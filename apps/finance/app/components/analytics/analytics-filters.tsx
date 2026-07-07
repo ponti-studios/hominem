@@ -1,9 +1,7 @@
-import { Button } from '@hominem/ui/button';
-import { DatePicker } from '@hominem/ui/date-picker';
 import { Badge } from '@hominem/ui/badge';
+import { Button } from '@hominem/ui/button';
 import { Card } from '@hominem/ui/card';
-import { Label } from '~/lib/ui-shims';
-import { Skeleton } from '~/lib/ui-shims';
+import { DatePicker } from '@hominem/ui/date-picker';
 import { Switch } from '@hominem/ui/switch';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Filter, X } from 'lucide-react';
@@ -14,6 +12,8 @@ import { TagSelect } from '~/components/category-select';
 import { GroupBySelect } from '~/components/group-by-select';
 import { useFinanceTags } from '~/lib/hooks/use-analytics';
 import { useFinanceAccounts } from '~/lib/hooks/use-finance-data';
+import { Label } from '~/lib/ui-shims';
+import { Skeleton } from '~/lib/ui-shims';
 
 interface AnalyticsFiltersProps {
   dateFrom: Date | undefined;

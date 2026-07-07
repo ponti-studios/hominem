@@ -1,7 +1,6 @@
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { LoadingSpinner } from '@hominem/ui/loading-spinner';
-import { useSort } from '~/lib/ui-shims';
 import { format, subMonths } from 'date-fns';
 import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -12,6 +11,7 @@ import { useTagBreakdown } from '~/lib/hooks/use-analytics';
 import { type FilterArgs, useFinanceAccounts } from '~/lib/hooks/use-finance-data';
 import { useSelectedAccount } from '~/lib/hooks/use-selected-account';
 import { formatCurrency } from '~/lib/number.utils';
+import { useSort } from '~/lib/ui-shims';
 
 interface TagBreakdownRow {
   tag: string;

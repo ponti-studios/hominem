@@ -1,8 +1,9 @@
+import { useCallback, Suspense } from 'react';
+import { Outlet } from 'react-router';
+
 import { PasskeyEnrollmentBanner, usePasskeyAuth } from '~/lib/ui-shims';
 import { AppLayout } from '~/lib/ui-shims';
 import { Toaster } from '~/lib/ui-shims';
-import { useCallback, Suspense } from 'react';
-import { Outlet } from 'react-router';
 
 import Header from '../components/header';
 import { LoadingScreen } from '../components/loading';

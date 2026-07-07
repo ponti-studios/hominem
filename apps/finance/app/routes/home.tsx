@@ -1,9 +1,10 @@
 import { useAuthContext } from '@hominem/auth';
-import { LandingPage } from '~/lib/ui-shims';
 import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { ChartLine, Landmark, UploadCloud, Gauge } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
+
+import { LandingPage } from '~/lib/ui-shims';
 
 export function meta() {
   return [

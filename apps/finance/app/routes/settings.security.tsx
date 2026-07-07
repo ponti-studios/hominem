@@ -1,8 +1,9 @@
-import { PasskeyManagement } from '@hominem/ui'; import { usePasskeyAuth } from '~/lib/ui-shims';
+import { PasskeyManagement } from '@hominem/ui';
 import { useCallback } from 'react';
 import { redirect } from 'react-router';
 
 import { getServerAuth } from '~/lib/auth.server';
+import { usePasskeyAuth } from '~/lib/ui-shims';
 
 export async function loader({ request }: { request: Request }) {
   const { user, headers } = await getServerAuth(request);

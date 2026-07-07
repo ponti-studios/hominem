@@ -28,7 +28,10 @@ export function useHonoQuery<TData = unknown>(
  * Compatibility wrapper for old useHonoMutation hook.
  */
 export function useHonoMutation<TData = unknown, TVariables = unknown>(
-  mutationFn: (client: { finance: ReturnType<typeof createFinanceClient> }, variables: TVariables) => Promise<TData>,
+  mutationFn: (
+    client: { finance: ReturnType<typeof createFinanceClient> },
+    variables: TVariables,
+  ) => Promise<TData>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options?: any,
 ) {
@@ -60,7 +63,6 @@ export function useHonoUtils() {
       if (queryKey) return queryClient.invalidateQueries({ queryKey });
       return queryClient.invalidateQueries();
     },
-    setQueryData: (queryKey: unknown[], data: unknown) =>
-      queryClient.setQueryData(queryKey, data),
+    setQueryData: (queryKey: unknown[], data: unknown) => queryClient.setQueryData(queryKey, data),
   };
 }

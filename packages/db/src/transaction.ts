@@ -1,20 +1,20 @@
 import type { Kysely, Transaction } from 'kysely';
 
 import { db } from './db';
-import type { DB } from './types/database';
+import type { Database } from './db';
 
 /**
  * A transaction-scoped database handle.
  * Repositories accept this so callers can compose writes atomically.
  */
-export type TransactionHandle = Transaction<DB>;
+export type TransactionHandle = Transaction<Database>;
 
 /**
  * A database handle that works with or without a transaction.
  * Repositories use this as their `db` parameter so the same code
  * runs inside or outside a transaction.
  */
-export type DbHandle = Kysely<DB> | TransactionHandle;
+export type DbHandle = Kysely<Database> | TransactionHandle;
 
 /**
  * Run a callback inside a database transaction.

@@ -1,7 +1,6 @@
-import { toast } from '~/lib/ui-shims';
-import { Button } from '@hominem/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
 import { Badge } from '@hominem/ui/badge';
+import { Button } from '@hominem/ui/button';
 import {
   Card,
   CardContent,
@@ -26,6 +25,7 @@ import { RouteLink } from '~/components/route-link';
 import { createServerHonoClient } from '~/lib/api.server';
 import { requireAuth } from '~/lib/guards';
 import { useAllAccounts } from '~/lib/hooks/use-finance-data';
+import { toast } from '~/lib/ui-shims';
 
 import type { Route } from './+types/accounts';
 
@@ -67,7 +67,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   const authResult = await requireAuth(request);
   const client = createServerHonoClient(authResult.session?.token, request);
 
-  const data = await client.finance.listAllAccounts().catch(() => ({ accounts: [], connections: [] }));
+  const data = await client.finance
+    .listAllAccounts()
+    .catch(() => ({ accounts: [], connections: [] }));
 
   return data;
 }

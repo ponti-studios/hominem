@@ -17,7 +17,8 @@ function HonoClientProvider({ children, baseUrl }: HonoProviderProps) {
   const getHeaders = useCallback(async (): Promise<Record<string, string>> => {
     try {
       const session = await authClient.getSession();
-      const token = (session as { data: { session: { token: string } } } | undefined)?.data?.session?.token;
+      const token = (session as { data: { session: { token: string } } } | undefined)?.data?.session
+        ?.token;
       if (token) return { authorization: `Bearer ${token}` };
     } catch {
       // ignore
@@ -27,7 +28,11 @@ function HonoClientProvider({ children, baseUrl }: HonoProviderProps) {
 
   const config: ClientConfig = authContext
     ? { baseUrl, getHeaders, onError: (e) => console.error('Hono RPC Error:', e) }
-    : { baseUrl, getHeaders: async () => ({}), onError: (e) => console.error('Hono RPC Error:', e) };
+    : {
+        baseUrl,
+        getHeaders: async () => ({}),
+        onError: (e) => console.error('Hono RPC Error:', e),
+      };
 
   return <BaseHonoProvider config={config}>{children}</BaseHonoProvider>;
 }

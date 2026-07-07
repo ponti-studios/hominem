@@ -13,7 +13,7 @@ import {
   getTransactionTagIds,
   queryTransactionsByContract,
   replaceTransactionTags,
-} from './finance';
+} from './index';
 
 async function _hasTaggingTables(): Promise<boolean> {
   const hasTagsTable = await tableExists('tags');
@@ -36,19 +36,19 @@ describeIntegration('finance tags integration', () => {
   let otherTagId: string;
 
   const cleanupUser = async (userId: string): Promise<void> => {
-    await db
-      .execute(sql`
+    await sql`
       delete from tagged_items
       where entity_type = ${'finance_transaction'}
         and entity_id in (select id from finance_transactions where user_id = ${userId})
-    `)
+    `
+      .execute(db)
       .catch(() => {});
-    await db
-      .execute(sql`delete from finance_transactions where user_id = ${userId}`)
+    await sql`delete from finance_transactions where user_id = ${userId}`
+      .execute(db)
       .catch(() => {});
-    await db.execute(sql`delete from finance_accounts where user_id = ${userId}`).catch(() => {});
-    await db.execute(sql`delete from tags where owner_id = ${userId}`).catch(() => {});
-    await db.execute(sql`delete from users where id = ${userId}`).catch(() => {});
+    await sql`delete from finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from tags where owner_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
   beforeEach(async () => {
@@ -65,13 +65,13 @@ describeIntegration('finance tags integration', () => {
       { id: otherUserId, name: 'Finance Tags User' },
     ]);
 
-    await db.execute(sql`
+    await sql`
       insert into tags (id, owner_id, name)
       values
         (${ownerFoodTagId}, ${ownerId}, ${'food'}),
         (${ownerTravelTagId}, ${ownerId}, ${'travel'}),
         (${otherTagId}, ${otherUserId}, ${'foreign-tag'})
-    `);
+    `.execute(db);
 
     const account = await createAccount({
       userId: ownerId,

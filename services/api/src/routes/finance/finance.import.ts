@@ -1,7 +1,7 @@
 import type { ImportTransactionsQueuePayload } from '@hominem/queues';
 import { QUEUE_NAMES } from '@hominem/queues';
-import { logger } from '@hominem/telemetry';
 import { csvStorageService } from '@hominem/storage';
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import type { Job } from 'bullmq';
 import { Hono } from 'hono';

@@ -65,9 +65,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const { authEnv, apiBaseUrl } = loaderData;
 
   return (
-    <AuthProvider
-      config={authEnv}
-    >
+    <AuthProvider config={authEnv}>
       <HonoProvider baseUrl={apiBaseUrl}>
         <UpdateGuard>
           <Outlet />

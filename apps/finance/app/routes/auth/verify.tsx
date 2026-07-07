@@ -1,5 +1,5 @@
-import { createAuthVerifyComponent } from '~/lib/ui-shims';
 import { createAuthVerifyAction, createAuthVerifyLoader } from '~/lib/auth-server-routes';
+import { createAuthVerifyComponent } from '~/lib/ui-shims';
 
 import { AUTH_CONFIG, AUTH_SERVER_ROUTE_CONFIG } from './config';
 

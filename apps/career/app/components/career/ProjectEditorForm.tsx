@@ -110,7 +110,7 @@ export function ProjectEditorForm({
   const isNew = !project?.id;
   const defaultValues = useMemo(
     () => buildProjectDefaults({ project, portfolioId, initialWorkExperienceId }),
-    [project, portfolioId, initialWorkExperienceId]
+    [project, portfolioId, initialWorkExperienceId],
   );
 
   const {
@@ -443,8 +443,6 @@ export function ProjectEditorForm({
           <span className="label">Visible</span>
         </label>
       </div>
-
-
     </form>
   );
 }

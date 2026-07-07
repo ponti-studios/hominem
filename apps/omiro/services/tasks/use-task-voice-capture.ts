@@ -96,10 +96,7 @@ export function useTaskVoiceCapture() {
           try {
             new File(fileUri).delete();
           } catch (deleteError) {
-            logger.error(
-              '[task-voice-capture] orphaned file delete failed',
-              deleteError as Error,
-            );
+            logger.error('[task-voice-capture] orphaned file delete failed', deleteError as Error);
           }
           setTaskError(createTaskVoiceCaptureError('creation-failed', rawText));
         } finally {
@@ -110,10 +107,7 @@ export function useTaskVoiceCapture() {
         try {
           new File(fileUri).delete();
         } catch (deleteError) {
-          logger.error(
-            '[task-voice-capture] orphaned file delete failed',
-            deleteError as Error,
-          );
+          logger.error('[task-voice-capture] orphaned file delete failed', deleteError as Error);
         }
         const code = getNativeErrorCode(transcriptionError);
         setTaskError(

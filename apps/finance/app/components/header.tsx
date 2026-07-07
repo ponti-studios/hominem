@@ -1,7 +1,8 @@
 'use client';
 
-import { Header, type NavItem } from '~/lib/ui-shims';
 import { ChartLine, CircleDollarSign, Landmark } from 'lucide-react';
+
+import { Header, type NavItem } from '~/lib/ui-shims';
 
 const APP_NAME = 'Finance';
 

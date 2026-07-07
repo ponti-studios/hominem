@@ -7,24 +7,24 @@ import {
   upsertPlaidItem,
   deletePlaidItem,
 } from '@hominem/finance-services';
-import { NotFoundError, InternalError } from '../errors';
 import { plaidSyncQueue } from '@hominem/queues';
 import { QUEUE_NAMES } from '@hominem/queues';
-import { logger } from '@hominem/telemetry';
-import { zValidator } from '@hono/zod-validator';
-import { Hono } from 'hono';
-import * as z from 'zod';
-
-import { env } from '../lib/env';
-import { API_BRAND } from '../../brand';
-import { PLAID_COUNTRY_CODES, PLAID_PRODUCTS, plaidClient } from '../lib/plaid';
-import { authMiddleware, type AppContext } from '../middleware/auth';
 import {
   type PlaidCreateLinkTokenOutput,
   type PlaidExchangeTokenOutput,
   type PlaidSyncItemOutput,
   type PlaidRemoveConnectionOutput,
 } from '@hominem/rpc/types/finance.types';
+import { logger } from '@hominem/telemetry';
+import { zValidator } from '@hono/zod-validator';
+import { Hono } from 'hono';
+import * as z from 'zod';
+
+import { API_BRAND } from '../../brand';
+import { NotFoundError, InternalError } from '../errors';
+import { env } from '../lib/env';
+import { PLAID_COUNTRY_CODES, PLAID_PRODUCTS, plaidClient } from '../lib/plaid';
+import { authMiddleware, type AppContext } from '../middleware/auth';
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -104,13 +104,13 @@ export const plaidRoutes = new Hono<AppContext>()
       // Save Plaid item
       await upsertPlaidItem({
         id: crypto.randomUUID(),
-        userId,
-        itemId,
-        accessToken,
-        institutionId: institution.id,
+        user_id: userId,
+        item_id: itemId,
+        access_token: accessToken,
+        institution_id: institution.id,
         status: 'active',
-        transactionsCursor: null,
-        lastSyncedAt: null,
+        cursor: null,
+        last_synced_at: null,
       });
 
       // Queue sync job
@@ -206,10 +206,10 @@ export const plaidRoutes = new Hono<AppContext>()
     }
 
     // Revoke access token with Plaid
-    if (plaidItem.accessToken) {
+    if (plaidItem.access_token) {
       try {
         await plaidClient.itemAccessTokenInvalidate({
-          access_token: plaidItem.accessToken,
+          access_token: plaidItem.access_token,
         });
       } catch (revokeError) {
         logger.warn('Failed to revoke Plaid access token', { error: revokeError });

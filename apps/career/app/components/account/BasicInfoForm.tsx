@@ -98,10 +98,7 @@ export function BasicInfoForm({
             <label htmlFor="jobTitle" className="subheading-4 text-muted-foreground">
               Job Title
             </label>
-            <Input
-              id="jobTitle"
-              {...register('jobTitle', { required: 'Job title is required' })}
-            />
+            <Input id="jobTitle" {...register('jobTitle', { required: 'Job title is required' })} />
             {errors.jobTitle && (
               <p className="body-4 text-destructive">{errors.jobTitle.message}</p>
             )}

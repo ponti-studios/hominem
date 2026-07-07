@@ -1,14 +1,8 @@
-import { Label } from '~/lib/ui-shims';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@hominem/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useId } from 'react';
 
 import { useFinanceAccounts } from '~/lib/hooks/use-finance-data';
+import { Label } from '~/lib/ui-shims';
 
 interface AccountSelectProps {
   selectedAccount: string;
@@ -46,7 +40,11 @@ export function AccountSelect({
   }
 
   const selectElement = (
-    <Select name="account" value={selectedAccount} onValueChange={(v: string | null) => v != null && handleChange(v)}>
+    <Select
+      name="account"
+      value={selectedAccount}
+      onValueChange={(v: string | null) => v != null && handleChange(v)}
+    >
       <SelectTrigger id={id} className={className}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

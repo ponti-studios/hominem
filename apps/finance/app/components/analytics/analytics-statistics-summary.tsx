@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Skeleton } from '~/lib/ui-shims';
 
 import { useTimeSeriesData } from '~/lib/hooks/use-time-series';
 import { formatCurrency } from '~/lib/number.utils';
+import { Skeleton } from '~/lib/ui-shims';
 
 interface AnalyticsStatisticsSummaryProps {
   dateFrom?: Date | undefined;

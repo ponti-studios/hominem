@@ -46,11 +46,14 @@ export function createAuthEntryAction(config: ServerRouteConfig) {
     const email = formData.get('email') as string;
 
     const apiBaseUrl = config.getApiBaseUrl();
-    const res = await fetch(new URL('/api/auth/email-otp/send-verification-otp', apiBaseUrl).toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', origin: apiBaseUrl },
-      body: JSON.stringify({ email, type: 'sign-in' }),
-    });
+    const res = await fetch(
+      new URL('/api/auth/email-otp/send-verification-otp', apiBaseUrl).toString(),
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', origin: apiBaseUrl },
+        body: JSON.stringify({ email, type: 'sign-in' }),
+      },
+    );
 
     if (!res.ok) {
       return data({ error: 'Failed to send verification email' }, { status: 400 });
@@ -103,9 +106,10 @@ export function createAuthVerifyAction(config: ServerRouteConfig) {
 
     const url = new URL(request.url);
     const next = url.searchParams.get('redirect');
-    const dest = next && isAllowedRedirect(next, config.allowedRedirectPrefixes ?? [])
-      ? next
-      : config.defaultRedirect ?? '/';
+    const dest =
+      next && isAllowedRedirect(next, config.allowedRedirectPrefixes ?? [])
+        ? next
+        : (config.defaultRedirect ?? '/');
 
     const headers = new Headers(res.headers);
     return redirect(dest, { headers });
@@ -115,27 +119,24 @@ export function createAuthVerifyAction(config: ServerRouteConfig) {
 // ── Logout ────────────────────────────────────────────────────────────────────
 export function createAuthLogoutRoute(config: ServerRouteConfig) {
   const handler = async ({ request }: { request: Request }) => {
-    const res = await fetch(
-      new URL('/api/auth/logout', config.getApiBaseUrl()).toString(),
-      {
-        method: 'POST',
-        headers: {
-          cookie: request.headers.get('cookie') ?? '',
-          'Content-Type': 'application/json',
-        },
+    const res = await fetch(new URL('/api/auth/logout', config.getApiBaseUrl()).toString(), {
+      method: 'POST',
+      headers: {
+        cookie: request.headers.get('cookie') ?? '',
+        'Content-Type': 'application/json',
       },
-    )
+    });
 
     // Forward set-cookie from sign-out response to clear the session cookie
-    const headers = new Headers()
-    const setCookie = res.headers.get('set-cookie')
+    const headers = new Headers();
+    const setCookie = res.headers.get('set-cookie');
     if (setCookie) {
-      headers.set('set-cookie', setCookie)
+      headers.set('set-cookie', setCookie);
     }
 
-    return redirect('/auth', { headers })
-  }
-  return { action: handler, loader: handler }
+    return redirect('/auth', { headers });
+  };
+  return { action: handler, loader: handler };
 }
 
 // ── Passkey callback ──────────────────────────────────────────────────────────
@@ -144,9 +145,10 @@ export function createAuthPasskeyCallbackRoute(config: AuthConfig) {
     action: async ({ request }: { request: Request }) => {
       const url = new URL(request.url);
       const next = url.searchParams.get('redirect');
-      const dest = next && isAllowedRedirect(next, config.allowedRedirectPrefixes ?? [])
-        ? next
-        : config.defaultRedirect ?? '/';
+      const dest =
+        next && isAllowedRedirect(next, config.allowedRedirectPrefixes ?? [])
+          ? next
+          : (config.defaultRedirect ?? '/');
       return redirect(dest);
     },
   };

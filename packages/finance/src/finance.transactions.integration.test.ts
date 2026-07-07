@@ -16,7 +16,7 @@ import {
   getTransactionByPlaidId,
   queryTransactions,
   updateTransaction,
-} from './finance';
+} from './index';
 
 const nextUserId = createDeterministicIdFactory('finance.transactions.integration');
 const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
@@ -27,11 +27,11 @@ describeIntegration('finance transactions integration', () => {
   let ownerAccountId: string;
 
   const cleanupUser = async (userId: string): Promise<void> => {
-    await db
-      .execute(sql`delete from finance_transactions where user_id = ${userId}`)
+    await sql`delete from finance_transactions where user_id = ${userId}`
+      .execute(db)
       .catch(() => {});
-    await db.execute(sql`delete from finance_accounts where user_id = ${userId}`).catch(() => {});
-    await db.execute(sql`delete from users where id = ${userId}`).catch(() => {});
+    await sql`delete from finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
   beforeEach(async () => {
@@ -100,7 +100,7 @@ describeIntegration('finance transactions integration', () => {
   });
 
   it('supports plaid external id lookup and delete', async () => {
-    await db.execute(sql`
+    await sql`
       insert into finance_transactions (
         id, user_id, account_id, amount, transaction_type, description, date, external_id
       )
@@ -114,7 +114,7 @@ describeIntegration('finance transactions integration', () => {
         ${'2026-02-10'},
         ${'plaid-ext-1'}
       )
-    `);
+    `.execute(db);
 
     const byPlaid = await getTransactionByPlaidId('plaid-ext-1', ownerId);
     expect(byPlaid).not.toBeNull();

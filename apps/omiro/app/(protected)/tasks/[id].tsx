@@ -12,8 +12,8 @@ import { EmptyState } from '~/components/ui/EmptyState';
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTaskDelete } from '~/services/tasks/use-task-delete';
-import { useTaskUpdate } from '~/services/tasks/use-task-update';
 import { useTaskQuery } from '~/services/tasks/use-task-query';
+import { useTaskUpdate } from '~/services/tasks/use-task-update';
 import t from '~/translations';
 
 type EditorState = { mode: 'create' } | { mode: 'edit'; task: Task; isChild: boolean } | null;

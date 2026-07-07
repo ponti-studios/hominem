@@ -24,7 +24,12 @@ interface VoiceRecordingPanelProps {
   doneAccessibilityLabel?: string;
 }
 
-export function VoiceRecordingPanel({ startedAt, onCancel, onDone, doneAccessibilityLabel }: VoiceRecordingPanelProps) {
+export function VoiceRecordingPanel({
+  startedAt,
+  onCancel,
+  onDone,
+  doneAccessibilityLabel,
+}: VoiceRecordingPanelProps) {
   const styles = useStyles();
   const themeColors = useThemeColors();
   const elapsed = useElapsedTimer(startedAt);
@@ -45,9 +50,7 @@ export function VoiceRecordingPanel({ startedAt, onCancel, onDone, doneAccessibi
       </View>
       {onDone ? (
         <IconButton
-          accessibilityLabel={
-            doneAccessibilityLabel ?? t.inboxComposer.composer.stopVoiceInputA11y
-          }
+          accessibilityLabel={doneAccessibilityLabel ?? t.inboxComposer.composer.stopVoiceInputA11y}
           circular
           disabled={false}
           icon="stop.fill"

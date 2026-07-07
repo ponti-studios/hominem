@@ -2,7 +2,6 @@ import type { TimeSeriesDataPoint } from '@hominem/rpc/types/finance.types';
 import { CHART_COLORS } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Skeleton } from '~/lib/ui-shims';
 import { adjustDateRange, formatMonthYear } from '@hominem/utils/dates';
 import type { Dispatch, SetStateAction } from 'react';
 import { useMemo } from 'react';
@@ -21,6 +20,7 @@ import {
 
 import { useTimeSeriesData } from '~/lib/hooks/use-time-series';
 import { formatCurrency } from '~/lib/number.utils';
+import { Skeleton } from '~/lib/ui-shims';
 
 interface AnalyticsChartDisplayProps {
   chartType: 'area' | 'bar';

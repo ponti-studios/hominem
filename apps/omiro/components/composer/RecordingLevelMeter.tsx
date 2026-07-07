@@ -3,8 +3,8 @@ import React, { useEffect, useSyncExternalStore } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { makeStyles, useThemeColors } from '~/components/theme';
 import { getRecordingSnapshot, subscribeRecording } from '~/components/media/audio.service';
+import { makeStyles, useThemeColors } from '~/components/theme';
 
 const BAR_COUNT = 12;
 const BAR_MAX_HEIGHT = 20;

@@ -1,5 +1,4 @@
 import { createAuthLogoutRoute } from '~/lib/auth-server-routes';
-
 import { serverEnv } from '~/lib/env';
 
 const authLogoutRoute = createAuthLogoutRoute({

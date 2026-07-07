@@ -20,7 +20,7 @@ import {
   updatePlaidItemStatusById,
   updatePlaidItemStatusByItemId,
   updatePlaidItemSyncStatus,
-} from './finance';
+} from './index';
 
 const nextUserId = createDeterministicIdFactory('finance.plaid.integration');
 const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
@@ -34,8 +34,8 @@ describeIntegration('finance plaid integration', () => {
   let otherUserId: string;
 
   const cleanupUser = async (userId: string): Promise<void> => {
-    await db.execute(sql`delete from plaid_items where user_id = ${userId}`).catch(() => {});
-    await db.execute(sql`delete from users where id = ${userId}`).catch(() => {});
+    await sql`delete from plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
   beforeEach(async () => {

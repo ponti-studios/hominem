@@ -1,19 +1,13 @@
 import { useAuthContext } from '@hominem/auth';
-import { toast } from '~/lib/ui-shims';
-import { Button } from '@hominem/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@hominem/ui/card';
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
 import { AlertCircle, Building2, Link } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { type PlaidLinkOnExit, type PlaidLinkOnSuccess, usePlaidLink } from 'react-plaid-link';
 
 import { useCreateLinkToken, useExchangeToken } from '~/lib/hooks/use-plaid';
+import { toast } from '~/lib/ui-shims';
 import { cn } from '~/lib/utils';
 
 interface PlaidLinkProps {

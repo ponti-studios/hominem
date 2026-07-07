@@ -1,12 +1,6 @@
 import { Button } from '@hominem/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@hominem/ui/select';
 import type { SortDirection, SortField, SortOption } from '@hominem/ui/hooks';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { X } from 'lucide-react';
 
 interface SortRowProps {

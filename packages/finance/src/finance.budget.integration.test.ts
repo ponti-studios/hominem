@@ -15,7 +15,7 @@ import {
   createAccount,
   createBudgetCategory,
   createTransaction,
-  deleteAllFinanceData,
+  deleteUserFinanceData,
   deleteBudgetCategory,
   getAllBudgetCategories,
   getBudgetCategoriesWithSpending,
@@ -25,7 +25,7 @@ import {
   queryTransactionsByContract,
   replaceTransactionTags,
   updateBudgetCategory,
-} from './finance';
+} from './index';
 
 const nextUserId = createDeterministicIdFactory('finance.budget.integration');
 const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
@@ -40,21 +40,21 @@ describeIntegration('finance budget integration', () => {
   let ownerAccountId: string;
 
   const cleanupUser = async (userId: string): Promise<void> => {
-    await db
-      .execute(sql`
+    await sql`
       delete from tagged_items
       where entity_type = ${'finance_transaction'}
         and entity_id in (select id from finance_transactions where user_id = ${userId})
-    `)
+    `
+      .execute(db)
       .catch(() => {});
-    await db.execute(sql`delete from plaid_items where user_id = ${userId}`).catch(() => {});
-    await db.execute(sql`delete from budget_goals where user_id = ${userId}`).catch(() => {});
-    await db
-      .execute(sql`delete from finance_transactions where user_id = ${userId}`)
+    await sql`delete from plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from budget_goals where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from finance_transactions where user_id = ${userId}`
+      .execute(db)
       .catch(() => {});
-    await db.execute(sql`delete from tags where owner_id = ${userId}`).catch(() => {});
-    await db.execute(sql`delete from finance_accounts where user_id = ${userId}`).catch(() => {});
-    await db.execute(sql`delete from users where id = ${userId}`).catch(() => {});
+    await sql`delete from tags where owner_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
   beforeEach(async () => {
@@ -127,10 +127,10 @@ describeIntegration('finance budget integration', () => {
 
     const budgetGoalsExists = await hasBudgetGoalsTable();
     if (budgetGoalsExists) {
-      await db.execute(sql`
+      await sql`
         insert into budget_goals (id, user_id, category_id, target_amount, target_period)
         values (${crypto.randomUUID()}, ${ownerId}, ${null}, ${500}, ${'monthly'})
-      `);
+      `.execute(db);
     }
 
     const txFood = await createTransaction({
@@ -240,7 +240,7 @@ describeIntegration('finance budget integration', () => {
       { tag: 'Transit', total: 60 },
     ]);
 
-    await deleteAllFinanceData(ownerId);
+    await deleteUserFinanceData(ownerId);
     const afterDelete = await queryTransactionsByContract({
       userId: ownerId,
       limit: 50,

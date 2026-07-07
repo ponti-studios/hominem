@@ -1,5 +1,3 @@
-import { toast } from '~/lib/ui-shims';
-import { Button } from '@hominem/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,10 +9,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@hominem/ui/alert-dialog';
+import { Button } from '@hominem/ui/button';
 import { RefreshCcw, Trash2 } from 'lucide-react';
 
 import { useRemovePlaidConnection, useSyncPlaidItem } from '~/lib/hooks/use-plaid';
 import type { Account } from '~/lib/types/account.types';
+import { toast } from '~/lib/ui-shims';
 
 import { PlaidStatusBadge } from './plaid-status-badge';
 

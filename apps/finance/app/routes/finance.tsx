@@ -1,4 +1,3 @@
-import { useSort } from '~/lib/ui-shims';
 import { useEffect, useState } from 'react';
 
 import { PaginationControls } from '~/components/finance/pagination-controls';
@@ -12,6 +11,7 @@ import {
   useFinanceTransactions,
 } from '~/lib/hooks/use-finance-data';
 import { useSelectedAccount } from '~/lib/hooks/use-selected-account';
+import { useSort } from '~/lib/ui-shims';
 
 import type { Route } from './+types/finance';
 
@@ -20,7 +20,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   const client = createServerHonoClient(authResult.session?.token, request);
 
   const [accounts, transactions] = await Promise.all([
-    client.finance.listAccounts({}).catch(() => [] as Awaited<ReturnType<typeof client.finance.listAccounts>>),
+    client.finance
+      .listAccounts({})
+      .catch(() => [] as Awaited<ReturnType<typeof client.finance.listAccounts>>),
     client.finance.listTransactions({ limit: 25 }).catch(
       () =>
         ({

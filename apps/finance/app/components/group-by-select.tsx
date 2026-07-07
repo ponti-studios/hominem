@@ -1,12 +1,7 @@
-import { Label } from '~/lib/ui-shims';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@hominem/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useId } from 'react';
+
+import { Label } from '~/lib/ui-shims';
 
 type GroupByOption = 'month' | 'week' | 'day';
 

@@ -55,7 +55,9 @@ export function BudgetOverview({ selectedMonthYear }: BudgetOverviewProps) {
       <Card>
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-center">
-            <div className="mx-auto"><LoadingSpinner variant="sm" /></div>
+            <div className="mx-auto">
+              <LoadingSpinner variant="sm" />
+            </div>
             <p className="mt-2 text-xs text-muted-foreground">Loading budget data...</p>
           </div>
         </CardContent>

@@ -1,10 +1,10 @@
 import type { Merchant } from '@hominem/rpc/types/finance.types';
 import { Badge } from '@hominem/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Skeleton } from '~/lib/ui-shims';
 
 import { useFinanceTopMerchants } from '~/lib/hooks/use-finance-top-merchants';
 import { formatCurrency } from '~/lib/number.utils';
+import { Skeleton } from '~/lib/ui-shims';
 
 interface TopMerchantsProps {
   dateFrom?: Date | undefined;

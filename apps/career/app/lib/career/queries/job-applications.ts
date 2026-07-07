@@ -358,9 +358,7 @@ export async function getAllApplicationsWithCompany(
   }
 
   if (filter?.companyId) {
-    applications = applications.filter(
-      (application) => application.companyId === filter.companyId,
-    );
+    applications = applications.filter((application) => application.companyId === filter.companyId);
   }
 
   if (filter?.source) {
@@ -382,8 +380,7 @@ export async function getAllApplicationsWithCompany(
   if (filter?.startDate) {
     applications = applications.filter(
       (application) =>
-        application.applicationDate &&
-        new Date(application.applicationDate) >= filter.startDate!,
+        application.applicationDate && new Date(application.applicationDate) >= filter.startDate!,
     );
   }
 

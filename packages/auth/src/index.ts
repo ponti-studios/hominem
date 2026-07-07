@@ -1,5 +1,5 @@
 export { AuthProvider, useAuthClient, useSession } from './client/provider';
-export type { } from './types';
+export type {} from './types';
 
 import { useSession, useAuthClient } from './client/provider';
 

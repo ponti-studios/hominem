@@ -438,11 +438,7 @@ export const CareerRepository = {
     await handle.deleteFrom('app.portfolios').where('ownerUserid', '=', ownerUserid).execute();
   },
 
-  async deletePortfolio(
-    handle: DbHandle,
-    ownerUserid: string,
-    portfolioId: string,
-  ): Promise<void> {
+  async deletePortfolio(handle: DbHandle, ownerUserid: string, portfolioId: string): Promise<void> {
     await handle
       .deleteFrom('app.portfolios')
       .where('id', '=', portfolioId)
@@ -711,8 +707,7 @@ export const CareerRepository = {
     if (updates.teamSize !== undefined) set.teamSize = updates.teamSize;
     if (updates.directReports !== undefined) set.directReports = updates.directReports;
     if (updates.reportsTo !== undefined) set.reportsTo = updates.reportsTo;
-    if (updates.reasonForLeaving !== undefined)
-      set.reasonForLeaving = updates.reasonForLeaving;
+    if (updates.reasonForLeaving !== undefined) set.reasonForLeaving = updates.reasonForLeaving;
     if (updates.exitNotes !== undefined) set.exitNotes = updates.exitNotes;
 
     const updated = await handle

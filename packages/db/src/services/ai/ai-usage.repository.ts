@@ -157,9 +157,7 @@ export const AIUsageEventRepository = {
       totalTokens: Number(row.totalTokens ?? 0),
       totalCostUsd: toRequiredNumber(row.total_cost_usd),
       lastRecordedAt:
-        row.last_recorded_at == null
-          ? null
-          : new Date(row.last_recorded_at).toISOString(),
+        row.last_recorded_at == null ? null : new Date(row.last_recorded_at).toISOString(),
     };
   },
 

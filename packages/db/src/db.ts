@@ -2,7 +2,9 @@ import { CamelCasePlugin, Kysely, PostgresDialect, sql as kyselySql } from 'kyse
 import pg from 'pg';
 
 import { env } from './env';
-import type { DB as Database } from './types/database';
+import type { DB } from './types/database';
+
+export type Database = DB;
 
 const { Pool, types } = pg;
 

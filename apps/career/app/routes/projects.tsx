@@ -219,9 +219,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
               <ProjectSummaryCard
                 key={project.id}
                 project={project}
-                clientLabel={
-                  clientsById.get(project.workExperienceId || '') || 'Unlinked project'
-                }
+                clientLabel={clientsById.get(project.workExperienceId || '') || 'Unlinked project'}
                 onEdit={(id) =>
                   navigate(currentSearch ? `/projects/${id}?${currentSearch}` : `/projects/${id}`)
                 }

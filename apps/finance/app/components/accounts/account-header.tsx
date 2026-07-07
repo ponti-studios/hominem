@@ -1,12 +1,6 @@
-import { Button } from '@hominem/ui/button';
 import { Badge } from '@hominem/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@hominem/ui/card';
+import { Button } from '@hominem/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
 import { ArrowLeft, Building2, CreditCard, Eye, EyeOff, RefreshCcw } from 'lucide-react';
 
 import { RouteLink } from '~/components/route-link';

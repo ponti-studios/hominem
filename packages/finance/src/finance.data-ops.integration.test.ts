@@ -12,11 +12,11 @@ import {
   createAccount,
   createBudgetCategory,
   createTransaction,
-  deleteAllFinanceDataWithSummary,
+  deleteUserFinanceData,
   exportFinanceData,
   replaceTransactionTags,
   upsertPlaidItem,
-} from './finance';
+} from './index';
 
 const nextUserId = createDeterministicIdFactory('finance.data-ops.integration');
 const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
@@ -33,14 +33,14 @@ describeIntegration('finance data ops integration', () => {
         sql`delete from tagged_items where entity_type = ${'finance_transaction'} and entity_id in (select id from finance_transactions where user_id = ${userId})`,
       )
       .catch(() => {});
-    await db.execute(sql`delete from plaid_items where user_id = ${userId}`).catch(() => {});
-    await db.execute(sql`delete from budget_goals where user_id = ${userId}`).catch(() => {});
-    await db
-      .execute(sql`delete from finance_transactions where user_id = ${userId}`)
+    await sql`delete from plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from budget_goals where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from finance_transactions where user_id = ${userId}`
+      .execute(db)
       .catch(() => {});
-    await db.execute(sql`delete from tags where owner_id = ${userId}`).catch(() => {});
-    await db.execute(sql`delete from finance_accounts where user_id = ${userId}`).catch(() => {});
-    await db.execute(sql`delete from users where id = ${userId}`).catch(() => {});
+    await sql`delete from tags where owner_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
   beforeEach(async () => {
@@ -153,7 +153,7 @@ describeIntegration('finance data ops integration', () => {
       merchantName: 'Keep',
     });
 
-    const summary = await deleteAllFinanceDataWithSummary(ownerId);
+    const summary = await deleteUserFinanceData(ownerId);
     expect(summary.deletedTransactions).toBeGreaterThanOrEqual(1);
     expect(summary.deletedAccounts).toBeGreaterThanOrEqual(1);
     expect(summary.deletedTaggedItems).toBeGreaterThanOrEqual(1);

@@ -53,13 +53,16 @@ export default function TasksScreen() {
     return () => clearTimeout(timer);
   }, [voiceCapture.state, voiceCapture.createdCount]);
 
-  const handlePressTask = useCallback((task: TaskListItemModel) => {
-    if ((task.childCount ?? 0) > 0) {
-      router.push(getTaskDetailRoute(task.id));
-      return;
-    }
-    setEditorState({ mode: 'edit', task });
-  }, [router]);
+  const handlePressTask = useCallback(
+    (task: TaskListItemModel) => {
+      if ((task.childCount ?? 0) > 0) {
+        router.push(getTaskDetailRoute(task.id));
+        return;
+      }
+      setEditorState({ mode: 'edit', task });
+    },
+    [router],
+  );
 
   const handleSubmitEditor = useCallback(
     (values: TaskEditorValues) => {

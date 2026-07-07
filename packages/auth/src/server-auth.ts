@@ -1,6 +1,9 @@
 // Mock auth provider for local development
 interface MockAuthProvider {
-  signIn: () => Promise<{ user: { id: string; email: string; name: string }; session: { id: string } }>;
+  signIn: () => Promise<{
+    user: { id: string; email: string; name: string };
+    session: { id: string };
+  }>;
   signOut: () => Promise<void>;
 }
 

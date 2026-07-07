@@ -1,9 +1,8 @@
 import { CHART_COLORS } from '@hominem/ui';
+import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Badge } from '@hominem/ui/badge';
 import { Input } from '@hominem/ui/input';
-import { Label } from '~/lib/ui-shims';
 import { AlertTriangle, Calendar, DollarSign, TrendingDown } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
 import {
@@ -19,6 +18,7 @@ import {
 
 import { useCalculateRunway } from '~/lib/hooks/use-runway';
 import { formatCurrency } from '~/lib/number.utils';
+import { Label } from '~/lib/ui-shims';
 
 interface PlannedPurchase {
   description: string;

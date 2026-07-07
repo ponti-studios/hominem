@@ -23,10 +23,7 @@ export function disableTestOtpStore(): void {
   storeEnabled = false;
 }
 
-export function getLatestTestOtp(input: {
-  email: string;
-  type?: string;
-}): TestOtpRecord | null {
+export function getLatestTestOtp(input: { email: string; type?: string }): TestOtpRecord | null {
   if (!storeEnabled) return null;
 
   const key = input.type ? `${input.email}:${input.type}` : input.email;

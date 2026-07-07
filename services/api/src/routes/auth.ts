@@ -11,7 +11,6 @@ import { STEP_UP_ACTIONS, isStepUpAction } from '@hominem/auth/step-up-actions';
 import type { StepUpAction } from '@hominem/auth/step-up-actions';
 import { db } from '@hominem/db';
 import { redis } from '@hominem/services/redis';
-
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import type { Context } from 'hono';

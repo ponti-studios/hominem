@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Skeleton } from '~/lib/ui-shims';
 import { redirect, useParams } from 'react-router';
 
 import { createServerHonoClient } from '~/lib/api.server';
 import { requireAuth } from '~/lib/guards';
 import { useMonthlyStats } from '~/lib/hooks/use-monthly-stats';
 import { formatCurrency } from '~/lib/number.utils';
+import { Skeleton } from '~/lib/ui-shims';
 
 import type { Route } from './+types/analytics.monthly.$month';
 

@@ -1,7 +1,4 @@
-import type {
-  BudgetCategoryData,
-  TransactionListOutput,
-} from '@hominem/rpc/types/finance.types';
+import type { BudgetCategoryData, TransactionListOutput } from '@hominem/rpc/types/finance.types';
 
 // Define the type based on what the API returns - use the base data type
 export type BudgetCategory = BudgetCategoryData;
