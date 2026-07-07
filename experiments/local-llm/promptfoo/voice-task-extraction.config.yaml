@@ -1,4 +1,4 @@
-description: "Voice task extraction — priority/due-date inference rules"
+description: "Voice task extraction — priority/due-date inference rules (v1 = production prompt verbatim, v2 = candidate revision)"
 
 providers:
   - id: ollama:chat:gemma4:e2b-mlx
@@ -15,7 +15,12 @@ providers:
       temperature: 0
 
 prompts:
-  - file://prompts/voice-task-extraction.json
+  - id: file://prompts/voice-task-extraction.json
+    label: v1-production
+  - id: file://prompts/voice-task-extraction-v2.json
+    label: v2-candidate
+  - id: file://prompts/voice-task-extraction-v3.json
+    label: v3-candidate
 
 tests:
   - vars:
@@ -32,6 +37,41 @@ tests:
       caseId: noon-default
       referenceDateTime: "2026-07-06T09:00:00-07:00 (America/Los_Angeles)"
       transcript: "I need to submit the tax documents by next Friday"
+    assert:
+      - type: javascript
+        value: file://assertions/voice-task-extraction.js
+
+  - vars:
+      caseId: in-two-weeks
+      referenceDateTime: "2026-07-06T09:00:00-07:00 (America/Los_Angeles)"
+      transcript: "remind me to renew the car registration in two weeks"
+    assert:
+      - type: javascript
+        value: file://assertions/voice-task-extraction.js
+
+  - vars:
+      caseId: explicit-clock-time
+      referenceDateTime: "2026-07-06T09:00:00-07:00 (America/Los_Angeles)"
+      transcript: "I have to pick up my kid from school tomorrow at 3pm"
+    assert:
+      - type: javascript
+        value: file://assertions/voice-task-extraction.js
+
+  - vars:
+      caseId: multi-mixed-urgency
+      referenceDateTime: "2026-07-06T09:00:00-07:00 (America/Los_Angeles)"
+      transcript: >-
+        okay so the production server is down and someone needs to restart it ASAP,
+        also I want to read that book on stoicism whenever I get a chance no particular
+        rush, and uh I need to buy groceries this week
+    assert:
+      - type: javascript
+        value: file://assertions/voice-task-extraction.js
+
+  - vars:
+      caseId: no-actionable-items
+      referenceDateTime: "2026-07-06T09:00:00-07:00 (America/Los_Angeles)"
+      transcript: "um so like I was just thinking about how weird it is that time feels faster now than when I was a kid"
     assert:
       - type: javascript
         value: file://assertions/voice-task-extraction.js

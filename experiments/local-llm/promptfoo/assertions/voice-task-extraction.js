@@ -1,16 +1,33 @@
 const { parseModelJson } = require('./json-utils');
 
-// These checks encode two real bugs found in a manual eval of gemma4:e2b-mlx on
-// 2026-07-06 (see experiments/local-llm/results.md):
+// These checks encode real bugs found in a manual + promptfoo eval of
+// gemma4:e2b-mlx (see experiments/local-llm/results.md):
 //   1. Fabricating priority: "none" instead of omitting the field.
 //   2. Using end-of-day (23:59:59) for a date with no explicit clock time,
 //      instead of the noon default the prompt specifies.
 // Keeping these as concrete assertions (not vibes) is the whole point of a
-// reliable eval — this is the exact thing a manual read is prone to miss on
+// reliable eval — this is exactly the kind of thing a manual read misses on
 // a re-run with a different model or prompt tweak.
 
 function hasNoonTime(isoString) {
   return typeof isoString === 'string' && isoString.includes('T12:00:00');
+}
+
+function checkPriority(task, { expected, mustNotBeOmitted, mustBeOmitted } = {}) {
+  const problems = [];
+  if (mustBeOmitted && task.priority !== undefined) {
+    problems.push(`priority should be omitted, got ${JSON.stringify(task.priority)}`);
+  }
+  if (mustNotBeOmitted) {
+    if (task.priority === undefined) {
+      problems.push('priority omitted, but explicit urgency language was stated');
+    } else if (task.priority === 'none' || task.priority === '') {
+      problems.push(`priority fabricated as ${JSON.stringify(task.priority)} instead of a real value or omission`);
+    } else if (expected && task.priority !== expected) {
+      problems.push(`priority should be "${expected}", got ${JSON.stringify(task.priority)}`);
+    }
+  }
+  return problems;
 }
 
 module.exports = function (output, context) {
@@ -33,59 +50,84 @@ module.exports = function (output, context) {
     if (tasks.length !== 2) {
       return { pass: false, score: 0, reason: `Expected 2 tasks, got ${tasks.length}` };
     }
-
     const landlord = tasks.find((t) => /landlord|lease/i.test(t.title || ''));
     const dentist = tasks.find((t) => /dentist/i.test(t.title || ''));
-
     if (!landlord) problems.push('No landlord/lease task found');
     if (!dentist) problems.push('No dentist task found');
 
     if (landlord) {
-      if (landlord.priority !== 'urgent') {
-        problems.push(`Landlord task priority should be "urgent", got ${JSON.stringify(landlord.priority)}`);
-      }
-      if (landlord.dueDate && !hasNoonTime(landlord.dueDate)) {
-        problems.push(
-          `Landlord task due "today" should default to noon (T12:00:00), got ${landlord.dueDate}`,
-        );
+      problems.push(...checkPriority(landlord, { expected: 'high', mustNotBeOmitted: true }));
+      if (landlord.dueAt && !hasNoonTime(landlord.dueAt)) {
+        problems.push(`Landlord task due "today" should default to noon, got ${landlord.dueAt}`);
       }
     }
-
     if (dentist) {
-      // "no rush" is explicit urgency language per the prompt's own examples —
-      // the field should be present (not omitted), and should not read as urgent.
-      if (dentist.priority === undefined) {
-        problems.push('Dentist task priority omitted, but "no rush" is explicit urgency language');
-      } else if (dentist.priority === 'none') {
-        problems.push('Dentist task priority fabricated as literal "none" instead of a real low-urgency value');
-      } else if (/urgent|high|asap|critical/i.test(dentist.priority)) {
+      // "no rush" is explicit urgency language per the prompt's own examples.
+      problems.push(...checkPriority(dentist, { mustNotBeOmitted: true }));
+      if (/urgent|high|asap|critical/i.test(dentist.priority || '')) {
         problems.push(`Dentist task priority "${dentist.priority}" contradicts stated "no rush"`);
       }
-      if (dentist.dueDate && !hasNoonTime(dentist.dueDate)) {
-        problems.push(`Dentist task due "next Friday" (no time given) should default to noon, got ${dentist.dueDate}`);
+      if (dentist.dueAt && !hasNoonTime(dentist.dueAt)) {
+        problems.push(`Dentist task due "next Friday" (no time given) should default to noon, got ${dentist.dueAt}`);
       }
     }
-
-    return problems.length
-      ? { pass: false, score: 0, reason: problems.join('; ') }
-      : { pass: true, score: 1, reason: 'Priority and due-date handling correct for both tasks' };
-  }
-
-  if (caseId === 'noon-default') {
+  } else if (caseId === 'noon-default') {
     if (tasks.length !== 1) {
       return { pass: false, score: 0, reason: `Expected 1 task, got ${tasks.length}` };
     }
     const task = tasks[0];
-    if (task.priority !== undefined) {
-      problems.push(`Priority should be omitted (no urgency stated), got ${JSON.stringify(task.priority)}`);
+    problems.push(...checkPriority(task, { mustBeOmitted: true }));
+    if (!hasNoonTime(task.dueAt)) {
+      problems.push(`Due date should default to noon, got ${task.dueAt}`);
     }
-    if (!hasNoonTime(task.dueDate)) {
-      problems.push(`Due date should default to noon (T12:00:00), got ${task.dueDate}`);
+  } else if (caseId === 'in-two-weeks') {
+    if (tasks.length !== 1) {
+      return { pass: false, score: 0, reason: `Expected 1 task, got ${tasks.length}` };
     }
-    return problems.length
-      ? { pass: false, score: 0, reason: problems.join('; ') }
-      : { pass: true, score: 1, reason: 'Priority correctly omitted and noon default applied' };
+    const task = tasks[0];
+    problems.push(...checkPriority(task, { mustBeOmitted: true }));
+    // Reference is 2026-07-06; "in two weeks" should land in the 2026-07-20 window.
+    if (!task.dueAt || !task.dueAt.startsWith('2026-07-2')) {
+      problems.push(`Due date should resolve to ~2026-07-20, got ${task.dueAt}`);
+    }
+    if (!hasNoonTime(task.dueAt)) {
+      problems.push(`Due date should default to noon, got ${task.dueAt}`);
+    }
+  } else if (caseId === 'explicit-clock-time') {
+    if (tasks.length !== 1) {
+      return { pass: false, score: 0, reason: `Expected 1 task, got ${tasks.length}` };
+    }
+    const task = tasks[0];
+    // User said "3pm" explicitly — noon default must NOT override a stated time.
+    if (!task.dueAt || !task.dueAt.includes('T15:00:00')) {
+      problems.push(`Due date should use the stated 3pm (T15:00:00), got ${task.dueAt}`);
+    }
+  } else if (caseId === 'multi-mixed-urgency') {
+    if (tasks.length !== 3) {
+      return { pass: false, score: 0, reason: `Expected 3 tasks, got ${tasks.length}` };
+    }
+    const highPriorityTask = tasks.find((t) => /server|prod|production/i.test(t.title || ''));
+    const low = tasks.find((t) => /book|read/i.test(t.title || ''));
+    const neutral = tasks.find((t) => /grocer/i.test(t.title || ''));
+    if (!highPriorityTask || !low || !neutral) {
+      problems.push('Could not find all three expected tasks (server/high, book/low, groceries/neutral)');
+    } else {
+      problems.push(...checkPriority(highPriorityTask, { expected: 'high', mustNotBeOmitted: true }));
+      problems.push(...checkPriority(low, { mustNotBeOmitted: true }));
+      if (low.priority && /high/i.test(low.priority)) {
+        problems.push(`Book task priority "${low.priority}" contradicts stated "whenever I get a chance"`);
+      }
+      problems.push(...checkPriority(neutral, { mustBeOmitted: true }));
+    }
+  } else if (caseId === 'no-actionable-items') {
+    if (tasks.length !== 0) {
+      return { pass: false, score: 0, reason: `Expected empty task list, got ${tasks.length}` };
+    }
+  } else {
+    return { pass: false, score: 0, reason: `Unknown caseId: ${caseId}` };
   }
 
-  return { pass: false, score: 0, reason: `Unknown caseId: ${caseId}` };
+  return problems.length
+    ? { pass: false, score: 0, reason: problems.join('; ') }
+    : { pass: true, score: 1, reason: 'All checks passed' };
 };

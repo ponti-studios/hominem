@@ -37,5 +37,32 @@ module.exports = function (output, context) {
     return { pass: true, score: 1, reason: 'Correctly returned no tasks for a non-actionable conversation' };
   }
 
+  if (caseId === 'single-task') {
+    if (tasks.length !== 1) {
+      return { pass: false, score: 0, reason: `Expected 1 task, got ${tasks.length}` };
+    }
+    return { pass: true, score: 1, reason: 'Correct single-task extraction' };
+  }
+
+  if (caseId === 'many-tasks') {
+    if (tasks.length !== 4) {
+      return { pass: false, score: 0, reason: `Expected 4 tasks, got ${tasks.length}` };
+    }
+    return { pass: true, score: 1, reason: 'Correctly extracted all 4 distinct tasks' };
+  }
+
+  if (caseId === 'implicit-actionable') {
+    // The user never says "I need to" — the actionable item is implied by
+    // narrating a problem with an obvious required next step.
+    if (tasks.length !== 1) {
+      return { pass: false, score: 0, reason: `Expected 1 task, got ${tasks.length}` };
+    }
+    const title = (tasks[0].title || '').toLowerCase();
+    if (!/passport|renew/.test(title)) {
+      return { pass: false, score: 0, reason: `Expected a passport-renewal task, got "${tasks[0].title}"` };
+    }
+    return { pass: true, score: 1, reason: 'Correctly inferred the implicit actionable item' };
+  }
+
   return { pass: false, score: 0, reason: `Unknown caseId: ${caseId}` };
 };
