@@ -96,10 +96,18 @@ describeIntegration('finance plaid integration', () => {
       accessToken: null,
     });
 
-    const deniedOwnerStatus = await updatePlaidItemStatusById(created.id, otherUserId, 'needs_attention');
+    const deniedOwnerStatus = await updatePlaidItemStatusById(
+      created.id,
+      otherUserId,
+      'needs_attention',
+    );
     expect(deniedOwnerStatus).toBe(false);
 
-    const allowedStatusById = await updatePlaidItemStatusById(created.id, ownerId, 'needs_attention');
+    const allowedStatusById = await updatePlaidItemStatusById(
+      created.id,
+      ownerId,
+      'needs_attention',
+    );
     expect(allowedStatusById).toBe(true);
 
     const allowedStatusByItem = await updatePlaidItemStatusByItemId(

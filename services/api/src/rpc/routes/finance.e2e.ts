@@ -7,7 +7,6 @@ import { createMiddleware } from 'hono/factory';
 import { ForbiddenError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
-
 function deterministicUuid(userId: string, label: string): string {
   const hash = crypto.createHash('sha256').update(`${userId}:${label}`).digest('hex');
   return [

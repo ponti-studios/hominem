@@ -24,7 +24,9 @@ describeIntegration('finance accounts integration', () => {
   let otherUserId: string;
 
   const cleanupUser = async (userId: string): Promise<void> => {
-    await sql`delete from app.finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.finance_accounts where user_id = ${userId}`
+      .execute(db)
+      .catch(() => {});
     await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 

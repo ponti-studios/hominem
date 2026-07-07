@@ -22,7 +22,6 @@ import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { toIsoString } from '../utils/to-iso-string';
 
-
 const transactionListSchema = TransactionQueryFiltersSchema.extend({
   account: z.string().uuid().optional(),
   sortBy: z.string().optional(),
@@ -264,9 +263,7 @@ export const transactionsRoutes = new Hono<AppContext>()
         ...(input.data.description !== undefined ? { description: input.data.description } : {}),
         ...(input.data.date !== undefined ? { postedOn: input.data.date } : {}),
         ...(input.data.accountId !== undefined ? { accountId: input.data.accountId } : {}),
-        ...(input.data.merchantName !== undefined
-          ? { merchantName: input.data.merchantName }
-          : {}),
+        ...(input.data.merchantName !== undefined ? { merchantName: input.data.merchantName } : {}),
       })
       .where('id', '=', input.id)
       .where('userId', '=', userId)

@@ -46,7 +46,9 @@ describeIntegration('finance tags integration', () => {
     await sql`delete from app.finance_transactions where user_id = ${userId}`
       .execute(db)
       .catch(() => {});
-    await sql`delete from app.finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.finance_accounts where user_id = ${userId}`
+      .execute(db)
+      .catch(() => {});
     await sql`delete from app.tags where owner_userid = ${userId}`.execute(db).catch(() => {});
     await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };

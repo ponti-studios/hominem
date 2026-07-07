@@ -208,7 +208,11 @@ export const accountsRoutes = new Hono<AppContext>()
     if (input.type !== undefined) updateValues.account_type = normalizeAccountType(input.type);
     if (input.balance !== undefined) updateValues.balance = Number(input.balance);
 
-    await db.updateTable('app.financeAccounts').set(updateValues).where('id', '=', input.id).execute();
+    await db
+      .updateTable('app.financeAccounts')
+      .set(updateValues)
+      .where('id', '=', input.id)
+      .execute();
 
     const updated = await db
       .selectFrom('app.financeAccounts')

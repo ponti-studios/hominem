@@ -231,7 +231,9 @@ export async function updateTransaction(
   }
 
   const nextAmount =
-    input.amount !== undefined ? toNumber(input.amount as unknown as string) : toNumber(existing.amount);
+    input.amount !== undefined
+      ? toNumber(input.amount as unknown as string)
+      : toNumber(existing.amount);
   const nextDescription =
     input.description === undefined ? existing.description : input.description;
   const nextPostedOn = input.postedOn ?? existing.postedOn;
@@ -288,9 +290,7 @@ export async function insertTransaction(input: {
 }): Promise<TransactionRow> {
   const amount = typeof input.amount === 'string' ? Number.parseFloat(input.amount) : input.amount;
   const postedOn =
-    input.postedOn instanceof Date
-      ? input.postedOn.toISOString().slice(0, 10)
-      : input.postedOn;
+    input.postedOn instanceof Date ? input.postedOn.toISOString().slice(0, 10) : input.postedOn;
   const transactionType = amount < 0 ? 'debit' : 'credit';
   const id = input.id ?? crypto.randomUUID();
 

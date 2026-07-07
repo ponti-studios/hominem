@@ -31,10 +31,7 @@ export async function getPlaidItemByUserAndItemId(
   return result ?? null;
 }
 
-export async function getPlaidItemById(
-  id: string,
-  userId?: string,
-): Promise<PlaidItemRow | null> {
+export async function getPlaidItemById(id: string, userId?: string): Promise<PlaidItemRow | null> {
   if (userId) {
     const result = await db
       .selectFrom('app.plaidItems')
@@ -55,9 +52,7 @@ export async function getPlaidItemById(
   return result ?? null;
 }
 
-export async function getPlaidItemByItemId(
-  providerItemId: string,
-): Promise<PlaidItemRow | null> {
+export async function getPlaidItemByItemId(providerItemId: string): Promise<PlaidItemRow | null> {
   const result = await db
     .selectFrom('app.plaidItems')
     .selectAll()
@@ -157,10 +152,7 @@ export async function updatePlaidItemStatusById(
   return getAffectedRows(result) > 0;
 }
 
-export async function updatePlaidItemCursor(
-  id: string,
-  cursor: string | null,
-): Promise<boolean> {
+export async function updatePlaidItemCursor(id: string, cursor: string | null): Promise<boolean> {
   const result = await db
     .updateTable('app.plaidItems')
     .set({
@@ -190,10 +182,7 @@ export async function updatePlaidItemSyncStatus(
   return getAffectedRows(result) > 0;
 }
 
-export async function updatePlaidItemError(
-  id: string,
-  errorCode: string | null,
-): Promise<boolean> {
+export async function updatePlaidItemError(id: string, errorCode: string | null): Promise<boolean> {
   const result = await db
     .updateTable('app.plaidItems')
     .set({
@@ -215,9 +204,6 @@ export async function deletePlaidItem(id: string, userId?: string): Promise<bool
     return getAffectedRows(result) > 0;
   }
 
-  const result = await db
-    .deleteFrom('app.plaidItems')
-    .where('id', '=', id)
-    .executeTakeFirst();
+  const result = await db.deleteFrom('app.plaidItems').where('id', '=', id).executeTakeFirst();
   return getAffectedRows(result) > 0;
 }

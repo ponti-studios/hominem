@@ -110,9 +110,7 @@ export async function checkBudgetCategoryNameExists(
 
 export const getUserExpenseCategories = getAllBudgetCategories;
 
-export async function getAllBudgetCategories(
-  ownerUserid: string,
-): Promise<Selectable<AppTags>[]> {
+export async function getAllBudgetCategories(ownerUserid: string): Promise<Selectable<AppTags>[]> {
   return db
     .selectFrom('app.tags')
     .selectAll()
@@ -122,9 +120,7 @@ export async function getAllBudgetCategories(
     .execute();
 }
 
-export async function getBudgetCategoriesWithSpending(
-  ownerUserid: string,
-): Promise<
+export async function getBudgetCategoriesWithSpending(ownerUserid: string): Promise<
   Array<{
     id: string;
     ownerUserid: string;
