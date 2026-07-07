@@ -76,6 +76,96 @@ Every JSON response in that manual run also came back wrapped in ` ```json `
 fences despite the prompt saying not to; `assertions/json-utils.js` strips
 those before parsing, same as the original manual script did.
 
+## Prompt iteration: v1 → v3 (2026-07-07)
+
+Expanding test cases (7 → 20+ across the four domains) and running gemma
+against the actual production baselines (`gpt-4o`, `gemini-2.5-flash-lite`,
+`gpt-4o-mini`) surfaced findings well beyond formatting quirks — including
+one bug that turned out to affect the production models too, not just
+gemma. `prompts/task-extraction-v2.json` / `-v3.json` and
+`prompts/voice-task-extraction-v2.json` / `-v3.json` are candidate prompt
+revisions, A/B tested against the real production prompt (`v1-production`)
+in the same config via promptfoo's multi-prompt matrix.
+
+**`task-extraction`: fully solved by v3 — 15/15 passing, all three models.**
+
+- v1 → v2: fixed gemma silently returning an empty task list for a
+  single-item or implicit (non-"I need to"-phrased) actionable item — but
+  introduced a regression, causing `gpt-4o` and `gemini` to start
+  fabricating a task from a vague "maybe I'll repaint the room at some
+  point" mention that v1 correctly ignored.
+- v2 → v3: added one negative few-shot example distinguishing a vague
+  someday-thought from a real low-urgency commitment, plus an empty-list
+  example. Fixed the regression without losing the recall fix — clean win
+  across all three models. **Ported into the real
+  [task-extraction.md](../../services/api/src/rpc/prompts/task-extraction.md) prompt.**
+
+**`voice-task-extraction`: real progress, but this domain shows the limits of prompt-only fixes.**
+
+- v1 → v2: fixed the noon-vs-end-of-day default and the fabricated
+  `"priority": "none"` value for gemma. Also revealed the noon-default bug
+  independently affects `gpt-4o` on v1 — not gemma-specific, a genuine gap
+  in the original prompt wording.
+- Expanding to a 3-item mixed-urgency transcript found gemma **silently
+  dropping one task out of three** — the most serious finding in this whole
+  eval, since a missed task is invisible to the user rather than merely
+  wrong. v2 → v3 added an explicit "low-priority tasks are not optional,
+  never drop them" instruction plus a 3-item few-shot example. This fixed
+  the drop (all 3 tasks now extracted), but introduced a smaller new
+  defect: gemma started assigning a spurious `"low"` priority to a task
+  that stated no urgency at all — trading a severe bug (missing task) for
+  a mild one (wrong-but-present metadata). Also observed **run-to-run
+  output variance from gemma at temperature 0** on a couple of cases,
+  meaning the same input didn't always produce the same output locally —
+  worth treating as a reliability question independent of prompt quality
+  before shipping anything on-device.
+- **Ported the validated, model-agnostic fixes into the real
+  [voice-task-extraction.md](../../services/api/src/rpc/prompts/voice-task-extraction.md)
+  prompt**: noon-default clarification, "don't drop low-priority items,"
+  and stricter date-arithmetic wording. Did **not** port the "count items
+  before responding" scaffolding verbatim from the eval prompt, since it's
+  eval-specific and the underlying instruction is already captured in
+  prose.
+
+### A schema mismatch this exercise caught (now fixed)
+
+Porting the eval's learnings back into production surfaced a real bug in
+the eval itself, not the model: the eval's prompts and assertions used
+`dueDate` and a `priority` enum of `low | medium | high | urgent`. The
+actual production schema
+([services/api/src/rpc/routes/tasks.ts](../../services/api/src/rpc/routes/tasks.ts))
+uses **`dueAt`** and **`low | medium | high` — there is no `urgent` value**.
+
+Fixed throughout: `prompts/voice-task-extraction*.json` (v1/v2/v3) and
+`assertions/voice-task-extraction.js` now use `dueAt` and map
+"urgent"/"ASAP"/"critical" to `"high"`, matching the real schema exactly.
+Re-running after the fix reproduced all previously-documented findings
+unchanged (including the run-to-run variance on `multi-mixed-urgency` for
+gemma — it dropped a task on this run's v3 result, having only mislabeled
+one on the previous run, same input, same temperature 0), plus one
+newly-visible finding: v1's `"priority"` field failures now correctly read
+as `"expected 'high', got 'urgent'"` — since v1 never defines an enum, an
+unconstrained model just echoes the literal trigger word rather than
+mapping it to a schema-valid value, which is precisely the gap v2/v3's
+explicit mapping instruction closes.
+
+### A methodology caveat worth keeping in mind
+
+Production calls OpenRouter with schema-constrained structured output
+(`createStructuredChatCompletion`), which forces `gpt-4o`/`gemini` to only
+ever emit values that satisfy the Zod schema — they structurally cannot
+emit `"none"` for an enum field or wrap output in markdown fences. This
+promptfoo eval calls all providers, including the OpenRouter ones, via
+plain unconstrained chat completion (no schema enforcement), so findings
+like "fabricated `none`" or "wrapped in ` ```json ` fences" for `gpt-4o`/
+`gemini` are likely **eval artifacts that wouldn't reproduce in real
+production** for those two models. The findings that remain fully valid
+regardless of schema enforcement are the ones schema constraints can't
+fix: wrong-but-validly-shaped values (end-of-day instead of noon) and
+undercounting (dropped tasks) — schema enforcement guarantees a date
+string looks like a date and a tasks array looks like a tasks array, but
+not that the date or the count is *correct*.
+
 ## Prior art
 
 `eval-gemma4.ts` is the original hand-rolled version of this eval, kept for

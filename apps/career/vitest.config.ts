@@ -1,4 +1,7 @@
+import 'dotenv/config'
 import { defineConfig } from 'vitest/config'
+
+const TEST_DATABASE_URL = process.env.DATABASE_URL_TEST;
 
 export default defineConfig({
   resolve: {
@@ -7,6 +10,8 @@ export default defineConfig({
   test: {
     env: {
       NODE_ENV: 'test',
+      DATABASE_URL: TEST_DATABASE_URL,
+      DATABASE_URL_TEST: TEST_DATABASE_URL,
     },
     globals: true,
     environment: 'jsdom',

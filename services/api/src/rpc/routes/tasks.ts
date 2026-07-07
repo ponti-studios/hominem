@@ -1,161 +1,205 @@
-import { db, ForbiddenError, NotFoundError } from '@hominem/db';
-import { CreateTaskInputSchema, UpdateTaskInputSchema } from '@hominem/rpc/schemas/tasks.schema';
+import { extractTasks, extractVoiceTasks } from '@hominem/ai';
+import { db, NotFoundError, runInTransaction, TaskRepository } from '@hominem/db';
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import * as z from 'zod';
 
-import type { AppContext } from '../middleware/auth';
-import { authMiddleware } from '../middleware/auth';
+import { recordAIUsageEvent } from '../../application/ai-usage.service';
+import {
+  CreateTaskBatchSchema,
+  CreateTaskSchema,
+  ExtractTasksInputSchema,
+  TaskParamSchema,
+  UpdateTaskSchema,
+  UpdateTaskStatusSchema,
+  VoiceTasksInputSchema,
+} from '../../schemas/tasks.schema';
+import { authMiddleware, type AppContext } from '../middleware/auth';
+import { rateLimitMiddleware } from '../middleware/rate-limit';
+import { loadPrompt } from '../utils/load-prompt';
 
-const taskIdParamSchema = z.object({
-  id: z.uuid(),
-});
+const TASK_EXTRACTION_SYSTEM_PROMPT = loadPrompt('task-extraction');
+const VOICE_TASK_EXTRACTION_SYSTEM_PROMPT = loadPrompt('voice-task-extraction');
 
-// Helper: Verify task ownership
-async function getTaskWithOwnershipCheck(taskId: string, userId: string) {
-  const task = await db
-    .selectFrom('tasks')
-    .selectAll()
-    .where('id', '=', taskId)
-    .where('user_id', '=', userId)
-    .executeTakeFirst();
-
-  if (!task) {
-    throw new ForbiddenError('Task not found or access denied', 'ownership');
-  }
-
-  return task;
+function buildTaskListTitle(tasks: { title: string }[]): string {
+  return tasks.length === 1 ? tasks[0].title : `${tasks.length} tasks`;
 }
 
 export const tasksRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  // List tasks
   .get('/', async (c) => {
     const userId = c.get('userId')!;
-    const status = c.req.query('status');
-    const priority = c.req.query('priority');
-    const limit = c.req.query('limit') ? Math.min(Number.parseInt(c.req.query('limit')!), 100) : 50;
-
-    let query = db.selectFrom('tasks').selectAll().where('user_id', '=', userId);
-
-    if (status) {
-      query = query.where('status', '=', status);
-    }
-    if (priority) {
-      query = query.where('priority', '=', priority);
-    }
-
-    const tasks = await query
-      .orderBy('created_at', 'asc')
-      .orderBy('id', 'asc')
-      .limit(limit)
-      .execute();
-
-    return c.json({ success: true, data: tasks });
+    const tasks = await TaskRepository.list(db, { userId });
+    return c.json({ tasks });
   })
-  // Get single task
-  .get('/:id', zValidator('param', taskIdParamSchema), async (c) => {
+  .post('/', zValidator('json', CreateTaskSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const input = c.req.valid('json');
+
+    if (input.parentTaskId) {
+      const parent = await TaskRepository.getOwned(db, input.parentTaskId, userId);
+      if (!parent) {
+        throw new NotFoundError('Task', { taskId: input.parentTaskId });
+      }
+    }
+
+    const task = await TaskRepository.create(db, {
+      artifactType: input.artifactType,
+      description: input.description ?? null,
+      title: input.title,
+      userId,
+      priority: input.priority,
+      dueAt: input.dueAt,
+      parentTaskId: input.parentTaskId ?? null,
+    });
+
+    return c.json(task, 201);
+  })
+  .use('/extract', rateLimitMiddleware({ bucket: 'ai-task-extract', windowSec: 60, max: 20 }))
+  .post('/extract', zValidator('json', ExtractTasksInputSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const requestId = c.get('requestId');
+    const { transcript } = c.req.valid('json');
+
+    try {
+      const { tasks, usage } = await extractTasks({ transcript }, TASK_EXTRACTION_SYSTEM_PROMPT);
+      await recordAIUsageEvent({
+        userId,
+        feature: 'task_extract',
+        operation: 'structured_output',
+        usage,
+        requestId,
+      });
+      return c.json({ tasks });
+    } catch (error) {
+      logger.error('[ai/tasks/extract] OpenRouter error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return c.json({ error: 'Task extraction failed' }, 500);
+    }
+  })
+  .post('/batch', zValidator('json', CreateTaskBatchSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { tasks } = c.req.valid('json');
+
+    if (tasks.length === 1) {
+      const task = await TaskRepository.create(db, {
+        artifactType: 'task',
+        description: tasks[0].description ?? null,
+        title: tasks[0].title,
+        userId,
+      });
+      return c.json({ parent: null, tasks: [task] }, 201);
+    }
+
+    const result = await runInTransaction((trx) =>
+      TaskRepository.createBatch(trx, {
+        userId,
+        parentTitle: buildTaskListTitle(tasks),
+        tasks,
+      }),
+    );
+
+    return c.json(result, 201);
+  })
+  .use('/voice', rateLimitMiddleware({ bucket: 'ai-task-voice', windowSec: 60, max: 20 }))
+  .post('/voice', zValidator('json', VoiceTasksInputSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const requestId = c.get('requestId');
+    const { transcript, referenceDate, timezone } = c.req.valid('json');
+
+    let tasks: Awaited<ReturnType<typeof extractVoiceTasks>>['tasks'];
+    try {
+      const result = await extractVoiceTasks(
+        { transcript, referenceDate: referenceDate ?? new Date().toISOString(), timezone },
+        VOICE_TASK_EXTRACTION_SYSTEM_PROMPT,
+      );
+      tasks = result.tasks;
+      await recordAIUsageEvent({
+        userId,
+        feature: 'voice_task_extract',
+        operation: 'structured_output',
+        usage: result.usage,
+        requestId,
+        metadata: {
+          timezone: timezone ?? null,
+        },
+      });
+    } catch (error) {
+      logger.error('[ai/tasks/voice] OpenRouter error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return c.json({ error: 'Voice task extraction failed' }, 500);
+    }
+
+    if (tasks.length === 0) {
+      return c.json({ parent: null, tasks: [] }, 201);
+    }
+
+    if (tasks.length === 1) {
+      const task = await TaskRepository.create(db, {
+        artifactType: 'task',
+        description: tasks[0].description ?? null,
+        title: tasks[0].title,
+        userId,
+        priority: tasks[0].priority,
+        dueAt: tasks[0].dueAt,
+      });
+      return c.json({ parent: null, tasks: [task] }, 201);
+    }
+
+    const result = await runInTransaction((trx) =>
+      TaskRepository.createBatch(trx, {
+        userId,
+        parentTitle: buildTaskListTitle(tasks),
+        tasks,
+      }),
+    );
+
+    return c.json(result, 201);
+  })
+  .get('/:id', zValidator('param', TaskParamSchema), async (c) => {
     const userId = c.get('userId')!;
     const { id } = c.req.valid('param');
 
-    const task = await db
-      .selectFrom('tasks')
-      .selectAll()
-      .where('id', '=', id)
-      .where('user_id', '=', userId)
-      .executeTakeFirst();
+    const task = await TaskRepository.load(db, id, userId);
+    const children =
+      task.artifactType === 'task_list'
+        ? await TaskRepository.listChildren(db, { parentId: id, userId })
+        : [];
 
-    if (!task) {
-      throw new NotFoundError('Task not found');
-    }
-    return c.json({ success: true, data: task });
+    return c.json({ task, children });
   })
-  // Create task
-  .post('/', zValidator('json', CreateTaskInputSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const data = c.req.valid('json');
-
-    const newTask = await db
-      .insertInto('tasks')
-      .values({
-        user_id: userId,
-        title: data.title,
-        description: data.description || null,
-        status: data.status || 'pending',
-        priority: data.priority || 'medium',
-        due_date: data.dueDate || null,
-      })
-      .returningAll()
-      .executeTakeFirstOrThrow();
-
-    return c.json({ success: true, data: newTask }, 201);
-  })
-  // Update task
   .patch(
-    '/:id',
-    zValidator('param', taskIdParamSchema),
-    zValidator('json', UpdateTaskInputSchema),
+    '/:id/complete',
+    zValidator('param', TaskParamSchema),
+    zValidator('json', UpdateTaskStatusSchema),
     async (c) => {
-      try {
-        const userId = c.get('userId')!;
-        const { id } = c.req.valid('param');
-        const data = c.req.valid('json');
-
-        // Verify ownership first
-        await getTaskWithOwnershipCheck(id, userId);
-
-        const updateData: {
-          title?: string;
-          description?: string | null;
-          status?: string;
-          priority?: string;
-          due_date?: string | null;
-          updated_at: string;
-        } = { updated_at: new Date().toISOString() };
-        if (data.title !== undefined) updateData.title = data.title;
-        if (data.description !== undefined) updateData.description = data.description;
-        if (data.status !== undefined) updateData.status = data.status;
-        if (data.priority !== undefined) updateData.priority = data.priority;
-        if (data.dueDate !== undefined) updateData.due_date = data.dueDate;
-
-        const updatedTask = await db
-          .updateTable('tasks')
-          .set(updateData)
-          .where('id', '=', id)
-          .returningAll()
-          .executeTakeFirst();
-
-        if (!updatedTask) {
-          throw new NotFoundError('Task not found or access denied');
-        }
-        return c.json({ success: true, data: updatedTask });
-      } catch (error) {
-        if (error instanceof ForbiddenError) {
-          throw new NotFoundError('Task not found or access denied');
-        }
-        throw error;
-      }
-    },
-  )
-  // Delete task
-  .delete('/:id', zValidator('param', taskIdParamSchema), async (c) => {
-    try {
       const userId = c.get('userId')!;
       const { id } = c.req.valid('param');
+      const { completed } = c.req.valid('json');
 
-      // Verify ownership first
-      await getTaskWithOwnershipCheck(id, userId);
+      const task = await TaskRepository.setCompleted(db, id, userId, completed);
+      return c.json(task);
+    },
+  )
+  .patch(
+    '/:id',
+    zValidator('param', TaskParamSchema),
+    zValidator('json', UpdateTaskSchema),
+    async (c) => {
+      const userId = c.get('userId')!;
+      const { id } = c.req.valid('param');
+      const patch = c.req.valid('json');
 
-      const result = await db.deleteFrom('tasks').where('id', '=', id).executeTakeFirst();
+      const task = await TaskRepository.update(db, id, userId, patch);
+      return c.json(task);
+    },
+  )
+  .delete('/:id', zValidator('param', TaskParamSchema), async (c) => {
+    const userId = c.get('userId')!;
+    const { id } = c.req.valid('param');
 
-      if (!result.numDeletedRows) {
-        throw new NotFoundError('Task not found or access denied');
-      }
-      return c.json({ success: true, data: { id } });
-    } catch (error) {
-      if (error instanceof ForbiddenError) {
-        throw new NotFoundError('Task not found or access denied');
-      }
-      throw error;
-    }
+    const task = await TaskRepository.remove(db, id, userId);
+    return c.json(task);
   });
