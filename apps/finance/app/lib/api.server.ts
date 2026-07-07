@@ -27,6 +27,6 @@ export function createServerHonoClient(accessToken?: string, request?: Request) 
   })
 
   return {
-    finance: createFinanceClient(rawClient as any),
+    finance: createFinanceClient(rawClient),
   }
 }
