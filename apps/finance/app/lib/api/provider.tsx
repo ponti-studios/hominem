@@ -17,7 +17,7 @@ function HonoClientProvider({ children, baseUrl }: HonoProviderProps) {
   const getHeaders = useCallback(async (): Promise<Record<string, string>> => {
     try {
       const session = await authClient.getSession();
-      const token = (session as any)?.data?.session?.token;
+      const token = (session as { data: { session: { token: string } } } | undefined)?.data?.session?.token;
       if (token) return { authorization: `Bearer ${token}` };
     } catch {
       // ignore

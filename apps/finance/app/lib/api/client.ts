@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@ta
 
 function useFinanceClient() {
   const client = useApiClient();
-  return createFinanceClient(client as any);
+  return createFinanceClient(client);
 }
 
 /**
@@ -29,6 +29,7 @@ export function useHonoQuery<TData = unknown>(
  */
 export function useHonoMutation<TData = unknown, TVariables = unknown>(
   mutationFn: (client: { finance: ReturnType<typeof createFinanceClient> }, variables: TVariables) => Promise<TData>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options?: any,
 ) {
   const financeClient = useFinanceClient();
