@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.profiles/bundler-noemit.json",
+  "compilerOptions": {
+    "composite": false
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".turbo"]
+}
