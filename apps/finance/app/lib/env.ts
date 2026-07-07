@@ -1,4 +1,4 @@
-import { createServerEnv } from '@hominem/env';
+import { createClientEnv, createServerEnv } from '@hominem/env';
 import * as z from 'zod';
 
 const serverSchema = z.object({
@@ -10,7 +10,16 @@ const serverSchema = z.object({
   PLAID_ENV: z.enum(['sandbox', 'development', 'production']).default('sandbox'),
 });
 
-export const serverEnv = createServerEnv(serverSchema, 'financeServer');
+function createEnv() {
+  try {
+    return createServerEnv(serverSchema, 'financeServer');
+  } catch {
+    // Running in browser — server env not available
+    return createClientEnv(serverSchema, 'financeServer');
+  }
+}
+
+export const serverEnv = createEnv();
 
 // Client-side env — read from import.meta.env directly (no validation at module scope)
 export const clientEnv = {

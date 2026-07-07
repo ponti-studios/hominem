@@ -1,0 +1,1 @@
+export { getUserChatsQuery } from './index';

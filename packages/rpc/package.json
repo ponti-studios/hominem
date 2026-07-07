@@ -41,7 +41,6 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@hominem/api": "workspace:*",
     "@hominem/chat": "workspace:*",
     "@preact/signals-react": "^3.1.1",
     "@tanstack/react-query": "5.100.10",

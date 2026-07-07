@@ -1,3 +1,5 @@
+import { db } from '@hominem/db';
+
 import type { Session, User } from './types';
 
 interface AuthConfig {
@@ -45,10 +47,10 @@ export async function getServerAuth(request: Request, config: AuthConfig) {
     headers.set('cookie', cookie);
   }
 
-  const response = await fetch(
-    new URL('/api/auth/get-session', config.apiBaseUrl).toString(),
-    { method: 'GET', headers },
-  );
+  const response = await fetch(new URL('/api/auth/get-session', config.apiBaseUrl).toString(), {
+    method: 'GET',
+    headers,
+  });
 
   if (!response.ok) {
     return { user: null, session: null, headers: new Headers() };
@@ -60,4 +62,96 @@ export async function getServerAuth(request: Request, config: AuthConfig) {
     session: payload?.session ?? null,
     headers: new Headers(),
   };
+}
+
+// ---------------------------------------------------------------------------
+// UserAuthService
+// ---------------------------------------------------------------------------
+
+interface FindUserInput {
+  id: string;
+}
+
+type UserRecord = {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  name: string;
+  image?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export const UserAuthService = {
+  async findByIdOrEmail(input: FindUserInput): Promise<UserRecord | null> {
+    const row = await db
+      .selectFrom('user')
+      .selectAll()
+      .where((eb) => eb.or([eb('id', '=', input.id), eb('email', '=', input.id)]))
+      .executeTakeFirst();
+
+    if (!row) return null;
+
+    return {
+      id: row.id,
+      email: row.email,
+      emailVerified: row.emailVerified ?? false,
+      name: row.name ?? '',
+      image: row.image,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Step-up helpers (Redis-backed)
+// ---------------------------------------------------------------------------
+
+type RedisClient = {
+  set: (key: string, value: string, mode?: string, ttl?: number) => Promise<unknown>;
+  get: (key: string) => Promise<string | null>;
+  del: (key: string) => Promise<unknown>;
+};
+
+let stepUpStoreClient: RedisClient | null = null;
+
+function stepUpKey(userId: string, action: string): string {
+  return `step-up:${action}:${userId}`;
+}
+
+const STEP_UP_TTL_SECONDS = 300; // 5 minutes
+
+export function configureStepUpStore(redisClient: RedisClient): void {
+  stepUpStoreClient = redisClient;
+}
+
+export async function grantStepUp(userId: string, action: string): Promise<void> {
+  if (!stepUpStoreClient) return;
+  await stepUpStoreClient.set(stepUpKey(userId, action), 'granted', 'EX', STEP_UP_TTL_SECONDS);
+}
+
+export async function hasRecentStepUp(userId: string, action: string): Promise<boolean> {
+  if (!stepUpStoreClient) return false;
+  const value = await stepUpStoreClient.get(stepUpKey(userId, action));
+  return value === 'granted';
+}
+
+interface FreshPasskeyAuthInput {
+  amr?: string[];
+  authTime?: number;
+}
+
+const PASSKEY_METHOD = 'passkey';
+
+/**
+ * Returns true when the access-token AMR includes "passkey" AND the
+ * auth_time is within the step-up TTL window.
+ */
+export function isFreshPasskeyAuth(input: FreshPasskeyAuthInput): boolean {
+  if (!input.amr?.includes(PASSKEY_METHOD)) return false;
+  if (!input.authTime) return false;
+
+  const ageSeconds = Math.floor(Date.now() / 1000) - input.authTime;
+  return ageSeconds < STEP_UP_TTL_SECONDS;
 }

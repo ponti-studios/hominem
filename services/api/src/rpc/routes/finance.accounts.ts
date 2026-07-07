@@ -59,6 +59,7 @@ function toAccountData(row: Selectable<Database['finance_accounts']>): AccountDa
     name: row.name,
     accountType: normalizeAccountType(row.account_type),
     balance: row.balance ? Number(row.balance) : 0,
+    plaidItemId: row.plaid_item_id ?? null,
   }
 }
 
@@ -319,7 +320,6 @@ export const accountsRoutes = new Hono<AppContext>()
     const payload: AccountAllOutput = {
       accounts: accounts.map((account) => ({
         ...toAccountWithPlaidInfo(account),
-        plaidItemId: null,
         transactions: [],
       })),
       connections: connections.map((connection) => toPlaidConnection(connection)),

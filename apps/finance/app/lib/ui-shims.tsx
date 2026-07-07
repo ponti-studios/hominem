@@ -5,7 +5,7 @@
  */
 import { cn } from '@hominem/ui/lib/utils';
 import { type ReactNode, forwardRef } from 'react';
-import { useSearchParams } from 'react-router';
+import { useFetcher, useSearchParams } from 'react-router';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -153,7 +153,7 @@ export function createAuthEntryComponent(_config: object) {
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-semibold">Sign in</h2>
         <form method="post" className="flex flex-col gap-3">
-          <input name="email" type="email" placeholder="Email" className="border rounded px-3 py-2" required />
+          <input name="email" type="email" placeholder="Email" aria-label="Email address" className="border rounded px-3 py-2" required />
           <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded">Continue</button>
         </form>
       </div>
@@ -165,14 +165,19 @@ export function createAuthVerifyComponent(_config: object) {
   return function AuthVerifyPage() {
     const [searchParams] = useSearchParams();
     const email = searchParams.get('email') ?? '';
+    const fetcher = useFetcher();
+    const actionData = fetcher.data as { error?: string } | undefined;
     return (
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-semibold">Enter code</h2>
-        <form method="post" className="flex flex-col gap-3">
+        <fetcher.Form method="post" className="flex flex-col gap-3">
           <input type="hidden" name="email" value={email} />
-          <input name="otp" type="text" placeholder="6-digit code" className="border rounded px-3 py-2" required />
+          <input name="otp" type="text" placeholder="6-digit code" aria-label="Verification code" className="border rounded px-3 py-2" required />
           <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded">Verify</button>
-        </form>
+        </fetcher.Form>
+        {actionData?.error && (
+          <p className="text-red-600 text-sm">Verification failed. Please check your code and try again.</p>
+        )}
       </div>
     );
   };

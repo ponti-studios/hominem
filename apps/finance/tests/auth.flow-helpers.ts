@@ -71,28 +71,40 @@ export async function signInWithEmailOtp(page: Page, email: string) {
 }
 
 export async function enterOtpCode(page: Page, otp: string) {
-  const digitInputs = page.locator('input[inputmode="numeric"]')
-  const otpField = page.locator('input[name="otp"]')
-  const normalized = otp.replace(/\D/g, '').slice(0, 6)
+  const normalized = otp.replace(/\D/g, '').slice(0, 6);
 
-  // Fill each digit input
-  for (let i = 0; i < 6; i++) {
-    await digitInputs.nth(i).fill(normalized[i] ?? '')
+  // Check if the page uses individual digit inputs or a single OTP field
+  const digitInputs = page.locator('input[inputmode="numeric"]')
+  const hasDigitInputs = await digitInputs.count()
+
+  if (hasDigitInputs > 0) {
+    // Individual digit inputs — fill each one
+    for (let i = 0; i < 6; i++) {
+      await digitInputs.nth(i).fill(normalized[i] ?? '')
+    }
+
+    // Verify digit inputs have values
+    await expect(digitInputs.first()).toHaveValue(normalized[0] ?? '', { timeout: 5000 })
   }
 
-  // Verify digit inputs have values
-  await expect(digitInputs.first()).toHaveValue(normalized[0] ?? '', { timeout: 5000 })
+  // Also handle a single OTP text input (most common in the finance app)
+  const otpField = page.locator('input[name="otp"]')
+  const hasOtpField = await otpField.count()
 
-  // Manually set hidden OTP field since React state sync may not work with Playwright
-  await otpField.evaluate((input, value) => {
-    if (!(input instanceof HTMLInputElement)) return
-    input.value = value
-    input.dispatchEvent(new Event('input', { bubbles: true }))
-    input.dispatchEvent(new Event('change', { bubbles: true }))
-  }, normalized)
+  if (hasOtpField > 0) {
+    await otpField.fill(normalized)
+    await expect(otpField).toHaveValue(normalized, { timeout: 5000 })
 
-  // Verify hidden field has value
-  await expect(otpField).toHaveValue(normalized, { timeout: 5000 })
+    // Manually trigger React events
+    await otpField.evaluate((input, value) => {
+      if (!(input instanceof HTMLInputElement)) return
+      input.value = value
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+      input.dispatchEvent(new Event('change', { bubbles: true }))
+    }, normalized)
+
+    await expect(otpField).toHaveValue(normalized, { timeout: 5000 })
+  }
 }
 
 export async function submitOtpCode(page: Page, otp: string) {

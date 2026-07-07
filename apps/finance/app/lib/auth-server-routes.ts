@@ -115,13 +115,27 @@ export function createAuthVerifyAction(config: ServerRouteConfig) {
 // ── Logout ────────────────────────────────────────────────────────────────────
 export function createAuthLogoutRoute(config: ServerRouteConfig) {
   const handler = async ({ request }: { request: Request }) => {
-    await fetch(new URL('/api/auth/sign-out', config.getApiBaseUrl()).toString(), {
-      method: 'POST',
-      headers: { cookie: request.headers.get('cookie') ?? '' },
-    });
-    return redirect('/auth');
-  };
-  return { action: handler, loader: handler };
+    const res = await fetch(
+      new URL('/api/auth/logout', config.getApiBaseUrl()).toString(),
+      {
+        method: 'POST',
+        headers: {
+          cookie: request.headers.get('cookie') ?? '',
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    // Forward set-cookie from sign-out response to clear the session cookie
+    const headers = new Headers()
+    const setCookie = res.headers.get('set-cookie')
+    if (setCookie) {
+      headers.set('set-cookie', setCookie)
+    }
+
+    return redirect('/auth', { headers })
+  }
+  return { action: handler, loader: handler }
 }
 
 // ── Passkey callback ──────────────────────────────────────────────────────────

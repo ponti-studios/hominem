@@ -46,7 +46,7 @@
     "zod": "4.3.6"
   },
   "devDependencies": {
-    "@react-router/dev": "7.14.0",
+    "@react-router/dev": "7.15.1",
     "@tailwindcss/vite": "^4.1.8",
     "@tanstack/react-query-devtools": "^5.80.6",
     "@testing-library/jest-dom": "^6.6.3",
