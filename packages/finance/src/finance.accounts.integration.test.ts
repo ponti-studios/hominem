@@ -24,7 +24,7 @@ describeIntegration('finance accounts integration', () => {
   let otherUserId: string;
 
   const cleanupUser = async (userId: string): Promise<void> => {
-    await sql`delete from finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
     await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
@@ -44,14 +44,14 @@ describeIntegration('finance accounts integration', () => {
     const created = await createAccount({
       userId: ownerId,
       name: 'Checking',
-      type: 'depository',
-      balance: 2500.55,
+      accountType: 'depository',
+      currentBalance: 2500.55,
     });
 
     expect(created.userId).toBe(ownerId);
     expect(created.name).toBe('Checking');
-    expect(created.type).toBe('depository');
-    expect(created.balance).toBe(2500.55);
+    expect(created.accountType).toBe('depository');
+    expect(Number(created.currentBalance)).toBe(2500.55);
 
     const listed = await listAccounts(ownerId);
     expect(listed).toHaveLength(1);
@@ -65,8 +65,8 @@ describeIntegration('finance accounts integration', () => {
     const created = await createAccount({
       userId: ownerId,
       name: 'Protected',
-      type: 'depository',
-      balance: 100,
+      accountType: 'depository',
+      currentBalance: 100,
     });
 
     const deniedUpdate = await updateAccount({
@@ -87,22 +87,22 @@ describeIntegration('finance accounts integration', () => {
     const first = await upsertAccount({
       userId: ownerId,
       name: 'Plaid Account',
-      type: 'credit',
-      balance: 10,
+      accountType: 'credit',
+      currentBalance: 10,
       plaidAccountId: 'plaid-acc-1',
     });
 
     const second = await upsertAccount({
       userId: ownerId,
       name: 'Plaid Account Updated',
-      type: 'credit',
-      balance: 20,
+      accountType: 'credit',
+      currentBalance: 20,
       plaidAccountId: 'plaid-acc-1',
     });
 
     expect(first.id).toBe(second.id);
     expect(second.name).toBe('Plaid Account Updated');
-    expect(second.balance).toBe(20);
+    expect(Number(second.currentBalance)).toBe(20);
 
     const byPlaid = await getAccountByPlaidId('plaid-acc-1', ownerId);
     expect(byPlaid?.id).toBe(first.id);

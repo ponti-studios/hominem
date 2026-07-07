@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import type { FinanceTransactions, Selectable } from '@hominem/db';
+import type { AppFinanceTransactions, Selectable } from '@hominem/db';
 import { db } from '@hominem/db';
 import { sql } from 'kysely';
 import z from 'zod';
@@ -8,7 +8,7 @@ import z from 'zod';
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
 import { getAffectedRows, sqlValueList, toNumber } from './utils';
 
-type TransactionRow = Selectable<FinanceTransactions>;
+type TransactionRow = Selectable<AppFinanceTransactions>;
 
 export const financeTransactionQueryContractSchema = z.object({
   userId: z.uuid(),
@@ -23,56 +23,57 @@ export const financeTransactionQueryContractSchema = z.object({
 
 export type FinanceTransactionQueryContract = z.infer<typeof financeTransactionQueryContractSchema>;
 
-export async function queryTransactions(user_id: string): Promise<TransactionRow[]> {
-  return queryTransactionsByContract({ user_id });
+export async function queryTransactions(userId: string): Promise<TransactionRow[]> {
+  return queryTransactionsByContract({ userId });
 }
 
 export async function queryTransactionsByContract(input: {
-  user_id: string;
-  account_id?: string;
-  date_from?: string;
-  date_to?: string;
+  userId: string;
+  accountId?: string;
+  dateFrom?: string;
+  dateTo?: string;
   limit?: number;
   offset?: number;
-  tag_ids?: string[];
-  tag_names?: string[];
+  tagIds?: string[];
+  tagNames?: string[];
 }): Promise<TransactionRow[]> {
   const parsed = financeTransactionQueryContractSchema.parse({
-    userId: input.user_id,
-    accountId: input.account_id,
-    dateFrom: input.date_from,
-    dateTo: input.date_to,
+    userId: input.userId,
+    accountId: input.accountId,
+    dateFrom: input.dateFrom,
+    dateTo: input.dateTo,
     limit: input.limit ?? 50,
     offset: input.offset ?? 0,
-    tagIds: input.tag_ids,
-    tagNames: input.tag_names,
+    tagIds: input.tagIds,
+    tagNames: input.tagNames,
   });
 
   const tagIds = parsed.tagIds ?? [];
   const tagNames = parsed.tagNames ?? [];
   let query = db
-    .selectFrom('finance_transactions as t')
+    .selectFrom('app.financeTransactions as t')
     .selectAll()
-    .where('t.user_id', '=', parsed.userId);
+    .where('t.userId', '=', parsed.userId);
 
   if (parsed.accountId) {
-    query = query.where('t.account_id', '=', parsed.accountId);
+    query = query.where('t.accountId', '=', parsed.accountId);
   }
   if (parsed.dateFrom) {
-    query = query.where('t.date', '>=', new Date(parsed.dateFrom));
+    query = query.where('t.postedOn', '>=', new Date(parsed.dateFrom));
   }
   if (parsed.dateTo) {
-    query = query.where('t.date', '<=', new Date(parsed.dateTo));
+    query = query.where('t.postedOn', '<=', new Date(parsed.dateTo));
   }
+
   if (tagIds.length > 0 && tagNames.length > 0) {
     query = query.where(
       sql<boolean>`exists (
         select 1
-        from tagged_items ti_filter
-        join tags tg_filter
+        from app.tag_assignments ti_filter
+        join app.tags tg_filter
           on tg_filter.id = ti_filter.tag_id
-         and tg_filter.owner_id = ${parsed.userId}
-        where ti_filter.entity_type = ${FINANCE_TRANSACTION_ENTITY_TYPE}
+         and tg_filter.owner_userid = ${parsed.userId}
+        where ti_filter.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass
           and ti_filter.entity_id = t.id
           and (
             ti_filter.tag_id in (${sqlValueList(tagIds)})
@@ -84,11 +85,11 @@ export async function queryTransactionsByContract(input: {
     query = query.where(
       sql<boolean>`exists (
         select 1
-        from tagged_items ti_filter
-        join tags tg_filter
+        from app.tag_assignments ti_filter
+        join app.tags tg_filter
           on tg_filter.id = ti_filter.tag_id
-         and tg_filter.owner_id = ${parsed.userId}
-        where ti_filter.entity_type = ${FINANCE_TRANSACTION_ENTITY_TYPE}
+         and tg_filter.owner_userid = ${parsed.userId}
+        where ti_filter.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass
           and ti_filter.entity_id = t.id
           and ti_filter.tag_id in (${sqlValueList(tagIds)})
       )`,
@@ -97,36 +98,35 @@ export async function queryTransactionsByContract(input: {
     query = query.where(
       sql<boolean>`exists (
         select 1
-        from tagged_items ti_filter
-        join tags tg_filter
+        from app.tag_assignments ti_filter
+        join app.tags tg_filter
           on tg_filter.id = ti_filter.tag_id
-         and tg_filter.owner_id = ${parsed.userId}
-        where ti_filter.entity_type = ${FINANCE_TRANSACTION_ENTITY_TYPE}
+         and tg_filter.owner_userid = ${parsed.userId}
+        where ti_filter.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass
           and ti_filter.entity_id = t.id
           and tg_filter.name in (${sqlValueList(tagNames)})
       )`,
     );
   }
 
-  const result = await query
-    .orderBy('t.date', 'desc')
+  return query
+    .orderBy('t.postedOn', 'desc')
     .orderBy('t.id', 'desc')
     .limit(parsed.limit)
     .offset(parsed.offset)
     .execute();
-  return result;
 }
 
 export async function replaceTransactionTags(
   transactionId: string,
-  user_id: string,
+  userId: string,
   tagIds: string[],
 ): Promise<string[]> {
   const ownershipResult = await db
-    .selectFrom('finance_transactions')
+    .selectFrom('app.financeTransactions')
     .select('id')
     .where('id', '=', transactionId)
-    .where('user_id', '=', user_id)
+    .where('userId', '=', userId)
     .limit(1)
     .executeTakeFirst();
   if (!ownershipResult) {
@@ -136,9 +136,9 @@ export async function replaceTransactionTags(
   const uniqueTagIds = [...new Set(tagIds)];
   if (uniqueTagIds.length > 0) {
     const validTagResult = await db
-      .selectFrom('tags')
+      .selectFrom('app.tags')
       .select('id')
-      .where('owner_id', '=', user_id)
+      .where('ownerUserid', '=', userId)
       .where(sql<boolean>`id in (${sqlValueList(uniqueTagIds)})`)
       .execute();
     const validIds = new Set((validTagResult as Array<{ id: string }>).map((row) => row.id));
@@ -148,19 +148,19 @@ export async function replaceTransactionTags(
   }
 
   await db
-    .deleteFrom('tagged_items')
-    .where('entity_type', '=', FINANCE_TRANSACTION_ENTITY_TYPE)
-    .where('entity_id', '=', transactionId)
+    .deleteFrom('app.tagAssignments')
+    .where('entityTable', '=', sql`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)
+    .where('entityId', '=', transactionId)
     .execute();
 
   for (const tagId of uniqueTagIds) {
     await db
-      .insertInto('tagged_items')
+      .insertInto('app.tagAssignments')
       .values({
         id: crypto.randomUUID(),
-        tag_id: tagId,
-        entity_type: FINANCE_TRANSACTION_ENTITY_TYPE,
-        entity_id: transactionId,
+        tagId,
+        entityTable: FINANCE_TRANSACTION_ENTITY_TYPE,
+        entityId: transactionId,
       })
       .execute();
   }
@@ -170,39 +170,38 @@ export async function replaceTransactionTags(
 
 export async function getTransactionTagIds(
   transactionId: string,
-  user_id: string,
+  userId: string,
 ): Promise<string[]> {
   const result = await db
-    .selectFrom('tagged_items as ti')
-    .innerJoin('tags as tg', (join) =>
-      join.onRef('tg.id', '=', 'ti.tag_id').on('tg.owner_id', '=', user_id),
+    .selectFrom('app.tagAssignments as ti')
+    .innerJoin('app.tags as tg', (join) =>
+      join.onRef('tg.id', '=', 'ti.tagId').on('tg.ownerUserid', '=', userId),
     )
-    .select('ti.tag_id')
-    .where('ti.entity_type', '=', FINANCE_TRANSACTION_ENTITY_TYPE)
-    .where('ti.entity_id', '=', transactionId)
-    .orderBy('ti.tag_id', 'asc')
+    .select('ti.tagId')
+    .where('ti.entityTable', '=', sql`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)
+    .where('ti.entityId', '=', transactionId)
+    .orderBy('ti.tagId', 'asc')
     .execute();
-  return (result as Array<{ tag_id: string }>).map((row) => row.tag_id);
+  return (result as Array<{ tagId: string }>).map((row) => row.tagId);
 }
 
 export async function createTransaction(
-  input: Partial<TransactionRow> & { user_id: string; account_id: string; amount: number },
+  input: Partial<TransactionRow> & { userId: string; accountId: string; amount: number },
 ): Promise<TransactionRow> {
   const id = input.id ?? crypto.randomUUID();
-  const transaction_type = input.amount < 0 ? 'expense' : 'income';
+  const transactionType = input.amount < 0 ? 'debit' : 'credit';
 
   const result = await db
-    .insertInto('finance_transactions')
+    .insertInto('app.financeTransactions')
     .values({
       id,
-      user_id: input.user_id,
-      account_id: input.account_id,
+      userId: input.userId,
+      accountId: input.accountId,
       amount: input.amount,
-      transaction_type,
+      transactionType,
       description: input.description ?? null,
-      category: input.category ?? null,
-      merchant_name: input.merchant_name ?? null,
-      date: input.date ?? new Date(),
+      merchantName: input.merchantName ?? null,
+      postedOn: input.postedOn ?? new Date(),
     })
     .returningAll()
     .executeTakeFirst();
@@ -215,66 +214,61 @@ export async function createTransaction(
 
 export async function updateTransaction(
   id: string,
-  user_id: string,
+  userId: string,
   input: Partial<
-    Pick<
-      TransactionRow,
-      'amount' | 'description' | 'date' | 'account_id' | 'category' | 'merchant_name'
-    >
+    Pick<TransactionRow, 'amount' | 'description' | 'postedOn' | 'accountId' | 'merchantName'>
   >,
 ): Promise<TransactionRow | null> {
-  const existingResult = await db
-    .selectFrom('finance_transactions')
+  const existing = await db
+    .selectFrom('app.financeTransactions')
     .selectAll()
     .where('id', '=', id)
-    .where('user_id', '=', user_id)
+    .where('userId', '=', userId)
     .limit(1)
     .executeTakeFirst();
-  const existing = existingResult ?? null;
   if (!existing) {
     return null;
   }
 
-  const nextAmount = input.amount ?? toNumber(existing.amount);
+  const nextAmount =
+    input.amount !== undefined ? toNumber(input.amount as unknown as string) : toNumber(existing.amount);
   const nextDescription =
     input.description === undefined ? existing.description : input.description;
-  const nextDate = input.date ?? existing.date;
-  const nextAccountId = input.account_id ?? existing.account_id;
-  const nextCategory = input.category === undefined ? existing.category : input.category;
+  const nextPostedOn = input.postedOn ?? existing.postedOn;
+  const nextAccountId = input.accountId ?? existing.accountId;
   const nextMerchantName =
-    input.merchant_name === undefined ? existing.merchant_name : input.merchant_name;
-  const nextType = nextAmount < 0 ? 'expense' : 'income';
+    input.merchantName === undefined ? existing.merchantName : input.merchantName;
+  const nextType = nextAmount < 0 ? 'debit' : 'credit';
 
   const updateResult = await db
-    .updateTable('finance_transactions')
+    .updateTable('app.financeTransactions')
     .set({
       amount: nextAmount,
       description: nextDescription,
-      date: nextDate,
-      account_id: nextAccountId,
-      category: nextCategory,
-      merchant_name: nextMerchantName,
-      transaction_type: nextType,
+      postedOn: nextPostedOn,
+      accountId: nextAccountId,
+      merchantName: nextMerchantName,
+      transactionType: nextType,
     })
     .where('id', '=', id)
-    .where('user_id', '=', user_id)
+    .where('userId', '=', userId)
     .returningAll()
     .executeTakeFirst();
   return updateResult ?? null;
 }
 
-export async function deleteTransaction(id: string, user_id?: string): Promise<boolean> {
-  if (user_id) {
+export async function deleteTransaction(id: string, userId?: string): Promise<boolean> {
+  if (userId) {
     const result = await db
-      .deleteFrom('finance_transactions')
+      .deleteFrom('app.financeTransactions')
       .where('id', '=', id)
-      .where('user_id', '=', user_id)
+      .where('userId', '=', userId)
       .executeTakeFirst();
     return getAffectedRows(result) > 0;
   }
 
   const result = await db
-    .deleteFrom('finance_transactions')
+    .deleteFrom('app.financeTransactions')
     .where('id', '=', id)
     .executeTakeFirst();
   return getAffectedRows(result) > 0;
@@ -282,37 +276,38 @@ export async function deleteTransaction(id: string, user_id?: string): Promise<b
 
 export async function insertTransaction(input: {
   id?: string;
-  user_id: string;
-  account_id: string;
+  userId: string;
+  accountId: string;
   amount: number | string;
   description: string | null;
-  date: string | Date;
-  merchant_name?: string | null;
-  category?: string | null;
+  postedOn: string | Date;
+  merchantName?: string | null;
   pending?: boolean;
   source?: string | null;
-  external_id?: string;
+  externalId?: string;
 }): Promise<TransactionRow> {
   const amount = typeof input.amount === 'string' ? Number.parseFloat(input.amount) : input.amount;
-  const date = input.date instanceof Date ? input.date.toISOString().slice(0, 10) : input.date;
-  const transaction_type = amount < 0 ? 'expense' : 'income';
+  const postedOn =
+    input.postedOn instanceof Date
+      ? input.postedOn.toISOString().slice(0, 10)
+      : input.postedOn;
+  const transactionType = amount < 0 ? 'debit' : 'credit';
   const id = input.id ?? crypto.randomUUID();
 
   const result = await db
-    .insertInto('finance_transactions')
+    .insertInto('app.financeTransactions')
     .values({
       id,
-      user_id: input.user_id,
-      account_id: input.account_id,
+      userId: input.userId,
+      accountId: input.accountId,
       amount,
-      transaction_type,
+      transactionType,
       description: input.description,
-      merchant_name: input.merchant_name ?? null,
-      category: input.category ?? null,
-      date,
+      merchantName: input.merchantName ?? null,
+      postedOn,
       pending: input.pending ?? false,
       source: input.source ?? null,
-      external_id: input.external_id ?? null,
+      externalId: input.externalId ?? null,
     })
     .returningAll()
     .executeTakeFirst();
@@ -324,16 +319,16 @@ export async function insertTransaction(input: {
 }
 
 export async function getTransactionByPlaidId(
-  external_id: string,
-  user_id?: string,
+  externalId: string,
+  userId?: string,
 ): Promise<TransactionRow | null> {
-  if (user_id) {
+  if (userId) {
     const result = await db
-      .selectFrom('finance_transactions')
+      .selectFrom('app.financeTransactions')
       .selectAll()
-      .where('external_id', '=', external_id)
-      .where('user_id', '=', user_id)
-      .orderBy('date', 'desc')
+      .where('externalId', '=', externalId)
+      .where('userId', '=', userId)
+      .orderBy('postedOn', 'desc')
       .orderBy('id', 'desc')
       .limit(1)
       .executeTakeFirst();
@@ -341,10 +336,10 @@ export async function getTransactionByPlaidId(
   }
 
   const result = await db
-    .selectFrom('finance_transactions')
+    .selectFrom('app.financeTransactions')
     .selectAll()
-    .where('external_id', '=', external_id)
-    .orderBy('date', 'desc')
+    .where('externalId', '=', externalId)
+    .orderBy('postedOn', 'desc')
     .orderBy('id', 'desc')
     .limit(1)
     .executeTakeFirst();
@@ -352,8 +347,8 @@ export async function getTransactionByPlaidId(
 }
 
 export async function processTransactionsFromCSVBuffer(_input: {
-  user_id: string;
-  account_id: string;
+  userId: string;
+  accountId: string;
   csvBuffer: ArrayBuffer | Buffer;
 }): Promise<{ imported: number; skipped: number }> {
   return { imported: 0, skipped: 0 };
@@ -364,19 +359,17 @@ export async function updatePlaidTransaction(
   updates: Partial<{
     amount: number | string;
     description: string | null;
-    date: string | Date;
-    merchant_name: string | null;
-    category: string | null;
+    postedOn: string | Date;
+    merchantName: string | null;
     pending: boolean;
   }>,
 ): Promise<TransactionRow | null> {
-  const existingResult = await db
-    .selectFrom('finance_transactions')
+  const existing = await db
+    .selectFrom('app.financeTransactions')
     .selectAll()
     .where('id', '=', id)
     .limit(1)
     .executeTakeFirst();
-  const existing = existingResult ?? null;
   if (!existing) {
     return null;
   }
@@ -389,26 +382,24 @@ export async function updatePlaidTransaction(
         : updates.amount;
   const nextDescription =
     updates.description === undefined ? existing.description : updates.description;
-  const nextDate =
-    updates.date === undefined
-      ? existing.date
-      : updates.date instanceof Date
-        ? updates.date.toISOString().slice(0, 10)
-        : updates.date;
-  const nextCategory = updates.category === undefined ? existing.category : updates.category;
+  const nextPostedOn =
+    updates.postedOn === undefined
+      ? existing.postedOn
+      : updates.postedOn instanceof Date
+        ? updates.postedOn.toISOString().slice(0, 10)
+        : updates.postedOn;
   const nextMerchantName =
-    updates.merchant_name === undefined ? existing.merchant_name : updates.merchant_name;
-  const nextType = nextAmount < 0 ? 'expense' : 'income';
+    updates.merchantName === undefined ? existing.merchantName : updates.merchantName;
+  const nextType = nextAmount < 0 ? 'debit' : 'credit';
 
   const result = await db
-    .updateTable('finance_transactions')
+    .updateTable('app.financeTransactions')
     .set({
       amount: nextAmount,
       description: nextDescription,
-      date: nextDate,
-      category: nextCategory,
-      merchant_name: nextMerchantName,
-      transaction_type: nextType,
+      postedOn: nextPostedOn,
+      merchantName: nextMerchantName,
+      transactionType: nextType,
     })
     .where('id', '=', id)
     .returningAll()
@@ -416,94 +407,92 @@ export async function updatePlaidTransaction(
   return result ?? null;
 }
 
-export async function deletePlaidTransaction(external_id: string): Promise<boolean> {
+export async function deletePlaidTransaction(externalId: string): Promise<boolean> {
   const result = await db
-    .deleteFrom('finance_transactions')
-    .where('external_id', '=', external_id)
+    .deleteFrom('app.financeTransactions')
+    .where('externalId', '=', externalId)
     .executeTakeFirst();
   return !!result;
 }
 
 export async function queryAnalyticsTransactionsByContract(input: {
-  user_id: string;
-  account_id?: string;
-  date_from?: string;
-  date_to?: string;
+  userId: string;
+  accountId?: string;
+  dateFrom?: string;
+  dateTo?: string;
   limit?: number;
   offset?: number;
-  tag_ids?: string[];
-  tag_names?: string[];
+  tagIds?: string[];
+  tagNames?: string[];
 }): Promise<
   Array<{
     id: string;
-    user_id: string;
-    account_id: string;
+    userId: string;
+    accountId: string;
     amount: number;
     description: string | null;
-    date: string | Date | null | undefined;
-    external_id: string | null | undefined;
-    category: string | null | undefined;
-    merchant_name: string | null | undefined;
+    postedOn: Date | string | null;
+    externalId: string | null;
+    merchantName: string | null;
     classification: string;
   }>
 > {
   const parsed = financeTransactionQueryContractSchema.parse({
-    userId: input.user_id,
-    accountId: input.account_id,
-    dateFrom: input.date_from,
-    dateTo: input.date_to,
+    userId: input.userId,
+    accountId: input.accountId,
+    dateFrom: input.dateFrom,
+    dateTo: input.dateTo,
     limit: input.limit ?? 200,
     offset: input.offset ?? 0,
-    tagIds: input.tag_ids,
-    tagNames: input.tag_names,
+    tagIds: input.tagIds,
+    tagNames: input.tagNames,
   });
 
   const tagIds = parsed.tagIds ?? [];
   const tagNames = parsed.tagNames ?? [];
   let query = db
-    .selectFrom('finance_transactions as t')
+    .selectFrom('app.financeTransactions as t')
     .select([
       't.id',
-      't.user_id',
-      't.account_id',
+      't.userId',
+      't.accountId',
       't.amount',
       't.description',
-      't.date',
-      't.external_id',
-      't.category',
-      't.merchant_name',
-      sql<string>`coalesce((select min(tg_tag.name) from tagged_items ti_tag join tags tg_tag on tg_tag.id = ti_tag.tag_id and tg_tag.owner_id = ${parsed.userId} where ti_tag.entity_type = ${FINANCE_TRANSACTION_ENTITY_TYPE} and ti_tag.entity_id = t.id), t.category, ${sql.lit('Uncategorized')})`.as(
+      't.postedOn',
+      't.externalId',
+      't.merchantName',
+      sql<string>`coalesce((select min(tg_tag.name) from app.tag_assignments ti_tag join app.tags tg_tag on tg_tag.id = ti_tag.tag_id and tg_tag.owner_userid = ${parsed.userId} where ti_tag.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass and ti_tag.entity_id = t.id), ${sql.lit('Uncategorized')})`.as(
         'classification',
       ),
     ])
-    .where('t.user_id', '=', parsed.userId);
+    .where('t.userId', '=', parsed.userId);
 
   if (parsed.accountId) {
-    query = query.where('t.account_id', '=', parsed.accountId);
+    query = query.where('t.accountId', '=', parsed.accountId);
   }
   if (parsed.dateFrom) {
-    query = query.where('t.date', '>=', new Date(parsed.dateFrom));
+    query = query.where('t.postedOn', '>=', new Date(parsed.dateFrom));
   }
   if (parsed.dateTo) {
-    query = query.where('t.date', '<=', new Date(parsed.dateTo));
+    query = query.where('t.postedOn', '<=', new Date(parsed.dateTo));
   }
 
   if (tagIds.length > 0 && tagNames.length > 0) {
     query = query.where(
-      sql<boolean>`exists (select 1 from tagged_items ti_filter join tags tg_filter on tg_filter.id = ti_filter.tag_id and tg_filter.owner_id = ${parsed.userId} where ti_filter.entity_type = ${FINANCE_TRANSACTION_ENTITY_TYPE} and ti_filter.entity_id = t.id and (ti_filter.tag_id in (${sqlValueList(tagIds)}) or tg_filter.name in (${sqlValueList(tagNames)})))`,
+      sql<boolean>`exists (select 1 from app.tag_assignments ti_filter join app.tags tg_filter on tg_filter.id = ti_filter.tag_id and tg_filter.owner_userid = ${parsed.userId} where ti_filter.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass and ti_filter.entity_id = t.id and (ti_filter.tag_id in (${sqlValueList(tagIds)}) or tg_filter.name in (${sqlValueList(tagNames)})))`,
     );
   } else if (tagIds.length > 0) {
     query = query.where(
-      sql<boolean>`exists (select 1 from tagged_items ti_filter join tags tg_filter on tg_filter.id = ti_filter.tag_id and tg_filter.owner_id = ${parsed.userId} where ti_filter.entity_type = ${FINANCE_TRANSACTION_ENTITY_TYPE} and ti_filter.entity_id = t.id and ti_filter.tag_id in (${sqlValueList(tagIds)}))`,
+      sql<boolean>`exists (select 1 from app.tag_assignments ti_filter join app.tags tg_filter on tg_filter.id = ti_filter.tag_id and tg_filter.owner_userid = ${parsed.userId} where ti_filter.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass and ti_filter.entity_id = t.id and ti_filter.tag_id in (${sqlValueList(tagIds)}))`,
     );
   } else if (tagNames.length > 0) {
     query = query.where(
-      sql<boolean>`exists (select 1 from tagged_items ti_filter join tags tg_filter on tg_filter.id = ti_filter.tag_id and tg_filter.owner_id = ${parsed.userId} where ti_filter.entity_type = ${FINANCE_TRANSACTION_ENTITY_TYPE} and ti_filter.entity_id = t.id and tg_filter.name in (${sqlValueList(tagNames)}))`,
+      sql<boolean>`exists (select 1 from app.tag_assignments ti_filter join app.tags tg_filter on tg_filter.id = ti_filter.tag_id and tg_filter.owner_userid = ${parsed.userId} where ti_filter.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass and ti_filter.entity_id = t.id and tg_filter.name in (${sqlValueList(tagNames)}))`,
     );
   }
 
   const result = await query
-    .orderBy('t.date', 'desc')
+    .orderBy('t.postedOn', 'desc')
     .orderBy('t.id', 'desc')
     .limit(parsed.limit)
     .offset(parsed.offset)

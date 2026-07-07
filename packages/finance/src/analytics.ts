@@ -6,24 +6,24 @@ import { queryAnalyticsTransactionsByContract } from './transactions';
 import { toNumber } from './utils';
 
 export async function getTagBreakdown(
-  owner_id: string,
+  ownerId: string,
 ): Promise<Array<{ tag: string; total: number }>> {
   const result = await db
-    .selectFrom('finance_transactions as t')
-    .innerJoin('tagged_items as ti', (join) =>
+    .selectFrom('app.financeTransactions as t')
+    .innerJoin('app.tagAssignments as ti', (join) =>
       join
-        .onRef('ti.entity_id', '=', 't.id')
-        .on('ti.entity_type', '=', FINANCE_TRANSACTION_ENTITY_TYPE),
+        .onRef('ti.entityId', '=', 't.id')
+        .on('ti.entityTable', '=', sql`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`),
     )
-    .innerJoin('tags as tg', (join) =>
-      join.onRef('tg.id', '=', 'ti.tag_id').on('tg.owner_id', '=', owner_id),
+    .innerJoin('app.tags as tg', (join) =>
+      join.onRef('tg.id', '=', 'ti.tagId').on('tg.ownerUserid', '=', ownerId),
     )
-    .select([
-      sql<string>`tg.name`.as('tag'),
+    .select((eb) => [
+      eb.ref('tg.name').as('tag'),
       sql<number>`coalesce(sum(abs(amount)), 0)`.as('total'),
     ])
-    .where('t.user_id', '=', owner_id)
-    .where('t.transaction_type', '=', 'expense')
+    .where('t.userId', '=', ownerId)
+    .where('t.transactionType', '=', 'debit')
     .groupBy('tg.name')
     .orderBy(sql`total`, 'desc')
     .orderBy('tag', 'asc')
@@ -31,53 +31,57 @@ export async function getTagBreakdown(
 
   return result.map((row) => ({
     tag: row.tag,
-    total: toNumber(row.total),
+    total: toNumber(row.total as number),
   }));
 }
 
 export const getTransactionTagAnalysis = getTagBreakdown;
 
 export async function getTopMerchants(
-  owner_id: string,
+  ownerId: string,
 ): Promise<Array<{ merchant: string; total: number }>> {
   const result = await db
-    .selectFrom('finance_transactions')
-    .select(['merchant_name as merchant', sql<number>`coalesce(sum(abs(amount)), 0)`.as('total')])
-    .where('user_id', '=', owner_id)
-    .where('transaction_type', '=', 'expense')
-    .where('merchant_name', 'is not', null)
+    .selectFrom('app.financeTransactions')
+    .select([
+      sql<string>`merchant_name`.as('merchant'),
+      sql<number>`coalesce(sum(abs(amount)), 0)`.as('total'),
+    ])
+    .where('userId', '=', ownerId)
+    .where('transactionType', '=', 'debit')
+    .where('merchantName', 'is not', null)
     .where(sql<boolean>`merchant_name <> ''`)
-    .groupBy('merchant_name')
+    .groupBy('merchantName')
     .orderBy(sql`total`, 'desc')
-    .orderBy('merchant_name', 'asc')
+    .orderBy('merchantName', 'asc')
     .limit(10)
     .execute();
 
   return result.map((row) => ({
-    merchant: row.merchant ?? 'Unknown',
-    total: toNumber(row.total),
+    merchant: (row as unknown as { merchant: string }).merchant ?? 'Unknown',
+    total: toNumber(row.total as number),
   }));
 }
 
 export async function getTagBreakdownByContract(input: {
-  user_id: string;
-  account_id?: string;
-  date_from?: string;
-  date_to?: string;
-  tag_ids?: string[];
-  tag_names?: string[];
+  userId: string;
+  accountId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  tagIds?: string[];
+  tagNames?: string[];
   limit?: number;
 }): Promise<Array<{ tag: string; amount: number; transactionCount: number }>> {
   const transactions = await queryAnalyticsTransactionsByContract({
-    user_id: input.user_id,
-    account_id: input.account_id,
-    date_from: input.date_from,
-    date_to: input.date_to,
-    tag_ids: input.tag_ids,
-    tag_names: input.tag_names,
+    userId: input.userId,
+    accountId: input.accountId,
+    dateFrom: input.dateFrom,
+    dateTo: input.dateTo,
+    tagIds: input.tagIds,
+    tagNames: input.tagNames,
     limit: 200,
     offset: 0,
   });
+
   const breakdownByLabel = new Map<string, { amount: number; transactionCount: number }>();
   for (const tx of transactions) {
     if (tx.amount >= 0) {
@@ -101,30 +105,31 @@ export async function getTagBreakdownByContract(input: {
 }
 
 export async function getTopMerchantsByContract(input: {
-  user_id: string;
-  account_id?: string;
-  date_from?: string;
-  date_to?: string;
-  tag_ids?: string[];
-  tag_names?: string[];
+  userId: string;
+  accountId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  tagIds?: string[];
+  tagNames?: string[];
   limit?: number;
 }): Promise<Array<{ name: string; totalSpent: number; transactionCount: number }>> {
   const transactions = await queryAnalyticsTransactionsByContract({
-    user_id: input.user_id,
-    account_id: input.account_id,
-    date_from: input.date_from,
-    date_to: input.date_to,
-    tag_ids: input.tag_ids,
-    tag_names: input.tag_names,
+    userId: input.userId,
+    accountId: input.accountId,
+    dateFrom: input.dateFrom,
+    dateTo: input.dateTo,
+    tagIds: input.tagIds,
+    tagNames: input.tagNames,
     limit: 200,
     offset: 0,
   });
+
   const merchantTotals = new Map<string, { totalSpent: number; transactionCount: number }>();
   for (const tx of transactions) {
     if (tx.amount >= 0) {
       continue;
     }
-    const merchantName = tx.merchant_name ?? 'Unknown';
+    const merchantName = tx.merchantName ?? 'Unknown';
     const current = merchantTotals.get(merchantName) ?? { totalSpent: 0, transactionCount: 0 };
     current.totalSpent += Math.abs(tx.amount);
     current.transactionCount += 1;
@@ -143,7 +148,7 @@ export async function getTopMerchantsByContract(input: {
 }
 
 export async function getMonthlyStatsByContract(input: {
-  user_id: string;
+  userId: string;
   month?: string;
 }): Promise<{
   month: string;
@@ -160,9 +165,9 @@ export async function getMonthlyStatsByContract(input: {
 }> {
   const range = parseMonthRange(input.month);
   const transactions = await queryAnalyticsTransactionsByContract({
-    user_id: input.user_id,
-    ...(range.from ? { date_from: range.from } : {}),
-    ...(range.to ? { date_to: range.to } : {}),
+    userId: input.userId,
+    ...(range.from ? { dateFrom: range.from } : {}),
+    ...(range.to ? { dateTo: range.to } : {}),
     limit: 200,
     offset: 0,
   });
@@ -179,7 +184,7 @@ export async function getMonthlyStatsByContract(input: {
     const spend = Math.abs(tx.amount);
     expenses += spend;
     categoryTotals.set(tx.classification, (categoryTotals.get(tx.classification) ?? 0) + spend);
-    const merchantName = tx.merchant_name ?? 'Unknown';
+    const merchantName = tx.merchantName ?? 'Unknown';
     merchantTotals.set(merchantName, (merchantTotals.get(merchantName) ?? 0) + spend);
   }
 
@@ -211,12 +216,12 @@ export async function getMonthlyStatsByContract(input: {
 }
 
 export async function getSpendingTimeSeriesByContract(input: {
-  user_id: string;
-  account_id?: string;
-  date_from?: string;
-  date_to?: string;
-  tag_ids?: string[];
-  tag_names?: string[];
+  userId: string;
+  accountId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  tagIds?: string[];
+  tagNames?: string[];
   limit?: number;
   groupBy?: 'month' | 'week' | 'day';
   includeStats?: boolean;
@@ -245,19 +250,19 @@ export async function getSpendingTimeSeriesByContract(input: {
   };
 }> {
   const transactions = await queryAnalyticsTransactionsByContract({
-    user_id: input.user_id,
-    ...(input.account_id ? { account_id: input.account_id } : {}),
-    ...(input.date_from ? { date_from: input.date_from } : {}),
-    ...(input.date_to ? { date_to: input.date_to } : {}),
-    ...(input.tag_ids ? { tag_ids: input.tag_ids } : {}),
-    ...(input.tag_names ? { tag_names: input.tag_names } : {}),
+    userId: input.userId,
+    ...(input.accountId ? { accountId: input.accountId } : {}),
+    ...(input.dateFrom ? { dateFrom: input.dateFrom } : {}),
+    ...(input.dateTo ? { dateTo: input.dateTo } : {}),
+    ...(input.tagIds ? { tagIds: input.tagIds } : {}),
+    ...(input.tagNames ? { tagNames: input.tagNames } : {}),
     limit: 200,
     offset: 0,
   });
 
   const bucketData = new Map<string, { income: number; expenses: number; count: number }>();
   for (const tx of transactions) {
-    const bucketKey = getTimeSeriesBucket(tx.date as string, input.groupBy);
+    const bucketKey = getTimeSeriesBucket(tx.postedOn as string, input.groupBy);
     const current = bucketData.get(bucketKey) ?? { income: 0, expenses: 0, count: 0 };
     if (tx.amount >= 0) {
       current.income += tx.amount;

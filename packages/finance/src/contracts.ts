@@ -1,1 +1,1 @@
-export const FINANCE_TRANSACTION_ENTITY_TYPE = 'finance_transaction';
+export const FINANCE_TRANSACTION_ENTITY_TYPE = 'app.finance_transactions';

@@ -26,7 +26,7 @@ const nextUserId = createDeterministicIdFactory('finance.plaid.integration');
 const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
 
 async function hasPlaidItemsTable(): Promise<boolean> {
-  return await tableExists('plaid_items');
+  return await tableExists('app.plaid_items');
 }
 
 describeIntegration('finance plaid integration', () => {
@@ -34,7 +34,7 @@ describeIntegration('finance plaid integration', () => {
   let otherUserId: string;
 
   const cleanupUser = async (userId: string): Promise<void> => {
-    await sql`delete from plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
     await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
@@ -53,53 +53,53 @@ describeIntegration('finance plaid integration', () => {
   });
 
   it('upserts and fetches plaid items by all lookup keys', async () => {
-    const itemId = `item-${crypto.randomUUID()}`;
+    const providerItemId = `item-${crypto.randomUUID()}`;
 
     const created = await upsertPlaidItem({
       id: crypto.randomUUID(),
       userId: ownerId,
-      itemId,
+      providerItemId,
       institutionId: null,
-      transactionsCursor: 'cursor-1',
+      cursor: 'cursor-1',
       accessToken: 'token-1',
     });
 
-    const byUserItem = await getPlaidItemByUserAndItemId(ownerId, itemId);
+    const byUserItem = await getPlaidItemByUserAndItemId(ownerId, providerItemId);
     expect(byUserItem?.id).toBe(created.id);
-    expect(byUserItem?.transactionsCursor).toBe('cursor-1');
+    expect(byUserItem?.cursor).toBe('cursor-1');
 
     const byId = await getPlaidItemById(created.id, ownerId);
-    expect(byId?.itemId).toBe(itemId);
+    expect(byId?.providerItemId).toBe(providerItemId);
 
-    const byItemId = await getPlaidItemByItemId(itemId);
+    const byItemId = await getPlaidItemByItemId(providerItemId);
     expect(byItemId?.id).toBe(created.id);
 
     const updated = await upsertPlaidItem({
       id: created.id,
       userId: ownerId,
-      itemId,
+      providerItemId,
       institutionId: null,
-      transactionsCursor: 'cursor-2',
+      cursor: 'cursor-2',
       accessToken: 'token-2',
     });
     expect(updated.id).toBe(created.id);
-    expect(updated.transactionsCursor).toBe('cursor-2');
+    expect(updated.cursor).toBe('cursor-2');
   });
 
   it('enforces owner guard and updates plaid status fields', async () => {
     const created = await upsertPlaidItem({
       id: crypto.randomUUID(),
       userId: ownerId,
-      itemId: 'item-guarded',
+      providerItemId: 'item-guarded',
       institutionId: null,
-      transactionsCursor: null,
+      cursor: null,
       accessToken: null,
     });
 
-    const deniedOwnerStatus = await updatePlaidItemStatusById(created.id, otherUserId, 'syncing');
+    const deniedOwnerStatus = await updatePlaidItemStatusById(created.id, otherUserId, 'needs_attention');
     expect(deniedOwnerStatus).toBe(false);
 
-    const allowedStatusById = await updatePlaidItemStatusById(created.id, ownerId, 'syncing');
+    const allowedStatusById = await updatePlaidItemStatusById(created.id, ownerId, 'needs_attention');
     expect(allowedStatusById).toBe(true);
 
     const allowedStatusByItem = await updatePlaidItemStatusByItemId(
@@ -112,23 +112,23 @@ describeIntegration('finance plaid integration', () => {
     const cursorUpdated = await updatePlaidItemCursor(created.id, 'cursor-next');
     expect(cursorUpdated).toBe(true);
 
-    const syncUpdated = await updatePlaidItemSyncStatus(created.id, 'success', null);
+    const syncUpdated = await updatePlaidItemSyncStatus(created.id, 'healthy', null);
     expect(syncUpdated).toBe(true);
 
     const errorUpdated = await updatePlaidItemError(created.id, 'none');
     expect(errorUpdated).toBe(true);
 
     const fetched = await getPlaidItemById(created.id, ownerId);
-    expect(fetched?.transactionsCursor).toBe('cursor-next');
+    expect(fetched?.cursor).toBe('cursor-next');
   });
 
   it('deletes plaid items with owner scope and idempotent behavior', async () => {
     const created = await upsertPlaidItem({
       id: crypto.randomUUID(),
       userId: ownerId,
-      itemId: 'item-delete',
+      providerItemId: 'item-delete',
       institutionId: null,
-      transactionsCursor: null,
+      cursor: null,
       accessToken: null,
     });
 

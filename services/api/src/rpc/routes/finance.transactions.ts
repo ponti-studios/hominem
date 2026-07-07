@@ -22,7 +22,6 @@ import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { toIsoString } from '../utils/to-iso-string';
 
-const FINANCE_TRANSACTION_ENTITY_TYPE = 'finance_transaction';
 
 const transactionListSchema = TransactionQueryFiltersSchema.extend({
   account: z.string().uuid().optional(),
@@ -58,7 +57,7 @@ const transactionUpdateSchema = z.object({
   }),
 });
 
-function toTransactionData(row: Selectable<Database['finance_transactions']>): TransactionData {
+function toTransactionData(row: Selectable<Database['app.financeTransactions']>): TransactionData {
   const amount =
     typeof row.amount === 'string' ? Number.parseFloat(row.amount) : Number(row.amount);
   return {
@@ -78,24 +77,24 @@ async function getTaggedTransactionIds(
   tagNames: string[],
 ): Promise<string[]> {
   let query = db
-    .selectFrom('tagged_items')
-    .innerJoin('tags', 'tags.id', 'tagged_items.tag_id')
-    .select('tagged_items.entity_id')
-    .where('tagged_items.entity_type', '=', FINANCE_TRANSACTION_ENTITY_TYPE)
-    .where('tags.owner_id', '=', userId);
+    .selectFrom('app.tagAssignments')
+    .innerJoin('app.tags', 'app.tagAssignments.tagId', 'app.tags.id')
+    .select('app.tagAssignments.entityId')
+    .where('app.tagAssignments.entityTable', '=', 'app.financeTransactions')
+    .where('app.tags.ownerUserid', '=', userId);
 
   if (tagIds.length > 0 && tagNames.length > 0) {
     query = query.where((eb) =>
-      eb.or([eb('tagged_items.tag_id', 'in', tagIds), eb('tags.name', 'in', tagNames)]),
+      eb.or([eb('app.tagAssignments.tagId', 'in', tagIds), eb('app.tags.name', 'in', tagNames)]),
     );
   } else if (tagIds.length > 0) {
-    query = query.where('tagged_items.tag_id', 'in', tagIds);
+    query = query.where('app.tagAssignments.tagId', 'in', tagIds);
   } else {
-    query = query.where('tags.name', 'in', tagNames);
+    query = query.where('app.tags.name', 'in', tagNames);
   }
 
   const rows = await query.execute();
-  return [...new Set(rows.map((r) => r.entity_id))];
+  return [...new Set(rows.map((r) => r.entityId))];
 }
 
 async function replaceTransactionTags(
@@ -104,19 +103,19 @@ async function replaceTransactionTags(
   tagIds: string[],
 ): Promise<void> {
   const tx = await db
-    .selectFrom('finance_transactions')
+    .selectFrom('app.financeTransactions')
     .select('id')
     .where('id', '=', transactionId)
-    .where('user_id', '=', userId)
+    .where('userId', '=', userId)
     .executeTakeFirst();
   if (!tx) return;
 
   const uniqueTagIds = [...new Set(tagIds)];
   if (uniqueTagIds.length > 0) {
     const validTags = await db
-      .selectFrom('tags')
+      .selectFrom('app.tags')
       .select('id')
-      .where('owner_id', '=', userId)
+      .where('ownerUserid', '=', userId)
       .where('id', 'in', uniqueTagIds)
       .execute();
     if (validTags.length !== uniqueTagIds.length) {
@@ -125,19 +124,19 @@ async function replaceTransactionTags(
   }
 
   await db
-    .deleteFrom('tagged_items')
-    .where('entity_type', '=', FINANCE_TRANSACTION_ENTITY_TYPE)
-    .where('entity_id', '=', transactionId)
+    .deleteFrom('app.tagAssignments')
+    .where('entityTable', '=', 'app.financeTransactions')
+    .where('entityId', '=', transactionId)
     .execute();
 
   for (const tagId of uniqueTagIds) {
     await db
-      .insertInto('tagged_items')
+      .insertInto('app.tagAssignments')
       .values({
         id: randomUUID(),
-        tag_id: tagId,
-        entity_type: FINANCE_TRANSACTION_ENTITY_TYPE,
-        entity_id: transactionId,
+        tagId: tagId,
+        entityTable: 'app.financeTransactions',
+        entityId: transactionId,
       })
       .execute();
   }
@@ -158,17 +157,17 @@ export const transactionsRoutes = new Hono<AppContext>()
     const dateTo = input.dateTo ? new Date(input.dateTo) : null;
 
     let query = db
-      .selectFrom('finance_transactions')
+      .selectFrom('app.financeTransactions')
       .selectAll()
-      .where('user_id', '=', userId)
-      .orderBy('date', 'desc')
+      .where('userId', '=', userId)
+      .orderBy('postedOn', 'desc')
       .orderBy('id', 'desc')
       .limit(limit)
       .offset(offset);
 
-    if (accountId) query = query.where('account_id', '=', accountId);
-    if (dateFrom) query = query.where('date', '>=', dateFrom);
-    if (dateTo) query = query.where('date', '<=', dateTo);
+    if (accountId) query = query.where('accountId', '=', accountId);
+    if (dateFrom) query = query.where('postedOn', '>=', dateFrom);
+    if (dateTo) query = query.where('postedOn', '<=', dateTo);
 
     if (hasTagFilters) {
       const taggedIds = await getTaggedTransactionIds(userId, tagIds, tagNames);
@@ -184,9 +183,9 @@ export const transactionsRoutes = new Hono<AppContext>()
     const [data, totalRow] = await Promise.all([
       query.execute(),
       db
-        .selectFrom('finance_transactions')
+        .selectFrom('app.financeTransactions')
         .select(db.fn.countAll<number>().as('count'))
-        .where('user_id', '=', userId)
+        .where('userId', '=', userId)
         .executeTakeFirst(),
     ]);
 
@@ -207,22 +206,21 @@ export const transactionsRoutes = new Hono<AppContext>()
     const transactionType = input.amount < 0 ? 'expense' : 'income';
 
     await db
-      .insertInto('finance_transactions')
+      .insertInto('app.financeTransactions')
       .values({
         id,
-        user_id: userId,
-        account_id: input.accountId,
+        userId: userId,
+        accountId: input.accountId,
         amount: input.amount,
-        transaction_type: transactionType,
+        transactionType: transactionType,
         description: input.description,
-        category: null,
-        merchant_name: null,
-        date: input.date,
+        merchantName: null,
+        postedOn: input.date,
       })
       .execute();
 
     const created = await db
-      .selectFrom('finance_transactions')
+      .selectFrom('app.financeTransactions')
       .selectAll()
       .where('id', '=', id)
       .executeTakeFirst();
@@ -240,10 +238,10 @@ export const transactionsRoutes = new Hono<AppContext>()
     const input = c.req.valid('json');
 
     const existing = await db
-      .selectFrom('finance_transactions')
+      .selectFrom('app.financeTransactions')
       .selectAll()
       .where('id', '=', input.id)
-      .where('user_id', '=', userId)
+      .where('userId', '=', userId)
       .executeTakeFirst();
 
     if (!existing) {
@@ -259,20 +257,19 @@ export const transactionsRoutes = new Hono<AppContext>()
     const nextType = amount < 0 ? 'expense' : 'income';
 
     const updated = await db
-      .updateTable('finance_transactions')
+      .updateTable('app.financeTransactions')
       .set({
         amount,
-        transaction_type: nextType,
+        transactionType: nextType,
         ...(input.data.description !== undefined ? { description: input.data.description } : {}),
-        ...(input.data.category !== undefined ? { category: input.data.category } : {}),
-        ...(input.data.date !== undefined ? { date: input.data.date } : {}),
-        ...(input.data.accountId !== undefined ? { account_id: input.data.accountId } : {}),
+        ...(input.data.date !== undefined ? { postedOn: input.data.date } : {}),
+        ...(input.data.accountId !== undefined ? { accountId: input.data.accountId } : {}),
         ...(input.data.merchantName !== undefined
-          ? { merchant_name: input.data.merchantName }
+          ? { merchantName: input.data.merchantName }
           : {}),
       })
       .where('id', '=', input.id)
-      .where('user_id', '=', userId)
+      .where('userId', '=', userId)
       .returningAll()
       .executeTakeFirst();
 
@@ -291,9 +288,9 @@ export const transactionsRoutes = new Hono<AppContext>()
     const input = c.req.valid('json');
 
     const result = await db
-      .deleteFrom('finance_transactions')
+      .deleteFrom('app.financeTransactions')
       .where('id', '=', input.id)
-      .where('user_id', '=', userId)
+      .where('userId', '=', userId)
       .returningAll()
       .executeTakeFirst();
 

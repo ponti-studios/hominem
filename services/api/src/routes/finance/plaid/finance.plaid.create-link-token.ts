@@ -18,7 +18,7 @@ financePlaidCreateLinkTokenRoutes.post('/', async (c) => {
 
   try {
     const createTokenResponse = await plaidClient.linkTokenCreate({
-      user: { client_user_id: userId },
+      user: { client_userId: userId },
       client_name: API_BRAND.financeClientName,
       products: PLAID_PRODUCTS,
       country_codes: PLAID_COUNTRY_CODES,

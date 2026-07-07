@@ -1,12 +1,5 @@
 import { db } from '@hominem/db';
-import type {
-  BudgetGoals,
-  FinanceAccounts,
-  FinanceTransactions,
-  PlaidItems,
-  Selectable,
-  Tags,
-} from '@hominem/db';
+import type { AppFinanceAccounts, AppFinanceTransactions, AppPlaidItems, AppTags, Selectable } from '@hominem/db';
 import { sql } from 'kysely';
 
 import { listAccounts } from './accounts';
@@ -15,7 +8,7 @@ import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
 import { queryTransactionsByContract } from './transactions';
 import { getAffectedRows, tableExists } from './utils';
 
-export async function deleteUserFinanceData(user_id: string): Promise<{
+export async function deleteUserFinanceData(userId: string): Promise<{
   deletedTaggedItems: number;
   deletedTransactions: number;
   deletedAccounts: number;
@@ -23,39 +16,39 @@ export async function deleteUserFinanceData(user_id: string): Promise<{
   deletedPlaidItems: number;
 }> {
   const taggedItemsResult = await db
-    .deleteFrom('tagged_items')
+    .deleteFrom('app.tagAssignments')
     .where(
-      sql<boolean>`entity_type = ${FINANCE_TRANSACTION_ENTITY_TYPE} and entity_id in (select id from finance_transactions where user_id = ${user_id})`,
+      sql<boolean>`entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass and entity_id in (select id from app.finance_transactions where user_id = ${userId})`,
     )
     .executeTakeFirst();
   const deletedTaggedItems = getAffectedRows(taggedItemsResult);
 
   const transactionsResult = await db
-    .deleteFrom('finance_transactions')
-    .where('user_id', '=', user_id)
+    .deleteFrom('app.financeTransactions')
+    .where('userId', '=', userId)
     .executeTakeFirst();
   const deletedTransactions = getAffectedRows(transactionsResult);
 
   const accountsResult = await db
-    .deleteFrom('finance_accounts')
-    .where('user_id', '=', user_id)
+    .deleteFrom('app.financeAccounts')
+    .where('userId', '=', userId)
     .executeTakeFirst();
   const deletedAccounts = getAffectedRows(accountsResult);
 
   let deletedBudgetGoals = 0;
   if (await tableExists('budget_goals')) {
     const budgetGoalsResult = await db
-      .deleteFrom('budget_goals')
-      .where('user_id', '=', user_id)
+      .deleteFrom('budget_goals' as any)
+      .where('userId', '=', userId)
       .executeTakeFirst();
     deletedBudgetGoals = getAffectedRows(budgetGoalsResult);
   }
 
   let deletedPlaidItems = 0;
-  if (await tableExists('plaid_items')) {
+  if (await tableExists('app.plaid_items')) {
     const plaidItemsResult = await db
-      .deleteFrom('plaid_items')
-      .where('user_id', '=', user_id)
+      .deleteFrom('app.plaidItems')
+      .where('userId', '=', userId)
       .executeTakeFirst();
     deletedPlaidItems = getAffectedRows(plaidItemsResult);
   }
@@ -69,38 +62,38 @@ export async function deleteUserFinanceData(user_id: string): Promise<{
   };
 }
 
-export async function exportFinanceData(user_id: string): Promise<{
-  accounts: Selectable<FinanceAccounts>[];
-  transactions: Selectable<FinanceTransactions>[];
-  tags: Selectable<Tags>[];
-  budgetGoals: Selectable<BudgetGoals>[];
-  plaidItems: Selectable<PlaidItems>[];
+export async function exportFinanceData(userId: string): Promise<{
+  accounts: Selectable<AppFinanceAccounts>[];
+  transactions: Selectable<AppFinanceTransactions>[];
+  tags: Selectable<AppTags>[];
+  budgetGoals: Record<string, unknown>[];
+  plaidItems: Selectable<AppPlaidItems>[];
 }> {
   const [accounts, transactions, tags] = await Promise.all([
-    listAccounts(user_id),
-    queryTransactionsByContract({ user_id, limit: 200, offset: 0 }),
-    getTransactionTags(user_id),
+    listAccounts(userId),
+    queryTransactionsByContract({ userId, limit: 200, offset: 0 }),
+    getTransactionTags(userId),
   ]);
 
-  let budgetGoals: Selectable<BudgetGoals>[] = [];
+  let budgetGoals: Record<string, unknown>[] = [];
   if (await tableExists('budget_goals')) {
     const budgetGoalsResult = await db
-      .selectFrom('budget_goals')
+      .selectFrom('budget_goals' as any)
       .selectAll()
-      .where('user_id', '=', user_id)
-      .orderBy('created_at', 'desc')
+      .where('userId', '=', userId)
+      .orderBy('createdAt', 'desc')
       .orderBy('id', 'asc')
       .execute();
-    budgetGoals = budgetGoalsResult;
+    budgetGoals = budgetGoalsResult as Record<string, unknown>[];
   }
 
-  let plaidItems: Selectable<PlaidItems>[] = [];
-  if (await tableExists('plaid_items')) {
+  let plaidItems: Selectable<AppPlaidItems>[] = [];
+  if (await tableExists('app.plaid_items')) {
     const plaidItemsResult = await db
-      .selectFrom('plaid_items')
+      .selectFrom('app.plaidItems')
       .selectAll()
-      .where('user_id', '=', user_id)
-      .orderBy('created_at', 'desc')
+      .where('userId', '=', userId)
+      .orderBy('createdAt', 'desc')
       .orderBy('id', 'asc')
       .execute();
     plaidItems = plaidItemsResult;

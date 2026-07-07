@@ -3,12 +3,11 @@
  * Please do not edit it manually.
  */
 
-import type { ColumnType } from 'kysely';
+import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
 
@@ -262,11 +261,10 @@ export interface AppFiles {
 }
 
 export interface AppFinanceAccounts {
-  accountid: string | null;
   accountSubtype: string | null;
   accountType: string;
   availableBalance: Numeric | null;
-  createdat: Generated<Timestamp>;
+  createdAt: Generated<Timestamp>;
   currencyCode: Generated<string>;
   currentBalance: Numeric | null;
   id: Generated<string>;
@@ -275,41 +273,42 @@ export interface AppFinanceAccounts {
   mask: string | null;
   metadata: Generated<Json>;
   name: string;
-  ownerUserid: string;
+  plaidAccountId: string | null;
   plaidItemId: string | null;
   provider: string | null;
-  updatedat: Generated<Timestamp>;
+  updatedAt: Generated<Timestamp>;
+  userId: string;
 }
 
 export interface AppFinanceInstitutions {
   countryCode: string | null;
-  createdat: Generated<Timestamp>;
+  createdAt: Generated<Timestamp>;
   id: Generated<string>;
   logoUrl: string | null;
   name: string;
   provider: string | null;
   providerInstitutionId: string | null;
-  updatedat: Generated<Timestamp>;
+  updatedAt: Generated<Timestamp>;
   websiteUrl: string | null;
 }
 
 export interface AppFinanceTransactions {
   accountId: string;
   amount: Numeric;
-  createdat: Generated<Timestamp>;
+  createdAt: Generated<Timestamp>;
   description: string | null;
   externalId: string | null;
   id: Generated<string>;
   merchantName: string | null;
   notes: string | null;
   occurredAt: Timestamp | null;
-  ownerUserid: string;
   pending: Generated<boolean>;
   postedOn: Timestamp;
   providerPayload: Generated<Json>;
   source: string | null;
   transactionType: string;
-  updatedat: Generated<Timestamp>;
+  updatedAt: Generated<Timestamp>;
+  userId: string;
 }
 
 export interface AppGoals {
@@ -564,19 +563,19 @@ export interface AppPlaces {
 }
 
 export interface AppPlaidItems {
-  accesstoken: string | null;
-  createdat: Generated<Timestamp>;
+  accessToken: string | null;
+  createdAt: Generated<Timestamp>;
   cursor: string | null;
   errorCode: string | null;
   errorMessage: string | null;
   id: Generated<string>;
   institutionId: string | null;
   lastSyncedAt: Timestamp | null;
-  ownerUserid: string;
   provider: Generated<string>;
   providerItemId: string;
   status: Generated<string>;
-  updatedat: Generated<Timestamp>;
+  updatedAt: Generated<Timestamp>;
+  userId: string;
 }
 
 export interface AppPortfolioAnalytics {
@@ -987,165 +986,6 @@ export interface Jwks {
   publicKey: string;
 }
 
-export interface LabsCaseUpdates {
-  caseId: string;
-  createdAt: Generated<Timestamp>;
-  id: string;
-  neutralContent: string;
-  rawContent: string;
-  round: number;
-}
-
-export interface LabsCovidData {
-  aged65Older: number | null;
-  aged70Older: number | null;
-  cardiovascDeathRate: number | null;
-  continent: string | null;
-  date: Timestamp | null;
-  diabetesPrevalence: number | null;
-  excessMortality: number | null;
-  excessMortalityCumulative: number | null;
-  excessMortalityCumulativeAbsolute: number | null;
-  excessMortalityCumulativePerMillion: number | null;
-  extremePoverty: number | null;
-  femaleSmokers: number | null;
-  gdpPerCapita: number | null;
-  handwashingFacilities: number | null;
-  hospitalBedsPerThousand: number | null;
-  hospPatients: number | null;
-  hospPatientsPerMillion: number | null;
-  humanDevelopmentIndex: number | null;
-  icuPatients: number | null;
-  icuPatientsPerMillion: number | null;
-  id: Generated<number>;
-  isoCode: string | null;
-  lifeExpectancy: number | null;
-  location: string | null;
-  maleSmokers: number | null;
-  medianAge: number | null;
-  newCases: number | null;
-  newCasesPerMillion: number | null;
-  newCasesSmoothed: number | null;
-  newCasesSmoothedPerMillion: number | null;
-  newDeaths: number | null;
-  newDeathsPerMillion: number | null;
-  newDeathsSmoothed: number | null;
-  newDeathsSmoothedPerMillion: number | null;
-  newPeopleVaccinatedSmoothed: number | null;
-  newPeopleVaccinatedSmoothedPerHundred: number | null;
-  newTests: number | null;
-  newTestsPerThousand: number | null;
-  newTestsSmoothed: number | null;
-  newTestsSmoothedPerThousand: number | null;
-  newVaccinations: number | null;
-  newVaccinationsSmoothed: number | null;
-  newVaccinationsSmoothedPerMillion: number | null;
-  peopleFullyVaccinated: Int8 | null;
-  peopleFullyVaccinatedPerHundred: number | null;
-  peopleVaccinated: Int8 | null;
-  peopleVaccinatedPerHundred: number | null;
-  population: Int8 | null;
-  populationDensity: number | null;
-  positiveRate: number | null;
-  reproductionRate: number | null;
-  stringencyIndex: number | null;
-  testsPerCase: number | null;
-  testsUnits: string | null;
-  totalBoosters: Int8 | null;
-  totalBoostersPerHundred: number | null;
-  totalCases: number | null;
-  totalCasesPerMillion: number | null;
-  totalDeaths: number | null;
-  totalDeathsPerMillion: number | null;
-  totalTests: number | null;
-  totalTestsPerThousand: number | null;
-  totalVaccinations: Int8 | null;
-  totalVaccinationsPerHundred: number | null;
-  weeklyHospAdmissions: number | null;
-  weeklyHospAdmissionsPerMillion: number | null;
-  weeklyIcuAdmissions: number | null;
-  weeklyIcuAdmissionsPerMillion: number | null;
-}
-
-export interface LabsDrizzleMigrations {
-  createdAt: Int8 | null;
-  hash: string;
-  id: Generated<number>;
-}
-
-export interface LabsRelationshipCases {
-  createdAt: Generated<Timestamp>;
-  id: string;
-  label: string | null;
-  neutralSituation: string;
-  question: string;
-  quorumSize: Generated<number>;
-  rawSituation: string;
-  status: Generated<string>;
-  userId: string | null;
-}
-
-export interface LabsRelationshipVerdicts {
-  caseId: string;
-  comment: string;
-  createdAt: Generated<Timestamp>;
-  fingerprint: string;
-  id: string;
-  updateId: string | null;
-  updateRound: Generated<number>;
-  userId: string | null;
-  value: string;
-}
-
-export interface LabsRhobhDailyPuzzles {
-  answer: string;
-  answerType: string;
-  clue: string;
-  createdAt: Generated<Timestamp>;
-  dateUtc: Timestamp | null;
-  detail: string;
-  id: Generated<number>;
-  normalizedAnswer: string;
-  sources: Generated<Json>;
-  updatedAt: Generated<Timestamp>;
-}
-
-export interface LabsSearchDocuments {
-  body: string;
-  category: string;
-  createdAt: Generated<Timestamp>;
-  embedding: string;
-  featured: Generated<boolean>;
-  id: Generated<number>;
-  kind: string;
-  location: string;
-  popularity: Generated<number>;
-  publishedAt: Timestamp;
-  searchText: string;
-  searchVector: Generated<string>;
-  sourceUrl: string;
-  subtitle: string;
-  summary: string;
-  tags: Json;
-  title: string;
-  updatedAt: Generated<Timestamp>;
-  year: number;
-}
-
-export interface LabsTflCameras {
-  available: boolean | null;
-  commonName: string;
-  createdAt: Generated<Timestamp>;
-  id: Generated<number>;
-  imageUrl: string | null;
-  lat: number;
-  lng: number;
-  tflId: string;
-  updatedAt: Generated<Timestamp>;
-  videoUrl: string | null;
-  view: string | null;
-}
-
 export interface OpsAuditLogs {
   action: string;
   actorUserid: string | null;
@@ -1213,180 +1053,72 @@ export interface Verification {
   value: string;
 }
 
-// --- Finance tables (public schema, from 20260705000000 migration) ---
-
-export interface FinanceAccounts {
-  id: string;
-  user_id: string;
-  name: string;
-  account_type: string;
-  balance: number;
-  data: Json | null;
-  institution_id?: string | null;
-  plaid_item_id?: string | null;
-  created_at?: Timestamp | null;
-  updated_at?: Timestamp | null;
-}
-
-export interface FinanceTransactions {
-  id: string;
-  user_id: string;
-  account_id: string;
-  amount: number;
-  description: string | null;
-  date?: Timestamp | string | null;
-  posted_on?: Timestamp | string | null;
-  occurred_at?: Timestamp | string | null;
-  external_id?: string | null;
-  category?: string | null;
-  merchant_name?: string | null;
-  notes?: string | null;
-  transaction_type?: string | null;
-  pending?: boolean;
-  source?: string | null;
-  created_at?: Timestamp | null;
-  updated_at?: Timestamp | null;
-}
-
-export interface PlaidItems {
-  id: string;
-  user_id: string;
-  item_id: string;
-  institution_id: string | null;
-  cursor: string | null;
-  access_token: string | null;
-  status: string | null;
-  last_synced_at: Timestamp | string | null;
-  error_code?: string | null;
-  error_message?: string | null;
-  error?: string | null;
-  created_at?: Timestamp | null;
-  updated_at?: Timestamp | null;
-}
-
-export interface Tags {
-  id: string;
-  owner_id: string;
-  name: string;
-  color: string | null;
-  description?: string | null;
-  icon?: string | null;
-  path?: string;
-  slug?: string;
-}
-
-export interface TaggedItems {
-  id: string;
-  tag_id: string;
-  entity_id: string;
-  entity_type: string;
-  assigned_by_userid?: string | null;
-  assignment_source?: string;
-  assignment_period?: string | null;
-  confidence?: number | null;
-  removed_at?: Timestamp | string | null;
-}
-
-export interface BudgetGoals {
-  id: string;
-  user_id: string;
-  category_id: string | null;
-  target_amount: number;
-  target_period: string;
-  created_at?: Timestamp | null;
-}
-
-export interface FinancialInstitutions {
-  id: string;
-  name: string;
-  logo_url?: string | null;
-  website_url?: string | null;
-  provider?: string | null;
-  provider_institution_id?: string | null;
-  country_code?: string | null;
-}
-
 export interface DB {
   account: Account;
-  'app.aiUsageEvents': AppAiUsageEvents;
-  'app.applicationFiles': AppApplicationFiles;
-  'app.applicationNotes': AppApplicationNotes;
-  'app.bookmarks': AppBookmarks;
-  'app.careerEvents': AppCareerEvents;
-  'app.certifications': AppCertifications;
-  'app.chatMessages': AppChatMessages;
-  'app.chats': AppChats;
-  'app.companies': AppCompanies;
-  'app.entities': AppEntities;
-  'app.entityLinks': AppEntityLinks;
-  'app.eventAttendees': AppEventAttendees;
-  'app.events': AppEvents;
-  'app.files': AppFiles;
-  'app.financeAccounts': AppFinanceAccounts;
-  'app.financeInstitutions': AppFinanceInstitutions;
-  'app.financeTransactions': AppFinanceTransactions;
-  'app.goals': AppGoals;
-  'app.jobApplications': AppJobApplications;
-  'app.keyResults': AppKeyResults;
-  'app.musicAlbums': AppMusicAlbums;
-  'app.musicArtists': AppMusicArtists;
-  'app.musicListens': AppMusicListens;
-  'app.musicPlaylists': AppMusicPlaylists;
-  'app.musicPlaylistTracks': AppMusicPlaylistTracks;
-  'app.musicTracks': AppMusicTracks;
-  'app.noteFiles': AppNoteFiles;
-  'app.notes': AppNotes;
-  'app.noteShares': AppNoteShares;
-  'app.noteVersions': AppNoteVersions;
-  'app.people': AppPeople;
-  'app.places': AppPlaces;
-  'app.plaidItems': AppPlaidItems;
-  'app.portfolioAnalytics': AppPortfolioAnalytics;
-  'app.portfolios': AppPortfolios;
-  'app.possessionContainers': AppPossessionContainers;
-  'app.possessionEvents': AppPossessionEvents;
-  'app.possessions': AppPossessions;
-  'app.projects': AppProjects;
-  'app.skills': AppSkills;
-  'app.socialLinks': AppSocialLinks;
-  'app.spaceInvites': AppSpaceInvites;
-  'app.spaceItems': AppSpaceItems;
-  'app.spaceMembers': AppSpaceMembers;
-  'app.spaces': AppSpaces;
-  'app.spaceTags': AppSpaceTags;
-  'app.tagAliases': AppTagAliases;
-  'app.tagAssignments': AppTagAssignments;
-  'app.tags': AppTags;
-  tagged_items: TaggedItems;
-  tags: Tags;
-  'app.taskAssignments': AppTaskAssignments;
-  'app.tasks': AppTasks;
-  'app.testimonials': AppTestimonials;
-  'app.travelTrips': AppTravelTrips;
-  'app.userPortfolioPreferences': AppUserPortfolioPreferences;
-  'app.vectorDocuments': AppVectorDocuments;
-  'app.videoChannels': AppVideoChannels;
-  'app.videoViews': AppVideoViews;
-  'app.workExperiences': AppWorkExperiences;
-  budget_goals: BudgetGoals;
+  "app.aiUsageEvents": AppAiUsageEvents;
+  "app.applicationFiles": AppApplicationFiles;
+  "app.applicationNotes": AppApplicationNotes;
+  "app.bookmarks": AppBookmarks;
+  "app.careerEvents": AppCareerEvents;
+  "app.certifications": AppCertifications;
+  "app.chatMessages": AppChatMessages;
+  "app.chats": AppChats;
+  "app.companies": AppCompanies;
+  "app.entities": AppEntities;
+  "app.entityLinks": AppEntityLinks;
+  "app.eventAttendees": AppEventAttendees;
+  "app.events": AppEvents;
+  "app.files": AppFiles;
+  "app.financeAccounts": AppFinanceAccounts;
+  "app.financeInstitutions": AppFinanceInstitutions;
+  "app.financeTransactions": AppFinanceTransactions;
+  "app.goals": AppGoals;
+  "app.jobApplications": AppJobApplications;
+  "app.keyResults": AppKeyResults;
+  "app.musicAlbums": AppMusicAlbums;
+  "app.musicArtists": AppMusicArtists;
+  "app.musicListens": AppMusicListens;
+  "app.musicPlaylists": AppMusicPlaylists;
+  "app.musicPlaylistTracks": AppMusicPlaylistTracks;
+  "app.musicTracks": AppMusicTracks;
+  "app.noteFiles": AppNoteFiles;
+  "app.notes": AppNotes;
+  "app.noteShares": AppNoteShares;
+  "app.noteVersions": AppNoteVersions;
+  "app.people": AppPeople;
+  "app.places": AppPlaces;
+  "app.plaidItems": AppPlaidItems;
+  "app.portfolioAnalytics": AppPortfolioAnalytics;
+  "app.portfolios": AppPortfolios;
+  "app.possessionContainers": AppPossessionContainers;
+  "app.possessionEvents": AppPossessionEvents;
+  "app.possessions": AppPossessions;
+  "app.projects": AppProjects;
+  "app.skills": AppSkills;
+  "app.socialLinks": AppSocialLinks;
+  "app.spaceInvites": AppSpaceInvites;
+  "app.spaceItems": AppSpaceItems;
+  "app.spaceMembers": AppSpaceMembers;
+  "app.spaces": AppSpaces;
+  "app.spaceTags": AppSpaceTags;
+  "app.tagAliases": AppTagAliases;
+  "app.tagAssignments": AppTagAssignments;
+  "app.tags": AppTags;
+  "app.taskAssignments": AppTaskAssignments;
+  "app.tasks": AppTasks;
+  "app.testimonials": AppTestimonials;
+  "app.travelTrips": AppTravelTrips;
+  "app.userPortfolioPreferences": AppUserPortfolioPreferences;
+  "app.vectorDocuments": AppVectorDocuments;
+  "app.videoChannels": AppVideoChannels;
+  "app.videoViews": AppVideoViews;
+  "app.workExperiences": AppWorkExperiences;
   deviceCode: DeviceCode;
-  finance_accounts: FinanceAccounts;
-  finance_transactions: FinanceTransactions;
-  financial_institutions: FinancialInstitutions;
   gooseDbVersion: GooseDbVersion;
   jwks: Jwks;
-  'labs.caseUpdates': LabsCaseUpdates;
-  'labs.covidData': LabsCovidData;
-  'labs.DrizzleMigrations': LabsDrizzleMigrations;
-  'labs.relationshipCases': LabsRelationshipCases;
-  'labs.relationshipVerdicts': LabsRelationshipVerdicts;
-  'labs.rhobhDailyPuzzles': LabsRhobhDailyPuzzles;
-  'labs.searchDocuments': LabsSearchDocuments;
-  'labs.tflCameras': LabsTflCameras;
-  'ops.auditLogs': OpsAuditLogs;
-  'ops.searchLogs': OpsSearchLogs;
+  "ops.auditLogs": OpsAuditLogs;
+  "ops.searchLogs": OpsSearchLogs;
   passkey: Passkey;
-  plaid_items: PlaidItems;
   session: Session;
   user: User;
   verification: Verification;

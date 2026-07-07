@@ -1,51 +1,53 @@
 import crypto from 'node:crypto';
 
 import { db } from '@hominem/db';
-import type { PlaidItems, Selectable } from '@hominem/db';
+import type { AppPlaidItems, Selectable } from '@hominem/db';
 
 import { getAffectedRows } from './utils';
 
-type PlaidItemRow = Selectable<PlaidItems>;
+type PlaidItemRow = Selectable<AppPlaidItems>;
 
-export async function listPlaidConnectionsForUser(user_id: string): Promise<PlaidItemRow[]> {
-  const result = await db
-    .selectFrom('plaid_items')
+export async function listPlaidConnectionsForUser(userId: string): Promise<PlaidItemRow[]> {
+  return db
+    .selectFrom('app.plaidItems')
     .selectAll()
-    .where('user_id', '=', user_id)
-    .orderBy('created_at', 'desc')
+    .where('userId', '=', userId)
+    .orderBy('createdAt', 'desc')
     .orderBy('id', 'asc')
     .execute();
-  return result;
 }
 
 export async function getPlaidItemByUserAndItemId(
-  user_id: string,
-  item_id: string,
+  userId: string,
+  providerItemId: string,
 ): Promise<PlaidItemRow | null> {
   const result = await db
-    .selectFrom('plaid_items')
+    .selectFrom('app.plaidItems')
     .selectAll()
-    .where('user_id', '=', user_id)
-    .where('item_id', '=', item_id)
+    .where('userId', '=', userId)
+    .where('providerItemId', '=', providerItemId)
     .limit(1)
     .executeTakeFirst();
   return result ?? null;
 }
 
-export async function getPlaidItemById(id: string, user_id?: string): Promise<PlaidItemRow | null> {
-  if (user_id) {
+export async function getPlaidItemById(
+  id: string,
+  userId?: string,
+): Promise<PlaidItemRow | null> {
+  if (userId) {
     const result = await db
-      .selectFrom('plaid_items')
+      .selectFrom('app.plaidItems')
       .selectAll()
       .where('id', '=', id)
-      .where('user_id', '=', user_id)
+      .where('userId', '=', userId)
       .limit(1)
       .executeTakeFirst();
     return result ?? null;
   }
 
   const result = await db
-    .selectFrom('plaid_items')
+    .selectFrom('app.plaidItems')
     .selectAll()
     .where('id', '=', id)
     .limit(1)
@@ -53,12 +55,14 @@ export async function getPlaidItemById(id: string, user_id?: string): Promise<Pl
   return result ?? null;
 }
 
-export async function getPlaidItemByItemId(item_id: string): Promise<PlaidItemRow | null> {
+export async function getPlaidItemByItemId(
+  providerItemId: string,
+): Promise<PlaidItemRow | null> {
   const result = await db
-    .selectFrom('plaid_items')
+    .selectFrom('app.plaidItems')
     .selectAll()
-    .where('item_id', '=', item_id)
-    .orderBy('created_at', 'desc')
+    .where('providerItemId', '=', providerItemId)
+    .orderBy('createdAt', 'desc')
     .orderBy('id', 'asc')
     .limit(1)
     .executeTakeFirst();
@@ -66,27 +70,27 @@ export async function getPlaidItemByItemId(item_id: string): Promise<PlaidItemRo
 }
 
 export async function upsertPlaidItem(
-  input: PlaidItemRow & { access_token?: string | null },
+  input: Partial<PlaidItemRow> & { userId: string; providerItemId: string },
 ): Promise<PlaidItemRow> {
   const existingResult = await db
-    .selectFrom('plaid_items')
+    .selectFrom('app.plaidItems')
     .selectAll()
-    .where('item_id', '=', input.item_id)
-    .where('user_id', '=', input.user_id)
+    .where('providerItemId', '=', input.providerItemId)
+    .where('userId', '=', input.userId)
     .limit(1)
     .executeTakeFirst();
   const existing = existingResult ?? null;
 
   if (existing) {
     const updatedResult = await db
-      .updateTable('plaid_items')
+      .updateTable('app.plaidItems')
       .set({
-        institution_id: input.institution_id ?? null,
+        institutionId: input.institutionId ?? null,
         cursor: input.cursor ?? null,
-        access_token: input.access_token ?? null,
+        accessToken: input.accessToken ?? null,
         status: input.status ?? 'healthy',
-        last_synced_at: input.last_synced_at ? new Date(input.last_synced_at) : null,
-        updated_at: new Date(),
+        lastSyncedAt: input.lastSyncedAt ? new Date(input.lastSyncedAt) : null,
+        updatedAt: new Date(),
       })
       .where('id', '=', existing.id)
       .returningAll()
@@ -99,16 +103,16 @@ export async function upsertPlaidItem(
   }
 
   const createdResult = await db
-    .insertInto('plaid_items')
+    .insertInto('app.plaidItems')
     .values({
       id: input.id ?? crypto.randomUUID(),
-      user_id: input.user_id,
-      item_id: input.item_id,
-      institution_id: input.institution_id ?? null,
+      userId: input.userId,
+      providerItemId: input.providerItemId,
+      institutionId: input.institutionId ?? null,
       cursor: input.cursor ?? null,
-      access_token: input.access_token ?? null,
+      accessToken: input.accessToken ?? null,
       status: input.status ?? 'healthy',
-      last_synced_at: input.last_synced_at ? new Date(input.last_synced_at) : null,
+      lastSyncedAt: input.lastSyncedAt ? new Date(input.lastSyncedAt) : null,
     })
     .returningAll()
     .executeTakeFirst();
@@ -120,45 +124,48 @@ export async function upsertPlaidItem(
 }
 
 export async function updatePlaidItemStatusByItemId(
-  user_id: string,
-  item_id: string,
+  userId: string,
+  providerItemId: string,
   status: string,
 ): Promise<boolean> {
   const result = await db
-    .updateTable('plaid_items')
+    .updateTable('app.plaidItems')
     .set({
       status,
-      updated_at: new Date(),
+      updatedAt: new Date(),
     })
-    .where('user_id', '=', user_id)
-    .where('item_id', '=', item_id)
+    .where('userId', '=', userId)
+    .where('providerItemId', '=', providerItemId)
     .executeTakeFirst();
   return getAffectedRows(result) > 0;
 }
 
 export async function updatePlaidItemStatusById(
   id: string,
-  user_id: string,
+  userId: string,
   status: string,
 ): Promise<boolean> {
   const result = await db
-    .updateTable('plaid_items')
+    .updateTable('app.plaidItems')
     .set({
       status,
-      updated_at: new Date(),
+      updatedAt: new Date(),
     })
     .where('id', '=', id)
-    .where('user_id', '=', user_id)
+    .where('userId', '=', userId)
     .executeTakeFirst();
   return getAffectedRows(result) > 0;
 }
 
-export async function updatePlaidItemCursor(id: string, cursor: string | null): Promise<boolean> {
+export async function updatePlaidItemCursor(
+  id: string,
+  cursor: string | null,
+): Promise<boolean> {
   const result = await db
-    .updateTable('plaid_items')
+    .updateTable('app.plaidItems')
     .set({
       cursor,
-      updated_at: new Date(),
+      updatedAt: new Date(),
     })
     .where('id', '=', id)
     .executeTakeFirst();
@@ -168,43 +175,49 @@ export async function updatePlaidItemCursor(id: string, cursor: string | null): 
 export async function updatePlaidItemSyncStatus(
   id: string,
   status: string,
-  error?: string | null,
+  errorCode?: string | null,
 ): Promise<boolean> {
   const result = await db
-    .updateTable('plaid_items')
+    .updateTable('app.plaidItems')
     .set({
       status,
-      error: error ?? null,
-      last_synced_at: new Date(),
-      updated_at: new Date(),
+      errorCode: errorCode ?? null,
+      lastSyncedAt: new Date(),
+      updatedAt: new Date(),
     })
     .where('id', '=', id)
     .executeTakeFirst();
   return getAffectedRows(result) > 0;
 }
 
-export async function updatePlaidItemError(id: string, error: string | null): Promise<boolean> {
+export async function updatePlaidItemError(
+  id: string,
+  errorCode: string | null,
+): Promise<boolean> {
   const result = await db
-    .updateTable('plaid_items')
+    .updateTable('app.plaidItems')
     .set({
-      error,
-      updated_at: new Date(),
+      errorCode: errorCode ?? null,
+      updatedAt: new Date(),
     })
     .where('id', '=', id)
     .executeTakeFirst();
   return getAffectedRows(result) > 0;
 }
 
-export async function deletePlaidItem(id: string, user_id?: string): Promise<boolean> {
-  if (user_id) {
+export async function deletePlaidItem(id: string, userId?: string): Promise<boolean> {
+  if (userId) {
     const result = await db
-      .deleteFrom('plaid_items')
+      .deleteFrom('app.plaidItems')
       .where('id', '=', id)
-      .where('user_id', '=', user_id)
+      .where('userId', '=', userId)
       .executeTakeFirst();
     return getAffectedRows(result) > 0;
   }
 
-  const result = await db.deleteFrom('plaid_items').where('id', '=', id).executeTakeFirst();
+  const result = await db
+    .deleteFrom('app.plaidItems')
+    .where('id', '=', id)
+    .executeTakeFirst();
   return getAffectedRows(result) > 0;
 }

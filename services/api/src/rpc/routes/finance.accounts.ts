@@ -57,18 +57,18 @@ function normalizeAccountType(value: string): AccountType {
   return 'other';
 }
 
-function toAccountData(row: Selectable<Database['finance_accounts']>): AccountData {
+function toAccountData(row: Selectable<Database['app.financeAccounts']>): AccountData {
   return {
     id: row.id,
     userId: row.user_id,
     name: row.name,
     accountType: normalizeAccountType(row.account_type),
-    balance: row.balance ? Number(row.balance) : 0,
+    currentBalance: row.balance ? Number(row.balance) : 0,
     plaidItemId: row.plaid_item_id ?? null,
   };
 }
 
-function toTransactionData(row: Selectable<Database['finance_transactions']>): TransactionData {
+function toTransactionData(row: Selectable<Database['app.financeTransactions']>): TransactionData {
   const amount =
     typeof row.amount === 'string' ? Number.parseFloat(row.amount) : Number(row.amount);
   return {
@@ -82,7 +82,7 @@ function toTransactionData(row: Selectable<Database['finance_transactions']>): T
   };
 }
 
-function toAccountWithPlaidInfo(row: Selectable<Database['finance_accounts']>): AccountData & {
+function toAccountWithPlaidInfo(row: Selectable<Database['app.financeAccounts']>): AccountData & {
   institutionName?: string | null;
   plaidAccountId?: string | null;
 } {
@@ -94,14 +94,14 @@ function toAccountWithPlaidInfo(row: Selectable<Database['finance_accounts']>): 
 }
 
 function toPlaidConnection(
-  row: Selectable<Database['plaid_items']>,
+  row: Selectable<Database['app.plaidItems']>,
   institutionName?: string,
 ): PlaidConnection {
   const createdAtStr = toIsoStringOr(row.created_at, new Date(0).toISOString());
 
   return {
     id: row.id,
-    institutionId: row.institution_id ?? '',
+    institutionId: row.institutionId ?? '',
     institutionName: institutionName ?? 'Institution',
     institutionLogo: null,
     status: row.error ? 'error' : row.cursor ? 'disconnected' : 'active',
@@ -113,9 +113,9 @@ function toPlaidConnection(
 // Helper to get account with ownership check
 async function getAccountWithOwnershipCheck(accountId: string, userId: string) {
   const account = await db
-    .selectFrom('finance_accounts')
+    .selectFrom('app.financeAccounts')
     .selectAll()
-    .where((eb) => eb.and([eb('id', '=', accountId), eb('user_id', '=', userId)]))
+    .where((eb) => eb.and([eb('id', '=', accountId), eb('userId', '=', userId)]))
     .executeTakeFirst();
 
   if (!account) {
@@ -131,10 +131,10 @@ async function getTransactionsForAccount(
   offset: number = 0,
 ) {
   return db
-    .selectFrom('finance_transactions')
+    .selectFrom('app.financeTransactions')
     .selectAll()
-    .where('account_id', '=', accountId)
-    .orderBy('date', 'desc')
+    .where('accountId', '=', accountId)
+    .orderBy('postedOn', 'desc')
     .limit(limit)
     .offset(offset)
     .execute();
@@ -144,10 +144,10 @@ export const accountsRoutes = new Hono<AppContext>()
   .post('/list', authMiddleware, zValidator('json', accountListSchema), async (c) => {
     const userId = c.get('userId')!;
     const accounts = await db
-      .selectFrom('finance_accounts')
+      .selectFrom('app.financeAccounts')
       .selectAll()
-      .where('user_id', '=', userId)
-      .orderBy('created_at', 'desc')
+      .where('userId', '=', userId)
+      .orderBy('createdAt', 'desc')
       .execute();
     return c.json<AccountListOutput>(accounts.map(toAccountData), 200);
   })
@@ -169,20 +169,20 @@ export const accountsRoutes = new Hono<AppContext>()
     const now = new Date().toISOString();
 
     await db
-      .insertInto('finance_accounts')
+      .insertInto('app.financeAccounts')
       .values({
         id: accountId,
-        user_id: userId,
+        userId: userId,
         name: input.name,
-        account_type: normalizeAccountType(input.type),
-        balance: input.balance === undefined ? 0 : Number(input.balance),
-        created_at: now,
-        updated_at: now,
+        accountType: normalizeAccountType(input.type),
+        currentBalance: input.balance === undefined ? 0 : Number(input.balance),
+        createdAt: now,
+        updatedAt: now,
       })
       .execute();
 
     const created = await db
-      .selectFrom('finance_accounts')
+      .selectFrom('app.financeAccounts')
       .selectAll()
       .where('id', '=', accountId)
       .executeTakeFirst();
@@ -198,20 +198,20 @@ export const accountsRoutes = new Hono<AppContext>()
 
     const now = new Date().toISOString();
     const updateValues: {
-      updated_at: string;
+      updatedAt: string;
       name?: string;
       account_type?: AccountType;
       balance?: number;
-    } = { updated_at: now };
+    } = { updatedAt: now };
 
     if (input.name !== undefined) updateValues.name = input.name;
     if (input.type !== undefined) updateValues.account_type = normalizeAccountType(input.type);
     if (input.balance !== undefined) updateValues.balance = Number(input.balance);
 
-    await db.updateTable('finance_accounts').set(updateValues).where('id', '=', input.id).execute();
+    await db.updateTable('app.financeAccounts').set(updateValues).where('id', '=', input.id).execute();
 
     const updated = await db
-      .selectFrom('finance_accounts')
+      .selectFrom('app.financeAccounts')
       .selectAll()
       .where('id', '=', input.id)
       .executeTakeFirst();
@@ -227,20 +227,20 @@ export const accountsRoutes = new Hono<AppContext>()
     await getAccountWithOwnershipCheck(input.id, userId);
 
     // Delete associated transactions first
-    await db.deleteFrom('finance_transactions').where('account_id', '=', input.id).execute();
+    await db.deleteFrom('app.financeTransactions').where('accountId', '=', input.id).execute();
 
     // Delete the account
-    await db.deleteFrom('finance_accounts').where('id', '=', input.id).execute();
+    await db.deleteFrom('app.financeAccounts').where('id', '=', input.id).execute();
 
     return c.json<AccountDeleteOutput>({ success: true }, 200);
   })
   .post('/with-plaid', authMiddleware, zValidator('json', emptyBodySchema), async (c) => {
     const userId = c.get('userId')!;
     const accounts = await db
-      .selectFrom('finance_accounts')
+      .selectFrom('app.financeAccounts')
       .selectAll()
-      .where('user_id', '=', userId)
-      .orderBy('created_at', 'desc')
+      .where('userId', '=', userId)
+      .orderBy('createdAt', 'desc')
       .execute();
 
     return c.json<AccountsWithPlaidOutput>(
@@ -256,16 +256,16 @@ export const accountsRoutes = new Hono<AppContext>()
 
     // Get Plaid connections from PlaidItems table
     const connections = await db
-      .selectFrom('plaid_items')
+      .selectFrom('app.plaidItems')
       .selectAll()
-      .where('user_id', '=', userId)
+      .where('userId', '=', userId)
       .execute();
 
     // Get accounts with institution info
     const institutions = await db
-      .selectFrom('finance_accounts')
+      .selectFrom('app.financeAccounts')
       .selectAll()
-      .where('user_id', '=', userId)
+      .where('userId', '=', userId)
       .execute();
 
     const institutionNames = new Map<string, string>();
@@ -276,7 +276,7 @@ export const accountsRoutes = new Hono<AppContext>()
     }
 
     const result: AccountConnectionsOutput = connections.map((connection): PlaidConnection => {
-      const institutionId = connection.institution_id;
+      const institutionId = connection.institutionId;
       return toPlaidConnection(
         connection,
         institutionId ? institutionNames.get(institutionId) : undefined,
@@ -293,10 +293,10 @@ export const accountsRoutes = new Hono<AppContext>()
       const userId = c.get('userId')!;
       const input = c.req.valid('json');
       const accounts = await db
-        .selectFrom('finance_accounts')
+        .selectFrom('app.financeAccounts')
         .selectAll()
         .where((eb) =>
-          eb.and([eb('user_id', '=', userId), eb('institution_id', '=', input.institutionId)]),
+          eb.and([eb('userId', '=', userId), eb('institutionId', '=', input.institutionId)]),
         )
         .execute();
 
@@ -314,12 +314,12 @@ export const accountsRoutes = new Hono<AppContext>()
 
     const [accounts, connections] = await Promise.all([
       db
-        .selectFrom('finance_accounts')
+        .selectFrom('app.financeAccounts')
         .selectAll()
-        .where('user_id', '=', userId)
-        .orderBy('created_at', 'desc')
+        .where('userId', '=', userId)
+        .orderBy('createdAt', 'desc')
         .execute(),
-      db.selectFrom('plaid_items').selectAll().where('user_id', '=', userId).execute(),
+      db.selectFrom('app.plaidItems').selectAll().where('userId', '=', userId).execute(),
     ]);
 
     const payload: AccountAllOutput = {

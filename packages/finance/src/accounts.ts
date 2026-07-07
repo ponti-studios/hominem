@@ -1,27 +1,28 @@
 import crypto from 'node:crypto';
 
 import { db } from '@hominem/db';
-import type { FinanceAccounts, Selectable } from '@hominem/db';
-import { sql } from 'kysely';
+import type { AppFinanceAccounts, Selectable } from '@hominem/db';
 
 import { getAffectedRows } from './utils';
 
 export async function createAccount(
-  input: Partial<Selectable<FinanceAccounts>> & { user_id: string; name: string },
-): Promise<Selectable<FinanceAccounts>> {
+  input: Partial<Selectable<AppFinanceAccounts>> & { userId: string; name: string },
+): Promise<Selectable<AppFinanceAccounts>> {
   const id = input.id ?? crypto.randomUUID();
-  const account_type = input.account_type ?? 'checking';
-  const balance = input.balance ?? 0;
+  const accountType = input.accountType ?? 'checking';
+  const currentBalance = input.currentBalance ?? 0;
 
   const result = await db
-    .insertInto('finance_accounts')
+    .insertInto('app.financeAccounts')
     .values({
       id,
-      user_id: input.user_id,
+      userId: input.userId,
       name: input.name,
-      account_type,
-      balance,
-      data: input.data ?? {},
+      accountType,
+      currentBalance,
+      metadata: input.metadata ?? {},
+      ...(input.plaidAccountId ? { plaidAccountId: input.plaidAccountId } : {}),
+      ...(input.plaidItemId ? { plaidItemId: input.plaidItemId } : {}),
     })
     .returningAll()
     .executeTakeFirst();
@@ -33,34 +34,33 @@ export async function createAccount(
   return result;
 }
 
-export async function listAccounts(user_id: string): Promise<Selectable<FinanceAccounts>[]> {
-  const result = await db
-    .selectFrom('finance_accounts')
+export async function listAccounts(userId: string): Promise<Selectable<AppFinanceAccounts>[]> {
+  return db
+    .selectFrom('app.financeAccounts')
     .selectAll()
-    .where('user_id', '=', user_id)
+    .where('userId', '=', userId)
     .orderBy('name', 'asc')
     .orderBy('id', 'asc')
     .execute();
-  return result;
 }
 
 export async function getAccountById(
   accountId: string,
-  user_id?: string,
-): Promise<Selectable<FinanceAccounts> | null> {
-  if (user_id) {
+  userId?: string,
+): Promise<Selectable<AppFinanceAccounts> | null> {
+  if (userId) {
     const result = await db
-      .selectFrom('finance_accounts')
+      .selectFrom('app.financeAccounts')
       .selectAll()
       .where('id', '=', accountId)
-      .where('user_id', '=', user_id)
+      .where('userId', '=', userId)
       .limit(1)
       .executeTakeFirst();
     return result ?? null;
   }
 
   const result = await db
-    .selectFrom('finance_accounts')
+    .selectFrom('app.financeAccounts')
     .selectAll()
     .where('id', '=', accountId)
     .limit(1)
@@ -69,46 +69,46 @@ export async function getAccountById(
 }
 
 export async function updateAccount(
-  input: Partial<Selectable<FinanceAccounts>> & { id: string; user_id?: string },
-): Promise<Selectable<FinanceAccounts> | null> {
-  const existing = await getAccountById(input.id, input.user_id);
+  input: Partial<Selectable<AppFinanceAccounts>> & { id: string; userId?: string },
+): Promise<Selectable<AppFinanceAccounts> | null> {
+  const existing = await getAccountById(input.id, input.userId);
   if (!existing) {
     return null;
   }
 
   const nextName = input.name ?? existing.name;
-  const nextType = input.account_type ?? existing.account_type;
-  const nextBalance = input.balance ?? existing.balance;
+  const nextType = input.accountType ?? existing.accountType;
+  const nextBalance = input.currentBalance ?? existing.currentBalance;
 
   const result = await db
-    .updateTable('finance_accounts')
+    .updateTable('app.financeAccounts')
     .set({
       name: nextName,
-      account_type: nextType,
-      balance: nextBalance,
-      data: input.data ?? existing.data,
-      updated_at: new Date(),
+      accountType: nextType,
+      currentBalance: nextBalance,
+      metadata: input.metadata ?? existing.metadata,
+      updatedAt: new Date(),
     })
     .where('id', '=', input.id)
-    .where('user_id', '=', existing.user_id)
+    .where('userId', '=', existing.userId)
     .returningAll()
     .executeTakeFirst();
 
   return result ?? null;
 }
 
-export async function deleteAccount(accountId: string, user_id?: string): Promise<boolean> {
-  if (user_id) {
+export async function deleteAccount(accountId: string, userId?: string): Promise<boolean> {
+  if (userId) {
     const result = await db
-      .deleteFrom('finance_accounts')
+      .deleteFrom('app.financeAccounts')
       .where('id', '=', accountId)
-      .where('user_id', '=', user_id)
+      .where('userId', '=', userId)
       .executeTakeFirst();
     return getAffectedRows(result) > 0;
   }
 
   const result = await db
-    .deleteFrom('finance_accounts')
+    .deleteFrom('app.financeAccounts')
     .where('id', '=', accountId)
     .executeTakeFirst();
   return getAffectedRows(result) > 0;
@@ -122,44 +122,42 @@ export const listAccountsWithPlaidInfo = listAccounts;
 
 export async function getAccountsForInstitution(
   institutionId: string,
-  user_id: string,
-): Promise<Selectable<FinanceAccounts>[]> {
-  const result = await db
-    .selectFrom('finance_accounts')
+  userId: string,
+): Promise<Selectable<AppFinanceAccounts>[]> {
+  return db
+    .selectFrom('app.financeAccounts')
     .selectAll()
-    .where('user_id', '=', user_id)
-    .where(sql<boolean>`institution_id = ${institutionId}`)
+    .where('userId', '=', userId)
+    .where('institutionId', '=', institutionId)
     .orderBy('name', 'asc')
     .orderBy('id', 'asc')
     .execute();
-  return result;
 }
 
 export async function upsertAccount(
-  input: Partial<Selectable<FinanceAccounts>> & { user_id: string },
-): Promise<Selectable<FinanceAccounts>> {
+  input: Partial<Selectable<AppFinanceAccounts>> & { userId: string },
+): Promise<Selectable<AppFinanceAccounts>> {
   if (!input.name) {
     throw new Error('upsertAccount requires name');
   }
 
-  if (input.data && (input.data as Record<string, unknown>).plaidAccountId) {
-    const plaidAccountId = (input.data as Record<string, unknown>).plaidAccountId as string;
+  if (input.plaidAccountId) {
     const existingResult = await db
-      .selectFrom('finance_accounts')
+      .selectFrom('app.financeAccounts')
       .selectAll()
-      .where('user_id', '=', input.user_id)
-      .where(sql<boolean>`data ->> 'plaidAccountId' = ${plaidAccountId}`)
+      .where('userId', '=', input.userId)
+      .where('plaidAccountId', '=', input.plaidAccountId)
       .limit(1)
       .executeTakeFirst();
     const existing = existingResult ?? null;
     if (existing) {
       const updated = await updateAccount({
         id: existing.id,
-        user_id: input.user_id,
+        userId: input.userId,
         name: input.name,
-        ...(input.account_type ? { account_type: input.account_type } : {}),
-        ...(input.balance !== undefined ? { balance: input.balance } : {}),
-        data: input.data,
+        ...(input.accountType ? { accountType: input.accountType } : {}),
+        ...(input.currentBalance !== undefined ? { currentBalance: input.currentBalance } : {}),
+        metadata: input.metadata,
       });
       if (!updated) {
         throw new Error('Failed to update existing plaid account');
@@ -169,54 +167,55 @@ export async function upsertAccount(
   }
 
   return createAccount({
-    user_id: input.user_id,
+    userId: input.userId,
     name: input.name,
     ...(input.id !== undefined ? { id: input.id } : {}),
-    ...(input.account_type ? { account_type: input.account_type } : {}),
-    ...(input.balance !== undefined ? { balance: input.balance } : {}),
-    ...(input.data ? { data: input.data } : {}),
+    ...(input.accountType ? { accountType: input.accountType } : {}),
+    ...(input.currentBalance !== undefined ? { currentBalance: input.currentBalance } : {}),
+    ...(input.metadata ? { metadata: input.metadata } : {}),
+    ...(input.plaidAccountId ? { plaidAccountId: input.plaidAccountId } : {}),
+    ...(input.plaidItemId ? { plaidItemId: input.plaidItemId } : {}),
   });
 }
 
 export async function getUserAccounts(
-  user_id: string,
+  userId: string,
   itemId?: string,
-): Promise<Selectable<FinanceAccounts>[]> {
+): Promise<Selectable<AppFinanceAccounts>[]> {
   if (!itemId) {
-    return listAccounts(user_id);
+    return listAccounts(userId);
   }
 
-  const result = await db
-    .selectFrom('finance_accounts')
+  return db
+    .selectFrom('app.financeAccounts')
     .selectAll()
-    .where('user_id', '=', user_id)
-    .where(sql<boolean>`data ->> 'plaidItemId' = ${itemId}`)
+    .where('userId', '=', userId)
+    .where('plaidItemId', '=', itemId)
     .orderBy('name', 'asc')
     .orderBy('id', 'asc')
     .execute();
-  return result;
 }
 
 export async function getAccountByPlaidId(
   plaidAccountId: string,
-  user_id?: string,
-): Promise<Selectable<FinanceAccounts> | null> {
-  if (user_id) {
+  userId?: string,
+): Promise<Selectable<AppFinanceAccounts> | null> {
+  if (userId) {
     const result = await db
-      .selectFrom('finance_accounts')
+      .selectFrom('app.financeAccounts')
       .selectAll()
-      .where('user_id', '=', user_id)
-      .where(sql<boolean>`data ->> 'plaidAccountId' = ${plaidAccountId}`)
+      .where('userId', '=', userId)
+      .where('plaidAccountId', '=', plaidAccountId)
       .limit(1)
       .executeTakeFirst();
     return result ?? null;
   }
 
   const result = await db
-    .selectFrom('finance_accounts')
+    .selectFrom('app.financeAccounts')
     .selectAll()
-    .where(sql<boolean>`data ->> 'plaidAccountId' = ${plaidAccountId}`)
-    .orderBy('created_at', 'desc')
+    .where('plaidAccountId', '=', plaidAccountId)
+    .orderBy('createdAt', 'desc')
     .orderBy('id', 'asc')
     .limit(1)
     .executeTakeFirst();

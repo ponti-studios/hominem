@@ -27,10 +27,10 @@ describeIntegration('finance transactions integration', () => {
   let ownerAccountId: string;
 
   const cleanupUser = async (userId: string): Promise<void> => {
-    await sql`delete from finance_transactions where user_id = ${userId}`
+    await sql`delete from app.finance_transactions where user_id = ${userId}`
       .execute(db)
       .catch(() => {});
-    await sql`delete from finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
     await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
@@ -48,8 +48,8 @@ describeIntegration('finance transactions integration', () => {
     const account = await createAccount({
       userId: ownerId,
       name: 'Checking',
-      type: 'depository',
-      balance: 1000,
+      accountType: 'depository',
+      currentBalance: 1000,
     });
     ownerAccountId = account.id;
   });
@@ -60,7 +60,7 @@ describeIntegration('finance transactions integration', () => {
       accountId: ownerAccountId,
       amount: 20,
       description: 'Older',
-      date: '2026-01-01',
+      postedOn: '2026-01-01',
     });
 
     const second = await createTransaction({
@@ -68,7 +68,7 @@ describeIntegration('finance transactions integration', () => {
       accountId: ownerAccountId,
       amount: 10,
       description: 'Newer',
-      date: '2026-02-01',
+      postedOn: '2026-02-01',
     });
 
     const ordered = await queryTransactions(ownerId);
@@ -83,7 +83,7 @@ describeIntegration('finance transactions integration', () => {
       accountId: ownerAccountId,
       amount: 42,
       description: 'Protected tx',
-      date: '2026-01-10',
+      postedOn: '2026-01-10',
     });
 
     const deniedUpdate = await updateTransaction(created.id, otherUserId, {
@@ -101,15 +101,15 @@ describeIntegration('finance transactions integration', () => {
 
   it('supports plaid external id lookup and delete', async () => {
     await sql`
-      insert into finance_transactions (
-        id, user_id, account_id, amount, transaction_type, description, date, external_id
+      insert into app.finance_transactions (
+        id, user_id, account_id, amount, transaction_type, description, posted_on, external_id
       )
       values (
         ${crypto.randomUUID()},
         ${ownerId},
         ${ownerAccountId},
         ${15.25},
-        ${'income'},
+        ${'credit'},
         ${'Plaid tx'},
         ${'2026-02-10'},
         ${'plaid-ext-1'}

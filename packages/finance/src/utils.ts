@@ -41,10 +41,17 @@ export function getAffectedRows(result: unknown): number {
 }
 
 export async function tableExists(tableName: string): Promise<boolean> {
+  let schema = 'public';
+  let table = tableName;
+  if (tableName.includes('.')) {
+    const parts = tableName.split('.');
+    schema = parts[0];
+    table = parts.slice(1).join('.');
+  }
   const q = db
     .selectFrom(sql`information_schema.tables`.as('t'))
     .selectAll()
-    .where(sql<boolean>`t.table_schema = 'public' and t.table_name = ${tableName}`);
+    .where(sql<boolean>`t.table_schema = ${schema} and t.table_name = ${table}`);
   const result = await q.executeTakeFirst();
   return Boolean(result);
 }

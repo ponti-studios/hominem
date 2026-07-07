@@ -7,7 +7,6 @@ import { createMiddleware } from 'hono/factory';
 import { ForbiddenError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
-const FINANCE_TRANSACTION_ENTITY_TYPE = 'finance_transaction';
 
 function deterministicUuid(userId: string, label: string): string {
   const hash = crypto.createHash('sha256').update(`${userId}:${label}`).digest('hex');
@@ -34,8 +33,8 @@ const e2eGuard = createMiddleware<AppContext>(async (c, next) => {
 
 async function resetFinanceData(userId: string) {
   const [transactions, tags] = await Promise.all([
-    db.selectFrom('finance_transactions').select('id').where('user_id', '=', userId).execute(),
-    db.selectFrom('tags').select('id').where('owner_id', '=', userId).execute(),
+    db.selectFrom('app.financeTransactions').select('id').where('userId', '=', userId).execute(),
+    db.selectFrom('app.tags').select('id').where('ownerUserid', '=', userId).execute(),
   ]);
 
   const transactionIds = transactions.map((transaction) => transaction.id);
@@ -43,20 +42,20 @@ async function resetFinanceData(userId: string) {
 
   if (transactionIds.length > 0) {
     await db
-      .deleteFrom('tagged_items')
-      .where('entity_type', '=', 'finance_transaction')
-      .where('entity_id', 'in', transactionIds)
+      .deleteFrom('app.tagAssignments')
+      .where('entityTable', '=', 'finance_transaction')
+      .where('entityId', 'in', transactionIds)
       .execute();
   }
 
   if (tagIds.length > 0) {
-    await db.deleteFrom('tagged_items').where('tag_id', 'in', tagIds).execute();
+    await db.deleteFrom('app.tagAssignments').where('tagId', 'in', tagIds).execute();
   }
 
-  await db.deleteFrom('finance_transactions').where('user_id', '=', userId).execute();
-  await db.deleteFrom('finance_accounts').where('user_id', '=', userId).execute();
-  await db.deleteFrom('plaid_items').where('user_id', '=', userId).execute();
-  await db.deleteFrom('tags').where('owner_id', '=', userId).execute();
+  await db.deleteFrom('app.financeTransactions').where('userId', '=', userId).execute();
+  await db.deleteFrom('app.financeAccounts').where('userId', '=', userId).execute();
+  await db.deleteFrom('app.plaidItems').where('userId', '=', userId).execute();
+  await db.deleteFrom('app.tags').where('ownerUserid', '=', userId).execute();
 }
 
 async function ensureE2eUser(user: NonNullable<AppContext['Variables']['user']>) {
@@ -112,106 +111,106 @@ async function seedFinanceData(userId: string) {
   };
 
   const existingInstitution = await db
-    .selectFrom('financial_institutions')
+    .selectFrom('app.financeInstitutions')
     .select('id')
     .where('provider', '=', 'plaid')
-    .where('provider_institution_id', '=', 'ins_e2e_local_credit_union')
+    .where('providerInstitutionId', '=', 'ins_e2e_local_credit_union')
     .executeTakeFirst();
 
   if (existingInstitution) {
     institutionId = existingInstitution.id;
   } else {
     await db
-      .insertInto('financial_institutions')
+      .insertInto('app.financeInstitutions')
       .values({
         id: institutionId,
         name: 'E2E Local Credit Union',
         provider: 'plaid',
-        provider_institution_id: 'ins_e2e_local_credit_union',
-        country_code: 'US',
-        website_url: 'https://example.test/e2e-bank',
-        logo_url: null,
+        providerInstitutionId: 'ins_e2e_local_credit_union',
+        countryCode: 'US',
+        websiteUrl: 'https://example.test/e2e-bank',
+        logoUrl: null,
       })
       .execute();
   }
 
   // The plaid_items table uses user_id, item_id (not provider_item_id), access_token, institution_id
   await db
-    .insertInto('plaid_items')
+    .insertInto('app.plaidItems')
     .values({
       id: plaidItemId,
-      user_id: userId,
-      item_id: `item-e2e-${userId.slice(0, 8)}`,
-      access_token: `access-e2e-${userId.slice(0, 8)}`,
-      institution_id: institutionId,
+      userId: userId,
+      providerItemId: `item-e2e-${userId.slice(0, 8)}`,
+      accessToken: `access-e2e-${userId.slice(0, 8)}`,
+      institutionId: institutionId,
       cursor: 'cursor-e2e-seeded',
       status: 'healthy',
-      last_synced_at: now,
-      created_at: now,
-      updated_at: now,
+      lastSyncedAt: now,
+      createdAt: now,
+      updatedAt: now,
     })
     .execute();
 
   // The finance_accounts table uses user_id, balance (not current_balance), data (JSONB)
   await db
-    .insertInto('finance_accounts')
+    .insertInto('app.financeAccounts')
     .values([
       {
         id: accounts.checking,
-        user_id: userId,
+        userId: userId,
         name: 'Everyday Checking',
-        account_type: 'checking',
-        balance: 2480.42,
-        data: JSON.stringify({
-          plaid_available_balance: 2400.42,
-          plaid_account_id: 'plaid-checking-e2e',
+        accountType: 'checking',
+        currentBalance: 2480.42,
+        metadata: JSON.stringify({
+          plaid_available_currentBalance: 2400.42,
+          plaid_accountId: 'plaid-checking-e2e',
           mask: '0001',
           currency_code: 'USD',
         }),
-        plaid_item_id: plaidItemId,
-        institution_id: institutionId,
-        created_at: now,
-        updated_at: now,
+        plaidAccountId: plaidItemId,
+        institutionId: institutionId,
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: accounts.credit,
-        user_id: userId,
+        userId: userId,
         name: 'Travel Credit',
-        account_type: 'credit',
-        balance: 742.1,
-        data: JSON.stringify({
-          plaid_available_balance: 0,
-          plaid_account_id: 'plaid-credit-e2e',
+        accountType: 'credit',
+        currentBalance: 742.1,
+        metadata: JSON.stringify({
+          plaid_available_currentBalance: 0,
+          plaid_accountId: 'plaid-credit-e2e',
           mask: '1010',
           currency_code: 'USD',
         }),
-        plaid_item_id: plaidItemId,
-        institution_id: institutionId,
-        created_at: now,
-        updated_at: now,
+        plaidAccountId: plaidItemId,
+        institutionId: institutionId,
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: accounts.savings,
-        user_id: userId,
+        userId: userId,
         name: 'Emergency Savings',
-        account_type: 'savings',
-        balance: 12000,
-        data: null,
-        plaid_item_id: null,
-        institution_id: null,
-        created_at: now,
-        updated_at: now,
+        accountType: 'savings',
+        currentBalance: 12000,
+        metadata: null,
+        plaidAccountId: null,
+        institutionId: null,
+        createdAt: now,
+        updatedAt: now,
       },
     ])
     .execute();
 
   // The tags table uses owner_id (not owner_userid)
   await db
-    .insertInto('tags')
+    .insertInto('app.tags')
     .values([
       {
         id: tags.groceries,
-        owner_id: userId,
+        ownerUserid: userId,
         name: 'Groceries',
         slug: 'finance-e2e-groceries',
         path: 'Groceries',
@@ -220,7 +219,7 @@ async function seedFinanceData(userId: string) {
       },
       {
         id: tags.rent,
-        owner_id: userId,
+        ownerUserid: userId,
         name: 'Rent',
         slug: 'finance-e2e-rent',
         path: 'Rent',
@@ -229,7 +228,7 @@ async function seedFinanceData(userId: string) {
       },
       {
         id: tags.income,
-        owner_id: userId,
+        ownerUserid: userId,
         name: 'Income',
         slug: 'finance-e2e-income',
         path: 'Income',
@@ -238,7 +237,7 @@ async function seedFinanceData(userId: string) {
       },
       {
         id: tags.travel,
-        owner_id: userId,
+        ownerUserid: userId,
         name: 'Travel',
         slug: 'finance-e2e-travel',
         path: 'Travel',
@@ -250,155 +249,139 @@ async function seedFinanceData(userId: string) {
 
   // finance_transactions uses user_id, date (not posted_on as required?), category
   await db
-    .insertInto('finance_transactions')
+    .insertInto('app.financeTransactions')
     .values([
       {
         id: transactions.salary,
-        user_id: userId,
-        account_id: accounts.checking,
+        userId: userId,
+        accountId: accounts.checking,
         amount: 5200,
         description: 'Ponti Studios Payroll',
-        merchant_name: 'Ponti Studios',
-        transaction_type: 'credit',
+        merchantName: 'Ponti Studios',
+        transactionType: 'credit',
         source: 'e2e-seed',
         pending: false,
-        posted_on: '2026-01-02T09:00:00.000Z',
-        date: '2026-01-02T09:00:00.000Z',
-        occurred_at: '2026-01-02T09:00:00.000Z',
-        created_at: now,
-        updated_at: now,
+        postedOn: '2026-01-02T09:00:00.000Z',
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: transactions.rent,
-        user_id: userId,
-        account_id: accounts.checking,
+        userId: userId,
+        accountId: accounts.checking,
         amount: -2200,
         description: 'January Studio Rent',
-        merchant_name: 'Atlas Lofts',
-        transaction_type: 'debit',
+        merchantName: 'Atlas Lofts',
+        transactionType: 'debit',
         source: 'e2e-seed',
         pending: false,
-        posted_on: '2026-01-03T10:00:00.000Z',
-        date: '2026-01-03T10:00:00.000Z',
-        occurred_at: '2026-01-03T10:00:00.000Z',
-        created_at: now,
-        updated_at: now,
+        postedOn: '2026-01-03T10:00:00.000Z',
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: transactions.groceries,
-        user_id: userId,
-        account_id: accounts.checking,
+        userId: userId,
+        accountId: accounts.checking,
         amount: -86.42,
         description: 'Whole Foods Market',
-        merchant_name: 'Whole Foods',
-        transaction_type: 'debit',
+        merchantName: 'Whole Foods',
+        transactionType: 'debit',
         source: 'e2e-seed',
-        pending: false,
-        posted_on: '2026-01-12T18:30:00.000Z',
-        date: '2026-01-12T18:30:00.000Z',
-        occurred_at: '2026-01-12T18:30:00.000Z',
-        created_at: now,
-        updated_at: now,
+        postedOn: '2026-01-12T18:30:00.000Z',
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: transactions.cafe,
-        user_id: userId,
-        account_id: accounts.checking,
+        userId: userId,
+        accountId: accounts.checking,
         amount: -7.25,
         description: 'Bridge Coffee',
-        merchant_name: 'Bridge Coffee',
-        transaction_type: 'debit',
-        source: 'e2e-seed',
+        merchantName: 'Bridge Coffee',
+        transactionType: 'debit',
         pending: false,
-        posted_on: '2026-01-14T16:15:00.000Z',
-        date: '2026-01-14T16:15:00.000Z',
-        occurred_at: '2026-01-14T16:15:00.000Z',
-        created_at: now,
-        updated_at: now,
+        postedOn: '2026-01-14T16:15:00.000Z',
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: transactions.flight,
-        user_id: userId,
-        account_id: accounts.credit,
+        userId: userId,
+        accountId: accounts.credit,
         amount: -412.84,
         description: 'Atlas Air Flight',
-        merchant_name: 'Atlas Air',
-        transaction_type: 'debit',
+        merchantName: 'Atlas Air',
+        transactionType: 'debit',
         source: 'e2e-seed',
         pending: false,
-        posted_on: '2026-01-18T13:45:00.000Z',
-        date: '2026-01-18T13:45:00.000Z',
-        occurred_at: '2026-01-18T13:45:00.000Z',
-        created_at: now,
-        updated_at: now,
+        postedOn: '2026-01-18T13:45:00.000Z',
+        createdAt: now,
+        updatedAt: now,
       },
       {
         id: transactions.interest,
-        user_id: userId,
-        account_id: accounts.savings,
+        userId: userId,
+        accountId: accounts.savings,
         amount: 18.05,
         description: 'Savings Interest',
-        merchant_name: 'Emergency Savings',
-        transaction_type: 'credit',
+        transactionType: 'credit',
         source: 'e2e-seed',
         pending: false,
-        posted_on: '2026-01-31T23:00:00.000Z',
-        date: '2026-01-31T23:00:00.000Z',
-        occurred_at: '2026-01-31T23:00:00.000Z',
-        created_at: now,
-        updated_at: now,
+        postedOn: '2026-01-31T23:00:00.000Z',
+        createdAt: now,
+        updatedAt: now,
       },
     ])
     .execute();
 
   // tagged_items uses entity_type (string), not entity_table (regclass)
-  const FINANCE_TRANSACTION_ENTITY_TYPE = 'finance_transaction';
   await db
-    .insertInto('tagged_items')
+    .insertInto('app.tagAssignments')
     .values([
       {
         id: deterministicUuid(userId, 'assignment-salary-income'),
-        tag_id: tags.income,
-        entity_type: FINANCE_TRANSACTION_ENTITY_TYPE,
-        entity_id: transactions.salary,
-        assigned_by_userid: userId,
-        assignment_source: 'import',
+        tagId: tags.income,
+        entityId: transactions.salary,
+        entityTable: 'app.financeTransactions',
+        assignedByUserid: userId,
+        assignmentSource: 'import',
         confidence: 1,
       },
       {
         id: deterministicUuid(userId, 'assignment-rent'),
-        tag_id: tags.rent,
-        entity_type: FINANCE_TRANSACTION_ENTITY_TYPE,
-        entity_id: transactions.rent,
-        assigned_by_userid: userId,
-        assignment_source: 'import',
+        tagId: tags.rent,
+        entityId: transactions.rent,
+        entityTable: 'app.financeTransactions',
+        assignedByUserid: userId,
+        assignmentSource: 'import',
         confidence: 1,
       },
       {
         id: deterministicUuid(userId, 'assignment-groceries'),
-        tag_id: tags.groceries,
-        entity_type: FINANCE_TRANSACTION_ENTITY_TYPE,
-        entity_id: transactions.groceries,
-        assigned_by_userid: userId,
-        assignment_source: 'import',
+        tagId: tags.groceries,
+        entityId: transactions.groceries,
+        entityTable: 'app.financeTransactions',
+        assignedByUserid: userId,
+        assignmentSource: 'import',
         confidence: 1,
       },
       {
         id: deterministicUuid(userId, 'assignment-flight-travel'),
-        tag_id: tags.travel,
-        entity_type: FINANCE_TRANSACTION_ENTITY_TYPE,
-        entity_id: transactions.flight,
-        assigned_by_userid: userId,
-        assignment_source: 'import',
+        tagId: tags.travel,
+        entityId: transactions.flight,
+        entityTable: 'app.financeTransactions',
+        assignedByUserid: userId,
+        assignmentSource: 'import',
         confidence: 1,
       },
       {
         id: deterministicUuid(userId, 'assignment-interest-income'),
-        tag_id: tags.income,
-        entity_type: FINANCE_TRANSACTION_ENTITY_TYPE,
-        entity_id: transactions.interest,
-        assigned_by_userid: userId,
-        assignment_source: 'import',
+        tagId: tags.income,
+        entityId: transactions.interest,
+        entityTable: 'app.financeTransactions',
+        assignedByUserid: userId,
+        assignmentSource: 'import',
         confidence: 1,
       },
     ])

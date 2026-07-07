@@ -10,7 +10,6 @@ import {
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
-  bulkCreateBudgetCategoriesFromTransactions,
   checkBudgetCategoryNameExists,
   createAccount,
   createBudgetCategory,
@@ -41,19 +40,19 @@ describeIntegration('finance budget integration', () => {
 
   const cleanupUser = async (userId: string): Promise<void> => {
     await sql`
-      delete from tagged_items
-      where entity_type = ${'finance_transaction'}
-        and entity_id in (select id from finance_transactions where user_id = ${userId})
+      delete from app.tag_assignments
+      where entity_table = ${'app.finance_transactions'}::regclass
+        and entity_id in (select id from app.finance_transactions where user_id = ${userId})
     `
       .execute(db)
       .catch(() => {});
-    await sql`delete from plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
     await sql`delete from budget_goals where user_id = ${userId}`.execute(db).catch(() => {});
-    await sql`delete from finance_transactions where user_id = ${userId}`
+    await sql`delete from app.finance_transactions where user_id = ${userId}`
       .execute(db)
       .catch(() => {});
-    await sql`delete from tags where owner_id = ${userId}`.execute(db).catch(() => {});
-    await sql`delete from finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.tags where owner_userid = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
     await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
@@ -71,20 +70,20 @@ describeIntegration('finance budget integration', () => {
     const account = await createAccount({
       userId: ownerId,
       name: 'Budget Checking',
-      type: 'depository',
-      balance: 4000,
+      accountType: 'depository',
+      currentBalance: 4000,
     });
     ownerAccountId = account.id;
   });
 
   it('creates, updates, lists and deletes budget categories with owner guards', async () => {
     const created = await createBudgetCategory({
-      userId: ownerId,
+      ownerUserid: ownerId,
       name: 'Food',
       color: '#00AAFF',
     });
 
-    expect(created.userId).toBe(ownerId);
+    expect(created.ownerUserid).toBe(ownerId);
     expect(created.name).toBe('Food');
     expect(created.color).toBe('#00AAFF');
 
@@ -117,11 +116,11 @@ describeIntegration('finance budget integration', () => {
 
   it('computes category spending and tracking totals deterministically', async () => {
     const foodTag = await createBudgetCategory({
-      userId: ownerId,
+      ownerUserid: ownerId,
       name: 'Food',
     });
     const travelTag = await createBudgetCategory({
-      userId: ownerId,
+      ownerUserid: ownerId,
       name: 'Travel',
     });
 
@@ -138,8 +137,7 @@ describeIntegration('finance budget integration', () => {
       accountId: ownerAccountId,
       amount: -120,
       description: 'Groceries',
-      date: '2026-03-01',
-      category: 'Food',
+      postedOn: '2026-03-01',
       merchantName: 'Market',
     });
     const txTravel = await createTransaction({
@@ -147,8 +145,7 @@ describeIntegration('finance budget integration', () => {
       accountId: ownerAccountId,
       amount: -80,
       description: 'Trip',
-      date: '2026-03-02',
-      category: 'Travel',
+      postedOn: '2026-03-02',
       merchantName: 'Airline',
     });
     await createTransaction({
@@ -156,8 +153,7 @@ describeIntegration('finance budget integration', () => {
       accountId: ownerAccountId,
       amount: 200,
       description: 'Paycheck',
-      date: '2026-03-03',
-      category: 'Income',
+      postedOn: '2026-03-03',
       merchantName: 'Employer',
     });
 
@@ -182,8 +178,7 @@ describeIntegration('finance budget integration', () => {
       accountId: ownerAccountId,
       amount: -25,
       description: 'Lunch',
-      date: '2026-03-01',
-      category: 'Food',
+      postedOn: '2026-03-01',
       merchantName: 'Cafe',
     });
     await createTransaction({
@@ -191,8 +186,7 @@ describeIntegration('finance budget integration', () => {
       accountId: ownerAccountId,
       amount: -75,
       description: 'Dinner',
-      date: '2026-03-02',
-      category: 'Food',
+      postedOn: '2026-03-02',
       merchantName: 'Bistro',
     });
     await createTransaction({
@@ -200,21 +194,18 @@ describeIntegration('finance budget integration', () => {
       accountId: ownerAccountId,
       amount: -60,
       description: 'Train',
-      date: '2026-03-03',
-      category: 'Transit',
+      postedOn: '2026-03-03',
       merchantName: 'Transit',
     });
 
-    const created = await bulkCreateBudgetCategoriesFromTransactions(ownerId);
-    expect(created).toHaveLength(2);
-    expect(created.map((item) => item.name)).toEqual(['Food', 'Transit']);
-
-    const categories = await getAllBudgetCategories(ownerId);
-    expect(categories).toHaveLength(2);
-    const foodTag = categories.find((item) => item.name === 'Food');
-    const transitTag = categories.find((item) => item.name === 'Transit');
-    expect(foodTag?.id).toBeDefined();
-    expect(transitTag?.id).toBeDefined();
+    const foodTag = await createBudgetCategory({
+      ownerUserid: ownerId,
+      name: 'Food',
+    });
+    const transitTag = await createBudgetCategory({
+      ownerUserid: ownerId,
+      name: 'Transit',
+    });
 
     const transactions = await queryTransactionsByContract({
       userId: ownerId,

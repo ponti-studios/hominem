@@ -15,9 +15,9 @@ export const tagsRoutes = new Hono<AppContext>().post(
   async (c) => {
     const userId = c.get('userId')!;
     const tags = await db
-      .selectFrom('tags')
-      .select(['id', 'owner_id', 'name', 'color'])
-      .where('owner_id', '=', userId)
+      .selectFrom('app.tags')
+      .select(['id', 'ownerUserid', 'name', 'color'])
+      .where('ownerUserid', '=', userId)
       .orderBy('name', 'asc')
       .orderBy('id', 'asc')
       .execute();
@@ -25,7 +25,7 @@ export const tagsRoutes = new Hono<AppContext>().post(
     return c.json<CategoriesListOutput>(
       tags.map((tag) => ({
         id: tag.id,
-        userId: tag.owner_id,
+        userId: tag.ownerUserid,
         name: tag.name,
         color: tag.color ?? null,
       })),

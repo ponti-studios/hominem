@@ -1,39 +1,37 @@
 import crypto from 'node:crypto';
 
 import { db } from '@hominem/db';
-import type { FinancialInstitutions, Selectable } from '@hominem/db';
+import type { AppFinanceInstitutions, Selectable } from '@hominem/db';
 
-type InstitutionRow = Selectable<FinancialInstitutions>;
+type InstitutionRow = Selectable<AppFinanceInstitutions>;
 
 export async function getAllInstitutions(): Promise<InstitutionRow[]> {
-  const result = await db
-    .selectFrom('financial_institutions')
+  return db
+    .selectFrom('app.financeInstitutions')
     .selectAll()
     .orderBy('name', 'asc')
     .orderBy('id', 'asc')
     .execute();
-  return result;
 }
 
 export async function createInstitution(name: string): Promise<InstitutionRow> {
   const result = await db
-    .insertInto('financial_institutions')
+    .insertInto('app.financeInstitutions')
     .values({
       id: crypto.randomUUID(),
       name,
     })
     .returningAll()
     .executeTakeFirst();
-  const row = result ?? null;
-  if (!row) {
+  if (!result) {
     throw new Error('Failed to create institution');
   }
-  return row;
+  return result;
 }
 
 export async function ensureInstitutionExists(name: string): Promise<InstitutionRow> {
   const existing = await db
-    .selectFrom('financial_institutions')
+    .selectFrom('app.financeInstitutions')
     .selectAll()
     .where('name', '=', name)
     .limit(1)

@@ -16,8 +16,8 @@ import {
 } from './index';
 
 async function _hasTaggingTables(): Promise<boolean> {
-  const hasTagsTable = await tableExists('tags');
-  const hasTaggedItemsTable = await tableExists('tagged_items');
+  const hasTagsTable = await tableExists('app.tags');
+  const hasTaggedItemsTable = await tableExists('app.tag_assignments');
   return hasTagsTable && hasTaggedItemsTable;
 }
 
@@ -37,17 +37,17 @@ describeIntegration('finance tags integration', () => {
 
   const cleanupUser = async (userId: string): Promise<void> => {
     await sql`
-      delete from tagged_items
-      where entity_type = ${'finance_transaction'}
-        and entity_id in (select id from finance_transactions where user_id = ${userId})
+      delete from app.tag_assignments
+      where entity_table = ${'app.financeTransactions'}
+        and entity_id in (select id from app.finance_transactions where user_id = ${userId})
     `
       .execute(db)
       .catch(() => {});
-    await sql`delete from finance_transactions where user_id = ${userId}`
+    await sql`delete from app.finance_transactions where user_id = ${userId}`
       .execute(db)
       .catch(() => {});
-    await sql`delete from finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
-    await sql`delete from tags where owner_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.tags where owner_userid = ${userId}`.execute(db).catch(() => {});
     await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
@@ -66,11 +66,11 @@ describeIntegration('finance tags integration', () => {
     ]);
 
     await sql`
-      insert into tags (id, owner_id, name)
+      insert into app.tags (id, owner_userid, name, slug, path)
       values
-        (${ownerFoodTagId}, ${ownerId}, ${'food'}),
-        (${ownerTravelTagId}, ${ownerId}, ${'travel'}),
-        (${otherTagId}, ${otherUserId}, ${'foreign-tag'})
+        (${ownerFoodTagId}, ${ownerId}, ${'food'}, ${'food'}, ${'food'}),
+        (${ownerTravelTagId}, ${ownerId}, ${'travel'}, ${'travel'}, ${'travel'}),
+        (${otherTagId}, ${otherUserId}, ${'foreign-tag'}, ${'foreign-tag'}, ${'foreign-tag'})
     `.execute(db);
 
     const account = await createAccount({

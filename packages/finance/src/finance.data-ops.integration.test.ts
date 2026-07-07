@@ -28,18 +28,16 @@ describeIntegration('finance data ops integration', () => {
   let otherAccountId: string;
 
   const cleanupUser = async (userId: string): Promise<void> => {
-    await db
-      .execute(
-        sql`delete from tagged_items where entity_type = ${'finance_transaction'} and entity_id in (select id from finance_transactions where user_id = ${userId})`,
-      )
-      .catch(() => {});
-    await sql`delete from plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
-    await sql`delete from budget_goals where user_id = ${userId}`.execute(db).catch(() => {});
-    await sql`delete from finance_transactions where user_id = ${userId}`
+    await sql`delete from app.tag_assignments where entity_table = ${'app.finance_transactions'}::regclass and entity_id in (select id from app.finance_transactions where user_id = ${userId})`
       .execute(db)
       .catch(() => {});
-    await sql`delete from tags where owner_id = ${userId}`.execute(db).catch(() => {});
-    await sql`delete from finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from budget_goals where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.finance_transactions where user_id = ${userId}`
+      .execute(db)
+      .catch(() => {});
+    await sql`delete from app.tags where owner_userid = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
     await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
@@ -57,23 +55,23 @@ describeIntegration('finance data ops integration', () => {
     const ownerAccount = await createAccount({
       userId: ownerId,
       name: 'Owner Checking',
-      type: 'depository',
-      balance: 1500,
+      accountType: 'depository',
+      currentBalance: 1500,
     });
     ownerAccountId = ownerAccount.id;
 
     const otherAccount = await createAccount({
       userId: otherUserId,
       name: 'Other Checking',
-      type: 'depository',
-      balance: 2000,
+      accountType: 'depository',
+      currentBalance: 2000,
     });
     otherAccountId = otherAccount.id;
   });
 
   it('exports only caller-scoped finance data', async () => {
     const ownerTag = await createBudgetCategory({
-      userId: ownerId,
+      ownerUserid: ownerId,
       name: `Food-${crypto.randomUUID().slice(0, 8)}`,
     });
     const ownerTx = await createTransaction({
@@ -81,8 +79,7 @@ describeIntegration('finance data ops integration', () => {
       accountId: ownerAccountId,
       amount: -42,
       description: 'Dinner',
-      date: '2026-03-03',
-      category: 'Food',
+      postedOn: '2026-03-03',
       merchantName: 'Cafe',
     });
     await replaceTransactionTags(ownerTx.id, ownerId, [ownerTag.id]);
@@ -90,9 +87,9 @@ describeIntegration('finance data ops integration', () => {
     await upsertPlaidItem({
       id: crypto.randomUUID(),
       userId: ownerId,
-      itemId: `item-${crypto.randomUUID()}`,
+      providerItemId: `item-${crypto.randomUUID()}`,
       institutionId: null,
-      transactionsCursor: 'cursor-1',
+      cursor: 'cursor-1',
       accessToken: 'token-1',
     });
 
@@ -101,8 +98,7 @@ describeIntegration('finance data ops integration', () => {
       accountId: otherAccountId,
       amount: -99,
       description: 'Other User Spend',
-      date: '2026-03-04',
-      category: 'Other',
+      postedOn: '2026-03-04',
       merchantName: 'Other',
     });
 
@@ -113,14 +109,14 @@ describeIntegration('finance data ops integration', () => {
     expect(exported.transactions.length).toBe(1);
     expect(exported.transactions[0]?.userId).toBe(ownerId);
     expect(exported.tags.length).toBe(1);
-    expect(exported.tags[0]?.userId).toBe(ownerId);
+    expect(exported.tags[0]?.ownerUserid).toBe(ownerId);
     expect(exported.plaidItems.length).toBe(1);
     expect(exported.plaidItems[0]?.userId).toBe(ownerId);
   });
 
   it('delete-all summary removes only caller-scoped data', async () => {
     const ownerTag = await createBudgetCategory({
-      userId: ownerId,
+      ownerUserid: ownerId,
       name: `Transit-${crypto.randomUUID().slice(0, 8)}`,
     });
     const ownerTx = await createTransaction({
@@ -128,8 +124,7 @@ describeIntegration('finance data ops integration', () => {
       accountId: ownerAccountId,
       amount: -30,
       description: 'Metro',
-      date: '2026-03-05',
-      category: 'Transit',
+      postedOn: '2026-03-05',
       merchantName: 'Transit',
     });
     await replaceTransactionTags(ownerTx.id, ownerId, [ownerTag.id]);
@@ -137,9 +132,9 @@ describeIntegration('finance data ops integration', () => {
     await upsertPlaidItem({
       id: crypto.randomUUID(),
       userId: ownerId,
-      itemId: `item-${crypto.randomUUID()}`,
+      providerItemId: `item-${crypto.randomUUID()}`,
       institutionId: null,
-      transactionsCursor: null,
+      cursor: null,
       accessToken: null,
     });
 
@@ -148,8 +143,7 @@ describeIntegration('finance data ops integration', () => {
       accountId: otherAccountId,
       amount: -45,
       description: 'Other User Keep',
-      date: '2026-03-05',
-      category: 'Keep',
+      postedOn: '2026-03-05',
       merchantName: 'Keep',
     });
 

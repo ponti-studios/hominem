@@ -32,18 +32,19 @@ financePlaidExchangeTokenRoutes.post('/', zValidator('json', exchangeTokenSchema
       public_token: publicToken,
     });
 
-    const accessToken = exchangeResponse.data.access_token;
+    const accessToken = exchangeResponse.data.accessToken;
     const itemId = exchangeResponse.data.item_id;
 
     const institution = await ensureInstitutionExists(institutionName);
 
     await upsertPlaidItem({
       id: crypto.randomUUID(),
-      userId,
-      itemId,
-      accessToken,
+      userId: userId,
+      providerItemId: itemId,
+      accessToken: accessToken,
       institutionId: institution.id || institutionId,
       status: 'active',
+      cursor: null,
       lastSyncedAt: null,
     });
 
@@ -51,9 +52,9 @@ financePlaidExchangeTokenRoutes.post('/', zValidator('json', exchangeTokenSchema
     await plaidSyncQueue.add(
       QUEUE_NAMES.PLAID_SYNC,
       {
-        userId,
-        accessToken,
-        itemId,
+        userId: userId,
+        accessToken: accessToken,
+        providerItemId: itemId,
         initialSync: true,
       },
       {

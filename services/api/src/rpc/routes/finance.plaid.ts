@@ -1,34 +1,33 @@
 import crypto from 'node:crypto';
 
 import {
+  deletePlaidItem,
   ensureInstitutionExists,
   getPlaidItemById,
   getPlaidItemByUserAndItemId,
   upsertPlaidItem,
-  deletePlaidItem,
 } from '@hominem/finance-services';
-import { plaidSyncQueue } from '@hominem/queues';
-import { QUEUE_NAMES } from '@hominem/queues';
+import { plaidSyncQueue, QUEUE_NAMES } from '@hominem/queues';
 import {
   type PlaidCreateLinkTokenOutput,
   type PlaidExchangeTokenOutput,
-  type PlaidSyncItemOutput,
   type PlaidRemoveConnectionOutput,
+  type PlaidSyncItemOutput,
 } from '@hominem/rpc/types/finance.types';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
 
+// UUID regex
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isUuid = (value: string): boolean => UUID_RE.test(value);
+
 import { API_BRAND } from '../../brand';
-import { NotFoundError, InternalError } from '../errors';
+import { InternalError, NotFoundError } from '../errors';
 import { env } from '../lib/env';
 import { PLAID_COUNTRY_CODES, PLAID_PRODUCTS, plaidClient } from '../lib/plaid';
 import { authMiddleware, type AppContext } from '../middleware/auth';
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
 
 /**
  * Finance Plaid Routes
@@ -42,7 +41,7 @@ export const plaidRoutes = new Hono<AppContext>()
       const userId = c.get('userId')!;
 
       const createTokenResponse = await plaidClient.linkTokenCreate({
-        user: { client_user_id: userId },
+        user: { client_userId: userId },
         client_name: API_BRAND.financeClientName,
         products: PLAID_PRODUCTS,
         country_codes: PLAID_COUNTRY_CODES,
@@ -85,8 +84,8 @@ export const plaidRoutes = new Hono<AppContext>()
         const exchangeResponse = await plaidClient.itemPublicTokenExchange({
           public_token: input.publicToken,
         });
-        accessToken = exchangeResponse.data.access_token;
-        itemId = exchangeResponse.data.item_id;
+        accessToken = exchangeResponse.data.accessToken;
+        itemId = exchangeResponse.data.providerItemId;
         requestId = exchangeResponse.data.request_id;
       } catch (error) {
         if (process.env.NODE_ENV !== 'test') {
@@ -104,13 +103,13 @@ export const plaidRoutes = new Hono<AppContext>()
       // Save Plaid item
       await upsertPlaidItem({
         id: crypto.randomUUID(),
-        user_id: userId,
-        item_id: itemId,
-        access_token: accessToken,
-        institution_id: institution.id,
+        userId: userId,
+        providerItemId: itemId,
+        accessToken: accessToken,
+        institutionId: institution.id,
         status: 'active',
         cursor: null,
-        last_synced_at: null,
+        lastSyncedAt: null,
       });
 
       // Queue sync job
@@ -165,7 +164,7 @@ export const plaidRoutes = new Hono<AppContext>()
       {
         userId,
         accessToken: plaidItem.accessToken,
-        itemId: plaidItem.itemId,
+        itemId: plaidItem.providerItemId,
         initialSync: false,
       },
       {
@@ -206,10 +205,10 @@ export const plaidRoutes = new Hono<AppContext>()
     }
 
     // Revoke access token with Plaid
-    if (plaidItem.access_token) {
+    if (plaidItem.accessToken) {
       try {
         await plaidClient.itemAccessTokenInvalidate({
-          access_token: plaidItem.access_token,
+          accessToken: plaidItem.accessToken,
         });
       } catch (revokeError) {
         logger.warn('Failed to revoke Plaid access token', { error: revokeError });

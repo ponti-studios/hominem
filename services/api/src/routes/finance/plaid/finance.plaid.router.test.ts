@@ -39,8 +39,8 @@ vi.mock('plaid', () => {
 
   const mockItemPublicTokenExchange = vi.fn(async () => ({
     data: {
-      access_token: 'access-sandbox-123456789',
-      item_id: 'item-123456789',
+      accessToken: 'access-sandbox-123456789',
+      providerItemId: 'item-123456789',
       request_id: 'req-123456789',
     },
   }));

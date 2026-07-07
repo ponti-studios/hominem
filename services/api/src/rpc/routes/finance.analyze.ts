@@ -83,7 +83,7 @@ export const analyzeRoutes = new Hono<AppContext>()
     const limit = input.limit ? toNumber(input.limit) : 5;
     const tagFilter = getTagFilter(input.tag);
     const breakdownBase = await getTagBreakdownByContract({
-      user_id: userId,
+      userId: userId,
       ...(input.account ? { account_id: input.account } : {}),
       ...(input.from ? { date_from: input.from } : {}),
       ...(input.to ? { date_to: input.to } : {}),
@@ -118,7 +118,7 @@ export const analyzeRoutes = new Hono<AppContext>()
     const limit = input.limit ? Math.max(1, Math.floor(toNumber(input.limit))) : 10;
     const tagFilter = getTagFilter(input.tag);
     const merchants = await getTopMerchantsByContract({
-      user_id: userId,
+      userId: userId,
       ...(input.account ? { account_id: input.account } : {}),
       ...(input.from ? { date_from: input.from } : {}),
       ...(input.to ? { date_to: input.to } : {}),
@@ -134,7 +134,7 @@ export const analyzeRoutes = new Hono<AppContext>()
     const userId = c.get('userId')!;
     const input = c.req.valid('json');
     const monthly = await getMonthlyStatsByContract({
-      user_id: userId,
+      userId: userId,
       ...(input.month ? { month: input.month } : {}),
     });
 
@@ -171,7 +171,7 @@ export const analyzeRoutes = new Hono<AppContext>()
       const limit = input.limit ? Math.max(1, Math.floor(toNumber(input.limit))) : 50;
       const tagFilter = getTagFilter(input.tag);
       const output = await getSpendingTimeSeriesByContract({
-        user_id: userId,
+        userId: userId,
         ...(input.account ? { account_id: input.account } : {}),
         ...(input.from ? { date_from: input.from } : {}),
         ...(input.to ? { date_to: input.to } : {}),

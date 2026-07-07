@@ -29,7 +29,7 @@ financePlaidDisconnectRoutes.delete('/:itemId', async (c) => {
     try {
       if (plaidItem.accessToken) {
         await plaidClient.itemRemove({
-          access_token: plaidItem.accessToken,
+          accessToken: plaidItem.accessToken,
         });
       }
     } catch (plaidError) {

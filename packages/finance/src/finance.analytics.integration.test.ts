@@ -18,8 +18,8 @@ import {
 } from './index';
 
 async function _hasTaggingTables(): Promise<boolean> {
-  const hasTagsTable = await tableExists('tags');
-  const hasTaggedItemsTable = await tableExists('tagged_items');
+  const hasTagsTable = await tableExists('app.tags');
+  const hasTaggedItemsTable = await tableExists('app.tag_assignments');
   return hasTagsTable && hasTaggedItemsTable;
 }
 
@@ -35,17 +35,17 @@ describeIntegration('finance analytics integration', () => {
 
   const cleanupUser = async (userId: string): Promise<void> => {
     await sql`
-      delete from tagged_items
-      where entity_type = ${'finance_transaction'}
-        and entity_id in (select id from finance_transactions where user_id = ${userId})
+      delete from app.tag_assignments
+      where entity_table = ${'app.finance_transactions'}::regclass
+        and entity_id in (select id from app.finance_transactions where user_id = ${userId})
     `
       .execute(db)
       .catch(() => {});
-    await sql`delete from finance_transactions where user_id = ${userId}`
+    await sql`delete from app.finance_transactions where user_id = ${userId}`
       .execute(db)
       .catch(() => {});
-    await sql`delete from finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
-    await sql`delete from tags where owner_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.finance_accounts where user_id = ${userId}`.execute(db).catch(() => {});
+    await sql`delete from app.tags where owner_userid = ${userId}`.execute(db).catch(() => {});
     await sql`delete from users where id = ${userId}`.execute(db).catch(() => {});
   };
 
@@ -59,17 +59,17 @@ describeIntegration('finance analytics integration', () => {
     await ensureIntegrationUsers([{ id: ownerId, name: 'Finance Analytics User' }]);
 
     await sql`
-      insert into tags (id, owner_id, name)
+      insert into app.tags (id, owner_userid, name, slug, path)
       values
-        (${foodTagId}, ${ownerId}, ${'food'}),
-        (${travelTagId}, ${ownerId}, ${'travel'})
+        (${foodTagId}, ${ownerId}, ${'food'}, ${'food'}, ${'food'}),
+        (${travelTagId}, ${ownerId}, ${'travel'}, ${'travel'}, ${'travel'})
     `.execute(db);
 
     const account = await createAccount({
       userId: ownerId,
       name: 'Analytics Checking',
-      type: 'depository',
-      balance: 1000,
+      accountType: 'depository',
+      currentBalance: 1000,
     });
     accountId = account.id;
   });
@@ -80,8 +80,7 @@ describeIntegration('finance analytics integration', () => {
       accountId,
       amount: -45,
       description: 'Lunch',
-      date: '2026-02-10',
-      category: 'LegacyCategory',
+      postedOn: '2026-02-10',
       merchantName: 'Cafe One',
     });
     const travel = await createTransaction({
@@ -89,7 +88,7 @@ describeIntegration('finance analytics integration', () => {
       accountId,
       amount: -70,
       description: 'Train',
-      date: '2026-02-11',
+      postedOn: '2026-02-11',
       merchantName: 'Rail Co',
     });
 
@@ -125,7 +124,7 @@ describeIntegration('finance analytics integration', () => {
       accountId,
       amount: 3000,
       description: 'Paycheck',
-      date: '2026-01-01',
+      postedOn: '2026-01-01',
       merchantName: null,
     });
     const groceries = await createTransaction({
@@ -133,7 +132,7 @@ describeIntegration('finance analytics integration', () => {
       accountId,
       amount: -120,
       description: 'Groceries',
-      date: '2026-01-05',
+      postedOn: '2026-01-05',
       merchantName: 'Store',
     });
     await replaceTransactionTags(groceries.id, ownerId, [foodTagId]);
