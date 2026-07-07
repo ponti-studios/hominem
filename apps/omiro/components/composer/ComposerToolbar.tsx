@@ -73,23 +73,23 @@ export function ComposerToolbar({
         />
       </View>
       <Reanimated.View style={styles.trailing} layout={pillLayout}>
-        <IconButton
-          accessibilityLabel={
-            isRecordingElsewhere
-              ? t.inboxComposer.composer.recordingElsewhereA11y
-              : isRecording
-                ? t.inboxComposer.composer.stopVoiceInputA11y
+        {isRecording ? null : (
+          <IconButton
+            accessibilityLabel={
+              isRecordingElsewhere
+                ? t.inboxComposer.composer.recordingElsewhereA11y
                 : t.inboxComposer.composer.startVoiceInputA11y
-          }
-          circular
-          disabled={!canToggleVoice}
-          icon={isRecording ? 'stop.fill' : 'mic.fill'}
-          iconSize={TOOLBAR_ICON_SIZE}
-          isAnimating={isVoiceBusy && !isRecording}
-          size={TOOL_BTN_SIZE}
-          variant="surface"
-          onPress={onVoicePress}
-        />
+            }
+            circular
+            disabled={!canToggleVoice}
+            icon="mic.fill"
+            iconSize={TOOLBAR_ICON_SIZE}
+            isAnimating={isVoiceBusy}
+            size={TOOL_BTN_SIZE}
+            variant="surface"
+            onPress={onVoicePress}
+          />
+        )}
         {canSubmit ? (
           <Reanimated.View entering={buttonEnter} exiting={buttonExit}>
             <IconButton

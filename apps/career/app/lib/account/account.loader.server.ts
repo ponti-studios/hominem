@@ -7,13 +7,13 @@ function toPortfolioSummary(portfolio: CareerPortfolioRecord): AccountPortfolioS
     id: portfolio.id,
     title: portfolio.title,
     slug: portfolio.slug,
-    is_public: portfolio.is_public,
-    is_active: portfolio.is_active,
+    isPublic: portfolio.isPublic,
+    isActive: portfolio.isActive,
     updatedat: portfolio.updatedat,
     name: portfolio.name,
-    job_title: portfolio.job_title,
+    jobTitle: portfolio.jobTitle,
     bio: portfolio.bio,
-    profile_image_url: portfolio.profile_image_url || undefined,
+    profileImageUrl: portfolio.profileImageUrl || undefined,
   };
 }
 

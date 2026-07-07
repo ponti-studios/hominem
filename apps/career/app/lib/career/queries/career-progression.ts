@@ -51,8 +51,8 @@ export interface CareerProgressionSummary {
   currentLevel: string;
   levelProgression: Array<{
     level: string;
-    start_date: string;
-    end_date?: string;
+    startDate: string;
+    endDate?: string;
     duration: number;
   }>;
 }
@@ -92,15 +92,15 @@ export function getCareerProgressionSummary(
   const events = eventsResult;
   const firstExp = workExps[0];
   const currentExp =
-    workExps.find((experience) => !experience.end_date) || workExps[workExps.length - 1];
-  const firstSalary = firstExp.base_salary || 0;
+    workExps.find((experience) => !experience.endDate) || workExps[workExps.length - 1];
+  const firstSalary = firstExp.baseSalary || 0;
   const currentSalary = getCurrentSalary(currentExp);
   const totalSalaryGrowth = currentSalary - firstSalary;
   const salaryGrowthPercentage = calculatePercentageChange(firstSalary, currentSalary);
-  const careerStart = firstExp.start_date ? new Date(firstExp.start_date) : new Date();
+  const careerStart = firstExp.startDate ? new Date(firstExp.startDate) : new Date();
   const totalExperience = yearsBetween(careerStart);
   const averageAnnualGrowth = totalExperience > 0 ? salaryGrowthPercentage / totalExperience : 0;
-  const promotionEvents = events.filter((event) => event.event_type === 'promotion');
+  const promotionEvents = events.filter((event) => event.eventType === 'promotion');
   const jobChangeCount = workExps.length - 1;
   const { totalTenure, completedJobs } = calculateTotalTenure(workExps);
   const averageTenurePerJob = completedJobs > 0 ? totalTenure / completedJobs : 0;
@@ -120,7 +120,7 @@ export function getCareerProgressionSummary(
     averageTenurePerJob,
     highestSalaryIncrease: highestIncrease,
     salaryByYear,
-    currentLevel: currentExp.seniority_level || '',
+    currentLevel: currentExp.seniorityLevel || '',
     levelProgression,
   };
 }
@@ -130,10 +130,10 @@ function calculateTotalTenure(workExps: ReturnType<typeof extractWorkExperiences
   let completedJobs = 0;
 
   for (const exp of workExps) {
-    if (exp.start_date) {
-      const end_date = exp.end_date ? new Date(exp.end_date) : new Date();
-      const start_date = new Date(exp.start_date);
-      totalTenure += yearsBetween(start_date, end_date);
+    if (exp.startDate) {
+      const endDate = exp.endDate ? new Date(exp.endDate) : new Date();
+      const startDate = new Date(exp.startDate);
+      totalTenure += yearsBetween(startDate, endDate);
       completedJobs++;
     }
   }
@@ -150,12 +150,12 @@ function findHighestSalaryIncrease(events: CareerEvent[]) {
   };
 
   for (const event of events) {
-    if (event.salary_increase && event.salary_increase > highestIncrease.amount) {
+    if (event.salaryIncrease && event.salaryIncrease > highestIncrease.amount) {
       highestIncrease = {
-        amount: event.salary_increase,
-        percentage: Number.parseFloat(event.increase_percentage || '0'),
-        reason: event.event_type || '',
-        date: toDate(event.event_date)?.toISOString() || '',
+        amount: event.salaryIncrease,
+        percentage: Number.parseFloat(event.increasePercentage || '0'),
+        reason: event.eventType || '',
+        date: toDate(event.eventDate)?.toISOString() || '',
       };
     }
   }
@@ -167,16 +167,16 @@ function buildSalaryByYear(workExps: ReturnType<typeof extractWorkExperiences>) 
   const salaryByYear: CareerProgressionSummary['salaryByYear'] = [];
 
   for (const exp of workExps) {
-    if (!exp.start_date || !exp.base_salary) continue;
+    if (!exp.startDate || !exp.baseSalary) continue;
 
-    const start_date = new Date(exp.start_date);
-    const end_date = exp.end_date ? new Date(exp.end_date) : new Date();
+    const startDate = new Date(exp.startDate);
+    const endDate = exp.endDate ? new Date(exp.endDate) : new Date();
 
-    for (let year = start_date.getFullYear(); year <= end_date.getFullYear(); year++) {
+    for (let year = startDate.getFullYear(); year <= endDate.getFullYear(); year++) {
       const yearStart = new Date(year, 0, 1);
       const yearEnd = new Date(year, 11, 31);
-      const periodStart = start_date > yearStart ? start_date : yearStart;
-      const periodEnd = end_date < yearEnd ? end_date : yearEnd;
+      const periodStart = startDate > yearStart ? startDate : yearStart;
+      const periodEnd = endDate < yearEnd ? endDate : yearEnd;
       const monthsWorked = calculateMonthsWorked(periodStart, periodEnd);
       const monthlyFraction = monthsWorked / 12;
       const annualSalary = getCurrentSalary(exp);
@@ -194,13 +194,13 @@ function buildSalaryByYear(workExps: ReturnType<typeof extractWorkExperiences>) 
   return salaryByYear;
 }
 
-function calculateMonthsWorked(start_date: Date, end_date: Date): number {
-  const startYear = start_date.getFullYear();
-  const startMonth = start_date.getMonth();
-  const startDay = start_date.getDate();
-  const endYear = end_date.getFullYear();
-  const endMonth = end_date.getMonth();
-  const endDay = end_date.getDate();
+function calculateMonthsWorked(startDate: Date, endDate: Date): number {
+  const startYear = startDate.getFullYear();
+  const startMonth = startDate.getMonth();
+  const startDay = startDate.getDate();
+  const endYear = endDate.getFullYear();
+  const endMonth = endDate.getMonth();
+  const endDay = endDate.getDate();
 
   let months = (endYear - startYear) * 12 + (endMonth - startMonth);
 
@@ -225,18 +225,18 @@ function buildLevelProgression(workExps: ReturnType<typeof extractWorkExperience
 
   for (let index = 0; index < workExps.length; index++) {
     const exp = workExps[index];
-    if (exp.seniority_level && exp.start_date) {
+    if (exp.seniorityLevel && exp.startDate) {
       const nextExp = workExps[index + 1];
-      const start_date = exp.start_date;
-      const end_date = exp.end_date || nextExp?.start_date || null;
-      const duration = end_date
-        ? Math.round(yearsBetween(new Date(start_date), new Date(end_date)) * 12)
-        : Math.round(yearsBetween(new Date(start_date)) * 12);
+      const startDate = exp.startDate;
+      const endDate = exp.endDate || nextExp?.startDate || null;
+      const duration = endDate
+        ? Math.round(yearsBetween(new Date(startDate), new Date(endDate)) * 12)
+        : Math.round(yearsBetween(new Date(startDate)) * 12);
 
       levelProgression.push({
-        level: exp.seniority_level,
-        start_date: new Date(start_date).toISOString(),
-        end_date: end_date ? new Date(end_date).toISOString() : undefined,
+        level: exp.seniorityLevel,
+        startDate: new Date(startDate).toISOString(),
+        endDate: endDate ? new Date(endDate).toISOString() : undefined,
         duration,
       });
     }
@@ -251,37 +251,37 @@ export function getWorkExperiencesWithFinancials(
   const workExps = extractWorkExperiences(experiencesResult);
 
   return workExps.map((exp) => {
-    const start_date = exp.start_date ? new Date(exp.start_date) : new Date();
-    const end_date = exp.end_date ? new Date(exp.end_date) : new Date();
-    const totalTenure = Math.round(yearsBetween(start_date, end_date) * 365);
+    const startDate = exp.startDate ? new Date(exp.startDate) : new Date();
+    const endDate = exp.endDate ? new Date(exp.endDate) : new Date();
+    const totalTenure = Math.round(yearsBetween(startDate, endDate) * 365);
     const currentSalary = getCurrentSalary(exp);
-    const bonuses = safeParseJson(exp.bonus_history, []) as Array<{
+    const bonuses = safeParseJson(exp.bonusHistory, []) as Array<{
       type: 'annual' | 'signing' | 'performance' | 'retention' | 'spot';
       amount: number;
       date: string;
       description?: string;
     }>;
     const totalBonuses = bonuses.reduce((sum: number, bonus) => sum + (bonus.amount || 0), 0);
-    const yearsWorked = yearsBetween(start_date, end_date);
+    const yearsWorked = yearsBetween(startDate, endDate);
     const totalCompensationReceived = currentSalary * yearsWorked + totalBonuses;
-    const adjustments = safeParseJson(exp.salary_adjustments, []) as Array<{
+    const adjustments = safeParseJson(exp.salaryAdjustments, []) as Array<{
       effectiveDate: string;
-      previous_salary: number;
-      new_salary: number;
+      previousSalary: number;
+      newSalary: number;
       increaseAmount: number;
-      increase_percentage: number;
+      increasePercentage: number;
       reason:
         | 'promotion'
         | 'merit_increase'
         | 'market_adjustment'
         | 'cost_of_living'
         | 'role_change';
-      new_title?: string;
+      newTitle?: string;
       notes?: string;
     }>;
     const averageAnnualRaise =
       adjustments.length > 0
-        ? adjustments.reduce((sum: number, adjustment) => sum + adjustment.increase_percentage, 0) /
+        ? adjustments.reduce((sum: number, adjustment) => sum + adjustment.increasePercentage, 0) /
           adjustments.length
         : 0;
     const promotionCount = adjustments.filter(
@@ -320,9 +320,9 @@ export function getCareerTimeline(
   const timelineItems = [];
 
   for (const exp of workExps) {
-    if (exp.start_date) {
+    if (exp.startDate) {
       timelineItems.push({
-        date: exp.start_date,
+        date: exp.startDate,
         type: 'job_start',
         title: `Started at ${exp.company}`,
         description: `${exp.role} - $${getCurrentSalary(exp).toLocaleString()}`,
@@ -332,26 +332,26 @@ export function getCareerTimeline(
       });
     }
 
-    if (exp.end_date) {
+    if (exp.endDate) {
       timelineItems.push({
-        date: exp.end_date,
+        date: exp.endDate,
         type: 'job_end',
         title: `Left ${exp.company}`,
-        description: exp.reason_for_leaving || 'Job ended',
+        description: exp.reasonForLeaving || 'Job ended',
         company: exp.company,
       });
     }
   }
 
   for (const event of events) {
-    if (event.event_date) {
+    if (event.eventDate) {
       timelineItems.push({
-        date: event.event_date,
-        type: event.event_type,
-        title: event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1),
+        date: event.eventDate,
+        type: event.eventType,
+        title: event.eventType.charAt(0).toUpperCase() + event.eventType.slice(1),
         description: event.description || '',
-        salaryChange: event.salary_increase || 0,
-        percentage: event.increase_percentage || '',
+        salaryChange: event.salaryIncrease || 0,
+        percentage: event.increasePercentage || '',
       });
     }
   }

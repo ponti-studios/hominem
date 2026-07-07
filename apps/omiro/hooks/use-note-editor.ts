@@ -76,6 +76,12 @@ export function useNoteEditor(noteId: string) {
     [saver],
   );
 
+  const flushSave = useCallback(
+    (title: string, content: string, fileIds: string[]) =>
+      saver.persistNow({ title: title || null, content, fileIds }),
+    [saver],
+  );
+
   const updateCache = useCallback(
     (patch: Partial<Note>) => {
       queryClient.setQueryData<Note>(noteKeys.detail(noteId), (prev) =>
@@ -104,5 +110,5 @@ export function useNoteEditor(noteId: string) {
     [saver, updateCache],
   );
 
-  return { save, updateCache, detachFile };
+  return { save, flushSave, updateCache, detachFile };
 }

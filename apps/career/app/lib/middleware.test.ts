@@ -30,7 +30,7 @@ const testUser = {
 
 const testPortfolio = {
   id: 'portfolio-id',
-  owner_userid: testUser.id,
+  ownerUserid: testUser.id,
   title: 'Portfolio',
   slug: 'portfolio',
 } satisfies Partial<CareerPortfolioRecord> as CareerPortfolioRecord;

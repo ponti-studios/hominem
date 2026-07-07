@@ -13,6 +13,7 @@ export default [
     route('api/resume/convert', 'routes/api.resume.convert.ts'),
     route('api/resume/customize', 'routes/api.resume.customize.ts'),
     route('api/skills/derive', 'routes/api.skills.derive.ts'),
+    route('api/skills/search', 'routes/api.skills.search.ts'),
     layout('routes/_authenticated-pages.tsx', [
       route('account', 'routes/account.tsx'),
       route('onboarding', 'routes/onboarding.tsx'),

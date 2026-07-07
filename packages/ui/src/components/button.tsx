@@ -66,6 +66,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(buttonVariants({ variant, size, className }))}
         style={{
           ...props.style,
+          backgroundColor: isLoading ? 'rgba(0, 0, 0, 0.1)' : undefined,
           cursor: disabled || isLoading ? 'default' : 'pointer',
         }}
         type="button"

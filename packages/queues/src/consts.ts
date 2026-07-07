@@ -3,6 +3,7 @@ export const QUEUE_NAMES = {
   GOOGLE_CALENDAR_SYNC: 'google-calendar-sync',
   PLACE_PHOTO_ENRICH: 'place-photo-enrich',
   FILE_PROCESSING: 'file-processing',
+  EMBEDDING_GENERATION: 'embedding-generation',
 } as const;
 
 export const REDIS_CHANNELS = {

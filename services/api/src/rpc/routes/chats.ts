@@ -1,22 +1,32 @@
-import { streamChatCompletion } from '@hominem/ai';
+import { getChatCompletionUsage, streamChatCompletion } from '@hominem/ai';
 import type { ChatMessageFileRecord, ChatMessageRecord, NoteContext } from '@hominem/db';
 import { ChatRepository, db, runInTransaction } from '@hominem/db';
+import { embeddingQueue } from '@hominem/queues';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 
+import { recordAIUsageEvent } from '../../application/ai-usage.service';
 import {
-  ChatsSendSchema,
   ChatsCreateSchema,
+  ChatsMessagesQuerySchema,
+  ChatsSendSchema,
   ChatsStartStreamSchema,
   ChatsUpdateSchema,
-  ChatsMessagesQuerySchema,
 } from '../../schemas/chats.schema';
 import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
 import { loadPrompt } from '../utils/load-prompt';
 import { toChatDto, toChatMessageDto, toStoredUserMessageContent } from './chats.mapper';
+
+async function enqueueChatEmbedding(userId: string, chatId: string) {
+  await embeddingQueue.add(
+    'generate-embedding',
+    { jobId: `chat-${chatId}`, userId, entityType: 'chat' as const, entityId: chatId },
+    { jobId: `chat-${chatId}`, removeOnComplete: true, removeOnFail: false },
+  );
+}
 
 function buildPrompt(
   message: string,
@@ -147,6 +157,7 @@ const chatByIdRoutes = new Hono<AppContext>()
   })
   .post('/stream', zValidator('json', ChatsSendSchema), async (c) => {
     const userId = c.get('userId')!;
+    const requestId = c.get('requestId');
     const chatId = getChatId(c);
 
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
@@ -182,9 +193,11 @@ const chatByIdRoutes = new Hono<AppContext>()
 
     return streamSSE(c, async (stream) => {
       let assistantText = '';
+      let usage: ReturnType<typeof getChatCompletionUsage> = null;
 
       try {
         for await (const chunk of completion) {
+          usage = getChatCompletionUsage(chunk) ?? usage;
           const text = chunk.choices?.[0]?.delta?.content;
           if (typeof text === 'string' && text.length > 0) {
             assistantText += text;
@@ -193,6 +206,18 @@ const chatByIdRoutes = new Hono<AppContext>()
         }
 
         await stream.writeSSE({ data: '[DONE]' });
+        await recordAIUsageEvent({
+          userId,
+          feature: 'chat_stream',
+          operation: 'chat_completion',
+          usage,
+          requestId,
+          metadata: {
+            chatId,
+            noteCount: resolvedNotes.length,
+            fileCount: resolvedFiles.length,
+          },
+        });
 
         if (assistantText.trim().length > 0) {
           await runInTransaction(async (trx) => {
@@ -204,6 +229,7 @@ const chatByIdRoutes = new Hono<AppContext>()
             });
             await ChatRepository.touchLastMessage(trx, chatId);
           });
+          await enqueueChatEmbedding(userId, chatId);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Stream error';
@@ -227,6 +253,7 @@ export const chatsRoutes = new Hono<AppContext>()
   })
   .post('/start-stream', zValidator('json', ChatsStartStreamSchema), async (c) => {
     const userId = c.get('userId')!;
+    const requestId = c.get('requestId');
     const { title, message, fileIds = [], noteIds = [] } = c.req.valid('json');
 
     const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
@@ -237,7 +264,11 @@ export const chatsRoutes = new Hono<AppContext>()
     }
 
     const chat = await runInTransaction(async (trx) => {
-      const createdChat = await ChatRepository.create(trx, { userId, title });
+      const createdChat = await ChatRepository.create(trx, {
+        userId,
+        title,
+        noteId: resolvedNotes.length === 1 ? resolvedNotes[0].id : null,
+      });
       await ChatRepository.insertMessage(trx, {
         chatId: createdChat.id,
         authorUserId: userId,
@@ -260,6 +291,7 @@ export const chatsRoutes = new Hono<AppContext>()
 
     return streamSSE(c, async (stream) => {
       let assistantText = '';
+      let usage: ReturnType<typeof getChatCompletionUsage> = null;
 
       await stream.writeSSE({
         data: JSON.stringify({
@@ -271,6 +303,7 @@ export const chatsRoutes = new Hono<AppContext>()
 
       try {
         for await (const chunk of completion) {
+          usage = getChatCompletionUsage(chunk) ?? usage;
           const text = chunk.choices?.[0]?.delta?.content;
           if (typeof text === 'string' && text.length > 0) {
             assistantText += text;
@@ -279,6 +312,18 @@ export const chatsRoutes = new Hono<AppContext>()
         }
 
         await stream.writeSSE({ data: '[DONE]' });
+        await recordAIUsageEvent({
+          userId,
+          feature: 'chat_stream',
+          operation: 'chat_completion',
+          usage,
+          requestId,
+          metadata: {
+            chatId: chat.id,
+            noteCount: resolvedNotes.length,
+            fileCount: resolvedFiles.length,
+          },
+        });
 
         if (assistantText.trim().length > 0) {
           await runInTransaction(async (trx) => {
@@ -290,6 +335,7 @@ export const chatsRoutes = new Hono<AppContext>()
             });
             await ChatRepository.touchLastMessage(trx, chat.id);
           });
+          await enqueueChatEmbedding(userId, chat.id);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Stream error';

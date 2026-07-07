@@ -142,7 +142,7 @@ export default ({ config }: ConfigContext) => {
       'expo-build-properties',
       {
         ios: {
-          deploymentTarget: '16.4',
+          deploymentTarget: '26.0',
           infoPlist: {
             NSAppTransportSecurity: {
               NSAllowsArbitraryLoads: false,
@@ -167,6 +167,8 @@ export default ({ config }: ConfigContext) => {
     'expo-web-browser',
     'expo-asset',
     'expo-audio',
+    'expo-image',
+    'expo-sharing',
     [
       'expo-notifications',
       {

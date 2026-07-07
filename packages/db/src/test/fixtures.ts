@@ -3,7 +3,7 @@
 export const createTestUser = async (
   overrides: { id?: string; email?: string; name?: string } = {},
 ) => {
-  const { db } = await import('../db');
+  const { authDb } = await import('../db');
   const id = overrides.id || `test-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
   const user = {
@@ -12,7 +12,7 @@ export const createTestUser = async (
     name: overrides.name || 'Test User',
   };
 
-  await db.insertInto('user').values(user).execute();
+  await authDb.insertInto('user').values(user).execute();
 
   return user;
 };

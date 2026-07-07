@@ -4,19 +4,18 @@ import type { Selectable } from 'kysely';
 import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppFiles, AppNotes } from '../../types/database';
-import { toRequiredIsoString } from '../_shared/mappers';
 
 type NoteRow = Selectable<AppNotes>;
 
 type NoteFileSource = Pick<
   Selectable<AppFiles>,
   | 'id'
-  | 'original_name'
+  | 'originalName'
   | 'mimetype'
   | 'size'
   | 'url'
   | 'content'
-  | 'text_content'
+  | 'textContent'
   | 'metadata'
   | 'createdat'
 >;
@@ -113,7 +112,7 @@ export interface SearchNotesPageRecord {
 
 type NoteFeedRow = Pick<
   NoteRow,
-  'id' | 'title' | 'excerpt' | 'content' | 'createdat' | 'owner_userid'
+  'id' | 'title' | 'excerpt' | 'content' | 'createdat' | 'ownerUserid'
 >;
 
 type NoteFeedAttachmentRow = {
@@ -123,13 +122,13 @@ type NoteFeedAttachmentRow = {
 function toNoteFile(row: NoteFileSource): NoteFileRecord {
   return {
     id: row.id,
-    originalName: row.original_name,
+    originalName: row.originalName,
     mimetype: row.mimetype,
     size: row.size,
     url: row.url,
-    uploadedAt: toRequiredIsoString(row.createdat),
+    uploadedAt: row.createdat.toISOString(),
     ...(row.content ? { content: row.content } : {}),
-    ...(row.text_content ? { textContent: row.text_content } : {}),
+    ...(row.textContent ? { textContent: row.textContent } : {}),
     ...(row.metadata && typeof row.metadata === 'object'
       ? { metadata: row.metadata as Record<string, unknown> }
       : {}),
@@ -139,14 +138,14 @@ function toNoteFile(row: NoteFileSource): NoteFileRecord {
 function toNoteRecord(row: NoteRow, files: NoteFileRecord[]): NoteRecord {
   return {
     id: row.id,
-    userId: row.owner_userid,
+    userId: row.ownerUserid,
     title: row.title,
     content: row.content,
     excerpt: row.excerpt,
-    parentNoteId: row.parent_note_id,
+    parentNoteId: row.parentNoteId,
     files,
-    createdAt: toRequiredIsoString(row.createdat),
-    updatedAt: toRequiredIsoString(row.updatedat),
+    createdAt: row.createdat.toISOString(),
+    updatedAt: row.updatedat.toISOString(),
   };
 }
 
@@ -211,22 +210,22 @@ export const NoteRepository = {
     }
 
     const rows = (await handle
-      .selectFrom('app.note_files as noteFile')
-      .innerJoin('app.files as file', 'file.id', 'noteFile.file_id')
+      .selectFrom('app.noteFiles as noteFile')
+      .innerJoin('app.files as file', 'file.id', 'noteFile.fileId')
       .select([
-        'noteFile.note_id as noteId',
+        'noteFile.noteId as noteId',
         'file.id',
-        'file.original_name',
+        'file.originalName',
         'file.mimetype',
         'file.size',
         'file.url',
         'file.content',
-        'file.text_content',
+        'file.textContent',
         'file.metadata',
         'file.createdat',
       ])
-      .where('noteFile.note_id', 'in', noteIds)
-      .orderBy('noteFile.attached_at', 'asc')
+      .where('noteFile.noteId', 'in', noteIds)
+      .orderBy('noteFile.attachedAt', 'asc')
       .execute()) as AttachedFileRow[];
 
     const result = new Map<string, NoteFileRecord[]>();
@@ -247,7 +246,7 @@ export const NoteRepository = {
       .selectFrom('app.notes')
       .selectAll()
       .where('id', '=', noteId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .executeTakeFirst();
 
     return (note as NoteRow | undefined) ?? null;
@@ -280,8 +279,8 @@ export const NoteRepository = {
     let query = handle
       .selectFrom('app.notes')
       .selectAll()
-      .where('owner_userid', '=', input.userId)
-      .where('archived_at', 'is', null);
+      .where('ownerUserid', '=', input.userId)
+      .where('archivedAt', 'is', null);
 
     if (input.since) {
       query = query.where('updatedat', '>=', new Date(input.since));
@@ -322,9 +321,9 @@ export const NoteRepository = {
     const limit = input.limit ? Math.min(input.limit, 100) : 20;
     let query = handle
       .selectFrom('app.notes')
-      .select(['id', 'title', 'excerpt', 'content', 'createdat', 'owner_userid'])
-      .where('owner_userid', '=', input.userId)
-      .where('archived_at', 'is', null)
+      .select(['id', 'title', 'excerpt', 'content', 'createdat', 'ownerUserid'])
+      .where('ownerUserid', '=', input.userId)
+      .where('archivedAt', 'is', null)
       .orderBy('createdat', 'desc')
       .orderBy('id', 'desc');
 
@@ -351,14 +350,14 @@ export const NoteRepository = {
       pageRows.length === 0
         ? []
         : ((await handle
-            .selectFrom('app.note_files')
-            .select('note_id as noteId')
+            .selectFrom('app.noteFiles')
+            .select('noteId as noteId')
             .where(
-              'note_id',
+              'noteId',
               'in',
               pageRows.map((row) => row.id),
             )
-            .groupBy('note_id')
+            .groupBy('noteId')
             .execute()) as NoteFeedAttachmentRow[]);
     const attachmentIds = new Set(attachmentRows.map((row) => row.noteId));
 
@@ -366,8 +365,8 @@ export const NoteRepository = {
       id: row.id,
       title: row.title,
       contentPreview: buildContentPreview(row.excerpt, row.content),
-      createdAt: toRequiredIsoString(row.createdat),
-      authorId: row.owner_userid,
+      createdAt: row.createdat.toISOString(),
+      authorId: row.ownerUserid,
       metadata: {
         hasAttachments: attachmentIds.has(row.id),
       },
@@ -378,7 +377,7 @@ export const NoteRepository = {
       notes,
       nextCursor:
         rows.length > limit && lastRow
-          ? encodeNoteFeedCursor(toRequiredIsoString(lastRow.createdat), lastRow.id)
+          ? encodeNoteFeedCursor(lastRow.createdat.toISOString(), lastRow.id)
           : null,
     };
   },
@@ -394,8 +393,8 @@ export const NoteRepository = {
     let query = handle
       .selectFrom('app.notes')
       .select(['id', 'title', 'excerpt', 'updatedat'])
-      .where('owner_userid', '=', input.userId)
-      .where('archived_at', 'is', null)
+      .where('ownerUserid', '=', input.userId)
+      .where('archivedAt', 'is', null)
       .where((eb) => eb.or([eb('title', 'ilike', pattern), eb('content', 'ilike', pattern)]));
 
     if (decoded) {
@@ -425,7 +424,7 @@ export const NoteRepository = {
       notes,
       nextCursor:
         rows.length > limit && lastRow
-          ? encodeNoteSearchCursor(toRequiredIsoString(lastRow.updatedat), lastRow.id)
+          ? encodeNoteSearchCursor(lastRow.updatedat.toISOString(), lastRow.id)
           : null,
     };
   },
@@ -437,11 +436,11 @@ export const NoteRepository = {
     return (await handle
       .insertInto('app.notes')
       .values({
-        owner_userid: input.userId,
+        ownerUserid: input.userId,
         title: input.title,
         content: input.content,
         excerpt: input.excerpt,
-        ...(input.parentNoteId ? { parent_note_id: input.parentNoteId } : {}),
+        ...(input.parentNoteId ? { parentNoteId: input.parentNoteId } : {}),
       })
       .returningAll()
       .executeTakeFirstOrThrow()) as NoteRow;
@@ -467,7 +466,7 @@ export const NoteRepository = {
       .updateTable('app.notes')
       .set(sets)
       .where('id', '=', noteId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .executeTakeFirstOrThrow();
   },
 
@@ -476,23 +475,23 @@ export const NoteRepository = {
    */
   /**
    * Soft delete (archive) a note by ID with ownership enforcement.
-   * Sets archived_at timestamp; note remains in database but is filtered from queries.
+   * Sets archivedAt timestamp; note remains in database but is filtered from queries.
    */
   async archive(handle: DbHandle, noteId: string, userId: string): Promise<void> {
     await handle
       .updateTable('app.notes')
-      .set({ archived_at: new Date() })
+      .set({ archivedAt: new Date() })
       .where('id', '=', noteId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .execute();
   },
 
   async unarchive(handle: DbHandle, noteId: string, userId: string): Promise<void> {
     await handle
       .updateTable('app.notes')
-      .set({ archived_at: null })
+      .set({ archivedAt: null })
       .where('id', '=', noteId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .execute();
   },
 
@@ -504,7 +503,7 @@ export const NoteRepository = {
     await handle
       .deleteFrom('app.notes')
       .where('id', '=', noteId)
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .execute();
   },
 
@@ -521,14 +520,14 @@ export const NoteRepository = {
     const uniqueFileIds = [...new Set(fileIds)];
 
     if (uniqueFileIds.length === 0) {
-      await handle.deleteFrom('app.note_files').where('note_id', '=', noteId).execute();
+      await handle.deleteFrom('app.noteFiles').where('noteId', '=', noteId).execute();
       return;
     }
 
     const ownedFiles = (await handle
       .selectFrom('app.files')
       .select('id')
-      .where('owner_userid', '=', userId)
+      .where('ownerUserid', '=', userId)
       .where('id', 'in', uniqueFileIds)
       .execute()) as Array<{ id: string }>;
 
@@ -536,10 +535,10 @@ export const NoteRepository = {
       throw new ValidationError('One or more files are unavailable for this note');
     }
 
-    await handle.deleteFrom('app.note_files').where('note_id', '=', noteId).execute();
+    await handle.deleteFrom('app.noteFiles').where('noteId', '=', noteId).execute();
     await handle
-      .insertInto('app.note_files')
-      .values(uniqueFileIds.map((fileId) => ({ note_id: noteId, file_id: fileId })))
+      .insertInto('app.noteFiles')
+      .values(uniqueFileIds.map((fileId) => ({ noteId: noteId, fileId: fileId })))
       .execute();
   },
 };

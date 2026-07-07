@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { db } from '@hominem/db';
+import { authDb, db } from '@hominem/db';
 
 type CareerTestUser = {
   id: string;
@@ -17,7 +17,7 @@ type CreatePortfolioOptions = {
   user?: CareerTestUser;
   slug?: string;
   title?: string;
-  job_title?: string;
+  jobTitle?: string;
 };
 
 export function createCareerTestDb() {
@@ -32,7 +32,7 @@ export function createCareerTestDb() {
     };
     userIds.push(user.id);
 
-    await db.insertInto('user').values(user).execute();
+    await authDb.insertInto('user').values(user).execute();
 
     return user;
   }
@@ -44,14 +44,14 @@ export function createCareerTestDb() {
     const portfolio = await db
       .insertInto('app.portfolios')
       .values({
-        owner_userid: user.id,
+        ownerUserid: user.id,
         slug,
         title: options.title ?? `${user.name} Portfolio`,
         name: user.name,
-        job_title: options.job_title ?? 'Engineer',
+        jobTitle: options.jobTitle ?? 'Engineer',
         bio: 'Bio',
         tagline: 'Tagline',
-        current_location: 'Los Angeles',
+        currentLocation: 'Los Angeles',
         email: user.email,
       })
       .returning(['id', 'slug', 'title'])
@@ -63,7 +63,7 @@ export function createCareerTestDb() {
   async function cleanup() {
     if (userIds.length === 0) return;
 
-    await db.deleteFrom('user').where('id', 'in', userIds).execute();
+    await authDb.deleteFrom('user').where('id', 'in', userIds).execute();
     userIds.length = 0;
   }
 

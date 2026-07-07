@@ -11,8 +11,8 @@ function getStepRates(applications: ApplicationWithCompany[]): StepRate[] {
   const total = applications.length;
   if (total === 0) return [];
 
-  const responses = applications.filter((a) => a.response_date).length;
-  const interviews = applications.filter((a) => a.first_interview_date).length;
+  const responses = applications.filter((a) => a.responseDate).length;
+  const interviews = applications.filter((a) => a.firstInterviewDate).length;
   const offers = applications.filter((a) => a.status === 'OFFER' || a.status === 'ACCEPTED').length;
 
   return [

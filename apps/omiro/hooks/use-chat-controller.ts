@@ -26,6 +26,7 @@ import {
   hasNonEmptyListData,
   resolveRestoredQueryState,
 } from '../services/query/restored-query-state';
+import t from '../translations';
 
 export interface ChatServices {
   useChatMessages: (args: { chatId: string }) => {
@@ -224,6 +225,26 @@ export function useChatController({
     },
   });
 
+  const extractTasksFromTranscript = useMutation({
+    mutationKey: ['chat-task-extract', chatId],
+    mutationFn: async (input: { transcript: string }) => {
+      const res = await client.api.tasks.extract.$post({ json: input });
+      const json = await res.json();
+      if ('error' in json) {
+        throw new Error(json.error);
+      }
+      return json;
+    },
+  });
+
+  const createTasksBatch = useMutation({
+    mutationKey: ['chat-task-batch', chatId],
+    mutationFn: async (input: { tasks: { title: string; description?: string }[] }) => {
+      const res = await client.api.tasks.batch.$post({ json: input });
+      return res.json();
+    },
+  });
+
   const {
     lifecycleState,
     pendingReview,
@@ -237,12 +258,62 @@ export function useChatController({
   } = useChatLifecycle({
     messages: proposalMessages,
     source,
-    onTransform: async (type: ArtifactType) =>
-      buildArtifactProposal(
+    onTransform: async (type: ArtifactType) => {
+      if (type === 'task_list') {
+        const { previewContent } = buildArtifactProposal(proposalMessages, 'task_list');
+        const { tasks } = await extractTasksFromTranscript.mutateAsync({
+          transcript: previewContent,
+        });
+        return {
+          proposedType: 'task_list' as const,
+          proposedTitle:
+            tasks.length === 0
+              ? t.chat.actions.noTasksFoundTitle
+              : tasks.length === 1
+                ? tasks[0].title
+                : t.chat.actions.tasksFoundTitle(tasks.length),
+          proposedChanges:
+            tasks.length === 0
+              ? [t.chat.actions.noTasksFoundDescription]
+              : tasks.map((task) => task.title),
+          previewContent,
+          items: tasks,
+        };
+      }
+
+      return buildArtifactProposal(
         proposalMessages,
-        type === 'tracker' ? 'note' : (type as 'note' | 'task' | 'task_list'),
-      ),
+        type === 'tracker' ? 'note' : (type as 'note' | 'task'),
+      );
+    },
     onAcceptReview: async (review) => {
+      if (review.items) {
+        if (review.items.length === 0) {
+          throw new Error('No tasks to create');
+        }
+
+        const result = await createTasksBatch.mutateAsync({ tasks: review.items });
+        const created = result.parent ?? result.tasks[0];
+        if (services.onContentCreated) {
+          await services.onContentCreated({
+            source: {
+              kind: 'artifact',
+              id: created.id,
+              title: created.title,
+              type: created.artifactType,
+            },
+            updatedAt: created.updatedAt,
+          });
+        }
+
+        return {
+          kind: 'artifact' as const,
+          id: created.id,
+          type: created.artifactType,
+          title: created.title,
+        };
+      }
+
       if (review.proposedType === 'note') {
         const note = await createNote.mutateAsync(review);
         if (services.onContentCreated) {

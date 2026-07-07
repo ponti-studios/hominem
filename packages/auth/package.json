@@ -12,10 +12,6 @@
       "types": "./src/types.ts",
       "default": "./src/types.ts"
     },
-    "./shared/error-contract": {
-      "types": "./src/shared/error-contract.ts",
-      "default": "./src/shared/error-contract.ts"
-    },
     "./shared/mask-email": {
       "types": "./src/shared/mask-email.ts",
       "default": "./src/shared/mask-email.ts"
@@ -66,6 +62,7 @@
   "dependencies": {
     "@better-auth/passkey": "^1.6.11",
     "@hominem/db": "workspace:*",
+    "@hominem/utils": "workspace:*",
     "better-auth": "^1.6.11"
   },
   "devDependencies": {

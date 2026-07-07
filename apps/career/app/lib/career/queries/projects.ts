@@ -1,58 +1,58 @@
 import type { CareerProjectRecord } from '@hominem/db';
 import { CareerRepository, db } from '@hominem/db';
 
-export async function getProjectsByPortfolio(portfolio_id: string) {
-  return CareerRepository.listProjectsByPortfolio(db, portfolio_id);
+export async function getProjectsByPortfolio(portfolioId: string) {
+  return CareerRepository.listProjectsByPortfolio(db, portfolioId);
 }
 
-export async function getProjectById(owner_userid: string, projectId: string) {
-  return CareerRepository.getProjectById(db, owner_userid, projectId);
+export async function getProjectById(ownerUserid: string, projectId: string) {
+  return CareerRepository.getProjectById(db, ownerUserid, projectId);
 }
 
 export async function getProjectsByWorkExperience(
-  portfolio_id: string,
-  work_experience_id: string,
+  portfolioId: string,
+  workExperienceId: string,
 ) {
-  return CareerRepository.listProjectsByWorkExperience(db, portfolio_id, work_experience_id);
+  return CareerRepository.listProjectsByWorkExperience(db, portfolioId, workExperienceId);
 }
 
 export async function createProject(
-  owner_userid: string,
+  ownerUserid: string,
   projectData: {
-    portfolio_id: string;
-    work_experience_id?: string | null;
+    portfolioId: string;
+    workExperienceId?: string | null;
     title: string;
     description: string;
-    short_description?: string | null;
+    shortDescription?: string | null;
     status: string;
     technologies?: string[];
-    is_visible: boolean;
-    is_featured: boolean;
-    sort_order: number;
+    isVisible: boolean;
+    isFeatured: boolean;
+    sortOrder: number;
   },
 ): Promise<CareerProjectRecord> {
-  return CareerRepository.createProject(db, owner_userid, projectData);
+  return CareerRepository.createProject(db, ownerUserid, projectData);
 }
 
 export async function updateProject(
-  owner_userid: string,
+  ownerUserid: string,
   projectId: string,
-  portfolio_id: string,
+  portfolioId: string,
   updates: {
-    work_experience_id?: string | null;
+    workExperienceId?: string | null;
     title: string;
     description: string;
-    short_description?: string | null;
+    shortDescription?: string | null;
     status: string;
     technologies?: string[];
-    is_visible?: boolean;
-    is_featured?: boolean;
-    sort_order?: number;
+    isVisible?: boolean;
+    isFeatured?: boolean;
+    sortOrder?: number;
   },
 ) {
-  await CareerRepository.updateProject(db, owner_userid, projectId, portfolio_id, updates);
+  await CareerRepository.updateProject(db, ownerUserid, projectId, portfolioId, updates);
 }
 
-export async function deleteProject(owner_userid: string, projectId: string, portfolio_id: string) {
-  await CareerRepository.deleteProject(db, owner_userid, projectId, portfolio_id);
+export async function deleteProject(ownerUserid: string, projectId: string, portfolioId: string) {
+  await CareerRepository.deleteProject(db, ownerUserid, projectId, portfolioId);
 }

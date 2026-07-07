@@ -25,12 +25,12 @@ interface SocialLinksFormValues {
 
 interface SocialLinksEditorSectionProps {
   social_links?: CareerSocialLinksRecord | null;
-  portfolio_id: string;
+  portfolioId: string;
 }
 
 function SocialLinksEditorSection({
   social_links: initialSocialLinks,
-  portfolio_id,
+  portfolioId,
 }: SocialLinksEditorSectionProps) {
   const fetcher = useFetcher();
   const {
@@ -65,7 +65,7 @@ function SocialLinksEditorSection({
           linkedin: formData.linkedin,
           twitter: formData.twitter,
           website: formData.website,
-          portfolio_id,
+          portfolioId,
         },
       ]),
     );
@@ -230,11 +230,11 @@ function SocialLinksEditorSection({
 export async function loader({ context }: Route.LoaderArgs) {
   const portfolio = context.get(portfolioContext)!;
   const social_links = await db
-    .selectFrom('app.social_links')
+    .selectFrom('app.socialLinks')
     .selectAll()
-    .where('portfolio_id', '=', portfolio.id)
+    .where('portfolioId', '=', portfolio.id)
     .executeTakeFirst();
-  return { social_links: social_links ?? null, portfolio_id: portfolio.id };
+  return { social_links: social_links ?? null, portfolioId: portfolio.id };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -245,23 +245,23 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
 
   const socialLinksDataResult = parseFormData<
-    Array<SocialLinksFormValues & { portfolio_id: string }>
+    Array<SocialLinksFormValues & { portfolioId: string }>
   >(formData, 'socialLinksData');
   if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
     return { success: false, error: "Your social links couldn't be read. Refresh and try again." };
   }
 
   const socialLinksData = socialLinksDataResult as Array<
-    SocialLinksFormValues & { portfolio_id: string }
+    SocialLinksFormValues & { portfolioId: string }
   >;
   const socialLinksPayload = socialLinksData[0];
 
-  if (!socialLinksPayload?.portfolio_id) {
+  if (!socialLinksPayload?.portfolioId) {
     return { success: false, error: 'Choose a portfolio before saving social links.' };
   }
 
   try {
-    await CareerRepository.saveSocialLinks(db, user.id, socialLinksPayload.portfolio_id, {
+    await CareerRepository.saveSocialLinks(db, user.id, socialLinksPayload.portfolioId, {
       id: socialLinksPayload.id,
       github: socialLinksPayload.github,
       linkedin: socialLinksPayload.linkedin,
@@ -280,7 +280,7 @@ export default function Social({ loaderData }: Route.ComponentProps) {
   return (
     <SocialLinksEditorSection
       social_links={loaderData.social_links}
-      portfolio_id={loaderData.portfolio_id}
+      portfolioId={loaderData.portfolioId}
     />
   );
 }

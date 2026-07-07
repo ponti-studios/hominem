@@ -20,9 +20,9 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
       <Card>
         <CardHeader>
           <CardTitle className="heading-4">Application Details</CardTitle>
-          {application.job_posting_url && (
+          {application.jobPostingUrl && (
             <a
-              href={application.job_posting_url}
+              href={application.jobPostingUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground transition-colors"
@@ -41,13 +41,13 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
 
             <div className="flex items-center gap-2">
               <Calendar className="size-4" />
-              <span>{formatApplicationDate(application.start_date)}</span>
+              <span>{formatApplicationDate(application.startDate)}</span>
             </div>
 
-            {application.salary_quoted && (
+            {application.salaryQuoted && (
               <div className="flex items-center gap-2">
                 <DollarSign className="size-4" />
-                <span>{application.salary_quoted}</span>
+                <span>{application.salaryQuoted}</span>
               </div>
             )}
             {application.source && (
@@ -114,11 +114,11 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
             )}
           </div>
 
-          {application.company_notes && (
+          {application.companyNotes && (
             <div className="mt-6 pt-6 border-t border-border">
               <span className="subheading-4 text-muted-foreground">Research Notes</span>
               <p className="text-muted-foreground whitespace-pre-wrap mt-1">
-                {application.company_notes}
+                {application.companyNotes}
               </p>
             </div>
           )}
@@ -147,21 +147,21 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
                 <div className="space-y-2">
                   <span className="subheading-4 text-muted-foreground">Recruiter Name</span>
                   <Input
-                    id="recruiter_name"
-                    name="recruiter_name"
+                    id="recruiterName"
+                    name="recruiterName"
                     placeholder="e.g. John Smith"
-                    defaultValue={application.recruiter_name || ''}
+                    defaultValue={application.recruiterName || ''}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <span className="subheading-4 text-muted-foreground">Recruiter Email</span>
                   <Input
-                    id="recruiter_email"
-                    name="recruiter_email"
+                    id="recruiterEmail"
+                    name="recruiterEmail"
                     type="email"
                     placeholder="e.g. john.smith@company.com"
-                    defaultValue={application.recruiter_email || ''}
+                    defaultValue={application.recruiterEmail || ''}
                   />
                 </div>
               </div>
@@ -169,11 +169,11 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
               <div className="space-y-2">
                 <span className="subheading-4 text-muted-foreground">Recruiter LinkedIn URL</span>
                 <Input
-                  id="recruiter_linkedin"
-                  name="recruiter_linkedin"
+                  id="recruiterLinkedin"
+                  name="recruiterLinkedin"
                   type="url"
                   placeholder="e.g. https://linkedin.com/in/johnsmith"
-                  defaultValue={application.recruiter_linkedin || ''}
+                  defaultValue={application.recruiterLinkedin || ''}
                 />
               </div>
 
@@ -196,7 +196,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
               <div>
                 <span className="subheading-4 text-muted-foreground">Recruiter Name</span>
                 <p className="text-foreground mt-1">
-                  {application.recruiter_name || (
+                  {application.recruiterName || (
                     <span className="text-muted-foreground italic">Not specified</span>
                   )}
                 </p>
@@ -204,12 +204,12 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
 
               <div>
                 <span className="subheading-4 text-muted-foreground">Recruiter Email</span>
-                {application.recruiter_email ? (
+                {application.recruiterEmail ? (
                   <a
-                    href={`mailto:${application.recruiter_email}`}
+                    href={`mailto:${application.recruiterEmail}`}
                     className="mt-1 block text-primary"
                   >
-                    {application.recruiter_email}
+                    {application.recruiterEmail}
                   </a>
                 ) : (
                   <p className="text-muted-foreground italic mt-1">Not specified</p>
@@ -218,9 +218,9 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
 
               <div className="md:col-span-2">
                 <span className="subheading-4 text-muted-foreground">Recruiter LinkedIn</span>
-                {application.recruiter_linkedin ? (
+                {application.recruiterLinkedin ? (
                   <a
-                    href={application.recruiter_linkedin}
+                    href={application.recruiterLinkedin}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-1 block text-primary"

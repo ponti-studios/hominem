@@ -4,8 +4,6 @@
  * Single source of truth consumed by both web and mobile.
  * Keys follow the pattern: [domain, operation, ...params]
  *
- * This eliminates the divergence where web used ['chats', 'list']
- * and mobile used ['resumableSessions'] for the same data.
  */
 
 export const queryKeys = {
@@ -39,6 +37,11 @@ export const queryKeys = {
     all: ['files'] as const,
     list: ['files', 'list'] as const,
     detail: (fileId: string) => ['files', 'detail', fileId] as const,
+  },
+
+  tasks: {
+    all: ['tasks'] as const,
+    detail: (id: string) => ['tasks', 'detail', id] as const,
   },
 } as const;
 

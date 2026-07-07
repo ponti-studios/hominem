@@ -83,7 +83,7 @@ function ApplicationCard({ application }: { application: ApplicationWithCompany 
               Applied
             </span>
             <span className="subheading-4 text-foreground">
-              {formatDate(application.application_date || application.start_date)}
+              {formatDate(application.applicationDate || application.startDate)}
             </span>
           </div>
 
@@ -99,19 +99,19 @@ function ApplicationCard({ application }: { application: ApplicationWithCompany 
             </div>
           ) : null}
 
-          {application.salary_quoted || application.salary_offered ? (
+          {application.salaryQuoted || application.salaryOffered ? (
             <div className="flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 text-muted-foreground">
                 <DollarSignIcon className="size-4" />
                 Salary
               </span>
               <span className="max-w-32 truncate text-right subheading-4 text-foreground">
-                {typeof application.salary_quoted === 'string'
-                  ? application.salary_quoted
-                  : application.salary_offered
-                    ? formatCurrency(centsToDollars(application.salary_offered))
-                    : application.salary_quoted
-                      ? formatCurrency(centsToDollars(application.salary_quoted))
+                {typeof application.salaryQuoted === 'string'
+                  ? application.salaryQuoted
+                  : application.salaryOffered
+                    ? formatCurrency(centsToDollars(application.salaryOffered))
+                    : application.salaryQuoted
+                      ? formatCurrency(centsToDollars(application.salaryQuoted))
                       : '—'}
               </span>
             </div>
@@ -125,9 +125,9 @@ function ApplicationCard({ application }: { application: ApplicationWithCompany 
           >
             View Details
           </Link>
-          {application.job_posting ? (
+          {application.jobPosting ? (
             <a
-              href={application.job_posting}
+              href={application.jobPosting}
               target="_blank"
               rel="noopener noreferrer"
               className={buttonVariants({ variant: 'outline' })}

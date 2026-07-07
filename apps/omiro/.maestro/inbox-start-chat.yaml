@@ -1,7 +1,9 @@
 appId: com.pontistudios.hakumi.dev
 ---
-- launchApp
-- assertVisible: Inbox
+# Starts a chat from the inbox composer. Typing text and tapping the
+# secondary action ("Start a new chat") creates a chat and navigates
+# to the chat detail screen.
+- runFlow: startup.yaml
 - tapOn:
     id: inbox-composer-input
 - inputText: Native first smoke chat
@@ -10,5 +12,7 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible: Native first smoke chat
 - assertVisible:
     id: chat-composer-input
-- back
-- assertVisible: Inbox
+- tapOn:
+    id: BackButton
+- assertVisible:
+    id: inbox-composer-input

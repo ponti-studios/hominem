@@ -7,7 +7,12 @@
       "project": ["**/*.{ts,tsx}"]
     },
 
+    "apps/career": {
+      "project": ["app/**/*.{ts,tsx}"]
+    },
+
     "services/api": {
+      "entry": ["src/index.ts", "src/worker.ts"],
       "project": ["src/**/*.{ts,tsx}"]
     },
 
@@ -21,7 +26,15 @@
     }
   },
 
-  "ignoreDependencies": ["babel-preset-expo"],
+  "ignoreDependencies": [
+    "babel-preset-expo",
+    "tw-animate-css",
+    "tailwindcss",
+    "expo-updates",
+    "@expo/plist",
+    "@expo/image-utils",
+    "@expo/prebuild-config"
+  ],
 
   "ignoreBinaries": [],
 
@@ -31,8 +44,6 @@
     "packages/ui/src/components/**",
     "apps/omiro/components/**",
     "apps/omiro/services/**",
-    "apps/omiro/hooks/**",
-    "apps/omiro/types/**",
     "apps/omiro/modules/**"
   ]
 }

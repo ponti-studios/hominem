@@ -32,21 +32,21 @@ export function ApplicationFilesTab({ application }: FilesTabProps) {
           </Card>
         )}
 
-        {application.cover_letter && (
+        {application.coverLetter && (
           <Card>
             <CardHeader>
               <CardTitle className="heading-4">Cover Letter</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="bg-muted p-3 rounded caption1 font-mono max-h-40 overflow-y-auto">
-                {application.cover_letter}
+                {application.coverLetter}
               </div>
             </CardContent>
           </Card>
         )}
       </div>
 
-      {!application.resume && !application.cover_letter && (
+      {!application.resume && !application.coverLetter && (
         <EmptyState
           title="No files yet"
           description="File upload functionality coming soon."

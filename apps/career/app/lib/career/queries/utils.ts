@@ -17,25 +17,24 @@ export function monthsBetween(start_date: Date, end_date: Date = new Date()): nu
 }
 
 export function getCurrentSalary(experience: {
-  base_salary?: number | null;
-  salary_adjustments?: unknown;
+  baseSalary?: number | null;
+  salaryAdjustments?: unknown;
 }): number {
-  if (!experience.base_salary) return 0;
+  const adjustments = safeParseJson<{ effectiveDate: string; newSalary: number }[]>(
+    experience.salaryAdjustments,
+    [],
+  );
 
-  const adjustments = experience.salary_adjustments as {
-    effectiveDate: string;
-    new_salary: number;
-  }[];
-
-  if (adjustments && adjustments.length > 0) {
-    const mostRecentAdjustment = adjustments.sort(
-      (left, right) =>
-        new Date(right.effectiveDate).getTime() - new Date(left.effectiveDate).getTime(),
-    )[0];
-    return mostRecentAdjustment.new_salary;
+  if (adjustments.length > 0) {
+    const mostRecentAdjustment = adjustments.reduce((mostRecent, adjustment) =>
+      new Date(adjustment.effectiveDate).getTime() > new Date(mostRecent.effectiveDate).getTime()
+        ? adjustment
+        : mostRecent,
+    );
+    return mostRecentAdjustment.newSalary;
   }
 
-  return experience.base_salary;
+  return experience.baseSalary ?? 0;
 }
 
 export function calculatePercentageChange(oldValue: number, newValue: number): number {

@@ -1,5 +1,15 @@
 import { requireNativeModule } from 'expo';
 
+// Must stay in sync with the `code` values thrown by VoiceTranscriberException
+// in VoiceTranscriberModule.swift — that's the only place these strings are
+// otherwise defined, so a typo on either side would silently break routing.
+export const VoiceTranscriberErrorCode = {
+  INVALID_AUDIO_URL: 'INVALID_AUDIO_URL',
+  RECOGNIZER_UNAVAILABLE: 'RECOGNIZER_UNAVAILABLE',
+  MISSING_PERMISSION: 'MISSING_PERMISSION',
+  EMPTY_TRANSCRIPT: 'EMPTY_TRANSCRIPT',
+} as const;
+
 export type SpeechRecognitionPermissionStatus =
   | 'authorized'
   | 'denied'
@@ -9,7 +19,7 @@ export type SpeechRecognitionPermissionStatus =
 export interface VoiceTranscriptionResult {
   rawText: string;
   locale: string;
-  engine: 'sfspeech';
+  engine: 'speech-analyzer';
   isOnDevice: true;
 }
 

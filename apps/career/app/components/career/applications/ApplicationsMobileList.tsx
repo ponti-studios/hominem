@@ -28,7 +28,7 @@ export function ApplicationsMobileList({ applications }: ApplicationsMobileListP
                     <span className="body-4 text-text-tertiary">·</span>
                     <p className="body-4 text-text-tertiary">
                       {formatApplicationDate(
-                        application.application_date || application.start_date || null,
+                        application.applicationDate || application.startDate || null,
                       )}
                     </p>
                   </div>

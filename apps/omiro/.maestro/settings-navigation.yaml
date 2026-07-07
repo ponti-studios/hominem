@@ -1,9 +1,12 @@
 appId: com.pontistudios.hakumi.dev
 ---
-- launchApp
-- assertVisible: Inbox
+# Navigates from the inbox to the Settings screen via the toolbar menu,
+# then back to the inbox.
+- runFlow: startup.yaml
 - tapOn: Open inbox menu
 - tapOn: Settings
 - assertVisible: Settings
-- back
-- assertVisible: Inbox
+- tapOn:
+    id: BackButton
+- assertVisible:
+    id: inbox-composer-input

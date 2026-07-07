@@ -1,4 +1,5 @@
 import { parseInboxTimestamp } from '@hominem/chat';
+import type { Note } from '@hominem/rpc/types';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -11,8 +12,9 @@ import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
 import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
-import { useNoteToolbar } from '~/hooks/use-note-toolbar';
+import { useNoteFormatting } from '~/hooks/use-note-formatting';
 import { useInlineEnhance } from '~/services/ai';
+import { normalizeChatTitle, useStartChatFromInbox } from '~/services/chat';
 import { writeResumeTarget } from '~/services/navigation/launch-state';
 import { getInboxRoute } from '~/services/navigation/routes';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
@@ -20,6 +22,11 @@ import { useNoteQuery } from '~/services/notes/use-note-query';
 import t from '~/translations';
 
 const COMPOSER_CLEARANCE = 220;
+
+interface NoteDraft {
+  title: string;
+  content: string;
+}
 
 function formatNoteDateline(
   note: { createdAt?: string | null; updatedAt?: string | null } | null,
@@ -78,54 +85,14 @@ export function NoteDetailScreen() {
 
 function NoteDetailEditor({ noteId }: { noteId: string }) {
   const styles = useNoteStyles();
-  const themeColors = useThemeColors();
-  const navigation = useNavigation();
   const router = useRouter();
-  const contentInputRef = useRef<TextInput>(null);
+  const navigation = useNavigation();
   const homeRoute = getInboxRoute();
-  const [isPreviewing, setIsPreviewing] = useState(false);
   const canGoBack = navigation.canGoBack();
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
-  const { save, updateCache, detachFile } = useNoteEditor(noteId);
+  const { save, flushSave, updateCache, detachFile } = useNoteEditor(noteId);
   const { mutate: deleteNote } = useNoteDelete({ noteId });
-  const {
-    isEnhanceOpen,
-    enhanceInstruction,
-    setEnhanceInstruction,
-    enhanceError,
-    isEnhancing,
-    toggleEnhance,
-    closeEnhance,
-    runEnhance,
-  } = useInlineEnhance();
-
-  useEffect(() => {
-    if (!note) {
-      return;
-    }
-
-    writeResumeTarget({
-      kind: 'note',
-      id: noteId,
-      title: note.title?.trim() || t.notes.editor.titleFallback,
-      updatedAt: note.updatedAt ?? null,
-    });
-  }, [note, noteId]);
-
-  const toolbar = useNoteToolbar({
-    content: note?.content ?? '',
-    onContentChange: (newText) => {
-      updateCache({ content: newText });
-      void save(
-        note?.title ?? null,
-        newText,
-        (note?.files ?? []).map((f) => f.id),
-      );
-    },
-  });
-
-  const dateline = formatNoteDateline(note ?? null);
 
   const handleDeleteNote = useCallback(() => {
     Alert.alert(t.inbox.item.deleteNote.title, t.inbox.item.deleteNote.message, [
@@ -209,7 +176,126 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
     );
   }
 
-  const handleDetach = (fileId: string) => detachFile(fileId, note.files, note.title, note.content);
+  return (
+    <NoteEditorBody
+      note={note}
+      canGoBack={canGoBack}
+      homeRoute={homeRoute}
+      isRefreshing={isRefreshing}
+      refetch={refetch}
+      save={save}
+      flushSave={flushSave}
+      updateCache={updateCache}
+      detachFile={detachFile}
+      onDeleteNote={handleDeleteNote}
+    />
+  );
+}
+
+interface NoteEditorBodyProps {
+  note: Note;
+  canGoBack: boolean;
+  homeRoute: ReturnType<typeof getInboxRoute>;
+  isRefreshing: boolean;
+  refetch: () => void;
+  save: ReturnType<typeof useNoteEditor>['save'];
+  flushSave: ReturnType<typeof useNoteEditor>['flushSave'];
+  updateCache: ReturnType<typeof useNoteEditor>['updateCache'];
+  detachFile: ReturnType<typeof useNoteEditor>['detachFile'];
+  onDeleteNote: () => void;
+}
+
+function NoteEditorBody({
+  note,
+  canGoBack,
+  homeRoute,
+  isRefreshing,
+  refetch,
+  save,
+  flushSave,
+  updateCache,
+  detachFile,
+  onDeleteNote,
+}: NoteEditorBodyProps) {
+  const styles = useNoteStyles();
+  const themeColors = useThemeColors();
+  const router = useRouter();
+  const contentInputRef = useRef<TextInput>(null);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [draft, setDraft] = useState<NoteDraft>(() => ({
+    title: note.title ?? '',
+    content: note.content,
+  }));
+
+  const formatting = useNoteFormatting();
+  const {
+    isEnhanceOpen,
+    enhanceInstruction,
+    setEnhanceInstruction,
+    enhanceError,
+    isEnhancing,
+    toggleEnhance,
+    closeEnhance,
+    runEnhance,
+  } = useInlineEnhance();
+
+  const { startChat, isStartingChat } = useStartChatFromInbox();
+
+  useEffect(() => {
+    writeResumeTarget({
+      kind: 'note',
+      id: note.id,
+      title: draft.title.trim() || t.notes.editor.titleFallback,
+      updatedAt: note.updatedAt ?? null,
+    });
+  }, [draft.title, note.id, note.updatedAt]);
+
+  const fileIds = note.files.map((file) => file.id);
+
+  const commitDraft = useCallback(
+    (next: NoteDraft) => {
+      setDraft(next);
+      updateCache({ title: next.title, content: next.content });
+      save(next.title, next.content, fileIds);
+    },
+    [fileIds, save, updateCache],
+  );
+
+  const handleTitleChange = useCallback(
+    (value: string) => commitDraft({ title: value, content: draft.content }),
+    [commitDraft, draft.content],
+  );
+
+  const handleContentChange = useCallback(
+    (value: string) => commitDraft({ title: draft.title, content: value }),
+    [commitDraft, draft.title],
+  );
+
+  const handleDetach = (fileId: string) =>
+    detachFile(fileId, note.files, draft.title, draft.content);
+
+  const handleStartChat = useCallback(async () => {
+    if (isStartingChat) return;
+
+    closeEnhance();
+
+    try {
+      await flushSave(draft.title, draft.content, fileIds);
+      await startChat({
+        title: normalizeChatTitle(draft.title || draft.content),
+        message: t.notes.editor.startChatMessage,
+        noteIds: [note.id],
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message === 'offline_unavailable'
+          ? t.notes.editor.startChatErrorOffline
+          : t.notes.editor.startChatErrorGeneric;
+      Alert.alert(t.notes.editor.startChatErrorTitle, message, [{ text: 'OK' }]);
+    }
+  }, [closeEnhance, draft.content, draft.title, fileIds, flushSave, isStartingChat, note.id, startChat]);
+
+  const dateline = formatNoteDateline(note);
 
   return (
     <>
@@ -238,7 +324,14 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           <Stack.Toolbar.MenuAction icon="sparkles" onPress={toggleEnhance}>
             {t.enhance.confirm}
           </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction destructive icon="trash" onPress={handleDeleteNote}>
+          <Stack.Toolbar.MenuAction
+            disabled={isStartingChat}
+            icon="bubble.left"
+            onPress={() => void handleStartChat()}
+          >
+            {t.notes.editor.startChat}
+          </Stack.Toolbar.MenuAction>
+          <Stack.Toolbar.MenuAction destructive icon="trash" onPress={onDeleteNote}>
             {t.inbox.item.deleteNote.title}
           </Stack.Toolbar.MenuAction>
         </Stack.Toolbar.Menu>
@@ -260,15 +353,8 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       >
         <TextInput
           multiline
-          defaultValue={note.title ?? ''}
-          onChangeText={(value) => {
-            updateCache({ title: value });
-            void save(
-              value,
-              note.content,
-              note.files.map((f) => f.id),
-            );
-          }}
+          value={draft.title}
+          onChangeText={handleTitleChange}
           placeholder={t.notes.editor.titlePlaceholder}
           placeholderTextColor={themeColors['text-tertiary']}
           scrollEnabled={false}
@@ -285,8 +371,8 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         <View style={styles.divider} />
 
         {isPreviewing ? (
-          note.content.trim().length > 0 ? (
-            <Markdown style={markdownStyles(themeColors)}>{note.content}</Markdown>
+          draft.content.trim().length > 0 ? (
+            <Markdown style={markdownStyles(themeColors)}>{draft.content}</Markdown>
           ) : (
             <Text style={styles.previewEmpty}>{t.notes.editor.previewEmpty}</Text>
           )
@@ -294,18 +380,11 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
           <TextInput
             ref={contentInputRef}
             multiline
-            value={note.content}
-            selection={toolbar.controlledSelection}
-            onChangeText={(value) => {
-              updateCache({ content: value });
-              toolbar.onTypingChange(value);
-              void save(
-                note.title,
-                value,
-                note.files.map((f) => f.id),
-              );
-            }}
-            onSelectionChange={toolbar.onSelectionChange}
+            value={draft.content}
+            selection={formatting.controlledSelection}
+            onChangeText={handleContentChange}
+            onSelectionChange={formatting.onSelectionChange}
+            onFocus={() => formatting.onFocus(draft.content)}
             placeholder={t.notes.editor.contentPlaceholder}
             placeholderTextColor={themeColors['text-tertiary']}
             cursorColor={themeColors.accent}
@@ -325,16 +404,8 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
             onCancel={closeEnhance}
             onConfirm={() =>
               void runEnhance({
-                text: note.content,
-                onEnhanced: (enhanced) => {
-                  updateCache({ content: enhanced });
-                  toolbar.onTypingChange(enhanced);
-                  void save(
-                    note.title,
-                    enhanced,
-                    note.files.map((file) => file.id),
-                  );
-                },
+                text: draft.content,
+                onEnhanced: (enhanced) => commitDraft({ title: draft.title, content: enhanced }),
               })
             }
             isEnhancing={isEnhancing}
@@ -377,11 +448,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       </ScrollView>
 
       <NoteToolbar
-        onAction={toolbar.applyFormat}
-        onUndo={toolbar.undo}
-        onRedo={toolbar.redo}
-        canUndo={toolbar.canUndo}
-        canRedo={toolbar.canRedo}
+        onAction={(command) => handleContentChange(formatting.applyFormat(draft.content, command))}
       />
     </>
   );

@@ -11,18 +11,18 @@ export const meta: Route.MetaFunction = ({ data }) => {
   }
 
   return [
-    { title: `${data.portfolio.name} - ${data.portfolio.job_title}` },
+    { title: `${data.portfolio.name} - ${data.portfolio.jobTitle}` },
     { name: 'description', content: data.portfolio.bio },
     {
       property: 'og:title',
-      content: `${data.portfolio.name} - ${data.portfolio.job_title}`,
+      content: `${data.portfolio.name} - ${data.portfolio.jobTitle}`,
     },
     { property: 'og:description', content: data.portfolio.bio },
     { property: 'og:type', content: 'profile' },
     { name: 'twitter:card', content: 'summary_large_image' },
     {
       name: 'twitter:title',
-      content: `${data.portfolio.name} - ${data.portfolio.job_title}`,
+      content: `${data.portfolio.name} - ${data.portfolio.jobTitle}`,
     },
     { name: 'twitter:description', content: data.portfolio.bio },
   ];
@@ -58,23 +58,23 @@ export default function Portfolio({
             <h1 className="font-sans text-4xl font-light text-foreground mb-2">{portfolio.name}</h1>
             {/* Contact */}
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <span>{portfolio.current_location}</span>
-              {portfolio.location_tagline && (
+              <span>{portfolio.currentLocation}</span>
+              {portfolio.locationTagline && (
                 <>
                   <span>•</span>
-                  <span>{portfolio.location_tagline}</span>
+                  <span>{portfolio.locationTagline}</span>
                 </>
               )}
               <span>•</span>
               <span>{portfolio.email}</span>
-              {portfolio.availability_status && portfolio.availability_message && (
+              {portfolio.availabilityStatus && portfolio.availabilityMessage && (
                 <>
                   <span>•</span>
-                  <span className="text-success font-medium">{portfolio.availability_message}</span>
+                  <span className="text-success font-medium">{portfolio.availabilityMessage}</span>
                 </>
               )}
             </div>
-            <p className="text-xl text-muted-foreground my-4">{portfolio.job_title}</p>
+            <p className="text-xl text-muted-foreground my-4">{portfolio.jobTitle}</p>
           </div>
         </div>
 
@@ -98,8 +98,8 @@ export default function Portfolio({
                     <p className="text-muted-foreground">{job.company}</p>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {job.start_date ? new Date(job.start_date).getFullYear() : 'Unknown'} -{' '}
-                    {job.end_date ? new Date(job.end_date).getFullYear() : 'Present'}
+                    {job.startDate ? new Date(job.startDate).getFullYear() : 'Unknown'} -{' '}
+                    {job.endDate ? new Date(job.endDate).getFullYear() : 'Present'}
                   </div>
                 </div>
                 <p className="text-muted-foreground mb-3 whitespace-pre-line leading-relaxed">
@@ -149,7 +149,7 @@ export default function Portfolio({
           <h2 className="font-sans text-2xl font-light text-foreground mb-8">Featured Projects</h2>
           <div className="space-y-8">
             {portfolio.projects
-              // .filter((project) => project.is_featured)
+              // .filter((project) => project.isFeatured)
               .map((project) => (
                 <div key={project.id} className="border border-border rounded-lg p-6">
                   <h3 className="font-medium text-foreground mb-2">{project.title}</h3>

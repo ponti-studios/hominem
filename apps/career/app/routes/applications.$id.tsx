@@ -1,5 +1,7 @@
-import type { UpdateCareerJobApplicationInput } from '@hominem/db';
-import type { CareerInterviewEntry as InterviewEntry } from '@hominem/db';
+import type {
+  CareerInterviewEntry as InterviewEntry,
+  UpdateCareerJobApplicationInput,
+} from '@hominem/db';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hominem/ui';
 import {
   Briefcase,
@@ -74,14 +76,14 @@ export async function action({ context, request, params }: Route.ActionArgs) {
         'position',
         'status',
         'location',
-        'job_posting',
-        'salary_quoted',
-        'salary_accepted',
-        'company_notes',
-        'negotiation_notes',
-        'recruiter_name',
-        'recruiter_email',
-        'recruiter_linkedin',
+        'jobPosting',
+        'salaryQuoted',
+        'salaryAccepted',
+        'companyNotes',
+        'negotiationNotes',
+        'recruiterName',
+        'recruiterEmail',
+        'recruiterLinkedin',
         'resume',
       ] as const;
 
@@ -209,9 +211,21 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
 
       {/* Application Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-        <div>
+        <div className="space-y-2">
           <h1 className="heading-3 md:heading-2 text-foreground">{application.position}</h1>
-          <p className="body-3 text-muted-foreground">{company?.name}</p>
+          <div className="flex gap-2 body-3 text-muted-foreground">
+            <p className="p-2 py-1 border rounded bg-surface">{company?.name}</p>
+            {(application.jobPosting || application.location) && (
+              <p className="p-2 py-1 border rounded bg-surface">
+                {application.location && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="size-3" />
+                    {application.location}
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <span
@@ -227,17 +241,6 @@ export default function ApplicationDetail({ loaderData, params }: Route.Componen
       </div>
 
       {/* Persistent job context bar */}
-      {(application.job_posting || application.location) && (
-        <div className="flex flex-wrap items-center gap-4 body-3 text-muted-foreground border border-border rounded-lg px-4 py-2 bg-muted/30">
-          {application.location && (
-            <span className="flex items-center gap-1">
-              <MapPin className="size-3" />
-              {application.location}
-            </span>
-          )}
-        </div>
-      )}
-
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabId)}>
         <div>
           <TabsList>

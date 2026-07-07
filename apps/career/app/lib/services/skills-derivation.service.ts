@@ -29,12 +29,12 @@ Rules:
 - Return valid JSON only: { "skills": [ ... ] }. No markdown, no explanation.`;
 
 export async function deriveSkillsFromCareerHistory(
-  owner_userid: string,
-  portfolio_id: string,
+  ownerUserid: string,
+  portfolioId: string,
 ): Promise<DerivedSkill[]> {
   const [workExperiences, projects] = await Promise.all([
-    CareerRepository.listUserWorkExperiences(db, owner_userid),
-    CareerRepository.listProjectsByPortfolio(db, portfolio_id),
+    CareerRepository.listUserWorkExperiences(db, ownerUserid),
+    CareerRepository.listProjectsByPortfolio(db, portfolioId),
   ]);
 
   if (workExperiences.length === 0 && projects.length === 0) {
@@ -45,7 +45,7 @@ export async function deriveSkillsFromCareerHistory(
     workExperiences.length > 0
       ? workExperiences
           .map((exp) => {
-            const dates = [exp.start_date, exp.end_date ?? 'present'].filter(Boolean).join(' – ');
+            const dates = [exp.startDate, exp.endDate ?? 'present'].filter(Boolean).join(' – ');
             return `Role: ${exp.role} at ${exp.company} (${dates})\nDescription: ${exp.description ?? 'N/A'}`;
           })
           .join('\n\n')

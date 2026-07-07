@@ -22,17 +22,17 @@ export interface CreateApplicationInput {
   companyDescription?: string | null;
   position: string;
   status?: JobApplicationStatus;
-  start_date?: Date;
+  startDate?: Date;
   location?: string | null;
-  job_posting?: string | null;
+  jobPosting?: string | null;
   requirements?: string[];
   skills?: string[];
-  job_posting_url?: string | null;
-  job_posting_word_count?: number | null;
-  salary_quoted?: string | null;
-  recruiter_name?: string | null;
-  recruiter_email?: string | null;
-  recruiter_linkedin?: string | null;
+  jobPostingUrl?: string | null;
+  jobPostingWordCount?: number | null;
+  salaryQuoted?: string | null;
+  recruiterName?: string | null;
+  recruiterEmail?: string | null;
+  recruiterLinkedin?: string | null;
   source?: string | null;
   link?: string | null;
 }
@@ -59,66 +59,66 @@ export class JobApplicationsService {
    */
   static async getApplicationDetail(
     applicationId: string,
-    owner_userid: string,
+    ownerUserid: string,
   ): Promise<ApplicationDetailData> {
     const applicationData = await db
-      .selectFrom('app.job_applications as application')
-      .leftJoin('app.companies as company', 'company.id', 'application.company_id')
+      .selectFrom('app.jobApplications as application')
+      .leftJoin('app.companies as company', 'company.id', 'application.companyId')
       .select([
         'application.id',
-        'application.owner_userid',
-        'application.company_id',
+        'application.ownerUserid',
+        'application.companyId',
         'application.position',
         'application.status',
-        'application.start_date',
-        'application.end_date',
+        'application.startDate',
+        'application.endDate',
         'application.location',
-        'application.job_posting',
+        'application.jobPosting',
         'application.requirements',
         'application.skills',
-        'application.job_posting_url',
-        'application.job_posting_word_count',
-        'application.salary_quoted',
-        'application.salary_accepted',
-        'application.salary_expected',
-        'application.salary_requested',
-        'application.salary_offered',
-        'application.salary_negotiated',
-        'application.salary_final',
-        'application.total_comp_offered',
-        'application.total_comp_final',
-        'application.equity_offered',
-        'application.equity_final',
-        'application.bonus_offered',
-        'application.bonus_final',
+        'application.jobPostingUrl',
+        'application.jobPostingWordCount',
+        'application.salaryQuoted',
+        'application.salaryAccepted',
+        'application.salaryExpected',
+        'application.salaryRequested',
+        'application.salaryOffered',
+        'application.salaryNegotiated',
+        'application.salaryFinal',
+        'application.totalCompOffered',
+        'application.totalCompFinal',
+        'application.equityOffered',
+        'application.equityFinal',
+        'application.bonusOffered',
+        'application.bonusFinal',
         'application.source',
-        'application.application_date',
-        'application.response_date',
-        'application.first_interview_date',
-        'application.offer_date',
-        'application.decision_date',
-        'application.rejection_reason',
-        'application.withdrawal_reason',
-        'application.time_to_response',
-        'application.time_to_first_interview',
-        'application.time_to_offer',
-        'application.time_to_decision',
-        'application.cover_letter',
+        'application.applicationDate',
+        'application.responseDate',
+        'application.firstInterviewDate',
+        'application.offerDate',
+        'application.decisionDate',
+        'application.rejectionReason',
+        'application.withdrawalReason',
+        'application.timeToResponse',
+        'application.timeToFirstInterview',
+        'application.timeToOffer',
+        'application.timeToDecision',
+        'application.coverLetter',
         'application.resume',
-        'application.job_id',
+        'application.jobId',
         'application.link',
-        'application.phone_screen',
+        'application.phoneScreen',
         'application.reference',
-        'application.interview_dates',
-        'application.company_notes',
-        'application.negotiation_notes',
-        'application.recruiter_name',
-        'application.recruiter_email',
-        'application.recruiter_linkedin',
+        'application.interviewDates',
+        'application.companyNotes',
+        'application.negotiationNotes',
+        'application.recruiterName',
+        'application.recruiterEmail',
+        'application.recruiterLinkedin',
         'application.stages',
         'application.createdat',
         'application.updatedat',
-        'company.id as company_id',
+        'company.id as companyId',
         'company.name as companyName',
         'company.website as companyWebsite',
         'company.industry as companyIndustry',
@@ -127,7 +127,7 @@ export class JobApplicationsService {
         'company.description as companyDescription',
       ])
       .where('application.id', '=', applicationId)
-      .where('application.owner_userid', '=', owner_userid)
+      .where('application.ownerUserid', '=', ownerUserid)
       .executeTakeFirst();
 
     if (!applicationData) {
@@ -135,16 +135,16 @@ export class JobApplicationsService {
     }
 
     const notesResult = await db
-      .selectFrom('app.application_notes')
+      .selectFrom('app.applicationNotes')
       .selectAll()
-      .where('application_id', '=', applicationId)
+      .where('applicationId', '=', applicationId)
       .orderBy('createdat', 'asc')
       .execute();
 
-    const company = applicationData.company_id
+    const company = applicationData.companyId
       ? ({
-          id: applicationData.company_id,
-          owner_userid: '',
+          id: applicationData.companyId,
+          ownerUserid: '',
           name: applicationData.companyName || '',
           website: applicationData.companyWebsite,
           industry: applicationData.companyIndustry,
@@ -158,61 +158,61 @@ export class JobApplicationsService {
 
     const application = {
       id: applicationData.id,
-      owner_userid: applicationData.owner_userid,
+      ownerUserid: applicationData.ownerUserid,
       position: applicationData.position,
-      company_id: applicationData.company_id,
+      companyId: applicationData.companyId,
       status: applicationData.status,
-      start_date: applicationData.start_date ? new Date(applicationData.start_date) : new Date(),
-      end_date: applicationData.end_date ? new Date(applicationData.end_date) : null,
+      startDate: applicationData.startDate ? new Date(applicationData.startDate) : new Date(),
+      endDate: applicationData.endDate ? new Date(applicationData.endDate) : null,
       location: applicationData.location,
-      job_posting: applicationData.job_posting,
+      jobPosting: applicationData.jobPosting,
       requirements: Array.isArray(applicationData.requirements) ? applicationData.requirements : [],
       skills: Array.isArray(applicationData.skills) ? applicationData.skills : [],
-      job_posting_url: applicationData.job_posting_url,
-      job_posting_word_count: applicationData.job_posting_word_count,
-      salary_quoted: applicationData.salary_quoted,
-      salary_accepted: applicationData.salary_accepted,
-      salary_expected: applicationData.salary_expected,
-      salary_requested: applicationData.salary_requested,
-      salary_offered: applicationData.salary_offered,
-      salary_negotiated: applicationData.salary_negotiated,
-      salary_final: applicationData.salary_final,
-      total_comp_offered: applicationData.total_comp_offered,
-      total_comp_final: applicationData.total_comp_final,
-      equity_offered: applicationData.equity_offered,
-      equity_final: applicationData.equity_final,
-      bonus_offered: applicationData.bonus_offered,
-      bonus_final: applicationData.bonus_final,
+      jobPostingUrl: applicationData.jobPostingUrl,
+      jobPostingWordCount: applicationData.jobPostingWordCount,
+      salaryQuoted: applicationData.salaryQuoted,
+      salaryAccepted: applicationData.salaryAccepted,
+      salaryExpected: applicationData.salaryExpected,
+      salaryRequested: applicationData.salaryRequested,
+      salaryOffered: applicationData.salaryOffered,
+      salaryNegotiated: applicationData.salaryNegotiated,
+      salaryFinal: applicationData.salaryFinal,
+      totalCompOffered: applicationData.totalCompOffered,
+      totalCompFinal: applicationData.totalCompFinal,
+      equityOffered: applicationData.equityOffered,
+      equityFinal: applicationData.equityFinal,
+      bonusOffered: applicationData.bonusOffered,
+      bonusFinal: applicationData.bonusFinal,
       source: applicationData.source,
-      application_date: applicationData.application_date
-        ? new Date(applicationData.application_date)
+      applicationDate: applicationData.applicationDate
+        ? new Date(applicationData.applicationDate)
         : null,
-      response_date: applicationData.response_date ? new Date(applicationData.response_date) : null,
-      first_interview_date: applicationData.first_interview_date
-        ? new Date(applicationData.first_interview_date)
+      responseDate: applicationData.responseDate ? new Date(applicationData.responseDate) : null,
+      firstInterviewDate: applicationData.firstInterviewDate
+        ? new Date(applicationData.firstInterviewDate)
         : null,
-      offer_date: applicationData.offer_date ? new Date(applicationData.offer_date) : null,
-      decision_date: applicationData.decision_date ? new Date(applicationData.decision_date) : null,
-      rejection_reason: applicationData.rejection_reason,
-      withdrawal_reason: applicationData.withdrawal_reason,
-      time_to_response: applicationData.time_to_response,
-      time_to_first_interview: applicationData.time_to_first_interview,
-      time_to_offer: applicationData.time_to_offer,
-      time_to_decision: applicationData.time_to_decision,
-      cover_letter: applicationData.cover_letter,
+      offerDate: applicationData.offerDate ? new Date(applicationData.offerDate) : null,
+      decisionDate: applicationData.decisionDate ? new Date(applicationData.decisionDate) : null,
+      rejectionReason: applicationData.rejectionReason,
+      withdrawalReason: applicationData.withdrawalReason,
+      timeToResponse: applicationData.timeToResponse,
+      timeToFirstInterview: applicationData.timeToFirstInterview,
+      timeToOffer: applicationData.timeToOffer,
+      timeToDecision: applicationData.timeToDecision,
+      coverLetter: applicationData.coverLetter,
       resume: applicationData.resume,
-      jobId: applicationData.job_id,
+      jobId: applicationData.jobId,
       link: applicationData.link,
-      phone_screen: applicationData.phone_screen,
+      phoneScreen: applicationData.phoneScreen,
       reference: applicationData.reference,
-      interview_dates: Array.isArray(applicationData.interview_dates)
-        ? (applicationData.interview_dates as unknown as InterviewEntry[])
+      interviewDates: Array.isArray(applicationData.interviewDates)
+        ? (applicationData.interviewDates as unknown as InterviewEntry[])
         : [],
-      company_notes: applicationData.company_notes,
-      negotiation_notes: applicationData.negotiation_notes,
-      recruiter_name: applicationData.recruiter_name,
-      recruiter_email: applicationData.recruiter_email,
-      recruiter_linkedin: applicationData.recruiter_linkedin,
+      companyNotes: applicationData.companyNotes,
+      negotiationNotes: applicationData.negotiationNotes,
+      recruiterName: applicationData.recruiterName,
+      recruiterEmail: applicationData.recruiterEmail,
+      recruiterLinkedin: applicationData.recruiterLinkedin,
       stages: Array.isArray(applicationData.stages) ? applicationData.stages : [],
       createdat: applicationData.createdat ? new Date(applicationData.createdat) : new Date(),
       updatedat: applicationData.updatedat ? new Date(applicationData.updatedat) : new Date(),
@@ -229,12 +229,12 @@ export class JobApplicationsService {
   /**
    * Verify application ownership
    */
-  static async verifyOwnership(applicationId: string, owner_userid: string): Promise<boolean> {
+  static async verifyOwnership(applicationId: string, ownerUserid: string): Promise<boolean> {
     const application = await db
-      .selectFrom('app.job_applications')
+      .selectFrom('app.jobApplications')
       .select('id')
       .where('id', '=', applicationId)
-      .where('owner_userid', '=', owner_userid)
+      .where('ownerUserid', '=', ownerUserid)
       .executeTakeFirst();
 
     return Boolean(application);
@@ -246,16 +246,16 @@ export class JobApplicationsService {
   static async updateApplication(
     applicationId: string,
     updates: UpdateCareerJobApplicationInput,
-    owner_userid?: string,
+    ownerUserid?: string,
   ): Promise<void> {
     if (Object.keys(updates).length === 0) {
       return;
     }
 
-    let query = db.updateTable('app.job_applications').set(updates).where('id', '=', applicationId);
+    let query = db.updateTable('app.jobApplications').set(updates).where('id', '=', applicationId);
 
-    if (owner_userid) {
-      query = query.where('owner_userid', '=', owner_userid);
+    if (ownerUserid) {
+      query = query.where('ownerUserid', '=', ownerUserid);
     }
 
     await query.executeTakeFirstOrThrow();
@@ -271,9 +271,9 @@ export class JobApplicationsService {
     content: string,
   ): Promise<void> {
     await db
-      .insertInto('app.application_notes')
+      .insertInto('app.applicationNotes')
       .values({
-        application_id: applicationId,
+        applicationId: applicationId,
         type: type || 'general',
         title,
         content,
@@ -285,7 +285,7 @@ export class JobApplicationsService {
    * Delete a note
    */
   static async deleteNote(noteId: string): Promise<void> {
-    await db.deleteFrom('app.application_notes').where('id', '=', noteId).execute();
+    await db.deleteFrom('app.applicationNotes').where('id', '=', noteId).execute();
   }
 
   /**
@@ -293,19 +293,19 @@ export class JobApplicationsService {
    */
   static async addInterview(applicationId: string, interview: InterviewEntry): Promise<void> {
     const currentApplication = await db
-      .selectFrom('app.job_applications')
-      .select('interview_dates')
+      .selectFrom('app.jobApplications')
+      .select('interviewDates')
       .where('id', '=', applicationId)
       .executeTakeFirst();
 
-    const currentInterviews = Array.isArray(currentApplication?.interview_dates)
-      ? (currentApplication.interview_dates as unknown as InterviewEntry[])
+    const currentInterviews = Array.isArray(currentApplication?.interviewDates)
+      ? (currentApplication.interviewDates as unknown as InterviewEntry[])
       : [];
 
     await db
-      .updateTable('app.job_applications')
+      .updateTable('app.jobApplications')
       .set({
-        interview_dates: [...currentInterviews, interview].map(interviewEntryToJson) as JsonValue,
+        interviewDates: [...currentInterviews, interview].map(interviewEntryToJson) as JsonValue,
       })
       .where('id', '=', applicationId)
       .executeTakeFirstOrThrow();
@@ -314,42 +314,42 @@ export class JobApplicationsService {
   /**
    * Get application by ID for ownership verification
    */
-  static async getApplicationById(applicationId: string, owner_userid: string) {
+  static async getApplicationById(applicationId: string, ownerUserid: string) {
     const application = await db
-      .selectFrom('app.job_applications')
+      .selectFrom('app.jobApplications')
       .selectAll()
       .where('id', '=', applicationId)
-      .where('owner_userid', '=', owner_userid)
+      .where('ownerUserid', '=', ownerUserid)
       .executeTakeFirst();
 
     return application || null;
   }
 
   static async createApplication(
-    owner_userid: string,
+    ownerUserid: string,
     input: CreateApplicationInput,
   ): Promise<CareerJobApplicationRecord> {
-    const company = await CareerRepository.findOrCreateCompany(db, owner_userid, {
+    const company = await CareerRepository.findOrCreateCompany(db, ownerUserid, {
       name: input.companyName,
       website: input.companyWebsite ?? null,
       description: input.companyDescription ?? null,
     });
 
-    return CareerRepository.createJobApplication(db, owner_userid, {
-      company_id: company.id,
+    return CareerRepository.createJobApplication(db, ownerUserid, {
+      companyId: company.id,
       position: input.position,
       status: input.status ?? JobApplicationStatus.APPLIED,
-      start_date: input.start_date ?? new Date(),
+      startDate: input.startDate ?? new Date(),
       location: input.location ?? null,
-      job_posting: input.job_posting ?? null,
+      jobPosting: input.jobPosting ?? null,
       requirements: input.requirements ?? [],
       skills: input.skills ?? [],
-      job_posting_url: input.job_posting_url ?? null,
-      job_posting_word_count: input.job_posting_word_count ?? null,
-      salary_quoted: input.salary_quoted ?? null,
-      recruiter_name: input.recruiter_name ?? null,
-      recruiter_email: input.recruiter_email ?? null,
-      recruiter_linkedin: input.recruiter_linkedin ?? null,
+      jobPostingUrl: input.jobPostingUrl ?? null,
+      jobPostingWordCount: input.jobPostingWordCount ?? null,
+      salaryQuoted: input.salaryQuoted ?? null,
+      recruiterName: input.recruiterName ?? null,
+      recruiterEmail: input.recruiterEmail ?? null,
+      recruiterLinkedin: input.recruiterLinkedin ?? null,
       source: input.source ?? null,
       link: input.link ?? null,
       reference: false,

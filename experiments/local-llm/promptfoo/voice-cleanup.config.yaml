@@ -1,0 +1,27 @@
+description: "Voice transcript cleanup — filler removal without losing meaning"
+
+providers:
+  - id: ollama:chat:gemma4:e2b-mlx
+    label: gemma4-e2b-mlx (local)
+    config:
+      temperature: 0
+  - id: openrouter:openai/gpt-4o-mini
+    label: gpt-4o-mini (current production voice-cleanup default)
+    config:
+      temperature: 0
+
+prompts:
+  - file://prompts/voice-cleanup.json
+
+tests:
+  - vars:
+      rawText: >-
+        um so like i need to uh pick up the the dry cleaning tomorrow and also um call
+        john about the uh about the meeting on thursday i think it's at like 3pm or something
+      # Encoded as a JSON string, not a YAML list — promptfoo treats a plain
+      # YAML-list var as a test-case matrix (one row per element) rather than
+      # a single array value. See assertions/voice-cleanup.js for the parse side.
+      mustPreserve: '["dry cleaning", "john", "thursday", "3"]'
+    assert:
+      - type: javascript
+        value: file://assertions/voice-cleanup.js

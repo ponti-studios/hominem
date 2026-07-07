@@ -117,7 +117,7 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
               <div className="flex items-center justify-between gap-3">
                 <h4 className="subheading-4 text-foreground">Application Submitted</h4>
                 <span className="body-3 text-muted-foreground">
-                  {new Date(application.start_date).toLocaleDateString()}
+                  {new Date(application.startDate).toLocaleDateString()}
                 </span>
               </div>
               <p className="body-3 text-muted-foreground">Initial application submitted</p>
@@ -126,7 +126,7 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
         </Card>
 
         {/* Interviews */}
-        {jsonArray<InterviewEntry>(application.interview_dates).map((interview) => (
+        {jsonArray<InterviewEntry>(application.interviewDates).map((interview) => (
           <Card key={interview.date}>
             <CardContent className="flex items-start gap-4 p-4">
               <div className="mt-1 size-3 shrink-0 rounded-full bg-accent" />

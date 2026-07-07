@@ -1,0 +1,19 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Switches between the Notes and Chats tabs in the inbox.
+# Segments are tapped by text because each is part of a single native
+# segmented control (testID="inbox-tab-control") rather than separate
+# elements with their own testIDs.
+- runFlow: startup.yaml
+- assertVisible:
+    id: inbox-composer-input
+- assertVisible:
+    id: inbox-tab-control
+- tapOn: Chats
+- assertVisible: Chats
+- assertVisible:
+    id: inbox-composer-input
+- tapOn: Notes
+- assertVisible: Notes
+- assertVisible:
+    id: inbox-composer-input

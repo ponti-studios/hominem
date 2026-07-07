@@ -10,13 +10,13 @@ export interface AccountPortfolioSummary {
   id: string;
   title: string;
   slug: string;
-  is_public: boolean;
-  is_active: boolean;
+  isPublic: boolean;
+  isActive: boolean;
   updatedat: string | Date;
   name?: string;
-  job_title?: string;
+  jobTitle?: string;
   bio?: string;
-  profile_image_url?: string;
+  profileImageUrl?: string;
 }
 
 export interface AccountLoaderData {
@@ -31,17 +31,17 @@ export interface BasicInfoFormValues {
   name: string;
   initials?: string | null;
   title?: string | null;
-  job_title: string;
+  jobTitle: string;
   bio: string;
   tagline: string;
-  current_location: string;
-  location_tagline?: string | null;
+  currentLocation: string;
+  locationTagline?: string | null;
   email: string;
   phone?: string | null;
-  availability_status?: boolean;
-  availability_message?: string | null;
-  is_public?: boolean;
-  is_active?: boolean;
+  availabilityStatus?: boolean;
+  availabilityMessage?: string | null;
+  isPublic?: boolean;
+  isActive?: boolean;
 }
 
 export interface AccountActionResult<TData = undefined> {

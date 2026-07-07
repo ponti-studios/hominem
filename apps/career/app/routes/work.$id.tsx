@@ -100,7 +100,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
       throw new Response('Work experience not found', { status: 404 });
     }
 
-    const projects = await getProjectsByWorkExperience(workExperience.portfolio_id, id);
+    const projects = await getProjectsByWorkExperience(workExperience.portfolioId, id);
 
     return {
       workExperience,
@@ -123,14 +123,14 @@ export async function action({ context, request, params }: Route.ActionArgs) {
   const operation = formData.get('operation');
 
   if (operation === 'delete') {
-    const portfolio_id = formData.get('portfolio_id');
+    const portfolioId = formData.get('portfolioId');
 
-    if (typeof portfolio_id !== 'string' || !portfolio_id) {
+    if (typeof portfolioId !== 'string' || !portfolioId) {
       return { success: false, operation, error: 'Choose a work experience before deleting it.' };
     }
 
     try {
-      await CareerRepository.deleteWorkExperience(db, user.id, id, portfolio_id);
+      await CareerRepository.deleteWorkExperience(db, user.id, id, portfolioId);
 
       return { success: true, operation };
     } catch (error) {
@@ -202,11 +202,11 @@ export async function action({ context, request, params }: Route.ActionArgs) {
 interface OverviewFormValues {
   role: string;
   company: string;
-  start_date: string;
-  end_date: string;
+  startDate: string;
+  endDate: string;
   is_current: boolean;
-  employment_type: string;
-  work_arrangement: string;
+  employmentType: string;
+  workArrangement: string;
   description: string;
   location: string;
 }
@@ -220,22 +220,22 @@ interface TechnologiesFormValues {
 }
 
 interface CompensationFormValues {
-  base_salary: string;
-  signing_bonus: string;
-  annual_bonus: string;
+  baseSalary: string;
+  signingBonus: string;
+  annualBonus: string;
 }
 
 interface TeamFormValues {
-  seniority_level: string;
+  seniorityLevel: string;
   department: string;
-  team_size: string;
-  direct_reports: string;
-  reports_to: string;
+  teamSize: string;
+  directReports: string;
+  reportsTo: string;
 }
 
 interface ExitFormValues {
-  reason_for_leaving: string;
-  exit_notes: string;
+  reasonForLeaving: string;
+  exitNotes: string;
 }
 
 export default function WorkExperienceDetail({ loaderData }: Route.ComponentProps) {
@@ -286,17 +286,17 @@ export default function WorkExperienceDetail({ loaderData }: Route.ComponentProp
             </div>
 
             <div className="body-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground">
-              <span>{formatDateRange(workExperience.start_date, workExperience.end_date)}</span>
-              {workExperience.employment_type ? (
+              <span>{formatDateRange(workExperience.startDate, workExperience.endDate)}</span>
+              {workExperience.employmentType ? (
                 <>
                   <span className="text-border">·</span>
-                  <span>{formatOptionalLabel(workExperience.employment_type)}</span>
+                  <span>{formatOptionalLabel(workExperience.employmentType)}</span>
                 </>
               ) : null}
-              {workExperience.work_arrangement ? (
+              {workExperience.workArrangement ? (
                 <>
                   <span className="text-border">·</span>
-                  <span>{formatOptionalLabel(workExperience.work_arrangement)}</span>
+                  <span>{formatOptionalLabel(workExperience.workArrangement)}</span>
                 </>
               ) : null}
             </div>
@@ -364,11 +364,11 @@ function OverviewSection({
     () => ({
       role: workExperience.role ?? '',
       company: workExperience.company ?? '',
-      start_date: toMonthInputValue(workExperience.start_date),
-      end_date: toMonthInputValue(workExperience.end_date),
-      is_current: !workExperience.end_date,
-      employment_type: workExperience.employment_type ?? '',
-      work_arrangement: workExperience.work_arrangement ?? '',
+      startDate: toMonthInputValue(workExperience.startDate),
+      endDate: toMonthInputValue(workExperience.endDate),
+      is_current: !workExperience.endDate,
+      employmentType: workExperience.employmentType ?? '',
+      workArrangement: workExperience.workArrangement ?? '',
       description: workExperience.description ?? '',
       location: metadata.location ?? '',
     }),
@@ -397,10 +397,10 @@ function OverviewSection({
     submitUpdates({
       role: values.role.trim(),
       company: values.company.trim(),
-      start_date: values.start_date || null,
-      end_date: values.is_current ? null : values.end_date || null,
-      employment_type: normalizeOptionalText(values.employment_type),
-      work_arrangement: normalizeOptionalText(values.work_arrangement),
+      startDate: values.startDate || null,
+      endDate: values.is_current ? null : values.endDate || null,
+      employmentType: normalizeOptionalText(values.employmentType),
+      workArrangement: normalizeOptionalText(values.workArrangement),
       description: values.description.trim(),
       metadata: {
         location: normalizeOptionalText(values.location),
@@ -430,11 +430,11 @@ function OverviewSection({
             <Field label="Company" error={errors.company?.message}>
               <Input {...register('company', { required: 'Add the company name.' })} />
             </Field>
-            <Field label="Start month" error={errors.start_date?.message}>
-              <Input type="month" {...register('start_date')} />
+            <Field label="Start month" error={errors.startDate?.message}>
+              <Input type="month" {...register('startDate')} />
             </Field>
             <Field label="End month" helpText="Leave blank for a current role.">
-              <Input type="month" disabled={isCurrent} {...register('end_date')} />
+              <Input type="month" disabled={isCurrent} {...register('endDate')} />
             </Field>
           </div>
 
@@ -452,7 +452,7 @@ function OverviewSection({
             <Field label="Employment type">
               <Controller
                 control={control}
-                name="employment_type"
+                name="employmentType"
                 render={({ field }) => (
                   <Select
                     value={field.value ?? ''}
@@ -476,7 +476,7 @@ function OverviewSection({
             <Field label="Work arrangement">
               <Controller
                 control={control}
-                name="work_arrangement"
+                name="workArrangement"
                 render={({ field }) => (
                   <Select
                     value={field.value ?? ''}
@@ -528,15 +528,15 @@ function OverviewSection({
             <DetailRow label="Company" value={workExperience.company || 'Not set'} />
             <DetailRow
               label="Timeline"
-              value={formatDateRange(workExperience.start_date, workExperience.end_date)}
+              value={formatDateRange(workExperience.startDate, workExperience.endDate)}
             />
             <DetailRow
               label="Employment"
-              value={formatOptionalLabel(workExperience.employment_type) ?? 'Not set'}
+              value={formatOptionalLabel(workExperience.employmentType) ?? 'Not set'}
             />
             <DetailRow
               label="Arrangement"
-              value={formatOptionalLabel(workExperience.work_arrangement) ?? 'Not set'}
+              value={formatOptionalLabel(workExperience.workArrangement) ?? 'Not set'}
             />
             <DetailRow label="Location" value={metadata.location ?? 'Not set'} />
           </div>
@@ -779,9 +779,9 @@ function CompensationSection({ workExperience }: { workExperience: WorkExperienc
   const [isEditing, setIsEditing] = useState(false);
   const defaultValues = useMemo(
     () => ({
-      base_salary: formatCurrencyInput(workExperience.base_salary),
-      signing_bonus: formatCurrencyInput(workExperience.signing_bonus),
-      annual_bonus: formatCurrencyInput(workExperience.annual_bonus),
+      baseSalary: formatCurrencyInput(workExperience.baseSalary),
+      signingBonus: formatCurrencyInput(workExperience.signingBonus),
+      annualBonus: formatCurrencyInput(workExperience.annualBonus),
     }),
     [workExperience],
   );
@@ -798,9 +798,9 @@ function CompensationSection({ workExperience }: { workExperience: WorkExperienc
 
   const onSubmit: SubmitHandler<CompensationFormValues> = (values) =>
     submitUpdates({
-      base_salary: normalizeCurrencyInput(values.base_salary),
-      signing_bonus: normalizeCurrencyInput(values.signing_bonus),
-      annual_bonus: normalizeCurrencyInput(values.annual_bonus),
+      baseSalary: normalizeCurrencyInput(values.baseSalary),
+      signingBonus: normalizeCurrencyInput(values.signingBonus),
+      annualBonus: normalizeCurrencyInput(values.annualBonus),
     });
 
   return (
@@ -821,13 +821,13 @@ function CompensationSection({ workExperience }: { workExperience: WorkExperienc
 
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Base salary" helpText="Enter the annual amount in dollars.">
-              <Input inputMode="decimal" placeholder="180000" {...register('base_salary')} />
+              <Input inputMode="decimal" placeholder="180000" {...register('baseSalary')} />
             </Field>
             <Field label="Signing bonus">
-              <Input inputMode="decimal" placeholder="25000" {...register('signing_bonus')} />
+              <Input inputMode="decimal" placeholder="25000" {...register('signingBonus')} />
             </Field>
             <Field label="Annual bonus">
-              <Input inputMode="decimal" placeholder="30000" {...register('annual_bonus')} />
+              <Input inputMode="decimal" placeholder="30000" {...register('annualBonus')} />
             </Field>
           </div>
 
@@ -844,15 +844,15 @@ function CompensationSection({ workExperience }: { workExperience: WorkExperienc
         <div className="grid gap-3 md:grid-cols-2">
           <DetailRow
             label="Base salary"
-            value={formatCurrency(workExperience.base_salary) ?? 'Not set'}
+            value={formatCurrency(workExperience.baseSalary) ?? 'Not set'}
           />
           <DetailRow
             label="Signing bonus"
-            value={formatCurrency(workExperience.signing_bonus) ?? 'Not set'}
+            value={formatCurrency(workExperience.signingBonus) ?? 'Not set'}
           />
           <DetailRow
             label="Annual bonus"
-            value={formatCurrency(workExperience.annual_bonus) ?? 'Not set'}
+            value={formatCurrency(workExperience.annualBonus) ?? 'Not set'}
           />
         </div>
       ) : (
@@ -866,11 +866,11 @@ function TeamSection({ workExperience }: { workExperience: WorkExperienceRecord 
   const [isEditing, setIsEditing] = useState(false);
   const defaultValues = useMemo(
     () => ({
-      seniority_level: workExperience.seniority_level ?? '',
+      seniorityLevel: workExperience.seniorityLevel ?? '',
       department: workExperience.department ?? '',
-      team_size: workExperience.team_size?.toString() ?? '',
-      direct_reports: workExperience.direct_reports?.toString() ?? '',
-      reports_to: workExperience.reports_to ?? '',
+      teamSize: workExperience.teamSize?.toString() ?? '',
+      directReports: workExperience.directReports?.toString() ?? '',
+      reportsTo: workExperience.reportsTo ?? '',
     }),
     [workExperience],
   );
@@ -887,11 +887,11 @@ function TeamSection({ workExperience }: { workExperience: WorkExperienceRecord 
 
   const onSubmit: SubmitHandler<TeamFormValues> = (values) =>
     submitUpdates({
-      seniority_level: normalizeOptionalText(values.seniority_level),
+      seniorityLevel: normalizeOptionalText(values.seniorityLevel),
       department: normalizeOptionalText(values.department),
-      team_size: normalizeOptionalNumber(values.team_size),
-      direct_reports: normalizeOptionalNumber(values.direct_reports),
-      reports_to: normalizeOptionalText(values.reports_to),
+      teamSize: normalizeOptionalNumber(values.teamSize),
+      directReports: normalizeOptionalNumber(values.directReports),
+      reportsTo: normalizeOptionalText(values.reportsTo),
     });
 
   return (
@@ -914,7 +914,7 @@ function TeamSection({ workExperience }: { workExperience: WorkExperienceRecord 
             <Field label="Seniority level">
               <Controller
                 control={control}
-                name="seniority_level"
+                name="seniorityLevel"
                 render={({ field }) => (
                   <Select
                     value={field.value ?? ''}
@@ -939,15 +939,15 @@ function TeamSection({ workExperience }: { workExperience: WorkExperienceRecord 
               <Input placeholder="Engineering" {...register('department')} />
             </Field>
             <Field label="Team size">
-              <Input inputMode="numeric" placeholder="12" {...register('team_size')} />
+              <Input inputMode="numeric" placeholder="12" {...register('teamSize')} />
             </Field>
             <Field label="Direct reports">
-              <Input inputMode="numeric" placeholder="4" {...register('direct_reports')} />
+              <Input inputMode="numeric" placeholder="4" {...register('directReports')} />
             </Field>
           </div>
 
           <Field label="Reports to">
-            <Input placeholder="Director of Engineering" {...register('reports_to')} />
+            <Input placeholder="Director of Engineering" {...register('reportsTo')} />
           </Field>
 
           <SectionFormActions
@@ -963,20 +963,20 @@ function TeamSection({ workExperience }: { workExperience: WorkExperienceRecord 
         <div className="grid gap-3 md:grid-cols-2">
           <DetailRow
             label="Seniority"
-            value={formatOptionalLabel(workExperience.seniority_level) ?? 'Not set'}
+            value={formatOptionalLabel(workExperience.seniorityLevel) ?? 'Not set'}
           />
           <DetailRow label="Department" value={workExperience.department ?? 'Not set'} />
           <DetailRow
             label="Team size"
-            value={workExperience.team_size != null ? `${workExperience.team_size}` : 'Not set'}
+            value={workExperience.teamSize != null ? `${workExperience.teamSize}` : 'Not set'}
           />
           <DetailRow
             label="Direct reports"
             value={
-              workExperience.direct_reports != null ? `${workExperience.direct_reports}` : 'Not set'
+              workExperience.directReports != null ? `${workExperience.directReports}` : 'Not set'
             }
           />
-          <DetailRow label="Reports to" value={workExperience.reports_to ?? 'Not set'} />
+          <DetailRow label="Reports to" value={workExperience.reportsTo ?? 'Not set'} />
         </div>
       ) : (
         <SectionEmptyState copy="Add team context if this role included leadership, scope, or reporting details." />
@@ -989,8 +989,8 @@ function ExitSection({ workExperience }: { workExperience: WorkExperienceRecord 
   const [isEditing, setIsEditing] = useState(false);
   const defaultValues = useMemo(
     () => ({
-      reason_for_leaving: workExperience.reason_for_leaving ?? '',
-      exit_notes: workExperience.exit_notes ?? '',
+      reasonForLeaving: workExperience.reasonForLeaving ?? '',
+      exitNotes: workExperience.exitNotes ?? '',
     }),
     [workExperience],
   );
@@ -1007,8 +1007,8 @@ function ExitSection({ workExperience }: { workExperience: WorkExperienceRecord 
 
   const onSubmit: SubmitHandler<ExitFormValues> = (values) =>
     submitUpdates({
-      reason_for_leaving: normalizeOptionalText(values.reason_for_leaving),
-      exit_notes: normalizeOptionalText(values.exit_notes),
+      reasonForLeaving: normalizeOptionalText(values.reasonForLeaving),
+      exitNotes: normalizeOptionalText(values.exitNotes),
     });
 
   return (
@@ -1030,7 +1030,7 @@ function ExitSection({ workExperience }: { workExperience: WorkExperienceRecord 
           <Field label="Reason for leaving">
             <Controller
               control={control}
-              name="reason_for_leaving"
+              name="reasonForLeaving"
               render={({ field }) => (
                 <Select
                   value={field.value ?? ''}
@@ -1056,7 +1056,7 @@ function ExitSection({ workExperience }: { workExperience: WorkExperienceRecord 
             <Textarea
               rows={4}
               placeholder="Any nuance you want to remember about the transition."
-              {...register('exit_notes')}
+              {...register('exitNotes')}
             />
           </Field>
 
@@ -1073,13 +1073,13 @@ function ExitSection({ workExperience }: { workExperience: WorkExperienceRecord 
         <div className="space-y-4">
           <DetailRow
             label="Reason for leaving"
-            value={formatOptionalLabel(workExperience.reason_for_leaving) ?? 'Not set'}
+            value={formatOptionalLabel(workExperience.reasonForLeaving) ?? 'Not set'}
           />
-          {workExperience.exit_notes ? (
+          {workExperience.exitNotes ? (
             <div className="space-y-2">
               <p className="ui-eyebrow">Notes</p>
               <p className="body-2 max-w-3xl whitespace-pre-wrap text-foreground/90">
-                {workExperience.exit_notes}
+                {workExperience.exitNotes}
               </p>
             </div>
           ) : null}
@@ -1192,7 +1192,7 @@ function submitDelete(
 ) {
   const formData = new FormData();
   formData.append('operation', 'delete');
-  formData.append('portfolio_id', workExperience.portfolio_id);
+  formData.append('portfolioId', workExperience.portfolioId);
   clearSubmissionError();
   fetcher.submit(formData, { method: 'POST' });
 }
@@ -1222,45 +1222,45 @@ function normalizeWorkExperienceUpdates(
           ? updates.description.trim()
           : updates.description
         : undefined,
-    start_date:
-      updates.start_date !== undefined ? normalizeDateInput(updates.start_date) : undefined,
-    end_date: updates.end_date !== undefined ? normalizeDateInput(updates.end_date) : undefined,
-    base_salary:
-      updates.base_salary !== undefined ? normalizeCurrencyInput(updates.base_salary) : undefined,
-    signing_bonus:
-      updates.signing_bonus !== undefined
-        ? normalizeCurrencyInput(updates.signing_bonus)
+    startDate:
+      updates.startDate !== undefined ? normalizeDateInput(updates.startDate) : undefined,
+    endDate: updates.endDate !== undefined ? normalizeDateInput(updates.endDate) : undefined,
+    baseSalary:
+      updates.baseSalary !== undefined ? normalizeCurrencyInput(updates.baseSalary) : undefined,
+    signingBonus:
+      updates.signingBonus !== undefined
+        ? normalizeCurrencyInput(updates.signingBonus)
         : undefined,
-    annual_bonus:
-      updates.annual_bonus !== undefined ? normalizeCurrencyInput(updates.annual_bonus) : undefined,
-    employment_type:
-      updates.employment_type !== undefined
-        ? normalizeOptionalText(updates.employment_type)
+    annualBonus:
+      updates.annualBonus !== undefined ? normalizeCurrencyInput(updates.annualBonus) : undefined,
+    employmentType:
+      updates.employmentType !== undefined
+        ? normalizeOptionalText(updates.employmentType)
         : undefined,
-    work_arrangement:
-      updates.work_arrangement !== undefined
-        ? normalizeOptionalText(updates.work_arrangement)
+    workArrangement:
+      updates.workArrangement !== undefined
+        ? normalizeOptionalText(updates.workArrangement)
         : undefined,
-    seniority_level:
-      updates.seniority_level !== undefined
-        ? normalizeOptionalText(updates.seniority_level)
+    seniorityLevel:
+      updates.seniorityLevel !== undefined
+        ? normalizeOptionalText(updates.seniorityLevel)
         : undefined,
     department:
       updates.department !== undefined ? normalizeOptionalText(updates.department) : undefined,
-    team_size:
-      updates.team_size !== undefined ? normalizeOptionalNumber(updates.team_size) : undefined,
-    direct_reports:
-      updates.direct_reports !== undefined
-        ? normalizeOptionalNumber(updates.direct_reports)
+    teamSize:
+      updates.teamSize !== undefined ? normalizeOptionalNumber(updates.teamSize) : undefined,
+    directReports:
+      updates.directReports !== undefined
+        ? normalizeOptionalNumber(updates.directReports)
         : undefined,
-    reports_to:
-      updates.reports_to !== undefined ? normalizeOptionalText(updates.reports_to) : undefined,
-    reason_for_leaving:
-      updates.reason_for_leaving !== undefined
-        ? normalizeOptionalText(updates.reason_for_leaving)
+    reportsTo:
+      updates.reportsTo !== undefined ? normalizeOptionalText(updates.reportsTo) : undefined,
+    reasonForLeaving:
+      updates.reasonForLeaving !== undefined
+        ? normalizeOptionalText(updates.reasonForLeaving)
         : undefined,
-    exit_notes:
-      updates.exit_notes !== undefined ? normalizeOptionalText(updates.exit_notes) : undefined,
+    exitNotes:
+      updates.exitNotes !== undefined ? normalizeOptionalText(updates.exitNotes) : undefined,
     metadata: updates.metadata !== undefined ? normalizeMetadata(updates.metadata) : undefined,
   };
 }
@@ -1426,24 +1426,24 @@ function formatCurrencyInput(cents: number | null | undefined) {
 
 function hasCompensation(workExperience: WorkExperienceRecord) {
   return [
-    workExperience.base_salary,
-    workExperience.signing_bonus,
-    workExperience.annual_bonus,
+    workExperience.baseSalary,
+    workExperience.signingBonus,
+    workExperience.annualBonus,
   ].some((value) => value !== null && value !== undefined);
 }
 
 function hasTeamDetails(workExperience: WorkExperienceRecord) {
   return [
-    workExperience.seniority_level,
+    workExperience.seniorityLevel,
     workExperience.department,
-    workExperience.team_size,
-    workExperience.direct_reports,
-    workExperience.reports_to,
+    workExperience.teamSize,
+    workExperience.directReports,
+    workExperience.reportsTo,
   ].some((value) => value !== null && value !== undefined && value !== '');
 }
 
 function hasExitDetails(workExperience: WorkExperienceRecord) {
-  return [workExperience.reason_for_leaving, workExperience.exit_notes].some(
+  return [workExperience.reasonForLeaving, workExperience.exitNotes].some(
     (value) => value !== null && value !== undefined && value !== '',
   );
 }

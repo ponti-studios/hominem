@@ -5,7 +5,7 @@
  */
 
 export type { Selectable } from 'kysely';
-export { db, healthCheck, pool, sql } from './db';
+export { authDb, db, healthCheck, pool, sql } from './db';
 export type { DB as Database, Json, JsonArray, JsonObject, JsonValue } from './types/database';
 
 // Transaction support
@@ -27,9 +27,6 @@ export {
   ValidationError,
 } from './errors';
 export type { ErrorCode } from './errors';
-
-// Shared mapper utilities
-export { toIsoString, toRequiredIsoString } from './services/_shared/mappers';
 
 // Repositories
 export { NoteRepository } from './services/notes/note.repository';
@@ -62,14 +59,42 @@ export { FileRepository } from './services/files/file.repository';
 export type { FileRecord, UpsertFileInput } from './services/files/file.repository';
 
 export { TaskRepository } from './services/tasks/task.repository';
-export type { CreateTaskInput, TaskRecord } from './services/tasks/task.repository';
+export type {
+  CreateTaskBatchInput,
+  CreateTaskInput,
+  TaskBatchRecord,
+  TaskListRecord,
+  TaskRecord,
+} from './services/tasks/task.repository';
+
+export { VectorDocumentRepository } from './services/vector/vector-document.repository';
+export type {
+  SearchVectorDocumentsInput,
+  UpsertVectorDocumentInput,
+  VectorDocumentEntityType,
+  VectorDocumentRecord,
+  VectorDocumentSearchResult,
+} from './services/vector/vector-document.repository';
+
+export { AIUsageEventRepository } from './services/ai/ai-usage.repository';
+export type {
+  AIUsageEventRecord,
+  AIUsageFeature,
+  AIUsageFeatureBreakdownRecord,
+  AIUsageModelBreakdownRecord,
+  AIUsageOperation,
+  AIUsageSummaryRecord,
+  CreateAIUsageEventInput,
+} from './services/ai/ai-usage.repository';
 
 export { CareerRepository } from './services/career/career.repository';
 export type {
+  CareerApplicationStage,
   CareerCertificationRecord,
   CareerCompanyRecord,
   CareerEventRecord,
   CareerFullPortfolioRecord,
+  CareerInterviewEntry,
   CareerJobApplicationRecord,
   CareerPortfolioRecord,
   CareerProjectRecord,
@@ -77,8 +102,6 @@ export type {
   CareerSocialLinksRecord,
   CareerTestimonialRecord,
   CareerWorkExperienceRecord,
-  CareerApplicationStage,
-  CareerInterviewEntry,
   CreateDefaultCareerPortfolioInput,
   UpdateCareerJobApplicationInput,
   UpdateCareerWorkExperienceInput,

@@ -1,0 +1,20 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Assumes seed data: a chat titled "Test Chat" exists and is visible in the
+# Chats tab of the inbox. Swipes left on the chat row to reveal the archive
+# action, taps "Archive", and verifies the chat is no longer visible.
+#
+# The swipe action button uses the accessibility label "Archive" (no testID),
+# so it is targeted by text regex. This is the same pattern used in
+# tasks-swipe-delete-task.yaml.
+- runFlow: startup.yaml
+- tapOn: Chats
+- assertVisible: Chats
+- assertVisible: Test Chat
+- swipe:
+    direction: LEFT
+    element:
+      text: Test Chat
+- tapOn:
+    text: "^Archive$"
+- assertNotVisible: Test Chat

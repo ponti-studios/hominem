@@ -25,7 +25,7 @@ export function OtpCodeInput({
   onComplete,
 }: OtpCodeInputProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const normalizedValue = normalizeOtp(value).slice(0, length);
+  const normalizedValue = normalizeOtp(value, length);
 
   React.useEffect(() => {
     if (autoFocus) {
@@ -35,7 +35,7 @@ export function OtpCodeInput({
 
   const handleChange = React.useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const next = normalizeOtp(event.target.value).slice(0, length);
+      const next = normalizeOtp(event.target.value, length);
       onChange(next);
       if (next.length === length) {
         onComplete?.(next);
@@ -47,7 +47,7 @@ export function OtpCodeInput({
   const handlePaste = React.useCallback(
     (event: React.ClipboardEvent<HTMLInputElement>) => {
       event.preventDefault();
-      const pasted = normalizeOtp(event.clipboardData.getData('text')).slice(0, length);
+      const pasted = normalizeOtp(event.clipboardData.getData('text'), length);
       if (!pasted) {
         return;
       }

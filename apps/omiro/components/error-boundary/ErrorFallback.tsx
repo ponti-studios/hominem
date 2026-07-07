@@ -42,10 +42,7 @@ export function ErrorFallback({
           tintColor={themeColors.destructive}
         />
         <Text
-          style={[
-            styles.title,
-            { fontSize: fontSizes[titleSize], color: themeColors.foreground },
-          ]}
+          style={[styles.title, { fontSize: fontSizes[titleSize], color: themeColors.foreground }]}
         >
           {title}
         </Text>

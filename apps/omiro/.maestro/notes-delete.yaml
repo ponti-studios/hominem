@@ -1,0 +1,18 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Assumes seed data: exactly one note exists in the inbox. Deletes it via the
+# row's overflow "Item actions" menu and confirms it is removed.
+- runFlow: startup.yaml
+- assertVisible:
+    id: inbox-item-note
+- assertVisible:
+    id: inbox-item-note-actions
+- tapOn:
+    id: inbox-item-note-actions
+    index: 0
+- tapOn: Delete
+- assertVisible: Delete note
+- tapOn:
+    text: "^Delete$"
+- assertNotVisible:
+    id: inbox-item-note

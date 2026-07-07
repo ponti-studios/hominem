@@ -1,9 +1,10 @@
 import { spacing } from '@hominem/ui/tokens';
-import React, { useEffect } from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { makeStyles, useThemeColors } from '~/components/theme';
+import { getRecordingSnapshot, subscribeRecording } from '~/components/media/audio.service';
 
 const BAR_COUNT = 12;
 const BAR_MAX_HEIGHT = 20;
@@ -42,13 +43,14 @@ function LevelBar({ db, tintColor }: LevelBarProps) {
   return <Animated.View style={[styles.bar, { backgroundColor: tintColor }, animatedStyle]} />;
 }
 
-interface RecordingLevelMeterProps {
-  meterings: number[];
-}
-
-export function RecordingLevelMeter({ meterings }: RecordingLevelMeterProps) {
+export function RecordingLevelMeter() {
   const styles = useStyles();
   const themeColors = useThemeColors();
+  const meterings = useSyncExternalStore(
+    subscribeRecording,
+    () => getRecordingSnapshot().meterings,
+    () => getRecordingSnapshot().meterings,
+  );
 
   const bars = Array.from({ length: BAR_COUNT }, (_, index) => {
     const sourceIndex = meterings.length - BAR_COUNT + index;

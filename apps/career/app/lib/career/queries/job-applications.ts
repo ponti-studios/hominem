@@ -10,11 +10,11 @@ import { calculatePercentageChange } from './utils';
 export type JobApplicationFilter = {
   status?: string;
   statuses?: string[];
-  company_id?: string;
+  companyId?: string;
   source?: string;
   search?: string;
-  start_date?: Date;
-  end_date?: Date;
+  startDate?: Date;
+  endDate?: Date;
   salaryMin?: number;
   salaryMax?: number;
 };
@@ -22,7 +22,7 @@ export type JobApplicationFilter = {
 export type PaginationOptions = {
   limit?: number;
   offset?: number;
-  orderBy?: 'application_date' | 'response_date' | 'offer_date' | 'companyName' | 'position';
+  orderBy?: 'applicationDate' | 'responseDate' | 'offerDate' | 'companyName' | 'position';
   orderDirection?: 'asc' | 'desc';
 };
 
@@ -79,9 +79,9 @@ export async function getJobApplicationMetrics(
   }
 
   const totalApplications = applications.length;
-  const responsesReceived = applications.filter((application) => application.response_date).length;
+  const responsesReceived = applications.filter((application) => application.responseDate).length;
   const interviewsScheduled = applications.filter(
-    (application) => application.first_interview_date,
+    (application) => application.firstInterviewDate,
   ).length;
   const offersReceived = applications.filter(
     (application) => application.status === 'OFFER' || application.status === 'ACCEPTED',
@@ -104,27 +104,27 @@ export async function getJobApplicationMetrics(
 }
 
 function calculateTimeMetrics(applications: ReturnType<typeof extractJobApplications>) {
-  const timeToResponseApps = applications.filter((application) => application.time_to_response);
-  const timeToOfferApps = applications.filter((application) => application.time_to_offer);
-  const timeToDecisionApps = applications.filter((application) => application.time_to_decision);
+  const timeToResponseApps = applications.filter((application) => application.timeToResponse);
+  const timeToOfferApps = applications.filter((application) => application.timeToOffer);
+  const timeToDecisionApps = applications.filter((application) => application.timeToDecision);
 
   return {
     averageTimeToResponse:
       timeToResponseApps.length > 0
         ? timeToResponseApps.reduce(
-            (sum, application) => sum + (application.time_to_response || 0),
+            (sum, application) => sum + (application.timeToResponse || 0),
             0,
           ) / timeToResponseApps.length
         : 0,
     averageTimeToOffer:
       timeToOfferApps.length > 0
-        ? timeToOfferApps.reduce((sum, application) => sum + (application.time_to_offer || 0), 0) /
+        ? timeToOfferApps.reduce((sum, application) => sum + (application.timeToOffer || 0), 0) /
           timeToOfferApps.length
         : 0,
     averageTimeToDecision:
       timeToDecisionApps.length > 0
         ? timeToDecisionApps.reduce(
-            (sum, application) => sum + (application.time_to_decision || 0),
+            (sum, application) => sum + (application.timeToDecision || 0),
             0,
           ) / timeToDecisionApps.length
         : 0,
@@ -136,20 +136,20 @@ function calculateSalaryMetrics(
   offersReceived: number,
 ) {
   const offeredSalaries = applications
-    .filter((application): application is typeof application & { salary_offered: number } =>
-      Boolean(application.salary_offered),
+    .filter((application): application is typeof application & { salaryOffered: number } =>
+      Boolean(application.salaryOffered),
     )
-    .map((application) => application.salary_offered);
+    .map((application) => application.salaryOffered);
   const acceptedSalaries = applications
-    .filter((application): application is typeof application & { salary_final: number } =>
-      Boolean(application.salary_final),
+    .filter((application): application is typeof application & { salaryFinal: number } =>
+      Boolean(application.salaryFinal),
     )
-    .map((application) => application.salary_final);
+    .map((application) => application.salaryFinal);
   const negotiatedApps = applications.filter(
     (application) =>
-      application.salary_offered &&
-      application.salary_negotiated &&
-      application.salary_negotiated > application.salary_offered,
+      application.salaryOffered &&
+      application.salaryNegotiated &&
+      application.salaryNegotiated > application.salaryOffered,
   );
 
   return {
@@ -165,10 +165,10 @@ function calculateSalaryMetrics(
     averageNegotiationIncrease:
       negotiatedApps.length > 0
         ? negotiatedApps.reduce((sum, application) => {
-            if (!application.salary_offered || !application.salary_negotiated) return sum;
+            if (!application.salaryOffered || !application.salaryNegotiated) return sum;
             return (
               sum +
-              calculatePercentageChange(application.salary_offered, application.salary_negotiated)
+              calculatePercentageChange(application.salaryOffered, application.salaryNegotiated)
             );
           }, 0) / negotiatedApps.length
         : 0,
@@ -183,7 +183,7 @@ function calculateSourceMetrics(applications: ReturnType<typeof extractJobApplic
     const current = sourceMap.get(source) || { count: 0, responses: 0, offers: 0 };
 
     current.count++;
-    if (application.response_date) current.responses++;
+    if (application.responseDate) current.responses++;
     if (application.status === 'OFFER' || application.status === 'ACCEPTED') current.offers++;
     sourceMap.set(source, current);
   }
@@ -220,28 +220,28 @@ export type JobApplicationFunnel = {
 };
 
 export async function getJobApplicationFunnel(
-  owner_userid: string,
+  ownerUserid: string,
 ): Promise<JobApplicationFunnel[]> {
-  const applications = extractJobApplications(await getUserJobApplications(owner_userid));
+  const applications = extractJobApplications(await getUserJobApplications(ownerUserid));
   const funnel = [
     { stage: 'Applied', count: applications.length },
     {
       stage: 'Response',
-      count: applications.filter((application) => application.response_date).length,
+      count: applications.filter((application) => application.responseDate).length,
     },
     {
       stage: 'Phone Screen',
       count: applications.filter(
         (application) =>
           application.status === 'PHONE_SCREEN' ||
-          (application.interview_dates &&
-            Array.isArray(application.interview_dates) &&
-            application.interview_dates.length > 0),
+          (application.interviewDates &&
+            Array.isArray(application.interviewDates) &&
+            application.interviewDates.length > 0),
       ).length,
     },
     {
       stage: 'Interview',
-      count: applications.filter((application) => application.first_interview_date).length,
+      count: applications.filter((application) => application.firstInterviewDate).length,
     },
     {
       stage: 'Final Round',
@@ -268,16 +268,16 @@ export async function getJobApplicationFunnel(
 export type RecentApplication = JobApplicationWithCompany;
 
 export async function getApplicationsByTimeframe(
-  owner_userid: string,
+  ownerUserid: string,
   days = 30,
 ): Promise<RecentApplication[]> {
-  const applications = extractJobApplications(await getUserJobApplications(owner_userid));
+  const applications = extractJobApplications(await getUserJobApplications(ownerUserid));
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
 
   return applications.filter(
     (application) =>
-      application.application_date && new Date(application.application_date) >= cutoffDate,
+      application.applicationDate && new Date(application.applicationDate) >= cutoffDate,
   );
 }
 
@@ -290,8 +290,8 @@ export type TopCompany = {
   interviewRate: number;
 };
 
-export async function getTopCompaniesAppliedTo(owner_userid: string, limit = 10) {
-  const applications = extractJobApplications(await getUserJobApplications(owner_userid));
+export async function getTopCompaniesAppliedTo(ownerUserid: string, limit = 10) {
+  const applications = extractJobApplications(await getUserJobApplications(ownerUserid));
   const companyMap = new Map<string, { count: number; offers: number; interviews: number }>();
 
   for (const application of applications) {
@@ -300,7 +300,7 @@ export async function getTopCompaniesAppliedTo(owner_userid: string, limit = 10)
 
     current.count++;
     if (application.status === 'OFFER' || application.status === 'ACCEPTED') current.offers++;
-    if (application.first_interview_date) current.interviews++;
+    if (application.firstInterviewDate) current.interviews++;
     companyMap.set(companyName, current);
   }
 
@@ -315,12 +315,12 @@ export async function getTopCompaniesAppliedTo(owner_userid: string, limit = 10)
     .slice(0, limit);
 }
 
-export async function getAverageApplicationCycleTime(owner_userid: string): Promise<number> {
-  const applications = extractJobApplications(await getUserJobApplications(owner_userid));
+export async function getAverageApplicationCycleTime(ownerUserid: string): Promise<number> {
+  const applications = extractJobApplications(await getUserJobApplications(ownerUserid));
   const completedApps = applications.filter(
     (application) =>
-      application.application_date &&
-      application.decision_date &&
+      application.applicationDate &&
+      application.decisionDate &&
       (application.status === 'ACCEPTED' ||
         application.status === 'REJECTED' ||
         application.status === 'WITHDRAWN'),
@@ -329,9 +329,9 @@ export async function getAverageApplicationCycleTime(owner_userid: string): Prom
   if (completedApps.length === 0) return 0;
 
   const totalDays = completedApps.reduce((sum, application) => {
-    if (!application.application_date || !application.decision_date) return sum;
-    const start = new Date(application.application_date);
-    const end = new Date(application.decision_date);
+    if (!application.applicationDate || !application.decisionDate) return sum;
+    const start = new Date(application.applicationDate);
+    const end = new Date(application.decisionDate);
     return sum + Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   }, 0);
 
@@ -339,12 +339,12 @@ export async function getAverageApplicationCycleTime(owner_userid: string): Prom
 }
 
 export async function getAllApplicationsWithCompany(
-  owner_userid: string,
+  ownerUserid: string,
   filter?: JobApplicationFilter,
   pagination?: PaginationOptions,
 ): Promise<ApplicationWithCompany[]> {
   let applications = extractJobApplications(
-    await getUserJobApplications(owner_userid),
+    await getUserJobApplications(ownerUserid),
   ) as ApplicationWithCompany[];
 
   if (filter?.status) {
@@ -357,9 +357,9 @@ export async function getAllApplicationsWithCompany(
     );
   }
 
-  if (filter?.company_id) {
+  if (filter?.companyId) {
     applications = applications.filter(
-      (application) => application.company_id === filter.company_id,
+      (application) => application.companyId === filter.companyId,
     );
   }
 
@@ -379,54 +379,54 @@ export async function getAllApplicationsWithCompany(
     });
   }
 
-  if (filter?.start_date) {
+  if (filter?.startDate) {
     applications = applications.filter(
       (application) =>
-        application.application_date &&
-        new Date(application.application_date) >= filter.start_date!,
+        application.applicationDate &&
+        new Date(application.applicationDate) >= filter.startDate!,
     );
   }
 
-  if (filter?.end_date) {
+  if (filter?.endDate) {
     applications = applications.filter(
       (application) =>
-        application.application_date && new Date(application.application_date) <= filter.end_date!,
+        application.applicationDate && new Date(application.applicationDate) <= filter.endDate!,
     );
   }
 
-  const orderBy = pagination?.orderBy || 'application_date';
+  const orderBy = pagination?.orderBy || 'applicationDate';
   const direction = pagination?.orderDirection === 'asc' ? 1 : -1;
 
   applications = [...applications].sort((left, right) => {
     const leftValue = (() => {
       switch (orderBy) {
-        case 'response_date':
-          return left.response_date ? new Date(left.response_date).getTime() : 0;
-        case 'offer_date':
-          return left.offer_date ? new Date(left.offer_date).getTime() : 0;
+        case 'responseDate':
+          return left.responseDate ? new Date(left.responseDate).getTime() : 0;
+        case 'offerDate':
+          return left.offerDate ? new Date(left.offerDate).getTime() : 0;
         case 'companyName':
           return left.company?.name.toLowerCase() || '';
         case 'position':
           return left.position.toLowerCase();
-        case 'application_date':
+        case 'applicationDate':
         default:
-          return left.application_date ? new Date(left.application_date).getTime() : 0;
+          return left.applicationDate ? new Date(left.applicationDate).getTime() : 0;
       }
     })();
 
     const rightValue = (() => {
       switch (orderBy) {
-        case 'response_date':
-          return right.response_date ? new Date(right.response_date).getTime() : 0;
-        case 'offer_date':
-          return right.offer_date ? new Date(right.offer_date).getTime() : 0;
+        case 'responseDate':
+          return right.responseDate ? new Date(right.responseDate).getTime() : 0;
+        case 'offerDate':
+          return right.offerDate ? new Date(right.offerDate).getTime() : 0;
         case 'companyName':
           return right.company?.name.toLowerCase() || '';
         case 'position':
           return right.position.toLowerCase();
-        case 'application_date':
+        case 'applicationDate':
         default:
-          return right.application_date ? new Date(right.application_date).getTime() : 0;
+          return right.applicationDate ? new Date(right.applicationDate).getTime() : 0;
       }
     })();
 
@@ -442,11 +442,11 @@ export async function getAllApplicationsWithCompany(
 }
 
 export async function getJobApplicationMetricsForUser(
-  owner_userid: string,
+  ownerUserid: string,
 ): Promise<JobApplicationMetrics> {
-  const applications = extractJobApplications(await getUserJobApplications(owner_userid));
+  const applications = extractJobApplications(await getUserJobApplications(ownerUserid));
   return getJobApplicationMetrics(applications);
 }
 
-export const getAllApplicationsWithCompanyForUser = (owner_userid: string) =>
-  getAllApplicationsWithCompany(owner_userid);
+export const getAllApplicationsWithCompanyForUser = (ownerUserid: string) =>
+  getAllApplicationsWithCompany(ownerUserid);

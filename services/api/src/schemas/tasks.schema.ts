@@ -1,7 +1,49 @@
 import * as z from 'zod';
 
+export const TaskPriority = z.enum(['low', 'medium', 'high']);
+
 export const CreateTaskSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().optional().nullable(),
   artifactType: z.enum(['task', 'task_list']),
+  priority: TaskPriority.optional(),
+  dueAt: z.iso.datetime().nullable().optional(),
+  parentTaskId: z.uuid().nullable().optional(),
 });
+
+export const ExtractTasksInputSchema = z.object({
+  transcript: z.string().min(1).max(20000),
+});
+
+export const VoiceTasksInputSchema = z.object({
+  transcript: z.string().min(1).max(20000),
+  referenceDate: z.iso.datetime().optional(),
+  timezone: z.string().optional(),
+});
+
+export const CreateTaskBatchSchema = z.object({
+  tasks: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(120),
+        description: z.string().trim().max(2000).optional(),
+      }),
+    )
+    .min(1)
+    .max(10),
+});
+
+export const TaskParamSchema = z.object({ id: z.uuid() });
+
+export const UpdateTaskStatusSchema = z.object({ completed: z.boolean() });
+
+export const UpdateTaskSchema = z
+  .object({
+    title: z.string().trim().min(1).max(120).optional(),
+    description: z.string().trim().max(2000).nullable().optional(),
+    priority: TaskPriority.optional(),
+    dueAt: z.iso.datetime().nullable().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided',
+  });

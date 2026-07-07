@@ -164,7 +164,7 @@ function resolveStorageFailure(error: unknown) {
 
 export const action: ActionFunction = async ({ request, context }) => {
   const user = context.get(userContext)!;
-  let owner_userid: string | undefined = user.id;
+  let ownerUserid: string | undefined = user.id;
 
   try {
     const rateLimit = resumeConvertRateLimit.isAllowed(user.id);
@@ -237,7 +237,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       pdfText = await extractPdfText(file);
     } catch (error) {
       logRouteError('Resume PDF text extraction failed', error, {
-        owner_userid: user.id,
+        ownerUserid: user.id,
         fileName: file.name,
         fileSize: file.size,
       });
@@ -293,7 +293,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       aiContent = getChatCompletionText(result);
     } catch (error) {
       logRouteError('Resume AI parsing request failed', error, {
-        owner_userid: user.id,
+        ownerUserid: user.id,
         fileName: file.name,
       });
       const failure = resolveAiParseFailure(error);
@@ -302,7 +302,7 @@ export const action: ActionFunction = async ({ request, context }) => {
 
     if (!aiContent.trim()) {
       logger.error('Resume AI parsing returned empty content', undefined, {
-        owner_userid: user.id,
+        ownerUserid: user.id,
         fileName: file.name,
       });
       return errorResponse(
@@ -318,7 +318,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       parsedResume = parseJsonObject(aiContent);
     } catch (error) {
       logRouteError('Resume AI parsing returned invalid JSON', error, {
-        owner_userid: user.id,
+        ownerUserid: user.id,
         fileName: file.name,
       });
       return errorResponse(
@@ -336,7 +336,7 @@ export const action: ActionFunction = async ({ request, context }) => {
     } = resumeSchema.safeParse(parsedResume as ConvertedResumeData);
     if (!success) {
       logger.error('Resume AI parsing failed schema validation', undefined, {
-        owner_userid: user.id,
+        ownerUserid: user.id,
         fileName: file.name,
         issues: schemaError.issues,
       });
@@ -357,7 +357,7 @@ export const action: ActionFunction = async ({ request, context }) => {
     } catch (error) {
       const failure = resolveStorageFailure(error);
       logger.error('Resume file upload failed', undefined, {
-        owner_userid: user.id,
+        ownerUserid: user.id,
         fileName: file.name,
         error: isStorageServiceError(error)
           ? error.code
@@ -369,17 +369,17 @@ export const action: ActionFunction = async ({ request, context }) => {
       return errorResponse(failure.error, 503, 'storage', true);
     }
 
-    let portfolio_id: string;
+    let portfolioId: string;
     let portfolioSlug: string;
     try {
       const saveResult = await saveResumeToDatabase(user.id, data, {
         replacePortfolioId: replaceExisting ? (existingPortfolio?.id ?? undefined) : undefined,
       });
-      portfolio_id = saveResult.portfolio_id;
+      portfolioId = saveResult.portfolioId;
       portfolioSlug = saveResult.portfolioSlug;
     } catch (error) {
       logRouteError('Resume database save failed', error, {
-        owner_userid: user.id,
+        ownerUserid: user.id,
         fileName: file.name,
       });
       if (uploadResult.id) {
@@ -387,7 +387,7 @@ export const action: ActionFunction = async ({ request, context }) => {
           const deleted = await resumeStorage.deleteFile(uploadResult.id, user.id);
           if (!deleted) {
             logger.error('Resume upload cleanup after database failure failed', undefined, {
-              owner_userid: user.id,
+              ownerUserid: user.id,
               fileName: file.name,
               fileId: uploadResult.id,
               error: 'File not found',
@@ -395,7 +395,7 @@ export const action: ActionFunction = async ({ request, context }) => {
           }
         } catch (cleanupError) {
           logRouteError('Resume upload cleanup after database failure threw', cleanupError, {
-            owner_userid: user.id,
+            ownerUserid: user.id,
             fileName: file.name,
             fileId: uploadResult.id,
           });
@@ -413,7 +413,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       message: 'Resume uploaded and processed successfully',
       data,
       saved: true,
-      portfolio_id,
+      portfolio_id: portfolioId,
       portfolioSlug,
       portfolioUrl: `/p/${portfolioSlug}`,
       fileUrl: uploadResult.url,
@@ -421,7 +421,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       retryable: false,
     } satisfies UploadResumeApiResponse;
   } catch (err) {
-    logRouteError('Resume conversion request failed before processing', err, { owner_userid });
+    logRouteError('Resume conversion request failed before processing', err, { ownerUserid });
 
     return errorResponse(
       'Could not start resume conversion. Please try again.',

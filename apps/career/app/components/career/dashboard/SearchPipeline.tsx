@@ -14,16 +14,16 @@ function getPipelineCounts(applications: ApplicationWithCompany[]) {
   const offer = live.filter((a) => a.status === 'OFFER' || a.status === 'ACCEPTED').length;
 
   const interviewing = live.filter(
-    (a) => a.first_interview_date && a.status !== 'OFFER' && a.status !== 'ACCEPTED',
+    (a) => a.firstInterviewDate && a.status !== 'OFFER' && a.status !== 'ACCEPTED',
   ).length;
 
   const screening = live.filter(
     (a) =>
-      a.response_date && !a.first_interview_date && a.status !== 'OFFER' && a.status !== 'ACCEPTED',
+      a.responseDate && !a.firstInterviewDate && a.status !== 'OFFER' && a.status !== 'ACCEPTED',
   ).length;
 
   const waiting = live.filter(
-    (a) => !a.response_date && a.status !== 'OFFER' && a.status !== 'ACCEPTED',
+    (a) => !a.responseDate && a.status !== 'OFFER' && a.status !== 'ACCEPTED',
   ).length;
 
   return { waiting, screening, interviewing, offer };

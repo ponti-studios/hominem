@@ -45,16 +45,16 @@ export function ApplicationsDesktopTable({ applications }: ApplicationsDesktopTa
 
               <p className="body-4 whitespace-nowrap text-text-tertiary">
                 {formatApplicationDate(
-                  application.application_date || application.start_date || null,
+                  application.applicationDate || application.startDate || null,
                 )}
               </p>
 
               <p className="body-4 whitespace-nowrap text-text-tertiary">
-                {formatApplicationDate(application.response_date)}
+                {formatApplicationDate(application.responseDate)}
               </p>
 
               <p className="body-4 whitespace-nowrap text-text-tertiary">
-                {formatApplicationSalary(application.salary_offered || application.salary_quoted)}
+                {formatApplicationSalary(application.salaryOffered || application.salaryQuoted)}
               </p>
 
               <p className="body-4 truncate capitalize text-text-tertiary">

@@ -14,7 +14,7 @@ const BENCHMARKS = {
 function getActiveInterviews(applications: ApplicationWithCompany[]) {
   return applications.filter(
     (a) =>
-      a.first_interview_date &&
+      a.firstInterviewDate &&
       a.status !== 'OFFER' &&
       a.status !== 'ACCEPTED' &&
       !['REJECTED', 'WITHDRAWN', 'CLOSED'].some((s) => a.status?.toUpperCase().includes(s)),

@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { Alert, TextInput } from 'react-native';
+import { TextInput } from 'react-native';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
 import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
@@ -7,7 +7,9 @@ import { ComposerProvider } from '~/components/composer/ComposerContext';
 import { ComposerShell } from '~/components/composer/ComposerShell';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
+import { InlineErrorBanner } from '~/components/composer/InlineErrorBanner';
 import { useComposerController } from '~/components/composer/useComposerController';
+import { getVoiceComposerErrorPresentation } from '~/components/composer/voiceComposerInput.helpers';
 import { VoiceRecordingPanel } from '~/components/composer/VoiceRecordingPanel';
 import { useActiveChat, useAutoUpdateChatTitle, useSendMessage } from '~/services/chat';
 import { clearChatDraft, readChatDraft, writeChatDraft } from '~/services/navigation/launch-state';
@@ -55,11 +57,6 @@ function ChatComposerDraftContent({
   const inputRef = useRef<TextInput>(null);
   const { sendChatMessage, isChatSending } = useSendMessage({ chatId });
   const autoUpdateTitle = useAutoUpdateChatTitle(chatId);
-  const handleVoiceError = useCallback(
-    (error: { title: string; message: string }) =>
-      Alert.alert(error.title, error.message, [{ text: 'OK' }]),
-    [],
-  );
   const {
     message,
     setMessage,
@@ -76,7 +73,9 @@ function ChatComposerDraftContent({
     isRecording,
     isRecordingElsewhere,
     recordingStartedAt,
-    recordingMeterings,
+    voiceState,
+    voiceError,
+    clearVoiceError,
     isEnhanceOpen,
     enhanceInstruction,
     setEnhanceInstruction,
@@ -91,7 +90,6 @@ function ChatComposerDraftContent({
     isSubmitting: isChatSending,
     onDraftChange: (msg) => writeChatDraft(chatId, msg),
     onClearDraft: () => clearChatDraft(chatId),
-    onVoiceError: handleVoiceError,
   });
 
   const handleSend = useCallback(async () => {
@@ -128,8 +126,13 @@ function ChatComposerDraftContent({
         isRecording ? (
           <VoiceRecordingPanel
             startedAt={recordingStartedAt}
-            meterings={recordingMeterings}
             onCancel={() => void cancelVoiceRecording()}
+            onDone={() => void handleVoicePress()}
+          />
+        ) : voiceState === 'failed' && voiceError ? (
+          <InlineErrorBanner
+            message={getVoiceComposerErrorPresentation(voiceError.code).message}
+            onDismiss={clearVoiceError}
           />
         ) : isEnhanceOpen ? (
           <InlineEnhanceTray

@@ -5,6 +5,11 @@ Hominem is a product monorepo with two active surfaces:
 - api in `services/api`
 - omiro in `apps/omiro`
 
+The reusable mobile starter extracted from Omiro now lives in the standalone
+`/Users/charlesponti/Developer/ponti-mobile-starter` repo. Hominem continues to own the
+production Omiro app, while `ponti-mobile-starter` owns the reusable mobile shell,
+theming, auth seams, and starter contract for future experiments.
+
 ## Architecture
 
 ```text

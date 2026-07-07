@@ -5,14 +5,11 @@ import { useComposerDraft } from '~/components/composer/useComposerDraft';
 import { useVoiceComposerInput } from '~/components/composer/useVoiceComposerInput';
 import { useInlineEnhance } from '~/services/ai';
 
-import type { VoiceComposerError } from './voiceComposerInput.helpers';
-
 interface UseComposerControllerOptions {
   initialMessage?: string;
   isSubmitting?: boolean;
   onDraftChange?: (message: string) => void;
   onClearDraft?: () => void;
-  onVoiceError?: (error: VoiceComposerError) => void;
 }
 
 export function useComposerController({
@@ -20,7 +17,6 @@ export function useComposerController({
   isSubmitting = false,
   onDraftChange,
   onClearDraft,
-  onVoiceError,
 }: UseComposerControllerOptions) {
   const {
     getMessage,
@@ -45,8 +41,10 @@ export function useComposerController({
     isRecording,
     isRecordingElsewhere,
     recordingStartedAt,
-    recordingMeterings,
-  } = useVoiceComposerInput({ getMessage, setMessage, onError: onVoiceError });
+    voiceState,
+    error: voiceError,
+    clearError: clearVoiceError,
+  } = useVoiceComposerInput({ getMessage, setMessage });
 
   const {
     isEnhanceOpen,
@@ -94,7 +92,9 @@ export function useComposerController({
     isRecording,
     isRecordingElsewhere,
     recordingStartedAt,
-    recordingMeterings,
+    voiceState,
+    voiceError,
+    clearVoiceError,
     isEnhanceOpen,
     enhanceInstruction,
     setEnhanceInstruction,

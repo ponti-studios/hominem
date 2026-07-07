@@ -30,7 +30,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
   return {
     project,
     workExperiences,
-    portfolioId: project.portfolio_id,
+    portfolioId: project.portfolioId,
   };
 }
 

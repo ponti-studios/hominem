@@ -1,4 +1,4 @@
-import { Kysely, PostgresDialect, sql as kyselySql, type Compilable } from 'kysely';
+import { CamelCasePlugin, Kysely, PostgresDialect, sql as kyselySql } from 'kysely';
 import pg from 'pg';
 
 import { env } from './env';
@@ -7,7 +7,7 @@ import type { DB as Database } from './types/database';
 const { Pool, types } = pg;
 
 // Re-export Kysely's sql template tag for raw SQL queries
-// Usage: await db.execute(sql`SELECT * FROM users`)
+// Usage: await sql`SELECT * FROM users`.execute(db)
 export const sql = kyselySql;
 
 // Configure pg to return dates as strings instead of Date objects
@@ -27,24 +27,19 @@ export const pool = new Pool({
   connectionString,
 });
 
-// Create Kysely instance with proper typing
-class KyselyDb extends Kysely<Database> {
-  async execute<R = unknown>(
-    query: Compilable<R> | { execute: (db: Kysely<Database>) => Promise<R> },
-  ) {
-    if (
-      typeof query === 'object' &&
-      query !== null &&
-      'execute' in query &&
-      typeof query.execute === 'function'
-    ) {
-      return query.execute(this);
-    }
-    return this.executeQuery(query as Compilable<R>);
-  }
-}
+export const db = new Kysely<Database>({
+  dialect: new PostgresDialect({
+    pool,
+  }),
+  plugins: [new CamelCasePlugin()],
+});
 
-export const db = new KyselyDb({
+// better-auth manages its own tables (account, session, user, verification, passkey,
+// jwks, deviceCode) and writes genuinely camelCase columns to Postgres directly, unlike
+// our app.*/labs.*/ops.* tables which are snake_case at rest. Those tables must bypass
+// CamelCasePlugin or it will mistranslate already-camelCase columns into snake_case SQL
+// that doesn't exist.
+export const authDb = new Kysely<Database>({
   dialect: new PostgresDialect({
     pool,
   }),

@@ -83,15 +83,15 @@ export interface CareerPerformanceRating {
 
 export interface CareerSalaryAdjustment {
   effectiveDate: string;
-  previous_salary: number;
-  new_salary: number;
+  previousSalary: number;
+  newSalary: number;
   increaseAmount: number;
-  increase_percentage: number;
+  increasePercentage: number;
   reason: 'promotion' | 'merit_increase' | 'market_adjustment' | 'cost_of_living' | 'role_change';
-  new_title?: string;
+  newTitle?: string;
   notes?: string;
   company: string;
-  work_experience_id: string;
+  workExperienceId: string;
 }
 
 export interface CareerInterviewEntry {
@@ -133,7 +133,7 @@ export type CareerEventRecord = CareerEventRow;
 export type CareerCertificationRecord = Selectable<AppCertifications>;
 
 export interface CreateDefaultCareerPortfolioInput {
-  owner_userid: string;
+  ownerUserid: string;
   email: string;
   name: string;
 }
@@ -142,42 +142,42 @@ export interface UpdateCareerWorkExperienceInput {
   role?: string;
   company?: string;
   description?: string;
-  start_date?: Date | string | null;
-  end_date?: Date | string | null;
+  startDate?: Date | string | null;
+  endDate?: Date | string | null;
   action?: string | null;
   tags?: string[];
   metadata?: Record<string, unknown> | null;
-  sort_order?: number;
-  is_visible?: boolean;
+  sortOrder?: number;
+  isVisible?: boolean;
   // financial
-  base_salary?: number | null;
-  signing_bonus?: number | null;
-  annual_bonus?: number | null;
+  baseSalary?: number | null;
+  signingBonus?: number | null;
+  annualBonus?: number | null;
   // role details
-  employment_type?: string | null;
-  work_arrangement?: string | null;
-  seniority_level?: string | null;
+  employmentType?: string | null;
+  workArrangement?: string | null;
+  seniorityLevel?: string | null;
   department?: string | null;
-  team_size?: number | null;
-  direct_reports?: number | null;
-  reports_to?: string | null;
+  teamSize?: number | null;
+  directReports?: number | null;
+  reportsTo?: string | null;
   // exit
-  reason_for_leaving?: string | null;
-  exit_notes?: string | null;
+  reasonForLeaving?: string | null;
+  exitNotes?: string | null;
 }
 
 export interface UpdateCareerJobApplicationInput {
   position?: string;
   status?: string;
   location?: string | null;
-  job_posting?: string | null;
-  salary_quoted?: string | null;
-  salary_accepted?: string | null;
-  company_notes?: string | null;
-  negotiation_notes?: string | null;
-  recruiter_name?: string | null;
-  recruiter_email?: string | null;
-  recruiter_linkedin?: string | null;
+  jobPosting?: string | null;
+  salaryQuoted?: string | null;
+  salaryAccepted?: string | null;
+  companyNotes?: string | null;
+  negotiationNotes?: string | null;
+  recruiterName?: string | null;
+  recruiterEmail?: string | null;
+  recruiterLinkedin?: string | null;
   resume?: string | null;
   updatedat?: Date;
 }
@@ -198,33 +198,33 @@ async function loadFullPortfolio(
 ): Promise<CareerFullPortfolioRecord> {
   const [social_links, work_experiences, skills, projects, testimonials] = await Promise.all([
     handle
-      .selectFrom('app.social_links')
+      .selectFrom('app.socialLinks')
       .selectAll()
-      .where('portfolio_id', '=', portfolio.id)
+      .where('portfolioId', '=', portfolio.id)
       .executeTakeFirst(),
     handle
-      .selectFrom('app.work_experiences')
+      .selectFrom('app.workExperiences')
       .selectAll()
-      .where('portfolio_id', '=', portfolio.id)
-      .orderBy(sql`start_date asc nulls last`)
+      .where('portfolioId', '=', portfolio.id)
+      .orderBy(sql`startDate asc nulls last`)
       .execute(),
     handle
       .selectFrom('app.skills')
       .selectAll()
-      .where('portfolio_id', '=', portfolio.id)
-      .orderBy('sort_order', 'asc')
+      .where('portfolioId', '=', portfolio.id)
+      .orderBy('sortOrder', 'asc')
       .execute(),
     handle
       .selectFrom('app.projects')
       .selectAll()
-      .where('portfolio_id', '=', portfolio.id)
-      .orderBy('sort_order', 'asc')
+      .where('portfolioId', '=', portfolio.id)
+      .orderBy('sortOrder', 'asc')
       .execute(),
     handle
       .selectFrom('app.testimonials')
       .selectAll()
-      .where('portfolio_id', '=', portfolio.id)
-      .orderBy('sort_order', 'asc')
+      .where('portfolioId', '=', portfolio.id)
+      .orderBy('sortOrder', 'asc')
       .execute(),
   ]);
 
@@ -249,35 +249,35 @@ function createPortfolioSlug(name: string): string {
   return `${base || 'portfolio'}-${suffix}`;
 }
 
-async function getOwnedPortfolioRow(handle: DbHandle, owner_userid: string, portfolio_id: string) {
+async function getOwnedPortfolioRow(handle: DbHandle, ownerUserid: string, portfolioId: string) {
   return handle
     .selectFrom('app.portfolios')
     .selectAll()
-    .where('id', '=', portfolio_id)
-    .where('owner_userid', '=', owner_userid)
+    .where('id', '=', portfolioId)
+    .where('ownerUserid', '=', ownerUserid)
     .executeTakeFirst();
 }
 
 async function getOwnedPortfolioRowOrThrow(
   handle: DbHandle,
-  owner_userid: string,
-  portfolio_id: string,
+  ownerUserid: string,
+  portfolioId: string,
 ) {
-  const portfolio = await getOwnedPortfolioRow(handle, owner_userid, portfolio_id);
+  const portfolio = await getOwnedPortfolioRow(handle, ownerUserid, portfolioId);
   if (!portfolio) {
-    throw new NotFoundError('Portfolio', { portfolio_id, owner_userid });
+    throw new NotFoundError('Portfolio', { portfolioId, ownerUserid });
   }
   return portfolio as PortfolioRow;
 }
 
 async function getCurrentPortfolioPreference(
   handle: DbHandle,
-  owner_userid: string,
+  ownerUserid: string,
 ): Promise<UserPortfolioPreferenceRow | null> {
   const preference = await handle
-    .selectFrom('app.user_portfolio_preferences')
+    .selectFrom('app.userPortfolioPreferences')
     .selectAll()
-    .where('user_id', '=', owner_userid)
+    .where('userId', '=', ownerUserid)
     .executeTakeFirst();
 
   return (preference as UserPortfolioPreferenceRow | undefined) ?? null;
@@ -285,15 +285,15 @@ async function getCurrentPortfolioPreference(
 
 async function resolveCurrentPortfolioRow(
   handle: DbHandle,
-  owner_userid: string,
+  ownerUserid: string,
 ): Promise<PortfolioRow | null> {
-  const preference = await getCurrentPortfolioPreference(handle, owner_userid);
+  const preference = await getCurrentPortfolioPreference(handle, ownerUserid);
 
-  if (preference?.current_portfolio_id) {
+  if (preference?.currentPortfolioId) {
     const preferredPortfolio = await getOwnedPortfolioRow(
       handle,
-      owner_userid,
-      preference.current_portfolio_id,
+      ownerUserid,
+      preference.currentPortfolioId,
     );
     if (preferredPortfolio) {
       return preferredPortfolio as PortfolioRow;
@@ -303,7 +303,7 @@ async function resolveCurrentPortfolioRow(
   const fallbackPortfolio = await handle
     .selectFrom('app.portfolios')
     .selectAll()
-    .where('owner_userid', '=', owner_userid)
+    .where('ownerUserid', '=', ownerUserid)
     .orderBy('createdat', 'desc')
     .executeTakeFirst();
 
@@ -313,21 +313,21 @@ async function resolveCurrentPortfolioRow(
 export const CareerRepository = {
   async getPortfolioByUserId(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
   ): Promise<CareerPortfolioRecord | null> {
-    const portfolio = await resolveCurrentPortfolioRow(handle, owner_userid);
+    const portfolio = await resolveCurrentPortfolioRow(handle, ownerUserid);
 
     return portfolio;
   },
 
   async listPortfoliosByUserId(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
   ): Promise<CareerPortfolioRecord[]> {
     const portfolios = await handle
       .selectFrom('app.portfolios')
       .selectAll()
-      .where('owner_userid', '=', owner_userid)
+      .where('ownerUserid', '=', ownerUserid)
       .orderBy('createdat', 'desc')
       .execute();
 
@@ -336,28 +336,28 @@ export const CareerRepository = {
 
   async getCurrentPortfolioIdByUserId(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
   ): Promise<string | null> {
-    const preference = await getCurrentPortfolioPreference(handle, owner_userid);
-    return preference?.current_portfolio_id ?? null;
+    const preference = await getCurrentPortfolioPreference(handle, ownerUserid);
+    return preference?.currentPortfolioId ?? null;
   },
 
   async setCurrentPortfolioByUserId(
     handle: DbHandle,
-    owner_userid: string,
-    portfolio_id: string,
+    ownerUserid: string,
+    portfolioId: string,
   ): Promise<void> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
 
     await handle
-      .insertInto('app.user_portfolio_preferences')
+      .insertInto('app.userPortfolioPreferences')
       .values({
-        user_id: owner_userid,
-        current_portfolio_id: portfolio_id,
+        userId: ownerUserid,
+        currentPortfolioId: portfolioId,
       })
       .onConflict((oc) =>
-        oc.column('user_id').doUpdateSet({
-          current_portfolio_id: portfolio_id,
+        oc.column('userId').doUpdateSet({
+          currentPortfolioId: portfolioId,
           updatedat: new Date(),
         }),
       )
@@ -376,9 +376,9 @@ export const CareerRepository = {
 
   async loadFullPortfolioByUserId(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
   ): Promise<CareerFullPortfolioRecord | null> {
-    const portfolio = await CareerRepository.getPortfolioByUserId(handle, owner_userid);
+    const portfolio = await CareerRepository.getPortfolioByUserId(handle, ownerUserid);
     return portfolio ? loadFullPortfolio(handle, portfolio) : null;
   },
 
@@ -387,7 +387,7 @@ export const CareerRepository = {
     slug: string,
   ): Promise<CareerFullPortfolioRecord | null> {
     const portfolio = await CareerRepository.getPortfolioBySlug(handle, slug);
-    if (!portfolio || !portfolio.is_public || !portfolio.is_active) {
+    if (!portfolio || !portfolio.isPublic || !portfolio.isActive) {
       return null;
     }
     return loadFullPortfolio(handle, portfolio);
@@ -418,14 +418,14 @@ export const CareerRepository = {
     const created = await handle
       .insertInto('app.portfolios')
       .values({
-        owner_userid: input.owner_userid,
+        ownerUserid: input.ownerUserid,
         slug: createPortfolioSlug(input.name),
         title: `${input.name}'s Portfolio`,
         name: input.name,
-        job_title: 'Software Engineer',
+        jobTitle: 'Software Engineer',
         bio: 'Welcome to my portfolio!',
         tagline: 'Building the future of software',
-        current_location: 'San Francisco, CA',
+        currentLocation: 'San Francisco, CA',
         email: input.email,
       })
       .returningAll()
@@ -434,58 +434,58 @@ export const CareerRepository = {
     return created as PortfolioRow;
   },
 
-  async deletePortfolioByUserId(handle: DbHandle, owner_userid: string): Promise<void> {
-    await handle.deleteFrom('app.portfolios').where('owner_userid', '=', owner_userid).execute();
+  async deletePortfolioByUserId(handle: DbHandle, ownerUserid: string): Promise<void> {
+    await handle.deleteFrom('app.portfolios').where('ownerUserid', '=', ownerUserid).execute();
   },
 
   async deletePortfolio(
     handle: DbHandle,
-    owner_userid: string,
-    portfolio_id: string,
+    ownerUserid: string,
+    portfolioId: string,
   ): Promise<void> {
     await handle
       .deleteFrom('app.portfolios')
-      .where('id', '=', portfolio_id)
-      .where('owner_userid', '=', owner_userid)
+      .where('id', '=', portfolioId)
+      .where('ownerUserid', '=', ownerUserid)
       .execute();
   },
 
   async updatePortfolioSlug(
     handle: DbHandle,
-    owner_userid: string,
-    portfolio_id: string,
+    ownerUserid: string,
+    portfolioId: string,
     slug: string,
   ): Promise<void> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
 
     await handle
       .updateTable('app.portfolios')
       .set({ slug })
-      .where('id', '=', portfolio_id)
-      .where('owner_userid', '=', owner_userid)
+      .where('id', '=', portfolioId)
+      .where('ownerUserid', '=', ownerUserid)
       .executeTakeFirstOrThrow();
   },
 
   async updatePortfolioProfileImage(
     handle: DbHandle,
-    owner_userid: string,
-    profile_image_url: string,
+    ownerUserid: string,
+    profileImageUrl: string,
   ): Promise<void> {
-    const portfolio = await CareerRepository.getPortfolioByUserId(handle, owner_userid);
+    const portfolio = await CareerRepository.getPortfolioByUserId(handle, ownerUserid);
     if (!portfolio) {
-      throw new NotFoundError('Portfolio', { owner_userid });
+      throw new NotFoundError('Portfolio', { ownerUserid });
     }
 
     await handle
       .updateTable('app.portfolios')
-      .set({ profile_image_url: profile_image_url })
+      .set({ profileImageUrl: profileImageUrl })
       .where('id', '=', portfolio.id)
       .executeTakeFirstOrThrow();
   },
 
   async findOrCreateCompany(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     input: {
       name: string;
       website?: string | null;
@@ -500,7 +500,7 @@ export const CareerRepository = {
     const existing = await handle
       .selectFrom('app.companies')
       .selectAll()
-      .where('owner_userid', '=', owner_userid)
+      .where('ownerUserid', '=', ownerUserid)
       .where(sql<string>`lower(name)`, '=', normalizedName.toLowerCase())
       .executeTakeFirst();
 
@@ -511,7 +511,7 @@ export const CareerRepository = {
     const created = await handle
       .insertInto('app.companies')
       .values({
-        owner_userid: owner_userid,
+        ownerUserid: ownerUserid,
         name: normalizedName,
         website: input.website ?? null,
         industry: input.industry ?? null,
@@ -527,73 +527,73 @@ export const CareerRepository = {
 
   async createJobApplication(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     input: {
-      company_id: string;
+      companyId: string;
       position: string;
       status: string;
-      start_date: Date | string;
-      end_date?: Date | string | null;
+      startDate: Date | string;
+      endDate?: Date | string | null;
       location?: string | null;
-      job_posting?: string | null;
+      jobPosting?: string | null;
       requirements?: string[];
       skills?: string[];
-      job_posting_url?: string | null;
-      job_posting_word_count?: number | null;
-      salary_quoted?: string | null;
-      salary_accepted?: string | null;
-      salary_offered?: number | null;
-      salary_final?: number | null;
+      jobPostingUrl?: string | null;
+      jobPostingWordCount?: number | null;
+      salaryQuoted?: string | null;
+      salaryAccepted?: string | null;
+      salaryOffered?: number | null;
+      salaryFinal?: number | null;
       source?: string | null;
-      application_date?: Date | string | null;
+      applicationDate?: Date | string | null;
       link?: string | null;
-      recruiter_name?: string | null;
-      recruiter_email?: string | null;
-      recruiter_linkedin?: string | null;
+      recruiterName?: string | null;
+      recruiterEmail?: string | null;
+      recruiterLinkedin?: string | null;
       reference?: boolean;
       stages?: CareerApplicationStage[];
-      interview_dates?: CareerInterviewEntry[];
+      interviewDates?: CareerInterviewEntry[];
     },
   ): Promise<CareerJobApplicationRecord> {
     const company = await handle
       .selectFrom('app.companies')
       .selectAll()
-      .where('id', '=', input.company_id)
-      .where('owner_userid', '=', owner_userid)
+      .where('id', '=', input.companyId)
+      .where('ownerUserid', '=', ownerUserid)
       .executeTakeFirst();
 
     if (!company) {
-      throw new NotFoundError('Company', { company_id: input.company_id, owner_userid });
+      throw new NotFoundError('Company', { companyId: input.companyId, ownerUserid });
     }
 
     const created = await handle
-      .insertInto('app.job_applications')
+      .insertInto('app.jobApplications')
       .values({
-        owner_userid: owner_userid,
-        company_id: input.company_id,
+        ownerUserid: ownerUserid,
+        companyId: input.companyId,
         position: input.position,
         status: input.status,
-        start_date: new Date(input.start_date),
-        end_date: input.end_date ? new Date(input.end_date) : null,
+        startDate: new Date(input.startDate),
+        endDate: input.endDate ? new Date(input.endDate) : null,
         location: input.location ?? null,
-        job_posting: input.job_posting ?? null,
+        jobPosting: input.jobPosting ?? null,
         requirements: serializeJsonColumn(input.requirements ?? []),
         skills: serializeJsonColumn(input.skills ?? []),
-        job_posting_url: input.job_posting_url ?? null,
-        job_posting_word_count: input.job_posting_word_count ?? null,
-        salary_quoted: input.salary_quoted ?? null,
-        salary_accepted: input.salary_accepted ?? null,
-        salary_offered: input.salary_offered ?? null,
-        salary_final: input.salary_final ?? null,
+        jobPostingUrl: input.jobPostingUrl ?? null,
+        jobPostingWordCount: input.jobPostingWordCount ?? null,
+        salaryQuoted: input.salaryQuoted ?? null,
+        salaryAccepted: input.salaryAccepted ?? null,
+        salaryOffered: input.salaryOffered ?? null,
+        salaryFinal: input.salaryFinal ?? null,
         source: input.source ?? null,
-        application_date: input.application_date ? new Date(input.application_date) : null,
+        applicationDate: input.applicationDate ? new Date(input.applicationDate) : null,
         link: input.link ?? null,
-        recruiter_name: input.recruiter_name ?? null,
-        recruiter_email: input.recruiter_email ?? null,
-        recruiter_linkedin: input.recruiter_linkedin ?? null,
+        recruiterName: input.recruiterName ?? null,
+        recruiterEmail: input.recruiterEmail ?? null,
+        recruiterLinkedin: input.recruiterLinkedin ?? null,
         reference: input.reference ?? false,
         stages: serializeJsonColumn(input.stages ?? []),
-        interview_dates: serializeJsonColumn(input.interview_dates ?? []),
+        interviewDates: serializeJsonColumn(input.interviewDates ?? []),
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -603,51 +603,51 @@ export const CareerRepository = {
 
   async updateJobApplicationStatus(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     applicationId: string,
     status: string,
   ): Promise<void> {
     await handle
-      .updateTable('app.job_applications')
+      .updateTable('app.jobApplications')
       .set({ status })
       .where('id', '=', applicationId)
-      .where('owner_userid', '=', owner_userid)
+      .where('ownerUserid', '=', ownerUserid)
       .executeTakeFirstOrThrow();
   },
 
   async deleteJobApplication(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     applicationId: string,
   ): Promise<void> {
     await handle
-      .deleteFrom('app.job_applications')
+      .deleteFrom('app.jobApplications')
       .where('id', '=', applicationId)
-      .where('owner_userid', '=', owner_userid)
+      .where('ownerUserid', '=', ownerUserid)
       .executeTakeFirstOrThrow();
   },
 
   async listUserWorkExperiences(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     direction: 'asc' | 'desc' = 'desc',
   ): Promise<CareerWorkExperienceRecord[]> {
     let query = handle
-      .selectFrom('app.work_experiences as workExperience')
-      .innerJoin('app.portfolios as portfolio', 'portfolio.id', 'workExperience.portfolio_id')
+      .selectFrom('app.workExperiences as workExperience')
+      .innerJoin('app.portfolios as portfolio', 'portfolio.id', 'workExperience.portfolioId')
       .selectAll('workExperience')
-      .where('portfolio.owner_userid', '=', owner_userid);
+      .where('portfolio.ownerUserid', '=', ownerUserid);
 
     query =
       direction === 'desc'
         ? query
-            .orderBy(sql`case when "workExperience"."end_date" is null then 0 else 1 end`)
-            .orderBy('workExperience.end_date', 'desc')
-            .orderBy('workExperience.start_date', 'desc')
+            .orderBy(sql`case when "workExperience"."endDate" is null then 0 else 1 end`)
+            .orderBy('workExperience.endDate', 'desc')
+            .orderBy('workExperience.startDate', 'desc')
         : query
-            .orderBy(sql`case when "workExperience"."end_date" is null then 1 else 0 end`)
-            .orderBy('workExperience.start_date', 'asc')
-            .orderBy('workExperience.end_date', 'asc');
+            .orderBy(sql`case when "workExperience"."endDate" is null then 1 else 0 end`)
+            .orderBy('workExperience.startDate', 'asc')
+            .orderBy('workExperience.endDate', 'asc');
 
     const rows = await query.execute();
 
@@ -656,14 +656,14 @@ export const CareerRepository = {
 
   async getWorkExperienceById(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     experienceId: string,
   ): Promise<CareerWorkExperienceRecord | null> {
     const row = await handle
-      .selectFrom('app.work_experiences as workExperience')
-      .innerJoin('app.portfolios as portfolio', 'portfolio.id', 'workExperience.portfolio_id')
+      .selectFrom('app.workExperiences as workExperience')
+      .innerJoin('app.portfolios as portfolio', 'portfolio.id', 'workExperience.portfolioId')
       .selectAll('workExperience')
-      .where('portfolio.owner_userid', '=', owner_userid)
+      .where('portfolio.ownerUserid', '=', ownerUserid)
       .where('workExperience.id', '=', experienceId)
       .executeTakeFirst();
 
@@ -672,17 +672,17 @@ export const CareerRepository = {
 
   async updateWorkExperience(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     experienceId: string,
     updates: UpdateCareerWorkExperienceInput,
   ): Promise<CareerWorkExperienceRecord> {
     const existing = await CareerRepository.getWorkExperienceById(
       handle,
-      owner_userid,
+      ownerUserid,
       experienceId,
     );
     if (!existing) {
-      throw new NotFoundError('WorkExperience', { experienceId, owner_userid });
+      throw new NotFoundError('WorkExperience', { experienceId, ownerUserid });
     }
 
     // Build only the columns that were explicitly provided
@@ -691,32 +691,32 @@ export const CareerRepository = {
     if (updates.role !== undefined) set.role = updates.role;
     if (updates.company !== undefined) set.company = updates.company;
     if (updates.description !== undefined) set.description = updates.description;
-    if (updates.start_date !== undefined)
-      set.start_date = updates.start_date ? new Date(updates.start_date) : null;
-    if (updates.end_date !== undefined)
-      set.end_date = updates.end_date ? new Date(updates.end_date) : null;
+    if (updates.startDate !== undefined)
+      set.startDate = updates.startDate ? new Date(updates.startDate) : null;
+    if (updates.endDate !== undefined)
+      set.endDate = updates.endDate ? new Date(updates.endDate) : null;
     if (updates.action !== undefined) set.action = updates.action;
     if (updates.tags !== undefined) set.tags = serializeJsonColumn(updates.tags);
     if (updates.metadata !== undefined)
       set.metadata = serializeJsonColumn(updates.metadata ?? null);
-    if (updates.sort_order !== undefined) set.sort_order = updates.sort_order;
-    if (updates.is_visible !== undefined) set.is_visible = updates.is_visible;
-    if (updates.base_salary !== undefined) set.base_salary = updates.base_salary;
-    if (updates.signing_bonus !== undefined) set.signing_bonus = updates.signing_bonus;
-    if (updates.annual_bonus !== undefined) set.annual_bonus = updates.annual_bonus;
-    if (updates.employment_type !== undefined) set.employment_type = updates.employment_type;
-    if (updates.work_arrangement !== undefined) set.work_arrangement = updates.work_arrangement;
-    if (updates.seniority_level !== undefined) set.seniority_level = updates.seniority_level;
+    if (updates.sortOrder !== undefined) set.sortOrder = updates.sortOrder;
+    if (updates.isVisible !== undefined) set.isVisible = updates.isVisible;
+    if (updates.baseSalary !== undefined) set.baseSalary = updates.baseSalary;
+    if (updates.signingBonus !== undefined) set.signingBonus = updates.signingBonus;
+    if (updates.annualBonus !== undefined) set.annualBonus = updates.annualBonus;
+    if (updates.employmentType !== undefined) set.employmentType = updates.employmentType;
+    if (updates.workArrangement !== undefined) set.workArrangement = updates.workArrangement;
+    if (updates.seniorityLevel !== undefined) set.seniorityLevel = updates.seniorityLevel;
     if (updates.department !== undefined) set.department = updates.department;
-    if (updates.team_size !== undefined) set.team_size = updates.team_size;
-    if (updates.direct_reports !== undefined) set.direct_reports = updates.direct_reports;
-    if (updates.reports_to !== undefined) set.reports_to = updates.reports_to;
-    if (updates.reason_for_leaving !== undefined)
-      set.reason_for_leaving = updates.reason_for_leaving;
-    if (updates.exit_notes !== undefined) set.exit_notes = updates.exit_notes;
+    if (updates.teamSize !== undefined) set.teamSize = updates.teamSize;
+    if (updates.directReports !== undefined) set.directReports = updates.directReports;
+    if (updates.reportsTo !== undefined) set.reportsTo = updates.reportsTo;
+    if (updates.reasonForLeaving !== undefined)
+      set.reasonForLeaving = updates.reasonForLeaving;
+    if (updates.exitNotes !== undefined) set.exitNotes = updates.exitNotes;
 
     const updated = await handle
-      .updateTable('app.work_experiences')
+      .updateTable('app.workExperiences')
       // biome-ignore lint/suspicious/noExplicitAny: dynamic column mapping
       .set(set as any)
       .where('id', '=', experienceId)
@@ -728,12 +728,12 @@ export const CareerRepository = {
 
   async listProjectsByPortfolio(
     handle: DbHandle,
-    portfolio_id: string,
+    portfolioId: string,
   ): Promise<CareerProjectRecord[]> {
     const rows = await handle
       .selectFrom('app.projects')
       .selectAll()
-      .where('portfolio_id', '=', portfolio_id)
+      .where('portfolioId', '=', portfolioId)
       .orderBy('createdat', 'desc')
       .execute();
 
@@ -742,14 +742,14 @@ export const CareerRepository = {
 
   async listProjectsByWorkExperience(
     handle: DbHandle,
-    portfolio_id: string,
-    work_experience_id: string,
+    portfolioId: string,
+    workExperienceId: string,
   ): Promise<CareerProjectRecord[]> {
     const rows = await handle
       .selectFrom('app.projects')
       .selectAll()
-      .where('portfolio_id', '=', portfolio_id)
-      .where('work_experience_id', '=', work_experience_id)
+      .where('portfolioId', '=', portfolioId)
+      .where('workExperienceId', '=', workExperienceId)
       .orderBy('createdat', 'desc')
       .execute();
 
@@ -758,14 +758,14 @@ export const CareerRepository = {
 
   async getProjectById(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     projectId: string,
   ): Promise<CareerProjectRecord | null> {
     const row = await handle
       .selectFrom('app.projects as project')
-      .innerJoin('app.portfolios as portfolio', 'portfolio.id', 'project.portfolio_id')
+      .innerJoin('app.portfolios as portfolio', 'portfolio.id', 'project.portfolioId')
       .selectAll('project')
-      .where('portfolio.owner_userid', '=', owner_userid)
+      .where('portfolio.ownerUserid', '=', ownerUserid)
       .where('project.id', '=', projectId)
       .executeTakeFirst();
 
@@ -774,14 +774,14 @@ export const CareerRepository = {
 
   async listUserCareerEvents(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     limit?: number,
   ): Promise<CareerEventRecord[]> {
     let query = handle
-      .selectFrom('app.career_events')
+      .selectFrom('app.careerEvents')
       .selectAll()
-      .where('owner_userid', '=', owner_userid)
-      .orderBy('event_date', 'desc');
+      .where('ownerUserid', '=', ownerUserid)
+      .orderBy('eventDate', 'desc');
 
     if (limit) {
       query = query.limit(limit);
@@ -793,13 +793,13 @@ export const CareerRepository = {
 
   async getApplicationById(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     applicationId: string,
   ): Promise<CareerJobApplicationRecord | null> {
     const application = await handle
-      .selectFrom('app.job_applications')
+      .selectFrom('app.jobApplications')
       .selectAll()
-      .where('owner_userid', '=', owner_userid)
+      .where('ownerUserid', '=', ownerUserid)
       .where('id', '=', applicationId)
       .executeTakeFirst();
 
@@ -808,7 +808,7 @@ export const CareerRepository = {
     const company = await handle
       .selectFrom('app.companies')
       .selectAll()
-      .where('id', '=', application.company_id)
+      .where('id', '=', application.companyId)
       .executeTakeFirst();
 
     return toJobApplicationRecord(
@@ -819,15 +819,15 @@ export const CareerRepository = {
 
   async listUserJobApplicationsWithCompany(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
   ): Promise<CareerJobApplicationRecord[]> {
     const applications = await handle
-      .selectFrom('app.job_applications')
+      .selectFrom('app.jobApplications')
       .selectAll()
-      .where('owner_userid', '=', owner_userid)
-      .orderBy('application_date', 'desc')
+      .where('ownerUserid', '=', ownerUserid)
+      .orderBy('applicationDate', 'desc')
       .execute();
-    const companyIds = [...new Set(applications.map((application) => application.company_id))];
+    const companyIds = [...new Set(applications.map((application) => application.companyId))];
 
     const companies =
       companyIds.length === 0
@@ -840,33 +840,33 @@ export const CareerRepository = {
     const companiesById = new Map(companies.map((company) => [company.id, company as CompanyRow]));
 
     return (applications as JobApplicationRow[]).map((application) =>
-      toJobApplicationRecord(application, companiesById.get(application.company_id) ?? null),
+      toJobApplicationRecord(application, companiesById.get(application.companyId) ?? null),
     );
   },
 
   async savePortfolioBasics(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     input: {
       name: string;
       initials?: string | null;
-      job_title: string;
+      jobTitle: string;
       title?: string | null;
       bio: string;
       tagline: string;
-      current_location: string;
-      location_tagline?: string | null;
+      currentLocation: string;
+      locationTagline?: string | null;
       email: string;
       phone?: string | null;
-      availability_status?: boolean;
-      availability_message?: string | null;
+      availabilityStatus?: boolean;
+      availabilityMessage?: string | null;
       theme?: Record<string, unknown> | null;
       copyright?: string | null;
-      is_public?: boolean;
-      is_active?: boolean;
+      isPublic?: boolean;
+      isActive?: boolean;
     },
   ): Promise<CareerPortfolioRecord> {
-    const existing = await CareerRepository.getPortfolioByUserId(handle, owner_userid);
+    const existing = await CareerRepository.getPortfolioByUserId(handle, ownerUserid);
 
     if (existing) {
       const updated = await handle
@@ -874,20 +874,20 @@ export const CareerRepository = {
         .set({
           name: input.name,
           initials: input.initials ?? null,
-          job_title: input.job_title,
+          jobTitle: input.jobTitle,
           title: input.title ?? `${input.name}'s Portfolio`,
           bio: input.bio,
           tagline: input.tagline,
-          current_location: input.current_location,
-          location_tagline: input.location_tagline ?? null,
+          currentLocation: input.currentLocation,
+          locationTagline: input.locationTagline ?? null,
           email: input.email,
           phone: input.phone ?? null,
-          availability_status: input.availability_status ?? false,
-          availability_message: input.availability_message ?? null,
+          availabilityStatus: input.availabilityStatus ?? false,
+          availabilityMessage: input.availabilityMessage ?? null,
           ...(input.theme !== undefined ? { theme: serializeJsonColumn(input.theme ?? null) } : {}),
           ...(input.copyright !== undefined ? { copyright: input.copyright } : {}),
-          ...(input.is_public !== undefined ? { is_public: input.is_public } : {}),
-          ...(input.is_active !== undefined ? { is_active: input.is_active } : {}),
+          ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
+          ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
         })
         .where('id', '=', existing.id)
         .returningAll()
@@ -899,24 +899,24 @@ export const CareerRepository = {
     const created = await handle
       .insertInto('app.portfolios')
       .values({
-        owner_userid: owner_userid,
+        ownerUserid: ownerUserid,
         slug: createPortfolioSlug(input.name),
         name: input.name,
         initials: input.initials ?? null,
-        job_title: input.job_title,
+        jobTitle: input.jobTitle,
         title: input.title ?? `${input.name}'s Portfolio`,
         bio: input.bio,
         tagline: input.tagline,
-        current_location: input.current_location,
-        location_tagline: input.location_tagline ?? null,
+        currentLocation: input.currentLocation,
+        locationTagline: input.locationTagline ?? null,
         email: input.email,
         phone: input.phone ?? null,
-        availability_status: input.availability_status ?? false,
-        availability_message: input.availability_message ?? null,
+        availabilityStatus: input.availabilityStatus ?? false,
+        availabilityMessage: input.availabilityMessage ?? null,
         ...(input.theme !== undefined ? { theme: serializeJsonColumn(input.theme ?? null) } : {}),
         ...(input.copyright !== undefined ? { copyright: input.copyright } : {}),
-        ...(input.is_public !== undefined ? { is_public: input.is_public } : {}),
-        ...(input.is_active !== undefined ? { is_active: input.is_active } : {}),
+        ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
+        ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -926,8 +926,8 @@ export const CareerRepository = {
 
   async saveSocialLinks(
     handle: DbHandle,
-    owner_userid: string,
-    portfolio_id: string,
+    ownerUserid: string,
+    portfolioId: string,
     input: {
       id?: string;
       github?: string | null;
@@ -936,17 +936,17 @@ export const CareerRepository = {
       website?: string | null;
     },
   ): Promise<CareerSocialLinksRecord> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
 
     const existing = await handle
-      .selectFrom('app.social_links')
+      .selectFrom('app.socialLinks')
       .selectAll()
-      .where('portfolio_id', '=', portfolio_id)
+      .where('portfolioId', '=', portfolioId)
       .executeTakeFirst();
 
     if (existing) {
       const updated = await handle
-        .updateTable('app.social_links')
+        .updateTable('app.socialLinks')
         .set({
           github: input.github ?? null,
           linkedin: input.linkedin ?? null,
@@ -961,9 +961,9 @@ export const CareerRepository = {
     }
 
     const created = await handle
-      .insertInto('app.social_links')
+      .insertInto('app.socialLinks')
       .values({
-        portfolio_id: portfolio_id,
+        portfolioId: portfolioId,
         github: input.github ?? null,
         linkedin: input.linkedin ?? null,
         twitter: input.twitter ?? null,
@@ -977,23 +977,23 @@ export const CareerRepository = {
 
   async replaceSkills(
     handle: DbHandle,
-    owner_userid: string,
-    portfolio_id: string,
+    ownerUserid: string,
+    portfolioId: string,
     skills: Array<{
       id?: string;
       name: string;
       category?: string | null;
       level: number;
-      ai_derived?: boolean;
+      aiDerived?: boolean;
       proof?: string | null;
     }>,
   ): Promise<void> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
 
     const current = await handle
       .selectFrom('app.skills')
       .select(['id'])
-      .where('portfolio_id', '=', portfolio_id)
+      .where('portfolioId', '=', portfolioId)
       .execute();
 
     const currentIds = current.map((item) => item.id);
@@ -1003,7 +1003,7 @@ export const CareerRepository = {
     if (toDelete.length > 0) {
       await handle
         .deleteFrom('app.skills')
-        .where('portfolio_id', '=', portfolio_id)
+        .where('portfolioId', '=', portfolioId)
         .where('id', 'in', toDelete)
         .execute();
     }
@@ -1016,22 +1016,22 @@ export const CareerRepository = {
             name: skill.name,
             category: skill.category ?? null,
             level: skill.level,
-            sort_order: index,
+            sortOrder: index,
             ...(skill.proof !== undefined && { proof: skill.proof }),
           })
           .where('id', '=', skill.id)
-          .where('portfolio_id', '=', portfolio_id)
+          .where('portfolioId', '=', portfolioId)
           .execute();
       } else {
         await handle
           .insertInto('app.skills')
           .values({
-            portfolio_id: portfolio_id,
+            portfolioId: portfolioId,
             name: skill.name,
             category: skill.category ?? null,
             level: skill.level,
-            sort_order: index,
-            ai_derived: skill.ai_derived ?? false,
+            sortOrder: index,
+            aiDerived: skill.aiDerived ?? false,
             proof: skill.proof ?? null,
           })
           .execute();
@@ -1041,47 +1041,47 @@ export const CareerRepository = {
 
   async createProject(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     input: {
-      portfolio_id: string;
-      work_experience_id?: string | null;
+      portfolioId: string;
+      workExperienceId?: string | null;
       title: string;
       description: string;
-      short_description?: string | null;
-      live_url?: string | null;
-      github_url?: string | null;
-      image_url?: string | null;
-      video_url?: string | null;
+      shortDescription?: string | null;
+      liveUrl?: string | null;
+      githubUrl?: string | null;
+      imageUrl?: string | null;
+      videoUrl?: string | null;
       technologies?: string[];
       status?: string;
-      start_date?: Date | string | null;
-      end_date?: Date | string | null;
-      is_featured?: boolean;
-      is_visible?: boolean;
-      sort_order?: number;
+      startDate?: Date | string | null;
+      endDate?: Date | string | null;
+      isFeatured?: boolean;
+      isVisible?: boolean;
+      sortOrder?: number;
     },
   ): Promise<CareerProjectRecord> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, input.portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, input.portfolioId);
 
     const created = await handle
       .insertInto('app.projects')
       .values({
-        portfolio_id: input.portfolio_id,
-        work_experience_id: input.work_experience_id ?? null,
+        portfolioId: input.portfolioId,
+        workExperienceId: input.workExperienceId ?? null,
         title: input.title,
         description: input.description,
-        short_description: input.short_description ?? null,
-        live_url: input.live_url ?? null,
-        github_url: input.github_url ?? null,
-        image_url: input.image_url ?? null,
-        video_url: input.video_url ?? null,
+        shortDescription: input.shortDescription ?? null,
+        liveUrl: input.liveUrl ?? null,
+        githubUrl: input.githubUrl ?? null,
+        imageUrl: input.imageUrl ?? null,
+        videoUrl: input.videoUrl ?? null,
         technologies: serializeJsonColumn(input.technologies ?? []),
         status: input.status ?? 'completed',
-        start_date: input.start_date ? new Date(input.start_date) : null,
-        end_date: input.end_date ? new Date(input.end_date) : null,
-        is_featured: input.is_featured ?? false,
-        is_visible: input.is_visible ?? true,
-        sort_order: input.sort_order ?? 0,
+        startDate: input.startDate ? new Date(input.startDate) : null,
+        endDate: input.endDate ? new Date(input.endDate) : null,
+        isFeatured: input.isFeatured ?? false,
+        isVisible: input.isVisible ?? true,
+        sortOrder: input.sortOrder ?? 0,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -1091,94 +1091,94 @@ export const CareerRepository = {
 
   async updateProject(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     projectId: string,
-    portfolio_id: string,
+    portfolioId: string,
     input: {
-      work_experience_id?: string | null;
+      workExperienceId?: string | null;
       title: string;
       description: string;
-      short_description?: string | null;
-      live_url?: string | null;
-      github_url?: string | null;
-      image_url?: string | null;
-      video_url?: string | null;
+      shortDescription?: string | null;
+      liveUrl?: string | null;
+      githubUrl?: string | null;
+      imageUrl?: string | null;
+      videoUrl?: string | null;
       technologies?: string[];
       status?: string;
-      start_date?: Date | string | null;
-      end_date?: Date | string | null;
-      is_featured?: boolean;
-      is_visible?: boolean;
-      sort_order?: number;
+      startDate?: Date | string | null;
+      endDate?: Date | string | null;
+      isFeatured?: boolean;
+      isVisible?: boolean;
+      sortOrder?: number;
     },
   ): Promise<void> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
 
     await handle
       .updateTable('app.projects')
       .set({
         title: input.title,
         description: input.description,
-        short_description: input.short_description ?? null,
-        live_url: input.live_url ?? null,
-        github_url: input.github_url ?? null,
-        image_url: input.image_url ?? null,
-        video_url: input.video_url ?? null,
+        shortDescription: input.shortDescription ?? null,
+        liveUrl: input.liveUrl ?? null,
+        githubUrl: input.githubUrl ?? null,
+        imageUrl: input.imageUrl ?? null,
+        videoUrl: input.videoUrl ?? null,
         technologies: serializeJsonColumn(input.technologies ?? []),
         status: input.status ?? 'completed',
-        work_experience_id: input.work_experience_id ?? null,
-        start_date: input.start_date ? new Date(input.start_date) : null,
-        end_date: input.end_date ? new Date(input.end_date) : null,
-        is_featured: input.is_featured ?? false,
-        is_visible: input.is_visible ?? true,
-        sort_order: input.sort_order ?? 0,
+        workExperienceId: input.workExperienceId ?? null,
+        startDate: input.startDate ? new Date(input.startDate) : null,
+        endDate: input.endDate ? new Date(input.endDate) : null,
+        isFeatured: input.isFeatured ?? false,
+        isVisible: input.isVisible ?? true,
+        sortOrder: input.sortOrder ?? 0,
       })
       .where('id', '=', projectId)
-      .where('portfolio_id', '=', portfolio_id)
+      .where('portfolioId', '=', portfolioId)
       .executeTakeFirstOrThrow();
   },
 
   async deleteProject(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     projectId: string,
-    portfolio_id: string,
+    portfolioId: string,
   ): Promise<void> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
 
     await handle
       .deleteFrom('app.projects')
       .where('id', '=', projectId)
-      .where('portfolio_id', '=', portfolio_id)
+      .where('portfolioId', '=', portfolioId)
       .executeTakeFirstOrThrow();
   },
 
   async createTestimonial(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     input: {
-      portfolio_id: string;
+      portfolioId: string;
       name: string;
       title?: string | null;
       company?: string | null;
       content: string;
-      avatar_url?: string | null;
-      linkedin_url?: string | null;
+      avatarUrl?: string | null;
+      linkedinUrl?: string | null;
       rating?: number | null;
     },
   ): Promise<CareerTestimonialRecord> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, input.portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, input.portfolioId);
 
     const created = await handle
       .insertInto('app.testimonials')
       .values({
-        portfolio_id: input.portfolio_id,
+        portfolioId: input.portfolioId,
         name: input.name,
         title: input.title ?? null,
         company: input.company ?? null,
         content: input.content,
-        avatar_url: input.avatar_url ?? null,
-        linkedin_url: input.linkedin_url ?? null,
+        avatarUrl: input.avatarUrl ?? null,
+        linkedinUrl: input.linkedinUrl ?? null,
         rating: input.rating ?? null,
       })
       .returningAll()
@@ -1189,20 +1189,20 @@ export const CareerRepository = {
 
   async updateTestimonial(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     testimonialId: string,
-    portfolio_id: string,
+    portfolioId: string,
     input: {
       name: string;
       title?: string | null;
       company?: string | null;
       content: string;
-      avatar_url?: string | null;
-      linkedin_url?: string | null;
+      avatarUrl?: string | null;
+      linkedinUrl?: string | null;
       rating?: number | null;
     },
   ): Promise<void> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
 
     await handle
       .updateTable('app.testimonials')
@@ -1211,65 +1211,65 @@ export const CareerRepository = {
         title: input.title ?? null,
         company: input.company ?? null,
         content: input.content,
-        avatar_url: input.avatar_url ?? null,
-        linkedin_url: input.linkedin_url ?? null,
+        avatarUrl: input.avatarUrl ?? null,
+        linkedinUrl: input.linkedinUrl ?? null,
         rating: input.rating ?? null,
       })
       .where('id', '=', testimonialId)
-      .where('portfolio_id', '=', portfolio_id)
+      .where('portfolioId', '=', portfolioId)
       .executeTakeFirstOrThrow();
   },
 
   async deleteTestimonial(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     testimonialId: string,
-    portfolio_id: string,
+    portfolioId: string,
   ): Promise<void> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
 
     await handle
       .deleteFrom('app.testimonials')
       .where('id', '=', testimonialId)
-      .where('portfolio_id', '=', portfolio_id)
+      .where('portfolioId', '=', portfolioId)
       .executeTakeFirstOrThrow();
   },
 
   async createWorkExperience(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     input: {
-      portfolio_id: string;
+      portfolioId: string;
       role: string;
       company: string;
       description: string;
-      start_date?: Date | string | null;
-      end_date?: Date | string | null;
+      startDate?: Date | string | null;
+      endDate?: Date | string | null;
       action?: string | null;
       tags?: string[];
       metadata?: Record<string, unknown> | null;
-      sort_order?: number;
-      is_visible?: boolean;
+      sortOrder?: number;
+      isVisible?: boolean;
     },
   ): Promise<CareerWorkExperienceRecord> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, input.portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, input.portfolioId);
 
     const created = await handle
-      .insertInto('app.work_experiences')
+      .insertInto('app.workExperiences')
       .values({
-        portfolio_id: input.portfolio_id,
+        portfolioId: input.portfolioId,
         role: input.role,
         company: input.company,
         description: input.description,
-        start_date: input.start_date ? new Date(input.start_date) : null,
-        end_date: input.end_date ? new Date(input.end_date) : null,
+        startDate: input.startDate ? new Date(input.startDate) : null,
+        endDate: input.endDate ? new Date(input.endDate) : null,
         action: input.action ?? null,
         ...(input.tags !== undefined ? { tags: serializeJsonColumn(input.tags) } : {}),
         ...(input.metadata !== undefined
           ? { metadata: serializeJsonColumn(input.metadata ?? null) }
           : {}),
-        sort_order: input.sort_order ?? 0,
-        is_visible: input.is_visible ?? true,
+        sortOrder: input.sortOrder ?? 0,
+        isVisible: input.isVisible ?? true,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -1279,16 +1279,16 @@ export const CareerRepository = {
 
   async deleteWorkExperience(
     handle: DbHandle,
-    owner_userid: string,
+    ownerUserid: string,
     experienceId: string,
-    portfolio_id: string,
+    portfolioId: string,
   ): Promise<void> {
-    await getOwnedPortfolioRowOrThrow(handle, owner_userid, portfolio_id);
+    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
 
     await handle
-      .deleteFrom('app.work_experiences')
+      .deleteFrom('app.workExperiences')
       .where('id', '=', experienceId)
-      .where('portfolio_id', '=', portfolio_id)
+      .where('portfolioId', '=', portfolioId)
       .executeTakeFirstOrThrow();
   },
 };

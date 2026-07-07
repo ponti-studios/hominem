@@ -1,6 +1,6 @@
 import { kyselyAdapter } from '@better-auth/kysely-adapter';
 import { passkey } from '@better-auth/passkey';
-import { db } from '@hominem/db';
+import { authDb } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
 import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
 import { betterAuth } from 'better-auth';
@@ -22,66 +22,6 @@ import { enableTestOtpStore, recordTestOtp } from './test-otp-store';
 if (env.AUTH_TEST_OTP_ENABLED) {
   enableTestOtpStore();
 }
-
-const userFieldMappings = {
-  emailVerified: 'emailVerified',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-};
-
-const sessionFieldMappings = {
-  expiresAt: 'expiresAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-  ipAddress: 'ipAddress',
-  userAgent: 'userAgent',
-  userId: 'userId',
-};
-
-const accountFieldMappings = {
-  accountId: 'accountId',
-  providerId: 'providerId',
-  userId: 'userId',
-  accessToken: 'accessToken',
-  refreshToken: 'refreshToken',
-  idToken: 'idToken',
-  accessTokenExpiresAt: 'accessTokenExpiresAt',
-  refreshTokenExpiresAt: 'refreshTokenExpiresAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-};
-
-const verificationFieldMappings = {
-  expiresAt: 'expiresAt',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt',
-};
-
-const passkeyFieldMappings = {
-  publicKey: 'publicKey',
-  userId: 'userId',
-  credentialID: 'credentialID',
-  deviceType: 'deviceType',
-  backedUp: 'backedUp',
-  createdAt: 'createdAt',
-};
-
-const jwksFieldMappings = {
-  publicKey: 'publicKey',
-  privateKey: 'privateKey',
-  createdAt: 'createdAt',
-  expiresAt: 'expiresAt',
-};
-
-const deviceCodeFieldMappings = {
-  deviceCode: 'deviceCode',
-  userCode: 'userCode',
-  userId: 'userId',
-  expiresAt: 'expiresAt',
-  lastPolledAt: 'lastPolledAt',
-  pollingInterval: 'pollingInterval',
-  clientId: 'clientId',
-};
 
 function getTrustedOrigins() {
   const origins = new Set([
@@ -135,25 +75,12 @@ type SendEmailParams = {
 
 type VerificationOtpType = 'sign-in' | 'email-verification' | 'forget-password' | string;
 
-type BetterAuthSession = {
-  user: {
-    id: string;
-    email: string;
-    emailVerified: boolean;
-    name: string;
-    image?: string | null | undefined;
-    createdAt: Date;
-    updatedAt: Date;
-  };
-  session: {
-    id: string;
-  };
-} | null;
-
 type BetterAuthServer = {
   handler: (request: Request) => Promise<Response>;
   api: {
-    getSession: (input: { headers: Headers }) => Promise<BetterAuthSession>;
+    getSession: (input: {
+      headers: Headers;
+    }) => Promise<typeof inferredBetterAuthServer.$Infer.Session | null>;
   };
 };
 
@@ -179,7 +106,7 @@ function shouldSendEmails(): boolean {
 
 async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<void> {
   if (!shouldSendEmails()) {
-    logger.info('email_skipped', { to, subject, nodeEnv: env.NODE_ENV });
+    logger.info('email_skipped', { to, subject });
     return;
   }
 
@@ -253,12 +180,6 @@ function getAuthPlugins() {
       rpID: env.AUTH_PASSKEY_RP_ID,
       rpName: API_BRAND.appName,
       origin: getTrustedOrigins(),
-      schema: {
-        passkey: {
-          modelName: 'passkey',
-          fields: passkeyFieldMappings,
-        },
-      },
     }),
     emailOTP({
       expiresIn: env.AUTH_EMAIL_OTP_EXPIRES_SECONDS,
@@ -282,14 +203,7 @@ function getAuthPlugins() {
         await sendEmail(buildVerificationOtpEmail({ to: email, otp, type }));
       },
     }),
-    jwt({
-      schema: {
-        jwks: {
-          modelName: 'jwks',
-          fields: jwksFieldMappings,
-        },
-      },
-    }),
+    jwt(),
     bearer(),
     multiSession({ maximumSessions: 8 }),
     oneTimeToken({
@@ -300,12 +214,10 @@ function getAuthPlugins() {
       expiresIn: '10m',
       interval: '5s',
       verificationUri: '/api/auth/device',
-      schema: {
-        deviceCode: {
-          modelName: 'deviceCode',
-          fields: deviceCodeFieldMappings,
-        },
-      },
+      // better-auth@1.6.11's deviceAuthorizationOptionsSchema marks `schema` as
+      // non-optional (likely a bug), so a placeholder must be passed even with no
+      // field/model overrides needed.
+      schema: {},
     }),
     openAPI({
       path: '/reference',
@@ -321,22 +233,6 @@ const betterAuthOptions: BetterAuthOptions = {
   baseURL: env.API_URL,
   trustedOrigins: getTrustedOrigins(),
   advanced: getAdvancedOptions(),
-  user: {
-    modelName: 'user',
-    fields: userFieldMappings,
-  },
-  session: {
-    modelName: 'session',
-    fields: sessionFieldMappings,
-  },
-  account: {
-    modelName: 'account',
-    fields: accountFieldMappings,
-  },
-  verification: {
-    modelName: 'verification',
-    fields: verificationFieldMappings,
-  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
@@ -346,7 +242,7 @@ const betterAuthOptions: BetterAuthOptions = {
 
 const inferredBetterAuthServer = betterAuth({
   ...betterAuthOptions,
-  database: kyselyAdapter(db),
+  database: kyselyAdapter(authDb),
 });
 
 export const betterAuthServer: BetterAuthServer = inferredBetterAuthServer;

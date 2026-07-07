@@ -13,16 +13,11 @@
     "API_URL",
     "WEB_URL",
     "DATABASE_URL",
-    "VITE_DATABASE_URL",
     "REDIS_URL",
     "BETTER_AUTH_SECRET",
     "AUTH_PASSKEY_RP_ID",
     "AUTH_PASSKEY_ORIGIN",
     "AUTH_COOKIE_DOMAIN",
-    "AUTH_E2E_ENABLED",
-    "AUTH_E2E_SECRET",
-    "AUTH_TEST_OTP_ENABLED",
-    "AUTH_TEST_OTP_TTL_SECONDS",
     "AUTH_EMAIL_OTP_EXPIRES_SECONDS",
     "RESEND_API_KEY",
     "RESEND_FROM_EMAIL",
@@ -30,7 +25,6 @@
     "SEND_EMAILS",
     "OPENROUTER_API_KEY",
     "AI_MODEL",
-    "SAVE_VOICE_AUDIO",
     "R2_ENDPOINT",
     "R2_BUCKET_NAME",
     "R2_ACCESS_KEY_ID",
@@ -42,12 +36,9 @@
     "OTEL_SERVICE_NAME",
     "OTEL_SERVICE_NAMESPACE",
     "OTEL_DEPLOYMENT_ENVIRONMENT",
-    "OTEL_TRACES_SAMPLER",
     "OTEL_TRACES_SAMPLER_ARG",
-    "OTEL_LOG_LEVEL",
     "OTEL_LOGS_EXPORTER",
     "VITE_PUBLIC_API_URL",
-    "VITE_POSTHOG_API_KEY",
     "VITE_POSTHOG_HOST",
     "VITE_OTEL_DISABLED",
     "VITE_OTEL_SERVICE_NAME",
@@ -55,13 +46,10 @@
     "VITE_OTEL_DEPLOYMENT_ENVIRONMENT",
     "VITE_OTEL_EXPORTER_OTLP_ENDPOINT",
     "VITE_OTEL_TRACES_SAMPLER_ARG",
-    "APP_VARIANT",
     "EXPO_PUBLIC_API_BASE_URL",
-    "EXPO_PUBLIC_E2E_AUTH_SECRET",
     "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED",
     "EXPO_PUBLIC_POSTHOG_API_KEY",
-    "EXPO_PUBLIC_POSTHOG_HOST",
-    "GITHUB_TOKEN"
+    "EXPO_PUBLIC_POSTHOG_HOST"
   ],
   "tasks": {
     "build": {
@@ -95,8 +83,7 @@
       "cache": false
     },
     "test": {
-      "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "dependsOn": ["^build"]
     },
     "test:coverage": {
       "dependsOn": ["^build"],

@@ -3,12 +3,11 @@
  * Please do not edit it manually.
  */
 
-import type { ColumnType } from 'kysely';
+import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
 
@@ -44,25 +43,43 @@ export interface Account {
   userId: string;
 }
 
-export interface AppApplicationFiles {
-  application_id: string;
+export interface AppAiUsageEvents {
+  cachedInputTokens: number | null;
+  costUsd: Numeric | null;
   createdat: Generated<Timestamp>;
-  file_content: string | null;
-  file_name: string;
-  file_size: number | null;
-  file_url: string | null;
+  feature: string;
   id: Generated<string>;
-  mime_type: string | null;
+  inputTokens: number;
+  metadata: Json | null;
+  model: string;
+  operation: string;
+  outputTokens: number;
+  ownerUserid: string;
+  provider: string;
+  reasoningTokens: number | null;
+  requestId: string | null;
+  totalTokens: number;
+}
+
+export interface AppApplicationFiles {
+  applicationId: string;
+  createdat: Generated<Timestamp>;
+  fileContent: string | null;
+  fileName: string;
+  fileSize: number | null;
+  fileUrl: string | null;
+  id: Generated<string>;
+  mimeType: string | null;
   type: string;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppApplicationNotes {
-  application_id: string;
+  applicationId: string;
   content: string;
   createdat: Generated<Timestamp>;
   id: Generated<string>;
-  is_private: Generated<boolean>;
+  isPrivate: Generated<boolean>;
   title: string | null;
   type: string;
   updatedat: Generated<Timestamp>;
@@ -73,8 +90,8 @@ export interface AppBookmarks {
   description: string | null;
   id: Generated<string>;
   metadata: Generated<Json>;
-  owner_userid: string;
-  place_id: string | null;
+  ownerUserid: string;
+  placeId: string | null;
   title: string;
   updatedat: Generated<Timestamp>;
   url: string;
@@ -82,35 +99,35 @@ export interface AppBookmarks {
 
 export interface AppCareerEvents {
   achievements: Generated<Json>;
-  bonus_amount: number | null;
-  bonus_type: string | null;
-  career_goals: Json | null;
+  bonusAmount: number | null;
+  bonusType: string | null;
+  careerGoals: Json | null;
   createdat: Generated<Timestamp>;
   description: string | null;
-  equity_granted: number | null;
-  equity_vesting: string | null;
-  event_date: Timestamp;
-  event_type: string;
+  equityGranted: number | null;
+  equityVesting: string | null;
+  eventDate: Timestamp;
+  eventType: string;
   id: Generated<string>;
-  increase_percentage: string | null;
-  manager_feedback: string | null;
-  market_salary_range: Json | null;
-  new_level: string | null;
-  new_salary: number | null;
-  new_title: string | null;
-  new_total_comp: number | null;
-  owner_userid: string;
-  performance_rating: string | null;
-  previous_level: string | null;
-  previous_salary: number | null;
-  previous_title: string | null;
-  previous_total_comp: number | null;
-  salary_increase: number | null;
-  self_assessment: string | null;
-  skills_gained: Generated<Json>;
-  total_comp_increase: number | null;
+  increasePercentage: string | null;
+  managerFeedback: string | null;
+  marketSalaryRange: Json | null;
+  newLevel: string | null;
+  newSalary: number | null;
+  newTitle: string | null;
+  newTotalComp: number | null;
+  ownerUserid: string;
+  performanceRating: string | null;
+  previousLevel: string | null;
+  previousSalary: number | null;
+  previousTitle: string | null;
+  previousTotalComp: number | null;
+  salaryIncrease: number | null;
+  selfAssessment: string | null;
+  skillsGained: Generated<Json>;
+  totalCompIncrease: number | null;
   updatedat: Generated<Timestamp>;
-  work_experience_id: string | null;
+  workExperienceId: string | null;
 }
 
 export interface AppCertifications {
@@ -118,43 +135,43 @@ export interface AppCertifications {
   cost: number | null;
   createdat: Generated<Timestamp>;
   description: string | null;
-  expiration_date: Timestamp | null;
+  expirationDate: Timestamp | null;
   id: Generated<string>;
-  is_visible: Generated<boolean>;
-  issue_date: Timestamp;
-  issuing_organization: string;
+  issueDate: Timestamp;
+  issuingOrganization: string;
+  isVisible: Generated<boolean>;
   name: string;
-  next_renewal_date: Timestamp | null;
-  owner_userid: string;
-  sort_order: Generated<number>;
+  nextRenewalDate: Timestamp | null;
+  ownerUserid: string;
+  sortOrder: Generated<number>;
   status: Generated<string>;
   updatedat: Generated<Timestamp>;
-  work_experience_id: string | null;
+  workExperienceId: string | null;
 }
 
 export interface AppChatMessages {
-  author_userid: string | null;
-  chat_id: string;
+  authorUserid: string | null;
+  chatId: string;
   content: string;
   createdat: Generated<Timestamp>;
   files: Json | null;
   id: Generated<string>;
-  parent_message_id: string | null;
+  parentMessageId: string | null;
   reasoning: string | null;
-  referenced_note_ids: Json | null;
+  referencedNoteIds: Json | null;
   role: string;
-  tool_calls: Json | null;
+  toolCalls: Json | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppChats {
-  archived_at: Timestamp | null;
+  archivedAt: Timestamp | null;
   createdat: Generated<Timestamp>;
   id: Generated<string>;
-  last_message_at: Generated<Timestamp>;
-  note_id: string | null;
-  owner_userid: string;
-  primary_space_id: string | null;
+  lastMessageAt: Generated<Timestamp>;
+  noteId: string | null;
+  ownerUserid: string;
+  primarySpaceId: string | null;
   source: string | null;
   title: string;
   updatedat: Generated<Timestamp>;
@@ -167,7 +184,7 @@ export interface AppCompanies {
   industry: string | null;
   location: string | null;
   name: string;
-  owner_userid: string;
+  ownerUserid: string;
   size: number | null;
   updatedat: Generated<Timestamp>;
   website: string | null;
@@ -175,35 +192,35 @@ export interface AppCompanies {
 
 export interface AppEntities {
   createdat: Generated<Timestamp>;
-  entity_id: string;
-  entity_table: string;
-  owner_userid: string | null;
-  primary_space_id: string | null;
+  entityId: string;
+  entityTable: string;
+  ownerUserid: string | null;
+  primarySpaceId: string | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppEntityLinks {
   createdat: Generated<Timestamp>;
-  from_entity_id: string;
-  from_entity_table: string;
+  fromEntityId: string;
+  fromEntityTable: string;
   id: Generated<string>;
   metadata: Generated<Json>;
-  owner_userid: string;
-  relation_type: string;
-  space_id: string | null;
-  to_entity_id: string;
-  to_entity_table: string;
+  ownerUserid: string;
+  relationType: string;
+  spaceId: string | null;
+  toEntityId: string;
+  toEntityTable: string;
   updatedat: Generated<Timestamp>;
-  valid_during: Generated<string>;
+  validDuring: Generated<string>;
 }
 
 export interface AppEventAttendees {
   createdat: Generated<Timestamp>;
   email: string | null;
-  event_id: string;
+  eventId: string;
   id: Generated<string>;
-  person_id: string | null;
-  responded_at: Timestamp | null;
+  personId: string | null;
+  respondedAt: Timestamp | null;
   role: Generated<string>;
   status: Generated<string>;
   updatedat: Generated<Timestamp>;
@@ -213,17 +230,17 @@ export interface AppEvents {
   color: string | null;
   createdat: Generated<Timestamp>;
   description: string | null;
-  ends_at: Timestamp | null;
-  event_type: string;
-  external_id: string | null;
+  endsAt: Timestamp | null;
+  eventType: string;
+  externalId: string | null;
   id: Generated<string>;
-  is_all_day: Generated<boolean>;
+  isAllDay: Generated<boolean>;
   metadata: Generated<Json>;
-  owner_userid: string;
-  place_id: string | null;
+  ownerUserid: string;
+  placeId: string | null;
   recurrence: Generated<Json>;
   source: string | null;
-  starts_at: Timestamp;
+  startsAt: Timestamp;
   title: string;
   updatedat: Generated<Timestamp>;
 }
@@ -234,63 +251,63 @@ export interface AppFiles {
   id: string;
   metadata: Json | null;
   mimetype: string;
-  original_name: string;
-  owner_userid: string;
+  originalName: string;
+  ownerUserid: string;
   size: number;
-  storage_key: string;
-  text_content: string | null;
+  storageKey: string;
+  textContent: string | null;
   updatedat: Generated<Timestamp>;
   url: string;
 }
 
 export interface AppFinanceAccounts {
-  account_subtype: string | null;
-  account_type: string;
   accountid: string | null;
-  available_balance: Numeric | null;
+  accountSubtype: string | null;
+  accountType: string;
+  availableBalance: Numeric | null;
   createdat: Generated<Timestamp>;
-  currency_code: Generated<string>;
-  current_balance: Numeric | null;
+  currencyCode: Generated<string>;
+  currentBalance: Numeric | null;
   id: Generated<string>;
-  institution_id: string | null;
-  is_active: Generated<boolean>;
+  institutionId: string | null;
+  isActive: Generated<boolean>;
   mask: string | null;
   metadata: Generated<Json>;
   name: string;
-  owner_userid: string;
-  plaid_item_id: string | null;
+  ownerUserid: string;
+  plaidItemId: string | null;
   provider: string | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppFinanceInstitutions {
-  country_code: string | null;
+  countryCode: string | null;
   createdat: Generated<Timestamp>;
   id: Generated<string>;
-  logo_url: string | null;
+  logoUrl: string | null;
   name: string;
   provider: string | null;
-  provider_institution_id: string | null;
+  providerInstitutionId: string | null;
   updatedat: Generated<Timestamp>;
-  website_url: string | null;
+  websiteUrl: string | null;
 }
 
 export interface AppFinanceTransactions {
-  account_id: string;
+  accountId: string;
   amount: Numeric;
   createdat: Generated<Timestamp>;
   description: string | null;
-  external_id: string | null;
+  externalId: string | null;
   id: Generated<string>;
-  merchant_name: string | null;
+  merchantName: string | null;
   notes: string | null;
-  occurred_at: Timestamp | null;
-  owner_userid: string;
+  occurredAt: Timestamp | null;
+  ownerUserid: string;
   pending: Generated<boolean>;
-  posted_on: Timestamp;
-  provider_payload: Generated<Json>;
+  postedOn: Timestamp;
+  providerPayload: Generated<Json>;
   source: string | null;
-  transaction_type: string;
+  transactionType: string;
   updatedat: Generated<Timestamp>;
 }
 
@@ -298,92 +315,92 @@ export interface AppGoals {
   createdat: Generated<Timestamp>;
   description: string | null;
   id: Generated<string>;
-  owner_userid: string;
+  ownerUserid: string;
   status: Generated<string>;
-  target_at: Timestamp | null;
+  targetAt: Timestamp | null;
   title: string;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppJobApplications {
-  application_date: Timestamp | null;
-  bonus_final: number | null;
-  bonus_offered: number | null;
-  company_id: string;
-  company_notes: string | null;
-  cover_letter: string | null;
+  applicationDate: Timestamp | null;
+  bonusFinal: number | null;
+  bonusOffered: number | null;
+  companyId: string;
+  companyNotes: string | null;
+  coverLetter: string | null;
   createdat: Generated<Timestamp>;
-  decision_date: Timestamp | null;
-  end_date: Timestamp | null;
-  equity_final: string | null;
-  equity_offered: string | null;
-  first_interview_date: Timestamp | null;
+  decisionDate: Timestamp | null;
+  endDate: Timestamp | null;
+  equityFinal: string | null;
+  equityOffered: string | null;
+  firstInterviewDate: Timestamp | null;
   id: Generated<string>;
-  interview_dates: Generated<Json>;
-  job_id: string | null;
-  job_posting: string | null;
-  job_posting_url: string | null;
-  job_posting_word_count: number | null;
+  interviewDates: Generated<Json>;
+  jobId: string | null;
+  jobPosting: string | null;
+  jobPostingUrl: string | null;
+  jobPostingWordCount: number | null;
   link: string | null;
   location: string | null;
-  negotiation_notes: string | null;
-  offer_date: Timestamp | null;
-  owner_userid: string;
-  phone_screen: string | null;
+  negotiationNotes: string | null;
+  offerDate: Timestamp | null;
+  ownerUserid: string;
+  phoneScreen: string | null;
   position: string;
-  recruiter_email: string | null;
-  recruiter_linkedin: string | null;
-  recruiter_name: string | null;
+  recruiterEmail: string | null;
+  recruiterLinkedin: string | null;
+  recruiterName: string | null;
   reference: Generated<boolean>;
-  rejection_reason: string | null;
+  rejectionReason: string | null;
   requirements: Generated<Json>;
-  response_date: Timestamp | null;
+  responseDate: Timestamp | null;
   resume: string | null;
-  salary_accepted: string | null;
-  salary_expected: number | null;
-  salary_final: number | null;
-  salary_negotiated: number | null;
-  salary_offered: number | null;
-  salary_quoted: string | null;
-  salary_requested: number | null;
+  salaryAccepted: string | null;
+  salaryExpected: number | null;
+  salaryFinal: number | null;
+  salaryNegotiated: number | null;
+  salaryOffered: number | null;
+  salaryQuoted: string | null;
+  salaryRequested: number | null;
   skills: Generated<Json>;
   source: string | null;
   stages: Generated<Json>;
-  start_date: Timestamp;
+  startDate: Timestamp;
   status: string;
-  time_to_decision: number | null;
-  time_to_first_interview: number | null;
-  time_to_offer: number | null;
-  time_to_response: number | null;
-  total_comp_final: number | null;
-  total_comp_offered: number | null;
+  timeToDecision: number | null;
+  timeToFirstInterview: number | null;
+  timeToOffer: number | null;
+  timeToResponse: number | null;
+  totalCompFinal: number | null;
+  totalCompOffered: number | null;
   updatedat: Generated<Timestamp>;
-  withdrawal_reason: string | null;
+  withdrawalReason: string | null;
 }
 
 export interface AppKeyResults {
   createdat: Generated<Timestamp>;
-  current_value: Numeric | null;
-  due_at: Timestamp | null;
-  goal_id: string;
+  currentValue: Numeric | null;
+  dueAt: Timestamp | null;
+  goalId: string;
   id: Generated<string>;
-  target_value: Numeric | null;
+  targetValue: Numeric | null;
   title: string;
   unit: string | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppMusicAlbums {
-  album_art_url: string | null;
-  artist_id: string | null;
-  artist_name: string | null;
+  albumArtUrl: string | null;
+  artistId: string | null;
+  artistName: string | null;
   createdat: Generated<Timestamp>;
-  external_id: string | null;
+  externalId: string | null;
   genre: string | null;
   id: Generated<string>;
   metadata: Generated<Json>;
-  owner_userid: string;
-  release_date: Timestamp | null;
+  ownerUserid: string;
+  releaseDate: Timestamp | null;
   source: string;
   title: string;
   updatedat: Generated<Timestamp>;
@@ -391,155 +408,155 @@ export interface AppMusicAlbums {
 
 export interface AppMusicArtists {
   createdat: Generated<Timestamp>;
-  external_id: string | null;
+  externalId: string | null;
   genre: string | null;
   id: Generated<string>;
-  image_url: string | null;
+  imageUrl: string | null;
   metadata: Generated<Json>;
   name: string;
-  owner_userid: string;
+  ownerUserid: string;
   source: string;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppMusicListens {
   completed: Generated<boolean>;
-  context_id: string | null;
-  context_type: string | null;
+  contextId: string | null;
+  contextType: string | null;
   createdat: Generated<Timestamp>;
-  duration_seconds: number | null;
-  ended_at: Timestamp | null;
+  durationSeconds: number | null;
+  endedAt: Timestamp | null;
   id: Generated<string>;
-  owner_userid: string;
+  ownerUserid: string;
   source: string;
-  started_at: Timestamp;
-  track_id: string | null;
+  startedAt: Timestamp;
+  trackId: string | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppMusicPlaylists {
   createdat: Generated<Timestamp>;
   description: string | null;
-  external_id: string | null;
+  externalId: string | null;
   id: Generated<string>;
-  image_url: string | null;
-  is_public: Generated<boolean>;
+  imageUrl: string | null;
+  isPublic: Generated<boolean>;
   metadata: Generated<Json>;
   name: string;
-  owner_userid: string;
+  ownerUserid: string;
   source: string;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppMusicPlaylistTracks {
-  added_at: Generated<Timestamp>;
-  playlist_id: string;
+  addedAt: Generated<Timestamp>;
+  playlistId: string;
   position: number;
-  track_id: string;
+  trackId: string;
 }
 
 export interface AppMusicTracks {
-  album_art_url: string | null;
-  album_id: string | null;
-  album_name: string | null;
-  artist_id: string | null;
-  artist_name: string | null;
+  albumArtUrl: string | null;
+  albumId: string | null;
+  albumName: string | null;
+  artistId: string | null;
+  artistName: string | null;
   createdat: Generated<Timestamp>;
-  disc_number: number | null;
-  duration_seconds: number | null;
-  external_id: string | null;
+  discNumber: number | null;
+  durationSeconds: number | null;
+  externalId: string | null;
   genre: string | null;
   id: Generated<string>;
   isrc: string | null;
   metadata: Generated<Json>;
-  owner_userid: string;
+  ownerUserid: string;
   source: string;
   title: string;
-  track_number: number | null;
+  trackNumber: number | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppNoteFiles {
-  attached_at: Generated<Timestamp>;
-  file_id: string;
-  note_id: string;
+  attachedAt: Generated<Timestamp>;
+  fileId: string;
+  noteId: string;
 }
 
 export interface AppNotes {
-  archived_at: Timestamp | null;
+  archivedAt: Timestamp | null;
   content: Generated<string>;
   createdat: Generated<Timestamp>;
-  current_version_id: string | null;
+  currentVersionId: string | null;
   excerpt: string | null;
   id: Generated<string>;
-  is_locked: Generated<boolean>;
-  owner_userid: string;
-  parent_note_id: string | null;
+  isLocked: Generated<boolean>;
+  ownerUserid: string;
+  parentNoteId: string | null;
   source: string | null;
   title: string | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppNoteShares {
-  access_period: Generated<string | null>;
+  accessPeriod: Generated<string | null>;
   createdat: Generated<Timestamp>;
   expiresat: Timestamp | null;
-  granted_by_userid: string | null;
+  grantedByUserid: string | null;
   id: Generated<string>;
-  note_id: string;
+  noteId: string;
   permission: Generated<string>;
   revokedat: Timestamp | null;
-  shared_with_userid: string;
+  sharedWithUserid: string;
 }
 
 export interface AppNoteVersions {
   analysis: Json | null;
   content: string | null;
-  created_by_userid: string | null;
   createdat: Generated<Timestamp>;
+  createdByUserid: string | null;
   excerpt: string | null;
   id: Generated<string>;
   mentions: Generated<Json>;
-  note_id: string;
-  note_type: Generated<string>;
-  published_at: Timestamp | null;
-  publishing_metadata: Json | null;
-  scheduled_for: Timestamp | null;
+  noteId: string;
+  noteType: Generated<string>;
+  publishedAt: Timestamp | null;
+  publishingMetadata: Json | null;
+  scheduledFor: Timestamp | null;
   status: Generated<string>;
   title: string | null;
   updatedat: Generated<Timestamp>;
-  version_number: number;
+  versionNumber: number;
 }
 
 export interface AppPeople {
   createdat: Generated<Timestamp>;
   email: string | null;
-  ended_at: Timestamp | null;
-  first_name: string | null;
+  endedAt: Timestamp | null;
+  firstName: string | null;
   id: Generated<string>;
   image: string | null;
-  last_name: string | null;
+  lastName: string | null;
   metadata: Generated<Json>;
   notes: string | null;
-  owner_userid: string;
-  person_type: Generated<string>;
+  ownerUserid: string;
+  personType: Generated<string>;
   phone: string | null;
-  started_at: Timestamp | null;
+  startedAt: Timestamp | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppPlaces {
   address: string | null;
   createdat: Generated<Timestamp>;
-  external_id: string | null;
+  externalId: string | null;
   id: Generated<string>;
   latitude: Numeric | null;
   longitude: Numeric | null;
   name: string;
   notes: string | null;
-  owner_userid: string;
-  place_type: string | null;
-  provider_payload: Generated<Json>;
+  ownerUserid: string;
+  placeType: string | null;
+  providerPayload: Generated<Json>;
   rating: Numeric | null;
   source: string | null;
   updatedat: Generated<Timestamp>;
@@ -549,14 +566,14 @@ export interface AppPlaidItems {
   accesstoken: string | null;
   createdat: Generated<Timestamp>;
   cursor: string | null;
-  error_code: string | null;
-  error_message: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
   id: Generated<string>;
-  institution_id: string | null;
-  last_synced_at: Timestamp | null;
-  owner_userid: string;
+  institutionId: string | null;
+  lastSyncedAt: Timestamp | null;
+  ownerUserid: string;
   provider: Generated<string>;
-  provider_item_id: string;
+  providerItemId: string;
   status: Generated<string>;
   updatedat: Generated<Timestamp>;
 }
@@ -567,33 +584,33 @@ export interface AppPortfolioAnalytics {
   createdat: Generated<Timestamp>;
   event: string;
   id: Generated<string>;
-  ip_address: string | null;
+  ipAddress: string | null;
   metadata: Json | null;
   path: string | null;
-  portfolio_id: string;
+  portfolioId: string;
   referer: string | null;
-  user_agent: string | null;
-  visitor_id: string | null;
+  userAgent: string | null;
+  visitorId: string | null;
 }
 
 export interface AppPortfolios {
-  availability_message: string | null;
-  availability_status: Generated<boolean>;
+  availabilityMessage: string | null;
+  availabilityStatus: Generated<boolean>;
   bio: string;
   copyright: string | null;
   createdat: Generated<Timestamp>;
-  current_location: string;
+  currentLocation: string;
   email: string;
   id: Generated<string>;
   initials: string | null;
-  is_active: Generated<boolean>;
-  is_public: Generated<boolean>;
-  job_title: string;
-  location_tagline: string | null;
+  isActive: Generated<boolean>;
+  isPublic: Generated<boolean>;
+  jobTitle: string;
+  locationTagline: string | null;
   name: string;
-  owner_userid: string;
+  ownerUserid: string;
   phone: string | null;
-  profile_image_url: string | null;
+  profileImageUrl: string | null;
   slug: string;
   tagline: string;
   theme: Json | null;
@@ -607,81 +624,81 @@ export interface AppPossessionContainers {
   id: Generated<string>;
   location: string | null;
   name: string;
-  owner_userid: string;
+  ownerUserid: string;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppPossessionEvents {
   amount: Numeric | null;
-  amount_unit: string | null;
-  container_id: string | null;
+  amountUnit: string | null;
+  containerId: string | null;
   createdat: Generated<Timestamp>;
-  end_date: Timestamp | null;
-  event_type: string;
+  endDate: Timestamp | null;
+  eventType: string;
   id: Generated<string>;
   metadata: Generated<Json>;
   method: string | null;
-  occurred_at: Timestamp | null;
-  owner_userid: string;
+  occurredAt: Timestamp | null;
+  ownerUserid: string;
   possessionid: string;
-  start_date: Timestamp | null;
+  startDate: Timestamp | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppPossessions {
-  container_id: string | null;
+  containerId: string | null;
   createdat: Generated<Timestamp>;
-  current_value: Numeric | null;
+  currentValue: Numeric | null;
   description: string | null;
   id: Generated<string>;
-  item_condition: string | null;
+  itemCondition: string | null;
   location: string | null;
   metadata: Generated<Json>;
   name: string;
-  owner_userid: string;
-  purchase_date: Timestamp | null;
-  purchase_price: Numeric | null;
-  serial_number: string | null;
+  ownerUserid: string;
+  purchaseDate: Timestamp | null;
+  purchasePrice: Numeric | null;
+  serialNumber: string | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppProjects {
   createdat: Generated<Timestamp>;
   description: string;
-  end_date: Timestamp | null;
-  github_url: string | null;
+  endDate: Timestamp | null;
+  githubUrl: string | null;
   id: Generated<string>;
-  image_url: string | null;
-  is_featured: Generated<boolean>;
-  is_visible: Generated<boolean>;
-  live_url: string | null;
-  portfolio_id: string;
-  short_description: string | null;
-  sort_order: Generated<number>;
-  start_date: Timestamp | null;
+  imageUrl: string | null;
+  isFeatured: Generated<boolean>;
+  isVisible: Generated<boolean>;
+  liveUrl: string | null;
+  portfolioId: string;
+  shortDescription: string | null;
+  sortOrder: Generated<number>;
+  startDate: Timestamp | null;
   status: Generated<string>;
   technologies: Generated<Json>;
   title: string;
   updatedat: Generated<Timestamp>;
-  video_url: string | null;
-  work_experience_id: string | null;
+  videoUrl: string | null;
+  workExperienceId: string | null;
 }
 
 export interface AppSkills {
-  ai_derived: Generated<boolean>;
+  aiDerived: Generated<boolean>;
   category: string | null;
   createdat: Generated<Timestamp>;
   description: string | null;
   icon: string | null;
   id: Generated<string>;
-  is_visible: Generated<boolean>;
+  isVisible: Generated<boolean>;
   level: number;
   name: string;
-  portfolio_id: string;
+  portfolioId: string;
   proof: string | null;
-  sort_order: Generated<number>;
+  sortOrder: Generated<number>;
   updatedat: Generated<Timestamp>;
-  years_of_experience: number | null;
+  yearsOfExperience: number | null;
 }
 
 export interface AppSocialLinks {
@@ -689,49 +706,49 @@ export interface AppSocialLinks {
   github: string | null;
   id: Generated<string>;
   linkedin: string | null;
-  portfolio_id: string;
+  portfolioId: string;
   twitter: string | null;
   updatedat: Generated<Timestamp>;
   website: string | null;
 }
 
 export interface AppSpaceInvites {
-  accepted_at: Timestamp | null;
+  acceptedAt: Timestamp | null;
   createdat: Generated<Timestamp>;
   expiresat: Generated<Timestamp>;
   id: Generated<string>;
-  invite_token: string;
-  invite_window: Generated<string | null>;
-  invited_user_email: string;
-  invited_user_email_normalized: Generated<string | null>;
-  invited_userid: string | null;
-  inviter_userid: string;
+  invitedUserEmail: string;
+  invitedUserEmailNormalized: Generated<string | null>;
+  invitedUserid: string | null;
+  inviterUserid: string;
+  inviteToken: string;
+  inviteWindow: Generated<string | null>;
   revokedat: Timestamp | null;
-  space_id: string;
+  spaceId: string;
   status: Generated<string>;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppSpaceItems {
-  added_at: Generated<Timestamp>;
-  added_by_userid: string | null;
-  entity_id: string;
-  entity_table: string;
+  addedAt: Generated<Timestamp>;
+  addedByUserid: string | null;
+  entityId: string;
+  entityTable: string;
   id: Generated<string>;
-  is_pinned: Generated<boolean>;
-  membership_period: Generated<string | null>;
+  isPinned: Generated<boolean>;
+  membershipPeriod: Generated<string | null>;
   metadata: Generated<Json>;
   position: Numeric | null;
-  removed_at: Timestamp | null;
-  space_id: string;
+  removedAt: Timestamp | null;
+  spaceId: string;
 }
 
 export interface AppSpaceMembers {
-  added_by_userid: string | null;
+  addedByUserid: string | null;
   createdat: Generated<Timestamp>;
   id: Generated<string>;
-  membership_period: Generated<string>;
-  space_id: string;
+  membershipPeriod: Generated<string>;
+  spaceId: string;
   userid: string;
 }
 
@@ -741,76 +758,76 @@ export interface AppSpaces {
   description: string | null;
   icon: string | null;
   id: Generated<string>;
-  is_ordered: Generated<boolean>;
+  isOrdered: Generated<boolean>;
   name: string;
-  owner_userid: string;
+  ownerUserid: string;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppSpaceTags {
-  created_by_userid: string | null;
   createdat: Generated<Timestamp>;
+  createdByUserid: string | null;
   id: Generated<string>;
-  space_id: string;
-  tag_id: string;
+  spaceId: string;
+  tagId: string;
 }
 
 export interface AppTagAliases {
   alias: string;
-  alias_slug: string;
+  aliasSlug: string;
   createdat: Generated<Timestamp>;
   id: Generated<string>;
-  tag_id: string;
+  tagId: string;
 }
 
 export interface AppTagAssignments {
-  assigned_by_userid: string | null;
-  assignment_period: Generated<string | null>;
-  assignment_source: Generated<string>;
+  assignedByUserid: string | null;
+  assignmentPeriod: Generated<string | null>;
+  assignmentSource: Generated<string>;
   confidence: Numeric | null;
   createdat: Generated<Timestamp>;
-  entity_id: string;
-  entity_table: string;
+  entityId: string;
+  entityTable: string;
   id: Generated<string>;
-  removed_at: Timestamp | null;
-  tag_id: string;
+  removedAt: Timestamp | null;
+  tagId: string;
 }
 
 export interface AppTags {
-  archived_at: Timestamp | null;
+  archivedAt: Timestamp | null;
   color: string | null;
-  created_by_userid: string | null;
   createdat: Generated<Timestamp>;
+  createdByUserid: string | null;
   description: string | null;
   icon: string | null;
   id: Generated<string>;
   name: string;
-  owner_userid: string;
+  ownerUserid: string;
   path: string;
   slug: string;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppTaskAssignments {
-  assigned_by_userid: string | null;
-  assignee_userid: string;
-  assignment_period: Generated<string>;
+  assignedByUserid: string | null;
+  assigneeUserid: string;
+  assignmentPeriod: Generated<string>;
   createdat: Generated<Timestamp>;
   id: Generated<string>;
   metadata: Generated<Json>;
-  primary_space_id: string;
-  task_id: string;
+  primarySpaceId: string;
+  taskId: string;
 }
 
 export interface AppTasks {
-  completed_at: Timestamp | null;
+  completedAt: Timestamp | null;
   createdat: Generated<Timestamp>;
   description: string | null;
-  due_at: Timestamp | null;
+  dueAt: Timestamp | null;
   id: Generated<string>;
-  owner_userid: string;
-  parent_task_id: string | null;
-  primary_space_id: string | null;
+  ownerUserid: string;
+  parentTaskId: string | null;
+  primarySpaceId: string | null;
   priority: Generated<string>;
   status: Generated<string>;
   title: string;
@@ -818,18 +835,18 @@ export interface AppTasks {
 }
 
 export interface AppTestimonials {
-  avatar_url: string | null;
+  avatarUrl: string | null;
   company: string | null;
   content: string;
   createdat: Generated<Timestamp>;
   id: Generated<string>;
-  is_verified: Generated<boolean>;
-  is_visible: Generated<boolean>;
-  linkedin_url: string | null;
+  isVerified: Generated<boolean>;
+  isVisible: Generated<boolean>;
+  linkedinUrl: string | null;
   name: string;
-  portfolio_id: string;
+  portfolioId: string;
   rating: number | null;
-  sort_order: Generated<number>;
+  sortOrder: Generated<number>;
   title: string | null;
   updatedat: Generated<Timestamp>;
 }
@@ -837,96 +854,108 @@ export interface AppTestimonials {
 export interface AppTravelTrips {
   createdat: Generated<Timestamp>;
   description: string | null;
-  end_date: Timestamp | null;
+  endDate: Timestamp | null;
   id: Generated<string>;
   name: string;
   notes: string | null;
-  owner_userid: string;
-  start_date: Timestamp;
+  ownerUserid: string;
+  startDate: Timestamp;
   status: Generated<string>;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppUserPortfolioPreferences {
   createdat: Generated<Timestamp>;
-  current_portfolio_id: string | null;
+  currentPortfolioId: string | null;
   updatedat: Generated<Timestamp>;
-  user_id: string;
+  userId: string;
+}
+
+export interface AppVectorDocuments {
+  content: string;
+  createdat: Generated<Timestamp>;
+  embedding: string;
+  entityId: string;
+  entityType: string;
+  id: Generated<string>;
+  metadata: Json | null;
+  ownerUserid: string;
+  updatedat: Generated<Timestamp>;
 }
 
 export interface AppVideoChannels {
   createdat: Generated<Timestamp>;
   description: string | null;
-  external_id: string | null;
+  externalId: string | null;
   handle: string | null;
   id: Generated<string>;
   image: string | null;
   metadata: Generated<Json>;
   name: string;
-  owner_userid: string;
+  ownerUserid: string;
   source: string;
-  subscriber_count: number | null;
+  subscriberCount: number | null;
   updatedat: Generated<Timestamp>;
 }
 
 export interface AppVideoViews {
-  channel_id: string | null;
-  channel_name: string | null;
+  channelId: string | null;
+  channelName: string | null;
   completed: Generated<boolean>;
-  content_type: string;
+  contentType: string;
   createdat: Generated<Timestamp>;
   description: string | null;
-  duration_seconds: number | null;
-  episode_number: number | null;
-  external_id: string | null;
+  durationSeconds: number | null;
+  episodeNumber: number | null;
+  externalId: string | null;
   id: Generated<string>;
   metadata: Generated<Json>;
-  owner_userid: string;
-  season_number: number | null;
+  ownerUserid: string;
+  seasonNumber: number | null;
   source: string;
-  thumbnail_url: string | null;
+  thumbnailUrl: string | null;
   title: string;
   updatedat: Generated<Timestamp>;
-  watch_time_seconds: Generated<number>;
-  watched_at: Timestamp;
+  watchedAt: Timestamp;
+  watchTimeSeconds: Generated<number>;
 }
 
 export interface AppWorkExperiences {
   action: string | null;
-  annual_bonus: number | null;
-  base_salary: number | null;
+  annualBonus: number | null;
+  baseSalary: number | null;
   benefits: Json | null;
-  bonus_history: Generated<Json>;
+  bonusHistory: Generated<Json>;
   company: string;
   createdat: Generated<Timestamp>;
   currency: Generated<string>;
   department: string | null;
   description: string;
-  direct_reports: Generated<number>;
-  employment_type: Generated<string>;
-  end_date: Timestamp | null;
-  exit_notes: string | null;
+  directReports: Generated<number>;
+  employmentType: Generated<string>;
+  endDate: Timestamp | null;
+  exitNotes: string | null;
   gradient: string | null;
   id: Generated<string>;
   image: string | null;
-  is_visible: Generated<boolean>;
+  isVisible: Generated<boolean>;
   metadata: Json | null;
   metrics: string | null;
-  performance_ratings: Generated<Json>;
-  portfolio_id: string;
-  reason_for_leaving: string | null;
-  reports_to: string | null;
+  performanceRatings: Generated<Json>;
+  portfolioId: string;
+  reasonForLeaving: string | null;
+  reportsTo: string | null;
   role: string;
-  salary_adjustments: Generated<Json>;
-  salary_range: Json | null;
-  seniority_level: string | null;
-  signing_bonus: number | null;
-  sort_order: Generated<number>;
-  start_date: Timestamp | null;
+  salaryAdjustments: Generated<Json>;
+  salaryRange: Json | null;
+  seniorityLevel: string | null;
+  signingBonus: number | null;
+  sortOrder: Generated<number>;
+  startDate: Timestamp | null;
   tags: Generated<Json>;
-  team_size: number | null;
+  teamSize: number | null;
   updatedat: Generated<Timestamp>;
-  work_arrangement: Generated<string>;
+  workArrangement: Generated<string>;
 }
 
 export interface DeviceCode {
@@ -942,17 +971,11 @@ export interface DeviceCode {
   userId: string | null;
 }
 
-export interface DrizzleDrizzleMigrations {
-  created_at: Int8 | null;
-  hash: string;
-  id: Generated<number>;
-}
-
 export interface GooseDbVersion {
   id: Generated<number>;
-  is_applied: boolean;
+  isApplied: boolean;
   tstamp: Generated<Timestamp>;
-  version_id: Int8;
+  versionId: Int8;
 }
 
 export interface Jwks {
@@ -963,162 +986,185 @@ export interface Jwks {
   publicKey: string;
 }
 
+export interface LabsCaseUpdates {
+  caseId: string;
+  createdAt: Generated<Timestamp>;
+  id: string;
+  neutralContent: string;
+  rawContent: string;
+  round: number;
+}
+
 export interface LabsCovidData {
-  aged_65_older: number | null;
-  aged_70_older: number | null;
-  cardiovasc_death_rate: number | null;
+  aged65Older: number | null;
+  aged70Older: number | null;
+  cardiovascDeathRate: number | null;
   continent: string | null;
   date: Timestamp | null;
-  diabetes_prevalence: number | null;
-  excess_mortality: number | null;
-  excess_mortality_cumulative: number | null;
-  excess_mortality_cumulative_absolute: number | null;
-  excess_mortality_cumulative_per_million: number | null;
-  extreme_poverty: number | null;
-  female_smokers: number | null;
-  gdp_per_capita: number | null;
-  handwashing_facilities: number | null;
-  hosp_patients: number | null;
-  hosp_patients_per_million: number | null;
-  hospital_beds_per_thousand: number | null;
-  human_development_index: number | null;
-  icu_patients: number | null;
-  icu_patients_per_million: number | null;
+  diabetesPrevalence: number | null;
+  excessMortality: number | null;
+  excessMortalityCumulative: number | null;
+  excessMortalityCumulativeAbsolute: number | null;
+  excessMortalityCumulativePerMillion: number | null;
+  extremePoverty: number | null;
+  femaleSmokers: number | null;
+  gdpPerCapita: number | null;
+  handwashingFacilities: number | null;
+  hospitalBedsPerThousand: number | null;
+  hospPatients: number | null;
+  hospPatientsPerMillion: number | null;
+  humanDevelopmentIndex: number | null;
+  icuPatients: number | null;
+  icuPatientsPerMillion: number | null;
   id: Generated<number>;
-  iso_code: string | null;
-  life_expectancy: number | null;
+  isoCode: string | null;
+  lifeExpectancy: number | null;
   location: string | null;
-  male_smokers: number | null;
-  median_age: number | null;
-  new_cases: number | null;
-  new_cases_per_million: number | null;
-  new_cases_smoothed: number | null;
-  new_cases_smoothed_per_million: number | null;
-  new_deaths: number | null;
-  new_deaths_per_million: number | null;
-  new_deaths_smoothed: number | null;
-  new_deaths_smoothed_per_million: number | null;
-  new_people_vaccinated_smoothed: number | null;
-  new_people_vaccinated_smoothed_per_hundred: number | null;
-  new_tests: number | null;
-  new_tests_per_thousand: number | null;
-  new_tests_smoothed: number | null;
-  new_tests_smoothed_per_thousand: number | null;
-  new_vaccinations: number | null;
-  new_vaccinations_smoothed: number | null;
-  new_vaccinations_smoothed_per_million: number | null;
-  people_fully_vaccinated: Int8 | null;
-  people_fully_vaccinated_per_hundred: number | null;
-  people_vaccinated: Int8 | null;
-  people_vaccinated_per_hundred: number | null;
+  maleSmokers: number | null;
+  medianAge: number | null;
+  newCases: number | null;
+  newCasesPerMillion: number | null;
+  newCasesSmoothed: number | null;
+  newCasesSmoothedPerMillion: number | null;
+  newDeaths: number | null;
+  newDeathsPerMillion: number | null;
+  newDeathsSmoothed: number | null;
+  newDeathsSmoothedPerMillion: number | null;
+  newPeopleVaccinatedSmoothed: number | null;
+  newPeopleVaccinatedSmoothedPerHundred: number | null;
+  newTests: number | null;
+  newTestsPerThousand: number | null;
+  newTestsSmoothed: number | null;
+  newTestsSmoothedPerThousand: number | null;
+  newVaccinations: number | null;
+  newVaccinationsSmoothed: number | null;
+  newVaccinationsSmoothedPerMillion: number | null;
+  peopleFullyVaccinated: Int8 | null;
+  peopleFullyVaccinatedPerHundred: number | null;
+  peopleVaccinated: Int8 | null;
+  peopleVaccinatedPerHundred: number | null;
   population: Int8 | null;
-  population_density: number | null;
-  positive_rate: number | null;
-  reproduction_rate: number | null;
-  stringency_index: number | null;
-  tests_per_case: number | null;
-  tests_units: string | null;
-  total_boosters: Int8 | null;
-  total_boosters_per_hundred: number | null;
-  total_cases: number | null;
-  total_cases_per_million: number | null;
-  total_deaths: number | null;
-  total_deaths_per_million: number | null;
-  total_tests: number | null;
-  total_tests_per_thousand: number | null;
-  total_vaccinations: Int8 | null;
-  total_vaccinations_per_hundred: number | null;
-  weekly_hosp_admissions: number | null;
-  weekly_hosp_admissions_per_million: number | null;
-  weekly_icu_admissions: number | null;
-  weekly_icu_admissions_per_million: number | null;
+  populationDensity: number | null;
+  positiveRate: number | null;
+  reproductionRate: number | null;
+  stringencyIndex: number | null;
+  testsPerCase: number | null;
+  testsUnits: string | null;
+  totalBoosters: Int8 | null;
+  totalBoostersPerHundred: number | null;
+  totalCases: number | null;
+  totalCasesPerMillion: number | null;
+  totalDeaths: number | null;
+  totalDeathsPerMillion: number | null;
+  totalTests: number | null;
+  totalTestsPerThousand: number | null;
+  totalVaccinations: Int8 | null;
+  totalVaccinationsPerHundred: number | null;
+  weeklyHospAdmissions: number | null;
+  weeklyHospAdmissionsPerMillion: number | null;
+  weeklyIcuAdmissions: number | null;
+  weeklyIcuAdmissionsPerMillion: number | null;
+}
+
+export interface LabsDrizzleMigrations {
+  createdAt: Int8 | null;
+  hash: string;
+  id: Generated<number>;
 }
 
 export interface LabsRelationshipCases {
-  attacks: Json | null;
-  card_type: string | null;
-  color_theme: string | null;
-  commitment_level: string | null;
-  created_at: Generated<Timestamp>;
-  description: string | null;
-  flaws: Json | null;
-  hp: string | null;
+  createdAt: Generated<Timestamp>;
   id: string;
-  image_position: Json | null;
-  image_scale: number | null;
-  name: string;
-  photo_url: string | null;
-  strengths: Json | null;
-  updated_at: Generated<Timestamp>;
-  user_id: string;
+  label: string | null;
+  neutralSituation: string;
+  question: string;
+  quorumSize: Generated<number>;
+  rawSituation: string;
+  status: Generated<string>;
+  userId: string | null;
 }
 
 export interface LabsRelationshipVerdicts {
-  case_id: string;
-  comment: string | null;
-  created_at: Generated<Timestamp>;
+  caseId: string;
+  comment: string;
+  createdAt: Generated<Timestamp>;
   fingerprint: string;
   id: string;
-  updated_at: Generated<Timestamp>;
-  user_id: string | null;
+  updateId: string | null;
+  updateRound: Generated<number>;
+  userId: string | null;
   value: string;
 }
 
 export interface LabsRhobhDailyPuzzles {
   answer: string;
-  answer_type: string;
+  answerType: string;
   clue: string;
-  created_at: Generated<Timestamp>;
-  date_utc: Timestamp;
+  createdAt: Generated<Timestamp>;
+  dateUtc: Timestamp | null;
   detail: string;
-  franchise: string;
-  generation_status: string;
   id: Generated<number>;
-  news_mode: string;
-  normalized_answer: string;
-  role: string;
-  source_published_at: Json;
-  source_summary: Json;
-  source_titles: Json;
-  source_urls: Json;
-  updated_at: Generated<Timestamp>;
-  validation_status: string;
+  normalizedAnswer: string;
+  sources: Generated<Json>;
+  updatedAt: Generated<Timestamp>;
+}
+
+export interface LabsSearchDocuments {
+  body: string;
+  category: string;
+  createdAt: Generated<Timestamp>;
+  embedding: string;
+  featured: Generated<boolean>;
+  id: Generated<number>;
+  kind: string;
+  location: string;
+  popularity: Generated<number>;
+  publishedAt: Timestamp;
+  searchText: string;
+  searchVector: Generated<string>;
+  sourceUrl: string;
+  subtitle: string;
+  summary: string;
+  tags: Json;
+  title: string;
+  updatedAt: Generated<Timestamp>;
+  year: number;
 }
 
 export interface LabsTflCameras {
   available: boolean | null;
-  common_name: string;
-  created_at: Generated<Timestamp>;
+  commonName: string;
+  createdAt: Generated<Timestamp>;
   id: Generated<number>;
-  image_url: string | null;
+  imageUrl: string | null;
   lat: number;
   lng: number;
-  tfl_id: string;
-  updated_at: Generated<Timestamp>;
-  video_url: string | null;
+  tflId: string;
+  updatedAt: Generated<Timestamp>;
+  videoUrl: string | null;
   view: string | null;
 }
 
 export interface OpsAuditLogs {
   action: string;
-  actor_userid: string | null;
+  actorUserid: string | null;
   createdat: Generated<Timestamp>;
-  entity_id: string | null;
-  entity_schema: string | null;
-  entity_table: string | null;
+  entityId: string | null;
+  entitySchema: string | null;
+  entityTable: string | null;
   id: Generated<string>;
   metadata: Generated<Json>;
 }
 
 export interface OpsSearchLogs {
-  actor_userid: string | null;
-  clicked_entity_id: string | null;
-  clicked_entity_type: string | null;
+  actorUserid: string | null;
+  clickedEntityId: string | null;
+  clickedEntityType: string | null;
   createdat: Generated<Timestamp>;
   id: Generated<string>;
   metadata: Generated<Json>;
   query: string;
-  results_count: number | null;
+  resultsCount: number | null;
   scope: string | null;
 }
 
@@ -1168,73 +1214,77 @@ export interface Verification {
 
 export interface DB {
   account: Account;
-  'app.application_files': AppApplicationFiles;
-  'app.application_notes': AppApplicationNotes;
-  'app.bookmarks': AppBookmarks;
-  'app.career_events': AppCareerEvents;
-  'app.certifications': AppCertifications;
-  'app.chat_messages': AppChatMessages;
-  'app.chats': AppChats;
-  'app.companies': AppCompanies;
-  'app.entities': AppEntities;
-  'app.entity_links': AppEntityLinks;
-  'app.event_attendees': AppEventAttendees;
-  'app.events': AppEvents;
-  'app.files': AppFiles;
-  'app.finance_accounts': AppFinanceAccounts;
-  'app.finance_institutions': AppFinanceInstitutions;
-  'app.finance_transactions': AppFinanceTransactions;
-  'app.goals': AppGoals;
-  'app.job_applications': AppJobApplications;
-  'app.key_results': AppKeyResults;
-  'app.music_albums': AppMusicAlbums;
-  'app.music_artists': AppMusicArtists;
-  'app.music_listens': AppMusicListens;
-  'app.music_playlist_tracks': AppMusicPlaylistTracks;
-  'app.music_playlists': AppMusicPlaylists;
-  'app.music_tracks': AppMusicTracks;
-  'app.note_files': AppNoteFiles;
-  'app.note_shares': AppNoteShares;
-  'app.note_versions': AppNoteVersions;
-  'app.notes': AppNotes;
-  'app.people': AppPeople;
-  'app.places': AppPlaces;
-  'app.plaid_items': AppPlaidItems;
-  'app.portfolio_analytics': AppPortfolioAnalytics;
-  'app.portfolios': AppPortfolios;
-  'app.possession_containers': AppPossessionContainers;
-  'app.possession_events': AppPossessionEvents;
-  'app.possessions': AppPossessions;
-  'app.projects': AppProjects;
-  'app.skills': AppSkills;
-  'app.social_links': AppSocialLinks;
-  'app.space_invites': AppSpaceInvites;
-  'app.space_items': AppSpaceItems;
-  'app.space_members': AppSpaceMembers;
-  'app.space_tags': AppSpaceTags;
-  'app.spaces': AppSpaces;
-  'app.tag_aliases': AppTagAliases;
-  'app.tag_assignments': AppTagAssignments;
-  'app.tags': AppTags;
-  'app.task_assignments': AppTaskAssignments;
-  'app.tasks': AppTasks;
-  'app.testimonials': AppTestimonials;
-  'app.travel_trips': AppTravelTrips;
-  'app.user_portfolio_preferences': AppUserPortfolioPreferences;
-  'app.video_channels': AppVideoChannels;
-  'app.video_views': AppVideoViews;
-  'app.work_experiences': AppWorkExperiences;
+  "app.aiUsageEvents": AppAiUsageEvents;
+  "app.applicationFiles": AppApplicationFiles;
+  "app.applicationNotes": AppApplicationNotes;
+  "app.bookmarks": AppBookmarks;
+  "app.careerEvents": AppCareerEvents;
+  "app.certifications": AppCertifications;
+  "app.chatMessages": AppChatMessages;
+  "app.chats": AppChats;
+  "app.companies": AppCompanies;
+  "app.entities": AppEntities;
+  "app.entityLinks": AppEntityLinks;
+  "app.eventAttendees": AppEventAttendees;
+  "app.events": AppEvents;
+  "app.files": AppFiles;
+  "app.financeAccounts": AppFinanceAccounts;
+  "app.financeInstitutions": AppFinanceInstitutions;
+  "app.financeTransactions": AppFinanceTransactions;
+  "app.goals": AppGoals;
+  "app.jobApplications": AppJobApplications;
+  "app.keyResults": AppKeyResults;
+  "app.musicAlbums": AppMusicAlbums;
+  "app.musicArtists": AppMusicArtists;
+  "app.musicListens": AppMusicListens;
+  "app.musicPlaylists": AppMusicPlaylists;
+  "app.musicPlaylistTracks": AppMusicPlaylistTracks;
+  "app.musicTracks": AppMusicTracks;
+  "app.noteFiles": AppNoteFiles;
+  "app.notes": AppNotes;
+  "app.noteShares": AppNoteShares;
+  "app.noteVersions": AppNoteVersions;
+  "app.people": AppPeople;
+  "app.places": AppPlaces;
+  "app.plaidItems": AppPlaidItems;
+  "app.portfolioAnalytics": AppPortfolioAnalytics;
+  "app.portfolios": AppPortfolios;
+  "app.possessionContainers": AppPossessionContainers;
+  "app.possessionEvents": AppPossessionEvents;
+  "app.possessions": AppPossessions;
+  "app.projects": AppProjects;
+  "app.skills": AppSkills;
+  "app.socialLinks": AppSocialLinks;
+  "app.spaceInvites": AppSpaceInvites;
+  "app.spaceItems": AppSpaceItems;
+  "app.spaceMembers": AppSpaceMembers;
+  "app.spaces": AppSpaces;
+  "app.spaceTags": AppSpaceTags;
+  "app.tagAliases": AppTagAliases;
+  "app.tagAssignments": AppTagAssignments;
+  "app.tags": AppTags;
+  "app.taskAssignments": AppTaskAssignments;
+  "app.tasks": AppTasks;
+  "app.testimonials": AppTestimonials;
+  "app.travelTrips": AppTravelTrips;
+  "app.userPortfolioPreferences": AppUserPortfolioPreferences;
+  "app.vectorDocuments": AppVectorDocuments;
+  "app.videoChannels": AppVideoChannels;
+  "app.videoViews": AppVideoViews;
+  "app.workExperiences": AppWorkExperiences;
   deviceCode: DeviceCode;
-  'drizzle.__drizzle_migrations': DrizzleDrizzleMigrations;
-  goose_db_version: GooseDbVersion;
+  gooseDbVersion: GooseDbVersion;
   jwks: Jwks;
-  'labs.covid_data': LabsCovidData;
-  'labs.relationship_cases': LabsRelationshipCases;
-  'labs.relationship_verdicts': LabsRelationshipVerdicts;
-  'labs.rhobh_daily_puzzles': LabsRhobhDailyPuzzles;
-  'labs.tfl_cameras': LabsTflCameras;
-  'ops.audit_logs': OpsAuditLogs;
-  'ops.search_logs': OpsSearchLogs;
+  "labs.caseUpdates": LabsCaseUpdates;
+  "labs.covidData": LabsCovidData;
+  "labs.DrizzleMigrations": LabsDrizzleMigrations;
+  "labs.relationshipCases": LabsRelationshipCases;
+  "labs.relationshipVerdicts": LabsRelationshipVerdicts;
+  "labs.rhobhDailyPuzzles": LabsRhobhDailyPuzzles;
+  "labs.searchDocuments": LabsSearchDocuments;
+  "labs.tflCameras": LabsTflCameras;
+  "ops.auditLogs": OpsAuditLogs;
+  "ops.searchLogs": OpsSearchLogs;
   passkey: Passkey;
   session: Session;
   user: User;

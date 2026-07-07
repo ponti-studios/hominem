@@ -1,0 +1,22 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Assumes seed data: a chat titled "Test Chat" exists and is visible in the
+# Chats tab of the inbox. Opens the chat, sends a message, and verifies the
+# message text appears in the conversation.
+#
+# Chat messages do not carry stable testIDs (they are rendered as Pressable
+# rows inside a FlashList), so we assert by text content after the message
+# round-trips through the server and back.
+- runFlow: startup.yaml
+- tapOn: Chats
+- assertVisible: Chats
+- assertVisible: Test Chat
+- tapOn: Test Chat
+- assertVisible:
+    id: chat-composer-input
+- tapOn:
+    id: chat-composer-input
+- inputText: Hello from Maestro
+- tapOn:
+    id: composer-submit-message
+- assertVisible: Hello from Maestro

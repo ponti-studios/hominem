@@ -13,7 +13,7 @@ export function AccountHeader({
   onImageUpload,
   onSignOut,
 }: {
-  currentPortfolio: { slug: string; is_public: boolean } | null;
+  currentPortfolio: { slug: string; isPublic: boolean } | null;
   currentImageUrl?: string;
   isSigningOut: boolean;
   updatedAtLabel?: string;
@@ -41,12 +41,12 @@ export function AccountHeader({
                   <Badge
                     variant="outline"
                     className={
-                      currentPortfolio.is_public
+                      currentPortfolio.isPublic
                         ? 'border-accent/30 bg-accent/10 text-foreground'
                         : 'border-border bg-muted text-foreground'
                     }
                   >
-                    {currentPortfolio.is_public ? 'Public' : 'Private'}
+                    {currentPortfolio.isPublic ? 'Public' : 'Private'}
                   </Badge>
                 </div>
               ) : null}

@@ -24,6 +24,7 @@ describe('voice cleanup service', () => {
     expect(result).toEqual({
       kind: 'success',
       output: buildFallbackOutput('hello'),
+      usage: null,
     });
     expect(cleanupTranscript).not.toHaveBeenCalled();
   });
@@ -34,9 +35,10 @@ describe('voice cleanup service', () => {
 
   it('accepts a valid cleanup', async () => {
     const result = await cleanupVoiceInput(baseInput, {
-      cleanupTranscript: vi
-        .fn()
-        .mockResolvedValue({ cleanedText: 'Hello, this is a raw transcript from the phone.' }),
+      cleanupTranscript: vi.fn().mockResolvedValue({
+        cleanedText: 'Hello, this is a raw transcript from the phone.',
+        usage: null,
+      }),
       logError: vi.fn(),
     });
 
@@ -48,18 +50,20 @@ describe('voice cleanup service', () => {
         changed: true,
         mode: 'constrained',
       },
+      usage: null,
     });
   });
 
   it('falls back when cleaned text is empty', async () => {
     const result = await cleanupVoiceInput(baseInput, {
-      cleanupTranscript: vi.fn().mockResolvedValue({ cleanedText: '   ' }),
+      cleanupTranscript: vi.fn().mockResolvedValue({ cleanedText: '   ', usage: null }),
       logError: vi.fn(),
     });
 
     expect(result).toEqual({
       kind: 'success',
       output: buildFallbackOutput(baseInput.rawText),
+      usage: null,
     });
   });
 
@@ -72,6 +76,7 @@ describe('voice cleanup service', () => {
       cleanupTranscript: vi.fn().mockResolvedValue({
         cleanedText:
           'hello this is a raw transcript from the phone with many many many extra words that completely change the length and shape of the original transcript in a suspicious way',
+        usage: null,
       }),
       logError: vi.fn(),
     });
@@ -79,6 +84,7 @@ describe('voice cleanup service', () => {
     expect(result).toEqual({
       kind: 'success',
       output: buildFallbackOutput(baseInput.rawText),
+      usage: null,
     });
   });
 
@@ -121,6 +127,7 @@ describe('voice cleanup service', () => {
     expect(result).toEqual({
       kind: 'success',
       output: buildFallbackOutput(baseInput.rawText),
+      usage: null,
     });
   });
 });
