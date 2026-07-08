@@ -65,6 +65,18 @@ export type PublishingMetadata = {
   importedFrom?: string | undefined
 }
 
+export type NoteFile = {
+  id: string
+  originalName: string
+  mimetype: string
+  size: number
+  url: string
+  uploadedAt: string
+  content?: string | undefined
+  textContent?: string | undefined
+  metadata?: Record<string, unknown> | undefined
+}
+
 export type Note = {
   id: string
   userId: string
@@ -80,6 +92,7 @@ export type Note = {
   parentNoteId: string | null
   versionNumber: number
   isLatestVersion: boolean
+  files: NoteFile[]
   publishedAt: string | null
   scheduledFor: string | null
   createdAt: string
@@ -101,6 +114,7 @@ export type NoteInsert = {
   parentNoteId?: string | null
   versionNumber?: number
   isLatestVersion?: boolean
+  files?: NoteFile[]
   publishedAt?: string | null
   scheduledFor?: string | null
   createdAt?: string

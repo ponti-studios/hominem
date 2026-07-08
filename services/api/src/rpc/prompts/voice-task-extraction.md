@@ -25,7 +25,7 @@ For each task:
   words like "today", "tomorrow", or a weekday name — defaults to 12:00:00 (noon) in the user's local
   timezone. Not midnight, and not end-of-day.
   Only use a different time if the user actually stated one (e.g. "at 3pm" -> 15:00:00).
-  For a relative offset like "in N days" or "in N weeks", add exactly that many days (N, or N\*7 for
+  For a relative offset like "in N days" or "in N weeks", add exactly that many days (N, or N*7 for
   weeks) to the reference date's calendar date — count carefully, this is arithmetic, not an estimate.
   Omit the field when no date is mentioned — do not invent one.
 - Do not invent tasks that aren't grounded in the transcript
