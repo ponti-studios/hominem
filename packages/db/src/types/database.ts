@@ -263,11 +263,7 @@ export interface AppFinanceAccounts {
   accountSubtype: string | null;
   accountType: string;
   availableBalance: Numeric | null;
-<<<<<<< HEAD
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-=======
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
   currencyCode: Generated<string>;
   currentBalance: Numeric | null;
   id: Generated<string>;
@@ -279,63 +275,39 @@ export interface AppFinanceAccounts {
   plaidAccountId: string | null;
   plaidItemId: string | null;
   provider: string | null;
-<<<<<<< HEAD
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
   userId: string;
-=======
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
 }
 
 export interface AppFinanceInstitutions {
   countryCode: string | null;
-<<<<<<< HEAD
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-=======
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
   id: Generated<string>;
   logoUrl: string | null;
   name: string;
   provider: string | null;
   providerInstitutionId: string | null;
-<<<<<<< HEAD
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
-=======
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
   websiteUrl: string | null;
 }
 
 export interface AppFinanceTransactions {
   accountId: string;
   amount: Numeric;
-<<<<<<< HEAD
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-=======
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
   description: string | null;
   externalId: string | null;
   id: Generated<string>;
   merchantName: string | null;
   notes: string | null;
   occurredAt: ColumnType<string, Date | string, Date | string> | null;
-<<<<<<< HEAD
-=======
-  ownerUserid: string;
->>>>>>> origin/main
   pending: Generated<boolean>;
   postedOn: ColumnType<string, Date | string, Date | string>;
   providerPayload: Generated<Json>;
   source: string | null;
   transactionType: string;
-<<<<<<< HEAD
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
   userId: string;
-=======
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
 }
 
 export interface AppGoals {
@@ -590,32 +562,19 @@ export interface AppPlaces {
 }
 
 export interface AppPlaidItems {
-<<<<<<< HEAD
   accessToken: string | null;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-=======
-  accesstoken: string | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
   cursor: string | null;
   errorCode: string | null;
   errorMessage: string | null;
   id: Generated<string>;
   institutionId: string | null;
   lastSyncedAt: ColumnType<string, Date | string, Date | string> | null;
-<<<<<<< HEAD
   provider: Generated<string>;
   providerItemId: string;
   status: Generated<string>;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
   userId: string;
-=======
-  ownerUserid: string;
-  provider: Generated<string>;
-  providerItemId: string;
-  status: Generated<string>;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
 }
 
 export interface AppPortfolioAnalytics {
@@ -741,20 +700,6 @@ export interface AppSkills {
   yearsOfExperience: number | null;
 }
 
-<<<<<<< HEAD
-export interface AppSocialLinks {
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  github: string | null;
-  id: Generated<string>;
-  linkedin: string | null;
-  portfolioId: string;
-  twitter: string | null;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-  website: string | null;
-}
-
-=======
->>>>>>> origin/main
 export interface AppSpaceInvites {
   acceptedAt: ColumnType<string, Date | string, Date | string> | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1039,8 +984,6 @@ export interface Jwks {
   publicKey: string;
 }
 
-<<<<<<< HEAD
-=======
 export interface LabsCaseUpdates {
   caseId: string;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1200,7 +1143,6 @@ export interface LabsTflCameras {
   view: string | null;
 }
 
->>>>>>> origin/main
 export interface OpsAuditLogs {
   action: string;
   actorUserid: string | null;
@@ -1310,10 +1252,6 @@ export interface DB {
   'app.possessions': AppPossessions;
   'app.projects': AppProjects;
   'app.skills': AppSkills;
-<<<<<<< HEAD
-  'app.socialLinks': AppSocialLinks;
-=======
->>>>>>> origin/main
   'app.spaceInvites': AppSpaceInvites;
   'app.spaceItems': AppSpaceItems;
   'app.spaceMembers': AppSpaceMembers;
@@ -1335,8 +1273,6 @@ export interface DB {
   deviceCode: DeviceCode;
   gooseDbVersion: GooseDbVersion;
   jwks: Jwks;
-<<<<<<< HEAD
-=======
   'labs.caseUpdates': LabsCaseUpdates;
   'labs.covidData': LabsCovidData;
   'labs.DrizzleMigrations': LabsDrizzleMigrations;
@@ -1345,7 +1281,6 @@ export interface DB {
   'labs.rhobhDailyPuzzles': LabsRhobhDailyPuzzles;
   'labs.searchDocuments': LabsSearchDocuments;
   'labs.tflCameras': LabsTflCameras;
->>>>>>> origin/main
   'ops.auditLogs': OpsAuditLogs;
   'ops.searchLogs': OpsSearchLogs;
   passkey: Passkey;
