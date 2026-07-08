@@ -1,4 +1,3 @@
-// @ts-nocheck -- legacy test file, needs rewrite for current DB schema
 import { describe, expect, test, vi } from 'vitest';
 
 import { importServerWithEnv } from './test-helpers/auth';
@@ -7,7 +6,7 @@ describe('mobile e2e login guard', () => {
   test('returns 404 in production mode even when e2e auth flag is enabled', async () => {
     const createServer = await importServerWithEnv({
       NODE_ENV: 'production',
-      AUTH_E2E_ENABLED: true,
+      AUTH_E2E_ENABLED: 'true',
       AUTH_E2E_SECRET: 'test-secret',
     });
     try {
@@ -30,7 +29,7 @@ describe('mobile e2e login guard', () => {
   test('returns 403 when secret is missing or invalid', async () => {
     const createServer = await importServerWithEnv({
       NODE_ENV: 'development',
-      AUTH_E2E_ENABLED: true,
+      AUTH_E2E_ENABLED: 'true',
       AUTH_E2E_SECRET: 'expected-secret',
     });
     try {
@@ -53,7 +52,7 @@ describe('mobile e2e login guard', () => {
   test('accepts passkey AMR for deterministic mobile passkey e2e flows', async () => {
     const createServer = await importServerWithEnv({
       NODE_ENV: 'development',
-      AUTH_E2E_ENABLED: true,
+      AUTH_E2E_ENABLED: 'true',
       AUTH_E2E_SECRET: 'test-secret',
     });
     try {

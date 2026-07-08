@@ -1,10 +1,9 @@
-// @ts-nocheck -- legacy test file, needs rewrite for current DB schema
 import { STEP_UP_ACTIONS } from '@hominem/auth/step-up-actions';
 import { db } from '@hominem/db';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import { cleanupApiAuthTestState } from '../../test/setup/auth-state.cleanup';
+import { cleanupAuthState } from '../test/setup/auth-state.cleanup';
 
 const proofStore = vi.hoisted(() => new Map<string, string>());
 const STEP_UP_USER_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -52,37 +51,37 @@ function createAuthedAppForUser(userId: string) {
 describe('auth step-up enforcement', () => {
   beforeEach(async () => {
     proofStore.clear();
-    await cleanupApiAuthTestState();
+    await cleanupAuthState();
 
     await db
-      .insertInto('users')
+      .insertInto('user')
       .values([
         {
           id: STEP_UP_USER_ID,
           email: 'step-up-existing@hominem.test',
           name: 'Existing Passkey User',
-          is_admin: false,
+          emailVerified: false,
         },
         {
           id: FIRST_TIME_USER_ID,
           email: 'step-up-first-time@hominem.test',
           name: 'First Time Passkey User',
-          is_admin: false,
+          emailVerified: false,
         },
       ])
       .execute();
 
     await db
-      .insertInto('user_passkey')
+      .insertInto('passkey')
       .values({
         id: 'step-up-passkey',
-        user_id: STEP_UP_USER_ID,
+        userId: STEP_UP_USER_ID,
         name: 'Existing Device',
-        public_key: 'public-key',
-        credential_id: 'credential-id',
+        publicKey: 'public-key',
+        credentialID: 'credential-id',
         counter: 0,
-        device_type: 'singleDevice',
-        backed_up: false,
+        deviceType: 'singleDevice',
+        backedUp: false,
         transports: 'internal',
         aaguid: 'test-aaguid',
       })
