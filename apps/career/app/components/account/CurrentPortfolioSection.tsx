@@ -1,29 +1,22 @@
-import { Badge } from '@hominem/ui';
 import { Button } from '@hominem/ui';
 import { ExternalLink } from 'lucide-react';
 
 import { SlugEditor } from '~/components/SlugEditor';
 import { UploadResumeForm } from '~/components/UploadResumeForm';
-import type { AccountPortfolioSummary } from '~/lib/account/types';
 import type { CareerPortfolioResponse } from '~/lib/api.server';
-import { cn } from '~/lib/utils';
 
 export function CurrentPortfolioSection({
   currentPortfolio,
-  portfolios,
   publicPortfolioUrl,
   showReplaceResume,
   onReplaceResumeComplete,
-  onSetCurrentPortfolio,
   onToggleReplaceResume,
   onUpdateSlug,
 }: {
   currentPortfolio: CareerPortfolioResponse;
-  portfolios: AccountPortfolioSummary[];
   publicPortfolioUrl: string | null;
   showReplaceResume: boolean;
   onReplaceResumeComplete: () => void;
-  onSetCurrentPortfolio: (portfolioId: string) => Promise<void>;
   onToggleReplaceResume: () => void;
   onUpdateSlug: (slug: string) => Promise<void>;
 }) {
@@ -79,54 +72,6 @@ export function CurrentPortfolioSection({
               >
                 Cancel
               </Button>
-            </div>
-          </div>
-        ) : null}
-
-        {portfolios.length > 1 ? (
-          <div className="space-y-3 border-t border-border pt-5">
-            <p className="subheading-4 text-foreground">Portfolios</p>
-
-            <div className="space-y-2">
-              {portfolios.map((portfolioOption) => {
-                const isCurrent = portfolioOption.id === currentPortfolio.id;
-
-                return (
-                  <div
-                    key={portfolioOption.id}
-                    className={cn(
-                      'flex flex-col gap-3 rounded-2xl px-4 py-4 sm:flex-row sm:items-center sm:justify-between',
-                      isCurrent ? 'bg-primary/5' : 'bg-muted/25',
-                    )}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate subheading-4 text-foreground">
-                        {portfolioOption.title}
-                      </p>
-                      <p className="truncate body-4 text-muted-foreground">
-                        /p/{portfolioOption.slug}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {isCurrent ? (
-                        <Badge variant="outline" className="border-primary/30 bg-primary/10">
-                          Current
-                        </Badge>
-                      ) : (
-                        <Button
-                          type="button"
-                          onClick={() => onSetCurrentPortfolio(portfolioOption.id)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          Use this portfolio
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         ) : null}

@@ -12,7 +12,6 @@ import type {
   AppProjects,
   AppSkills,
   AppTestimonials,
-  AppUserPortfolioPreferences,
   AppUserSocialLinks,
   AppWorkExperiences,
 } from '../../types/database';
@@ -23,20 +22,12 @@ type WorkExperienceRow = Selectable<AppWorkExperiences>;
 type SkillRow = Selectable<AppSkills>;
 type ProjectRow = Selectable<AppProjects>;
 type TestimonialRow = Selectable<AppTestimonials>;
-type UserPortfolioPreferenceRow = Selectable<AppUserPortfolioPreferences>;
 type CompanyRow = Selectable<AppCompanies>;
 type JobApplicationRow = Selectable<AppJobApplications>;
 type CareerEventRow = Selectable<AppCareerEvents>;
 
 function serializeJsonColumn(value: unknown): string | null {
   return value === null ? null : JSON.stringify(value);
-}
-
-export interface CareerPortfolioTheme {
-  primaryColor?: string;
-  accentColor?: string;
-  backgroundColor?: string;
-  fontFamily?: string;
 }
 
 export interface CareerSalaryRange {
@@ -263,101 +254,18 @@ async function getOwnedPortfolioRowOrThrow(
   return portfolio as PortfolioRow;
 }
 
-async function getCurrentPortfolioPreference(
-  handle: DbHandle,
-  ownerUserid: string,
-): Promise<UserPortfolioPreferenceRow | null> {
-  const preference = await handle
-    .selectFrom('app.userPortfolioPreferences')
-    .selectAll()
-    .where('userId', '=', ownerUserid)
-    .executeTakeFirst();
-
-  return (preference as UserPortfolioPreferenceRow | undefined) ?? null;
-}
-
-async function resolveCurrentPortfolioRow(
-  handle: DbHandle,
-  ownerUserid: string,
-): Promise<(PortfolioRow & { theme: Record<string, string> | null }) | null> {
-  const preference = await getCurrentPortfolioPreference(handle, ownerUserid);
-
-  if (preference?.currentPortfolioId) {
-    const preferredPortfolio = await getOwnedPortfolioRow(
-      handle,
-      ownerUserid,
-      preference.currentPortfolioId,
-    );
-    if (preferredPortfolio) {
-      return preferredPortfolio as PortfolioRow;
-    }
-  }
-
-  const fallbackPortfolio = await handle
-    .selectFrom('app.portfolios')
-    .selectAll()
-    .where('ownerUserid', '=', ownerUserid)
-    .orderBy('createdat', 'desc')
-    .executeTakeFirst();
-
-  return {
-    ...fallbackPortfolio,
-    theme: fallbackPortfolio?.theme ? JSON.parse(fallbackPortfolio.theme) : null,
-  };
-}
-
 export const CareerRepository = {
   async getPortfolioByUserId(
     handle: DbHandle,
     ownerUserid: string,
   ): Promise<CareerPortfolioRecord | null> {
-    const portfolio = await resolveCurrentPortfolioRow(handle, ownerUserid);
-
-    return portfolio;
-  },
-
-  async listPortfoliosByUserId(
-    handle: DbHandle,
-    ownerUserid: string,
-  ): Promise<CareerPortfolioRecord[]> {
-    const portfolios = await handle
+    const portfolio = await handle
       .selectFrom('app.portfolios')
       .selectAll()
       .where('ownerUserid', '=', ownerUserid)
-      .orderBy('createdat', 'desc')
-      .execute();
+      .executeTakeFirst();
 
-    return portfolios as PortfolioRow[];
-  },
-
-  async getCurrentPortfolioIdByUserId(
-    handle: DbHandle,
-    ownerUserid: string,
-  ): Promise<string | null> {
-    const preference = await getCurrentPortfolioPreference(handle, ownerUserid);
-    return preference?.currentPortfolioId ?? null;
-  },
-
-  async setCurrentPortfolioByUserId(
-    handle: DbHandle,
-    ownerUserid: string,
-    portfolioId: string,
-  ): Promise<void> {
-    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
-
-    await handle
-      .insertInto('app.userPortfolioPreferences')
-      .values({
-        userId: ownerUserid,
-        currentPortfolioId: portfolioId,
-      })
-      .onConflict((oc) =>
-        oc.column('userId').doUpdateSet({
-          currentPortfolioId: portfolioId,
-          updatedat: new Date(),
-        }),
-      )
-      .execute();
+    return (portfolio as PortfolioRow | undefined) ?? null;
   },
 
   async getPortfolioBySlug(handle: DbHandle, slug: string): Promise<CareerPortfolioRecord | null> {
@@ -432,14 +340,6 @@ export const CareerRepository = {
 
   async deletePortfolioByUserId(handle: DbHandle, ownerUserid: string): Promise<void> {
     await handle.deleteFrom('app.portfolios').where('ownerUserid', '=', ownerUserid).execute();
-  },
-
-  async deletePortfolio(handle: DbHandle, ownerUserid: string, portfolioId: string): Promise<void> {
-    await handle
-      .deleteFrom('app.portfolios')
-      .where('id', '=', portfolioId)
-      .where('ownerUserid', '=', ownerUserid)
-      .execute();
   },
 
   async updatePortfolioSlug(
@@ -851,7 +751,6 @@ export const CareerRepository = {
       phone?: string | null;
       availabilityStatus?: boolean;
       availabilityMessage?: string | null;
-      theme?: Record<string, unknown> | null;
       copyright?: string | null;
       isPublic?: boolean;
       isActive?: boolean;
@@ -875,7 +774,6 @@ export const CareerRepository = {
           phone: input.phone ?? null,
           availabilityStatus: input.availabilityStatus ?? false,
           availabilityMessage: input.availabilityMessage ?? null,
-          ...(input.theme !== undefined ? { theme: serializeJsonColumn(input.theme ?? null) } : {}),
           ...(input.copyright !== undefined ? { copyright: input.copyright } : {}),
           ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
           ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
@@ -904,7 +802,6 @@ export const CareerRepository = {
         phone: input.phone ?? null,
         availabilityStatus: input.availabilityStatus ?? false,
         availabilityMessage: input.availabilityMessage ?? null,
-        ...(input.theme !== undefined ? { theme: serializeJsonColumn(input.theme ?? null) } : {}),
         ...(input.copyright !== undefined ? { copyright: input.copyright } : {}),
         ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
         ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),

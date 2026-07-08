@@ -11,9 +11,9 @@ interface AuthRateLimit {
   max: number;
 }
 
+// High-risk extras only. Better Auth owns OTP rate limits for native paths.
 const AUTH_RATE_LIMITS: AuthRateLimit[] = [
-  { path: '/api/auth/device/code', bucket: 'device-code', windowSec: 600, max: 10 },
-  { path: '/api/auth/device/token', bucket: 'device-token', windowSec: 600, max: 120 },
+  { path: '/api/auth/mobile/e2e/login', bucket: 'mobile-e2e-login', windowSec: 60, max: 20 },
 ];
 
 async function getRedis() {

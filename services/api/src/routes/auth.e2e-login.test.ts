@@ -49,7 +49,7 @@ describe('mobile e2e login guard', () => {
     }
   }, 15000);
 
-  test('accepts passkey AMR for deterministic mobile passkey e2e flows', async () => {
+  test('establishes a Better Auth session without custom access tokens', async () => {
     const createServer = await importServerWithEnv({
       NODE_ENV: 'development',
       AUTH_E2E_ENABLED: 'true',
@@ -65,16 +65,22 @@ describe('mobile e2e login guard', () => {
         },
         body: JSON.stringify({
           email: 'mobile-passkey-e2e@hominem.test',
-          amr: ['passkey', 'e2e', 'mobile'],
+          name: 'Mobile E2E User',
         }),
       });
 
       expect(response.status).toBe(200);
-      const body = (await response.json()) as { access_token: string; provider: string };
-      expect(body.access_token.length).toBeGreaterThan(10);
+      const body = (await response.json()) as {
+        provider: string;
+        user: { id: string; email: string };
+        access_token?: string;
+      };
       expect(body.provider).toBe('better-auth');
+      expect(body.user.id).toBeTruthy();
+      expect(body.user.email).toBe('mobile-passkey-e2e@hominem.test');
+      expect(body.access_token).toBeUndefined();
     } finally {
       vi.doUnmock('../../env');
     }
-  }, 15000);
+  }, 30000);
 });

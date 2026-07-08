@@ -34,7 +34,6 @@ const createMockPortfolio = (overrides: Partial<FullPortfolio> = {}): FullPortfo
   email: 'john.doe@example.com',
   phone: '+1 (555) 123-4567',
   profileImageUrl: null,
-  theme: null,
   copyright: null,
   createdat: new Date('2024-01-01').toISOString(),
   updatedat: new Date('2024-01-01').toISOString(),

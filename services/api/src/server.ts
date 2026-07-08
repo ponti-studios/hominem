@@ -39,8 +39,8 @@ const DEV_OPENAPI_SERVER = {
 const BEARER_SECURITY_SCHEME = {
   type: 'http',
   scheme: 'bearer',
-  bearerFormat: 'JWT',
-  description: 'JWT token for authentication',
+  bearerFormat: 'session',
+  description: 'Better Auth session (cookie or bearer plugin token)',
 } as const;
 
 function createAllowedOrigins() {
@@ -114,6 +114,8 @@ function registerApiRoutes(app: Hono<AppEnv>) {
   const authHandler = createAuthHandler();
 
   app.route('/', rpcApp);
+  // Custom auth extras first (session adapter, step-up guards, e2e helpers).
+  // Unmatched /api/auth/* falls through to the Better Auth catch-all handler.
   app.route('/api/auth', authRoutes);
   app.use('/api/auth/*', authRateLimitMiddleware());
   app.route('/api/status', statusRoutes);

@@ -24,7 +24,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
-  const { user, portfolios, currentPortfolio, socialLinks } = loaderData;
+  const { user, currentPortfolio, socialLinks } = loaderData;
 
   const submitAccountAction = async <TData,>(
     formData: FormData,
@@ -73,15 +73,6 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
     const formData = new FormData();
     formData.append('action', 'delete');
     formData.append('portfolioId', currentPortfolio.id);
-
-    await submitAccountAction(formData);
-    revalidator.revalidate();
-  };
-
-  const handleSetCurrentPortfolio = async (portfolioId: string) => {
-    const formData = new FormData();
-    formData.append('action', 'set-current-portfolio');
-    formData.append('portfolioId', portfolioId);
 
     await submitAccountAction(formData);
     revalidator.revalidate();
@@ -232,11 +223,9 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
         <section className="space-y-6">
           <CurrentPortfolioSection
             currentPortfolio={currentPortfolio}
-            portfolios={portfolios}
             publicPortfolioUrl={publicPortfolioUrl}
             showReplaceResume={showReplaceResume}
             onReplaceResumeComplete={handleReplaceResumeComplete}
-            onSetCurrentPortfolio={handleSetCurrentPortfolio}
             onToggleReplaceResume={() => setShowReplaceResume((current) => !current)}
             onUpdateSlug={handleUpdateSlug}
           />
@@ -252,11 +241,9 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
           <AccountActions
             canDownloadPdf={currentPortfolio.isPublic}
             isGeneratingPdf={pdfGenerating}
-            onCreatePortfolio={() => navigate('/onboarding')}
             onDeletePortfolio={handleDeletePortfolio}
             onDownloadPdf={handleDownloadPdf}
             onEditPortfolio={() => navigate('/work')}
-            onReplacePortfolio={() => setShowReplaceResume((current) => !current)}
           />
 
           {pdfError ? (

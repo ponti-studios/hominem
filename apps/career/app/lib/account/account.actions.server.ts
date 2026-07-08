@@ -27,7 +27,6 @@ type AccountActionHandler = (args: {
 
 const accountActionHandlers: Record<string, AccountActionHandler> = {
   delete: handleDeletePortfolioAction,
-  'set-current-portfolio': handleSetCurrentPortfolioAction,
   'upload-profile-image': handleUploadProfileImageAction,
   'update-slug': handleUpdateSlugAction,
   'update-basics': handleUpdateBasicsAction,
@@ -78,46 +77,17 @@ export async function handleAccountAction({
 }
 
 async function handleDeletePortfolioAction({
-  formData,
   user,
 }: {
   formData: FormData;
   user: AccountPageUser;
 }): Promise<AccountActionResult> {
-  const portfolioId = formData.get('portfolioId');
-
-  if (typeof portfolioId !== 'string' || !portfolioId) {
-    throw new Response('Portfolio ID is required', { status: 400 });
-  }
-
   try {
-    await CareerRepository.deletePortfolio(db, user.id, portfolioId);
+    await CareerRepository.deletePortfolioByUserId(db, user.id);
     return { success: true, message: 'Portfolio deleted successfully' };
   } catch (error) {
     console.error('Failed to delete portfolio:', error);
     throw new Response('Failed to delete portfolio', { status: 500 });
-  }
-}
-
-async function handleSetCurrentPortfolioAction({
-  formData,
-  user,
-}: {
-  formData: FormData;
-  user: AccountPageUser;
-}): Promise<AccountActionResult> {
-  const portfolioId = formData.get('portfolioId');
-
-  if (typeof portfolioId !== 'string' || !portfolioId) {
-    throw new Response('Portfolio ID is required', { status: 400 });
-  }
-
-  try {
-    await CareerRepository.setCurrentPortfolioByUserId(db, user.id, portfolioId);
-    return { success: true, message: 'Current portfolio updated successfully' };
-  } catch (error) {
-    console.error('Failed to update current portfolio:', error);
-    throw new Response('Failed to update current portfolio', { status: 500 });
   }
 }
 

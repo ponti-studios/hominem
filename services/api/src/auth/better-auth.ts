@@ -4,15 +4,7 @@ import { authDb } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
 import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
 import { betterAuth } from 'better-auth';
-import {
-  bearer,
-  deviceAuthorization,
-  emailOTP,
-  jwt,
-  multiSession,
-  oneTimeToken,
-  openAPI,
-} from 'better-auth/plugins';
+import { bearer, emailOTP, multiSession, openAPI } from 'better-auth/plugins';
 
 import { API_BRAND } from '../brand';
 import { env } from '../env';
@@ -203,22 +195,9 @@ function getAuthPlugins() {
         await sendEmail(buildVerificationOtpEmail({ to: email, otp, type }));
       },
     }),
-    jwt(),
+    // Bearer lets getSession honor Authorization when clients send BA session tokens.
     bearer(),
     multiSession({ maximumSessions: 8 }),
-    oneTimeToken({
-      expiresIn: 5,
-      storeToken: 'hashed',
-    }),
-    deviceAuthorization({
-      expiresIn: '10m',
-      interval: '5s',
-      verificationUri: '/api/auth/device',
-      // better-auth@1.6.11's deviceAuthorizationOptionsSchema marks `schema` as
-      // non-optional (likely a bug), so a placeholder must be passed even with no
-      // field/model overrides needed.
-      schema: {},
-    }),
     openAPI({
       path: '/reference',
       theme: 'deepSpace',
@@ -228,14 +207,16 @@ function getAuthPlugins() {
   return plugins;
 }
 
+// Email OTP + passkey are the product auth surfaces. Password auth, device
+// authorization, JWT/JWKS, and one-time tokens are intentionally disabled until
+// a concrete client needs them (see kernel-better-auth surface map).
 const betterAuthOptions: BetterAuthOptions = {
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.API_URL,
   trustedOrigins: getTrustedOrigins(),
   advanced: getAdvancedOptions(),
   emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: true,
+    enabled: false,
   },
   plugins: getAuthPlugins(),
 };

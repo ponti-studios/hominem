@@ -1,5 +1,5 @@
 import { STEP_UP_ACTIONS } from '@hominem/auth/step-up-actions';
-import { db } from '@hominem/db';
+import { authDb } from '@hominem/db';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -22,19 +22,6 @@ vi.mock('@hominem/services/redis', () => ({
 
 import { authRoutes } from './auth';
 
-function createAuthedApp() {
-  return new Hono<{
-    Variables: {
-      userId?: string;
-    };
-  }>()
-    .use('*', async (c, next) => {
-      c.set('userId', STEP_UP_USER_ID);
-      await next();
-    })
-    .route('/api/auth', authRoutes);
-}
-
 function createAuthedAppForUser(userId: string) {
   return new Hono<{
     Variables: {
@@ -53,7 +40,7 @@ describe('auth step-up enforcement', () => {
     proofStore.clear();
     await cleanupAuthState();
 
-    await db
+    await authDb
       .insertInto('user')
       .values([
         {
@@ -71,7 +58,7 @@ describe('auth step-up enforcement', () => {
       ])
       .execute();
 
-    await db
+    await authDb
       .insertInto('passkey')
       .values({
         id: 'step-up-passkey',
@@ -89,11 +76,12 @@ describe('auth step-up enforcement', () => {
   });
 
   test('blocks passkey registration options without recent step-up proof', async () => {
-    const app = createAuthedApp();
+    const app = createAuthedAppForUser(STEP_UP_USER_ID);
 
-    const response = await app.request('http://localhost/api/auth/passkey/register/options', {
-      method: 'POST',
-    });
+    const response = await app.request(
+      'http://localhost/api/auth/passkey/generate-register-options',
+      { method: 'GET' },
+    );
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toMatchObject({
@@ -105,18 +93,20 @@ describe('auth step-up enforcement', () => {
   test('allows first passkey registration to proceed without step-up proof', async () => {
     const app = createAuthedAppForUser(FIRST_TIME_USER_ID);
 
-    const response = await app.request('http://localhost/api/auth/passkey/register/options', {
-      method: 'POST',
-    });
+    const response = await app.request(
+      'http://localhost/api/auth/passkey/generate-register-options',
+      { method: 'GET' },
+    );
 
+    // Forwarded to Better Auth (not 403). Exact status depends on BA session/options.
     expect(response.status).not.toBe(403);
   });
 
   test('blocks passkey deletion without recent step-up proof', async () => {
-    const app = createAuthedApp();
+    const app = createAuthedAppForUser(STEP_UP_USER_ID);
 
-    const response = await app.request('http://localhost/api/auth/passkey/delete', {
-      method: 'DELETE',
+    const response = await app.request('http://localhost/api/auth/passkey/delete-passkey', {
+      method: 'POST',
       headers: {
         'content-type': 'application/json',
       },
@@ -127,6 +117,22 @@ describe('auth step-up enforcement', () => {
     await expect(response.json()).resolves.toMatchObject({
       error: 'step_up_required',
       action: STEP_UP_ACTIONS.PASSKEY_DELETE,
+    });
+  });
+
+  test('blocks native BA registration verify path without step-up when enrolled', async () => {
+    const app = createAuthedAppForUser(STEP_UP_USER_ID);
+
+    const response = await app.request('http://localhost/api/auth/passkey/verify-registration', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ response: {} }),
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'step_up_required',
+      action: STEP_UP_ACTIONS.PASSKEY_REGISTER,
     });
   });
 });

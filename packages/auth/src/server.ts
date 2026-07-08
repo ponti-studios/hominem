@@ -85,22 +85,3 @@ export async function hasRecentStepUp(userId: string, action: string): Promise<b
   const value = await stepUpStoreClient.get(stepUpKey(userId, action));
   return value === 'granted';
 }
-
-interface FreshPasskeyAuthInput {
-  amr?: string[];
-  authTime?: number;
-}
-
-const PASSKEY_METHOD = 'passkey';
-
-/**
- * Returns true when the access-token AMR includes "passkey" AND the
- * auth_time is within the step-up TTL window.
- */
-export function isFreshPasskeyAuth(input: FreshPasskeyAuthInput): boolean {
-  if (!input.amr?.includes(PASSKEY_METHOD)) return false;
-  if (!input.authTime) return false;
-
-  const ageSeconds = Math.floor(Date.now() / 1000) - input.authTime;
-  return ageSeconds < STEP_UP_TTL_SECONDS;
-}

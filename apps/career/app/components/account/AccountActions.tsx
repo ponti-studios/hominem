@@ -1,24 +1,20 @@
 import { Button } from '@hominem/ui';
-import { Download, Edit, Trash2, Upload } from 'lucide-react';
+import { Download, Edit, Trash2 } from 'lucide-react';
 
 import { cn } from '~/lib/utils';
 
 export function AccountActions({
   canDownloadPdf,
   isGeneratingPdf,
-  onCreatePortfolio,
   onDeletePortfolio,
   onDownloadPdf,
   onEditPortfolio,
-  onReplacePortfolio,
 }: {
   canDownloadPdf: boolean;
   isGeneratingPdf: boolean;
-  onCreatePortfolio: () => void;
   onDeletePortfolio: () => Promise<void>;
   onDownloadPdf: () => Promise<void>;
   onEditPortfolio: () => void;
-  onReplacePortfolio: () => void;
 }) {
   return (
     <section className="space-y-4">
@@ -42,18 +38,6 @@ export function AccountActions({
               ? 'Make the portfolio public in the editor before generating a downloadable PDF.'
               : undefined
           }
-        />
-        <ActionButtonRow
-          icon={Upload}
-          label="Create new portfolio"
-          onClick={() => onCreatePortfolio()}
-          variant="outline"
-        />
-        <ActionButtonRow
-          icon={Upload}
-          label="Replace portfolio"
-          onClick={() => onReplacePortfolio()}
-          variant="outline"
         />
         <ActionButtonRow
           icon={Trash2}

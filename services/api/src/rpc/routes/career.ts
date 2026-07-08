@@ -31,7 +31,6 @@ export interface CareerPortfolioResponse {
   profileImageUrl: string | null;
   slug: string;
   tagline: string;
-  theme: unknown | null;
   title: string;
   updatedat: string;
 }

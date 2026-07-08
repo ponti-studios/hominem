@@ -611,7 +611,6 @@ export interface AppPortfolios {
   profileImageUrl: string | null;
   slug: string;
   tagline: string;
-  theme: Json | null;
   title: string;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
@@ -860,13 +859,6 @@ export interface AppTravelTrips {
   startDate: ColumnType<string, Date | string, Date | string>;
   status: Generated<string>;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppUserPortfolioPreferences {
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  currentPortfolioId: string | null;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-  userId: string;
 }
 
 export interface AppVectorDocuments {
@@ -1265,7 +1257,6 @@ export interface DB {
   "app.tasks": AppTasks;
   "app.testimonials": AppTestimonials;
   "app.travelTrips": AppTravelTrips;
-  "app.userPortfolioPreferences": AppUserPortfolioPreferences;
   "app.vectorDocuments": AppVectorDocuments;
   "app.videoChannels": AppVideoChannels;
   "app.videoViews": AppVideoViews;

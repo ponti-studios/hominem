@@ -56,7 +56,6 @@ export async function saveResumeToDatabase(
       .executeTakeFirstOrThrow();
 
     const portfolioId = createdPortfolio.id;
-    await CareerRepository.setCurrentPortfolioByUserId(tx, ownerUserid, portfolioId);
 
     if (data.social_links) {
       const existingSocialLinks = await CareerRepository.getUserSocialLinks(tx, ownerUserid);

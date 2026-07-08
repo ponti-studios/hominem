@@ -1,23 +1,8 @@
-import { CareerRepository, db, type CareerPortfolioRecord } from '@hominem/db';
+import { CareerRepository, db } from '@hominem/db';
 
 import type { CareerPortfolioResponse } from '~/lib/api.server';
 
-import type { AccountLoaderData, AccountPageUser, AccountPortfolioSummary } from './types';
-
-function toPortfolioSummary(portfolio: CareerPortfolioRecord): AccountPortfolioSummary {
-  return {
-    id: portfolio.id,
-    title: portfolio.title,
-    slug: portfolio.slug,
-    isPublic: portfolio.isPublic,
-    isActive: portfolio.isActive,
-    updatedat: portfolio.updatedat,
-    name: portfolio.name,
-    jobTitle: portfolio.jobTitle,
-    bio: portfolio.bio,
-    profileImageUrl: portfolio.profileImageUrl || undefined,
-  };
-}
+import type { AccountLoaderData, AccountPageUser } from './types';
 
 export async function loadAccountPageData({
   user,
@@ -26,18 +11,12 @@ export async function loadAccountPageData({
   user: AccountPageUser;
   currentPortfolio: CareerPortfolioResponse | null;
 }): Promise<AccountLoaderData> {
-  const [portfolioRows, socialLinks] = await Promise.all([
-    CareerRepository.listPortfoliosByUserId(db, user.id),
-    CareerRepository.getUserSocialLinks(db, user.id),
-  ]);
-  const portfolios = portfolioRows.map(toPortfolioSummary);
+  const socialLinks = await CareerRepository.getUserSocialLinks(db, user.id);
 
   return {
     user,
-    portfolios,
     currentPortfolio,
-    currentPortfolioId: currentPortfolio?.id ?? null,
-    hasPortfolio: portfolios.length > 0,
+    hasPortfolio: currentPortfolio !== null,
     socialLinks,
   };
 }

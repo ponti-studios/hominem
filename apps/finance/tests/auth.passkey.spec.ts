@@ -136,13 +136,9 @@ async function registerPasskey(page: Page): Promise<PasskeyOperationResult> {
       }
     }
 
-    const optionsResponse = await fetch('/api/auth/passkey/register/options', {
-      method: 'POST',
+    const optionsResponse = await fetch('/api/auth/passkey/generate-register-options', {
+      method: 'GET',
       credentials: 'include',
-      headers: {
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ name: 'Finance E2E Device' }),
     })
 
     if (!optionsResponse.ok) {
@@ -192,7 +188,7 @@ async function registerPasskey(page: Page): Promise<PasskeyOperationResult> {
       }
     }
 
-    const verifyResponse = await fetch('/api/auth/passkey/register/verify', {
+    const verifyResponse = await fetch('/api/auth/passkey/verify-registration', {
       method: 'POST',
       credentials: 'include',
       headers: {

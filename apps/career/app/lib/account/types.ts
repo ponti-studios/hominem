@@ -8,24 +8,9 @@ export interface AccountPageUser {
   email?: string | null;
 }
 
-export interface AccountPortfolioSummary {
-  id: string;
-  title: string;
-  slug: string;
-  isPublic: boolean;
-  isActive: boolean;
-  updatedat: string | Date;
-  name?: string;
-  jobTitle?: string;
-  bio?: string;
-  profileImageUrl?: string;
-}
-
 export interface AccountLoaderData {
   user: AccountPageUser;
-  portfolios: AccountPortfolioSummary[];
   currentPortfolio: CareerPortfolioResponse | null;
-  currentPortfolioId: string | null;
   hasPortfolio: boolean;
   socialLinks: CareerUserSocialLinksRecord | null;
 }

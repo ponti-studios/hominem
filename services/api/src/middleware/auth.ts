@@ -1,8 +1,6 @@
 import type { User } from '@hominem/auth/types';
-import { db, UserRepository } from '@hominem/db';
 import type { MiddlewareHandler } from 'hono';
 
-import { resolveBearerAuth } from '../auth/bearer';
 import { betterAuthServer } from '../auth/better-auth';
 import type { AuthContextEnvelope } from '../auth/types';
 
@@ -15,12 +13,6 @@ declare module 'hono' {
     userId?: string;
     authError?: AuthErrorCode;
   }
-}
-
-interface BetterAuthSessionContext {
-  auth: AuthContextEnvelope;
-  user: User;
-  userId: string;
 }
 
 function toAuthUser(user: {
@@ -45,91 +37,23 @@ function toAuthUser(user: {
 
 function setAuthContext(
   c: {
-    set: <K extends keyof BetterAuthSessionContext>(
-      key: K,
-      value: BetterAuthSessionContext[K],
-    ) => void;
+    set: (key: 'user' | 'userId' | 'auth', value: User | string | AuthContextEnvelope) => void;
   },
-  input: {
-    user: User;
-    sessionId: string;
-    amr: string[];
-    authTime?: number;
-    role?: 'user' | 'admin';
-    scope?: string[];
-  },
+  input: { user: User; sessionId: string },
 ) {
   c.set('user', input.user);
   c.set('userId', input.user.id);
   c.set('auth', {
     sub: input.user.id,
     sid: input.sessionId,
-    scope: input.scope ?? ['api:read', 'api:write'],
-    role: input.role ?? 'user',
-    amr: input.amr,
-    authTime: input.authTime ?? Math.floor(Date.now() / 1000),
+    authTime: Math.floor(Date.now() / 1000),
   });
 }
 
-async function applyBearerAuth(
-  c: {
-    req: { header: (name: string) => string | undefined };
-    set: <K extends keyof BetterAuthSessionContext>(
-      key: K,
-      value: BetterAuthSessionContext[K],
-    ) => void;
-  },
-  authHeader: string,
-): Promise<boolean> {
-  const resolved = await resolveBearerAuth(authHeader);
-  if (!resolved) return false;
-
-  const userRecord = await UserRepository.findByIdOrEmail(db, { id: resolved.claims.sub });
-  if (!userRecord) return false;
-
-  setAuthContext(c, {
-    user: toAuthUser({
-      ...userRecord,
-      createdAt: new Date(userRecord.createdAt),
-      updatedAt: new Date(userRecord.updatedAt),
-    }),
-    sessionId: resolved.claims.sid,
-    amr: resolved.claims.amr,
-    authTime: resolved.claims.auth_time,
-    role: resolved.claims.role,
-    scope: resolved.claims.scope,
-  });
-
-  return true;
-}
-
-async function applyBetterAuthSession(c: {
-  req: { raw: Request };
-  set: <K extends keyof BetterAuthSessionContext>(
-    key: K,
-    value: BetterAuthSessionContext[K],
-  ) => void;
-}) {
-  const betterAuthSession = await betterAuthServer.api.getSession({
-    headers: c.req.raw.headers,
-  });
-
-  const betterAuthUserId = betterAuthSession?.user?.id;
-  const betterAuthSessionId = betterAuthSession?.session?.id;
-
-  if (!betterAuthUserId || !betterAuthSessionId) {
-    return false;
-  }
-
-  setAuthContext(c, {
-    user: toAuthUser(betterAuthSession.user),
-    sessionId: betterAuthSessionId,
-    amr: ['better-auth-session'],
-  });
-
-  return true;
-}
-
+/**
+ * Resolve the caller identity via Better Auth only (session cookies or BA bearer).
+ * Custom JWT issuance is intentionally unsupported.
+ */
 export const authJwtMiddleware = (): MiddlewareHandler => {
   return async (c, next) => {
     const path = c.req.path;
@@ -137,22 +61,24 @@ export const authJwtMiddleware = (): MiddlewareHandler => {
       return await next();
     }
 
-    const authHeader = c.req.header('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      // A Bearer token is authoritative when present — verified-or-401, no
-      // silent fallback to an unrelated cookie session.
-      const bearerAuthenticated = await applyBearerAuth(c, authHeader);
-      if (!bearerAuthenticated) {
-        c.set('authError', 'invalid_token');
-      }
+    const betterAuthSession = await betterAuthServer.api.getSession({
+      headers: c.req.raw.headers,
+    });
+
+    const userId = betterAuthSession?.user?.id;
+    const sessionId = betterAuthSession?.session?.id;
+
+    if (userId && sessionId) {
+      setAuthContext(c, {
+        user: toAuthUser(betterAuthSession.user),
+        sessionId,
+      });
       return await next();
     }
 
-    const sessionFound = await applyBetterAuthSession(c);
-
-    // Fallback: in e2e/test mode, accept x-user-id header for cross-origin RPC calls
-    // where SameSite=Lax prevents session cookie from being sent
-    if (!sessionFound && process.env.NODE_ENV !== 'production') {
+    // Non-prod: accept x-user-id for cross-origin e2e where SameSite=Lax
+    // prevents session cookies from being sent.
+    if (process.env.NODE_ENV !== 'production') {
       const proxyUserId = c.req.header('x-user-id');
       if (proxyUserId) {
         c.set('userId', proxyUserId);

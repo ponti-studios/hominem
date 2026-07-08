@@ -61,44 +61,12 @@ export function authStateMachine(state: AuthState, event: AuthEvent): AuthState 
         isLoading: true,
       };
 
-    case 'API_TOKEN_MINT_STARTED':
-      return {
-        ...state,
-        status: 'minting_api_token',
-        error: null,
-        isLoading: true,
-      };
-
-    case 'API_TOKEN_MINT_FAILED':
-      return {
-        ...state,
-        status: 'degraded',
-        error: event.error,
-        isLoading: false,
-      };
-
     case 'PROFILE_SYNC_STARTED':
       return {
         ...state,
         status: 'syncing_profile',
         error: null,
         isLoading: true,
-      };
-
-    case 'REFRESH_STARTED':
-      return {
-        ...state,
-        status: 'refreshing_session',
-        error: null,
-        isLoading: true,
-      };
-
-    case 'REFRESH_FAILED':
-      return {
-        ...state,
-        status: 'signed_out',
-        error: event.error,
-        isLoading: false,
       };
 
     case 'PASSKEY_AUTH_STARTED':
