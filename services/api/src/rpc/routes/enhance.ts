@@ -9,9 +9,7 @@ import { AIUsageQuerySchema } from '../../schemas/ai.schema';
 import { EnhanceTextInputSchema } from '../../schemas/enhance.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
-import { loadPrompt } from '../utils/load-prompt';
-
-const ENHANCE_SYSTEM_PROMPT = loadPrompt('text-enhance');
+import { TEXT_ENHANCE_PROMPT } from '../prompts';
 
 export const enhanceRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
@@ -47,7 +45,7 @@ export const enhanceRoutes = new Hono<AppContext>()
     const { text, instruction } = c.req.valid('json');
 
     try {
-      const enhanced = await enhanceText({ text, instruction }, ENHANCE_SYSTEM_PROMPT);
+      const enhanced = await enhanceText({ text, instruction }, TEXT_ENHANCE_PROMPT);
       await recordAIUsageEvent({
         userId,
         feature: 'text_enhance',

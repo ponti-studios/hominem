@@ -39,8 +39,9 @@ jobs:
           ref: ${{ inputs.checkout_ref || github.sha }}
 
       - name: install-railway-cli
-        # Pin to a specific npm version for reproducibility.
-        run: npm install -g @railway/cli@4.58.0
+        # Keep reasonably current — older CLI builds have reported false "Deploy failed"
+        # after image push without running the healthcheck phase.
+        run: npm install -g @railway/cli@5.25.1
 
       - name: validate-env
         run: |
@@ -55,7 +56,10 @@ jobs:
 
       - name: stage-railway-config
         if: inputs.config_path != ''
-        run: cp "${{ inputs.config_path }}" railway.json
+        run: |
+          cp "${{ inputs.config_path }}" railway.json
+          echo "Staged railway.json from ${{ inputs.config_path }}:"
+          cat railway.json
 
       - name: deploy-to-railway
         run: |
@@ -63,20 +67,21 @@ jobs:
           if [ -f railway.json ]; then
             echo "Using railway.json from $(pwd)/railway.json"
           else
-            echo "No railway.json staged; Railway will use the repository root defaults."
+            echo "No railway.json staged; Railway will use dashboard / service config."
           fi
 
           set +e
-          output=$(railway up --ci --service "$SERVICE" 2>&1)
-          status=$?
+          # Stream logs so healthcheck progress is visible in Actions.
+          railway up --ci --service "$SERVICE" 2>&1 | tee /tmp/railway-up.log
+          status=${PIPESTATUS[0]}
           set -e
 
-          printf '%s\n' "$output"
-
           if [ "$status" -ne 0 ]; then
-            log_url=$(printf '%s\n' "$output" | grep -Eo 'https://railway\.com/project/[^[:space:]]+' | tail -n 1)
+            log_url=$(grep -Eo 'https://railway\.com/project/[^[:space:]]+' /tmp/railway-up.log | tail -n 1 || true)
             if [ -n "$log_url" ]; then
               echo "Railway build logs: $log_url"
             fi
+            echo "--- last 80 lines of railway up ---"
+            tail -n 80 /tmp/railway-up.log || true
             exit "$status"
           fi

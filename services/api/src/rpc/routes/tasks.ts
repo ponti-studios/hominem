@@ -16,10 +16,7 @@ import {
 } from '../../schemas/tasks.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
-import { loadPrompt } from '../utils/load-prompt';
-
-const TASK_EXTRACTION_SYSTEM_PROMPT = loadPrompt('task-extraction');
-const VOICE_TASK_EXTRACTION_SYSTEM_PROMPT = loadPrompt('voice-task-extraction');
+import { TASK_EXTRACTION_PROMPT, VOICE_TASK_EXTRACTION_PROMPT } from '../prompts';
 
 function buildTaskListTitle(tasks: { title: string }[]): string {
   return tasks.length === 1 ? tasks[0].title : `${tasks.length} tasks`;
@@ -62,7 +59,7 @@ export const tasksRoutes = new Hono<AppContext>()
     const { transcript } = c.req.valid('json');
 
     try {
-      const { tasks, usage } = await extractTasks({ transcript }, TASK_EXTRACTION_SYSTEM_PROMPT);
+      const { tasks, usage } = await extractTasks({ transcript }, TASK_EXTRACTION_PROMPT);
       await recordAIUsageEvent({
         userId,
         feature: 'task_extract',
@@ -112,7 +109,7 @@ export const tasksRoutes = new Hono<AppContext>()
     try {
       const result = await extractVoiceTasks(
         { transcript, referenceDate: referenceDate ?? new Date().toISOString(), timezone },
-        VOICE_TASK_EXTRACTION_SYSTEM_PROMPT,
+        VOICE_TASK_EXTRACTION_PROMPT,
       );
       tasks = result.tasks;
       await recordAIUsageEvent({

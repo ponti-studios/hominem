@@ -17,7 +17,7 @@ import {
 import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
-import { loadPrompt } from '../utils/load-prompt';
+import { CHAT_ASSISTANT_PROMPT } from '../prompts';
 import { toChatDto, toChatMessageDto, toStoredUserMessageContent } from './chats.mapper';
 
 async function enqueueChatEmbedding(userId: string, chatId: string) {
@@ -186,7 +186,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     const prompt = buildPrompt(message, history, resolvedNotes, resolvedFiles);
     const completion = streamChatCompletion({
       messages: [
-        { role: 'system', content: loadPrompt('chat-assistant') },
+        { role: 'system', content: CHAT_ASSISTANT_PROMPT },
         { role: 'user', content: prompt },
       ],
     });
@@ -284,7 +284,7 @@ export const chatsRoutes = new Hono<AppContext>()
     const prompt = buildPrompt(message, [], resolvedNotes, resolvedFiles);
     const completion = streamChatCompletion({
       messages: [
-        { role: 'system', content: loadPrompt('chat-assistant') },
+        { role: 'system', content: CHAT_ASSISTANT_PROMPT },
         { role: 'user', content: prompt },
       ],
     });

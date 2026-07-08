@@ -48,9 +48,11 @@ Thumbs.db
 .gitlab-ci.yml
 .circleci
 
-# Documentation
-*.md
-docs
+# Documentation (do not exclude app prompt assets — they are runtime/build inputs)
+/README.md
+/**/README.md
+/docs
+/docs/**
 
 # Sensitive/private directories
 .auth
