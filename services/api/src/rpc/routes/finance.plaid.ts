@@ -13,7 +13,7 @@ import {
   type PlaidExchangeTokenOutput,
   type PlaidRemoveConnectionOutput,
   type PlaidSyncItemOutput,
-} from '@hominem/rpc/types/finance.types';
+} from '@hominem/rpc/finance';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';

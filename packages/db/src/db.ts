@@ -18,6 +18,10 @@ types.setTypeParser(types.builtins.TIMESTAMP, (val) => val);
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (val) => val);
 types.setTypeParser(types.builtins.DATE, (val) => val);
 
+// Configure pg to return numeric as number for consistent types
+// Safe for finance amounts — precision loss only affects very large values
+types.setTypeParser(types.builtins.NUMERIC, (val) => parseFloat(val));
+
 // Create a connection pool
 const connectionString = env.DATABASE_URL;
 

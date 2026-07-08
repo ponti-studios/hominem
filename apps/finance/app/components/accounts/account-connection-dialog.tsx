@@ -108,8 +108,8 @@ export function AccountConnectionDialog({ account, trigger }: AccountConnectionD
             <div className="p-3 bg-muted">
               <div className="font-medium">{account.name}</div>
               <div className="text-sm text-muted-foreground">{account.accountType}</div>
-              {account.balance && (
-                <div className="text-sm">Balance: ${Number(account.balance).toLocaleString()}</div>
+              {account.currentBalance && (
+                <div className="text-sm">Balance: ${Number(account.currentBalance).toLocaleString()}</div>
               )}
             </div>
           </div>

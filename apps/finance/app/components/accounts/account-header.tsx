@@ -1,6 +1,7 @@
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
+import { formatCurrency } from '@hominem/utils';
 import { ArrowLeft, Building2, CreditCard, Eye, EyeOff, RefreshCcw } from 'lucide-react';
 
 import { RouteLink } from '~/components/route-link';
@@ -31,13 +32,6 @@ export function AccountHeader({
       default:
         return <Building2 className="size-6" />;
     }
-  };
-
-  const formatBalance = (balance: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(balance);
   };
 
   const getAccountTypeColor = (type: string) => {
@@ -94,12 +88,12 @@ export function AccountHeader({
 
         <CardContent className="space-y-4">
           {/* Balance for Plaid accounts */}
-          {isPlaidAccount && account.balance && (
+          {isPlaidAccount && account.currentBalance && (
             <div className="flex items-center justify-between p-4 bg-muted/50 ">
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-muted-foreground">Current Balance:</span>
                 <span className="text-2xl font-bold">
-                  {isBalanceVisible ? formatBalance(Number(account.balance)) : '••••••'}
+                  {isBalanceVisible ? formatCurrency(Number(account.currentBalance)) : '••••••'}
                 </span>
               </div>
               <Button variant="ghost" size="sm" onClick={onToggleBalance}>

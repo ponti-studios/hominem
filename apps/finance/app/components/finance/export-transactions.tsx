@@ -24,11 +24,11 @@ export function ExportTransactions() {
       ...transactions.map((tx) => {
         const account = accountsMap.get(tx.accountId);
         return [
-          tx.date,
+          tx.postedOn,
           `"${tx.description?.replace(/"/g, '""') || ''}"`,
           String(tx.amount),
           'Uncategorized',
-          tx.type || 'expense',
+          Number(tx.amount) < 0 ? "expense" : "income",
           account?.name || 'Unknown',
         ].join(',');
       }),

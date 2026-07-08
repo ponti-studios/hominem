@@ -16,7 +16,7 @@ type RawAccountWithTransactions = {
   userId: string;
   name: string;
   accountType: AccountWithTransactions['accountType'];
-  balance: number;
+  currentBalance: number | null;
   transactions: AccountWithTransactions['transactions'];
   institutionName?: string | null | undefined;
   plaidAccountId?: string | null | undefined;
@@ -31,7 +31,7 @@ function normalizeAccountWithTransactions(
     userId: account.userId,
     name: account.name,
     accountType: account.accountType,
-    balance: account.balance,
+    currentBalance: account.currentBalance,
     transactions: account.transactions,
   };
 

@@ -93,15 +93,12 @@ export type BudgetCategoryData = {
   averageMonthlyExpense?: string
 }
 
-export type AccountType = 'checking' | 'savings' | 'credit' | 'investment' | 'cash' | 'other'
-export type TransactionType = 'income' | 'expense' | 'transfer'
-
 export type AccountData = {
   id: string
   userId: string
   name: string
-  accountType: AccountType
-  balance: number
+  accountType: string
+  currentBalance: number | null
 }
 
 export type TransactionData = {
@@ -109,9 +106,9 @@ export type TransactionData = {
   userId: string
   accountId: string
   amount: number
-  description: string
-  date: string
-  type: TransactionType
+  description: string | null
+  postedOn: string
+  merchantName: string | null
 }
 
 export type AccountWithPlaidInfo = AccountData & {

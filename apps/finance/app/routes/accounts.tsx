@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@hominem/ui/card';
+import { formatCurrency } from '@hominem/utils';
 import {
   AlertTriangle,
   Building2,
@@ -35,7 +36,7 @@ type RawAccountWithOptionalPlaid = {
   userId: string;
   name: string;
   accountType: AccountWithOptionalPlaid['accountType'];
-  balance: number;
+  currentBalance: number | null;
   transactions: AccountWithOptionalPlaid['transactions'];
   institutionName?: string | null | undefined;
   plaidAccountId?: string | null | undefined;
@@ -48,7 +49,7 @@ function normalizeAccount(account: RawAccountWithOptionalPlaid): AccountWithOpti
     userId: account.userId,
     name: account.name,
     accountType: account.accountType,
-    balance: account.balance,
+    currentBalance: account.currentBalance,
     transactions: account.transactions,
   };
   if (account.institutionName !== undefined) {
@@ -92,13 +93,6 @@ function AccountCard({
     }
   };
 
-  const formatBalance = (balance: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(balance);
-  };
-
   return (
     <Card className="overflow-hidden flex flex-col">
       <CardHeader className="pb-3">
@@ -125,12 +119,12 @@ function AccountCard({
       <CardContent className="flex-1">
         <div className="space-y-4">
           {/* Balance display */}
-          {account.balance && (
+          {account.currentBalance && (
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-muted-foreground">Balance:</span>
                 <span className="font-semibold">
-                  {isBalanceVisible ? formatBalance(Number(account.balance)) : '••••••'}
+                  {isBalanceVisible ? formatCurrency(Number(account.currentBalance)) : '••••••'}
                 </span>
               </div>
               <Button

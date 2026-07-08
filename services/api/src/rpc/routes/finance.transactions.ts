@@ -1,14 +1,10 @@
 import { randomUUID } from 'crypto';
 
 import { db } from '@hominem/db';
-import type {
-  AppFinanceTransactions,
-} from '@hominem/db';
 import {
   TransactionInsertSchema,
   TransactionQueryFiltersSchema,
 } from '@hominem/rpc/finance';
-import type { TransactionData, TransactionType } from '@hominem/rpc/finance';
 import type {
   TransactionCreateOutput,
   TransactionDeleteOutput,
@@ -21,7 +17,6 @@ import * as z from 'zod';
 
 import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
-import { toIsoString } from '../utils/to-iso-string';
 
 const transactionListSchema = TransactionQueryFiltersSchema.extend({
   account: z.string().uuid().optional(),
@@ -56,20 +51,6 @@ const transactionUpdateSchema = z.object({
     tagIds: z.array(z.string().uuid()).optional(),
   }),
 });
-
-function toTransactionData(row: AppFinanceTransactions): TransactionData {
-  const amount =
-    typeof row.amount === 'string' ? Number.parseFloat(row.amount) : Number(row.amount);
-  return {
-    id: row.id,
-    userId: row.user_id,
-    accountId: row.account_id,
-    amount,
-    description: row.description ?? '',
-    date: toIsoString(row.date),
-    type: (amount < 0 ? 'expense' : 'income') as TransactionType,
-  };
-}
 
 async function getTaggedTransactionIds(
   userId: string,
@@ -189,7 +170,15 @@ export const transactionsRoutes = new Hono<AppContext>()
         .executeTakeFirst(),
     ]);
 
-    const responseData = data.map(toTransactionData);
+    const responseData = data.map((t) => ({
+      id: t.id,
+      userId: t.userId,
+      accountId: t.accountId,
+      amount: t.amount ? Number(t.amount) : 0,
+      description: t.description ?? null,
+      postedOn: t.postedOn ? String(t.postedOn) : '',
+      merchantName: t.merchantName ?? null,
+    }));
     return c.json<TransactionListOutput>(
       {
         data: responseData,
@@ -231,7 +220,18 @@ export const transactionsRoutes = new Hono<AppContext>()
       await replaceTransactionTags(id, userId, input.tagIds);
     }
 
-    return c.json<TransactionCreateOutput>(toTransactionData(created), 201);
+    return c.json<TransactionCreateOutput>(
+      {
+        id: created.id,
+        userId: created.userId,
+        accountId: created.accountId,
+        amount: created.amount ? Number(created.amount) : 0,
+        description: created.description ?? null,
+        postedOn: created.postedOn ? String(created.postedOn) : '',
+        merchantName: created.merchantName ?? null,
+      },
+      201,
+    );
   })
   .post('/update', authMiddleware, zValidator('json', transactionUpdateSchema), async (c) => {
     const userId = c.get('userId')!;
@@ -279,7 +279,17 @@ export const transactionsRoutes = new Hono<AppContext>()
       await replaceTransactionTags(updated.id, userId, input.data.tagIds);
     }
 
-    return c.json<TransactionUpdateOutput>(toTransactionData(updated));
+    return c.json<TransactionUpdateOutput>(
+      {
+        id: updated!.id,
+        userId: updated!.userId,
+        accountId: updated!.accountId,
+        amount: updated!.amount ? Number(updated!.amount) : 0,
+        description: updated!.description ?? null,
+        postedOn: updated!.postedOn ? String(updated!.postedOn) : '',
+        merchantName: updated!.merchantName ?? null,
+      },
+    );
   })
   .post('/delete', authMiddleware, zValidator('json', transactionDeleteSchema), async (c) => {
     const userId = c.get('userId')!;
