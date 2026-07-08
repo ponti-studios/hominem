@@ -20,12 +20,18 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { finance } = createServerHonoClient(authResult.session?.token, request);
 
   const [accountsRes, transactionsRes] = await Promise.all([
-    finance.accounts.list.$get({ query: {} }).then((r) => r.json()).catch(() => []),
-    finance.transactions.list.$get({ query: { limit: '25' } }).then((r) => r.json()).catch(() => ({
-      data: [],
-      filteredCount: 0,
-      totalUserCount: 0,
-    })),
+    finance.accounts.list
+      .$get({ query: {} })
+      .then((r) => r.json())
+      .catch(() => []),
+    finance.transactions.list
+      .$get({ query: { limit: '25' } })
+      .then((r) => r.json())
+      .catch(() => ({
+        data: [],
+        filteredCount: 0,
+        totalUserCount: 0,
+      })),
   ]);
 
   return {

@@ -12,7 +12,10 @@ export function loadPrompt(name: string): string {
   if (cached !== undefined) return cached;
 
   const fileName = `${name}.md`;
-  const candidates = [join(import.meta.dirname, '..', 'prompts', fileName), join(import.meta.dirname, 'prompts', fileName)];
+  const candidates = [
+    join(import.meta.dirname, '..', 'prompts', fileName),
+    join(import.meta.dirname, 'prompts', fileName),
+  ];
   const filePath = candidates.find((candidate) => existsSync(candidate));
   if (!filePath) {
     throw new Error(`Prompt file not found: ${fileName}`);

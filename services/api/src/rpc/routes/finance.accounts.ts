@@ -289,23 +289,30 @@ export const accountsRoutes = new Hono<AppContext>()
 
     return c.json(connections, 200);
   })
-  .get('/institution-accounts', authMiddleware, zValidator('query', institutionAccountsSchema), async (c) => {
-    const userId = c.get('userId')!;
-    const input = c.req.valid('query');
-    const accounts = await db
-      .selectFrom('app.financeAccounts')
-      .selectAll()
-      .where((eb) => eb.and([eb('userId', '=', userId), eb('institutionId', '=', input.institutionId)]))
-      .execute();
+  .get(
+    '/institution-accounts',
+    authMiddleware,
+    zValidator('query', institutionAccountsSchema),
+    async (c) => {
+      const userId = c.get('userId')!;
+      const input = c.req.valid('query');
+      const accounts = await db
+        .selectFrom('app.financeAccounts')
+        .selectAll()
+        .where((eb) =>
+          eb.and([eb('userId', '=', userId), eb('institutionId', '=', input.institutionId)]),
+        )
+        .execute();
 
-    return c.json(
-      accounts.map((account) => ({
-        ...normalizeAccountRow(account),
-        institutionName: null,
-      })),
-      200,
-    );
-  })
+      return c.json(
+        accounts.map((account) => ({
+          ...normalizeAccountRow(account),
+          institutionName: null,
+        })),
+        200,
+      );
+    },
+  )
   .get('/all', authMiddleware, async (c) => {
     const userId = c.get('userId')!;
 
@@ -328,7 +335,9 @@ export const accountsRoutes = new Hono<AppContext>()
       }
     }
 
-    const institutionMap = new Map(institutions.map((institution) => [institution.id, institution]));
+    const institutionMap = new Map(
+      institutions.map((institution) => [institution.id, institution]),
+    );
 
     return c.json(
       {

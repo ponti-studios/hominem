@@ -1,5 +1,5 @@
-import { useApiClient } from '@hominem/rpc/react';
 import type { FinanceClient } from '@hominem/rpc/finance';
+import { useApiClient } from '@hominem/rpc/react';
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 
 function useFinanceClient(): FinanceClient {
@@ -22,10 +22,7 @@ export function useHonoQuery<TData = unknown>(
 }
 
 export function useHonoMutation<TData = unknown, TVariables = unknown>(
-  mutationFn: (
-    client: { finance: FinanceClient },
-    variables: TVariables,
-  ) => Promise<TData>,
+  mutationFn: (client: { finance: FinanceClient }, variables: TVariables) => Promise<TData>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options?: any,
 ) {

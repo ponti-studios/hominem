@@ -28,7 +28,7 @@ export function ExportTransactions() {
           `"${tx.description?.replace(/"/g, '""') || ''}"`,
           String(tx.amount),
           'Uncategorized',
-          Number(tx.amount) < 0 ? "expense" : "income",
+          Number(tx.amount) < 0 ? 'expense' : 'income',
           account?.name || 'Unknown',
         ].join(',');
       }),

@@ -8,26 +8,28 @@ import * as z from 'zod';
 import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
-const transactionListSchema = z.object({
-  accountId: z.string().uuid().optional(),
-  dateFrom: z.string().optional(),
-  dateTo: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-  tagIds: z.array(z.string().uuid()).optional(),
-  tagNames: z.array(z.string().min(1)).optional(),
-}).extend({
-  account: z.string().uuid().optional(),
-  sortBy: z.string().optional(),
-  sortDirection: z
-    .enum(['asc', 'desc'])
-    .or(z.array(z.enum(['asc', 'desc'])))
-    .optional(),
-  description: z.string().optional(),
-  search: z.string().optional(),
-  min: z.string().optional(),
-  max: z.string().optional(),
-});
+const transactionListSchema = z
+  .object({
+    accountId: z.string().uuid().optional(),
+    dateFrom: z.string().optional(),
+    dateTo: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(200).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+    tagIds: z.array(z.string().uuid()).optional(),
+    tagNames: z.array(z.string().min(1)).optional(),
+  })
+  .extend({
+    account: z.string().uuid().optional(),
+    sortBy: z.string().optional(),
+    sortDirection: z
+      .enum(['asc', 'desc'])
+      .or(z.array(z.enum(['asc', 'desc'])))
+      .optional(),
+    description: z.string().optional(),
+    search: z.string().optional(),
+    min: z.string().optional(),
+    max: z.string().optional(),
+  });
 
 const transactionDeleteSchema = z.object({
   id: z.string().uuid(),
@@ -279,17 +281,15 @@ export const transactionsRoutes = new Hono<AppContext>()
       await replaceTransactionTags(updated.id, userId, input.data.tagIds);
     }
 
-    return c.json(
-      {
-        id: updated!.id,
-        userId: updated!.userId,
-        accountId: updated!.accountId,
-        amount: updated!.amount ? Number(updated!.amount) : 0,
-        description: updated!.description ?? null,
-        postedOn: updated!.postedOn ? String(updated!.postedOn) : '',
-        merchantName: updated!.merchantName ?? null,
-      },
-    );
+    return c.json({
+      id: updated!.id,
+      userId: updated!.userId,
+      accountId: updated!.accountId,
+      amount: updated!.amount ? Number(updated!.amount) : 0,
+      description: updated!.description ?? null,
+      postedOn: updated!.postedOn ? String(updated!.postedOn) : '',
+      merchantName: updated!.merchantName ?? null,
+    });
   })
   .post('/delete', authMiddleware, zValidator('json', transactionDeleteSchema), async (c) => {
     const userId = c.get('userId')!;

@@ -87,10 +87,10 @@ export const useFinanceAccounts = ({ initialData }: UseFinanceAccountsOptions = 
 };
 
 export const useFinancialInstitutions = () =>
-  useHonoQuery<InstitutionsListOutput>(
-    ['finance', 'institutions', 'list'],
-    ({ finance }) =>
-      finance.institutions.list.$get({ query: {} }).then((r: { json: () => Promise<InstitutionsListOutput> }) => r.json()),
+  useHonoQuery<InstitutionsListOutput>(['finance', 'institutions', 'list'], ({ finance }) =>
+    finance.institutions.list
+      .$get({ query: {} })
+      .then((r: { json: () => Promise<InstitutionsListOutput> }) => r.json()),
   );
 
 // Hook that adds value by transforming data for unified view
@@ -193,7 +193,9 @@ export function useFinanceTransactions({
           query: {
             ...(filters.dateFrom ? { dateFrom: format(filters.dateFrom, 'yyyy-MM-dd') } : {}),
             ...(filters.dateTo ? { dateTo: format(filters.dateTo, 'yyyy-MM-dd') } : {}),
-            ...(filters.accountId && filters.accountId !== 'all' ? { account: filters.accountId } : {}),
+            ...(filters.accountId && filters.accountId !== 'all'
+              ? { account: filters.accountId }
+              : {}),
             ...(filters.description ? { description: filters.description } : {}),
             limit: String(limit),
             offset: String(offset),

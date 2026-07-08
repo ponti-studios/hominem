@@ -28,9 +28,7 @@ export function SortRow({
     <div key={sortOption.field} className="flex items-center gap-2">
       <Select
         value={sortOption.field}
-        onValueChange={(value) =>
-          updateSortOption(index, { ...sortOption, field: value })
-        }
+        onValueChange={(value) => updateSortOption(index, { ...sortOption, field: value })}
       >
         <SelectTrigger className="w-[130px] h-8 text-xs">
           <SelectValue placeholder="Select field" />

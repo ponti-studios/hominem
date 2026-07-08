@@ -45,7 +45,7 @@ function TransactionMetadata({
       )}
       <div className="flex items-center gap-1">
         <Tag className="size-3" />
-                <span>{Number(transaction.amount) < 0 ? 'expense' : 'income'}</span>
+        <span>{Number(transaction.amount) < 0 ? 'expense' : 'income'}</span>
       </div>
     </div>
   );

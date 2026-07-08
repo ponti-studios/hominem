@@ -22,7 +22,7 @@ function normalizeInitialAccount(account: {
   userId: string;
   name: string;
   accountType: AccountGetOutput['accountType'];
-    currentBalance: number | null;
+  currentBalance: number | null;
   transactions: AccountGetOutput['transactions'];
   institutionName?: string | null | undefined;
   plaidAccountId?: string | null | undefined;

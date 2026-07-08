@@ -5,8 +5,12 @@ declare module 'plaid' {
 
   export class PlaidApi {
     constructor(configuration: Configuration);
-    linkTokenCreate(input: unknown): Promise<{ data: { link_token: string; expiration: string; request_id: string } }>;
-    itemPublicTokenExchange(input: unknown): Promise<{ data: { accessToken: string; providerItemId: string; request_id: string } }>;
+    linkTokenCreate(
+      input: unknown,
+    ): Promise<{ data: { link_token: string; expiration: string; request_id: string } }>;
+    itemPublicTokenExchange(
+      input: unknown,
+    ): Promise<{ data: { accessToken: string; providerItemId: string; request_id: string } }>;
     itemAccessTokenInvalidate(input: unknown): Promise<unknown>;
     itemRemove(input: unknown): Promise<unknown>;
   }
