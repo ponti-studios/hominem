@@ -11,14 +11,14 @@ import type {
   AppPortfolios,
   AppProjects,
   AppSkills,
-  AppSocialLinks,
   AppTestimonials,
   AppUserPortfolioPreferences,
+  AppUserSocialLinks,
   AppWorkExperiences,
 } from '../../types/database';
 
 type PortfolioRow = Selectable<AppPortfolios>;
-type SocialLinksRow = Selectable<AppSocialLinks>;
+type UserSocialLinksRow = Selectable<AppUserSocialLinks>;
 type WorkExperienceRow = Selectable<AppWorkExperiences>;
 type SkillRow = Selectable<AppSkills>;
 type ProjectRow = Selectable<AppProjects>;
@@ -109,14 +109,13 @@ export interface CareerApplicationStage {
 }
 
 export type CareerPortfolioRecord = PortfolioRow;
-export type CareerSocialLinksRecord = SocialLinksRow;
+export type CareerUserSocialLinksRecord = UserSocialLinksRow;
 export type CareerWorkExperienceRecord = WorkExperienceRow;
 export type CareerSkillRecord = SkillRow;
 export type CareerProjectRecord = ProjectRow;
 export type CareerTestimonialRecord = TestimonialRow;
 
 export interface CareerFullPortfolioRecord extends CareerPortfolioRecord {
-  social_links: CareerSocialLinksRecord | null;
   work_experiences: CareerWorkExperienceRecord[];
   skills: CareerSkillRecord[];
   projects: CareerProjectRecord[];
@@ -196,12 +195,7 @@ async function loadFullPortfolio(
   handle: DbHandle,
   portfolio: CareerPortfolioRecord,
 ): Promise<CareerFullPortfolioRecord> {
-  const [social_links, work_experiences, skills, projects, testimonials] = await Promise.all([
-    handle
-      .selectFrom('app.socialLinks')
-      .selectAll()
-      .where('portfolioId', '=', portfolio.id)
-      .executeTakeFirst(),
+  const [work_experiences, skills, projects, testimonials] = await Promise.all([
     handle
       .selectFrom('app.workExperiences')
       .selectAll()
@@ -230,7 +224,6 @@ async function loadFullPortfolio(
 
   return {
     ...portfolio,
-    social_links: (social_links as SocialLinksRow | undefined) ?? null,
     work_experiences: work_experiences as WorkExperienceRow[],
     skills: skills as SkillRow[],
     projects: projects as ProjectRow[],
@@ -919,46 +912,55 @@ export const CareerRepository = {
     return created as PortfolioRow;
   },
 
-  async saveSocialLinks(
+  async getUserSocialLinks(
     handle: DbHandle,
     ownerUserid: string,
-    portfolioId: string,
+  ): Promise<CareerUserSocialLinksRecord | null> {
+    const row = await handle
+      .selectFrom('app.userSocialLinks')
+      .selectAll()
+      .where('userId', '=', ownerUserid)
+      .executeTakeFirst();
+
+    return (row as UserSocialLinksRow | undefined) ?? null;
+  },
+
+  async saveUserSocialLinks(
+    handle: DbHandle,
+    ownerUserid: string,
     input: {
-      id?: string;
       github?: string | null;
       linkedin?: string | null;
       twitter?: string | null;
       website?: string | null;
     },
-  ): Promise<CareerSocialLinksRecord> {
-    await getOwnedPortfolioRowOrThrow(handle, ownerUserid, portfolioId);
-
+  ): Promise<CareerUserSocialLinksRecord> {
     const existing = await handle
-      .selectFrom('app.socialLinks')
+      .selectFrom('app.userSocialLinks')
       .selectAll()
-      .where('portfolioId', '=', portfolioId)
+      .where('userId', '=', ownerUserid)
       .executeTakeFirst();
 
     if (existing) {
       const updated = await handle
-        .updateTable('app.socialLinks')
+        .updateTable('app.userSocialLinks')
         .set({
           github: input.github ?? null,
           linkedin: input.linkedin ?? null,
           twitter: input.twitter ?? null,
           website: input.website ?? null,
         })
-        .where('id', '=', (existing as SocialLinksRow).id)
+        .where('userId', '=', ownerUserid)
         .returningAll()
         .executeTakeFirstOrThrow();
 
-      return updated as SocialLinksRow;
+      return updated as UserSocialLinksRow;
     }
 
     const created = await handle
-      .insertInto('app.socialLinks')
+      .insertInto('app.userSocialLinks')
       .values({
-        portfolioId: portfolioId,
+        userId: ownerUserid,
         github: input.github ?? null,
         linkedin: input.linkedin ?? null,
         twitter: input.twitter ?? null,
@@ -967,7 +969,7 @@ export const CareerRepository = {
       .returningAll()
       .executeTakeFirstOrThrow();
 
-    return created as SocialLinksRow;
+    return created as UserSocialLinksRow;
   },
 
   async replaceSkills(

@@ -702,17 +702,6 @@ export interface AppSkills {
   yearsOfExperience: number | null;
 }
 
-export interface AppSocialLinks {
-  createdat: Generated<Timestamp>;
-  github: string | null;
-  id: Generated<string>;
-  linkedin: string | null;
-  portfolioId: string;
-  twitter: string | null;
-  updatedat: Generated<Timestamp>;
-  website: string | null;
-}
-
 export interface AppSpaceInvites {
   acceptedAt: Timestamp | null;
   createdat: Generated<Timestamp>;
@@ -870,6 +859,16 @@ export interface AppUserPortfolioPreferences {
   currentPortfolioId: string | null;
   updatedat: Generated<Timestamp>;
   userId: string;
+}
+
+export interface AppUserSocialLinks {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  github: string | null;
+  linkedin: string | null;
+  twitter: string | null;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+  website: string | null;
 }
 
 export interface AppVectorDocuments {
@@ -1255,7 +1254,6 @@ export interface DB {
   'app.possessions': AppPossessions;
   'app.projects': AppProjects;
   'app.skills': AppSkills;
-  'app.socialLinks': AppSocialLinks;
   'app.spaceInvites': AppSpaceInvites;
   'app.spaceItems': AppSpaceItems;
   'app.spaceMembers': AppSpaceMembers;
@@ -1269,6 +1267,7 @@ export interface DB {
   'app.testimonials': AppTestimonials;
   'app.travelTrips': AppTravelTrips;
   'app.userPortfolioPreferences': AppUserPortfolioPreferences;
+  'app.userSocialLinks': AppUserSocialLinks;
   'app.vectorDocuments': AppVectorDocuments;
   'app.videoChannels': AppVideoChannels;
   'app.videoViews': AppVideoViews;

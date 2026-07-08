@@ -3,7 +3,12 @@ import { createStorageService, isStorageServiceError, validateFile } from '@homi
 
 import { parseFormData } from '~/lib/route-utils';
 
-import type { AccountActionResult, AccountPageUser, BasicInfoFormValues } from './types';
+import type {
+  AccountActionResult,
+  AccountPageUser,
+  BasicInfoFormValues,
+  SocialLinksFormValues,
+} from './types';
 
 const profileImageStorage = createStorageService('images', {
   maxFileSize: 5 * 1024 * 1024,
@@ -26,6 +31,7 @@ const accountActionHandlers: Record<string, AccountActionHandler> = {
   'upload-profile-image': handleUploadProfileImageAction,
   'update-slug': handleUpdateSlugAction,
   'update-basics': handleUpdateBasicsAction,
+  'update-social-links': handleUpdateSocialLinksAction,
 };
 
 function getProfileImageUploadErrorMessage(error: unknown): string {
@@ -222,6 +228,36 @@ async function handleUpdateSlugAction({
 
     console.error('Failed to update portfolio URL:', error);
     throw new Response('Failed to update portfolio URL', { status: 500 });
+  }
+}
+
+async function handleUpdateSocialLinksAction({
+  formData,
+  user,
+}: {
+  formData: FormData;
+  user: AccountPageUser;
+}): Promise<AccountActionResult> {
+  const socialLinksDataResult = parseFormData<SocialLinksFormValues>(formData, 'socialLinksData');
+
+  if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
+    return { success: false, error: "Your social links couldn't be read. Refresh and try again." };
+  }
+
+  const socialLinksData = socialLinksDataResult as SocialLinksFormValues;
+
+  try {
+    await CareerRepository.saveUserSocialLinks(db, user.id, {
+      github: socialLinksData.github ?? null,
+      linkedin: socialLinksData.linkedin ?? null,
+      twitter: socialLinksData.twitter ?? null,
+      website: socialLinksData.website ?? null,
+    });
+
+    return { success: true, message: 'Social links saved successfully' };
+  } catch (error) {
+    console.error('Failed to save social links:', error);
+    return { success: false, error: "We couldn't save your social links. Try again." };
   }
 }
 

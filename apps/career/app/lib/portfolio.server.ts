@@ -14,12 +14,14 @@ export async function getFullPortfolioBySlug(slug: string): Promise<FullPortfoli
 /**
  * Deletes a user's portfolio and all associated data
  * Due to CASCADE DELETE constraints, this will automatically remove:
- * - social_links
  * - work_experiences
  * - skills
  * - projects
  * - testimonials
  * - analytics
+ *
+ * Social links are user-scoped (app.user_social_links), not portfolio-scoped,
+ * so they are unaffected by portfolio deletion.
  */
 export async function deleteUserPortfolio(owner_userid: string): Promise<void> {
   return CareerRepository.deletePortfolioByUserId(db, owner_userid);

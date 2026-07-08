@@ -1,4 +1,4 @@
-import type { CareerPortfolioRecord } from '@hominem/db';
+import type { CareerPortfolioRecord, CareerUserSocialLinksRecord } from '@hominem/db';
 
 export interface AccountPageUser {
   id: string;
@@ -25,6 +25,7 @@ export interface AccountLoaderData {
   currentPortfolio: CareerPortfolioRecord | null;
   currentPortfolioId: string | null;
   hasPortfolio: boolean;
+  socialLinks: CareerUserSocialLinksRecord | null;
 }
 
 export interface BasicInfoFormValues {
@@ -42,6 +43,13 @@ export interface BasicInfoFormValues {
   availabilityMessage?: string | null;
   isPublic?: boolean;
   isActive?: boolean;
+}
+
+export interface SocialLinksFormValues {
+  github?: string | null;
+  linkedin?: string | null;
+  twitter?: string | null;
+  website?: string | null;
 }
 
 export interface AccountActionResult<TData = undefined> {

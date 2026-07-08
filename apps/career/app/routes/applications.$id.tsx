@@ -1,5 +1,13 @@
-import { Briefcase, Calendar, ChevronLeft, FileText, MapPin, MessageSquare, Paperclip } from 'lucide-react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import {
+  Briefcase,
+  Calendar,
+  ChevronLeft,
+  FileText,
+  MapPin,
+  MessageSquare,
+  Paperclip,
+} from 'lucide-react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 
 import { QuickActionsDropdown } from '~/components/career';
 import { userContext } from '~/lib/middleware';
@@ -40,20 +48,44 @@ const tabItems = [
 export default function ApplicationDetailLayout({ loaderData }: Route.ComponentProps) {
   const { application } = loaderData;
   const navigate = useNavigate();
+  const location = useLocation();
   const { company } = application;
+
+  const applicationBasePath = location.pathname.split('/').slice(0, 3).join('/');
+  const activeTabIndex = tabItems.findIndex((tab) => {
+    if (tab.to === '.') {
+      return location.pathname === applicationBasePath;
+    }
+
+    const targetPath = `${applicationBasePath}/${tab.to}`;
+    return location.pathname === targetPath || location.pathname.startsWith(`${targetPath}/`);
+  });
+
+  const navigateWithViewTransition = (to: string) => {
+    const startViewTransition = document.startViewTransition?.bind(document);
+
+    if (startViewTransition) {
+      startViewTransition(() => {
+        void navigate(to);
+      });
+      return;
+    }
+
+    void navigate(to);
+  };
 
   const quickActions = [
     {
       id: 'add-note',
       label: 'Add Note',
       icon: MessageSquare,
-      onClick: () => navigate('notes'),
+      onClick: () => navigateWithViewTransition('notes'),
     },
     {
       id: 'view-timeline',
       label: 'View Timeline',
       icon: Calendar,
-      onClick: () => navigate('timeline'),
+      onClick: () => navigateWithViewTransition('timeline'),
     },
   ];
 
@@ -99,16 +131,28 @@ export default function ApplicationDetailLayout({ loaderData }: Route.ComponentP
       </div>
 
       {/* Tabs as routes */}
-      <nav className="bg-surface border flex h-auto w-full items-center gap-1 rounded-full p-1">
+      <nav className="relative flex h-auto w-full items-center gap-1 rounded-full border bg-surface p-1">
+        <span
+          className="pointer-events-none absolute inset-y-1 left-1 rounded-full border border-border/40 bg-card shadow-sm transition-transform duration-300 ease-out"
+          style={{
+            width: `calc((100% - 0.5rem) / ${tabItems.length})`,
+            transform: `translateX(calc(${Math.max(activeTabIndex, 0)} * 100%))`,
+            viewTransitionName: 'application-tab-indicator',
+          }}
+        />
         {tabItems.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             end={tab.end}
+            onClick={(event) => {
+              event.preventDefault();
+              navigateWithViewTransition(tab.to);
+            }}
             className={({ isActive }) =>
               cn(
-                'text-text-primary flex flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap transition-all',
-                isActive && 'bg-card text-card-foreground border-border/40 border',
+                'relative z-10 flex flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap text-text-primary transition-colors duration-300 ease-out',
+                isActive && 'text-card-foreground',
               )
             }
           >
@@ -118,7 +162,7 @@ export default function ApplicationDetailLayout({ loaderData }: Route.ComponentP
         ))}
       </nav>
 
-      <div className="pt-6">
+      <div className="pt-6" style={{ viewTransitionName: 'application-tab-panel' }}>
         <Outlet context={application} />
       </div>
     </div>

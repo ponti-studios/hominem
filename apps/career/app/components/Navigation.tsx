@@ -10,7 +10,6 @@ const PORTFOLIO_LINKS = [
   { href: '/work', label: 'Work', fullLabel: 'Work Experience', end: false },
   { href: '/projects', label: 'Projects', fullLabel: 'Projects', end: false },
   { href: '/skills', label: 'Skills', fullLabel: 'Skills', end: true },
-  { href: '/social', label: 'Social', fullLabel: 'Social & Links', end: true },
   { href: '/testimonials', label: 'Testimonials', fullLabel: 'Testimonials', end: true },
 ] as const;
 

@@ -1,7 +1,18 @@
+import type { CareerUserSocialLinksRecord } from '@hominem/db';
 import { describe, expect, it } from 'vitest';
 
 import type { FullPortfolio } from '../portfolio.server';
 import { formatPortfolioForLLM } from './portfolio-formatter';
+
+const mockSocialLinks: CareerUserSocialLinksRecord = {
+  userId: 'test-user-id',
+  github: 'https://github.com/johndoe',
+  linkedin: 'https://linkedin.com/in/johndoe',
+  twitter: 'https://twitter.com/johndoe',
+  website: 'https://johndoe.dev',
+  createdat: new Date('2024-01-01').toISOString(),
+  updatedat: new Date('2024-01-01').toISOString(),
+};
 
 // Mock portfolio data for testing
 const createMockPortfolio = (overrides: Partial<FullPortfolio> = {}): FullPortfolio => ({
@@ -27,16 +38,6 @@ const createMockPortfolio = (overrides: Partial<FullPortfolio> = {}): FullPortfo
   copyright: null,
   createdat: new Date('2024-01-01').toISOString(),
   updatedat: new Date('2024-01-01').toISOString(),
-  social_links: {
-    id: 'social-1',
-    portfolioId: 'test-portfolio-id',
-    github: 'https://github.com/johndoe',
-    linkedin: 'https://linkedin.com/in/johndoe',
-    twitter: 'https://twitter.com/johndoe',
-    website: 'https://johndoe.dev',
-    createdat: new Date('2024-01-01').toISOString(),
-    updatedat: new Date('2024-01-01').toISOString(),
-  },
   work_experiences: [
     {
       id: 'work-1',
@@ -221,7 +222,7 @@ const createMockPortfolio = (overrides: Partial<FullPortfolio> = {}): FullPortfo
 describe('formatPortfolioForLLM', () => {
   it('should format complete portfolio data correctly', () => {
     const portfolio = createMockPortfolio();
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('CANDIDATE PROFILE:');
     expect(result).toContain('Name: John Doe');
@@ -233,7 +234,7 @@ describe('formatPortfolioForLLM', () => {
 
   it('should include professional summary', () => {
     const portfolio = createMockPortfolio();
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('PROFESSIONAL SUMMARY:');
     expect(result).toContain('Passionate full-stack developer with 5+ years');
@@ -241,7 +242,7 @@ describe('formatPortfolioForLLM', () => {
 
   it('should format social links correctly', () => {
     const portfolio = createMockPortfolio();
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('CONTACT LINKS:');
     expect(result).toContain('- LinkedIn: https://linkedin.com/in/johndoe');
@@ -251,10 +252,8 @@ describe('formatPortfolioForLLM', () => {
   });
 
   it('should handle missing social links gracefully', () => {
-    const portfolio = createMockPortfolio({
-      social_links: null,
-    });
-    const result = formatPortfolioForLLM(portfolio);
+    const portfolio = createMockPortfolio();
+    const result = formatPortfolioForLLM(portfolio, null);
 
     expect(result).toContain('CONTACT LINKS:');
     expect(result).not.toContain('- LinkedIn:');
@@ -263,7 +262,7 @@ describe('formatPortfolioForLLM', () => {
 
   it('should format work experience with dates', () => {
     const portfolio = createMockPortfolio();
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('WORK EXPERIENCE:');
     expect(result).toContain('1. Senior Full Stack Developer at TechCorp Inc (Dec 2021 - Present)');
@@ -282,14 +281,14 @@ describe('formatPortfolioForLLM', () => {
         },
       ],
     });
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('(Unknown - Present)');
   });
 
   it('should categorize skills correctly', () => {
     const portfolio = createMockPortfolio();
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('SKILLS:');
     expect(result).toContain('Frontend:');
@@ -304,7 +303,7 @@ describe('formatPortfolioForLLM', () => {
 
   it('should format projects with technologies and URLs', () => {
     const portfolio = createMockPortfolio();
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('PROJECTS:');
     expect(result).toContain('1. E-commerce Platform (completed)');
@@ -322,7 +321,7 @@ describe('formatPortfolioForLLM', () => {
     const portfolio = createMockPortfolio({
       phone: null,
     });
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('Name: John Doe');
     expect(result).toContain('Email: john.doe@example.com');
@@ -335,7 +334,7 @@ describe('formatPortfolioForLLM', () => {
       skills: [],
       projects: [],
     });
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('CANDIDATE PROFILE:');
     expect(result).toContain('WORK EXPERIENCE:');
@@ -364,7 +363,7 @@ describe('formatPortfolioForLLM', () => {
         },
       ],
     });
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('Programming:');
     expect(result).toContain('- JavaScript (80% proficiency)');
@@ -397,7 +396,7 @@ describe('formatPortfolioForLLM', () => {
         },
       ],
     });
-    const result = formatPortfolioForLLM(portfolio);
+    const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('1. Simple App (completed)');
     expect(result).toContain('Description: A basic application');

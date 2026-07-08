@@ -38,7 +38,6 @@ export default function Login() {
     '/resume',
     '/work',
     '/skills',
-    '/social',
     '/stats',
     '/projects',
     '/testimonials',

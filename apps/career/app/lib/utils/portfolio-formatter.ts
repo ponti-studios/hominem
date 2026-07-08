@@ -1,3 +1,5 @@
+import type { CareerUserSocialLinksRecord } from '@hominem/db';
+
 import { jsonArray } from '../db-json';
 import type { FullPortfolio } from '../portfolio.server';
 
@@ -5,7 +7,10 @@ import type { FullPortfolio } from '../portfolio.server';
  * Formats portfolio data in a natural, LLM-friendly format
  * instead of JSON to improve AI comprehension and resume generation quality
  */
-export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
+export function formatPortfolioForLLM(
+  portfolioData: FullPortfolio,
+  socialLinks: CareerUserSocialLinksRecord | null,
+): string {
   let formatted = 'CANDIDATE PROFILE:\n';
   formatted += `Name: ${portfolioData.name}\n`;
   formatted += `Current Role: ${portfolioData.jobTitle}\n`;
@@ -17,15 +22,11 @@ export function formatPortfolioForLLM(portfolioData: FullPortfolio): string {
   formatted += `${portfolioData.bio}\n`;
 
   formatted += '\nCONTACT LINKS:';
-  if (portfolioData.social_links) {
-    if (portfolioData.social_links.linkedin)
-      formatted += `\n- LinkedIn: ${portfolioData.social_links.linkedin}`;
-    if (portfolioData.social_links.github)
-      formatted += `\n- GitHub: ${portfolioData.social_links.github}`;
-    if (portfolioData.social_links.website)
-      formatted += `\n- Website: ${portfolioData.social_links.website}`;
-    if (portfolioData.social_links.twitter)
-      formatted += `\n- Twitter: ${portfolioData.social_links.twitter}`;
+  if (socialLinks) {
+    if (socialLinks.linkedin) formatted += `\n- LinkedIn: ${socialLinks.linkedin}`;
+    if (socialLinks.github) formatted += `\n- GitHub: ${socialLinks.github}`;
+    if (socialLinks.website) formatted += `\n- Website: ${socialLinks.website}`;
+    if (socialLinks.twitter) formatted += `\n- Twitter: ${socialLinks.twitter}`;
   }
 
   formatted += '\n\nWORK EXPERIENCE:';

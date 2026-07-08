@@ -59,16 +59,13 @@ export async function saveResumeToDatabase(
     await CareerRepository.setCurrentPortfolioByUserId(tx, ownerUserid, portfolioId);
 
     if (data.social_links) {
-      await tx
-        .insertInto('app.socialLinks')
-        .values({
-          portfolioId: portfolioId,
-          github: data.social_links.github ?? null,
-          linkedin: data.social_links.linkedin ?? null,
-          twitter: data.social_links.twitter ?? null,
-          website: data.social_links.website ?? null,
-        })
-        .execute();
+      const existingSocialLinks = await CareerRepository.getUserSocialLinks(tx, ownerUserid);
+      await CareerRepository.saveUserSocialLinks(tx, ownerUserid, {
+        github: data.social_links.github ?? existingSocialLinks?.github ?? null,
+        linkedin: data.social_links.linkedin ?? existingSocialLinks?.linkedin ?? null,
+        twitter: data.social_links.twitter ?? existingSocialLinks?.twitter ?? null,
+        website: data.social_links.website ?? existingSocialLinks?.website ?? null,
+      });
     }
 
     for (const [index, workExperience] of data.workExperience.entries()) {

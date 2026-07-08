@@ -1,88 +1,67 @@
-import type { CareerSocialLinksRecord } from '@hominem/db';
-import { CareerRepository, db } from '@hominem/db';
+import type { CareerUserSocialLinksRecord } from '@hominem/db';
 import { Button } from '@hominem/ui';
 import { Card, CardContent, Input } from '@hominem/ui';
 import { Github, Globe, Linkedin, SaveIcon, Twitter } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
-import { useFetcher } from 'react-router';
 
-import { FormErrorAlert } from '../components/FormErrorAlert';
-import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
-import { portfolioContext, userContext } from '../lib/middleware';
-import { parseFormData } from '../lib/route-utils';
-import { Route } from './+types/social';
+import { FormErrorAlert } from '~/components/FormErrorAlert';
+import type { AccountActionResult, SocialLinksFormValues } from '~/lib/account/types';
 
-export const meta: Route.MetaFunction = () => [{ title: 'Social | Craftd' }];
+export function SocialLinksSection({
+  socialLinks,
+  onSave,
+}: {
+  socialLinks: CareerUserSocialLinksRecord | null;
+  onSave: (values: SocialLinksFormValues) => Promise<AccountActionResult<unknown>>;
+}) {
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-interface SocialLinksFormValues {
-  id?: string;
-  github?: string | null;
-  linkedin?: string | null;
-  twitter?: string | null;
-  website?: string | null;
-}
-
-interface SocialLinksEditorSectionProps {
-  social_links?: CareerSocialLinksRecord | null;
-  portfolioId: string;
-}
-
-function SocialLinksEditorSection({
-  social_links: initialSocialLinks,
-  portfolioId,
-}: SocialLinksEditorSectionProps) {
-  const fetcher = useFetcher();
   const {
     register,
     handleSubmit,
     reset,
-    formState: { isDirty, errors },
+    formState: { isDirty, isSubmitting, errors },
   } = useForm<SocialLinksFormValues>({
-    defaultValues: initialSocialLinks || {},
+    defaultValues: {
+      github: socialLinks?.github || '',
+      linkedin: socialLinks?.linkedin || '',
+      twitter: socialLinks?.twitter || '',
+      website: socialLinks?.website || '',
+    },
     mode: 'onChange',
   });
 
   useEffect(() => {
-    reset(initialSocialLinks || {});
-  }, [initialSocialLinks, reset]);
+    reset({
+      github: socialLinks?.github || '',
+      linkedin: socialLinks?.linkedin || '',
+      twitter: socialLinks?.twitter || '',
+      website: socialLinks?.website || '',
+    });
+  }, [socialLinks, reset]);
 
-  const { submissionError, clearSubmissionError } = useCareerEditorSubmission({
-    fetcher,
-    errorMessage: "We couldn't save your social links. Try again.",
-  });
-
-  const onSubmit: SubmitHandler<SocialLinksFormValues> = (formData) => {
+  const onSubmit: SubmitHandler<SocialLinksFormValues> = async (formData) => {
     if (!isDirty) return;
 
-    const formData2 = new FormData();
-    formData2.append(
-      'socialLinksData',
-      JSON.stringify([
-        {
-          id: formData.id,
-          github: formData.github,
-          linkedin: formData.linkedin,
-          twitter: formData.twitter,
-          website: formData.website,
-          portfolioId,
-        },
-      ]),
-    );
+    setSubmissionError(null);
+    const result = await onSave(formData);
 
-    clearSubmissionError();
-    fetcher.submit(formData2, { method: 'POST', action: '/social' });
+    if (result.success === false) {
+      setSubmissionError(result.error || "We couldn't save your social links. Try again.");
+      return;
+    }
+
+    reset(formData);
   };
 
-  const isSaving = fetcher.state === 'submitting';
-
   return (
-    <section className="flex flex-col gap-6">
-      <h2 className="heading-2 text-foreground">Social</h2>
+    <section className="space-y-4">
+      <h2 className="heading-3 text-foreground">Social</h2>
 
       <Card>
         <CardContent className="p-6">
-          <form id="social-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
             <FormErrorAlert title="Social links weren't saved" message={submissionError} />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -212,8 +191,8 @@ function SocialLinksEditorSection({
             <div className="flex justify-end">
               <Button
                 type="submit"
-                disabled={isSaving || !isDirty}
-                isLoading={isSaving}
+                disabled={isSubmitting || !isDirty}
+                isLoading={isSubmitting}
                 aria-label="Save social links"
               >
                 <SaveIcon className="size-4" />
@@ -224,63 +203,5 @@ function SocialLinksEditorSection({
         </CardContent>
       </Card>
     </section>
-  );
-}
-
-export async function loader({ context }: Route.LoaderArgs) {
-  const portfolio = context.get(portfolioContext)!;
-  const social_links = await db
-    .selectFrom('app.socialLinks')
-    .selectAll()
-    .where('portfolioId', '=', portfolio.id)
-    .executeTakeFirst();
-  return { social_links: social_links ?? null, portfolioId: portfolio.id };
-}
-
-export async function action({ request, context }: Route.ActionArgs) {
-  const user = context.get(userContext);
-  if (!user) {
-    throw new Response('User not found', { status: 401 });
-  }
-  const formData = await request.formData();
-
-  const socialLinksDataResult = parseFormData<
-    Array<SocialLinksFormValues & { portfolioId: string }>
-  >(formData, 'socialLinksData');
-  if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
-    return { success: false, error: "Your social links couldn't be read. Refresh and try again." };
-  }
-
-  const socialLinksData = socialLinksDataResult as Array<
-    SocialLinksFormValues & { portfolioId: string }
-  >;
-  const socialLinksPayload = socialLinksData[0];
-
-  if (!socialLinksPayload?.portfolioId) {
-    return { success: false, error: 'Choose a portfolio before saving social links.' };
-  }
-
-  try {
-    await CareerRepository.saveSocialLinks(db, user.id, socialLinksPayload.portfolioId, {
-      id: socialLinksPayload.id,
-      github: socialLinksPayload.github,
-      linkedin: socialLinksPayload.linkedin,
-      twitter: socialLinksPayload.twitter,
-      website: socialLinksPayload.website,
-    });
-
-    return { success: true, message: 'Social links saved successfully' };
-  } catch (error) {
-    console.error('Failed to save social links:', error);
-    return { success: false, error: "We couldn't save your social links. Try again." };
-  }
-}
-
-export default function Social({ loaderData }: Route.ComponentProps) {
-  return (
-    <SocialLinksEditorSection
-      social_links={loaderData.social_links}
-      portfolioId={loaderData.portfolioId}
-    />
   );
 }
