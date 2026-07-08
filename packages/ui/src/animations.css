@@ -358,3 +358,25 @@
     transform: translateY(8px) scale(0.98);
   }
 }
+
+/*
+ * View Transitions: opt-in only.
+ * The browser's default root crossfade animates every diffed pixel of the
+ * whole page using mix-blend-mode: plus-lighter, which visibly flashes white
+ * on any element whose color changes during the transition (e.g. a nav item
+ * going from inactive to active). Disabling the root group's animation makes
+ * transitions opt-in — only elements with an explicit view-transition-name
+ * (set inline via style.viewTransitionName) animate; everything else swaps
+ * instantly with no crossfade artifact.
+ */
+::view-transition-group(root) {
+  animation-duration: 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

@@ -1,8 +1,8 @@
 ## Rules
 
+- Follow YAGNI (You Aren't Gonna Need It) principle and one-liner solutions whenever possible.
 - Never commit code. The user must review and commit the changes themselves.
-
-- The `apps/omiro` app should only support Apple devices. Do not add fallbacks for other platforms such as Android.
+- `apps/omiro` should only support Apple devices. Do not add fallbacks for other platforms such as Android.
 
 ## Testing the omiro app (iOS Simulator)
 

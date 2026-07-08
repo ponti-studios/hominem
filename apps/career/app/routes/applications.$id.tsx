@@ -149,12 +149,7 @@ export default function ApplicationDetailLayout({ loaderData }: Route.ComponentP
               event.preventDefault();
               navigateWithViewTransition(tab.to);
             }}
-            className={({ isActive }) =>
-              cn(
-                'relative z-10 flex flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap text-text-primary transition-colors duration-300 ease-out',
-                isActive && 'text-card-foreground',
-              )
-            }
+            className="relative z-10 flex flex-1 items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap text-text-primary"
           >
             <tab.icon className="size-4 shrink-0" />
             <span className="hidden sm:inline">{tab.label}</span>
