@@ -2,6 +2,8 @@
 // Finance — Schemas, Types & Client
 // ============================================================================
 
+import type { HonoClient } from './core/api-client'
+
 // ---------------------------------------------------------------------------
 // Shared types
 // ---------------------------------------------------------------------------
@@ -407,14 +409,5 @@ export type RunwayCalculateOutput = {
 // Client
 // ---------------------------------------------------------------------------
 
-/**
- * Typed finance client surface, derived from the server AppType.
- *
- * @example
- *   import type { AppType } from '@hominem/api/types'
- *   import type { FinanceClient } from '@hominem/rpc/finance'
- *   const finance = client.api.finance as FinanceClient<AppType>
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type FinanceClient<T = any> = T extends { api: { finance: infer F } } ? F : any
+export type FinanceClient = HonoClient['api']['finance']
 

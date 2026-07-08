@@ -29,6 +29,11 @@ function isAllowedRedirect(href: string, allowedPrefixes: readonly string[] | st
   }
 }
 
+function getFormDataString(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === 'string' ? value : '';
+}
+
 // ── Entry (email OTP request) ─────────────────────────────────────────────────
 export function createAuthEntryLoader(config: AuthConfig, getServerAuth: GetServerAuthFn) {
   return async ({ request }: { request: Request }) => {
@@ -43,7 +48,7 @@ export function createAuthEntryLoader(config: AuthConfig, getServerAuth: GetServ
 export function createAuthEntryAction(config: ServerRouteConfig) {
   return async ({ request }: { request: Request }) => {
     const formData = await request.formData();
-    const email = formData.get('email') as string;
+    const email = getFormDataString(formData, 'email');
 
     const apiBaseUrl = config.getApiBaseUrl();
     const res = await fetch(
@@ -84,8 +89,8 @@ export function createAuthVerifyAction(config: ServerRouteConfig) {
   return async ({ request }: { request: Request }) => {
     const formData = await request.formData();
     const reqUrl = new URL(request.url);
-    const email = (formData.get('email') as string) || reqUrl.searchParams.get('email') || '';
-    const otp = formData.get('otp') as string;
+    const email = getFormDataString(formData, 'email') || reqUrl.searchParams.get('email') || '';
+    const otp = getFormDataString(formData, 'otp');
 
     const apiBaseUrl = config.getApiBaseUrl();
     const res = await fetch(new URL('/api/auth/sign-in/email-otp', apiBaseUrl).toString(), {

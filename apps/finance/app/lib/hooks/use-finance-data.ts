@@ -68,7 +68,7 @@ export const useFinanceAccounts = ({ initialData }: UseFinanceAccountsOptions = 
     initialData ? { initialData } : {},
   );
 
-  const accountsData = (Array.isArray(data) ? data : []) as AccountListOutput;
+  const accountsData: AccountListOutput = Array.isArray(data) ? data : [];
 
   const accountsMap = useMemo(() => {
     if (!Array.isArray(accountsData)) {
@@ -160,7 +160,7 @@ export function useFinanceTransactions({
     return sortOptions[0]?.field || 'date';
   }, [sortOptions]);
 
-  const sortOrder = useMemo(() => {
+  const sortOrder: 'asc' | 'desc' = useMemo(() => {
     return sortOptions[0]?.direction || 'desc';
   }, [sortOptions]);
 
@@ -198,7 +198,7 @@ export function useFinanceTransactions({
             limit: String(limit),
             offset: String(offset),
             sortBy,
-            sortDirection: sortOrder as 'asc' | 'desc',
+            sortDirection: sortOrder,
           },
         })
         .then((r) => r.json()),

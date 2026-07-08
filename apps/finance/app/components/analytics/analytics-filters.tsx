@@ -177,9 +177,9 @@ export function AnalyticsFilters({
 }: AnalyticsFiltersProps) {
   const accountsQuery = useFinanceAccounts();
   const tagsQuery = useFinanceTags();
-  const tags = (Array.isArray(tagsQuery.data) ? tagsQuery.data : []) as Array<
-    string | { id: string; name: string }
-  >;
+  const tags: Array<string | { id: string; name: string }> = Array.isArray(tagsQuery.data)
+    ? tagsQuery.data
+    : [];
   const tagsLoading = tagsQuery.isLoading;
 
   const isLoading = accountsQuery.isLoading || tagsLoading;

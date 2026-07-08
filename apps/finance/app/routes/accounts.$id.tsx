@@ -69,7 +69,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 }
 
 export default function AccountDetailsPage({ loaderData }: Route.ComponentProps) {
-  const { id } = useParams() as { id: string };
+  const { id } = useParams();
+  const accountId = id ?? '';
   const { account: initialAccount, transactionsResult: initialTransactionsResult } = loaderData;
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
 
@@ -80,7 +81,7 @@ export default function AccountDetailsPage({ loaderData }: Route.ComponentProps)
     error: accountError,
     refetch: refetchAccount,
   } = useAccountById(
-    id,
+    accountId,
     initialAccount ? { initialData: normalizeInitialAccount(initialAccount) } : undefined,
   );
 
@@ -97,7 +98,7 @@ export default function AccountDetailsPage({ loaderData }: Route.ComponentProps)
     error: transactionsError,
     refetch: refetchTransactions,
   } = useFinanceTransactions({
-    filters: { accountId: id },
+    filters: { accountId },
     limit: 50,
     initialData: initialTransactionsResult,
   });
@@ -180,7 +181,7 @@ export default function AccountDetailsPage({ loaderData }: Route.ComponentProps)
           </CardContent>
         </Card>
       ) : (
-        <AccountSpendingChart accountId={id} accountName={account.name} />
+        <AccountSpendingChart accountId={accountId} accountName={account.name} />
       )}
 
       {/* Transactions Section */}

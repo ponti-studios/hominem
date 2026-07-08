@@ -1,5 +1,5 @@
 import { Button } from '@hominem/ui/button';
-import type { SortDirection, SortField, SortOption } from '@hominem/ui/hooks';
+import type { SortField, SortOption } from '@hominem/ui/hooks';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { X } from 'lucide-react';
 
@@ -29,7 +29,7 @@ export function SortRow({
       <Select
         value={sortOption.field}
         onValueChange={(value) =>
-          updateSortOption(index, { ...sortOption, field: value as SortField })
+          updateSortOption(index, { ...sortOption, field: value })
         }
       >
         <SelectTrigger className="w-[130px] h-8 text-xs">
@@ -45,9 +45,11 @@ export function SortRow({
       </Select>
       <Select
         value={sortOption.direction}
-        onValueChange={(value) =>
-          updateSortOption(index, { ...sortOption, direction: value as SortDirection })
-        }
+        onValueChange={(value) => {
+          if (value === 'asc' || value === 'desc') {
+            updateSortOption(index, { ...sortOption, direction: value });
+          }
+        }}
       >
         <SelectTrigger className="w-[110px] h-8 text-xs">
           <SelectValue placeholder="Direction" />

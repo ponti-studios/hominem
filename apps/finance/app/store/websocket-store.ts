@@ -44,7 +44,7 @@ const useWebSocketStore = create<WebSocketStore>((set, get) => {
   let reconnectAttempts = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   const messageQueue: WebSocketMessage<unknown>[] = [];
-  const listeners = new Map<string, Set<WebSocketListener<unknown>>>();
+  const listeners = new Map<string, Set<WebSocketListener<any>>>();
   let tokenProvider: (() => Promise<string | null>) | undefined;
   let wsBaseUrl = '';
   const options: WebSocketOptions = { ...DEFAULT_OPTIONS };
@@ -283,13 +283,13 @@ const useWebSocketStore = create<WebSocketStore>((set, get) => {
         listeners.set(type, new Set());
       }
 
-      listeners.get(type)?.add(listener as WebSocketListener<unknown>);
+      listeners.get(type)?.add(listener);
 
       // Return unsubscribe function
       return () => {
         const typeListeners = listeners.get(type);
         if (typeListeners) {
-          typeListeners.delete(listener as WebSocketListener<unknown>);
+          typeListeners.delete(listener);
 
           if (typeListeners.size === 0) {
             listeners.delete(type);

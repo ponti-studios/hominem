@@ -5,7 +5,7 @@ import { serverEnv } from '~/lib/env';
 
 const customFetch =
   (accessToken?: string, request?: Request): typeof fetch =>
-  async (input, init) => {
+  async (input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers);
 
     if (request) {
@@ -17,7 +17,7 @@ const customFetch =
       headers.set('authorization', `Bearer ${accessToken}`);
     }
 
-    return fetch(input as RequestInfo | URL, { ...init, headers, credentials: 'include' });
+    return fetch(input, { ...init, headers, credentials: 'include' });
   };
 
 export function createServerHonoClient(accessToken?: string, request?: Request) {

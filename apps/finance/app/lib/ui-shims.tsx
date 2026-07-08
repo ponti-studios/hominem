@@ -212,8 +212,8 @@ export function createAuthVerifyComponent(_config: object) {
   return function AuthVerifyPage() {
     const [searchParams] = useSearchParams();
     const email = searchParams.get('email') ?? '';
-    const fetcher = useFetcher();
-    const actionData = fetcher.data as { error?: string } | undefined;
+    const fetcher = useFetcher<{ error?: string }>();
+    const actionData = fetcher.data;
     return (
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-semibold">Enter code</h2>

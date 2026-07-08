@@ -33,6 +33,7 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@hominem/api": "workspace:*",
     "@hominem/chat": "workspace:*",
     "@tanstack/react-query": "5.100.10",
     "hono": "4.12.25",

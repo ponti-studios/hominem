@@ -2,7 +2,7 @@ import type { FileStatus, ImportRequestResponse } from '@hominem/queues';
 import { Alert, AlertDescription } from '@hominem/ui';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
-import { memo, useCallback, useEffect, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 
 import { DropZone } from '~/components/drop-zone';
 import { FileUploadStatus } from '~/components/file-upload-status';
@@ -325,7 +325,7 @@ const FileImport = memo(function FileImport({
       return <div className="size-3 bg-muted-foreground " />;
     }
 
-    const indicators = {
+    const indicators: Record<string, ReactNode> = {
       uploading: <div className="size-3 bg-emphasis-high " />,
       processing: <div className="size-3 bg-emphasis-medium " />,
       queued: <div className="size-3 bg-warning " />,
@@ -333,11 +333,7 @@ const FileImport = memo(function FileImport({
       error: <div className="size-3 bg-destructive " />,
     };
 
-    return (
-      indicators[status.status as keyof typeof indicators] || (
-        <div className="size-3 bg-muted-foreground " />
-      )
-    );
+    return indicators[status.status] || <div className="size-3 bg-muted-foreground " />;
   }, [status]);
 
   // Memoize button states

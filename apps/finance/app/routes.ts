@@ -1,6 +1,6 @@
 import { index, layout, type RouteConfig, route } from '@react-router/dev/routes';
 
-export default [
+const routes = [
   layout('routes/auth/layout.tsx', [
     route('/auth', 'routes/auth/index.tsx'),
     route('/auth/verify', 'routes/auth/verify.tsx'),
@@ -32,4 +32,6 @@ export default [
     // Catch-all 404 route
     route('*', 'routes/$.tsx'),
   ]),
-] as RouteConfig;
+] satisfies RouteConfig;
+
+export default routes;

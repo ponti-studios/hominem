@@ -23,6 +23,6 @@ export const serverEnv = createEnv();
 
 // Client-side env — read from import.meta.env directly (no validation at module scope)
 export const clientEnv = {
-  VITE_PUBLIC_API_URL: import.meta.env.VITE_PUBLIC_API_URL as string,
-  VITE_R2_DOMAIN: import.meta.env.VITE_R2_DOMAIN as string | undefined,
+  VITE_PUBLIC_API_URL: import.meta.env.VITE_PUBLIC_API_URL,
+  VITE_R2_DOMAIN: import.meta.env.VITE_R2_DOMAIN,
 };

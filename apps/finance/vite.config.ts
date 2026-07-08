@@ -91,7 +91,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
           gzipSize: true,
           brotliSize: true,
         }),
-    ].filter(Boolean) as PluginOption[],
+    ].filter(Boolean) satisfies PluginOption[],
 
     // CSS optimization options
     css: {

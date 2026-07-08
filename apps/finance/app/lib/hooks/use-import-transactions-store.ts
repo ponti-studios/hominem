@@ -42,15 +42,16 @@ export function useImportTransactionsStore() {
 
   const convertJobToFileStatusStable = useCallback(
     (jobs: ImportTransactionsJob[]): FileStatus[] =>
-      jobs.map(
-        (job) =>
-          ({
-            file: getStableFile(job.fileName),
-            status: job.status,
-            stats: job.stats,
-            ...(job.error && { error: job.error }),
-          }) as FileStatus,
-      ),
+      jobs.map((job) => {
+        const status: FileStatus = {
+          file: getStableFile(job.fileName),
+          status: job.status,
+          stats: job.stats,
+          ...(job.error && { error: job.error }),
+        };
+
+        return status;
+      }),
     [getStableFile],
   );
 
@@ -206,7 +207,7 @@ export function useImportTransactionsStore() {
                 body: formData,
               });
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              const result = (await res.json()) as ImportRequestResponse;
+              const result: ImportRequestResponse = await res.json();
 
               if (!result.success) {
                 throw new Error('Import failed');

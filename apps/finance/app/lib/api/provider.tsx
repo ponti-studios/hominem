@@ -12,19 +12,13 @@ interface HonoProviderProps {
 // Always renders on client — hooks called unconditionally
 function HonoClientProvider({ children, baseUrl }: HonoProviderProps) {
   const authContext = useSafeAuth();
-  const { authClient } = useAuthContext();
+  const { session } = useAuthContext();
 
   const getHeaders = useCallback(async (): Promise<Record<string, string>> => {
-    try {
-      const session = await authClient.getSession();
-      const token = (session as { data: { session: { token: string } } } | undefined)?.data?.session
-        ?.token;
-      if (token) return { authorization: `Bearer ${token}` };
-    } catch {
-      // ignore
-    }
+    const token = session?.token;
+    if (token) return { authorization: `Bearer ${token}` };
     return {};
-  }, [authClient]);
+  }, [session]);
 
   const config: ClientConfig = authContext
     ? { baseUrl, getHeaders, onError: (e) => console.error('Hono RPC Error:', e) }

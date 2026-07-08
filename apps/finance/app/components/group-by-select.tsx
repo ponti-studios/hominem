@@ -26,7 +26,11 @@ export function GroupBySelect({
       <Select
         name="groupBy"
         value={groupBy}
-        onValueChange={(value) => onGroupByChange(value as GroupByOption)}
+        onValueChange={(value) => {
+          if (value === 'month' || value === 'week' || value === 'day') {
+            onGroupByChange(value);
+          }
+        }}
       >
         <SelectTrigger id={id}>
           <SelectValue />
