@@ -7,10 +7,12 @@ import { AccountActions } from '~/components/account/AccountActions';
 import { AccountHeader } from '~/components/account/AccountHeader';
 import { BasicInfoForm } from '~/components/account/BasicInfoForm';
 import { CurrentPortfolioSection } from '~/components/account/CurrentPortfolioSection';
+import { SocialLinksSection } from '~/components/account/SocialLinksSection';
 import type {
   AccountActionResult,
   AccountLoaderData,
   BasicInfoFormValues,
+  SocialLinksFormValues,
 } from '~/lib/account/types';
 
 export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
@@ -22,7 +24,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
-  const { user, portfolios, currentPortfolio } = loaderData;
+  const { user, portfolios, currentPortfolio, socialLinks } = loaderData;
 
   const submitAccountAction = async <TData,>(
     formData: FormData,
@@ -120,6 +122,16 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
     return result;
   };
 
+  const handleSaveSocialLinks = async (values: SocialLinksFormValues) => {
+    const formData = new FormData();
+    formData.append('action', 'update-social-links');
+    formData.append('socialLinksData', JSON.stringify(values));
+
+    const result = await submitAccountAction(formData);
+    revalidator.revalidate();
+    return result;
+  };
+
   const handleReplaceResumeComplete = () => {
     setShowReplaceResume(false);
     revalidator.revalidate();
@@ -197,6 +209,8 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
             </Button>
           </div>
         </section>
+
+        <SocialLinksSection socialLinks={socialLinks} onSave={handleSaveSocialLinks} />
       </div>
     );
   }
@@ -230,6 +244,8 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
           <section className="space-y-4">
             <BasicInfoForm portfolio={currentPortfolio} onSave={handleSaveBasics} />
           </section>
+
+          <SocialLinksSection socialLinks={socialLinks} onSave={handleSaveSocialLinks} />
         </section>
 
         <aside className="space-y-8">

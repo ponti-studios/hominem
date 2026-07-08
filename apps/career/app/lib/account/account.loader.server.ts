@@ -24,7 +24,10 @@ export async function loadAccountPageData({
   user: AccountPageUser;
   currentPortfolio: CareerPortfolioRecord | null;
 }): Promise<AccountLoaderData> {
-  const portfolioRows = await CareerRepository.listPortfoliosByUserId(db, user.id);
+  const [portfolioRows, socialLinks] = await Promise.all([
+    CareerRepository.listPortfoliosByUserId(db, user.id),
+    CareerRepository.getUserSocialLinks(db, user.id),
+  ]);
   const portfolios = portfolioRows.map(toPortfolioSummary);
 
   return {
@@ -33,5 +36,6 @@ export async function loadAccountPageData({
     currentPortfolio,
     currentPortfolioId: currentPortfolio?.id ?? null,
     hasPortfolio: portfolios.length > 0,
+    socialLinks,
   };
 }

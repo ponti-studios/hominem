@@ -1,6 +1,45 @@
 @import '@hominem/ui/styles.css';
 @import 'tw-animate-css';
 
+::view-transition-old(application-tab-panel),
+::view-transition-new(application-tab-panel) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(application-tab-panel) {
+  animation-name: application-tab-panel-exit;
+}
+
+::view-transition-new(application-tab-panel) {
+  animation-name: application-tab-panel-enter;
+}
+
+@keyframes application-tab-panel-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes application-tab-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @source '../../../packages/ui/src';
 
 @layer base {

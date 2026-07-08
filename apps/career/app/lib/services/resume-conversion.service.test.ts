@@ -137,9 +137,9 @@ describe('resume conversion slug generation', () => {
         .where('portfolioId', '=', portfolioId)
         .executeTakeFirstOrThrow(),
       db
-        .selectFrom('app.socialLinks')
+        .selectFrom('app.userSocialLinks')
         .select(['github'])
-        .where('portfolioId', '=', portfolioId)
+        .where('userId', '=', user.id)
         .executeTakeFirstOrThrow(),
     ]);
 

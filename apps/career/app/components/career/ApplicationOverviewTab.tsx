@@ -2,8 +2,8 @@ import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@homi
 import { Button } from '@hominem/ui';
 import { Card, CardContent, CardHeader, CardTitle, Input } from '@hominem/ui';
 import { Briefcase, Calendar, DollarSign, ExternalLink, MapPin, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
-import { Form } from 'react-router';
+import { useEffect, useRef, useState } from 'react';
+import { Form, useNavigation } from 'react-router';
 
 import { formatApplicationDate } from '~/lib/utils/applicationUtils';
 
@@ -14,6 +14,16 @@ interface OverviewTabProps {
 
 export function ApplicationOverviewTab({ application, company }: OverviewTabProps) {
   const [isEditingRecruiter, setIsEditingRecruiter] = useState(false);
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === 'submitting';
+  const wasSubmitting = useRef(isSubmitting);
+
+  useEffect(() => {
+    if (wasSubmitting.current && !isSubmitting) {
+      setIsEditingRecruiter(false);
+    }
+    wasSubmitting.current = isSubmitting;
+  }, [isSubmitting]);
 
   return (
     <div className="space-y-2">
@@ -178,7 +188,7 @@ export function ApplicationOverviewTab({ application, company }: OverviewTabProp
               </div>
 
               <div className="flex gap-2 pt-2">
-                <Button type="submit" size="sm" onClick={() => setIsEditingRecruiter(false)}>
+                <Button type="submit" size="sm" disabled={isSubmitting} isLoading={isSubmitting}>
                   Save
                 </Button>
                 <Button
