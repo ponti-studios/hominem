@@ -38,16 +38,6 @@ const createMockPortfolio = (overrides: Partial<FullPortfolio> = {}): FullPortfo
   copyright: null,
   createdat: new Date('2024-01-01').toISOString(),
   updatedat: new Date('2024-01-01').toISOString(),
-  social_links: {
-    id: 'social-1',
-    portfolioId: 'test-portfolio-id',
-    github: 'https://github.com/johndoe',
-    linkedin: 'https://linkedin.com/in/johndoe',
-    twitter: 'https://twitter.com/johndoe',
-    website: 'https://johndoe.dev',
-    createdat: new Date('2024-01-01').toISOString(),
-    updatedat: new Date('2024-01-01').toISOString(),
-  },
   work_experiences: [
     {
       id: 'work-1',
