@@ -4,6 +4,10 @@
   "description": "Unified authentication package for Hominem apps (web, mobile, CLI)",
   "type": "module",
   "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
     "./types": {
       "types": "./src/types.ts",
       "default": "./src/types.ts"
@@ -35,6 +39,18 @@
     "./client/passkey": {
       "types": "./src/client/passkey.ts",
       "default": "./src/client/passkey.ts"
+    },
+    "./server": {
+      "types": "./src/server.ts",
+      "default": "./src/server.ts"
+    },
+    "./step-up-actions": {
+      "types": "./src/shared/step-up-actions.ts",
+      "default": "./src/shared/step-up-actions.ts"
+    },
+    "./server-auth": {
+      "types": "./src/server-auth.ts",
+      "default": "./src/server-auth.ts"
     }
   },
   "scripts": {

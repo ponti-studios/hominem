@@ -90,16 +90,6 @@ export function safeParseJson<T>(jsonField: unknown, fallback: T): T {
   }
 }
 
-export function formatCurrency(cents: number | null, currency = 'USD'): string {
-  const dollars = centsToDollars(cents);
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(dollars);
-}
-
 export function formatPercentage(value: number, decimals = 1): string {
   return `${value.toFixed(decimals)}%`;
 }

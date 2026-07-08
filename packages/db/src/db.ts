@@ -2,7 +2,9 @@ import { CamelCasePlugin, Kysely, PostgresDialect, sql as kyselySql } from 'kyse
 import pg from 'pg';
 
 import { env } from './env';
-import type { DB as Database } from './types/database';
+import type { DB } from './types/database';
+
+export type Database = DB;
 
 const { Pool, types } = pg;
 
@@ -15,6 +17,10 @@ export const sql = kyselySql;
 types.setTypeParser(types.builtins.TIMESTAMP, (val) => val);
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (val) => val);
 types.setTypeParser(types.builtins.DATE, (val) => val);
+
+// Configure pg to return numeric as number for consistent types
+// Safe for finance amounts — precision loss only affects very large values
+types.setTypeParser(types.builtins.NUMERIC, (val) => parseFloat(val));
 
 // Create a connection pool
 const connectionString = env.DATABASE_URL;

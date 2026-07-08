@@ -21,6 +21,30 @@ export const createDeterministicIdFactory = (prefix: string) => {
   };
 };
 
+/**
+ * Check if a database table exists.
+ * Supports both bare table names and schema-qualified names (e.g., 'tags' or 'app.tags').
+ */
+export const tableExists = async (tableName: string): Promise<boolean> => {
+  try {
+    const { pool } = await import('../db');
+    let schema = 'public';
+    let table = tableName;
+    if (tableName.includes('.')) {
+      const parts = tableName.split('.');
+      schema = parts[0];
+      table = parts[1];
+    }
+    const result = await pool.query(
+      `SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2)`,
+      [schema, table],
+    );
+    return result.rows[0]?.exists ?? false;
+  } catch {
+    return false;
+  }
+};
+
 // Create users with specific IDs (for tests that need deterministic IDs)
 export const ensureIntegrationUsers = async (
   users: Array<{ id: string; name: string; email?: string }>,

@@ -17,6 +17,11 @@ export const importTransactionsQueue: Queue = new BullQueue(QUEUE_NAMES.IMPORT_T
   connection: redis as any,
 });
 
+export const plaidSyncQueue: Queue = new BullQueue(QUEUE_NAMES.PLAID_SYNC, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  connection: redis as any,
+});
+
 export const placePhotoEnrichQueue: Queue = new BullQueue(QUEUE_NAMES.PLACE_PHOTO_ENRICH, {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   connection: redis as any,

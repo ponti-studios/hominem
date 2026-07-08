@@ -7,6 +7,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./finance": {
+      "types": "./src/finance.ts",
+      "default": "./src/finance.ts"
+    },
     "./react": {
       "types": "./src/react/index.ts",
       "default": "./src/react/index.ts"

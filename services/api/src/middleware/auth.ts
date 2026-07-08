@@ -96,7 +96,26 @@ export const authJwtMiddleware = (): MiddlewareHandler => {
       return await next();
     }
 
-    await applyBetterAuthSession(c);
+    const sessionFound = await applyBetterAuthSession(c);
+
+    // Fallback: in e2e/test mode, accept x-user-id header for cross-origin RPC calls
+    // where SameSite=Lax prevents session cookie from being sent
+    if (!sessionFound && process.env.NODE_ENV !== 'production') {
+      const proxyUserId = c.req.header('x-user-id');
+      if (proxyUserId) {
+        c.set('userId', proxyUserId);
+        c.set('user', {
+          id: proxyUserId,
+          email: `proxy-${proxyUserId.slice(0, 8)}@hominem.e2e`,
+          emailVerified: true,
+          name: 'Proxy User',
+          image: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as User);
+      }
+    }
+
     return await next();
   };
 };

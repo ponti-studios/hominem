@@ -1,0 +1,51 @@
+import { Hono } from 'hono';
+
+import type { AppContext } from '../middleware/auth';
+import { accountsRoutes } from './finance.accounts';
+import { analyzeRoutes } from './finance.analyze';
+import { budgetRoutes } from './finance.budget';
+import { dataRoutes } from './finance.data';
+import { financeE2eRoutes } from './finance.e2e';
+import { exportRoutes } from './finance.export';
+import { institutionsRoutes } from './finance.institutions';
+import { runwayRoutes } from './finance.runway';
+import { tagsRoutes } from './finance.tags';
+import { transactionsRoutes } from './finance.transactions';
+
+/**
+ * Main Finance Router
+ *
+ * Composes all finance sub-routers into a single cohesive API.
+ *
+ * Routes:
+ * - /transactions/* - Transaction operations
+ * - /accounts/* - Account operations
+ * - /analyze/* - Analytics and reporting
+ * - /tags/* - Tag taxonomy operations
+ * - /plaid/* - Plaid integration
+ * - /budget/* - Budget management
+ * - /institutions/* - Financial institutions
+ * - /runway/* - Runway calculations
+ * - /export/* - Data export
+ * - /data/* - Data management
+ *
+ * Performance Benefits:
+ * - Each sub-router is independently maintainable
+ * - Type-checking is blazing fast (explicit types, no inference)
+ * - Clear separation of concerns
+ * - Easy to test individual routers
+ */
+
+export const financeRoutes = new Hono<AppContext>()
+  .route('/transactions', transactionsRoutes)
+  .route('/accounts', accountsRoutes)
+  .route('/analyze', analyzeRoutes)
+  .route('/tags', tagsRoutes)
+  .route('/budget', budgetRoutes)
+  .route('/e2e', financeE2eRoutes)
+  .route('/institutions', institutionsRoutes)
+  .route('/runway', runwayRoutes)
+  .route('/export', exportRoutes)
+  .route('/data', dataRoutes);
+
+export type AppType = typeof financeRoutes;

@@ -18,6 +18,7 @@ import { authJwtMiddleware } from './middleware/auth';
 import { authRateLimitMiddleware } from './middleware/auth-rate-limit';
 import { blockMaliciousProbes } from './middleware/block-probes';
 import { requestLogger } from './middleware/request-logger';
+import { authRoutes } from './routes/auth';
 import { imagesRoutes } from './routes/images';
 import { statusRoutes } from './routes/status';
 import { rpcApp } from './rpc/app';
@@ -113,6 +114,7 @@ function registerApiRoutes(app: Hono<AppEnv>) {
   const authHandler = createAuthHandler();
 
   app.route('/', rpcApp);
+  app.route('/api/auth', authRoutes);
   app.use('/api/auth/*', authRateLimitMiddleware());
   app.route('/api/status', statusRoutes);
   app.on(['GET', 'POST'], '/api/auth', authHandler);

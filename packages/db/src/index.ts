@@ -6,7 +6,8 @@
 
 export type { Selectable } from 'kysely';
 export { authDb, db, healthCheck, pool, sql } from './db';
-export type { DB as Database, Json, JsonArray, JsonObject, JsonValue } from './types/database';
+export type { DB, Json, JsonArray, JsonObject, JsonValue } from './types/database';
+export type { Database } from './db';
 
 // Transaction support
 export { runInTransaction } from './transaction';

@@ -34,3 +34,5 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
 
     return c.json(result.output);
   });
+
+export const voiceRoutes = authenticatedVoiceRoutes;

@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.profiles/package-bundler.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "../../.cache/finance.tsbuildinfo",
+    "outDir": "./build",
+    "rootDir": "./src"
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    ".turbo",
+    ".cache",
+    "coverage",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/__tests__",
+    "**/__mocks__",
+    "*.tsbuildinfo",
+    ".react-router/cache"
+  ]
+}

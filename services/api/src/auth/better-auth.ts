@@ -16,6 +16,12 @@ import {
 
 import { API_BRAND } from '../brand';
 import { env } from '../env';
+import { enableTestOtpStore, recordTestOtp } from './test-otp-store';
+
+// Enable the test OTP store immediately if configured
+if (env.AUTH_TEST_OTP_ENABLED) {
+  enableTestOtpStore();
+}
 
 function getTrustedOrigins() {
   const origins = new Set([
@@ -179,6 +185,12 @@ function getAuthPlugins() {
       expiresIn: env.AUTH_EMAIL_OTP_EXPIRES_SECONDS,
       generateOTP: () => (shouldSendEmails() ? generateNumericOtp(6) : TEST_OTP),
       sendVerificationOTP: async ({ email, otp, type }) => {
+        if (env.AUTH_TEST_OTP_ENABLED) {
+          enableTestOtpStore();
+          recordTestOtp(email, otp, type);
+          return;
+        }
+
         if (env.NODE_ENV === 'development') {
           logDevelopmentVerificationOtp({ email, otp, type });
           return;
