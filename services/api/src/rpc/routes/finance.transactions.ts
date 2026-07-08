@@ -1,10 +1,6 @@
 import { randomUUID } from 'crypto';
 
 import { db } from '@hominem/db';
-import {
-  TransactionInsertSchema,
-  TransactionQueryFiltersSchema,
-} from '@hominem/rpc/finance';
 import type {
   TransactionCreateOutput,
   TransactionDeleteOutput,
@@ -18,7 +14,15 @@ import * as z from 'zod';
 import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
-const transactionListSchema = TransactionQueryFiltersSchema.extend({
+const transactionListSchema = z.object({
+  accountId: z.string().uuid().optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+  tagIds: z.array(z.string().uuid()).optional(),
+  tagNames: z.array(z.string().min(1)).optional(),
+}).extend({
   account: z.string().uuid().optional(),
   sortBy: z.string().optional(),
   sortDirection: z
@@ -35,8 +39,13 @@ const transactionDeleteSchema = z.object({
   id: z.string().uuid(),
 });
 
-const transactionCreateSchema = TransactionInsertSchema.omit({
-  userId: true,
+const transactionCreateSchema = z.object({
+  accountId: z.string().uuid(),
+  amount: z.number(),
+  description: z.string().min(1),
+  date: z.string(),
+  type: z.enum(['income', 'expense', 'transfer']).optional(),
+  tagIds: z.array(z.string().uuid()).optional(),
 });
 
 const transactionUpdateSchema = z.object({
@@ -124,9 +133,9 @@ async function replaceTransactionTags(
 }
 
 export const transactionsRoutes = new Hono<AppContext>()
-  .post('/list', authMiddleware, zValidator('json', transactionListSchema), async (c) => {
+  .get('/list', authMiddleware, zValidator('query', transactionListSchema), async (c) => {
     const userId = c.get('userId')!;
-    const input = c.req.valid('json');
+    const input = c.req.valid('query');
     const accountId = input.accountId ?? input.account;
     const tagIds = input.tagIds ?? [];
     const tagNames = input.tagNames ?? [];
@@ -134,8 +143,8 @@ export const transactionsRoutes = new Hono<AppContext>()
     const offset = input.offset ?? 0;
 
     const hasTagFilters = tagIds.length > 0 || tagNames.length > 0;
-    const dateFrom = input.dateFrom ? new Date(input.dateFrom) : null;
-    const dateTo = input.dateTo ? new Date(input.dateTo) : null;
+    const dateFrom = input.dateFrom ?? null;
+    const dateTo = input.dateTo ?? null;
 
     let query = db
       .selectFrom('app.financeTransactions')

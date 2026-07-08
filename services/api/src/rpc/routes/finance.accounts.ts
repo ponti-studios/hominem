@@ -3,7 +3,6 @@ import { randomUUID } from 'crypto';
 import { db } from '@hominem/db';
 import type {
   AccountAllOutput,
-  AccountConnectionsOutput,
   AccountCreateOutput,
   AccountDeleteOutput,
   AccountGetOutput,
@@ -11,14 +10,6 @@ import type {
   AccountListOutput,
   AccountUpdateOutput,
   AccountsWithPlaidOutput,
-} from '@hominem/rpc/finance';
-import {
-  accountCreateSchema,
-  accountDeleteSchema,
-  accountGetSchema,
-  accountListSchema,
-  accountUpdateSchema,
-  institutionAccountsSchema,
 } from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -28,7 +19,38 @@ import { NotFoundError } from '../errors';
 import type { AppContext } from '../middleware/auth';
 import { authMiddleware } from '../middleware/auth';
 
-const emptyBodySchema = z.object({});
+const accountListSchema = z.object({
+  includeInactive: z.coerce.boolean().optional().default(false),
+});
+
+const accountGetSchema = z.object({
+  id: z.string().uuid(),
+});
+
+const accountCreateSchema = z.object({
+  name: z.string().min(1),
+  type: z.string().min(1).optional(),
+  balance: z.union([z.number(), z.string()]).optional(),
+  institutionId: z.string().optional(),
+  institution: z.string().optional(),
+});
+
+const accountUpdateSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).optional(),
+  type: z.string().min(1).optional(),
+  balance: z.union([z.number(), z.string()]).optional(),
+  institutionId: z.string().optional(),
+  institution: z.string().optional(),
+});
+
+const accountDeleteSchema = z.object({
+  id: z.string().uuid(),
+});
+
+const institutionAccountsSchema = z.object({
+  institutionId: z.string(),
+});
 
 // Helper to get account with ownership check
 async function getAccountWithOwnershipCheck(accountId: string, userId: string) {
@@ -61,7 +83,7 @@ async function getTransactionsForAccount(
 }
 
 export const accountsRoutes = new Hono<AppContext>()
-  .post('/list', authMiddleware, zValidator('json', accountListSchema), async (c) => {
+  .get('/list', authMiddleware, zValidator('query', accountListSchema), async (c) => {
     const userId = c.get('userId')!;
     const accounts = await db
       .selectFrom('app.financeAccounts')
@@ -80,9 +102,9 @@ export const accountsRoutes = new Hono<AppContext>()
       200,
     );
   })
-  .post('/get', authMiddleware, zValidator('json', accountGetSchema), async (c) => {
+  .get('/get', authMiddleware, zValidator('query', accountGetSchema), async (c) => {
     const userId = c.get('userId')!;
-    const input = c.req.valid('json');
+    const input = c.req.valid('query');
     const account = await getAccountWithOwnershipCheck(input.id, userId);
     const transactions = await getTransactionsForAccount(input.id, 200, 0);
     return c.json<AccountGetOutput>({
@@ -188,7 +210,7 @@ export const accountsRoutes = new Hono<AppContext>()
 
     return c.json<AccountDeleteOutput>({ success: true }, 200);
   })
-  .post('/with-plaid', authMiddleware, zValidator('json', emptyBodySchema), async (c) => {
+  .get('/with-plaid', authMiddleware, async (c) => {
     const userId = c.get('userId')!;
     const accounts = await db
       .selectFrom('app.financeAccounts')
@@ -197,21 +219,9 @@ export const accountsRoutes = new Hono<AppContext>()
       .orderBy('createdAt', 'desc')
       .execute();
 
-    return c.json<AccountsWithPlaidOutput>(
-      accounts.map((a) => ({
-        id: String(a.id),
-        userId: a.userId,
-        name: a.name,
-        accountType: a.accountType,
-        currentBalance: a.currentBalance ? Number(a.currentBalance) : null,
-        institutionName: null,
-        plaidAccountId: a.plaidAccountId ? String(a.plaidAccountId) : null,
-        plaidItemId: a.plaidItemId ? String(a.plaidItemId) : null,
-      })),
-      200,
-    );
+    return c.json<AccountsWithPlaidOutput>(accounts, 200);
   })
-  .post('/connections', authMiddleware, zValidator('json', emptyBodySchema), async (c) => {
+  .get('/connections', authMiddleware, async (c) => {
     const userId = c.get('userId')!;
 
     const connections = await db
@@ -220,36 +230,15 @@ export const accountsRoutes = new Hono<AppContext>()
       .where('userId', '=', userId)
       .execute();
 
-    const institutions = await db
-      .selectFrom('app.financeAccounts')
-      .selectAll()
-      .where('userId', '=', userId)
-      .execute();
-
-    const institutionNames = new Map<string, string>();
-    for (const account of institutions) {
-      if (account.id && account.name) {
-        institutionNames.set(account.id, account.name);
-      }
-    }
-
-    const result: AccountConnectionsOutput = connections.map((connection): PlaidConnection => {
-      const institutionId = connection.institutionId;
-      return toPlaidConnection(
-        connection,
-        institutionId ? institutionNames.get(institutionId) : undefined,
-      );
-    });
-
-    return c.json<AccountConnectionsOutput>(result, 200);
+    return c.json(connections, 200);
   })
-  .post(
+  .get(
     '/institution-accounts',
     authMiddleware,
-    zValidator('json', institutionAccountsSchema),
+    zValidator('query', institutionAccountsSchema),
     async (c) => {
       const userId = c.get('userId')!;
-      const input = c.req.valid('json');
+      const input = c.req.valid('query');
       const accounts = await db
         .selectFrom('app.financeAccounts')
         .selectAll()
@@ -258,22 +247,10 @@ export const accountsRoutes = new Hono<AppContext>()
         )
         .execute();
 
-      return c.json<AccountInstitutionAccountsOutput>(
-        accounts.map((a) => ({
-          id: String(a.id),
-          userId: a.userId,
-          name: a.name,
-          accountType: a.accountType,
-          currentBalance: a.currentBalance ? Number(a.currentBalance) : null,
-          institutionName: null,
-          plaidAccountId: a.plaidAccountId ? String(a.plaidAccountId) : null,
-          plaidItemId: a.plaidItemId ? String(a.plaidItemId) : null,
-        })),
-        200,
-      );
+      return c.json<AccountInstitutionAccountsOutput>(accounts, 200);
     },
   )
-  .post('/all', authMiddleware, zValidator('json', emptyBodySchema), async (c) => {
+  .get('/all', authMiddleware, async (c) => {
     const userId = c.get('userId')!;
 
     const [accounts, connections] = await Promise.all([
@@ -286,16 +263,11 @@ export const accountsRoutes = new Hono<AppContext>()
       db.selectFrom('app.plaidItems').selectAll().where('userId', '=', userId).execute(),
     ]);
 
-    const payload: AccountAllOutput = {
-      accounts: accounts.map((a) => ({
-        id: String(a.id),
-        userId: a.userId,
-        name: a.name,
-        accountType: a.accountType,
-        currentBalance: a.currentBalance ? Number(a.currentBalance) : null,
-        transactions: [],
-      })),
-      connections: connections.map((connection) => toPlaidConnection(connection)),
-    };
-    return c.json(payload, 200);
+    return c.json(
+      {
+        accounts: accounts.map((a) => ({ ...a, transactions: [] })),
+        connections,
+      } as AccountAllOutput,
+      200,
+    );
   });

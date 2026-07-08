@@ -1,44 +1,39 @@
-import { createFinanceClient } from '@hominem/rpc/finance';
 import { useApiClient } from '@hominem/rpc/react';
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 
+import type { FinanceClient } from '@hominem/rpc/finance';
+
 function useFinanceClient() {
   const client = useApiClient();
-  return createFinanceClient(client);
+  return client.api.finance as unknown as FinanceClient;
 }
 
-/**
- * Compatibility wrapper for old useHonoQuery hook — queries the finance domain.
- */
 export function useHonoQuery<TData = unknown>(
   queryKey: unknown[],
-  queryFn: (client: { finance: ReturnType<typeof createFinanceClient> }) => Promise<TData>,
+  queryFn: (client: { finance: FinanceClient }) => Promise<TData>,
   options?: Partial<UseQueryOptions<TData>>,
 ) {
-  const financeClient = useFinanceClient();
+  const finance = useFinanceClient();
 
   return useQuery({
     queryKey,
-    queryFn: () => queryFn({ finance: financeClient }),
+    queryFn: () => queryFn({ finance }),
     ...options,
   } as UseQueryOptions<TData>);
 }
 
-/**
- * Compatibility wrapper for old useHonoMutation hook.
- */
 export function useHonoMutation<TData = unknown, TVariables = unknown>(
   mutationFn: (
-    client: { finance: ReturnType<typeof createFinanceClient> },
+    client: { finance: FinanceClient },
     variables: TVariables,
   ) => Promise<TData>,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options?: any,
 ) {
-  const financeClient = useFinanceClient();
+  const finance = useFinanceClient();
 
   return useMutation({
-    mutationFn: (variables: TVariables) => mutationFn({ finance: financeClient }, variables),
+    mutationFn: (variables: TVariables) => mutationFn({ finance }, variables),
     onSuccess: (data: TData) => {
       options?.onSuccess?.(data);
     },
@@ -49,9 +44,6 @@ export function useHonoMutation<TData = unknown, TVariables = unknown>(
   });
 }
 
-/**
- * Utility hooks for query cache operations.
- */
 export function useHonoUtils() {
   const queryClient = useQueryClient();
   return {

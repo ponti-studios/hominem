@@ -1,3 +1,3 @@
-import type { HonoClient } from './api-client';
+import type { HonoClient } from './api-client'
 
-export type RawHonoClient = HonoClient;
+export type RawHonoClient = HonoClient

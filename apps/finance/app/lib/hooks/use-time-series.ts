@@ -43,15 +43,19 @@ export function useTimeSeriesData({
       },
     ],
     ({ finance }) =>
-      finance.getSpendingTimeSeries({
-        ...(dateFrom ? { from: format(dateFrom, 'yyyy-MM-dd') } : {}),
-        ...(dateTo ? { to: format(dateTo, 'yyyy-MM-dd') } : {}),
-        ...(account && account !== 'all' ? { account } : {}),
-        ...(tag ? { tag } : {}),
-        includeStats,
-        compareToPrevious,
-        groupBy,
-      }),
+      finance.analyze['spending-time-series']
+        .$get({
+          query: {
+            ...(dateFrom ? { from: format(dateFrom, 'yyyy-MM-dd') } : {}),
+            ...(dateTo ? { to: format(dateTo, 'yyyy-MM-dd') } : {}),
+            ...(account && account !== 'all' ? { account } : {}),
+            ...(tag ? { tag } : {}),
+            includeStats: String(includeStats),
+            compareToPrevious: String(compareToPrevious),
+            groupBy,
+          },
+        })
+        .then((r) => r.json()),
     {
       enabled,
       staleTime: 5 * 60 * 1000, // 5 minutes

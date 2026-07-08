@@ -24,8 +24,8 @@ export const useBudgetCategories = () =>
   useHonoQuery<BudgetCategoriesListOutput>(
     ['finance', 'budget', 'categories', 'list'],
     async ({ finance }) => {
-      const categories = await finance.listTags();
-      return categories.map((category) => {
+      const categories = await finance.tags.list.$get({ query: {} }).then((r) => r.json());
+      return categories.map((category: any) => {
         const normalized = {
           id: category.id,
           userId: category.userId,

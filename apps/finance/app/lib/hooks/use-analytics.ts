@@ -45,12 +45,16 @@ export function useTagBreakdown({ from, to, account, tag, limit = 5 }: TagBreakd
       },
     ],
     ({ finance }) =>
-      finance.getTagBreakdown({
-        ...(from ? { from: format(from, 'yyyy-MM-dd') } : {}),
-        ...(to ? { to: format(to, 'yyyy-MM-dd') } : {}),
-        ...(tag ? { tag } : {}),
-        limit,
-      }),
+      finance.analyze['tag-breakdown']
+        .$get({
+          query: {
+            ...(from ? { from: format(from, 'yyyy-MM-dd') } : {}),
+            ...(to ? { to: format(to, 'yyyy-MM-dd') } : {}),
+            ...(tag ? { tag } : {}),
+            limit: String(limit),
+          },
+        })
+        .then((r) => r.json()),
     {
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
@@ -63,7 +67,7 @@ export function useTagBreakdown({ from, to, account, tag, limit = 5 }: TagBreakd
 export function useFinanceTags() {
   return useHonoQuery<FinanceTagsOutput>(
     ['finance', 'tags', 'list'],
-    ({ finance }) => finance.listTags(),
+    ({ finance }) => finance.tags.list.$get({ query: {} }).then((r) => r.json()),
     {
       staleTime: 10 * 60 * 1000, // 10 minutes - tags don't change often
     },

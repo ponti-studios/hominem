@@ -12,8 +12,6 @@ import * as z from 'zod';
 import { authMiddleware } from '../middleware/auth';
 import type { AppContext } from '../middleware/auth';
 
-const emptyBodySchema = z.object({});
-
 const createInstitutionSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
@@ -24,7 +22,7 @@ const createInstitutionSchema = z.object({
 });
 
 export const institutionsRoutes = new Hono<AppContext>()
-  .post('/list', authMiddleware, zValidator('json', emptyBodySchema), async (c) => {
+  .get('/list', authMiddleware, async (c) => {
     const institutions = await db
       .selectFrom('app.financeInstitutions')
       .select(['id', 'name'])

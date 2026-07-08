@@ -1,17 +1,12 @@
 import { db } from '@hominem/db';
 import type { CategoriesListOutput } from '@hominem/rpc/finance';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import * as z from 'zod';
 
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
-const emptyBodySchema = z.object({});
-
-export const tagsRoutes = new Hono<AppContext>().post(
+export const tagsRoutes = new Hono<AppContext>().get(
   '/list',
   authMiddleware,
-  zValidator('json', emptyBodySchema),
   async (c) => {
     const userId = c.get('userId')!;
     const tags = await db

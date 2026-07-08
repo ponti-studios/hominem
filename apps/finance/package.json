@@ -17,7 +17,9 @@
   },
   "dependencies": {
     "@hominem/auth": "workspace:*",
+    "@hominem/api": "workspace:*",
     "@hominem/env": "workspace:*",
+    "hono": "4.12.25",
     "@hominem/queues": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/ui": "workspace:*",

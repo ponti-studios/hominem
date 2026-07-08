@@ -1,32 +1,29 @@
-import { createApiClient } from '@hominem/rpc';
-import { createFinanceClient } from '@hominem/rpc/finance';
+import type { AppType } from '@hominem/api/types';
+import { hc } from 'hono/client';
 
 import { serverEnv } from '~/lib/env';
 
+const customFetch =
+  (accessToken?: string, request?: Request): typeof fetch =>
+  async (input, init) => {
+    const headers = new Headers(init?.headers);
+
+    if (request) {
+      const cookie = request.headers.get('cookie');
+      if (cookie) headers.set('cookie', cookie);
+    }
+
+    if (accessToken) {
+      headers.set('authorization', `Bearer ${accessToken}`);
+    }
+
+    return fetch(input as RequestInfo | URL, { ...init, headers, credentials: 'include' });
+  };
+
 export function createServerHonoClient(accessToken?: string, request?: Request) {
-  const rawClient = createApiClient({
-    baseUrl: serverEnv.VITE_PUBLIC_API_URL,
-    getHeaders: async (): Promise<Record<string, string>> => {
-      const headers: Record<string, string> = {};
-
-      // Forward the incoming request's cookie (browser session cookie)
-      // so the API can authenticate the SSR user.
-      if (request) {
-        const cookie = request.headers.get('cookie');
-        if (cookie) {
-          headers.cookie = cookie;
-        }
-      }
-
-      if (accessToken) {
-        headers.authorization = `Bearer ${accessToken}`;
-      }
-
-      return headers;
-    },
+  const client = hc<AppType>(serverEnv.VITE_PUBLIC_API_URL, {
+    fetch: customFetch(accessToken, request),
   });
 
-  return {
-    finance: createFinanceClient(rawClient),
-  };
+  return { finance: client.api.finance };
 }

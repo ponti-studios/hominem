@@ -21,7 +21,7 @@ const tagBreakdownSchema = z.object({
   to: z.string().optional(),
   account: z.string().optional(),
   tag: z.string().optional(),
-  limit: z.union([z.number(), z.string()]).optional(),
+  limit: z.coerce.number().optional(),
 });
 
 const topMerchantsSchema = z.object({
@@ -29,7 +29,7 @@ const topMerchantsSchema = z.object({
   to: z.string().optional(),
   account: z.string().optional(),
   tag: z.string().optional(),
-  limit: z.union([z.number(), z.string()]).optional(),
+  limit: z.coerce.number().optional(),
 });
 
 const monthlyStatsSchema = z.object({
@@ -44,19 +44,11 @@ const spendingTimeSeriesSchema = z.object({
   to: z.string().optional(),
   account: z.string().optional(),
   tag: z.string().optional(),
-  limit: z.union([z.number(), z.string()]).optional(),
+  limit: z.coerce.number().optional(),
   groupBy: z.enum(['month', 'week', 'day']).optional(),
-  includeStats: z.boolean().optional(),
-  compareToPrevious: z.boolean().optional(),
+  includeStats: z.coerce.boolean().optional(),
+  compareToPrevious: z.coerce.boolean().optional(),
 });
-
-function toNumber(value: string | number): number {
-  if (typeof value === 'number') {
-    return value;
-  }
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
 
 function toCurrency(value: number): string {
   return `$${value.toFixed(2)}`;
@@ -77,10 +69,10 @@ function getTagFilter(tag?: string): { tag_ids?: string[]; tag_names?: string[] 
 }
 
 export const analyzeRoutes = new Hono<AppContext>()
-  .post('/tag-breakdown', authMiddleware, zValidator('json', tagBreakdownSchema), async (c) => {
+  .get('/tag-breakdown', authMiddleware, zValidator('query', tagBreakdownSchema), async (c) => {
     const userId = c.get('userId')!;
-    const input = c.req.valid('json');
-    const limit = input.limit ? toNumber(input.limit) : 5;
+    const input = c.req.valid('query');
+    const limit = input.limit ?? 5;
     const tagFilter = getTagFilter(input.tag);
     const breakdownBase = await getTagBreakdownByContract({
       userId: userId,
@@ -112,10 +104,10 @@ export const analyzeRoutes = new Hono<AppContext>()
       averagePerDay: totalSpending / daySpan,
     });
   })
-  .post('/top-merchants', authMiddleware, zValidator('json', topMerchantsSchema), async (c) => {
+  .get('/top-merchants', authMiddleware, zValidator('query', topMerchantsSchema), async (c) => {
     const userId = c.get('userId')!;
-    const input = c.req.valid('json');
-    const limit = input.limit ? Math.max(1, Math.floor(toNumber(input.limit))) : 10;
+    const input = c.req.valid('query');
+    const limit = input.limit ? Math.max(1, Math.floor(input.limit)) : 10;
     const tagFilter = getTagFilter(input.tag);
     const merchants = await getTopMerchantsByContract({
       userId: userId,
@@ -130,9 +122,9 @@ export const analyzeRoutes = new Hono<AppContext>()
       merchants,
     });
   })
-  .post('/monthly-stats', authMiddleware, zValidator('json', monthlyStatsSchema), async (c) => {
+  .get('/monthly-stats', authMiddleware, zValidator('query', monthlyStatsSchema), async (c) => {
     const userId = c.get('userId')!;
-    const input = c.req.valid('json');
+    const input = c.req.valid('query');
     const monthly = await getMonthlyStatsByContract({
       userId: userId,
       ...(input.month ? { month: input.month } : {}),
@@ -161,14 +153,14 @@ export const analyzeRoutes = new Hono<AppContext>()
 
     return c.json<MonthlyStatsOutput>(monthlyStats);
   })
-  .post(
+  .get(
     '/spending-time-series',
     authMiddleware,
-    zValidator('json', spendingTimeSeriesSchema),
+    zValidator('query', spendingTimeSeriesSchema),
     async (c) => {
       const userId = c.get('userId')!;
-      const input = c.req.valid('json');
-      const limit = input.limit ? Math.max(1, Math.floor(toNumber(input.limit))) : 50;
+      const input = c.req.valid('query');
+      const limit = input.limit ? Math.max(1, Math.floor(input.limit)) : 50;
       const tagFilter = getTagFilter(input.tag);
       const output = await getSpendingTimeSeriesByContract({
         userId: userId,

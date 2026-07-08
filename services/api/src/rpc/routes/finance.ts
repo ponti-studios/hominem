@@ -47,3 +47,5 @@ export const financeRoutes = new Hono<AppContext>()
   .route('/runway', runwayRoutes)
   .route('/export', exportRoutes)
   .route('/data', dataRoutes);
+
+export type AppType = typeof financeRoutes;

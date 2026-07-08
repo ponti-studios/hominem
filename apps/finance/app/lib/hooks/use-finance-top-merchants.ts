@@ -20,13 +20,17 @@ export function useFinanceTopMerchants({
   return useHonoQuery<TopMerchantsOutput>(
     ['finance', 'analyze', 'top-merchants', { from, to, account, tag, limit }],
     ({ finance }) =>
-      finance.getTopMerchants({
-        ...(from ? { from } : {}),
-        ...(to ? { to } : {}),
-        ...(account ? { account } : {}),
-        ...(tag ? { tag } : {}),
-        ...(typeof limit === 'number' ? { limit } : {}),
-      }),
+      finance.analyze['top-merchants']
+        .$get({
+          query: {
+            ...(from ? { from } : {}),
+            ...(to ? { to } : {}),
+            ...(account ? { account } : {}),
+            ...(tag ? { tag } : {}),
+            ...(typeof limit === 'number' ? { limit: String(limit) } : {}),
+          },
+        })
+        .then((r) => r.json()),
     {
       staleTime: 5 * 60 * 1000,
     },

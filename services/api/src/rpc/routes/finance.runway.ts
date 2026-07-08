@@ -15,54 +15,42 @@ import * as z from 'zod';
 import { authMiddleware } from '../middleware/auth';
 import type { AppContext } from '../middleware/auth';
 
-const numberSchema = z
-  .union([z.number(), z.string()])
-  .transform((value) => (typeof value === 'number' ? value : Number.parseFloat(value)));
+const numberFromQuery = z.coerce.number();
 
 const plannedPurchaseSchema = z.object({
   description: z.string(),
-  amount: numberSchema,
+  amount: numberFromQuery,
   date: z.string(),
 });
 
 const runwayInputSchema = z.object({
-  balance: numberSchema,
-  monthlyExpenses: numberSchema,
+  balance: numberFromQuery,
+  monthlyExpenses: numberFromQuery,
   plannedPurchases: z.array(plannedPurchaseSchema).optional(),
-  projectionMonths: z
-    .union([z.number(), z.string()])
-    .optional()
-    .transform((value) => {
-      if (value === undefined) {
-        return 24;
-      }
-      return typeof value === 'number' ? value : Number.parseInt(value, 10);
-    }),
+  projectionMonths: z.coerce.number().optional().default(24),
 });
 
 const budgetBreakdownInputSchema = z.object({
-  monthlyIncome: numberSchema,
-  savingsTarget: numberSchema.optional(),
+  monthlyIncome: numberFromQuery,
+  savingsTarget: numberFromQuery.optional(),
 });
 
 const savingsGoalInputSchema = z.object({
-  currentSavings: numberSchema,
-  goalAmount: numberSchema,
-  monthlyContribution: numberSchema,
-  interestRate: numberSchema.optional(),
+  currentSavings: numberFromQuery,
+  goalAmount: numberFromQuery,
+  monthlyContribution: numberFromQuery,
+  interestRate: numberFromQuery.optional(),
 });
 
 const loanDetailsInputSchema = z.object({
-  principal: numberSchema,
-  annualRate: numberSchema,
-  months: z
-    .union([z.number().int().positive(), z.string()])
-    .transform((value) => (typeof value === 'number' ? value : Number.parseInt(value, 10))),
+  principal: numberFromQuery,
+  annualRate: numberFromQuery,
+  months: z.coerce.number().int().positive(),
 });
 
 export const runwayRoutes = new Hono<AppContext>()
-  .post('/calculate', authMiddleware, zValidator('json', runwayInputSchema), async (c) => {
-    const input = c.req.valid('json');
+  .get('/calculate', authMiddleware, zValidator('query', runwayInputSchema), async (c) => {
+    const input = c.req.valid('query');
     const parsed = runwayCalculationSchema.parse({
       monthlyIncome: 0,
       monthlyExpenses: input.monthlyExpenses,
@@ -114,23 +102,23 @@ export const runwayRoutes = new Hono<AppContext>()
         result.months === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : result.months / 12,
     });
   })
-  .post(
+  .get(
     '/budget-breakdown',
     authMiddleware,
-    zValidator('json', budgetBreakdownInputSchema),
+    zValidator('query', budgetBreakdownInputSchema),
     async (c) => {
-      const input = c.req.valid('json');
+      const input = c.req.valid('query');
       const parsed = calculateBudgetBreakdownInputSchema.parse(input);
       return c.json(calculateBudgetBreakdown(parsed));
     },
   )
-  .post('/savings-goal', authMiddleware, zValidator('json', savingsGoalInputSchema), async (c) => {
-    const input = c.req.valid('json');
+  .get('/savings-goal', authMiddleware, zValidator('query', savingsGoalInputSchema), async (c) => {
+    const input = c.req.valid('query');
     const parsed = calculateSavingsGoalInputSchema.parse(input);
     return c.json(calculateSavingsGoal(parsed));
   })
-  .post('/loan-details', authMiddleware, zValidator('json', loanDetailsInputSchema), async (c) => {
-    const input = c.req.valid('json');
+  .get('/loan-details', authMiddleware, zValidator('query', loanDetailsInputSchema), async (c) => {
+    const input = c.req.valid('query');
     const result = calculateLoanDetails({
       principal: input.principal,
       annualRate: input.annualRate,

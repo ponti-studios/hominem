@@ -17,25 +17,20 @@ import type { Route } from './+types/finance';
 
 export async function loader({ request }: Route.LoaderArgs) {
   const authResult = await requireAuth(request);
-  const client = createServerHonoClient(authResult.session?.token, request);
+  const { finance } = createServerHonoClient(authResult.session?.token, request);
 
-  const [accounts, transactions] = await Promise.all([
-    client.finance
-      .listAccounts({})
-      .catch(() => [] as Awaited<ReturnType<typeof client.finance.listAccounts>>),
-    client.finance.listTransactions({ limit: 25 }).catch(
-      () =>
-        ({
-          data: [],
-          filteredCount: 0,
-          totalUserCount: 0,
-        }) satisfies Awaited<ReturnType<typeof client.finance.listTransactions>>,
-    ),
+  const [accountsRes, transactionsRes] = await Promise.all([
+    finance.accounts.list.$get({ query: {} }).then((r) => r.json()).catch(() => []),
+    finance.transactions.list.$get({ query: { limit: '25' } }).then((r) => r.json()).catch(() => ({
+      data: [],
+      filteredCount: 0,
+      totalUserCount: 0,
+    })),
   ]);
 
   return {
-    accounts,
-    transactions,
+    accounts: accountsRes,
+    transactions: transactionsRes,
   };
 }
 

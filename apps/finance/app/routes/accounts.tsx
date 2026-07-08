@@ -66,10 +66,10 @@ function normalizeAccount(account: RawAccountWithOptionalPlaid): AccountWithOpti
 
 export async function loader({ request }: Route.LoaderArgs) {
   const authResult = await requireAuth(request);
-  const client = createServerHonoClient(authResult.session?.token, request);
+  const { finance } = createServerHonoClient(authResult.session?.token, request);
 
-  const data = await client.finance
-    .listAllAccounts()
+  const data = await finance.accounts.all.$get({ query: {} })
+    .then((r) => r.json())
     .catch(() => ({ accounts: [], connections: [] }));
 
   return data;

@@ -8,6 +8,10 @@
     "./types": {
       "types": "./src/rpc/app.ts",
       "default": "./src/rpc/app.ts"
+    },
+    "./finance": {
+      "types": "./src/rpc/routes/finance.ts",
+      "default": "./src/rpc/routes/finance.ts"
     }
   },
   "scripts": {
