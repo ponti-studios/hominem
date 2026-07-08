@@ -1,6 +1,7 @@
 ## Rules
 
-- The `apps/omiro` app should only support Apple devices. Do not add fallbacks for other platforms such as Android.
+- Follow YAGNI (You Aren't Gonna Need It) principle and one-liner solutions whenever possible.
+- `apps/omiro` should only support Apple devices. Do not add fallbacks for other platforms such as Android.
 
 ## Testing the omiro app (iOS Simulator)
 
