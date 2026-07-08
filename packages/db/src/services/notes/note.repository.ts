@@ -401,7 +401,11 @@ export const NoteRepository = {
       query = query.where((eb) =>
         eb.or([
           eb('updatedat', '<', new Date(decoded.updatedAt).toISOString()),
-          eb('updatedat', '=', new Date(decoded.updatedAt).toISOString()).and('id', '<', decoded.id),
+          eb('updatedat', '=', new Date(decoded.updatedAt).toISOString()).and(
+            'id',
+            '<',
+            decoded.id,
+          ),
         ]),
       );
     }

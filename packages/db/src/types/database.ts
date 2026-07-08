@@ -1275,6 +1275,14 @@ export interface DB {
   deviceCode: DeviceCode;
   gooseDbVersion: GooseDbVersion;
   jwks: Jwks;
+  'labs.caseUpdates': LabsCaseUpdates;
+  'labs.covidData': LabsCovidData;
+  'labs.DrizzleMigrations': LabsDrizzleMigrations;
+  'labs.relationshipCases': LabsRelationshipCases;
+  'labs.relationshipVerdicts': LabsRelationshipVerdicts;
+  'labs.rhobhDailyPuzzles': LabsRhobhDailyPuzzles;
+  'labs.searchDocuments': LabsSearchDocuments;
+  'labs.tflCameras': LabsTflCameras;
   'ops.auditLogs': OpsAuditLogs;
   'ops.searchLogs': OpsSearchLogs;
   passkey: Passkey;
