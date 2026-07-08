@@ -4,12 +4,6 @@ import {
   getSpendingTimeSeriesByContract,
   getTopMerchantsByContract,
 } from '@hominem/finance-services';
-import type {
-  TagBreakdownOutput,
-  MonthlyStatsOutput,
-  SpendingTimeSeriesOutput,
-  TopMerchantsOutput,
-} from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
@@ -93,7 +87,7 @@ export const analyzeRoutes = new Hono<AppContext>()
           )
         : 1;
 
-    return c.json<TagBreakdownOutput>({
+    return c.json({
       breakdown: breakdownBase.map((item) => ({
         tag: item.tag,
         amount: item.amount,
@@ -118,7 +112,7 @@ export const analyzeRoutes = new Hono<AppContext>()
       limit,
     });
 
-    return c.json<TopMerchantsOutput>({
+    return c.json({
       merchants,
     });
   })
@@ -130,7 +124,7 @@ export const analyzeRoutes = new Hono<AppContext>()
       ...(input.month ? { month: input.month } : {}),
     });
 
-    const monthlyStats: MonthlyStatsOutput = {
+    const monthlyStats = {
       month: monthly.month,
       income: monthly.income,
       expenses: monthly.expenses,
@@ -151,7 +145,7 @@ export const analyzeRoutes = new Hono<AppContext>()
       ...(monthly.endDate ? { endDate: monthly.endDate } : {}),
     };
 
-    return c.json<MonthlyStatsOutput>(monthlyStats);
+    return c.json(monthlyStats);
   })
   .get(
     '/spending-time-series',
@@ -173,6 +167,6 @@ export const analyzeRoutes = new Hono<AppContext>()
         ...(input.includeStats !== undefined ? { includeStats: input.includeStats } : {}),
       });
 
-      return c.json<SpendingTimeSeriesOutput>(output);
+      return c.json(output);
     },
   );

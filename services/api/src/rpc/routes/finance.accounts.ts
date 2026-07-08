@@ -1,16 +1,6 @@
 import { randomUUID } from 'crypto';
 
 import { db } from '@hominem/db';
-import type {
-  AccountAllOutput,
-  AccountCreateOutput,
-  AccountDeleteOutput,
-  AccountGetOutput,
-  AccountInstitutionAccountsOutput,
-  AccountListOutput,
-  AccountUpdateOutput,
-  AccountsWithPlaidOutput,
-} from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
@@ -91,7 +81,7 @@ export const accountsRoutes = new Hono<AppContext>()
       .where('userId', '=', userId)
       .orderBy('createdAt', 'desc')
       .execute();
-    return c.json<AccountListOutput>(
+    return c.json(
       accounts.map((a) => ({
         id: String(a.id),
         userId: a.userId,
@@ -107,7 +97,7 @@ export const accountsRoutes = new Hono<AppContext>()
     const input = c.req.valid('query');
     const account = await getAccountWithOwnershipCheck(input.id, userId);
     const transactions = await getTransactionsForAccount(input.id, 200, 0);
-    return c.json<AccountGetOutput>({
+    return c.json({
       id: String(account.id),
       userId: account.userId,
       name: account.name,
@@ -151,7 +141,7 @@ export const accountsRoutes = new Hono<AppContext>()
       .executeTakeFirst();
 
     if (!created) throw new NotFoundError('Account not found after creation');
-    return c.json<AccountCreateOutput>(
+    return c.json(
       {
         id: String(created.id),
         userId: created.userId,
@@ -188,7 +178,7 @@ export const accountsRoutes = new Hono<AppContext>()
       .executeTakeFirst();
 
     if (!updated) throw new NotFoundError('Account not found after update');
-    return c.json<AccountUpdateOutput>(
+    return c.json(
       {
         id: String(updated.id),
         userId: updated.userId,
@@ -208,7 +198,7 @@ export const accountsRoutes = new Hono<AppContext>()
     await db.deleteFrom('app.financeTransactions').where('accountId', '=', input.id).execute();
     await db.deleteFrom('app.financeAccounts').where('id', '=', input.id).execute();
 
-    return c.json<AccountDeleteOutput>({ success: true }, 200);
+    return c.json({ success: true }, 200);
   })
   .get('/with-plaid', authMiddleware, async (c) => {
     const userId = c.get('userId')!;
@@ -219,7 +209,7 @@ export const accountsRoutes = new Hono<AppContext>()
       .orderBy('createdAt', 'desc')
       .execute();
 
-    return c.json<AccountsWithPlaidOutput>(accounts, 200);
+    return c.json(accounts, 200);
   })
   .get('/connections', authMiddleware, async (c) => {
     const userId = c.get('userId')!;
@@ -247,7 +237,7 @@ export const accountsRoutes = new Hono<AppContext>()
         )
         .execute();
 
-      return c.json<AccountInstitutionAccountsOutput>(accounts, 200);
+      return c.json(accounts, 200);
     },
   )
   .get('/all', authMiddleware, async (c) => {
@@ -267,7 +257,7 @@ export const accountsRoutes = new Hono<AppContext>()
       {
         accounts: accounts.map((a) => ({ ...a, transactions: [] })),
         connections,
-      } as AccountAllOutput,
+      },
       200,
     );
   });

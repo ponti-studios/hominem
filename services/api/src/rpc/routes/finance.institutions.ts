@@ -1,10 +1,6 @@
 import { randomUUID } from 'crypto';
 
 import { db } from '@hominem/db';
-import type {
-  InstitutionCreateOutput,
-  InstitutionsListOutput,
-} from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
@@ -29,7 +25,7 @@ export const institutionsRoutes = new Hono<AppContext>()
       .orderBy('name', 'asc')
       .execute();
 
-    return c.json<InstitutionsListOutput>(
+    return c.json(
       institutions.map((item) => ({ id: item.id, name: item.name })),
       200,
     );
@@ -48,5 +44,5 @@ export const institutionsRoutes = new Hono<AppContext>()
 
     if (!created) throw new Error('Failed to create institution');
 
-    return c.json<InstitutionCreateOutput>({ id: created.id, name: created.name }, 201);
+    return c.json({ id: created.id, name: created.name }, 201);
   });

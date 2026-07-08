@@ -7,7 +7,6 @@ import {
   calculateSavingsGoalInputSchema,
   runwayCalculationSchema,
 } from '@hominem/finance-services';
-import type { RunwayCalculateOutput } from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
@@ -69,7 +68,7 @@ export const runwayRoutes = new Hono<AppContext>()
         monthlyPurchases.set(index, (monthlyPurchases.get(index) ?? 0) + purchase.amount);
       }
     }
-    const projectionData: RunwayCalculateOutput['projectionData'] = [];
+    const projectionData: Array<{ month: string; balance: number }> = [];
     let runningBalance = input.balance;
     for (let month = 0; month < projectionMonths; month++) {
       runningBalance -= input.monthlyExpenses;
@@ -91,7 +90,7 @@ export const runwayRoutes = new Hono<AppContext>()
       runwayEndDate.setMonth(runwayEndDate.getMonth() + result.months);
     }
 
-    return c.json<RunwayCalculateOutput>({
+    return c.json({
       runwayMonths: result.months,
       runwayEndDate: runwayEndDate.toISOString(),
       isRunwayDangerous: result.months !== Number.POSITIVE_INFINITY && result.months <= 6,

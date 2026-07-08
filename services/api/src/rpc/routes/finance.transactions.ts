@@ -1,12 +1,6 @@
 import { randomUUID } from 'crypto';
 
 import { db } from '@hominem/db';
-import type {
-  TransactionCreateOutput,
-  TransactionDeleteOutput,
-  TransactionListOutput,
-  TransactionUpdateOutput,
-} from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';
@@ -156,16 +150,13 @@ export const transactionsRoutes = new Hono<AppContext>()
       .offset(offset);
 
     if (accountId) query = query.where('accountId', '=', accountId);
-    if (dateFrom) query = query.where('postedOn', '>=', dateFrom);
-    if (dateTo) query = query.where('postedOn', '<=', dateTo);
+    if (dateFrom) query = query.where('postedOn', '>=', new Date(dateFrom));
+    if (dateTo) query = query.where('postedOn', '<=', new Date(dateTo));
 
     if (hasTagFilters) {
       const taggedIds = await getTaggedTransactionIds(userId, tagIds, tagNames);
       if (taggedIds.length === 0) {
-        return c.json<TransactionListOutput>(
-          { data: [], filteredCount: 0, totalUserCount: 0 },
-          200,
-        );
+        return c.json({ data: [], filteredCount: 0, totalUserCount: 0 }, 200);
       }
       query = query.where('id', 'in', taggedIds);
     }
@@ -188,7 +179,7 @@ export const transactionsRoutes = new Hono<AppContext>()
       postedOn: t.postedOn ? String(t.postedOn) : '',
       merchantName: t.merchantName ?? null,
     }));
-    return c.json<TransactionListOutput>(
+    return c.json(
       {
         data: responseData,
         filteredCount: responseData.length,
@@ -229,7 +220,7 @@ export const transactionsRoutes = new Hono<AppContext>()
       await replaceTransactionTags(id, userId, input.tagIds);
     }
 
-    return c.json<TransactionCreateOutput>(
+    return c.json(
       {
         id: created.id,
         userId: created.userId,
@@ -288,7 +279,7 @@ export const transactionsRoutes = new Hono<AppContext>()
       await replaceTransactionTags(updated.id, userId, input.data.tagIds);
     }
 
-    return c.json<TransactionUpdateOutput>(
+    return c.json(
       {
         id: updated!.id,
         userId: updated!.userId,
@@ -312,7 +303,7 @@ export const transactionsRoutes = new Hono<AppContext>()
       .executeTakeFirst();
 
     const deleted = Boolean(result);
-    return c.json<TransactionDeleteOutput>({
+    return c.json({
       success: deleted,
       ...(deleted ? {} : { message: 'Transaction not found' }),
     });

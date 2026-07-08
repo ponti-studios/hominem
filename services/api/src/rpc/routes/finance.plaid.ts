@@ -8,12 +8,6 @@ import {
   upsertPlaidItem,
 } from '@hominem/finance-services';
 import { plaidSyncQueue, QUEUE_NAMES } from '@hominem/queues';
-import {
-  type PlaidCreateLinkTokenOutput,
-  type PlaidExchangeTokenOutput,
-  type PlaidRemoveConnectionOutput,
-  type PlaidSyncItemOutput,
-} from '@hominem/rpc/finance';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -49,7 +43,7 @@ export const plaidRoutes = new Hono<AppContext>()
         webhook: `${env.API_URL}/api/finance/plaid/webhook`,
       });
 
-      return c.json<PlaidCreateLinkTokenOutput>(
+      return c.json(
         {
           linkToken: createTokenResponse.data.link_token,
           expiration: createTokenResponse.data.expiration,
@@ -132,7 +126,7 @@ export const plaidRoutes = new Hono<AppContext>()
         },
       );
 
-      return c.json<PlaidExchangeTokenOutput>(
+      return c.json(
         {
           accessToken,
           itemId,
@@ -178,7 +172,7 @@ export const plaidRoutes = new Hono<AppContext>()
       },
     );
 
-    return c.json<PlaidSyncItemOutput>(
+    return c.json(
       {
         success: true,
         added: 0, // Async, so we don't know yet
@@ -218,5 +212,5 @@ export const plaidRoutes = new Hono<AppContext>()
     // Delete the plaid item
     await deletePlaidItem(plaidItem.id, userId);
 
-    return c.json<PlaidRemoveConnectionOutput>({ success: true }, 200);
+    return c.json({ success: true }, 200);
   });
