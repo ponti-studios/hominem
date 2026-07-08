@@ -1,7 +1,5 @@
-import { useAuthContext, useSafeAuth } from '@hominem/auth';
 import type { ClientConfig } from '@hominem/rpc';
 import { HonoProvider as BaseHonoProvider } from '@hominem/rpc/react';
-import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 
 interface HonoProviderProps {
@@ -11,22 +9,10 @@ interface HonoProviderProps {
 
 // Always renders on client — hooks called unconditionally
 function HonoClientProvider({ children, baseUrl }: HonoProviderProps) {
-  const authContext = useSafeAuth();
-  const { session } = useAuthContext();
-
-  const getHeaders = useCallback(async (): Promise<Record<string, string>> => {
-    const token = session?.token;
-    if (token) return { authorization: `Bearer ${token}` };
-    return {};
-  }, [session]);
-
-  const config: ClientConfig = authContext
-    ? { baseUrl, getHeaders, onError: (e) => console.error('Hono RPC Error:', e) }
-    : {
-        baseUrl,
-        getHeaders: async () => ({}),
-        onError: (e) => console.error('Hono RPC Error:', e),
-      };
+  // RPC calls are same-origin and authenticate via the Better Auth session
+  // cookie (the client already sends credentials: 'include') — no
+  // Authorization header is needed or valid here.
+  const config: ClientConfig = { baseUrl, onError: (e) => console.error('Hono RPC Error:', e) };
 
   return <BaseHonoProvider config={config}>{children}</BaseHonoProvider>;
 }

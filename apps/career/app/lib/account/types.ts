@@ -1,4 +1,6 @@
-import type { CareerPortfolioRecord, CareerUserSocialLinksRecord } from '@hominem/db';
+import type { CareerUserSocialLinksRecord } from '@hominem/db';
+
+import type { CareerPortfolioResponse } from '~/lib/api.server';
 
 export interface AccountPageUser {
   id: string;
@@ -22,7 +24,7 @@ export interface AccountPortfolioSummary {
 export interface AccountLoaderData {
   user: AccountPageUser;
   portfolios: AccountPortfolioSummary[];
-  currentPortfolio: CareerPortfolioRecord | null;
+  currentPortfolio: CareerPortfolioResponse | null;
   currentPortfolioId: string | null;
   hasPortfolio: boolean;
   socialLinks: CareerUserSocialLinksRecord | null;

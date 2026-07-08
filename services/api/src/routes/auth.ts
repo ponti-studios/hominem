@@ -1,7 +1,6 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 
 import {
-  UserAuthService,
   configureStepUpStore,
   grantStepUp,
   hasRecentStepUp,
@@ -9,7 +8,7 @@ import {
 } from '@hominem/auth/server';
 import { STEP_UP_ACTIONS, isStepUpAction } from '@hominem/auth/step-up-actions';
 import type { StepUpAction } from '@hominem/auth/step-up-actions';
-import { db } from '@hominem/db';
+import { db, UserRepository } from '@hominem/db';
 import { redis } from '@hominem/services/redis';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
@@ -17,11 +16,12 @@ import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { getBearerToken, resolveBearerAuth } from '../auth/bearer';
 import { betterAuthServer } from '../auth/better-auth';
 import { getJwks } from '../auth/key-store';
-import { isSessionRevoked, revokeSession, rotateRefreshToken } from '../auth/session-store';
+import { revokeSession, rotateRefreshToken } from '../auth/session-store';
 import { getLatestTestOtp, isTestOtpStoreEnabled } from '../auth/test-otp-store';
-import { issueAccessToken, verifyAccessToken } from '../auth/tokens';
+import { issueAccessToken } from '../auth/tokens';
 import { env } from '../env';
 import type { AppEnv } from '../server';
 
@@ -202,15 +202,8 @@ async function resolveAuthUserId(c: {
     return betterAuthSession.userId;
   }
 
-  const authHeader = c.req.header('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    try {
-      const claims = await verifyAccessToken(authHeader.slice(7));
-      if (claims?.sub) return claims.sub;
-    } catch {
-      // invalid token — fall through
-    }
-  }
+  const resolved = await resolveBearerAuth(c.req.header('authorization'));
+  if (resolved) return resolved.claims.sub;
 
   return null;
 }
@@ -229,16 +222,8 @@ async function resolveAuthSessionId(c: {
     return betterAuthSession.sessionId;
   }
 
-  const authHeader = c.req.header('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    try {
-      const claims = await verifyAccessToken(authHeader.slice(7));
-      if (!claims) return null;
-      return claims.sid;
-    } catch {
-      return null;
-    }
-  }
+  const resolved = await resolveBearerAuth(c.req.header('authorization'));
+  if (resolved) return resolved.claims.sid;
 
   return null;
 }
@@ -387,30 +372,14 @@ async function enforceAuthRateLimit(c: Context<AppEnv>, input: AuthRateLimitInpu
   return null;
 }
 
-function getBearerToken(headerValue?: string) {
-  if (!headerValue || !headerValue.startsWith('Bearer ')) {
-    return null;
-  }
-
-  return headerValue.slice(7);
-}
-
 async function hasRecentPasskeyBearerAuth(c: Context<AppEnv>) {
-  const bearerToken = getBearerToken(c.req.header('authorization'));
-  if (!bearerToken) {
-    return false;
-  }
+  const resolved = await resolveBearerAuth(c.req.header('authorization'));
+  if (!resolved) return false;
 
-  try {
-    const claims = await verifyAccessToken(bearerToken);
-    if (!claims) return false;
-    return isFreshPasskeyAuth({
-      amr: claims.amr,
-      authTime: claims.auth_time,
-    });
-  } catch {
-    return false;
-  }
+  return isFreshPasskeyAuth({
+    amr: resolved.claims.amr,
+    authTime: resolved.claims.auth_time,
+  });
 }
 
 async function hasSatisfiedStepUp(c: Context<AppEnv>, userId: string, action: StepUpAction) {
@@ -482,7 +451,7 @@ async function buildSessionResponse(input: {
   amr: string[];
   includeBearerToken?: boolean;
 }): Promise<AppSessionResponse | null> {
-  const userRecord = await UserAuthService.findByIdOrEmail({ id: input.userId });
+  const userRecord = await UserRepository.findByIdOrEmail(db, { id: input.userId });
   if (!userRecord) {
     return null;
   }
@@ -493,7 +462,7 @@ async function buildSessionResponse(input: {
       id: userRecord.id,
       email: userRecord.email,
       ...(userRecord.name ? { name: userRecord.name } : {}),
-      isAdmin: userRecord.isAdmin ?? false,
+      isAdmin: false,
       ...(userRecord.createdAt ? { createdAt: userRecord.createdAt } : {}),
       ...(userRecord.updatedAt ? { updatedAt: userRecord.updatedAt } : {}),
     },
@@ -501,7 +470,7 @@ async function buildSessionResponse(input: {
       sub: userRecord.id,
       sid: input.sessionId,
       scope: ['api:read', 'api:write'],
-      role: userRecord.isAdmin ? 'admin' : 'user',
+      role: 'user',
       amr: input.amr,
       authTime: Math.floor(Date.now() / 1000),
     },
@@ -511,7 +480,7 @@ async function buildSessionResponse(input: {
     const access = issueAccessToken({
       sub: userRecord.id,
       sid: input.sessionId,
-      role: userRecord.isAdmin ? 'admin' : 'user',
+      role: 'user',
       scope: ['api:read', 'api:write'],
       amr: input.amr,
     });
@@ -812,42 +781,20 @@ authRoutes.post('/logout', async (c) => {
 
 authRoutes.get('/session', async (c) => {
   // Identity-only endpoint.
-  // The JWT middleware bypasses all /api/auth/* routes, so we validate the
-  // bearer token directly here, or fall back to the Better Auth session cookie.
+  // The JWT middleware bypasses all /api/auth/* routes, so we validate auth
+  // directly here. A Bearer token, when present, is authoritative — verified
+  // or 401, with no fallback to an unrelated cookie session.
+  const authHeader = c.req.header('authorization');
 
-  const authHeader = c.req.header('authorization') ?? '';
-  let bearerToken: string | null = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
-  if (bearerToken) {
+  if (getBearerToken(authHeader)) {
     try {
-      const betterAuthSession = await getBetterAuthSessionContext(c);
-      if (betterAuthSession) {
-        const sessionResponse = await buildSessionResponse({
-          sessionId: betterAuthSession.sessionId,
-          userId: betterAuthSession.userId,
-          amr: ['better-auth-session'],
-          includeBearerToken: false,
-        });
-
-        if (sessionResponse) {
-          return c.json(sessionResponse);
-        }
-      }
-    } catch {
-      // Fall through to legacy bearer validation for callers that still use it.
-    }
-
-    try {
-      const claims = await verifyAccessToken(bearerToken);
-      if (!claims) {
+      const resolved = await resolveBearerAuth(authHeader);
+      if (!resolved) {
         return c.json({ isAuthenticated: false, user: null }, 401);
       }
-      const revoked = await isSessionRevoked(claims.sid);
-      if (revoked) {
-        return c.json({ isAuthenticated: false, user: null }, 401);
-      }
+      const { claims } = resolved;
 
-      const userRecord = await UserAuthService.findByIdOrEmail({ id: claims.sub });
+      const userRecord = await UserRepository.findByIdOrEmail(db, { id: claims.sub });
       if (!userRecord) {
         return c.json({ isAuthenticated: false, user: null }, 401);
       }
@@ -858,7 +805,7 @@ authRoutes.get('/session', async (c) => {
           id: userRecord.id,
           email: userRecord.email,
           ...(userRecord.name ? { name: userRecord.name } : {}),
-          isAdmin: userRecord.isAdmin ?? false,
+          isAdmin: false,
           ...(userRecord.createdAt ? { createdAt: userRecord.createdAt } : {}),
           ...(userRecord.updatedAt ? { updatedAt: userRecord.updatedAt } : {}),
         },
@@ -870,7 +817,7 @@ authRoutes.get('/session', async (c) => {
           amr: claims.amr,
           authTime: claims.auth_time,
         },
-        accessToken: bearerToken,
+        accessToken: getBearerToken(authHeader),
         expiresIn:
           typeof claims.exp === 'number'
             ? Math.max(claims.exp - Math.floor(Date.now() / 1000), 0)
@@ -918,16 +865,16 @@ authRoutes.post('/refresh', async (c) => {
 
 authRoutes.post('/verify', async (c) => {
   const authHeader = c.req.header('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (!getBearerToken(authHeader)) {
     return c.json({ valid: false, error: 'missing_bearer_token' }, 400);
   }
 
-  try {
-    const claims = await verifyAccessToken(authHeader.slice(7));
-    return c.json({ valid: true, claims });
-  } catch {
+  const resolved = await resolveBearerAuth(authHeader);
+  if (!resolved) {
     return c.json({ valid: false, error: 'invalid_token' }, 401);
   }
+
+  return c.json({ valid: true, claims: resolved.claims });
 });
 
 authRoutes.post('/dev/issue-token', zValidator('json', devIssueTokenSchema), async (c) => {

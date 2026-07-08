@@ -9,22 +9,13 @@ vi.mock('./env', () => ({
 import { getServerSession } from './auth.server';
 
 const sessionPayload = {
+  isAuthenticated: true,
   user: {
     id: 'auth-user-id',
     email: 'user@example.com',
     emailVerified: true,
     name: 'Test User',
     image: null,
-    createdat: new Date(),
-    updatedat: new Date(),
-  },
-  session: {
-    id: 'session-id',
-    token: 'token',
-    owner_userid: 'auth-user-id',
-    expiresAt: new Date(),
-    ipAddress: null,
-    userAgent: null,
     createdat: new Date(),
     updatedat: new Date(),
   },
@@ -48,11 +39,10 @@ describe('career auth server helpers', () => {
     const [url, init] = fetchMock.mock.calls[0] ?? [];
     if (!(init?.headers instanceof Headers)) throw new Error('expected fetch Headers');
 
-    expect(String(url)).toMatch(/\/api\/auth\/get-session$/);
+    expect(String(url)).toMatch(/\/api\/auth\/session$/);
     expect(init.method).toBe('GET');
     expect(init.headers.get('cookie')).toBe('better-auth.session_token=session-token');
     expect(result.user?.id).toBe('auth-user-id');
-    expect(result.session?.id).toBe('session-id');
     expect(result.headers).toBeInstanceOf(Headers);
   });
 
@@ -64,7 +54,6 @@ describe('career auth server helpers', () => {
 
     await expect(getServerSession(new Request('http://localhost/'))).resolves.toEqual({
       user: null,
-      session: null,
       headers: expect.any(Headers),
     });
   });
@@ -86,6 +75,5 @@ describe('career auth server helpers', () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(result.user?.id).toBe(testUser.id);
-    expect(result.session?.id).toBe('test-session');
   });
 });

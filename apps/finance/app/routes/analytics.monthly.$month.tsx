@@ -15,8 +15,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     return redirect('/analytics');
   }
 
-  const authResult = await requireAuth(request);
-  const { finance } = createServerHonoClient(authResult.session?.token, request);
+  await requireAuth(request);
+  const { finance } = createServerHonoClient(request);
 
   const stats = await finance.analyze['monthly-stats']
     .$get({ query: { month } })

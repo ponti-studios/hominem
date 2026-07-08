@@ -1,4 +1,4 @@
-import { useAuthContext } from '@hominem/auth';
+import { useAuthContext } from '@hominem/auth/client/provider';
 import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';

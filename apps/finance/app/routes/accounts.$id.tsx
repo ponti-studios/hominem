@@ -54,8 +54,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     return redirect('/accounts');
   }
 
-  const authResult = await requireAuth(request);
-  const { finance } = createServerHonoClient(authResult.session?.token, request);
+  await requireAuth(request);
+  const { finance } = createServerHonoClient(request);
 
   const [account, transactionsResult] = await Promise.all([
     finance.accounts.get.$get({ query: { id } }).then((r) => r.json()),

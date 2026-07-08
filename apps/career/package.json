@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@hominem/ai": "workspace:*",
+    "@hominem/api": "workspace:*",
     "@hominem/auth": "workspace:*",
     "@hominem/db": "workspace:*",
     "@hominem/storage": "workspace:*",
@@ -28,6 +29,7 @@
     "@tanstack/react-query": "^5.80.6",
     "clsx": "^2.1.1",
     "dotenv": "^16.5.0",
+    "hono": "4.12.25",
     "isbot": "^5.1.27",
     "lucide-react": "0.576.0",
     "pdf2json": "^3.1.6",

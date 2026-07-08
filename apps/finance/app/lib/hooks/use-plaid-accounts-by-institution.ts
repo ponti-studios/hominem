@@ -1,4 +1,4 @@
-import { useAuthContext } from '@hominem/auth';
+import { useAuthContext } from '@hominem/auth/client/provider';
 import { useApiClient } from '@hominem/ui/hooks';
 import { useQuery } from '@tanstack/react-query';
 

@@ -1,4 +1,4 @@
-import { useAuthContext } from '@hominem/auth';
+import { useAuthContext } from '@hominem/auth/client/provider';
 import type { FileStatus, ImportRequestResponse, ImportTransactionsJob } from '@hominem/queues';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';

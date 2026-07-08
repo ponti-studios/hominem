@@ -1,9 +1,12 @@
-import { db } from '@hominem/db';
-
-import type { Session, User } from './types';
+import type { User } from './types';
 
 interface AuthConfig {
   apiBaseUrl: string;
+}
+
+interface SessionPayload {
+  isAuthenticated: boolean;
+  user: User | null;
 }
 
 function getTestAuthUser(cookieHeader: string | null): User | null {
@@ -26,20 +29,7 @@ export async function getServerAuth(request: Request, config: AuthConfig) {
   if (process.env.NODE_ENV !== 'production') {
     const testUser = getTestAuthUser(cookie);
     if (testUser) {
-      return {
-        user: testUser,
-        session: {
-          id: 'test-session',
-          token: 'test-session',
-          userId: testUser.id,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-          ipAddress: null,
-          userAgent: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } satisfies Session,
-        headers: new Headers(),
-      };
+      return { user: testUser, headers: new Headers() };
     }
   }
 
@@ -47,64 +37,21 @@ export async function getServerAuth(request: Request, config: AuthConfig) {
     headers.set('cookie', cookie);
   }
 
-  const response = await fetch(new URL('/api/auth/get-session', config.apiBaseUrl).toString(), {
+  const response = await fetch(new URL('/api/auth/session', config.apiBaseUrl).toString(), {
     method: 'GET',
     headers,
   });
 
   if (!response.ok) {
-    return { user: null, session: null, headers: new Headers() };
+    return { user: null, headers: new Headers() };
   }
 
-  const payload = (await response.json()) as { user: User; session: Session } | null;
+  const payload = (await response.json()) as SessionPayload | null;
   return {
-    user: payload?.user ?? null,
-    session: payload?.session ?? null,
+    user: payload?.isAuthenticated ? (payload.user ?? null) : null,
     headers: new Headers(),
   };
 }
-
-// ---------------------------------------------------------------------------
-// UserAuthService
-// ---------------------------------------------------------------------------
-
-interface FindUserInput {
-  id: string;
-}
-
-type UserRecord = {
-  id: string;
-  email: string;
-  emailVerified: boolean;
-  name: string;
-  image?: string | null;
-  isAdmin: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export const UserAuthService = {
-  async findByIdOrEmail(input: FindUserInput): Promise<UserRecord | null> {
-    const row = await db
-      .selectFrom('user')
-      .selectAll()
-      .where((eb) => eb.or([eb('id', '=', input.id), eb('email', '=', input.id)]))
-      .executeTakeFirst();
-
-    if (!row) return null;
-
-    return {
-      id: row.id,
-      email: row.email,
-      emailVerified: row.emailVerified ?? false,
-      name: row.name ?? '',
-      image: row.image,
-      isAdmin: false,
-      createdAt: String(row.createdAt),
-      updatedAt: String(row.updatedAt),
-    };
-  },
-};
 
 // ---------------------------------------------------------------------------
 // Step-up helpers (Redis-backed)

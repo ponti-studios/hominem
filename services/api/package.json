@@ -12,6 +12,10 @@
     "./finance": {
       "types": "./src/rpc/routes/finance.ts",
       "default": "./src/rpc/routes/finance.ts"
+    },
+    "./career": {
+      "types": "./src/rpc/routes/career.ts",
+      "default": "./src/rpc/routes/career.ts"
     }
   },
   "scripts": {

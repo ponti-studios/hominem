@@ -1,6 +1,8 @@
 import type { User } from '@hominem/auth/types';
+import { db, UserRepository } from '@hominem/db';
 import type { MiddlewareHandler } from 'hono';
 
+import { resolveBearerAuth } from '../auth/bearer';
 import { betterAuthServer } from '../auth/better-auth';
 import type { AuthContextEnvelope } from '../auth/types';
 
@@ -48,18 +50,57 @@ function setAuthContext(
       value: BetterAuthSessionContext[K],
     ) => void;
   },
-  input: { user: User; sessionId: string; amr: string[]; authTime?: number },
+  input: {
+    user: User;
+    sessionId: string;
+    amr: string[];
+    authTime?: number;
+    role?: 'user' | 'admin';
+    scope?: string[];
+  },
 ) {
   c.set('user', input.user);
   c.set('userId', input.user.id);
   c.set('auth', {
     sub: input.user.id,
     sid: input.sessionId,
-    scope: ['api:read', 'api:write'],
-    role: 'user',
+    scope: input.scope ?? ['api:read', 'api:write'],
+    role: input.role ?? 'user',
     amr: input.amr,
     authTime: input.authTime ?? Math.floor(Date.now() / 1000),
   });
+}
+
+async function applyBearerAuth(
+  c: {
+    req: { header: (name: string) => string | undefined };
+    set: <K extends keyof BetterAuthSessionContext>(
+      key: K,
+      value: BetterAuthSessionContext[K],
+    ) => void;
+  },
+  authHeader: string,
+): Promise<boolean> {
+  const resolved = await resolveBearerAuth(authHeader);
+  if (!resolved) return false;
+
+  const userRecord = await UserRepository.findByIdOrEmail(db, { id: resolved.claims.sub });
+  if (!userRecord) return false;
+
+  setAuthContext(c, {
+    user: toAuthUser({
+      ...userRecord,
+      createdAt: new Date(userRecord.createdAt),
+      updatedAt: new Date(userRecord.updatedAt),
+    }),
+    sessionId: resolved.claims.sid,
+    amr: resolved.claims.amr,
+    authTime: resolved.claims.auth_time,
+    role: resolved.claims.role,
+    scope: resolved.claims.scope,
+  });
+
+  return true;
 }
 
 async function applyBetterAuthSession(c: {
@@ -93,6 +134,17 @@ export const authJwtMiddleware = (): MiddlewareHandler => {
   return async (c, next) => {
     const path = c.req.path;
     if (path.startsWith('/api/auth')) {
+      return await next();
+    }
+
+    const authHeader = c.req.header('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      // A Bearer token is authoritative when present — verified-or-401, no
+      // silent fallback to an unrelated cookie session.
+      const bearerAuthenticated = await applyBearerAuth(c, authHeader);
+      if (!bearerAuthenticated) {
+        c.set('authError', 'invalid_token');
+      }
       return await next();
     }
 

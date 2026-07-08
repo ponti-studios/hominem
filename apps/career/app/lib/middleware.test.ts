@@ -4,14 +4,11 @@ import type { User } from '@hominem/auth/types';
 import type { CareerPortfolioRecord } from '@hominem/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const getPortfolioByUserId = vi.fn();
+const fetchCurrentPortfolio = vi.fn();
 const getServerSession = vi.fn();
 
-vi.mock('@hominem/db', () => ({
-  CareerRepository: {
-    getPortfolioByUserId,
-  },
-  db: {},
+vi.mock('./api.server', () => ({
+  fetchCurrentPortfolio,
 }));
 
 vi.mock('./auth.server', () => ({
@@ -51,13 +48,13 @@ const next = () => Promise.resolve(new Response());
 describe('career middleware', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getPortfolioByUserId.mockResolvedValue(null);
+    fetchCurrentPortfolio.mockResolvedValue(null);
   });
 
   it('hydrates user context when a session exists', async () => {
     const { sessionMiddleware, userContext } = await import('./middleware');
     const requestContext = createRequestContext();
-    getServerSession.mockResolvedValue({ user: testUser, session: { id: 'session-id' } });
+    getServerSession.mockResolvedValue({ user: testUser, headers: new Headers() });
 
     const result = await sessionMiddleware(
       {
@@ -105,17 +102,18 @@ describe('career middleware', () => {
     const { loadPortfolioMiddleware, portfolioContext, userContext } = await import('./middleware');
     const requestContext = createRequestContext();
     requestContext.context.set(userContext, testUser);
-    getPortfolioByUserId.mockResolvedValue(testPortfolio);
+    fetchCurrentPortfolio.mockResolvedValue(testPortfolio);
 
+    const request = new Request('http://localhost/account');
     await loadPortfolioMiddleware(
       {
-        request: new Request('http://localhost/account'),
+        request,
         context: requestContext.context,
       } as never,
       next,
     );
 
-    expect(getPortfolioByUserId).toHaveBeenCalledWith({}, testUser.id);
+    expect(fetchCurrentPortfolio).toHaveBeenCalledWith(request);
     expect(requestContext.values.get(portfolioContext)).toBe(testPortfolio);
   });
 

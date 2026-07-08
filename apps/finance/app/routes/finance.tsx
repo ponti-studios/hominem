@@ -16,8 +16,8 @@ import { useSort } from '~/lib/ui-shims';
 import type { Route } from './+types/finance';
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const authResult = await requireAuth(request);
-  const { finance } = createServerHonoClient(authResult.session?.token, request);
+  await requireAuth(request);
+  const { finance } = createServerHonoClient(request);
 
   const [accountsRes, transactionsRes] = await Promise.all([
     finance.accounts.list

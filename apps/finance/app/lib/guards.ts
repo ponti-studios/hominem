@@ -15,5 +15,5 @@ export async function requireAuth(request: Request) {
     throw redirect(`/auth?next=${next}`, { headers: auth.headers });
   }
 
-  return { user: auth.user, headers: auth.headers, session: auth.session };
+  return { user: auth.user, headers: auth.headers };
 }

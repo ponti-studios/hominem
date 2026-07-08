@@ -1,5 +1,5 @@
-import { sql } from 'kysely';
 import type { Selectable } from 'kysely';
+import { sql } from 'kysely';
 
 import { NotFoundError } from '../../errors';
 import type { DbHandle } from '../../transaction';
@@ -279,7 +279,7 @@ async function getCurrentPortfolioPreference(
 async function resolveCurrentPortfolioRow(
   handle: DbHandle,
   ownerUserid: string,
-): Promise<PortfolioRow | null> {
+): Promise<(PortfolioRow & { theme: Record<string, string> | null }) | null> {
   const preference = await getCurrentPortfolioPreference(handle, ownerUserid);
 
   if (preference?.currentPortfolioId) {
@@ -300,7 +300,10 @@ async function resolveCurrentPortfolioRow(
     .orderBy('createdat', 'desc')
     .executeTakeFirst();
 
-  return (fallbackPortfolio as PortfolioRow | undefined) ?? null;
+  return {
+    ...fallbackPortfolio,
+    theme: fallbackPortfolio?.theme ? JSON.parse(fallbackPortfolio.theme) : null,
+  };
 }
 
 export const CareerRepository = {

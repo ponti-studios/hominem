@@ -20,13 +20,11 @@ describe('requireAuth', () => {
 
     mockGetServerAuth.mockResolvedValue({
       user: { id: 'user-1', email: 'finance@hominem.test' },
-      session: null,
       headers,
     });
 
     await expect(requireAuth(new Request('http://finance.lvh.me:4444/finance'))).resolves.toEqual({
       user: { id: 'user-1', email: 'finance@hominem.test' },
-      session: null,
       headers,
     });
   });
@@ -34,7 +32,6 @@ describe('requireAuth', () => {
   it('redirects unauthenticated users to auth', async () => {
     mockGetServerAuth.mockResolvedValue({
       user: null,
-      session: null,
       headers: new Headers(),
     });
 

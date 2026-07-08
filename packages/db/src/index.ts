@@ -107,3 +107,6 @@ export type {
   UpdateCareerJobApplicationInput,
   UpdateCareerWorkExperienceInput,
 } from './services/career/career.repository';
+
+export { UserRepository } from './services/users/user.repository';
+export type { FindUserInput, UserRecord } from './services/users/user.repository';

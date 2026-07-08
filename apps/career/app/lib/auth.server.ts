@@ -1,72 +1,14 @@
-import type { Session, User } from '@hominem/auth/types';
+import { getServerAuth as sharedGetServerAuth } from '@hominem/auth/server';
+import type { User } from '@hominem/auth/types';
 
 import { serverEnv } from './env';
 
 export type { User };
 
-function getTestAuthUser(cookieHeader: string | null): User | null {
-  const testAuthCookie = cookieHeader
-    ?.split(';')
-    .find((cookie) => cookie.trim().startsWith('test-auth-user='))
-    ?.split('=')[1];
+export const getServerAuth = (request: Request) =>
+  sharedGetServerAuth(request, { apiBaseUrl: serverEnv().VITE_PUBLIC_API_URL });
 
-  if (!testAuthCookie) return null;
-
-  try {
-    return JSON.parse(decodeURIComponent(testAuthCookie)) as User;
-  } catch {
-    return null;
-  }
-}
-
-export async function getServerSession(request: Request) {
-  const headers = new Headers();
-  const cookie = request.headers.get('cookie');
-
-  if (process.env.NODE_ENV !== 'production') {
-    const testUser = getTestAuthUser(cookie);
-    if (testUser) {
-      return {
-        user: testUser,
-        session: {
-          id: 'test-session',
-          token: 'test-session',
-          userId: testUser.id,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-          ipAddress: null,
-          userAgent: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } satisfies Session,
-        headers: new Headers(),
-      };
-    }
-  }
-
-  if (cookie) {
-    headers.set('cookie', cookie);
-  }
-
-  const response = await fetch(
-    new URL('/api/auth/get-session', serverEnv().VITE_PUBLIC_API_URL).toString(),
-    {
-      method: 'GET',
-      headers,
-    },
-  );
-
-  if (!response.ok) {
-    return { user: null, session: null, headers: new Headers() };
-  }
-
-  const payload = (await response.json()) as {
-    user: User;
-    session: Session;
-  } | null;
-
-  return {
-    user: payload?.user ?? null,
-    session: payload?.session ?? null,
-    headers: new Headers(),
-  };
-}
+export const getServerSession = async (request: Request) => {
+  const { user, headers } = await getServerAuth(request);
+  return { user, headers };
+};

@@ -1,4 +1,4 @@
-import { useAuthContext } from '@hominem/auth';
+import { useAuthContext } from '@hominem/auth/client/provider';
 import { LoadingSpinner } from '@hominem/ui/loading-spinner';
 import { ChartLine, Landmark, UploadCloud, Gauge } from 'lucide-react';
 import { useEffect } from 'react';

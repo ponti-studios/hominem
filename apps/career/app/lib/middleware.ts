@@ -1,11 +1,11 @@
-import { CareerRepository, db } from '@hominem/db';
-import type { CareerPortfolioRecord } from '@hominem/db';
 import { createContext, redirect, type RouterContext } from 'react-router';
 
+import type { CareerPortfolioResponse } from './api.server';
+import { fetchCurrentPortfolio } from './api.server';
 import { getServerSession, type User } from './auth.server';
 
 export const userContext = createContext<User | null>(null);
-export const portfolioContext = createContext<CareerPortfolioRecord | null>(null);
+export const portfolioContext = createContext<CareerPortfolioResponse | null>(null);
 
 type MiddlewareContext = {
   get: <T>(key: RouterContext<T>) => T;
@@ -62,7 +62,7 @@ export async function requireAuthMiddleware(
 }
 
 export async function loadPortfolioMiddleware(
-  { context }: SharedMiddlewareArgs,
+  { request, context }: SharedMiddlewareArgs,
   next: SharedMiddlewareNext,
 ): Promise<Response | void> {
   const user = context.get(userContext);
@@ -70,7 +70,7 @@ export async function loadPortfolioMiddleware(
     return next();
   }
 
-  const currentPortfolio = await CareerRepository.getPortfolioByUserId(db, user.id);
+  const currentPortfolio = await fetchCurrentPortfolio(request);
   context.set(portfolioContext, currentPortfolio ?? null);
 
   return next();

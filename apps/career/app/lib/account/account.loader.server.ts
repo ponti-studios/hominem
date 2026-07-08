@@ -1,5 +1,7 @@
 import { CareerRepository, db, type CareerPortfolioRecord } from '@hominem/db';
 
+import type { CareerPortfolioResponse } from '~/lib/api.server';
+
 import type { AccountLoaderData, AccountPageUser, AccountPortfolioSummary } from './types';
 
 function toPortfolioSummary(portfolio: CareerPortfolioRecord): AccountPortfolioSummary {
@@ -22,7 +24,7 @@ export async function loadAccountPageData({
   currentPortfolio,
 }: {
   user: AccountPageUser;
-  currentPortfolio: CareerPortfolioRecord | null;
+  currentPortfolio: CareerPortfolioResponse | null;
 }): Promise<AccountLoaderData> {
   const [portfolioRows, socialLinks] = await Promise.all([
     CareerRepository.listPortfoliosByUserId(db, user.id),

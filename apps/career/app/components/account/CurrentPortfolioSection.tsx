@@ -1,4 +1,3 @@
-import type { CareerPortfolioRecord } from '@hominem/db';
 import { Badge } from '@hominem/ui';
 import { Button } from '@hominem/ui';
 import { ExternalLink } from 'lucide-react';
@@ -6,6 +5,7 @@ import { ExternalLink } from 'lucide-react';
 import { SlugEditor } from '~/components/SlugEditor';
 import { UploadResumeForm } from '~/components/UploadResumeForm';
 import type { AccountPortfolioSummary } from '~/lib/account/types';
+import type { CareerPortfolioResponse } from '~/lib/api.server';
 import { cn } from '~/lib/utils';
 
 export function CurrentPortfolioSection({
@@ -18,7 +18,7 @@ export function CurrentPortfolioSection({
   onToggleReplaceResume,
   onUpdateSlug,
 }: {
-  currentPortfolio: CareerPortfolioRecord;
+  currentPortfolio: CareerPortfolioResponse;
   portfolios: AccountPortfolioSummary[];
   publicPortfolioUrl: string | null;
   showReplaceResume: boolean;

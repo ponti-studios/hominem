@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 
 import type { AppContext } from '../middleware/auth';
+import { careerRoutes } from './career';
 import { chatsRoutes } from './chats';
 import { enhanceRoutes } from './enhance';
 import { filesRoutes } from './files';
@@ -11,6 +12,7 @@ import { tasksRoutes } from './tasks';
 import { voiceRoutes } from './voice';
 
 export const economyRoutes = new Hono<AppContext>()
+  .route('/career', careerRoutes)
   .route('/chats', chatsRoutes)
   .route('/enhance', enhanceRoutes)
   .route('/files', filesRoutes)

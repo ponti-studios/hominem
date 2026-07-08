@@ -1,4 +1,4 @@
-import { AuthProvider } from '@hominem/auth';
+import { AuthProvider } from '@hominem/auth/client/provider';
 import { COMMON_FONT_LINKS, COMMON_ICON_LINKS, UpdateGuard } from '@hominem/ui';
 import type React from 'react';
 import {
@@ -19,12 +19,11 @@ import { serverEnv } from './lib/env';
 import './globals.css';
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { user, session, headers } = await getServerSession(request);
+  const { user, headers } = await getServerSession(request);
 
   return data(
     {
       user,
-      session,
       authEnv: {
         apiBaseUrl: authConfig.apiBaseUrl,
       },

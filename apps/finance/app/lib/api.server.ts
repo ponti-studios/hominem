@@ -4,7 +4,7 @@ import { hc } from 'hono/client';
 import { serverEnv } from '~/lib/env';
 
 const customFetch =
-  (accessToken?: string, request?: Request): typeof fetch =>
+  (request?: Request): typeof fetch =>
   async (input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers);
 
@@ -13,16 +13,12 @@ const customFetch =
       if (cookie) headers.set('cookie', cookie);
     }
 
-    if (accessToken) {
-      headers.set('authorization', `Bearer ${accessToken}`);
-    }
-
     return fetch(input, { ...init, headers, credentials: 'include' });
   };
 
-export function createServerHonoClient(accessToken?: string, request?: Request) {
+export function createServerHonoClient(request?: Request) {
   const client = hc<AppType>(serverEnv.VITE_PUBLIC_API_URL, {
-    fetch: customFetch(accessToken, request),
+    fetch: customFetch(request),
   });
 
   return { finance: client.api.finance };

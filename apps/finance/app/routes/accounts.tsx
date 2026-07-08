@@ -65,8 +65,8 @@ function normalizeAccount(account: RawAccountWithOptionalPlaid): AccountWithOpti
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const authResult = await requireAuth(request);
-  const { finance } = createServerHonoClient(authResult.session?.token, request);
+  await requireAuth(request);
+  const { finance } = createServerHonoClient(request);
 
   const data = await finance.accounts.all
     .$get({ query: {} })
