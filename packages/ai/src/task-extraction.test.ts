@@ -8,9 +8,9 @@ import {
 
 describe('formatVoiceTaskReferenceDate', () => {
   it('formats the reference date in the caller timezone with an explicit offset', () => {
-    expect(
-      formatVoiceTaskReferenceDate('2026-07-08T03:30:00.000Z', 'America/Los_Angeles'),
-    ).toBe('2026-07-07T20:30:00-07:00');
+    expect(formatVoiceTaskReferenceDate('2026-07-08T03:30:00.000Z', 'America/Los_Angeles')).toBe(
+      '2026-07-07T20:30:00-07:00',
+    );
   });
 });
 

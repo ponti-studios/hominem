@@ -1,6 +1,5 @@
-import { RotateCcwIcon, SaveIcon, Trash2Icon } from 'lucide-react';
-
 import { Button } from '@hominem/ui';
+import { RotateCcwIcon, SaveIcon, Trash2Icon } from 'lucide-react';
 
 export interface EditorFormActionsProps {
   isSaving: boolean;

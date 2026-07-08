@@ -225,9 +225,7 @@ export const TaskRepository = {
           ? { description: patch.description?.trim() || null }
           : {}),
         ...(patch.priority !== undefined ? { priority: patch.priority } : {}),
-        ...(patch.dueAt !== undefined
-          ? { dueAt: patch.dueAt ? new Date(patch.dueAt) : null }
-          : {}),
+        ...(patch.dueAt !== undefined ? { dueAt: patch.dueAt ? new Date(patch.dueAt) : null } : {}),
       })
       .where('id', '=', id)
       .where('ownerUserid', '=', userId)

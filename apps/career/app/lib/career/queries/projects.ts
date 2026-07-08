@@ -9,10 +9,7 @@ export async function getProjectById(ownerUserid: string, projectId: string) {
   return CareerRepository.getProjectById(db, ownerUserid, projectId);
 }
 
-export async function getProjectsByWorkExperience(
-  portfolioId: string,
-  workExperienceId: string,
-) {
+export async function getProjectsByWorkExperience(portfolioId: string, workExperienceId: string) {
   return CareerRepository.listProjectsByWorkExperience(db, portfolioId, workExperienceId);
 }
 

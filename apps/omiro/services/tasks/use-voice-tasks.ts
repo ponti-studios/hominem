@@ -18,7 +18,9 @@ export function useVoiceTasks() {
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as { error?: unknown };
         throw new Error(
-          typeof error.error === 'string' ? error.error : `Voice task creation failed (${res.status})`,
+          typeof error.error === 'string'
+            ? error.error
+            : `Voice task creation failed (${res.status})`,
         );
       }
       return TasksVoiceOutputSchema.parse(await res.json());

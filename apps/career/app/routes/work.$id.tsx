@@ -1222,15 +1222,12 @@ function normalizeWorkExperienceUpdates(
           ? updates.description.trim()
           : updates.description
         : undefined,
-    startDate:
-      updates.startDate !== undefined ? normalizeDateInput(updates.startDate) : undefined,
+    startDate: updates.startDate !== undefined ? normalizeDateInput(updates.startDate) : undefined,
     endDate: updates.endDate !== undefined ? normalizeDateInput(updates.endDate) : undefined,
     baseSalary:
       updates.baseSalary !== undefined ? normalizeCurrencyInput(updates.baseSalary) : undefined,
     signingBonus:
-      updates.signingBonus !== undefined
-        ? normalizeCurrencyInput(updates.signingBonus)
-        : undefined,
+      updates.signingBonus !== undefined ? normalizeCurrencyInput(updates.signingBonus) : undefined,
     annualBonus:
       updates.annualBonus !== undefined ? normalizeCurrencyInput(updates.annualBonus) : undefined,
     employmentType:
@@ -1425,11 +1422,9 @@ function formatCurrencyInput(cents: number | null | undefined) {
 }
 
 function hasCompensation(workExperience: WorkExperienceRecord) {
-  return [
-    workExperience.baseSalary,
-    workExperience.signingBonus,
-    workExperience.annualBonus,
-  ].some((value) => value !== null && value !== undefined);
+  return [workExperience.baseSalary, workExperience.signingBonus, workExperience.annualBonus].some(
+    (value) => value !== null && value !== undefined,
+  );
 }
 
 function hasTeamDetails(workExperience: WorkExperienceRecord) {

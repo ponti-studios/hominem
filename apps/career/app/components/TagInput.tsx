@@ -1,6 +1,5 @@
-import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
-
 import { FilterChip } from '@hominem/ui';
+import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 export interface TagInputProps {
   id: string;
@@ -64,9 +63,7 @@ export function TagInput({
 
     debounceRef.current = setTimeout(async () => {
       const results = await fetchSuggestions(trimmed);
-      const filtered = results.filter(
-        (s) => s.toLowerCase() !== trimmed && !tagList.includes(s),
-      );
+      const filtered = results.filter((s) => s.toLowerCase() !== trimmed && !tagList.includes(s));
       setSuggestions(filtered);
       setOpen(filtered.length > 0);
       setActiveIndex(-1);
@@ -165,9 +162,7 @@ export function TagInput({
             aria-expanded={open}
             aria-autocomplete="list"
             aria-controls={open ? `${id}-suggestions` : undefined}
-            aria-activedescendant={
-              activeIndex >= 0 ? `${id}-suggestion-${activeIndex}` : undefined
-            }
+            aria-activedescendant={activeIndex >= 0 ? `${id}-suggestion-${activeIndex}` : undefined}
           />
         </div>
       </div>
@@ -186,9 +181,7 @@ export function TagInput({
               role="option"
               aria-selected={index === activeIndex}
               className={`cursor-pointer px-3 py-2 text-sm transition-colors ${
-                index === activeIndex
-                  ? 'bg-accent text-accent-foreground'
-                  : 'hover:bg-accent/50'
+                index === activeIndex ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
               }`}
               onMouseDown={(e) => {
                 e.preventDefault(); // prevent blur before click

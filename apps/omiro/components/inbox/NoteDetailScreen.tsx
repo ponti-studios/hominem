@@ -293,7 +293,16 @@ function NoteEditorBody({
           : t.notes.editor.startChatErrorGeneric;
       Alert.alert(t.notes.editor.startChatErrorTitle, message, [{ text: 'OK' }]);
     }
-  }, [closeEnhance, draft.content, draft.title, fileIds, flushSave, isStartingChat, note.id, startChat]);
+  }, [
+    closeEnhance,
+    draft.content,
+    draft.title,
+    fileIds,
+    flushSave,
+    isStartingChat,
+    note.id,
+    startChat,
+  ]);
 
   const dateline = formatNoteDateline(note);
 

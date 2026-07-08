@@ -57,7 +57,10 @@ export function useTaskCreate({ parentId }: UseTaskCreateOptions = {}) {
       await queryClient.cancelQueries({ queryKey: taskKeys.all });
 
       const optimisticId = `optimistic-task-${Date.now().toString()}`;
-      const optimisticTask = buildOptimisticTask({ ...input, parentTaskId: parentId }, optimisticId);
+      const optimisticTask = buildOptimisticTask(
+        { ...input, parentTaskId: parentId },
+        optimisticId,
+      );
 
       const previousAll = queryClient.getQueryData<TaskListItem[]>(taskKeys.all);
       const previousDetail = parentId
