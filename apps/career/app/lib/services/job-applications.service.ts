@@ -1,6 +1,5 @@
 import { CareerRepository, db } from '@hominem/db';
 import type {
-  AppApplicationFiles,
   AppApplicationNotes,
   CareerJobApplicationRecord,
   JsonObject,
@@ -36,12 +35,6 @@ export interface CreateApplicationInput {
   link?: string | null;
 }
 
-export interface ApplicationDetailData {
-  application: ApplicationWithCompany;
-  notes: Selectable<AppApplicationNotes>[];
-  files: Selectable<AppApplicationFiles>[];
-}
-
 function interviewEntryToJson(entry: InterviewEntry): JsonObject {
   return {
     type: entry.type,
@@ -54,30 +47,31 @@ function interviewEntryToJson(entry: InterviewEntry): JsonObject {
 
 export class JobApplicationsService {
   /**
-   * Get application details with company information and notes
+   * Get an application with company information
    */
-  static async getApplicationDetail(
+  static async getApplication(
     applicationId: string,
     ownerUserid: string,
-  ): Promise<ApplicationDetailData> {
+  ): Promise<ApplicationWithCompany> {
     const application = await CareerRepository.getApplicationById(db, ownerUserid, applicationId);
 
     if (!application) {
       throw new Error('Application not found');
     }
 
-    const notesResult = await db
+    return application;
+  }
+
+  /**
+   * List notes for an application
+   */
+  static async listNotes(applicationId: string): Promise<Selectable<AppApplicationNotes>[]> {
+    return db
       .selectFrom('app.applicationNotes')
       .selectAll()
       .where('applicationId', '=', applicationId)
       .orderBy('createdat', 'asc')
       .execute();
-
-    return {
-      application,
-      notes: notesResult,
-      files: [],
-    };
   }
 
   /**
