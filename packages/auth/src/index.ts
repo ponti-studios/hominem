@@ -1,7 +1,6 @@
 export { AuthProvider, useAuthClient, useSession } from './client/provider';
-export type {} from './types';
 
-import { useSession, useAuthClient } from './client/provider';
+import { useAuthClient, useSession } from './client/provider';
 
 /**
  * Compatibility hook for legacy useAuthContext API.

@@ -7,7 +7,7 @@ import {
   calculateSavingsGoalInputSchema,
   runwayCalculationSchema,
 } from '@hominem/finance-services';
-import type { RunwayCalculateOutput } from '@hominem/rpc/types/finance/runway.types';
+import type { RunwayCalculateOutput } from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';

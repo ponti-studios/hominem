@@ -4,7 +4,7 @@ import { db } from '@hominem/db';
 import type {
   InstitutionCreateOutput,
   InstitutionsListOutput,
-} from '@hominem/rpc/types/finance/institutions.types';
+} from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';

@@ -5,7 +5,6 @@ import {
   createDeterministicIdFactory,
   ensureIntegrationUsers,
   isIntegrationDatabaseAvailable,
-  tableExists,
 } from '@hominem/db/test/utils';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -16,10 +15,10 @@ import {
   createTransaction,
   deleteUserFinanceData,
   deleteBudgetCategory,
-  getAllBudgetCategories,
   getBudgetCategoriesWithSpending,
   getBudgetCategoryById,
   getBudgetTrackingData,
+  getSpendingCategories,
   getTransactionTagAnalysis,
   queryTransactionsByContract,
   replaceTransactionTags,
@@ -28,10 +27,6 @@ import {
 
 const nextUserId = createDeterministicIdFactory('finance.budget.integration');
 const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
-
-async function hasBudgetGoalsTable(): Promise<boolean> {
-  return await tableExists('budget_goals');
-}
 
 describeIntegration('finance budget integration', () => {
   let ownerId: string;
@@ -47,7 +42,6 @@ describeIntegration('finance budget integration', () => {
       .execute(db)
       .catch(() => {});
     await sql`delete from app.plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
-    await sql`delete from budget_goals where user_id = ${userId}`.execute(db).catch(() => {});
     await sql`delete from app.finance_transactions where user_id = ${userId}`
       .execute(db)
       .catch(() => {});
@@ -92,7 +86,7 @@ describeIntegration('finance budget integration', () => {
     const exists = await checkBudgetCategoryNameExists(ownerId, 'Food');
     expect(exists).toBe(true);
 
-    const listed = await getAllBudgetCategories(ownerId);
+    const listed = await getSpendingCategories(ownerId);
     expect(listed).toHaveLength(1);
     expect(listed[0]?.id).toBe(created.id);
 
@@ -125,14 +119,6 @@ describeIntegration('finance budget integration', () => {
       ownerUserid: ownerId,
       name: 'Travel',
     });
-
-    const budgetGoalsExists = await hasBudgetGoalsTable();
-    if (budgetGoalsExists) {
-      await sql`
-        insert into budget_goals (id, user_id, category_id, target_amount, target_period)
-        values (${crypto.randomUUID()}, ${ownerId}, ${null}, ${500}, ${'monthly'})
-      `.execute(db);
-    }
 
     const txFood = await createTransaction({
       userId: ownerId,
@@ -170,7 +156,7 @@ describeIntegration('finance budget integration', () => {
     expect(spending[1]?.spent).toBe(80);
 
     const tracking = await getBudgetTrackingData(ownerId);
-    expect(tracking.totalBudget).toBe(budgetGoalsExists ? 500 : 0);
+    expect(tracking.totalBudget).toBe(0);
     expect(tracking.totalSpent).toBe(200);
   });
 

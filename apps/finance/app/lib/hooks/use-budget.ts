@@ -4,7 +4,7 @@ import type {
   BudgetCalculateInput,
   BudgetCalculateOutput,
   TransactionCategoryAnalysisOutput,
-} from '@hominem/rpc/types/finance.types';
+} from '@hominem/rpc/finance';
 
 import { useHonoMutation, useHonoQuery, useHonoUtils } from '~/lib/api';
 

@@ -1,20 +1,25 @@
-export type { NoteAnalysis } from '../schemas/notes.schema'
+export type NoteAnalysis = {
+  category?: string | null
+  sentiment?: string | null
+  keyPhrases?: string[]
+  summary?: string | null
+}
 
-export type {
-  AllContentType,
-  ContentTag,
-  TaskPriority,
-  TaskStatus,
-} from '../schemas/notes.schema'
+export type AllContentType = NoteContentType
 
-export {
-  NoteContentTypeSchema,
-  NoteStatusSchema,
-  TaskPrioritySchema,
-  TaskStatusSchema,
-} from '../schemas/notes.schema'
+export type ContentTag = {
+  id: string
+  name: string
+}
 
-import type { ContentTag, TaskPriority, TaskStatus, NoteAnalysis } from '../schemas/notes.schema'
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
+export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'cancelled'
+
+export const NoteContentTypeSchema = {} as const
+export const NoteStatusSchema = {} as const
+export const TaskPrioritySchema = {} as const
+export const TaskStatusSchema = {} as const
+
 
 export type NoteContentType =
   | 'note'

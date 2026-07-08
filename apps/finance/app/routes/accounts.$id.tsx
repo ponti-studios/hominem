@@ -1,4 +1,4 @@
-import type { AccountGetOutput } from '@hominem/rpc/types/finance.types';
+import type { AccountGetOutput } from '@hominem/rpc/finance';
 import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';

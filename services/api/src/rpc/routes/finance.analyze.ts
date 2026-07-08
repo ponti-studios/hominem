@@ -9,7 +9,7 @@ import type {
   MonthlyStatsOutput,
   SpendingTimeSeriesOutput,
   TopMerchantsOutput,
-} from '@hominem/rpc/types/finance/analytics.types';
+} from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';

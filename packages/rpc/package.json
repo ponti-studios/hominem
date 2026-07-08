@@ -7,6 +7,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./finance": {
+      "types": "./src/finance.ts",
+      "default": "./src/finance.ts"
+    },
     "./react": {
       "types": "./src/react/index.ts",
       "default": "./src/react/index.ts"
@@ -22,18 +26,6 @@
     "./voice-events": {
       "types": "./src/voice-events.ts",
       "default": "./src/voice-events.ts"
-    },
-    "./domains/finance": {
-      "types": "./src/domains/finance.ts",
-      "default": "./src/domains/finance.ts"
-    },
-    "./schemas/*": {
-      "types": "./src/schemas/*.ts",
-      "default": "./src/schemas/*.ts"
-    },
-    "./types/finance/*": {
-      "types": "./src/types/finance/*.ts",
-      "default": "./src/types/finance/*.ts"
     }
   },
   "scripts": {

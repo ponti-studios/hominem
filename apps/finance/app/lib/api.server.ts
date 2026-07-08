@@ -1,5 +1,5 @@
 import { createApiClient } from '@hominem/rpc';
-import { createFinanceClient } from '@hominem/rpc/domains/finance';
+import { createFinanceClient } from '@hominem/rpc/finance';
 
 import { serverEnv } from '~/lib/env';
 

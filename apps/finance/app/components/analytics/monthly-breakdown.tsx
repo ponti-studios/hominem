@@ -1,4 +1,4 @@
-import type { TimeSeriesDataPoint } from '@hominem/rpc/types/finance.types';
+import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
 import { Card, CardContent } from '@hominem/ui/card';
 import { Link, useNavigate } from 'react-router';
 

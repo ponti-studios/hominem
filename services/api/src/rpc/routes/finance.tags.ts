@@ -1,5 +1,5 @@
 import { db } from '@hominem/db';
-import type { CategoriesListOutput } from '@hominem/rpc/types/finance/categories.types';
+import type { CategoriesListOutput } from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import * as z from 'zod';

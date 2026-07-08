@@ -1,4 +1,4 @@
-import type { TopMerchantsOutput } from '@hominem/rpc/types/finance.types';
+import type { TopMerchantsOutput } from '@hominem/rpc/finance';
 
 import { useHonoQuery } from '~/lib/api';
 

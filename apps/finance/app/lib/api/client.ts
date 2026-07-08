@@ -1,4 +1,4 @@
-import { createFinanceClient } from '@hominem/rpc/domains/finance';
+import { createFinanceClient } from '@hominem/rpc/finance';
 import { useApiClient } from '@hominem/rpc/react';
 import { useMutation, useQuery, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
 

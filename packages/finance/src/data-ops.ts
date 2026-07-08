@@ -18,7 +18,6 @@ export async function deleteUserFinanceData(userId: string): Promise<{
   deletedTaggedItems: number;
   deletedTransactions: number;
   deletedAccounts: number;
-  deletedBudgetGoals: number;
   deletedPlaidItems: number;
 }> {
   const taggedItemsResult = await db
@@ -41,15 +40,6 @@ export async function deleteUserFinanceData(userId: string): Promise<{
     .executeTakeFirst();
   const deletedAccounts = getAffectedRows(accountsResult);
 
-  let deletedBudgetGoals = 0;
-  if (await tableExists('budget_goals')) {
-    const budgetGoalsResult = await db
-      .deleteFrom('budget_goals' as any)
-      .where('userId', '=', userId)
-      .executeTakeFirst();
-    deletedBudgetGoals = getAffectedRows(budgetGoalsResult);
-  }
-
   let deletedPlaidItems = 0;
   if (await tableExists('app.plaid_items')) {
     const plaidItemsResult = await db
@@ -63,7 +53,6 @@ export async function deleteUserFinanceData(userId: string): Promise<{
     deletedTaggedItems,
     deletedTransactions,
     deletedAccounts,
-    deletedBudgetGoals,
     deletedPlaidItems,
   };
 }
@@ -72,7 +61,6 @@ export async function exportFinanceData(userId: string): Promise<{
   accounts: Selectable<AppFinanceAccounts>[];
   transactions: Selectable<AppFinanceTransactions>[];
   tags: Selectable<AppTags>[];
-  budgetGoals: Record<string, unknown>[];
   plaidItems: Selectable<AppPlaidItems>[];
 }> {
   const [accounts, transactions, tags] = await Promise.all([
@@ -80,18 +68,6 @@ export async function exportFinanceData(userId: string): Promise<{
     queryTransactionsByContract({ userId, limit: 200, offset: 0 }),
     getTransactionTags(userId),
   ]);
-
-  let budgetGoals: Record<string, unknown>[] = [];
-  if (await tableExists('budget_goals')) {
-    const budgetGoalsResult = await db
-      .selectFrom('budget_goals' as any)
-      .selectAll()
-      .where('userId', '=', userId)
-      .orderBy('createdAt', 'desc')
-      .orderBy('id', 'asc')
-      .execute();
-    budgetGoals = budgetGoalsResult as Record<string, unknown>[];
-  }
 
   let plaidItems: Selectable<AppPlaidItems>[] = [];
   if (await tableExists('app.plaid_items')) {
@@ -109,7 +85,6 @@ export async function exportFinanceData(userId: string): Promise<{
     accounts,
     transactions,
     tags,
-    budgetGoals,
     plaidItems,
   };
 }

@@ -1,4 +1,4 @@
-import type { MonthlyStatsOutput } from '@hominem/rpc/types/finance.types';
+import type { MonthlyStatsOutput } from '@hominem/rpc/finance';
 
 import { useHonoQuery } from '~/lib/api';
 

@@ -1,4 +1,4 @@
-import type { InstitutionsListOutput } from '@hominem/rpc/types/finance.types';
+import type { InstitutionsListOutput } from '@hominem/rpc/finance';
 
 import { useHonoQuery } from '~/lib/api';
 

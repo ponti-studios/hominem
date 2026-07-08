@@ -1,4 +1,4 @@
-import type { SpendingTimeSeriesOutput } from '@hominem/rpc/types/finance.types';
+import type { SpendingTimeSeriesOutput } from '@hominem/rpc/finance';
 import { format } from 'date-fns';
 
 import { useHonoQuery } from '~/lib/api';

@@ -32,7 +32,6 @@ describeIntegration('finance data ops integration', () => {
       .execute(db)
       .catch(() => {});
     await sql`delete from app.plaid_items where user_id = ${userId}`.execute(db).catch(() => {});
-    await sql`delete from budget_goals where user_id = ${userId}`.execute(db).catch(() => {});
     await sql`delete from app.finance_transactions where user_id = ${userId}`
       .execute(db)
       .catch(() => {});

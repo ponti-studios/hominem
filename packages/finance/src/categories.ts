@@ -1,13 +1,13 @@
 import crypto from 'node:crypto';
 
-import { db } from '@hominem/db';
 import type { AppTags, Selectable } from '@hominem/db';
+import { db } from '@hominem/db';
 import { sql } from 'kysely';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
-import { getAffectedRows, tableExists, toNumber } from './utils';
+import { getAffectedRows, toNumber } from './utils';
 
-export async function getSpendingCategories(ownerId: string): Promise<Selectable<AppTags>[]> {
+export async function getAllTags(ownerId: string): Promise<Selectable<AppTags>[]> {
   return db
     .selectFrom('app.tags')
     .selectAll()
@@ -17,9 +17,11 @@ export async function getSpendingCategories(ownerId: string): Promise<Selectable
     .execute();
 }
 
-export const getTransactionTags = getSpendingCategories;
+export const getSpendingCategories = getAllTags;
+export const getTransactionTags = getAllTags;
+export const getUserExpenseCategories = getAllTags;
 
-export async function createBudgetCategory(
+export async function createTag(
   input: Partial<Selectable<AppTags>> & { ownerUserid: string; name: string },
 ): Promise<Selectable<AppTags>> {
   const id = input.id ?? crypto.randomUUID();
@@ -37,12 +39,13 @@ export async function createBudgetCategory(
     .returningAll()
     .executeTakeFirst();
   if (!result) {
-    throw new Error('Failed to create budget category');
+    throw new Error('Failed to create tag');
   }
   return result;
 }
+export const createBudgetCategory = createTag;
 
-export async function updateBudgetCategory(
+export async function updateTag(
   id: string,
   ownerUserid: string,
   input: Partial<Selectable<AppTags>>,
@@ -70,8 +73,9 @@ export async function updateBudgetCategory(
     .executeTakeFirst();
   return result ?? null;
 }
+export const updateBudgetCategory = updateTag;
 
-export async function deleteBudgetCategory(id: string, ownerUserid: string): Promise<boolean> {
+export async function deleteTag(id: string, ownerUserid: string): Promise<boolean> {
   const result = await db
     .deleteFrom('app.tags')
     .where('id', '=', id)
@@ -79,8 +83,9 @@ export async function deleteBudgetCategory(id: string, ownerUserid: string): Pro
     .executeTakeFirst();
   return getAffectedRows(result) > 0;
 }
+export const deleteBudgetCategory = deleteTag;
 
-export async function getBudgetCategoryById(
+export async function getTagById(
   id: string,
   ownerUserid: string,
 ): Promise<Selectable<AppTags> | null> {
@@ -93,11 +98,9 @@ export async function getBudgetCategoryById(
     .executeTakeFirst();
   return result ?? null;
 }
+export const getBudgetCategoryById = getTagById;
 
-export async function checkBudgetCategoryNameExists(
-  ownerUserid: string,
-  name: string,
-): Promise<boolean> {
+export async function checkTagNameExists(ownerUserid: string, name: string): Promise<boolean> {
   const result = await db
     .selectFrom('app.tags')
     .select('id')
@@ -107,18 +110,7 @@ export async function checkBudgetCategoryNameExists(
     .executeTakeFirst();
   return !!result;
 }
-
-export const getUserExpenseCategories = getAllBudgetCategories;
-
-export async function getAllBudgetCategories(ownerUserid: string): Promise<Selectable<AppTags>[]> {
-  return db
-    .selectFrom('app.tags')
-    .selectAll()
-    .where('ownerUserid', '=', ownerUserid)
-    .orderBy('name', 'asc')
-    .orderBy('id', 'asc')
-    .execute();
-}
+export const checkBudgetCategoryNameExists = checkTagNameExists;
 
 export async function getBudgetCategoriesWithSpending(ownerUserid: string): Promise<
   Array<{
@@ -175,20 +167,7 @@ export async function getBudgetTrackingData(
     .executeTakeFirst();
   const totalSpent = spentResult ? toNumber(spentResult.totalSpent) : 0;
 
-  const hasBudgetGoals = await tableExists('budget_goals');
-  if (!hasBudgetGoals) {
-    return { totalBudget: 0, totalSpent };
-  }
-
-  const budgetResult = await db
-    .selectFrom('budget_goals' as any)
-    .select(sql<number>`coalesce(sum(target_amount), 0)`.as('totalBudget'))
-    .where('userId', '=', ownerUserid)
-    .executeTakeFirst();
-  return {
-    totalBudget: budgetResult ? toNumber(budgetResult.totalBudget) : 0,
-    totalSpent,
-  };
+  return { totalBudget: 0, totalSpent };
 }
 
 export async function bulkCreateBudgetCategoriesFromTransactions(

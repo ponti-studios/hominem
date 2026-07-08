@@ -1,7 +1,27 @@
 import { randomUUID } from 'crypto';
 
 import { db } from '@hominem/db';
-import type { Database } from '@hominem/db';
+import type {
+  AppFinanceAccounts,
+  AppFinanceTransactions,
+  AppPlaidItems,
+} from '@hominem/db';
+import type {
+  AccountAllOutput,
+  AccountConnectionsOutput,
+  AccountCreateOutput,
+  AccountData,
+  AccountDeleteOutput,
+  AccountGetOutput,
+  AccountInstitutionAccountsOutput,
+  AccountListOutput,
+  AccountType,
+  AccountUpdateOutput,
+  AccountsWithPlaidOutput,
+  PlaidConnection,
+  TransactionData,
+  TransactionType,
+} from '@hominem/rpc/finance';
 import {
   accountCreateSchema,
   accountDeleteSchema,
@@ -9,29 +29,9 @@ import {
   accountListSchema,
   accountUpdateSchema,
   institutionAccountsSchema,
-} from '@hominem/rpc/schemas/finance.accounts.schema';
-import type {
-  AccountAllOutput,
-  AccountConnectionsOutput,
-  AccountCreateOutput,
-  AccountDeleteOutput,
-  AccountGetOutput,
-  AccountInstitutionAccountsOutput,
-  AccountListOutput,
-  AccountUpdateOutput,
-  AccountsWithPlaidOutput,
-} from '@hominem/rpc/types/finance/accounts.types';
-import type {
-  AccountData,
-  AccountType,
-  PlaidConnection,
-  TransactionData,
-} from '@hominem/rpc/types/finance/shared.types';
-import type { TransactionType } from '@hominem/rpc/types/finance/shared.types';
-import { redis } from '@hominem/services/redis';
+} from '@hominem/rpc/finance';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import type { Selectable } from 'kysely';
 import * as z from 'zod';
 
 import { NotFoundError } from '../errors';
@@ -57,7 +57,7 @@ function normalizeAccountType(value: string): AccountType {
   return 'other';
 }
 
-function toAccountData(row: Selectable<Database['app.financeAccounts']>): AccountData {
+function toAccountData(row: AppFinanceAccounts): AccountData {
   return {
     id: row.id,
     userId: row.user_id,
@@ -68,7 +68,7 @@ function toAccountData(row: Selectable<Database['app.financeAccounts']>): Accoun
   };
 }
 
-function toTransactionData(row: Selectable<Database['app.financeTransactions']>): TransactionData {
+function toTransactionData(row: AppFinanceTransactions): TransactionData {
   const amount =
     typeof row.amount === 'string' ? Number.parseFloat(row.amount) : Number(row.amount);
   return {
@@ -82,7 +82,7 @@ function toTransactionData(row: Selectable<Database['app.financeTransactions']>)
   };
 }
 
-function toAccountWithPlaidInfo(row: Selectable<Database['app.financeAccounts']>): AccountData & {
+function toAccountWithPlaidInfo(row: AppFinanceAccounts): AccountData & {
   institutionName?: string | null;
   plaidAccountId?: string | null;
 } {
@@ -94,7 +94,7 @@ function toAccountWithPlaidInfo(row: Selectable<Database['app.financeAccounts']>
 }
 
 function toPlaidConnection(
-  row: Selectable<Database['app.plaidItems']>,
+  row: AppPlaidItems,
   institutionName?: string,
 ): PlaidConnection {
   const createdAtStr = toIsoStringOr(row.created_at, new Date(0).toISOString());

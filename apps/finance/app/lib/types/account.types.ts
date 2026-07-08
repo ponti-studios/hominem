@@ -1,4 +1,4 @@
-import type { AccountWithPlaidInfo } from '@hominem/rpc/types/finance.types';
+import type { AccountWithPlaidInfo } from '@hominem/rpc/finance';
 
 /**
  * Account type - represents a financial account from the API

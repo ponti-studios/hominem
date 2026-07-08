@@ -1,4 +1,4 @@
-import type { RunwayCalculateInput, RunwayCalculateOutput } from '@hominem/rpc/types/finance.types';
+import type { RunwayCalculateInput, RunwayCalculateOutput } from '@hominem/rpc/finance';
 
 import { useHonoMutation } from '~/lib/api';
 

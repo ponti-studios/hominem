@@ -1,4 +1,4 @@
-import type { Merchant } from '@hominem/rpc/types/finance.types';
+import type { Merchant } from '@hominem/rpc/finance';
 import { Badge } from '@hominem/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 
