@@ -3,12 +3,11 @@
  * Please do not edit it manually.
  */
 
-import type { ColumnType } from 'kysely';
+import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
 
@@ -260,14 +259,11 @@ export interface AppFiles {
 }
 
 export interface AppFinanceAccounts {
+  accountid: string | null;
   accountSubtype: string | null;
   accountType: string;
   availableBalance: Numeric | null;
-<<<<<<< HEAD
-  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-=======
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
   currencyCode: Generated<string>;
   currentBalance: Numeric | null;
   id: Generated<string>;
@@ -276,66 +272,41 @@ export interface AppFinanceAccounts {
   mask: string | null;
   metadata: Generated<Json>;
   name: string;
-  plaidAccountId: string | null;
+  ownerUserid: string;
   plaidItemId: string | null;
   provider: string | null;
-<<<<<<< HEAD
-  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  userId: string;
-=======
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
 }
 
 export interface AppFinanceInstitutions {
   countryCode: string | null;
-<<<<<<< HEAD
-  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-=======
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
   id: Generated<string>;
   logoUrl: string | null;
   name: string;
   provider: string | null;
   providerInstitutionId: string | null;
-<<<<<<< HEAD
-  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
-=======
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
   websiteUrl: string | null;
 }
 
 export interface AppFinanceTransactions {
   accountId: string;
   amount: Numeric;
-<<<<<<< HEAD
-  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-=======
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
   description: string | null;
   externalId: string | null;
   id: Generated<string>;
   merchantName: string | null;
   notes: string | null;
   occurredAt: ColumnType<string, Date | string, Date | string> | null;
-<<<<<<< HEAD
-=======
   ownerUserid: string;
->>>>>>> origin/main
   pending: Generated<boolean>;
   postedOn: ColumnType<string, Date | string, Date | string>;
   providerPayload: Generated<Json>;
   source: string | null;
   transactionType: string;
-<<<<<<< HEAD
-  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  userId: string;
-=======
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
 }
 
 export interface AppGoals {
@@ -590,32 +561,19 @@ export interface AppPlaces {
 }
 
 export interface AppPlaidItems {
-<<<<<<< HEAD
-  accessToken: string | null;
-  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-=======
   accesstoken: string | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
   cursor: string | null;
   errorCode: string | null;
   errorMessage: string | null;
   id: Generated<string>;
   institutionId: string | null;
   lastSyncedAt: ColumnType<string, Date | string, Date | string> | null;
-<<<<<<< HEAD
-  provider: Generated<string>;
-  providerItemId: string;
-  status: Generated<string>;
-  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  userId: string;
-=======
   ownerUserid: string;
   provider: Generated<string>;
   providerItemId: string;
   status: Generated<string>;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
->>>>>>> origin/main
 }
 
 export interface AppPortfolioAnalytics {
@@ -741,7 +699,6 @@ export interface AppSkills {
   yearsOfExperience: number | null;
 }
 
-<<<<<<< HEAD
 export interface AppSocialLinks {
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
   github: string | null;
@@ -753,8 +710,6 @@ export interface AppSocialLinks {
   website: string | null;
 }
 
-=======
->>>>>>> origin/main
 export interface AppSpaceInvites {
   acceptedAt: ColumnType<string, Date | string, Date | string> | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -914,16 +869,6 @@ export interface AppUserPortfolioPreferences {
   userId: string;
 }
 
-export interface AppUserSocialLinks {
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  github: string | null;
-  linkedin: string | null;
-  twitter: string | null;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-  userId: string;
-  website: string | null;
-}
-
 export interface AppVectorDocuments {
   content: string;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1039,8 +984,6 @@ export interface Jwks {
   publicKey: string;
 }
 
-<<<<<<< HEAD
-=======
 export interface LabsCaseUpdates {
   caseId: string;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1200,7 +1143,6 @@ export interface LabsTflCameras {
   view: string | null;
 }
 
->>>>>>> origin/main
 export interface OpsAuditLogs {
   action: string;
   actorUserid: string | null;
@@ -1270,84 +1212,77 @@ export interface Verification {
 
 export interface DB {
   account: Account;
-  'app.aiUsageEvents': AppAiUsageEvents;
-  'app.applicationFiles': AppApplicationFiles;
-  'app.applicationNotes': AppApplicationNotes;
-  'app.bookmarks': AppBookmarks;
-  'app.careerEvents': AppCareerEvents;
-  'app.certifications': AppCertifications;
-  'app.chatMessages': AppChatMessages;
-  'app.chats': AppChats;
-  'app.companies': AppCompanies;
-  'app.entities': AppEntities;
-  'app.entityLinks': AppEntityLinks;
-  'app.eventAttendees': AppEventAttendees;
-  'app.events': AppEvents;
-  'app.files': AppFiles;
-  'app.financeAccounts': AppFinanceAccounts;
-  'app.financeInstitutions': AppFinanceInstitutions;
-  'app.financeTransactions': AppFinanceTransactions;
-  'app.goals': AppGoals;
-  'app.jobApplications': AppJobApplications;
-  'app.keyResults': AppKeyResults;
-  'app.musicAlbums': AppMusicAlbums;
-  'app.musicArtists': AppMusicArtists;
-  'app.musicListens': AppMusicListens;
-  'app.musicPlaylists': AppMusicPlaylists;
-  'app.musicPlaylistTracks': AppMusicPlaylistTracks;
-  'app.musicTracks': AppMusicTracks;
-  'app.noteFiles': AppNoteFiles;
-  'app.notes': AppNotes;
-  'app.noteShares': AppNoteShares;
-  'app.noteVersions': AppNoteVersions;
-  'app.people': AppPeople;
-  'app.places': AppPlaces;
-  'app.plaidItems': AppPlaidItems;
-  'app.portfolioAnalytics': AppPortfolioAnalytics;
-  'app.portfolios': AppPortfolios;
-  'app.possessionContainers': AppPossessionContainers;
-  'app.possessionEvents': AppPossessionEvents;
-  'app.possessions': AppPossessions;
-  'app.projects': AppProjects;
-  'app.skills': AppSkills;
-<<<<<<< HEAD
-  'app.socialLinks': AppSocialLinks;
-=======
->>>>>>> origin/main
-  'app.spaceInvites': AppSpaceInvites;
-  'app.spaceItems': AppSpaceItems;
-  'app.spaceMembers': AppSpaceMembers;
-  'app.spaces': AppSpaces;
-  'app.spaceTags': AppSpaceTags;
-  'app.tagAliases': AppTagAliases;
-  'app.tagAssignments': AppTagAssignments;
-  'app.tags': AppTags;
-  'app.taskAssignments': AppTaskAssignments;
-  'app.tasks': AppTasks;
-  'app.testimonials': AppTestimonials;
-  'app.travelTrips': AppTravelTrips;
-  'app.userPortfolioPreferences': AppUserPortfolioPreferences;
-  'app.userSocialLinks': AppUserSocialLinks;
-  'app.vectorDocuments': AppVectorDocuments;
-  'app.videoChannels': AppVideoChannels;
-  'app.videoViews': AppVideoViews;
-  'app.workExperiences': AppWorkExperiences;
+  "app.aiUsageEvents": AppAiUsageEvents;
+  "app.applicationFiles": AppApplicationFiles;
+  "app.applicationNotes": AppApplicationNotes;
+  "app.bookmarks": AppBookmarks;
+  "app.careerEvents": AppCareerEvents;
+  "app.certifications": AppCertifications;
+  "app.chatMessages": AppChatMessages;
+  "app.chats": AppChats;
+  "app.companies": AppCompanies;
+  "app.entities": AppEntities;
+  "app.entityLinks": AppEntityLinks;
+  "app.eventAttendees": AppEventAttendees;
+  "app.events": AppEvents;
+  "app.files": AppFiles;
+  "app.financeAccounts": AppFinanceAccounts;
+  "app.financeInstitutions": AppFinanceInstitutions;
+  "app.financeTransactions": AppFinanceTransactions;
+  "app.goals": AppGoals;
+  "app.jobApplications": AppJobApplications;
+  "app.keyResults": AppKeyResults;
+  "app.musicAlbums": AppMusicAlbums;
+  "app.musicArtists": AppMusicArtists;
+  "app.musicListens": AppMusicListens;
+  "app.musicPlaylists": AppMusicPlaylists;
+  "app.musicPlaylistTracks": AppMusicPlaylistTracks;
+  "app.musicTracks": AppMusicTracks;
+  "app.noteFiles": AppNoteFiles;
+  "app.notes": AppNotes;
+  "app.noteShares": AppNoteShares;
+  "app.noteVersions": AppNoteVersions;
+  "app.people": AppPeople;
+  "app.places": AppPlaces;
+  "app.plaidItems": AppPlaidItems;
+  "app.portfolioAnalytics": AppPortfolioAnalytics;
+  "app.portfolios": AppPortfolios;
+  "app.possessionContainers": AppPossessionContainers;
+  "app.possessionEvents": AppPossessionEvents;
+  "app.possessions": AppPossessions;
+  "app.projects": AppProjects;
+  "app.skills": AppSkills;
+  "app.socialLinks": AppSocialLinks;
+  "app.spaceInvites": AppSpaceInvites;
+  "app.spaceItems": AppSpaceItems;
+  "app.spaceMembers": AppSpaceMembers;
+  "app.spaces": AppSpaces;
+  "app.spaceTags": AppSpaceTags;
+  "app.tagAliases": AppTagAliases;
+  "app.tagAssignments": AppTagAssignments;
+  "app.tags": AppTags;
+  "app.taskAssignments": AppTaskAssignments;
+  "app.tasks": AppTasks;
+  "app.testimonials": AppTestimonials;
+  "app.travelTrips": AppTravelTrips;
+  "app.userPortfolioPreferences": AppUserPortfolioPreferences;
+  "app.vectorDocuments": AppVectorDocuments;
+  "app.videoChannels": AppVideoChannels;
+  "app.videoViews": AppVideoViews;
+  "app.workExperiences": AppWorkExperiences;
   deviceCode: DeviceCode;
   gooseDbVersion: GooseDbVersion;
   jwks: Jwks;
-<<<<<<< HEAD
-=======
-  'labs.caseUpdates': LabsCaseUpdates;
-  'labs.covidData': LabsCovidData;
-  'labs.DrizzleMigrations': LabsDrizzleMigrations;
-  'labs.relationshipCases': LabsRelationshipCases;
-  'labs.relationshipVerdicts': LabsRelationshipVerdicts;
-  'labs.rhobhDailyPuzzles': LabsRhobhDailyPuzzles;
-  'labs.searchDocuments': LabsSearchDocuments;
-  'labs.tflCameras': LabsTflCameras;
->>>>>>> origin/main
-  'ops.auditLogs': OpsAuditLogs;
-  'ops.searchLogs': OpsSearchLogs;
+  "labs.caseUpdates": LabsCaseUpdates;
+  "labs.covidData": LabsCovidData;
+  "labs.DrizzleMigrations": LabsDrizzleMigrations;
+  "labs.relationshipCases": LabsRelationshipCases;
+  "labs.relationshipVerdicts": LabsRelationshipVerdicts;
+  "labs.rhobhDailyPuzzles": LabsRhobhDailyPuzzles;
+  "labs.searchDocuments": LabsSearchDocuments;
+  "labs.tflCameras": LabsTflCameras;
+  "ops.auditLogs": OpsAuditLogs;
+  "ops.searchLogs": OpsSearchLogs;
   passkey: Passkey;
   session: Session;
   user: User;
