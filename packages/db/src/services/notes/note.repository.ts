@@ -126,7 +126,7 @@ function toNoteFile(row: NoteFileSource): NoteFileRecord {
     mimetype: row.mimetype,
     size: row.size,
     url: row.url,
-    uploadedAt: row.createdat.toISOString(),
+    uploadedAt: new Date(row.createdat).toISOString(),
     ...(row.content ? { content: row.content } : {}),
     ...(row.textContent ? { textContent: row.textContent } : {}),
     ...(row.metadata && typeof row.metadata === 'object'
@@ -144,8 +144,8 @@ function toNoteRecord(row: NoteRow, files: NoteFileRecord[]): NoteRecord {
     excerpt: row.excerpt,
     parentNoteId: row.parentNoteId,
     files,
-    createdAt: row.createdat.toISOString(),
-    updatedAt: row.updatedat.toISOString(),
+    createdAt: new Date(row.createdat).toISOString(),
+    updatedAt: new Date(row.updatedat).toISOString(),
   };
 }
 
@@ -283,7 +283,7 @@ export const NoteRepository = {
       .where('archivedAt', 'is', null);
 
     if (input.since) {
-      query = query.where('updatedat', '>=', new Date(input.since));
+      query = query.where('updatedat', '>=', new Date(input.since).toISOString());
     }
 
     if (input.query) {
@@ -334,7 +334,7 @@ export const NoteRepository = {
         throw new ValidationError('Invalid note feed cursor');
       }
 
-      const cursorDate = new Date(decoded.createdAt);
+      const cursorDate = new Date(decoded.createdAt).toISOString();
       query = query.where((eb) =>
         eb.or([
           eb('createdat', '<', cursorDate),
@@ -365,7 +365,7 @@ export const NoteRepository = {
       id: row.id,
       title: row.title,
       contentPreview: buildContentPreview(row.excerpt, row.content),
-      createdAt: row.createdat.toISOString(),
+      createdAt: new Date(row.createdat).toISOString(),
       authorId: row.ownerUserid,
       metadata: {
         hasAttachments: attachmentIds.has(row.id),
@@ -377,7 +377,7 @@ export const NoteRepository = {
       notes,
       nextCursor:
         rows.length > limit && lastRow
-          ? encodeNoteFeedCursor(lastRow.createdat.toISOString(), lastRow.id)
+          ? encodeNoteFeedCursor(new Date(lastRow.createdat).toISOString(), lastRow.id)
           : null,
     };
   },
@@ -400,8 +400,8 @@ export const NoteRepository = {
     if (decoded) {
       query = query.where((eb) =>
         eb.or([
-          eb('updatedat', '<', new Date(decoded.updatedAt)),
-          eb('updatedat', '=', new Date(decoded.updatedAt)).and('id', '<', decoded.id),
+          eb('updatedat', '<', new Date(decoded.updatedAt).toISOString()),
+          eb('updatedat', '=', new Date(decoded.updatedAt).toISOString()).and('id', '<', decoded.id),
         ]),
       );
     }
@@ -424,7 +424,7 @@ export const NoteRepository = {
       notes,
       nextCursor:
         rows.length > limit && lastRow
-          ? encodeNoteSearchCursor(lastRow.updatedat.toISOString(), lastRow.id)
+          ? encodeNoteSearchCursor(new Date(lastRow.updatedat).toISOString(), lastRow.id)
           : null,
     };
   },

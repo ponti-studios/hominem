@@ -17,7 +17,7 @@ export async function saveUpdatedProfile(input: {
   const merged: User = {
     ...current,
     ...updates,
-    updatedAt: new Date(),
+    updatedAt: new Date().toISOString(),
   };
 
   const saved = await persist(merged);

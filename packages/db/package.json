@@ -28,8 +28,7 @@
     "typecheck": "tsgo --noEmit",
     "test": "vitest run",
     "format": "oxfmt src --write",
-    "lint": "oxlint src --fix",
-    "kysely-codegen": "kysely-codegen --camel-case --out-file ./src/types/database.ts"
+    "lint": "oxlint src --fix"
   },
   "dependencies": {
     "@hominem/utils": "workspace:*",

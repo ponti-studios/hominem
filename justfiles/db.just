@@ -37,7 +37,7 @@ db-migrate:
     just goose-install
     DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"
     goose -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" up
-    pnpm --filter "@hominem/db" run kysely-codegen
+    pnpm --filter "@hominem/db" exec kysely-codegen --camel-case --date-parser string --type-mapping '{\"timestamp\":\"ColumnType<string, Date | string, Date | string>\",\"timestamptz\":\"ColumnType<string, Date | string, Date | string>\",\"date\":\"ColumnType<string, Date | string, Date | string>\"}' --out-file ./src/types/database.ts
 
 db-rollback:
     #!/usr/bin/env bash

@@ -62,7 +62,7 @@ function toFileRecord(row: FileRow): FileRecord {
     ...(row.metadata && typeof row.metadata === 'object'
       ? { metadata: row.metadata as Record<string, unknown> }
       : {}),
-    uploadedAt: row.createdat.toISOString(),
+    uploadedAt: new Date(row.createdat).toISOString(),
   };
 }
 

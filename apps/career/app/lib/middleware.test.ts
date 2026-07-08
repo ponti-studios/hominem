@@ -24,8 +24,8 @@ const testUser = {
   emailVerified: true,
   name: 'Test User',
   image: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 } satisfies User;
 
 const testPortfolio = {

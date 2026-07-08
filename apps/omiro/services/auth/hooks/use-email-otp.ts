@@ -31,8 +31,8 @@ function fromSignInUser(user: { id: string; email: string; name?: string | null 
     name: user.name ?? '',
     image: null,
     emailVerified: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 }
 
