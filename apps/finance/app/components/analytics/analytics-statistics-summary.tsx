@@ -102,7 +102,7 @@ export function AnalyticsStatisticsSummary({
                   </div>
                 </div>
                 <div className="text-xl font-bold text-black font-mono">
-                  {formatCurrency(stats.totalIncome)}
+                  {formatCurrency(stats.totalIncome ?? 0)}
                 </div>
               </div>
 
@@ -117,7 +117,7 @@ export function AnalyticsStatisticsSummary({
                   </div>
                 </div>
                 <div className="text-xl font-bold text-destructive font-mono">
-                  {formatCurrency(stats.totalExpenses)}
+                  {formatCurrency(stats.totalExpenses ?? 0)}
                 </div>
               </div>
 
@@ -130,7 +130,7 @@ export function AnalyticsStatisticsSummary({
                   <div className="text-xs text-muted-foreground">Over {stats.count} months</div>
                 </div>
                 <div className="text-xl font-bold text-black font-mono">
-                  {formatCurrency(stats.averageIncome)}
+                  {formatCurrency(stats.averageIncome ?? 0)}
                 </div>
               </div>
 
@@ -143,7 +143,7 @@ export function AnalyticsStatisticsSummary({
                   <div className="text-xs text-muted-foreground">Over {stats.count} months</div>
                 </div>
                 <div className="text-xl font-bold text-destructive font-mono">
-                  {formatCurrency(stats.averageExpenses)}
+                  {formatCurrency(stats.averageExpenses ?? 0)}
                 </div>
               </div>
             </div>

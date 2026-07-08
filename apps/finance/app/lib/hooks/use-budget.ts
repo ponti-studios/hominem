@@ -25,7 +25,7 @@ export const useBudgetCategories = () =>
     ['finance', 'budget', 'categories', 'list'],
     async ({ finance }) => {
       const categories = await finance.tags.list.$get({ query: {} }).then((r) => r.json());
-      return categories.map((category: any) => {
+      return categories.map((category) => {
         const normalized = {
           id: category.id,
           userId: category.userId,

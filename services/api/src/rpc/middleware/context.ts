@@ -29,10 +29,10 @@ export const contextMiddleware = createMiddleware<AppContext>(async (c, next) =>
           id: localUser.id,
           email: localUser.email,
           name: localUser.name ?? undefined,
-          image: localUser.avatar_url ?? undefined,
+          image: localUser.image ?? undefined,
           isAdmin: false,
-          createdAt: localUser.created_at ?? new Date().toISOString(),
-          updatedAt: localUser.updated_at ?? new Date().toISOString(),
+          createdAt: localUser.createdAt ?? new Date().toISOString(),
+          updatedAt: localUser.updatedAt ?? new Date().toISOString(),
         });
         c.set('userId', localUser.id);
       }
@@ -54,7 +54,7 @@ export const contextMiddleware = createMiddleware<AppContext>(async (c, next) =>
       apiBaseUrl: process.env.API_URL || 'http://localhost:3000',
     };
 
-    const { user, headers, session, auth } = await getServerAuth(request, authConfig);
+    const { user, headers, session } = await getServerAuth(request, authConfig);
 
     // Copy auth headers (cookies) to response headers
     headers.forEach((value, key) => {
@@ -65,10 +65,6 @@ export const contextMiddleware = createMiddleware<AppContext>(async (c, next) =>
       c.set('user', user);
       c.set('userId', user.id);
     }
-    if (auth) {
-      c.set('auth', auth);
-    }
-
     // Session is available for bearer propagation where needed.
     if (session) {
       void session;

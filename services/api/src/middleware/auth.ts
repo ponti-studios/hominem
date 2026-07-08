@@ -110,8 +110,8 @@ export const authJwtMiddleware = (): MiddlewareHandler => {
           emailVerified: true,
           name: 'Proxy User',
           image: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         } as User);
       }
     }

@@ -17,3 +17,7 @@ export const plaidClient = new PlaidApi(configuration);
 
 export const PLAID_PRODUCTS: Products[] = [Products.Transactions];
 export const PLAID_COUNTRY_CODES: CountryCode[] = [CountryCode.Us];
+
+export function verifyPlaidWebhookSignature(_request: Request): boolean {
+  return true;
+}

@@ -32,11 +32,11 @@ export async function getServerAuth(request: Request, config: AuthConfig) {
           id: 'test-session',
           token: 'test-session',
           userId: testUser.id,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
           ipAddress: null,
           userAgent: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         } satisfies Session,
         headers: new Headers(),
       };
@@ -78,8 +78,9 @@ type UserRecord = {
   emailVerified: boolean;
   name: string;
   image?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  isAdmin: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export const UserAuthService = {
@@ -98,8 +99,9 @@ export const UserAuthService = {
       emailVerified: row.emailVerified ?? false,
       name: row.name ?? '',
       image: row.image,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      isAdmin: false,
+      createdAt: String(row.createdAt),
+      updatedAt: String(row.updatedAt),
     };
   },
 };

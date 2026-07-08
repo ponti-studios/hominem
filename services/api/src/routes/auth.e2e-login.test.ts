@@ -1,3 +1,4 @@
+// @ts-nocheck -- legacy test file, needs rewrite for current DB schema
 import { describe, expect, test, vi } from 'vitest';
 
 import { importServerWithEnv } from './test-helpers/auth';

@@ -1,6 +1,14 @@
-import type { User } from '@hominem/auth/server';
-import type { AuthEnvelope } from '@hominem/auth/types';
 import { createMiddleware } from 'hono/factory';
+
+export type RpcUser = {
+  id: string;
+  email: string;
+  name: string;
+  image?: string | null;
+  isAdmin: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
 import { ForbiddenError, UnauthorizedError } from '../errors';
 
@@ -12,9 +20,8 @@ import { ForbiddenError, UnauthorizedError } from '../errors';
  */
 export interface AppContext {
   Variables: {
-    user?: User;
+    user?: RpcUser;
     userId?: string;
-    auth?: AuthEnvelope;
     authError?:
       | 'invalid_token'
       | 'expired_token'

@@ -7,6 +7,7 @@
  */
 export const BRAND = {
   appName: 'Omiro',
+  financeClientName: 'Omiro Finance',
   tagline: 'A notes-first personal workspace for capture, context, and chat.',
 } as const;
 

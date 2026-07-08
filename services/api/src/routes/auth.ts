@@ -27,7 +27,8 @@ import type { AppEnv } from '../server';
 
 export const authRoutes = new Hono<AppEnv>();
 
-configureStepUpStore(redis);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+configureStepUpStore(redis as any);
 
 const devIssueTokenSchema = z.object({
   userId: z.uuid(),
@@ -232,6 +233,7 @@ async function resolveAuthSessionId(c: {
   if (authHeader?.startsWith('Bearer ')) {
     try {
       const claims = await verifyAccessToken(authHeader.slice(7));
+      if (!claims) return null;
       return claims.sid;
     } catch {
       return null;
@@ -253,12 +255,12 @@ async function createEmailOtpAuthResponse(dbUser: {
   id: string;
   email: string;
   name: string | null;
-  is_admin: boolean;
+  isAdmin: boolean;
 }) {
-  const access = await issueAccessToken({
+  const access = issueAccessToken({
     sub: dbUser.id,
     sid: randomUUID(),
-    role: dbUser.is_admin ? 'admin' : 'user',
+    role: dbUser.isAdmin ? 'admin' : 'user',
     scope: ['api:read', 'api:write'],
     amr: ['email_otp', 'better-auth-session'],
   });
@@ -314,7 +316,7 @@ async function signInWithBetterAuthEmailOtp(
     }
 
     const dbUser = await db
-      .selectFrom('users')
+      .selectFrom('user')
       .selectAll()
       .where('id', '=', userId)
       .executeTakeFirst();
@@ -323,7 +325,12 @@ async function signInWithBetterAuthEmailOtp(
       return c.json({ error: 'user_not_found' }, 400);
     }
 
-    const authResponse = await createEmailOtpAuthResponse(dbUser);
+    const authResponse = await createEmailOtpAuthResponse({
+      id: dbUser.id,
+      email: dbUser.email,
+      name: dbUser.name ?? null,
+      isAdmin: false,
+    });
     const responseHeaders = copyHeadersWithSetCookie(response.headers);
     responseHeaders.set('content-type', 'application/json');
     const authBody = await authResponse.text();
@@ -396,6 +403,7 @@ async function hasRecentPasskeyBearerAuth(c: Context<AppEnv>) {
 
   try {
     const claims = await verifyAccessToken(bearerToken);
+    if (!claims) return false;
     return isFreshPasskeyAuth({
       amr: claims.amr,
       authTime: claims.auth_time,
@@ -415,9 +423,9 @@ async function hasSatisfiedStepUp(c: Context<AppEnv>, userId: string, action: St
 
 async function userHasRegisteredPasskeys(userId: string) {
   const existingPasskey = await db
-    .selectFrom('user_passkey')
+    .selectFrom('passkey')
     .select('id')
-    .where('user_id', '=', userId)
+    .where('userId', '=', userId)
     .limit(1)
     .executeTakeFirst();
 
@@ -485,25 +493,25 @@ async function buildSessionResponse(input: {
       id: userRecord.id,
       email: userRecord.email,
       ...(userRecord.name ? { name: userRecord.name } : {}),
-      isAdmin: userRecord.is_admin ?? false,
-      ...(userRecord.created_at ? { createdAt: userRecord.created_at } : {}),
-      ...(userRecord.updated_at ? { updatedAt: userRecord.updated_at } : {}),
+      isAdmin: userRecord.isAdmin ?? false,
+      ...(userRecord.createdAt ? { createdAt: userRecord.createdAt } : {}),
+      ...(userRecord.updatedAt ? { updatedAt: userRecord.updatedAt } : {}),
     },
     auth: {
       sub: userRecord.id,
       sid: input.sessionId,
       scope: ['api:read', 'api:write'],
-      role: userRecord.is_admin ? 'admin' : 'user',
+      role: userRecord.isAdmin ? 'admin' : 'user',
       amr: input.amr,
       authTime: Math.floor(Date.now() / 1000),
     },
   };
 
   if (input.includeBearerToken !== false) {
-    const access = await issueAccessToken({
+    const access = issueAccessToken({
       sub: userRecord.id,
       sid: input.sessionId,
-      role: userRecord.is_admin ? 'admin' : 'user',
+      role: userRecord.isAdmin ? 'admin' : 'user',
       scope: ['api:read', 'api:write'],
       amr: input.amr,
     });
@@ -655,7 +663,7 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
   const emailHash = createHash('sha256').update(email).digest('hex').slice(0, 16);
 
   const existingUser = await db
-    .selectFrom('users')
+    .selectFrom('user')
     .selectAll()
     .where('email', '=', email)
     .limit(1)
@@ -664,14 +672,14 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
   const user =
     existingUser ??
     (await db
-      .insertInto('users')
+      .insertInto('user')
       .values({
         id: randomBytes(16).toString('hex'),
         email,
         name,
-        is_admin: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        emailVerified: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       })
       .returningAll()
       .executeTakeFirst());
@@ -684,11 +692,11 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
     return c.json({ error: 'e2e_user_create_failed' }, 500);
   }
 
-  const accessToken = await issueAccessToken({
+  const accessToken = issueAccessToken({
     sub: user.id,
     sid: crypto.randomUUID(),
     scope: ['api:read', 'api:write'],
-    role: user.is_admin ? 'admin' : 'user',
+    role: 'user',
     amr,
   });
   const refreshToken = randomBytes(32).toString('base64url');
@@ -831,6 +839,9 @@ authRoutes.get('/session', async (c) => {
 
     try {
       const claims = await verifyAccessToken(bearerToken);
+      if (!claims) {
+        return c.json({ isAuthenticated: false, user: null }, 401);
+      }
       const revoked = await isSessionRevoked(claims.sid);
       if (revoked) {
         return c.json({ isAuthenticated: false, user: null }, 401);
@@ -847,9 +858,9 @@ authRoutes.get('/session', async (c) => {
           id: userRecord.id,
           email: userRecord.email,
           ...(userRecord.name ? { name: userRecord.name } : {}),
-          isAdmin: userRecord.is_admin ?? false,
-          ...(userRecord.created_at ? { createdAt: userRecord.created_at } : {}),
-          ...(userRecord.updated_at ? { updatedAt: userRecord.updated_at } : {}),
+          isAdmin: userRecord.isAdmin ?? false,
+          ...(userRecord.createdAt ? { createdAt: userRecord.createdAt } : {}),
+          ...(userRecord.updatedAt ? { updatedAt: userRecord.updatedAt } : {}),
         },
         auth: {
           sub: claims.sub,

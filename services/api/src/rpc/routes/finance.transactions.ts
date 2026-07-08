@@ -150,8 +150,8 @@ export const transactionsRoutes = new Hono<AppContext>()
       .offset(offset);
 
     if (accountId) query = query.where('accountId', '=', accountId);
-    if (dateFrom) query = query.where('postedOn', '>=', new Date(dateFrom));
-    if (dateTo) query = query.where('postedOn', '<=', new Date(dateTo));
+    if (dateFrom) query = query.where('postedOn', '>=', dateFrom);
+    if (dateTo) query = query.where('postedOn', '<=', dateTo);
 
     if (hasTagFilters) {
       const taggedIds = await getTaggedTransactionIds(userId, tagIds, tagNames);
