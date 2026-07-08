@@ -15,13 +15,13 @@ describe('saveUpdatedProfile', () => {
       name: 'Old Name',
       image: null,
       emailVerified: true,
-      createdAt: new Date('2024-01-01T00:00:00.000Z'),
-      updatedAt: new Date('2024-01-02T00:00:00.000Z'),
+      createdAt: new Date('2024-01-01T00:00:00.000Z').toISOString(),
+      updatedAt: new Date('2024-01-02T00:00:00.000Z').toISOString(),
     };
     const saved: User = {
       ...current,
       name: 'New Name',
-      updatedAt: new Date('2024-02-01T00:00:00.000Z'),
+      updatedAt: new Date('2024-02-01T00:00:00.000Z').toISOString(),
     };
     const persist = vi.fn().mockResolvedValue(saved);
     const dispatch = vi.fn();
@@ -40,7 +40,7 @@ describe('saveUpdatedProfile', () => {
         id: 'user-1',
         name: 'New Name',
         email: 'user@example.com',
-        updatedAt: expect.any(Date),
+        updatedAt: expect.any(String),
       }),
     );
     expect(dispatch).toHaveBeenCalledWith({ type: 'SESSION_LOADED', user: saved });

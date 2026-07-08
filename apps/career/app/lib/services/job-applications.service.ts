@@ -2,7 +2,6 @@ import { CareerRepository, db } from '@hominem/db';
 import type {
   AppApplicationFiles,
   AppApplicationNotes,
-  CareerCompanyRecord as Company,
   CareerJobApplicationRecord,
   JsonObject,
   JsonValue,
@@ -61,76 +60,9 @@ export class JobApplicationsService {
     applicationId: string,
     ownerUserid: string,
   ): Promise<ApplicationDetailData> {
-    const applicationData = await db
-      .selectFrom('app.jobApplications as application')
-      .leftJoin('app.companies as company', 'company.id', 'application.companyId')
-      .select([
-        'application.id',
-        'application.ownerUserid',
-        'application.companyId',
-        'application.position',
-        'application.status',
-        'application.startDate',
-        'application.endDate',
-        'application.location',
-        'application.jobPosting',
-        'application.requirements',
-        'application.skills',
-        'application.jobPostingUrl',
-        'application.jobPostingWordCount',
-        'application.salaryQuoted',
-        'application.salaryAccepted',
-        'application.salaryExpected',
-        'application.salaryRequested',
-        'application.salaryOffered',
-        'application.salaryNegotiated',
-        'application.salaryFinal',
-        'application.totalCompOffered',
-        'application.totalCompFinal',
-        'application.equityOffered',
-        'application.equityFinal',
-        'application.bonusOffered',
-        'application.bonusFinal',
-        'application.source',
-        'application.applicationDate',
-        'application.responseDate',
-        'application.firstInterviewDate',
-        'application.offerDate',
-        'application.decisionDate',
-        'application.rejectionReason',
-        'application.withdrawalReason',
-        'application.timeToResponse',
-        'application.timeToFirstInterview',
-        'application.timeToOffer',
-        'application.timeToDecision',
-        'application.coverLetter',
-        'application.resume',
-        'application.jobId',
-        'application.link',
-        'application.phoneScreen',
-        'application.reference',
-        'application.interviewDates',
-        'application.companyNotes',
-        'application.negotiationNotes',
-        'application.recruiterName',
-        'application.recruiterEmail',
-        'application.recruiterLinkedin',
-        'application.stages',
-        'application.createdat',
-        'application.updatedat',
-        'company.id as companyId',
-        'company.name as companyName',
-        'company.website as companyWebsite',
-        'company.industry as companyIndustry',
-        'company.size as companySize',
-        'company.location as companyLocation',
-        'company.description as companyDescription',
-      ])
-      .where('application.id', '=', applicationId)
-      .where('application.ownerUserid', '=', ownerUserid)
-      .executeTakeFirst();
+    const application = await CareerRepository.getApplicationById(db, ownerUserid, applicationId);
 
-    if (!applicationData) {
+    if (!application) {
       throw new Error('Application not found');
     }
 
@@ -140,84 +72,6 @@ export class JobApplicationsService {
       .where('applicationId', '=', applicationId)
       .orderBy('createdat', 'asc')
       .execute();
-
-    const company = applicationData.companyId
-      ? ({
-          id: applicationData.companyId,
-          ownerUserid: '',
-          name: applicationData.companyName || '',
-          website: applicationData.companyWebsite,
-          industry: applicationData.companyIndustry,
-          size: applicationData.companySize,
-          location: applicationData.companyLocation,
-          description: applicationData.companyDescription,
-          createdat: new Date(),
-          updatedat: new Date(),
-        } as Company)
-      : null;
-
-    const application = {
-      id: applicationData.id,
-      ownerUserid: applicationData.ownerUserid,
-      position: applicationData.position,
-      companyId: applicationData.companyId,
-      status: applicationData.status,
-      startDate: applicationData.startDate ? new Date(applicationData.startDate) : new Date(),
-      endDate: applicationData.endDate ? new Date(applicationData.endDate) : null,
-      location: applicationData.location,
-      jobPosting: applicationData.jobPosting,
-      requirements: Array.isArray(applicationData.requirements) ? applicationData.requirements : [],
-      skills: Array.isArray(applicationData.skills) ? applicationData.skills : [],
-      jobPostingUrl: applicationData.jobPostingUrl,
-      jobPostingWordCount: applicationData.jobPostingWordCount,
-      salaryQuoted: applicationData.salaryQuoted,
-      salaryAccepted: applicationData.salaryAccepted,
-      salaryExpected: applicationData.salaryExpected,
-      salaryRequested: applicationData.salaryRequested,
-      salaryOffered: applicationData.salaryOffered,
-      salaryNegotiated: applicationData.salaryNegotiated,
-      salaryFinal: applicationData.salaryFinal,
-      totalCompOffered: applicationData.totalCompOffered,
-      totalCompFinal: applicationData.totalCompFinal,
-      equityOffered: applicationData.equityOffered,
-      equityFinal: applicationData.equityFinal,
-      bonusOffered: applicationData.bonusOffered,
-      bonusFinal: applicationData.bonusFinal,
-      source: applicationData.source,
-      applicationDate: applicationData.applicationDate
-        ? new Date(applicationData.applicationDate)
-        : null,
-      responseDate: applicationData.responseDate ? new Date(applicationData.responseDate) : null,
-      firstInterviewDate: applicationData.firstInterviewDate
-        ? new Date(applicationData.firstInterviewDate)
-        : null,
-      offerDate: applicationData.offerDate ? new Date(applicationData.offerDate) : null,
-      decisionDate: applicationData.decisionDate ? new Date(applicationData.decisionDate) : null,
-      rejectionReason: applicationData.rejectionReason,
-      withdrawalReason: applicationData.withdrawalReason,
-      timeToResponse: applicationData.timeToResponse,
-      timeToFirstInterview: applicationData.timeToFirstInterview,
-      timeToOffer: applicationData.timeToOffer,
-      timeToDecision: applicationData.timeToDecision,
-      coverLetter: applicationData.coverLetter,
-      resume: applicationData.resume,
-      jobId: applicationData.jobId,
-      link: applicationData.link,
-      phoneScreen: applicationData.phoneScreen,
-      reference: applicationData.reference,
-      interviewDates: Array.isArray(applicationData.interviewDates)
-        ? (applicationData.interviewDates as unknown as InterviewEntry[])
-        : [],
-      companyNotes: applicationData.companyNotes,
-      negotiationNotes: applicationData.negotiationNotes,
-      recruiterName: applicationData.recruiterName,
-      recruiterEmail: applicationData.recruiterEmail,
-      recruiterLinkedin: applicationData.recruiterLinkedin,
-      stages: Array.isArray(applicationData.stages) ? applicationData.stages : [],
-      createdat: applicationData.createdat ? new Date(applicationData.createdat) : new Date(),
-      updatedat: applicationData.updatedat ? new Date(applicationData.updatedat) : new Date(),
-      company,
-    } as unknown as ApplicationWithCompany;
 
     return {
       application,

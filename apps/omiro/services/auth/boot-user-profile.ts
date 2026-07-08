@@ -16,8 +16,8 @@ function fromSignInUser(user: SignInUser): User {
     name: user.name ?? '',
     image: null,
     emailVerified: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 }
 

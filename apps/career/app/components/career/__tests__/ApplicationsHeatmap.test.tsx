@@ -19,7 +19,7 @@ const mockApplications = [
       name: 'Tech Corp',
     },
     status: JobApplicationStatus.APPLIED,
-    startDate: new Date('2024-01-15T00:00:00.000Z'),
+    startDate: new Date('2024-01-15T00:00:00.000Z').toISOString(),
   }),
   makeApplicationWithCompany({
     id: '2',
@@ -32,7 +32,7 @@ const mockApplications = [
       name: 'Startup Inc',
     },
     status: JobApplicationStatus.APPLIED,
-    startDate: new Date('2024-01-15T00:00:00.000Z'),
+    startDate: new Date('2024-01-15T00:00:00.000Z').toISOString(),
   }),
   makeApplicationWithCompany({
     id: '3',
@@ -45,7 +45,7 @@ const mockApplications = [
       name: 'Big Tech',
     },
     status: JobApplicationStatus.APPLIED,
-    startDate: new Date('2024-01-20T00:00:00.000Z'),
+    startDate: new Date('2024-01-20T00:00:00.000Z').toISOString(),
   }),
 ];
 

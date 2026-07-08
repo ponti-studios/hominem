@@ -99,7 +99,7 @@ function toAIUsageEventRecord(row: AIUsageEventRow): AIUsageEventRecord {
     reasoningTokens: row.reasoningTokens,
     costUsd: toNullableNumber(row.costUsd),
     metadata: row.metadata,
-    createdAt: row.createdat.toISOString(),
+    createdAt: new Date(row.createdat).toISOString(),
   };
 }
 
@@ -132,11 +132,11 @@ export const AIUsageEventRepository = {
     let query = handle.selectFrom('app.aiUsageEvents').where('ownerUserid', '=', input.userId);
 
     if (input.from) {
-      query = query.where('createdat', '>=', new Date(input.from));
+      query = query.where('createdat', '>=', new Date(input.from).toISOString());
     }
 
     if (input.to) {
-      query = query.where('createdat', '<=', new Date(input.to));
+      query = query.where('createdat', '<=', new Date(input.to).toISOString());
     }
 
     const row = await query
@@ -168,11 +168,11 @@ export const AIUsageEventRepository = {
     let query = handle.selectFrom('app.aiUsageEvents').where('ownerUserid', '=', input.userId);
 
     if (input.from) {
-      query = query.where('createdat', '>=', new Date(input.from));
+      query = query.where('createdat', '>=', new Date(input.from).toISOString());
     }
 
     if (input.to) {
-      query = query.where('createdat', '<=', new Date(input.to));
+      query = query.where('createdat', '<=', new Date(input.to).toISOString());
     }
 
     const rows = await query
@@ -208,11 +208,11 @@ export const AIUsageEventRepository = {
     let query = handle.selectFrom('app.aiUsageEvents').where('ownerUserid', '=', input.userId);
 
     if (input.from) {
-      query = query.where('createdat', '>=', new Date(input.from));
+      query = query.where('createdat', '>=', new Date(input.from).toISOString());
     }
 
     if (input.to) {
-      query = query.where('createdat', '<=', new Date(input.to));
+      query = query.where('createdat', '<=', new Date(input.to).toISOString());
     }
 
     const rows = await query

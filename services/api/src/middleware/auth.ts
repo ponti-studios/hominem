@@ -36,8 +36,8 @@ function toAuthUser(user: {
     emailVerified: user.emailVerified,
     name: user.name,
     image: user.image ?? null,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
+    createdAt: new Date(user.createdAt).toISOString(),
+    updatedAt: new Date(user.updatedAt).toISOString(),
   };
 }
 

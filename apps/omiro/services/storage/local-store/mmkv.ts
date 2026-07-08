@@ -38,8 +38,8 @@ const normalizeProfile = (profile: UserProfile): UserProfile => ({
   email: profile.email ?? '',
   emailVerified: Boolean(profile.emailVerified),
   image: profile.image ?? null,
-  createdAt: new Date(profile.createdAt),
-  updatedAt: new Date(profile.updatedAt),
+  createdAt: new Date(profile.createdAt).toISOString(),
+  updatedAt: new Date(profile.updatedAt).toISOString(),
 });
 
 const normalizeSettings = (settings: Settings): Settings => ({
