@@ -29,7 +29,6 @@ export function CompensationSection({ workExperience }: { workExperience: WorkEx
   const { isSubmitting, submissionError, submitUpdates, clearSubmissionError } =
     useWorkExperienceSection({
       errorMessage: 'We couldn’t save the compensation details. Try again.',
-      onSuccess: () => setIsEditing(false),
     });
   const { register, handleSubmit, reset } = useForm<CompensationFormValues>({ defaultValues });
 

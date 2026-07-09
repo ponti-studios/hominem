@@ -197,17 +197,10 @@ export const action: ActionFunction = async ({ request, context }) => {
     }
 
     const formData = await request.formData();
-    const file = formData.get('pdf') as File | null;
+    const pdfField = formData.get('pdf');
+    const storedFileIdField = formData.get('fileId');
     const replaceExisting = formData.get('replaceExisting') === 'true';
     let existingPortfolio: { id: string } | null = null;
-    if (!file) {
-      return errorResponse(
-        'No PDF file was attached. Choose a resume PDF and try again.',
-        400,
-        'file-validation',
-        true,
-      );
-    }
 
     // One portfolio per user: create only when none exists; otherwise require replace.
     existingPortfolio = await PortfolioRepository.getPortfolioByUserId(db, user.id);
@@ -228,16 +221,71 @@ export const action: ActionFunction = async ({ request, context }) => {
       );
     }
 
-    const validation = validateFile(file, PDF_RESUME_VALIDATION);
-    if (!validation.valid) {
+    let file: File;
+    let uploadResult: { id: string; url: string };
+
+    if (typeof storedFileIdField === 'string' && storedFileIdField.trim()) {
+      // Re-convert an already stored PDF (no second upload).
+      const fileId = storedFileIdField.trim();
+      const bytes = await resumeStorage.getFile(fileId, user.id);
+      if (!bytes) {
+        return errorResponse(
+          'That file was not found. It may have been deleted.',
+          404,
+          'file-validation',
+          false,
+        );
+      }
+      const listed = await resumeStorage.listUserFiles(user.id);
+      const meta = listed.find((entry) => entry.name.startsWith(fileId));
+      const fileName = meta?.name ?? `${fileId}.pdf`;
+      file = new File([Buffer.from(bytes)], fileName, { type: 'application/pdf' });
+      const fileUrl = (await resumeStorage.getFileUrl(fileId, user.id)) ?? '';
+      uploadResult = { id: fileId, url: fileUrl };
+    } else if (pdfField instanceof File) {
+      file = pdfField;
+
+      const validation = validateFile(file, PDF_RESUME_VALIDATION);
+      if (!validation.valid) {
+        return errorResponse(
+          validation.error ?? 'The selected file is not a valid resume PDF.',
+          400,
+          'file-validation',
+          true,
+        );
+      }
+      const uploadMimeType = resolveUploadMimeType(file);
+
+      // Persist the PDF first so a later extract/AI/DB failure does not lose the file.
+      try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        uploadResult = await resumeStorage.storeFile(buffer, uploadMimeType, user.id, {
+          originalName: file.name,
+        });
+      } catch (error) {
+        const failure = resolveStorageFailure(error);
+        logger.error('Resume file upload failed', undefined, {
+          ownerUserid: user.id,
+          fileName: file.name,
+          error: isStorageServiceError(error)
+            ? error.code
+            : error instanceof Error
+              ? error.message
+              : error,
+          ...(failure.details ? { storage: failure.details } : {}),
+        });
+        return errorResponse(failure.error, 503, 'storage', true);
+      }
+    } else {
       return errorResponse(
-        validation.error ?? 'The selected file is not a valid resume PDF.',
+        'No PDF file was attached. Choose a resume PDF and try again.',
         400,
         'file-validation',
         true,
       );
     }
-    const uploadMimeType = resolveUploadMimeType(file);
+
+    const storedFile = { fileUrl: uploadResult.url, fileId: uploadResult.id };
 
     let pdfText: string;
     try {
@@ -247,30 +295,34 @@ export const action: ActionFunction = async ({ request, context }) => {
         ownerUserid: user.id,
         fileName: file.name,
         fileSize: file.size,
+        ...storedFile,
       });
       return errorResponse(
-        'Could not read text from this PDF. Try a searchable PDF instead of a scanned or password-protected file.',
+        'Could not read text from this PDF. Try a searchable PDF instead of a scanned or password-protected file. Your PDF was saved so you can retry.',
         400,
         'pdf-extraction',
         true,
+        { fileUrl: uploadResult.url },
       );
     }
 
     if (!pdfText.trim()) {
       return errorResponse(
-        'This PDF did not contain readable text. Upload a searchable resume PDF instead of a scanned image.',
+        'This PDF did not contain readable text. Upload a searchable resume PDF instead of a scanned image. Your PDF was saved so you can retry.',
         400,
         'pdf-extraction',
         true,
+        { fileUrl: uploadResult.url },
       );
     }
 
     if (pdfText.length > MAX_EXTRACTED_RESUME_TEXT_LENGTH) {
       return errorResponse(
-        'This resume contains too much text to process safely. Try a shorter resume PDF.',
+        'This resume contains too much text to process safely. Try a shorter resume PDF. Your PDF was saved so you can retry.',
         400,
         'pdf-extraction',
         true,
+        { fileUrl: uploadResult.url },
       );
     }
 
@@ -302,21 +354,26 @@ export const action: ActionFunction = async ({ request, context }) => {
       logRouteError('Resume AI parsing request failed', error, {
         ownerUserid: user.id,
         fileName: file.name,
+        ...storedFile,
       });
       const failure = resolveAiParseFailure(error);
-      return errorResponse(failure.error, failure.status, 'ai-parse', true);
+      return errorResponse(failure.error, failure.status, 'ai-parse', true, {
+        fileUrl: uploadResult.url,
+      });
     }
 
     if (!aiContent.trim()) {
       logger.error('Resume AI parsing returned empty content', undefined, {
         ownerUserid: user.id,
         fileName: file.name,
+        ...storedFile,
       });
       return errorResponse(
-        'The AI parser returned an empty response. Try again, or upload a simpler resume PDF.',
+        'The AI parser returned an empty response. Try again, or upload a simpler resume PDF. Your PDF was saved so you can retry.',
         502,
         'ai-parse',
         true,
+        { fileUrl: uploadResult.url },
       );
     }
 
@@ -327,12 +384,14 @@ export const action: ActionFunction = async ({ request, context }) => {
       logRouteError('Resume AI parsing returned invalid JSON', error, {
         ownerUserid: user.id,
         fileName: file.name,
+        ...storedFile,
       });
       return errorResponse(
-        'The AI parser returned malformed resume data. Try again, or upload a simpler resume PDF.',
+        'The AI parser returned malformed resume data. Try again, or upload a simpler resume PDF. Your PDF was saved so you can retry.',
         502,
         'ai-parse',
         true,
+        { fileUrl: uploadResult.url },
       );
     }
 
@@ -346,34 +405,15 @@ export const action: ActionFunction = async ({ request, context }) => {
         ownerUserid: user.id,
         fileName: file.name,
         issues: schemaError.issues,
+        ...storedFile,
       });
       return errorResponse(
-        'The parsed resume data was incomplete or invalid. Try again, or update the PDF with clearer resume sections.',
+        'The parsed resume data was incomplete or invalid. Try again, or update the PDF with clearer resume sections. Your PDF was saved so you can retry.',
         422,
         'schema-validation',
         true,
+        { fileUrl: uploadResult.url },
       );
-    }
-
-    let uploadResult: { id: string; url: string };
-    try {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      uploadResult = await resumeStorage.storeFile(buffer, uploadMimeType, user.id, {
-        originalName: file.name,
-      });
-    } catch (error) {
-      const failure = resolveStorageFailure(error);
-      logger.error('Resume file upload failed', undefined, {
-        ownerUserid: user.id,
-        fileName: file.name,
-        error: isStorageServiceError(error)
-          ? error.code
-          : error instanceof Error
-            ? error.message
-            : error,
-        ...(failure.details ? { storage: failure.details } : {}),
-      });
-      return errorResponse(failure.error, 503, 'storage', true);
     }
 
     let portfolioId: string;
@@ -388,31 +428,15 @@ export const action: ActionFunction = async ({ request, context }) => {
       logRouteError('Resume database save failed', error, {
         ownerUserid: user.id,
         fileName: file.name,
+        ...storedFile,
       });
-      if (uploadResult.id) {
-        try {
-          const deleted = await resumeStorage.deleteFile(uploadResult.id, user.id);
-          if (!deleted) {
-            logger.error('Resume upload cleanup after database failure failed', undefined, {
-              ownerUserid: user.id,
-              fileName: file.name,
-              fileId: uploadResult.id,
-              error: 'File not found',
-            });
-          }
-        } catch (cleanupError) {
-          logRouteError('Resume upload cleanup after database failure threw', cleanupError, {
-            ownerUserid: user.id,
-            fileName: file.name,
-            fileId: uploadResult.id,
-          });
-        }
-      }
+      // Keep the stored PDF — do not delete on portfolio save failure.
       return errorResponse(
-        'Resume was parsed and uploaded, but saving the portfolio failed. Check the database connection and migrations.',
+        'Your PDF was saved, but saving the portfolio failed. Check the database connection and migrations, then try again.',
         500,
         'database',
         true,
+        { fileUrl: uploadResult.url },
       );
     }
 

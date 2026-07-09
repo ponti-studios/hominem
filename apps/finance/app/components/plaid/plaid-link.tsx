@@ -153,7 +153,7 @@ export function PlaidLink({
     return (
       <Card className={cn('w-full max-w-md', className)}>
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex size-12 items-center justify-center border border-primary">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center border border-border">
             <Building2 className="size-6 text-primary" />
           </div>
           <CardTitle>Connect Your Bank Account</CardTitle>

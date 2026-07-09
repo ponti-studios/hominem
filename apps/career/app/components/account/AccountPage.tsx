@@ -1,12 +1,10 @@
 import { useAuthClient } from '@hominem/auth/client/provider';
-import { Button } from '@hominem/ui';
 import { useState } from 'react';
 import { useNavigate, useRevalidator } from 'react-router';
 
 import { AccountActions } from '~/components/account/AccountActions';
-import { AccountHeader } from '~/components/account/AccountHeader';
+import { AccountDocumentsSection } from '~/components/account/AccountDocumentsSection';
 import { BasicInfoForm } from '~/components/account/BasicInfoForm';
-import { CurrentPortfolioSection } from '~/components/account/CurrentPortfolioSection';
 import { SocialLinksSection } from '~/components/account/SocialLinksSection';
 import type {
   AccountActionResult,
@@ -20,11 +18,10 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
   const revalidator = useRevalidator();
   const authClient = useAuthClient();
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [showReplaceResume, setShowReplaceResume] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
 
-  const { user, currentPortfolio, socialLinks } = loaderData;
+  const { user, currentPortfolio, socialLinks, documents } = loaderData;
 
   const submitAccountAction = async <TData,>(
     formData: FormData,
@@ -75,7 +72,36 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
     formData.append('portfolioId', currentPortfolio.id);
 
     await submitAccountAction(formData);
-    navigate('/onboarding');
+    navigate('/work');
+  };
+
+  const handleDeleteDocument = async (fileId: string) => {
+    const formData = new FormData();
+    formData.append('action', 'delete-document');
+    formData.append('fileId', fileId);
+    const result = await submitAccountAction(formData);
+    if (result.success === false) {
+      throw new Error(result.error || 'Failed to delete file');
+    }
+    revalidator.revalidate();
+  };
+
+  const handleConvertDocument = async (fileId: string) => {
+    const formData = new FormData();
+    formData.append('fileId', fileId);
+    formData.append('replaceExisting', 'true');
+    const response = await fetch('/api/resume/convert', {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: formData,
+    });
+    const payload = (await response.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    if (!response.ok) {
+      throw new Error(payload?.error || 'Conversion failed');
+    }
+    revalidator.revalidate();
   };
 
   const handleImageUpload = async (croppedImageBlob: Blob) => {
@@ -123,11 +149,6 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
     return result;
   };
 
-  const handleReplaceResumeComplete = () => {
-    setShowReplaceResume(false);
-    revalidator.revalidate();
-  };
-
   const handleDownloadPdf = async () => {
     if (!currentPortfolio?.slug || !currentPortfolio.isPublic) {
       setPdfError('Portfolio must be public to generate PDF');
@@ -171,36 +192,25 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
     }
   };
 
-  const userDisplayName = String(user.name || user.email);
-  const publicPortfolioUrl = `/p/${currentPortfolio.slug}`;
-
   return (
-    <div className="space-y-8 pb-8">
-      <AccountHeader
-        currentPortfolio={currentPortfolio}
-        currentImageUrl={currentPortfolio.profileImageUrl || undefined}
-        isSigningOut={isSigningOut}
-        updatedAtLabel={`Updated ${new Date(currentPortfolio.updatedat).toLocaleDateString()}`}
-        userDisplayName={userDisplayName}
-        userEmail={user.email}
-        onImageUpload={handleImageUpload}
-        onSignOut={handleSignOut}
-      />
-
+    <div className="flex flex-col gap-6">
       <div className="grid gap-10 xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.8fr)]">
         <section className="space-y-6">
-          <CurrentPortfolioSection
-            currentPortfolio={currentPortfolio}
-            publicPortfolioUrl={publicPortfolioUrl}
-            showReplaceResume={showReplaceResume}
-            onReplaceResumeComplete={handleReplaceResumeComplete}
-            onToggleReplaceResume={() => setShowReplaceResume((current) => !current)}
-            onUpdateSlug={handleUpdateSlug}
-          />
-
           <section className="space-y-4">
-            <BasicInfoForm portfolio={currentPortfolio} onSave={handleSaveBasics} />
+            <BasicInfoForm
+              portfolio={currentPortfolio}
+              accountEmail={user.email}
+              onSave={handleSaveBasics}
+              onImageUpload={handleImageUpload}
+              onUpdateSlug={handleUpdateSlug}
+            />
           </section>
+
+          <AccountDocumentsSection
+            documents={documents}
+            onDelete={handleDeleteDocument}
+            onConvert={handleConvertDocument}
+          />
 
           <SocialLinksSection socialLinks={socialLinks} onSave={handleSaveSocialLinks} />
         </section>
@@ -209,9 +219,10 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
           <AccountActions
             canDownloadPdf={currentPortfolio.isPublic}
             isGeneratingPdf={pdfGenerating}
+            isSigningOut={isSigningOut}
             onDeletePortfolio={handleDeletePortfolio}
             onDownloadPdf={handleDownloadPdf}
-            onEditPortfolio={() => navigate('/work')}
+            onSignOut={handleSignOut}
           />
 
           {pdfError ? (

@@ -426,7 +426,8 @@ describe('resume convert action', () => {
 
     expect(response.status).toBe(422);
     expect(body.stage).toBe('schema-validation');
-    expect(mocks.storeFile).not.toHaveBeenCalled();
+    expect(mocks.storeFile).toHaveBeenCalledTimes(1);
+    expect(body.fileUrl).toBe('http://localhost:9000/storage/resumes/resume.pdf');
   });
 
   it('normalizes present dates before saving', async () => {
@@ -483,7 +484,7 @@ describe('resume convert action', () => {
     expect(body.error).toMatch(/storage/i);
   });
 
-  it('returns database stage when saving fails', async () => {
+  it('returns database stage when saving fails and keeps the stored PDF', async () => {
     mocks.saveResumeToDatabase.mockRejectedValue(new Error('db failed'));
 
     const response = await callAction(formRequest(pdfFile()));
@@ -491,31 +492,22 @@ describe('resume convert action', () => {
 
     expect(response.status).toBe(500);
     expect(body.stage).toBe('database');
-    expect(mocks.deleteFile).toHaveBeenCalledWith('file-id', 'user-id');
+    expect(body.fileUrl).toBe('http://localhost:9000/storage/resumes/resume.pdf');
+    expect(mocks.storeFile).toHaveBeenCalledTimes(1);
+    expect(mocks.deleteFile).not.toHaveBeenCalled();
   });
 
-  it('keeps database failure response when upload cleanup fails', async () => {
-    mocks.saveResumeToDatabase.mockRejectedValue(new Error('db failed'));
-    mocks.deleteFile.mockResolvedValue(false);
+  it('stores the PDF before AI parse failures', async () => {
+    mocks.createCompletion.mockRejectedValue(new Error('ai down'));
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
 
-    expect(response.status).toBe(500);
-    expect(body.stage).toBe('database');
-    expect(mocks.deleteFile).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps database failure response when upload cleanup throws', async () => {
-    mocks.saveResumeToDatabase.mockRejectedValue(new Error('db failed'));
-    mocks.deleteFile.mockRejectedValue(new Error('cleanup threw'));
-
-    const response = await callAction(formRequest(pdfFile()));
-    const body = await responseBody(response);
-
-    expect(response.status).toBe(500);
-    expect(body.stage).toBe('database');
-    expect(mocks.deleteFile).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(502);
+    expect(body.stage).toBe('ai-parse');
+    expect(mocks.storeFile).toHaveBeenCalledTimes(1);
+    expect(body.fileUrl).toBe('http://localhost:9000/storage/resumes/resume.pdf');
+    expect(mocks.deleteFile).not.toHaveBeenCalled();
   });
 
   it('returns portfolio metadata when conversion succeeds', async () => {

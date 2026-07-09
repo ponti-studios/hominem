@@ -76,7 +76,7 @@ const demoPortfolio = {
 
 export default function Demo() {
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <Link to="/" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
           <ArrowLeft className="size-4" />

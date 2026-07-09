@@ -164,15 +164,6 @@ export function UploadResumeForm({
 
   return (
     <div className="w-full max-w-md">
-      {showHeading ? (
-        <div className="mb-4">
-          <h1 className="heading-3 text-foreground">Upload your resume</h1>
-          <p className="body-4 text-muted-foreground">
-            We'll extract your information and build your portfolio automatically.
-          </p>
-        </div>
-      ) : null}
-
       <DropZone
         status={status}
         file={selectedFile ? { name: selectedFile.name, size: selectedFile.size } : null}
@@ -180,9 +171,9 @@ export function UploadResumeForm({
         notice={notice}
         accept=".pdf,application/pdf"
         emptyLabel={
-          <>
-            Drop your resume here, or <span className="text-primary font-medium">browse</span>
-          </>
+          <div>
+            Drop a resume here, or <span className="text-primary font-medium">browse</span>
+          </div>
         }
         emptyHint="PDF only · max 10MB"
         busyLabel="Resume processing"

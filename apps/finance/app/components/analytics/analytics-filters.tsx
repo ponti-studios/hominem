@@ -137,7 +137,7 @@ function FilterChips({
       {chips.map((chip) => (
         <Badge
           key={chip.key}
-          className="flex items-center gap-1 pr-1 border border-foreground text-foreground text-xs max-w-full"
+          className="flex max-w-full items-center gap-1 border border-border pr-1 text-xs text-foreground"
         >
           <span className="truncate">{chip.label}</span>
           <Button

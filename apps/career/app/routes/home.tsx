@@ -85,7 +85,7 @@ function Dashboard({
   const { allApplications, metrics } = loaderData;
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="heading-2">Job Search</h1>
         <p className="body-3 text-muted-foreground">Where things stand right now.</p>
@@ -112,7 +112,7 @@ function Dashboard({
 function LandingPage() {
   return (
     <div className="relative overflow-hidden">
-      <section className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col py-6">
+      <section className="relative flex min-h-[calc(100vh-5rem)] w-full flex-col">
         <main className="flex flex-1 items-center">
           <div className="w-full">
             <div className="max-w-2xl">
@@ -141,9 +141,9 @@ function LandingPage() {
               </div>
             </div>
 
-            <div className="mt-14 border-t border-subtle pt-6">
+            <div className="mt-14 border-t border-border pt-6">
               <p className="ui-eyebrow">What gets hard</p>
-              <div className="mt-5 grid gap-5 border-y border-subtle py-5">
+              <div className="mt-5 grid gap-5 border-y border-border py-5">
                 {searchProblems.map((problem, index) => (
                   <div key={problem.label}>
                     <p className="ui-eyebrow">{String(index + 1).padStart(2, '0')}</p>
@@ -166,7 +166,7 @@ function LandingPage() {
               </p>
             </section>
 
-            <footer className="flex items-center justify-between border-t border-subtle py-5 footnote text-muted-foreground">
+            <footer className="flex items-center justify-between border-t border-border py-5 footnote text-muted-foreground">
               <span>Craftd</span>
               <span>Less scrambling. More control.</span>
             </footer>

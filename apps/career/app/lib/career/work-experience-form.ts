@@ -44,7 +44,6 @@ export interface OverviewFormValues {
   company: string;
   startDate: string;
   endDate: string;
-  is_current: boolean;
   employmentType: string;
   workArrangement: string;
   description: string;

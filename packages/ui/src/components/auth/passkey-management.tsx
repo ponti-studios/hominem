@@ -97,7 +97,7 @@ export function PasskeyManagement({
       {isLoading ? (
         <p className="text-muted-foreground text-sm">Loading passkeys...</p>
       ) : passkeys.length === 0 ? (
-        <div className="border-default text-text-secondary flex items-center gap-3 border border-dashed p-4 text-sm">
+        <div className="border-border text-text-secondary flex items-center gap-3 border border-dashed p-4 text-sm">
           <KeyRound className="size-4 shrink-0" aria-hidden />
           <span>No passkeys registered. Add one to sign in faster.</span>
         </div>
@@ -106,7 +106,7 @@ export function PasskeyManagement({
           {passkeys.map((pk) => (
             <li
               key={pk.id}
-              className="border-default flex items-center justify-between border px-4 py-3 text-sm"
+              className="border-border flex items-center justify-between border px-4 py-3 text-sm"
             >
               <div className="flex items-center gap-3">
                 <KeyRound className="text-text-secondary size-4 shrink-0" aria-hidden />

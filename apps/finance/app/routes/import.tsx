@@ -203,7 +203,7 @@ export default function TransactionImportPage() {
           <DropZone
             isImporting={isImportInProgress}
             dragActive={dragActive}
-            className={cn(dragActive && 'border-muted-foreground')}
+            className={cn(dragActive && 'border-border')}
             onDrop={handleDropWithValidation}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -349,15 +349,13 @@ const FileImport = memo(function FileImport({
   const itemClassName = useMemo(
     () =>
       cn(
-        'p-4 ',
-        'border border-muted/50',
-        '',
-        // Add subtle border color based on status
-        !status && 'border-l-4 border-l-muted-foreground',
-        status?.status === 'processing' && 'border-l-4 border-l-white/50',
-        status?.status === 'uploading' && 'border-l-4 border-l-white/70',
+        'border border-border p-4',
+        // Status accent on the left edge only
+        !status && 'border-l-4 border-l-border',
+        status?.status === 'processing' && 'border-l-4 border-l-border',
+        status?.status === 'uploading' && 'border-l-4 border-l-border',
         status?.status === 'queued' && 'border-l-4 border-l-warning',
-        status?.status === 'done' && 'border-l-4 border-l-white/90',
+        status?.status === 'done' && 'border-l-4 border-l-success',
         status?.status === 'error' && 'border-l-4 border-l-destructive',
       ),
     [status],
@@ -376,7 +374,7 @@ const FileImport = memo(function FileImport({
                 size="sm"
                 onClick={handleStart}
                 disabled={!isConnected}
-                className="h-8 px-3 text-xs border border-primary text-primary font-medium"
+                className="h-8 border-border px-3 text-xs font-medium"
               >
                 Start
               </Button>

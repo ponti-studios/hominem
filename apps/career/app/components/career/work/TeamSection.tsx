@@ -41,7 +41,6 @@ export function TeamSection({ workExperience }: { workExperience: WorkExperience
   const { isSubmitting, submissionError, submitUpdates, clearSubmissionError } =
     useWorkExperienceSection({
       errorMessage: 'We couldn’t save the team details. Try again.',
-      onSuccess: () => setIsEditing(false),
     });
   const { control, register, handleSubmit, reset } = useForm<TeamFormValues>({ defaultValues });
 

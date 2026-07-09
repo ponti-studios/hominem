@@ -1,20 +1,30 @@
 import type { PortfolioRecord } from '@hominem/db';
-import { Button } from '@hominem/ui';
-import { Input, Switch, Textarea } from '@hominem/ui';
+import { Button, Input, Switch, Textarea } from '@hominem/ui';
 import { useEffect, useState } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 
 import { FormErrorAlert } from '~/components/FormErrorAlert';
+import { ProfileImageUpload } from '~/components/ProfileImageUpload';
+import { SlugEditor } from '~/components/SlugEditor';
 import type { AccountActionResult, BasicInfoFormValues } from '~/lib/account/types';
 
 export function BasicInfoForm({
   portfolio,
+  accountEmail,
   onSave,
+  onImageUpload,
+  onUpdateSlug,
 }: {
   portfolio: PortfolioRecord;
+  accountEmail?: string | null;
   onSave: (values: BasicInfoFormValues) => Promise<AccountActionResult<unknown>>;
+  onImageUpload: (croppedImageBlob: Blob) => Promise<string | undefined>;
+  onUpdateSlug: (slug: string) => Promise<void>;
 }) {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
+
+  const lockedEmail = accountEmail || portfolio.email || '';
 
   const {
     register,
@@ -22,43 +32,18 @@ export function BasicInfoForm({
     formState: { errors, isDirty, isSubmitting },
     reset,
     control,
+    getValues,
+    setValue,
+    watch,
   } = useForm<BasicInfoFormValues>({
-    defaultValues: {
-      name: portfolio.name || '',
-      initials: portfolio.initials || '',
-      title: portfolio.title || '',
-      jobTitle: portfolio.jobTitle || '',
-      bio: portfolio.bio || '',
-      tagline: portfolio.tagline || '',
-      currentLocation: portfolio.currentLocation || '',
-      locationTagline: portfolio.locationTagline || '',
-      email: portfolio.email || '',
-      phone: portfolio.phone || '',
-      availabilityStatus: portfolio.availabilityStatus || false,
-      availabilityMessage: portfolio.availabilityMessage || '',
-      isPublic: portfolio.isPublic,
-      isActive: portfolio.isActive,
-    },
+    defaultValues: portfolioToFormValues(portfolio, lockedEmail),
   });
 
+  const displayName = watch('name') || portfolio.name || lockedEmail || 'Profile';
+
   useEffect(() => {
-    reset({
-      name: portfolio.name || '',
-      initials: portfolio.initials || '',
-      title: portfolio.title || '',
-      jobTitle: portfolio.jobTitle || '',
-      bio: portfolio.bio || '',
-      tagline: portfolio.tagline || '',
-      currentLocation: portfolio.currentLocation || '',
-      locationTagline: portfolio.locationTagline || '',
-      email: portfolio.email || '',
-      phone: portfolio.phone || '',
-      availabilityStatus: portfolio.availabilityStatus || false,
-      availabilityMessage: portfolio.availabilityMessage || '',
-      isPublic: portfolio.isPublic,
-      isActive: portfolio.isActive,
-    });
-  }, [portfolio, reset]);
+    reset(portfolioToFormValues(portfolio, lockedEmail));
+  }, [portfolio, lockedEmail, reset]);
 
   const onSubmit: SubmitHandler<BasicInfoFormValues> = async (formData) => {
     if (!isDirty) {
@@ -66,21 +51,78 @@ export function BasicInfoForm({
     }
 
     setSubmissionError(null);
-    const result = await onSave(formData);
+    const result = await onSave({ ...formData, email: lockedEmail });
 
     if (result.success === false) {
       setSubmissionError(result.error || 'We couldn’t save your basic info. Try again.');
       return;
     }
 
-    reset(formData);
+    reset({ ...formData, email: lockedEmail });
+  };
+
+  const handleAvailabilityChange = async (checked: boolean) => {
+    const previous = getValues('availabilityStatus') ?? false;
+    setValue('availabilityStatus', checked, { shouldDirty: false });
+    setIsTogglingAvailability(true);
+    setSubmissionError(null);
+
+    const result = await onSave({
+      ...getValues(),
+      email: lockedEmail,
+      availabilityStatus: checked,
+    });
+
+    setIsTogglingAvailability(false);
+
+    if (result.success === false) {
+      setValue('availabilityStatus', previous, { shouldDirty: false });
+      setSubmissionError(result.error || 'We couldn’t update availability. Try again.');
+      return;
+    }
+
+    reset({ ...getValues(), email: lockedEmail, availabilityStatus: checked });
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FormErrorAlert title="Basic info wasn’t saved" message={submissionError} />
-      <EditorSection title="Personal">
+
+      <section className="space-y-5">
+        <div className="flex items-center gap-4">
+          <ProfileImageUpload
+            compact
+            currentImageUrl={portfolio.profileImageUrl || undefined}
+            onUpload={onImageUpload}
+          />
+          <div className="min-w-0 space-y-1">
+            <p className="subheading-3 truncate">{displayName}</p>
+            <p className="body-4 text-muted-foreground">
+              Updated {new Date(portfolio.updatedat).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1 md:col-span-2">
+            <label htmlFor="email" className="subheading-4 text-muted-foreground">
+              Email
+            </label>
+            <Input id="email" type="email" value={lockedEmail} disabled readOnly />
+          </div>
+
+          <div className="space-y-1 md:col-span-2">
+            <label htmlFor="portfolio-slug" className="subheading-4 text-muted-foreground">
+              Portfolio URL
+            </label>
+            <SlugEditor
+              portfolioId={portfolio.id}
+              initialSlug={portfolio.slug}
+              liveUrl={portfolio.isPublic ? `/p/${portfolio.slug}` : null}
+              onSave={(slug) => onUpdateSlug(slug)}
+            />
+          </div>
+
           <div className="space-y-1 md:col-span-2">
             <label htmlFor="name" className="subheading-4 text-muted-foreground">
               Full Name
@@ -103,7 +145,7 @@ export function BasicInfoForm({
               <p className="body-4 text-destructive">{errors.jobTitle.message}</p>
             )}
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 md:col-span-2">
             <label htmlFor="tagline" className="subheading-4 text-muted-foreground">
               Tagline
             </label>
@@ -127,24 +169,10 @@ export function BasicInfoForm({
             {errors.bio && <p className="body-4 text-destructive">{errors.bio.message}</p>}
           </div>
         </div>
-      </EditorSection>
+      </section>
 
       <EditorSection title="Contact">
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-1">
-            <label htmlFor="email" className="subheading-4 text-muted-foreground">
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              {...register('email', {
-                required: 'Email is required',
-                pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' },
-              })}
-            />
-            {errors.email && <p className="body-4 text-destructive">{errors.email.message}</p>}
-          </div>
           <div className="space-y-1">
             <label htmlFor="phone" className="subheading-4 text-muted-foreground">
               Phone
@@ -178,28 +206,29 @@ export function BasicInfoForm({
         </div>
       </EditorSection>
 
-      <EditorSection title="Availability">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-2xl bg-muted/40 px-4 py-4">
-            <p className="subheading-4 text-foreground">Open to opportunities</p>
-            <Controller
-              name="availabilityStatus"
-              control={control}
-              render={({ field }) => (
-                <Switch
-                  id="availabilityStatus"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
-          </div>
+      <section className="border-t border-border pt-6">
+        <div className="flex items-center justify-between rounded-2xl bg-muted/40 px-4 py-4">
+          <p className="subheading-4 text-foreground">Open to opportunities</p>
+          <Controller
+            name="availabilityStatus"
+            control={control}
+            render={({ field }) => (
+              <Switch
+                id="availabilityStatus"
+                checked={field.value}
+                disabled={isTogglingAvailability || isSubmitting}
+                onCheckedChange={(checked) => {
+                  void handleAvailabilityChange(checked);
+                }}
+              />
+            )}
+          />
         </div>
-      </EditorSection>
+      </section>
 
       <Button
         type="submit"
-        disabled={isSubmitting || !isDirty}
+        disabled={isSubmitting || isTogglingAvailability || !isDirty}
         variant="default"
         className="w-full rounded-full sm:w-auto sm:px-6"
         isLoading={isSubmitting}
@@ -209,6 +238,28 @@ export function BasicInfoForm({
       </Button>
     </form>
   );
+}
+
+function portfolioToFormValues(
+  portfolio: PortfolioRecord,
+  email: string,
+): BasicInfoFormValues {
+  return {
+    name: portfolio.name || '',
+    initials: portfolio.initials || '',
+    title: portfolio.title || '',
+    jobTitle: portfolio.jobTitle || '',
+    bio: portfolio.bio || '',
+    tagline: portfolio.tagline || '',
+    currentLocation: portfolio.currentLocation || '',
+    locationTagline: portfolio.locationTagline || '',
+    email,
+    phone: portfolio.phone || '',
+    availabilityStatus: portfolio.availabilityStatus || false,
+    availabilityMessage: portfolio.availabilityMessage || '',
+    isPublic: portfolio.isPublic,
+    isActive: portfolio.isActive,
+  };
 }
 
 function EditorSection({ title, children }: { title: string; children: React.ReactNode }) {

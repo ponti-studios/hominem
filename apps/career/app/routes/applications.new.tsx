@@ -169,11 +169,9 @@ export default function CreateJobApplication() {
   };
 
   return (
-    <div>
-      <div className="container mx-auto py-4">
-        <div className="max-w-3xl mx-auto">
+    <div className="flex flex-col gap-6">
           {/* Input Method */}
-          <Card className="border-0 bg-background/80 backdrop-blur-sm mb-4">
+          <Card className="border-0 bg-background/80 backdrop-blur-sm">
             <CardContent className="p-4">
               {/* URL input — default / primary path */}
               {inputMethod === 'url' && (
@@ -263,7 +261,7 @@ export default function CreateJobApplication() {
               <CardContent className="p-4">
                 {/* Scraped Data Preview */}
                 {scrapedData && (
-                  <div className="mb-6 p-4 bg-accent/10 border border-accent/30 rounded-lg">
+                  <div className="mb-6 rounded-lg border border-border bg-muted/40 p-4">
                     <h3 className="heading-3 text-foreground mb-4">Extracted Job Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {scrapedData.requirements.length > 0 && (
@@ -321,7 +319,7 @@ export default function CreateJobApplication() {
                       </div>
                     )}
 
-                    <div className="mt-4 pt-4 border-t border-accent/30">
+                    <div className="mt-4 border-t border-border pt-4">
                       <div className="flex flex-wrap gap-4 body-4 text-muted-foreground">
                         <span>{scrapedData.wordCount} words</span>
                         {scrapedData.url && <span>URL captured</span>}
@@ -517,8 +515,6 @@ export default function CreateJobApplication() {
               </CardContent>
             </Card>
           )}
-        </div>
-      </div>
     </div>
   );
 }

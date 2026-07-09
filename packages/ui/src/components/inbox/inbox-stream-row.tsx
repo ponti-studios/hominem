@@ -126,7 +126,7 @@ export const InboxStreamRow = memo(function InboxStreamRow({
   }
 
   return (
-    <div className="after:bg-border-subtle relative py-0 after:absolute after:inset-x-3 after:bottom-0 after:h-px last:after:hidden">
+    <div className="after:bg-border relative py-0 after:absolute after:inset-x-3 after:bottom-0 after:h-px last:after:hidden">
       {rowContent}
     </div>
   );

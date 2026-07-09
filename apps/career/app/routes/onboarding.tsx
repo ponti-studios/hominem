@@ -28,7 +28,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 py-4">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
       <header className="space-y-2 text-center sm:text-left">
         <p className="ui-eyebrow">Import</p>
         <h1 className="heading-2 text-foreground">Fill your portfolio from a resume</h1>

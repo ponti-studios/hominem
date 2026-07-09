@@ -141,14 +141,15 @@ export const WorkExperienceRepository = {
       .selectAll('workExperience')
       .where('portfolio.ownerUserid', '=', ownerUserid);
 
+    // Use Kysely orderBy (not raw sql aliases): CamelCasePlugin rewrites
+    // workExperience → work_experience, so quoted raw identifiers miss the FROM alias.
     query =
       direction === 'desc'
         ? query
-            .orderBy(sql`case when "workExperience"."endDate" is null then 0 else 1 end`)
-            .orderBy('workExperience.endDate', 'desc')
+            .orderBy('workExperience.endDate', (ob) => ob.desc().nullsFirst())
             .orderBy('workExperience.startDate', 'desc')
         : query
-            .orderBy(sql`case when "workExperience"."endDate" is null then 1 else 0 end`)
+            .orderBy(sql`case when ${sql.ref('workExperience.endDate')} is null then 1 else 0 end`)
             .orderBy('workExperience.startDate', 'asc')
             .orderBy('workExperience.endDate', 'asc');
 
@@ -163,7 +164,7 @@ export const WorkExperienceRepository = {
       .selectFrom('app.workExperiences')
       .selectAll()
       .where('portfolioId', '=', portfolioId)
-      .orderBy(sql`startDate asc nulls last`)
+      .orderBy('startDate', (ob) => ob.asc().nullsLast())
       .execute();
 
     return (rows as WorkExperienceRow[]).map(toWorkExperienceRecord);

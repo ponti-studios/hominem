@@ -37,7 +37,6 @@ export function ExitSection({ workExperience }: { workExperience: WorkExperience
   const { isSubmitting, submissionError, submitUpdates, clearSubmissionError } =
     useWorkExperienceSection({
       errorMessage: 'We couldn’t save the exit details. Try again.',
-      onSuccess: () => setIsEditing(false),
     });
   const { control, register, handleSubmit, reset } = useForm<ExitFormValues>({ defaultValues });
 

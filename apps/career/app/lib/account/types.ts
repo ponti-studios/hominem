@@ -7,11 +7,20 @@ export interface AccountPageUser {
   email?: string | null;
 }
 
+export interface AccountDocumentFile {
+  id: string;
+  name: string;
+  displayName: string;
+  size: number;
+  lastModified: string | null;
+}
+
 export interface AccountLoaderData {
   user: AccountPageUser;
   currentPortfolio: PortfolioRecord;
   hasPortfolio: true;
   socialLinks: UserSocialLinksRecord | null;
+  documents: AccountDocumentFile[];
 }
 
 export interface BasicInfoFormValues {

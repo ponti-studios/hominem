@@ -20,7 +20,6 @@ export function TechnologiesSection({ technologies }: { technologies: string[] }
   const { isSubmitting, submissionError, submitUpdates, clearSubmissionError } =
     useWorkExperienceSection({
       errorMessage: 'We couldn’t save the technologies. Try again.',
-      onSuccess: () => setIsEditing(false),
     });
   const { register, handleSubmit, reset } = useForm<TechnologiesFormValues>({ defaultValues });
 

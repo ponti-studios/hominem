@@ -14,7 +14,7 @@ import type { ApplicationsDesktopTableProps } from './types';
 export function ApplicationsDesktopTable({ applications }: ApplicationsDesktopTableProps) {
   return (
     <div className="hidden md:block">
-      <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)] gap-3 border-b border-border bg-muted/20 px-4 py-3 ui-data-label">
+      <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)] gap-3 bg-muted/20 px-4 py-3 ui-data-label">
         <span>Position</span>
         <span>Status</span>
         <span>Applied</span>

@@ -43,7 +43,6 @@ export function OverviewSection({
       company: workExperience.company ?? '',
       startDate: toMonthInputValue(workExperience.startDate),
       endDate: toMonthInputValue(workExperience.endDate),
-      is_current: !workExperience.endDate,
       employmentType: workExperience.employmentType ?? '',
       workArrangement: workExperience.workArrangement ?? '',
       description: workExperience.description ?? '',
@@ -54,17 +53,14 @@ export function OverviewSection({
   const { isSubmitting, submissionError, submitUpdates, clearSubmissionError } =
     useWorkExperienceSection({
       errorMessage: 'We couldn’t save the overview. Try again.',
-      onSuccess: () => setIsEditing(false),
     });
   const {
     control,
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<OverviewFormValues>({ defaultValues });
-  const isCurrent = watch('is_current');
 
   useEffect(() => {
     reset(defaultValues);
@@ -75,7 +71,7 @@ export function OverviewSection({
       role: values.role.trim(),
       company: values.company.trim(),
       startDate: values.startDate || null,
-      endDate: values.is_current ? null : values.endDate || null,
+      endDate: values.endDate || null,
       employmentType: normalizeOptionalText(values.employmentType),
       workArrangement: normalizeOptionalText(values.workArrangement),
       description: values.description.trim(),
@@ -111,19 +107,9 @@ export function OverviewSection({
               <Input type="month" {...register('startDate')} />
             </Field>
             <Field label="End month" helpText="Leave blank for a current role.">
-              <Input type="month" disabled={isCurrent} {...register('endDate')} />
+              <Input type="month" {...register('endDate')} />
             </Field>
           </div>
-
-          <label className="flex items-start gap-3 rounded-md border p-3">
-            <input type="checkbox" className="mt-1 size-4" {...register('is_current')} />
-            <span className="space-y-1">
-              <span className="body-3 block text-foreground">This is my current role</span>
-              <span className="body-4 block text-muted-foreground">
-                Current roles are treated as the newest entries in your work history.
-              </span>
-            </span>
-          </label>
 
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Employment type">

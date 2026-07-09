@@ -3,6 +3,7 @@ import { createStorageService, isStorageServiceError, validateFile } from '@homi
 
 import { parseFormData } from '~/lib/route-utils';
 
+import { deleteUserDocument } from './documents.server';
 import type {
   AccountActionResult,
   AccountPageUser,
@@ -31,6 +32,7 @@ const accountActionHandlers: Record<string, AccountActionHandler> = {
   'update-slug': handleUpdateSlugAction,
   'update-basics': handleUpdateBasicsAction,
   'update-social-links': handleUpdateSocialLinksAction,
+  'delete-document': handleDeleteDocumentAction,
 };
 
 function getProfileImageUploadErrorMessage(error: unknown): string {
@@ -252,5 +254,29 @@ async function handleUpdateBasicsAction({
   } catch (error) {
     console.error('Failed to update portfolio basics:', error);
     return { success: false, error: 'We couldn’t save your basic info. Try again.' };
+  }
+}
+
+async function handleDeleteDocumentAction({
+  formData,
+  user,
+}: {
+  formData: FormData;
+  user: AccountPageUser;
+}): Promise<AccountActionResult> {
+  const fileId = formData.get('fileId');
+  if (typeof fileId !== 'string' || !fileId.trim()) {
+    return { success: false, error: 'Choose a file to delete.' };
+  }
+
+  try {
+    const deleted = await deleteUserDocument(user.id, fileId.trim());
+    if (!deleted) {
+      return { success: false, error: 'That file was not found or could not be deleted.' };
+    }
+    return { success: true, message: 'File deleted' };
+  } catch (error) {
+    console.error('Failed to delete document:', error);
+    return { success: false, error: 'We couldn’t delete that file. Try again.' };
   }
 }

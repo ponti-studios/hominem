@@ -50,8 +50,8 @@ export function InlineEnhanceTray({
               className={cn(
                 'void-hover focus-visible:ring-ring rounded-full border px-3 py-1.5 text-xs focus-visible:ring-2 focus-visible:outline-none',
                 isActive
-                  ? 'border-border-default bg-background text-foreground'
-                  : 'border-border-subtle bg-background/70 text-text-secondary [--color-interaction-hover-bg:transparent] [--color-interaction-hover-border:var(--color-border-default)] [--color-interaction-hover-text:var(--color-foreground)]',
+                  ? 'border-border bg-background text-foreground'
+                  : 'border-border bg-background/70 text-text-secondary [--color-interaction-hover-bg:transparent] [--color-interaction-hover-border:var(--color-border)] [--color-interaction-hover-text:var(--color-foreground)]',
               )}
               onClick={() => onInstructionChange(suggestion)}
             >

@@ -13,9 +13,15 @@ const serverSchema = z.object({
 function createEnv() {
   try {
     return createServerEnv(serverSchema, 'financeServer');
-  } catch {
-    // Running in browser — server env not available
-    return createClientEnv(serverSchema, 'financeServer');
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.includes('createServerEnv can only be used in Node.js context')
+    ) {
+      // Running in browser — server env not available
+      return createClientEnv(serverSchema, 'financeServer');
+    }
+    throw error;
   }
 }
 

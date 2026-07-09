@@ -20,7 +20,6 @@ export function AchievementsSection({ achievements }: { achievements: string[] }
   const { isSubmitting, submissionError, submitUpdates, clearSubmissionError } =
     useWorkExperienceSection({
       errorMessage: 'We couldn’t save the achievements. Try again.',
-      onSuccess: () => setIsEditing(false),
     });
   const { control, register, handleSubmit, reset } = useForm<AchievementsFormValues>({
     defaultValues,

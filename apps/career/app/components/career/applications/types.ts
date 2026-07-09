@@ -14,8 +14,6 @@ export interface ApplicationsFiltersProps {
 
 export interface ApplicationsResultsSummaryProps {
   page: number;
-  limit: number;
-  total: number;
   totalPages: number;
   onPrevPage: () => void;
   onNextPage: () => void;

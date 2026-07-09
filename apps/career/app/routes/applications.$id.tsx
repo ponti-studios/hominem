@@ -65,7 +65,7 @@ export default function ApplicationDetailLayout({ loaderData }: Route.ComponentP
   ];
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="flex flex-col gap-6">
       {/* Header */}
       <header className="flex items-center justify-between">
         <Link to="/applications" className="flex items-center body-3 text-muted-foreground">

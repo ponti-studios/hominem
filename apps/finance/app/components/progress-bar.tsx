@@ -8,7 +8,7 @@ export function ProgressBar({
   progress?: number;
 }) {
   return (
-    <div className={cn('w-full h-[2px] border-t border-foreground overflow-hidden', className)}>
+    <div className={cn('h-[2px] w-full overflow-hidden border-t border-border', className)}>
       <div
         className={cn('h-full border-t border-warning')}
         style={{

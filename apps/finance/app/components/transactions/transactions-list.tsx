@@ -79,7 +79,7 @@ export function TransactionsList({
     return (
       <div className="space-y-0 mx-auto border border-border overflow-hidden">
         {Array.from({ length: 5 }, (_, i) => `skeleton-${Date.now()}-${i}`).map((key) => (
-          <div key={key} className="p-4 sm:p-6 border-b border-muted last:border-b-0">
+          <div key={key} className="border-b border-border p-4 last:border-b-0 sm:p-6">
             <div className="flex items-start gap-4">
               <div className="size-12 bg-muted" />
               <div className="flex-1 space-y-2">

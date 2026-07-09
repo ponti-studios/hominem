@@ -8,7 +8,8 @@ export interface FilterSelectOption<T extends string> {
 }
 
 export interface FilterSelectProps<T extends string> {
-  label: string;
+  /** Optional visible label. Prefer placeholder-only filters when omitted. */
+  label?: string;
   value: T | '';
   options: Array<FilterSelectOption<T>>;
   onChange: (value: T | '') => void;
@@ -32,19 +33,21 @@ export function FilterSelect<T extends string>({
 
   return (
     <div className="flex-1">
-      <label
-        htmlFor={selectId}
-        className="text-muted-foreground mb-1.5 block text-xs font-medium tracking-wide uppercase"
-      >
-        {label}
-      </label>
+      {label ? (
+        <label
+          htmlFor={selectId}
+          className="text-muted-foreground mb-1.5 block text-xs font-medium tracking-wide uppercase"
+        >
+          {label}
+        </label>
+      ) : null}
       <Select
         value={selectValue}
         onValueChange={(nextValue) =>
           onChange((nextValue === ALL_VALUE ? '' : nextValue) as T | '')
         }
       >
-        <SelectTrigger id={selectId} className="w-full">
+        <SelectTrigger id={selectId} className="w-full" aria-label={label ?? placeholder}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>

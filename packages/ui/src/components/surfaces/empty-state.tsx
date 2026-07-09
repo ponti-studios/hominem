@@ -38,9 +38,9 @@ export function EmptyState({
               large ? 'min-h-80 px-6 py-10' : 'min-h-64 px-5 py-8',
             )
           : cn('flex flex-col gap-3', large ? 'px-6 py-5' : 'px-5 py-4'),
-        variant === 'default' && 'border-border-subtle',
-        variant === 'dashed' && 'border-border-subtle border-2 border-dashed',
-        variant === 'search' && 'border-border-subtle bg-muted/30 border-dashed shadow-none',
+        variant === 'default' && 'border-border',
+        variant === 'dashed' && 'border-border border-2 border-dashed',
+        variant === 'search' && 'border-border bg-muted/30 border-dashed shadow-none',
         variant === 'quiet' && 'bg-muted/25 border-transparent shadow-none',
         className,
       )}
@@ -48,7 +48,7 @@ export function EmptyState({
       {icon ? (
         <div
           className={cn(
-            'border-border-subtle bg-background text-text-tertiary flex items-center justify-center rounded-2xl border',
+            'border-border bg-background text-text-tertiary flex items-center justify-center rounded-2xl border',
             centered ? 'mb-4 size-12' : 'mb-1 size-10',
           )}
         >

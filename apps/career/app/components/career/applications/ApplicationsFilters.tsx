@@ -52,29 +52,18 @@ export function ApplicationsFilters({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="flex-1">
-          <label
-            htmlFor="application-search"
-            className="subheading-4 mb-2 block text-muted-foreground"
-          >
-            Search
-          </label>
           <Input
             id="application-search"
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search by position or company..."
+            aria-label="Search applications"
           />
         </div>
 
         <div className="sm:w-48">
-          <label
-            htmlFor="application-status-dropdown"
-            className="subheading-4 mb-2 block text-muted-foreground"
-          >
-            Status
-          </label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -82,6 +71,7 @@ export function ApplicationsFilters({
                 type="button"
                 variant="outline"
                 className="w-full justify-between bg-background"
+                aria-label="Filter by status"
               >
                 <span className="truncate">
                   {selectedStatuses.length === 0
@@ -109,7 +99,6 @@ export function ApplicationsFilters({
 
         <div className="sm:w-48">
           <FilterSelect
-            label="Source"
             value={selectedSource}
             options={sourceOptions}
             onChange={onSourceChange}

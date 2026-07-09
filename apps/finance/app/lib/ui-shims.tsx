@@ -39,43 +39,6 @@ export function Toaster() {
   return null;
 }
 
-// ── NavItem type ──────────────────────────────────────────────────────────────
-export interface NavItem {
-  title: string;
-  url: string;
-  icon?: React.ComponentType<{ className?: string }>;
-}
-
-// ── Header ────────────────────────────────────────────────────────────────────
-interface HeaderProps {
-  brandName?: string;
-  brandIcon?: ReactNode;
-  navItems?: NavItem[];
-}
-
-export function Header({ brandName, brandIcon, navItems = [] }: HeaderProps) {
-  return (
-    <nav className="flex items-center gap-4 px-4 py-2 border-b">
-      <div className="flex items-center gap-2">
-        {brandIcon}
-        {brandName && <span className="font-semibold">{brandName}</span>}
-      </div>
-      <div className="flex items-center gap-2">
-        {navItems.map((item) => (
-          <a
-            key={item.url}
-            href={item.url}
-            className="flex items-center gap-1 text-sm px-2 py-1 rounded hover:bg-muted"
-          >
-            {item.icon && <item.icon className="size-4" />}
-            {item.title}
-          </a>
-        ))}
-      </div>
-    </nav>
-  );
-}
-
 // ── AppLayout ─────────────────────────────────────────────────────────────────
 interface AppLayoutProps {
   navigation?: ReactNode;
@@ -274,7 +237,7 @@ export const SearchInput = forwardRef<
     ref={ref}
     type="search"
     className={cn(
-      'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm',
+      'flex h-9 w-full rounded-md border border-border bg-transparent px-3 py-1 text-sm shadow-sm',
       className,
     )}
     {...props}

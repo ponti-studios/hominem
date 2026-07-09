@@ -50,7 +50,7 @@ export default function Portfolio({
   const { portfolio } = loaderData;
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-12">
+    <div className="mx-auto w-full max-w-2xl flex flex-col gap-6">
       {/* Header */}
       <header className="mb-16">
         <div className="flex items-start justify-between mb-8">

@@ -237,7 +237,7 @@ export default function TagsAnalyticsPage() {
           {activeFilters.map((filter) => (
             <Badge
               key={filter.id}
-              className="flex items-center gap-1 pr-1 border border-foreground text-foreground text-xs"
+              className="flex items-center gap-1 border border-border pr-1 text-xs text-foreground"
             >
               <span>{filter.label}</span>
               <Button
@@ -256,7 +256,7 @@ export default function TagsAnalyticsPage() {
             </Badge>
           ))}
           {searchValue.trim() && (
-            <Badge className="flex items-center gap-1 pr-1 border border-foreground text-foreground text-xs">
+            <Badge className="flex items-center gap-1 border border-border pr-1 text-xs text-foreground">
               <span>Search: {searchValue}</span>
               <Button
                 type="button"
@@ -289,7 +289,7 @@ export default function TagsAnalyticsPage() {
         <div className="flex justify-center py-10">
           <output className="space-y-4 w-full" aria-live="polite">
             {[1, 2, 3, 4, 5].map((val) => (
-              <div key={val} className="h-12 border border-foreground w-full" />
+              <div key={val} className="h-12 w-full border border-border" />
             ))}
           </output>
         </div>
@@ -409,7 +409,7 @@ export default function TagsAnalyticsPage() {
                           {percentage.toFixed(1)}%
                         </div>
                         {/* Progress Bar */}
-                        <div className="w-24 border border-foreground h-1">
+                        <div className="h-1 w-24 border border-border">
                           <div
                             className="h-1 bg-primary"
                             style={{

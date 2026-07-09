@@ -50,7 +50,7 @@ export default function EditProject({ loaderData }: Route.ComponentProps) {
   const backHref = currentSearch ? `/projects?${currentSearch}` : '/projects';
 
   return (
-    <section className="container flex flex-col gap-4 mx-auto">
+    <section className="flex flex-col gap-6">
       <button
         type="button"
         onClick={() => navigate(backHref)}

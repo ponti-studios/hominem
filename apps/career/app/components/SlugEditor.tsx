@@ -1,5 +1,5 @@
 import { Button, Input } from '@hominem/ui';
-import { Check, Loader2, X } from 'lucide-react';
+import { Check, ExternalLink, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSubmit } from 'react-router';
 
@@ -8,6 +8,7 @@ import { cn } from '~/lib/utils';
 interface SlugEditorProps {
   portfolioId: string;
   initialSlug: string;
+  liveUrl?: string | null;
   onSave?: (newSlug: string) => void;
 }
 
@@ -20,7 +21,7 @@ interface ValidationState {
 
 const DEFAULT_SLUG_PLACEHOLDER = 'your-portfolio-name';
 
-export function SlugEditor({ portfolioId, initialSlug, onSave }: SlugEditorProps) {
+export function SlugEditor({ portfolioId, initialSlug, liveUrl, onSave }: SlugEditorProps) {
   const submit = useSubmit();
 
   // Component state
@@ -182,31 +183,46 @@ export function SlugEditor({ portfolioId, initialSlug, onSave }: SlugEditorProps
       ? 'text-success'
       : 'text-destructive';
 
+  const statusIcon = getValidationStatus();
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <div className="min-w-0 flex-1 space-y-2">
-          <label htmlFor="portfolio-slug" className="sr-only">
-            Portfolio URL
-          </label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 body-4 text-muted-foreground">
-              craftd.dev/p/
-            </span>
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-              {getValidationStatus()}
-            </span>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1">
+          <span className="inline-flex shrink-0 items-center rounded-l-md border border-r-0 bg-base px-3 body-3 text-muted-foreground">
+            craftd.dev/p/
+          </span>
+          <div className="relative min-w-0 flex-1">
+            {statusIcon ? (
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                {statusIcon}
+              </span>
+            ) : null}
             <Input
               id="portfolio-slug"
               type="text"
               value={slugValue}
               onChange={handleInputChange}
               aria-invalid={!validation.isValid}
-              className="h-11 rounded-xl pl-[106px] pr-10 font-mono shadow-none"
+              className={cn('rounded-l-none', statusIcon && 'pr-10')}
               placeholder={DEFAULT_SLUG_PLACEHOLDER}
             />
           </div>
         </div>
+
+        {liveUrl ? (
+          <Button
+            asChild
+            variant="outline"
+            size="icon"
+            className="size-9 shrink-0"
+            aria-label="View live"
+          >
+            <a href={liveUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink />
+            </a>
+          </Button>
+        ) : null}
 
         <Button
           type="button"
@@ -214,7 +230,7 @@ export function SlugEditor({ portfolioId, initialSlug, onSave }: SlugEditorProps
           disabled={!canSave}
           variant="outline"
           size="default"
-          className="h-11 shrink-0 rounded-full px-4"
+          className="shrink-0"
         >
           {isSaving ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : null}
           Save

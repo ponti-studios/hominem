@@ -218,52 +218,42 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
     <section className="flex flex-col gap-6">
       <ApplicationsHeader onAdd={() => navigate('/applications/new')} />
 
-      <div className="space-y-8">
-        <div className="overflow-hidden rounded-lg border border-border bg-card">
-          <div className="p-4">
-            <ApplicationsFilters
-              searchValue={searchValue}
-              onSearchChange={handleSearchChange}
-              statuses={statuses}
-              selectedStatuses={filters.statuses}
-              onStatusToggle={handleStatusToggle}
-              sourceOptions={sourceOptions}
-              selectedSource={filters.source}
-              onSourceChange={handleSourceChange}
-              onClearFilters={clearFilters}
-            />
+      <div className="flex flex-col gap-6">
+        <ApplicationsFilters
+          searchValue={searchValue}
+          onSearchChange={handleSearchChange}
+          statuses={statuses}
+          selectedStatuses={filters.statuses}
+          onStatusToggle={handleStatusToggle}
+          sourceOptions={sourceOptions}
+          selectedSource={filters.source}
+          onSourceChange={handleSourceChange}
+          onClearFilters={clearFilters}
+        />
 
-            <ApplicationsResultsSummary
-              page={pagination.page}
-              limit={pagination.limit}
-              total={pagination.total}
-              totalPages={pagination.totalPages}
-              onPrevPage={() => updateSearchParams({ page: String(pagination.page - 1) })}
-              onNextPage={() => updateSearchParams({ page: String(pagination.page + 1) })}
-            />
-          </div>
+        <ApplicationsResultsSummary
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          onPrevPage={() => updateSearchParams({ page: String(pagination.page - 1) })}
+          onNextPage={() => updateSearchParams({ page: String(pagination.page + 1) })}
+        />
 
-          {applications.length === 0 ? (
-            <div className="px-6 py-10 sm:px-8">
-              <ApplicationsEmptyState
-                kind={hasFilters ? 'filtered' : 'base'}
-                emptyTitle={
-                  hasFilters ? 'No applications match your filters' : 'No applications found'
-                }
-                emptyDescription={
-                  hasFilters
-                    ? 'Try adjusting your search criteria'
-                    : 'Start tracking your job applications to see them here'
-                }
-              />
-            </div>
-          ) : (
-            <>
-              <ApplicationsDesktopTable applications={applications} />
-              <ApplicationsMobileList applications={applications} />
-            </>
-          )}
-        </div>
+        {applications.length === 0 ? (
+          <ApplicationsEmptyState
+            kind={hasFilters ? 'filtered' : 'base'}
+            emptyTitle={hasFilters ? 'No applications match your filters' : 'No applications found'}
+            emptyDescription={
+              hasFilters
+                ? 'Try adjusting your search criteria'
+                : 'Start tracking your job applications to see them here'
+            }
+          />
+        ) : (
+          <>
+            <ApplicationsDesktopTable applications={applications} />
+            <ApplicationsMobileList applications={applications} />
+          </>
+        )}
       </div>
     </section>
   );

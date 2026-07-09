@@ -1,29 +1,36 @@
 import { Button } from '@hominem/ui';
-import { Download, Edit, Trash2 } from 'lucide-react';
+import { Download, Edit, LogOut, Trash2 } from 'lucide-react';
+import { useRevalidator } from 'react-router';
 
 import { cn } from '~/lib/utils';
+
+import { UploadResumeForm } from '../UploadResumeForm';
 
 export function AccountActions({
   canDownloadPdf,
   isGeneratingPdf,
+  isSigningOut,
   onDeletePortfolio,
   onDownloadPdf,
-  onEditPortfolio,
+  onSignOut,
 }: {
   canDownloadPdf: boolean;
   isGeneratingPdf: boolean;
+  isSigningOut: boolean;
   onDeletePortfolio: () => Promise<void>;
   onDownloadPdf: () => Promise<void>;
-  onEditPortfolio: () => void;
+  onSignOut: () => Promise<void>;
 }) {
+  const revalidator = useRevalidator();
+
   return (
     <section className="space-y-4">
       <div className="space-y-3">
-        <ActionButtonRow
-          icon={Edit}
-          label="Edit portfolio"
-          onClick={() => onEditPortfolio()}
-          variant="default"
+        <UploadResumeForm
+          mode="replace"
+          onUploadStart={() => undefined}
+          onUploadComplete={() => revalidator.revalidate()}
+          onUploadError={() => undefined}
         />
         <ActionButtonRow
           icon={Download}
@@ -45,6 +52,13 @@ export function AccountActions({
           onClick={() => onDeletePortfolio()}
           variant="outline"
           destructive
+        />
+        <ActionButtonRow
+          icon={LogOut}
+          label={isSigningOut ? 'Signing Out...' : 'Sign Out'}
+          onClick={() => onSignOut()}
+          variant="ghost"
+          disabled={isSigningOut}
         />
       </div>
     </section>
