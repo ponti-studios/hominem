@@ -1,11 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
-import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const workspaceRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const reuseExistingServer = process.env.REUSE_SERVERS === 'true'
-const apiBaseUrl = 'http://api.lvh.me:4040'
-const financeBaseUrl = 'http://finance.lvh.me:4444'
+const apiBaseUrl = 'http://localhost:4040'
+const financeBaseUrl = 'http://localhost:4444'
 
 export default defineConfig({
   testDir: './tests',

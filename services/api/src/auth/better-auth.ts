@@ -18,8 +18,9 @@ if (env.AUTH_TEST_OTP_ENABLED) {
 function getTrustedOrigins() {
   const origins = new Set([
     env.API_URL,
-    env.CAREER_URL,
     env.AUTH_PASSKEY_ORIGIN,
+    env.CAREER_URL,
+    env.FINANCE_URL,
     env.WEB_URL,
     'hakumi://',
     'hakumi-dev://',

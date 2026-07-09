@@ -9,6 +9,7 @@ export const apiSchema = baseSchema.extend({
   API_URL: z.url().default('http://localhost:4040'),
   CAREER_URL: z.url().default('http://localhost:4451'),
   WEB_URL: z.url().default('http://localhost:4445'),
+  FINANCE_URL: z.url().default('http://localhost:4444'),
   DATABASE_URL: isTest
     ? z.url().default('postgresql://postgres:postgres@127.0.0.1:4433/app-test')
     : z.url(),

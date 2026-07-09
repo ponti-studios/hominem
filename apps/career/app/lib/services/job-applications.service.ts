@@ -3,7 +3,6 @@ import type {
   AppApplicationNotes,
   JobApplicationRecord,
   JsonObject,
-  JsonValue,
   Selectable,
   UpdateCompanyInput,
   UpdateJobApplicationInput,
@@ -44,6 +43,10 @@ function interviewEntryToJson(entry: InterviewEntry): JsonObject {
     interviewer: entry.interviewer,
     notes: entry.notes,
   };
+}
+
+function serializeJsonColumn(value: unknown): string {
+  return JSON.stringify(value);
 }
 
 export class JobApplicationsService {
@@ -216,7 +219,9 @@ export class JobApplicationsService {
     await db
       .updateTable('app.jobApplications')
       .set({
-        interviewDates: [...currentInterviews, interview].map(interviewEntryToJson) as JsonValue,
+        interviewDates: serializeJsonColumn(
+          [...currentInterviews, interview].map(interviewEntryToJson),
+        ),
       })
       .where('id', '=', applicationId)
       .executeTakeFirstOrThrow();

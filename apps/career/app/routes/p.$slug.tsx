@@ -2,8 +2,8 @@ import { jsonArray } from '../lib/db-json';
 import { getFullPortfolioBySlug } from '../lib/portfolio.server';
 import { Route } from './+types/p.$slug';
 
-export const meta: Route.MetaFunction = ({ data }) => {
-  if (!data) {
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  if (!loaderData) {
     return [
       { title: 'Portfolio Not Found | Craftd' },
       { name: 'description', content: 'The requested portfolio could not be found.' },
@@ -11,20 +11,20 @@ export const meta: Route.MetaFunction = ({ data }) => {
   }
 
   return [
-    { title: `${data.portfolio.name} - ${data.portfolio.jobTitle}` },
-    { name: 'description', content: data.portfolio.bio },
+    { title: `${loaderData.portfolio.name} - ${loaderData.portfolio.jobTitle}` },
+    { name: 'description', content: loaderData.portfolio.bio },
     {
       property: 'og:title',
-      content: `${data.portfolio.name} - ${data.portfolio.jobTitle}`,
+      content: `${loaderData.portfolio.name} - ${loaderData.portfolio.jobTitle}`,
     },
-    { property: 'og:description', content: data.portfolio.bio },
+    { property: 'og:description', content: loaderData.portfolio.bio },
     { property: 'og:type', content: 'profile' },
     { name: 'twitter:card', content: 'summary_large_image' },
     {
       name: 'twitter:title',
-      content: `${data.portfolio.name} - ${data.portfolio.jobTitle}`,
+      content: `${loaderData.portfolio.name} - ${loaderData.portfolio.jobTitle}`,
     },
-    { name: 'twitter:description', content: data.portfolio.bio },
+    { name: 'twitter:description', content: loaderData.portfolio.bio },
   ];
 };
 
@@ -59,20 +59,20 @@ export default function Portfolio({
             {/* Contact */}
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span>{portfolio.currentLocation}</span>
-              {portfolio.locationTagline && (
+              {portfolio.openToRemote ? (
                 <>
                   <span>•</span>
-                  <span>{portfolio.locationTagline}</span>
+                  <span className="text-success font-medium">Open to remote</span>
                 </>
-              )}
+              ) : null}
+              {portfolio.availabilityStatus ? (
+                <>
+                  <span>•</span>
+                  <span className="text-success font-medium">Open to opportunities</span>
+                </>
+              ) : null}
               <span>•</span>
               <span>{portfolio.email}</span>
-              {portfolio.availabilityStatus && portfolio.availabilityMessage && (
-                <>
-                  <span>•</span>
-                  <span className="text-success font-medium">{portfolio.availabilityMessage}</span>
-                </>
-              )}
             </div>
             <p className="text-xl text-muted-foreground my-4">{portfolio.jobTitle}</p>
           </div>

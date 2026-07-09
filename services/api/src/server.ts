@@ -44,7 +44,7 @@ const BEARER_SECURITY_SCHEME = {
 } as const;
 
 function createAllowedOrigins() {
-  return new Set([env.API_URL, env.WEB_URL, env.CAREER_URL]);
+  return new Set([env.API_URL, env.WEB_URL, env.FINANCE_URL, env.CAREER_URL]);
 }
 
 function createCorsMiddleware(): MiddlewareHandler {

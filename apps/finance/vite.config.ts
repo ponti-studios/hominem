@@ -4,7 +4,6 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import type { ConfigEnv, PluginOption, UserConfig } from 'vite';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const isProd = mode === 'production';
@@ -14,7 +13,6 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     plugins: [
       tailwindcss(),
       reactRouter(),
-      tsconfigPaths(),
       VitePWA({
         registerType: 'prompt',
         injectRegister: false,
@@ -104,7 +102,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
 
     server: {
-      allowedHosts: ['finance.lvh.me'],
+      allowedHosts: ['localhost'],
       port: 4444,
       strictPort: true,
     },
@@ -119,14 +117,15 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
 
     ssr: {
-      noExternal: [/^@hominem\//],
+      noExternal: [/^@hominem\//, '@tanstack/react-query'],
       external: ['node:fs', 'node:path', 'node:url', 'node:http'],
       resolve: {
         conditions: ['node'],
       },
     },
     resolve: {
-      dedupe: ['react', 'react-dom'],
+      dedupe: ['react', 'react-dom', '@tanstack/react-query'],
+      tsconfigPaths: true,
     },
     optimizeDeps: {
       exclude: ['@react-router/node'],

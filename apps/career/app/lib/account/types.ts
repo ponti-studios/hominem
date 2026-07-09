@@ -31,11 +31,10 @@ export interface BasicInfoFormValues {
   bio: string;
   tagline: string;
   currentLocation: string;
-  locationTagline?: string | null;
   email: string;
   phone?: string | null;
   availabilityStatus?: boolean;
-  availabilityMessage?: string | null;
+  openToRemote?: boolean;
   isPublic?: boolean;
   isActive?: boolean;
 }

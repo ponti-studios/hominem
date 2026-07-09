@@ -592,7 +592,6 @@ export interface AppPortfolioAnalytics {
 }
 
 export interface AppPortfolios {
-  availabilityMessage: string | null;
   availabilityStatus: Generated<boolean>;
   bio: string;
   copyright: string | null;
@@ -604,8 +603,8 @@ export interface AppPortfolios {
   isActive: Generated<boolean>;
   isPublic: Generated<boolean>;
   jobTitle: string;
-  locationTagline: string | null;
   name: string;
+  openToRemote: Generated<boolean>;
   ownerUserid: string;
   phone: string | null;
   profileImageUrl: string | null;

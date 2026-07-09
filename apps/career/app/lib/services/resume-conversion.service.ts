@@ -46,9 +46,8 @@ export async function saveResumeToDatabase(
         bio: data.portfolio.bio,
         tagline: data.portfolio.tagline,
         currentLocation: data.portfolio.current_location,
-        locationTagline: data.portfolio.location_tagline ?? null,
         availabilityStatus: data.portfolio.availability_status,
-        availabilityMessage: data.portfolio.availability_message ?? null,
+        openToRemote: data.portfolio.open_to_remote ?? false,
         email: data.portfolio.email,
         phone: data.portfolio.phone ?? null,
       })

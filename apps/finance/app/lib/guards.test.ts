@@ -23,7 +23,7 @@ describe('requireAuth', () => {
       headers,
     });
 
-    await expect(requireAuth(new Request('http://finance.lvh.me:4444/finance'))).resolves.toEqual({
+    await expect(requireAuth(new Request('http://localhost:4444/finance'))).resolves.toEqual({
       user: { id: 'user-1', email: 'finance@hominem.test' },
       headers,
     });
@@ -36,7 +36,7 @@ describe('requireAuth', () => {
     });
 
     await expect(
-      requireAuth(new Request('http://finance.lvh.me:4444/finance?view=month')),
+      requireAuth(new Request('http://localhost:4444/finance?view=month')),
     ).rejects.toMatchObject({
       status: 302,
       headers: expect.objectContaining({
@@ -44,7 +44,7 @@ describe('requireAuth', () => {
       }),
     });
 
-    await requireAuth(new Request('http://finance.lvh.me:4444/finance?view=month')).catch(
+    await requireAuth(new Request('http://localhost:4444/finance?view=month')).catch(
       (response: Response) => {
         expect(response.headers.get('Location')).toBe('/auth?next=%2Ffinance%3Fview%3Dmonth');
       },

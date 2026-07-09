@@ -22,7 +22,7 @@ export function BasicInfoForm({
   onUpdateSlug: (slug: string) => Promise<void>;
 }) {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
-  const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
+  const [isTogglingFlag, setIsTogglingFlag] = useState(false);
 
   const lockedEmail = accountEmail || portfolio.email || '';
 
@@ -61,27 +61,30 @@ export function BasicInfoForm({
     reset({ ...formData, email: lockedEmail });
   };
 
-  const handleAvailabilityChange = async (checked: boolean) => {
-    const previous = getValues('availabilityStatus') ?? false;
-    setValue('availabilityStatus', checked, { shouldDirty: false });
-    setIsTogglingAvailability(true);
+  const handleFlagToggle = async (
+    field: 'availabilityStatus' | 'openToRemote',
+    checked: boolean,
+  ) => {
+    const previous = getValues(field) ?? false;
+    setValue(field, checked, { shouldDirty: false });
+    setIsTogglingFlag(true);
     setSubmissionError(null);
 
     const result = await onSave({
       ...getValues(),
       email: lockedEmail,
-      availabilityStatus: checked,
+      [field]: checked,
     });
 
-    setIsTogglingAvailability(false);
+    setIsTogglingFlag(false);
 
     if (result.success === false) {
-      setValue('availabilityStatus', previous, { shouldDirty: false });
-      setSubmissionError(result.error || 'We couldn’t update availability. Try again.');
+      setValue(field, previous, { shouldDirty: false });
+      setSubmissionError(result.error || 'We couldn’t update that setting. Try again.');
       return;
     }
 
-    reset({ ...getValues(), email: lockedEmail, availabilityStatus: checked });
+    reset({ ...getValues(), email: lockedEmail, [field]: checked });
   };
 
   return (
@@ -183,7 +186,7 @@ export function BasicInfoForm({
       </EditorSection>
 
       <EditorSection title="Location">
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-4">
           <div className="space-y-1">
             <label htmlFor="currentLocation" className="subheading-4 text-muted-foreground">
               Location
@@ -197,11 +200,23 @@ export function BasicInfoForm({
               <p className="body-4 text-destructive">{errors.currentLocation.message}</p>
             )}
           </div>
-          <div className="space-y-1">
-            <label htmlFor="locationTagline" className="subheading-4 text-muted-foreground">
-              Location tagline
-            </label>
-            <Input id="locationTagline" {...register('locationTagline')} maxLength={255} />
+
+          <div className="flex items-center justify-between rounded-2xl bg-muted/40 px-4 py-4">
+            <p className="subheading-4 text-foreground">Open to remote</p>
+            <Controller
+              name="openToRemote"
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  id="openToRemote"
+                  checked={field.value}
+                  disabled={isTogglingFlag || isSubmitting}
+                  onCheckedChange={(checked) => {
+                    void handleFlagToggle('openToRemote', checked);
+                  }}
+                />
+              )}
+            />
           </div>
         </div>
       </EditorSection>
@@ -216,9 +231,9 @@ export function BasicInfoForm({
               <Switch
                 id="availabilityStatus"
                 checked={field.value}
-                disabled={isTogglingAvailability || isSubmitting}
+                disabled={isTogglingFlag || isSubmitting}
                 onCheckedChange={(checked) => {
-                  void handleAvailabilityChange(checked);
+                  void handleFlagToggle('availabilityStatus', checked);
                 }}
               />
             )}
@@ -228,7 +243,7 @@ export function BasicInfoForm({
 
       <Button
         type="submit"
-        disabled={isSubmitting || isTogglingAvailability || !isDirty}
+        disabled={isSubmitting || isTogglingFlag || !isDirty}
         variant="default"
         className="w-full rounded-full sm:w-auto sm:px-6"
         isLoading={isSubmitting}
@@ -240,10 +255,7 @@ export function BasicInfoForm({
   );
 }
 
-function portfolioToFormValues(
-  portfolio: PortfolioRecord,
-  email: string,
-): BasicInfoFormValues {
+function portfolioToFormValues(portfolio: PortfolioRecord, email: string): BasicInfoFormValues {
   return {
     name: portfolio.name || '',
     initials: portfolio.initials || '',
@@ -252,11 +264,10 @@ function portfolioToFormValues(
     bio: portfolio.bio || '',
     tagline: portfolio.tagline || '',
     currentLocation: portfolio.currentLocation || '',
-    locationTagline: portfolio.locationTagline || '',
     email,
     phone: portfolio.phone || '',
     availabilityStatus: portfolio.availabilityStatus || false,
-    availabilityMessage: portfolio.availabilityMessage || '',
+    openToRemote: portfolio.openToRemote || false,
     isPublic: portfolio.isPublic,
     isActive: portfolio.isActive,
   };

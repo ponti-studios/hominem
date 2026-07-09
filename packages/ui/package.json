@@ -211,7 +211,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.42.0",
     "lucide-react": "0.576.0",
-    "react": "19.2.3",
+    "react": "19.2.7",
     "react-day-picker": "^9.11.1",
     "tailwind-merge": "3.2.0",
     "vaul": "^1.1.2"
@@ -223,7 +223,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "oxfmt": "0.56.0",
     "oxlint": "^1.71.0",
-    "react-dom": "19.2.3",
+    "react-dom": "19.2.7",
     "tailwindcss": "^4.1.18",
     "typescript": "6.0.3",
     "vite": "8.0.16"

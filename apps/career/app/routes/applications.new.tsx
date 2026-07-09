@@ -170,351 +170,333 @@ export default function CreateJobApplication() {
 
   return (
     <div className="flex flex-col gap-6">
-          {/* Input Method */}
-          <Card className="border-0 bg-background/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              {/* URL input — default / primary path */}
-              {inputMethod === 'url' && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="url"
-                      name="url"
-                      id="url"
-                      placeholder="Paste job posting URL..."
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
-                      className="h-11"
-                      disabled={isScraping}
-                      autoFocus
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleScrape}
-                      disabled={isScraping || !url.trim()}
-                      className="h-11 shrink-0"
-                      variant="default"
-                      isLoading={isScraping}
-                      loadingLabel="Scraping..."
-                    >
-                      Import
-                    </Button>
-                  </div>
-                  {scrapingError && <p className="body-4 text-destructive mt-2">{scrapingError}</p>}
-                  <p className="mt-2 body-4 text-muted-foreground">
-                    or{' '}
-                    <button
-                      type="button"
-                      className="underline transition-colors"
-                      onClick={() => setInputMethod('paste')}
-                    >
-                      paste a description
-                    </button>
-                    {' · '}
-                    <button
-                      type="button"
-                      className="underline transition-colors"
-                      onClick={() => setInputMethod('manual')}
-                    >
-                      enter manually
-                    </button>
-                  </p>
-                </>
-              )}
+      {/* Input Method */}
+      <Card className="border-0 bg-background/80 backdrop-blur-sm">
+        <CardContent className="p-4">
+          {/* URL input — default / primary path */}
+          {inputMethod === 'url' && (
+            <>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="url"
+                  name="url"
+                  id="url"
+                  placeholder="Paste job posting URL..."
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  className="h-11"
+                  disabled={isScraping}
+                  autoFocus
+                />
+                <Button
+                  type="button"
+                  onClick={handleScrape}
+                  disabled={isScraping || !url.trim()}
+                  className="h-11 shrink-0"
+                  variant="default"
+                  isLoading={isScraping}
+                  loadingLabel="Scraping..."
+                >
+                  Import
+                </Button>
+              </div>
+              {scrapingError && <p className="body-4 text-destructive mt-2">{scrapingError}</p>}
+              <p className="mt-2 body-4 text-muted-foreground">
+                or{' '}
+                <button
+                  type="button"
+                  className="underline transition-colors"
+                  onClick={() => setInputMethod('paste')}
+                >
+                  paste a description
+                </button>
+                {' · '}
+                <button
+                  type="button"
+                  className="underline transition-colors"
+                  onClick={() => setInputMethod('manual')}
+                >
+                  enter manually
+                </button>
+              </p>
+            </>
+          )}
 
-              {/* Paste Description */}
-              {inputMethod === 'paste' && (
-                <div className="space-y-2">
-                  <textarea
-                    id="pastedDescription"
-                    value={pastedDescription}
-                    onChange={(e) => setPastedDescription(e.target.value)}
-                    rows={8}
-                    placeholder="Paste the job description here..."
-                    className="w-full resize-none rounded-lg border border-border px-3 py-2"
-                    autoFocus
-                  />
-                  <div className="flex items-center gap-3">
-                    <Button
-                      onClick={handlePasteDescription}
-                      disabled={!pastedDescription.trim()}
-                      variant="default"
-                    >
-                      Use This Description
-                    </Button>
-                    <button
-                      type="button"
-                      className="body-4 text-muted-foreground underline transition-colors"
-                      onClick={() => setInputMethod('url')}
-                    >
-                      Back to URL
-                    </button>
-                  </div>
+          {/* Paste Description */}
+          {inputMethod === 'paste' && (
+            <div className="space-y-2">
+              <textarea
+                id="pastedDescription"
+                value={pastedDescription}
+                onChange={(e) => setPastedDescription(e.target.value)}
+                rows={8}
+                placeholder="Paste the job description here..."
+                className="w-full resize-none rounded-lg border border-border px-3 py-2"
+                autoFocus
+              />
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={handlePasteDescription}
+                  disabled={!pastedDescription.trim()}
+                  variant="default"
+                >
+                  Use This Description
+                </Button>
+                <button
+                  type="button"
+                  className="body-4 text-muted-foreground underline transition-colors"
+                  onClick={() => setInputMethod('url')}
+                >
+                  Back to URL
+                </button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Manual Form — shown after URL scrape or when entering manually */}
+      {(inputMethod === 'manual' || scrapedData) && (
+        <Card className=" border-0 bg-background/80 backdrop-blur-sm">
+          <CardContent className="p-4">
+            {/* Scraped Data Preview */}
+            {scrapedData && (
+              <div className="mb-6 rounded-lg border border-border bg-muted/40 p-4">
+                <h3 className="heading-3 text-foreground mb-4">Extracted Job Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {scrapedData.requirements.length > 0 && (
+                    <div>
+                      <h4 className="subheading-4 text-foreground mb-2">Requirements</h4>
+                      <ul className="space-y-1">
+                        {scrapedData.requirements.slice(0, 5).map((req, index) => (
+                          <li
+                            key={`req-${index}-${req.slice(0, 20)}`}
+                            className="body-3 text-muted-foreground flex items-start gap-2"
+                          >
+                            <span className="mt-1">•</span>
+                            <span>{req}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {scrapedData.skills.length > 0 && (
+                    <div>
+                      <h4 className="subheading-4 text-foreground mb-2">Skills</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {scrapedData.skills.slice(0, 8).map((skill, _index) => (
+                          <span
+                            key={`skill-${skill}`}
+                            className="px-2 py-1 bg-accent/20 text-muted-foreground caption1 rounded-md"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                        {scrapedData.skills.length > 8 && (
+                          <span className="px-2 py-1 bg-accent/20 text-primary caption1 rounded-md italic">
+                            +{scrapedData.skills.length - 8} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Manual Form — shown after URL scrape or when entering manually */}
-          {(inputMethod === 'manual' || scrapedData) && (
-            <Card className=" border-0 bg-background/80 backdrop-blur-sm">
-              <CardContent className="p-4">
-                {/* Scraped Data Preview */}
-                {scrapedData && (
-                  <div className="mb-6 rounded-lg border border-border bg-muted/40 p-4">
-                    <h3 className="heading-3 text-foreground mb-4">Extracted Job Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {scrapedData.requirements.length > 0 && (
-                        <div>
-                          <h4 className="subheading-4 text-foreground mb-2">Requirements</h4>
-                          <ul className="space-y-1">
-                            {scrapedData.requirements.slice(0, 5).map((req, index) => (
-                              <li
-                                key={`req-${index}-${req.slice(0, 20)}`}
-                                className="body-3 text-muted-foreground flex items-start gap-2"
-                              >
-                                <span className="mt-1">•</span>
-                                <span>{req}</span>
-                              </li>
-                            ))}
-                            {scrapedData.requirements.length > 5 && (
-                              <li className="body-3 text-muted-foreground italic">
-                                +{scrapedData.requirements.length - 5} more requirements
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-                      )}
-
-                      {scrapedData.skills.length > 0 && (
-                        <div>
-                          <h4 className="subheading-4 text-foreground mb-2">Skills</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {scrapedData.skills.slice(0, 8).map((skill, _index) => (
-                              <span
-                                key={`skill-${skill}`}
-                                className="px-2 py-1 bg-accent/20 text-muted-foreground caption1 rounded-md"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                            {scrapedData.skills.length > 8 && (
-                              <span className="px-2 py-1 bg-accent/20 text-primary caption1 rounded-md italic">
-                                +{scrapedData.skills.length - 8} more
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {scrapedData.companyDescription && (
-                      <div className="mt-4">
-                        <h4 className="subheading-4 text-foreground mb-2">Company Description</h4>
-                        <p className="body-3 text-muted-foreground leading-relaxed">
-                          {scrapedData.companyDescription.length > 200
-                            ? `${scrapedData.companyDescription.substring(0, 200)}...`
-                            : scrapedData.companyDescription}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="mt-4 border-t border-border pt-4">
-                      <div className="flex flex-wrap gap-4 body-4 text-muted-foreground">
-                        <span>{scrapedData.wordCount} words</span>
-                        {scrapedData.url && <span>URL captured</span>}
-                        <span>{new Date(scrapedData.scrapedAt).toLocaleDateString()}</span>
-                      </div>
-                    </div>
+                {scrapedData.companyDescription && (
+                  <div className="mt-4">
+                    <h4 className="subheading-4 text-foreground mb-2">Company Description</h4>
+                    <p className="body-3 text-muted-foreground leading-relaxed">
+                      {scrapedData.companyDescription.length > 200
+                        ? `${scrapedData.companyDescription.substring(0, 200)}...`
+                        : scrapedData.companyDescription}
+                    </p>
                   </div>
                 )}
 
-                <Form method="post" className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label htmlFor="position" className="subheading-4 text-muted-foreground">
-                        Job Title *
-                      </label>
-                      <Input
-                        id="position"
-                        name="position"
-                        placeholder="e.g. Senior Software Engineer"
-                        required
-                        className="h-11"
-                        defaultValue={scrapedData?.job_title || ''}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label htmlFor="company" className="subheading-4 text-muted-foreground">
-                        Company *
-                      </label>
-                      <Input
-                        id="company"
-                        name="company"
-                        placeholder="e.g. Google, Microsoft"
-                        required
-                        className="h-11"
-                        defaultValue={scrapedData?.companyName || ''}
-                      />
-                    </div>
+                <div className="mt-4 border-t border-border pt-4">
+                  <div className="flex flex-wrap gap-4 body-4 text-muted-foreground">
+                    <span>{scrapedData.wordCount} words</span>
+                    {scrapedData.url && <span>URL captured</span>}
+                    <span>{new Date(scrapedData.scrapedAt).toLocaleDateString()}</span>
                   </div>
+                </div>
+              </div>
+            )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <DatePicker
-                        id="startDate"
-                        label="Application Date *"
-                        value={applicationDate}
-                        onSelect={(nextDate) => {
-                          if (nextDate) {
-                            setApplicationDate(nextDate);
-                          }
-                        }}
-                        placeholder="Pick application date"
-                        containerClassName="min-w-0"
-                      />
-                      <input
-                        type="hidden"
-                        name="startDate"
-                        value={applicationDate.toISOString().split('T')[0]}
-                      />
-                    </div>
+            <Form method="post" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label htmlFor="position" className="subheading-4 text-muted-foreground">
+                    Job Title *
+                  </label>
+                  <Input
+                    id="position"
+                    name="position"
+                    placeholder="e.g. Senior Software Engineer"
+                    required
+                    className="h-11"
+                    defaultValue={scrapedData?.job_title || ''}
+                  />
+                </div>
 
-                    <div className="space-y-2">
-                      <label htmlFor="status" className="subheading-4 text-muted-foreground">
-                        Status
-                      </label>
-                      <Select name="status" defaultValue={JobApplicationStatus.APPLIED}>
-                        <SelectTrigger id="status" className="w-full">
-                          <SelectValue placeholder="Select Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.values(JobApplicationStatus).map((status) => (
-                            <SelectItem key={status} value={status}>
-                              {status.replace(/_/g, ' ')}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <label htmlFor="company" className="subheading-4 text-muted-foreground">
+                    Company *
+                  </label>
+                  <Input
+                    id="company"
+                    name="company"
+                    placeholder="e.g. Google, Microsoft"
+                    required
+                    className="h-11"
+                    defaultValue={scrapedData?.companyName || ''}
+                  />
+                </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <DatePicker
+                    id="startDate"
+                    label="Application Date *"
+                    value={applicationDate}
+                    onSelect={(nextDate) => {
+                      if (nextDate) {
+                        setApplicationDate(nextDate);
+                      }
+                    }}
+                    placeholder="Pick application date"
+                    containerClassName="min-w-0"
+                  />
+                  <input
+                    type="hidden"
+                    name="startDate"
+                    value={applicationDate.toISOString().split('T')[0]}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="status" className="subheading-4 text-muted-foreground">
+                    Status
+                  </label>
+                  <Select name="status" defaultValue={JobApplicationStatus.APPLIED}>
+                    <SelectTrigger id="status" className="w-full">
+                      <SelectValue placeholder="Select Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(JobApplicationStatus).map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status.replace(/_/g, ' ')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="location" className="subheading-4 text-muted-foreground">
+                  Location
+                </label>
+                <Input
+                  id="location"
+                  name="location"
+                  placeholder="e.g. San Francisco, CA or Remote"
+                  className="h-11"
+                  defaultValue={scrapedData?.location || ''}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="jobPosting" className="subheading-4 text-muted-foreground">
+                  Job Description
+                </label>
+                <textarea
+                  id="jobPosting"
+                  name="jobPosting"
+                  rows={6}
+                  placeholder="Paste the job description here..."
+                  className="w-full resize-none rounded-lg border border-border px-3 py-2"
+                  defaultValue={scrapedData ? scrapedData.jobDescription : ''}
+                />
+                {/* Hidden field to store full structured data */}
+                {scrapedData && (
+                  <input type="hidden" name="jobPostingData" value={JSON.stringify(scrapedData)} />
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="salaryQuoted" className="subheading-4 text-muted-foreground">
+                  Salary Range
+                </label>
+                <Input
+                  id="salaryQuoted"
+                  name="salaryQuoted"
+                  placeholder="e.g. $120k - $150k or $80/hour"
+                  className="h-11"
+                />
+              </div>
+
+              {/* Recruiter Information */}
+              <div className="pt-4 border-t border-border">
+                <h3 className="heading-3 text-foreground mb-4">Recruiter Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label htmlFor="location" className="subheading-4 text-muted-foreground">
-                      Location
+                    <label htmlFor="recruiterName" className="subheading-4 text-muted-foreground">
+                      Recruiter Name
                     </label>
                     <Input
-                      id="location"
-                      name="location"
-                      placeholder="e.g. San Francisco, CA or Remote"
+                      id="recruiterName"
+                      name="recruiterName"
+                      placeholder="e.g. John Smith"
                       className="h-11"
-                      defaultValue={scrapedData?.location || ''}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="jobPosting" className="subheading-4 text-muted-foreground">
-                      Job Description
-                    </label>
-                    <textarea
-                      id="jobPosting"
-                      name="jobPosting"
-                      rows={6}
-                      placeholder="Paste the job description here..."
-                      className="w-full resize-none rounded-lg border border-border px-3 py-2"
-                      defaultValue={scrapedData ? scrapedData.jobDescription : ''}
-                    />
-                    {/* Hidden field to store full structured data */}
-                    {scrapedData && (
-                      <input
-                        type="hidden"
-                        name="jobPostingData"
-                        value={JSON.stringify(scrapedData)}
-                      />
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="salaryQuoted" className="subheading-4 text-muted-foreground">
-                      Salary Range
+                    <label htmlFor="recruiterEmail" className="subheading-4 text-muted-foreground">
+                      Recruiter Email
                     </label>
                     <Input
-                      id="salaryQuoted"
-                      name="salaryQuoted"
-                      placeholder="e.g. $120k - $150k or $80/hour"
+                      id="recruiterEmail"
+                      name="recruiterEmail"
+                      type="email"
+                      placeholder="e.g. john.smith@company.com"
                       className="h-11"
                     />
                   </div>
+                </div>
 
-                  {/* Recruiter Information */}
-                  <div className="pt-4 border-t border-border">
-                    <h3 className="heading-3 text-foreground mb-4">Recruiter Information</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label
-                          htmlFor="recruiterName"
-                          className="subheading-4 text-muted-foreground"
-                        >
-                          Recruiter Name
-                        </label>
-                        <Input
-                          id="recruiterName"
-                          name="recruiterName"
-                          placeholder="e.g. John Smith"
-                          className="h-11"
-                        />
-                      </div>
+                <div className="mt-6 space-y-2">
+                  <label htmlFor="recruiterLinkedin" className="subheading-4 text-muted-foreground">
+                    Recruiter LinkedIn URL
+                  </label>
+                  <Input
+                    id="recruiterLinkedin"
+                    name="recruiterLinkedin"
+                    type="url"
+                    placeholder="e.g. https://linkedin.com/in/johnsmith"
+                    className="h-11"
+                  />
+                </div>
+              </div>
 
-                      <div className="space-y-2">
-                        <label
-                          htmlFor="recruiterEmail"
-                          className="subheading-4 text-muted-foreground"
-                        >
-                          Recruiter Email
-                        </label>
-                        <Input
-                          id="recruiterEmail"
-                          name="recruiterEmail"
-                          type="email"
-                          placeholder="e.g. john.smith@company.com"
-                          className="h-11"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-6 space-y-2">
-                      <label
-                        htmlFor="recruiterLinkedin"
-                        className="subheading-4 text-muted-foreground"
-                      >
-                        Recruiter LinkedIn URL
-                      </label>
-                      <Input
-                        id="recruiterLinkedin"
-                        name="recruiterLinkedin"
-                        type="url"
-                        placeholder="e.g. https://linkedin.com/in/johnsmith"
-                        className="h-11"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-6">
-                    <Button type="submit" className="flex-1 h-11 font-medium" variant="default">
-                      Create Application
-                    </Button>
-                    <Link
-                      to="/applications"
-                      className="inline-flex h-11 flex-1 items-center justify-center rounded-lg border border-border bg-card subheading-4 text-muted-foreground transition-colors"
-                    >
-                      Cancel
-                    </Link>
-                  </div>
-                </Form>
-              </CardContent>
-            </Card>
-          )}
+              <div className="flex gap-3 pt-6">
+                <Button type="submit" className="flex-1 h-11 font-medium" variant="default">
+                  Create Application
+                </Button>
+                <Link
+                  to="/applications"
+                  className="inline-flex h-11 flex-1 items-center justify-center rounded-lg border border-border bg-card subheading-4 text-muted-foreground transition-colors"
+                >
+                  Cancel
+                </Link>
+              </div>
+            </Form>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

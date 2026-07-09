@@ -23,11 +23,10 @@ export interface PortfolioRecord {
   bio: string;
   tagline: string;
   currentLocation: string;
-  locationTagline: string | null;
   email: string;
   phone: string | null;
   availabilityStatus: boolean;
-  availabilityMessage: string | null;
+  openToRemote: boolean;
   copyright: string | null;
   isPublic: boolean;
   isActive: boolean;
@@ -57,11 +56,10 @@ export interface SavePortfolioBasicsInput {
   bio: string;
   tagline: string;
   currentLocation: string;
-  locationTagline?: string | null;
   email: string;
   phone?: string | null;
   availabilityStatus?: boolean;
-  availabilityMessage?: string | null;
+  openToRemote?: boolean;
   copyright?: string | null;
   isPublic?: boolean;
   isActive?: boolean;
@@ -79,11 +77,10 @@ function toPortfolioRecord(row: PortfolioRow): PortfolioRecord {
     bio: row.bio,
     tagline: row.tagline,
     currentLocation: row.currentLocation,
-    locationTagline: row.locationTagline,
     email: row.email,
     phone: row.phone,
     availabilityStatus: row.availabilityStatus,
-    availabilityMessage: row.availabilityMessage,
+    openToRemote: row.openToRemote,
     copyright: row.copyright,
     isPublic: row.isPublic,
     isActive: row.isActive,
@@ -272,11 +269,10 @@ export const PortfolioRepository = {
           bio: input.bio,
           tagline: input.tagline,
           currentLocation: input.currentLocation,
-          locationTagline: input.locationTagline ?? null,
           email: input.email,
           phone: input.phone ?? null,
           availabilityStatus: input.availabilityStatus ?? false,
-          availabilityMessage: input.availabilityMessage ?? null,
+          openToRemote: input.openToRemote ?? false,
           ...(input.copyright !== undefined ? { copyright: input.copyright } : {}),
           ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
           ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
@@ -300,11 +296,10 @@ export const PortfolioRepository = {
         bio: input.bio,
         tagline: input.tagline,
         currentLocation: input.currentLocation,
-        locationTagline: input.locationTagline ?? null,
         email: input.email,
         phone: input.phone ?? null,
         availabilityStatus: input.availabilityStatus ?? false,
-        availabilityMessage: input.availabilityMessage ?? null,
+        openToRemote: input.openToRemote ?? false,
         ...(input.copyright !== undefined ? { copyright: input.copyright } : {}),
         ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
         ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),

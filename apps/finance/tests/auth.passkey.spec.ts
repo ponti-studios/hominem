@@ -1,98 +1,106 @@
-import { expect, test } from '@playwright/test'
-import type { BrowserContext, Page } from '@playwright/test'
-import { setupVirtualPasskey, teardownVirtualPasskey } from './auth.passkey-helpers'
-import { createAuthTestEmail, fetchLatestSignInOtp, signInWithEmailOtp, submitOtpCode } from './auth.flow-helpers'
+import type { BrowserContext, Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-const AUTH_API_BASE_URL = 'http://api.lvh.me:4040'
-const FINANCE_APP_BASE_URL = 'http://finance.lvh.me:4444'
+import {
+  createAuthTestEmail,
+  fetchLatestSignInOtp,
+  signInWithEmailOtp,
+  submitOtpCode,
+} from './auth.flow-helpers';
+import { setupVirtualPasskey, teardownVirtualPasskey } from './auth.passkey-helpers';
+
+const AUTH_API_BASE_URL = 'http://localhost:4040';
+const FINANCE_APP_BASE_URL = 'http://localhost:4444';
 
 interface PasskeyOperationResult {
-  ok: boolean
-  status: number
-  error: string | null
-  detail?: string | null
+  ok: boolean;
+  status: number;
+  error: string | null;
+  detail?: string | null;
 }
 
 interface PasskeyCredentialDescriptorJson {
-  type: string
-  id: string
-  transports?: string[]
+  type: string;
+  id: string;
+  transports?: string[];
 }
 
 interface PasskeyCreationUserJson {
-  id: string
-  name: string
-  displayName: string
+  id: string;
+  name: string;
+  displayName: string;
 }
 
 interface PasskeyCreationRpJson {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 interface PasskeyCreationPubKeyParamJson {
-  type: string
-  alg: number
+  type: string;
+  alg: number;
 }
 
 interface PasskeyCreationOptionsJson {
-  challenge: string
-  timeout?: number
-  rp: PasskeyCreationRpJson
-  user: PasskeyCreationUserJson
-  pubKeyCredParams: PasskeyCreationPubKeyParamJson[]
-  excludeCredentials?: PasskeyCredentialDescriptorJson[]
-  authenticatorSelection?: AuthenticatorSelectionCriteria
-  attestation?: AttestationConveyancePreference
+  challenge: string;
+  timeout?: number;
+  rp: PasskeyCreationRpJson;
+  user: PasskeyCreationUserJson;
+  pubKeyCredParams: PasskeyCreationPubKeyParamJson[];
+  excludeCredentials?: PasskeyCredentialDescriptorJson[];
+  authenticatorSelection?: AuthenticatorSelectionCriteria;
+  attestation?: AttestationConveyancePreference;
 }
 
 interface PasskeyRegisterOptionsResponse {
-  options?: PasskeyCreationOptionsJson
-  challenge?: string
+  options?: PasskeyCreationOptionsJson;
+  challenge?: string;
 }
 
 interface SerializedRegistrationCredential {
-  id: string
-  rawId: string
-  type: string
+  id: string;
+  rawId: string;
+  type: string;
   response: {
-    clientDataJSON: string
-    attestationObject: string
-    transports?: string[]
-  }
+    clientDataJSON: string;
+    attestationObject: string;
+    transports?: string[];
+  };
 }
 
 interface WebAuthnCapability {
-  hasCreate: boolean
-  isSecureContext: boolean
+  hasCreate: boolean;
+  isSecureContext: boolean;
 }
 
 async function registerPasskey(page: Page): Promise<PasskeyOperationResult> {
-  await page.goto(`${AUTH_API_BASE_URL}/api/auth/session`)
+  await page.goto(`${AUTH_API_BASE_URL}/api/auth/session`);
 
   return page.evaluate(async () => {
     function decodeBase64Url(value: string) {
-      const normalized = value.replace(/-/g, '+').replace(/_/g, '/')
-      const padLength = (4 - (normalized.length % 4)) % 4
-      const padded = normalized + '='.repeat(padLength)
-      const raw = atob(padded)
-      const bytes = new Uint8Array(raw.length)
+      const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+      const padLength = (4 - (normalized.length % 4)) % 4;
+      const padded = normalized + '='.repeat(padLength);
+      const raw = atob(padded);
+      const bytes = new Uint8Array(raw.length);
       for (let i = 0; i < raw.length; i += 1) {
-        bytes[i] = raw.charCodeAt(i)
+        bytes[i] = raw.charCodeAt(i);
       }
-      return bytes.buffer
+      return bytes.buffer;
     }
 
     function encodeBase64Url(buffer: ArrayBuffer) {
-      const bytes = new Uint8Array(buffer)
-      let binary = ''
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
       for (const byte of bytes) {
-        binary += String.fromCharCode(byte)
+        binary += String.fromCharCode(byte);
       }
-      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
     }
 
-    function normalizeCreationOptions(options: PasskeyCreationOptionsJson): PublicKeyCredentialCreationOptions {
+    function normalizeCreationOptions(
+      options: PasskeyCreationOptionsJson,
+    ): PublicKeyCredentialCreationOptions {
       return {
         challenge: decodeBase64Url(options.challenge),
         timeout: options.timeout,
@@ -113,12 +121,14 @@ async function registerPasskey(page: Page): Promise<PasskeyOperationResult> {
         })),
         authenticatorSelection: options.authenticatorSelection,
         attestation: options.attestation,
-      }
+      };
     }
 
-    function serializeAttestation(credential: PublicKeyCredential): SerializedRegistrationCredential | null {
+    function serializeAttestation(
+      credential: PublicKeyCredential,
+    ): SerializedRegistrationCredential | null {
       if (!(credential.response instanceof AuthenticatorAttestationResponse)) {
-        return null
+        return null;
       }
 
       return {
@@ -133,13 +143,13 @@ async function registerPasskey(page: Page): Promise<PasskeyOperationResult> {
               ? credential.response.getTransports()
               : undefined,
         },
-      }
+      };
     }
 
     const optionsResponse = await fetch('/api/auth/passkey/generate-register-options', {
       method: 'GET',
       credentials: 'include',
-    })
+    });
 
     if (!optionsResponse.ok) {
       return {
@@ -147,16 +157,16 @@ async function registerPasskey(page: Page): Promise<PasskeyOperationResult> {
         status: optionsResponse.status,
         error: 'register_options_failed',
         detail: await optionsResponse.text(),
-      }
+      };
     }
 
-    const optionsPayload = (await optionsResponse.json()) as PasskeyRegisterOptionsResponse
-    const optionsPayloadText = JSON.stringify(optionsPayload)
+    const optionsPayload = (await optionsResponse.json()) as PasskeyRegisterOptionsResponse;
+    const optionsPayloadText = JSON.stringify(optionsPayload);
     const creationOptions =
       optionsPayload.options ??
       (typeof optionsPayload.challenge === 'string'
         ? (optionsPayload as PasskeyCreationOptionsJson)
-        : null)
+        : null);
 
     if (!creationOptions || typeof creationOptions.challenge !== 'string') {
       return {
@@ -164,28 +174,28 @@ async function registerPasskey(page: Page): Promise<PasskeyOperationResult> {
         status: 500,
         error: 'invalid_register_options_payload',
         detail: JSON.stringify(optionsPayload),
-      }
+      };
     }
 
     const credential = (await navigator.credentials.create({
       publicKey: normalizeCreationOptions(creationOptions),
-    })) as PublicKeyCredential | null
+    })) as PublicKeyCredential | null;
 
     if (!credential) {
       return {
         ok: false,
         status: 499,
         error: 'register_cancelled',
-      }
+      };
     }
 
-    const serializedCredential = serializeAttestation(credential)
+    const serializedCredential = serializeAttestation(credential);
     if (!serializedCredential) {
       return {
         ok: false,
         status: 500,
         error: 'register_serialization_failed',
-      }
+      };
     }
 
     const verifyResponse = await fetch('/api/auth/passkey/verify-registration', {
@@ -198,7 +208,7 @@ async function registerPasskey(page: Page): Promise<PasskeyOperationResult> {
         response: serializedCredential,
         name: 'Finance E2E Device',
       }),
-    })
+    });
 
     return {
       ok: verifyResponse.ok,
@@ -207,17 +217,17 @@ async function registerPasskey(page: Page): Promise<PasskeyOperationResult> {
       detail: verifyResponse.ok
         ? null
         : `${await verifyResponse.text()}|options=${optionsPayloadText}`,
-    }
-  })
+    };
+  });
 }
 
 async function getWebAuthnCapability(page: Page): Promise<WebAuthnCapability> {
-  await page.goto(`${FINANCE_APP_BASE_URL}/auth`)
+  await page.goto(`${FINANCE_APP_BASE_URL}/auth`);
 
   return page.evaluate(() => ({
     hasCreate: typeof navigator.credentials?.create === 'function',
     isSecureContext,
-  }))
+  }));
 }
 
 /**
@@ -226,163 +236,176 @@ async function getWebAuthnCapability(page: Page): Promise<WebAuthnCapability> {
  * virtual WebAuthn authenticator to complete the flow.
  */
 async function authenticateWithPasskeyUI(page: Page): Promise<{ errors: string[] }> {
-  await page.goto(`${FINANCE_APP_BASE_URL}/auth`)
+  await page.goto(`${FINANCE_APP_BASE_URL}/auth`);
   // Wait for the page to hydrate — the passkey button is added after hydration
-  const passkeyButton = page.getByRole('button', { name: /passkey/i })
-  await passkeyButton.waitFor({ state: 'visible', timeout: 20000 })
+  const passkeyButton = page.getByRole('button', { name: /passkey/i });
+  await passkeyButton.waitFor({ state: 'visible', timeout: 20000 });
 
   // Intercept any errors from the passkey auth hook
-  const errors: string[] = []
-  page.on('pageerror', (err) => errors.push(err.message))
+  const errors: string[] = [];
+  page.on('pageerror', (err) => errors.push(err.message));
 
-  await passkeyButton.click()
+  await passkeyButton.click();
 
   // Give it a moment to see if any errors come up
-  await page.waitForTimeout(2000)
+  await page.waitForTimeout(2000);
 
-  return { errors }
+  return { errors };
 }
 
 async function readAuthSession(context: BrowserContext): Promise<{
-  status: number
-  body: { isAuthenticated?: boolean; user?: { email?: string } | null }
+  status: number;
+  body: { isAuthenticated?: boolean; user?: { email?: string } | null };
 }> {
-  const sessionPage = await context.newPage()
+  const sessionPage = await context.newPage();
   try {
-    const response = await sessionPage.goto(`${AUTH_API_BASE_URL}/api/auth/session`)
-    const status = response?.status() ?? 0
-    const body = (await sessionPage.evaluate(() => document.body.textContent || '{}').then((text) => {
-      try {
-        return JSON.parse(text) as { isAuthenticated?: boolean; user?: { email?: string } | null }
-      } catch {
-        return {}
-      }
-    }))
-    return { status, body }
+    const response = await sessionPage.goto(`${AUTH_API_BASE_URL}/api/auth/session`);
+    const status = response?.status() ?? 0;
+    const body = await sessionPage
+      .evaluate(() => document.body.textContent || '{}')
+      .then((text) => {
+        try {
+          return JSON.parse(text) as {
+            isAuthenticated?: boolean;
+            user?: { email?: string } | null;
+          };
+        } catch {
+          return {};
+        }
+      });
+    return { status, body };
   } finally {
-    await sessionPage.close()
+    await sessionPage.close();
   }
 }
 
-test('web passkey registration and sign-in flow reaches authenticated finance view', async ({ page, context }) => {
-  const email = createAuthTestEmail('finance-passkey')
+test('web passkey registration and sign-in flow reaches authenticated finance view', async ({
+  page,
+  context,
+}) => {
+  const email = createAuthTestEmail('finance-passkey');
 
-  await signInWithEmailOtp(page, email)
-  await expect(page).toHaveURL(/\/finance$/)
+  await signInWithEmailOtp(page, email);
+  await expect(page).toHaveURL(/\/finance$/);
 
-  const webAuthnCapability = await getWebAuthnCapability(page)
+  const webAuthnCapability = await getWebAuthnCapability(page);
   test.skip(
     !webAuthnCapability.isSecureContext || !webAuthnCapability.hasCreate,
     'WebAuthn registration requires a secure browser context with navigator.credentials.create',
-  )
+  );
 
-  const passkeyHandle = await setupVirtualPasskey(context, page)
+  const passkeyHandle = await setupVirtualPasskey(context, page);
 
   try {
-    const registerResult = await registerPasskey(page)
+    const registerResult = await registerPasskey(page);
     if (
       !registerResult.ok &&
       registerResult.status === 401 &&
       registerResult.error === 'register_options_failed'
     ) {
-      test.skip(true, 'Passkey registration endpoint is unauthorized in this environment')
+      test.skip(true, 'Passkey registration endpoint is unauthorized in this environment');
     }
-    expect(registerResult, JSON.stringify(registerResult)).toMatchObject({ ok: true, error: null })
+    expect(registerResult, JSON.stringify(registerResult)).toMatchObject({ ok: true, error: null });
 
-    await context.clearCookies()
-    await page.goto('/finance')
-    await expect(page).toHaveURL(/\/auth$/)
+    await context.clearCookies();
+    await page.goto('/finance');
+    await expect(page).toHaveURL(/\/auth$/);
 
     await authenticateWithPasskeyUI(page).then((result) => {
       if (result.errors.length > 0) {
-        throw new Error(`Page errors during passkey auth: ${result.errors.join(', ')}`)
+        throw new Error(`Page errors during passkey auth: ${result.errors.join(', ')}`);
       }
-    })
+    });
 
-    await expect(page).toHaveURL(/\/finance$/, { timeout: 30000 })
-    await expect(page.getByRole('heading', { name: 'Error' })).not.toBeVisible()
+    await expect(page).toHaveURL(/\/finance$/, { timeout: 30000 });
+    await expect(page.getByRole('heading', { name: 'Error' })).not.toBeVisible();
   } finally {
-    await teardownVirtualPasskey(context, page, passkeyHandle)
+    await teardownVirtualPasskey(context, page, passkeyHandle);
   }
-})
+});
 
-test('web auth falls back from passkey entry to email otp successfully', async ({ page, context }) => {
-  const email = createAuthTestEmail('finance-passkey-fallback')
+test('web auth falls back from passkey entry to email otp successfully', async ({
+  page,
+  context,
+}) => {
+  const email = createAuthTestEmail('finance-passkey-fallback');
 
-  await context.clearCookies()
-  await page.goto(`${FINANCE_APP_BASE_URL}/auth`)
+  await context.clearCookies();
+  await page.goto(`${FINANCE_APP_BASE_URL}/auth`);
 
-  const passkeyButton = page.getByRole('button', { name: /passkey/i })
-  const passkeyCount = await passkeyButton.count()
+  const passkeyButton = page.getByRole('button', { name: /passkey/i });
+  const passkeyCount = await passkeyButton.count();
   if (passkeyCount > 0) {
-    await passkeyButton.first().click()
+    await passkeyButton.first().click();
   }
 
-  const emailInput = page.getByLabel('Email address')
+  const emailInput = page.getByLabel('Email address');
   await expect(async () => {
-    await emailInput.fill(email)
-    await expect(emailInput).toHaveValue(email)
-  }).toPass({ timeout: 20000 })
+    await emailInput.fill(email);
+    await expect(emailInput).toHaveValue(email);
+  }).toPass({ timeout: 20000 });
 
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(page).toHaveURL(/\/auth\/verify\?email=/, { timeout: 30000 })
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page).toHaveURL(/\/auth\/verify\?email=/, { timeout: 30000 });
 
-  const otp = await fetchLatestSignInOtp(email)
-  await submitOtpCode(page, otp)
-  await expect(page).toHaveURL(/\/finance$/, { timeout: 30000 })
-})
+  const otp = await fetchLatestSignInOtp(email);
+  await submitOtpCode(page, otp);
+  await expect(page).toHaveURL(/\/finance$/, { timeout: 30000 });
+});
 
 test('finance authenticated surfaces expose passkey enrollment controls', async ({ page }) => {
-  const email = createAuthTestEmail('finance-passkey-surface')
+  const email = createAuthTestEmail('finance-passkey-surface');
 
-  await signInWithEmailOtp(page, email)
-  await expect(page).toHaveURL(/\/finance$/)
+  await signInWithEmailOtp(page, email);
+  await expect(page).toHaveURL(/\/finance$/);
 
-  await page.goto('/settings/security')
-  await expect(page.getByRole('button', { name: /add a passkey/i })).toBeVisible({ timeout: 15000 })
-})
+  await page.goto('/settings/security');
+  await expect(page.getByRole('button', { name: /add a passkey/i })).toBeVisible({
+    timeout: 15000,
+  });
+});
 
 test('boot flow with valid credentials keeps user signed in', async ({ page, context }) => {
-  const email = createAuthTestEmail('finance-boot-valid')
+  const email = createAuthTestEmail('finance-boot-valid');
 
   // Sign in normally
-  await signInWithEmailOtp(page, email)
-  await expect(page).toHaveURL(/\/finance$/)
+  await signInWithEmailOtp(page, email);
+  await expect(page).toHaveURL(/\/finance$/);
 
   // Verify we can access protected endpoints
-  const sessionResponse = await readAuthSession(context)
-  expect(sessionResponse.status).toBe(200)
-  expect(sessionResponse.body.isAuthenticated).toBe(true)
+  const sessionResponse = await readAuthSession(context);
+  expect(sessionResponse.status).toBe(200);
+  expect(sessionResponse.body.isAuthenticated).toBe(true);
 
   // Reload the page — Better Auth session cookie should still be valid
-  await page.reload()
+  await page.reload();
 
   // Should still be at /finance (not redirected to /auth)
-  await expect(page).toHaveURL(/\/finance$/, { timeout: 10000 })
-})
+  await expect(page).toHaveURL(/\/finance$/, { timeout: 10000 });
+});
 
 test('boot flow with no credentials redirects to auth', async ({ page, context }) => {
   // Navigate to a protected route without any cookies
-  await context.clearCookies()
-  await page.goto(`${FINANCE_APP_BASE_URL}/finance`)
+  await context.clearCookies();
+  await page.goto(`${FINANCE_APP_BASE_URL}/finance`);
 
   // Should redirect to /auth and preserve the intended destination
-  await expect(page).toHaveURL(/\/auth\?next=%2Ffinance$/, { timeout: 10000 })
-})
+  await expect(page).toHaveURL(/\/auth\?next=%2Ffinance$/, { timeout: 10000 });
+});
 
 test('session expiry flow verifies access token is sent in requests', async ({ page, context }) => {
-  const email = createAuthTestEmail('finance-session-expiry')
+  const email = createAuthTestEmail('finance-session-expiry');
 
   // Sign in normally
-  await signInWithEmailOtp(page, email)
-  await expect(page).toHaveURL(/\/finance$/)
+  await signInWithEmailOtp(page, email);
+  await expect(page).toHaveURL(/\/finance$/);
 
   // Verify that the access token is being used in subsequent API calls
   // by checking that session verification succeeds
-  const sessionResponse = await readAuthSession(context)
+  const sessionResponse = await readAuthSession(context);
 
   // Should have a valid user in the session
-  expect(sessionResponse.status).toBe(200)
-  expect(sessionResponse.body.user).toBeDefined()
-  expect(sessionResponse.body.user?.email).toContain(email)
-})
+  expect(sessionResponse.status).toBe(200);
+  expect(sessionResponse.body.user).toBeDefined();
+  expect(sessionResponse.body.user?.email).toContain(email);
+});
