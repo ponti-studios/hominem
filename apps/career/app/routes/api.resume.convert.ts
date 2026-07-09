@@ -209,16 +209,23 @@ export const action: ActionFunction = async ({ request, context }) => {
       );
     }
 
-    if (replaceExisting) {
-      existingPortfolio = await PortfolioRepository.getPortfolioByUserId(db, user.id);
-      if (!existingPortfolio) {
-        return errorResponse(
-          'No existing portfolio was found to replace. Create a portfolio first.',
-          404,
-          'request',
-          false,
-        );
-      }
+    // One portfolio per user: create only when none exists; otherwise require replace.
+    existingPortfolio = await PortfolioRepository.getPortfolioByUserId(db, user.id);
+    if (existingPortfolio && !replaceExisting) {
+      return errorResponse(
+        'You already have a portfolio. Replace it from your account or work page instead of creating another.',
+        409,
+        'request',
+        false,
+      );
+    }
+    if (replaceExisting && !existingPortfolio) {
+      return errorResponse(
+        'No existing portfolio was found to replace. Create a portfolio first.',
+        404,
+        'request',
+        false,
+      );
     }
 
     const validation = validateFile(file, PDF_RESUME_VALIDATION);

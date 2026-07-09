@@ -189,6 +189,13 @@ export const PortfolioRepository = {
     handle: DbHandle,
     input: CreateDefaultPortfolioInput,
   ): Promise<PortfolioRecord> {
+    const existing = await PortfolioRepository.getPortfolioByUserId(handle, input.ownerUserid);
+    if (existing) {
+      throw new Error('User already has a portfolio');
+    }
+
+    // NOT NULL / not-blank checks require non-empty strings; use quiet placeholders
+    // until the user uploads a resume or edits basics.
     const created = await handle
       .insertInto('app.portfolios')
       .values({
@@ -196,10 +203,10 @@ export const PortfolioRepository = {
         slug: createPortfolioSlug(input.name),
         title: `${input.name}'s Portfolio`,
         name: input.name,
-        jobTitle: '',
-        bio: '',
-        tagline: '',
-        currentLocation: '',
+        jobTitle: 'Your title',
+        bio: 'Add a short bio.',
+        tagline: 'Getting started',
+        currentLocation: 'Location',
         email: input.email,
         isPublic: false,
         isActive: true,

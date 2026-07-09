@@ -24,9 +24,9 @@ import Navigation from './components/Navigation';
 
 import './app.css';
 import { NavigationProgress } from './components/NavigationProgress';
-import { fetchCurrentPortfolio } from './lib/api.server';
 import { serverEnv } from './lib/env';
 import { sessionMiddleware, userContext } from './lib/middleware';
+import { ensureUserPortfolio } from './lib/portfolio.server';
 
 export const links = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -106,9 +106,15 @@ export const middleware: Route.MiddlewareFunction[] = [
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = context.get(userContext);
-  const hasPortfolio = user ? (await fetchCurrentPortfolio(request)) !== null : false;
+  if (user) {
+    await ensureUserPortfolio(request, user);
+  }
 
-  return data({ user, hasPortfolio, apiBaseUrl: serverEnv().VITE_PUBLIC_API_URL });
+  return data({
+    user,
+    hasPortfolio: Boolean(user),
+    apiBaseUrl: serverEnv().VITE_PUBLIC_API_URL,
+  });
 }
 
 // Add route handle to enable accessing loader data from child routes

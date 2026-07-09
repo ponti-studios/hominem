@@ -4,11 +4,11 @@ import type { User } from '@hominem/auth/types';
 import type { PortfolioRecord } from '@hominem/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const fetchCurrentPortfolio = vi.fn();
+const ensureUserPortfolio = vi.fn();
 const getServerSession = vi.fn();
 
-vi.mock('./api.server', () => ({
-  fetchCurrentPortfolio,
+vi.mock('./portfolio.server', () => ({
+  ensureUserPortfolio,
 }));
 
 vi.mock('./auth.server', () => ({
@@ -48,7 +48,7 @@ const next = () => Promise.resolve(new Response());
 describe('career middleware', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchCurrentPortfolio.mockResolvedValue(null);
+    ensureUserPortfolio.mockResolvedValue(testPortfolio);
   });
 
   it('hydrates user context when a session exists', async () => {
@@ -98,11 +98,10 @@ describe('career middleware', () => {
     expect((result as Response).status).toBe(401);
   });
 
-  it('loads the current portfolio for authenticated page routes', async () => {
+  it('ensures a portfolio for authenticated page routes', async () => {
     const { loadPortfolioMiddleware, portfolioContext, userContext } = await import('./middleware');
     const requestContext = createRequestContext();
     requestContext.context.set(userContext, testUser);
-    fetchCurrentPortfolio.mockResolvedValue(testPortfolio);
 
     const request = new Request('http://localhost/account');
     await loadPortfolioMiddleware(
@@ -113,11 +112,11 @@ describe('career middleware', () => {
       next,
     );
 
-    expect(fetchCurrentPortfolio).toHaveBeenCalledWith(request);
+    expect(ensureUserPortfolio).toHaveBeenCalledWith(request, testUser);
     expect(requestContext.values.get(portfolioContext)).toBe(testPortfolio);
   });
 
-  it('redirects portfolio-required routes when the user has no portfolio', async () => {
+  it('redirects portfolio-required routes when portfolio context is missing', async () => {
     const { requirePortfolioMiddleware, userContext } = await import('./middleware');
     const requestContext = createRequestContext();
     requestContext.context.set(userContext, testUser);
@@ -131,6 +130,6 @@ describe('career middleware', () => {
     );
 
     expect(result).toBeInstanceOf(Response);
-    expect((result as Response).headers.get('location')).toBe('/onboarding');
+    expect((result as Response).headers.get('location')).toBe('/work');
   });
 });

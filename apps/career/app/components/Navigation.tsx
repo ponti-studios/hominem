@@ -15,7 +15,6 @@ import {
   MenuIcon,
   MessageSquareQuoteIcon,
   SparklesIcon,
-  UserPlusIcon,
   UserRoundIcon,
   type LucideIcon,
 } from 'lucide-react';
@@ -66,7 +65,6 @@ const PUBLIC_LINKS: readonly NavItem[] = [
 
 const UNAUTHENTICATED_LINKS: readonly NavItem[] = [
   { href: '/login', label: 'Log in', end: true, icon: LogInIcon },
-  { href: '/onboarding', label: 'Sign up', end: true, icon: UserPlusIcon },
 ] as const;
 
 const AUTHENTICATED_LINKS: readonly NavItem[] = [

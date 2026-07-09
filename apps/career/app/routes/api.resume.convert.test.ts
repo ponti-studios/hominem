@@ -254,17 +254,18 @@ describe('resume convert action', () => {
     expect(body.error).toBe('Invalid PDF');
   });
 
-  it('creates a new portfolio even when one already exists', async () => {
+  it('rejects create when the user already has a portfolio', async () => {
     const { user } = await createExistingPortfolio();
 
     const response = await callAction(formRequest(pdfFile()), user);
     const body = await responseBody(response);
 
-    expect(response.status).toBe(200);
-    expect(body.stage).toBe('complete');
-    expect(mocks.extractPdfText).toHaveBeenCalledTimes(1);
-    expect(mocks.createCompletion).toHaveBeenCalledTimes(1);
-    expect(mocks.storeFile).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(409);
+    expect(body.stage).toBe('request');
+    expect(body.error).toMatch(/already have a portfolio/i);
+    expect(mocks.extractPdfText).not.toHaveBeenCalled();
+    expect(mocks.createCompletion).not.toHaveBeenCalled();
+    expect(mocks.saveResumeToDatabase).not.toHaveBeenCalled();
   });
 
   it('continues conversion when replacement is requested from the account page', async () => {

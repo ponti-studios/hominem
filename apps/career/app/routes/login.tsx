@@ -19,8 +19,7 @@ export const meta: Route.MetaFunction = () => [
 
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
-  // Onboarding bounces users who already have a portfolio into the product.
-  if (user) throw redirect('/onboarding');
+  if (user) throw redirect('/work');
   return null;
 }
 
@@ -32,7 +31,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [loginStep, setLoginStep] = useState<LoginStep>('email');
   const next = new URLSearchParams(location.search).get('next');
-  const postAuthRedirect = resolveAuthRedirect(next, '/onboarding', [
+  const postAuthRedirect = resolveAuthRedirect(next, '/work', [
     '/account',
     '/onboarding',
     '/applications',

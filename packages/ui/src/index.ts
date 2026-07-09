@@ -172,6 +172,12 @@ export { Slider } from './components/slider';
 export { Stepper } from './components/stepper';
 export type { StepperProps } from './components/stepper';
 export { Switch } from './components/switch';
+export { DropZone } from './components/drop-zone';
+export type {
+  DropZoneFileInfo,
+  DropZoneProps,
+  DropZoneStatus,
+} from './components/drop-zone';
 export { EmptyState } from './components/surfaces/empty-state';
 export { SectionIntro } from './components/surfaces/section-intro';
 export { StatePanel } from './components/surfaces/state-panel';

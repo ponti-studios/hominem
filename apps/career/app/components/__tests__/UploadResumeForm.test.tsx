@@ -44,10 +44,10 @@ describe('UploadResumeForm', () => {
     vi.useRealTimers();
   });
 
-  it('disables upload until a file is selected', () => {
+  it('hides the upload action until a file is selected', () => {
     renderForm();
 
-    expect(screen.getByRole('button', { name: /upload resume/i })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /upload resume/i })).not.toBeInTheDocument();
   });
 
   it('rejects a non-PDF file', async () => {
@@ -55,8 +55,6 @@ describe('UploadResumeForm', () => {
     fireEvent.change(fileInput(), {
       target: { files: [new File(['hello'], 'resume.txt', { type: 'text/plain' })] },
     });
-
-    fireEvent.click(screen.getByRole('button', { name: /upload resume/i }));
 
     expect(await screen.findByText('Please select a PDF file')).toBeInTheDocument();
     expect(onUploadError).toHaveBeenCalledWith('Please select a PDF file');
@@ -89,8 +87,6 @@ describe('UploadResumeForm', () => {
         type: 'application/pdf',
       }),
     );
-
-    await user.click(screen.getByRole('button', { name: /upload resume/i }));
 
     expect(await screen.findByText('File size must be less than 10MB')).toBeInTheDocument();
     expect(onUploadError).toHaveBeenCalledWith('File size must be less than 10MB');
@@ -201,7 +197,7 @@ describe('UploadResumeForm', () => {
     expect(submittedWithReplaceExisting).toBe(true);
   });
 
-  it('clears file and error state when choosing a different PDF', async () => {
+  it('replaces a failed file when a new PDF is selected', async () => {
     const user = userEvent.setup();
     server.use(
       http.post('/api/resume/convert', async () =>
@@ -217,10 +213,12 @@ describe('UploadResumeForm', () => {
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
     expect(await screen.findByText('Storage failed')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /use a different pdf/i }));
+    await selectFile(user, new File(['pdf'], 'other.pdf', { type: 'application/pdf' }));
 
     expect(screen.queryByText('Storage failed')).not.toBeInTheDocument();
     expect(screen.queryByText('resume.pdf')).not.toBeInTheDocument();
+    expect(screen.getByText('other.pdf')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /upload resume/i })).toBeEnabled();
   });
 
   it('shows a readable fallback for non-JSON errors', async () => {
@@ -240,8 +238,7 @@ describe('UploadResumeForm', () => {
 
   it('selects the first dropped file and shows a notice for multiple files', () => {
     renderForm();
-    const dropzone = screen.getByText(/drop your resume here/i).closest('div');
-    if (!dropzone) throw new Error('dropzone not found');
+    const dropzone = screen.getByRole('button', { name: /file upload drop zone/i });
 
     fireEvent.drop(dropzone, {
       dataTransfer: {

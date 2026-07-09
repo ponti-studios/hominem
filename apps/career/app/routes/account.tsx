@@ -12,7 +12,8 @@ export async function loader({ context }: Route.LoaderArgs) {
   const currentPortfolio = context.get(portfolioContext);
 
   if (!currentPortfolio) {
-    throw redirect('/onboarding');
+    // loadPortfolioMiddleware should always ensure a portfolio for signed-in users.
+    throw redirect('/work');
   }
 
   return loadAccountPageData({

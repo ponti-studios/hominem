@@ -1,8 +1,8 @@
 import type { PortfolioRecord } from '@hominem/db';
 import { createContext, redirect, type RouterContext } from 'react-router';
 
-import { fetchCurrentPortfolio } from './api.server';
 import { getServerSession, type User } from './auth.server';
+import { ensureUserPortfolio } from './portfolio.server';
 
 export const userContext = createContext<User | null>(null);
 export const portfolioContext = createContext<PortfolioRecord | null>(null);
@@ -70,8 +70,9 @@ export async function loadPortfolioMiddleware(
     return next();
   }
 
-  const currentPortfolio = await fetchCurrentPortfolio(request);
-  context.set(portfolioContext, currentPortfolio ?? null);
+  // Ensure a single portfolio exists for every signed-in user (created on first access).
+  const currentPortfolio = await ensureUserPortfolio(request, user);
+  context.set(portfolioContext, currentPortfolio);
 
   return next();
 }
@@ -87,7 +88,8 @@ export async function requirePortfolioMiddleware(
 
   const currentPortfolio = context.get(portfolioContext);
   if (!currentPortfolio) {
-    return redirect('/onboarding');
+    // Should not happen after ensureUserPortfolio; keep a hard fail-safe.
+    return redirect('/work');
   }
 
   return next();

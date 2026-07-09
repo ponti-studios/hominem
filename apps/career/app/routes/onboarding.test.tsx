@@ -5,38 +5,32 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
 const navigate = vi.fn();
-const fetcherSubmit = vi.fn();
 
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router');
   return {
     ...actual,
     useNavigate: () => navigate,
-    useFetcher: () => ({
-      state: 'idle',
-      data: null,
-      submit: fetcherSubmit,
-    }),
   };
 });
 
 vi.mock('../components/UploadResumeForm', () => ({
   UploadResumeForm: ({
+    mode,
     onUploadComplete,
   }: {
+    mode?: string;
     onUploadComplete: (response: { portfolioSlug: string }) => void;
   }) => (
-    <button type="button" onClick={() => onUploadComplete(makeUploadResumeResponse())}>
+    <button
+      type="button"
+      data-mode={mode}
+      onClick={() => onUploadComplete({ portfolioSlug: 'charles-ponti' })}
+    >
       Mock Upload Form
     </button>
   ),
 }));
-
-function makeUploadResumeResponse() {
-  return {
-    portfolioSlug: 'charles-ponti',
-  };
-}
 
 import Onboarding from './onboarding';
 
@@ -47,6 +41,7 @@ function renderOnboarding() {
         path: '/onboarding',
         element: <Onboarding />,
       },
+      { path: '/work', element: <div>work</div> },
     ],
     { initialEntries: ['/onboarding'] },
   );
@@ -55,25 +50,26 @@ function renderOnboarding() {
 }
 
 describe('Onboarding', () => {
+  it('uses replace mode for resume upload', () => {
+    renderOnboarding();
+    expect(screen.getByRole('button', { name: /mock upload form/i })).toHaveAttribute(
+      'data-mode',
+      'replace',
+    );
+  });
+
   it('navigates to work after upload completes', async () => {
     const user = userEvent.setup();
     navigate.mockReset();
 
     renderOnboarding();
-
     await user.click(screen.getByRole('button', { name: /mock upload form/i }));
 
     expect(navigate).toHaveBeenCalledWith('/work');
   });
 
-  it('submits start-without-resume action', async () => {
-    const user = userEvent.setup();
-    fetcherSubmit.mockReset();
-
+  it('offers skip to work', () => {
     renderOnboarding();
-
-    await user.click(screen.getByRole('button', { name: /start without a resume/i }));
-
-    expect(fetcherSubmit).toHaveBeenCalledWith({}, { method: 'POST' });
+    expect(screen.getByRole('link', { name: /skip for now/i })).toHaveAttribute('href', '/work');
   });
 });
