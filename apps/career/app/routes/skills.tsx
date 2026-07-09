@@ -1,5 +1,5 @@
-import type { CareerSkillRecord } from '@hominem/db';
-import { CareerRepository, db, runInTransaction } from '@hominem/db';
+import type { SkillRecord } from '@hominem/db';
+import { db, runInTransaction, SkillRepository } from '@hominem/db';
 import { Button } from '@hominem/ui';
 import {
   Card,
@@ -24,7 +24,7 @@ import { Route } from './+types/skills';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Skills | Craftd' }];
 
-type EditableSkill = Partial<CareerSkillRecord> & {
+type EditableSkill = Partial<SkillRecord> & {
   name: string;
   level: number;
   portfolioId: string;
@@ -44,7 +44,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_ORDER = ['technical', 'data', 'design', 'product', 'leadership', 'other'];
 
 interface SkillsEditorSectionProps {
-  skills?: CareerSkillRecord[] | null;
+  skills?: SkillRecord[] | null;
   portfolioId: string;
 }
 
@@ -299,7 +299,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     }>;
 
     await runInTransaction((tx) =>
-      CareerRepository.replaceSkills(
+      SkillRepository.replaceSkills(
         tx,
         user.id,
         portfolio.id,

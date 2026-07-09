@@ -1,6 +1,5 @@
-import { CareerRepository, db } from '@hominem/db';
-
-import type { CareerPortfolioResponse } from '~/lib/api.server';
+import { db, SocialLinksRepository } from '@hominem/db';
+import type { PortfolioRecord } from '@hominem/db';
 
 import type { AccountLoaderData, AccountPageUser } from './types';
 
@@ -9,9 +8,9 @@ export async function loadAccountPageData({
   currentPortfolio,
 }: {
   user: AccountPageUser;
-  currentPortfolio: CareerPortfolioResponse | null;
+  currentPortfolio: PortfolioRecord | null;
 }): Promise<AccountLoaderData> {
-  const socialLinks = await CareerRepository.getUserSocialLinks(db, user.id);
+  const socialLinks = await SocialLinksRepository.get(db, user.id);
 
   return {
     user,

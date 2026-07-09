@@ -26,6 +26,19 @@ Schemas: `auth`, `app`, `ops`. Extensions already installed: `pgcrypto`, `pg_trg
 
 Migrations must be idempotent — CI runs `goose up` twice and checks for pending migrations.
 
+## Repository pattern
+
+Every domain gets one file under `src/services/<domain>/<name>.repository.ts` (split further, e.g. `services/career/*.repository.ts`, when a "domain" actually covers several entities with separate lifecycles/tables). Reference implementations: `services/tasks/task.repository.ts`, `services/users/user.repository.ts`.
+
+1. **Private row type**: `type XRow = Selectable<AppX>`, imported from `kysely`/`../../types/database` — never exported.
+2. **Public DTO type**: `export interface XRecord { ... }` — hand-written, plain JSON-serializable fields only (`string`, `number`, `boolean`, `JsonValue`, nested DTOs). **Never alias a `Selectable<T>` as the public type** — that leaks Kysely's `Generated<ColumnType<...>>` wrapper machinery across package/API boundaries, which has caused real "type instantiation is excessively deep" failures in consuming apps.
+3. **Explicit mapper**: `function toXRecord(row: XRow): XRecord { ... }` — the single place row→DTO conversion happens. Composed/joined data (e.g. a job application's company) gets assembled here, not inline at call sites.
+4. **Exported functions return `XRecord`, never `XRow`** — narrow exceptions only for private, unexported helpers.
+5. **Casts (`as XRow`) are fine immediately after a query**, before mapping — `DbHandle = Kysely<Database> | TransactionHandle` (a union, for transaction composability) limits Kysely's inference in some query shapes. Casts must never appear on anything an exported function returns.
+6. **Cross-repository composition is one-directional.** If domain A's aggregate needs domain B's data (e.g. a full-portfolio load needs work experiences, skills, projects), A imports B — never the reverse. Shared cross-cutting checks (ownership, etc.) that multiple sibling repos need go in their own leaf module (e.g. `services/career/ownership.ts`) so nobody has to import back into the domain that owns the parent entity.
+
+At the RPC layer (`services/api/src/rpc/routes/*.ts`), once a repository returns real DTOs, route handlers do `return c.json({ x })` directly — no parallel hand-rolled response type needed. The wire type is authored once, at the repository.
+
 ## Multi-step writes
 
 Use `runInTransaction` from `src/transaction.ts` for any operation that touches multiple tables:

@@ -1,6 +1,6 @@
-import type { CareerJobApplicationRecord } from '@hominem/db';
+import type { JobApplicationRecord } from '@hominem/db';
 
-export type ApplicationWithCompany = CareerJobApplicationRecord;
+export type ApplicationWithCompany = JobApplicationRecord;
 
 export interface JobPosting {
   job_title: string;

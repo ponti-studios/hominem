@@ -1,10 +1,10 @@
-import type { CareerUserSocialLinksRecord } from '@hominem/db';
+import type { UserSocialLinksRecord } from '@hominem/db';
 import { describe, expect, it } from 'vitest';
 
 import type { FullPortfolio } from '../portfolio.server';
 import { formatPortfolioForLLM } from './portfolio-formatter';
 
-const mockSocialLinks: CareerUserSocialLinksRecord = {
+const mockSocialLinks: UserSocialLinksRecord = {
   userId: 'test-user-id',
   github: 'https://github.com/johndoe',
   linkedin: 'https://linkedin.com/in/johndoe',

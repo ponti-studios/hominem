@@ -1,4 +1,4 @@
-import { CareerRepository, db } from '@hominem/db';
+import { db, JobApplicationRepository } from '@hominem/db';
 import { Button, useDebouncedValue } from '@hominem/ui';
 import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -108,7 +108,7 @@ export async function action({ context, request }: Route.ActionArgs) {
         throw new Response('Missing or invalid applicationId or status', { status: 400 });
       }
 
-      await CareerRepository.updateJobApplicationStatus(
+      await JobApplicationRepository.updateJobApplicationStatus(
         db,
         user.id,
         applicationId,
@@ -125,7 +125,7 @@ export async function action({ context, request }: Route.ActionArgs) {
         throw new Response('Missing or invalid applicationId', { status: 400 });
       }
 
-      await CareerRepository.deleteJobApplication(db, user.id, applicationId);
+      await JobApplicationRepository.deleteJobApplication(db, user.id, applicationId);
 
       return { message: 'Job application deleted successfully' };
     }

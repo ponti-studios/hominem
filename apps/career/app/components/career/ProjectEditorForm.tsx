@@ -1,4 +1,4 @@
-import type { CareerProjectRecord as Project } from '@hominem/db';
+import type { ProjectRecord as Project } from '@hominem/db';
 import {
   Input,
   Select,

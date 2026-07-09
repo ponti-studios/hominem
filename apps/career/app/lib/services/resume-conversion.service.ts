@@ -1,4 +1,4 @@
-import { CareerRepository, runInTransaction, sql, type DbHandle } from '@hominem/db';
+import { runInTransaction, SocialLinksRepository, sql, type DbHandle } from '@hominem/db';
 
 import type { ConvertedResumeData } from '../../types/resume';
 import { normalizePortfolioSlug } from '../../types/resume';
@@ -58,8 +58,8 @@ export async function saveResumeToDatabase(
     const portfolioId = createdPortfolio.id;
 
     if (data.social_links) {
-      const existingSocialLinks = await CareerRepository.getUserSocialLinks(tx, ownerUserid);
-      await CareerRepository.saveUserSocialLinks(tx, ownerUserid, {
+      const existingSocialLinks = await SocialLinksRepository.get(tx, ownerUserid);
+      await SocialLinksRepository.save(tx, ownerUserid, {
         github: data.social_links.github ?? existingSocialLinks?.github ?? null,
         linkedin: data.social_links.linkedin ?? existingSocialLinks?.linkedin ?? null,
         twitter: data.social_links.twitter ?? existingSocialLinks?.twitter ?? null,

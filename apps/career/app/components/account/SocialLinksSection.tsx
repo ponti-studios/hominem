@@ -1,4 +1,4 @@
-import type { CareerUserSocialLinksRecord } from '@hominem/db';
+import type { UserSocialLinksRecord } from '@hominem/db';
 import { Button } from '@hominem/ui';
 import { Card, CardContent, Input } from '@hominem/ui';
 import { Github, Globe, Linkedin, SaveIcon, Twitter } from 'lucide-react';
@@ -12,7 +12,7 @@ export function SocialLinksSection({
   socialLinks,
   onSave,
 }: {
-  socialLinks: CareerUserSocialLinksRecord | null;
+  socialLinks: UserSocialLinksRecord | null;
   onSave: (values: SocialLinksFormValues) => Promise<AccountActionResult<unknown>>;
 }) {
   const [submissionError, setSubmissionError] = useState<string | null>(null);

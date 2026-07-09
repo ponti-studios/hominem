@@ -1,4 +1,4 @@
-import { CareerRepository, db, runInTransaction } from '@hominem/db';
+import { db, PortfolioRepository, runInTransaction, SkillRepository } from '@hominem/db';
 import { data } from 'react-router';
 
 import { userContext } from '~/lib/middleware';
@@ -16,7 +16,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     return data({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  const portfolio = await CareerRepository.getPortfolioByUserId(db, user.id);
+  const portfolio = await PortfolioRepository.getPortfolioByUserId(db, user.id);
   if (!portfolio) {
     return data({ success: false, error: 'No portfolio found.' }, { status: 404 });
   }
@@ -41,7 +41,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   try {
     await runInTransaction((tx) =>
-      CareerRepository.replaceSkills(
+      SkillRepository.replaceSkills(
         tx,
         user.id,
         portfolio.id,

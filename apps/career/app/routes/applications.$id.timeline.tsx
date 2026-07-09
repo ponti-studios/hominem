@@ -1,6 +1,6 @@
 import type {
   CareerInterviewEntry as InterviewEntry,
-  CareerJobApplicationRecord as ApplicationWithCompany,
+  JobApplicationRecord as ApplicationWithCompany,
 } from '@hominem/db';
 import { useOutletContext } from 'react-router';
 

@@ -1,4 +1,4 @@
-import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
+import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import { EmptyState } from '@hominem/ui';
 import { Button } from '@hominem/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui';

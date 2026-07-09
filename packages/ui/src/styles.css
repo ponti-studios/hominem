@@ -120,7 +120,14 @@
   --color-interaction-hover-bg: rgba(129, 139, 152, 0.12);
   --color-interaction-hover-border: rgba(129, 139, 152, 0.35);
   --color-interaction-hover-text: var(--color-foreground);
+  --color-interaction-hover-shadow: none;
+  --color-interaction-hover-transform: none;
   --color-interaction-focus-ring: rgba(9, 105, 218, 0.22);
+  --color-interaction-focus-outline-width: 2px;
+  --color-interaction-focus-outline-color: var(--color-ring);
+  --color-interaction-focus-outline-offset: 2px;
+  --color-interaction-focus-border: var(--color-ring);
+  --color-interaction-focus-shadow: 0 0 0 3px var(--color-interaction-focus-ring);
 
   --color-black: #000000;
   --color-white: #ffffff;
@@ -234,7 +241,14 @@
   --color-interaction-hover-bg: rgba(129, 139, 152, 0.12);
   --color-interaction-hover-border: rgba(129, 139, 152, 0.35);
   --color-interaction-hover-text: var(--color-foreground);
+  --color-interaction-hover-shadow: none;
+  --color-interaction-hover-transform: none;
   --color-interaction-focus-ring: rgba(9, 105, 218, 0.22);
+  --color-interaction-focus-outline-width: 2px;
+  --color-interaction-focus-outline-color: var(--color-ring);
+  --color-interaction-focus-outline-offset: 2px;
+  --color-interaction-focus-border: var(--color-ring);
+  --color-interaction-focus-shadow: 0 0 0 3px var(--color-interaction-focus-ring);
   --color-black: #000000;
   --color-white: #ffffff;
 }
@@ -311,7 +325,14 @@
   --color-interaction-hover-bg: rgba(139, 148, 158, 0.16);
   --color-interaction-hover-border: rgba(139, 148, 158, 0.32);
   --color-interaction-hover-text: var(--color-foreground);
+  --color-interaction-hover-shadow: none;
+  --color-interaction-hover-transform: none;
   --color-interaction-focus-ring: rgba(47, 129, 247, 0.28);
+  --color-interaction-focus-outline-width: 2px;
+  --color-interaction-focus-outline-color: var(--color-ring);
+  --color-interaction-focus-outline-offset: 2px;
+  --color-interaction-focus-border: var(--color-ring);
+  --color-interaction-focus-shadow: 0 0 0 3px var(--color-interaction-focus-ring);
 }
 
 :root[data-color-system='apple'][data-color-mode='light'],
@@ -385,7 +406,14 @@
   --color-interaction-hover-bg: rgba(60, 60, 67, 0.08);
   --color-interaction-hover-border: rgba(60, 60, 67, 0.24);
   --color-interaction-hover-text: var(--color-foreground);
+  --color-interaction-hover-shadow: none;
+  --color-interaction-hover-transform: none;
   --color-interaction-focus-ring: rgba(0, 122, 255, 0.22);
+  --color-interaction-focus-outline-width: 2px;
+  --color-interaction-focus-outline-color: var(--color-ring);
+  --color-interaction-focus-outline-offset: 2px;
+  --color-interaction-focus-border: var(--color-ring);
+  --color-interaction-focus-shadow: 0 0 0 3px var(--color-interaction-focus-ring);
 }
 
 :root[data-color-system='apple'][data-color-mode='dark'],
@@ -459,7 +487,14 @@
   --color-interaction-hover-bg: rgba(255, 255, 255, 0.08);
   --color-interaction-hover-border: rgba(255, 255, 255, 0.18);
   --color-interaction-hover-text: var(--color-foreground);
+  --color-interaction-hover-shadow: none;
+  --color-interaction-hover-transform: none;
   --color-interaction-focus-ring: rgba(10, 132, 255, 0.28);
+  --color-interaction-focus-outline-width: 2px;
+  --color-interaction-focus-outline-color: var(--color-ring);
+  --color-interaction-focus-outline-offset: 2px;
+  --color-interaction-focus-border: var(--color-ring);
+  --color-interaction-focus-shadow: 0 0 0 3px var(--color-interaction-focus-ring);
 }
 
 :root[data-color-system='primer'][data-color-mode='light'],
@@ -541,7 +576,14 @@
     --color-interaction-hover-bg: rgba(139, 148, 158, 0.16);
     --color-interaction-hover-border: rgba(139, 148, 158, 0.32);
     --color-interaction-hover-text: var(--color-foreground);
+    --color-interaction-hover-shadow: none;
+    --color-interaction-hover-transform: none;
     --color-interaction-focus-ring: rgba(47, 129, 247, 0.28);
+    --color-interaction-focus-outline-width: 2px;
+    --color-interaction-focus-outline-color: var(--color-ring);
+    --color-interaction-focus-outline-offset: 2px;
+    --color-interaction-focus-border: var(--color-ring);
+    --color-interaction-focus-shadow: 0 0 0 3px var(--color-interaction-focus-ring);
   }
 
   :root[data-color-system='apple']:not([data-color-mode]) {
@@ -614,7 +656,14 @@
     --color-interaction-hover-bg: rgba(255, 255, 255, 0.08);
     --color-interaction-hover-border: rgba(255, 255, 255, 0.18);
     --color-interaction-hover-text: var(--color-foreground);
+    --color-interaction-hover-shadow: none;
+    --color-interaction-hover-transform: none;
     --color-interaction-focus-ring: rgba(10, 132, 255, 0.28);
+    --color-interaction-focus-outline-width: 2px;
+    --color-interaction-focus-outline-color: var(--color-ring);
+    --color-interaction-focus-outline-offset: 2px;
+    --color-interaction-focus-border: var(--color-ring);
+    --color-interaction-focus-shadow: 0 0 0 3px var(--color-interaction-focus-ring);
   }
 }
 
@@ -978,11 +1027,11 @@
 
   @media (hover: hover) {
     &:not(:disabled):not([data-disabled]):not([aria-disabled='true']):hover {
-      background-color: var(--void-hover-bg, var(--color-interaction-hover-bg));
-      color: var(--void-hover-color, var(--color-interaction-hover-text));
-      border-color: var(--void-hover-border, var(--color-interaction-hover-border));
-      box-shadow: var(--void-hover-shadow, none);
-      transform: var(--void-hover-transform, none);
+      background-color: var(--color-interaction-hover-bg);
+      color: var(--color-interaction-hover-text);
+      border-color: var(--color-interaction-hover-border);
+      box-shadow: var(--color-interaction-hover-shadow);
+      transform: var(--color-interaction-hover-transform);
     }
   }
 }
@@ -990,13 +1039,11 @@
 @utility void-focus {
   outline: none;
   &:focus-visible {
-    outline: var(--void-focus-outline-width, 2px) solid
-      var(--void-focus-outline-color, var(--color-ring));
-    outline-offset: var(--void-focus-outline-offset, 2px);
-    border-color: var(--void-focus-border, var(--color-ring));
-    box-shadow: var(--void-focus-shadow, 0 0 0 3px var(--color-interaction-focus-ring));
-    background-color: var(--void-focus-bg);
-    color: var(--void-focus-color);
+    outline: var(--color-interaction-focus-outline-width) solid
+      var(--color-interaction-focus-outline-color);
+    outline-offset: var(--color-interaction-focus-outline-offset);
+    border-color: var(--color-interaction-focus-border);
+    box-shadow: var(--color-interaction-focus-shadow);
   }
 }
 

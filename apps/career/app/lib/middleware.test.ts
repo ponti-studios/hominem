@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import type { User } from '@hominem/auth/types';
-import type { CareerPortfolioRecord } from '@hominem/db';
+import type { PortfolioRecord } from '@hominem/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchCurrentPortfolio = vi.fn();
@@ -30,7 +30,7 @@ const testPortfolio = {
   ownerUserid: testUser.id,
   title: 'Portfolio',
   slug: 'portfolio',
-} satisfies Partial<CareerPortfolioRecord> as CareerPortfolioRecord;
+} satisfies Partial<PortfolioRecord> as PortfolioRecord;
 
 function createRequestContext() {
   const values = new Map<unknown, unknown>();

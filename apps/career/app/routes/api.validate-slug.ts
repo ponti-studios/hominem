@@ -1,4 +1,4 @@
-import { CareerRepository, db } from '@hominem/db';
+import { db, PortfolioRepository } from '@hominem/db';
 import { data } from 'react-router';
 
 import { createErrorResponse, createSuccessResponse } from '../lib/route-utils';
@@ -35,7 +35,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   // Check if slug already exists (excluding current portfolio if editing)
   try {
-    const isAvailable = await CareerRepository.isSlugAvailable(
+    const isAvailable = await PortfolioRepository.isSlugAvailable(
       db,
       slug,
       currentPortfolioId || undefined,

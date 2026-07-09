@@ -1,4 +1,4 @@
-import type { CareerEventRecord as CareerEvent, CareerWorkExperienceRecord } from '@hominem/db';
+import type { CareerEventRecord as CareerEvent, WorkExperienceRecord } from '@hominem/db';
 
 import {
   extractWorkExperiences,
@@ -16,7 +16,7 @@ export interface WorkExperienceMetadata {
   technologies?: string[];
 }
 
-export interface WorkExperienceWithFinancials extends CareerWorkExperienceRecord {
+export interface WorkExperienceWithFinancials extends WorkExperienceRecord {
   totalTenure?: number;
   currentAnnualizedSalary?: number;
   totalCompensationReceived?: number;

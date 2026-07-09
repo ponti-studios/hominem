@@ -1,4 +1,4 @@
-import type { CareerJobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
+import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import { useOutletContext } from 'react-router';
 
 import { ApplicationResumeTab } from '~/components/career';

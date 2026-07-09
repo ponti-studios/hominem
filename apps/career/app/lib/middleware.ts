@@ -1,11 +1,11 @@
+import type { PortfolioRecord } from '@hominem/db';
 import { createContext, redirect, type RouterContext } from 'react-router';
 
-import type { CareerPortfolioResponse } from './api.server';
 import { fetchCurrentPortfolio } from './api.server';
 import { getServerSession, type User } from './auth.server';
 
 export const userContext = createContext<User | null>(null);
-export const portfolioContext = createContext<CareerPortfolioResponse | null>(null);
+export const portfolioContext = createContext<PortfolioRecord | null>(null);
 
 type MiddlewareContext = {
   get: <T>(key: RouterContext<T>) => T;

@@ -1,5 +1,5 @@
-import type { CareerTestimonialRecord as Testimonial } from '@hominem/db';
-import { CareerRepository, db } from '@hominem/db';
+import type { TestimonialRecord as Testimonial } from '@hominem/db';
+import { db, TestimonialRepository } from '@hominem/db';
 import { EmptyState } from '@hominem/ui';
 import { Button } from '@hominem/ui';
 import {
@@ -414,7 +414,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           // Insert new testimonial
           const { id: _id, ...insertData } = testimonialData;
 
-          const newTestimonial = await CareerRepository.createTestimonial(db, user.id, {
+          const newTestimonial = await TestimonialRepository.createTestimonial(db, user.id, {
             portfolioId: insertData.portfolioId,
             name: insertData.name,
             title: insertData.title,
@@ -443,15 +443,21 @@ export async function action({ request, context }: Route.ActionArgs) {
           };
         }
 
-        await CareerRepository.updateTestimonial(db, user.id, id, testimonialData.portfolioId, {
-          name: updateData.name,
-          title: updateData.title,
-          company: updateData.company,
-          content: updateData.content,
-          avatarUrl: updateData.avatarUrl,
-          linkedinUrl: updateData.linkedinUrl,
-          rating: updateData.rating,
-        });
+        await TestimonialRepository.updateTestimonial(
+          db,
+          user.id,
+          id,
+          testimonialData.portfolioId,
+          {
+            name: updateData.name,
+            title: updateData.title,
+            company: updateData.company,
+            content: updateData.content,
+            avatarUrl: updateData.avatarUrl,
+            linkedinUrl: updateData.linkedinUrl,
+            rating: updateData.rating,
+          },
+        );
 
         return { success: true, operation, message: 'Testimonial updated successfully' };
       } catch (error) {
@@ -476,7 +482,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       }
 
       try {
-        await CareerRepository.deleteTestimonial(db, user.id, id, portfolioId);
+        await TestimonialRepository.deleteTestimonial(db, user.id, id, portfolioId);
         return { success: true, operation, message: 'Testimonial deleted successfully' };
       } catch (error) {
         console.error('Failed to delete testimonial:', error);

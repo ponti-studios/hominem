@@ -1,9 +1,8 @@
-import type { careerRoutes, CareerPortfolioResponse } from '@hominem/api/career';
+import type { careerRoutes } from '@hominem/api/career';
+import type { PortfolioRecord } from '@hominem/db';
 import { hc } from 'hono/client';
 
 import { serverEnv } from './env';
-
-export type { CareerPortfolioResponse };
 
 const customFetch =
   (request?: Request): typeof fetch =>
@@ -29,9 +28,7 @@ export function createServerHonoClient(request?: Request) {
   return { career };
 }
 
-export async function fetchCurrentPortfolio(
-  request: Request,
-): Promise<CareerPortfolioResponse | null> {
+export async function fetchCurrentPortfolio(request: Request): Promise<PortfolioRecord | null> {
   const { career } = createServerHonoClient(request);
   const res = await career.portfolio.$get();
   const data = await res.json();

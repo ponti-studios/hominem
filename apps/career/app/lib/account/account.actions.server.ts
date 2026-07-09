@@ -1,4 +1,4 @@
-import { CareerRepository, db } from '@hominem/db';
+import { db, PortfolioRepository, SocialLinksRepository } from '@hominem/db';
 import { createStorageService, isStorageServiceError, validateFile } from '@hominem/storage';
 
 import { parseFormData } from '~/lib/route-utils';
@@ -83,7 +83,7 @@ async function handleDeletePortfolioAction({
   user: AccountPageUser;
 }): Promise<AccountActionResult> {
   try {
-    await CareerRepository.deletePortfolioByUserId(db, user.id);
+    await PortfolioRepository.deletePortfolioByUserId(db, user.id);
     return { success: true, message: 'Portfolio deleted successfully' };
   } catch (error) {
     console.error('Failed to delete portfolio:', error);
@@ -122,7 +122,7 @@ async function handleUploadProfileImageAction({
     }
 
     try {
-      await CareerRepository.updatePortfolioProfileImage(db, user.id, uploadResult.url);
+      await PortfolioRepository.updatePortfolioProfileImage(db, user.id, uploadResult.url);
     } catch (updateError) {
       console.error('Database update error:', updateError);
       await profileImageStorage.deleteFile(uploadResult.id, user.id);
@@ -178,13 +178,13 @@ async function handleUpdateSlugAction({
       throw new Response('Slug must be less than 50 characters long', { status: 400 });
     }
 
-    const isAvailable = await CareerRepository.isSlugAvailable(db, newSlug, portfolioId);
+    const isAvailable = await PortfolioRepository.isSlugAvailable(db, newSlug, portfolioId);
 
     if (!isAvailable) {
       throw new Response('Slug is already taken', { status: 400 });
     }
 
-    await CareerRepository.updatePortfolioSlug(db, user.id, portfolioId, newSlug);
+    await PortfolioRepository.updatePortfolioSlug(db, user.id, portfolioId, newSlug);
 
     return {
       success: true,
@@ -217,7 +217,7 @@ async function handleUpdateSocialLinksAction({
   const socialLinksData = socialLinksDataResult as SocialLinksFormValues;
 
   try {
-    await CareerRepository.saveUserSocialLinks(db, user.id, {
+    await SocialLinksRepository.save(db, user.id, {
       github: socialLinksData.github ?? null,
       linkedin: socialLinksData.linkedin ?? null,
       twitter: socialLinksData.twitter ?? null,
@@ -247,7 +247,7 @@ async function handleUpdateBasicsAction({
   const portfolioData = portfolioDataResult as BasicInfoFormValues;
 
   try {
-    await CareerRepository.savePortfolioBasics(db, user.id, portfolioData);
+    await PortfolioRepository.savePortfolioBasics(db, user.id, portfolioData);
     return { success: true, message: 'Portfolio basics updated successfully' };
   } catch (error) {
     console.error('Failed to update portfolio basics:', error);

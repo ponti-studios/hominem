@@ -1,5 +1,5 @@
-import type { CareerWorkExperienceRecord as WorkExperience } from '@hominem/db';
-import { CareerRepository, db } from '@hominem/db';
+import type { WorkExperienceRecord as WorkExperience } from '@hominem/db';
+import { db, WorkExperienceRepository } from '@hominem/db';
 import { EmptyState } from '@hominem/ui';
 import { Button } from '@hominem/ui';
 import { stringToDate } from '@hominem/utils/dates';
@@ -177,7 +177,11 @@ export default function Work({ loaderData }: Route.ComponentProps) {
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   const portfolio = context.get(portfolioContext)!;
-  const work_experiences = await CareerRepository.listUserWorkExperiences(db, user.id, 'desc');
+  const work_experiences = await WorkExperienceRepository.listUserWorkExperiences(
+    db,
+    user.id,
+    'desc',
+  );
   return { work_experiences, portfolioId: portfolio.id };
 }
 
@@ -227,7 +231,7 @@ export async function action({ request, context }: Route.ActionArgs) {
             endDate: stringToDate(insertData.endDate),
           };
 
-          const newExperience = await CareerRepository.createWorkExperience(db, user.id, {
+          const newExperience = await WorkExperienceRepository.createWorkExperience(db, user.id, {
             portfolioId: dbData.portfolioId,
             role: dbData.role,
             company: dbData.company,
@@ -266,7 +270,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           endDate: stringToDate(updateData.endDate),
         };
 
-        await CareerRepository.updateWorkExperience(db, user.id, id, {
+        await WorkExperienceRepository.updateWorkExperience(db, user.id, id, {
           role: dbData.role,
           company: dbData.company,
           description: dbData.description,
@@ -302,7 +306,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       }
 
       try {
-        await CareerRepository.deleteWorkExperience(db, user.id, id, portfolioId);
+        await WorkExperienceRepository.deleteWorkExperience(db, user.id, id, portfolioId);
         return { success: true, operation, message: 'Work experience deleted successfully' };
       } catch (error) {
         console.error('Failed to delete work experience:', error);

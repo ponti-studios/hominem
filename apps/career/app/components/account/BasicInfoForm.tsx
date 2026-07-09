@@ -1,3 +1,4 @@
+import type { PortfolioRecord } from '@hominem/db';
 import { Button } from '@hominem/ui';
 import { Input, Switch, Textarea } from '@hominem/ui';
 import { useEffect, useState } from 'react';
@@ -5,13 +6,12 @@ import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 
 import { FormErrorAlert } from '~/components/FormErrorAlert';
 import type { AccountActionResult, BasicInfoFormValues } from '~/lib/account/types';
-import type { CareerPortfolioResponse } from '~/lib/api.server';
 
 export function BasicInfoForm({
   portfolio,
   onSave,
 }: {
-  portfolio: CareerPortfolioResponse;
+  portfolio: PortfolioRecord;
   onSave: (values: BasicInfoFormValues) => Promise<AccountActionResult<unknown>>;
 }) {
   const [submissionError, setSubmissionError] = useState<string | null>(null);

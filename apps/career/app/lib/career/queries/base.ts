@@ -1,25 +1,30 @@
 import type {
-  CareerCompanyRecord as Company,
-  CareerJobApplicationRecord as JobApplication,
-  CareerWorkExperienceRecord as WorkExperience,
-  UpdateCareerWorkExperienceInput,
+  CompanyRecord as Company,
+  JobApplicationRecord as JobApplication,
+  UpdateWorkExperienceInput,
+  WorkExperienceRecord as WorkExperience,
 } from '@hominem/db';
-import { CareerRepository, db } from '@hominem/db';
+import {
+  CareerEventRepository,
+  db,
+  JobApplicationRepository,
+  WorkExperienceRepository,
+} from '@hominem/db';
 
 export async function getUserWorkExperiences(ownerUserid: string) {
-  return CareerRepository.listUserWorkExperiences(db, ownerUserid, 'desc');
+  return WorkExperienceRepository.listUserWorkExperiences(db, ownerUserid, 'desc');
 }
 
 export async function getUserWorkExperiencesDesc(ownerUserid: string) {
-  return CareerRepository.listUserWorkExperiences(db, ownerUserid, 'desc');
+  return WorkExperienceRepository.listUserWorkExperiences(db, ownerUserid, 'desc');
 }
 
 export async function getUserCareerEvents(ownerUserid: string, limit?: number) {
-  return CareerRepository.listUserCareerEvents(db, ownerUserid, limit);
+  return CareerEventRepository.listUserCareerEvents(db, ownerUserid, limit);
 }
 
 export async function getUserJobApplications(ownerUserid: string) {
-  return CareerRepository.listUserJobApplicationsWithCompany(db, ownerUserid);
+  return JobApplicationRepository.listUserJobApplicationsWithCompany(db, ownerUserid);
 }
 
 export async function getCurrentWorkExperience(ownerUserid: string) {
@@ -28,7 +33,11 @@ export async function getCurrentWorkExperience(ownerUserid: string) {
 }
 
 export async function getFirstWorkExperience(ownerUserid: string) {
-  const experiences = await CareerRepository.listUserWorkExperiences(db, ownerUserid, 'asc');
+  const experiences = await WorkExperienceRepository.listUserWorkExperiences(
+    db,
+    ownerUserid,
+    'asc',
+  );
   return experiences[0] || null;
 }
 
@@ -76,13 +85,13 @@ export function extractJobApplications(joinedResults: JobApplicationWithCompany[
 }
 
 export async function getWorkExperienceById(ownerUserid: string, experienceId: string) {
-  return CareerRepository.getWorkExperienceById(db, ownerUserid, experienceId);
+  return WorkExperienceRepository.getWorkExperienceById(db, ownerUserid, experienceId);
 }
 
 export async function updateWorkExperience(
   ownerUserid: string,
   experienceId: string,
-  updates: UpdateCareerWorkExperienceInput,
+  updates: UpdateWorkExperienceInput,
 ) {
-  return CareerRepository.updateWorkExperience(db, ownerUserid, experienceId, updates);
+  return WorkExperienceRepository.updateWorkExperience(db, ownerUserid, experienceId, updates);
 }

@@ -1,5 +1,5 @@
 import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
-import { CareerRepository, db } from '@hominem/db';
+import { db, ProjectRepository, WorkExperienceRepository } from '@hominem/db';
 import { z } from 'zod';
 
 const derivedSkillSchema = z.object({
@@ -33,8 +33,8 @@ export async function deriveSkillsFromCareerHistory(
   portfolioId: string,
 ): Promise<DerivedSkill[]> {
   const [workExperiences, projects] = await Promise.all([
-    CareerRepository.listUserWorkExperiences(db, ownerUserid),
-    CareerRepository.listProjectsByPortfolio(db, portfolioId),
+    WorkExperienceRepository.listUserWorkExperiences(db, ownerUserid),
+    ProjectRepository.listProjectsByPortfolio(db, portfolioId),
   ]);
 
   if (workExperiences.length === 0 && projects.length === 0) {

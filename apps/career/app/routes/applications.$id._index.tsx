@@ -1,12 +1,10 @@
-import type {
-  CareerJobApplicationRecord as ApplicationWithCompany,
-  UpdateCareerJobApplicationInput,
-} from '@hominem/db';
+import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import { useOutletContext } from 'react-router';
 
 import { ApplicationOverviewTab } from '~/components/career';
 import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
+import { ApplicationFormError, parseApplicationUpdateFormData } from '~/lib/utils/applicationForm';
 
 import { Route } from './+types/applications.$id._index';
 
@@ -23,33 +21,26 @@ export async function action({ context, request, params }: Route.ActionArgs) {
     throw new Response('Application not found or access denied', { status: 403 });
   }
 
-  const formData = await request.formData();
-  const updates: UpdateCareerJobApplicationInput = {};
+  try {
+    const formData = await request.formData();
+    const { application, company } = parseApplicationUpdateFormData(formData);
 
-  const fields = [
-    'position',
-    'status',
-    'location',
-    'jobPosting',
-    'salaryQuoted',
-    'salaryAccepted',
-    'companyNotes',
-    'negotiationNotes',
-    'recruiterName',
-    'recruiterEmail',
-    'recruiterLinkedin',
-    'resume',
-  ] as const;
-
-  for (const field of fields) {
-    const value = formData.get(field);
-    if (value !== null) {
-      updates[field] = value as string | undefined;
+    if (Object.keys(application).length > 0) {
+      await JobApplicationsService.updateApplication(id, application, user.id);
     }
-  }
 
-  await JobApplicationsService.updateApplication(id, updates);
-  return { message: 'Application updated successfully' };
+    if (company) {
+      await JobApplicationsService.updateLinkedCompany(id, user.id, company);
+    }
+
+    return { success: true, message: 'Application updated successfully' };
+  } catch (error) {
+    if (error instanceof ApplicationFormError) {
+      throw new Response(error.message, { status: 400 });
+    }
+    console.error('Error updating application:', error);
+    throw new Response('Failed to update application', { status: 500 });
+  }
 }
 
 export default function ApplicationOverviewRoute() {

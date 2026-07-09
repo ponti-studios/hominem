@@ -45,7 +45,7 @@ export function DatePicker({
             id={id}
             variant={variant}
             disabled={disabled}
-            className="bg-muted placeholder:text-muted-foreground w-full justify-start text-left font-normal backdrop-blur-sm [--void-focus-shadow:0_0_0_2px_color-mix(in_srgb,var(--color-ring)_30%,transparent)]"
+            className="bg-muted placeholder:text-muted-foreground w-full justify-start text-left font-normal backdrop-blur-sm [--color-interaction-focus-shadow:0_0_0_2px_color-mix(in_srgb,var(--color-ring)_30%,transparent)]"
           >
             <CalendarIcon className="mr-2 size-4" />
             {value ? format(value, dateFormat) : <span>{placeholder}</span>}

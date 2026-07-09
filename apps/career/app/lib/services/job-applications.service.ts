@@ -1,15 +1,16 @@
-import { CareerRepository, db } from '@hominem/db';
+import { CompanyRepository, db, JobApplicationRepository } from '@hominem/db';
 import type {
   AppApplicationNotes,
-  CareerJobApplicationRecord,
+  JobApplicationRecord,
   JsonObject,
   JsonValue,
   Selectable,
-  UpdateCareerJobApplicationInput,
+  UpdateCompanyInput,
+  UpdateJobApplicationInput,
 } from '@hominem/db';
 import type {
   CareerInterviewEntry as InterviewEntry,
-  CareerJobApplicationRecord as ApplicationWithCompany,
+  JobApplicationRecord as ApplicationWithCompany,
 } from '@hominem/db';
 
 import { JobApplicationStage, JobApplicationStatus } from '~/types/career';
@@ -53,7 +54,11 @@ export class JobApplicationsService {
     applicationId: string,
     ownerUserid: string,
   ): Promise<ApplicationWithCompany> {
-    const application = await CareerRepository.getApplicationById(db, ownerUserid, applicationId);
+    const application = await JobApplicationRepository.getApplicationById(
+      db,
+      ownerUserid,
+      applicationId,
+    );
 
     if (!application) {
       throw new Error('Application not found');
@@ -93,20 +98,78 @@ export class JobApplicationsService {
    */
   static async updateApplication(
     applicationId: string,
-    updates: UpdateCareerJobApplicationInput,
+    updates: UpdateJobApplicationInput,
     ownerUserid?: string,
   ): Promise<void> {
     if (Object.keys(updates).length === 0) {
       return;
     }
 
-    let query = db.updateTable('app.jobApplications').set(updates).where('id', '=', applicationId);
+    const payload = { ...updates, updatedat: updates.updatedat ?? new Date() };
+
+    let query = db.updateTable('app.jobApplications').set(payload).where('id', '=', applicationId);
 
     if (ownerUserid) {
       query = query.where('ownerUserid', '=', ownerUserid);
     }
 
     await query.executeTakeFirstOrThrow();
+  }
+
+  /**
+   * Update the company linked to an application, or create+link if missing.
+   */
+  static async updateLinkedCompany(
+    applicationId: string,
+    ownerUserid: string,
+    companyUpdates: UpdateCompanyInput,
+  ): Promise<void> {
+    if (Object.keys(companyUpdates).length === 0) {
+      return;
+    }
+
+    const application = await db
+      .selectFrom('app.jobApplications')
+      .select(['id', 'companyId'])
+      .where('id', '=', applicationId)
+      .where('ownerUserid', '=', ownerUserid)
+      .executeTakeFirst();
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    if (application.companyId) {
+      await CompanyRepository.update(db, ownerUserid, application.companyId, companyUpdates);
+      return;
+    }
+
+    const company = await CompanyRepository.findOrCreate(db, ownerUserid, {
+      name: companyUpdates.name?.trim() || 'Unknown Company',
+      website: companyUpdates.website ?? null,
+      industry: companyUpdates.industry ?? null,
+      size: companyUpdates.size ?? null,
+      location: companyUpdates.location ?? null,
+      description: companyUpdates.description ?? null,
+    });
+
+    // If we created via name-only match, apply remaining field updates.
+    if (
+      companyUpdates.website !== undefined ||
+      companyUpdates.industry !== undefined ||
+      companyUpdates.size !== undefined ||
+      companyUpdates.location !== undefined ||
+      companyUpdates.description !== undefined ||
+      (companyUpdates.name && company.name !== companyUpdates.name.trim())
+    ) {
+      await CompanyRepository.update(db, ownerUserid, company.id, companyUpdates);
+    }
+
+    await JobApplicationsService.updateApplication(
+      applicationId,
+      { companyId: company.id },
+      ownerUserid,
+    );
   }
 
   /**
@@ -176,14 +239,14 @@ export class JobApplicationsService {
   static async createApplication(
     ownerUserid: string,
     input: CreateApplicationInput,
-  ): Promise<CareerJobApplicationRecord> {
-    const company = await CareerRepository.findOrCreateCompany(db, ownerUserid, {
+  ): Promise<JobApplicationRecord> {
+    const company = await CompanyRepository.findOrCreate(db, ownerUserid, {
       name: input.companyName,
       website: input.companyWebsite ?? null,
       description: input.companyDescription ?? null,
     });
 
-    return CareerRepository.createJobApplication(db, ownerUserid, {
+    return JobApplicationRepository.createJobApplication(db, ownerUserid, {
       companyId: company.id,
       position: input.position,
       status: input.status ?? JobApplicationStatus.APPLIED,

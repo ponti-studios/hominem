@@ -1,9 +1,9 @@
+import type { PortfolioRecord } from '@hominem/db';
 import { Button } from '@hominem/ui';
 import { ExternalLink } from 'lucide-react';
 
 import { SlugEditor } from '~/components/SlugEditor';
 import { UploadResumeForm } from '~/components/UploadResumeForm';
-import type { CareerPortfolioResponse } from '~/lib/api.server';
 
 export function CurrentPortfolioSection({
   currentPortfolio,
@@ -13,7 +13,7 @@ export function CurrentPortfolioSection({
   onToggleReplaceResume,
   onUpdateSlug,
 }: {
-  currentPortfolio: CareerPortfolioResponse;
+  currentPortfolio: PortfolioRecord;
   publicPortfolioUrl: string | null;
   showReplaceResume: boolean;
   onReplaceResumeComplete: () => void;

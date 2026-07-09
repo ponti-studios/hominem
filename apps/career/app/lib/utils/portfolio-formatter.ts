@@ -1,4 +1,4 @@
-import type { CareerUserSocialLinksRecord } from '@hominem/db';
+import type { UserSocialLinksRecord } from '@hominem/db';
 
 import { jsonArray } from '../db-json';
 import type { FullPortfolio } from '../portfolio.server';
@@ -9,7 +9,7 @@ import type { FullPortfolio } from '../portfolio.server';
  */
 export function formatPortfolioForLLM(
   portfolioData: FullPortfolio,
-  socialLinks: CareerUserSocialLinksRecord | null,
+  socialLinks: UserSocialLinksRecord | null,
 ): string {
   let formatted = 'CANDIDATE PROFILE:\n';
   formatted += `Name: ${portfolioData.name}\n`;

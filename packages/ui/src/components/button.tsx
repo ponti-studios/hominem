@@ -11,16 +11,16 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'void-hover border-transparent bg-primary text-primary-foreground [--void-hover-bg:color-mix(in_srgb,var(--color-primary)_90%,white_10%)] [--void-hover-color:var(--color-primary-foreground)] [--void-hover-border:transparent]',
+          'void-hover border-transparent bg-primary text-primary-foreground [--color-interaction-hover-bg:color-mix(in_srgb,var(--color-primary)_90%,white_10%)] [--color-interaction-hover-text:var(--color-primary-foreground)] [--color-interaction-hover-border:transparent]',
         destructive:
-          'void-hover border-transparent bg-destructive text-destructive-foreground [--void-hover-bg:color-mix(in_srgb,var(--color-destructive)_90%,white_10%)] [--void-hover-color:var(--color-destructive-foreground)] [--void-hover-border:transparent]',
+          'void-hover border-transparent bg-destructive text-destructive-foreground [--color-interaction-hover-bg:color-mix(in_srgb,var(--color-destructive)_90%,white_10%)] [--color-interaction-hover-text:var(--color-destructive-foreground)] [--color-interaction-hover-border:transparent]',
         outline:
-          'void-hover border-border bg-surface text-foreground [--void-hover-bg:var(--color-bg-elevated)] [--void-hover-color:var(--color-foreground)] [--void-hover-border:var(--color-border-default)]',
+          'void-hover border-border bg-surface text-foreground [--color-interaction-hover-bg:var(--color-bg-elevated)] [--color-interaction-hover-text:var(--color-foreground)] [--color-interaction-hover-border:var(--color-border-default)]',
         secondary:
-          'void-hover border-transparent bg-secondary text-secondary-foreground [--void-hover-bg:color-mix(in_srgb,var(--color-secondary)_80%,white_20%)] [--void-hover-color:var(--color-secondary-foreground)] [--void-hover-border:transparent]',
+          'void-hover border-transparent bg-secondary text-secondary-foreground [--color-interaction-hover-bg:color-mix(in_srgb,var(--color-secondary)_80%,white_20%)] [--color-interaction-hover-text:var(--color-secondary-foreground)] [--color-interaction-hover-border:transparent]',
         ghost:
-          'void-hover border-transparent bg-transparent text-foreground [--void-hover-bg:var(--color-accent)] [--void-hover-color:var(--color-accent-foreground)] [--void-hover-border:transparent]',
-        link: 'void-hover border-transparent bg-transparent text-foreground underline-offset-4 hover:underline [--void-hover-bg:transparent] [--void-hover-color:var(--color-secondary-foreground)] [--void-hover-border:transparent]',
+          'void-hover border-transparent bg-transparent text-foreground [--color-interaction-hover-bg:var(--color-accent)] [--color-interaction-hover-text:var(--color-accent-foreground)] [--color-interaction-hover-border:transparent]',
+        link: 'void-hover border-transparent bg-transparent text-foreground underline-offset-4 hover:underline [--color-interaction-hover-bg:transparent] [--color-interaction-hover-text:var(--color-secondary-foreground)] [--color-interaction-hover-border:transparent]',
       },
       size: {
         default: 'px-3 text-sm',

@@ -1,4 +1,4 @@
-import { CareerRepository, db } from '@hominem/db';
+import { db, ProjectRepository } from '@hominem/db';
 import { stringToDate } from '@hominem/utils/dates';
 
 import { parseFormData } from '../route-utils';
@@ -32,7 +32,7 @@ export async function handleProjectMutationAction(request: Request, ownerUserId:
       try {
         if (operation === 'create') {
           const { id: _id, ...insertData } = projectData;
-          const newProject = await CareerRepository.createProject(db, ownerUserId, {
+          const newProject = await ProjectRepository.createProject(db, ownerUserId, {
             ...insertData,
             startDate: stringToDate(insertData.startDate),
             endDate: stringToDate(insertData.endDate),
@@ -55,7 +55,7 @@ export async function handleProjectMutationAction(request: Request, ownerUserId:
           };
         }
 
-        await CareerRepository.updateProject(db, ownerUserId, id, projectData.portfolioId, {
+        await ProjectRepository.updateProject(db, ownerUserId, id, projectData.portfolioId, {
           ...updateData,
           startDate: stringToDate(updateData.startDate),
           endDate: stringToDate(updateData.endDate),
@@ -84,7 +84,7 @@ export async function handleProjectMutationAction(request: Request, ownerUserId:
       }
 
       try {
-        await CareerRepository.deleteProject(db, ownerUserId, id, portfolioId);
+        await ProjectRepository.deleteProject(db, ownerUserId, id, portfolioId);
         return { success: true, operation, message: 'Project deleted successfully' };
       } catch (error) {
         console.error('Failed to delete project:', error);

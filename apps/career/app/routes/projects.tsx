@@ -1,7 +1,4 @@
-import type {
-  CareerProjectRecord as Project,
-  CareerWorkExperienceRecord as WorkExperience,
-} from '@hominem/db';
+import type { ProjectRecord as Project, WorkExperienceRecord as WorkExperience } from '@hominem/db';
 import { Button } from '@hominem/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui';
 import { FolderOpenIcon, PencilLineIcon, PlusIcon, XIcon } from 'lucide-react';

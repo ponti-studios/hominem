@@ -88,25 +88,62 @@ export type {
   CreateAIUsageEventInput,
 } from './services/ai/ai-usage.repository';
 
-export { CareerRepository } from './services/career/career.repository';
+export { PortfolioRepository } from './services/career/portfolio.repository';
+export type {
+  CreateDefaultPortfolioInput,
+  FullPortfolioRecord,
+  PortfolioRecord,
+  SavePortfolioBasicsInput,
+} from './services/career/portfolio.repository';
+
+export { WorkExperienceRepository } from './services/career/work-experience.repository';
+export type {
+  CreateWorkExperienceInput,
+  UpdateWorkExperienceInput,
+  WorkExperienceRecord,
+} from './services/career/work-experience.repository';
+
+export { SkillRepository } from './services/career/skill.repository';
+export type { ReplaceSkillInput, SkillRecord } from './services/career/skill.repository';
+
+export { ProjectRepository } from './services/career/project.repository';
+export type {
+  CreateProjectInput,
+  ProjectRecord,
+  UpdateProjectInput,
+} from './services/career/project.repository';
+
+export { TestimonialRepository } from './services/career/testimonial.repository';
+export type {
+  CreateTestimonialInput,
+  TestimonialRecord,
+  UpdateTestimonialInput,
+} from './services/career/testimonial.repository';
+
+export { CompanyRepository } from './services/career/company.repository';
+export type {
+  CompanyRecord,
+  FindOrCreateCompanyInput,
+  UpdateCompanyInput,
+} from './services/career/company.repository';
+
+export { JobApplicationRepository } from './services/career/job-application.repository';
 export type {
   CareerApplicationStage,
-  CareerCertificationRecord,
-  CareerCompanyRecord,
-  CareerEventRecord,
-  CareerFullPortfolioRecord,
   CareerInterviewEntry,
-  CareerJobApplicationRecord,
-  CareerPortfolioRecord,
-  CareerProjectRecord,
-  CareerSkillRecord,
-  CareerTestimonialRecord,
-  CareerUserSocialLinksRecord,
-  CareerWorkExperienceRecord,
-  CreateDefaultCareerPortfolioInput,
-  UpdateCareerJobApplicationInput,
-  UpdateCareerWorkExperienceInput,
-} from './services/career/career.repository';
+  CreateJobApplicationInput,
+  JobApplicationRecord,
+  UpdateJobApplicationInput,
+} from './services/career/job-application.repository';
+
+export { CareerEventRepository } from './services/career/career-event.repository';
+export type { CareerEventRecord } from './services/career/career-event.repository';
+
+export { SocialLinksRepository } from './services/career/social-links.repository';
+export type {
+  SaveUserSocialLinksInput,
+  UserSocialLinksRecord,
+} from './services/career/social-links.repository';
 
 export { UserRepository } from './services/users/user.repository';
 export type { FindUserInput, UserRecord } from './services/users/user.repository';

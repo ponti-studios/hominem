@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
-import { CareerRepository, db } from '@hominem/db';
+import { db, SocialLinksRepository } from '@hominem/db';
 import { data, type ActionFunction } from 'react-router';
 import { z } from 'zod';
 
@@ -121,7 +121,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       );
     }
 
-    const socialLinks = await CareerRepository.getUserSocialLinks(db, user.id);
+    const socialLinks = await SocialLinksRepository.get(db, user.id);
 
     // Format portfolio data for better LLM consumption using utility function
     const portfolioContext = formatPortfolioForLLM(portfolio, socialLinks);

@@ -1,8 +1,5 @@
-import type {
-  CareerWorkExperienceRecord as WorkExperienceRecord,
-  UpdateCareerWorkExperienceInput,
-} from '@hominem/db';
-import { CareerRepository, db } from '@hominem/db';
+import type { UpdateWorkExperienceInput, WorkExperienceRecord } from '@hominem/db';
+import { db, WorkExperienceRepository } from '@hominem/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -130,7 +127,7 @@ export async function action({ context, request, params }: Route.ActionArgs) {
     }
 
     try {
-      await CareerRepository.deleteWorkExperience(db, user.id, id, portfolioId);
+      await WorkExperienceRepository.deleteWorkExperience(db, user.id, id, portfolioId);
 
       return { success: true, operation };
     } catch (error) {
@@ -147,7 +144,7 @@ export async function action({ context, request, params }: Route.ActionArgs) {
     return { success: false, operation, error: 'We couldn’t understand that request.' };
   }
 
-  const updatesResult = parseFormData<UpdateCareerWorkExperienceInput>(formData, 'updates');
+  const updatesResult = parseFormData<UpdateWorkExperienceInput>(formData, 'updates');
   if ('success' in updatesResult && !updatesResult.success) {
     return {
       success: false,
@@ -156,7 +153,7 @@ export async function action({ context, request, params }: Route.ActionArgs) {
     };
   }
 
-  const updates = normalizeWorkExperienceUpdates(updatesResult as UpdateCareerWorkExperienceInput);
+  const updates = normalizeWorkExperienceUpdates(updatesResult as UpdateWorkExperienceInput);
 
   if (!hasDefinedUpdates(updates)) {
     return { success: true, operation };
@@ -1180,7 +1177,7 @@ function useWorkExperienceSection({
     isSubmitting: fetcher.state !== 'idle',
     submissionError,
     clearSubmissionError,
-    submitUpdates: (updates: UpdateCareerWorkExperienceInput) =>
+    submitUpdates: (updates: UpdateWorkExperienceInput) =>
       submitWorkExperienceUpdates(fetcher, clearSubmissionError, updates),
   };
 }
@@ -1200,7 +1197,7 @@ function submitDelete(
 function submitWorkExperienceUpdates(
   fetcher: ReturnType<typeof useFetcher>,
   clearSubmissionError: () => void,
-  updates: UpdateCareerWorkExperienceInput,
+  updates: UpdateWorkExperienceInput,
 ) {
   const formData = new FormData();
   formData.append('operation', 'update');
@@ -1210,8 +1207,8 @@ function submitWorkExperienceUpdates(
 }
 
 function normalizeWorkExperienceUpdates(
-  updates: UpdateCareerWorkExperienceInput,
-): UpdateCareerWorkExperienceInput {
+  updates: UpdateWorkExperienceInput,
+): UpdateWorkExperienceInput {
   return {
     ...updates,
     role: updates.role !== undefined ? updates.role.trim() : undefined,
@@ -1287,7 +1284,7 @@ function normalizeMetadata(metadata: Record<string, unknown> | null) {
   return normalized;
 }
 
-function hasDefinedUpdates(updates: UpdateCareerWorkExperienceInput) {
+function hasDefinedUpdates(updates: UpdateWorkExperienceInput) {
   return Object.values(updates).some((value) => value !== undefined);
 }
 
