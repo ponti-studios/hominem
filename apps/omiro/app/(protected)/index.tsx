@@ -1,7 +1,7 @@
 import ExpoSegmentedControl from '@expo/ui/community/segmented-control';
 import { Host, RNHostView } from '@expo/ui/swift-ui';
 import { Stack, useIsFocused, useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -44,8 +44,28 @@ export default function InboxScreen() {
   const [activeTab, setActiveTab] = useState<InboxTab>('notes');
   const [searchQuery, setSearchQuery] = useState('');
   const inboxDraft = readInboxDraft();
+  const headKey = items[0]?.id ?? null;
 
-  useTopAnchoredInbox({ listRef, headKey: items[0]?.id ?? null, isFocused });
+  const { requestTopReveal } = useTopAnchoredInbox({ listRef, headKey, isFocused });
+
+  // The list's initial scroll offset can land under the collapsing nav/search bar
+  // header, hiding the top row until the user scrolls manually. Snap to the top
+  // whenever the screen (re)gains focus or the first page of data becomes available.
+  const previousFocusedRef = useRef(isFocused);
+  useEffect(() => {
+    if (isFocused && !previousFocusedRef.current) {
+      requestTopReveal();
+    }
+    previousFocusedRef.current = isFocused;
+  }, [isFocused, requestTopReveal]);
+
+  const previousHeadKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (isFocused && headKey !== null && previousHeadKeyRef.current === null) {
+      requestTopReveal();
+    }
+    previousHeadKeyRef.current = headKey;
+  }, [headKey, isFocused, requestTopReveal]);
 
   const handleOpenSettings = useCallback(() => router.push(getSettingsRoute()), [router]);
 

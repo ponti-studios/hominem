@@ -44,25 +44,35 @@ function mergeInboxItems(items: InboxStreamItem[]) {
   return sortInboxItems(Array.from(mergedItems.values()));
 }
 
-export function readCachedInboxItems(): InboxStreamItem[] {
+export interface CachedInboxSnapshotResult {
+  items: InboxStreamItem[];
+  savedAt: number | null;
+}
+
+export function readCachedInboxSnapshot(): CachedInboxSnapshotResult {
   const raw = storage.getString(INBOX_CACHE_KEY);
   if (!raw) {
-    return [];
+    return { items: [], savedAt: null };
   }
 
   try {
-    const parsed = JSON.parse(raw) as { items?: unknown };
+    const parsed = JSON.parse(raw) as { items?: unknown; savedAt?: unknown };
     if (!Array.isArray(parsed.items)) {
       storage.remove(INBOX_CACHE_KEY);
-      return [];
+      return { items: [], savedAt: null };
     }
 
-    const items = parsed.items.filter(isInboxItem);
-    return sortInboxItems(items);
+    const items = sortInboxItems(parsed.items.filter(isInboxItem));
+    const savedAt = typeof parsed.savedAt === 'string' ? Date.parse(parsed.savedAt) : Number.NaN;
+    return { items, savedAt: Number.isFinite(savedAt) ? savedAt : null };
   } catch {
     storage.remove(INBOX_CACHE_KEY);
-    return [];
+    return { items: [], savedAt: null };
   }
+}
+
+export function readCachedInboxItems(): InboxStreamItem[] {
+  return readCachedInboxSnapshot().items;
 }
 
 function writeCachedInboxItems(items: InboxStreamItem[]) {
@@ -84,4 +94,15 @@ export function replaceCachedInboxItems(items: InboxStreamItem[]) {
 
 export function appendCachedInboxItems(items: InboxStreamItem[]) {
   writeCachedInboxItems(mergeInboxItems([...readCachedInboxItems(), ...items]));
+}
+
+export function removeCachedInboxItem(identity: {
+  kind: InboxStreamItem['kind'];
+  entityId: string;
+}) {
+  writeCachedInboxItems(
+    readCachedInboxItems().filter(
+      (item) => !(item.kind === identity.kind && item.entityId === identity.entityId),
+    ),
+  );
 }

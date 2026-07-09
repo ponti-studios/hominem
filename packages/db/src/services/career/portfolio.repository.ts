@@ -196,11 +196,13 @@ export const PortfolioRepository = {
         slug: createPortfolioSlug(input.name),
         title: `${input.name}'s Portfolio`,
         name: input.name,
-        jobTitle: 'Software Engineer',
-        bio: 'Welcome to my portfolio!',
-        tagline: 'Building the future of software',
-        currentLocation: 'San Francisco, CA',
+        jobTitle: '',
+        bio: '',
+        tagline: '',
+        currentLocation: '',
         email: input.email,
+        isPublic: false,
+        isActive: true,
       })
       .returningAll()
       .executeTakeFirstOrThrow();

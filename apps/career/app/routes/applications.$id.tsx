@@ -1,4 +1,12 @@
-import { Briefcase, Calendar, ChevronLeft, FileText, MapPin, MessageSquare, Paperclip } from 'lucide-react';
+import {
+  Briefcase,
+  Calendar,
+  ChevronLeft,
+  FileText,
+  MapPin,
+  MessageSquare,
+  Paperclip,
+} from 'lucide-react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 
 import { QuickActionsDropdown } from '~/components/career';

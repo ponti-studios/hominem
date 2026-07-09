@@ -1,7 +1,8 @@
 import 'dotenv/config'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 
-const TEST_DATABASE_URL = process.env.DATABASE_URL_TEST;
+const TEST_DATABASE_URL = process.env.DATABASE_URL_TEST || 'postgresql://postgres:postgres@127.0.0.1:4433/app-test';
 
 export default defineConfig({
   resolve: {
@@ -15,7 +16,7 @@ export default defineConfig({
     },
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['vitest.setup.ts'],
+    setupFiles: [fileURLToPath(new URL('vitest.setup.ts', import.meta.url))],
     include: ['**/*.test.{ts,tsx,js,jsx}'],
 
     clearMocks: true,

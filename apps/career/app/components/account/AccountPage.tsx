@@ -75,7 +75,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
     formData.append('portfolioId', currentPortfolio.id);
 
     await submitAccountAction(formData);
-    revalidator.revalidate();
+    navigate('/onboarding');
   };
 
   const handleImageUpload = async (croppedImageBlob: Blob) => {
@@ -172,39 +172,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
   };
 
   const userDisplayName = String(user.name || user.email);
-  const publicPortfolioUrl = currentPortfolio ? `/p/${currentPortfolio.slug}` : null;
-
-  if (!currentPortfolio) {
-    return (
-      <div className="space-y-8 pb-8">
-        <AccountHeader
-          currentPortfolio={null}
-          currentImageUrl={undefined}
-          isSigningOut={isSigningOut}
-          userDisplayName={userDisplayName}
-          userEmail={user.email}
-          onImageUpload={handleImageUpload}
-          onSignOut={handleSignOut}
-        />
-
-        <section className="space-y-4 py-8 text-center">
-          <h2 className="heading-3">Start with a resume upload</h2>
-          <div className="flex justify-center">
-            <Button
-              type="button"
-              onClick={() => navigate('/onboarding')}
-              variant="default"
-              className="rounded-full px-6"
-            >
-              Get started
-            </Button>
-          </div>
-        </section>
-
-        <SocialLinksSection socialLinks={socialLinks} onSave={handleSaveSocialLinks} />
-      </div>
-    );
-  }
+  const publicPortfolioUrl = `/p/${currentPortfolio.slug}`;
 
   return (
     <div className="space-y-8 pb-8">

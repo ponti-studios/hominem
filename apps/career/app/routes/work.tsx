@@ -1,14 +1,15 @@
 import type { WorkExperienceRecord as WorkExperience } from '@hominem/db';
 import { db, WorkExperienceRepository } from '@hominem/db';
-import { EmptyState } from '@hominem/ui';
-import { Button } from '@hominem/ui';
+import { Button, EmptyState } from '@hominem/ui';
 import { stringToDate } from '@hominem/utils/dates';
-import { PencilLineIcon, PlusIcon } from 'lucide-react';
-import { useFetcher, useNavigate } from 'react-router';
+import { PencilLineIcon, PlusIcon, UploadIcon } from 'lucide-react';
+import { useState } from 'react';
+import { useFetcher, useNavigate, useRevalidator } from 'react-router';
 
 import type { WorkExperienceMetadata } from '~/lib/career/queries/career-progression';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
+import { UploadResumeForm } from '../components/UploadResumeForm';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
@@ -90,8 +91,10 @@ function WorkExperienceSummaryCard({
 export default function Work({ loaderData }: Route.ComponentProps) {
   const draftFetcher = useFetcher();
   const navigate = useNavigate();
+  const revalidator = useRevalidator();
   const { work_experiences, portfolioId } = loaderData;
   const experiences = work_experiences || [];
+  const [showResumeUpload, setShowResumeUpload] = useState(false);
 
   const { submissionError, clearSubmissionError } = useCareerEditorSubmission<WorkExperience>({
     fetcher: draftFetcher,
@@ -162,11 +165,51 @@ export default function Work({ loaderData }: Route.ComponentProps) {
               ))}
             </ul>
           </div>
+        ) : showResumeUpload ? (
+          <div className="mx-auto flex w-full max-w-md flex-col gap-4">
+            <UploadResumeForm
+              mode="replace"
+              showHeading
+              onUploadStart={() => undefined}
+              onUploadComplete={() => {
+                setShowResumeUpload(false);
+                revalidator.revalidate();
+              }}
+              onUploadError={() => undefined}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => setShowResumeUpload(false)}
+            >
+              Cancel
+            </Button>
+          </div>
         ) : (
           <EmptyState
-            title="No work experience yet"
-            description='Click "Add New Experience" to get started.'
+            title="Build your foundation"
+            description="Upload a resume to extract roles automatically, or add your first role by hand."
             variant="dashed"
+            action={
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <Button type="button" onClick={() => setShowResumeUpload(true)}>
+                  <UploadIcon className="size-4" />
+                  Upload resume
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddNew}
+                  disabled={draftFetcher.state === 'submitting'}
+                  isLoading={draftFetcher.state === 'submitting'}
+                  loadingLabel="Creating…"
+                >
+                  <PlusIcon className="size-4" />
+                  Add a role
+                </Button>
+              </div>
+            }
           />
         )}
       </div>

@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import type { InboxStreamItemData } from '~/components/inbox/InboxStreamItem.types';
 import {
   appendCachedInboxItems,
-  readCachedInboxItems,
+  readCachedInboxSnapshot,
   replaceCachedInboxItems,
 } from '~/services/inbox/cache';
 import { getContentRoute } from '~/services/navigation/routes';
@@ -40,7 +40,8 @@ function toInboxStreamItem(item: InboxStreamItem): InboxStreamItemData {
 
 export function useInboxStreamItems({ enabled = true }: UseInboxStreamItemsOptions = {}) {
   const client = useApiClient();
-  const cachedItems = readCachedInboxItems();
+  const cachedSnapshot = readCachedInboxSnapshot();
+  const cachedItems = cachedSnapshot.items;
 
   const inboxQuery = useInfiniteQuery<
     InboxOutput,
@@ -70,7 +71,10 @@ export function useInboxStreamItems({ enabled = true }: UseInboxStreamItemsOptio
       cachedItems.length > 0
         ? { pages: [{ items: cachedItems, nextCursor: null }], pageParams: [null] }
         : undefined,
-    initialDataUpdatedAt: cachedItems.length > 0 ? 0 : undefined,
+    // Trust the cache's real age instead of forcing `0` (always-stale): a fresh
+    // cache read then skips an immediate background refetch, avoiding the
+    // visible reflow of cache-rendered rows being replaced moments after mount.
+    initialDataUpdatedAt: cachedItems.length > 0 ? (cachedSnapshot.savedAt ?? 0) : undefined,
     staleTime: INBOX_STREAM_STALE_TIME_MS,
     enabled,
   });

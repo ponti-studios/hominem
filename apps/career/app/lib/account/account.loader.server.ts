@@ -8,14 +8,14 @@ export async function loadAccountPageData({
   currentPortfolio,
 }: {
   user: AccountPageUser;
-  currentPortfolio: PortfolioRecord | null;
+  currentPortfolio: PortfolioRecord;
 }): Promise<AccountLoaderData> {
   const socialLinks = await SocialLinksRepository.get(db, user.id);
 
   return {
     user,
     currentPortfolio,
-    hasPortfolio: currentPortfolio !== null,
+    hasPortfolio: true,
     socialLinks,
   };
 }

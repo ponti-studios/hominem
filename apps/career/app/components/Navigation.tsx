@@ -1,71 +1,157 @@
-import { ChevronDown } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@hominem/ui';
+import {
+  BriefcaseBusinessIcon,
+  ClipboardListIcon,
+  EyeIcon,
+  FolderKanbanIcon,
+  LogInIcon,
+  MenuIcon,
+  MessageSquareQuoteIcon,
+  SparklesIcon,
+  UserPlusIcon,
+  UserRoundIcon,
+  type LucideIcon,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 
 import { cn } from '~/lib/utils';
 
-import { useUser } from '../hooks/useAuth';
+import { useHasPortfolio, useUser } from '../hooks/useAuth';
 
-const PORTFOLIO_LINKS = [
-  { href: '/work', label: 'Work', fullLabel: 'Work Experience', end: false },
-  { href: '/projects', label: 'Projects', fullLabel: 'Projects', end: false },
-  { href: '/skills', label: 'Skills', fullLabel: 'Skills', end: true },
-  { href: '/testimonials', label: 'Testimonials', fullLabel: 'Testimonials', end: true },
+type NavItem = {
+  href: string;
+  label: string;
+  end: boolean;
+  icon: LucideIcon;
+};
+
+const PORTFOLIO_LINKS: readonly NavItem[] = [
+  {
+    href: '/work',
+    label: 'Work',
+    end: false,
+    icon: BriefcaseBusinessIcon,
+  },
+  {
+    href: '/projects',
+    label: 'Projects',
+    end: false,
+    icon: FolderKanbanIcon,
+  },
+  {
+    href: '/skills',
+    label: 'Skills',
+    end: true,
+    icon: SparklesIcon,
+  },
+  {
+    href: '/testimonials',
+    label: 'Testimonials',
+    end: true,
+    icon: MessageSquareQuoteIcon,
+  },
 ] as const;
 
-const PUBLIC_LINKS = [{ href: '/demo', label: 'Demo', end: true }] as const;
-
-const UNAUTHENTICATED_LINKS = [
-  { href: '/login', label: 'Log in', end: true },
-  { href: '/onboarding', label: 'Sign up', end: true },
+const PUBLIC_LINKS: readonly NavItem[] = [
+  { href: '/demo', label: 'Demo', end: true, icon: EyeIcon },
 ] as const;
 
-const AUTHENTICATED_LINKS = [
-  { href: '/applications', label: 'Applications', end: false },
-  { href: '/account', label: 'Account', end: false },
+const UNAUTHENTICATED_LINKS: readonly NavItem[] = [
+  { href: '/login', label: 'Log in', end: true, icon: LogInIcon },
+  { href: '/onboarding', label: 'Sign up', end: true, icon: UserPlusIcon },
 ] as const;
 
-const navLinkClass = (isActive: boolean) =>
+const AUTHENTICATED_LINKS: readonly NavItem[] = [
+  {
+    href: '/applications',
+    label: 'Applications',
+    end: false,
+    icon: ClipboardListIcon,
+  },
+  {
+    href: '/account',
+    label: 'Account',
+    end: false,
+    icon: UserRoundIcon,
+  },
+] as const;
+
+const iconLinkClass = (isActive: boolean) =>
   cn(
-    'px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide whitespace-nowrap uppercase transition-colors',
-    isActive ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground',
+    'inline-flex size-9 items-center justify-center rounded-full transition-colors',
+    isActive
+      ? 'bg-foreground text-background'
+      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
   );
 
-const pillShellClassName =
-  'w-full max-w-6xl flex items-center justify-between rounded-full border border-border bg-card px-4 py-2 shadow-sm';
+const menuItemClass = (isActive: boolean) =>
+  cn(
+    'flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+    isActive
+      ? 'bg-foreground text-background'
+      : 'text-foreground hover:bg-muted focus:bg-muted',
+  );
+
+function isLinkActive(pathname: string, href: string, end: boolean) {
+  return end ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function IconNavLink({ item }: { item: NavItem }) {
+  const Icon = item.icon;
+
+  return (
+    <NavLink
+      to={item.href}
+      end={item.end}
+      title={item.label}
+      aria-label={item.label}
+      className={({ isActive }) => iconLinkClass(isActive)}
+    >
+      <Icon className="size-4" aria-hidden />
+    </NavLink>
+  );
+}
 
 export default function Navigation() {
   const user = useUser();
+  const hasPortfolio = useHasPortfolio();
   const location = useLocation();
   const isAuthenticated = Boolean(user);
-  const [portfolioOpen, setPortfolioOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    function handleOutsideClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setPortfolioOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
-
-  useEffect(() => {
-    setPortfolioOpen(false);
+    setMenuOpen(false);
   }, [location.pathname]);
 
-  const isPortfolioActive = PORTFOLIO_LINKS.some((link) =>
-    link.end ? location.pathname === link.href : location.pathname.startsWith(link.href),
-  );
-
+  // Portfolio-gated product links only when the user can actually open them.
+  const primaryLinks = isAuthenticated && hasPortfolio ? PORTFOLIO_LINKS : [];
   const trailingLinks = isAuthenticated
-    ? AUTHENTICATED_LINKS
+    ? hasPortfolio
+      ? AUTHENTICATED_LINKS
+      : []
     : [...PUBLIC_LINKS, ...UNAUTHENTICATED_LINKS];
+  const menuLinks = [...primaryLinks, ...trailingLinks];
+  const showNav = menuLinks.length > 0;
+
+  const menuHasActive = menuLinks.some((link) =>
+    isLinkActive(location.pathname, link.href, link.end),
+  );
 
   return (
     <header className="pointer-events-none fixed inset-x-0 top-5 z-50 flex justify-center px-4">
-      <div className={cn(pillShellClassName, 'pointer-events-auto')}>
+      <div
+        className={cn(
+          'pointer-events-auto flex w-full max-w-6xl items-center justify-between rounded-full border border-border bg-card px-3 py-1.5 shadow-sm sm:px-4',
+        )}
+      >
         <Link
           to="/"
           className="flex shrink-0 items-center px-2 text-sm font-semibold tracking-tight text-foreground"
@@ -73,81 +159,80 @@ export default function Navigation() {
           Career
         </Link>
 
-        <div className="flex items-center gap-1">
-          {isAuthenticated ? (
-            <>
-              <nav className="hidden items-center gap-1 sm:flex" aria-label="Portfolio">
-                {PORTFOLIO_LINKS.map((link) => (
-                  <NavLink
-                    key={link.href}
-                    to={link.href}
-                    end={link.end}
-                    className={({ isActive }) => navLinkClass(isActive)}
+        {showNav ? (
+          <>
+            {/* md+: icon row */}
+            <nav className="hidden items-center gap-0.5 md:flex" aria-label="Main">
+              {primaryLinks.map((link) => (
+                <IconNavLink key={link.href} item={link} />
+              ))}
+              {primaryLinks.length > 0 && trailingLinks.length > 0 ? (
+                <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+              ) : null}
+              {trailingLinks.map((link) => (
+                <IconNavLink key={link.href} item={link} />
+              ))}
+            </nav>
+
+            {/* < md: collapse right side into menu */}
+            <div className="md:hidden">
+              <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Open menu"
+                    title="Menu"
+                    className={iconLinkClass(menuHasActive && !menuOpen)}
                   >
-                    {link.label}
-                  </NavLink>
-                ))}
-              </nav>
-
-              <div className="relative sm:hidden" ref={dropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setPortfolioOpen((prev) => !prev)}
-                  className={cn(
-                    'px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-colors',
-                    isPortfolioActive
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
+                    <MenuIcon className="size-4" aria-hidden />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={12}
+                  className="w-56 rounded-2xl border-border p-2 shadow-md"
                 >
-                  <span className="flex items-center gap-1">
-                    Portfolio
-                    <ChevronDown
-                      className={cn(
-                        'h-3.5 w-3.5 transition-transform',
-                        portfolioOpen && 'rotate-180',
-                      )}
-                    />
-                  </span>
-                </button>
-
-                {portfolioOpen && (
-                  <div className="absolute right-0 top-[calc(100%+0.75rem)] w-52 rounded-3xl border border-border bg-card p-2 shadow-sm">
-                    {PORTFOLIO_LINKS.map((link) => (
-                      <NavLink
-                        key={link.href}
-                        to={link.href}
-                        end={link.end}
-                        className={({ isActive }) =>
-                          cn(
-                            'flex items-center rounded-2xl px-3 py-2 text-xs font-semibold tracking-wide uppercase transition-colors',
-                            isActive
-                              ? 'bg-foreground text-background'
-                              : 'text-muted-foreground hover:text-foreground',
-                          )
-                        }
-                      >
-                        {link.fullLabel}
-                      </NavLink>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          ) : null}
-
-          {trailingLinks.map((link) => (
-            <NavLink
-              key={link.href}
-              to={link.href}
-              end={link.end}
-              className={({ isActive }) => navLinkClass(isActive)}
-            >
-              {link.label}
-            </NavLink>
-          ))}
-        </div>
+                  {isAuthenticated && hasPortfolio ? (
+                    <>
+                      <DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        Portfolio
+                      </DropdownMenuLabel>
+                      {PORTFOLIO_LINKS.map((link) => (
+                        <MenuNavItem key={link.href} item={link} pathname={location.pathname} />
+                      ))}
+                      <DropdownMenuSeparator className="my-2" />
+                      <DropdownMenuLabel className="px-3 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        Account
+                      </DropdownMenuLabel>
+                      {AUTHENTICATED_LINKS.map((link) => (
+                        <MenuNavItem key={link.href} item={link} pathname={location.pathname} />
+                      ))}
+                    </>
+                  ) : (
+                    menuLinks.map((link) => (
+                      <MenuNavItem key={link.href} item={link} pathname={location.pathname} />
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </>
+        ) : null}
       </div>
     </header>
+  );
+}
+
+function MenuNavItem({ item, pathname }: { item: NavItem; pathname: string }) {
+  const Icon = item.icon;
+  const active = isLinkActive(pathname, item.href, item.end);
+
+  return (
+    <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+      <NavLink to={item.href} end={item.end} className={menuItemClass(active)}>
+        <Icon className="size-4 shrink-0" aria-hidden />
+        <span>{item.label}</span>
+      </NavLink>
+    </DropdownMenuItem>
   );
 }

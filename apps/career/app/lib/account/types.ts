@@ -9,8 +9,8 @@ export interface AccountPageUser {
 
 export interface AccountLoaderData {
   user: AccountPageUser;
-  currentPortfolio: PortfolioRecord | null;
-  hasPortfolio: boolean;
+  currentPortfolio: PortfolioRecord;
+  hasPortfolio: true;
   socialLinks: UserSocialLinksRecord | null;
 }
 

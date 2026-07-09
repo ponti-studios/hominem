@@ -3,12 +3,11 @@
  * Please do not edit it manually.
  */
 
-import type { ColumnType } from 'kysely';
+import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
 
 export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
 
@@ -699,17 +698,6 @@ export interface AppSkills {
   yearsOfExperience: number | null;
 }
 
-export interface AppSocialLinks {
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  github: string | null;
-  id: Generated<string>;
-  linkedin: string | null;
-  portfolioId: string;
-  twitter: string | null;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-  website: string | null;
-}
-
 export interface AppSpaceInvites {
   acceptedAt: ColumnType<string, Date | string, Date | string> | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -987,6 +975,207 @@ export interface Jwks {
   publicKey: string;
 }
 
+export interface LabsArticles {
+  description: string | null;
+  feedId: number;
+  fetchedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<number>;
+  imageUrl: string | null;
+  publishedAt: ColumnType<string, Date | string, Date | string> | null;
+  rejectionCount: Generated<number>;
+  rejectionReason: string | null;
+  status: Generated<string>;
+  title: string;
+  url: string;
+}
+
+export interface LabsCaseUpdates {
+  caseId: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: string;
+  neutralContent: string;
+  rawContent: string;
+  round: number;
+}
+
+export interface LabsCovidData {
+  aged65Older: number | null;
+  aged70Older: number | null;
+  cardiovascDeathRate: number | null;
+  continent: string | null;
+  date: ColumnType<string, Date | string, Date | string> | null;
+  diabetesPrevalence: number | null;
+  excessMortality: number | null;
+  excessMortalityCumulative: number | null;
+  excessMortalityCumulativeAbsolute: number | null;
+  excessMortalityCumulativePerMillion: number | null;
+  extremePoverty: number | null;
+  femaleSmokers: number | null;
+  gdpPerCapita: number | null;
+  handwashingFacilities: number | null;
+  hospitalBedsPerThousand: number | null;
+  hospPatients: number | null;
+  hospPatientsPerMillion: number | null;
+  humanDevelopmentIndex: number | null;
+  icuPatients: number | null;
+  icuPatientsPerMillion: number | null;
+  id: Generated<number>;
+  isoCode: string | null;
+  lifeExpectancy: number | null;
+  location: string | null;
+  maleSmokers: number | null;
+  medianAge: number | null;
+  newCases: number | null;
+  newCasesPerMillion: number | null;
+  newCasesSmoothed: number | null;
+  newCasesSmoothedPerMillion: number | null;
+  newDeaths: number | null;
+  newDeathsPerMillion: number | null;
+  newDeathsSmoothed: number | null;
+  newDeathsSmoothedPerMillion: number | null;
+  newPeopleVaccinatedSmoothed: number | null;
+  newPeopleVaccinatedSmoothedPerHundred: number | null;
+  newTests: number | null;
+  newTestsPerThousand: number | null;
+  newTestsSmoothed: number | null;
+  newTestsSmoothedPerThousand: number | null;
+  newVaccinations: number | null;
+  newVaccinationsSmoothed: number | null;
+  newVaccinationsSmoothedPerMillion: number | null;
+  peopleFullyVaccinated: Int8 | null;
+  peopleFullyVaccinatedPerHundred: number | null;
+  peopleVaccinated: Int8 | null;
+  peopleVaccinatedPerHundred: number | null;
+  population: Int8 | null;
+  populationDensity: number | null;
+  positiveRate: number | null;
+  reproductionRate: number | null;
+  stringencyIndex: number | null;
+  testsPerCase: number | null;
+  testsUnits: string | null;
+  totalBoosters: Int8 | null;
+  totalBoostersPerHundred: number | null;
+  totalCases: number | null;
+  totalCasesPerMillion: number | null;
+  totalDeaths: number | null;
+  totalDeathsPerMillion: number | null;
+  totalTests: number | null;
+  totalTestsPerThousand: number | null;
+  totalVaccinations: Int8 | null;
+  totalVaccinationsPerHundred: number | null;
+  weeklyHospAdmissions: number | null;
+  weeklyHospAdmissionsPerMillion: number | null;
+  weeklyIcuAdmissions: number | null;
+  weeklyIcuAdmissionsPerMillion: number | null;
+}
+
+export interface LabsDailyPuzzles {
+  answer: string;
+  answerType: string;
+  articleId: number;
+  clue: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  dateUtc: ColumnType<string, Date | string, Date | string>;
+  detail: string;
+  gameId: number;
+  id: Generated<number>;
+  normalizedAnswer: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface LabsDrizzleMigrations {
+  createdAt: Int8 | null;
+  hash: string;
+  id: Generated<number>;
+}
+
+export interface LabsFeedGames {
+  feedId: number;
+  gameId: number;
+}
+
+export interface LabsFeeds {
+  active: Generated<boolean>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<number>;
+  kind: Generated<string>;
+  label: string;
+  url: string;
+}
+
+export interface LabsGames {
+  active: Generated<boolean>;
+  answerLength: Generated<number>;
+  articleExpiryDays: Generated<number>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<number>;
+  name: string;
+  repeatWindowDays: Generated<number>;
+  slug: string;
+  systemPromptPath: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface LabsRelationshipCases {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: string;
+  label: string | null;
+  neutralSituation: string;
+  question: string;
+  quorumSize: Generated<number>;
+  rawSituation: string;
+  status: Generated<string>;
+  userId: string | null;
+}
+
+export interface LabsRelationshipVerdicts {
+  caseId: string;
+  comment: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  fingerprint: string;
+  id: string;
+  updateId: string | null;
+  updateRound: Generated<number>;
+  userId: string | null;
+  value: string;
+}
+
+export interface LabsSearchDocuments {
+  body: string;
+  category: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  embedding: string;
+  featured: Generated<boolean>;
+  id: Generated<number>;
+  kind: string;
+  location: string;
+  popularity: Generated<number>;
+  publishedAt: ColumnType<string, Date | string, Date | string>;
+  searchText: string;
+  searchVector: Generated<string>;
+  sourceUrl: string;
+  subtitle: string;
+  summary: string;
+  tags: Json;
+  title: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  year: number;
+}
+
+export interface LabsTflCameras {
+  available: boolean | null;
+  commonName: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<number>;
+  imageUrl: string | null;
+  lat: number;
+  lng: number;
+  tflId: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  videoUrl: string | null;
+  view: string | null;
+}
+
 export interface OpsAuditLogs {
   action: string;
   actorUserid: string | null;
@@ -1056,69 +1245,80 @@ export interface Verification {
 
 export interface DB {
   account: Account;
-  'app.aiUsageEvents': AppAiUsageEvents;
-  'app.applicationFiles': AppApplicationFiles;
-  'app.applicationNotes': AppApplicationNotes;
-  'app.bookmarks': AppBookmarks;
-  'app.careerEvents': AppCareerEvents;
-  'app.certifications': AppCertifications;
-  'app.chatMessages': AppChatMessages;
-  'app.chats': AppChats;
-  'app.companies': AppCompanies;
-  'app.entities': AppEntities;
-  'app.entityLinks': AppEntityLinks;
-  'app.eventAttendees': AppEventAttendees;
-  'app.events': AppEvents;
-  'app.files': AppFiles;
-  'app.financeAccounts': AppFinanceAccounts;
-  'app.financeInstitutions': AppFinanceInstitutions;
-  'app.financeTransactions': AppFinanceTransactions;
-  'app.goals': AppGoals;
-  'app.jobApplications': AppJobApplications;
-  'app.keyResults': AppKeyResults;
-  'app.musicAlbums': AppMusicAlbums;
-  'app.musicArtists': AppMusicArtists;
-  'app.musicListens': AppMusicListens;
-  'app.musicPlaylists': AppMusicPlaylists;
-  'app.musicPlaylistTracks': AppMusicPlaylistTracks;
-  'app.musicTracks': AppMusicTracks;
-  'app.noteFiles': AppNoteFiles;
-  'app.notes': AppNotes;
-  'app.noteShares': AppNoteShares;
-  'app.noteVersions': AppNoteVersions;
-  'app.people': AppPeople;
-  'app.places': AppPlaces;
-  'app.plaidItems': AppPlaidItems;
-  'app.portfolioAnalytics': AppPortfolioAnalytics;
-  'app.portfolios': AppPortfolios;
-  'app.possessionContainers': AppPossessionContainers;
-  'app.possessionEvents': AppPossessionEvents;
-  'app.possessions': AppPossessions;
-  'app.projects': AppProjects;
-  'app.skills': AppSkills;
-  'app.socialLinks': AppSocialLinks;
-  'app.spaceInvites': AppSpaceInvites;
-  'app.spaceItems': AppSpaceItems;
-  'app.spaceMembers': AppSpaceMembers;
-  'app.spaces': AppSpaces;
-  'app.spaceTags': AppSpaceTags;
-  'app.tagAliases': AppTagAliases;
-  'app.tagAssignments': AppTagAssignments;
-  'app.tags': AppTags;
-  'app.taskAssignments': AppTaskAssignments;
-  'app.tasks': AppTasks;
-  'app.testimonials': AppTestimonials;
-  'app.travelTrips': AppTravelTrips;
-  'app.userSocialLinks': AppUserSocialLinks;
-  'app.vectorDocuments': AppVectorDocuments;
-  'app.videoChannels': AppVideoChannels;
-  'app.videoViews': AppVideoViews;
-  'app.workExperiences': AppWorkExperiences;
+  "app.aiUsageEvents": AppAiUsageEvents;
+  "app.applicationFiles": AppApplicationFiles;
+  "app.applicationNotes": AppApplicationNotes;
+  "app.bookmarks": AppBookmarks;
+  "app.careerEvents": AppCareerEvents;
+  "app.certifications": AppCertifications;
+  "app.chatMessages": AppChatMessages;
+  "app.chats": AppChats;
+  "app.companies": AppCompanies;
+  "app.entities": AppEntities;
+  "app.entityLinks": AppEntityLinks;
+  "app.eventAttendees": AppEventAttendees;
+  "app.events": AppEvents;
+  "app.files": AppFiles;
+  "app.financeAccounts": AppFinanceAccounts;
+  "app.financeInstitutions": AppFinanceInstitutions;
+  "app.financeTransactions": AppFinanceTransactions;
+  "app.goals": AppGoals;
+  "app.jobApplications": AppJobApplications;
+  "app.keyResults": AppKeyResults;
+  "app.musicAlbums": AppMusicAlbums;
+  "app.musicArtists": AppMusicArtists;
+  "app.musicListens": AppMusicListens;
+  "app.musicPlaylists": AppMusicPlaylists;
+  "app.musicPlaylistTracks": AppMusicPlaylistTracks;
+  "app.musicTracks": AppMusicTracks;
+  "app.noteFiles": AppNoteFiles;
+  "app.notes": AppNotes;
+  "app.noteShares": AppNoteShares;
+  "app.noteVersions": AppNoteVersions;
+  "app.people": AppPeople;
+  "app.places": AppPlaces;
+  "app.plaidItems": AppPlaidItems;
+  "app.portfolioAnalytics": AppPortfolioAnalytics;
+  "app.portfolios": AppPortfolios;
+  "app.possessionContainers": AppPossessionContainers;
+  "app.possessionEvents": AppPossessionEvents;
+  "app.possessions": AppPossessions;
+  "app.projects": AppProjects;
+  "app.skills": AppSkills;
+  "app.spaceInvites": AppSpaceInvites;
+  "app.spaceItems": AppSpaceItems;
+  "app.spaceMembers": AppSpaceMembers;
+  "app.spaces": AppSpaces;
+  "app.spaceTags": AppSpaceTags;
+  "app.tagAliases": AppTagAliases;
+  "app.tagAssignments": AppTagAssignments;
+  "app.tags": AppTags;
+  "app.taskAssignments": AppTaskAssignments;
+  "app.tasks": AppTasks;
+  "app.testimonials": AppTestimonials;
+  "app.travelTrips": AppTravelTrips;
+  "app.userSocialLinks": AppUserSocialLinks;
+  "app.vectorDocuments": AppVectorDocuments;
+  "app.videoChannels": AppVideoChannels;
+  "app.videoViews": AppVideoViews;
+  "app.workExperiences": AppWorkExperiences;
   deviceCode: DeviceCode;
   gooseDbVersion: GooseDbVersion;
   jwks: Jwks;
-  'ops.auditLogs': OpsAuditLogs;
-  'ops.searchLogs': OpsSearchLogs;
+  "labs.articles": LabsArticles;
+  "labs.caseUpdates": LabsCaseUpdates;
+  "labs.covidData": LabsCovidData;
+  "labs.dailyPuzzles": LabsDailyPuzzles;
+  "labs.DrizzleMigrations": LabsDrizzleMigrations;
+  "labs.feedGames": LabsFeedGames;
+  "labs.feeds": LabsFeeds;
+  "labs.games": LabsGames;
+  "labs.relationshipCases": LabsRelationshipCases;
+  "labs.relationshipVerdicts": LabsRelationshipVerdicts;
+  "labs.searchDocuments": LabsSearchDocuments;
+  "labs.tflCameras": LabsTflCameras;
+  "ops.auditLogs": OpsAuditLogs;
+  "ops.searchLogs": OpsSearchLogs;
   passkey: Passkey;
   session: Session;
   user: User;

@@ -12,6 +12,8 @@ interface UploadResumeFormProps {
   onUploadComplete: (response: UploadResumeApiResponse) => void;
   onUploadError?: (error: string) => void;
   mode?: 'create' | 'replace';
+  /** When false, only the drop zone + actions render (parent supplies page title). */
+  showHeading?: boolean;
 }
 
 type UploadStatus = 'idle' | 'pending' | 'error';
@@ -39,6 +41,7 @@ export function UploadResumeForm({
   onUploadComplete,
   onUploadError,
   mode = 'create',
+  showHeading = true,
 }: UploadResumeFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -187,12 +190,14 @@ export function UploadResumeForm({
 
   return (
     <div className="w-full max-w-md">
-      <div className="mb-4">
-        <h1 className="heading-3 text-foreground">Upload your resume</h1>
-        <p className="body-4 text-muted-foreground">
-          We'll extract your information and build your portfolio automatically.
-        </p>
-      </div>
+      {showHeading ? (
+        <div className="mb-4">
+          <h1 className="heading-3 text-foreground">Upload your resume</h1>
+          <p className="body-4 text-muted-foreground">
+            We'll extract your information and build your portfolio automatically.
+          </p>
+        </div>
+      ) : null}
 
       <Card>
         <CardContent className="space-y-4">

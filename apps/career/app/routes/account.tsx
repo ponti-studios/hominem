@@ -1,3 +1,5 @@
+import { redirect } from 'react-router';
+
 import { AccountPage } from '~/components/account/AccountPage';
 import { handleAccountAction } from '~/lib/account/account.actions.server';
 import { loadAccountPageData } from '~/lib/account/account.loader.server';
@@ -9,9 +11,13 @@ export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   const currentPortfolio = context.get(portfolioContext);
 
+  if (!currentPortfolio) {
+    throw redirect('/onboarding');
+  }
+
   return loadAccountPageData({
     user,
-    currentPortfolio: currentPortfolio ?? null,
+    currentPortfolio,
   });
 }
 

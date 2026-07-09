@@ -24,6 +24,7 @@ import Navigation from './components/Navigation';
 
 import './app.css';
 import { NavigationProgress } from './components/NavigationProgress';
+import { fetchCurrentPortfolio } from './lib/api.server';
 import { serverEnv } from './lib/env';
 import { sessionMiddleware, userContext } from './lib/middleware';
 
@@ -103,10 +104,11 @@ export const middleware: Route.MiddlewareFunction[] = [
   (args, next) => sessionMiddleware(args, next),
 ];
 
-export async function loader({ context }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
   const user = context.get(userContext);
+  const hasPortfolio = user ? (await fetchCurrentPortfolio(request)) !== null : false;
 
-  return data({ user, apiBaseUrl: serverEnv().VITE_PUBLIC_API_URL });
+  return data({ user, hasPortfolio, apiBaseUrl: serverEnv().VITE_PUBLIC_API_URL });
 }
 
 // Add route handle to enable accessing loader data from child routes

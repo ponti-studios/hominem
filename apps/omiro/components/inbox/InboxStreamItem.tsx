@@ -1,7 +1,7 @@
 import { MenuView } from '@expo/ui/community/menu';
 import { Link, useRouter } from 'expo-router';
-import React, { memo, useCallback, useRef } from 'react';
-import { Alert, Pressable, View } from 'react-native';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import type { SharedValue } from 'react-native-reanimated';
@@ -44,6 +44,14 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
     chatId: item.entityId,
   });
   const isPending = isDeletingNote || isArchivingChat;
+  const [isRowPressed, setIsRowPressed] = useState(false);
+  // Link.Trigger/asChild merges style via `{...slotStyle, ...childStyle}` (@radix-ui/react-slot),
+  // which silently drops a function-style Pressable (spreading a function yields {}).
+  // Keep this as a single flattened plain object so the merge preserves `contentButton`.
+  const contentButtonStyle = useMemo(
+    () => StyleSheet.flatten([styles.contentButton, isRowPressed && styles.rowPressed]),
+    [styles, isRowPressed],
+  );
 
   const handleDelete = useCallback(() => {
     swipeableRef.current?.close();
@@ -105,7 +113,9 @@ export const InboxStreamItem = memo(({ item, swipeEnabled = true }: InboxStreamI
             accessibilityLabel={`${primaryText}, ${isChat ? 'Chat' : 'Note'}`}
             accessibilityRole="button"
             disabled={isPending}
-            style={({ pressed }) => [styles.contentButton, pressed && styles.rowPressed]}
+            onPressIn={() => setIsRowPressed(true)}
+            onPressOut={() => setIsRowPressed(false)}
+            style={contentButtonStyle}
             testID={`inbox-item-${item.kind}-open`}
           >
             <View style={styles.titleRow}>
