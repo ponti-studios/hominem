@@ -1,7 +1,7 @@
 import ExpoSegmentedControl from '@expo/ui/community/segmented-control';
 import { Host, RNHostView } from '@expo/ui/swift-ui';
 import { Stack, useIsFocused, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
