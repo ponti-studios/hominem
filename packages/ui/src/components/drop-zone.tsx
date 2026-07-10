@@ -255,9 +255,7 @@ export function DropZone({
                 {busyDescription ? (
                   <p className="body-4 text-muted-foreground">{busyDescription}</p>
                 ) : null}
-                {file ? (
-                  <p className="body-4 truncate text-muted-foreground">{file.name}</p>
-                ) : null}
+                {file ? <p className="body-4 truncate text-muted-foreground">{file.name}</p> : null}
               </div>
               <div
                 className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
@@ -271,9 +269,7 @@ export function DropZone({
 
           {!showDragging && status === 'failed' ? (
             <div className="w-full space-y-2">
-              {file ? (
-                <p className="subheading-4 truncate text-foreground">{file.name}</p>
-              ) : null}
+              {file ? <p className="subheading-4 truncate text-foreground">{file.name}</p> : null}
               {error ? <p className="body-3 text-destructive">{error}</p> : null}
               {failedActions}
             </div>

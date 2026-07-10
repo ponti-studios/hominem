@@ -189,9 +189,10 @@ async function findOrCreateEvent(
     .executeTakeFirst();
 
   const startsAt = timestamp(occurrence.startsAt, 'startsAt');
-  const endsAt = occurrence.endsAt === undefined || occurrence.endsAt === null
-    ? null
-    : timestamp(occurrence.endsAt, 'endsAt');
+  const endsAt =
+    occurrence.endsAt === undefined || occurrence.endsAt === null
+      ? null
+      : timestamp(occurrence.endsAt, 'endsAt');
   if (endsAt && endsAt < startsAt) {
     throw new ValidationError('endsAt must be on or after startsAt.');
   }
@@ -260,7 +261,9 @@ async function findOrCreateImportRecord(
       occurredAt: timestamp(occurrence.startsAt, 'startsAt'),
       metadata: occurrence.metadata ?? {},
     })
-    .onConflict((conflict) => conflict.columns(['sourceId', 'externalId', 'contentHash']).doNothing())
+    .onConflict((conflict) =>
+      conflict.columns(['sourceId', 'externalId', 'contentHash']).doNothing(),
+    )
     .returningAll()
     .executeTakeFirst();
   if (inserted) {
@@ -286,16 +289,18 @@ async function upsertOccurrence(
   occurrence: CalendarOccurrenceImportInput,
 ): Promise<EventOccurrenceRow> {
   const startsAt = timestamp(occurrence.startsAt, 'startsAt');
-  const endsAt = occurrence.endsAt === undefined || occurrence.endsAt === null
-    ? null
-    : timestamp(occurrence.endsAt, 'endsAt');
+  const endsAt =
+    occurrence.endsAt === undefined || occurrence.endsAt === null
+      ? null
+      : timestamp(occurrence.endsAt, 'endsAt');
   if (endsAt && endsAt < startsAt) {
     throw new ValidationError('endsAt must be on or after startsAt.');
   }
 
-  const occurrenceDate = occurrence.occurrenceDate === undefined || occurrence.occurrenceDate === null
-    ? null
-    : date(occurrence.occurrenceDate, 'occurrenceDate');
+  const occurrenceDate =
+    occurrence.occurrenceDate === undefined || occurrence.occurrenceDate === null
+      ? null
+      : date(occurrence.occurrenceDate, 'occurrenceDate');
   if (occurrence.isAllDay && !occurrenceDate) {
     throw new ValidationError('occurrenceDate is required for all-day events.');
   }
@@ -337,7 +342,9 @@ export const CalendarImportRepository = {
       throw new ValidationError('At least one calendar occurrence is required.');
     }
 
-    const source = await runInTransaction((transaction) => findOrCreateSource(transaction, ownerUserid, input));
+    const source = await runInTransaction((transaction) =>
+      findOrCreateSource(transaction, ownerUserid, input),
+    );
     const importRun = (await db
       .insertInto('app.importRuns')
       .values({
@@ -356,7 +363,12 @@ export const CalendarImportRepository = {
         const imported: CalendarOccurrenceRecord[] = [];
         for (const occurrenceInput of input.occurrences) {
           const event = await findOrCreateEvent(transaction, ownerUserid, source, occurrenceInput);
-          const sourceRecord = await findOrCreateImportRecord(transaction, source, importRun, occurrenceInput);
+          const sourceRecord = await findOrCreateImportRecord(
+            transaction,
+            source,
+            importRun,
+            occurrenceInput,
+          );
           const occurrence = await upsertOccurrence(transaction, event, occurrenceInput);
 
           await transaction

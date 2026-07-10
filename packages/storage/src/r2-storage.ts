@@ -33,6 +33,11 @@ function getIsTestMode(): boolean {
   return process.env.NODE_ENV === 'test';
 }
 
+function getIsLocalStorageEndpoint(endpoint: string): boolean {
+  const hostname = new URL(endpoint).hostname;
+  return ['localhost', '127.0.0.1', '::1', 'host.docker.internal', 'minio'].includes(hostname);
+}
+
 type StorageConnectionConfig = {
   endpoint: string;
   region: string;
@@ -44,30 +49,19 @@ type StorageConnectionConfig = {
   canCreateBucket: boolean;
 };
 
-function getCloudflareR2StorageConfig(): StorageConnectionConfig | null {
-  if (
-    !env.R2_ENDPOINT ||
-    !env.R2_BUCKET_NAME ||
-    !env.R2_ACCESS_KEY_ID ||
-    !env.R2_SECRET_ACCESS_KEY
-  ) {
-    return null;
-  }
+function getStorageConnectionConfig(): StorageConnectionConfig {
+  const isLocalEndpoint = getIsLocalStorageEndpoint(env.R2_ENDPOINT);
 
   return {
     endpoint: env.R2_ENDPOINT,
-    region: 'auto',
+    region: isLocalEndpoint ? 'us-east-1' : 'auto',
     bucketName: env.R2_BUCKET_NAME,
     accessKeyId: env.R2_ACCESS_KEY_ID,
     secretAccessKey: env.R2_SECRET_ACCESS_KEY,
     publicUrl: env.R2_PUBLIC_URL,
-    forcePathStyle: false,
-    canCreateBucket: false,
+    forcePathStyle: isLocalEndpoint,
+    canCreateBucket: isLocalEndpoint,
   };
-}
-
-function getStorageConnectionConfig(): StorageConnectionConfig {
-  return getCloudflareR2StorageConfig() as StorageConnectionConfig;
 }
 
 function getBucketAccessError(bucketName: string, error: unknown): StorageServiceError {

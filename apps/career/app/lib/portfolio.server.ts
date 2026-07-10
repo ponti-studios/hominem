@@ -1,8 +1,8 @@
 import type { FullPortfolioRecord, PortfolioRecord } from '@hominem/db';
 import { db, PortfolioRepository } from '@hominem/db';
 
-import type { User } from './auth.server';
 import { fetchCurrentPortfolio } from './api.server';
+import type { User } from './auth.server';
 
 export interface FullPortfolio extends FullPortfolioRecord {}
 
@@ -44,10 +44,7 @@ export function portfolioDisplayName(user: {
  * Every signed-in career user gets exactly one portfolio.
  * Creates a private empty shell on first access if missing.
  */
-export async function ensureUserPortfolio(
-  request: Request,
-  user: User,
-): Promise<PortfolioRecord> {
+export async function ensureUserPortfolio(request: Request, user: User): Promise<PortfolioRecord> {
   const existing = await fetchCurrentPortfolio(request);
   if (existing) return existing;
 

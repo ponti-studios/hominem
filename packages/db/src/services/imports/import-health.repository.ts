@@ -129,17 +129,15 @@ export class ImportHealthRepository {
       db
         .selectFrom('app.importSources as source')
         .leftJoin('app.importRuns as latestRun', (join) =>
-          join
-            .onRef('latestRun.sourceId', '=', 'source.id')
-            .on(
-              'latestRun.createdat',
-              '=',
-              sql`(
+          join.onRef('latestRun.sourceId', '=', 'source.id').on(
+            'latestRun.createdat',
+            '=',
+            sql`(
                 select max(r.createdat)
                 from app.import_runs r
                 where r.source_id = source.id
               )`,
-            ),
+          ),
         )
         .select((eb) => [
           'source.id as sourceId',
@@ -192,10 +190,13 @@ export class ImportHealthRepository {
       warnings.push(`${pendingReviewCount} import review item(s) need attention.`);
     }
     const failedReconciliationCount = reconciliations.filter(
-      (reconciliation) => reconciliation.status !== 'matched' || reconciliationHasWarning(reconciliation.details),
+      (reconciliation) =>
+        reconciliation.status !== 'matched' || reconciliationHasWarning(reconciliation.details),
     ).length;
     if (failedReconciliationCount > 0) {
-      warnings.push(`${failedReconciliationCount} recent reconciliation check(s) reported mismatches or warnings.`);
+      warnings.push(
+        `${failedReconciliationCount} recent reconciliation check(s) reported mismatches or warnings.`,
+      );
     }
 
     return {

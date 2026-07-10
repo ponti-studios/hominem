@@ -103,7 +103,11 @@ runIntegration('CalendarImportRepository', () => {
     expect(occurrences).toHaveLength(2);
     expect(occurrences.map((occurrence) => occurrence.status)).toEqual(['confirmed', 'cancelled']);
     expect(importRecords).toHaveLength(2);
-    expect(mappings.filter((mapping) => mapping.canonicalEntityId === occurrences[0]?.id)).toHaveLength(1);
-    expect(mappings.filter((mapping) => mapping.canonicalEntityId === occurrences[1]?.id)).toHaveLength(1);
+    expect(
+      mappings.filter((mapping) => mapping.canonicalEntityId === occurrences[0]?.id),
+    ).toHaveLength(1);
+    expect(
+      mappings.filter((mapping) => mapping.canonicalEntityId === occurrences[1]?.id),
+    ).toHaveLength(1);
   });
 });

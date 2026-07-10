@@ -339,9 +339,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
 
         {filteredProjects.length === 0 ? (
           <EmptyState
-            title={
-              hasFilters ? 'No projects match your filters' : 'No projects found'
-            }
+            title={hasFilters ? 'No projects match your filters' : 'No projects found'}
             description={
               hasFilters
                 ? 'Try adjusting your search or client filter'

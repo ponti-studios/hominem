@@ -52,7 +52,13 @@ export default function Onboarding() {
       </div>
 
       <div className="flex justify-center">
-        <Button type="button" variant="ghost" className="rounded-full" disabled={isUploading} asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          className="rounded-full"
+          disabled={isUploading}
+          asChild
+        >
           <Link to="/work">Skip for now</Link>
         </Button>
       </div>

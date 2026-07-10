@@ -19,7 +19,12 @@ const errorClasses = vi.hoisted(() => {
     readonly statusCode: number;
     readonly details?: Record<string, unknown>;
 
-    constructor(message: string, code = 'INTERNAL_ERROR', statusCode = 500, details?: Record<string, unknown>) {
+    constructor(
+      message: string,
+      code = 'INTERNAL_ERROR',
+      statusCode = 500,
+      details?: Record<string, unknown>,
+    ) {
       super(message);
       this.code = code;
       this.statusCode = statusCode;
@@ -105,7 +110,9 @@ describe('personal routes', () => {
   it('validates finance month queries before calling repositories', async () => {
     repositories.financeMonthlySummary.mockClear();
 
-    const response = await createApp(true).request('/api/personal/finance/monthly-summary?month=March');
+    const response = await createApp(true).request(
+      '/api/personal/finance/monthly-summary?month=March',
+    );
 
     expect(response.status).toBe(400);
     expect(repositories.financeMonthlySummary).not.toHaveBeenCalled();

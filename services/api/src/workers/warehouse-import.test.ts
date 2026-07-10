@@ -1,5 +1,5 @@
-import { randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -47,8 +47,10 @@ runIntegration('importWarehouseSnapshot', () => {
   const directories: string[] = [];
 
   afterEach(async () => {
-    for (const directory of directories.splice(0)) await rm(directory, { recursive: true, force: true });
-    for (const userId of userIds.splice(0)) await authDb.deleteFrom('user').where('id', '=', userId).execute();
+    for (const directory of directories.splice(0))
+      await rm(directory, { recursive: true, force: true });
+    for (const userId of userIds.splice(0))
+      await authDb.deleteFrom('user').where('id', '=', userId).execute();
   });
 
   it('retains every source row and normalizes calendar occurrences idempotently', async () => {
@@ -61,8 +63,14 @@ runIntegration('importWarehouseSnapshot', () => {
     const fixture = await createWarehouseFixture();
     directories.push(fixture.directory);
 
-    const first = await importWarehouseSnapshot({ ownerUserId: userId, databasePath: fixture.databasePath });
-    const second = await importWarehouseSnapshot({ ownerUserId: userId, databasePath: fixture.databasePath });
+    const first = await importWarehouseSnapshot({
+      ownerUserId: userId,
+      databasePath: fixture.databasePath,
+    });
+    const second = await importWarehouseSnapshot({
+      ownerUserId: userId,
+      databasePath: fixture.databasePath,
+    });
 
     expect(first.tables).toEqual([
       { table: 'calendar_event_occurrences', recordCount: 1 },

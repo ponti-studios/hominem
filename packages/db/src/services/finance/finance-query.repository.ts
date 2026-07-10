@@ -55,7 +55,11 @@ function parseMonth(month: string): { month: string; startsOn: string; endsBefor
   const year = Number(yearText);
   const monthIndex = Number(monthText) - 1;
   const starts = new Date(Date.UTC(year, monthIndex, 1));
-  if (Number.isNaN(starts.valueOf()) || starts.getUTCFullYear() !== year || starts.getUTCMonth() !== monthIndex) {
+  if (
+    Number.isNaN(starts.valueOf()) ||
+    starts.getUTCFullYear() !== year ||
+    starts.getUTCMonth() !== monthIndex
+  ) {
     throw new ValidationError('month must use YYYY-MM format.');
   }
 
@@ -79,7 +83,8 @@ function expenseAmount(row: { amount: unknown; transactionType: string }): numbe
 
 function incomeAmount(row: { amount: unknown; transactionType: string }): number {
   const amount = numberValue(row.amount);
-  if (row.transactionType === 'income' || row.transactionType === 'credit') return Math.max(amount, 0);
+  if (row.transactionType === 'income' || row.transactionType === 'credit')
+    return Math.max(amount, 0);
   return amount > 0 ? amount : 0;
 }
 
@@ -140,7 +145,10 @@ export class FinanceQueryRepository {
         totalSpent: roundMoney(value.totalSpent),
         transactionCount: value.transactionCount,
       }))
-      .sort((left, right) => right.totalSpent - left.totalSpent || left.merchantName.localeCompare(right.merchantName))
+      .sort(
+        (left, right) =>
+          right.totalSpent - left.totalSpent || left.merchantName.localeCompare(right.merchantName),
+      )
       .slice(0, limit);
 
     return {

@@ -110,7 +110,9 @@ const implementations = {
       scopes: ['provenance:read'],
     },
     invoke: async (ownerUserId, input) => {
-      z.object({}).strict().parse(input ?? {});
+      z.object({})
+        .strict()
+        .parse(input ?? {});
       const health = await ImportHealthRepository.getPersonalDataHealth(ownerUserId);
       return personalDataHealthSchema.parse(health);
     },

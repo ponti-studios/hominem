@@ -1,14 +1,9 @@
-import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 
-import {
-  CalendarImportRepository,
-  db,
-  runInTransaction,
-  type JsonValue,
-} from '@hominem/db';
+import { CalendarImportRepository, db, runInTransaction, type JsonValue } from '@hominem/db';
 import { importStorageService } from '@hominem/storage';
 
 const execFileAsync = promisify(execFile);
@@ -40,13 +35,20 @@ function identifier(value: string): string {
 }
 
 async function sqliteJson<T>(databasePath: string, statement: string): Promise<T> {
-  const { stdout } = await execFileAsync('/usr/bin/sqlite3', ['-readonly', '-json', databasePath, statement], {
-    maxBuffer: 128 * 1024 * 1024,
-  });
+  const { stdout } = await execFileAsync(
+    '/usr/bin/sqlite3',
+    ['-readonly', '-json', databasePath, statement],
+    {
+      maxBuffer: 128 * 1024 * 1024,
+    },
+  );
   return JSON.parse(stdout || '[]') as T;
 }
 
-async function findOrCreateWarehouseSource(ownerUserId: string, displayName: string): Promise<string> {
+async function findOrCreateWarehouseSource(
+  ownerUserId: string,
+  displayName: string,
+): Promise<string> {
   const existing = await db
     .selectFrom('app.importSources')
     .select('id')
@@ -144,21 +146,25 @@ function asCalendarRows(
     if (!startsAt || !uid || !occurrenceKey) return [];
 
     const payload = Buffer.from(JSON.stringify(row));
-    return [{
-      calendarUid: uid,
-      occurrenceKey,
-      title: typeof row.summary === 'string' && row.summary.trim() ? row.summary : '(untitled event)',
-      description: typeof row.description === 'string' ? row.description : null,
-      location: typeof row.location === 'string' ? row.location : null,
-      startsAt,
-      endsAt: typeof row.occurrence_end_utc === 'string' ? row.occurrence_end_utc : null,
-      occurrenceDate: typeof row.occurrence_date === 'string' ? row.occurrence_date : null,
-      isAllDay: row.is_all_day === 1,
-      isCancelled: row.is_cancelled === 1,
-      contentHash: sha256(payload),
-      rawObjectKey: rawObjectKeys.get(recordExternalId('calendar_event_occurrences', row, index)) ?? null,
-      metadata: { warehouse: { rawEventId: row.raw_event_id ?? null } } as JsonValue,
-    }];
+    return [
+      {
+        calendarUid: uid,
+        occurrenceKey,
+        title:
+          typeof row.summary === 'string' && row.summary.trim() ? row.summary : '(untitled event)',
+        description: typeof row.description === 'string' ? row.description : null,
+        location: typeof row.location === 'string' ? row.location : null,
+        startsAt,
+        endsAt: typeof row.occurrence_end_utc === 'string' ? row.occurrence_end_utc : null,
+        occurrenceDate: typeof row.occurrence_date === 'string' ? row.occurrence_date : null,
+        isAllDay: row.is_all_day === 1,
+        isCancelled: row.is_cancelled === 1,
+        contentHash: sha256(payload),
+        rawObjectKey:
+          rawObjectKeys.get(recordExternalId('calendar_event_occurrences', row, index)) ?? null,
+        metadata: { warehouse: { rawEventId: row.raw_event_id ?? null } } as JsonValue,
+      },
+    ];
   });
 }
 
@@ -167,7 +173,9 @@ function asCalendarRows(
  * and row is retained as an immutable artifact/record before selected domains
  * are normalized, so an incomplete mapper can never silently discard history.
  */
-export async function importWarehouseSnapshot(input: WarehouseImportInput): Promise<WarehouseImportResult> {
+export async function importWarehouseSnapshot(
+  input: WarehouseImportInput,
+): Promise<WarehouseImportResult> {
   const snapshot = await readFile(input.databasePath);
   const snapshotHash = sha256(snapshot);
   const sourceId = await findOrCreateWarehouseSource(
@@ -214,7 +222,10 @@ export async function importWarehouseSnapshot(input: WarehouseImportInput): Prom
 
     for (const table of tables) {
       const tableName = table.name;
-      const rows = await sqliteJson<SqliteRow[]>(input.databasePath, `SELECT * FROM ${identifier(tableName)}`);
+      const rows = await sqliteJson<SqliteRow[]>(
+        input.databasePath,
+        `SELECT * FROM ${identifier(tableName)}`,
+      );
       summaries.push({ table: tableName, recordCount: rows.length });
       recordsRead += rows.length;
       if (tableName === 'calendar_event_occurrences') calendarRows = rows;
@@ -245,14 +256,20 @@ export async function importWarehouseSnapshot(input: WarehouseImportInput): Prom
               rawObjectKey: artifact.objectKey,
               metadata: { warehouseTable: tableName },
             })
-            .onConflict((conflict) => conflict.columns(['sourceId', 'externalId', 'contentHash']).doNothing())
+            .onConflict((conflict) =>
+              conflict.columns(['sourceId', 'externalId', 'contentHash']).doNothing(),
+            )
             .returning('id')
             .executeTakeFirst();
           if (!sourceRecord) continue;
           recordsImported += 1;
           await transaction
             .insertInto('app.importRecordPayloads')
-            .values({ sourceRecordId: sourceRecord.id, artifactId: artifact.id, payloadHash: artifact.contentHash })
+            .values({
+              sourceRecordId: sourceRecord.id,
+              artifactId: artifact.id,
+              payloadHash: artifact.contentHash,
+            })
             .onConflict((conflict) => conflict.doNothing())
             .execute();
         }
@@ -273,16 +290,17 @@ export async function importWarehouseSnapshot(input: WarehouseImportInput): Prom
     }
 
     const calendarInput = asCalendarRows(calendarRows, calendarRawObjectKeys);
-    const calendarResult = calendarInput.length === 0
-      ? null
-      : await CalendarImportRepository.importOccurrences(input.ownerUserId, {
-          provider: 'warehouse',
-          sourceExternalAccountId: 'warehouse-sqlite',
-          sourceDisplayName: input.sourceDisplayName?.trim() || 'Warehouse SQLite',
-          inputObjectKey: snapshotArtifact.objectKey,
-          inputChecksum: snapshotHash,
-          occurrences: calendarInput,
-        });
+    const calendarResult =
+      calendarInput.length === 0
+        ? null
+        : await CalendarImportRepository.importOccurrences(input.ownerUserId, {
+            provider: 'warehouse',
+            sourceExternalAccountId: 'warehouse-sqlite',
+            sourceDisplayName: input.sourceDisplayName?.trim() || 'Warehouse SQLite',
+            inputObjectKey: snapshotArtifact.objectKey,
+            inputChecksum: snapshotHash,
+            occurrences: calendarInput,
+          });
 
     await db
       .updateTable('app.importRuns')
