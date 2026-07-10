@@ -3,6 +3,14 @@ packages:
   - 'services/*'
   - 'packages/*'
 
+# Single source of truth for shared dependency versions.
+# Reference from package.json with "catalog:" (e.g. "react": "catalog:").
+catalog:
+  react: 19.2.7
+  react-dom: 19.2.7
+  '@types/react': 19.2.10
+  '@types/react-dom': 19.1.7
+
 overrides:
   ua-parser-js: 1.0.39
   prismjs: '>=1.30.0'
@@ -17,6 +25,11 @@ overrides:
   kysely: '>=0.28.17'
   '@protobufjs/utf8': '>=1.1.1'
   protobufjs: '>=7.5.6'
+  # Force every workspace + transitive consumer onto the catalog React.
+  react: 'catalog:'
+  react-dom: 'catalog:'
+  '@types/react': 'catalog:'
+  '@types/react-dom': 'catalog:'
 
 nodeVersion: 24.14.1
 engineStrict: true

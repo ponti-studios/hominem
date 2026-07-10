@@ -36,9 +36,9 @@
     "date-fns": "^3.6.0"
   },
   "devDependencies": {
-    "react": "19.2.3"
+    "react": "catalog:"
   },
   "peerDependencies": {
-    "react": "19.2.3"
+    "react": "catalog:"
   }
 }
