@@ -7,7 +7,6 @@ import { Alert } from 'react-native';
 
 import { writeCachedNote } from '~/services/content-cache';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
-import { useTopAnchoredInbox } from '~/services/inbox/top-anchored-inbox';
 import { noteKeys } from '~/services/notes/query-keys';
 import t from '~/translations';
 
@@ -18,7 +17,6 @@ const NOTE_SAVE_DEBOUNCE_MS = 600;
 export function useNoteEditor(noteId: string) {
   const client = useApiClient();
   const queryClient = useQueryClient();
-  const { requestTopReveal } = useTopAnchoredInbox();
   const hasShownSaveErrorRef = useRef(false);
 
   const commitServerResponse = useCallback(
@@ -30,10 +28,9 @@ export function useNoteEditor(noteId: string) {
         if (!current) return [updatedNote];
         return current.map((entry) => (entry.id === updatedNote.id ? updatedNote : entry));
       });
-      requestTopReveal();
       void invalidateInboxQueries(queryClient);
     },
-    [queryClient, requestTopReveal],
+    [queryClient],
   );
 
   const persistSave = useCallback(

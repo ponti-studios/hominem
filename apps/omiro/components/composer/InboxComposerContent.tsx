@@ -13,7 +13,6 @@ import { getVoiceComposerErrorPresentation } from '~/components/composer/voiceCo
 import { VoiceRecordingPanel } from '~/components/composer/VoiceRecordingPanel';
 import { normalizeChatTitle, useStartChatFromInbox } from '~/services/chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
-import { useTopAnchoredInbox } from '~/services/inbox/top-anchored-inbox';
 import { donateAddNoteIntent } from '~/services/intent-donation';
 import { useCreateNote } from '~/services/notes/use-create-note';
 import t from '~/translations';
@@ -36,7 +35,6 @@ export function InboxComposerContent({
   testID,
 }: InboxComposerContentProps) {
   const queryClient = useQueryClient();
-  const { requestTopReveal } = useTopAnchoredInbox();
   const { mutateAsync: createNote, isPending: isSaving } = useCreateNote();
   const { startChat, isStartingChat } = useStartChatFromInbox();
   const inputRef = useRef<TextInput>(null);
@@ -81,7 +79,6 @@ export function InboxComposerContent({
     await createNote({ text: message.trim(), fileIds: uploadedAttachmentIds });
     donateAddNoteIntent();
     await invalidateInboxQueries(queryClient);
-    requestTopReveal();
     clearComposer();
     onComplete?.();
   }, [
@@ -91,7 +88,6 @@ export function InboxComposerContent({
     message,
     uploadedAttachmentIds,
     queryClient,
-    requestTopReveal,
     clearComposer,
     onComplete,
   ]);
@@ -107,7 +103,6 @@ export function InboxComposerContent({
         noteIds: [],
         onReady: () => {
           clearComposer();
-          requestTopReveal();
           onComplete?.();
         },
       });
@@ -125,7 +120,6 @@ export function InboxComposerContent({
     message,
     uploadedAttachmentIds,
     clearComposer,
-    requestTopReveal,
     onComplete,
   ]);
 
