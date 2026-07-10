@@ -1,3 +1,4 @@
+import { SectionIntro } from '@hominem/ui';
 import { getLastMonthFromRange } from '@hominem/utils/dates';
 import { subMonths } from 'date-fns';
 import { useState } from 'react';
@@ -20,75 +21,72 @@ export default function FinanceAnalyticsPage() {
   const [groupBy, setGroupBy] = useState<'month' | 'week' | 'day'>('month');
   const [chartType, setChartType] = useState<'area' | 'bar'>('area');
 
-  // Get the last month from the date range for budget overview
   const lastMonthYear = getLastMonthFromRange(dateFrom, dateTo);
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-      </div>
+    <div className="flex flex-col gap-6">
+      <SectionIntro
+        title="Analytics"
+        description="Spending patterns, budgets, and trends across your accounts."
+      />
 
-      <div className="flex flex-col gap-4">
-        <AnalyticsFilters
+      <AnalyticsFilters
+        dateFrom={dateFrom}
+        setDateFrom={setDateFrom}
+        dateTo={dateTo}
+        setDateTo={setDateTo}
+        selectedAccount={selectedAccount}
+        setSelectedAccount={setSelectedAccount}
+        selectedTag={selectedTag}
+        setSelectedTag={setSelectedTag}
+        groupBy={groupBy}
+        setGroupBy={setGroupBy}
+        includeStats={includeStats}
+        setIncludeStats={setIncludeStats}
+        compareToPrevious={compareToPrevious}
+        setCompareToPrevious={setCompareToPrevious}
+      />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <AnalyticsStatisticsSummary
           dateFrom={dateFrom}
-          setDateFrom={setDateFrom}
           dateTo={dateTo}
-          setDateTo={setDateTo}
           selectedAccount={selectedAccount}
-          setSelectedAccount={setSelectedAccount}
           selectedTag={selectedTag}
-          setSelectedTag={setSelectedTag}
-          groupBy={groupBy}
-          setGroupBy={setGroupBy}
           includeStats={includeStats}
-          setIncludeStats={setIncludeStats}
-          compareToPrevious={compareToPrevious}
-          setCompareToPrevious={setCompareToPrevious}
         />
-
-        {/* Financial Summary and Budget Overview side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <AnalyticsStatisticsSummary
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            selectedAccount={selectedAccount}
-            selectedTag={selectedTag}
-            includeStats={includeStats}
-          />
-          <BudgetOverview selectedMonthYear={lastMonthYear} />
-        </div>
-
-        <AnalyticsChartDisplay
-          chartType={chartType}
-          setChartType={setChartType}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          selectedAccount={selectedAccount}
-          selectedTag={selectedTag}
-          groupBy={groupBy}
-          compareToPrevious={compareToPrevious}
-        />
-
-        <MonthlyBreakdown
-          title="Monthly Breakdown"
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          selectedAccount={selectedAccount}
-          selectedTag={selectedTag}
-          compareToPrevious={compareToPrevious}
-          groupBy={groupBy}
-        />
-
-        <TopTags dateFrom={dateFrom} dateTo={dateTo} selectedAccount={selectedAccount} />
-
-        <TopMerchants
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          selectedAccount={selectedAccount}
-          selectedTag={selectedTag}
-        />
+        <BudgetOverview selectedMonthYear={lastMonthYear} />
       </div>
+
+      <AnalyticsChartDisplay
+        chartType={chartType}
+        setChartType={setChartType}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        selectedAccount={selectedAccount}
+        selectedTag={selectedTag}
+        groupBy={groupBy}
+        compareToPrevious={compareToPrevious}
+      />
+
+      <MonthlyBreakdown
+        title="Monthly Breakdown"
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        selectedAccount={selectedAccount}
+        selectedTag={selectedTag}
+        compareToPrevious={compareToPrevious}
+        groupBy={groupBy}
+      />
+
+      <TopTags dateFrom={dateFrom} dateTo={dateTo} selectedAccount={selectedAccount} />
+
+      <TopMerchants
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        selectedAccount={selectedAccount}
+        selectedTag={selectedTag}
+      />
     </div>
   );
 }

@@ -13,8 +13,8 @@ import { Button } from '@hominem/ui/button';
 import { RefreshCcw, Trash2 } from 'lucide-react';
 
 import { useRemovePlaidConnection, useSyncPlaidItem } from '~/lib/hooks/use-plaid';
+import { toast } from '~/lib/toast';
 import type { Account } from '~/lib/types/account.types';
-import { toast } from '~/lib/ui-shims';
 
 import { PlaidStatusBadge } from './plaid-status-badge';
 

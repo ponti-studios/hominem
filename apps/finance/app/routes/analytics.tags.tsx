@@ -10,8 +10,8 @@ import { TransactionFilters } from '~/components/finance/transaction-filters';
 import { useTagBreakdown } from '~/lib/hooks/use-analytics';
 import { type FilterArgs, useFinanceAccounts } from '~/lib/hooks/use-finance-data';
 import { useSelectedAccount } from '~/lib/hooks/use-selected-account';
+import { useSort } from '~/lib/hooks/use-sort';
 import { formatCurrency } from '~/lib/number.utils';
-import { useSort } from '~/lib/ui-shims';
 
 interface TagBreakdownRow {
   tag: string;

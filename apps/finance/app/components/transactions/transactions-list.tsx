@@ -1,7 +1,11 @@
-import { CreditCard, DollarSign, Tag } from 'lucide-react';
+import { Badge, EmptyState } from '@hominem/ui';
+import { CreditCard, Receipt } from 'lucide-react';
 
+import { Skeleton } from '~/components/skeleton';
 import type { useFinanceAccounts, useFinanceTransactions } from '~/lib/hooks/use-finance-data';
 import { cn } from '~/lib/utils';
+
+const listShellClass = 'overflow-hidden rounded-3xl border border-border bg-surface shadow-xs';
 
 type TransactionFromAPI = ReturnType<typeof useFinanceTransactions>['transactions'][number];
 type AccountsMap = ReturnType<typeof useFinanceAccounts>['accountsMap'];
@@ -14,39 +18,26 @@ type TransactionsListProps = {
   accountsMap: AccountsMap;
 };
 
+function formatPostedOn(value: string | Date | null | undefined) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 function TransactionAmount({ transaction }: { transaction: TransactionFromAPI }) {
   const amount = Number(transaction.amount);
-  const isNegative = amount < 0;
+  const isExpense = amount < 0;
   const displayAmount = Math.abs(amount).toFixed(2);
 
   return (
-    <div className="text-right">
-      <div className={cn('font-semibold', isNegative ? 'text-destructive' : 'text-foreground')}>
-        ${displayAmount}
-      </div>
-    </div>
-  );
-}
-
-function TransactionMetadata({
-  transaction,
-  account,
-}: {
-  transaction: TransactionFromAPI;
-  account?: AccountFromMap | undefined;
-}) {
-  return (
-    <div className="flex justify-between text-xs text-muted-foreground">
-      {account && (
-        <div className="flex items-center gap-1">
-          <CreditCard className="size-3" />
-          <span>{account.name}</span>
-        </div>
+    <div
+      className={cn(
+        'tabular-nums font-semibold',
+        isExpense ? 'text-destructive' : 'text-foreground',
       )}
-      <div className="flex items-center gap-1">
-        <Tag className="size-3" />
-        <span>{Number(transaction.amount) < 0 ? 'expense' : 'income'}</span>
-      </div>
+    >
+      {isExpense ? '−' : '+'}${displayAmount}
     </div>
   );
 }
@@ -58,13 +49,31 @@ function TransactionListItem({
   transaction: TransactionFromAPI;
   account?: AccountFromMap | undefined;
 }) {
+  const postedOn = formatPostedOn(transaction.postedOn);
+  const isExpense = Number(transaction.amount) < 0;
+
   return (
-    <div className="group border-b border-border py-4 px-2 space-y-2">
-      <div className="w-full flex items-center justify-between gap-4">
-        <h3 className=" text-black tracking-tight">{transaction.description || 'Transaction'}</h3>
-        <TransactionAmount transaction={transaction} />
+    <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:px-5">
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="heading-4 truncate text-foreground">
+            {transaction.description || 'Transaction'}
+          </h3>
+          <Badge variant="secondary" className="shrink-0">
+            {isExpense ? 'Expense' : 'Income'}
+          </Badge>
+        </div>
+        <div className="body-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
+          {postedOn ? <span>{postedOn}</span> : null}
+          {account ? (
+            <span className="inline-flex items-center gap-1">
+              <CreditCard className="size-3" aria-hidden />
+              {account.name}
+            </span>
+          ) : null}
+        </div>
       </div>
-      <TransactionMetadata transaction={transaction} account={account} />
+      <TransactionAmount transaction={transaction} />
     </div>
   );
 }
@@ -77,22 +86,17 @@ export function TransactionsList({
 }: TransactionsListProps) {
   if (loading) {
     return (
-      <div className="space-y-0 mx-auto border border-border overflow-hidden">
-        {Array.from({ length: 5 }, (_, i) => `skeleton-${Date.now()}-${i}`).map((key) => (
-          <div key={key} className="border-b border-border p-4 last:border-b-0 sm:p-6">
-            <div className="flex items-start gap-4">
-              <div className="size-12 bg-muted" />
-              <div className="flex-1 space-y-2">
-                <div className="flex justify-between">
-                  <div className="h-4 bg-muted w-1/2" />
-                  <div className="h-4 bg-muted w-16" />
-                </div>
-                <div className="flex gap-4">
-                  <div className="h-3 bg-muted w-20" />
-                  <div className="h-3 bg-muted w-24" />
-                </div>
-              </div>
+      <div className={listShellClass}>
+        {Array.from({ length: 5 }, (_, i) => (
+          <div
+            key={`tx-skeleton-${i}`}
+            className="flex items-start justify-between gap-4 border-b border-border px-4 py-3 last:border-b-0 sm:px-5"
+          >
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-3 w-1/3" />
             </div>
+            <Skeleton className="h-4 w-16" />
           </div>
         ))}
       </div>
@@ -101,30 +105,28 @@ export function TransactionsList({
 
   if (error) {
     return (
-      <div className="p-8 text-center border border-destructive/50 bg-destructive/10 max-w-4xl mx-auto">
-        <div className="text-destructive font-medium">{error}</div>
-      </div>
+      <EmptyState
+        variant="dashed"
+        title="Couldn’t load transactions"
+        description={error}
+        icon={<Receipt className="size-5" aria-hidden />}
+      />
     );
   }
 
   if (transactions.length === 0) {
     return (
-      <div className="p-8 text-center border border-border bg-muted max-w-4xl mx-auto">
-        <div className="flex flex-col items-center gap-3">
-          <div className="size-12 bg-muted flex items-center justify-center">
-            <DollarSign className="size-6 text-muted-foreground" />
-          </div>
-          <div className="text-muted-foreground font-medium">No transactions found</div>
-          <div className="text-sm text-muted-foreground">
-            Try adjusting your filters or date range
-          </div>
-        </div>
-      </div>
+      <EmptyState
+        variant="search"
+        title="No transactions found"
+        description="Try adjusting your filters or date range."
+        icon={<Receipt className="size-5" aria-hidden />}
+      />
     );
   }
 
   return (
-    <div className="mx-auto border border-border overflow-hidden">
+    <div className={listShellClass}>
       {transactions.map((transaction) => (
         <TransactionListItem
           key={transaction.id}

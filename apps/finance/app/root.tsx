@@ -1,9 +1,20 @@
 import { AuthProvider } from '@hominem/auth/client/provider';
-import { COMMON_FONT_LINKS, COMMON_ICON_LINKS, UpdateGuard } from '@hominem/ui';
+import {
+  Button,
+  buttonVariants,
+  Card,
+  CardContent,
+  COLOR_MODE_ATTRIBUTE,
+  COLOR_SYSTEM_ATTRIBUTE,
+  COMMON_FONT_LINKS,
+  COMMON_ICON_LINKS,
+  UpdateGuard,
+} from '@hominem/ui';
 import type React from 'react';
 import {
   data,
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -37,21 +48,39 @@ export const meta: Route.MetaFunction = () => {
   return [
     { title: 'Florin' },
     { name: 'description', content: 'Manage your personal finances with Florin' },
+    { name: 'theme-color', content: '#141210' },
   ];
 };
 
 export const links: Route.LinksFunction = () => [...COMMON_FONT_LINKS, ...COMMON_ICON_LINKS];
 
+const themeBootScript = `
+(() => {
+  const root = document.documentElement;
+  const system = localStorage.getItem('hominem:ui-color-system') || root.getAttribute('${COLOR_SYSTEM_ATTRIBUTE}') || 'primer';
+  const mode = localStorage.getItem('hominem:ui-color-mode') || root.getAttribute('${COLOR_MODE_ATTRIBUTE}') || 'system';
+
+  root.setAttribute('${COLOR_SYSTEM_ATTRIBUTE}', system === 'apple' ? 'apple' : 'primer');
+
+  if (mode === 'light' || mode === 'dark') {
+    root.setAttribute('${COLOR_MODE_ATTRIBUTE}', mode);
+  } else {
+    root.removeAttribute('${COLOR_MODE_ATTRIBUTE}');
+  }
+})();
+`;
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-color-system="primer" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="bg-background text-foreground">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -75,28 +104,57 @@ export default function App({ loaderData }: Route.ComponentProps) {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = 'Oops!';
-  let details = 'An unexpected error occurred.';
-  let stack: string | undefined;
-
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? '404' : 'Error';
-    details =
-      error.status === 404 ? 'The requested page could not be found.' : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+    if (error.status === 404) {
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-foreground">
+          <Card className="w-full max-w-md border-border bg-card text-center">
+            <CardContent className="space-y-4 p-6">
+              <h1 className="display-2 text-foreground">404</h1>
+              <p className="heading-3 text-muted-foreground">Page Not Found</p>
+              <Link to="/" className={buttonVariants({ size: 'lg' })}>
+                Go Home
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-foreground">
+        <Card className="w-full max-w-md border-border bg-card text-center">
+          <CardContent className="space-y-4 p-6">
+            <h1 className="display-2 text-destructive">{error.status}</h1>
+            <p className="heading-3 text-muted-foreground">{error.statusText}</p>
+            <Link to="/" className={buttonVariants({ variant: 'destructive', size: 'lg' })}>
+              Go Home
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
+  const isDev = import.meta.env.DEV;
+  const message = isDev && error instanceof Error ? error.message : 'An unexpected error occurred.';
+  const stack = isDev && error instanceof Error ? error.stack : null;
+
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-foreground">
+      <Card className="w-full max-w-2xl border-border bg-card">
+        <CardContent className="space-y-4 p-6 text-center">
+          <h1 className="heading-1 text-foreground">Oops!</h1>
+          <p className="body-3 text-muted-foreground">{message}</p>
+          {stack && (
+            <pre className="max-h-48 w-full overflow-auto rounded-md border border-destructive/30 bg-muted p-4 text-left body-3 text-foreground">
+              {stack}
+            </pre>
+          )}
+          <Button asChild variant="default">
+            <Link to="/">Go Home</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

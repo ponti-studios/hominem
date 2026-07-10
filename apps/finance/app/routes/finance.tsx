@@ -1,7 +1,11 @@
+import { buttonVariants, EmptyState, SectionIntro } from '@hominem/ui';
+import { Receipt, UploadCloud } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 
 import { PaginationControls } from '~/components/finance/pagination-controls';
 import { TransactionFilters } from '~/components/finance/transaction-filters';
+import { Skeleton } from '~/components/skeleton';
 import { TransactionsList } from '~/components/transactions/transactions-list';
 import { createServerHonoClient } from '~/lib/api.server';
 import { requireAuth } from '~/lib/guards';
@@ -11,7 +15,7 @@ import {
   useFinanceTransactions,
 } from '~/lib/hooks/use-finance-data';
 import { useSelectedAccount } from '~/lib/hooks/use-selected-account';
-import { useSort } from '~/lib/ui-shims';
+import { useSort } from '~/lib/hooks/use-sort';
 
 import type { Route } from './+types/finance';
 
@@ -96,9 +100,28 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
   };
 
   const totalPages = limit > 0 ? Math.ceil(totalTransactions / limit) : 0;
+  const errorMessage =
+    typeof error === 'string'
+      ? error
+      : error instanceof Error
+        ? error.message
+        : error
+          ? 'An unknown error occurred'
+          : null;
 
   return (
-    <>
+    <div className="flex flex-col gap-6">
+      <SectionIntro
+        title="Transactions"
+        description="Search, filter, and review activity across your accounts."
+        actions={
+          <Link to="/import" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            <UploadCloud className="size-4" aria-hidden />
+            Import
+          </Link>
+        }
+      />
+
       <TransactionFilters
         accountsMap={accountsMap}
         accountsLoading={accountsLoading}
@@ -114,30 +137,53 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
         loading={loading}
       />
 
-      {/* Shared Loading, Error, and Empty States */}
       {loading ? (
-        <div className="flex justify-center py-10">
-          <div className="space-y-4 w-full">
-            {[1, 2, 3, 4, 5].map((val) => (
-              <div key={val} className="h-24 bg-muted w-full md:h-12" />
-            ))}
-          </div>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={`page-skeleton-${i}`} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
-      ) : error ? (
-        <div className="p-8 text-center text-destructive">
-          {typeof error === 'string'
-            ? error
-            : error instanceof Error
-              ? error.message
-              : 'An unknown error occurred'}
-        </div>
+      ) : errorMessage ? (
+        <EmptyState
+          variant="dashed"
+          title="Couldn’t load transactions"
+          description={errorMessage}
+          icon={<Receipt className="size-5" aria-hidden />}
+        />
       ) : transactions.length === 0 ? (
-        <div className="p-8 text-center text-muted-foreground">No transactions found.</div>
+        <EmptyState
+          variant="search"
+          title="No transactions found"
+          description="Connect an account or import a CSV to get started. You can also clear filters if results look empty."
+          icon={<Receipt className="size-5" aria-hidden />}
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Link to="/accounts" className={buttonVariants({ size: 'sm' })}>
+                Connect accounts
+              </Link>
+              <Link to="/import" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                Import CSV
+              </Link>
+            </div>
+          }
+        />
       ) : (
         <>
+          <div className="body-3 flex items-center justify-between text-muted-foreground">
+            <span>
+              {totalTransactions.toLocaleString()} transaction
+              {totalTransactions === 1 ? '' : 's'}
+            </span>
+            {totalPages > 1 ? (
+              <span>
+                Page {page + 1} of {totalPages}
+              </span>
+            ) : null}
+          </div>
+
           <TransactionsList
-            loading={transactionsLoading}
-            error={transactionsError}
+            loading={false}
+            error={null}
             transactions={transactions}
             accountsMap={accountsMap}
           />
@@ -145,6 +191,6 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
           <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
-    </>
+    </div>
   );
 }

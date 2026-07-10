@@ -1,14 +1,16 @@
-import { Button } from '@hominem/ui/button';
-import { DatePicker } from '@hominem/ui/date-picker';
 import {
+  Button,
+  DatePicker,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@hominem/ui/dropdown';
-import { FilterChip } from '@hominem/ui/filters';
-import type { SortOption } from '@hominem/ui/hooks';
+  FilterChip,
+  Input,
+  Label,
+  type SortOption,
+} from '@hominem/ui';
 import { ListFilter, RefreshCcw } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
@@ -16,7 +18,6 @@ import { AccountSelect } from '~/components/account-select';
 import { SortControls } from '~/components/finance/sort-controls';
 import type { FilterArgs, useFinanceAccounts } from '~/lib/hooks/use-finance-data';
 import { useSelectedAccount } from '~/lib/hooks/use-selected-account';
-import { SearchInput } from '~/lib/ui-shims';
 
 interface ActiveSortOption extends SortOption {
   onRemove: () => void;
@@ -26,22 +27,14 @@ interface ActiveSortOption extends SortOption {
 interface TransactionFiltersProps {
   accountsMap: ReturnType<typeof useFinanceAccounts>['accountsMap'];
   accountsLoading: boolean;
-
-  // Filters state
   filters: FilterArgs;
   onFiltersChange: (filters: FilterArgs) => void;
-
-  // Search state
   searchValue: string;
   onSearchChange: (value: string) => void;
-
-  // Sort state
   sortOptions: SortOption[];
   addSortOption: (option: SortOption) => void;
   updateSortOption: (index: number, option: SortOption) => void;
   removeSortOption: (index: number) => void;
-
-  // Actions
   onRefresh: () => void;
   loading?: boolean;
 }
@@ -66,7 +59,6 @@ export function TransactionFilters({
   const [focusedSortIndex, setFocusedSortIndex] = useState<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Optimize account lookup with memoized account names map
   const accountNames = useMemo(() => {
     const names = new Map<string, string>();
     accountsMap.forEach((account, id) => {
@@ -75,7 +67,6 @@ export function TransactionFilters({
     return names;
   }, [accountsMap]);
 
-  // Create filters object that includes the selected account
   const allFilters = useMemo(
     () => ({
       ...filters,
@@ -84,7 +75,6 @@ export function TransactionFilters({
     [filters, selectedAccount],
   );
 
-  // Handle account selection
   const handleSelectedAccountChange = useCallback(
     (accountId: string) => {
       setSelectedAccount(accountId);
@@ -92,7 +82,6 @@ export function TransactionFilters({
     [setSelectedAccount],
   );
 
-  // Handle date changes
   const handleDateFromChange = useCallback(
     (date: Date | undefined) => {
       onFiltersChange({
@@ -125,30 +114,23 @@ export function TransactionFilters({
     setIsSortControlsOpen(true);
   }, []);
 
-  const handleRefresh = useCallback(() => {
-    onRefresh();
-  }, [onRefresh]);
-
   const activeFilters = useMemo(() => {
     return Object.entries(allFilters)
       .filter(([, value]) => value !== undefined && value !== '')
       .map(([key, value]) => {
-        // Handle special cases for different filter types
         let displayValue = String(value);
         let displayKey = key.charAt(0).toUpperCase() + key.slice(1);
 
-        // For accountId, show the account name instead of the ID (optimized lookup)
         if (key === 'accountId' && value && typeof value === 'string') {
           displayValue = accountNames.get(value) || value;
           displayKey = 'Account';
         }
 
-        // For date filters, format the date nicely
         if ((key === 'dateFrom' || key === 'dateTo') && value) {
           try {
             const date = value instanceof Date ? value : new Date(String(value));
             displayValue = date.toLocaleDateString();
-            displayKey = key === 'dateFrom' ? 'From Date' : 'To Date';
+            displayKey = key === 'dateFrom' ? 'From' : 'To';
           } catch {
             // Keep original value if date parsing fails
           }
@@ -159,34 +141,26 @@ export function TransactionFilters({
           label: `${displayKey}: ${displayValue}`,
           onRemove: () => {
             if (key === 'accountId') {
-              // Clear the selected account when removing account filter
               setSelectedAccount('all');
             } else {
-              // For other filters, update filters
               onFiltersChange({
                 ...filters,
                 [key]: undefined,
               });
               if (key === 'description') {
-                // Also clear the search input value when removing description filter
                 onSearchChange('');
               }
             }
           },
           onClick: () => {
             if (key === 'description') {
-              // Focus the search input for description filter
               searchInputRef.current?.focus();
-            }
-            if (key === 'accountId') {
-              // Could be enhanced to open filter controls and focus account selector
             }
           },
         };
       });
   }, [allFilters, accountNames, filters, onFiltersChange, onSearchChange, setSelectedAccount]);
 
-  // Generate active sort option chips with memoization
   const activeSortOptions: ActiveSortOption[] = useMemo(() => {
     return sortOptions.map((sortOption: SortOption, index: number) => ({
       ...sortOption,
@@ -198,29 +172,30 @@ export function TransactionFilters({
   }, [sortOptions, removeSortOption, handleSortChipClick]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <SearchInput
-        ref={searchInputRef}
-        value={searchValue}
-        onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Search transactions..."
-        className="max-w-md"
-      />
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Input
+          ref={searchInputRef}
+          type="search"
+          value={searchValue}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search transactions..."
+          className="w-full sm:max-w-md"
+          aria-label="Search transactions"
+        />
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-wrap gap-2">
           <DropdownMenu open={isFilterControlsOpen} onOpenChange={setIsFilterControlsOpen}>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <ListFilter className="size-4 mr-2" />
+              <Button variant="outline" size="sm">
+                <ListFilter className="size-4" aria-hidden />
                 Filters
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 p-2 space-y-2">
-              <DropdownMenuLabel>Apply Filters</DropdownMenuLabel>
+            <DropdownMenuContent className="w-64 space-y-3 p-3" align="end">
+              <DropdownMenuLabel>Apply filters</DropdownMenuLabel>
               <DropdownMenuSeparator />
 
-              {/* Account Filter */}
               <AccountSelect
                 selectedAccount={selectedAccount}
                 onAccountChange={handleSelectedAccountChange}
@@ -229,11 +204,8 @@ export function TransactionFilters({
                 label="Account"
               />
 
-              {/* Date From Filter */}
-              <div className="space-y-1">
-                <label htmlFor="from-date-filter" className="text-sm font-medium">
-                  From Date
-                </label>
+              <div className="space-y-1.5">
+                <Label htmlFor="from-date-filter">From date</Label>
                 <DatePicker
                   value={filters.dateFrom}
                   onSelect={handleDateFromChange}
@@ -241,11 +213,8 @@ export function TransactionFilters({
                 />
               </div>
 
-              {/* Date To Filter */}
-              <div className="space-y-1">
-                <label htmlFor="to-date-filter" className="text-sm font-medium">
-                  To Date
-                </label>
+              <div className="space-y-1.5">
+                <Label htmlFor="to-date-filter">To date</Label>
                 <DatePicker
                   value={filters.dateTo}
                   onSelect={handleDateToChange}
@@ -254,6 +223,7 @@ export function TransactionFilters({
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
+
           <SortControls
             sortOptions={sortOptions || []}
             addSortOption={addSortOption}
@@ -263,17 +233,17 @@ export function TransactionFilters({
             onOpenChange={handleSortControlsOpenChange}
             focusedSortIndex={focusedSortIndex}
           />
-          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
-            <RefreshCcw className={`size-4 mr-2 ${loading ? '' : ''}`} />
+
+          <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading}>
+            <RefreshCcw className="size-4" aria-hidden />
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* Active Filters and Sorts Display */}
       {(activeFilters.length > 0 || activeSortOptions.length > 0) && (
-        <div className="flex flex-wrap gap-2 items-center mb-4">
-          <span className="text-sm text-muted-foreground">Active criteria:</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="body-3 text-muted-foreground">Active:</span>
           {activeFilters.map((filter) => (
             <FilterChip
               key={filter.id}
@@ -284,8 +254,8 @@ export function TransactionFilters({
           ))}
           {activeSortOptions.map((sort: ActiveSortOption) => (
             <FilterChip
-              key={`sort-${sort.field}`}
-              label={`Sort by ${sort.field} (${sort.direction})`}
+              key={`sort-${sort.field}-${sort.direction}`}
+              label={`Sort: ${sort.field} (${sort.direction})`}
               onRemove={sort.onRemove}
               onClick={sort.onClick}
             />

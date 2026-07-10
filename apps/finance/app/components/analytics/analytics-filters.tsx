@@ -1,3 +1,4 @@
+import { Label } from '@hominem/ui';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card } from '@hominem/ui/card';
@@ -10,10 +11,9 @@ import { type Dispatch, type SetStateAction, useId, useState } from 'react';
 import { AccountSelect } from '~/components/account-select';
 import { TagSelect } from '~/components/category-select';
 import { GroupBySelect } from '~/components/group-by-select';
+import { Skeleton } from '~/components/skeleton';
 import { useFinanceTags } from '~/lib/hooks/use-analytics';
 import { useFinanceAccounts } from '~/lib/hooks/use-finance-data';
-import { Label } from '~/lib/ui-shims';
-import { Skeleton } from '~/lib/ui-shims';
 
 interface AnalyticsFiltersProps {
   dateFrom: Date | undefined;

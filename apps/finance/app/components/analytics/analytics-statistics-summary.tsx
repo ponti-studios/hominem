@@ -1,8 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { EmptyState, MetricCard, SurfacePanel } from '@hominem/ui';
+import type { ReactNode } from 'react';
 
+import { Skeleton } from '~/components/skeleton';
 import { useTimeSeriesData } from '~/lib/hooks/use-time-series';
 import { formatCurrency } from '~/lib/number.utils';
-import { Skeleton } from '~/lib/ui-shims';
+
+function StatsShell({ children }: { children: ReactNode }) {
+  return <SurfacePanel>{children}</SurfacePanel>;
+}
 
 interface AnalyticsStatisticsSummaryProps {
   dateFrom?: Date | undefined;
@@ -37,127 +42,74 @@ export function AnalyticsStatisticsSummary({
 
   if (!includeStats) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center font-normal text-base text-secondary-foreground">
-            Statistics are disabled. Enable them in filters to see summary data.
-          </div>
-        </CardContent>
-      </Card>
+      <EmptyState
+        layout="inline"
+        variant="quiet"
+        title="Statistics disabled"
+        description="Enable stats in filters to see summary data."
+      />
     );
   }
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Financial Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col space-y-4">
-            {['total-income', 'total-expenses', 'average-income', 'average-expenses'].map((key) => (
-              <div key={`stats-skeleton-${key}`} className="flex justify-between items-center">
-                <div className="space-y-1">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="size-32" />
-                </div>
-                <Skeleton className="h-6 w-20" />
-              </div>
+      <StatsShell>
+        <div className="space-y-4">
+          <Skeleton className="h-5 w-40" />
+          <div className="grid grid-cols-2 gap-3">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={`stat-skeleton-${i}`} className="h-24 rounded-xl" />
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </StatsShell>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center text-destructive">
-            {error.message || 'Unable to load statistics. Retry later.'}
-          </div>
-        </CardContent>
-      </Card>
+      <EmptyState
+        layout="inline"
+        variant="dashed"
+        title="Unable to load statistics"
+        description={error.message || 'Retry later.'}
+      />
+    );
+  }
+
+  if (!stats) {
+    return (
+      <EmptyState
+        layout="inline"
+        variant="quiet"
+        title="No statistics available"
+        description="Try enabling stats in filters."
+      />
     );
   }
 
   return (
-    <>
-      {stats ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-secondary-foreground">
-              Financial Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col space-y-4">
-              {/* Total Income Row */}
-              <div className="flex justify-between items-center">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-secondary-foreground">Total Income</div>
-                  <div className="text-xs text-muted-foreground">
-                    For period {stats.periodCovered}
-                  </div>
-                </div>
-                <div className="text-xl font-bold text-black font-mono">
-                  {formatCurrency(stats.totalIncome ?? 0)}
-                </div>
-              </div>
-
-              {/* Total Expenses Row */}
-              <div className="flex justify-between items-center">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-secondary-foreground">
-                    Total Expenses
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    For period {stats.periodCovered}
-                  </div>
-                </div>
-                <div className="text-xl font-bold text-destructive font-mono">
-                  {formatCurrency(stats.totalExpenses ?? 0)}
-                </div>
-              </div>
-
-              {/* Average Income Row */}
-              <div className="flex justify-between items-center">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-secondary-foreground">
-                    Average Income
-                  </div>
-                  <div className="text-xs text-muted-foreground">Over {stats.count} months</div>
-                </div>
-                <div className="text-xl font-bold text-black font-mono">
-                  {formatCurrency(stats.averageIncome ?? 0)}
-                </div>
-              </div>
-
-              {/* Average Expenses Row */}
-              <div className="flex justify-between items-center">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-secondary-foreground">
-                    Average Expenses
-                  </div>
-                  <div className="text-xs text-muted-foreground">Over {stats.count} months</div>
-                </div>
-                <div className="text-xl font-bold text-destructive font-mono">
-                  {formatCurrency(stats.averageExpenses ?? 0)}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center font-normal text-base text-secondary-foreground">
-              No statistics available. Try enabling stats in filters.
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </>
+    <StatsShell>
+      <div className="space-y-4">
+        <div>
+          <h2 className="heading-4 text-foreground">Financial summary</h2>
+          <p className="body-3 text-muted-foreground">{stats.periodCovered}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard label="Total income" value={formatCurrency(stats.totalIncome ?? 0)} />
+          <MetricCard label="Total expenses" value={formatCurrency(stats.totalExpenses ?? 0)} />
+          <MetricCard
+            label="Avg income"
+            value={formatCurrency(stats.averageIncome ?? 0)}
+            change={`Over ${stats.count} months`}
+          />
+          <MetricCard
+            label="Avg expenses"
+            value={formatCurrency(stats.averageExpenses ?? 0)}
+            change={`Over ${stats.count} months`}
+          />
+        </div>
+      </div>
+    </StatsShell>
   );
 }

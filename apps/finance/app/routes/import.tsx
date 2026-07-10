@@ -1,7 +1,5 @@
 import type { FileStatus, ImportRequestResponse } from '@hominem/queues';
-import { Alert, AlertDescription } from '@hominem/ui';
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
+import { Alert, AlertDescription, Badge, Button, SectionIntro } from '@hominem/ui';
 import { memo, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 
 import { DropZone } from '~/components/drop-zone';
@@ -176,93 +174,81 @@ export default function TransactionImportPage() {
   }, [activeJobIds.length, isImportInProgress, statusCounts.completed, toast]);
 
   return (
-    <div className="p-4 sm:p-6 md:p-8">
-      <div className={cn('w-full max-w-2xl mx-auto p-8 space-y-6')}>
-        {/* Title */}
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-3">
-            <h1 className="text-2xl font-bold text-foreground">Import Transactions</h1>
-            {!isConnected && <Badge variant="outline">Connecting...</Badge>}
-          </div>
-          <p className="text-muted-foreground">Drag and drop your CSV files or click to browse</p>
-        </div>
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      <SectionIntro
+        title="Import transactions"
+        description="Drag and drop CSV files or click to browse."
+        actions={!isConnected ? <Badge variant="outline">Connecting…</Badge> : undefined}
+      />
 
-        {/* Error display */}
-        {isError && (
-          <div>
-            <Alert variant="destructive">
-              <AlertDescription>
-                {error?.message || 'An error occurred during import'}
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
+      {isError ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error?.message || 'An error occurred during import'}</AlertDescription>
+        </Alert>
+      ) : null}
 
-        {/* File upload area */}
-        <div className="w-full flex justify-center">
-          <DropZone
-            isImporting={isImportInProgress}
-            dragActive={dragActive}
-            className={cn(dragActive && 'border-border')}
-            onDrop={handleDropWithValidation}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onChange={handleFileChange}
-            accept=".csv"
-            multiple={true}
-          />
-        </div>
-
-        {/* Single file list with all files */}
-        {allFiles.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-foreground">Files</h2>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                {statusCounts.selected > 0 && (
-                  <span className="flex items-center gap-1">
-                    <div className="size-2 bg-muted-foreground " />
-                    {statusCounts.selected} selected
-                  </span>
-                )}
-                {statusCounts.processing > 0 && (
-                  <span className="flex items-center gap-1">
-                    <div className="size-2 bg-emphasis-high " />
-                    {statusCounts.processing} processing
-                  </span>
-                )}
-                {statusCounts.queued > 0 && (
-                  <span className="flex items-center gap-1">
-                    <div className="size-2 bg-warning " />
-                    {statusCounts.queued} queued
-                  </span>
-                )}
-                {statusCounts.completed > 0 && (
-                  <span className="flex items-center gap-1">
-                    <div className="size-2 bg-emphasis-highest " />
-                    {statusCounts.completed} completed
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <ul className="space-y-3">
-              {allFiles.map((file) => (
-                <FileImport
-                  key={file.id}
-                  fileName={file.fileName}
-                  status={file.status}
-                  id={file.id}
-                  file={file.file}
-                  isConnected={isConnected}
-                  onStart={memoizedStartSingleFile}
-                  onRemove={memoizedHandleRemoveFile}
-                />
-              ))}
-            </ul>
-          </div>
-        )}
+      <div className="flex w-full justify-center">
+        <DropZone
+          isImporting={isImportInProgress}
+          dragActive={dragActive}
+          className={cn(dragActive && 'border-border')}
+          onDrop={handleDropWithValidation}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onChange={handleFileChange}
+          accept=".csv"
+          multiple={true}
+        />
       </div>
+
+      {allFiles.length > 0 ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="heading-4 text-foreground">Files</h2>
+            <div className="body-3 flex items-center gap-4 text-muted-foreground">
+              {statusCounts.selected > 0 && (
+                <span className="flex items-center gap-1">
+                  <div className="size-2 bg-muted-foreground" />
+                  {statusCounts.selected} selected
+                </span>
+              )}
+              {statusCounts.processing > 0 && (
+                <span className="flex items-center gap-1">
+                  <div className="size-2 bg-emphasis-high" />
+                  {statusCounts.processing} processing
+                </span>
+              )}
+              {statusCounts.queued > 0 && (
+                <span className="flex items-center gap-1">
+                  <div className="size-2 bg-warning" />
+                  {statusCounts.queued} queued
+                </span>
+              )}
+              {statusCounts.completed > 0 && (
+                <span className="flex items-center gap-1">
+                  <div className="size-2 bg-emphasis-highest" />
+                  {statusCounts.completed} completed
+                </span>
+              )}
+            </div>
+          </div>
+
+          <ul className="space-y-3">
+            {allFiles.map((file) => (
+              <FileImport
+                key={file.id}
+                fileName={file.fileName}
+                status={file.status}
+                id={file.id}
+                file={file.file}
+                isConnected={isConnected}
+                onStart={memoizedStartSingleFile}
+                onRemove={memoizedHandleRemoveFile}
+              />
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,9 +1,9 @@
-import { PasskeyManagement } from '@hominem/ui';
+import { usePasskeys } from '@hominem/auth/client/passkey';
+import { PasskeyManagement, SectionIntro } from '@hominem/ui';
 import { useCallback } from 'react';
 import { redirect } from 'react-router';
 
 import { getServerAuth } from '~/lib/auth.server';
-import { usePasskeyAuth } from '~/lib/ui-shims';
 
 export async function loader({ request }: { request: Request }) {
   const { user, headers } = await getServerAuth(request);
@@ -14,19 +14,60 @@ export async function loader({ request }: { request: Request }) {
 }
 
 export default function SecuritySettingsPage() {
-  const { deletePasskey, register } = usePasskeyAuth();
-  const handleAdd = useCallback(() => register(), [register]);
-  const handleDelete = useCallback((id: string) => deletePasskey(id), [deletePasskey]);
+  const {
+    data: passkeys,
+    isLoading,
+    error,
+    register,
+    deletePasskey,
+    authError,
+  } = usePasskeys({
+    enabled: true,
+  });
+
+  const handleAdd = useCallback(async () => {
+    try {
+      await register();
+      return true;
+    } catch {
+      return false;
+    }
+  }, [register]);
+
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        await deletePasskey(id);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [deletePasskey],
+  );
 
   return (
-    <div className="max-w-xl mx-auto py-8 px-4 space-y-8">
-      <div>
-        <h1 className="text-xl font-semibold">Security</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage sign-in methods and authentication settings.
-        </p>
-      </div>
-      <PasskeyManagement onAdd={handleAdd} onDelete={handleDelete} />
+    <div className="mx-auto w-full max-w-xl space-y-8">
+      <SectionIntro
+        title="Security"
+        description="Manage sign-in methods and authentication settings."
+      />
+      <PasskeyManagement
+        passkeys={passkeys.map((p) => ({
+          id: p.id,
+          ...(p.name ? { name: p.name } : {}),
+          ...(p.createdAt
+            ? {
+                createdAt:
+                  typeof p.createdAt === 'string' ? p.createdAt : p.createdAt.toISOString(),
+              }
+            : {}),
+        }))}
+        isLoading={isLoading}
+        error={authError ?? error?.message ?? null}
+        onAdd={handleAdd}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

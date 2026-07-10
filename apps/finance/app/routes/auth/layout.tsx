@@ -1,11 +1,9 @@
 import { Outlet } from 'react-router';
 
-import { AuthRouteLayout } from '~/lib/ui-shims';
-
 export default function AuthLayout() {
   return (
-    <AuthRouteLayout>
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <Outlet />
-    </AuthRouteLayout>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Button } from '@hominem/ui/button';
 
 import { useFinanceAccounts, useFinanceTransactions } from '~/lib/hooks/use-finance-data';
-import { toast } from '~/lib/ui-shims';
+import { toast } from '~/lib/toast';
 
 export function ExportTransactions() {
   const { accountsMap } = useFinanceAccounts();

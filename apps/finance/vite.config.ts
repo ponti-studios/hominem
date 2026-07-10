@@ -117,7 +117,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
 
     ssr: {
-      noExternal: [/^@hominem\//, '@tanstack/react-query'],
+      noExternal: [/^@hominem\//, '@tanstack/react-query', 'better-auth', '@better-auth/passkey'],
       external: ['node:fs', 'node:path', 'node:url', 'node:http'],
       resolve: {
         conditions: ['node'],

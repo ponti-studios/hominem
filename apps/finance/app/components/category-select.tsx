@@ -1,7 +1,6 @@
+import { Label } from '@hominem/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
 import { useId } from 'react';
-
-import { Label } from '~/lib/ui-shims';
 
 interface TagOption {
   id: string;

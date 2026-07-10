@@ -1,23 +1,22 @@
-import { createAuthVerifyAction, createAuthVerifyLoader } from '~/lib/auth-server-routes';
-import { createAuthVerifyComponent } from '~/lib/ui-shims';
+import { redirect } from 'react-router';
 
-import { AUTH_CONFIG, AUTH_SERVER_ROUTE_CONFIG } from './config';
+import type { Route } from './+types/verify';
 
-export const loader = createAuthVerifyLoader(AUTH_CONFIG, async (request) => {
-  const { getServerAuth } = await import('~/lib/auth.server');
-  const { user, headers } = await getServerAuth(request);
+/**
+ * Legacy verify URL — OTP now lives on /auth as a client step.
+ * Preserve deep links that include ?email=.
+ */
+export async function loader({ request }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const email = url.searchParams.get('email');
+  const next = url.searchParams.get('next');
+  const params = new URLSearchParams();
+  if (email) params.set('email', email);
+  if (next) params.set('next', next);
+  const qs = params.toString();
+  throw redirect(qs ? `/auth?${qs}` : '/auth');
+}
 
-  return {
-    headers,
-    user: user
-      ? {
-          id: user.id,
-          email: user.email,
-          ...(user.name ? { name: user.name } : {}),
-        }
-      : null,
-  };
-});
-export const action = createAuthVerifyAction(AUTH_SERVER_ROUTE_CONFIG);
-
-export default createAuthVerifyComponent(AUTH_CONFIG);
+export default function AuthVerifyRedirect() {
+  return null;
+}

@@ -18,9 +18,9 @@ import {
   YAxis,
 } from 'recharts';
 
+import { Skeleton } from '~/components/skeleton';
 import { useTimeSeriesData } from '~/lib/hooks/use-time-series';
 import { formatCurrency } from '~/lib/number.utils';
-import { Skeleton } from '~/lib/ui-shims';
 
 interface AnalyticsChartDisplayProps {
   chartType: 'area' | 'bar';

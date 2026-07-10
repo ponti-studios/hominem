@@ -1,9 +1,9 @@
 import { Badge } from '@hominem/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 
+import { Skeleton } from '~/components/skeleton';
 import { useTagBreakdown } from '~/lib/hooks/use-analytics';
 import { formatCurrency } from '~/lib/number.utils';
-import { Skeleton } from '~/lib/ui-shims';
 
 interface TopTagsProps {
   dateFrom?: Date | undefined;

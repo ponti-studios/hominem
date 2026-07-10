@@ -2,9 +2,9 @@ import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
 import { Card, CardContent } from '@hominem/ui/card';
 import { Link, useNavigate } from 'react-router';
 
+import { Skeleton } from '~/components/skeleton';
 import { useTimeSeriesData } from '~/lib/hooks/use-time-series';
 import { formatCurrency } from '~/lib/number.utils';
-import { Skeleton } from '~/lib/ui-shims';
 import { cn } from '~/lib/utils';
 
 interface MonthlyBreakdownProps {

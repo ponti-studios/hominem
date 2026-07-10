@@ -1,10 +1,36 @@
-import { useAuthContext } from '@hominem/auth/client/provider';
-import { LoadingSpinner } from '@hominem/ui/loading-spinner';
-import { ChartLine, Landmark, UploadCloud, Gauge } from 'lucide-react';
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { buttonVariants } from '@hominem/ui';
+import { ChartLine, Gauge, Landmark, UploadCloud } from 'lucide-react';
+import { Link, redirect } from 'react-router';
 
-import { LandingPage } from '~/lib/ui-shims';
+import { getServerSession } from '~/lib/auth.server';
+
+import type { Route } from './+types/home';
+
+const FEATURES = [
+  {
+    icon: Landmark,
+    title: 'Account sync',
+    description:
+      'Connect your bank and card accounts. Transactions appear automatically, categorized and ready to review.',
+  },
+  {
+    icon: ChartLine,
+    title: 'Spending breakdown',
+    description:
+      'See exactly where money went, by category and by month. No guessing. No spreadsheets.',
+  },
+  {
+    icon: Gauge,
+    title: 'Runway',
+    description:
+      'Know how long your savings will last at your current spend rate. A single number that tells you everything.',
+  },
+  {
+    icon: UploadCloud,
+    title: 'CSV import',
+    description: "Your bank doesn't connect? Upload a CSV. Florin parses it regardless of format.",
+  },
+] as const;
 
 export function meta() {
   return [
@@ -17,76 +43,54 @@ export function meta() {
   ];
 }
 
-export default function Home() {
-  const { user, isLoading } = useAuthContext();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoading && user) {
-      navigate('/finance', { replace: true });
-    }
-  }, [isLoading, user, navigate]);
-
-  if (isLoading || user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner variant="md" />
-      </div>
-    );
+export async function loader({ request }: Route.LoaderArgs) {
+  const { user, headers } = await getServerSession(request);
+  if (user) {
+    throw redirect('/finance', { headers });
   }
+  return null;
+}
 
+export default function Home() {
   return (
-    <LandingPage
-      kicker="Personal Finance"
-      headline="See where your money goes."
-      sub="Connect your accounts, track spending across categories, and finally understand your financial picture."
-      ctaPrimary={{ label: 'Get started free', href: '/auth' }}
-      ctaSecondary={{ label: 'Sign in', href: '/auth' }}
-      problem="You roughly know what you earn. You don't know where it goes. At the end of the month the number is smaller and you're not sure why. That's not a willpower problem — it's a visibility problem."
-      features={[
-        {
-          icon: Landmark,
-          title: 'Account sync',
-          description:
-            'Connect your bank and card accounts. Transactions appear automatically, categorized and ready to review.',
-        },
-        {
-          icon: ChartLine,
-          title: 'Spending breakdown',
-          description:
-            'See exactly where money went, by category and by month. No guessing. No spreadsheets.',
-        },
-        {
-          icon: Gauge,
-          title: 'Runway',
-          description:
-            'Know how long your savings will last at your current spend rate. A single number that tells you everything.',
-        },
-        {
-          icon: UploadCloud,
-          title: 'CSV import',
-          description:
-            "Your bank doesn't connect? Upload a CSV. Florin parses it regardless of format.",
-        },
-      ]}
-      steps={[
-        {
-          label: 'Connect your accounts',
-          description:
-            'Link your bank, credit cards, and investment accounts via Plaid. Takes under two minutes.',
-        },
-        {
-          label: 'Review your spending',
-          description:
-            'Transactions are auto-categorized. Adjust any that are wrong — Florin learns from corrections.',
-        },
-        {
-          label: 'Understand the picture',
-          description:
-            'See your monthly totals, category breakdown, and runway in one view. No analysis required.',
-        },
-      ]}
-      trustSignal="Free to use. No credit card required."
-    />
+    <div className="flex flex-1 flex-col items-center gap-12 py-8 text-center sm:py-12">
+      <div className="mx-auto max-w-2xl space-y-4">
+        <p className="callout text-muted-foreground">Personal Finance</p>
+        <h1 className="display-2 text-foreground">See where your money goes.</h1>
+        <p className="body-1 text-muted-foreground">
+          Connect your accounts, track spending across categories, and finally understand your
+          financial picture.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Link to="/auth" className={buttonVariants({ size: 'lg' })}>
+            Get started free
+          </Link>
+          <Link to="/auth" className={buttonVariants({ variant: 'outline', size: 'lg' })}>
+            Sign in
+          </Link>
+        </div>
+      </div>
+
+      <p className="body-2 max-w-xl text-muted-foreground">
+        You roughly know what you earn. You don&apos;t know where it goes. At the end of the month
+        the number is smaller and you&apos;re not sure why. That&apos;s not a willpower problem —
+        it&apos;s a visibility problem.
+      </p>
+
+      <div className="grid w-full max-w-3xl gap-4 text-left sm:grid-cols-2">
+        {FEATURES.map((feature) => (
+          <div
+            key={feature.title}
+            className="rounded-lg border border-border bg-card p-4 text-card-foreground"
+          >
+            <feature.icon className="mb-2 size-5 text-foreground" aria-hidden />
+            <h3 className="heading-4 text-foreground">{feature.title}</h3>
+            <p className="body-3 mt-1 text-muted-foreground">{feature.description}</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="body-3 text-muted-foreground">Free to use. No credit card required.</p>
+    </div>
   );
 }

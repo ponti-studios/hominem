@@ -1,4 +1,5 @@
 import { CHART_COLORS } from '@hominem/ui';
+import { Label } from '@hominem/ui';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
@@ -18,7 +19,6 @@ import {
 
 import { useCalculateRunway } from '~/lib/hooks/use-runway';
 import { formatCurrency } from '~/lib/number.utils';
-import { Label } from '~/lib/ui-shims';
 
 interface PlannedPurchase {
   description: string;

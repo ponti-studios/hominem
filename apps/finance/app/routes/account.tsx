@@ -17,7 +17,7 @@ import { useState } from 'react';
 
 import { ExportTransactions } from '~/components/finance/export-transactions';
 import { RouteLink } from '~/components/route-link';
-import { toast } from '~/lib/ui-shims';
+import { toast } from '~/lib/toast';
 
 export default function AccountPage() {
   const { logout } = useAuthContext();

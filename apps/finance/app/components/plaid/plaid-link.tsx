@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { type PlaidLinkOnExit, type PlaidLinkOnSuccess, usePlaidLink } from 'react-plaid-link';
 
 import { useCreateLinkToken, useExchangeToken } from '~/lib/hooks/use-plaid';
-import { toast } from '~/lib/ui-shims';
+import { toast } from '~/lib/toast';
 import { cn } from '~/lib/utils';
 
 interface PlaidLinkProps {

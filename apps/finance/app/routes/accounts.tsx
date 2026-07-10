@@ -1,14 +1,19 @@
-import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@hominem/ui/card';
+  EmptyState,
+  LoadingSpinner,
+  SectionIntro,
+} from '@hominem/ui';
 import { formatCurrency } from '@hominem/utils';
 import {
   AlertTriangle,
@@ -26,7 +31,7 @@ import { RouteLink } from '~/components/route-link';
 import { createServerHonoClient } from '~/lib/api.server';
 import { requireAuth } from '~/lib/guards';
 import { useAllAccounts } from '~/lib/hooks/use-finance-data';
-import { toast } from '~/lib/ui-shims';
+import { toast } from '~/lib/toast';
 
 import type { Route } from './+types/accounts';
 
@@ -76,7 +81,6 @@ export async function loader({ request }: Route.LoaderArgs) {
   return data;
 }
 
-// Simple account card for overview
 function AccountCard({
   account,
 }: {
@@ -85,69 +89,67 @@ function AccountCard({
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const isPlaidAccount = Boolean(account.plaidItemId);
 
-  const getAccountTypeIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'credit':
-        return <CreditCard className="size-4" />;
-      default:
-        return <Building2 className="size-4" />;
-    }
-  };
+  const typeIcon =
+    account.accountType.toLowerCase() === 'credit' ? (
+      <CreditCard className="size-4" aria-hidden />
+    ) : (
+      <Building2 className="size-4" aria-hidden />
+    );
 
   return (
-    <Card className="overflow-hidden flex flex-col">
+    <Card className="flex flex-col overflow-hidden">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-1.5 bg-muted">{getAccountTypeIcon(account.accountType)}</div>
-            <div>
-              <CardTitle className="text-lg">{account.name}</CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="rounded-lg bg-muted p-1.5 text-foreground">{typeIcon}</div>
+            <div className="min-w-0">
+              <CardTitle className="truncate text-lg">{account.name}</CardTitle>
               <CardDescription>
                 {account.institutionName && isPlaidAccount
                   ? account.institutionName
-                  : `${account.accountType.charAt(0).toUpperCase() + account.accountType.slice(1)}`}
+                  : `${account.accountType.charAt(0).toUpperCase()}${account.accountType.slice(1)}`}
               </CardDescription>
             </div>
           </div>
-          {isPlaidAccount && (
-            <Badge variant="secondary" className="text-foreground bg-muted border-border">
-              Connected
-            </Badge>
-          )}
+          {isPlaidAccount ? <Badge variant="secondary">Connected</Badge> : null}
         </div>
       </CardHeader>
 
       <CardContent className="flex-1">
-        <div className="space-y-4">
-          {/* Balance display */}
-          {account.currentBalance && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">Balance:</span>
-                <span className="font-semibold">
-                  {isBalanceVisible ? formatCurrency(Number(account.currentBalance)) : '••••••'}
-                </span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsBalanceVisible(!isBalanceVisible)}
-              >
-                {isBalanceVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </Button>
+        {account.currentBalance != null ? (
+          <div className="flex items-center justify-between gap-2">
+            <div className="space-y-0.5">
+              <p className="body-3 text-muted-foreground">Balance</p>
+              <p className="heading-3 tabular-nums text-foreground">
+                {isBalanceVisible ? formatCurrency(Number(account.currentBalance)) : '••••••'}
+              </p>
             </div>
-          )}
-        </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsBalanceVisible(!isBalanceVisible)}
+              aria-label={isBalanceVisible ? 'Hide balance' : 'Show balance'}
+            >
+              {isBalanceVisible ? (
+                <EyeOff className="size-4" aria-hidden />
+              ) : (
+                <Eye className="size-4" aria-hidden />
+              )}
+            </Button>
+          </div>
+        ) : (
+          <p className="body-3 text-muted-foreground">No balance on file</p>
+        )}
       </CardContent>
 
-      <CardFooter className="bg-muted/50 p-3 flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {isPlaidAccount ? 'Plaid Connected' : 'Manual Account'}
-        </div>
+      <CardFooter className="flex items-center justify-between bg-muted/40 p-3">
+        <span className="body-3 text-muted-foreground">
+          {isPlaidAccount ? 'Plaid connected' : 'Manual account'}
+        </span>
         <Button variant="outline" size="sm" asChild>
           <RouteLink to={`/accounts/${account.id}`}>
-            <ExternalLink className="size-4 mr-2" />
-            View Details
+            <ExternalLink className="size-4" aria-hidden />
+            Details
           </RouteLink>
         </Button>
       </CardFooter>
@@ -184,91 +186,79 @@ export default function AccountsPage({ loaderData }: Route.ComponentProps) {
   const hasError = allAccountsQuery.error;
   const hasAccounts = (allAccountsQuery.accounts || []).length > 0;
 
-  // Sort accounts to show Plaid-connected accounts first, then manual accounts
   const sortedAccounts = (allAccountsQuery.accounts || []).sort((a, b) => {
     if (a.plaidItemId && !b.plaidItemId) return -1;
     if (!a.plaidItemId && b.plaidItemId) return 1;
     return a.name.localeCompare(b.name);
   });
 
-  const refreshData = async () => {
-    await allAccountsQuery.refetch();
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Bank Accounts</h1>
-          <p className="text-muted-foreground">
-            Manage your connected bank accounts and financial data sources
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={refreshData} disabled={isLoading}>
-            <RefreshCcw className="size-4 mr-2" />
-            Refresh
-          </Button>
-          <PlaidConnectButton
-            variant="default"
-            onSuccess={handleConnectionSuccess}
-            onError={(e: Error | unknown) =>
-              e instanceof Error
-                ? handleConnectionError(e)
-                : handleConnectionError(new Error('Unknown error'))
-            }
-          >
-            Add Bank Account
-          </PlaidConnectButton>
-        </div>
-      </div>
+    <div className="flex flex-col gap-6">
+      <SectionIntro
+        title="Accounts"
+        description="Manage connected banks and financial data sources."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => allAccountsQuery.refetch()}
+              disabled={isLoading}
+            >
+              <RefreshCcw className="size-4" aria-hidden />
+              Refresh
+            </Button>
+            <PlaidConnectButton
+              variant="default"
+              onSuccess={handleConnectionSuccess}
+              onError={(e: Error | unknown) =>
+                e instanceof Error
+                  ? handleConnectionError(e)
+                  : handleConnectionError(new Error('Unknown error'))
+              }
+            >
+              Add bank
+            </PlaidConnectButton>
+          </div>
+        }
+      />
 
       {hasError ? (
         <Alert variant="destructive">
           <AlertTriangle className="size-4" />
-          <AlertTitle>Error Loading Data</AlertTitle>
+          <AlertTitle>Error loading data</AlertTitle>
           <AlertDescription>
             {allAccountsQuery.error?.message || 'Failed to load banking data'}
           </AlertDescription>
         </Alert>
       ) : null}
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center space-y-4">
-            <RefreshCcw className="size-8 mx-auto text-muted-foreground" />
-            <p className="text-muted-foreground">Loading your bank accounts...</p>
-          </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <LoadingSpinner variant="md" />
         </div>
-      )}
+      ) : null}
 
-      {/* Empty State */}
-      {!isLoading && !hasAccounts && !hasError && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="p-4 bg-muted mb-4">
-              <Building2 className="size-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No Bank Accounts</h3>
-            <p className="text-muted-foreground mb-6 max-w-md">
-              Connect your bank accounts to automatically import transactions and get insights into
-              your finances.
-            </p>
+      {!isLoading && !hasAccounts && !hasError ? (
+        <EmptyState
+          variant="dashed"
+          title="No bank accounts"
+          description="Connect your bank accounts to import transactions and understand your spending."
+          icon={<Building2 className="size-5" aria-hidden />}
+          action={
             <PlaidLink
               variant="card"
               onSuccess={handleConnectionSuccess}
               onError={handleConnectionError}
             />
-          </CardContent>
-        </Card>
-      )}
+          }
+        />
+      ) : null}
 
-      {/* Accounts Section */}
-      {hasAccounts && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Your Accounts</h2>
+      {hasAccounts ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="heading-4 text-foreground">Your accounts</h2>
             <Badge variant="secondary">{allAccountsQuery.accounts.length} accounts</Badge>
           </div>
 
@@ -278,7 +268,7 @@ export default function AccountsPage({ loaderData }: Route.ComponentProps) {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

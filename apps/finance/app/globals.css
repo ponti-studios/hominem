@@ -1,5 +1,10 @@
-@import '../../../packages/ui/src/styles.css';
-@import '../../../packages/ui/src/animations.css';
+@import '@hominem/ui/styles.css';
+@import '@hominem/ui/animations.css';
 
-/* Tell Tailwind to scan the packages/ui directory for classes */
 @source '../../../packages/ui/src';
+
+@layer base {
+  body {
+    min-width: 320px;
+  }
+}
