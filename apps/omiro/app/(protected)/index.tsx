@@ -49,16 +49,7 @@ export default function InboxScreen() {
   const { requestTopReveal } = useTopAnchoredInbox({ listRef, headKey, isFocused });
 
   // The list's initial scroll offset can land under the collapsing nav/search bar
-  // header, hiding the top row until the user scrolls manually. Snap to the top
-  // whenever the screen (re)gains focus or the first page of data becomes available.
-  const previousFocusedRef = useRef(isFocused);
-  useEffect(() => {
-    if (isFocused && !previousFocusedRef.current) {
-      requestTopReveal();
-    }
-    previousFocusedRef.current = isFocused;
-  }, [isFocused, requestTopReveal]);
-
+  // header, hiding the top row until the first page of data becomes available.
   const previousHeadKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (isFocused && headKey !== null && previousHeadKeyRef.current === null) {

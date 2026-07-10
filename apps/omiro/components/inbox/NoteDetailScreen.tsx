@@ -115,7 +115,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         <Stack.Screen
           options={{
             title: '',
-            headerTitle: () => null,
             headerBackButtonDisplayMode: 'minimal',
             headerBackVisible: canGoBack,
           }}
@@ -138,7 +137,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         <Stack.Screen
           options={{
             title: '',
-            headerTitle: () => null,
             headerBackButtonDisplayMode: 'minimal',
             headerBackVisible: canGoBack,
           }}
@@ -311,7 +309,6 @@ function NoteEditorBody({
       <Stack.Screen
         options={{
           title: '',
-          headerTitle: () => null,
           headerBackButtonDisplayMode: 'minimal',
           headerBackVisible: canGoBack,
         }}
