@@ -77,7 +77,7 @@
     "react-native-vision-camera": "^5.0.9",
     "react-native-web": "^0.21.0",
     "react-native-worklets": "0.10.0",
-    "zod": "4.4.3"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@expo/plist": "^0.7.0",

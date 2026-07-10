@@ -1,5 +1,5 @@
 import { db, PortfolioRepository, SocialLinksRepository } from '@hominem/db';
-import { createStorageService, isStorageServiceError, validateFile } from '@hominem/storage';
+import { imageStorageService, isStorageServiceError, validateFile } from '@hominem/storage';
 
 import { parseFormData } from '~/lib/route-utils';
 
@@ -10,11 +10,6 @@ import type {
   BasicInfoFormValues,
   SocialLinksFormValues,
 } from './types';
-
-const profileImageStorage = createStorageService('images', {
-  maxFileSize: 5 * 1024 * 1024,
-  isPublic: true,
-});
 
 const PROFILE_IMAGE_VALIDATION = {
   maxSizeBytes: 5 * 1024 * 1024,
@@ -116,7 +111,7 @@ async function handleUploadProfileImageAction({
 
     try {
       const buffer = Buffer.from(await imageFile.arrayBuffer());
-      uploadResult = await profileImageStorage.storeFile(buffer, imageFile.type, user.id, {
+      uploadResult = await imageStorageService.storeFile(buffer, imageFile.type, user.id, {
         originalName: imageFile.name,
       });
     } catch (uploadError) {
@@ -127,7 +122,7 @@ async function handleUploadProfileImageAction({
       await PortfolioRepository.updatePortfolioProfileImage(db, user.id, uploadResult.url);
     } catch (updateError) {
       console.error('Database update error:', updateError);
-      await profileImageStorage.deleteFile(uploadResult.id, user.id);
+      await imageStorageService.deleteFile(uploadResult.id, user.id);
       throw new Response('Failed to update portfolio', { status: 500 });
     }
 

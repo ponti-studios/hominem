@@ -1,14 +1,8 @@
-import { createStorageService, type FileObject } from '@hominem/storage';
+import { documentStorageService, type FileObject } from '@hominem/storage';
 
 import type { AccountDocumentFile } from './types';
 
-const documentStorage = createStorageService('documents', {
-  maxFileSize: 10 * 1024 * 1024,
-  isPublic: false,
-});
-
-const UUID_PREFIX =
-  /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:-|\.|$)/i;
+const UUID_PREFIX = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:-|\.|$)/i;
 
 export function parseStoredDocument(entry: FileObject): AccountDocumentFile {
   const match = UUID_PREFIX.exec(entry.name);
@@ -28,16 +22,14 @@ export function parseStoredDocument(entry: FileObject): AccountDocumentFile {
 }
 
 export async function listUserDocuments(userId: string): Promise<AccountDocumentFile[]> {
-  const files = await documentStorage.listUserFiles(userId);
-  return files
-    .map(parseStoredDocument)
-    .sort((a, b) => {
-      const aTime = a.lastModified ? Date.parse(a.lastModified) : 0;
-      const bTime = b.lastModified ? Date.parse(b.lastModified) : 0;
-      return bTime - aTime;
-    });
+  const files = await documentStorageService.listUserFiles(userId);
+  return files.map(parseStoredDocument).sort((a, b) => {
+    const aTime = a.lastModified ? Date.parse(a.lastModified) : 0;
+    const bTime = b.lastModified ? Date.parse(b.lastModified) : 0;
+    return bTime - aTime;
+  });
 }
 
 export async function deleteUserDocument(userId: string, fileId: string): Promise<boolean> {
-  return documentStorage.deleteFile(fileId, userId);
+  return documentStorageService.deleteFile(fileId, userId);
 }

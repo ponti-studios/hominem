@@ -17,11 +17,12 @@ import {
   sanitizeFileName,
 } from '@hominem/utils/files';
 
+import { env } from './env';
 import { StorageServiceError } from './errors';
 import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
 import { isSupportedUploadMimeType } from './upload-policy';
 
-export type StorageCategory = 'csvs' | 'chats' | 'places' | 'images' | 'documents';
+export type StorageCategory = 'csvs' | 'chats' | 'places' | 'images' | 'documents' | 'imports';
 
 function resolveFileExtension(filename: string, mimetype: string): string {
   const ext = getFileExtension(filename);
@@ -43,66 +44,30 @@ type StorageConnectionConfig = {
   canCreateBucket: boolean;
 };
 
-const localMinioStorageConfig: StorageConnectionConfig = {
-  endpoint: 'http://localhost:9000',
-  region: 'auto',
-  bucketName: 'storage',
-  accessKeyId: 'minioadmin',
-  secretAccessKey: 'minioadmin',
-  publicUrl: 'http://localhost:9000',
-  forcePathStyle: true,
-  canCreateBucket: true,
-};
-
 function getCloudflareR2StorageConfig(): StorageConnectionConfig | null {
-  const endpoint = process.env.R2_ENDPOINT;
-  const bucketName = process.env.R2_BUCKET_NAME;
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const publicUrl = process.env.R2_PUBLIC_URL;
-  const values = [endpoint, bucketName, accessKeyId, secretAccessKey, publicUrl];
-  const hasPartialConfig = values.some(Boolean);
-
-  if (!hasPartialConfig) {
+  if (
+    !env.R2_ENDPOINT ||
+    !env.R2_BUCKET_NAME ||
+    !env.R2_ACCESS_KEY_ID ||
+    !env.R2_SECRET_ACCESS_KEY
+  ) {
     return null;
   }
 
-  const missing = [
-    endpoint ? null : 'R2_ENDPOINT',
-    bucketName ? null : 'R2_BUCKET_NAME',
-    accessKeyId ? null : 'R2_ACCESS_KEY_ID',
-    secretAccessKey ? null : 'R2_SECRET_ACCESS_KEY',
-  ].filter((value): value is string => Boolean(value));
-
-  if (missing.length > 0) {
-    throw new StorageServiceError('storage.config.missing', { missing });
-  }
-
   return {
-    endpoint: endpoint!,
+    endpoint: env.R2_ENDPOINT,
     region: 'auto',
-    bucketName: bucketName!,
-    accessKeyId: accessKeyId!,
-    secretAccessKey: secretAccessKey!,
-    publicUrl,
+    bucketName: env.R2_BUCKET_NAME,
+    accessKeyId: env.R2_ACCESS_KEY_ID,
+    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+    publicUrl: env.R2_PUBLIC_URL,
     forcePathStyle: false,
     canCreateBucket: false,
   };
 }
 
 function getStorageConnectionConfig(): StorageConnectionConfig {
-  const r2Config = getCloudflareR2StorageConfig();
-  if (r2Config) {
-    return r2Config;
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    throw new StorageServiceError('storage.config.missing', {
-      missing: ['R2_ENDPOINT', 'R2_BUCKET_NAME', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY'],
-    });
-  }
-
-  return localMinioStorageConfig;
+  return getCloudflareR2StorageConfig() as StorageConnectionConfig;
 }
 
 function getBucketAccessError(bucketName: string, error: unknown): StorageServiceError {
@@ -199,6 +164,14 @@ class InMemoryStorageBackend {
     await this.__testOnlyStoreFile(filePath, buffer);
   }
 
+  async storeImmutableObject(userId: string, contentHash: string, buffer: Buffer): Promise<string> {
+    const key = `${this.getKey(userId, 'sha256')}/${contentHash}`;
+    if (!this.files.has(key)) {
+      this.files.set(key, buffer);
+    }
+    return key;
+  }
+
   markUploadPending(filePath: string, mimetype: string, size: number): void {
     this.pendingUploads.set(filePath, { mimetype, size });
   }
@@ -266,11 +239,11 @@ class InMemoryStorageBackend {
       originalName,
       mimetype: input.mimetype,
       size: input.size,
-      uploadUrl: `http://localhost:4040/api/files/upload-bytes/${id}`,
+      uploadUrl: `/api/files/upload-bytes/${id}`,
       headers: {
         'content-type': input.mimetype,
       },
-      url: `http://localhost:4040/files/${id}`,
+      url: `/files/${id}`,
       uploadedAt: new Date(),
       expiresAt: new Date(Date.now() + expiresIn * 1000),
     };
@@ -353,11 +326,11 @@ class InMemoryStorageBackend {
       return null;
     }
 
-    return `http://localhost:4040/files/${fileId}`;
+    return `/files/${fileId}`;
   }
 
   async getSignedUrl(filePath: string): Promise<string> {
-    return `http://localhost:4040/files/${filePath}`;
+    return `/files/${filePath}`;
   }
 
   async fileExists(filePath: string): Promise<boolean> {
@@ -369,7 +342,7 @@ class InMemoryStorageBackend {
   }
 
   getPublicUrlForPath(filePath: string): string {
-    return `http://localhost:4040/files/${filePath}`;
+    return `/files/${filePath}`;
   }
 
   getPublicUrl(filePath: string): string {
@@ -425,7 +398,7 @@ class InMemoryStorageBackend {
 }
 
 export class R2StorageService {
-  client!: S3Client;
+  private _client?: S3Client;
   bucketName!: string;
   category!: StorageCategory;
   maxFileSize!: number;
@@ -447,24 +420,30 @@ export class R2StorageService {
       });
     }
 
-    const storageConfig = getStorageConnectionConfig();
-
-    this.client = new S3Client({
-      region: storageConfig.region,
-      endpoint: storageConfig.endpoint,
-      credentials: {
-        accessKeyId: storageConfig.accessKeyId,
-        secretAccessKey: storageConfig.secretAccessKey,
-      },
-      forcePathStyle: storageConfig.forcePathStyle,
-    });
-
-    this.bucketName = storageConfig.bucketName;
     this.category = category;
     this.maxFileSize = options?.maxFileSize || 50 * 1024 * 1024;
     this.isPublic = options?.isPublic ?? false;
     this.userScoped = category !== 'places';
-    this.canCreateBucket = storageConfig.canCreateBucket;
+  }
+
+  get client(): S3Client {
+    if (!this._client) {
+      const storageConfig = getStorageConnectionConfig();
+
+      this._client = new S3Client({
+        region: storageConfig.region,
+        endpoint: storageConfig.endpoint,
+        credentials: {
+          accessKeyId: storageConfig.accessKeyId,
+          secretAccessKey: storageConfig.secretAccessKey,
+        },
+        forcePathStyle: storageConfig.forcePathStyle,
+      });
+
+      this.bucketName = storageConfig.bucketName;
+      this.canCreateBucket = storageConfig.canCreateBucket;
+    }
+    return this._client;
   }
 
   getKey(userId: string, filename: string): string {
@@ -476,7 +455,9 @@ export class R2StorageService {
 
   async ensureBucket(): Promise<void> {
     try {
-      await this.client.send(new HeadBucketCommand({ Bucket: this.bucketName }));
+      // Accessing client ensures this.bucketName and this.canCreateBucket get initialized
+      const s3 = this.client;
+      await s3.send(new HeadBucketCommand({ Bucket: this.bucketName }));
     } catch (error) {
       if (!this.canCreateBucket) {
         throw getBucketAccessError(this.bucketName, error);
@@ -785,9 +766,10 @@ export class R2StorageService {
   }
 
   getPublicUrl(key: string): string {
+    // We must invoke this.client to ensure storageConfig configures bucketName
     const storageConfig = getStorageConnectionConfig();
     const endpoint = storageConfig.endpoint;
-    const bucket = this.bucketName;
+    const bucket = storageConfig.bucketName;
     const publicUrl = storageConfig.publicUrl;
     if (publicUrl) {
       return `${publicUrl.replace(/\/$/, '')}/${bucket}/${key}`;
@@ -829,50 +811,60 @@ export class R2StorageService {
     });
     await this.client.send(command);
   }
+
+  /**
+   * Stores a private, content-addressed import object. Re-importing identical
+   * bytes returns the same key and never overwrites a distinct artifact.
+   */
+  async storeImmutableObject(userId: string, contentHash: string, buffer: Buffer): Promise<string> {
+    if (!/^[a-f0-9]{64}$/i.test(contentHash)) {
+      throw new Error('contentHash must be a SHA-256 hex digest');
+    }
+
+    await this.ensureBucket();
+    const key = `${this.getKey(userId, 'sha256')}/${contentHash.toLowerCase()}`;
+    if (await this.fileExists(key)) {
+      return key;
+    }
+
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: buffer,
+        ContentType: 'application/octet-stream',
+      }),
+    );
+    return key;
+  }
 }
 
-const createCsvStorageService = () =>
-  new R2StorageService('csvs', {
-    maxFileSize: 50 * 1024 * 1024,
-    isPublic: false,
-  });
+export const csvStorageService = new R2StorageService('csvs', {
+  maxFileSize: 50 * 1024 * 1024,
+  isPublic: false,
+});
 
-const createFileStorageService = () =>
-  new R2StorageService('chats', {
-    maxFileSize: 10 * 1024 * 1024,
-    isPublic: true,
-  });
+export const fileStorageService = new R2StorageService('chats', {
+  maxFileSize: 10 * 1024 * 1024,
+  isPublic: true,
+});
 
-const createPlaceImagesStorageService = () =>
-  new R2StorageService('places', {
-    maxFileSize: 10 * 1024 * 1024,
-    isPublic: true,
-  });
+export const placeImagesStorageService = new R2StorageService('places', {
+  maxFileSize: 10 * 1024 * 1024,
+  isPublic: true,
+});
 
-function createLazyStorageService(factory: () => R2StorageService): R2StorageService {
-  let service: R2StorageService | null = null;
+export const importStorageService = new R2StorageService('imports', {
+  maxFileSize: 1024 * 1024 * 1024,
+  isPublic: false,
+});
 
-  return new Proxy({} as R2StorageService, {
-    get(_target, prop, receiver) {
-      service ??= factory();
-      return Reflect.get(service, prop, receiver);
-    },
-    set(_target, prop, value, receiver) {
-      service ??= factory();
-      return Reflect.set(service, prop, value, receiver);
-    },
-  });
-}
+export const documentStorageService = new R2StorageService('documents', {
+  maxFileSize: 25 * 1024 * 1024,
+  isPublic: false,
+});
 
-export const csvStorageService = createLazyStorageService(createCsvStorageService);
-
-export const fileStorageService = createLazyStorageService(createFileStorageService);
-
-export const placeImagesStorageService = createLazyStorageService(createPlaceImagesStorageService);
-
-export function createStorageService(
-  category: StorageCategory,
-  options?: StorageOptions,
-): R2StorageService {
-  return createLazyStorageService(() => new R2StorageService(category, options));
-}
+export const imageStorageService = new R2StorageService('images', {
+  maxFileSize: 10 * 1024 * 1024,
+  isPublic: true,
+});

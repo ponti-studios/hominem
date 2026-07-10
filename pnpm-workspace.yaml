@@ -10,6 +10,7 @@ catalog:
   react-dom: 19.2.7
   '@types/react': 19.2.10
   '@types/react-dom': 19.1.7
+  zod: 4.4.3
 
 overrides:
   ua-parser-js: 1.0.39

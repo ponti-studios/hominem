@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@hominem/ui';
-import { AlertCircle, CheckCircle, Copy, FileText, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle, Copy, Download, FileText, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useFetcher } from 'react-router';
 
@@ -21,11 +21,34 @@ import type {
   CustomizeResumeApiResponse,
   JobAnalysis,
 } from '~/lib/api-contracts';
+import { getCompanyName } from '~/lib/utils/applicationUtils';
 import type { JobPosting } from '~/types/applications';
 
 interface ApplicationResumeTabProps {
   application: ApplicationWithCompany;
   applicationId: string;
+}
+
+function toFilenamePart(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'resume'
+  );
+}
+
+function downloadMarkdown(filename: string, content: string): void {
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
 }
 
 export function ApplicationResumeTab({
@@ -58,6 +81,9 @@ export function ApplicationResumeTab({
   const hasStructuredPosting = parsedJobPosting !== null;
   const hasRawPosting = !hasStructuredPosting && Boolean(application.jobPosting);
   const hasAnyPosting = hasStructuredPosting || hasRawPosting;
+  const resumeFilename = `${toFilenamePart(getCompanyName(application.company))}-${toFilenamePart(
+    application.position,
+  )}-resume.md`;
 
   const isSaving = fetcher.state !== 'idle';
   const saveSuccess =
@@ -109,6 +135,10 @@ export function ApplicationResumeTab({
     await navigator.clipboard.writeText(text);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2000);
+  }
+
+  function handleDownload(text: string) {
+    downloadMarkdown(resumeFilename, text);
   }
 
   if (!hasAnyPosting) {
@@ -170,6 +200,14 @@ export function ApplicationResumeTab({
                 <Button variant="ghost" size="sm" onClick={() => handleCopy(application.resume!)}>
                   <Copy className="size-4 mr-1" />
                   Copy
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownload(application.resume!)}
+                >
+                  <Download className="size-4 mr-1" />
+                  Download
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setShowRegenerate(true)}>
                   <Sparkles className="size-4 mr-1" />
@@ -286,6 +324,10 @@ export function ApplicationResumeTab({
                 <Button variant="ghost" size="sm" onClick={() => handleCopy(generatedResume)}>
                   <Copy className="size-4 mr-1" />
                   {copySuccess ? 'Copied!' : 'Copy'}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleDownload(generatedResume)}>
+                  <Download className="size-4 mr-1" />
+                  Download
                 </Button>
                 <Button
                   size="sm"

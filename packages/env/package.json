@@ -34,7 +34,7 @@
     "lint": "oxlint src --fix"
   },
   "dependencies": {
-    "zod": "4.3.6"
+    "zod": "catalog:"
   },
   "devDependencies": {}
 }

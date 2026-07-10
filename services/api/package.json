@@ -25,6 +25,8 @@
     "lint": "oxlint src --fix",
     "start": "node dist/index.mjs",
     "start:worker": "node dist/worker.mjs",
+    "import:warehouse": "tsx scripts/import-warehouse.ts",
+    "test": "vitest run",
     "typecheck": "tsgo --noEmit",
     "e2e:setup": "tsx scripts/e2e-setup.ts"
   },
@@ -35,12 +37,7 @@
     "@hominem/auth": "workspace:*",
     "@hominem/db": "workspace:*",
     "@hominem/env": "workspace:*",
-
     "@hominem/finance-services": "workspace:*",
-
-
-
-
     "@hominem/queues": "workspace:*",
     "@hominem/services": "workspace:*",
     "@hominem/storage": "workspace:*",
@@ -57,7 +54,7 @@
     "hono-openapi": "^1.3.0",
     "pg": "^8.20.0",
     "resend": "^6.12.4",
-    "zod": "4.3.6"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { createChatCompletion, getChatCompletionText, OpenRouterRequestError } from '@hominem/ai';
 import { db, PortfolioRepository } from '@hominem/db';
 import {
-  createStorageService,
+  documentStorageService,
   isStorageServiceError,
   resolveUploadMimeType,
   validateFile,
@@ -21,10 +21,6 @@ import type { ConvertedResumeData, ResumeConvertStage } from '../types/resume';
 import { resumeSchema } from '../types/resume';
 
 const MAX_EXTRACTED_RESUME_TEXT_LENGTH = 80_000;
-const resumeStorage = createStorageService('documents', {
-  maxFileSize: 10 * 1024 * 1024,
-  isPublic: false,
-});
 const PDF_RESUME_VALIDATION = {
   maxSizeBytes: 10 * 1024 * 1024,
   allowedTypes: ['application/pdf'],
@@ -227,7 +223,7 @@ export const action: ActionFunction = async ({ request, context }) => {
     if (typeof storedFileIdField === 'string' && storedFileIdField.trim()) {
       // Re-convert an already stored PDF (no second upload).
       const fileId = storedFileIdField.trim();
-      const bytes = await resumeStorage.getFile(fileId, user.id);
+      const bytes = await documentStorageService.getFile(fileId, user.id);
       if (!bytes) {
         return errorResponse(
           'That file was not found. It may have been deleted.',
@@ -236,11 +232,11 @@ export const action: ActionFunction = async ({ request, context }) => {
           false,
         );
       }
-      const listed = await resumeStorage.listUserFiles(user.id);
+      const listed = await documentStorageService.listUserFiles(user.id);
       const meta = listed.find((entry) => entry.name.startsWith(fileId));
       const fileName = meta?.name ?? `${fileId}.pdf`;
       file = new File([Buffer.from(bytes)], fileName, { type: 'application/pdf' });
-      const fileUrl = (await resumeStorage.getFileUrl(fileId, user.id)) ?? '';
+      const fileUrl = (await documentStorageService.getFileUrl(fileId, user.id)) ?? '';
       uploadResult = { id: fileId, url: fileUrl };
     } else if (pdfField instanceof File) {
       file = pdfField;
@@ -259,7 +255,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       // Persist the PDF first so a later extract/AI/DB failure does not lose the file.
       try {
         const buffer = Buffer.from(await file.arrayBuffer());
-        uploadResult = await resumeStorage.storeFile(buffer, uploadMimeType, user.id, {
+        uploadResult = await documentStorageService.storeFile(buffer, uploadMimeType, user.id, {
           originalName: file.name,
         });
       } catch (error) {

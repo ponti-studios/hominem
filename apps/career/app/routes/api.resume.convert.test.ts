@@ -10,15 +10,19 @@ import { userContext } from '../lib/middleware';
 
 const mocks = vi.hoisted(() => ({
   createCompletion: vi.fn(),
-  createStorageService: vi.fn(),
-  deleteFile: vi.fn(),
+  documentStorageService: {
+    storeFile: vi.fn(),
+    deleteFile: vi.fn(),
+    getFileUrl: vi.fn(),
+    listUserFiles: vi.fn(),
+    getFile: vi.fn(),
+  },
   extractPdfText: vi.fn(),
   getRateLimitHeaders: vi.fn(),
   isRateLimitAllowed: vi.fn(),
   logError: vi.fn(),
   resolveUploadMimeType: vi.fn(),
   saveResumeToDatabase: vi.fn(),
-  storeFile: vi.fn(),
   validateFile: vi.fn(),
 }));
 
@@ -32,7 +36,7 @@ vi.mock('@hominem/storage', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@hominem/storage')>();
   return {
     ...actual,
-    createStorageService: mocks.createStorageService,
+    documentStorageService: mocks.documentStorageService,
     resolveUploadMimeType: mocks.resolveUploadMimeType,
     validateFile: mocks.validateFile,
   };
@@ -82,10 +86,6 @@ let action: typeof import('./api.resume.convert').action;
 const testDb = createCareerTestDb();
 
 beforeAll(async () => {
-  mocks.createStorageService.mockReturnValue({
-    deleteFile: mocks.deleteFile,
-    storeFile: mocks.storeFile,
-  });
   ({ action } = await import('./api.resume.convert'));
 });
 
@@ -191,11 +191,11 @@ describe('resume convert action', () => {
     mocks.createCompletion.mockResolvedValue({
       choices: [{ message: { content: JSON.stringify(makeConvertedResumeData()) } }],
     });
-    mocks.storeFile.mockResolvedValue({
+    mocks.documentStorageService.storeFile.mockResolvedValue({
       id: 'file-id',
-      url: 'http://localhost:9000/storage/resumes/resume.pdf',
+      url: '/files/file-id',
     });
-    mocks.deleteFile.mockResolvedValue(true);
+    mocks.documentStorageService.deleteFile.mockResolvedValue(true);
     mocks.saveResumeToDatabase.mockResolvedValue({
       portfolioId: 'portfolio-id',
       portfolioSlug: 'charles-ponti',
@@ -232,7 +232,7 @@ describe('resume convert action', () => {
     expect(body.rateLimit).toMatchObject({ limit: 3, remaining: 0 });
     expect(mocks.extractPdfText).not.toHaveBeenCalled();
     expect(mocks.createCompletion).not.toHaveBeenCalled();
-    expect(mocks.storeFile).not.toHaveBeenCalled();
+    expect(mocks.documentStorageService.storeFile).not.toHaveBeenCalled();
   });
 
   it('returns file validation stage when no file is attached', async () => {
@@ -426,8 +426,8 @@ describe('resume convert action', () => {
 
     expect(response.status).toBe(422);
     expect(body.stage).toBe('schema-validation');
-    expect(mocks.storeFile).toHaveBeenCalledTimes(1);
-    expect(body.fileUrl).toBe('http://localhost:9000/storage/resumes/resume.pdf');
+    expect(mocks.documentStorageService.storeFile).toHaveBeenCalledTimes(1);
+    expect(body.fileUrl).toBe('/files/file-id');
   });
 
   it('normalizes present dates before saving', async () => {
@@ -468,13 +468,18 @@ describe('resume convert action', () => {
     const response = await callAction(formRequest(pdfFileWithoutMime()));
 
     expect(response.status).toBe(200);
-    expect(mocks.storeFile).toHaveBeenCalledWith(expect.any(Buffer), 'application/pdf', 'user-id', {
-      originalName: 'resume.pdf',
-    });
+    expect(mocks.documentStorageService.storeFile).toHaveBeenCalledWith(
+      expect.any(Buffer),
+      'application/pdf',
+      'user-id',
+      {
+        originalName: 'resume.pdf',
+      },
+    );
   });
 
   it('returns storage stage when upload fails', async () => {
-    mocks.storeFile.mockRejectedValue(new Error('storage failed'));
+    mocks.documentStorageService.storeFile.mockRejectedValue(new Error('storage failed'));
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
@@ -492,9 +497,9 @@ describe('resume convert action', () => {
 
     expect(response.status).toBe(500);
     expect(body.stage).toBe('database');
-    expect(body.fileUrl).toBe('http://localhost:9000/storage/resumes/resume.pdf');
-    expect(mocks.storeFile).toHaveBeenCalledTimes(1);
-    expect(mocks.deleteFile).not.toHaveBeenCalled();
+    expect(body.fileUrl).toBe('/files/file-id');
+    expect(mocks.documentStorageService.storeFile).toHaveBeenCalledTimes(1);
+    expect(mocks.documentStorageService.deleteFile).not.toHaveBeenCalled();
   });
 
   it('stores the PDF before AI parse failures', async () => {
@@ -505,9 +510,9 @@ describe('resume convert action', () => {
 
     expect(response.status).toBe(502);
     expect(body.stage).toBe('ai-parse');
-    expect(mocks.storeFile).toHaveBeenCalledTimes(1);
-    expect(body.fileUrl).toBe('http://localhost:9000/storage/resumes/resume.pdf');
-    expect(mocks.deleteFile).not.toHaveBeenCalled();
+    expect(mocks.documentStorageService.storeFile).toHaveBeenCalledTimes(1);
+    expect(body.fileUrl).toBe('/files/file-id');
+    expect(mocks.documentStorageService.deleteFile).not.toHaveBeenCalled();
   });
 
   it('returns portfolio metadata when conversion succeeds', async () => {
@@ -519,6 +524,6 @@ describe('resume convert action', () => {
     expect(body.portfolio_id).toBe('portfolio-id');
     expect(body.portfolioSlug).toBe('charles-ponti');
     expect(body.portfolioUrl).toBe('/p/charles-ponti');
-    expect(body.fileUrl).toBe('http://localhost:9000/storage/resumes/resume.pdf');
+    expect(body.fileUrl).toBe('/files/file-id');
   });
 });

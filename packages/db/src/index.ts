@@ -147,3 +147,34 @@ export type {
 
 export { UserRepository } from './services/users/user.repository';
 export type { FindUserInput, UserRecord } from './services/users/user.repository';
+
+export { CalendarImportRepository } from './services/calendar/calendar-import.repository';
+export type {
+  CalendarImportRunRecord,
+  CalendarOccurrenceImportInput,
+  CalendarOccurrenceRecord,
+  ImportCalendarOccurrencesInput,
+} from './services/calendar/calendar-import.repository';
+
+export { CalendarQueryRepository } from './services/calendar/calendar-query.repository';
+export type {
+  CalendarEvidenceRecord,
+  CalendarOccurrenceReadRecord,
+  CalendarSearchInput,
+  CalendarUpcomingInput,
+} from './services/calendar/calendar-query.repository';
+
+export { FinanceQueryRepository } from './services/finance/finance-query.repository';
+export type {
+  FinanceMerchantSpendRecord,
+  FinanceMonthlySummaryInput,
+  FinanceMonthlySummaryRecord,
+  FinanceTransactionSummaryRecord,
+} from './services/finance/finance-query.repository';
+
+export { ImportHealthRepository } from './services/imports/import-health.repository';
+export type {
+  ImportSourceHealthRecord,
+  PersonalDataHealthRecord,
+  ReconciliationHealthRecord,
+} from './services/imports/import-health.repository';

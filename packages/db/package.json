@@ -34,7 +34,7 @@
     "@hominem/utils": "workspace:*",
     "kysely": "^0.28.17",
     "pg": "^8.20.0",
-    "zod": "4.3.6"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "dotenv": "17.2.3",
