@@ -1,12 +1,16 @@
 import { logger } from '@hominem/telemetry';
+import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   WebStandardStreamableHTTPServerTransport,
   type WebStandardStreamableHTTPServerTransportOptions,
 } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
-import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import type { CallToolResult, ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
+import type {
+  CallToolResult,
+  ServerNotification,
+  ServerRequest,
+} from '@modelcontextprotocol/sdk/types.js';
 
 import { UnauthorizedError } from '../errors';
 import { callTool, listTools, type McpToolDefinition } from './tools';
@@ -52,7 +56,7 @@ function createToolHandler(definition: McpToolDefinition) {
     }
 
     try {
-      return await callTool(context.ownerUserId, definition.name, args);
+      return (await callTool(context.ownerUserId, definition.name, args)) as CallToolResult;
     } catch (error) {
       logger.warn('[mcp] tool invocation failed', {
         tool: definition.name,
@@ -88,7 +92,9 @@ function createMcpServer() {
 }
 
 export async function handleMcpRequestWithSession(c: any): Promise<Response> {
-  const session = c.get('mcpSession') as { userId: string; scopes: string; clientId?: string } | undefined;
+  const session = c.get('mcpSession') as
+    | { userId: string; scopes: string; clientId?: string }
+    | undefined;
   const userId = c.get('userId') as string | undefined;
 
   if (!userId) {
@@ -98,7 +104,10 @@ export async function handleMcpRequestWithSession(c: any): Promise<Response> {
   // Scopes from session, or from header (dev fallback), or from registered tools (default)
   const scopes = session?.scopes
     ? session.scopes.split(' ').filter(Boolean)
-    : (c.req.header('x-mcp-scopes') ?? '').split(',').map((s: string) => s.trim()).filter(Boolean);
+    : (c.req.header('x-mcp-scopes') ?? '')
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean);
 
   if (scopes.length === 0) {
     // Default: grant scopes for all registered tools

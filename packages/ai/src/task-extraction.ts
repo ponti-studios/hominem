@@ -5,7 +5,10 @@ import {
   normalizeOpenRouterError,
   type OpenRouterClientOptions,
 } from './shared';
-import { createStructuredChatCompletion } from './text';
+import {
+  createStructuredChatCompletion,
+  StructuredOutputError as AITextStructuredOutputError,
+} from './text';
 
 export type TaskExtractionInput = OpenRouterClientOptions & {
   transcript: string;
@@ -76,6 +79,10 @@ export async function extractTasks(
       usage,
     };
   } catch (error) {
+    if (error instanceof AITextStructuredOutputError) {
+      throw error;
+    }
+
     throw normalizeOpenRouterError(error);
   }
 }
@@ -296,6 +303,10 @@ export async function extractVoiceTasks(
       usage,
     };
   } catch (error) {
+    if (error instanceof AITextStructuredOutputError) {
+      throw error;
+    }
+
     throw normalizeOpenRouterError(error);
   }
 }

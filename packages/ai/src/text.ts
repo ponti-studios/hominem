@@ -6,7 +6,11 @@ import {
   openRouterText,
   type OpenRouterTextModelOptions,
 } from '@tanstack/ai-openrouter';
-import { webFetchTool, webSearchTool } from '@tanstack/ai-openrouter/tools';
+import {
+  convertWebFetchToolToAdapterFormat,
+  webFetchTool,
+  webSearchTool,
+} from '@tanstack/ai-openrouter/tools';
 import { z } from 'zod';
 
 import {
@@ -49,6 +53,18 @@ export type StructuredChatCompletionResult<T> = {
   output: T;
   usage: AIUsageMetrics | null;
 };
+
+export class StructuredOutputError extends Error {
+  usage: AIUsageMetrics | null;
+  cause?: unknown;
+
+  constructor(message: string, options: { usage: AIUsageMetrics | null; cause?: unknown }) {
+    super(message);
+    this.name = 'StructuredOutputError';
+    this.usage = options.usage;
+    this.cause = options.cause;
+  }
+}
 
 export function createOpenRouterTextAdapter(options: OpenRouterTextAdapterOptions = {}) {
   if (options.adapter) {
@@ -359,6 +375,25 @@ function parseStructuredOutputText(response: ChatResult) {
   }
 }
 
+export function getStructuredOutputUsage(value: unknown) {
+  if (
+    value &&
+    typeof value === 'object' &&
+    'usage' in value &&
+    ((value as { usage?: unknown }).usage === null ||
+      (typeof (value as { usage?: unknown }).usage === 'object' &&
+        (value as { usage?: unknown }).usage !== undefined))
+  ) {
+    return (value as { usage: AIUsageMetrics | null }).usage;
+  }
+
+  if (value instanceof StructuredOutputError) {
+    return value.usage;
+  }
+
+  return null;
+}
+
 export async function createStructuredChatCompletion<TSchema extends z.ZodTypeAny>(
   input: {
     model: string;
@@ -394,10 +429,29 @@ export async function createStructuredChatCompletion<TSchema extends z.ZodTypeAn
     options,
   );
 
-  return {
-    output: input.schema.parse(parseStructuredOutputText(response)),
-    usage: getChatCompletionUsage(response),
-  };
+  const usage = getChatCompletionUsage(response);
+  let parsed: unknown;
+
+  try {
+    parsed = parseStructuredOutputText(response);
+  } catch (error) {
+    throw new StructuredOutputError(
+      error instanceof Error ? error.message : 'OpenRouter returned invalid structured JSON',
+      { usage, cause: error },
+    );
+  }
+
+  try {
+    return {
+      output: input.schema.parse(parsed),
+      usage,
+    };
+  } catch (error) {
+    throw new StructuredOutputError('OpenRouter returned invalid structured output', {
+      usage,
+      cause: error,
+    });
+  }
 }
 
 export function getChatCompletionText(response: ChatResult, fallback = ''): string {
@@ -430,4 +484,10 @@ export async function enhanceText(
   };
 }
 
-export { chat, openRouterText, webFetchTool, webSearchTool };
+export {
+  chat,
+  convertWebFetchToolToAdapterFormat,
+  openRouterText,
+  webFetchTool,
+  webSearchTool,
+};

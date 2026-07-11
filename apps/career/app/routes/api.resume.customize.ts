@@ -1,7 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
-import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
+import { createChatCompletion, getChatCompletionText, getChatCompletionUsage } from '@hominem/ai';
 import { db, SocialLinksRepository } from '@hominem/db';
+import { recordAIUsageEvent } from '@hominem/services';
 import { data, type ActionFunction } from 'react-router';
 import { z } from 'zod';
 
@@ -143,6 +145,7 @@ ${portfolioContext}
 Please create a customized resume that highlights the most relevant experience and skills for this specific job opportunity.`;
 
     // Generate customized resume using the shared monorepo AI client
+    const resumeEventId = randomUUID();
     const result = await createChatCompletion({
       messages: [
         { role: 'system', content: systemPrompt },
@@ -151,8 +154,26 @@ Please create a customized resume that highlights the most relevant experience a
       maxTokens: 4000,
       temperature: 0.3,
     });
+    await recordAIUsageEvent({
+      eventId: resumeEventId,
+      userId: user.id,
+      feature: 'career_resume_customize',
+      operation: 'chat_completion',
+      usage: getChatCompletionUsage(result),
+      model: result.model,
+      metadata: {
+        portfolioId: portfolio.id,
+        hasStructuredJobPosting: Boolean(jobPostingData),
+        resumeFormat,
+        targetLength,
+        focusAreasCount: focusAreas.length,
+        jobPostingWordCount: finalJobPosting.split(/\s+/).filter(Boolean).length,
+        call: 'resume_generation',
+      },
+    });
 
     // Extract key insights from the job posting for additional context
+    const analysisEventId = randomUUID();
     const analysisResult = await createChatCompletion({
       responseFormat: { type: 'json_object' },
       messages: [
@@ -169,6 +190,23 @@ ${finalJobPosting}`,
         },
       ],
       temperature: 0.1,
+    });
+    await recordAIUsageEvent({
+      eventId: analysisEventId,
+      userId: user.id,
+      feature: 'career_resume_customize',
+      operation: 'structured_output',
+      usage: getChatCompletionUsage(analysisResult),
+      model: analysisResult.model,
+      metadata: {
+        portfolioId: portfolio.id,
+        hasStructuredJobPosting: Boolean(jobPostingData),
+        resumeFormat,
+        targetLength,
+        focusAreasCount: focusAreas.length,
+        jobPostingWordCount: finalJobPosting.split(/\s+/).filter(Boolean).length,
+        call: 'job_analysis',
+      },
     });
 
     const parsedAnalysis = parseJsonObject(getChatCompletionText(analysisResult));

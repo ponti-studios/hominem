@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 import { generateEmbedding } from '@hominem/ai';
 import { ChatRepository, NoteRepository, VectorDocumentRepository, db } from '@hominem/db';
 import { QUEUE_NAMES, type EmbeddingGenerationJob } from '@hominem/queues';
@@ -10,6 +12,19 @@ import { recordAIUsageEvent } from '../application/ai-usage.service';
 const EMBEDDING_DIMENSIONS = 1536;
 
 let worker: Worker | null = null;
+
+function toDeterministicUuid(value: string) {
+  const hash = createHash('sha256').update(value).digest('hex');
+  const timeHigh = `4${hash.slice(13, 16)}`;
+  const clockSeq = `${((Number.parseInt(hash.slice(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, '0')}${hash.slice(18, 20)}`;
+  return [
+    hash.slice(0, 8),
+    hash.slice(8, 12),
+    timeHigh,
+    clockSeq,
+    hash.slice(20, 32),
+  ].join('-');
+}
 
 async function buildEntityContent(
   entityType: EmbeddingGenerationJob['entityType'],
@@ -35,6 +50,9 @@ async function processEmbeddingJob(data: EmbeddingGenerationJob) {
     return;
   }
 
+  const eventId = toDeterministicUuid(
+    `${data.jobId}:${data.entityType}:${data.entityId}:embedding`,
+  );
   const embeddingResult = await generateEmbedding(content, { dimensions: EMBEDDING_DIMENSIONS });
   const embedding = embeddingResult.embedding;
   if (embedding.length === 0) {
@@ -46,6 +64,7 @@ async function processEmbeddingJob(data: EmbeddingGenerationJob) {
   }
 
   await recordAIUsageEvent({
+    eventId,
     userId: data.userId,
     feature: 'embedding',
     operation: 'embedding',

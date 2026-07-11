@@ -1,5 +1,8 @@
-import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
+import { randomUUID } from 'node:crypto';
+
+import { createChatCompletion, getChatCompletionText, getChatCompletionUsage } from '@hominem/ai';
 import { db, ProjectRepository, WorkExperienceRepository } from '@hominem/db';
+import { recordAIUsageEvent } from '@hominem/services';
 import { z } from 'zod';
 
 const derivedSkillSchema = z.object({
@@ -65,12 +68,26 @@ export async function deriveSkillsFromCareerHistory(
 
   const userMessage = `Work History:\n${workSection}\n\nProjects:\n${projectSection}`;
 
+  const eventId = randomUUID();
   const result = await createChatCompletion({
     responseFormat: { type: 'json_object' },
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userMessage },
     ],
+  });
+  await recordAIUsageEvent({
+    eventId,
+    userId: ownerUserid,
+    feature: 'career_skills_derive',
+    operation: 'structured_output',
+    usage: getChatCompletionUsage(result),
+    model: result.model,
+    metadata: {
+      portfolioId,
+      workExperienceCount: workExperiences.length,
+      projectCount: projects.length,
+    },
   });
 
   const raw = getChatCompletionText(result);

@@ -1,6 +1,7 @@
 import {
   cleanupVoiceTranscript,
   OpenRouterRequestError,
+  StructuredOutputError,
   type AIUsageMetrics,
   type VoiceTranscriptCleanupOutput,
 } from '@hominem/ai';
@@ -138,6 +139,14 @@ export async function cleanupVoiceInput(
       usage,
     };
   } catch (error) {
+    if (error instanceof StructuredOutputError) {
+      return {
+        kind: 'success',
+        output: buildFallbackOutput(rawText),
+        usage: error.usage,
+      };
+    }
+
     deps.logError('[voice-cleanup] cleanup failed', {
       source: input.source,
       locale: input.locale,

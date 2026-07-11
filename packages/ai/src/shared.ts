@@ -55,6 +55,7 @@ export type AIUsageMetrics = {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
+  reportedTotalTokens: number | null;
   costUsd: number | null;
   cachedPromptTokens: number | null;
   reasoningTokens: number | null;
@@ -81,14 +82,19 @@ export function normalizeOpenRouterChatUsage(
 
   const promptTokens = toRequiredNumber(usage.promptTokens);
   const completionTokens = toRequiredNumber(usage.completionTokens);
-  const totalTokens = toNullableNumber(usage.totalTokens) ?? promptTokens + completionTokens;
+  const canonicalTotalTokens = promptTokens + completionTokens;
+  const reportedTotalTokens = toNullableNumber(usage.totalTokens);
 
   return {
     provider: 'openrouter',
     model,
     promptTokens,
     completionTokens,
-    totalTokens,
+    totalTokens: canonicalTotalTokens,
+    reportedTotalTokens:
+      reportedTotalTokens === null || reportedTotalTokens === canonicalTotalTokens
+        ? null
+        : reportedTotalTokens,
     costUsd: toNullableNumber(usage.cost),
     cachedPromptTokens: toNullableNumber(usage.promptTokensDetails?.cachedTokens),
     reasoningTokens: toNullableNumber(usage.completionTokensDetails?.reasoningTokens),
@@ -109,14 +115,19 @@ export function normalizeOpenRouterEmbeddingUsage(
   }
 
   const promptTokens = toRequiredNumber(usage.promptTokens);
-  const totalTokens = toNullableNumber(usage.totalTokens) ?? promptTokens;
+  const canonicalTotalTokens = promptTokens;
+  const reportedTotalTokens = toNullableNumber(usage.totalTokens);
 
   return {
     provider: 'openrouter',
     model,
     promptTokens,
     completionTokens: 0,
-    totalTokens,
+    totalTokens: canonicalTotalTokens,
+    reportedTotalTokens:
+      reportedTotalTokens === null || reportedTotalTokens === canonicalTotalTokens
+        ? null
+        : reportedTotalTokens,
     costUsd: toNullableNumber(usage.cost),
     cachedPromptTokens:
       usage.promptTokensDetails && isJsonObject(usage.promptTokensDetails)

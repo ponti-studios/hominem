@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
@@ -12,8 +14,8 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
   .use('/cleanup', rateLimitMiddleware({ bucket: 'voice-cleanup', windowSec: 60, max: 30 }))
   .post('/cleanup', zValidator('json', VoiceCleanupInputSchema), async (c) => {
     const userId = c.get('userId')!;
-    const requestId = c.get('requestId');
     const input = c.req.valid('json');
+    const eventId = randomUUID();
 
     const result = await cleanupVoiceInput(input);
     if (result.kind === 'provider-error') {
@@ -21,11 +23,11 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
     }
 
     await recordAIUsageEvent({
+      eventId,
       userId,
       feature: 'voice_cleanup',
       operation: 'structured_output',
       usage: result.usage,
-      requestId,
       metadata: {
         source: input.source,
         locale: input.locale ?? null,

@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { enhanceText } from '@hominem/ai';
 import { AIUsageEventRepository, db } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
@@ -41,17 +43,17 @@ export const enhanceRoutes = new Hono<AppContext>()
   .use('/enhance', rateLimitMiddleware({ bucket: 'ai-enhance', windowSec: 60, max: 30 }))
   .post('/enhance', zValidator('json', EnhanceTextInputSchema), async (c) => {
     const userId = c.get('userId')!;
-    const requestId = c.get('requestId');
     const { text, instruction } = c.req.valid('json');
+    const eventId = randomUUID();
 
     try {
       const enhanced = await enhanceText({ text, instruction }, TEXT_ENHANCE_PROMPT);
       await recordAIUsageEvent({
+        eventId,
         userId,
         feature: 'text_enhance',
         operation: 'chat_completion',
         usage: enhanced.usage,
-        requestId,
         metadata: {
           instructionProvided: Boolean(instruction),
         },

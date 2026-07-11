@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@hominem/ai": "workspace:*",
+    "@hominem/db": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/telemetry": "workspace:*",
     "@hominem/utils": "workspace:*",

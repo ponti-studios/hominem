@@ -36,6 +36,7 @@ async function processFileUploadJob(data: FileProcessingJobData) {
     data.originalName,
     data.mimetype,
     data.fileId,
+    data.userId,
   );
 
   await FileRepository.upsert(db, {

@@ -1,9 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import { Buffer } from 'node:buffer';
 
-import { createChatCompletion, getChatCompletionText } from '@hominem/ai';
+import { createChatCompletion, getChatCompletionText, getChatCompletionUsage } from '@hominem/ai';
 import { LOG_MESSAGES, logger } from '@hominem/telemetry';
 import mammoth from 'mammoth';
 import PDFParser from 'pdf2json';
+
+import { recordAIUsageEvent } from './ai-usage';
 
 export interface ProcessedFile {
   id: string;
@@ -23,6 +26,7 @@ export class FileProcessorService {
     originalName: string,
     mimetype: string,
     fileId: string,
+    userId: string,
   ): Promise<ProcessedFile> {
     const baseFile: ProcessedFile = {
       id: fileId,
@@ -35,9 +39,9 @@ export class FileProcessorService {
     try {
       switch (baseFile.type) {
         case 'image':
-          return await FileProcessorService.processImage(buffer, baseFile);
+          return await FileProcessorService.processImage(buffer, baseFile, userId);
         case 'document':
-          return await FileProcessorService.processDocument(buffer, baseFile, mimetype);
+          return await FileProcessorService.processDocument(buffer, baseFile, mimetype, userId);
         case 'audio':
           return await FileProcessorService.processAudio(buffer, baseFile);
         case 'video':
@@ -57,11 +61,13 @@ export class FileProcessorService {
   private static async processImage(
     buffer: ArrayBuffer,
     file: ProcessedFile,
+    userId: string,
   ): Promise<ProcessedFile> {
     let textContent = '';
     if (buffer.byteLength < 20 * 1024 * 1024) {
       try {
         const base64Image = Buffer.from(buffer).toString('base64');
+        const eventId = randomUUID();
         const response = await createChatCompletion({
           messages: [
             {
@@ -82,6 +88,19 @@ export class FileProcessorService {
           ],
           maxTokens: 500,
         });
+        await recordAIUsageEvent({
+          eventId,
+          userId,
+          feature: 'file_image_analyze',
+          operation: 'chat_completion',
+          usage: getChatCompletionUsage(response),
+          model: response.model,
+          metadata: {
+            fileId: file.id,
+            mimeType: file.mimetype,
+            sizeBytes: file.size,
+          },
+        });
 
         textContent = getChatCompletionText(response);
       } catch (error) {
@@ -99,6 +118,7 @@ export class FileProcessorService {
     buffer: ArrayBuffer,
     file: ProcessedFile,
     mimetype: string,
+    userId: string,
   ): Promise<ProcessedFile> {
     let textContent = '';
 
@@ -133,6 +153,7 @@ export class FileProcessorService {
       let summary = '';
       if (textContent.length > 1000) {
         try {
+          const eventId = randomUUID();
           const response = await createChatCompletion({
             messages: [
               {
@@ -148,6 +169,20 @@ export class FileProcessorService {
               },
             ],
             maxTokens: 300,
+          });
+          await recordAIUsageEvent({
+            eventId,
+            userId,
+            feature: 'file_document_summarize',
+            operation: 'chat_completion',
+            usage: getChatCompletionUsage(response),
+            model: response.model,
+            metadata: {
+              fileId: file.id,
+              mimeType: file.mimetype,
+              sizeBytes: file.size,
+              extractedCharacterCount: textContent.length,
+            },
           });
 
           summary = getChatCompletionText(response);

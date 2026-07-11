@@ -102,32 +102,31 @@ specs/00-build-mcp/
 ```text
 services/api/src/
 ├── mcp/
-│   ├── transport.ts          # Streamable HTTP transport handler
-│   ├── capability-registry.ts # Tool registration and scoping
-│   ├── tools.ts               # Tool definitions, registration, and dispatch
-│   └── schemas.ts            # Runtime input/output/evidence schemas
-├── middleware/   
-│   └── mcp-auth.ts           # Better Auth session resolution for MCP
-└── app.entities schema via packages/db/migrations/  # Goose migration
+│   ├── server.ts              # Streamable HTTP transport + tool handler
+│   ├── routes.ts              # MCP auth middleware + route mounting + OAuth discovery
+│   ├── tools.ts               # Generic tool registry (register/list/call)
+│   ├── tools/
+│   │   └── career.ts          # Career domain tool definitions
+│   └── rate-limiter.ts        # Per-user sliding-window rate limiter
+├── schemas/
+│   └── career.schema.ts       # Zod schemas for Career tool input/output
+├── application/
+│   └── career.service.ts      # CareerService (wraps PortfolioRepository)
+├── auth/
+│   └── better-auth.ts         # Better Auth config with MCP plugin
+└── server.ts                  # Main app — mounts OAuth discovery routes
 
-services/api/tests/
-├── mcp/
-│   ├── transport.test.ts     # Streamable HTTP: discovery, invocation, denial
-│   ├── auth.test.ts          # Scope denial, revocation, consent
-│   ├── redaction.test.ts     # Evidence redaction, no-data, result caps
-│   └── evaluation/           # LLM evaluation harness
-│       ├── harness.ts        # Fixture setup, scenario runner, scoring
-│       ├── scenarios/        # Career and Omiro workspace scenarios
-│       └── reports/          # Versioned evaluation reports
+packages/db/migrations/
+└── 20260710110000_add_mcp_tool_call_feature_to_ai_usage.sql
 ```
 
 **Structure Decision**: The MCP server lives within the existing `services/api`
-workspace, not a new package. A new `mcp/` module directory holds the transport,
-registry, tool adapter, and schemas. `middleware/` gets the MCP auth middleware.
-Database migrations live in `packages/db/migrations/` per the standard workflow.
-Tests mirror the source structure under `tests/mcp/`, plus the evaluation
-harness in its own subdirectory. This avoids a new package (Principle I) and
-keeps MCP as a capability of the existing API service.
+workspace. A new `mcp/` directory holds the transport, tool registry, domain
+tool modules, and rate limiter. Auth is handled by `mcp/routes.ts` which uses
+the Better Auth MCP plugin for OAuth access tokens with fallback to session
+cookies and `x-user-id` header for dev/test. OAuth discovery endpoints are
+mounted at the server root. Database migrations live in `packages/db/migrations/`.
+No new packages introduced (Principle I).
 
 ## Complexity Tracking
 

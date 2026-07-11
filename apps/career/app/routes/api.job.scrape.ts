@@ -1,11 +1,23 @@
+import { randomUUID } from 'node:crypto';
+
 import { data, type ActionFunction } from 'react-router';
+import { recordAIUsageEvent } from '@hominem/services';
 
 import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
 import { logger } from '~/lib/logger';
-import { scrapeJobPosting } from '~/lib/services/job-scraping.service';
+import { userContext } from '~/lib/middleware';
+import {
+  parseScrapedJobPostingContent,
+  scrapeJobPosting,
+} from '~/lib/services/job-scraping.service';
 
-export const action: ActionFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request, context }) => {
   try {
+    const user = context.get(userContext);
+    if (!user) {
+      return data({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const { url: jobUrl } = (await request.json()) as JobScrapeApiRequest;
 
     if (!jobUrl) {
@@ -18,7 +30,8 @@ export const action: ActionFunction = async ({ request }) => {
       return data({ error: 'Invalid URL format' }, { status: 400 });
     }
 
-    const result = await scrapeJobPosting(jobUrl);
+    const eventId = randomUUID();
+    const result = await scrapeJobPosting(user.id, jobUrl);
 
     if (!result.success) {
       return data(
@@ -29,7 +42,30 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    return { job_posting: result.job_posting } satisfies JobScrapeApiResponse;
+    await recordAIUsageEvent({
+      eventId,
+      userId: user.id,
+      feature: 'career_job_scrape',
+      operation: 'structured_output',
+      usage: result.usage,
+      model: result.model,
+      metadata: {
+        source: 'job_url',
+      },
+    });
+
+    try {
+      return {
+        job_posting: parseScrapedJobPostingContent(result.content ?? '', jobUrl),
+      } satisfies JobScrapeApiResponse;
+    } catch (error) {
+      return data(
+        {
+          error: error instanceof Error ? error.message : 'Job posting scraping failed',
+        } satisfies JobScrapeApiResponse,
+        { status: 400 },
+      );
+    }
   } catch (error) {
     logger.error(
       'Job scraping API error',

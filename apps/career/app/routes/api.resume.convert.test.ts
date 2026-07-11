@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   isRateLimitAllowed: vi.fn(),
   logError: vi.fn(),
   resolveUploadMimeType: vi.fn(),
+  recordAIUsageEvent: vi.fn(),
   saveResumeToDatabase: vi.fn(),
   validateFile: vi.fn(),
 }));
@@ -58,6 +59,10 @@ vi.mock('../lib/rate-limit', () => ({
   getRateLimitHeaders: mocks.getRateLimitHeaders,
 }));
 
+vi.mock('@hominem/services', () => ({
+  recordAIUsageEvent: mocks.recordAIUsageEvent,
+}));
+
 vi.mock('@hominem/ai', () => ({
   OpenRouterRequestError: class OpenRouterRequestError extends Error {
     status?: number;
@@ -80,6 +85,18 @@ vi.mock('@hominem/ai', () => ({
     (result: { choices?: Array<{ message?: { content?: string } }> }) =>
       result.choices?.[0]?.message?.content ?? '',
   ),
+  getChatCompletionUsage: vi.fn((result: { model?: string; usage?: Record<string, unknown> }) => ({
+    provider: 'openrouter',
+    model: result.model ?? 'test-model',
+    promptTokens: Number(result.usage?.promptTokens ?? 0),
+    completionTokens: Number(result.usage?.completionTokens ?? 0),
+    totalTokens: Number(result.usage?.totalTokens ?? 0),
+    reportedTotalTokens: null,
+    costUsd:
+      result.usage && 'cost' in result.usage ? Number(result.usage.cost ?? 0) : null,
+    cachedPromptTokens: null,
+    reasoningTokens: null,
+  })),
 }));
 
 let action: typeof import('./api.resume.convert').action;
@@ -189,6 +206,8 @@ describe('resume convert action', () => {
     });
     mocks.extractPdfText.mockResolvedValue('resume text');
     mocks.createCompletion.mockResolvedValue({
+      model: 'test-model',
+      usage: { promptTokens: 12, completionTokens: 8, totalTokens: 20, cost: 0.2 },
       choices: [{ message: { content: JSON.stringify(makeConvertedResumeData()) } }],
     });
     mocks.documentStorageService.storeFile.mockResolvedValue({
@@ -196,6 +215,7 @@ describe('resume convert action', () => {
       url: '/files/file-id',
     });
     mocks.documentStorageService.deleteFile.mockResolvedValue(true);
+    mocks.recordAIUsageEvent.mockResolvedValue(undefined);
     mocks.saveResumeToDatabase.mockResolvedValue({
       portfolioId: 'portfolio-id',
       portfolioSlug: 'charles-ponti',
@@ -389,17 +409,30 @@ describe('resume convert action', () => {
   });
 
   it('returns ai parse stage when the AI response is malformed JSON', async () => {
-    mocks.createCompletion.mockResolvedValue({ choices: [{ message: { content: '{' } }] });
+    mocks.createCompletion.mockResolvedValue({
+      model: 'model',
+      usage: { promptTokens: 12, completionTokens: 8, totalTokens: 20, cost: 0.42 },
+      choices: [{ message: { content: '{' } }],
+    });
 
     const response = await callAction(formRequest(pdfFile()));
     const body = await responseBody(response);
 
     expect(response.status).toBe(502);
     expect(body.stage).toBe('ai-parse');
+    expect(mocks.recordAIUsageEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        feature: 'career_resume_convert',
+        operation: 'structured_output',
+        usage: expect.objectContaining({ totalTokens: 20, costUsd: 0.42 }),
+      }),
+    );
   });
 
   it('returns schema validation stage when the parsed resume is invalid', async () => {
     mocks.createCompletion.mockResolvedValue({
+      model: 'model',
+      usage: { promptTokens: 9, completionTokens: 7, totalTokens: 16, cost: 0.31 },
       choices: [{ message: { content: JSON.stringify({ portfolio: { email: 'not-an-email' } }) } }],
     });
 
@@ -408,6 +441,12 @@ describe('resume convert action', () => {
 
     expect(response.status).toBe(422);
     expect(body.stage).toBe('schema-validation');
+    expect(mocks.recordAIUsageEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        feature: 'career_resume_convert',
+        usage: expect.objectContaining({ totalTokens: 16, costUsd: 0.31 }),
+      }),
+    );
   });
 
   it('returns schema validation stage when required parsed fields are blank', async () => {

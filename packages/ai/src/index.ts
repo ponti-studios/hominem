@@ -1,6 +1,10 @@
 export { chat } from '@tanstack/ai';
 export { openRouterText } from '@tanstack/ai-openrouter';
-export { webFetchTool, webSearchTool } from '@tanstack/ai-openrouter/tools';
+export {
+  convertWebFetchToolToAdapterFormat,
+  webFetchTool,
+  webSearchTool,
+} from '@tanstack/ai-openrouter/tools';
 
 export {
   createOpenRouterClient,
@@ -35,9 +39,11 @@ export {
   enhanceText,
   getChatCompletionText,
   getChatCompletionUsage,
+  getStructuredOutputUsage,
   getSharedAiModelConfig,
   getSharedTextModel,
   postChatCompletion,
+  StructuredOutputError,
   streamChatCompletion,
 } from './text';
 

@@ -1,4 +1,6 @@
-import { extractTasks, extractVoiceTasks } from '@hominem/ai';
+import { randomUUID } from 'node:crypto';
+
+import { extractTasks, extractVoiceTasks, getStructuredOutputUsage } from '@hominem/ai';
 import { db, NotFoundError, runInTransaction, TaskRepository } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
@@ -55,20 +57,31 @@ export const tasksRoutes = new Hono<AppContext>()
   .use('/extract', rateLimitMiddleware({ bucket: 'ai-task-extract', windowSec: 60, max: 20 }))
   .post('/extract', zValidator('json', ExtractTasksInputSchema), async (c) => {
     const userId = c.get('userId')!;
-    const requestId = c.get('requestId');
     const { transcript } = c.req.valid('json');
+    const eventId = randomUUID();
 
     try {
       const { tasks, usage } = await extractTasks({ transcript }, TASK_EXTRACTION_PROMPT);
       await recordAIUsageEvent({
+        eventId,
         userId,
         feature: 'task_extract',
         operation: 'structured_output',
         usage,
-        requestId,
       });
       return c.json({ tasks });
     } catch (error) {
+      const usage = getStructuredOutputUsage(error);
+      if (usage) {
+        await recordAIUsageEvent({
+          eventId,
+          userId,
+          feature: 'task_extract',
+          operation: 'structured_output',
+          usage,
+        });
+      }
+
       logger.error('[ai/tasks/extract] OpenRouter error', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -102,8 +115,8 @@ export const tasksRoutes = new Hono<AppContext>()
   .use('/voice', rateLimitMiddleware({ bucket: 'ai-task-voice', windowSec: 60, max: 20 }))
   .post('/voice', zValidator('json', VoiceTasksInputSchema), async (c) => {
     const userId = c.get('userId')!;
-    const requestId = c.get('requestId');
     const { transcript, referenceDate, timezone } = c.req.valid('json');
+    const eventId = randomUUID();
 
     let tasks: Awaited<ReturnType<typeof extractVoiceTasks>>['tasks'];
     try {
@@ -113,16 +126,30 @@ export const tasksRoutes = new Hono<AppContext>()
       );
       tasks = result.tasks;
       await recordAIUsageEvent({
+        eventId,
         userId,
         feature: 'voice_task_extract',
         operation: 'structured_output',
         usage: result.usage,
-        requestId,
         metadata: {
           timezone: timezone ?? null,
         },
       });
     } catch (error) {
+      const usage = getStructuredOutputUsage(error);
+      if (usage) {
+        await recordAIUsageEvent({
+          eventId,
+          userId,
+          feature: 'voice_task_extract',
+          operation: 'structured_output',
+          usage,
+          metadata: {
+            timezone: timezone ?? null,
+          },
+        });
+      }
+
       logger.error('[ai/tasks/voice] OpenRouter error', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });

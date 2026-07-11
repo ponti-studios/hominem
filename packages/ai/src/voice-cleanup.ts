@@ -5,7 +5,10 @@ import {
   normalizeOpenRouterError,
   type OpenRouterClientOptions,
 } from './shared';
-import { createStructuredChatCompletion } from './text';
+import {
+  createStructuredChatCompletion,
+  StructuredOutputError as AITextStructuredOutputError,
+} from './text';
 
 export type VoiceTranscriptCleanupInput = OpenRouterClientOptions & {
   rawText: string;
@@ -69,6 +72,10 @@ export async function cleanupVoiceTranscript(
       usage,
     };
   } catch (error) {
+    if (error instanceof AITextStructuredOutputError) {
+      throw error;
+    }
+
     throw normalizeOpenRouterError(error);
   }
 }

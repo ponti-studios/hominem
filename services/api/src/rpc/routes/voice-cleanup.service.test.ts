@@ -1,6 +1,12 @@
 import { OpenRouterRequestError } from '@hominem/ai';
 import { describe, expect, it, vi } from 'vitest';
 
+vi.mock('@hominem/telemetry', () => ({
+  logger: {
+    error: vi.fn(),
+  },
+}));
+
 import {
   buildFallbackOutput,
   cleanupVoiceInput,

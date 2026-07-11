@@ -1,7 +1,14 @@
+import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
-import { createChatCompletion, getChatCompletionText, OpenRouterRequestError } from '@hominem/ai';
+import {
+  createChatCompletion,
+  getChatCompletionText,
+  getChatCompletionUsage,
+  OpenRouterRequestError,
+} from '@hominem/ai';
 import { db, PortfolioRepository } from '@hominem/db';
+import { recordAIUsageEvent } from '@hominem/services';
 import {
   documentStorageService,
   isStorageServiceError,
@@ -325,6 +332,7 @@ export const action: ActionFunction = async ({ request, context }) => {
     let aiContent: string;
     try {
       const resumeParserSystemPrompt = await loadResumeParserSystemPrompt();
+      const eventId = randomUUID();
       const result = await createChatCompletion({
         responseFormat: {
           type: 'json_schema',
@@ -344,6 +352,19 @@ export const action: ActionFunction = async ({ request, context }) => {
             content: `Parse this resume into structured JSON. Resume text:\n${pdfText}`,
           },
         ],
+      });
+      await recordAIUsageEvent({
+        eventId,
+        userId: user.id,
+        feature: 'career_resume_convert',
+        operation: 'structured_output',
+        usage: getChatCompletionUsage(result),
+        model: result.model,
+        metadata: {
+          fileId: uploadResult.id,
+          extractedCharacterCount: pdfText.length,
+          replaceExisting,
+        },
       });
       aiContent = getChatCompletionText(result);
     } catch (error) {

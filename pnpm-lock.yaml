@@ -94,6 +94,9 @@ importers:
       '@hominem/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@hominem/services':
+        specifier: workspace:*
+        version: link:../../packages/services
       '@hominem/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -690,6 +693,9 @@ importers:
       '@hominem/ai':
         specifier: workspace:*
         version: link:../ai
+      '@hominem/db':
+        specifier: workspace:*
+        version: link:../db
       '@hominem/env':
         specifier: workspace:*
         version: link:../env
@@ -13021,6 +13027,7 @@ snapshots:
   '@hominem/services@file:packages/services(@opentelemetry/api@1.9.1)':
     dependencies:
       '@hominem/ai': file:packages/ai(@opentelemetry/api@1.9.1)
+      '@hominem/db': file:packages/db
       '@hominem/env': file:packages/env
       '@hominem/telemetry': file:packages/telemetry
       '@hominem/utils': file:packages/utils
@@ -13034,6 +13041,7 @@ snapshots:
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@react-email/render'
+      - pg-native
       - supports-color
 
   '@hominem/storage@file:packages/storage':

@@ -13,7 +13,13 @@ export type AIUsageFeature =
   | 'voice_task_extract'
   | 'voice_cleanup'
   | 'embedding'
-  | 'mcp_tool_call';
+  | 'mcp_tool_call'
+  | 'career_resume_convert'
+  | 'career_resume_customize'
+  | 'career_job_scrape'
+  | 'career_skills_derive'
+  | 'file_image_analyze'
+  | 'file_document_summarize';
 
 export type AIUsageOperation = 'chat_completion' | 'structured_output' | 'embedding';
 
@@ -36,6 +42,7 @@ export interface AIUsageEventRecord {
 }
 
 export interface CreateAIUsageEventInput {
+  id?: string;
   userId: string;
   provider: string;
   feature: AIUsageFeature;
@@ -109,6 +116,7 @@ export const AIUsageEventRepository = {
     const row = await handle
       .insertInto('app.aiUsageEvents')
       .values({
+        ...(input.id ? { id: input.id } : {}),
         ownerUserid: input.userId,
         provider: input.provider,
         feature: input.feature,
@@ -129,6 +137,32 @@ export const AIUsageEventRepository = {
     return toAIUsageEventRecord(row as AIUsageEventRow);
   },
 
+  async createIfAbsent(handle: DbHandle, input: CreateAIUsageEventInput): Promise<boolean> {
+    const inserted = await handle
+      .insertInto('app.aiUsageEvents')
+      .values({
+        ...(input.id ? { id: input.id } : {}),
+        ownerUserid: input.userId,
+        provider: input.provider,
+        feature: input.feature,
+        operation: input.operation,
+        model: input.model,
+        requestId: input.requestId ?? null,
+        inputTokens: input.inputTokens,
+        outputTokens: input.outputTokens,
+        totalTokens: input.totalTokens,
+        cachedInputTokens: input.cachedInputTokens ?? null,
+        reasoningTokens: input.reasoningTokens ?? null,
+        costUsd: input.costUsd ?? null,
+        metadata: input.metadata === undefined ? null : (input.metadata as never),
+      })
+      .onConflict((conflict) => conflict.column('id').doNothing())
+      .returning('id')
+      .executeTakeFirst();
+
+    return Boolean(inserted?.id);
+  },
+
   async getSummary(handle: DbHandle, input: AIUsageQueryRange): Promise<AIUsageSummaryRecord> {
     let query = handle.selectFrom('app.aiUsageEvents').where('ownerUserid', '=', input.userId);
 
@@ -142,23 +176,22 @@ export const AIUsageEventRepository = {
 
     const row = await query
       .select([
-        sql<number>`count(*)`.as('request_count'),
-        sql<number>`coalesce(sum(inputTokens), 0)`.as('prompt_tokens'),
-        sql<number>`coalesce(sum(outputTokens), 0)`.as('completion_tokens'),
-        sql<number>`coalesce(sum(totalTokens), 0)`.as('totalTokens'),
-        sql<Numeric>`coalesce(sum(costUsd), 0)`.as('total_cost_usd'),
-        sql<Date | string | null>`max(createdat)`.as('last_recorded_at'),
+        sql<number>`count(*)`.as('requestCount'),
+        sql<number>`coalesce(sum(input_tokens), 0)`.as('promptTokens'),
+        sql<number>`coalesce(sum(output_tokens), 0)`.as('completionTokens'),
+        sql<number>`coalesce(sum(total_tokens), 0)`.as('totalTokens'),
+        sql<Numeric>`coalesce(sum(cost_usd), 0)`.as('totalCostUsd'),
+        sql<Date | string | null>`max(createdat)`.as('lastRecordedAt'),
       ])
       .executeTakeFirstOrThrow();
 
     return {
-      requestCount: Number(row.request_count ?? 0),
-      promptTokens: Number(row.prompt_tokens ?? 0),
-      completionTokens: Number(row.completion_tokens ?? 0),
+      requestCount: Number(row.requestCount ?? 0),
+      promptTokens: Number(row.promptTokens ?? 0),
+      completionTokens: Number(row.completionTokens ?? 0),
       totalTokens: Number(row.totalTokens ?? 0),
-      totalCostUsd: toRequiredNumber(row.total_cost_usd),
-      lastRecordedAt:
-        row.last_recorded_at == null ? null : new Date(row.last_recorded_at).toISOString(),
+      totalCostUsd: toRequiredNumber(row.totalCostUsd),
+      lastRecordedAt: row.lastRecordedAt == null ? null : new Date(row.lastRecordedAt).toISOString(),
     };
   },
 
@@ -179,25 +212,25 @@ export const AIUsageEventRepository = {
     const rows = await query
       .select([
         'feature',
-        sql<number>`count(*)`.as('request_count'),
-        sql<number>`coalesce(sum(inputTokens), 0)`.as('prompt_tokens'),
-        sql<number>`coalesce(sum(outputTokens), 0)`.as('completion_tokens'),
-        sql<number>`coalesce(sum(totalTokens), 0)`.as('totalTokens'),
-        sql<Numeric>`coalesce(sum(costUsd), 0)`.as('total_cost_usd'),
+        sql<number>`count(*)`.as('requestCount'),
+        sql<number>`coalesce(sum(input_tokens), 0)`.as('promptTokens'),
+        sql<number>`coalesce(sum(output_tokens), 0)`.as('completionTokens'),
+        sql<number>`coalesce(sum(total_tokens), 0)`.as('totalTokens'),
+        sql<Numeric>`coalesce(sum(cost_usd), 0)`.as('totalCostUsd'),
       ])
       .groupBy('feature')
-      .orderBy(sql`coalesce(sum(costUsd), 0)`, 'desc')
-      .orderBy(sql`coalesce(sum(totalTokens), 0)`, 'desc')
+      .orderBy(sql`coalesce(sum(cost_usd), 0)`, 'desc')
+      .orderBy(sql`coalesce(sum(total_tokens), 0)`, 'desc')
       .execute();
 
     return rows.map(
       (row): AIUsageFeatureBreakdownRecord => ({
         feature: row.feature as AIUsageFeature,
-        requestCount: Number(row.request_count ?? 0),
-        promptTokens: Number(row.prompt_tokens ?? 0),
-        completionTokens: Number(row.completion_tokens ?? 0),
+        requestCount: Number(row.requestCount ?? 0),
+        promptTokens: Number(row.promptTokens ?? 0),
+        completionTokens: Number(row.completionTokens ?? 0),
         totalTokens: Number(row.totalTokens ?? 0),
-        totalCostUsd: toRequiredNumber(row.total_cost_usd),
+        totalCostUsd: toRequiredNumber(row.totalCostUsd),
       }),
     );
   },
@@ -219,25 +252,25 @@ export const AIUsageEventRepository = {
     const rows = await query
       .select([
         'model',
-        sql<number>`count(*)`.as('request_count'),
-        sql<number>`coalesce(sum(inputTokens), 0)`.as('prompt_tokens'),
-        sql<number>`coalesce(sum(outputTokens), 0)`.as('completion_tokens'),
-        sql<number>`coalesce(sum(totalTokens), 0)`.as('totalTokens'),
-        sql<Numeric>`coalesce(sum(costUsd), 0)`.as('total_cost_usd'),
+        sql<number>`count(*)`.as('requestCount'),
+        sql<number>`coalesce(sum(input_tokens), 0)`.as('promptTokens'),
+        sql<number>`coalesce(sum(output_tokens), 0)`.as('completionTokens'),
+        sql<number>`coalesce(sum(total_tokens), 0)`.as('totalTokens'),
+        sql<Numeric>`coalesce(sum(cost_usd), 0)`.as('totalCostUsd'),
       ])
       .groupBy('model')
-      .orderBy(sql`coalesce(sum(costUsd), 0)`, 'desc')
-      .orderBy(sql`coalesce(sum(totalTokens), 0)`, 'desc')
+      .orderBy(sql`coalesce(sum(cost_usd), 0)`, 'desc')
+      .orderBy(sql`coalesce(sum(total_tokens), 0)`, 'desc')
       .execute();
 
     return rows.map(
       (row): AIUsageModelBreakdownRecord => ({
         model: row.model,
-        requestCount: Number(row.request_count ?? 0),
-        promptTokens: Number(row.prompt_tokens ?? 0),
-        completionTokens: Number(row.completion_tokens ?? 0),
+        requestCount: Number(row.requestCount ?? 0),
+        promptTokens: Number(row.promptTokens ?? 0),
+        completionTokens: Number(row.completionTokens ?? 0),
         totalTokens: Number(row.totalTokens ?? 0),
-        totalCostUsd: toRequiredNumber(row.total_cost_usd),
+        totalCostUsd: toRequiredNumber(row.totalCostUsd),
       }),
     );
   },

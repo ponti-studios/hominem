@@ -16,17 +16,17 @@ export interface McpToolDefinition {
   resultCap: number;
 }
 
-export interface McpToolResult extends CallToolResult {
+export type McpToolResult = Omit<CallToolResult, 'structuredContent'> & {
   content: Array<{ type: 'text'; text: string }>;
-  structuredContent: Record<string, unknown>;
-}
+  structuredContent: Record<string, unknown> | null;
+};
 
 type ToolImplementation = {
   definition: McpToolDefinition;
   invoke: (ownerUserId: string, input: unknown) => Promise<unknown>;
 };
 
-function toolResult(structuredContent: Record<string, unknown>): McpToolResult {
+function toolResult(structuredContent: Record<string, unknown> | null): McpToolResult {
   return {
     content: [{ type: 'text', text: JSON.stringify(structuredContent) }],
     structuredContent,
@@ -58,7 +58,16 @@ export async function callTool(
   }
 
   const structuredContent = await implementation.invoke(ownerUserId, input);
-  if (!structuredContent || typeof structuredContent !== 'object' || Array.isArray(structuredContent)) {
+
+  if (structuredContent === null) {
+    return toolResult(null);
+  }
+
+  if (
+    structuredContent === undefined ||
+    typeof structuredContent !== 'object' ||
+    Array.isArray(structuredContent)
+  ) {
     throw new ValidationError(`MCP tool returned invalid structured content: ${name}`);
   }
 
