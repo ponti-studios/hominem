@@ -1,0 +1,8 @@
+{
+  "name": "hominem-mcp",
+  "version": "0.1.0",
+  "description": "Connects Claude Code to the Hominem API's MCP server — authenticated tools for querying and managing user data (career, portfolio, and other domain tools registered under services/api/src/mcp/tools).",
+  "author": {
+    "name": "Hominem"
+  }
+}

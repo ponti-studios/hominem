@@ -53,6 +53,8 @@ Paths in this task list use the project-relative structure from the plan:
 - [ ] T008 [P] Create capability registry scaffolding in `services/api/src/mcp/capability-registry.ts` — tool registration interface
 - [ ] T009 [P] Create MCP schema definitions in `services/api/src/mcp/schemas.ts` — Zod schemas for input/output/evidence
 - [ ] T010 [P] Set up MCP test infrastructure in `services/api/tests/mcp/` — helpers, mock data factories, fixture setup
+- [ ] T010a [P] Implement rate-limiting middleware in `services/api/src/middleware/mcp-rate-limit.ts` — per-user 5 req/s token bucket, HTTP 429 on excess
+- [ ] T010b [P] Implement `MCP_ENABLED_SCOPES` conditional import gating in `services/api/src/mcp/routes.ts` — only import tool modules whose scope is listed
 
 **Checkpoint**: Foundation ready - MCP server skeleton exists, migrations applied, user story implementation can now begin
 
@@ -116,29 +118,29 @@ Paths in this task list use the project-relative structure from the plan:
 
 ---
 
-## Phase 5: User Story 3 - ChatGPT OAuth Integration (Priority: P2)
+## Phase 5: User Story 3 - MCP OAuth Integration (Priority: P2)
 
-**Goal**: ChatGPT uses a separate OAuth client with explicit consent and revocable grants.
+**Goal**: MCP clients (ChatGPT, Claude Code, Cursor) authenticate via Better Auth MCP plugin's generic OAuth 2.0 flow with per-client registration, consent, and revocation.
 
-**Independent Test**: A ChatGPT OAuth client authenticates, tools respect grant scope, and revocation immediately denies further access.
+**Independent Test**: An OAuth client with revocable grants authenticates, tools respect grant scope, and revocation denies further access.
 
 ### Tests for User Story 3 ⚠️
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T033 [P] [US3] OAuth consent test in `services/api/tests/mcp/auth.test.ts` — ChatGPT OAuth client with valid grant can invoke tools within scope
+- [ ] T033 [P] [US3] OAuth consent test in `services/api/tests/mcp/auth.test.ts` — OAuth client with valid grant can invoke tools within scope
 - [ ] T034 [P] [US3] Grant revocation test in `services/api/tests/mcp/auth.test.ts` — revoked grant immediately denies tool invocation
-- [ ] T035 [P] [US3] Scope mismatch test in `services/api/tests/mcp/auth.test.ts` — ChatGPT client with `knowledge:read` cannot invoke `career:read` tool
+- [ ] T035 [P] [US3] Scope mismatch test in `services/api/tests/mcp/auth.test.ts` — client with `knowledge:read` grant cannot invoke `career:read` tool
 
 ### Implementation for User Story 3
 
-- [ ] T036 [US3] Configure ChatGPT OAuth client in Better Auth — separate client ID/secret with scoped grant support
-- [ ] T037 [US3] Implement OAuth grant validation in `services/api/src/middleware/mcp-auth.ts` — resolve grant from Better Auth session, check scope, check revocation
-- [ ] T038 [US3] Implement grant revocation endpoint or integration with Better Auth's revocation flow
-- [ ] T039 [US3] Integrate ChatGPT OAuth flow with existing scope enforcement in MCP auth middleware
-- [ ] T040 [US3] Add audit logging for ChatGPT OAuth consent and revocation events
+- [ ] T036 [US3] Add Better Auth MCP plugin to auth config in `services/api/src/auth/better-auth.ts` — install `mcp` from `better-auth/plugins`, configure login page and scopes
+- [ ] T037 [US3] Create OAuth tables migration — `oauthApplication`, `oauthAccessToken`, `oauthConsent` in `packages/db/migrations/`
+- [ ] T038 [US3] Implement `getMcpSession()` token validation in `services/api/src/mcp/server.ts` — resolve access token to userId + scopes
+- [ ] T039 [US3] Mount OAuth discovery endpoints at root — `.well-known/oauth-authorization-server` and `.well-known/oauth-protected-resource` in `services/api/src/mcp/routes.ts`
+- [ ] T040 [US3] Add WWW-Authenticate header on 401 responses to direct MCP clients to OAuth metadata
 
-**Checkpoint**: ChatGPT OAuth integration should be functional and independently testable
+**Checkpoint**: Generic MCP OAuth should be functional — any MCP client can register, get consent, and receive scoped access tokens
 
 ---
 
@@ -161,9 +163,9 @@ Paths in this task list use the project-relative structure from the plan:
 - [ ] T044 [P] [US4] Implement evaluation harness in `services/api/tests/mcp/evaluation/harness.ts` — scenario runner with fixture setup, LLM invocation via OpenRouter, trace recording
 - [ ] T045 [P] [US4] Create Career fixture scenarios in `services/api/tests/mcp/evaluation/scenarios/career.ts` — positive, no-data, denied-scope, and redaction cases
 - [ ] T046 [P] [US4] Create Workspace fixture scenarios in `services/api/tests/mcp/evaluation/scenarios/workspace.ts` — positive, no-data, denied-scope, and redaction cases
-- [ ] T047 [US4] Implement deterministic assertions for tool choice, arguments, authorization, and evidence in harness
-- [ ] T048 [US4] Implement quality evaluator integration (via OpenRouter or configurable evaluator) for answer scoring
-- [ ] T049 [US4] Implement report generation in `services/api/tests/mcp/evaluation/reports/` — model config, trace output, scores, evaluator rationale, latency, cost
+- [ ] T047 [US4] Implement deterministic assertions for tool choice, arguments, authorization, and evidence in harness — these are the gating checks
+- [ ] T048 [US4] Implement quality evaluator capture (advisory only) — record LLM quality scores and evaluator rationale but do not gate on them
+- [ ] T049 [US4] Implement report generation in `services/api/tests/mcp/evaluation/reports/` — model config, trace output, deterministic pass/fail, advisory quality scores, latency, cost
 - [ ] T050 [US4] Configure fast PR subset (deterministic tests only) vs. full benchmark run
 
 **Checkpoint**: LLM evaluation harness should be functional with Career and Workspace scenarios
@@ -179,6 +181,7 @@ Paths in this task list use the project-relative structure from the plan:
 - [ ] T053 [P] Run quickstart.md validation scenarios to verify end-to-end functionality
 - [ ] T054 Code cleanup and edge-case hardening across all MCP modules
 - [ ] T055 [P] Address any security review findings before enabling domain tools
+- [ ] T056 Implement daily cost budget throttling — query `app.ai_usage_events` for user's daily total before invocation, return 429 if budget exceeded
 
 ---
 

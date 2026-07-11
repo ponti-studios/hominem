@@ -65,3 +65,7 @@ api:
     else
         {{ TURBO_DEV }} --filter=@hominem/api
     fi
+
+mcp-install-claude:
+    claude plugin marketplace add ./plugins
+    claude plugin install hominem-mcp@hominem-plugins --scope local

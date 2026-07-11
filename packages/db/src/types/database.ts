@@ -1390,6 +1390,82 @@ export interface LabsTflCameras {
   view: string | null;
 }
 
+export interface Oauthaccesstoken {
+  accessToken: string;
+  accessTokenExpiresAt: ColumnType<string, Date | string, Date | string>;
+  clientId: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  refreshToken: string;
+  refreshTokenExpiresAt: ColumnType<string, Date | string, Date | string>;
+  scopes: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string | null;
+}
+
+export interface OauthAccessToken {
+  accessToken: string;
+  accessTokenExpiresAt: ColumnType<string, Date | string, Date | string>;
+  clientId: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: string;
+  refreshToken: string;
+  refreshTokenExpiresAt: ColumnType<string, Date | string, Date | string>;
+  scopes: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string | null;
+}
+
+export interface Oauthapplication {
+  clientId: string;
+  clientSecret: string | null;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  disabled: Generated<boolean | null>;
+  icon: string | null;
+  id: Generated<string>;
+  metadata: string | null;
+  name: string;
+  redirectUrls: string;
+  type: Generated<string>;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string | null;
+}
+
+export interface OauthApplication {
+  clientId: string;
+  clientSecret: string | null;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  disabled: Generated<boolean>;
+  icon: string | null;
+  id: string;
+  metadata: string | null;
+  name: string;
+  redirectUrls: string;
+  type: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string | null;
+}
+
+export interface Oauthconsent {
+  clientId: string;
+  consentGiven: Generated<boolean>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  scopes: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
+export interface OauthConsent {
+  clientId: string;
+  consentGiven: Generated<boolean>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: string;
+  scopes: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
 export interface Passkey {
   aaguid: string | null;
   backedUp: Generated<boolean>;
@@ -1526,6 +1602,12 @@ export interface DB {
   "labs.relationshipVerdicts": LabsRelationshipVerdicts;
   "labs.searchDocuments": LabsSearchDocuments;
   "labs.tflCameras": LabsTflCameras;
+  oauthaccesstoken: Oauthaccesstoken;
+  oauthAccessToken: OauthAccessToken;
+  oauthapplication: Oauthapplication;
+  oauthApplication: OauthApplication;
+  oauthconsent: Oauthconsent;
+  oauthConsent: OauthConsent;
   passkey: Passkey;
   session: Session;
   user: User;

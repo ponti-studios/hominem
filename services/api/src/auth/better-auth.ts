@@ -4,7 +4,7 @@ import { authDb } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
 import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
 import { betterAuth } from 'better-auth';
-import { bearer, emailOTP, multiSession, openAPI } from 'better-auth/plugins';
+import { bearer, emailOTP, mcp, multiSession, openAPI } from 'better-auth/plugins';
 
 import { API_BRAND } from '../brand';
 import { env } from '../env';
@@ -198,6 +198,17 @@ function getAuthPlugins() {
     }),
     // Bearer lets getSession honor Authorization when clients send BA session tokens.
     bearer(),
+    mcp({
+      loginPage: new URL('/login', env.CAREER_URL).toString(),
+      resource: new URL('/api/mcp', env.API_URL).toString(),
+      oidcConfig: {
+        loginPage: new URL('/login', env.CAREER_URL).toString(),
+        scopes: ['career:read'],
+        metadata: {
+          scopes_supported: ['openid', 'profile', 'email', 'offline_access', 'career:read'],
+        },
+      },
+    }),
     multiSession({ maximumSessions: 8 }),
     openAPI({
       path: '/reference',

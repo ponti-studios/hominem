@@ -38,11 +38,15 @@ unbounded response sizes; evaluation harness runs in <5 min for PR subset
 
 **Constraints**: MCP v1 is read-only only; tools must invoke application
 services (never repositories or SQL); `@modelcontextprotocol/sdk` installation
-blocked by pnpm workspace `ERR_PNPM_MISSING_TIME` — this MUST be resolved first
+blocked by pnpm workspace `ERR_PNPM_MISSING_TIME` — this MUST be resolved first;
+MCP tool invocations rate-limited to 5 req/s per user with HTTP 429 on excess;
+daily AI cost budget per user tracked via `app.ai_usage_events` with throttling
+when exceeded
 
 **Scale/Scope**: Single server, multiple domain tools, multi-user with Better
 Auth; first two domain tools are Career (`career:read`) and Omiro workspace
-(`knowledge:read`)
+(`knowledge:read`); tool modules gated via `MCP_ENABLED_SCOPES` env var — only
+scopes listed in the variable are imported and registered
 
 ## Constitution Check
 

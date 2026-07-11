@@ -7,10 +7,8 @@ import {
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
 import type { CallToolResult, ServerNotification, ServerRequest } from '@modelcontextprotocol/sdk/types.js';
-import type { Context } from 'hono';
 
 import { UnauthorizedError } from '../errors';
-import type { AppContext } from '../rpc/middleware/auth';
 import { callTool, listTools, type McpToolDefinition } from './tools';
 
 interface McpAuthInfoExtra {
@@ -18,13 +16,6 @@ interface McpAuthInfoExtra {
   sessionId: string | null;
   authTime: number;
 }
-
-interface McpRequestContext {
-  ownerUserId: string;
-  grantedScopes: Set<string>;
-}
-
-const defaultGrantedScopes = [...new Set(listTools().flatMap((tool) => [...tool.scopes]))];
 
 const transportOptions: WebStandardStreamableHTTPServerTransportOptions = {
   sessionIdGenerator: undefined,
@@ -38,52 +29,11 @@ function createErrorResult(message: string): CallToolResult {
   };
 }
 
-function parseGrantedScopes(rawScopes: string | undefined): string[] {
-  if (!rawScopes) {
-    // Temporary bridge until an OAuth grant model exists for external MCP
-    // clients: authenticated sessions default to the current read-only tool set.
-    return defaultGrantedScopes;
-  }
-
-  return rawScopes
-    .split(',')
-    .map((scope) => scope.trim())
-    .filter((scope) => scope.length > 0);
-}
-
-function createAuthInfo(c: Context<AppContext>): AuthInfo {
-  const userId = c.get('userId');
-  if (!userId) {
-    throw new UnauthorizedError('Authentication required');
-  }
-
-  const session = c.get('auth');
-  const grantedScopes = parseGrantedScopes(c.req.header('x-mcp-scopes') ?? undefined);
-
-  return {
-    token: c.req.header('authorization')?.replace(/^Bearer\s+/i, '') ?? session?.sid ?? userId,
-    clientId: c.req.header('user-agent') ?? 'hominem-mcp',
-    scopes: grantedScopes,
-    extra: {
-      ownerUserId: userId,
-      sessionId: session?.sid ?? null,
-      authTime: session?.authTime ?? Math.floor(Date.now() / 1000),
-    } satisfies McpAuthInfoExtra,
-  };
-}
-
-function resolveRequestContext(authInfo?: AuthInfo): McpRequestContext | null {
+function resolveRequestContext(authInfo?: AuthInfo) {
   const extra = authInfo?.extra as Partial<McpAuthInfoExtra> | undefined;
   const ownerUserId = extra?.ownerUserId;
-
-  if (!ownerUserId) {
-    return null;
-  }
-
-  return {
-    ownerUserId,
-    grantedScopes: new Set(authInfo?.scopes ?? []),
-  };
+  if (!ownerUserId) return null;
+  return { ownerUserId, grantedScopes: new Set(authInfo?.scopes ?? []) };
 }
 
 function hasRequiredScopes(grantedScopes: Set<string>, requiredScopes: readonly string[]): boolean {
@@ -109,7 +59,6 @@ function createToolHandler(definition: McpToolDefinition) {
         userId: context.ownerUserId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-
       return createErrorResult(error instanceof Error ? error.message : 'Unknown MCP tool error');
     }
   };
@@ -117,13 +66,8 @@ function createToolHandler(definition: McpToolDefinition) {
 
 function createMcpServer() {
   const mcpServer = new McpServer(
-    {
-      name: 'Hominem MCP',
-      version: '1.0.0',
-    },
-    {
-      instructions: 'Read-only MCP tools for authenticated Hominem users.',
-    },
+    { name: 'Hominem MCP', version: '1.0.0' },
+    { instructions: 'Read-only MCP tools for authenticated Hominem users.' },
   );
 
   for (const definition of listTools()) {
@@ -134,9 +78,7 @@ function createMcpServer() {
         description: definition.description,
         inputSchema: definition.inputSchema,
         outputSchema: definition.outputSchema,
-        annotations: {
-          readOnlyHint: definition.readOnly,
-        },
+        annotations: { readOnlyHint: definition.readOnly },
       },
       createToolHandler(definition),
     );
@@ -145,8 +87,35 @@ function createMcpServer() {
   return mcpServer;
 }
 
-export async function handleMcpRequest(c: Context<AppContext>): Promise<Response> {
-  const authInfo = createAuthInfo(c);
+export async function handleMcpRequestWithSession(c: any): Promise<Response> {
+  const session = c.get('mcpSession') as { userId: string; scopes: string; clientId?: string } | undefined;
+  const userId = c.get('userId') as string | undefined;
+
+  if (!userId) {
+    throw new UnauthorizedError('MCP session required');
+  }
+
+  // Scopes from session, or from header (dev fallback), or from registered tools (default)
+  const scopes = session?.scopes
+    ? session.scopes.split(' ').filter(Boolean)
+    : (c.req.header('x-mcp-scopes') ?? '').split(',').map((s: string) => s.trim()).filter(Boolean);
+
+  if (scopes.length === 0) {
+    // Default: grant scopes for all registered tools
+    scopes.push(...listTools().flatMap((tool) => [...tool.scopes]));
+  }
+
+  const authInfo: AuthInfo = {
+    token: c.req.header('authorization')?.replace(/^Bearer\s+/i, '') ?? '',
+    clientId: session?.clientId ?? c.req.header('user-agent') ?? 'hominem-mcp',
+    scopes,
+    extra: {
+      ownerUserId: userId,
+      sessionId: null,
+      authTime: Math.floor(Date.now() / 1000),
+    } satisfies McpAuthInfoExtra,
+  };
+
   const transport = new WebStandardStreamableHTTPServerTransport(transportOptions);
   const mcpServer = createMcpServer();
   await mcpServer.connect(transport);

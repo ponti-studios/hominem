@@ -8,6 +8,16 @@
 
 **Input**: Provide one secure, read-only remote MCP server that domain plans can attach to without creating their own transports, authentication paths, or ad-hoc tool contracts.
 
+## Clarifications
+
+### Session 2026-07-11
+
+- Q: What mechanism controls which domain tools are enabled (per FR-013)? → A: Conditional imports via `MCP_ENABLED_SCOPES` env var. Tool modules are only imported (and thus registered) if their scope is listed in the env var.
+- Q: Does ChatGPT need a separate OAuth client vs generic MCP OAuth? → A: No distinction needed. The Better Auth MCP plugin provides generic OAuth 2.0 with per-client registration, consent, and revocation. ChatGPT is just another registered client.
+- Q: What constitutes a passing evaluation run? → A: Deterministic-only scoring. Only deterministic checks (tool choice, argument schema match, scope enforcement, result structure) are gating. LLM quality scoring is advisory only.
+- Q: Should there be rate limiting on MCP tool calls? → A: Both per-user rate limit (5 req/s per user, returning 429) and cost-based throttling (track AI usage cost per user, throttle when daily budget exceeded).
+- Q: How should evaluation score a tool call that returns no data? → A: No-data is valid. Score based on correct tool selection and well-formed response structure, not presence of data.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Base MCP Server with Streamable HTTP Transport (Priority: P1)
@@ -70,7 +80,7 @@ As a developer, I want a versioned, fixture-backed LLM evaluation suite that exe
 - How does the system handle a revoked grant mid-session?
 - How does evaluation handle a model that correctly declines to use any tool?
 - What happens when pnpm workspace resolution blocks SDK installation?
-- How does no-data interact with evidence requirements when the user expects a result?
+- **No-data + evidence**: Evaluation scores no-data responses on correct tool selection and well-formed response structure, not on data presence. An empty result is valid per FR-006.
 
 ## Requirements *(mandatory)*
 
@@ -83,12 +93,14 @@ As a developer, I want a versioned, fixture-backed LLM evaluation suite that exe
 - **FR-005**: AI MUST NEVER receive database credentials, SQL, raw provider payloads, storage paths, private files, attachments, broad table dumps, or unrestricted message bodies.
 - **FR-006**: Every result MUST identify minimal canonical evidence; a capability MUST report no-data rather than implying completeness.
 - **FR-007**: MCP v1 MUST be read-only. Mutation tools, generic exports, generic semantic search, agent-framework data access, and high-risk domains are out of scope.
-- **FR-008**: ChatGPT MUST use a separate OAuth client with explicit consent and revocable grants.
+- **FR-008**: ChatGPT MUST authenticate via the generic MCP OAuth 2.0 flow (Better Auth MCP plugin) with explicit consent and revocable grants — no separate OAuth server is needed.
 - **FR-009**: Transport tests MUST prove discovery, invocation, scope denial, revocation, no-data, bounded results, and redaction.
 - **FR-010**: A versioned synthetic-fixture evaluation suite MUST exercise the real MCP transport with at minimum Career and Omiro workspace scenarios.
 - **FR-011**: Evaluation reports MUST capture model/configuration, tool-call traces, deterministic checks, quality scores, evaluator rationale, latency, and cost.
 - **FR-012**: Each enabled domain tool MUST add positive, no-data, denied-scope, and redaction/leakage evaluation cases; its PR subset MUST pass before release.
-- **FR-013**: No domain scope MAY be enabled before its domain plan's acceptance criteria are complete.
+- **FR-013**: No domain scope MAY be enabled before its domain plan's acceptance criteria are complete. Tool module imports MUST be gated by a `MCP_ENABLED_SCOPES` environment variable — only scopes listed in the variable cause their tool modules to be imported and registered.
+- **FR-014**: MCP tool invocations MUST be rate-limited per authenticated user (5 req/s, returning HTTP 429 on excess).
+- **FR-015**: AI usage cost per user MUST be tracked via `app.ai_usage_events`; when a daily cost budget is exceeded, further invocations MUST be throttled.
 
 ### Key Entities
 
@@ -105,7 +117,7 @@ As a developer, I want a versioned, fixture-backed LLM evaluation suite that exe
 - **SC-002**: A tool can be declared once with all required metadata and invokes only application services.
 - **SC-003**: ChatGPT uses a separate OAuth client with consent and revocation — transport tests prove discovery, invocation, scope denial, revocation, no-data, bounded results, and redaction.
 - **SC-004**: A versioned synthetic-fixture evaluation suite exercises the real MCP transport with Career and Omiro workspace scenarios.
-- **SC-005**: Evaluation reports capture model/configuration, tool-call traces, deterministic checks, quality scores, evaluator rationale, latency, and cost.
+- **SC-005**: Evaluation reports capture model/configuration, tool-call traces, deterministic check results (pass/fail per check), and advisory quality scores with evaluator rationale, latency, and cost.
 - **SC-006**: Each enabled domain tool adds positive, no-data, denied-scope, and redaction/leakage evaluation cases.
 - **SC-007**: No domain scope is enabled before its domain plan's acceptance criteria are complete.
 
@@ -115,5 +127,5 @@ As a developer, I want a versioned, fixture-backed LLM evaluation suite that exe
 - The pnpm workspace resolution blocker (`ERR_PNPM_MISSING_TIME`) is resolved before SDK installation.
 - The first MCP verticals are Career (`career:read`) and Omiro workspace (`knowledge:read`).
 - Calendar, finance, health, communications, file access, and every mutation tool remain deferred for v1.
-- The evaluation harness baseline model(s), pass thresholds, and evaluator configuration will be determined during implementation and versioned with the cases.
+- The evaluation harness evaluates deterministic checks (tool choice, argument schema match, scope enforcement, result structure) as gating criteria. LLM quality scoring is recorded but advisory only. Pass thresholds are per-deterministic-check: all must pass.
 - Domain plans may build their schema and private application services independently but cannot expose a remote tool until Plan 00 passes its acceptance criteria.

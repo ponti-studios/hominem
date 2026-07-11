@@ -1,0 +1,6 @@
+{
+  "hominem": {
+    "type": "http",
+    "url": "${HOMINEM_API_URL}/api/mcp"
+  }
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveAuthRedirect } from './redirect-policy';
+import { resolveAuthRedirect, resolveOAuthResumeUrl } from './redirect-policy';
 
 describe('resolveAuthRedirect', () => {
   it('falls back when redirect is missing', () => {
@@ -49,5 +49,38 @@ describe('resolveAuthRedirect', () => {
       rejectedReason: null,
       rejectedPathname: null,
     });
+  });
+});
+
+describe('resolveOAuthResumeUrl', () => {
+  const apiBaseUrl = 'http://localhost:4040';
+  const authorizeSearch =
+    '?response_type=code&client_id=abc123&redirect_uri=http%3A%2F%2Flocalhost%3A61531%2Fcallback&state=xyz';
+
+  it('builds the API authorize URL, forwarding the original query string', () => {
+    expect(resolveOAuthResumeUrl(authorizeSearch, apiBaseUrl)).toBe(
+      `${apiBaseUrl}/api/auth/mcp/authorize${authorizeSearch}`,
+    );
+  });
+
+  it('returns null when required OAuth params are missing', () => {
+    expect(resolveOAuthResumeUrl('?foo=bar', apiBaseUrl)).toBeNull();
+  });
+
+  it('returns null when response_type is not "code"', () => {
+    expect(
+      resolveOAuthResumeUrl(
+        '?response_type=token&client_id=abc123&redirect_uri=http%3A%2F%2Flocalhost%2Fcallback',
+        apiBaseUrl,
+      ),
+    ).toBeNull();
+  });
+
+  it('ignores an attacker-supplied host — destination host always comes from apiBaseUrl', () => {
+    const maliciousSearch =
+      '?response_type=code&client_id=abc&redirect_uri=http%3A%2F%2Fevil.example%2Fcallback&host=evil.example';
+    const result = resolveOAuthResumeUrl(maliciousSearch, apiBaseUrl);
+    expect(result).not.toBeNull();
+    expect(new URL(result!).origin).toBe(apiBaseUrl);
   });
 });
