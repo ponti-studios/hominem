@@ -15,8 +15,7 @@
 cd services/api
 pnpm add @modelcontextprotocol/sdk@^1.29.0
 
-# 2. Create and apply the migration for new schema objects
-#    (app.entities, app.entity_links, app.entity_attributes, app.ai_usage_events)
+# 2. Apply any pending migrations (adds mcp_tool_call to ai_usage_events feature enum)
 just db-migrate
 
 # 3. Start the API in dev mode

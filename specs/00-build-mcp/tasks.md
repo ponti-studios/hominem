@@ -46,7 +46,7 @@ Paths in this task list use the project-relative structure from the plan:
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create Goose migration for `app.entities`, `app.entity_links`, `app.entity_attributes`, and `app.ai_usage_events` in `packages/db/migrations/`
+- [ ] T004 Create Goose migration to add `mcp_tool_call` to `app.ai_usage_events` feature CHECK constraint in `packages/db/migrations/`
 - [ ] T005 Run `just db-migrate` to apply migration and regenerate Kysely types
 - [ ] T006 [P] Create MCP transport handler scaffolding in `services/api/src/mcp/transport.ts` — empty Streamable HTTP endpoint ready to wire
 - [ ] T007 [P] Create MCP auth middleware in `services/api/src/middleware/mcp-auth.ts` — Better Auth session resolution for MCP requests

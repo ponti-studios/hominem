@@ -22,7 +22,8 @@ attributable capabilities that invoke application services only.
 Better Auth (existing), BullMQ (existing), Zod for runtime schemas (existing)
 
 **Storage**: PostgreSQL via Kysely — `app.entities`, `app.entity_links`,
-`app.entity_attributes`, `app.ai_usage_events` (new migration required)
+`app.ai_usage_events` (all already exist in production; migration adds
+`mcp_tool_call` to the ai_usage_events feature enum)
 
 **Testing**: Vitest (existing) for unit/integration; MCP Streamable HTTP
 integration suite; separate LLM evaluation harness with synthetic fixtures
@@ -58,10 +59,11 @@ Auth; first two domain tools are Career (`career:read`) and Omiro workspace
     via Better Auth, authorizes scope, calls a service, and returns typed
     errors. Compliant.
 
-**⚠ III. Database Discipline** — Schema changes required: `app.entities`,
-    `app.entity_links`, `app.entity_attributes`, `app.ai_usage_events`.
-    These need a Goose migration and `just db-migrate` run. Must add
-    migration to the implementation sequence.
+**✅ III. Database Discipline** — No new tables needed. `app.entities`,
+    `app.entity_links`, and `app.ai_usage_events` already exist in
+    production. A small migration adds `mcp_tool_call` to the
+    `ai_usage_events` feature CHECK constraint. Then `just db-migrate`
+    and regenerate types.
 
 **✅ IV. Quality Gates** — Implementation must pass `pnpm run check`
     (typecheck + lint + build + test) before merge. Standard requirement,

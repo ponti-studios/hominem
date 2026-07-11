@@ -94,8 +94,7 @@ As a developer, I want a versioned, fixture-backed LLM evaluation suite that exe
 
 - **app.entities**: Owner-scoped registry for selected typed domain rows. Supports tags, spaces, and explicit cross-domain links. Never the primary domain model.
 - **app.entity_links**: Records real relationships between entities.
-- **app.entity_attributes**: Holds sparse, namespaced, evidence-backed derived attributes.
-- **app.ai_usage_events**: Records operational AI usage (provider, feature, model, token counts, cost) without storing prompts or private-content evidence.
+- **app.ai_usage_events**: Records operational AI usage (provider, feature, model, token counts, cost) without storing prompts or private-content evidence. Feature enum includes `mcp_tool_call` for MCP tool invocations.
 - **MCP Capability**: Narrow, typed read model over an application service. Declares scope, sensitivity ceiling, input/output/evidence schemas, result cap, and audit event.
 
 ## Success Criteria *(mandatory)*

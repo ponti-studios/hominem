@@ -12,7 +12,8 @@ export type AIUsageFeature =
   | 'task_extract'
   | 'voice_task_extract'
   | 'voice_cleanup'
-  | 'embedding';
+  | 'embedding'
+  | 'mcp_tool_call';
 
 export type AIUsageOperation = 'chat_completion' | 'structured_output' | 'embedding';
 
