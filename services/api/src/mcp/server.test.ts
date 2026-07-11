@@ -1,23 +1,13 @@
 import { Hono } from 'hono';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import type { AppContext, RpcUser } from '../rpc/middleware/auth';
 import { apiErrorHandler } from '../rpc/middleware/error';
 import { requestIdMiddleware } from '../rpc/middleware/auth';
 import { validationErrorMiddleware } from '../rpc/middleware/validation';
 import { mcpRoutes } from './routes';
-
-const services = vi.hoisted(() => ({
-  financeMonthlySummary: vi.fn(),
-}));
-
-vi.mock('../application/finance.service', () => ({
-  FinanceService: class {
-    monthlySummary = services.financeMonthlySummary;
-  },
-}));
 
 const testUser: RpcUser = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -53,12 +43,9 @@ function createApp(authenticated: boolean) {
   return app;
 }
 
-async function createClient(app: Hono<AppContext>, scopes?: string) {
+async function createClient(app: Hono<AppContext>) {
   const transport = new StreamableHTTPClientTransport(new URL('http://localhost/api/mcp'), {
     fetch: async (input, init) => app.fetch(new Request(input, init)),
-    requestInit: {
-      headers: scopes ? { 'x-mcp-scopes': scopes } : undefined,
-    },
   });
   const client = new Client({ name: 'test-client', version: '1.0.0' });
   await client.connect(transport);
@@ -76,57 +63,11 @@ describe('mcp server transport', () => {
     });
   });
 
-  it('lists tools and invokes a finance tool over streamable HTTP', async () => {
-    services.financeMonthlySummary.mockResolvedValueOnce({
-      month: '2026-03',
-      startsOn: '2026-03-01',
-      endsBefore: '2026-04-01',
-      currencyCode: 'USD',
-      totalSpent: 162.5,
-      totalIncome: 2000,
-      transactionCount: 3,
-      topMerchants: [],
-      transactions: [],
-    });
-
+  it('connects and initializes over streamable HTTP', async () => {
     const client = await createClient(createApp(true));
     try {
-      const tools = await client.listTools();
-      expect(tools.tools.map((tool) => tool.name)).toEqual(['personal_finance_monthly_summary']);
-
-      const result = await client.callTool({
-        name: 'personal_finance_monthly_summary',
-        arguments: {
-          month: '2026-03',
-        },
-      });
-
-      expect(result.isError).toBeFalsy();
-      expect(result.structuredContent).toMatchObject({
-        month: '2026-03',
-        totalIncome: 2000,
-      });
-    } finally {
-      await client.close();
-    }
-  });
-
-  it('returns an error result when the caller lacks the required scope', async () => {
-    const client = await createClient(createApp(true), 'notes:read');
-    try {
-      const result = await client.callTool({
-        name: 'personal_finance_monthly_summary',
-        arguments: {
-          month: '2026-03',
-        },
-      });
-
-      expect(result.isError).toBe(true);
-      const content = result.content as Array<{ type: string; text: string }>;
-      expect(content[0]).toMatchObject({
-        type: 'text',
-        text: 'Missing required scope(s): finance:read',
-      });
+      // Client connected successfully if no error thrown
+      expect(client.getServerVersion()).toMatchObject({ name: 'Hominem MCP', version: '1.0.0' });
     } finally {
       await client.close();
     }

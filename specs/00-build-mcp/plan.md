@@ -100,7 +100,7 @@ services/api/src/
 ├── mcp/
 │   ├── transport.ts          # Streamable HTTP transport handler
 │   ├── capability-registry.ts # Tool registration and scoping
-│   ├── personal-tools.ts     # Adapter: resolves Hominem user, enforces scope
+│   ├── tools.ts               # Tool definitions, registration, and dispatch
 │   └── schemas.ts            # Runtime input/output/evidence schemas
 ├── middleware/   
 │   └── mcp-auth.ts           # Better Auth session resolution for MCP

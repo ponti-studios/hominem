@@ -11,7 +11,7 @@ import type { Context } from 'hono';
 
 import { UnauthorizedError } from '../errors';
 import type { AppContext } from '../rpc/middleware/auth';
-import { callPersonalMcpTool, listPersonalMcpTools, type PersonalMcpToolDefinition } from './personal-tools';
+import { callTool, listTools, type McpToolDefinition } from './tools';
 
 interface McpAuthInfoExtra {
   ownerUserId: string;
@@ -24,7 +24,7 @@ interface McpRequestContext {
   grantedScopes: Set<string>;
 }
 
-const defaultGrantedScopes = [...new Set(listPersonalMcpTools().flatMap((tool) => [...tool.scopes]))];
+const defaultGrantedScopes = [...new Set(listTools().flatMap((tool) => [...tool.scopes]))];
 
 const transportOptions: WebStandardStreamableHTTPServerTransportOptions = {
   sessionIdGenerator: undefined,
@@ -90,7 +90,7 @@ function hasRequiredScopes(grantedScopes: Set<string>, requiredScopes: readonly 
   return requiredScopes.every((scope) => grantedScopes.has(scope));
 }
 
-function createToolHandler(definition: PersonalMcpToolDefinition) {
+function createToolHandler(definition: McpToolDefinition) {
   return async (args: unknown, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) => {
     const context = resolveRequestContext(extra.authInfo);
     if (!context) {
@@ -102,7 +102,7 @@ function createToolHandler(definition: PersonalMcpToolDefinition) {
     }
 
     try {
-      return await callPersonalMcpTool(context.ownerUserId, definition.name, args);
+      return await callTool(context.ownerUserId, definition.name, args);
     } catch (error) {
       logger.warn('[mcp] tool invocation failed', {
         tool: definition.name,
@@ -126,7 +126,7 @@ function createMcpServer() {
     },
   );
 
-  for (const definition of listPersonalMcpTools()) {
+  for (const definition of listTools()) {
     mcpServer.registerTool(
       definition.name,
       {

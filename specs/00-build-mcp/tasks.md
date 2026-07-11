@@ -78,7 +78,7 @@ Paths in this task list use the project-relative structure from the plan:
 - [ ] T015 [US1] Implement Streamable HTTP transport handler in `services/api/src/mcp/transport.ts` — Hono route wrapping `StreamableHTTPServerTransport`
 - [ ] T016 [P] [US1] Implement tool declaration helper in `services/api/src/mcp/capability-registry.ts` — wraps SDK `Server.tool()` with scope/sensitivity/result cap metadata
 - [ ] T017 [P] [US1] Implement runtime schema definitions in `services/api/src/mcp/schemas.ts` — Zod schemas for tool input, output, and evidence
-- [ ] T018 [US1] Implement first Career tool (`get_career_portfolio`) in `services/api/src/mcp/personal-tools.ts` — tool definition with input/output schemas, scope, and service call
+- [ ] T018 [US1] Implement first Career tool (`get_career_portfolio`) in `services/api/src/mcp/tools.ts` — tool definition with input/output schemas, scope, and service call
 - [ ] T019 [US1] Wire MCP route into `services/api/src/index.ts` — register `POST /api/mcp` with auth middleware and transport handler
 - [ ] T020 [US1] Register initial tool list (Career + Workspace tools) in capability registry
 - [ ] T021 [US1] Add logging for MCP tool invocation in transport handler
