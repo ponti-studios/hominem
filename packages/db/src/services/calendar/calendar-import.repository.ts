@@ -45,27 +45,29 @@ export interface ImportCalendarOccurrencesInput {
   occurrences: readonly CalendarOccurrenceImportInput[];
 }
 
-export interface CalendarImportRunRecord {
-  id: string;
-  sourceId: string;
-  status: string;
-  recordsRead: number;
-  recordsImported: number;
-  recordsRejected: number;
-  startedAt: string | null;
-  completedAt: string | null;
-}
+export type CalendarImportRunRecord = Pick<
+  ImportRunRow,
+  | 'id'
+  | 'sourceId'
+  | 'status'
+  | 'recordsRead'
+  | 'recordsImported'
+  | 'recordsRejected'
+  | 'startedAt'
+  | 'completedAt'
+>;
 
-export interface CalendarOccurrenceRecord {
-  id: string;
-  eventId: string;
-  occurrenceKey: string;
-  startsAt: string;
-  endsAt: string | null;
-  occurrenceDate: string | null;
-  isAllDay: boolean;
-  status: string;
-}
+export type CalendarOccurrenceRecord = Pick<
+  EventOccurrenceRow,
+  | 'id'
+  | 'eventId'
+  | 'occurrenceKey'
+  | 'startsAt'
+  | 'endsAt'
+  | 'occurrenceDate'
+  | 'isAllDay'
+  | 'status'
+>;
 
 function requiredText(value: string, field: string): string {
   const normalized = value.trim();

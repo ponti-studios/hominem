@@ -4,7 +4,6 @@ const repositories = vi.hoisted(() => ({
   calendarSearch: vi.fn(),
   calendarUpcoming: vi.fn(),
   financeMonthlySummary: vi.fn(),
-  getPersonalDataHealth: vi.fn(),
 }));
 
 const errors = vi.hoisted(() => {
@@ -24,9 +23,6 @@ vi.mock('@hominem/db', () => ({
   FinanceQueryRepository: {
     monthlySummary: repositories.financeMonthlySummary,
   },
-  ImportHealthRepository: {
-    getPersonalDataHealth: repositories.getPersonalDataHealth,
-  },
   ValidationError: errors.ValidationError,
 }));
 
@@ -42,14 +38,12 @@ describe('personal MCP tool registry', () => {
       'personal_calendar_search',
       'personal_calendar_upcoming',
       'personal_finance_monthly_summary',
-      'personal_data_health',
     ]);
     expect(tools.every((tool) => tool.readOnly)).toBe(true);
     expect(tools.flatMap((tool) => [...tool.scopes])).toEqual([
       'calendar:read',
       'calendar:read',
       'finance:read',
-      'provenance:read',
     ]);
   });
 
@@ -67,7 +61,7 @@ describe('personal MCP tool registry', () => {
         isCancelled: false,
         evidence: {
           sourceRecordId: '44444444-4444-4444-8444-444444444444',
-          sourceSystem: 'warehouse',
+          sourceSystem: 'calendar-fixture',
           sourceFile: 'march-trip.ics',
           importRunId: '55555555-5555-4555-8555-555555555555',
           importedAt: '2026-07-10T10:00:00.000Z',

@@ -6,7 +6,6 @@ import { authDb, db } from '../db';
 import { CalendarImportRepository } from './calendar/calendar-import.repository';
 import { CalendarQueryRepository } from './calendar/calendar-query.repository';
 import { FinanceQueryRepository } from './finance/finance-query.repository';
-import { ImportHealthRepository } from './imports/import-health.repository';
 
 const runIntegration = process.env.NODE_ENV === 'test' ? describe : describe.skip;
 
@@ -40,9 +39,9 @@ runIntegration('personal data read capabilities', () => {
   it('searches calendar metadata with redacted event evidence', async () => {
     const userId = await createUser();
     await CalendarImportRepository.importOccurrences(userId, {
-      provider: 'warehouse',
+      provider: 'calendar-fixture',
       sourceExternalAccountId: 'calendar-fixture',
-      sourceDisplayName: 'Warehouse Calendar',
+      sourceDisplayName: 'Fixture Calendar',
       inputObjectKey: 'imports/calendar/source.sqlite',
       inputChecksum: 'calendar-fixture-checksum',
       occurrences: [
@@ -74,11 +73,95 @@ runIntegration('personal data read capabilities', () => {
       location: 'Nashville',
       isCancelled: false,
       evidence: {
-        sourceSystem: 'warehouse',
+        sourceSystem: 'calendar-fixture',
         sourceFile: 'march-trip.ics',
       },
     });
     expect(JSON.stringify(results[0])).not.toContain('Private dinner notes');
+
+    const detail = await CalendarQueryRepository.getOccurrence(userId, results[0]!.occurrenceId);
+
+    expect(detail).toMatchObject({
+      occurrenceId: results[0]!.occurrenceId,
+      title: 'Dinner in Nashville',
+      evidence: {
+        sourceSystem: 'calendar-fixture',
+        sourceFile: 'march-trip.ics',
+      },
+    });
+    expect(JSON.stringify(detail)).not.toContain('raw/calendar/march-trip.ics');
+  });
+
+  it('returns upcoming calendar occurrences ordered, bounded, and without cancellations', async () => {
+    const userId = await createUser();
+    await CalendarImportRepository.importOccurrences(userId, {
+      provider: 'calendar-fixture',
+      sourceExternalAccountId: 'calendar-upcoming',
+      sourceDisplayName: 'Fixture Calendar',
+      occurrences: [
+        {
+          calendarUid: 'cancelled-lunch',
+          occurrenceKey: '2026-03-12T18:00:00.000Z',
+          title: 'Cancelled lunch',
+          startsAt: '2026-03-12T18:00:00.000Z',
+          endsAt: '2026-03-12T19:00:00.000Z',
+          isAllDay: false,
+          isCancelled: true,
+          contentHash: 'cancelled-lunch',
+          rawObjectKey: 'raw/calendar/cancelled-lunch.ics',
+        },
+        {
+          calendarUid: 'all-day-conference',
+          occurrenceKey: '2026-03-13',
+          title: 'All-day conference',
+          startsAt: '2026-03-13T00:00:00.000Z',
+          occurrenceDate: '2026-03-13',
+          isAllDay: true,
+          isCancelled: false,
+          contentHash: 'all-day-conference',
+          rawObjectKey: 'raw/calendar/all-day-conference.ics',
+        },
+        {
+          calendarUid: 'morning-flight',
+          occurrenceKey: '2026-03-12T14:00:00.000Z',
+          title: 'Morning flight',
+          startsAt: '2026-03-12T14:00:00.000Z',
+          endsAt: '2026-03-12T16:00:00.000Z',
+          isAllDay: false,
+          isCancelled: false,
+          contentHash: 'morning-flight',
+          rawObjectKey: 'raw/calendar/morning-flight.ics',
+        },
+      ],
+    });
+
+    const upcoming = await CalendarQueryRepository.upcoming(userId, {
+      startsFrom: '2026-03-12T00:00:00.000Z',
+      startsBefore: '2026-03-14T00:00:00.000Z',
+    });
+
+    expect(upcoming.map((event) => event.title)).toEqual([
+      'Morning flight',
+      'All-day conference',
+    ]);
+    expect(upcoming[1]).toMatchObject({
+      occurrenceDate: '2026-03-13',
+      isAllDay: true,
+    });
+    expect(upcoming.every((event) => !event.isCancelled)).toBe(true);
+
+    const cancelled = await CalendarQueryRepository.search(userId, {
+      query: 'Cancelled',
+      startsFrom: '2026-03-12T00:00:00.000Z',
+      startsBefore: '2026-03-14T00:00:00.000Z',
+      includeCancelled: true,
+    });
+
+    expect(cancelled).toHaveLength(1);
+    expect(cancelled[0]).toMatchObject({
+      title: 'Cancelled lunch',
+      isCancelled: true,
+    });
   });
 
   it('summarizes monthly spending and merchant destinations', async () => {
@@ -151,44 +234,91 @@ runIntegration('personal data read capabilities', () => {
     ]);
   });
 
-  it('reports aggregate import and canonical data health without raw artifact keys', async () => {
+  it('caps finance summary evidence and excludes transactions outside the month', async () => {
     const userId = await createUser();
-    await CalendarImportRepository.importOccurrences(userId, {
-      provider: 'warehouse',
-      sourceExternalAccountId: 'calendar-health',
-      sourceDisplayName: 'Warehouse Calendar',
-      occurrences: [
+    const institutionId = randomUUID();
+    const accountId = randomUUID();
+    institutionIds.push(institutionId);
+
+    await db
+      .insertInto('app.financeInstitutions')
+      .values({ id: institutionId, name: 'Test Bank' })
+      .execute();
+    await db
+      .insertInto('app.financeAccounts')
+      .values({
+        id: accountId,
+        userId,
+        institutionId,
+        name: 'Personal Checking',
+        accountType: 'checking',
+      })
+      .execute();
+    await db
+      .insertInto('app.financeTransactions')
+      .values([
         {
-          calendarUid: 'health-check',
-          occurrenceKey: '2026-07-10T16:00:00.000Z',
-          title: 'Health check',
-          startsAt: '2026-07-10T16:00:00.000Z',
-          endsAt: '2026-07-10T17:00:00.000Z',
-          isAllDay: false,
-          isCancelled: false,
-          contentHash: 'health-check-occurrence',
-          rawObjectKey: 'raw/calendar/health-check.ics',
+          id: randomUUID(),
+          userId,
+          accountId,
+          amount: -10,
+          transactionType: 'debit',
+          postedOn: '2026-03-01',
+          merchantName: 'Coffee',
+          description: 'Morning coffee',
         },
-      ],
+        {
+          id: randomUUID(),
+          userId,
+          accountId,
+          amount: -20,
+          transactionType: 'debit',
+          postedOn: '2026-03-02',
+          merchantName: 'Lunch',
+          description: 'Lunch',
+        },
+        {
+          id: randomUUID(),
+          userId,
+          accountId,
+          amount: 100,
+          transactionType: 'credit',
+          postedOn: '2026-03-03',
+          merchantName: 'Client',
+          description: 'Invoice',
+        },
+        {
+          id: randomUUID(),
+          userId,
+          accountId,
+          amount: -999,
+          transactionType: 'debit',
+          postedOn: '2026-04-01',
+          merchantName: 'April',
+          description: 'Out of range',
+        },
+      ])
+      .execute();
+
+    const summary = await FinanceQueryRepository.monthlySummary(userId, {
+      month: '2026-03',
+      limit: 2,
     });
 
-    const health = await ImportHealthRepository.getPersonalDataHealth(userId);
-
-    expect(health).toMatchObject({
-      databaseAccessible: true,
-      importSourceCount: 1,
-      importRunCount: 1,
-      rawRecordCount: 1,
-      canonicalCounts: {
-        calendarOccurrences: 1,
-      },
+    expect(summary).toMatchObject({
+      month: '2026-03',
+      startsOn: '2026-03-01',
+      endsBefore: '2026-04-01',
+      totalSpent: 30,
+      totalIncome: 100,
+      transactionCount: 3,
     });
-    expect(health.sources[0]).toMatchObject({
-      provider: 'warehouse',
-      sourceKind: 'calendar',
-      runCount: 1,
-      latestRunStatus: 'completed',
-    });
-    expect(JSON.stringify(health)).not.toContain('raw/calendar/health-check.ics');
+    expect(summary.transactions).toHaveLength(2);
+    expect(summary.topMerchants.map((merchant) => merchant.merchantName)).toEqual([
+      'Lunch',
+      'Coffee',
+    ]);
+    expect(JSON.stringify(summary)).not.toContain('Out of range');
+    expect(JSON.stringify(summary)).not.toContain('providerPayload');
   });
 });

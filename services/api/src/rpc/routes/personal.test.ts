@@ -10,7 +10,6 @@ const repositories = vi.hoisted(() => ({
   calendarSearch: vi.fn(),
   calendarUpcoming: vi.fn(),
   financeMonthlySummary: vi.fn(),
-  getPersonalDataHealth: vi.fn(),
 }));
 
 const errorClasses = vi.hoisted(() => {
@@ -48,9 +47,6 @@ vi.mock('@hominem/db', () => ({
   },
   FinanceQueryRepository: {
     monthlySummary: repositories.financeMonthlySummary,
-  },
-  ImportHealthRepository: {
-    getPersonalDataHealth: repositories.getPersonalDataHealth,
   },
   ConflictError: errorClasses.MockServiceError,
   ForbiddenError: errorClasses.MockServiceError,
@@ -99,7 +95,7 @@ function createApp(authenticated: boolean) {
 
 describe('personal routes', () => {
   it('requires authentication', async () => {
-    const response = await createApp(false).request('/api/personal/data-health');
+    const response = await createApp(false).request('/api/personal/calendar/upcoming');
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toMatchObject({
@@ -116,39 +112,5 @@ describe('personal routes', () => {
 
     expect(response.status).toBe(400);
     expect(repositories.financeMonthlySummary).not.toHaveBeenCalled();
-  });
-
-  it('returns read-only personal data health in a data envelope', async () => {
-    repositories.getPersonalDataHealth.mockResolvedValueOnce({
-      databaseAccessible: true,
-      importSourceCount: 1,
-      importRunCount: 2,
-      latestImportCompletedAt: '2026-07-10T10:00:00.000Z',
-      artifactCount: 3,
-      rawRecordCount: 4,
-      canonicalCounts: {
-        calendarOccurrences: 5,
-        financeTransactions: 6,
-        notes: 7,
-        chats: 8,
-      },
-      sources: [],
-      reconciliations: [],
-      warnings: [],
-    });
-
-    const response = await createApp(true).request('/api/personal/data-health');
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      data: {
-        databaseAccessible: true,
-        canonicalCounts: {
-          calendarOccurrences: 5,
-          financeTransactions: 6,
-        },
-      },
-    });
-    expect(repositories.getPersonalDataHealth).toHaveBeenCalledWith(testUser.id);
   });
 });

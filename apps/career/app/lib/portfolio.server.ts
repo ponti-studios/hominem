@@ -1,16 +1,17 @@
-import type { FullPortfolioRecord, PortfolioRecord } from '@hominem/db';
+import type { FullPortfolioRecord, PortfolioRecord, PublicFullPortfolioRecord } from '@hominem/db';
 import { db, PortfolioRepository } from '@hominem/db';
 
 import { fetchCurrentPortfolio } from './api.server';
 import type { User } from './auth.server';
 
 export interface FullPortfolio extends FullPortfolioRecord {}
+export interface PublicPortfolio extends PublicFullPortfolioRecord {}
 
 export async function getFullUserPortfolio(owner_userid: string): Promise<FullPortfolio | null> {
   return PortfolioRepository.loadFullPortfolioByUserId(db, owner_userid);
 }
 
-export async function getFullPortfolioBySlug(slug: string): Promise<FullPortfolio | null> {
+export async function getFullPortfolioBySlug(slug: string): Promise<PublicPortfolio | null> {
   return PortfolioRepository.loadFullPortfolioBySlug(db, slug);
 }
 

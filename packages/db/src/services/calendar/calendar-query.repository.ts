@@ -1,29 +1,42 @@
-import { sql } from 'kysely';
+import { sql, type Selectable } from 'kysely';
 
 import { db } from '../../db';
 import { ValidationError } from '../../errors';
-import type { JsonValue } from '../../types/database';
+import type {
+  AppEventOccurrences,
+  AppEvents,
+  AppImportRecords,
+  AppImportRuns,
+  AppImportSources,
+  JsonValue,
+} from '../../types/database';
 
-export interface CalendarEvidenceRecord {
-  sourceRecordId: string | null;
-  sourceSystem: string | null;
+type EventRow = Selectable<AppEvents>;
+type EventOccurrenceRow = Selectable<AppEventOccurrences>;
+type ImportRecordRow = Selectable<AppImportRecords>;
+type ImportRunRow = Selectable<AppImportRuns>;
+type ImportSourceRow = Selectable<AppImportSources>;
+
+export type CalendarEvidenceRecord = {
+  sourceRecordId: ImportRecordRow['id'] | null;
+  sourceSystem: ImportSourceRow['provider'] | null;
   sourceFile: string | null;
-  importRunId: string | null;
-  importedAt: string | null;
-}
+  importRunId: ImportRunRow['id'] | null;
+  importedAt: ImportRecordRow['createdat'] | null;
+};
 
-export interface CalendarOccurrenceReadRecord {
-  occurrenceId: string;
-  eventId: string;
-  title: string;
-  startsAt: string;
-  endsAt: string | null;
-  occurrenceDate: string | null;
-  isAllDay: boolean;
+export type CalendarOccurrenceReadRecord = {
+  occurrenceId: EventOccurrenceRow['id'];
+  eventId: EventRow['id'];
+  title: EventRow['title'];
+  startsAt: EventOccurrenceRow['startsAt'];
+  endsAt: EventOccurrenceRow['endsAt'];
+  occurrenceDate: EventOccurrenceRow['occurrenceDate'];
+  isAllDay: EventOccurrenceRow['isAllDay'];
   location: string | null;
   isCancelled: boolean;
   evidence: CalendarEvidenceRecord;
-}
+};
 
 export interface CalendarSearchInput {
   query: string;
@@ -84,20 +97,20 @@ function metadataLocation(metadata: JsonValue): string | null {
 }
 
 type CalendarOccurrenceRow = {
-  occurrenceId: string;
-  eventId: string;
-  title: string;
-  startsAt: string;
-  endsAt: string | null;
-  occurrenceDate: string | null;
-  isAllDay: boolean;
-  status: string;
-  metadata: JsonValue;
-  sourceRecordId: string | null;
-  sourceSystem: string | null;
-  rawObjectKey: string | null;
-  importRunId: string | null;
-  importedAt: string | null;
+  occurrenceId: EventOccurrenceRow['id'];
+  eventId: EventRow['id'];
+  title: EventRow['title'];
+  startsAt: EventOccurrenceRow['startsAt'];
+  endsAt: EventOccurrenceRow['endsAt'];
+  occurrenceDate: EventOccurrenceRow['occurrenceDate'];
+  isAllDay: EventOccurrenceRow['isAllDay'];
+  status: EventOccurrenceRow['status'];
+  metadata: EventRow['metadata'];
+  sourceRecordId: ImportRecordRow['id'] | null;
+  sourceSystem: ImportSourceRow['provider'] | null;
+  rawObjectKey: ImportRecordRow['rawObjectKey'] | null;
+  importRunId: ImportRunRow['id'] | null;
+  importedAt: ImportRecordRow['createdat'] | null;
 };
 
 function toReadRecord(row: CalendarOccurrenceRow): CalendarOccurrenceReadRecord {
@@ -153,6 +166,17 @@ function baseCalendarQuery(ownerUserId: string) {
 }
 
 export class CalendarQueryRepository {
+  static async getOccurrence(
+    ownerUserId: string,
+    occurrenceId: string,
+  ): Promise<CalendarOccurrenceReadRecord | null> {
+    const row = await baseCalendarQuery(ownerUserId)
+      .where('occurrence.id', '=', occurrenceId)
+      .executeTakeFirst();
+
+    return row ? toReadRecord(row as CalendarOccurrenceRow) : null;
+  }
+
   static async search(
     ownerUserId: string,
     input: CalendarSearchInput,

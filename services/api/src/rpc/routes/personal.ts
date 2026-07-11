@@ -1,22 +1,24 @@
-import {
-  CalendarQueryRepository,
-  FinanceQueryRepository,
-  ImportHealthRepository,
-} from '@hominem/db';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
+import { CalendarService } from '../../application/calendar.service';
+import { FinanceService } from '../../application/finance.service';
 import {
   calendarOccurrenceSchema,
   calendarSearchQuerySchema,
   calendarUpcomingQuerySchema,
+} from '../../schemas/calendar.schema';
+import {
   financeMonthlySummaryQuerySchema,
   financeMonthlySummarySchema,
-  personalDataHealthSchema,
-} from '../../schemas/personal-data.schema';
+} from '../../schemas/finance.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { respondWithData } from '../response';
 
 const routes = new Hono<AppContext>();
+const calendarOccurrencesSchema = calendarOccurrenceSchema.array();
+const calendarService = new CalendarService();
+const financeService = new FinanceService();
 
 routes
   .get(
@@ -26,8 +28,8 @@ routes
     async (c) => {
       const userId = c.get('userId')!;
       const input = c.req.valid('query');
-      const results = await CalendarQueryRepository.search(userId, input);
-      return c.json({ data: calendarOccurrenceSchema.array().parse(results) }, 200);
+      const results = await calendarService.search(userId, input);
+      return respondWithData(c, calendarOccurrencesSchema, results);
     },
   )
   .get(
@@ -37,8 +39,8 @@ routes
     async (c) => {
       const userId = c.get('userId')!;
       const input = c.req.valid('query');
-      const results = await CalendarQueryRepository.upcoming(userId, input);
-      return c.json({ data: calendarOccurrenceSchema.array().parse(results) }, 200);
+      const results = await calendarService.upcoming(userId, input);
+      return respondWithData(c, calendarOccurrencesSchema, results);
     },
   )
   .get(
@@ -48,14 +50,9 @@ routes
     async (c) => {
       const userId = c.get('userId')!;
       const input = c.req.valid('query');
-      const summary = await FinanceQueryRepository.monthlySummary(userId, input);
-      return c.json({ data: financeMonthlySummarySchema.parse(summary) }, 200);
+      const summary = await financeService.monthlySummary(userId, input);
+      return respondWithData(c, financeMonthlySummarySchema, summary);
     },
-  )
-  .get('/data-health', authMiddleware, async (c) => {
-    const userId = c.get('userId')!;
-    const health = await ImportHealthRepository.getPersonalDataHealth(userId);
-    return c.json({ data: personalDataHealthSchema.parse(health) }, 200);
-  });
+  );
 
 export const personalRoutes: Hono<AppContext> = routes;

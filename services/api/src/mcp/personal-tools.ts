@@ -1,25 +1,30 @@
-import {
-  CalendarQueryRepository,
-  FinanceQueryRepository,
-  ImportHealthRepository,
-  ValidationError,
-} from '@hominem/db';
+import { ValidationError } from '@hominem/db';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import * as z from 'zod';
 
+import { CalendarService } from '../application/calendar.service';
+import {
+  assertReadOnlyMcpCapability,
+  defineCapability,
+  parseCapabilityInput,
+  parseCapabilityOutput,
+  type CapabilityDefinition,
+} from '../application/capability';
+import { FinanceService } from '../application/finance.service';
 import {
   calendarOccurrenceSchema,
   calendarSearchQuerySchema,
   calendarUpcomingQuerySchema,
+} from '../schemas/calendar.schema';
+import {
   financeMonthlySummaryQuerySchema,
   financeMonthlySummarySchema,
-  personalDataHealthSchema,
-} from '../schemas/personal-data.schema';
+} from '../schemas/finance.schema';
 
 const toolNames = [
   'personal_calendar_search',
   'personal_calendar_upcoming',
   'personal_finance_monthly_summary',
-  'personal_data_health',
 ] as const;
 
 export type PersonalMcpToolName = (typeof toolNames)[number];
@@ -29,95 +34,118 @@ export interface PersonalMcpToolDefinition {
   title: string;
   description: string;
   inputSchema: z.ZodType;
+  outputSchema: z.ZodType;
   readOnly: true;
   scopes: readonly string[];
+  sensitivity: CapabilityDefinition['sensitivity'];
+  resultCap: number;
 }
 
-export interface PersonalMcpToolResult {
+export interface PersonalMcpToolResult extends CallToolResult {
   content: Array<{ type: 'text'; text: string }>;
-  structuredContent: unknown;
+  structuredContent: Record<string, unknown>;
 }
 
 type ToolImplementation = {
-  definition: PersonalMcpToolDefinition;
+  definition: PersonalCapabilityDefinition;
   invoke: (ownerUserId: string, input: unknown) => Promise<unknown>;
 };
 
-function toolResult(structuredContent: unknown): PersonalMcpToolResult {
+type PersonalCapabilityDefinition = CapabilityDefinition<
+  PersonalMcpToolName,
+  z.ZodType,
+  z.ZodType
+> & {
+  readOnly: true;
+  transports: readonly ['mcp'];
+};
+
+const calendarService = new CalendarService();
+const financeService = new FinanceService();
+
+function toolResult(structuredContent: Record<string, unknown>): PersonalMcpToolResult {
   return {
     content: [{ type: 'text', text: JSON.stringify(structuredContent) }],
     structuredContent,
   };
 }
 
+const definitions = {
+  personal_calendar_search: defineCapability({
+    name: 'personal_calendar_search',
+    title: 'Search calendar events',
+    description:
+      'Search the authenticated user calendar by literal text across metadata-only event title, description, and location. Returns event metadata and provenance evidence, not event body details.',
+    inputSchema: calendarSearchQuerySchema,
+    outputSchema: z.object({ events: calendarOccurrenceSchema.array() }),
+    readOnly: true,
+    scopes: ['calendar:read'],
+    sensitivity: 'sensitive',
+    resultCap: 50,
+    transports: ['mcp'],
+  }),
+  personal_calendar_upcoming: defineCapability({
+    name: 'personal_calendar_upcoming',
+    title: 'List upcoming calendar events',
+    description:
+      'List upcoming non-cancelled calendar occurrences for the authenticated user in a bounded time window.',
+    inputSchema: calendarUpcomingQuerySchema,
+    outputSchema: z.object({ events: calendarOccurrenceSchema.array() }),
+    readOnly: true,
+    scopes: ['calendar:read'],
+    sensitivity: 'sensitive',
+    resultCap: 50,
+    transports: ['mcp'],
+  }),
+  personal_finance_monthly_summary: defineCapability({
+    name: 'personal_finance_monthly_summary',
+    title: 'Summarize monthly finance activity',
+    description:
+      'Summarize authenticated user spending, income, top merchants, and bounded transaction evidence for one calendar month.',
+    inputSchema: financeMonthlySummaryQuerySchema,
+    outputSchema: financeMonthlySummarySchema,
+    readOnly: true,
+    scopes: ['finance:read'],
+    sensitivity: 'highly_sensitive',
+    resultCap: 50,
+    transports: ['mcp'],
+  }),
+} satisfies Record<PersonalMcpToolName, PersonalCapabilityDefinition>;
+
 const implementations = {
   personal_calendar_search: {
-    definition: {
-      name: 'personal_calendar_search',
-      title: 'Search calendar events',
-      description:
-        'Search the authenticated user calendar by literal text across metadata-only event title, description, and location. Returns event metadata and provenance evidence, not event body details.',
-      inputSchema: calendarSearchQuerySchema,
-      readOnly: true,
-      scopes: ['calendar:read'],
-    },
+    definition: definitions.personal_calendar_search,
     invoke: async (ownerUserId, input) => {
-      const parsed = calendarSearchQuerySchema.parse(input);
-      const rows = await CalendarQueryRepository.search(ownerUserId, parsed);
-      return { events: calendarOccurrenceSchema.array().parse(rows) };
+      const parsed = parseCapabilityInput(definitions.personal_calendar_search, input);
+      const rows = await calendarService.search(ownerUserId, parsed);
+      return parseCapabilityOutput(definitions.personal_calendar_search, {
+        events: rows,
+      });
     },
   },
   personal_calendar_upcoming: {
-    definition: {
-      name: 'personal_calendar_upcoming',
-      title: 'List upcoming calendar events',
-      description:
-        'List upcoming non-cancelled calendar occurrences for the authenticated user in a bounded time window.',
-      inputSchema: calendarUpcomingQuerySchema,
-      readOnly: true,
-      scopes: ['calendar:read'],
-    },
+    definition: definitions.personal_calendar_upcoming,
     invoke: async (ownerUserId, input) => {
-      const parsed = calendarUpcomingQuerySchema.parse(input ?? {});
-      const rows = await CalendarQueryRepository.upcoming(ownerUserId, parsed);
-      return { events: calendarOccurrenceSchema.array().parse(rows) };
+      const parsed = parseCapabilityInput(definitions.personal_calendar_upcoming, input ?? {});
+      const rows = await calendarService.upcoming(ownerUserId, parsed);
+      return parseCapabilityOutput(definitions.personal_calendar_upcoming, {
+        events: rows,
+      });
     },
   },
   personal_finance_monthly_summary: {
-    definition: {
-      name: 'personal_finance_monthly_summary',
-      title: 'Summarize monthly finance activity',
-      description:
-        'Summarize authenticated user spending, income, top merchants, and bounded transaction evidence for one calendar month.',
-      inputSchema: financeMonthlySummaryQuerySchema,
-      readOnly: true,
-      scopes: ['finance:read'],
-    },
+    definition: definitions.personal_finance_monthly_summary,
     invoke: async (ownerUserId, input) => {
-      const parsed = financeMonthlySummaryQuerySchema.parse(input);
-      const summary = await FinanceQueryRepository.monthlySummary(ownerUserId, parsed);
-      return financeMonthlySummarySchema.parse(summary);
-    },
-  },
-  personal_data_health: {
-    definition: {
-      name: 'personal_data_health',
-      title: 'Report personal data health',
-      description:
-        'Report aggregate import freshness, canonical record counts, source status, and non-sensitive quality warnings for the authenticated user.',
-      inputSchema: z.object({}).strict(),
-      readOnly: true,
-      scopes: ['provenance:read'],
-    },
-    invoke: async (ownerUserId, input) => {
-      z.object({})
-        .strict()
-        .parse(input ?? {});
-      const health = await ImportHealthRepository.getPersonalDataHealth(ownerUserId);
-      return personalDataHealthSchema.parse(health);
+      const parsed = parseCapabilityInput(definitions.personal_finance_monthly_summary, input);
+      const summary = await financeService.monthlySummary(ownerUserId, parsed);
+      return parseCapabilityOutput(definitions.personal_finance_monthly_summary, summary);
     },
   },
 } satisfies Record<PersonalMcpToolName, ToolImplementation>;
+
+for (const implementation of Object.values(implementations)) {
+  assertReadOnlyMcpCapability(implementation.definition);
+}
 
 export function listPersonalMcpTools(): PersonalMcpToolDefinition[] {
   return toolNames.map((name) => implementations[name].definition);
@@ -134,5 +162,9 @@ export async function callPersonalMcpTool(
   }
 
   const structuredContent = await implementation.invoke(ownerUserId, input);
+  if (!structuredContent || typeof structuredContent !== 'object' || Array.isArray(structuredContent)) {
+    throw new ValidationError(`MCP tool returned invalid structured content: ${name}`);
+  }
+
   return toolResult(structuredContent);
 }

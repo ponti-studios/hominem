@@ -8,7 +8,11 @@ import { verifyPortfolioOwnership } from './ownership';
 import { ProjectRepository, type ProjectRecord } from './project.repository';
 import { SkillRepository, type SkillRecord } from './skill.repository';
 import { TestimonialRepository, type TestimonialRecord } from './testimonial.repository';
-import { WorkExperienceRepository, type WorkExperienceRecord } from './work-experience.repository';
+import {
+  WorkExperienceRepository,
+  type PublicWorkExperienceRecord,
+  type WorkExperienceRecord,
+} from './work-experience.repository';
 
 type PortfolioRow = Selectable<AppPortfolios>;
 
@@ -37,6 +41,13 @@ export interface PortfolioRecord {
 
 export interface FullPortfolioRecord extends PortfolioRecord {
   work_experiences: WorkExperienceRecord[];
+  skills: SkillRecord[];
+  projects: ProjectRecord[];
+  testimonials: TestimonialRecord[];
+}
+
+export interface PublicFullPortfolioRecord extends PortfolioRecord {
+  work_experiences: PublicWorkExperienceRecord[];
   skills: SkillRecord[];
   projects: ProjectRecord[];
   testimonials: TestimonialRecord[];
@@ -121,6 +132,20 @@ async function loadFullPortfolio(
   };
 }
 
+async function loadPublicPortfolio(
+  handle: DbHandle,
+  portfolio: PortfolioRecord,
+): Promise<PublicFullPortfolioRecord> {
+  const [work_experiences, skills, projects, testimonials] = await Promise.all([
+    WorkExperienceRepository.listPublicByPortfolioId(handle, portfolio.id),
+    SkillRepository.listByPortfolioId(handle, portfolio.id),
+    ProjectRepository.listByPortfolioId(handle, portfolio.id),
+    TestimonialRepository.listByPortfolioId(handle, portfolio.id),
+  ]);
+
+  return { ...portfolio, work_experiences, skills, projects, testimonials };
+}
+
 export const PortfolioRepository = {
   async getPortfolioByUserId(
     handle: DbHandle,
@@ -156,12 +181,12 @@ export const PortfolioRepository = {
   async loadFullPortfolioBySlug(
     handle: DbHandle,
     slug: string,
-  ): Promise<FullPortfolioRecord | null> {
+  ): Promise<PublicFullPortfolioRecord | null> {
     const portfolio = await PortfolioRepository.getPortfolioBySlug(handle, slug);
     if (!portfolio || !portfolio.isPublic || !portfolio.isActive) {
       return null;
     }
-    return loadFullPortfolio(handle, portfolio);
+    return loadPublicPortfolio(handle, portfolio);
   },
 
   async isSlugAvailable(

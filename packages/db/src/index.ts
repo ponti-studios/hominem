@@ -92,6 +92,7 @@ export { PortfolioRepository } from './services/career/portfolio.repository';
 export type {
   CreateDefaultPortfolioInput,
   FullPortfolioRecord,
+  PublicFullPortfolioRecord,
   PortfolioRecord,
   SavePortfolioBasicsInput,
 } from './services/career/portfolio.repository';
@@ -100,8 +101,10 @@ export { WorkExperienceRepository } from './services/career/work-experience.repo
 export type {
   CreateWorkExperienceInput,
   UpdateWorkExperienceInput,
+  PublicWorkExperienceRecord,
   WorkExperienceRecord,
 } from './services/career/work-experience.repository';
+export { redactWorkExperienceForPublic } from './services/career/work-experience.repository';
 
 export { SkillRepository } from './services/career/skill.repository';
 export type { ReplaceSkillInput, SkillRecord } from './services/career/skill.repository';
@@ -171,10 +174,3 @@ export type {
   FinanceMonthlySummaryRecord,
   FinanceTransactionSummaryRecord,
 } from './services/finance/finance-query.repository';
-
-export { ImportHealthRepository } from './services/imports/import-health.repository';
-export type {
-  ImportSourceHealthRecord,
-  PersonalDataHealthRecord,
-  ReconciliationHealthRecord,
-} from './services/imports/import-health.repository';

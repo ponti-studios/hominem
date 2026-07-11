@@ -50,6 +50,50 @@ export interface WorkExperienceRecord {
   updatedat: string;
 }
 
+type PublicWorkExperienceExcludedFields =
+  | 'annualBonus'
+  | 'baseSalary'
+  | 'benefits'
+  | 'bonusHistory'
+  | 'currency'
+  | 'directReports'
+  | 'exitNotes'
+  | 'performanceRatings'
+  | 'reasonForLeaving'
+  | 'reportsTo'
+  | 'salaryAdjustments'
+  | 'salaryRange'
+  | 'signingBonus'
+  | 'teamSize';
+
+export type PublicWorkExperienceRecord = Omit<
+  WorkExperienceRecord,
+  PublicWorkExperienceExcludedFields
+>;
+
+export function redactWorkExperienceForPublic(
+  record: WorkExperienceRecord,
+): PublicWorkExperienceRecord {
+  const {
+    annualBonus: _annualBonus,
+    baseSalary: _baseSalary,
+    benefits: _benefits,
+    bonusHistory: _bonusHistory,
+    currency: _currency,
+    directReports: _directReports,
+    exitNotes: _exitNotes,
+    performanceRatings: _performanceRatings,
+    reasonForLeaving: _reasonForLeaving,
+    reportsTo: _reportsTo,
+    salaryAdjustments: _salaryAdjustments,
+    salaryRange: _salaryRange,
+    signingBonus: _signingBonus,
+    teamSize: _teamSize,
+    ...publicRecord
+  } = record;
+  return publicRecord;
+}
+
 export interface CreateWorkExperienceInput {
   portfolioId: string;
   role: string;
@@ -168,6 +212,14 @@ export const WorkExperienceRepository = {
       .execute();
 
     return (rows as WorkExperienceRow[]).map(toWorkExperienceRecord);
+  },
+
+  async listPublicByPortfolioId(
+    handle: DbHandle,
+    portfolioId: string,
+  ): Promise<PublicWorkExperienceRecord[]> {
+    const records = await WorkExperienceRepository.listByPortfolioId(handle, portfolioId);
+    return records.map(redactWorkExperienceForPublic);
   },
 
   async getWorkExperienceById(

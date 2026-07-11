@@ -25,7 +25,6 @@
     "lint": "oxlint src --fix",
     "start": "node dist/index.mjs",
     "start:worker": "node dist/worker.mjs",
-    "import:warehouse": "tsx scripts/import-warehouse.ts",
     "test": "vitest run",
     "typecheck": "tsgo --noEmit",
     "e2e:setup": "tsx scripts/e2e-setup.ts"
@@ -45,6 +44,7 @@
     "@hono/node-server": "^1.19.11",
     "@hono/standard-validator": "^0.2.0",
     "@hono/zod-validator": "^0.7.6",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@scalar/hono-api-reference": "^0.10.2",
     "@sentry/node": "^8.54.0",
     "better-auth": "^1.6.11",

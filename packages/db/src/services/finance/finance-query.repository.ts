@@ -1,29 +1,40 @@
+import type { Selectable } from 'kysely';
+
 import { db } from '../../db';
 import { ValidationError } from '../../errors';
+import type {
+  AppFinanceAccounts,
+  AppFinanceInstitutions,
+  AppFinanceTransactions,
+} from '../../types/database';
+
+type FinanceAccountRow = Selectable<AppFinanceAccounts>;
+type FinanceInstitutionRow = Selectable<AppFinanceInstitutions>;
+type FinanceTransactionRow = Selectable<AppFinanceTransactions>;
 
 export interface FinanceMonthlySummaryInput {
   month: string;
   limit?: number;
 }
 
-export interface FinanceTransactionSummaryRecord {
-  transactionId: string;
-  accountId: string;
-  accountName: string;
-  institutionName: string | null;
-  postedOn: string;
+export type FinanceTransactionSummaryRecord = {
+  transactionId: FinanceTransactionRow['id'];
+  accountId: FinanceTransactionRow['accountId'];
+  accountName: FinanceAccountRow['name'];
+  institutionName: FinanceInstitutionRow['name'] | null;
+  postedOn: FinanceTransactionRow['postedOn'];
   amount: number;
-  transactionType: string;
-  merchantName: string | null;
-}
+  transactionType: FinanceTransactionRow['transactionType'];
+  merchantName: FinanceTransactionRow['merchantName'];
+};
 
-export interface FinanceMerchantSpendRecord {
+export type FinanceMerchantSpendRecord = {
   merchantName: string;
   totalSpent: number;
   transactionCount: number;
-}
+};
 
-export interface FinanceMonthlySummaryRecord {
+export type FinanceMonthlySummaryRecord = {
   month: string;
   startsOn: string;
   endsBefore: string;
@@ -33,7 +44,7 @@ export interface FinanceMonthlySummaryRecord {
   transactionCount: number;
   topMerchants: FinanceMerchantSpendRecord[];
   transactions: FinanceTransactionSummaryRecord[];
-}
+};
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 50;

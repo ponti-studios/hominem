@@ -4,6 +4,7 @@ import type { AppContext } from './middleware/auth';
 import { requestIdMiddleware } from './middleware/auth';
 import { apiErrorHandler } from './middleware/error';
 import { validationErrorMiddleware } from './middleware/validation';
+import { mcpRoutes } from '../mcp/routes';
 import { economyRoutes } from './routes/economy';
 
 export const rpcApp = new Hono<AppContext>()
@@ -11,6 +12,7 @@ export const rpcApp = new Hono<AppContext>()
   .use(requestIdMiddleware)
   .use(validationErrorMiddleware)
   .basePath('/api')
+  .route('/mcp', mcpRoutes)
   .route('', economyRoutes);
 
 export type AppType = typeof rpcApp;
