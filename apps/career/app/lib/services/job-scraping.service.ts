@@ -39,7 +39,7 @@ const extractedJobSchema = z.object({
 });
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-const EXTRACTION_MODEL = 'openai/gpt-4o-mini';
+const EXTRACTION_MODEL = 'qwen/qwen3.5-flash-02-23';
 
 export async function scrapeJobPosting(jobUrl: string): Promise<JobScrapingResult> {
   try {

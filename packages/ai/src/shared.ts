@@ -4,16 +4,16 @@ import { OpenRouter } from '@openrouter/sdk';
 export const DEFAULT_HTTP_REFERER = 'https://hominem.app';
 export const DEFAULT_APP_TITLE = 'Hominem';
 
-export const DEFAULT_TEXT_MODEL = process.env.AI_MODEL ?? 'openai/gpt-4o';
+export const DEFAULT_TEXT_MODEL = process.env.AI_MODEL ?? 'qwen/qwen3.5-flash-02-23';
 export const DEFAULT_IMAGE_MODEL = 'x-ai/grok-imagine-image-quality';
 export const DEFAULT_EMBEDDING_MODEL = 'google/gemini-embedding-2';
 export const DEFAULT_TRANSCRIPTION_MODEL = 'mistralai/voxtral-mini-transcribe';
 export const DEFAULT_ENHANCE_MODEL = 'google/gemini-2.5-flash-lite';
-export const DEFAULT_SPEECH_MODEL = 'openai/gpt-4o-audio-preview';
+export const DEFAULT_SPEECH_MODEL = 'openai/gpt-audio-mini';
 export const DEFAULT_VOICE_CLEANUP_MODEL =
-  process.env.OPENROUTER_VOICE_CLEANUP_MODEL ?? 'openai/gpt-4o-mini';
+  process.env.OPENROUTER_VOICE_CLEANUP_MODEL ?? 'qwen/qwen3.5-flash-02-23';
 export const DEFAULT_TASK_EXTRACTION_MODEL =
-  process.env.OPENROUTER_TASK_EXTRACTION_MODEL ?? 'google/gemini-2.5-flash-lite';
+  process.env.OPENROUTER_TASK_EXTRACTION_MODEL ?? 'qwen/qwen3.5-flash-02-23';
 
 export type OpenRouterClientOptions = {
   httpReferer?: string;
