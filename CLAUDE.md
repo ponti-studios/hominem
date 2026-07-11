@@ -30,7 +30,7 @@ pnpm run check            # typecheck + lint + build + test (full validation)
 
 ## Database workflow
 
-After any schema change:
+After any schema change, follow [.agents/skills/db-migrate/SKILL.md](.agents/skills/db-migrate/SKILL.md):
 
 ```bash
 just db-migrate           # run Goose migrations + kysely-codegen

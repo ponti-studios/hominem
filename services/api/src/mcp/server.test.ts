@@ -10,16 +10,7 @@ import { validationErrorMiddleware } from '../rpc/middleware/validation';
 import { mcpRoutes } from './routes';
 
 const services = vi.hoisted(() => ({
-  calendarSearch: vi.fn(),
-  calendarUpcoming: vi.fn(),
   financeMonthlySummary: vi.fn(),
-}));
-
-vi.mock('../application/calendar.service', () => ({
-  CalendarService: class {
-    search = services.calendarSearch;
-    upcoming = services.calendarUpcoming;
-  },
 }));
 
 vi.mock('../application/finance.service', () => ({
@@ -85,54 +76,35 @@ describe('mcp server transport', () => {
     });
   });
 
-  it('lists tools and invokes a calendar tool over streamable HTTP', async () => {
-    services.calendarSearch.mockResolvedValueOnce([
-      {
-        occurrenceId: '22222222-2222-4222-8222-222222222222',
-        eventId: '33333333-3333-4333-8333-333333333333',
-        title: 'Dinner in Nashville',
-        startsAt: '2026-03-12T18:00:00.000Z',
-        endsAt: '2026-03-12T20:00:00.000Z',
-        occurrenceDate: null,
-        isAllDay: false,
-        location: 'Nashville',
-        isCancelled: false,
-        evidence: {
-          sourceRecordId: '44444444-4444-4444-8444-444444444444',
-          sourceSystem: 'calendar-fixture',
-          sourceFile: 'march-trip.ics',
-          importRunId: '55555555-5555-4555-8555-555555555555',
-          importedAt: '2026-07-10T10:00:00.000Z',
-        },
-      },
-    ]);
+  it('lists tools and invokes a finance tool over streamable HTTP', async () => {
+    services.financeMonthlySummary.mockResolvedValueOnce({
+      month: '2026-03',
+      startsOn: '2026-03-01',
+      endsBefore: '2026-04-01',
+      currencyCode: 'USD',
+      totalSpent: 162.5,
+      totalIncome: 2000,
+      transactionCount: 3,
+      topMerchants: [],
+      transactions: [],
+    });
 
     const client = await createClient(createApp(true));
     try {
       const tools = await client.listTools();
-      expect(tools.tools.map((tool) => tool.name)).toEqual([
-        'personal_calendar_search',
-        'personal_calendar_upcoming',
-        'personal_finance_monthly_summary',
-      ]);
+      expect(tools.tools.map((tool) => tool.name)).toEqual(['personal_finance_monthly_summary']);
 
       const result = await client.callTool({
-        name: 'personal_calendar_search',
+        name: 'personal_finance_monthly_summary',
         arguments: {
-          query: 'Nashville',
-          startsFrom: '2026-03-01T00:00:00.000Z',
-          startsBefore: '2026-04-01T00:00:00.000Z',
+          month: '2026-03',
         },
       });
 
       expect(result.isError).toBeFalsy();
       expect(result.structuredContent).toMatchObject({
-        events: [
-          {
-            title: 'Dinner in Nashville',
-            evidence: { sourceFile: 'march-trip.ics' },
-          },
-        ],
+        month: '2026-03',
+        totalIncome: 2000,
       });
     } finally {
       await client.close();
@@ -140,12 +112,12 @@ describe('mcp server transport', () => {
   });
 
   it('returns an error result when the caller lacks the required scope', async () => {
-    const client = await createClient(createApp(true), 'finance:read');
+    const client = await createClient(createApp(true), 'notes:read');
     try {
       const result = await client.callTool({
-        name: 'personal_calendar_search',
+        name: 'personal_finance_monthly_summary',
         arguments: {
-          query: 'Nashville',
+          month: '2026-03',
         },
       });
 
@@ -153,7 +125,7 @@ describe('mcp server transport', () => {
       const content = result.content as Array<{ type: string; text: string }>;
       expect(content[0]).toMatchObject({
         type: 'text',
-        text: 'Missing required scope(s): calendar:read',
+        text: 'Missing required scope(s): finance:read',
       });
     } finally {
       await client.close();

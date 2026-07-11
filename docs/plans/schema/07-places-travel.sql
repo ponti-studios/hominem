@@ -29,5 +29,4 @@ CREATE TABLE app.travel_segments (
   CHECK (arrives_at IS NULL OR departs_at IS NULL OR arrives_at >= departs_at)
 );
 CREATE INDEX idx_place_visits_owner_start ON app.place_visits(owner_userid, started_at DESC);
-ALTER TABLE app.events ADD CONSTRAINT events_place_id_fkey FOREIGN KEY (place_id) REFERENCES app.places(id) ON DELETE SET NULL;
 ALTER TABLE app.bookmarks ADD CONSTRAINT bookmarks_place_id_fkey FOREIGN KEY (place_id) REFERENCES app.places(id) ON DELETE SET NULL;

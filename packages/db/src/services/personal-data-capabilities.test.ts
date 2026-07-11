@@ -3,8 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { authDb, db } from '../db';
-import { CalendarImportRepository } from './calendar/calendar-import.repository';
-import { CalendarQueryRepository } from './calendar/calendar-query.repository';
 import { FinanceQueryRepository } from './finance/finance-query.repository';
 
 const runIntegration = process.env.NODE_ENV === 'test' ? describe : describe.skip;
@@ -15,7 +13,6 @@ runIntegration('personal data read capabilities', () => {
 
   afterEach(async () => {
     for (const userId of userIds.splice(0)) {
-      await db.deleteFrom('app.importSources').where('ownerUserid', '=', userId).execute();
       await db.deleteFrom('app.financeTransactions').where('userId', '=', userId).execute();
       await db.deleteFrom('app.financeAccounts').where('userId', '=', userId).execute();
       await authDb.deleteFrom('user').where('id', '=', userId).execute();
@@ -35,134 +32,6 @@ runIntegration('personal data read capabilities', () => {
       .execute();
     return userId;
   }
-
-  it('searches calendar metadata with redacted event evidence', async () => {
-    const userId = await createUser();
-    await CalendarImportRepository.importOccurrences(userId, {
-      provider: 'calendar-fixture',
-      sourceExternalAccountId: 'calendar-fixture',
-      sourceDisplayName: 'Fixture Calendar',
-      inputObjectKey: 'imports/calendar/source.sqlite',
-      inputChecksum: 'calendar-fixture-checksum',
-      occurrences: [
-        {
-          calendarUid: 'march-trip',
-          occurrenceKey: '2026-03-12T18:00:00.000Z',
-          title: 'Dinner in Nashville',
-          description: 'Private dinner notes should not leave the read model.',
-          location: 'Nashville',
-          startsAt: '2026-03-12T18:00:00.000Z',
-          endsAt: '2026-03-12T20:00:00.000Z',
-          isAllDay: false,
-          isCancelled: false,
-          contentHash: 'calendar-fixture-occurrence',
-          rawObjectKey: 'raw/calendar/march-trip.ics',
-        },
-      ],
-    });
-
-    const results = await CalendarQueryRepository.search(userId, {
-      query: 'Nashville',
-      startsFrom: '2026-03-01T00:00:00.000Z',
-      startsBefore: '2026-04-01T00:00:00.000Z',
-    });
-
-    expect(results).toHaveLength(1);
-    expect(results[0]).toMatchObject({
-      title: 'Dinner in Nashville',
-      location: 'Nashville',
-      isCancelled: false,
-      evidence: {
-        sourceSystem: 'calendar-fixture',
-        sourceFile: 'march-trip.ics',
-      },
-    });
-    expect(JSON.stringify(results[0])).not.toContain('Private dinner notes');
-
-    const detail = await CalendarQueryRepository.getOccurrence(userId, results[0]!.occurrenceId);
-
-    expect(detail).toMatchObject({
-      occurrenceId: results[0]!.occurrenceId,
-      title: 'Dinner in Nashville',
-      evidence: {
-        sourceSystem: 'calendar-fixture',
-        sourceFile: 'march-trip.ics',
-      },
-    });
-    expect(JSON.stringify(detail)).not.toContain('raw/calendar/march-trip.ics');
-  });
-
-  it('returns upcoming calendar occurrences ordered, bounded, and without cancellations', async () => {
-    const userId = await createUser();
-    await CalendarImportRepository.importOccurrences(userId, {
-      provider: 'calendar-fixture',
-      sourceExternalAccountId: 'calendar-upcoming',
-      sourceDisplayName: 'Fixture Calendar',
-      occurrences: [
-        {
-          calendarUid: 'cancelled-lunch',
-          occurrenceKey: '2026-03-12T18:00:00.000Z',
-          title: 'Cancelled lunch',
-          startsAt: '2026-03-12T18:00:00.000Z',
-          endsAt: '2026-03-12T19:00:00.000Z',
-          isAllDay: false,
-          isCancelled: true,
-          contentHash: 'cancelled-lunch',
-          rawObjectKey: 'raw/calendar/cancelled-lunch.ics',
-        },
-        {
-          calendarUid: 'all-day-conference',
-          occurrenceKey: '2026-03-13',
-          title: 'All-day conference',
-          startsAt: '2026-03-13T00:00:00.000Z',
-          occurrenceDate: '2026-03-13',
-          isAllDay: true,
-          isCancelled: false,
-          contentHash: 'all-day-conference',
-          rawObjectKey: 'raw/calendar/all-day-conference.ics',
-        },
-        {
-          calendarUid: 'morning-flight',
-          occurrenceKey: '2026-03-12T14:00:00.000Z',
-          title: 'Morning flight',
-          startsAt: '2026-03-12T14:00:00.000Z',
-          endsAt: '2026-03-12T16:00:00.000Z',
-          isAllDay: false,
-          isCancelled: false,
-          contentHash: 'morning-flight',
-          rawObjectKey: 'raw/calendar/morning-flight.ics',
-        },
-      ],
-    });
-
-    const upcoming = await CalendarQueryRepository.upcoming(userId, {
-      startsFrom: '2026-03-12T00:00:00.000Z',
-      startsBefore: '2026-03-14T00:00:00.000Z',
-    });
-
-    expect(upcoming.map((event) => event.title)).toEqual([
-      'Morning flight',
-      'All-day conference',
-    ]);
-    expect(upcoming[1]).toMatchObject({
-      occurrenceDate: '2026-03-13',
-      isAllDay: true,
-    });
-    expect(upcoming.every((event) => !event.isCancelled)).toBe(true);
-
-    const cancelled = await CalendarQueryRepository.search(userId, {
-      query: 'Cancelled',
-      startsFrom: '2026-03-12T00:00:00.000Z',
-      startsBefore: '2026-03-14T00:00:00.000Z',
-      includeCancelled: true,
-    });
-
-    expect(cancelled).toHaveLength(1);
-    expect(cancelled[0]).toMatchObject({
-      title: 'Cancelled lunch',
-      isCancelled: true,
-    });
-  });
 
   it('summarizes monthly spending and merchant destinations', async () => {
     const userId = await createUser();

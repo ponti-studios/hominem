@@ -10,13 +10,13 @@ import {
 
 describe('capability foundation', () => {
   const capability = defineCapability({
-    name: 'calendar.upcoming',
-    title: 'Upcoming calendar',
-    description: 'Returns upcoming calendar metadata.',
+    name: 'finance.monthly_summary',
+    title: 'Monthly finance summary',
+    description: 'Returns monthly finance metadata.',
     inputSchema: z.object({ limit: z.number().int().min(1).max(50).default(25) }),
     outputSchema: z.object({ events: z.array(z.object({ title: z.string() })) }),
     readOnly: true,
-    scopes: ['calendar:read'],
+    scopes: ['finance:read'],
     sensitivity: 'sensitive',
     resultCap: 50,
     transports: ['rpc', 'mcp'],
@@ -36,10 +36,10 @@ describe('capability foundation', () => {
   it('enforces MCP read-only and result-cap rules', () => {
     expect(() => assertReadOnlyMcpCapability(capability)).not.toThrow();
     expect(() =>
-      assertReadOnlyMcpCapability({ ...capability, name: 'calendar.write', readOnly: false }),
-    ).toThrow('MCP capability must be read-only: calendar.write');
+      assertReadOnlyMcpCapability({ ...capability, name: 'finance.write', readOnly: false }),
+    ).toThrow('MCP capability must be read-only: finance.write');
     expect(() =>
-      assertReadOnlyMcpCapability({ ...capability, name: 'calendar.dump', resultCap: 500 }),
-    ).toThrow('MCP capability resultCap must be between 1 and 50: calendar.dump');
+      assertReadOnlyMcpCapability({ ...capability, name: 'finance.dump', resultCap: 500 }),
+    ).toThrow('MCP capability resultCap must be between 1 and 50: finance.dump');
   });
 });

@@ -15,7 +15,7 @@ boundary; it does not introduce a separate knowledge store.
 
 ## Canonical entities and relationships
 
-`app.notes` is a versioned document: the note row holds a pointer (`current_version_id`) into `app.note_versions`, and each version carries its own `status` (`draft`/`published`/`archived`), `note_type` (`note`/`document`/`template`), and optional `published_at`/`scheduled_for` — the model doubles as lightweight CMS/publishing, not just private notes. `app.chats` hold `app.chat_messages`; a chat may be anchored to a note (`chats.note_id`) as an AI notebook thread. `app.tasks` are separate, may nest (`parent_task_id`), and can be shared/assigned within a space (`primary_space_id`, `app.task_assignments`). `app.extracted_facts` cite a subject entity, a predicate/value, and an optional source record with confidence. `app.vector_documents` hold embeddings for notes and chats only (not an arbitrary entity). `app.bookmarks` are user-saved links, optionally tied to a place. `app.note_files`/`app.note_shares` attach files and per-note sharing grants to a note; there is no separate `app.documents` table — documents are a `note_versions.note_type` value, not a distinct entity.
+`app.notes` is a versioned document: the note row holds a pointer (`current_version_id`) into `app.note_versions`, and each version carries its own `status` (`draft`/`published`/`archived`), `note_type` (`note`/`document`/`template`), and optional `published_at`/`scheduled_for` — the model doubles as lightweight CMS/publishing, not just private notes. `app.chats` hold `app.chat_messages`; a chat may be anchored to a note (`chats.note_id`) as an AI notebook thread. `app.tasks` are separate, may nest (`parent_task_id`), and can be shared/assigned within a space (`primary_space_id`, `app.task_assignments`). `app.extracted_facts` cite a subject entity, a predicate/value, a plain source label, bounded evidence JSON, and confidence; there is no import-record provenance layer in the MVP. `app.vector_documents` hold embeddings for notes and chats only (not an arbitrary entity). `app.bookmarks` are user-saved links, optionally tied to a place. `app.note_files`/`app.note_shares` attach files and per-note sharing grants to a note; there is no separate `app.documents` table — documents are a `note_versions.note_type` value, not a distinct entity.
 
 ## Lifecycle and invariants
 
@@ -40,7 +40,7 @@ Tags have the same two-tier pattern: `app.tags`/`tag_aliases`/`tag_assignments` 
 ## Delivery acceptance
 
 - [ ] Knowledge repositories expose notes, note versions, chats, messages, tags, links, embeddings, and extracted facts through typed methods.
-- [ ] Services distinguish user-authored content, imported content, and AI-derived facts.
+- [ ] Services distinguish user-authored content, externally sourced content labels, and AI-derived facts without relying on import infrastructure.
 - [ ] API DTOs apply excerpt policies and never return unrestricted note/chat dumps by default.
 - [ ] MCP knowledge tools support scoped retrieval with evidence, confidence, and no-data responses.
 - [ ] Tests cover note sharing, tag sharing, version selection, embedding lookup, fact confidence, and excerpt redaction.

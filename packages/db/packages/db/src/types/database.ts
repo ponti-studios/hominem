@@ -175,6 +175,29 @@ export interface AppChats {
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
+export interface AppCommunicationMessages {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  direction: string;
+  externalId: string | null;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  ownerUserid: string;
+  senderPersonId: string | null;
+  sentAt: ColumnType<string, Date | string, Date | string>;
+  threadId: string;
+}
+
+export interface AppCommunicationThreads {
+  channel: string;
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  externalId: string | null;
+  id: Generated<string>;
+  ownerUserid: string;
+  sensitivity: Generated<string>;
+  title: string | null;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
 export interface AppCompanies {
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
   description: string | null;
@@ -197,6 +220,18 @@ export interface AppEntities {
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
+export interface AppEntityAttributes {
+  attributeKey: string;
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  entityId: string;
+  entityTable: string;
+  id: Generated<string>;
+  namespace: string;
+  ownerUserid: string;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  value: Json;
+}
+
 export interface AppEntityLinks {
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
   fromEntityId: string;
@@ -212,35 +247,16 @@ export interface AppEntityLinks {
   validDuring: Generated<string>;
 }
 
-export interface AppEventAttendees {
+export interface AppExtractedFacts {
+  confidence: Generated<Numeric>;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  email: string | null;
-  eventId: string;
   id: Generated<string>;
-  personId: string | null;
-  respondedAt: ColumnType<string, Date | string, Date | string> | null;
-  role: Generated<string>;
-  status: Generated<string>;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppEvents {
-  color: string | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  description: string | null;
-  endsAt: ColumnType<string, Date | string, Date | string> | null;
-  eventType: string;
-  externalId: string | null;
-  id: Generated<string>;
-  isAllDay: Generated<boolean>;
-  metadata: Generated<Json>;
+  objectValue: Json;
+  observedAt: ColumnType<string, Date | string, Date | string> | null;
   ownerUserid: string;
-  placeId: string | null;
-  recurrence: Generated<Json>;
-  source: string | null;
-  startsAt: ColumnType<string, Date | string, Date | string>;
-  title: string;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  predicate: string;
+  subjectId: string | null;
+  subjectTable: string | null;
 }
 
 export interface AppFiles {
@@ -259,11 +275,10 @@ export interface AppFiles {
 }
 
 export interface AppFinanceAccounts {
-  accountid: string | null;
   accountSubtype: string | null;
   accountType: string;
   availableBalance: Numeric | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   currencyCode: Generated<string>;
   currentBalance: Numeric | null;
   id: Generated<string>;
@@ -272,41 +287,88 @@ export interface AppFinanceAccounts {
   mask: string | null;
   metadata: Generated<Json>;
   name: string;
-  ownerUserid: string;
+  plaidAccountId: string | null;
   plaidItemId: string | null;
   provider: string | null;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
+export interface AppFinanceCategories {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  kind: Generated<string>;
+  name: string;
+  ownerUserid: string;
+  parentId: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
 export interface AppFinanceInstitutions {
   countryCode: string | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   id: Generated<string>;
   logoUrl: string | null;
   name: string;
   provider: string | null;
   providerInstitutionId: string | null;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  websiteUrl: string | null;
+}
+
+export interface AppFinanceMerchants {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  name: string;
+  normalizedName: string;
+  ownerUserid: string;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
   websiteUrl: string | null;
+}
+
+export interface AppFinanceStatementPeriods {
+  accountId: string;
+  closingBalance: Numeric | null;
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  endsOn: ColumnType<string, Date | string, Date | string>;
+  id: Generated<string>;
+  openingBalance: Numeric | null;
+  ownerUserid: string;
+  startsOn: ColumnType<string, Date | string, Date | string>;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppFinanceTransactionPostings {
+  accountId: string | null;
+  amount: Numeric;
+  categoryId: string | null;
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  currencyCode: Generated<string>;
+  id: Generated<string>;
+  memo: string | null;
+  ownerUserid: string;
+  transactionId: string;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
 export interface AppFinanceTransactions {
   accountId: string;
   amount: Numeric;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   description: string | null;
   externalId: string | null;
   id: Generated<string>;
   merchantName: string | null;
   notes: string | null;
   occurredAt: ColumnType<string, Date | string, Date | string> | null;
-  ownerUserid: string;
   pending: Generated<boolean>;
   postedOn: ColumnType<string, Date | string, Date | string>;
   providerPayload: Generated<Json>;
   source: string | null;
   transactionType: string;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
 }
 
 export interface AppGoals {
@@ -386,6 +448,32 @@ export interface AppKeyResults {
   title: string;
   unit: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppMediaConsumptions {
+  completedAt: ColumnType<string, Date | string, Date | string> | null;
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  mediaWorkId: string;
+  notes: string | null;
+  ownerUserid: string;
+  progress: Numeric | null;
+  rating: Numeric | null;
+  startedAt: ColumnType<string, Date | string, Date | string> | null;
+  status: Generated<string>;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppMediaWorks {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  creators: Generated<Json>;
+  externalId: string | null;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  ownerUserid: string;
+  title: string;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  workType: string;
 }
 
 export interface AppMusicAlbums {
@@ -526,6 +614,30 @@ export interface AppNoteVersions {
   versionNumber: number;
 }
 
+export interface AppOrganizationMemberships {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  endedAt: ColumnType<string, Date | string, Date | string> | null;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  organizationId: string;
+  ownerUserid: string;
+  personId: string | null;
+  role: string | null;
+  startedAt: ColumnType<string, Date | string, Date | string> | null;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppOrganizations {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  kind: string | null;
+  metadata: Generated<Json>;
+  name: string;
+  ownerUserid: string;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  websiteUrl: string | null;
+}
+
 export interface AppPeople {
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
   email: string | null;
@@ -540,6 +652,40 @@ export interface AppPeople {
   personType: Generated<string>;
   phone: string | null;
   startedAt: ColumnType<string, Date | string, Date | string> | null;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppPersonAliases {
+  alias: string;
+  aliasKind: Generated<string>;
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  ownerUserid: string;
+  personId: string;
+}
+
+export interface AppPersonContactMethods {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  isPrimary: Generated<boolean>;
+  kind: string;
+  label: string | null;
+  ownerUserid: string;
+  personId: string;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  value: string;
+}
+
+export interface AppPersonRelationships {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  endedAt: ColumnType<string, Date | string, Date | string> | null;
+  fromPersonId: string;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  ownerUserid: string;
+  relationshipType: string;
+  startedAt: ColumnType<string, Date | string, Date | string> | null;
+  toPersonId: string;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
@@ -560,20 +706,33 @@ export interface AppPlaces {
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
-export interface AppPlaidItems {
-  accesstoken: string | null;
+export interface AppPlaceVisits {
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  endedAt: ColumnType<string, Date | string, Date | string> | null;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  ownerUserid: string;
+  placeId: string;
+  purpose: string | null;
+  source: string | null;
+  startedAt: ColumnType<string, Date | string, Date | string>;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppPlaidItems {
+  accessToken: string | null;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   cursor: string | null;
   errorCode: string | null;
   errorMessage: string | null;
   id: Generated<string>;
   institutionId: string | null;
   lastSyncedAt: ColumnType<string, Date | string, Date | string> | null;
-  ownerUserid: string;
   provider: Generated<string>;
   providerItemId: string;
   status: Generated<string>;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
 }
 
 export interface AppPortfolioAnalytics {
@@ -592,7 +751,6 @@ export interface AppPortfolioAnalytics {
 }
 
 export interface AppPortfolios {
-  availabilityMessage: string | null;
   availabilityStatus: Generated<boolean>;
   bio: string;
   copyright: string | null;
@@ -604,8 +762,8 @@ export interface AppPortfolios {
   isActive: Generated<boolean>;
   isPublic: Generated<boolean>;
   jobTitle: string;
-  locationTagline: string | null;
   name: string;
+  openToRemote: Generated<boolean>;
   ownerUserid: string;
   phone: string | null;
   profileImageUrl: string | null;
@@ -681,6 +839,34 @@ export interface AppProjects {
   workExperienceId: string | null;
 }
 
+export interface AppPurchaseLineItems {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  ownerUserid: string;
+  possessionId: string | null;
+  purchaseOrderId: string;
+  quantity: Generated<Numeric>;
+  title: string;
+  unitAmount: Numeric | null;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppPurchaseOrders {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  currencyCode: Generated<string>;
+  externalId: string | null;
+  id: Generated<string>;
+  merchantId: string | null;
+  metadata: Generated<Json>;
+  orderedAt: ColumnType<string, Date | string, Date | string> | null;
+  ownerUserid: string;
+  source: string | null;
+  status: string | null;
+  totalAmount: Numeric | null;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
 export interface AppSkills {
   aiDerived: Generated<boolean>;
   category: string | null;
@@ -698,15 +884,16 @@ export interface AppSkills {
   yearsOfExperience: number | null;
 }
 
-export interface AppSocialLinks {
+export interface AppSocialInteractions {
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  github: string | null;
   id: Generated<string>;
-  linkedin: string | null;
-  portfolioId: string;
-  twitter: string | null;
+  interactionType: string;
+  metadata: Generated<Json>;
+  occurredAt: ColumnType<string, Date | string, Date | string>;
+  ownerUserid: string;
+  personId: string | null;
+  source: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-  website: string | null;
 }
 
 export interface AppSpaceInvites {
@@ -848,6 +1035,22 @@ export interface AppTestimonials {
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
+export interface AppTravelSegments {
+  arrivesAt: ColumnType<string, Date | string, Date | string> | null;
+  confirmationCode: string | null;
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  departsAt: ColumnType<string, Date | string, Date | string> | null;
+  destinationPlaceId: string | null;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  originPlaceId: string | null;
+  ownerUserid: string;
+  provider: string | null;
+  segmentType: string;
+  tripId: string;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
 export interface AppTravelTrips {
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
   description: string | null;
@@ -859,6 +1062,16 @@ export interface AppTravelTrips {
   startDate: ColumnType<string, Date | string, Date | string>;
   status: Generated<string>;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppUserSocialLinks {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  github: string | null;
+  linkedin: string | null;
+  twitter: string | null;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+  website: string | null;
 }
 
 export interface AppVectorDocuments {
@@ -976,6 +1189,20 @@ export interface Jwks {
   publicKey: string;
 }
 
+export interface LabsArticles {
+  description: string | null;
+  feedId: number;
+  fetchedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<number>;
+  imageUrl: string | null;
+  publishedAt: ColumnType<string, Date | string, Date | string> | null;
+  rejectionCount: Generated<number>;
+  rejectionReason: string | null;
+  status: Generated<string>;
+  title: string;
+  url: string;
+}
+
 export interface LabsCaseUpdates {
   caseId: string;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1056,10 +1283,51 @@ export interface LabsCovidData {
   weeklyIcuAdmissionsPerMillion: number | null;
 }
 
+export interface LabsDailyPuzzles {
+  answer: string;
+  answerType: string;
+  articleId: number;
+  clue: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  dateUtc: ColumnType<string, Date | string, Date | string>;
+  detail: string;
+  gameId: number;
+  id: Generated<number>;
+  normalizedAnswer: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
 export interface LabsDrizzleMigrations {
   createdAt: Int8 | null;
   hash: string;
   id: Generated<number>;
+}
+
+export interface LabsFeedGames {
+  feedId: number;
+  gameId: number;
+}
+
+export interface LabsFeeds {
+  active: Generated<boolean>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<number>;
+  kind: Generated<string>;
+  label: string;
+  url: string;
+}
+
+export interface LabsGames {
+  active: Generated<boolean>;
+  answerLength: Generated<number>;
+  articleExpiryDays: Generated<number>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<number>;
+  name: string;
+  repeatWindowDays: Generated<number>;
+  slug: string;
+  systemPromptPath: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
 export interface LabsRelationshipCases {
@@ -1084,19 +1352,6 @@ export interface LabsRelationshipVerdicts {
   updateRound: Generated<number>;
   userId: string | null;
   value: string;
-}
-
-export interface LabsRhobhDailyPuzzles {
-  answer: string;
-  answerType: string;
-  clue: string;
-  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  dateUtc: ColumnType<string, Date | string, Date | string> | null;
-  detail: string;
-  id: Generated<number>;
-  normalizedAnswer: string;
-  sources: Generated<Json>;
-  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
 export interface LabsSearchDocuments {
@@ -1212,18 +1467,26 @@ export interface DB {
   "app.certifications": AppCertifications;
   "app.chatMessages": AppChatMessages;
   "app.chats": AppChats;
+  "app.communicationMessages": AppCommunicationMessages;
+  "app.communicationThreads": AppCommunicationThreads;
   "app.companies": AppCompanies;
   "app.entities": AppEntities;
+  "app.entityAttributes": AppEntityAttributes;
   "app.entityLinks": AppEntityLinks;
-  "app.eventAttendees": AppEventAttendees;
-  "app.events": AppEvents;
+  "app.extractedFacts": AppExtractedFacts;
   "app.files": AppFiles;
   "app.financeAccounts": AppFinanceAccounts;
+  "app.financeCategories": AppFinanceCategories;
   "app.financeInstitutions": AppFinanceInstitutions;
+  "app.financeMerchants": AppFinanceMerchants;
+  "app.financeStatementPeriods": AppFinanceStatementPeriods;
+  "app.financeTransactionPostings": AppFinanceTransactionPostings;
   "app.financeTransactions": AppFinanceTransactions;
   "app.goals": AppGoals;
   "app.jobApplications": AppJobApplications;
   "app.keyResults": AppKeyResults;
+  "app.mediaConsumptions": AppMediaConsumptions;
+  "app.mediaWorks": AppMediaWorks;
   "app.musicAlbums": AppMusicAlbums;
   "app.musicArtists": AppMusicArtists;
   "app.musicListens": AppMusicListens;
@@ -1234,8 +1497,14 @@ export interface DB {
   "app.notes": AppNotes;
   "app.noteShares": AppNoteShares;
   "app.noteVersions": AppNoteVersions;
+  "app.organizationMemberships": AppOrganizationMemberships;
+  "app.organizations": AppOrganizations;
   "app.people": AppPeople;
+  "app.personAliases": AppPersonAliases;
+  "app.personContactMethods": AppPersonContactMethods;
+  "app.personRelationships": AppPersonRelationships;
   "app.places": AppPlaces;
+  "app.placeVisits": AppPlaceVisits;
   "app.plaidItems": AppPlaidItems;
   "app.portfolioAnalytics": AppPortfolioAnalytics;
   "app.portfolios": AppPortfolios;
@@ -1243,8 +1512,10 @@ export interface DB {
   "app.possessionEvents": AppPossessionEvents;
   "app.possessions": AppPossessions;
   "app.projects": AppProjects;
+  "app.purchaseLineItems": AppPurchaseLineItems;
+  "app.purchaseOrders": AppPurchaseOrders;
   "app.skills": AppSkills;
-  "app.socialLinks": AppSocialLinks;
+  "app.socialInteractions": AppSocialInteractions;
   "app.spaceInvites": AppSpaceInvites;
   "app.spaceItems": AppSpaceItems;
   "app.spaceMembers": AppSpaceMembers;
@@ -1256,7 +1527,9 @@ export interface DB {
   "app.taskAssignments": AppTaskAssignments;
   "app.tasks": AppTasks;
   "app.testimonials": AppTestimonials;
+  "app.travelSegments": AppTravelSegments;
   "app.travelTrips": AppTravelTrips;
+  "app.userSocialLinks": AppUserSocialLinks;
   "app.vectorDocuments": AppVectorDocuments;
   "app.videoChannels": AppVideoChannels;
   "app.videoViews": AppVideoViews;
@@ -1264,12 +1537,16 @@ export interface DB {
   deviceCode: DeviceCode;
   gooseDbVersion: GooseDbVersion;
   jwks: Jwks;
+  "labs.articles": LabsArticles;
   "labs.caseUpdates": LabsCaseUpdates;
   "labs.covidData": LabsCovidData;
+  "labs.dailyPuzzles": LabsDailyPuzzles;
   "labs.DrizzleMigrations": LabsDrizzleMigrations;
+  "labs.feedGames": LabsFeedGames;
+  "labs.feeds": LabsFeeds;
+  "labs.games": LabsGames;
   "labs.relationshipCases": LabsRelationshipCases;
   "labs.relationshipVerdicts": LabsRelationshipVerdicts;
-  "labs.rhobhDailyPuzzles": LabsRhobhDailyPuzzles;
   "labs.searchDocuments": LabsSearchDocuments;
   "labs.tflCameras": LabsTflCameras;
   "ops.auditLogs": OpsAuditLogs;

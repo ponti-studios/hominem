@@ -9,6 +9,9 @@ Represent planned and historical time-based commitments without losing recurrenc
 - **Schema:** [schema/04-calendar-time.sql](schema/04-calendar-time.sql)
 - **Repository and service:** provide upcoming, bounded search, and event-detail reads while preserving time semantics.
 - **MCP:** after Plan 00, expose only scope-checked schedule/search summaries through the calendar service.
+- **Current status:** deferred. Calendar tables, repositories, RPC endpoints,
+  and MCP tools are intentionally absent from the MVP codebase until this plan
+  is reopened later this year.
 
 ## Canonical entities and relationships
 
@@ -30,17 +33,22 @@ Event bodies, attendees, and organizer details are sensitive. Default AI evidenc
 
 ## Divergence from the original design
 
-The original design modeled recurrence as `event_series` → `event_occurrences` with a text `recurrence_rule`. Production's real shape is `events` → `event_occurrences`, where `events` plays the series role but stores the rule as a `jsonb` blob rather than an iCal `RRULE` string, and attendees are tracked on the event, not per-occurrence — so a single RSVP applies to the whole series, not one instance. If an attendee needs to accept one occurrence and decline another, that is not representable today.
+The previous implementation attempted to model recurrence as `events` →
+`event_occurrences`, with `events` playing the series role and recurrence stored
+as `jsonb`. That code has been removed from the MVP. When this plan is reopened,
+the schema should be evaluated fresh instead of assuming the removed table shape
+is still production canon.
 
 ## Delivery acceptance
 
-- [x] Calendar repositories support upcoming, bounded search, and event detail reads.
-- [x] Services preserve all-day semantics separately from timed timestamps.
-- [x] RPC calendar endpoints validate input and return metadata-only DTOs.
-- [x] MCP timeline and schedule tools use the calendar service with capped, structured evidence.
-- [x] Tests cover cancellation, ordering, date windows, timezone/all-day behavior, result caps, evidence, and metadata redaction.
-- [ ] Deferred: per-occurrence attendee RSVP and recurrence-rule normalization beyond the existing `jsonb` shape.
+- [ ] Calendar schema is introduced by a dedicated migration and generated Kysely types.
+- [ ] Calendar repositories support upcoming, bounded search, and event detail reads.
+- [ ] Services preserve all-day semantics separately from timed timestamps.
+- [ ] RPC calendar endpoints validate input and return metadata-only DTOs.
+- [ ] MCP timeline and schedule tools use the calendar service with capped, structured evidence.
+- [ ] Tests cover cancellation, ordering, date windows, timezone/all-day behavior, result caps, evidence, and metadata redaction.
+- [ ] Per-occurrence attendee RSVP and recurrence-rule normalization are either implemented or explicitly rejected.
 
 ## Deferred work
 
-None.
+All calendar implementation work is deferred.

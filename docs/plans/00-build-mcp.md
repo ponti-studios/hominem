@@ -95,12 +95,12 @@ both a fast PR subset and a fuller recorded benchmark run.
 
 The first MCP verticals extend the production apps: Career (`apps/career`) and
 the Omiro workspace (`apps/omiro`). Their candidate scopes are `career:read`
-and `knowledge:read`.
-Calendar tools that already exist in the registry remain supported, but they do
-not set the next implementation priority. Finance is the final planned domain
-and remains disabled for external clients until consent, revocation, audit
-logging, scope-denial tests, and security review are complete. Health,
-communications, file access, and every mutation tool remain deferred.
+and `knowledge:read`. Calendar is explicitly deferred until its numbered plan is
+reopened later; no calendar schema, repository, API, or MCP tool is part of the
+current MVP surface. Finance is the final planned domain and remains disabled
+for external clients until consent, revocation, audit logging, scope-denial
+tests, and security review are complete. Health, communications, file access,
+and every mutation tool remain deferred.
 
 ## Delivery acceptance
 

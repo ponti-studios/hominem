@@ -95,30 +95,6 @@ export interface AppBookmarks {
   url: string;
 }
 
-export interface AppCalendarEventSources {
-  calendarId: string | null;
-  calendarUid: string;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  eventId: string;
-  id: Generated<string>;
-  sourceId: string;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppCalendars {
-  color: string | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  externalId: string | null;
-  id: Generated<string>;
-  isPrimary: Generated<boolean>;
-  metadata: Generated<Json>;
-  name: string;
-  ownerUserid: string;
-  sourceId: string | null;
-  timezone: string | null;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
 export interface AppCareerEvents {
   achievements: Generated<Json>;
   bonusAmount: number | null;
@@ -200,7 +176,6 @@ export interface AppChats {
 }
 
 export interface AppCommunicationMessages {
-  bodyArtifactId: string | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
   direction: string;
   externalId: string | null;
@@ -219,7 +194,6 @@ export interface AppCommunicationThreads {
   id: Generated<string>;
   ownerUserid: string;
   sensitivity: Generated<string>;
-  sourceId: string | null;
   title: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
@@ -254,7 +228,6 @@ export interface AppEntityAttributes {
   id: Generated<string>;
   namespace: string;
   ownerUserid: string;
-  sourceRecordId: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
   value: Json;
 }
@@ -274,63 +247,6 @@ export interface AppEntityLinks {
   validDuring: Generated<string>;
 }
 
-export interface AppEntitySourceRecords {
-  canonicalEntityId: string;
-  canonicalEntityTable: string;
-  confidence: Numeric | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  id: Generated<string>;
-  mappingKind: Generated<string>;
-  metadata: Generated<Json>;
-  sourceRecordId: string;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppEventAttendees {
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  email: string | null;
-  eventId: string;
-  id: Generated<string>;
-  personId: string | null;
-  respondedAt: ColumnType<string, Date | string, Date | string> | null;
-  role: Generated<string>;
-  status: Generated<string>;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppEventOccurrences {
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  endsAt: ColumnType<string, Date | string, Date | string> | null;
-  eventId: string;
-  id: Generated<string>;
-  isAllDay: Generated<boolean>;
-  metadata: Generated<Json>;
-  occurrenceDate: ColumnType<string, Date | string, Date | string> | null;
-  occurrenceKey: string;
-  startsAt: ColumnType<string, Date | string, Date | string>;
-  status: Generated<string>;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppEvents {
-  color: string | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  description: string | null;
-  endsAt: ColumnType<string, Date | string, Date | string> | null;
-  eventType: string;
-  externalId: string | null;
-  id: Generated<string>;
-  isAllDay: Generated<boolean>;
-  metadata: Generated<Json>;
-  ownerUserid: string;
-  placeId: string | null;
-  recurrence: Generated<Json>;
-  source: string | null;
-  startsAt: ColumnType<string, Date | string, Date | string>;
-  title: string;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
 export interface AppExtractedFacts {
   confidence: Generated<Numeric>;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -339,7 +255,6 @@ export interface AppExtractedFacts {
   observedAt: ColumnType<string, Date | string, Date | string> | null;
   ownerUserid: string;
   predicate: string;
-  sourceRecordId: string | null;
   subjectId: string | null;
   subjectTable: string | null;
 }
@@ -421,7 +336,6 @@ export interface AppFinanceStatementPeriods {
   openingBalance: Numeric | null;
   ownerUserid: string;
   startsOn: ColumnType<string, Date | string, Date | string>;
-  statementArtifactId: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
@@ -465,105 +379,6 @@ export interface AppGoals {
   status: Generated<string>;
   targetAt: ColumnType<string, Date | string, Date | string> | null;
   title: string;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppImportArtifacts {
-  byteSize: Int8;
-  contentHash: string;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  id: Generated<string>;
-  importRunId: string | null;
-  mediaType: string;
-  metadata: Generated<Json>;
-  objectKey: string;
-  originalFilename: string | null;
-  ownerUserid: string;
-  retentionClass: Generated<string>;
-  sourceId: string | null;
-}
-
-export interface AppImportReconciliations {
-  canonicalChecksum: string | null;
-  canonicalCount: number;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  details: Generated<Json>;
-  entityKind: string;
-  id: Generated<string>;
-  importRunId: string;
-  sourceChecksum: string | null;
-  sourceCount: number;
-  status: string;
-}
-
-export interface AppImportRecordPayloads {
-  artifactId: string;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  payloadHash: string;
-  payloadLength: number | null;
-  payloadOffset: Int8 | null;
-  sourceRecordId: string;
-}
-
-export interface AppImportRecords {
-  contentHash: string;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  externalId: string;
-  externalVersion: string | null;
-  id: Generated<string>;
-  importRunId: string;
-  metadata: Generated<Json>;
-  observedAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  occurredAt: ColumnType<string, Date | string, Date | string> | null;
-  rawObjectKey: string | null;
-  recordType: string;
-  sourceId: string;
-}
-
-export interface AppImportReviewItems {
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  id: Generated<string>;
-  proposedChange: Generated<Json>;
-  proposedEntityId: string | null;
-  proposedEntityTable: string | null;
-  resolution: Json | null;
-  reviewedAt: ColumnType<string, Date | string, Date | string> | null;
-  reviewedByUserid: string | null;
-  reviewKind: string;
-  sourceRecordId: string;
-  status: Generated<string>;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppImportRuns {
-  completedAt: ColumnType<string, Date | string, Date | string> | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  errorSummary: string | null;
-  id: Generated<string>;
-  inputChecksum: string | null;
-  inputObjectKey: string | null;
-  metadata: Generated<Json>;
-  recordsImported: Generated<number>;
-  recordsRead: Generated<number>;
-  recordsRejected: Generated<number>;
-  sourceId: string;
-  startedAt: ColumnType<string, Date | string, Date | string> | null;
-  status: Generated<string>;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppImportSources {
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  displayName: string;
-  externalAccountId: string | null;
-  id: Generated<string>;
-  lastSyncedAt: ColumnType<string, Date | string, Date | string> | null;
-  metadata: Generated<Json>;
-  ownerUserid: string;
-  provider: string;
-  sourceKind: string;
-  status: Generated<string>;
-  syncCursor: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
@@ -1648,8 +1463,6 @@ export interface DB {
   "app.applicationFiles": AppApplicationFiles;
   "app.applicationNotes": AppApplicationNotes;
   "app.bookmarks": AppBookmarks;
-  "app.calendarEventSources": AppCalendarEventSources;
-  "app.calendars": AppCalendars;
   "app.careerEvents": AppCareerEvents;
   "app.certifications": AppCertifications;
   "app.chatMessages": AppChatMessages;
@@ -1660,10 +1473,6 @@ export interface DB {
   "app.entities": AppEntities;
   "app.entityAttributes": AppEntityAttributes;
   "app.entityLinks": AppEntityLinks;
-  "app.entitySourceRecords": AppEntitySourceRecords;
-  "app.eventAttendees": AppEventAttendees;
-  "app.eventOccurrences": AppEventOccurrences;
-  "app.events": AppEvents;
   "app.extractedFacts": AppExtractedFacts;
   "app.files": AppFiles;
   "app.financeAccounts": AppFinanceAccounts;
@@ -1674,13 +1483,6 @@ export interface DB {
   "app.financeTransactionPostings": AppFinanceTransactionPostings;
   "app.financeTransactions": AppFinanceTransactions;
   "app.goals": AppGoals;
-  "app.importArtifacts": AppImportArtifacts;
-  "app.importReconciliations": AppImportReconciliations;
-  "app.importRecordPayloads": AppImportRecordPayloads;
-  "app.importRecords": AppImportRecords;
-  "app.importReviewItems": AppImportReviewItems;
-  "app.importRuns": AppImportRuns;
-  "app.importSources": AppImportSources;
   "app.jobApplications": AppJobApplications;
   "app.keyResults": AppKeyResults;
   "app.mediaConsumptions": AppMediaConsumptions;

@@ -7,8 +7,6 @@ import { apiErrorHandler } from '../middleware/error';
 import { validationErrorMiddleware } from '../middleware/validation';
 
 const repositories = vi.hoisted(() => ({
-  calendarSearch: vi.fn(),
-  calendarUpcoming: vi.fn(),
   financeMonthlySummary: vi.fn(),
 }));
 
@@ -41,10 +39,6 @@ const errorClasses = vi.hoisted(() => {
 });
 
 vi.mock('@hominem/db', () => ({
-  CalendarQueryRepository: {
-    search: repositories.calendarSearch,
-    upcoming: repositories.calendarUpcoming,
-  },
   FinanceQueryRepository: {
     monthlySummary: repositories.financeMonthlySummary,
   },
@@ -95,7 +89,7 @@ function createApp(authenticated: boolean) {
 
 describe('personal routes', () => {
   it('requires authentication', async () => {
-    const response = await createApp(false).request('/api/personal/calendar/upcoming');
+    const response = await createApp(false).request('/api/personal/finance/monthly-summary');
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toMatchObject({

@@ -42,4 +42,3 @@ CREATE TABLE app.user_social_links (
   user_id text PRIMARY KEY REFERENCES "user"(id) ON DELETE CASCADE, github text, linkedin text, twitter text, website text,
   createdAt timestamptz NOT NULL DEFAULT now(), updatedAt timestamptz NOT NULL DEFAULT now()
 );
-ALTER TABLE app.event_attendees ADD CONSTRAINT event_attendees_person_id_fkey FOREIGN KEY (person_id) REFERENCES app.people(id) ON DELETE SET NULL;

@@ -1,6 +1,6 @@
 ---
 name: db-migrate
-description: Strict Goose migration workflow for packages/db/migrations: write timestamped Up/Down SQL, apply local/test migrations, and regenerate Kysely types.
+description: 'Strict Goose migration workflow for packages/db/migrations: write timestamped Up/Down SQL, apply local/test migrations, and regenerate Kysely types.'
 disable-model-invocation: true
 ---
 

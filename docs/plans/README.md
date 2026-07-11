@@ -48,5 +48,5 @@ out of scope. Finance remains the final stage because its data is highly
 sensitive even though `apps/finance` already uses its schema in production.
 
 `docs/architecture/` contains cross-cutting references. It is not an
-implementation queue. Historical approvals are in
-[docs/architecture/APPROVAL.md](../architecture/APPROVAL.md).
+implementation queue; upcoming feature implementation should start from the
+numbered PRD files in this directory.
