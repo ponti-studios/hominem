@@ -19,20 +19,22 @@
     "url": "git+https://github.com/hackefeller/hominem.git"
   },
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "dev:career": "turbo run dev --filter=@hominem/career",
-    "dev:finance": "turbo run dev --filter=@hominem/finance",
-    "dev:omiro": "turbo run dev --filter=@hominem/omiro",
-    "dev:api": "turbo run dev --filter=@hominem/api",
-    "lint": "turbo run lint",
-    "format": "turbo run format",
-    "precommit": "pnpm run format && pnpm run lint",
-    "prepush": "pnpm test",
-    "test": "turbo run test",
-    "typecheck": "turbo run typecheck",
-    "knip": "knip",
-    "check": "turbo run typecheck lint build test --concurrency 1 --force"
+    "setup": "just setup",
+    "build": "just build",
+    "dev": "just dev",
+    "dev:career": "just dev-career",
+    "dev:finance": "just dev-finance",
+    "dev:omiro": "just dev-omiro",
+    "dev:api": "just dev-api",
+    "lint": "just lint",
+    "format": "just format",
+    "precommit": "just format && just lint",
+    "prepush": "just test",
+    "test": "just test",
+    "typecheck": "just typecheck",
+    "knip": "mise exec -- pnpm exec knip",
+    "check": "just check",
+    "check:api": "just check-api"
   },
   "devDependencies": {
     "@expo/image-utils": "^0.10.1",
@@ -77,5 +79,5 @@
   "engines": {
     "node": ">=24.14.1"
   },
-  "packageManager": "pnpm@11.10.0"
+  "packageManager": "pnpm@11.10.0+sha512.0b7f8b98060031904c017e3a41eb187a16d40eeb829b95c4f8cb03681761fc4ab53dd219115b9b447f4dce1a05a214764461e7d3703392a9f32f9511ce8c86c8"
 }

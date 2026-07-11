@@ -9,6 +9,7 @@ ENV TURBO_TELEMETRY_DISABLED=1 \
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY packages ./packages
+COPY services/api ./services/api
 COPY apps/career ./apps/career
 COPY tsconfig.base.json ./
 COPY tsconfig.profiles ./tsconfig.profiles
@@ -19,6 +20,7 @@ RUN npm install -g pnpm@11.10.0 && \
 
 # react-router build bundles all @hominem/* packages into build/server and build/client
 RUN pnpm --filter @hominem/career run build
+RUN pnpm --filter @hominem/career --prod deploy /app/deploy
 
 FROM node:26.1.0-alpine AS server
 
@@ -31,10 +33,7 @@ RUN apk add --no-cache ca-certificates curl && \
     addgroup -g 1001 careeruser && \
     adduser -D -u 1001 -G careeruser -s /sbin/nologin -h /app careeruser
 
-COPY --from=builder --chown=careeruser:careeruser /app/apps/career/package.json ./package.json
-RUN node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8')); pkg.dependencies = Object.fromEntries(Object.entries(pkg.dependencies ?? {}).filter(([, version]) => !String(version).startsWith('workspace:'))); delete pkg.devDependencies; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');" && \
-    npm install --omit=dev --legacy-peer-deps
-COPY --from=builder --chown=careeruser:careeruser /app/apps/career/package.json ./package.json
+COPY --from=builder --chown=careeruser:careeruser /app/deploy ./
 COPY --from=builder --chown=careeruser:careeruser /app/apps/career/build ./build
 
 USER careeruser

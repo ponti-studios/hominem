@@ -37,6 +37,7 @@ engineStrict: true
 pmOnFail: error
 dedupePeerDependents: true
 resolvePeersFromWorkspaceRoot: true
+injectWorkspacePackages: true
 verifyStoreIntegrity: true
 strictStorePkgContentCheck: true
 minimumReleaseAge: 1440

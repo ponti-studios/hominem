@@ -1,13 +1,6 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "globalDependencies": [
-    "package.json",
-    "pnpm-lock.yaml",
-    ".env",
-    ".env.*",
-    "**/.env",
-    "**/.env.*"
-  ],
+  "globalDependencies": ["package.json", "pnpm-lock.yaml", ".env", ".env.*"],
   "globalEnv": [
     "NODE_ENV",
     "API_URL",
@@ -55,20 +48,25 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"],
       "outputs": ["dist/**", "build/**", ".react-router/**", "app/routes/+types/**/*"]
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
     },
     "db:migrate": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
     },
     "db:rollback": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
     },
     "db:status": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
     },
     "format": {
       "outputs": []
@@ -77,23 +75,30 @@
       "outputs": []
     },
     "preview": {
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
     },
     "start": {
       "dependsOn": ["build"],
-      "cache": false
+      "cache": false,
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
     },
     "test:coverage": {
       "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"],
       "outputs": ["coverage/**"]
     },
     "test:watch": {
+      "cache": false,
+      "persistent": true,
       "outputs": []
     },
     "typecheck": {
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"],
       "outputs": []
     }
   }

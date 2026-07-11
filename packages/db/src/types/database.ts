@@ -1390,29 +1390,6 @@ export interface LabsTflCameras {
   view: string | null;
 }
 
-export interface OpsAuditLogs {
-  action: string;
-  actorUserid: string | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  entityId: string | null;
-  entitySchema: string | null;
-  entityTable: string | null;
-  id: Generated<string>;
-  metadata: Generated<Json>;
-}
-
-export interface OpsSearchLogs {
-  actorUserid: string | null;
-  clickedEntityId: string | null;
-  clickedEntityType: string | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  id: Generated<string>;
-  metadata: Generated<Json>;
-  query: string;
-  resultsCount: number | null;
-  scope: string | null;
-}
-
 export interface Passkey {
   aaguid: string | null;
   backedUp: Generated<boolean>;
@@ -1549,8 +1526,6 @@ export interface DB {
   "labs.relationshipVerdicts": LabsRelationshipVerdicts;
   "labs.searchDocuments": LabsSearchDocuments;
   "labs.tflCameras": LabsTflCameras;
-  "ops.auditLogs": OpsAuditLogs;
-  "ops.searchLogs": OpsSearchLogs;
   passkey: Passkey;
   session: Session;
   user: User;

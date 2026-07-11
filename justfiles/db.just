@@ -33,11 +33,11 @@ db-setup environment="test" migrations-path="packages/db/migrations":
     "$goose_bin" -dir "$migrations_dir" postgres "$DATABASE_URL" up
 
 db-migrate:
-    #!/usr/bin/env bash
-    just goose-install
-    DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"
-    goose -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" up
-    pnpm --filter "@hominem/db" exec kysely-codegen --camel-case --date-parser string --type-mapping '{"timestamp":"ColumnType<string, Date | string, Date | string>","timestamptz":"ColumnType<string, Date | string, Date | string>","date":"ColumnType<string, Date | string, Date | string>"}' --out-file ./src/types/database.ts
+  #!/usr/bin/env bash
+  just goose-install
+  DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"
+  goose -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" up
+  {{ PNPM }} --filter "@hominem/db" exec kysely-codegen --camel-case --date-parser string --type-mapping '{"timestamp":"ColumnType<string, Date | string, Date | string>","timestamptz":"ColumnType<string, Date | string, Date | string>","date":"ColumnType<string, Date | string, Date | string>"}' --out-file ./src/types/database.ts
 
 db-rollback:
     #!/usr/bin/env bash

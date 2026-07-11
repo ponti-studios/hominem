@@ -66,8 +66,19 @@ describe('mcp server transport', () => {
   it('connects and initializes over streamable HTTP', async () => {
     const client = await createClient(createApp(true));
     try {
-      // Client connected successfully if no error thrown
       expect(client.getServerVersion()).toMatchObject({ name: 'Hominem MCP', version: '1.0.0' });
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('lists registered career tools', async () => {
+    const client = await createClient(createApp(true));
+    try {
+      const tools = await client.listTools();
+      const toolNames = tools.tools.map((t) => t.name);
+      expect(toolNames).toContain('get_career_portfolio');
+      expect(toolNames).toContain('list_career_experiences');
     } finally {
       await client.close();
     }

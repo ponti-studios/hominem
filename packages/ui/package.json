@@ -5,6 +5,7 @@
   "description": "Shared UI component library mirrored from Ponti Studios Labs UI",
   "files": [
     "dist",
+    "src",
     "src/styles.css",
     "src/animations.css"
   ],
