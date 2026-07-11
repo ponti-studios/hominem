@@ -1,11 +1,11 @@
-description: "Voice transcript cleanup — filler removal without losing meaning"
+description: 'Voice transcript cleanup — filler removal without losing meaning'
 
 providers:
   - id: ollama:chat:gemma4:e2b-mlx
     label: gemma4-e2b-mlx (local)
     config:
       temperature: 0
-  - id: openrouter:openai/gpt-4o-mini
+  - id: openrouter:qwen/qwen3.5-flash-02-23-mini
     label: gpt-4o-mini (current production voice-cleanup default)
     config:
       temperature: 0
@@ -27,7 +27,7 @@ tests:
         value: file://assertions/voice-cleanup.js
 
   - vars:
-      rawText: "i i need to call call the the bank about about my account tomorrow"
+      rawText: 'i i need to call call the the bank about about my account tomorrow'
       mustPreserve: '["bank", "account", "tomorrow"]'
     assert:
       - type: javascript
@@ -46,7 +46,7 @@ tests:
       # No filler at all — the prompt says "if uncertain, return the original
       # transcript unchanged" and "do not summarize, expand, or paraphrase".
       # A clean transcript should come back essentially as-is, not rewritten.
-      rawText: "Pick up milk and eggs on the way home."
+      rawText: 'Pick up milk and eggs on the way home.'
       mustPreserve: '["milk", "eggs", "way home"]'
     assert:
       - type: javascript

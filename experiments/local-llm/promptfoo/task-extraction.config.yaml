@@ -1,11 +1,11 @@
-description: "Task extraction from a chat transcript — task discrimination + JSON shape"
+description: 'Task extraction from a chat transcript — task discrimination + JSON shape'
 
 providers:
   - id: ollama:chat:gemma4:e2b-mlx
     label: gemma4-e2b-mlx (local)
     config:
       temperature: 0
-  - id: openrouter:openai/gpt-4o
+  - id: openrouter:qwen/qwen3.5-flash-02-23
     label: gpt-4o (current production default)
     config:
       temperature: 0

@@ -1,11 +1,11 @@
-description: "Omiro chat persona — does the model hold the blunt/direct tone?"
+description: 'Omiro chat persona — does the model hold the blunt/direct tone?'
 
 providers:
   - id: ollama:chat:gemma4:e2b-mlx
     label: gemma4-e2b-mlx (local)
     config:
       temperature: 0.7
-  - id: openrouter:openai/gpt-4o
+  - id: openrouter:qwen/qwen3.5-flash-02-23
     label: gpt-4o (current production default)
     config:
       temperature: 0.7
@@ -21,7 +21,7 @@ prompts:
 # doesn't silently fall back to whatever credential happens to be present.
 defaultTest:
   options:
-    provider: openrouter:openai/gpt-4o
+    provider: openrouter:qwen/qwen3.5-flash-02-23
 
 tests:
   - vars:
@@ -37,7 +37,7 @@ tests:
           Pass only if it clearly satisfies "get to the point and call out the bad logic."
 
   - vars:
-      user_message: "Should I use Postgres or MongoDB for a project with relational data and needs strong consistency?"
+      user_message: 'Should I use Postgres or MongoDB for a project with relational data and needs strong consistency?'
     assert:
       - type: llm-rubric
         value: |
@@ -60,7 +60,7 @@ tests:
           Pass only if it confirms plainly without overpraising or padding.
 
   - vars:
-      user_message: "lol my code finally works after 4 hours, turns out i had a typo in a variable name the whole time"
+      user_message: 'lol my code finally works after 4 hours, turns out i had a typo in a variable name the whole time'
     assert:
       - type: llm-rubric
         value: |
