@@ -11,7 +11,6 @@ import { useAppLock } from '~/hooks/use-app-lock';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { ApiProvider } from '~/services/api/api-provider';
 import { useAuth } from '~/services/auth/auth-provider';
-import { TopAnchoredInboxProvider } from '~/services/inbox/top-anchored-inbox';
 import queryClient from '~/services/query-client';
 import t from '~/translations';
 
@@ -91,27 +90,25 @@ function ProtectedShell() {
   return (
     <FeatureErrorBoundary featureName="Protected">
       <ApiProvider queryClient={queryClient}>
-        <TopAnchoredInboxProvider>
-          <View style={styles.root}>
-            <Stack
-              initialRouteName="index"
-              screenOptions={{
-                ...screenOptions,
-                contentStyle: { backgroundColor: themeColors['bg-base'] },
-                headerLargeTitle: false,
-                headerShadowVisible: false,
-              }}
-            >
-              <Stack.Screen name="index" options={{ headerShown: true }} />
-              <Stack.Screen name="inbox/[kind]/[id]" options={{}} />
-              <Stack.Screen name="settings/index" options={{ title: 'Settings' }} />
-              <Stack.Screen name="settings/archived-chats" options={{ title: 'Archived Chats' }} />
-              <Stack.Screen name="tasks/index" options={{ title: 'Tasks' }} />
-              <Stack.Screen name="tasks/[id]" options={{}} />
-              <Stack.Screen name="onboarding" options={{ headerShown: true }} />
-            </Stack>
-          </View>
-        </TopAnchoredInboxProvider>
+        <View style={styles.root}>
+          <Stack
+            initialRouteName="index"
+            screenOptions={{
+              ...screenOptions,
+              contentStyle: { backgroundColor: themeColors['bg-base'] },
+              headerLargeTitle: false,
+              headerShadowVisible: false,
+            }}
+          >
+            <Stack.Screen name="index" options={{ headerShown: true }} />
+            <Stack.Screen name="inbox/[kind]/[id]" options={{}} />
+            <Stack.Screen name="settings/index" options={{ title: 'Settings' }} />
+            <Stack.Screen name="settings/archived-chats" options={{ title: 'Archived Chats' }} />
+            <Stack.Screen name="tasks/index" options={{ title: 'Tasks' }} />
+            <Stack.Screen name="tasks/[id]" options={{}} />
+            <Stack.Screen name="onboarding" options={{ headerShown: true }} />
+          </Stack>
+        </View>
       </ApiProvider>
     </FeatureErrorBoundary>
   );
