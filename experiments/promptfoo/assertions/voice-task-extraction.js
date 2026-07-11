@@ -1,7 +1,6 @@
 const { parseModelJson } = require('./json-utils');
 
-// These checks encode real bugs found in a manual + promptfoo eval of
-// gemma4:e2b-mlx (see experiments/local-llm/results.md):
+// These checks encode real bugs found in a manual + promptfoo eval of gemma4:e2b-mlx:
 //   1. Fabricating priority: "none" instead of omitting the field.
 //   2. Using end-of-day (23:59:59) for a date with no explicit clock time,
 //      instead of the noon default the prompt specifies.
@@ -22,7 +21,9 @@ function checkPriority(task, { expected, mustNotBeOmitted, mustBeOmitted } = {})
     if (task.priority === undefined) {
       problems.push('priority omitted, but explicit urgency language was stated');
     } else if (task.priority === 'none' || task.priority === '') {
-      problems.push(`priority fabricated as ${JSON.stringify(task.priority)} instead of a real value or omission`);
+      problems.push(
+        `priority fabricated as ${JSON.stringify(task.priority)} instead of a real value or omission`,
+      );
     } else if (expected && task.priority !== expected) {
       problems.push(`priority should be "${expected}", got ${JSON.stringify(task.priority)}`);
     }
@@ -68,7 +69,9 @@ module.exports = function (output, context) {
         problems.push(`Dentist task priority "${dentist.priority}" contradicts stated "no rush"`);
       }
       if (dentist.dueAt && !hasNoonTime(dentist.dueAt)) {
-        problems.push(`Dentist task due "next Friday" (no time given) should default to noon, got ${dentist.dueAt}`);
+        problems.push(
+          `Dentist task due "next Friday" (no time given) should default to noon, got ${dentist.dueAt}`,
+        );
       }
     }
   } else if (caseId === 'noon-default') {
@@ -110,12 +113,18 @@ module.exports = function (output, context) {
     const low = tasks.find((t) => /book|read/i.test(t.title || ''));
     const neutral = tasks.find((t) => /grocer/i.test(t.title || ''));
     if (!highPriorityTask || !low || !neutral) {
-      problems.push('Could not find all three expected tasks (server/high, book/low, groceries/neutral)');
+      problems.push(
+        'Could not find all three expected tasks (server/high, book/low, groceries/neutral)',
+      );
     } else {
-      problems.push(...checkPriority(highPriorityTask, { expected: 'high', mustNotBeOmitted: true }));
+      problems.push(
+        ...checkPriority(highPriorityTask, { expected: 'high', mustNotBeOmitted: true }),
+      );
       problems.push(...checkPriority(low, { mustNotBeOmitted: true }));
       if (low.priority && /high/i.test(low.priority)) {
-        problems.push(`Book task priority "${low.priority}" contradicts stated "whenever I get a chance"`);
+        problems.push(
+          `Book task priority "${low.priority}" contradicts stated "whenever I get a chance"`,
+        );
       }
       problems.push(...checkPriority(neutral, { mustBeOmitted: true }));
     }

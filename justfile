@@ -9,7 +9,7 @@ TURBO := "pnpm exec turbo"
 TURBO_DEV := "pnpm exec turbo run dev --ui stream"
 
 import 'justfiles/db.just'
-import 'justfiles/local-llm.just'
+import 'justfiles/promptfoo.just'
 import 'justfiles/mobile.just'
 
 lint:

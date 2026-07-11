@@ -1,4 +1,4 @@
-LOCAL_LLM_EVAL_DIR := ROOT_DIR / "experiments" / "local-llm" / "promptfoo"
+LOCAL_LLM_EVAL_DIR := ROOT_DIR / "experiments" / "promptfoo"
 
 local-llm-eval config:
     #!/usr/bin/env bash
