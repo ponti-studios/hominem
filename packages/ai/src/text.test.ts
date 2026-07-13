@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { createStructuredChatCompletion, getStructuredOutputUsage, StructuredOutputError } from './text';
+import {
+  createStructuredChatCompletion,
+  getStructuredOutputUsage,
+  StructuredOutputError,
+} from './text';
 
 const createChatSend = vi.fn();
 

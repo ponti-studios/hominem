@@ -70,7 +70,7 @@ export default function Navigation() {
   const cta = isAuthenticated
     ? undefined
     : {
-        href: '/login',
+        href: '/auth',
         label: 'Log in',
         variant: 'outline' as const,
         icon: <LogInIcon className={iconClass} aria-hidden />,

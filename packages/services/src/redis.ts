@@ -1,7 +1,7 @@
 import { delay, TIME_UNITS } from '@hominem/utils';
 import Redis from 'ioredis';
 
-import { env } from './env';
+import { env } from './env.js';
 
 // For compatibility with utility exports if they are not yet updated
 // We might need to import specifically from files if index exports aren't clean

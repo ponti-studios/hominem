@@ -1,53 +1,19 @@
 {
   "name": "@hominem/telemetry",
   "version": "0.1.0",
-  "description": "OpenTelemetry instrumentation for Hominem services and apps",
+  "description": "Shared logging primitives for Hominem services and apps",
   "type": "module",
-  "types": "./build/index.d.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./build/index.d.ts",
-      "default": "./build/index.js"
-    },
-    "./node": {
-      "types": "./build/node/index.d.ts",
-      "default": "./build/node/index.js"
-    },
-    "./browser": {
-      "types": "./build/browser/index.d.ts",
-      "default": "./build/browser/index.js"
-    },
-    "./shared": {
-      "types": "./build/shared/index.d.ts",
-      "default": "./build/shared/index.js"
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
     }
   },
   "scripts": {
-    "build": "tsgo -p tsconfig.json",
+    "build": "tsgo --noEmit -p tsconfig.json",
     "lint": "oxlint src --fix",
     "typecheck": "tsgo --noEmit",
     "format": "oxfmt src --write"
-  },
-  "dependencies": {
-    "@opentelemetry/api": "^1.8.0",
-    "@opentelemetry/api-logs": "^0.51.0",
-    "@opentelemetry/context-async-hooks": "^1.24.0",
-    "@opentelemetry/core": "^2.8.0",
-    "@opentelemetry/exporter-logs-otlp-http": "^0.51.0",
-    "@opentelemetry/exporter-metrics-otlp-http": "^0.51.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.51.0",
-    "@opentelemetry/instrumentation": "^0.51.0",
-    "@opentelemetry/instrumentation-http": "^0.51.0",
-    "@opentelemetry/instrumentation-pg": "^0.43.0",
-    "@opentelemetry/instrumentation-redis": "^0.41.0",
-    "@opentelemetry/otlp-exporter-base": "^0.51.0",
-    "@opentelemetry/resources": "^1.24.0",
-    "@opentelemetry/sdk-logs": "^0.51.0",
-    "@opentelemetry/sdk-metrics": "^1.24.0",
-    "@opentelemetry/sdk-trace-base": "^1.24.0",
-    "@opentelemetry/sdk-trace-node": "^1.24.0",
-    "@opentelemetry/sdk-trace-web": "^1.24.0",
-    "@opentelemetry/semantic-conventions": "^1.24.0"
-  },
-  "devDependencies": {}
+  }
 }

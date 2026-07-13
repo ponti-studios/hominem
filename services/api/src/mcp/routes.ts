@@ -13,7 +13,7 @@ import { handleMcpRequestWithSession } from './server';
 const enabledScopes = new Set(
   (process.env.MCP_ENABLED_SCOPES ?? '')
     .split(',')
-    .map((s) => s.trim())
+    .map((scope: string) => scope.trim())
     .filter(Boolean),
 );
 

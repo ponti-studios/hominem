@@ -12,17 +12,16 @@ import { respondWithData } from '../response';
 const routes = new Hono<AppContext>();
 const financeService = new FinanceService();
 
-routes
-  .get(
-    '/finance/monthly-summary',
-    authMiddleware,
-    zValidator('query', financeMonthlySummaryQuerySchema),
-    async (c) => {
-      const userId = c.get('userId')!;
-      const input = c.req.valid('query');
-      const summary = await financeService.monthlySummary(userId, input);
-      return respondWithData(c, financeMonthlySummarySchema, summary);
-    },
-  );
+routes.get(
+  '/finance/monthly-summary',
+  authMiddleware,
+  zValidator('query', financeMonthlySummaryQuerySchema),
+  async (c) => {
+    const userId = c.get('userId')!;
+    const input = c.req.valid('query');
+    const summary = await financeService.monthlySummary(userId, input);
+    return respondWithData(c, financeMonthlySummarySchema, summary);
+  },
+);
 
 export const personalRoutes: Hono<AppContext> = routes;

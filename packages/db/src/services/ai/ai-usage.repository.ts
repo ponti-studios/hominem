@@ -191,7 +191,8 @@ export const AIUsageEventRepository = {
       completionTokens: Number(row.completionTokens ?? 0),
       totalTokens: Number(row.totalTokens ?? 0),
       totalCostUsd: toRequiredNumber(row.totalCostUsd),
-      lastRecordedAt: row.lastRecordedAt == null ? null : new Date(row.lastRecordedAt).toISOString(),
+      lastRecordedAt:
+        row.lastRecordedAt == null ? null : new Date(row.lastRecordedAt).toISOString(),
     };
   },
 

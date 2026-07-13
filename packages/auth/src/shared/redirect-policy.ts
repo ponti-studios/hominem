@@ -3,7 +3,7 @@ function normalizeRedirectPrefix(prefix: string) {
   return normalized.endsWith('/') && normalized !== '/' ? normalized.slice(0, -1) : normalized;
 }
 
-function isAllowedRedirectPath(pathname: string, allowedPrefixes: string[]) {
+function isAllowedRedirectPath(pathname: string, allowedPrefixes: readonly string[]) {
   for (const prefix of allowedPrefixes) {
     const normalizedPrefix = normalizeRedirectPrefix(prefix);
     if (pathname === normalizedPrefix) return true;
@@ -34,7 +34,7 @@ function getRejectedReason(next?: string) {
 export function resolveAuthRedirect(
   next: string | null | undefined,
   fallback: string,
-  allowedPrefixes: string[] = [fallback],
+  allowedPrefixes: readonly string[] = [fallback],
 ): AuthRedirectResolution {
   const rejectedReason = getRejectedReason(next ?? undefined);
 

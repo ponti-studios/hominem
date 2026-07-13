@@ -48,11 +48,7 @@ export function noData(): EvidenceEnvelope<never> {
 /**
  * Log redaction activity — when sensitive fields are excluded from responses.
  */
-export function logRedaction(
-  toolName: string,
-  redactedFields: string[],
-  recordCount: number,
-) {
+export function logRedaction(toolName: string, redactedFields: string[], recordCount: number) {
   if (redactedFields.length === 0) return;
 
   logger.info('[mcp] evidence redaction applied', {

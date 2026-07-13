@@ -1,12 +1,12 @@
+import { db, sql } from '@hominem/db';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { db, sql } from '@hominem/db';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { AppContext, RpcUser } from '../rpc/middleware/auth';
-import { apiErrorHandler } from '../rpc/middleware/error';
 import { requestIdMiddleware } from '../rpc/middleware/auth';
+import { apiErrorHandler } from '../rpc/middleware/error';
 import { validationErrorMiddleware } from '../rpc/middleware/validation';
 import { mcpRoutes } from './routes';
 
@@ -59,7 +59,11 @@ async function createClient(app: Hono<AppContext>) {
   return client;
 }
 
-function mcpToolToOllamaTool(tool: { name: string; description?: string; inputSchema?: Record<string, unknown> }) {
+function mcpToolToOllamaTool(tool: {
+  name: string;
+  description?: string;
+  inputSchema?: Record<string, unknown>;
+}) {
   return {
     type: 'function',
     function: {
@@ -160,72 +164,80 @@ afterAll(async () => {
 });
 
 describe('MCP tools via Ollama LLM', () => {
-  it('connects to Ollama', async () => {
-    const res = await fetch('http://localhost:11434/api/tags');
-    expect(res.ok).toBe(true);
-    const data = (await res.json()) as { models?: Array<{ name: string }> };
-    const models = (data.models ?? []).map((m) => m.name);
-    expect(models).toContain(MODEL);
-  }, TIMEOUT);
+  it(
+    'connects to Ollama',
+    async () => {
+      const res = await fetch('http://localhost:11434/api/tags');
+      expect(res.ok).toBe(true);
+      const data = (await res.json()) as { models?: Array<{ name: string }> };
+      const models = (data.models ?? []).map((m) => m.name);
+      expect(models).toContain(MODEL);
+    },
+    TIMEOUT,
+  );
 
-  it('LLM calls get_career_portfolio tool and reports result', async () => {
-    const app = createApp();
-    const mcp = await createClient(app);
+  it(
+    'LLM calls get_career_portfolio tool and reports result',
+    async () => {
+      const app = createApp();
+      const mcp = await createClient(app);
 
-    try {
-      // 1. Get tool definitions from MCP server
-      const { tools: mcpTools } = await mcp.listTools();
-      expect(mcpTools.length).toBeGreaterThan(0);
+      try {
+        // 1. Get tool definitions from MCP server
+        const { tools: mcpTools } = await mcp.listTools();
+        expect(mcpTools.length).toBeGreaterThan(0);
 
-      const portfolioTool = mcpTools.find((t) => t.name === 'get_career_portfolio');
-      expect(portfolioTool).toBeDefined();
+        const portfolioTool = mcpTools.find((t) => t.name === 'get_career_portfolio');
+        expect(portfolioTool).toBeDefined();
 
-      // 2. Convert to Ollama tool format
-      const ollamaTools = mcpTools.map(mcpToolToOllamaTool);
+        // 2. Convert to Ollama tool format
+        const ollamaTools = mcpTools.map(mcpToolToOllamaTool);
 
-      // 3. Send prompt that should trigger a tool call
-      const messages = [
-        ollamaMessage('user', "Look up my career portfolio and tell me what you find."),
-      ];
+        // 3. Send prompt that should trigger a tool call
+        const messages = [
+          ollamaMessage('user', 'Look up my career portfolio and tell me what you find.'),
+        ];
 
-      const firstResp = await ollamaChat(messages, ollamaTools);
-      expect(firstResp.done).toBe(true);
-      expect(firstResp.message.tool_calls).toBeDefined();
-      expect(firstResp.message.tool_calls!.length).toBeGreaterThanOrEqual(1);
+        const firstResp = await ollamaChat(messages, ollamaTools);
+        expect(firstResp.done).toBe(true);
+        expect(firstResp.message.tool_calls).toBeDefined();
+        expect(firstResp.message.tool_calls!.length).toBeGreaterThanOrEqual(1);
 
-      const toolCall = firstResp.message.tool_calls![0];
-      expect(toolCall.function.name).toBe('get_career_portfolio');
+        const toolCall = firstResp.message.tool_calls![0];
+        expect(toolCall.function.name).toBe('get_career_portfolio');
 
-      // 4. Execute the tool via MCP client
-      const toolResult = await mcp.callTool({
-        name: toolCall.function.name,
-        arguments: toolCall.function.arguments,
-      });
+        // 4. Execute the tool via MCP client
+        const toolResult = await mcp.callTool({
+          name: toolCall.function.name,
+          arguments: toolCall.function.arguments,
+        });
 
-      // 5. Send result back to Ollama
-      const resultContent = (toolResult.content as Array<{ type: string; text?: string }>)
-        .map((c) => c.text ?? '')
-        .join('\n');
+        // 5. Send result back to Ollama
+        const resultContent = (toolResult.content as Array<{ type: string; text?: string }>)
+          .map((c) => c.text ?? '')
+          .join('\n');
 
-      messages.push(
-        ollamaMessage('assistant', firstResp.message.content, firstResp.message.tool_calls),
-        ollamaMessage('tool', resultContent),
-      );
+        messages.push(
+          ollamaMessage('assistant', firstResp.message.content, firstResp.message.tool_calls),
+          ollamaMessage('tool', resultContent),
+        );
 
-      const finalResp = await ollamaChat(messages, ollamaTools);
+        const finalResp = await ollamaChat(messages, ollamaTools);
 
-      // 6. LLM should produce a coherent final response based on the tool result
-      expect(finalResp.message.content).toBeTruthy();
-      expect(finalResp.message.content.length).toBeGreaterThan(20);
+        // 6. LLM should produce a coherent final response based on the tool result
+        expect(finalResp.message.content).toBeTruthy();
+        expect(finalResp.message.content.length).toBeGreaterThan(20);
 
-      console.log('\n=== LLM Eval Result ===');
-      console.log(`Tool called: ${toolCall.function.name}`);
-      console.log(`Arguments: ${JSON.stringify(toolCall.function.arguments)}`);
-      console.log(`Tool result: ${resultContent}`);
-      console.log(`Final response: ${finalResp.message.content}`);
-      console.log('=== End Eval ===\n');
-    } finally {
-      await mcp.close();
-    }
-  }, TIMEOUT);
+        console.log('\n=== LLM Eval Result ===');
+        console.log(`Tool called: ${toolCall.function.name}`);
+        console.log(`Arguments: ${JSON.stringify(toolCall.function.arguments)}`);
+        console.log(`Tool result: ${resultContent}`);
+        console.log(`Final response: ${finalResp.message.content}`);
+        console.log('=== End Eval ===\n');
+      } finally {
+        await mcp.close();
+      }
+    },
+    TIMEOUT,
+  );
 });

@@ -194,7 +194,7 @@ export function UploadResumeForm({
             ) : null}
             {requiresLogin ? (
               <Button type="button" variant="outline" size="sm" asChild>
-                <a href="/login?next=/onboarding">
+                <a href="/auth?next=/onboarding">
                   <LogIn className="size-4" />
                   Sign in
                 </a>

@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-import { env } from './env';
+import { env } from './env.js';
 
 type SendInviteEmailParams = {
   to: string;

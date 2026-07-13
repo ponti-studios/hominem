@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { buildEvidence, logRedaction, noData } from './evidence';
 
 describe('evidence utilities', () => {

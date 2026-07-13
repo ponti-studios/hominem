@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { isRateLimited } from './rate-limiter';
 
 const userId = 'test-user-1';

@@ -58,7 +58,7 @@ describe('career middleware', () => {
 
     const result = await sessionMiddleware(
       {
-        request: new Request('http://localhost/login'),
+        request: new Request('http://localhost/auth'),
         context: requestContext.context,
       } as never,
       next,
@@ -80,7 +80,7 @@ describe('career middleware', () => {
     );
 
     expect(result).toBeInstanceOf(Response);
-    expect((result as Response).headers.get('location')).toBe('/login');
+    expect((result as Response).headers.get('location')).toBe('/auth?next=%2Faccount');
   });
 
   it('returns 401 for authenticated api requests without a session', async () => {

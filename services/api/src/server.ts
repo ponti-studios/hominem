@@ -14,6 +14,7 @@ import type { AuthContextEnvelope } from './auth/types';
 import { API_BRAND } from './brand';
 import { env } from './env';
 import { isServiceError } from './errors';
+import { oauthDiscoveryRoutes } from './mcp/routes';
 import { authJwtMiddleware } from './middleware/auth';
 import { authRateLimitMiddleware } from './middleware/auth-rate-limit';
 import { blockMaliciousProbes } from './middleware/block-probes';
@@ -22,7 +23,6 @@ import { authRoutes } from './routes/auth';
 import { imagesRoutes } from './routes/images';
 import { statusRoutes } from './routes/status';
 import { rpcApp } from './rpc/app';
-import { oauthDiscoveryRoutes } from './mcp/routes';
 
 export type AppEnv = {
   Variables: {

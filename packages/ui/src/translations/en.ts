@@ -2,7 +2,7 @@ export const UI_TRANSLATIONS_EN = {
   auth: {
     emailEntry: {
       title: 'Sign in',
-      helper: 'Enter your email to continue.',
+      helper: 'Enter your email to sign in',
       emailPlaceholder: 'you@example.com',
       emailLabel: 'Email address',
       submitButton: 'Continue',

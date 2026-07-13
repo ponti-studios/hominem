@@ -17,12 +17,14 @@ export {
   AlertDialogTrigger,
 } from './components/alert-dialog';
 export { AuthScaffold } from './components/auth/auth-scaffold';
+export { EmailOtpAuthFlow } from './components/auth/email-otp-auth-flow';
 export { EmailEntryForm } from './components/auth/email-entry-form';
 export { OtpCodeInput } from './components/auth/otp-code-input';
 export { OtpVerificationForm } from './components/auth/otp-verification-form';
 export { PasskeyButton } from './components/auth/passkey-button';
 export { PasskeyManagement } from './components/auth/passkey-management';
 export type { AuthScaffoldProps } from './components/auth/auth-scaffold';
+export type { EmailOtpAuthFlowProps } from './components/auth/email-otp-auth-flow';
 export type { EmailEntryFormProps } from './components/auth/email-entry-form';
 export type { OtpCodeInputProps } from './components/auth/otp-code-input';
 export type { OtpVerificationFormProps } from './components/auth/otp-verification-form';

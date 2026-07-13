@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 
+import { mcpRoutes } from '../mcp/routes';
 import type { AppContext } from './middleware/auth';
 import { requestIdMiddleware } from './middleware/auth';
 import { apiErrorHandler } from './middleware/error';
 import { validationErrorMiddleware } from './middleware/validation';
-import { mcpRoutes } from '../mcp/routes';
 import { economyRoutes } from './routes/economy';
 
 export const rpcApp = new Hono<AppContext>()

@@ -23,12 +23,15 @@ function isApiRequest(path: string): boolean {
   return path === '/api' || path.startsWith('/api/');
 }
 
-function unauthorizedResponse(path: string) {
+function unauthorizedResponse(request: Request) {
+  const url = new URL(request.url);
+  const path = url.pathname;
   if (isApiRequest(path)) {
     return Response.json({ error: 'Authentication required' }, { status: 401 });
   }
 
-  return redirect('/login');
+  const next = encodeURIComponent(url.pathname + url.search);
+  return redirect(`/auth?next=${next}`);
 }
 
 export async function sessionMiddleware(
@@ -51,11 +54,10 @@ export async function requireAuthMiddleware(
   { request, context }: SharedMiddlewareArgs,
   next: SharedMiddlewareNext,
 ): Promise<Response | void> {
-  const path = new URL(request.url).pathname;
   const user = context.get(userContext);
 
   if (!user) {
-    return unauthorizedResponse(path);
+    return unauthorizedResponse(request);
   }
 
   return next();
@@ -78,12 +80,13 @@ export async function loadPortfolioMiddleware(
 }
 
 export async function requirePortfolioMiddleware(
-  { context }: SharedMiddlewareArgs,
+  { request, context }: SharedMiddlewareArgs,
   next: SharedMiddlewareNext,
 ): Promise<Response | void> {
   const user = context.get(userContext);
   if (!user) {
-    return redirect('/login');
+    const url = new URL(request.url);
+    return redirect(`/auth?next=${encodeURIComponent(url.pathname + url.search)}`);
   }
 
   const currentPortfolio = context.get(portfolioContext);

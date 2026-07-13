@@ -1,13 +1,8 @@
 import { buttonVariants } from '@hominem/ui';
 import { Link } from 'react-router';
 
-import { FunnelHealth } from '~/components/career/dashboard/FunnelHealth';
-import { SearchPipeline } from '~/components/career/dashboard/SearchPipeline';
-import { TimelineEstimate } from '~/components/career/dashboard/TimelineEstimate';
-import {
-  getAllApplicationsWithCompany,
-  getJobApplicationMetricsForUser,
-} from '~/lib/career/queries/job-applications';
+import { TimelineSpine } from '~/components/career/timeline/TimelineSpine';
+import { getCareerStoryTimeline } from '~/lib/career/queries/career-timeline';
 import { userContext } from '~/lib/middleware';
 import { cn } from '~/lib/utils';
 
@@ -35,15 +30,11 @@ export async function loader({ context }: Route.LoaderArgs) {
   if (!user) return { authenticated: false as const };
 
   try {
-    const [allApplications, metrics] = await Promise.all([
-      getAllApplicationsWithCompany(user.id),
-      getJobApplicationMetricsForUser(user.id),
-    ]);
+    const timeline = await getCareerStoryTimeline(user.id);
 
     return {
       authenticated: true as const,
-      allApplications,
-      metrics,
+      timeline,
     };
   } catch (error) {
     console.error('Error loading career data:', error);
@@ -82,29 +73,16 @@ function Dashboard({
 }: {
   loaderData: Extract<Route.ComponentProps['loaderData'], { authenticated: true }>;
 }) {
-  const { allApplications, metrics } = loaderData;
+  const { timeline } = loaderData;
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="heading-2">Job Search</h1>
-        <p className="body-3 text-muted-foreground">Where things stand right now.</p>
+        <h1 className="heading-2">Your career story</h1>
+        <p className="body-3 text-muted-foreground">Newest at the top.</p>
       </div>
 
-      <section className="space-y-2">
-        <p className="ui-eyebrow">Is anything moving?</p>
-        <SearchPipeline applications={allApplications} />
-      </section>
-
-      <section className="space-y-2">
-        <p className="ui-eyebrow">Is my approach working?</p>
-        <FunnelHealth applications={allApplications} />
-      </section>
-
-      <section className="space-y-2">
-        <p className="ui-eyebrow">How long will this take?</p>
-        <TimelineEstimate applications={allApplications} metrics={metrics} />
-      </section>
+      <TimelineSpine timeline={timeline} />
     </div>
   );
 }

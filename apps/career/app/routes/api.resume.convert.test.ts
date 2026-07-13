@@ -92,8 +92,7 @@ vi.mock('@hominem/ai', () => ({
     completionTokens: Number(result.usage?.completionTokens ?? 0),
     totalTokens: Number(result.usage?.totalTokens ?? 0),
     reportedTotalTokens: null,
-    costUsd:
-      result.usage && 'cost' in result.usage ? Number(result.usage.cost ?? 0) : null,
+    costUsd: result.usage && 'cost' in result.usage ? Number(result.usage.cost ?? 0) : null,
     cachedPromptTokens: null,
     reasoningTokens: null,
   })),

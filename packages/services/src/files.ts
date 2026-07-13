@@ -1,12 +1,12 @@
-import { randomUUID } from 'node:crypto';
 import { Buffer } from 'node:buffer';
+import { randomUUID } from 'node:crypto';
 
 import { createChatCompletion, getChatCompletionText, getChatCompletionUsage } from '@hominem/ai';
 import { LOG_MESSAGES, logger } from '@hominem/telemetry';
 import mammoth from 'mammoth';
 import PDFParser from 'pdf2json';
 
-import { recordAIUsageEvent } from './ai-usage';
+import { recordAIUsageEvent } from './ai-usage.js';
 
 export interface ProcessedFile {
   id: string;

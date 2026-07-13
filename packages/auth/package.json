@@ -36,6 +36,10 @@
       "types": "./src/client/email-auth.ts",
       "default": "./src/client/email-auth.ts"
     },
+    "./client/email-otp-route": {
+      "types": "./src/client/email-otp-route.ts",
+      "default": "./src/client/email-otp-route.ts"
+    },
     "./client/passkey": {
       "types": "./src/client/passkey.ts",
       "default": "./src/client/passkey.ts"

@@ -1,11 +1,11 @@
-import { Hono } from 'hono';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
 
 import type { AppContext, RpcUser } from '../rpc/middleware/auth';
-import { apiErrorHandler } from '../rpc/middleware/error';
 import { requestIdMiddleware } from '../rpc/middleware/auth';
+import { apiErrorHandler } from '../rpc/middleware/error';
 import { validationErrorMiddleware } from '../rpc/middleware/validation';
 import { mcpRoutes } from './routes';
 

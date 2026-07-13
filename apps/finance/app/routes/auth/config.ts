@@ -10,8 +10,6 @@ export const AUTH_CONFIG = {
     '/settings',
   ],
   defaultRedirect: '/finance',
-  description: 'Enter your email to sign in',
-  title: 'Continue to Florin',
 } as const;
 
 export const AUTH_SERVER_ROUTE_CONFIG = {

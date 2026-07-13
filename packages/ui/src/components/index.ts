@@ -11,6 +11,7 @@ export {
 } from './alert-dialog';
 export {
   AuthScaffold,
+  EmailOtpAuthFlow,
   EmailEntryForm,
   OtpCodeInput,
   OtpVerificationForm,

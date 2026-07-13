@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
-import { data, type ActionFunction } from 'react-router';
 import { recordAIUsageEvent } from '@hominem/services';
+import { data, type ActionFunction } from 'react-router';
 
 import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
 import { logger } from '~/lib/logger';

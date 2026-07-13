@@ -2,7 +2,8 @@ import { type RouteConfig, index, layout, route } from '@react-router/dev/routes
 
 export default [
   index('routes/home.tsx'),
-  route('login', 'routes/login.tsx'),
+  route('/auth', 'routes/auth/index.tsx'),
+  route('/login', 'routes/login.tsx'),
   route('health', 'routes/health.ts'),
   route('api/job/scrape', 'routes/api.job.scrape.ts'),
   route('api/portfolio/:owner_userid', 'routes/api.portfolio.$userId.ts'),

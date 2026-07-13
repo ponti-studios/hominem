@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AppContext, RpcUser } from '../middleware/auth';
-import { apiErrorHandler } from '../middleware/error';
 import { requestIdMiddleware } from '../middleware/auth';
+import { apiErrorHandler } from '../middleware/error';
 import { validationErrorMiddleware } from '../middleware/validation';
 
 const mocks = vi.hoisted(() => ({
@@ -97,8 +97,8 @@ describe('chat stream accounting', () => {
     mocks.touchLastMessage.mockResolvedValue(undefined);
     mocks.resolveReferencedNotes.mockResolvedValue([]);
     mocks.resolveChatFiles.mockResolvedValue([]);
-    mocks.runInTransaction.mockImplementation(async (callback: (trx: unknown) => Promise<unknown>) =>
-      callback({}),
+    mocks.runInTransaction.mockImplementation(
+      async (callback: (trx: unknown) => Promise<unknown>) => callback({}),
     );
     mocks.recordAIUsageEvent.mockResolvedValue(undefined);
     mocks.enqueueEmbedding.mockResolvedValue(undefined);

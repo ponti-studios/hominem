@@ -1,9 +1,4 @@
-import {
-  db,
-  PortfolioRepository,
-  WorkExperienceRepository,
-  SkillRepository,
-} from '@hominem/db';
+import { db, PortfolioRepository, WorkExperienceRepository, SkillRepository } from '@hominem/db';
 
 import { careerPortfolioSchema } from '../schemas/career.schema';
 

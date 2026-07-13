@@ -484,10 +484,4 @@ export async function enhanceText(
   };
 }
 
-export {
-  chat,
-  convertWebFetchToolToAdapterFormat,
-  openRouterText,
-  webFetchTool,
-  webSearchTool,
-};
+export { chat, convertWebFetchToolToAdapterFormat, openRouterText, webFetchTool, webSearchTool };

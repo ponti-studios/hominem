@@ -110,7 +110,7 @@ describe('UploadResumeForm', () => {
     expect(await screen.findByText('Please log in to upload your resume.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /sign in/i })).toHaveAttribute(
       'href',
-      '/login?next=/onboarding',
+      '/auth?next=/onboarding',
     );
   });
 
