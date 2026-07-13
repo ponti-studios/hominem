@@ -5,9 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { authDb, db, sql } from '../../db';
 import { AIUsageEventRepository } from './ai-usage.repository';
 
-const runIntegration = describe;
-
-runIntegration('AIUsageEventRepository', () => {
+describe('AIUsageEventRepository', () => {
   const userIds: string[] = [];
 
   afterEach(async () => {

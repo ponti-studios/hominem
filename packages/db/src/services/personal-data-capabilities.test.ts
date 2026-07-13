@@ -5,9 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { authDb, db } from '../db';
 import { FinanceQueryRepository } from './finance/finance-query.repository';
 
-const runIntegration = process.env.NODE_ENV === 'test' ? describe : describe.skip;
-
-runIntegration('personal data read capabilities', () => {
+describe('personal data read capabilities', () => {
   const userIds: string[] = [];
   const institutionIds: string[] = [];
 
