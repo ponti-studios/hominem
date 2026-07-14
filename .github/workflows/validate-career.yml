@@ -44,6 +44,7 @@ jobs:
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       TURBO_TELEMETRY_DISABLED: '1'
       NODE_ENV: test
+      VITE_PUBLIC_API_URL: http://localhost:3000
       OPENROUTER_API_KEY: 'some-random-key'
       REDIS_URL: redis://localhost:6379
       RESEND_API_KEY: 'some-resend-api-key'
