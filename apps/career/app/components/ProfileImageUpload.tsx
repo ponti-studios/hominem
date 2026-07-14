@@ -66,7 +66,6 @@ export function ProfileImageUpload({
       setShowCropper(false);
       setImgSrc('');
     } catch (error) {
-      console.error('Upload error:', error);
       setUploadError(error instanceof Error ? error.message : 'Upload failed');
     } finally {
       setIsUploading(false);

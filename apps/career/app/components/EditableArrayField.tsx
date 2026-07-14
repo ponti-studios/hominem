@@ -98,14 +98,7 @@ export function EditableArrayField({
       form.appendChild(fieldInput);
       form.appendChild(valueInput);
       document.body.appendChild(form);
-
-      try {
-        form.submit();
-      } catch (error) {
-        console.error('Form submission attempted:', { field, value: filteredValues });
-        console.error(error);
-      }
-
+      form.submit();
       document.body.removeChild(form);
     }
 

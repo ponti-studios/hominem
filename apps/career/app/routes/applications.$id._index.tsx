@@ -2,6 +2,7 @@ import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db
 import { useOutletContext } from 'react-router';
 
 import { ApplicationOverviewTab } from '~/components/career';
+import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { ApplicationFormError, parseApplicationUpdateFormData } from '~/lib/utils/applicationForm';
@@ -38,7 +39,7 @@ export async function action({ context, request, params }: Route.ActionArgs) {
     if (error instanceof ApplicationFormError) {
       throw new Response(error.message, { status: 400 });
     }
-    console.error('Error updating application:', error);
+    logger.error('Error updating application', error, { applicationId: id, owner_userid: user.id });
     throw new Response('Failed to update application', { status: 500 });
   }
 }

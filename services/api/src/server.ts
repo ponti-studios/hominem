@@ -1,6 +1,5 @@
 import type { User } from '@hominem/auth/types';
 import { LOG_MESSAGES, logger } from '@hominem/telemetry';
-import { createHonoTelemetryMiddleware } from '@hominem/telemetry/node';
 import { Scalar } from '@scalar/hono-api-reference';
 import * as Sentry from '@sentry/node';
 import { Hono, type MiddlewareHandler } from 'hono';
@@ -104,7 +103,6 @@ function createOpenApiDocumentation() {
 
 function registerBaseMiddleware(app: Hono<AppEnv>) {
   app.use('*', blockMaliciousProbes());
-  app.use('*', createHonoTelemetryMiddleware());
   app.use('*', requestLogger());
   app.use('*', prettyJSON());
   app.use('*', createCorsMiddleware());

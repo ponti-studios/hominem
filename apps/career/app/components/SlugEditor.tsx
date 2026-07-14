@@ -141,8 +141,8 @@ export function SlugEditor({ portfolioId, initialSlug, liveUrl, onSave }: SlugEd
 
       // Let the parent component handle the success state
       onSave?.(slugValue);
-    } catch (error) {
-      console.error('Failed to save slug:', error);
+    } catch {
+      // React Router submit is synchronous here; leave saving state cleanup to finally.
     } finally {
       setIsSaving(false);
     }

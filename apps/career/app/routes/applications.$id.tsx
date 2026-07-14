@@ -10,6 +10,7 @@ import {
 import { Link, NavLink, Outlet, useNavigate } from 'react-router';
 
 import { QuickActionsDropdown } from '~/components/career';
+import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { cn } from '~/lib/utils';
@@ -29,10 +30,13 @@ export async function loader({ context, params }: Route.LoaderArgs) {
     const application = await JobApplicationsService.getApplication(id, user.id);
     return { application };
   } catch (error) {
-    console.error('Error fetching application details:', error);
     if (error instanceof Error && error.message === 'Application not found') {
       throw new Response('Application not found', { status: 404 });
     }
+    logger.error('Error fetching application details', error, {
+      applicationId: id,
+      owner_userid: user.id,
+    });
     throw new Response('Failed to fetch application details', { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { db, PortfolioRepository, runInTransaction, SkillRepository } from '@hominem/db';
 import { data } from 'react-router';
 
+import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { deriveSkillsFromCareerHistory } from '~/lib/services/skills-derivation.service';
 
@@ -25,7 +26,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   try {
     derived = await deriveSkillsFromCareerHistory(user.id, portfolio.id);
   } catch (error) {
-    console.error('Skills derivation failed', error);
+    logger.error('Skills derivation failed', error, {
+      owner_userid: user.id,
+      portfolioId: portfolio.id,
+    });
     return data({ success: false, error: 'Failed to derive skills. Try again.' }, { status: 500 });
   }
 
@@ -55,7 +59,10 @@ export async function action({ request, context }: Route.ActionArgs) {
       ),
     );
   } catch (error) {
-    console.error('Failed to save derived skills', error);
+    logger.error('Failed to save derived skills', error, {
+      owner_userid: user.id,
+      portfolioId: portfolio.id,
+    });
     return data({ success: false, error: 'Failed to save skills. Try again.' }, { status: 500 });
   }
 

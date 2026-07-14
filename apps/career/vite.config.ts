@@ -5,6 +5,13 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  build: {
+    rolldownOptions: {
+      checks: {
+        pluginTimings: false,
+      },
+    },
+  },
   clearScreen: false,
   plugins: [tailwindcss(), reactRouter()],
   resolve: {

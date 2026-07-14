@@ -163,7 +163,17 @@ export function UploadResumeForm({
   };
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md space-y-4">
+      {showHeading ? (
+        <header className="space-y-1 text-center">
+          <h2 className="heading-4">
+            {mode === 'replace' ? 'Replace your portfolio' : 'Upload your resume'}
+          </h2>
+          <p className="body-3 text-muted-foreground">
+            PDF only. We’ll extract the details and keep everything editable.
+          </p>
+        </header>
+      ) : null}
       <DropZone
         status={status}
         file={selectedFile ? { name: selectedFile.name, size: selectedFile.size } : null}
@@ -171,9 +181,9 @@ export function UploadResumeForm({
         notice={notice}
         accept=".pdf,application/pdf"
         emptyLabel={
-          <div>
+          <>
             Drop a resume here, or <span className="text-primary font-medium">browse</span>
-          </div>
+          </>
         }
         emptyHint="PDF only · max 10MB"
         busyLabel="Resume processing"

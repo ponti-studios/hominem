@@ -19,8 +19,11 @@ const testUser: RpcUser = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-const OLLAMA_URL = 'http://localhost:11434/api/chat';
-const MODEL = 'gemma4:12b';
+const RUN_OLLAMA_EVAL = process.env.RUN_OLLAMA_EVAL === 'true';
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434';
+const OLLAMA_URL = new URL('/api/chat', OLLAMA_BASE_URL).toString();
+const OLLAMA_TAGS_URL = new URL('/api/tags', OLLAMA_BASE_URL).toString();
+const MODEL = process.env.OLLAMA_MODEL ?? 'gemma4:12b';
 
 function createApp() {
   const app = new Hono<AppContext>()
@@ -110,64 +113,66 @@ const TIMEOUT = 120_000;
 // Seed a test user with portfolio data so the LLM has real data to query.
 // The test user ID must match the one in createApp() below.
 const SEED_USER_ID = '11111111-1111-4111-8111-111111111111';
-let seedPortfolioId: string | null = null;
+const describeOllamaEval = RUN_OLLAMA_EVAL ? describe : describe.skip;
 
-beforeAll(async () => {
-  // Create test user
-  await sql`
-    INSERT INTO public.user (id, name, email, "emailVerified", "createdAt", "updatedAt")
-    VALUES (${SEED_USER_ID}, 'Eval User', 'eval@test.com', true, now(), now())
-    ON CONFLICT (id) DO NOTHING
-  `.execute(db);
+describeOllamaEval('MCP tools via Ollama LLM', () => {
+  let seedPortfolioId: string | null = null;
 
-  // Create portfolio
-  const result = await sql<{ id: string }>`
-    INSERT INTO app.portfolios (
-      owner_userid, slug, title, name, job_title, bio, tagline,
-      current_location, email, is_public, is_active
-    ) VALUES (
-      ${SEED_USER_ID}, 'eval-user', 'Eval User Portfolio', 'Eval User',
-      'Senior Engineer', 'A seasoned engineer with years of experience.',
-      'Building great things', 'San Francisco, CA', 'eval@test.com',
-      true, true
-    )
-    ON CONFLICT (owner_userid) DO UPDATE SET is_public = true
-    RETURNING id
-  `.execute(db);
-  seedPortfolioId = result.rows[0].id;
+  beforeAll(async () => {
+    // Create test user
+    await sql`
+      INSERT INTO public.user (id, name, email, "emailVerified", "createdAt", "updatedAt")
+      VALUES (${SEED_USER_ID}, 'Eval User', 'eval@test.com', true, now(), now())
+      ON CONFLICT (id) DO NOTHING
+    `.execute(db);
 
-  // Create work experiences
-  await sql`
-    INSERT INTO app.work_experiences (portfolio_id, role, company, description, start_date, end_date, sort_order)
-    VALUES
-      (${seedPortfolioId}, 'Senior Engineer', 'Acme Corp', 'Built the core platform.', '2020-01-01', '2022-06-01', 1),
-      (${seedPortfolioId}, 'Lead Engineer', 'TechStart Inc', 'Led a team of 5 engineers.', '2022-06-01', '2024-01-01', 2),
-      (${seedPortfolioId}, 'Staff Engineer', 'BigCloud Industries', 'Architected cloud infrastructure.', '2024-01-01', null, 3)
-  `.execute(db);
+    // Create portfolio
+    const result = await sql<{ id: string }>`
+      INSERT INTO app.portfolios (
+        owner_userid, slug, title, name, job_title, bio, tagline,
+        current_location, email, is_public, is_active
+      ) VALUES (
+        ${SEED_USER_ID}, 'eval-user', 'Eval User Portfolio', 'Eval User',
+        'Senior Engineer', 'A seasoned engineer with years of experience.',
+        'Building great things', 'San Francisco, CA', 'eval@test.com',
+        true, true
+      )
+      ON CONFLICT (owner_userid) DO UPDATE SET is_public = true
+      RETURNING id
+    `.execute(db);
+    seedPortfolioId = result.rows[0].id;
 
-  // Create skills
-  await sql`
-    INSERT INTO app.skills (portfolio_id, name, category, level)
-    VALUES
-      (${seedPortfolioId}, 'TypeScript', 'Technical', 5),
-      (${seedPortfolioId}, 'System Design', 'Architecture', 4),
-      (${seedPortfolioId}, 'Team Leadership', 'Management', 4)
-  `.execute(db);
-});
+    // Create work experiences
+    await sql`
+      INSERT INTO app.work_experiences (portfolio_id, role, company, description, start_date, end_date, sort_order)
+      VALUES
+        (${seedPortfolioId}, 'Senior Engineer', 'Acme Corp', 'Built the core platform.', '2020-01-01', '2022-06-01', 1),
+        (${seedPortfolioId}, 'Lead Engineer', 'TechStart Inc', 'Led a team of 5 engineers.', '2022-06-01', '2024-01-01', 2),
+        (${seedPortfolioId}, 'Staff Engineer', 'BigCloud Industries', 'Architected cloud infrastructure.', '2024-01-01', null, 3)
+    `.execute(db);
 
-afterAll(async () => {
-  if (seedPortfolioId) {
-    // Cascading delete: portfolio → work_experiences, skills
-    await sql`DELETE FROM app.portfolios WHERE id = ${seedPortfolioId}`.execute(db);
-  }
-  await sql`DELETE FROM public.user WHERE id = ${SEED_USER_ID}`.execute(db);
-});
+    // Create skills
+    await sql`
+      INSERT INTO app.skills (portfolio_id, name, category, level)
+      VALUES
+        (${seedPortfolioId}, 'TypeScript', 'Technical', 5),
+        (${seedPortfolioId}, 'System Design', 'Architecture', 4),
+        (${seedPortfolioId}, 'Team Leadership', 'Management', 4)
+    `.execute(db);
+  });
 
-describe('MCP tools via Ollama LLM', () => {
+  afterAll(async () => {
+    if (seedPortfolioId) {
+      // Cascading delete: portfolio -> work_experiences, skills
+      await sql`DELETE FROM app.portfolios WHERE id = ${seedPortfolioId}`.execute(db);
+    }
+    await sql`DELETE FROM public.user WHERE id = ${SEED_USER_ID}`.execute(db);
+  });
+
   it(
     'connects to Ollama',
     async () => {
-      const res = await fetch('http://localhost:11434/api/tags');
+      const res = await fetch(OLLAMA_TAGS_URL);
       expect(res.ok).toBe(true);
       const data = (await res.json()) as { models?: Array<{ name: string }> };
       const models = (data.models ?? []).map((m) => m.name);

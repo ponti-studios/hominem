@@ -14,6 +14,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       tailwindcss(),
       reactRouter(),
       VitePWA({
+        outDir: 'build/client',
         registerType: 'prompt',
         injectRegister: false,
         devOptions: {
@@ -85,7 +86,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       isAnalyze &&
         visualizer({
           open: true,
-          filename: 'dist/stats.html',
+          filename: 'build/client/stats.html',
           gzipSize: true,
           brotliSize: true,
         }),
@@ -110,10 +111,15 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     build: {
       cssCodeSplit: true,
       minify: isProd ? 'esbuild' : false,
+      rolldownOptions: {
+        checks: {
+          pluginTimings: false,
+        },
+      },
       rollupOptions: {
         external: ['node:perf_hooks', 'perf_hooks'],
       },
-      sourcemap: true,
+      sourcemap: !isProd,
     },
 
     ssr: {

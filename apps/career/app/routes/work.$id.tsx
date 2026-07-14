@@ -10,6 +10,7 @@ import {
   normalizeWorkExperienceUpdates,
 } from '~/lib/career/work-experience-form';
 import { jsonObject } from '~/lib/db-json';
+import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { parseFormData } from '~/lib/route-utils';
 
@@ -35,7 +36,13 @@ export async function loader({ context, params }: Route.LoaderArgs) {
       linkedProjectCount: projects.length,
     };
   } catch (error) {
-    console.error('Error loading work experience:', error);
+    if (error instanceof Response) {
+      throw error;
+    }
+    logger.error('Error loading work experience', error, {
+      workExperienceId: id,
+      owner_userid: user.id,
+    });
     throw new Response('Failed to load work experience', { status: 500 });
   }
 }
@@ -62,7 +69,11 @@ export async function action({ context, request, params }: Route.ActionArgs) {
 
       return { success: true, operation };
     } catch (error) {
-      console.error('Error deleting work experience:', error);
+      logger.error('Error deleting work experience', error, {
+        workExperienceId: id,
+        portfolioId,
+        owner_userid: user.id,
+      });
       return {
         success: false,
         operation,
@@ -118,7 +129,10 @@ export async function action({ context, request, params }: Route.ActionArgs) {
 
     return { success: true, operation };
   } catch (error) {
-    console.error('Error updating work experience:', error);
+    logger.error('Error updating work experience', error, {
+      workExperienceId: id,
+      owner_userid: user.id,
+    });
     return {
       success: false,
       operation,

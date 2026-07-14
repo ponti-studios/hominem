@@ -5,9 +5,9 @@ set positional-arguments := true
 
 ROOT_DIR := justfile_directory()
 UI_DIR := ROOT_DIR / "packages" / "ui"
-PNPM := 'env PNPM_HOME= PATH="$(dirname "$(mise which pnpm)"):$PATH" "$(mise which pnpm)"'
-TURBO := 'env PNPM_HOME= PATH="$(dirname "$(mise which pnpm)"):$PATH" "$(mise which pnpm)" exec turbo'
-TURBO_DEV := 'env PNPM_HOME= PATH="$(dirname "$(mise which pnpm)"):$PATH" "$(mise which pnpm)" exec turbo run dev --ui stream'
+PNPM := 'pnpm'
+TURBO := 'pnpm exec turbo'
+TURBO_DEV := 'pnpm exec turbo run dev --ui stream'
 
 import 'justfiles/db.just'
 import 'justfiles/promptfoo.just'

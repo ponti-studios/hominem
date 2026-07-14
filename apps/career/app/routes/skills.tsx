@@ -19,6 +19,7 @@ import { useFetcher } from 'react-router';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
+import { logger } from '../lib/logger';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { Route } from './+types/skills';
 
@@ -316,7 +317,10 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to save skills:', error);
+    logger.error('Failed to save skills', error, {
+      owner_userid: user.id,
+      portfolioId: portfolio.id,
+    });
     return { success: false, error: "We couldn't save your skills. Try again." };
   }
 }

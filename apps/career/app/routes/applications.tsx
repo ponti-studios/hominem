@@ -10,6 +10,7 @@ import { ApplicationsFilters } from '~/components/career/applications/Applicatio
 import { ApplicationsMobileList } from '~/components/career/applications/ApplicationsMobileList';
 import { ApplicationsResultsSummary } from '~/components/career/applications/ApplicationsResultsSummary';
 import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications';
+import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { buildApplicationsSearchParams } from '~/lib/utils/applicationsSearchParams';
 import {
@@ -85,7 +86,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       },
     };
   } catch (error) {
-    console.error('Error loading job applications data:', error);
+    logger.error('Error loading job applications data', error, { owner_userid: user.id });
     throw new Response('Failed to load job applications data', { status: 500 });
   }
 }
@@ -132,7 +133,10 @@ export async function action({ context, request }: Route.ActionArgs) {
 
     throw new Response('Invalid operation', { status: 400 });
   } catch (error) {
-    console.error('Error in job applications action:', error);
+    if (error instanceof Response) {
+      throw error;
+    }
+    logger.error('Error in job applications action', error, { owner_userid: user.id });
     throw new Response('Failed to process job application request', { status: 500 });
   }
 }

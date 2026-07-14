@@ -18,6 +18,7 @@ import { useFetcher } from 'react-router';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
+import { logger } from '../lib/logger';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
 import { Route } from './+types/testimonials';
@@ -461,7 +462,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
         return { success: true, operation, message: 'Testimonial updated successfully' };
       } catch (error) {
-        console.error(`Failed to ${operation} testimonial:`, error);
+        logger.error(`Failed to ${operation} testimonial`, error, { owner_userid: user.id });
         return {
           success: false,
           operation,
@@ -485,7 +486,11 @@ export async function action({ request, context }: Route.ActionArgs) {
         await TestimonialRepository.deleteTestimonial(db, user.id, id, portfolioId);
         return { success: true, operation, message: 'Testimonial deleted successfully' };
       } catch (error) {
-        console.error('Failed to delete testimonial:', error);
+        logger.error('Failed to delete testimonial', error, {
+          testimonialId: id,
+          portfolioId,
+          owner_userid: user.id,
+        });
         return {
           success: false,
           operation,

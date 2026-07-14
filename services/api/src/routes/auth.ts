@@ -449,6 +449,7 @@ authRoutes.post('/passkey/verify-authentication', async (c) => {
 authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), async (c) => {
   const clientIp = getClientIp(c);
   const userAgent = c.req.header('user-agent') ?? 'unknown';
+  const shouldLogE2eAudit = process.env.VITEST !== 'true';
   const auditContext = {
     actor: 'mobile-e2e-client',
     clientIp,
@@ -458,20 +459,24 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
   };
 
   if (!isE2eAuthEnabled()) {
-    logger.warn('[auth:e2e:mobile] denied because E2E auth is disabled', {
-      ...auditContext,
-      denialReason: 'e2e_auth_disabled',
-    });
+    if (shouldLogE2eAudit) {
+      logger.warn('[auth:e2e:mobile] denied because E2E auth is disabled', {
+        ...auditContext,
+        denialReason: 'e2e_auth_disabled',
+      });
+    }
     return c.json({ error: 'not_found' }, 404);
   }
 
   const providedSecret = c.req.header('x-e2e-auth-secret');
   if (!providedSecret || !env.AUTH_E2E_SECRET || providedSecret !== env.AUTH_E2E_SECRET) {
-    logger.warn('[auth:e2e:mobile] denied because secret header is invalid', {
-      ...auditContext,
-      denialReason: 'invalid_secret',
-      hasProvidedSecret: Boolean(providedSecret),
-    });
+    if (shouldLogE2eAudit) {
+      logger.warn('[auth:e2e:mobile] denied because secret header is invalid', {
+        ...auditContext,
+        denialReason: 'invalid_secret',
+        hasProvidedSecret: Boolean(providedSecret),
+      });
+    }
     return c.json({ error: 'forbidden' }, 403);
   }
 
@@ -538,12 +543,14 @@ authRoutes.post('/mobile/e2e/login', zValidator('json', mobileE2eLoginSchema), a
     return c.json({ error: 'e2e_user_missing' }, 500);
   }
 
-  logger.info('[auth:e2e:mobile] established Better Auth session', {
-    ...auditContext,
-    emailHash,
-    userId,
-    sessionId: signInBody?.session?.id,
-  });
+  if (shouldLogE2eAudit) {
+    logger.info('[auth:e2e:mobile] established Better Auth session', {
+      ...auditContext,
+      emailHash,
+      userId,
+      sessionId: signInBody?.session?.id,
+    });
+  }
 
   const headers = copyHeadersWithSetCookie(signInResponse.headers);
   headers.set('content-type', 'application/json');

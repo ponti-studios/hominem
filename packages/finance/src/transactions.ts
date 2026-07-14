@@ -2,13 +2,24 @@ import crypto from 'node:crypto';
 
 import type { AppFinanceTransactions, Selectable } from '@hominem/db';
 import { db } from '@hominem/db';
-import { sql } from 'kysely';
+import { sql, type Insertable, type Updateable } from 'kysely';
 import z from 'zod';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
 import { getAffectedRows, sqlValueList, toNumber } from './utils';
 
 type TransactionRow = Selectable<AppFinanceTransactions>;
+type CreateTransactionInput = Partial<Insertable<AppFinanceTransactions>> & {
+  userId: string;
+  accountId: string;
+  amount: number | string;
+};
+type UpdateTransactionInput = Partial<
+  Pick<
+    Updateable<AppFinanceTransactions>,
+    'amount' | 'description' | 'postedOn' | 'accountId' | 'merchantName'
+  >
+>;
 
 export const financeTransactionQueryContractSchema = z.object({
   userId: z.uuid(),
@@ -185,11 +196,10 @@ export async function getTransactionTagIds(
   return (result as Array<{ tagId: string }>).map((row) => row.tagId);
 }
 
-export async function createTransaction(
-  input: Partial<TransactionRow> & { userId: string; accountId: string; amount: number },
-): Promise<TransactionRow> {
+export async function createTransaction(input: CreateTransactionInput): Promise<TransactionRow> {
   const id = input.id ?? crypto.randomUUID();
-  const transactionType = input.amount < 0 ? 'debit' : 'credit';
+  const amount = toNumber(input.amount);
+  const transactionType = amount < 0 ? 'debit' : 'credit';
 
   const result = await db
     .insertInto('app.financeTransactions')
@@ -197,7 +207,7 @@ export async function createTransaction(
       id,
       userId: input.userId,
       accountId: input.accountId,
-      amount: input.amount,
+      amount,
       transactionType,
       description: input.description ?? null,
       merchantName: input.merchantName ?? null,
@@ -215,9 +225,7 @@ export async function createTransaction(
 export async function updateTransaction(
   id: string,
   userId: string,
-  input: Partial<
-    Pick<TransactionRow, 'amount' | 'description' | 'postedOn' | 'accountId' | 'merchantName'>
-  >,
+  input: UpdateTransactionInput,
 ): Promise<TransactionRow | null> {
   const existing = await db
     .selectFrom('app.financeTransactions')
@@ -231,9 +239,7 @@ export async function updateTransaction(
   }
 
   const nextAmount =
-    input.amount !== undefined
-      ? toNumber(input.amount as unknown as string)
-      : toNumber(existing.amount);
+    input.amount !== undefined ? toNumber(input.amount) : toNumber(existing.amount);
   const nextDescription =
     input.description === undefined ? existing.description : input.description;
   const nextPostedOn = input.postedOn ?? existing.postedOn;

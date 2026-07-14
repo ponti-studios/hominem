@@ -6,6 +6,21 @@ interface LogContext {
   [key: string]: unknown;
 }
 
+function serializeError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+
+  return {
+    message: String(error),
+    value: error,
+  };
+}
+
 class Logger {
   private isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -39,14 +54,10 @@ class Logger {
     console.warn(JSON.stringify(this.formatMessage('warn', message, context)));
   }
 
-  error(message: string, error?: Error, context?: LogContext) {
+  error(message: string, error?: unknown, context?: LogContext) {
     const errorContext = error
       ? {
-          error: {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          },
+          error: serializeError(error),
           ...context,
         }
       : context;

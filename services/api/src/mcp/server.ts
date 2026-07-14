@@ -11,9 +11,23 @@ import type {
   ServerNotification,
   ServerRequest,
 } from '@modelcontextprotocol/sdk/types.js';
+import type { Context } from 'hono';
 
 import { UnauthorizedError } from '../errors';
 import { callTool, listTools, type McpToolDefinition } from './tools';
+
+export type McpSession = {
+  userId: string;
+  scopes: string;
+  clientId?: string;
+};
+
+export type McpHonoEnv = {
+  Variables: {
+    userId?: string;
+    mcpSession?: McpSession;
+  };
+};
 
 interface McpAuthInfoExtra {
   ownerUserId: string;
@@ -91,11 +105,9 @@ function createMcpServer() {
   return mcpServer;
 }
 
-export async function handleMcpRequestWithSession(c: any): Promise<Response> {
-  const session = c.get('mcpSession') as
-    | { userId: string; scopes: string; clientId?: string }
-    | undefined;
-  const userId = c.get('userId') as string | undefined;
+export async function handleMcpRequestWithSession(c: Context<McpHonoEnv>): Promise<Response> {
+  const session = c.get('mcpSession');
+  const userId = c.get('userId');
 
   if (!userId) {
     throw new UnauthorizedError('MCP session required');

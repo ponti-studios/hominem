@@ -11,6 +11,7 @@ import type { WorkExperienceMetadata } from '~/lib/career/queries/career-progres
 import { FormErrorAlert } from '../components/FormErrorAlert';
 import { UploadResumeForm } from '../components/UploadResumeForm';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
+import { logger } from '../lib/logger';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { parseFormData } from '../lib/route-utils';
 import { Route } from './+types/work';
@@ -328,7 +329,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
         return { success: true, operation, message: 'Work experience updated successfully' };
       } catch (error) {
-        console.error(`Failed to ${operation} work experience:`, error);
+        logger.error(`Failed to ${operation} work experience`, error, { owner_userid: user.id });
         return {
           success: false,
           operation,
@@ -352,7 +353,11 @@ export async function action({ request, context }: Route.ActionArgs) {
         await WorkExperienceRepository.deleteWorkExperience(db, user.id, id, portfolioId);
         return { success: true, operation, message: 'Work experience deleted successfully' };
       } catch (error) {
-        console.error('Failed to delete work experience:', error);
+        logger.error('Failed to delete work experience', error, {
+          workExperienceId: id,
+          portfolioId,
+          owner_userid: user.id,
+        });
         return {
           success: false,
           operation,

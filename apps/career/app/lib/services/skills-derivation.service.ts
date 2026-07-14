@@ -91,7 +91,6 @@ export async function deriveSkillsFromCareerHistory(
   });
 
   const raw = getChatCompletionText(result);
-  console.log('[skills-derivation] raw AI response:', raw?.slice(0, 500));
   const parsed = JSON.parse(raw);
 
   // json_object mode always returns an object; find the first array value

@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 
 import { TimelineSpine } from '~/components/career/timeline/TimelineSpine';
 import { getCareerStoryTimeline } from '~/lib/career/queries/career-timeline';
+import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { cn } from '~/lib/utils';
 
@@ -37,7 +38,7 @@ export async function loader({ context }: Route.LoaderArgs) {
       timeline,
     };
   } catch (error) {
-    console.error('Error loading career data:', error);
+    logger.error('Error loading career data', error, { owner_userid: user.id });
     throw new Response('Failed to load career data', { status: 500 });
   }
 }

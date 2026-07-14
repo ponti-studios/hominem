@@ -1,12 +1,27 @@
 import crypto from 'node:crypto';
 
 import { db } from '@hominem/db';
-import type { AppFinanceAccounts, Selectable } from '@hominem/db';
+import type { AppFinanceAccounts } from '@hominem/db';
+import type { Insertable, Selectable, Updateable } from 'kysely';
 
 import { getAffectedRows } from './utils';
 
+type CreateAccountInput = Partial<Insertable<AppFinanceAccounts>> & {
+  userId: string;
+  name: string;
+};
+
+type UpdateAccountInput = Partial<Updateable<AppFinanceAccounts>> & {
+  id: string;
+  userId?: string;
+};
+
+type UpsertAccountInput = Partial<Insertable<AppFinanceAccounts>> & {
+  userId: string;
+};
+
 export async function createAccount(
-  input: Partial<Selectable<AppFinanceAccounts>> & { userId: string; name: string },
+  input: CreateAccountInput,
 ): Promise<Selectable<AppFinanceAccounts>> {
   const id = input.id ?? crypto.randomUUID();
   const accountType = input.accountType ?? 'checking';
@@ -69,7 +84,7 @@ export async function getAccountById(
 }
 
 export async function updateAccount(
-  input: Partial<Selectable<AppFinanceAccounts>> & { id: string; userId?: string },
+  input: UpdateAccountInput,
 ): Promise<Selectable<AppFinanceAccounts> | null> {
   const existing = await getAccountById(input.id, input.userId);
   if (!existing) {
@@ -135,7 +150,7 @@ export async function getAccountsForInstitution(
 }
 
 export async function upsertAccount(
-  input: Partial<Selectable<AppFinanceAccounts>> & { userId: string },
+  input: UpsertAccountInput,
 ): Promise<Selectable<AppFinanceAccounts>> {
   if (!input.name) {
     throw new Error('upsertAccount requires name');

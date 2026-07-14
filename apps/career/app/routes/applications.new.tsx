@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { Form, Link, redirect } from 'react-router';
 
 import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contracts';
+import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import type { JobPosting } from '~/types/applications';
@@ -85,7 +86,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
     return redirect(`/applications/${application.id}`);
   } catch (error) {
-    console.error('Error creating job application:', error);
+    logger.error('Error creating job application', error, { owner_userid: user.id });
     throw new Response('Failed to create job application. Please try again.', { status: 500 });
   }
 }
@@ -123,8 +124,7 @@ export default function CreateJobApplication() {
       } else {
         setScrapingError(result.error || 'Failed to scrape job posting.');
       }
-    } catch (error) {
-      console.error('Scraping error:', error);
+    } catch {
       setScrapingError('An unexpected error occurred.');
     } finally {
       setIsScraping(false);

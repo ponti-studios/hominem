@@ -1,12 +1,24 @@
 import { db, sql } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
 import { oAuthDiscoveryMetadata, oAuthProtectedResourceMetadata } from 'better-auth/plugins';
-import { Hono } from 'hono';
+import { Hono, type Context, type Next } from 'hono';
 
 import { betterAuthServer } from '../auth/better-auth';
 import { env } from '../env';
 import { isRateLimited } from './rate-limiter';
-import { handleMcpRequestWithSession } from './server';
+import { handleMcpRequestWithSession, type McpHonoEnv } from './server';
+
+type BetterAuthMcpServer = typeof betterAuthServer & {
+  api: typeof betterAuthServer.api & {
+    getMcpSession: (input: {
+      headers: Headers;
+    }) => Promise<{ userId: string; scopes: string; clientId?: string } | null>;
+    getMcpOAuthConfig: (...args: unknown[]) => unknown;
+    getMCPProtectedResource: (...args: unknown[]) => unknown;
+  };
+};
+
+const betterAuthMcpServer = betterAuthServer as BetterAuthMcpServer;
 
 // Conditional imports — only register tools whose scope is in MCP_ENABLED_SCOPES
 // Use top-level await via ESM (services/api is ESM)
@@ -25,9 +37,9 @@ if (enabledScopes.size === 0 || enabledScopes.has('career:read')) {
  * MCP middleware — validates access tokens via Better Auth's MCP plugin.
  * Applies rate limiting and cost throttling. Falls back to session auth for dev/test.
  */
-async function mcpAuthMiddleware(c: any, next: () => Promise<void>) {
+async function mcpAuthMiddleware(c: Context<McpHonoEnv>, next: Next) {
   // First try MCP plugin session (OAuth access token)
-  const mcpSession = await (betterAuthServer.api as any).getMcpSession({
+  const mcpSession = await betterAuthMcpServer.api.getMcpSession({
     headers: c.req.raw.headers,
   });
 
@@ -130,10 +142,10 @@ async function checkCostBudget(userId: string): Promise<Response | null> {
   return null;
 }
 
-export const mcpRoutes = new Hono()
+export const mcpRoutes = new Hono<McpHonoEnv>()
   .use('*', mcpAuthMiddleware)
-  .all('/', async (c) => handleMcpRequestWithSession(c as any))
-  .all('/*', async (c) => handleMcpRequestWithSession(c as any));
+  .all('/', handleMcpRequestWithSession)
+  .all('/*', handleMcpRequestWithSession);
 
 /**
  * OAuth discovery routes — mounted at the server root so MCP clients
@@ -141,11 +153,11 @@ export const mcpRoutes = new Hono()
  */
 export const oauthDiscoveryRoutes = new Hono()
   .get('/.well-known/oauth-authorization-server', async (c) => {
-    return oAuthDiscoveryMetadata(betterAuthServer as any)(c.req.raw);
+    return oAuthDiscoveryMetadata(betterAuthMcpServer)(c.req.raw);
   })
   .get('/.well-known/oauth-protected-resource/*', async (c) => {
-    return oAuthProtectedResourceMetadata(betterAuthServer as any)(c.req.raw);
+    return oAuthProtectedResourceMetadata(betterAuthMcpServer)(c.req.raw);
   })
   .get('/.well-known/oauth-protected-resource', async (c) => {
-    return oAuthProtectedResourceMetadata(betterAuthServer as any)(c.req.raw);
+    return oAuthProtectedResourceMetadata(betterAuthMcpServer)(c.req.raw);
   });

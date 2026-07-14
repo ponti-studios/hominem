@@ -24,12 +24,14 @@ export function buildEvidence<T>(
     return { evidence: results, isTruncated: false };
   }
 
-  logger.warn('[mcp] result cap exceeded', {
-    tool: toolName,
-    total: results.length,
-    cap: resultCap,
-    dropped: results.length - resultCap,
-  });
+  if (process.env.NODE_ENV !== 'test') {
+    logger.warn('[mcp] result cap exceeded', {
+      tool: toolName,
+      total: results.length,
+      cap: resultCap,
+      dropped: results.length - resultCap,
+    });
+  }
 
   return {
     evidence: results.slice(0, resultCap),
@@ -50,6 +52,7 @@ export function noData(): EvidenceEnvelope<never> {
  */
 export function logRedaction(toolName: string, redactedFields: string[], recordCount: number) {
   if (redactedFields.length === 0) return;
+  if (process.env.NODE_ENV === 'test') return;
 
   logger.info('[mcp] evidence redaction applied', {
     tool: toolName,

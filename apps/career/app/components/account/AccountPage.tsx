@@ -51,8 +51,8 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
       setIsSigningOut(true);
       await authClient.signOut();
       navigate('/');
-    } catch (error) {
-      console.error('Error signing out:', error);
+    } catch {
+      // Keep the user on the account page if sign-out fails.
     } finally {
       setIsSigningOut(false);
     }
@@ -184,8 +184,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
       }
 
       setPdfError(result.message || 'Failed to generate PDF');
-    } catch (error) {
-      console.error('PDF generation error:', error);
+    } catch {
       setPdfError('Failed to generate PDF. Please try again.');
     } finally {
       setPdfGenerating(false);

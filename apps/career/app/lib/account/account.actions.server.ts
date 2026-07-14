@@ -1,6 +1,7 @@
 import { db, PortfolioRepository, SocialLinksRepository } from '@hominem/db';
 import { imageStorageService, isStorageServiceError, validateFile } from '@hominem/storage';
 
+import { logger } from '~/lib/logger';
 import { parseFormData } from '~/lib/route-utils';
 
 import { deleteUserDocument } from './documents.server';
@@ -83,7 +84,7 @@ async function handleDeletePortfolioAction({
     await PortfolioRepository.deletePortfolioByUserId(db, user.id);
     return { success: true, message: 'Portfolio deleted successfully' };
   } catch (error) {
-    console.error('Failed to delete portfolio:', error);
+    logger.error('Failed to delete portfolio', error, { owner_userid: user.id });
     throw new Response('Failed to delete portfolio', { status: 500 });
   }
 }
@@ -115,13 +116,14 @@ async function handleUploadProfileImageAction({
         originalName: imageFile.name,
       });
     } catch (uploadError) {
+      logger.error('Failed to store profile image', uploadError, { owner_userid: user.id });
       throw new Response(getProfileImageUploadErrorMessage(uploadError), { status: 500 });
     }
 
     try {
       await PortfolioRepository.updatePortfolioProfileImage(db, user.id, uploadResult.url);
     } catch (updateError) {
-      console.error('Database update error:', updateError);
+      logger.error('Database update error', updateError, { owner_userid: user.id });
       await imageStorageService.deleteFile(uploadResult.id, user.id);
       throw new Response('Failed to update portfolio', { status: 500 });
     }
@@ -136,7 +138,7 @@ async function handleUploadProfileImageAction({
       throw error;
     }
 
-    console.error('Failed to upload profile image:', error);
+    logger.error('Failed to upload profile image', error, { owner_userid: user.id });
     throw new Response('Failed to upload profile image', { status: 500 });
   }
 }
@@ -193,7 +195,7 @@ async function handleUpdateSlugAction({
       throw error;
     }
 
-    console.error('Failed to update portfolio URL:', error);
+    logger.error('Failed to update portfolio URL', error, { owner_userid: user.id });
     throw new Response('Failed to update portfolio URL', { status: 500 });
   }
 }
@@ -223,7 +225,7 @@ async function handleUpdateSocialLinksAction({
 
     return { success: true, message: 'Social links saved successfully' };
   } catch (error) {
-    console.error('Failed to save social links:', error);
+    logger.error('Failed to save social links', error, { owner_userid: user.id });
     return { success: false, error: "We couldn't save your social links. Try again." };
   }
 }
@@ -247,7 +249,7 @@ async function handleUpdateBasicsAction({
     await PortfolioRepository.savePortfolioBasics(db, user.id, portfolioData);
     return { success: true, message: 'Portfolio basics updated successfully' };
   } catch (error) {
-    console.error('Failed to update portfolio basics:', error);
+    logger.error('Failed to update portfolio basics', error, { owner_userid: user.id });
     return { success: false, error: 'We couldn’t save your basic info. Try again.' };
   }
 }
@@ -271,7 +273,10 @@ async function handleDeleteDocumentAction({
     }
     return { success: true, message: 'File deleted' };
   } catch (error) {
-    console.error('Failed to delete document:', error);
+    logger.error('Failed to delete document', error, {
+      fileId: fileId.trim(),
+      owner_userid: user.id,
+    });
     return { success: false, error: 'We couldn’t delete that file. Try again.' };
   }
 }

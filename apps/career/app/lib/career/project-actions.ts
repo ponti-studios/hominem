@@ -1,6 +1,7 @@
 import { db, ProjectRepository } from '@hominem/db';
 import { stringToDate } from '@hominem/utils/dates';
 
+import { logger } from '../logger';
 import { parseFormData } from '../route-utils';
 import { type ProjectMutationValues, normalizeProjectMutationValues } from './project-form';
 
@@ -63,7 +64,7 @@ export async function handleProjectMutationAction(request: Request, ownerUserId:
 
         return { success: true, operation, message: 'Project updated successfully' };
       } catch (error) {
-        console.error(`Failed to ${operation} project:`, error);
+        logger.error(`Failed to ${operation} project`, error, { owner_userid: ownerUserId });
         return {
           success: false,
           operation,
@@ -87,7 +88,11 @@ export async function handleProjectMutationAction(request: Request, ownerUserId:
         await ProjectRepository.deleteProject(db, ownerUserId, id, portfolioId);
         return { success: true, operation, message: 'Project deleted successfully' };
       } catch (error) {
-        console.error('Failed to delete project:', error);
+        logger.error('Failed to delete project', error, {
+          projectId: id,
+          portfolioId,
+          owner_userid: ownerUserId,
+        });
         return { success: false, operation, error: 'We couldn’t delete this project. Try again.' };
       }
     }

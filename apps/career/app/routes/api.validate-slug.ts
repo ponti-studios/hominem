@@ -1,6 +1,7 @@
 import { db, PortfolioRepository } from '@hominem/db';
 import { data } from 'react-router';
 
+import { logger } from '../lib/logger';
 import { createErrorResponse, createSuccessResponse } from '../lib/route-utils';
 import { Route } from './+types/api.validate-slug';
 
@@ -47,7 +48,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       message: isAvailable ? 'Slug is available' : 'Slug is already taken',
     });
   } catch (error) {
-    console.error('Error checking slug availability:', error);
+    logger.error('Error checking slug availability', error, { slug, currentPortfolioId });
     return data(createErrorResponse('Failed to check slug availability'), { status: 500 });
   }
 }

@@ -1,3 +1,5 @@
+import { logger } from '../../logger';
+
 export function centsToDollars(cents: number | null): number {
   return cents ? Math.round(cents / 100) : 0;
 }
@@ -85,7 +87,7 @@ export function safeParseJson<T>(jsonField: unknown, fallback: T): T {
 
     return jsonField as T;
   } catch (error) {
-    console.error('Failed to parse JSON field:', error);
+    logger.error('Failed to parse JSON field', error);
     return fallback;
   }
 }
