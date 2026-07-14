@@ -1,3 +1,5 @@
+import { randomInt } from 'node:crypto';
+
 import { kyselyAdapter } from '@better-auth/kysely-adapter';
 import { passkey } from '@better-auth/passkey';
 import { authDb } from '@hominem/db';
@@ -86,8 +88,11 @@ const verificationOtpSubjectByType = {
 export const TEST_OTP = '000000';
 export const MCP_SCOPES = ['career:read'] as const;
 
-function generateNumericOtp(length: number): string {
-  return Array.from({ length }, () => String(Math.floor(Math.random() * 10))).join('');
+function generateNumericOtp({ length, isTest }: { length: number; isTest?: boolean }): string {
+  if (isTest) return TEST_OTP;
+  return randomInt(0, 10 ** length)
+    .toString()
+    .padStart(length, '0');
 }
 
 function shouldSendEmails(): boolean {
@@ -177,7 +182,7 @@ function getAuthPlugins() {
     }),
     emailOTP({
       expiresIn: env.AUTH_EMAIL_OTP_EXPIRES_SECONDS,
-      generateOTP: () => (shouldSendEmails() ? generateNumericOtp(6) : TEST_OTP),
+      generateOTP: () => generateNumericOtp({ length: 6, isTest: shouldSendEmails() }),
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (env.AUTH_TEST_OTP_ENABLED) {
           enableTestOtpStore();
