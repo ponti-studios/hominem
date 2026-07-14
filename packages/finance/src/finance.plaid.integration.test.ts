@@ -87,10 +87,11 @@ describeIntegration('finance plaid integration', () => {
   });
 
   it('enforces owner guard and updates plaid status fields', async () => {
+    const providerItemId = `item-guarded-${crypto.randomUUID()}`;
     const created = await upsertPlaidItem({
       id: crypto.randomUUID(),
       userId: ownerId,
-      providerItemId: 'item-guarded',
+      providerItemId,
       institutionId: null,
       cursor: null,
       accessToken: null,
@@ -112,7 +113,7 @@ describeIntegration('finance plaid integration', () => {
 
     const allowedStatusByItem = await updatePlaidItemStatusByItemId(
       ownerId,
-      'item-guarded',
+      providerItemId,
       'healthy',
     );
     expect(allowedStatusByItem).toBe(true);
@@ -131,10 +132,11 @@ describeIntegration('finance plaid integration', () => {
   });
 
   it('deletes plaid items with owner scope and idempotent behavior', async () => {
+    const providerItemId = `item-delete-${crypto.randomUUID()}`;
     const created = await upsertPlaidItem({
       id: crypto.randomUUID(),
       userId: ownerId,
-      providerItemId: 'item-delete',
+      providerItemId,
       institutionId: null,
       cursor: null,
       accessToken: null,

@@ -8,6 +8,7 @@ UI_DIR := ROOT_DIR / "packages" / "ui"
 PNPM := 'pnpm'
 TURBO := 'pnpm exec turbo'
 TURBO_DEV := 'pnpm exec turbo run dev --ui stream'
+TEST_DATABASE_URL := 'postgresql://postgres:postgres@127.0.0.1:5434/app-test'
 
 import 'justfiles/db.just'
 import 'justfiles/promptfoo.just'
@@ -32,7 +33,7 @@ test:
     {{ TURBO }} run test
 
 test-api:
-    {{ TURBO }} run test --filter=@hominem/api...
+    DATABASE_URL="{{ TEST_DATABASE_URL }}" {{ TURBO }} run test --filter=@hominem/api...
 
 check:
     {{ TURBO }} run format lint build test --force

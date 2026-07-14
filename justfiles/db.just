@@ -1,6 +1,5 @@
 MIGRATIONS_DIR := ROOT_DIR / "packages" / "db" / "migrations"
-LOCAL_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:5434/hominem"
-LOCAL_TEST_DATABASE_URL := "postgresql://postgres:postgres@127.0.0.1:4433/app-test"
+DATABASE_URL_TEST := "DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5434/app-test"
 
 goose-install goose-version="v3.27.0":
     #!/usr/bin/env bash
@@ -18,12 +17,8 @@ db-setup environment="test" migrations-path="packages/db/migrations":
     goose_bin="$(go env GOPATH)/bin/goose"
     just goose-install
     if [ -z "${DATABASE_URL:-}" ]; then
-      if [ "{{ environment }}" = "test" ]; then
-        DATABASE_URL="{{ LOCAL_TEST_DATABASE_URL }}"
-      else
-        echo "DATABASE_URL must be set"
-        exit 1
-      fi
+      echo "DATABASE_URL must be set"
+      exit 1
     fi
     migrations_dir="{{ ROOT_DIR }}/{{ migrations-path }}"
     if [ ! -d "$migrations_dir" ]; then
@@ -35,26 +30,38 @@ db-setup environment="test" migrations-path="packages/db/migrations":
 db-migrate:
   #!/usr/bin/env bash
   just goose-install
-  DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"
+  if [ -z "${DATABASE_URL:-}" ]; then
+    echo "DATABASE_URL must be set"
+    exit 1
+  fi
   goose -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" up
   {{ PNPM }} --filter "@hominem/db" exec kysely-codegen --camel-case --date-parser string --type-mapping '{"timestamp":"ColumnType<string, Date | string, Date | string>","timestamptz":"ColumnType<string, Date | string, Date | string>","date":"ColumnType<string, Date | string, Date | string>"}' --out-file ./src/types/database.ts
 
 db-rollback:
     #!/usr/bin/env bash
     just goose-install
-    DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"
+    if [ -z "${DATABASE_URL:-}" ]; then
+      echo "DATABASE_URL must be set"
+      exit 1
+    fi
     goose -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" down
 
 db-status:
     #!/usr/bin/env bash
     just goose-install
-    DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"
+    if [ -z "${DATABASE_URL:-}" ]; then
+      echo "DATABASE_URL must be set"
+      exit 1
+    fi
     goose -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" status
 
 validate-migrations:
     #!/usr/bin/env bash
     goose_bin="$(go env GOPATH)/bin/goose"
-    DATABASE_URL="${DATABASE_URL:-{{ LOCAL_DATABASE_URL }}}"
+    if [ -z "${DATABASE_URL:-}" ]; then
+      echo "DATABASE_URL must be set"
+      exit 1
+    fi
     "$goose_bin" -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" up
     "$goose_bin" -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" up
     STATUS="$($goose_bin -dir "{{ MIGRATIONS_DIR }}" postgres "$DATABASE_URL" status)"

@@ -1,21 +1,17 @@
 import { createServerEnv } from '@hominem/env';
 import * as z from 'zod';
 
-const isTest = process.env.NODE_ENV === 'test';
-
 const envSchema = z.object({
   PORT: z.string().default('4040'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   API_URL: z.string().url().default('http://localhost:4040'),
   COOKIE_SECRET: z.string().default('supersecret'),
-  DATABASE_URL: isTest
-    ? z.string().url().default('postgresql://postgres:postgres@localhost:5432/hominem_test')
-    : z.string().url(),
+  DATABASE_URL: z.string().url(),
 
   NOTES_URL: z.string().url().default('http://localhost:4445'),
 
   GOOGLE_API_KEY: z.string().default(''),
-  OPENROUTER_API_KEY: z.string().default('test-openrouter-key'),
+  OPENROUTER_API_KEY: z.string(),
   AI_MODEL: z.string().default('qwen/qwen3.5-flash-02-23'),
 
   PLAID_CLIENT_ID: z.string().default(''),

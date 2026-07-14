@@ -47,10 +47,3 @@ Use `runInTransaction` from `src/transaction.ts` for any operation that touches 
 import { runInTransaction } from '@hominem/db';
 await runInTransaction(async (trx) => { ... });
 ```
-
-## Databases
-
-| Purpose | URL |
-|---------|-----|
-| Local dev | `postgresql://postgres:postgres@127.0.0.1:5434/app` |
-| Tests | `postgresql://postgres:postgres@127.0.0.1:4433/app-test` |

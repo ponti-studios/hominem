@@ -2,26 +2,20 @@ import * as z from 'zod';
 
 import { baseSchema } from './base';
 
-const isTest = process.env.NODE_ENV === 'test';
-
 export const apiSchema = baseSchema.extend({
   PORT: z.string().default('3000'),
   API_URL: z.url().default('http://localhost:4040'),
   CAREER_URL: z.url().default('http://localhost:4451'),
   WEB_URL: z.url().default('http://localhost:4445'),
   FINANCE_URL: z.url().default('http://localhost:4444'),
-  DATABASE_URL: isTest
-    ? z.url().default('postgresql://postgres:postgres@127.0.0.1:4433/app-test')
-    : z.url(),
+  DATABASE_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().default('dev-better-auth-secret-change-me'),
   AUTH_PASSKEY_RP_ID: z.string().default('api.ponti.io'),
   AUTH_PASSKEY_ORIGIN: z.url().default('https://api.ponti.io'),
   AUTH_COOKIE_DOMAIN: z.string().default(''),
   AUTH_E2E_ENABLED: z.coerce.boolean().default(false),
   AUTH_E2E_SECRET: z.string().default(''),
-  AUTH_TEST_OTP_ENABLED: isTest
-    ? z.coerce.boolean().default(true)
-    : z.coerce.boolean().default(false),
+  AUTH_TEST_OTP_ENABLED: z.coerce.boolean().default(process.env.NODE_ENV !== 'test'),
   AUTH_TEST_OTP_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   AUTH_EMAIL_OTP_EXPIRES_SECONDS: z.coerce.number().int().positive().default(300),
   RESEND_API_KEY: z.string(),
@@ -31,7 +25,7 @@ export const apiSchema = baseSchema.extend({
     .enum(['true', 'false'])
     .default('false')
     .describe('Whether to actually send emails via Resend'),
-  OPENROUTER_API_KEY: isTest ? z.string().default('test-openrouter-key') : z.string(),
+  OPENROUTER_API_KEY: z.string(),
   OPENROUTER_VOICE_CLEANUP_MODEL: z.string().default('qwen/qwen3.5-flash-02-23'),
   SENTRY_DSN: z.string().optional(),
   SAVE_VOICE_AUDIO: z.coerce.boolean().default(false),

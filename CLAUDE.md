@@ -38,14 +38,13 @@ just db-migrate           # run Goose migrations + kysely-codegen
 
 `packages/db/src/types/database.ts` is generated — never edit it by hand.
 
-Tests require the **test database** (`DATABASE_URL_TEST`) with migrations applied:
+Tests require `DATABASE_URL` to point at the intended test database with migrations applied:
 
 ```bash
-just db-migrate           # applies to both local and test DB
+DATABASE_URL="<test-database-url>" just db-setup
 ```
 
-Local DB: `postgresql://postgres:postgres@127.0.0.1:5434/app`  
-Test DB: `postgresql://postgres:postgres@127.0.0.1:4433/app-test`
+Do not rely on fallback database URLs. Set `DATABASE_URL` explicitly for local dev, CI, and tests.
 
 ## Code style
 
