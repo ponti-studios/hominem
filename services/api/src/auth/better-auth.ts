@@ -182,7 +182,7 @@ function getAuthPlugins() {
     }),
     emailOTP({
       expiresIn: env.AUTH_EMAIL_OTP_EXPIRES_SECONDS,
-      generateOTP: () => generateNumericOtp({ length: 6, isTest: shouldSendEmails() }),
+      generateOTP: () => generateNumericOtp({ length: 6, isTest: !shouldSendEmails() }),
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (env.AUTH_TEST_OTP_ENABLED) {
           enableTestOtpStore();
