@@ -17,7 +17,7 @@ routes.get(
   authMiddleware,
   zValidator('query', financeMonthlySummaryQuerySchema),
   async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('query');
     const summary = await financeService.monthlySummary(userId, input);
     return respondWithData(c, financeMonthlySummarySchema, summary);

@@ -18,7 +18,7 @@ just mobile build staging
 just mobile update staging
 ```
 
-The repo defaults the current runtime line to `ios-r1`. When native compatibility changes, bump that value in `apps/omiro/app.config.ts`, `apps/omiro/eas.json`, `apps/omiro/.env.example`, and `scripts/command`.
+The repo defaults the current runtime line to `ios-r1`. When native compatibility changes, bump that value in `apps/omiro/app.config.ts`, `apps/omiro/eas.json`, `apps/omiro/.env.example`, and `just/mobile.just`.
 
 ## Working In Zed
 

@@ -46,6 +46,7 @@ export interface AppAiUsageEvents {
   cachedInputTokens: number | null;
   costUsd: Numeric | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  durationMs: number | null;
   feature: string;
   id: Generated<string>;
   inputTokens: number;

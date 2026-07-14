@@ -69,6 +69,8 @@ const testUser: RpcUser = {
   id: '11111111-1111-4111-8111-111111111111',
   email: 'chat@example.com',
   name: 'Chat Test User',
+  emailVerified: true,
+  image: null,
   isAdmin: false,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -81,8 +83,12 @@ function createApp() {
     .use(validationErrorMiddleware);
 
   app.use('*', async (c, next) => {
-    c.set('user', testUser);
-    c.set('userId', testUser.id);
+    c.set('auth', {
+      user: testUser,
+      userId: testUser.id,
+      credential: 'session',
+      scopes: [],
+    });
     await next();
   });
 

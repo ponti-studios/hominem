@@ -5,7 +5,7 @@ Goal: make CI, deploy workflows, docs, and command scopes reflect the actual pro
 
 ## Summary
 
-P3 is about portfolio truth. The repo now has a cleaner command interface, but the product story is inconsistent. Some docs imply only API and Omiro are active. CI and deploy workflows still treat Career as deployable, and `just` treats Finance as a first-class scope.
+P3 is about portfolio truth. The repo now has a cleaner command interface, but the product story is inconsistent. Some docs imply only API and Omiro are active. Career has an operating production deployment, and `just` treats Finance as a first-class scope.
 
 The architecture should make it obvious which products are active, which are experimental, and which are archived.
 
@@ -17,10 +17,10 @@ The root README says the active surface is API and Omiro, but the command system
 
 Evidence:
 
-- [README.md](/Users/charlesponti/Developer/hominem/README.md)
-- [scripts/command](/Users/charlesponti/Developer/hominem/scripts/command)
-- [.github/workflows/deploy-career.yml](/Users/charlesponti/Developer/hominem/.github/workflows/deploy-career.yml)
-- [apps/finance/railway.json](/Users/charlesponti/Developer/hominem/apps/finance/railway.json)
+- [README.md](../../../README.md)
+- [justfile](../../../justfile)
+- [.github/workflows/deploy-career.yml](../../../.github/workflows/deploy-career.yml)
+- [apps/finance/railway.json](../../../apps/finance/railway.json)
 
 Required decision:
 
@@ -38,15 +38,47 @@ Once answered, align:
 - Railway configs
 - validation expectations
 
+The deployment repair establishes one immediate fact: Career is currently maintained
+enough to warrant a production workflow and validation. A future decision may retire
+it deliberately, but the README cannot describe it as absent while its production
+service remains under active operational ownership.
+
+### Deploy Targets Need Explicit Ownership
+
+The Railway project currently contains services associated with more than one repository.
+That made it possible for a Hominem GitHub secret to select the Labyrinth service from the
+separate Labs repository. The resulting error named a missing Labyrinth Dockerfile, even
+though the Hominem archive was the actual input.
+
+There is a second ownership boundary inside Railway: a service may be deployed by a
+GitHub workflow, a linked Railway repository source, or both. Both is not redundancy;
+it creates competing revisions and configuration paths. The worker demonstrated this
+when the GitHub workflow deployment succeeded but the linked-source deployment later
+failed against a stale worker config path.
+
+Required shape:
+
+- Assign one deploy authority per service. Hominem production services use GitHub
+  Actions; their Railway linked-source auto-deploy must remain disconnected.
+- Maintain a checked-in deployment-target registry. Each entry records the owning
+  repository, logical service name, Railway service identity, config path, trigger
+  workflow, and deployment authority.
+- Keep Railway service IDs in GitHub secrets, but validate their resolved names against
+  the registry before upload. This protects against a correctly formatted but wrong ID.
+- Prefer separate Railway projects for independently operated repositories. If services
+  intentionally share a project, the registry and workflow checks are mandatory.
+- Treat a deploy job as successful only after the target Railway deployment reaches a
+  successful terminal state. Archive upload success is an intermediate event.
+
 ### Finance Is First-Class Locally But Missing CI
 
 `just check finance` exists and Finance has package scripts, but there is no `validate-finance.yml`.
 
 Evidence:
 
-- [apps/finance/package.json](/Users/charlesponti/Developer/hominem/apps/finance/package.json)
-- [scripts/command](/Users/charlesponti/Developer/hominem/scripts/command)
-- [.github/workflows](/Users/charlesponti/Developer/hominem/.github/workflows)
+- [apps/finance/package.json](../../../apps/finance/package.json)
+- [justfile](../../../justfile)
+- [.github/workflows](../../../.github/workflows)
 
 Required shape:
 
@@ -94,10 +126,10 @@ Some validation workflows have path filters; API is broader. Packages changes tr
 
 Evidence:
 
-- [.github/workflows/validate-api.yml](/Users/charlesponti/Developer/hominem/.github/workflows/validate-api.yml)
-- [.github/workflows/validate-career.yml](/Users/charlesponti/Developer/hominem/.github/workflows/validate-career.yml)
-- [.github/workflows/validate-mobile.yml](/Users/charlesponti/Developer/hominem/.github/workflows/validate-mobile.yml)
-- [.github/workflows/validate-db.yml](/Users/charlesponti/Developer/hominem/.github/workflows/validate-db.yml)
+- [.github/workflows/validate-api.yml](../../../.github/workflows/validate-api.yml)
+- [.github/workflows/validate-career.yml](../../../.github/workflows/validate-career.yml)
+- [.github/workflows/validate-mobile.yml](../../../.github/workflows/validate-mobile.yml)
+- [.github/workflows/validate-db.yml](../../../.github/workflows/validate-db.yml)
 
 Required shape:
 
@@ -111,8 +143,8 @@ Some package docs still mention package-level pnpm/Bun commands instead of the c
 
 Evidence:
 
-- [services/api/README.md](/Users/charlesponti/Developer/hominem/services/api/README.md)
-- [README.md](/Users/charlesponti/Developer/hominem/README.md)
+- [services/api/README.md](../../../services/api/README.md)
+- [README.md](../../../README.md)
 
 Required shape:
 
@@ -128,7 +160,7 @@ Keep only API and Omiro as active products.
 
 Actions:
 
-- Remove Career deploy workflow.
+- Retire Career's deploy workflow and Railway service as one intentional archival change.
 - Remove Finance first-class `just` scope.
 - Move Career/Finance docs to experimental/archived language.
 - Keep package checks only where they support API/Omiro.
@@ -167,6 +199,11 @@ Recommended initial choice: Option C unless the portfolio decision is already cl
 - [ ] Align README with that classification.
 - [ ] Add or remove Finance CI based on classification.
 - [ ] Align Career deploy workflow with classification.
+- [ ] Record every production deployment target and its single deployment authority.
+- [ ] Disconnect linked Railway sources for GitHub-managed services and prevent their
+      reintroduction without an ownership decision.
+- [ ] Make reusable Railway deployment workflows verify target identity and final remote
+      deployment success.
 - [ ] Make `just check` scope-aware where release confidence differs.
 - [ ] Define workspace script contract.
 - [ ] Clean old docs that recommend direct package commands.

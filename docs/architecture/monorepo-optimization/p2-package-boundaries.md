@@ -28,16 +28,42 @@ Pressure points:
 
 ## Findings
 
+### Authentication Is A Single API Boundary
+
+The API previously resolved identity in the global middleware and again in the MCP
+route. That duplicated Better Auth lookups and allowed MCP to maintain its own user,
+session, E2E, and scope contract.
+
+The target boundary is now:
+
+- The API auth middleware resolves Better Auth sessions, MCP OAuth credentials, and the
+  secret-gated E2E identity into one `auth` context.
+- Route middleware checks whether that context is present and applies route-specific
+  authorization.
+- MCP adapts the canonical context to the MCP SDK and owns only tool scopes, rate
+  limiting, and cost budgets.
+- No route-specific middleware resolves a second user identity.
+
+Evidence:
+
+- [services/api/src/auth/types.ts](../../../services/api/src/auth/types.ts)
+- [services/api/src/middleware/auth.ts](../../../services/api/src/middleware/auth.ts)
+- [services/api/src/mcp/routes.ts](../../../services/api/src/mcp/routes.ts)
+- [services/api/src/mcp/server.ts](../../../services/api/src/mcp/server.ts)
+
+This boundary keeps authentication ownership in the API edge while allowing each route
+family to express its own authorization policy.
+
 ### API Is Also A Contract Package
 
 `@hominem/rpc` imports API types from the deployable service. App code also imports API route types directly.
 
 Evidence:
 
-- [packages/rpc/src/core/api-client.ts](/Users/charlesponti/Developer/hominem/packages/rpc/src/core/api-client.ts)
-- [apps/finance/app/lib/api.server.ts](/Users/charlesponti/Developer/hominem/apps/finance/app/lib/api.server.ts)
-- [apps/career/app/lib/api.server.ts](/Users/charlesponti/Developer/hominem/apps/career/app/lib/api.server.ts)
-- [services/api/package.json](/Users/charlesponti/Developer/hominem/services/api/package.json)
+- [packages/rpc/src/core/api-client.ts](../../../packages/rpc/src/core/api-client.ts)
+- [apps/finance/app/lib/api.server.ts](../../../apps/finance/app/lib/api.server.ts)
+- [apps/career/app/lib/api.server.ts](../../../apps/career/app/lib/api.server.ts)
+- [services/api/package.json](../../../services/api/package.json)
 
 Problem:
 
@@ -59,9 +85,9 @@ Product app code imports `@hominem/db` directly. Local inventory found 68 direct
 
 Evidence:
 
-- [apps/career](/Users/charlesponti/Developer/hominem/apps/career)
-- [apps/finance](/Users/charlesponti/Developer/hominem/apps/finance)
-- [packages/db/src/index.ts](/Users/charlesponti/Developer/hominem/packages/db/src/index.ts)
+- [apps/career](../../../apps/career)
+- [apps/finance](../../../apps/finance)
+- [packages/db/src/index.ts](../../../packages/db/src/index.ts)
 
 Problem:
 
@@ -85,10 +111,10 @@ The package contains unrelated backend concerns.
 
 Evidence:
 
-- [packages/services/src/index.ts](/Users/charlesponti/Developer/hominem/packages/services/src/index.ts)
-- [packages/services/src/redis.ts](/Users/charlesponti/Developer/hominem/packages/services/src/redis.ts)
-- [packages/services/src/resend.ts](/Users/charlesponti/Developer/hominem/packages/services/src/resend.ts)
-- [packages/services/src/files.ts](/Users/charlesponti/Developer/hominem/packages/services/src/files.ts)
+- [packages/services/src/index.ts](../../../packages/services/src/index.ts)
+- [packages/services/src/redis.ts](../../../packages/services/src/redis.ts)
+- [packages/services/src/resend.ts](../../../packages/services/src/resend.ts)
+- [packages/services/src/files.ts](../../../packages/services/src/files.ts)
 
 Problem:
 
@@ -107,9 +133,9 @@ Root barrels make imports easy, but they weaken architecture when everything can
 
 Evidence:
 
-- [packages/db/src/index.ts](/Users/charlesponti/Developer/hominem/packages/db/src/index.ts)
-- [packages/ui/src/index.ts](/Users/charlesponti/Developer/hominem/packages/ui/src/index.ts)
-- [packages/finance/src/index.ts](/Users/charlesponti/Developer/hominem/packages/finance/src/index.ts)
+- [packages/db/src/index.ts](../../../packages/db/src/index.ts)
+- [packages/ui/src/index.ts](../../../packages/ui/src/index.ts)
+- [packages/finance/src/index.ts](../../../packages/finance/src/index.ts)
 
 Target:
 
@@ -165,6 +191,8 @@ services/api
 - [ ] Move Career DB access behind app-local server services or API/RPC.
 - [ ] Split or collapse `@hominem/services`.
 - [ ] Tighten DB/UI/finance root barrels.
+- [ ] Keep authentication resolution in the API edge and prevent route-specific identity
+      resolution from returning.
 - [ ] Remove stale build artifacts if source-first exports remain the rule.
 
 ## Validation

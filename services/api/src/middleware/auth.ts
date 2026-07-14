@@ -1,17 +1,16 @@
 import type { User } from '@hominem/auth/types';
+import { authDb } from '@hominem/db';
 import type { MiddlewareHandler } from 'hono';
 
-import { betterAuthServer } from '../auth/better-auth';
-import type { AuthContextEnvelope } from '../auth/types';
+import { betterAuthMcpServer, betterAuthServer, MCP_SCOPES } from '../auth/better-auth';
+import type { AuthContext } from '../auth/types';
 
 type AuthErrorCode = 'invalid_token' | 'expired_token' | 'invalid_session';
 const E2E_AUTH_SECRET_HEADER = 'x-e2e-auth-secret';
 
 declare module 'hono' {
   interface ContextVariableMap {
-    auth?: AuthContextEnvelope;
-    user?: User;
-    userId?: string;
+    auth?: AuthContext;
     authError?: AuthErrorCode;
   }
 }
@@ -36,21 +35,6 @@ function toAuthUser(user: {
   };
 }
 
-function setAuthContext(
-  c: {
-    set: (key: 'user' | 'userId' | 'auth', value: User | string | AuthContextEnvelope) => void;
-  },
-  input: { user: User; sessionId: string },
-) {
-  c.set('user', input.user);
-  c.set('userId', input.user.id);
-  c.set('auth', {
-    sub: input.user.id,
-    sid: input.sessionId,
-    authTime: Math.floor(Date.now() / 1000),
-  });
-}
-
 function isE2eProxyAuthAllowed(c: Parameters<MiddlewareHandler>[0]) {
   if (process.env.NODE_ENV === 'production') return false;
   if (process.env.AUTH_E2E_ENABLED !== 'true') return false;
@@ -61,15 +45,56 @@ function isE2eProxyAuthAllowed(c: Parameters<MiddlewareHandler>[0]) {
   return c.req.header(E2E_AUTH_SECRET_HEADER) === expectedSecret;
 }
 
+function isMcpRequest(path: string) {
+  return path === '/api/mcp' || path.startsWith('/api/mcp/');
+}
+
+function parseScopes(value: string) {
+  return value
+    .split(/[ ,]+/)
+    .map((scope) => scope.trim())
+    .filter(Boolean);
+}
+
+async function getUser(userId: string): Promise<User | null> {
+  return (
+    (await authDb.selectFrom('user').selectAll().where('id', '=', userId).executeTakeFirst()) ??
+    null
+  );
+}
+
+function setAuthContext(c: Parameters<MiddlewareHandler>[0], input: AuthContext) {
+  c.set('auth', input);
+}
+
 /**
- * Resolve the caller identity via Better Auth only (session cookies or BA bearer).
- * Custom JWT issuance is intentionally unsupported.
+ * Resolve the caller identity once at the API boundary. Route-specific middleware
+ * may authorize the resolved context, but must not establish a second identity.
  */
-export const authJwtMiddleware = (): MiddlewareHandler => {
+export const authMiddleware = (): MiddlewareHandler => {
   return async (c, next) => {
     const path = c.req.path;
     if (path.startsWith('/api/auth')) {
       return await next();
+    }
+
+    if (isMcpRequest(path) && c.req.header('authorization')) {
+      const mcpSession = await betterAuthMcpServer.api.getMcpSession({
+        headers: c.req.raw.headers,
+      });
+
+      if (mcpSession) {
+        const user = await getUser(mcpSession.userId);
+        if (user) {
+          setAuthContext(c, {
+            user,
+            userId: user.id,
+            credential: 'mcp-oauth',
+            scopes: mcpSession.scopes.split(' ').filter(Boolean),
+          });
+          return await next();
+        }
+      }
     }
 
     const betterAuthSession = await betterAuthServer.api.getSession({
@@ -82,7 +107,10 @@ export const authJwtMiddleware = (): MiddlewareHandler => {
     if (userId && sessionId) {
       setAuthContext(c, {
         user: toAuthUser(betterAuthSession.user),
+        userId,
         sessionId,
+        credential: 'session',
+        scopes: isMcpRequest(path) && process.env.NODE_ENV !== 'production' ? [...MCP_SCOPES] : [],
       });
       return await next();
     }
@@ -91,16 +119,20 @@ export const authJwtMiddleware = (): MiddlewareHandler => {
     // SameSite=Lax prevents session cookies from being sent.
     const proxyUserId = c.req.header('x-user-id');
     if (proxyUserId && isE2eProxyAuthAllowed(c)) {
-      c.set('userId', proxyUserId);
-      c.set('user', {
-        id: proxyUserId,
-        email: `proxy-${proxyUserId.slice(0, 8)}@hominem.e2e`,
-        emailVerified: true,
-        name: 'Proxy User',
-        image: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as User);
+      setAuthContext(c, {
+        userId: proxyUserId,
+        user: {
+          id: proxyUserId,
+          email: `proxy-${proxyUserId.slice(0, 8)}@hominem.e2e`,
+          emailVerified: true,
+          name: 'Proxy User',
+          image: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as User,
+        credential: 'e2e',
+        scopes: isMcpRequest(path) ? parseScopes(c.req.header('x-mcp-scopes') ?? '') : [],
+      });
     }
 
     return await next();

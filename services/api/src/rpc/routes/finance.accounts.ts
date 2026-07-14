@@ -144,7 +144,7 @@ function normalizePlaidConnection(
 
 export const accountsRoutes = new Hono<AppContext>()
   .get('/list', authMiddleware, zValidator('query', accountListSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const accounts = await db
       .selectFrom('app.financeAccounts')
       .selectAll()
@@ -164,7 +164,7 @@ export const accountsRoutes = new Hono<AppContext>()
     );
   })
   .get('/get', authMiddleware, zValidator('query', accountGetSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('query');
     const account = await getAccountWithOwnershipCheck(input.id, userId);
     const transactions = await getTransactionsForAccount(input.id, 200, 0);
@@ -175,7 +175,7 @@ export const accountsRoutes = new Hono<AppContext>()
     });
   })
   .post('/create', authMiddleware, zValidator('json', accountCreateSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
     const accountId = randomUUID();
     const now = new Date().toISOString();
@@ -213,7 +213,7 @@ export const accountsRoutes = new Hono<AppContext>()
     );
   })
   .post('/update', authMiddleware, zValidator('json', accountUpdateSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
 
     await getAccountWithOwnershipCheck(input.id, userId);
@@ -251,7 +251,7 @@ export const accountsRoutes = new Hono<AppContext>()
     );
   })
   .post('/delete', authMiddleware, zValidator('json', accountDeleteSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
 
     await getAccountWithOwnershipCheck(input.id, userId);
@@ -262,7 +262,7 @@ export const accountsRoutes = new Hono<AppContext>()
     return c.json({ success: true }, 200);
   })
   .get('/with-plaid', authMiddleware, async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const accounts = await db
       .selectFrom('app.financeAccounts')
       .selectAll()
@@ -279,7 +279,7 @@ export const accountsRoutes = new Hono<AppContext>()
     );
   })
   .get('/connections', authMiddleware, async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
 
     const connections = await db
       .selectFrom('app.plaidItems')
@@ -294,7 +294,7 @@ export const accountsRoutes = new Hono<AppContext>()
     authMiddleware,
     zValidator('query', institutionAccountsSchema),
     async (c) => {
-      const userId = c.get('userId')!;
+      const userId = c.get('auth')!.userId;
       const input = c.req.valid('query');
       const accounts = await db
         .selectFrom('app.financeAccounts')
@@ -314,7 +314,7 @@ export const accountsRoutes = new Hono<AppContext>()
     },
   )
   .get('/all', authMiddleware, async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
 
     const [accounts, connections, institutions] = await Promise.all([
       db

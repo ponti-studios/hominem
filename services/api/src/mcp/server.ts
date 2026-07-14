@@ -13,19 +13,13 @@ import type {
 } from '@modelcontextprotocol/sdk/types.js';
 import type { Context } from 'hono';
 
+import type { AuthContext } from '../auth/types';
 import { UnauthorizedError } from '../errors';
 import { callTool, listTools, type McpToolDefinition } from './tools';
 
-export type McpSession = {
-  userId: string;
-  scopes: string;
-  clientId?: string;
-};
-
 export type McpHonoEnv = {
   Variables: {
-    userId?: string;
-    mcpSession?: McpSession;
+    auth?: AuthContext;
   };
 };
 
@@ -106,28 +100,19 @@ function createMcpServer() {
 }
 
 export async function handleMcpRequestWithSession(c: Context<McpHonoEnv>): Promise<Response> {
-  const session = c.get('mcpSession');
-  const userId = c.get('userId');
+  const auth = c.get('auth');
 
-  if (!userId) {
+  if (!auth) {
     throw new UnauthorizedError('MCP session required');
   }
 
-  // Scopes from session, or from explicit E2E/dev header.
-  const scopes = session?.scopes
-    ? session.scopes.split(' ').filter(Boolean)
-    : (c.req.header('x-mcp-scopes') ?? '')
-        .split(',')
-        .map((s: string) => s.trim())
-        .filter(Boolean);
-
   const authInfo: AuthInfo = {
     token: c.req.header('authorization')?.replace(/^Bearer\s+/i, '') ?? '',
-    clientId: session?.clientId ?? c.req.header('user-agent') ?? 'hominem-mcp',
-    scopes,
+    clientId: c.req.header('user-agent') ?? 'hominem-mcp',
+    scopes: auth.scopes,
     extra: {
-      ownerUserId: userId,
-      sessionId: null,
+      ownerUserId: auth.userId,
+      sessionId: auth.sessionId ?? null,
       authTime: Math.floor(Date.now() / 1000),
     } satisfies McpAuthInfoExtra,
   };

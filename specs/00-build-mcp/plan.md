@@ -66,7 +66,7 @@ scopes listed in the variable are imported and registered
 **✅ III. Database Discipline** — No new tables needed. `app.entities`,
     `app.entity_links`, and `app.ai_usage_events` already exist in
     production. A small migration adds `mcp_tool_call` to the
-    `ai_usage_events` feature CHECK constraint. Then `just db-migrate`
+    `ai_usage_events` feature CHECK constraint. Then `just db migrate`
     and regenerate types.
 
 **✅ IV. Quality Gates** — Implementation must pass `pnpm run check`

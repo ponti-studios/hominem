@@ -15,6 +15,7 @@ interface JobScrapingProviderResult {
   content?: string;
   usage: AIUsageMetrics | null;
   model?: string;
+  durationMs: number;
   error?: string;
 }
 
@@ -49,6 +50,8 @@ export async function scrapeJobPosting(
   _userId: string,
   jobUrl: string,
 ): Promise<JobScrapingProviderResult> {
+  const startedAt = performance.now();
+
   try {
     const response = await createChatCompletion({
       model: 'qwen/qwen3.5-flash-02-23',
@@ -71,11 +74,13 @@ export async function scrapeJobPosting(
       content: getChatCompletionText(response),
       usage: getChatCompletionUsage(response),
       model: response.model,
+      durationMs: Math.round(performance.now() - startedAt),
     };
   } catch (error) {
     return {
       success: false,
       usage: null,
+      durationMs: Math.round(performance.now() - startedAt),
       error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
