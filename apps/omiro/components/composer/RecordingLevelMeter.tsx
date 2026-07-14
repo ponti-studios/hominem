@@ -18,7 +18,6 @@ const DB_FLOOR = -50;
 const DB_CEILING = -5;
 
 function normalizeDb(db: number): number {
-  'worklet';
   const clamped = Math.min(DB_CEILING, Math.max(DB_FLOOR, db));
   return (clamped - DB_FLOOR) / (DB_CEILING - DB_FLOOR);
 }

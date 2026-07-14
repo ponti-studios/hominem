@@ -1,7 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 const AUTH_API_BASE_URL = 'http://localhost:4040';
-const FINANCE_APP_BASE_URL = 'http://localhost:4444';
 const AUTH_TEST_OTP_URL = `${AUTH_API_BASE_URL}/api/auth/test/otp/latest`;
 const AUTH_E2E_SECRET = 'otp-secret';
 const OTP_FETCH_TIMEOUT_MS = 15_000;

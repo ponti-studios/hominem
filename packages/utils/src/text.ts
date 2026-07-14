@@ -11,7 +11,8 @@ export function slugifyText(value: string | null): string | null {
   const normalized = (value ?? '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 
   return normalized.length > 0 ? normalized : null;
 }

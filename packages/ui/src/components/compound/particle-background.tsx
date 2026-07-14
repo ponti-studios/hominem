@@ -179,6 +179,7 @@ export function ParticleBackground({
       raf.current = requestAnimationFrame(draw);
     }
 
+    // lgtm[js/superfluous-trailing-arguments] ResizeObserver requires its callback.
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
     resize();

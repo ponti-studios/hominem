@@ -99,7 +99,7 @@ export const test = base.extend<Fixtures>({
     const email = createAuthTestEmail(`finance-${testInfo.project.name}`);
     const userId = crypto.randomUUID();
     await installFinanceApiAuthRoute(context, userId);
-    await signInWithEmailOtp(page, email, userId);
+    await signInWithEmailOtp(page, email);
     await use(page);
   },
   financeApi: async ({ authenticatedPage }, use) => {

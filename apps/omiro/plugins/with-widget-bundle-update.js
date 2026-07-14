@@ -54,7 +54,11 @@ module.exports = function withWidgetBundleUpdate(config) {
         BUNDLE_PATH,
       )
 
-      if (!fs.existsSync(bundlePath)) {
+      let bundleFd
+      try {
+        bundleFd = fs.openSync(bundlePath, fs.constants.O_RDWR)
+      } catch (error) {
+        if (error.code !== 'ENOENT') throw error
         console.warn(
           `[with-widget-bundle-update] ${BUNDLE_PATH} not found – skipping. ` +
             'This is expected if Live Activity is disabled.',
@@ -62,21 +66,26 @@ module.exports = function withWidgetBundleUpdate(config) {
         return modConfig
       }
 
-      const original = fs.readFileSync(bundlePath, 'utf-8')
-      const result = patchBundleFile(original)
+      try {
+        const original = fs.readFileSync(bundleFd, 'utf-8')
+        const result = patchBundleFile(original)
 
-      if (!result.patched) {
-        if (result.reason === 'already patched') {
+        if (!result.patched) {
+          if (result.reason === 'already patched') {
+            return modConfig
+          }
+          console.warn(
+            `[with-widget-bundle-update] Could not patch: ${result.reason}. Skipping.`,
+          )
           return modConfig
         }
-        console.warn(
-          `[with-widget-bundle-update] Could not patch: ${result.reason}. Skipping.`,
-        )
-        return modConfig
-      }
 
-      fs.writeFileSync(bundlePath, result.content, 'utf-8')
-      return modConfig
+        fs.ftruncateSync(bundleFd, 0)
+        fs.writeFileSync(bundleFd, result.content, 'utf-8')
+        return modConfig
+      } finally {
+        fs.closeSync(bundleFd)
+      }
     },
   ])
 }
