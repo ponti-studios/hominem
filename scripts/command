@@ -181,7 +181,7 @@ deploy_railway() {
   trap 'rm -f "$ROOT_DIR/railway.json"' RETURN
   cd "$ROOT_DIR"
   set +e
-  pnpm exec railway up --ci --service "$SERVICE" 2>&1 | tee /tmp/railway-up.log
+  pnpm exec railway up --ci --no-gitignore --service "$SERVICE" 2>&1 | tee /tmp/railway-up.log
   local status=${PIPESTATUS[0]}
   set -e
   if [[ "$status" -ne 0 ]]; then
