@@ -39,6 +39,7 @@ beforeEach(() => {
     success: true,
     content: '{not-json',
     model: 'job-model',
+    durationMs: 1234,
     usage: {
       provider: 'openrouter',
       model: 'job-model',
@@ -107,6 +108,7 @@ describe('job scrape action', () => {
       expect.objectContaining({
         feature: 'career_job_scrape',
         usage: expect.objectContaining({ totalTokens: 14, costUsd: 0.22 }),
+        durationMs: 1234,
       }),
     );
   });

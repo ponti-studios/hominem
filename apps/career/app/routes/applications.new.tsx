@@ -22,6 +22,12 @@ import { JobApplicationStatus } from '~/types/career';
 
 import { Route } from './+types/applications.new';
 
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string' && item.trim() !== '')
+    : [];
+}
+
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext);
   return { user };
@@ -38,8 +44,8 @@ export async function action({ request, context }: Route.ActionArgs) {
   const startDate = formData.get('startDate') as string;
   const status = formData.get('status') as JobApplicationStatus;
   const location = formData.get('location') as string;
-  const jobPosting = formData.get('jobPosting') as string;
-  const jobPostingData = formData.get('jobPostingData') as string;
+  const jobPosting = String(formData.get('jobPosting') ?? '');
+  const jobPostingData = String(formData.get('jobPostingData') ?? '');
   const salaryQuoted = formData.get('salaryQuoted') as string;
   const recruiterName = formData.get('recruiterName') as string;
   const recruiterEmail = formData.get('recruiterEmail') as string;
@@ -53,31 +59,35 @@ export async function action({ request, context }: Route.ActionArgs) {
   let skills: string[] = [];
   let jobPostingUrl: string | null = null;
   let jobPostingWordCount: number | null = null;
+  let parsedJobPosting: JobPosting | null = null;
 
   if (jobPostingData) {
     try {
-      const parsed = JSON.parse(jobPostingData) as JobPosting;
-      requirements = parsed.requirements || [];
-      skills = parsed.skills || [];
-      jobPostingUrl = parsed.url || null;
-      jobPostingWordCount = parsed.wordCount || null;
+      parsedJobPosting = JSON.parse(jobPostingData) as JobPosting;
+      requirements = toStringArray(parsedJobPosting.requirements);
+      skills = toStringArray(parsedJobPosting.skills);
+      jobPostingUrl = parsedJobPosting.url || null;
+      jobPostingWordCount = parsedJobPosting.wordCount || null;
     } catch {
       // fall through with defaults
     }
   }
 
   try {
+    const normalizedJobPosting = jobPosting.trim() || parsedJobPosting?.jobDescription || null;
     const application = await JobApplicationsService.createApplication(user.id, {
       companyName,
+      companyDescription: parsedJobPosting?.companyDescription || null,
       position,
       status,
       startDate: new Date(startDate),
       location: location || null,
-      jobPosting: jobPostingData || jobPosting || null,
+      jobPosting: normalizedJobPosting,
       requirements,
       skills,
       jobPostingUrl,
-      jobPostingWordCount,
+      jobPostingWordCount:
+        jobPostingWordCount ?? normalizedJobPosting?.split(/\s+/).filter(Boolean).length ?? null,
       salaryQuoted: salaryQuoted || null,
       recruiterName: recruiterName || null,
       recruiterEmail: recruiterEmail || null,
@@ -420,7 +430,7 @@ export default function CreateJobApplication() {
                   className="w-full resize-none rounded-lg border border-border px-3 py-2"
                   defaultValue={scrapedData ? scrapedData.jobDescription : ''}
                 />
-                {/* Hidden field to store full structured data */}
+                {/* Hidden scrape metadata is normalized into dedicated columns by the action. */}
                 {scrapedData && (
                   <input type="hidden" name="jobPostingData" value={JSON.stringify(scrapedData)} />
                 )}
