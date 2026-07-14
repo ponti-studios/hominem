@@ -32,6 +32,7 @@ jobs:
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       TURBO_TELEMETRY_DISABLED: '1'
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5434/app-test
+      OPENROUTER_API_KEY: 'some-random-key'
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
     strategy:

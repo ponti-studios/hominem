@@ -5,7 +5,9 @@
   },
   "build": {
     "base": {
-      "node": "22.13.0",
+      "node": "24.14.1",
+      "pnpm": "11.10.0",
+      "corepack": true,
       "env": {
         "EXPO_RUNTIME_VERSION": "ios-r1"
       }
