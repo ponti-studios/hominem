@@ -6,7 +6,7 @@
   "build": {
     "base": {
       "node": "24.14.1",
-      "corepack": true,
+      "pnpm": "11.10.0",
       "env": {
         "EXPO_RUNTIME_VERSION": "ios-r1"
       }
@@ -30,8 +30,7 @@
         "EXPO_RUNTIME_VERSION": "ios-r1",
         "APP_ENV": "development",
         "EXPO_PUBLIC_E2E_TESTING": "true",
-        "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "false"
-        ,
+        "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "false",
         "OMIRO_DEV_CLIENT": "false"
       }
     },
