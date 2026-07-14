@@ -417,9 +417,6 @@ importers:
       expo-file-system:
         specifier: ~57.0.0
         version: 57.0.0(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.7))
-      expo-font:
-        specifier: ~57.0.0
-        version: 57.0.0(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.7))(react@19.2.7)
       expo-haptics:
         specifier: ^57.0.0
         version: 57.0.0(expo@57.0.2)
@@ -438,15 +435,9 @@ importers:
       expo-local-authentication:
         specifier: ^57.0.0
         version: 57.0.0(expo@57.0.2)
-      expo-localization:
-        specifier: ~57.0.0
-        version: 57.0.0(expo@57.0.2)(react@19.2.7)
       expo-media-library:
         specifier: ^57.0.1
         version: 57.0.1(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.7))
-      expo-network:
-        specifier: ~57.0.0
-        version: 57.0.0(expo@57.0.2)(react@19.2.7)
       expo-notifications:
         specifier: ~57.0.3
         version: 57.0.3(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.7))(react@19.2.7)(typescript@6.0.3)
@@ -474,9 +465,6 @@ importers:
       expo-updates:
         specifier: ~57.0.6
         version: 57.0.6(expo-dev-client@57.0.5(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.7)))(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.7))(react@19.2.7)
-      expo-web-browser:
-        specifier: ~57.0.0
-        version: 57.0.0(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.7))
       posthog-react-native:
         specifier: ^4.45.6
         version: 4.45.6(expo-application@57.0.0(expo@57.0.2))(expo-device@57.0.0(expo@57.0.2))(expo-file-system@57.0.0(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.7)))(expo-localization@57.0.0(expo@57.0.2)(react@19.2.7))(react-native-safe-area-context@5.7.0(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.7))(react@19.2.7))

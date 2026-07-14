@@ -162,9 +162,6 @@ export default ({ config }: ConfigContext) => {
       },
     ],
     ['expo-secure-store'],
-    'expo-font',
-    'expo-localization',
-    'expo-web-browser',
     'expo-asset',
     'expo-audio',
     'expo-image',
@@ -198,7 +195,6 @@ export default ({ config }: ConfigContext) => {
   ];
 
   if (!e2eTesting) {
-    plugins.push('./plugins/with-widget-bundle-update');
     plugins.push('@bacons/apple-targets');
   }
 
