@@ -33,6 +33,7 @@ jobs:
       TURBO_TELEMETRY_DISABLED: '1'
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5434/app-test
       OPENROUTER_API_KEY: 'some-random-key'
+      REDIS_URL: redis://localhost:6379
       RESEND_API_KEY: 'some-resend-api-key'
       RESEND_FROM_EMAIL: 'test@example.com'
       RESEND_FROM_NAME: 'Test Sender'
@@ -56,6 +57,15 @@ jobs:
           --health-retries 5
         ports:
           - 5434:5432
+      redis:
+        image: redis:latest
+        options: >-
+          --health-cmd "redis-cli ping || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
 
     steps:
       - name: checkout-repository
