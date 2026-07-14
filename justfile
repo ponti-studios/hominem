@@ -33,7 +33,7 @@ test:
     {{ TURBO }} run test
 
 test-api:
-    DATABASE_URL="{{ TEST_DATABASE_URL }}" {{ TURBO }} run test --filter=@hominem/api...
+    AUTH_E2E_SECRET="otp-secret" DATABASE_URL="{{ TEST_DATABASE_URL }}" {{ TURBO }} run test --filter=@hominem/api...
 
 check:
     {{ TURBO }} run format lint build test --force
