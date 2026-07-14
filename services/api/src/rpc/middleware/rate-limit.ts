@@ -24,7 +24,7 @@ export function rateLimitMiddleware(input: RateLimitInput) {
   return createMiddleware<AppContext>(async (c, next) => {
     try {
       const redis = await getRedis();
-      const userId = c.get('userId') ?? 'anonymous';
+      const userId = c.get('auth')?.userId ?? 'anonymous';
       const key = `ratelimit:rpc:${input.bucket}:${hashRateLimitIdentifier(`${userId}:${input.bucket}`)}`;
       const count = await redis.incr(key);
 

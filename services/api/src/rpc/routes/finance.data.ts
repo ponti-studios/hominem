@@ -15,7 +15,7 @@ export const dataRoutes = new Hono<AppContext>().post(
   authMiddleware,
   zValidator('json', deleteAllSchema),
   async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const summary = await deleteUserFinanceData(userId);
     return c.json({
       success: true,

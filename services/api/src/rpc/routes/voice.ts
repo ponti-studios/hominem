@@ -13,7 +13,7 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .use('/cleanup', rateLimitMiddleware({ bucket: 'voice-cleanup', windowSec: 60, max: 30 }))
   .post('/cleanup', zValidator('json', VoiceCleanupInputSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
     const eventId = randomUUID();
 

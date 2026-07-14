@@ -4,7 +4,7 @@ import { Hono } from 'hono';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
 export const tagsRoutes = new Hono<AppContext>().get('/list', authMiddleware, async (c) => {
-  const userId = c.get('userId')!;
+  const userId = c.get('auth')!.userId;
   const tags = await db
     .selectFrom('app.tags')
     .select(['id', 'ownerUserid', 'name', 'color'])

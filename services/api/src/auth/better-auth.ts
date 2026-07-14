@@ -84,6 +84,7 @@ const verificationOtpSubjectByType = {
 } as const satisfies Record<string, string>;
 
 export const TEST_OTP = '000000';
+export const MCP_SCOPES = ['career:read'] as const;
 
 function generateNumericOtp(length: number): string {
   return Array.from({ length }, () => String(Math.floor(Math.random() * 10))).join('');
@@ -203,9 +204,9 @@ function getAuthPlugins() {
       resource: new URL('/api/mcp', env.API_URL).toString(),
       oidcConfig: {
         loginPage: new URL('/login', env.CAREER_URL).toString(),
-        scopes: ['career:read'],
+        scopes: [...MCP_SCOPES],
         metadata: {
-          scopes_supported: ['openid', 'profile', 'email', 'offline_access', 'career:read'],
+          scopes_supported: ['openid', 'profile', 'email', 'offline_access', ...MCP_SCOPES],
         },
       },
     }),
@@ -239,3 +240,13 @@ const inferredBetterAuthServer = betterAuth({
 });
 
 export const betterAuthServer: BetterAuthServer = inferredBetterAuthServer;
+
+export const betterAuthMcpServer = betterAuthServer as BetterAuthServer & {
+  api: BetterAuthServer['api'] & {
+    getMcpSession: (input: {
+      headers: Headers;
+    }) => Promise<{ userId: string; scopes: string; clientId?: string } | null>;
+    getMcpOAuthConfig: (...args: unknown[]) => unknown;
+    getMCPProtectedResource: (...args: unknown[]) => unknown;
+  };
+};

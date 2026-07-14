@@ -27,12 +27,12 @@ function buildTaskListTitle(tasks: { title: string }[]): string {
 export const tasksRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const tasks = await TaskRepository.list(db, { userId });
     return c.json({ tasks });
   })
   .post('/', zValidator('json', CreateTaskSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
 
     if (input.parentTaskId) {
@@ -56,7 +56,7 @@ export const tasksRoutes = new Hono<AppContext>()
   })
   .use('/extract', rateLimitMiddleware({ bucket: 'ai-task-extract', windowSec: 60, max: 20 }))
   .post('/extract', zValidator('json', ExtractTasksInputSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const { transcript } = c.req.valid('json');
     const eventId = randomUUID();
 
@@ -89,7 +89,7 @@ export const tasksRoutes = new Hono<AppContext>()
     }
   })
   .post('/batch', zValidator('json', CreateTaskBatchSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const { tasks } = c.req.valid('json');
 
     if (tasks.length === 1) {
@@ -114,7 +114,7 @@ export const tasksRoutes = new Hono<AppContext>()
   })
   .use('/voice', rateLimitMiddleware({ bucket: 'ai-task-voice', windowSec: 60, max: 20 }))
   .post('/voice', zValidator('json', VoiceTasksInputSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const { transcript, referenceDate, timezone } = c.req.valid('json');
     const eventId = randomUUID();
 
@@ -183,7 +183,7 @@ export const tasksRoutes = new Hono<AppContext>()
     return c.json(result, 201);
   })
   .get('/:id', zValidator('param', TaskParamSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const { id } = c.req.valid('param');
 
     const task = await TaskRepository.load(db, id, userId);
@@ -199,7 +199,7 @@ export const tasksRoutes = new Hono<AppContext>()
     zValidator('param', TaskParamSchema),
     zValidator('json', UpdateTaskStatusSchema),
     async (c) => {
-      const userId = c.get('userId')!;
+      const userId = c.get('auth')!.userId;
       const { id } = c.req.valid('param');
       const { completed } = c.req.valid('json');
 
@@ -212,7 +212,7 @@ export const tasksRoutes = new Hono<AppContext>()
     zValidator('param', TaskParamSchema),
     zValidator('json', UpdateTaskSchema),
     async (c) => {
-      const userId = c.get('userId')!;
+      const userId = c.get('auth')!.userId;
       const { id } = c.req.valid('param');
       const patch = c.req.valid('json');
 
@@ -221,7 +221,7 @@ export const tasksRoutes = new Hono<AppContext>()
     },
   )
   .delete('/:id', zValidator('param', TaskParamSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const { id } = c.req.valid('param');
 
     const task = await TaskRepository.remove(db, id, userId);

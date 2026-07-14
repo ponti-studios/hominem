@@ -1,4 +1,3 @@
-import type { User } from '@hominem/auth/types';
 import { LOG_MESSAGES, logger } from '@hominem/telemetry';
 import { Scalar } from '@scalar/hono-api-reference';
 import * as Sentry from '@sentry/node';
@@ -9,12 +8,12 @@ import { prettyJSON } from 'hono/pretty-json';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
 import { betterAuthServer } from './auth/better-auth';
-import type { AuthContextEnvelope } from './auth/types';
+import type { AuthContext } from './auth/types';
 import { API_BRAND } from './brand';
 import { env } from './env';
 import { isServiceError } from './errors';
 import { oauthDiscoveryRoutes } from './mcp/routes';
-import { authJwtMiddleware } from './middleware/auth';
+import { authMiddleware } from './middleware/auth';
 import { authRateLimitMiddleware } from './middleware/auth-rate-limit';
 import { blockMaliciousProbes } from './middleware/block-probes';
 import { requestLogger } from './middleware/request-logger';
@@ -25,9 +24,7 @@ import { rpcApp } from './rpc/app';
 
 export type AppEnv = {
   Variables: {
-    userId?: string;
-    user?: User;
-    auth?: AuthContextEnvelope;
+    auth?: AuthContext;
   };
 };
 
@@ -106,7 +103,7 @@ function registerBaseMiddleware(app: Hono<AppEnv>) {
   app.use('*', requestLogger());
   app.use('*', prettyJSON());
   app.use('*', createCorsMiddleware());
-  app.use('*', authJwtMiddleware());
+  app.use('*', authMiddleware());
 }
 
 function registerApiRoutes(app: Hono<AppEnv>) {

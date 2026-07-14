@@ -27,7 +27,7 @@ Usage:
   just db [migrate|rollback|status|validate|codegen] [test]
   just mobile [dev|start|e2e|lint|test|test-watch]
   just mobile [prebuild|build|update|release] [development|staging|production]
-  just eval [run|all|view] [config]
+  just eval [mcp|run|all|view] [config]
   just mcp install claude
   just deploy railway <api|career|workers> <config-path>
 EOF
@@ -148,14 +148,17 @@ eval_command() {
   local config="$2"
   cd "$ROOT_DIR/experiments/promptfoo"
   case "$action" in
+    mcp)
+      [[ -z "$config" ]] || die 'eval mcp does not accept a config'
+      cd "$ROOT_DIR/services/api"
+      DATABASE_URL="$TEST_DATABASE_URL" pnpm exec tsx scripts/mcp-ollama-eval.ts
+      ;;
     run)
       [[ -n "$config" ]] || die 'eval run requires a config'
-      [[ -n "${OPENROUTER_API_KEY:-}" ]] || die 'OPENROUTER_API_KEY must be set'
       npx promptfoo@latest eval -c "$config.config.yaml"
       ;;
     all)
       [[ -z "$config" ]] || die 'eval all does not accept a config'
-      [[ -n "${OPENROUTER_API_KEY:-}" ]] || die 'OPENROUTER_API_KEY must be set'
       for current in chat-assistant task-extraction voice-task-extraction voice-cleanup; do
         npx promptfoo@latest eval -c "$current.config.yaml"
       done

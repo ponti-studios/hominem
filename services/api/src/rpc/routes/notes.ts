@@ -27,7 +27,7 @@ async function enqueueNoteEmbedding(userId: string, noteId: string) {
 export const notesRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', zValidator('query', NotesListQuerySchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const query = c.req.valid('query');
 
     const notes = await NoteRepository.list(db, {
@@ -45,7 +45,7 @@ export const notesRoutes = new Hono<AppContext>()
     });
   })
   .get('/feed', zValidator('query', NotesFeedQuerySchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const query = c.req.valid('query');
     const feed = await NoteRepository.listFeed(db, {
       userId,
@@ -59,7 +59,7 @@ export const notesRoutes = new Hono<AppContext>()
     });
   })
   .get('/search', zValidator('query', NoteSearchQuerySchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const query = c.req.valid('query');
     const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 20) : 10;
 
@@ -73,7 +73,7 @@ export const notesRoutes = new Hono<AppContext>()
     return c.json(results);
   })
   .post('/', zValidator('json', CreateNoteInputSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
     const note = await noteService.createNote(userId, {
       title: input.title ?? null,
@@ -85,7 +85,7 @@ export const notesRoutes = new Hono<AppContext>()
     return c.json(toNoteDto(note), 201);
   })
   .get('/:id', zValidator('param', NoteParamSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const { id } = c.req.valid('param');
     const note = await NoteRepository.load(db, id, userId);
     return c.json(toNoteDto(note));
@@ -95,7 +95,7 @@ export const notesRoutes = new Hono<AppContext>()
     zValidator('param', NoteParamSchema),
     zValidator('json', UpdateNoteInputSchema),
     async (c) => {
-      const userId = c.get('userId')!;
+      const userId = c.get('auth')!.userId;
       const { id } = c.req.valid('param');
       const input = c.req.valid('json');
 
@@ -110,7 +110,7 @@ export const notesRoutes = new Hono<AppContext>()
     },
   )
   .delete('/:id', zValidator('param', NoteParamSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const { id } = c.req.valid('param');
 
     const note = await NoteRepository.load(db, id, userId);

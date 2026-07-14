@@ -57,7 +57,7 @@ async function resetFinanceData(userId: string) {
   await db.deleteFrom('app.tags').where('ownerUserid', '=', userId).execute();
 }
 
-async function ensureE2eUser(user: NonNullable<AppContext['Variables']['user']>) {
+async function ensureE2eUser(user: NonNullable<AppContext['Variables']['auth']>['user']) {
   const now = new Date().toISOString();
 
   await db
@@ -399,15 +399,15 @@ async function seedFinanceData(userId: string) {
 export const financeE2eRoutes = new Hono<AppContext>()
   .use('*', e2eGuard, authMiddleware)
   .post('/reset', async (c) => {
-    const userId = c.get('userId')!;
-    const user = c.get('user')!;
+    const userId = c.get('auth')!.userId;
+    const user = c.get('auth')!.user;
     await ensureE2eUser(user);
     await resetFinanceData(userId);
     return c.json({ ok: true, userId });
   })
   .post('/seed', async (c) => {
-    const userId = c.get('userId')!;
-    const user = c.get('user')!;
+    const userId = c.get('auth')!.userId;
+    const user = c.get('auth')!.user;
     await ensureE2eUser(user);
     const seed = await seedFinanceData(userId);
     return c.json({ ok: true, ...seed });

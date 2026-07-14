@@ -16,7 +16,7 @@ import { TEXT_ENHANCE_PROMPT } from '../prompts';
 export const enhanceRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/usage', zValidator('query', AIUsageQuerySchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const query = c.req.valid('query');
     const input = {
       userId,
@@ -42,7 +42,7 @@ export const enhanceRoutes = new Hono<AppContext>()
   })
   .use('/enhance', rateLimitMiddleware({ bucket: 'ai-enhance', windowSec: 60, max: 30 }))
   .post('/enhance', zValidator('json', EnhanceTextInputSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const { text, instruction } = c.req.valid('json');
     const eventId = randomUUID();
 

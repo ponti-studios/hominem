@@ -73,7 +73,7 @@ export const filesRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .delete('/:fileId', async (c) => {
     try {
-      const userId = c.get('userId')!;
+      const userId = c.get('auth')!.userId;
       const fileId = c.req.param('fileId');
 
       const exists = await FileRepository.existsForUser(db, fileId, userId);
@@ -91,7 +91,7 @@ export const filesRoutes = new Hono<AppContext>()
   })
   .post('/', async (c) => {
     try {
-      const userId = c.get('userId')!;
+      const userId = c.get('auth')!.userId;
       const body = await c.req.parseBody();
       const file = body.file;
 

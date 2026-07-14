@@ -141,7 +141,10 @@ just test api
 # Redaction tests (evidence, no-data, result caps)
 just test api
 
-# LLM evaluation harness (full suite — may take several minutes)
+# MCP/Ollama evaluation harness (explicit and may take several minutes)
+just eval mcp
+
+# Promptfoo evaluation suite
 just eval all
 
 # Fast PR subset (deterministic tests only, no LLM eval)

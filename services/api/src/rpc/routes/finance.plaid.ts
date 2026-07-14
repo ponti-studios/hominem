@@ -32,7 +32,7 @@ export const plaidRoutes = new Hono<AppContext>()
   // POST /create-link-token - Create link token
   .post('/create-link-token', async (c) => {
     try {
-      const userId = c.get('userId')!;
+      const userId = c.get('auth')!.userId;
 
       const createTokenResponse = await plaidClient.linkTokenCreate({
         user: { client_userId: userId },
@@ -69,7 +69,7 @@ export const plaidRoutes = new Hono<AppContext>()
     ),
     async (c) => {
       const input = c.req.valid('json');
-      const userId = c.get('userId')!;
+      const userId = c.get('auth')!.userId;
 
       let accessToken = '';
       let itemId = '';
@@ -140,7 +140,7 @@ export const plaidRoutes = new Hono<AppContext>()
   // POST /sync-item - Sync Plaid item
   .post('/sync-item', zValidator('json', z.object({ itemId: z.string() })), async (c) => {
     const input = c.req.valid('json');
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
 
     // Get the plaid item
     const plaidItem = isUuid(input.itemId)
@@ -186,7 +186,7 @@ export const plaidRoutes = new Hono<AppContext>()
   // POST /remove-connection - Remove connection
   .post('/remove-connection', zValidator('json', z.object({ itemId: z.string() })), async (c) => {
     const input = c.req.valid('json');
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
 
     // Get the plaid item
     const plaidItem = isUuid(input.itemId)

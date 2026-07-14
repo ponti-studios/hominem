@@ -64,7 +64,7 @@ function getTagFilter(tag?: string): { tag_ids?: string[]; tag_names?: string[] 
 
 export const analyzeRoutes = new Hono<AppContext>()
   .get('/tag-breakdown', authMiddleware, zValidator('query', tagBreakdownSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('query');
     const limit = input.limit ?? 5;
     const tagFilter = getTagFilter(input.tag);
@@ -99,7 +99,7 @@ export const analyzeRoutes = new Hono<AppContext>()
     });
   })
   .get('/top-merchants', authMiddleware, zValidator('query', topMerchantsSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('query');
     const limit = input.limit ? Math.max(1, Math.floor(input.limit)) : 10;
     const tagFilter = getTagFilter(input.tag);
@@ -117,7 +117,7 @@ export const analyzeRoutes = new Hono<AppContext>()
     });
   })
   .get('/monthly-stats', authMiddleware, zValidator('query', monthlyStatsSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('query');
     const monthly = await getMonthlyStatsByContract({
       userId: userId,
@@ -152,7 +152,7 @@ export const analyzeRoutes = new Hono<AppContext>()
     authMiddleware,
     zValidator('query', spendingTimeSeriesSchema),
     async (c) => {
-      const userId = c.get('userId')!;
+      const userId = c.get('auth')!.userId;
       const input = c.req.valid('query');
       const limit = input.limit ? Math.max(1, Math.floor(input.limit)) : 50;
       const tagFilter = getTagFilter(input.tag);

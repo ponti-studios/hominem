@@ -37,7 +37,7 @@ description: "Task list for Build MCP feature implementation"
 - [x] T007 [P] Create MCP auth middleware — `routes.ts` with Better Auth MCP plugin session validation
 - [x] T008 [P] Create tool registry — `tools.ts` with `registerTool`, `listTools`, `callTool`
 - [x] T009 [P] Create MCP schema definitions — `services/api/src/schemas/career.schema.ts`
-- [x] T010 [P] Set up MCP test infrastructure — `server.test.ts`, `tools.test.ts`, `ollama-eval.test.ts`
+- [x] T010 [P] Set up MCP test infrastructure — `server.test.ts`, `tools.test.ts`; move the Ollama evaluation to `services/api/scripts/mcp-ollama-eval.ts`
 - [x] T010a [P] Implement rate-limiting middleware (`services/api/src/mcp/rate-limiter.ts`) — 5 req/s per user, 429 on excess
 - [x] T010b [P] Implement `MCP_ENABLED_SCOPES` conditional import gating in `routes.ts`
 
@@ -93,8 +93,8 @@ description: "Task list for Build MCP feature implementation"
 - [x] T011 [P] [US1] Transport discovery test — `tools/list` returns registered tool names
 - [x] T012 [P] [US1] Transport invocation test — LLM eval exercises `tools/call` end-to-end
 - [x] T013 [P] [US1] Transport auth test — unauthenticated request returns 401
-- [ ] T014 [P] [US1] Transport invalid-input test — request with invalid input schema returns validation error
-- [ ] T022 [US1] Add validation error handling for malformed JSON-RPC requests
+- [x] T014 [P] [US1] Transport invalid-input test — request with invalid input schema returns validation error
+- [x] T022 [US1] Add validation error handling for malformed JSON-RPC requests
 
 ### Privacy & Security Tests
 

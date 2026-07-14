@@ -6,6 +6,7 @@ goal: remove immediate correctness, safety, and security risks before deeper arc
 # P0 Guardrails
 
 ## Summary
+
 Make the system safe to work in while we clean up the monorepo. This batch of work will not implement any grand architecture moves.
 
 Implement guardrails that prevent the monorepo from surprising developers, CI, or staging environments while larger cleanup happens.
@@ -18,8 +19,8 @@ Implement guardrails that prevent the monorepo from surprising developers, CI, o
 
 Evidence:
 
-- [scripts/command](/Users/charlesponti/Developer/hominem/scripts/command)
-- [turbo.json](/Users/charlesponti/Developer/hominem/turbo.json)
+- [scripts/command](../../../scripts/command)
+- [turbo.json](../../../turbo.json)
 
 Confirmed command:
 
@@ -37,9 +38,9 @@ The API accepts `x-user-id` in non-production environments. MCP paths have simil
 
 Evidence:
 
-- [services/api/src/middleware/auth.ts](/Users/charlesponti/Developer/hominem/services/api/src/middleware/auth.ts)
-- [services/api/src/mcp/routes.ts](/Users/charlesponti/Developer/hominem/services/api/src/mcp/routes.ts)
-- [services/api/src/mcp/server.ts](/Users/charlesponti/Developer/hominem/services/api/src/mcp/server.ts)
+- [services/api/src/middleware/auth.ts](../../../services/api/src/middleware/auth.ts)
+- [services/api/src/mcp/routes.ts](../../../services/api/src/mcp/routes.ts)
+- [services/api/src/mcp/server.ts](../../../services/api/src/mcp/server.ts)
 
 Required shape:
 
@@ -53,9 +54,9 @@ Required shape:
 
 Evidence:
 
-- [scripts/command](/Users/charlesponti/Developer/hominem/scripts/command)
-- [packages/db/src/env.ts](/Users/charlesponti/Developer/hominem/packages/db/src/env.ts)
-- [services/api/src/routes/auth.step-up.test.ts](/Users/charlesponti/Developer/hominem/services/api/src/routes/auth.step-up.test.ts)
+- [scripts/command](../../../scripts/command)
+- [packages/db/src/env.ts](../../../packages/db/src/env.ts)
+- [services/api/src/routes/auth.step-up.test.ts](../../../services/api/src/routes/auth.step-up.test.ts)
 
 Required shape:
 
@@ -69,9 +70,9 @@ Required shape:
 
 Evidence:
 
-- [scripts/command](/Users/charlesponti/Developer/hominem/scripts/command)
-- [packages/db/src/types/database.ts](/Users/charlesponti/Developer/hominem/packages/db/src/types/database.ts)
-- [.github/workflows/validate-db.yml](/Users/charlesponti/Developer/hominem/.github/workflows/validate-db.yml)
+- [scripts/command](../../../scripts/command)
+- [packages/db/src/types/database.ts](../../../packages/db/src/types/database.ts)
+- [.github/workflows/validate-db.yml](../../../.github/workflows/validate-db.yml)
 
 Required shape:
 
@@ -85,8 +86,8 @@ The logging package has key-based redaction, but serialized errors can still car
 
 Evidence:
 
-- [packages/telemetry/src/logger.ts](/Users/charlesponti/Developer/hominem/packages/telemetry/src/logger.ts)
-- [services/api/src/routes/images.ts](/Users/charlesponti/Developer/hominem/services/api/src/routes/images.ts)
+- [packages/telemetry/src/logger.ts](../../../packages/telemetry/src/logger.ts)
+- [services/api/src/routes/images.ts](../../../services/api/src/routes/images.ts)
 
 Required shape:
 

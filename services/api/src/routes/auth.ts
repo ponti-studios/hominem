@@ -138,10 +138,10 @@ function getHeaderCarrier(c: { req: { raw: Request } }) {
  * Global JWT middleware skips /api/auth, so these routes check auth themselves.
  */
 async function resolveAuthUserId(c: {
-  get: (key: string) => string | null;
+  get: (key: string) => { userId: string } | undefined;
   req: { raw: Request };
 }): Promise<string | null> {
-  const fromMiddleware = c.get('userId');
+  const fromMiddleware = c.get('auth')?.userId;
   if (fromMiddleware) return fromMiddleware;
 
   const betterAuthSession = await getBetterAuthSessionContext(c as Context<AppEnv>);

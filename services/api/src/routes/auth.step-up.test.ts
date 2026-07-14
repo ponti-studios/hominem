@@ -3,6 +3,8 @@ import { authDb } from '@hominem/db';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
+import type { AuthContext } from '../auth/types';
+
 const proofStore = vi.hoisted(() => new Map<string, string>());
 const STEP_UP_USER_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const FIRST_TIME_USER_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
@@ -24,11 +26,24 @@ import { authRoutes } from './auth';
 function createAuthedAppForUser(userId: string) {
   return new Hono<{
     Variables: {
-      userId?: string;
+      auth?: AuthContext;
     };
   }>()
     .use('*', async (c, next) => {
-      c.set('userId', userId);
+      c.set('auth', {
+        user: {
+          id: userId,
+          email: `${userId}@hominem.test`,
+          emailVerified: false,
+          name: 'Step Up Test User',
+          image: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        userId,
+        credential: 'session',
+        scopes: [],
+      });
       await next();
     })
     .route('/api/auth', authRoutes);
