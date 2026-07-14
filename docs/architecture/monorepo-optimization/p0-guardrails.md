@@ -15,11 +15,11 @@ Implement guardrails that prevent the monorepo from surprising developers, CI, o
 
 ### `just lint fix` Is Broken
 
-`scripts/command` dispatches `just lint fix` to `turbo lint:fix`, but `turbo.json` does not define a `lint:fix` task.
+The command layer dispatches `just lint fix` to `turbo lint:fix`, but `turbo.json` does not define a `lint:fix` task.
 
 Evidence:
 
-- [scripts/command](../../../scripts/command)
+- [justfile](../../../justfile)
 - [turbo.json](../../../turbo.json)
 
 Confirmed command:
@@ -54,7 +54,7 @@ Required shape:
 
 Evidence:
 
-- [scripts/command](../../../scripts/command)
+- [justfile](../../../justfile)
 - [packages/db/src/env.ts](../../../packages/db/src/env.ts)
 - [services/api/src/routes/auth.step-up.test.ts](../../../services/api/src/routes/auth.step-up.test.ts)
 
@@ -70,7 +70,7 @@ Required shape:
 
 Evidence:
 
-- [scripts/command](../../../scripts/command)
+- [justfile](../../../justfile)
 - [packages/db/src/types/database.ts](../../../packages/db/src/types/database.ts)
 - [.github/workflows/validate-db.yml](../../../.github/workflows/validate-db.yml)
 

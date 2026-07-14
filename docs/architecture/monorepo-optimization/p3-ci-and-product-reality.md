@@ -18,7 +18,7 @@ The root README says the active surface is API and Omiro, but the command system
 Evidence:
 
 - [README.md](../../../README.md)
-- [scripts/command](../../../scripts/command)
+- [justfile](../../../justfile)
 - [.github/workflows/deploy-career.yml](../../../.github/workflows/deploy-career.yml)
 - [apps/finance/railway.json](../../../apps/finance/railway.json)
 
@@ -77,7 +77,7 @@ Required shape:
 Evidence:
 
 - [apps/finance/package.json](../../../apps/finance/package.json)
-- [scripts/command](../../../scripts/command)
+- [justfile](../../../justfile)
 - [.github/workflows](../../../.github/workflows)
 
 Required shape:

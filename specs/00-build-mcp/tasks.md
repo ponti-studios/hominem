@@ -32,7 +32,7 @@ description: "Task list for Build MCP feature implementation"
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
 - [x] T004 Create Goose migration to add `mcp_tool_call` to `app.ai_usage_events` feature CHECK constraint
-- [x] T005 Run `just db-migrate` to apply migration and regenerate Kysely types
+- [x] T005 Run `just db migrate` and `just db codegen` to apply migration and regenerate Kysely types
 - [x] T006 [P] Create MCP transport handler — `server.ts` with Streamable HTTP transport
 - [x] T007 [P] Create MCP auth middleware — `routes.ts` with Better Auth MCP plugin session validation
 - [x] T008 [P] Create tool registry — `tools.ts` with `registerTool`, `listTools`, `callTool`

@@ -12,7 +12,7 @@ pnpm monorepo orchestrated with Turbo. Key directories:
 - `packages/db` — PostgreSQL + Kysely + Goose migrations
 - `packages/auth` — Better-auth (passkeys + OTP)
 - `packages/ai` — OpenRouter integration
-- `scripts/command` — implementation behind the root `just` command interface
+- `justfile` and `just/*.just` — the repository command interface and its domain modules
 
 ## Commands
 

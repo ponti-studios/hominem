@@ -39,7 +39,7 @@ Observed failure modes:
 - The worker had both GitHub Actions and a linked Railway source deploying it. The
   linked source later attempted a stale configuration path after the workflow deploy
   had succeeded.
-- `scripts/command` stages the selected service config as root `railway.json`, but that
+- The deploy command stages the selected service config as root `railway.json`, but that
   file is ignored. Without an explicit archive rule, the Railway CLI can omit the
   selected config.
 - `railway up` returning successfully only proves that Railway accepted an upload. A
@@ -129,7 +129,7 @@ Evidence:
 
 - [apps/omiro/app.config.ts](../../../apps/omiro/app.config.ts)
 - [apps/omiro/eas.json](../../../apps/omiro/eas.json)
-- [scripts/command](../../../scripts/command)
+- [just/deploy.just](../../../just/deploy.just)
 - [apps/omiro/README.md](../../../apps/omiro/README.md)
 
 Required shape:
