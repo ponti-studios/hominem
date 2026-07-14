@@ -35,6 +35,8 @@ jobs:
       OPENROUTER_API_KEY: 'some-random-key'
       RESEND_API_KEY: 'some-resend-api-key'
       RESEND_FROM_EMAIL: 'test@example.com'
+      RESEND_FROM_NAME: 'Test Sender'
+      NODE_ENV: test
 
     strategy:
       matrix:
