@@ -186,8 +186,10 @@
     "build": "vite build",
     "dev": "vite",
     "typecheck": "tsc --noEmit",
-    "lint": "oxlint src --fix",
-    "format": "oxfmt src --write"
+    "lint": "oxlint src",
+    "lint:fix": "oxlint src --fix",
+    "format": "oxfmt src --write",
+    "format:check": "oxfmt src --check"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

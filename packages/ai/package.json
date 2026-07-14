@@ -16,7 +16,9 @@
     "build": "tsgo -p tsconfig.json",
     "typecheck": "tsgo --noEmit",
     "format": "oxfmt src --write",
-    "lint": "oxlint src --fix"
+    "format:check": "oxfmt src --check",
+    "lint": "oxlint src",
+    "lint:fix": "oxlint src --fix"
   },
   "dependencies": {
     "@hominem/utils": "workspace:*",

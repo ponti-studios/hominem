@@ -7,6 +7,8 @@ on:
       - 'apps/omiro/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
+      - 'justfile'
+      - 'scripts/**'
       - '.github/actions/setup-pnpm-workspace/**'
       - '.github/workflows/validate-mobile.yml'
   pull_request:
@@ -15,6 +17,8 @@ on:
       - 'apps/omiro/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
+      - 'justfile'
+      - 'scripts/**'
       - '.github/actions/setup-pnpm-workspace/**'
       - '.github/workflows/validate-mobile.yml'
 
@@ -43,8 +47,5 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: lint
-        run: just mobile-lint
-
-      - name: run-tests
-        run: just mobile-test
+      - name: validate-mobile
+        run: just check mobile

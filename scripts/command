@@ -1,0 +1,285 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+TEST_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5434/app-test'
+TEST_AUTH_E2E_SECRET='otp-secret'
+OMIRO_DIR="$ROOT_DIR/apps/omiro"
+OMIRO_RUNTIME_VERSION='ios-r1'
+
+die() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+usage() {
+  cat <<'EOF'
+Usage:
+  just setup
+  just dev [all|api|career|finance|mobile]
+  just lint [all|api|career|finance|mobile]
+  just lint fix [all|api|career|finance|mobile]
+  just format [write|check] [all|api|career|finance|mobile]
+  just typecheck [scope]
+  just build [scope]
+  just test [scope]
+  just check [scope]
+  just db [migrate|rollback|status|validate|codegen] [test]
+  just mobile [dev|start|e2e|lint|test|test-watch]
+  just mobile [prebuild|build|update|release] [development|staging|production]
+  just eval [run|all|view] [config]
+  just mcp install claude
+  just deploy railway <api|career|workers> <config-path>
+EOF
+}
+
+scope_filter() {
+  case "$1" in
+    all) ;;
+    api) printf '%s\n' '--filter=@hominem/api...' ;;
+    career) printf '%s\n' '--filter=@hominem/career...' ;;
+    finance) printf '%s\n' '--filter=@hominem/finance...' ;;
+    mobile) printf '%s\n' '--filter=@hominem/omiro...' ;;
+    *) die "unknown scope '$1' (expected all, api, career, finance, or mobile)" ;;
+  esac
+}
+
+dev_filter() {
+  case "$1" in
+    all) ;;
+    api) printf '%s\n' '--filter=@hominem/api' ;;
+    career) printf '%s\n' '--filter=@hominem/career' ;;
+    finance) printf '%s\n' '--filter=@hominem/finance' ;;
+    mobile) printf '%s\n' '--filter=@hominem/omiro' ;;
+    *) die "unknown scope '$1' (expected all, api, career, finance, or mobile)" ;;
+  esac
+}
+
+turbo() {
+  local task="$1"
+  local scope="$2"
+  local filter
+  filter="$(scope_filter "$scope")"
+  cd "$ROOT_DIR"
+  if [[ -n "$filter" ]]; then
+    pnpm exec turbo run "$task" "$filter"
+  else
+    pnpm exec turbo run "$task"
+  fi
+}
+
+test() {
+  DATABASE_URL="$TEST_DATABASE_URL" AUTH_E2E_SECRET="$TEST_AUTH_E2E_SECRET" turbo test "$1"
+}
+
+require_database_url() {
+  [[ -n "${DATABASE_URL:-}" ]] || die 'DATABASE_URL must be set'
+}
+
+use_database_profile() {
+  case "$1" in
+    '') require_database_url ;;
+    test) export DATABASE_URL="$TEST_DATABASE_URL" ;;
+    *) die "unknown database profile '$1' (expected test or no profile)" ;;
+  esac
+}
+
+goose() {
+  local goose_bin
+  goose_bin="$(go env GOPATH)/bin/goose"
+  if [[ ! -x "$goose_bin" ]]; then
+    go install github.com/pressly/goose/v3/cmd/goose@v3.27.0
+  fi
+  "$goose_bin" "$@"
+}
+
+database() {
+  local action="$1"
+  local profile="$2"
+  use_database_profile "$profile"
+  case "$action" in
+    migrate) goose -dir "$ROOT_DIR/packages/db/migrations" postgres "$DATABASE_URL" up ;;
+    rollback) goose -dir "$ROOT_DIR/packages/db/migrations" postgres "$DATABASE_URL" down ;;
+    status) goose -dir "$ROOT_DIR/packages/db/migrations" postgres "$DATABASE_URL" status ;;
+    validate)
+      goose -dir "$ROOT_DIR/packages/db/migrations" postgres "$DATABASE_URL" up
+      goose -dir "$ROOT_DIR/packages/db/migrations" postgres "$DATABASE_URL" up
+      if goose -dir "$ROOT_DIR/packages/db/migrations" postgres "$DATABASE_URL" status | tee /dev/stderr | grep -Eiq 'pending'; then
+        die 'pending migrations remain after goose up'
+      fi
+      ;;
+    codegen)
+      [[ -z "$profile" ]] || die 'db codegen does not accept a database profile'
+      cd "$ROOT_DIR/packages/db"
+      pnpm exec kysely-codegen --camel-case --date-parser string --type-mapping '{"timestamp":"ColumnType<string, Date | string, Date | string>","timestamptz":"ColumnType<string, Date | string, Date | string>","date":"ColumnType<string, Date | string, Date | string>"}' --out-file ./src/types/database.ts
+      ;;
+    *) die "unknown db action '$action'" ;;
+  esac
+}
+
+mobile() {
+  local action="$1"
+  local target="$2"
+  cd "$OMIRO_DIR"
+  case "$action:$target" in
+    dev:) APP_ENV=development OMIRO_DEV_CLIENT=true pnpm exec expo run:ios ;;
+    start:) pnpm exec expo start --ios ;;
+    e2e:) APP_ENV=development EXPO_PUBLIC_E2E_TESTING=true OMIRO_DEV_CLIENT=false pnpm exec expo run:ios ;;
+    lint:) pnpm exec expo lint ;;
+    test:) pnpm exec vitest run --config vitest.config.ts ;;
+    test-watch:) pnpm exec vitest --config vitest.config.ts ;;
+    prebuild:development) APP_ENV=development OMIRO_DEV_CLIENT=true pnpm exec expo prebuild --platform ios --clean ;;
+    prebuild:production) APP_ENV=production OMIRO_RELEASE_CHANNEL=production EXPO_RUNTIME_VERSION="$OMIRO_RUNTIME_VERSION" pnpm exec expo prebuild --platform ios --clean ;;
+    build:staging) EXPO_RUNTIME_VERSION="$OMIRO_RUNTIME_VERSION" pnpm exec eas build --platform ios --profile staging ;;
+    build:production) EXPO_RUNTIME_VERSION="$OMIRO_RUNTIME_VERSION" pnpm exec eas build --platform ios --profile production ;;
+    update:staging) APP_ENV=production OMIRO_RELEASE_CHANNEL=staging EXPO_RUNTIME_VERSION="$OMIRO_RUNTIME_VERSION" pnpm exec eas update --channel staging ;;
+    update:production) APP_ENV=production OMIRO_RELEASE_CHANNEL=production EXPO_RUNTIME_VERSION="$OMIRO_RUNTIME_VERSION" pnpm exec eas update --channel production ;;
+    release:production)
+      APP_ENV=production OMIRO_RELEASE_CHANNEL=production EXPO_RUNTIME_VERSION="$OMIRO_RUNTIME_VERSION" pnpm exec expo prebuild --platform ios --clean --no-install
+      APP_ENV=production OMIRO_RELEASE_CHANNEL=production EXPO_RUNTIME_VERSION="$OMIRO_RUNTIME_VERSION" pnpm exec eas build --platform ios --profile production --auto-submit --non-interactive
+      ;;
+    *) die "unknown mobile command '$action ${target:+$target}'" ;;
+  esac
+}
+
+eval_command() {
+  local action="$1"
+  local config="$2"
+  cd "$ROOT_DIR/experiments/promptfoo"
+  case "$action" in
+    run)
+      [[ -n "$config" ]] || die 'eval run requires a config'
+      [[ -n "${OPENROUTER_API_KEY:-}" ]] || die 'OPENROUTER_API_KEY must be set'
+      npx promptfoo@latest eval -c "$config.config.yaml"
+      ;;
+    all)
+      [[ -z "$config" ]] || die 'eval all does not accept a config'
+      [[ -n "${OPENROUTER_API_KEY:-}" ]] || die 'OPENROUTER_API_KEY must be set'
+      for current in chat-assistant task-extraction voice-task-extraction voice-cleanup; do
+        npx promptfoo@latest eval -c "$current.config.yaml"
+      done
+      ;;
+    view)
+      [[ -z "$config" ]] || die 'eval view does not accept a config'
+      npx promptfoo@latest view
+      ;;
+    *) die "unknown eval action '$action'" ;;
+  esac
+}
+
+deploy_railway() {
+  local service="$1"
+  local config="$2"
+  [[ "$service" =~ ^(api|career|workers)$ ]] || die "unknown Railway service '$service'"
+  [[ -f "$ROOT_DIR/$config" ]] || die "Railway config not found: $config"
+  [[ -n "${SERVICE:-}" ]] || die 'SERVICE must be set'
+  [[ -n "${RAILWAY_TOKEN:-}" ]] || die 'RAILWAY_TOKEN must be set'
+  [[ ! -e "$ROOT_DIR/railway.json" ]] || die 'railway.json already exists at the repository root'
+
+  cp "$ROOT_DIR/$config" "$ROOT_DIR/railway.json"
+  trap 'rm -f "$ROOT_DIR/railway.json"' RETURN
+  cd "$ROOT_DIR"
+  set +e
+  pnpm exec railway up --ci --service "$SERVICE" 2>&1 | tee /tmp/railway-up.log
+  local status=${PIPESTATUS[0]}
+  set -e
+  if [[ "$status" -ne 0 ]]; then
+    local log_url
+    log_url="$(grep -Eo 'https://railway\.com/project/[^[:space:]]+' /tmp/railway-up.log | tail -n 1 || true)"
+    [[ -z "$log_url" ]] || echo "Railway build logs: $log_url" >&2
+    tail -n 80 /tmp/railway-up.log || true
+    return "$status"
+  fi
+}
+
+main() {
+  local command="${1:-}"
+  shift || true
+  case "$command" in
+    setup)
+      [[ "$#" -eq 0 ]] || die 'setup does not accept arguments'
+      cd "$ROOT_DIR"
+      pnpm install
+      ;;
+    dev)
+      local scope="${1:-all}"
+      [[ "$#" -le 1 ]] || die 'dev accepts one scope'
+      if [[ "$scope" == mobile ]]; then
+        mobile dev ''
+      else
+        local filter
+        filter="$(dev_filter "$scope")"
+        cd "$ROOT_DIR"
+        if [[ -n "$filter" ]]; then
+          pnpm exec turbo run dev --ui stream "$filter"
+        else
+          pnpm exec turbo run dev --ui stream
+        fi
+      fi
+      ;;
+    lint)
+      local first="${1:-all}"
+      local second="${2:-}"
+      [[ "$#" -le 2 ]] || die 'lint accepts [scope] or fix [scope]'
+      if [[ "$first" == fix ]]; then
+        turbo lint:fix "${second:-all}"
+      else
+        [[ -z "$second" ]] || die 'lint accepts [scope] or fix [scope]'
+        turbo lint "$first"
+      fi
+      ;;
+    format)
+      local first="${1:-write}"
+      local second="${2:-}"
+      [[ "$#" -le 2 ]] || die 'format accepts [write|check] [scope]'
+      case "$first" in
+        write) turbo format "${second:-all}" ;;
+        check) turbo format:check "${second:-all}" ;;
+        *) [[ -z "$second" ]] || die 'format accepts [write|check] [scope]'; turbo format "$first" ;;
+      esac
+      ;;
+    typecheck|build)
+      [[ "$#" -le 1 ]] || die "$command accepts one scope"
+      turbo "$command" "${1:-all}"
+      ;;
+    test)
+      [[ "$#" -le 1 ]] || die 'test accepts one scope'
+      test "${1:-all}"
+      ;;
+    check)
+      local scope="${1:-all}"
+      [[ "$#" -le 1 ]] || die 'check accepts one scope'
+      turbo format:check "$scope"
+      turbo lint "$scope"
+      turbo typecheck "$scope"
+      turbo build "$scope"
+      test "$scope"
+      ;;
+    db)
+      [[ "$#" -le 2 && "$#" -ge 1 ]] || die 'db requires an action and optional test profile'
+      database "$1" "${2:-}"
+      ;;
+    mobile)
+      [[ "$#" -le 2 && "$#" -ge 1 ]] || die 'mobile requires an action and optional target'
+      mobile "$1" "${2:-}"
+      ;;
+    eval)
+      [[ "$#" -le 2 && "$#" -ge 1 ]] || die 'eval requires an action and optional config'
+      eval_command "$1" "${2:-}"
+      ;;
+    mcp)
+      [[ "$#" -eq 2 && "$1" == install && "$2" == claude ]] || die 'use: just mcp install claude'
+      cd "$ROOT_DIR"
+      claude plugin marketplace add ./plugins
+      claude plugin install hominem-mcp@hominem-plugins --scope local
+      ;;
+    deploy)
+      [[ "$#" -eq 3 && "$1" == railway ]] || die 'use: just deploy railway <service> <config-path>'
+      deploy_railway "$2" "$3"
+      ;;
+    ''|help|--help|-h) usage ;;
+    *) die "unknown command '$command'" ;;
+  esac
+}
+
+main "$@"

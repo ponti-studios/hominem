@@ -4,15 +4,19 @@ on:
   push:
     branches: [main]
     paths:
-      - 'packages/core/db/**'
+      - 'packages/db/**'
       - 'pnpm-lock.yaml'
+      - 'justfile'
+      - 'scripts/**'
       - '.github/actions/setup-pnpm-workspace/**'
       - '.github/workflows/validate-db.yml'
   pull_request:
     branches: [main, preview]
     paths:
-      - 'packages/core/db/**'
+      - 'packages/db/**'
       - 'pnpm-lock.yaml'
+      - 'justfile'
+      - 'scripts/**'
       - '.github/actions/setup-pnpm-workspace/**'
       - '.github/workflows/validate-db.yml'
 
@@ -27,7 +31,6 @@ jobs:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       TURBO_TELEMETRY_DISABLED: '1'
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5434/app-test
 
     strategy:
       matrix:
@@ -64,4 +67,4 @@ jobs:
           go-version: ${{ matrix.go-version }}
 
       - name: validate-migrations
-        run: just validate-migrations
+        run: just db validate test

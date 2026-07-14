@@ -28,27 +28,7 @@ jobs:
         with:
           node-version: '24.14.1'
 
-      - name: setup-eas
-        run: npm install -g eas-cli@18
-
-      - name: prebuild
-        working-directory: apps/omiro
+      - name: release-production-build
         env:
-          APP_ENV: production
-          OMIRO_RELEASE_CHANNEL: production
-          EXPO_RUNTIME_VERSION: ios-r1
-        run: pnpm exec expo prebuild --platform ios --clean --no-install
-
-      - name: submit-build
-        working-directory: apps/omiro
-        env:
-          APP_ENV: production
-          OMIRO_RELEASE_CHANNEL: production
-          EXPO_RUNTIME_VERSION: ios-r1
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          pnpm exec eas build \
-            --platform ios \
-            --profile production \
-            --auto-submit \
-            --non-interactive
+        run: just mobile release production

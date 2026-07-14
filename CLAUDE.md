@@ -12,20 +12,18 @@ pnpm monorepo orchestrated with Turbo. Key directories:
 - `packages/db` — PostgreSQL + Kysely + Goose migrations
 - `packages/auth` — Better-auth (passkeys + OTP)
 - `packages/ai` — OpenRouter integration
-- `justfiles/` — Just recipes (preferred over raw `pnpm` scripts)
+- `scripts/command` — implementation behind the root `just` command interface
 
 ## Commands
 
-Prefer `just` recipes over bare `pnpm` commands.
+Use `just` for every repo-level command. Package scripts are internal Turbo primitives.
 
 ```bash
-just dev-api              # API in watch mode
-just check-api            # lint + typecheck + test for API
-just mobile-lint          # lint omiro
-just run-ios dev          # launch omiro on iOS simulator
-pnpm run precommit        # format + lint (run before committing)
-pnpm run prepush          # full test suite
-pnpm run check            # typecheck + lint + build + test (full validation)
+just dev api
+just check api
+just check mobile
+just format write
+just db migrate
 ```
 
 ## Database workflow
@@ -33,7 +31,8 @@ pnpm run check            # typecheck + lint + build + test (full validation)
 After any schema change, follow [.agents/skills/db-migrate/SKILL.md](.agents/skills/db-migrate/SKILL.md):
 
 ```bash
-just db-migrate           # run Goose migrations + kysely-codegen
+just db migrate            # apply migrations using DATABASE_URL
+just db codegen            # regenerate Kysely types using DATABASE_URL
 ```
 
 `packages/db/src/types/database.ts` is generated — never edit it by hand.
@@ -41,7 +40,7 @@ just db-migrate           # run Goose migrations + kysely-codegen
 Tests require `DATABASE_URL` to point at the intended test database with migrations applied:
 
 ```bash
-DATABASE_URL="<test-database-url>" just db-setup
+just db migrate test
 ```
 
 Do not rely on fallback database URLs. Set `DATABASE_URL` explicitly for local dev, CI, and tests.
@@ -50,7 +49,7 @@ Do not rely on fallback database URLs. Set `DATABASE_URL` explicitly for local d
 
 - Linter: **oxlint** — `typescript/no-explicit-any` is an **error**, not a warning
 - Formatter: **oxfmt** — single quotes, imports sorted ascending case-insensitively
-- Run `pnpm run format` to apply formatting before any edit is considered done
+- Run `just format write` to apply formatting before any edit is considered done
 - Follow YAGNI; use arrow-function shorthand (`() => fn(args)` not `() => { return fn(args); }`)
 
 ## Git conventions

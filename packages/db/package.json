@@ -28,7 +28,9 @@
     "typecheck": "tsgo --noEmit",
     "test": "vitest run",
     "format": "oxfmt src --write",
-    "lint": "oxlint src --fix"
+    "format:check": "oxfmt src --check",
+    "lint": "oxlint src",
+    "lint:fix": "oxlint src --fix"
   },
   "dependencies": {
     "@hominem/utils": "workspace:*",

@@ -10,8 +10,10 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "format": "bunx oxfmt ./src",
-    "lint": "bunx oxlint ./src",
+    "format": "pnpm exec oxfmt ./src --write",
+    "format:check": "pnpm exec oxfmt ./src --check",
+    "lint": "pnpm exec oxlint ./src",
+    "lint:fix": "pnpm exec oxlint ./src --fix",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest"
   },

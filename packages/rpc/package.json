@@ -29,7 +29,6 @@
     }
   },
   "scripts": {
-    "build": "true",
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {

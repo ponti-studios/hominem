@@ -16,8 +16,10 @@
   },
   "scripts": {
     "build": "tsgo -p tsconfig.json",
-    "lint": "oxlint src --fix",
+    "lint": "oxlint src",
+    "lint:fix": "oxlint src --fix",
     "typecheck": "tsgo --noEmit",
-    "format": "oxfmt src --write"
+    "format": "oxfmt src --write",
+    "format:check": "oxfmt src --check"
   }
 }

@@ -25,43 +25,37 @@ The default direction is from apps into shared packages, and from shared package
 Use the smallest possible loop by default.
 
 1. `just setup`
-2. `just dev-api`
-3. `just check-api`
+2. `just dev api`
+3. `just test api`
 
 When you are working on the API or shared backend code, run the API validation lane instead:
 
 1. Start the local test services you need.
-2. Run `just check-api`
+2. Run `just check api`
 
 For Omiro work, use the app bootstrap loop in `apps/omiro/README.md`:
 
-1. `just mobile-prebuild-development`
-2. `just mobile-dev`
+1. `just mobile prebuild development`
+2. `just mobile dev`
 
 ## Canonical Commands
 
 - `just setup`: install dependencies and prepare the repo toolchain
-- `just dev`: run the default multi-package development graph through Turbo
-- `just dev-api`: run the API for backend product work
-- `just dev-career`: run the career web app development graph
-- `just dev-finance`: run the finance web app development graph
-- `just dev-omiro`: run the Omiro iOS app development flow
-- `just check-api`: lint, typecheck, and test the API
-- `just check`: run the full workspace format, lint, build, and test lane
-- `just mobile-prebuild-development`: prebuild the iOS app for development
-- `just mobile-prebuild-production`: prebuild the iOS app for production
-- `just mobile-dev`: build and run the Omiro iOS app
-- `just start-ios`: start the Expo iOS flow without running `expo run:ios`
-- `just validate-migrations`: validate migration idempotency
+- `just dev <scope>`: start a product development loop
+- `just check <scope>`: read-only format, lint, typecheck, build, and test validation
+- `just test <scope>`: run tests with the shared test database profile
+- `just format write <scope>`: apply formatting
+- `just db migrate [test]`: apply database migrations
+- `just db codegen`: regenerate database types against the caller's `DATABASE_URL`
+- `just mobile <action>`: iOS development, test, build, update, and release commands
 
 ## Setup And Build
 
 1. `just setup`
-2. `just check-api`
+2. `just check api`
 3. `just build` for a full workspace build when needed
 
-The root `package.json` scripts are convenience wrappers over these `just` recipes.
-Prefer `just` directly when working in the repo so the toolchain always runs through `mise`.
+`just` is the only repo-level command interface. Package scripts are Turbo primitives.
 
 ## CI Model
 

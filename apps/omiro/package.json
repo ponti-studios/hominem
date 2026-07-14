@@ -4,11 +4,13 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "format": "oxfmt components app config constants hooks services tests types",
+    "format": "oxfmt components app config constants hooks services tests types --write",
+    "format:check": "oxfmt components app config constants hooks services tests types --check",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts",
     "typecheck": "tsgo --noEmit -p tsconfig.json",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "lint:fix": "expo lint --fix"
   },
   "dependencies": {
     "@bacons/apple-targets": "^4.0.7",

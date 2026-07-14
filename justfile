@@ -4,69 +4,43 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 set positional-arguments := true
 
 ROOT_DIR := justfile_directory()
-UI_DIR := ROOT_DIR / "packages" / "ui"
-PNPM := 'pnpm'
-TURBO := 'pnpm exec turbo'
-TURBO_DEV := 'pnpm exec turbo run dev --ui stream'
-TEST_DATABASE_URL := 'postgresql://postgres:postgres@127.0.0.1:5434/app-test'
-
-import 'justfiles/db.just'
-import 'justfiles/promptfoo.just'
-import 'justfiles/mobile.just'
+COMMAND := ROOT_DIR / "scripts" / "command"
 
 setup:
-    {{ PNPM }} install
+    bash "{{ COMMAND }}" setup
 
-lint:
-    {{ TURBO }} run lint
+dev scope='all':
+    bash "{{ COMMAND }}" dev "{{ scope }}"
 
-typecheck:
-    {{ TURBO }} run typecheck
+lint first='all' second='':
+    bash "{{ COMMAND }}" lint "{{ first }}" "{{ second }}"
 
-build:
-    {{ TURBO }} run build
+format first='write' second='':
+    bash "{{ COMMAND }}" format "{{ first }}" "{{ second }}"
 
-format:
-    {{ TURBO }} run format
+typecheck scope='all':
+    bash "{{ COMMAND }}" typecheck "{{ scope }}"
 
-test:
-    {{ TURBO }} run test
+build scope='all':
+    bash "{{ COMMAND }}" build "{{ scope }}"
 
-test-api:
-    AUTH_E2E_SECRET="otp-secret" DATABASE_URL="{{ TEST_DATABASE_URL }}" {{ TURBO }} run test --filter=@hominem/api...
+test scope='all':
+    bash "{{ COMMAND }}" test "{{ scope }}"
 
-check:
-    {{ TURBO }} run format lint build test --force
+check scope='all':
+    bash "{{ COMMAND }}" check "{{ scope }}"
 
-check-api:
-    {{ TURBO }} run lint typecheck test --filter=@hominem/api... --force
+db action target='':
+    bash "{{ COMMAND }}" db "{{ action }}" "{{ target }}"
 
-dev:
-    {{ TURBO_DEV }}
+mobile action target='':
+    bash "{{ COMMAND }}" mobile "{{ action }}" "{{ target }}"
 
-dev-api:
-    {{ TURBO_DEV }} --filter=@hominem/api
+eval action config='':
+    bash "{{ COMMAND }}" eval "{{ action }}" "{{ config }}"
 
-dev-career:
-    {{ TURBO_DEV }} --filter=@hominem/career
+mcp action target='':
+    bash "{{ COMMAND }}" mcp "{{ action }}" "{{ target }}"
 
-dev-finance:
-    {{ TURBO_DEV }} --filter=@hominem/finance
-
-dev-omiro:
-    just mobile-dev
-
-storybook:
-    cd "{{ UI_DIR }}" && {{ PNPM }} exec storybook dev -p 6006
-
-api:
-    #!/usr/bin/env bash
-    if [[ "$1" == "--prod" ]]; then
-        {{ TURBO }} run start --filter=@hominem/api
-    else
-        {{ TURBO_DEV }} --filter=@hominem/api
-    fi
-
-mcp-install-claude:
-    claude plugin marketplace add ./plugins
-    claude plugin install hominem-mcp@hominem-plugins --scope local
+deploy provider service config:
+    bash "{{ COMMAND }}" deploy "{{ provider }}" "{{ service }}" "{{ config }}"

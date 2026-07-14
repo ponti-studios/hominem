@@ -39,4 +39,4 @@ jobs:
       - name: apply-database-migrations
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: just db-setup
+        run: just db migrate

@@ -47,8 +47,10 @@ blockExoticSubdeps: true
 strictDepBuilds: true
 allowBuilds:
   '@openrouter/sdk': true
+  '@railway/cli': true
   '@swc/core': true
   core-js: false
+  dtrace-provider: false
   esbuild: true
   msgpackr-extract: false
   msw: false

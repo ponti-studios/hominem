@@ -33,8 +33,8 @@ Job handlers live in `src/workers/`. Register them in `src/worker.ts`. Workers r
 
 ```bash
 node build.mjs    # custom rolldown build → dist/index.mjs + dist/worker.mjs
-just check-api    # lint + typecheck + test
-just dev-api      # watch mode
+just test api      # API test lane
+just dev api       # watch mode
 ```
 
 Standard `turbo build` does not work here — always use `node build.mjs`.

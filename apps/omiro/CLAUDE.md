@@ -26,7 +26,7 @@ Key testIDs:
 
 Run tests:
 ```bash
-just mobile-test
+just mobile test
 ```
 
 Maestro requires Java 17:
@@ -38,7 +38,7 @@ export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
 ## Commands
 
 ```bash
-just run-ios dev          # launch on iOS simulator
-just mobile-lint          # lint
-just mobile-prebuild      # expo prebuild (before native changes)
+just mobile dev                  # launch on iOS simulator
+just mobile lint                 # lint
+just mobile prebuild development # expo prebuild for development
 ```

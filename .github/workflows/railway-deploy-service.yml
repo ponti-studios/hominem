@@ -9,9 +9,8 @@ on:
         type: string
         default: ''
       config_path:
-        required: false
+        required: true
         type: string
-        default: ''
     secrets:
       service_target:
         required: true
@@ -38,10 +37,10 @@ jobs:
         with:
           ref: ${{ inputs.checkout_ref || github.sha }}
 
-      - name: install-railway-cli
-        # Keep reasonably current — older CLI builds have reported false "Deploy failed"
-        # after image push without running the healthcheck phase.
-        run: npm install -g @railway/cli@5.25.1
+      - name: setup-pnpm-workspace
+        uses: ./.github/actions/setup-pnpm-workspace
+        with:
+          node-version: '24.14.1'
 
       - name: validate-env
         run: |
@@ -54,34 +53,5 @@ jobs:
             exit 1
           }
 
-      - name: stage-railway-config
-        if: inputs.config_path != ''
-        run: |
-          cp "${{ inputs.config_path }}" railway.json
-          echo "Staged railway.json from ${{ inputs.config_path }}:"
-          cat railway.json
-
       - name: deploy-to-railway
-        run: |
-          echo "Deploying '${{ inputs.service_name }}' with Railway service '$SERVICE'"
-          if [ -f railway.json ]; then
-            echo "Using railway.json from $(pwd)/railway.json"
-          else
-            echo "No railway.json staged; Railway will use dashboard / service config."
-          fi
-
-          set +e
-          # Stream logs so healthcheck progress is visible in Actions.
-          railway up --ci --service "$SERVICE" 2>&1 | tee /tmp/railway-up.log
-          status=${PIPESTATUS[0]}
-          set -e
-
-          if [ "$status" -ne 0 ]; then
-            log_url=$(grep -Eo 'https://railway\.com/project/[^[:space:]]+' /tmp/railway-up.log | tail -n 1 || true)
-            if [ -n "$log_url" ]; then
-              echo "Railway build logs: $log_url"
-            fi
-            echo "--- last 80 lines of railway up ---"
-            tail -n 80 /tmp/railway-up.log || true
-            exit "$status"
-          fi
+        run: just deploy railway "${{ inputs.service_name }}" "${{ inputs.config_path }}"

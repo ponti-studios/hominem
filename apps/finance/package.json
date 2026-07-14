@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "bunx oxlint ./app",
-    "format": "bunx oxfmt ./app",
+    "lint": "pnpm exec oxlint ./app",
+    "lint:fix": "pnpm exec oxlint ./app --fix",
+    "format": "pnpm exec oxfmt ./app --write",
+    "format:check": "pnpm exec oxfmt ./app --check",
     "build": "react-router build",
     "clean": "rm -rf build",
     "dev": "react-router dev",

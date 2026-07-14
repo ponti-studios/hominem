@@ -12,6 +12,7 @@
     "AUTH_PASSKEY_RP_ID",
     "AUTH_PASSKEY_ORIGIN",
     "AUTH_COOKIE_DOMAIN",
+    "AUTH_E2E_SECRET",
     "AUTH_EMAIL_OTP_EXPIRES_SECONDS",
     "RESEND_API_KEY",
     "RESEND_FROM_EMAIL",
@@ -56,19 +57,10 @@
       "persistent": true,
       "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
     },
-    "db:migrate": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
-    },
-    "db:rollback": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
-    },
-    "db:status": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
-    },
     "format": {
+      "outputs": []
+    },
+    "format:check": {
       "outputs": []
     },
     "lint": {
@@ -84,7 +76,6 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
     },
     "test": {
-      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"]
     },
     "test:coverage": {
