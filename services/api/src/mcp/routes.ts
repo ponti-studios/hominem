@@ -19,6 +19,17 @@ type BetterAuthMcpServer = typeof betterAuthServer & {
 };
 
 const betterAuthMcpServer = betterAuthServer as BetterAuthMcpServer;
+const E2E_AUTH_SECRET_HEADER = 'x-e2e-auth-secret';
+
+function isE2eProxyAuthAllowed(c: Context) {
+  if (process.env.NODE_ENV === 'production') return false;
+  if (process.env.AUTH_E2E_ENABLED !== 'true') return false;
+
+  const expectedSecret = process.env.AUTH_E2E_SECRET;
+  if (!expectedSecret) return false;
+
+  return c.req.header(E2E_AUTH_SECRET_HEADER) === expectedSecret;
+}
 
 // Conditional imports — only register tools whose scope is in MCP_ENABLED_SCOPES
 // Use top-level await via ESM (services/api is ESM)
@@ -51,7 +62,7 @@ async function mcpAuthMiddleware(c: Context<McpHonoEnv>, next: Next) {
     const userId = c.get('userId');
     if (userId) {
       c.set('mcpSession', { userId, scopes: '' });
-    } else if (process.env.NODE_ENV !== 'production') {
+    } else if (isE2eProxyAuthAllowed(c)) {
       const proxyUserId = c.req.header('x-user-id');
       if (proxyUserId) {
         c.set('userId', proxyUserId);

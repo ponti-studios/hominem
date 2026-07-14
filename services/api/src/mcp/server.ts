@@ -113,18 +113,13 @@ export async function handleMcpRequestWithSession(c: Context<McpHonoEnv>): Promi
     throw new UnauthorizedError('MCP session required');
   }
 
-  // Scopes from session, or from header (dev fallback), or from registered tools (default)
+  // Scopes from session, or from explicit E2E/dev header.
   const scopes = session?.scopes
     ? session.scopes.split(' ').filter(Boolean)
     : (c.req.header('x-mcp-scopes') ?? '')
         .split(',')
         .map((s: string) => s.trim())
         .filter(Boolean);
-
-  if (scopes.length === 0) {
-    // Default: grant scopes for all registered tools
-    scopes.push(...listTools().flatMap((tool) => [...tool.scopes]));
-  }
 
   const authInfo: AuthInfo = {
     token: c.req.header('authorization')?.replace(/^Bearer\s+/i, '') ?? '',

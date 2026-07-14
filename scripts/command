@@ -112,6 +112,7 @@ database() {
       [[ -z "$profile" ]] || die 'db codegen does not accept a database profile'
       cd "$ROOT_DIR/packages/db"
       pnpm exec kysely-codegen --camel-case --date-parser string --type-mapping '{"timestamp":"ColumnType<string, Date | string, Date | string>","timestamptz":"ColumnType<string, Date | string, Date | string>","date":"ColumnType<string, Date | string, Date | string>"}' --out-file ./src/types/database.ts
+      pnpm exec oxfmt ./src/types/database.ts --write
       ;;
     *) die "unknown db action '$action'" ;;
   esac

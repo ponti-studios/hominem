@@ -5,6 +5,7 @@ import { betterAuthServer } from '../auth/better-auth';
 import type { AuthContextEnvelope } from '../auth/types';
 
 type AuthErrorCode = 'invalid_token' | 'expired_token' | 'invalid_session';
+const E2E_AUTH_SECRET_HEADER = 'x-e2e-auth-secret';
 
 declare module 'hono' {
   interface ContextVariableMap {
@@ -50,6 +51,16 @@ function setAuthContext(
   });
 }
 
+function isE2eProxyAuthAllowed(c: Parameters<MiddlewareHandler>[0]) {
+  if (process.env.NODE_ENV === 'production') return false;
+  if (process.env.AUTH_E2E_ENABLED !== 'true') return false;
+
+  const expectedSecret = process.env.AUTH_E2E_SECRET;
+  if (!expectedSecret) return false;
+
+  return c.req.header(E2E_AUTH_SECRET_HEADER) === expectedSecret;
+}
+
 /**
  * Resolve the caller identity via Better Auth only (session cookies or BA bearer).
  * Custom JWT issuance is intentionally unsupported.
@@ -76,22 +87,20 @@ export const authJwtMiddleware = (): MiddlewareHandler => {
       return await next();
     }
 
-    // Non-prod: accept x-user-id for cross-origin e2e where SameSite=Lax
-    // prevents session cookies from being sent.
-    if (process.env.NODE_ENV !== 'production') {
-      const proxyUserId = c.req.header('x-user-id');
-      if (proxyUserId) {
-        c.set('userId', proxyUserId);
-        c.set('user', {
-          id: proxyUserId,
-          email: `proxy-${proxyUserId.slice(0, 8)}@hominem.e2e`,
-          emailVerified: true,
-          name: 'Proxy User',
-          image: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as User);
-      }
+    // E2E-only: proxy user identity for cross-origin browser tests where
+    // SameSite=Lax prevents session cookies from being sent.
+    const proxyUserId = c.req.header('x-user-id');
+    if (proxyUserId && isE2eProxyAuthAllowed(c)) {
+      c.set('userId', proxyUserId);
+      c.set('user', {
+        id: proxyUserId,
+        email: `proxy-${proxyUserId.slice(0, 8)}@hominem.e2e`,
+        emailVerified: true,
+        name: 'Proxy User',
+        image: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as User);
     }
 
     return await next();
