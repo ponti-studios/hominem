@@ -3,7 +3,16 @@ type LogValue = unknown;
 type LogLevel = 'debug' | 'error' | 'info' | 'warn';
 
 const REDACTED = '[REDACTED]';
-const sensitiveFieldPatterns = ['authorization', 'cookie', 'email', 'password', 'secret', 'token'];
+const sensitiveFieldPatterns = [
+  'authorization',
+  'cookie',
+  'decodedurl',
+  'email',
+  'imageurl',
+  'password',
+  'secret',
+  'token',
+];
 
 function isRecord(value: LogValue): value is LogData {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -18,7 +27,7 @@ function serializeError(error: Error): LogData {
   return {
     error_name: error.name,
     error_message: error.message,
-    ...(error.stack ? { error_stack: error.stack } : {}),
+    ...(process.env.NODE_ENV !== 'test' && error.stack ? { error_stack: error.stack } : {}),
   };
 }
 

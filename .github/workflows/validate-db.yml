@@ -68,3 +68,8 @@ jobs:
 
       - name: validate-migrations
         run: just db validate test
+
+      - name: validate-generated-types
+        run: |
+          DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5434/app-test" just db codegen
+          git diff --exit-code packages/db/src/types/database.ts

@@ -133,20 +133,19 @@ and `isTruncated: true` if more than 10 exist.
 
 ```bash
 # Transport tests (discovery, invocation, denial, revocation, redaction)
-cd services/api
-pnpm run test -- -- mcp/transport
+just test api
 
 # Auth tests (scope denial, consent, revocation)
-pnpm run test -- -- mcp/auth
+just test api
 
 # Redaction tests (evidence, no-data, result caps)
-pnpm run test -- -- mcp/redaction
+just test api
 
 # LLM evaluation harness (full suite — may take several minutes)
-pnpm run test -- -- mcp/evaluation
+just eval all
 
 # Fast PR subset (deterministic tests only, no LLM eval)
-pnpm run test -- -- mcp/transport mcp/auth mcp/redaction
+just test api
 ```
 
 ## Reference

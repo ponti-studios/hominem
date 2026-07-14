@@ -36,12 +36,14 @@ export function formatPortfolioForLLM(
       ? new Date(exp.startDate).toLocaleDateString('en-US', {
           month: 'short',
           year: 'numeric',
+          timeZone: 'UTC',
         })
       : 'Unknown';
     const endDate = exp.endDate
       ? new Date(exp.endDate).toLocaleDateString('en-US', {
           month: 'short',
           year: 'numeric',
+          timeZone: 'UTC',
         })
       : 'Present';
 

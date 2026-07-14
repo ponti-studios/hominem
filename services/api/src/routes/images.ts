@@ -189,8 +189,7 @@ imagesRoutes.get('/proxy', async (c) => {
   } catch (err) {
     logger.error('Error proxying image', {
       error: err,
-      imageUrl,
-      decodedUrl: imageUrl ? decodeURIComponent(imageUrl) : 'N/A',
+      imageUrl: imageUrl ? createHash('sha256').update(imageUrl).digest('hex') : 'N/A',
     });
     throw new InternalError('Failed to proxy image', {
       message: err instanceof Error ? err.message : 'Unknown error',

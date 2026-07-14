@@ -67,6 +67,7 @@ async function installFinanceApiAuthRoute(context: BrowserContext, userId: strin
     const targetUrl = route.request().url().replace(APP_BASE_URL, API_BASE_URL);
     const headers = {
       ...route.request().headers(),
+      'x-e2e-auth-secret': getAuthE2eSecret(),
       'x-user-id': userId,
     };
     const response = await route.fetch({ url: targetUrl, headers });
@@ -78,6 +79,7 @@ async function installFinanceApiAuthRoute(context: BrowserContext, userId: strin
   await context.route(`${API_BASE_URL}/api/finance/**`, async (route) => {
     const headers = {
       ...route.request().headers(),
+      'x-e2e-auth-secret': getAuthE2eSecret(),
       'x-user-id': userId,
     };
     const response = await route.fetch({ url: route.request().url(), headers });
