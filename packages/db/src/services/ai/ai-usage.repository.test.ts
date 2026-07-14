@@ -41,10 +41,10 @@ describe('AIUsageEventRepository', () => {
         operation: 'structured_output',
         model: 'model',
         inputTokens: 10,
-      outputTokens: 5,
-      totalTokens: 15,
-      costUsd: 0.15,
-      durationMs: 1234,
+        outputTokens: 5,
+        totalTokens: 15,
+        costUsd: 0.15,
+        durationMs: 1234,
       }),
     ).toBe(true);
 
