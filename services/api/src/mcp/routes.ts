@@ -3,22 +3,10 @@ import { logger } from '@hominem/telemetry';
 import { oAuthDiscoveryMetadata, oAuthProtectedResourceMetadata } from 'better-auth/plugins';
 import { Hono, type Context, type Next } from 'hono';
 
-import { betterAuthServer } from '../auth/better-auth';
+import { betterAuthMcpServer } from '../auth/better-auth';
 import { env } from '../env';
 import { isRateLimited } from './rate-limiter';
 import { handleMcpRequestWithSession, type McpHonoEnv } from './server';
-
-type BetterAuthMcpServer = typeof betterAuthServer & {
-  api: typeof betterAuthServer.api & {
-    getMcpSession: (input: {
-      headers: Headers;
-    }) => Promise<{ userId: string; scopes: string; clientId?: string } | null>;
-    getMcpOAuthConfig: (...args: unknown[]) => unknown;
-    getMCPProtectedResource: (...args: unknown[]) => unknown;
-  };
-};
-
-const betterAuthMcpServer = betterAuthServer as BetterAuthMcpServer;
 
 // Conditional imports — only register tools whose scope is in MCP_ENABLED_SCOPES
 // Use top-level await via ESM (services/api is ESM)
@@ -33,35 +21,9 @@ if (enabledScopes.size === 0 || enabledScopes.has('career:read')) {
   await import('./tools/career');
 }
 
-/**
- * MCP middleware — validates access tokens via Better Auth's MCP plugin.
- * Applies rate limiting and cost throttling. Falls back to session auth for dev/test.
- */
-async function mcpAuthMiddleware(c: Context<McpHonoEnv>, next: Next) {
-  // First try MCP plugin session (OAuth access token)
-  const mcpSession = await betterAuthMcpServer.api.getMcpSession({
-    headers: c.req.raw.headers,
-  });
-
-  if (mcpSession) {
-    c.set('userId', mcpSession.userId);
-    c.set('mcpSession', mcpSession);
-  } else {
-    // Fallback: existing session auth (Bearer token, cookies)
-    const userId = c.get('userId');
-    if (userId) {
-      c.set('mcpSession', { userId, scopes: '' });
-    } else if (process.env.NODE_ENV !== 'production') {
-      const proxyUserId = c.req.header('x-user-id');
-      if (proxyUserId) {
-        c.set('userId', proxyUserId);
-        c.set('mcpSession', { userId: proxyUserId, scopes: '' });
-      }
-    }
-  }
-
-  const session = c.get('mcpSession') as { userId: string; scopes: string } | undefined;
-  if (!session?.userId) {
+async function mcpAuthorizationMiddleware(c: Context<McpHonoEnv>, next: Next) {
+  const auth = c.get('auth');
+  if (!auth) {
     const resourceMetadataUrl = new URL(
       '/.well-known/oauth-protected-resource/api/mcp',
       env.API_URL,
@@ -84,7 +46,7 @@ async function mcpAuthMiddleware(c: Context<McpHonoEnv>, next: Next) {
   }
 
   // Rate limit check (production only — tests/dev share user IDs and would false-trigger)
-  if (process.env.NODE_ENV === 'production' && isRateLimited(session.userId)) {
+  if (process.env.NODE_ENV === 'production' && isRateLimited(auth.userId)) {
     return new Response(
       JSON.stringify({ error: 'rate_limited', code: 'RATE_LIMITED', message: 'Too many requests' }),
       { status: 429, headers: { 'content-type': 'application/json' } },
@@ -93,7 +55,7 @@ async function mcpAuthMiddleware(c: Context<McpHonoEnv>, next: Next) {
 
   // Daily cost budget throttle (production only)
   if (process.env.NODE_ENV === 'production') {
-    const throttled = await checkCostBudget(session.userId);
+    const throttled = await checkCostBudget(auth.userId);
     if (throttled) return throttled;
   }
 
@@ -143,7 +105,7 @@ async function checkCostBudget(userId: string): Promise<Response | null> {
 }
 
 export const mcpRoutes = new Hono<McpHonoEnv>()
-  .use('*', mcpAuthMiddleware)
+  .use('*', mcpAuthorizationMiddleware)
   .all('/', handleMcpRequestWithSession)
   .all('/*', handleMcpRequestWithSession);
 

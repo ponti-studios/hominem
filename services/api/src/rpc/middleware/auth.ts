@@ -1,14 +1,8 @@
 import { createMiddleware } from 'hono/factory';
 
-export type RpcUser = {
-  id: string;
-  email: string;
-  name: string;
-  image?: string | null;
-  isAdmin: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
+import type { AuthContext, AuthUser } from '../../auth/types';
+
+export type RpcUser = AuthUser & { isAdmin: boolean };
 
 import { ForbiddenError, UnauthorizedError } from '../errors';
 
@@ -20,8 +14,7 @@ import { ForbiddenError, UnauthorizedError } from '../errors';
  */
 export interface AppContext {
   Variables: {
-    user?: RpcUser;
-    userId?: string;
+    auth?: AuthContext;
     authError?:
       | 'invalid_token'
       | 'expired_token'
@@ -43,8 +36,8 @@ export interface AppContext {
  * Global error middleware catches and converts to REST response.
  */
 export const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
-  const user = c.get('user');
-  const userId = c.get('userId');
+  const user = c.get('auth')?.user;
+  const userId = c.get('auth')?.userId;
   const authError = c.get('authError');
 
   if (!user || !userId) {
@@ -58,11 +51,11 @@ export const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
  * Admin Middleware
  *
  * Requires the authenticated user to have isAdmin = true.
- * Must be used after the context middleware that sets user/userId.
+ * Must be used after the context middleware that sets auth.
  */
 export const adminMiddleware = createMiddleware<AppContext>(async (c, next) => {
-  const user = c.get('user');
-  const userId = c.get('userId');
+  const user = c.get('auth')?.user;
+  const userId = c.get('auth')?.userId;
 
   if (!user || !userId) {
     throw new UnauthorizedError('Authentication required');

@@ -38,7 +38,7 @@ export function App() {
 #### Build Library
 
 ```bash
-pnpm build
+just build all
 ```
 
 Generates ESM output in `dist/` directory.
@@ -46,7 +46,7 @@ Generates ESM output in `dist/` directory.
 #### Type Checking
 
 ```bash
-pnpm typecheck
+just typecheck all
 ```
 
 ## Style Guide
@@ -91,11 +91,10 @@ const buttonVariants = cva('inline-flex items-center justify-center', {
 
 ### Testing
 
-Run type checking and linting before committing:
+Run the repository checks before committing:
 
 ```bash
-pnpm typecheck
-pnpm lint
+just check all
 ```
 
 ## Adding New Components

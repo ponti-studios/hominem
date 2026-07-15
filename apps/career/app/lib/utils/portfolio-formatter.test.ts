@@ -263,8 +263,8 @@ describe('formatPortfolioForLLM', () => {
     const result = formatPortfolioForLLM(portfolio, mockSocialLinks);
 
     expect(result).toContain('WORK EXPERIENCE:');
-    expect(result).toContain('1. Senior Full Stack Developer at TechCorp Inc (Dec 2021 - Present)');
-    expect(result).toContain('2. Frontend Developer at StartupXYZ (May 2020 - Dec 2021)');
+    expect(result).toContain('1. Senior Full Stack Developer at TechCorp Inc (Jan 2022 - Present)');
+    expect(result).toContain('2. Frontend Developer at StartupXYZ (Jun 2020 - Dec 2021)');
     expect(result).toContain('Key Metrics: Led team of 5, improved performance by 40%');
     expect(result).toContain('Technologies: React, Node.js, TypeScript, PostgreSQL');
   });

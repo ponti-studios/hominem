@@ -21,7 +21,6 @@ import {
 import { Alert, Share, TextInput } from 'react-native';
 
 import { loadMarkdown } from '../components/chat/chat-message';
-import type { SendInput } from '../services/chat/use-send-message';
 import {
   hasNonEmptyListData,
   resolveRestoredQueryState,
@@ -35,9 +34,6 @@ export interface ChatServices {
     isPending: boolean;
     refetch: () => Promise<unknown>;
     data: ChatMessageItem[] | undefined;
-  };
-  useSendMessage: (args: { chatId: string }) => {
-    sendChatMessage: (input: SendInput) => Promise<void>;
   };
   useArchiveChat: (args: { chatId: string; onSuccess: () => void }) => {
     mutate: () => void;
@@ -152,7 +148,6 @@ export function useChatController({
       onChatArchive();
     },
   });
-  const { sendChatMessage } = services.useSendMessage({ chatId });
   const [Markdown, setMarkdown] = useState<MarkdownComponent | null>(null);
   const [uiState, dispatch] = useReducer(mobileUiReducer, initialMobileUiState);
   const searchInputRef = useRef<TextInput | null>(null);

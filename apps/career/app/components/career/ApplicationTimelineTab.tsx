@@ -1,12 +1,13 @@
 import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
-import { Badge } from '@hominem/ui';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -53,11 +54,11 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="interviewType" className="subheading-4 text-foreground">
+                  <Label htmlFor="interviewType" className="subheading-4 text-foreground">
                     Interview Type
-                  </label>
+                  </Label>
                   <Select name="interviewType" defaultValue="phone">
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger id="interviewType" className="w-full">
                       <SelectValue placeholder="Select interview type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -71,25 +72,30 @@ export function ApplicationTimelineTab({ application }: TimelineTabProps) {
                 </div>
 
                 <div>
-                  <label htmlFor="interviewDate" className="subheading-4 text-foreground">
+                  <Label htmlFor="interviewDate" className="subheading-4 text-foreground">
                     Date & Time
-                  </label>
-                  <Input name="interviewDate" type="datetime-local" required />
+                  </Label>
+                  <Input id="interviewDate" name="interviewDate" type="datetime-local" required />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="interviewer" className="subheading-4 text-foreground">
+                <Label htmlFor="interviewer" className="subheading-4 text-foreground">
                   Interviewer
-                </label>
-                <Input name="interviewer" placeholder="Name or role of interviewer" />
+                </Label>
+                <Input
+                  id="interviewer"
+                  name="interviewer"
+                  placeholder="Name or role of interviewer"
+                />
               </div>
 
               <div>
-                <label htmlFor="interviewNotes" className="subheading-4 text-foreground">
+                <Label htmlFor="interviewNotes" className="subheading-4 text-foreground">
                   Notes
-                </label>
+                </Label>
                 <Textarea
+                  id="interviewNotes"
                   name="interviewNotes"
                   rows={3}
                   placeholder="Any additional notes about the interview"

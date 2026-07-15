@@ -44,6 +44,7 @@ describe('AIUsageEventRepository', () => {
         outputTokens: 5,
         totalTokens: 15,
         costUsd: 0.15,
+        durationMs: 1234,
       }),
     ).toBe(true);
 
@@ -69,6 +70,14 @@ describe('AIUsageEventRepository', () => {
       .executeTakeFirstOrThrow();
 
     expect(Number(row.count)).toBe(1);
+
+    const usageEvent = await db
+      .selectFrom('app.aiUsageEvents')
+      .select('durationMs')
+      .where('id', '=', eventId)
+      .executeTakeFirstOrThrow();
+
+    expect(usageEvent.durationMs).toBe(1234);
   });
 
   it('stores distinct provider invocations separately and supports new feature values', async () => {

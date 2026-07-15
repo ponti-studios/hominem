@@ -115,7 +115,7 @@ function writeErrorEvent(
 const chatByIdRoutes = new Hono<AppContext>()
   .use('/stream', rateLimitMiddleware({ bucket: 'chat-stream', windowSec: 60, max: 30 }))
   .get('/', async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const chatId = getChatId(c);
 
     const chat = await ChatRepository.getOwnedOrThrow(db, chatId, userId);
@@ -127,7 +127,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     });
   })
   .patch('/', zValidator('json', ChatsUpdateSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const chatId = getChatId(c);
     const { title } = c.req.valid('json');
 
@@ -137,7 +137,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     return c.json({ success: true });
   })
   .post('/archive', async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const chatId = getChatId(c);
 
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
@@ -146,7 +146,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     return c.json(toChatDto(archived));
   })
   .get('/messages', zValidator('query', ChatsMessagesQuerySchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const chatId = getChatId(c);
 
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
@@ -158,7 +158,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     return c.json(messages.map(toChatMessageDto));
   })
   .post('/stream', zValidator('json', ChatsSendSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const chatId = getChatId(c);
 
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
@@ -255,18 +255,18 @@ const chatByIdRoutes = new Hono<AppContext>()
 export const chatsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const chats = await ChatRepository.listForUser(db, userId, 100);
     return c.json(chats.map(toChatDto));
   })
   .post('/', zValidator('json', ChatsCreateSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const { title } = c.req.valid('json');
     const chat = await ChatRepository.create(db, { userId, title });
     return c.json(toChatDto(chat), 201);
   })
   .post('/start-stream', zValidator('json', ChatsStartStreamSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const { title, message, fileIds = [], noteIds = [] } = c.req.valid('json');
 
     const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);

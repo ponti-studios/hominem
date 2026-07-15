@@ -6,7 +6,7 @@
 - Local services running (Postgres, Redis): via Docker Compose
 - `@modelcontextprotocol/sdk` installed in `services/api`
 - pnpm workspace issue resolved (see [research.md](./research.md) for options)
-- Database migrations applied: `just db-migrate`
+- Database migrations applied: `just db migrate`
 
 ## Setup
 
@@ -16,10 +16,10 @@ cd services/api
 pnpm add @modelcontextprotocol/sdk@^1.29.0
 
 # 2. Apply any pending migrations (adds mcp_tool_call to ai_usage_events feature enum)
-just db-migrate
+just db migrate
 
 # 3. Start the API in dev mode
-just dev-api
+just dev api
 ```
 
 ## Validation Scenarios
@@ -133,20 +133,22 @@ and `isTruncated: true` if more than 10 exist.
 
 ```bash
 # Transport tests (discovery, invocation, denial, revocation, redaction)
-cd services/api
-pnpm run test -- -- mcp/transport
+just test api
 
 # Auth tests (scope denial, consent, revocation)
-pnpm run test -- -- mcp/auth
+just test api
 
 # Redaction tests (evidence, no-data, result caps)
-pnpm run test -- -- mcp/redaction
+just test api
 
-# LLM evaluation harness (full suite — may take several minutes)
-pnpm run test -- -- mcp/evaluation
+# MCP/Ollama evaluation harness (explicit and may take several minutes)
+just eval mcp
+
+# Promptfoo evaluation suite
+just eval all
 
 # Fast PR subset (deterministic tests only, no LLM eval)
-pnpm run test -- -- mcp/transport mcp/auth mcp/redaction
+just test api
 ```
 
 ## Reference

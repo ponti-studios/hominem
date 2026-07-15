@@ -179,7 +179,7 @@ export function ParticleBackground({
       raf.current = requestAnimationFrame(draw);
     }
 
-    const ro = new ResizeObserver(resize);
+    const ro = new ResizeObserver(() => resize());
     ro.observe(canvas);
     resize();
     draw();

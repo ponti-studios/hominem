@@ -56,7 +56,7 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
 
     return c.json<ApiErrorResponse>(
       {
-        error: serviceError.code.toLowerCase().replace(/_/g, '_'),
+        error: serviceError.code.toLowerCase(),
         code: serviceError.code,
         message: serviceError.message,
         details: serviceError.details,

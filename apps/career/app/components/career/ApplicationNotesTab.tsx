@@ -1,13 +1,14 @@
 import type { AppApplicationNotes, Selectable } from '@hominem/db';
-import { EmptyState } from '@hominem/ui';
-import { Badge } from '@hominem/ui';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
+  EmptyState,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -47,11 +48,11 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="noteType" className="subheading-4 text-foreground">
+                  <Label htmlFor="noteType" className="subheading-4 text-foreground">
                     Note Type
-                  </label>
+                  </Label>
                   <Select name="noteType" defaultValue="general">
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger id="noteType" className="w-full">
                       <SelectValue placeholder="Select note type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -65,18 +66,19 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                 </div>
 
                 <div>
-                  <label htmlFor="noteTitle" className="subheading-4 text-foreground">
+                  <Label htmlFor="noteTitle" className="subheading-4 text-foreground">
                     Title (Optional)
-                  </label>
-                  <Input name="noteTitle" placeholder="Note title" />
+                  </Label>
+                  <Input id="noteTitle" name="noteTitle" placeholder="Note title" />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="noteContent" className="subheading-4 text-foreground">
+                <Label htmlFor="noteContent" className="subheading-4 text-foreground">
                   Content
-                </label>
+                </Label>
                 <Textarea
+                  id="noteContent"
                   name="noteContent"
                   rows={4}
                   required

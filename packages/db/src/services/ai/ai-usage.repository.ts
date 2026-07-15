@@ -37,6 +37,7 @@ export interface AIUsageEventRecord {
   cachedInputTokens: number | null;
   reasoningTokens: number | null;
   costUsd: number | null;
+  durationMs: number | null;
   metadata: unknown;
   createdAt: string;
 }
@@ -55,6 +56,7 @@ export interface CreateAIUsageEventInput {
   cachedInputTokens?: number | null;
   reasoningTokens?: number | null;
   costUsd?: number | null;
+  durationMs?: number | null;
   metadata?: unknown;
 }
 
@@ -106,6 +108,7 @@ function toAIUsageEventRecord(row: AIUsageEventRow): AIUsageEventRecord {
     cachedInputTokens: row.cachedInputTokens,
     reasoningTokens: row.reasoningTokens,
     costUsd: toNullableNumber(row.costUsd),
+    durationMs: row.durationMs,
     metadata: row.metadata,
     createdAt: new Date(row.createdat).toISOString(),
   };
@@ -129,6 +132,7 @@ export const AIUsageEventRepository = {
         cachedInputTokens: input.cachedInputTokens ?? null,
         reasoningTokens: input.reasoningTokens ?? null,
         costUsd: input.costUsd ?? null,
+        durationMs: input.durationMs ?? null,
         metadata: input.metadata === undefined ? null : (input.metadata as never),
       })
       .returningAll()
@@ -154,6 +158,7 @@ export const AIUsageEventRepository = {
         cachedInputTokens: input.cachedInputTokens ?? null,
         reasoningTokens: input.reasoningTokens ?? null,
         costUsd: input.costUsd ?? null,
+        durationMs: input.durationMs ?? null,
         metadata: input.metadata === undefined ? null : (input.metadata as never),
       })
       .onConflict((conflict) => conflict.column('id').doNothing())

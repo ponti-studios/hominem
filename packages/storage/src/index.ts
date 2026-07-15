@@ -26,10 +26,4 @@ export type {
   UploadPolicyFile,
 } from './upload-policy';
 
-export type {
-  FileObject,
-  PreparedUpload,
-  StorageOptions,
-  StoredFile,
-  TestStorageService,
-} from './types';
+export type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';

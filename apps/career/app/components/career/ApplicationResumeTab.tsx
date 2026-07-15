@@ -1,11 +1,12 @@
 import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
-import { Button } from '@hominem/ui';
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -237,12 +238,14 @@ export function ApplicationResumeTab({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="subheading-4 text-muted-foreground">Format</label>
+                <Label htmlFor="resume-format" className="subheading-4 text-muted-foreground">
+                  Format
+                </Label>
                 <Select
                   value={resumeFormat}
                   onValueChange={(v) => setResumeFormat(v as typeof resumeFormat)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="resume-format">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -255,12 +258,14 @@ export function ApplicationResumeTab({
               </div>
 
               <div className="space-y-1.5">
-                <label className="subheading-4 text-muted-foreground">Length</label>
+                <Label htmlFor="resume-length" className="subheading-4 text-muted-foreground">
+                  Length
+                </Label>
                 <Select
                   value={targetLength}
                   onValueChange={(v) => setTargetLength(v as typeof targetLength)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="resume-length">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -273,13 +278,14 @@ export function ApplicationResumeTab({
             </div>
 
             <div className="space-y-1.5">
-              <label className="subheading-4 text-muted-foreground">
+              <Label htmlFor="resume-focus-areas" className="subheading-4 text-muted-foreground">
                 Focus Areas{' '}
                 <span className="font-normal text-muted-foreground/70">
                   (optional, comma-separated)
                 </span>
-              </label>
+              </Label>
               <Input
+                id="resume-focus-areas"
                 placeholder="e.g. leadership, TypeScript, distributed systems"
                 value={focusAreas}
                 onChange={(e) => setFocusAreas(e.target.value)}

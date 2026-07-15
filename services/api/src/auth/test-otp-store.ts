@@ -52,7 +52,7 @@ export function recordTestOtp(
   const now = new Date();
   let email: string;
   let otpValue: string;
-  let typeValue = 'sign-in';
+  let typeValue: string;
 
   if (typeof emailOrInput === 'string') {
     email = emailOrInput;

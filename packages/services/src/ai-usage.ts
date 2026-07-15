@@ -15,6 +15,7 @@ type RecordAIUsageEventInput = {
   usage?: AIUsageMetrics | null;
   metadata?: Record<string, unknown>;
   model?: string | null;
+  durationMs?: number | null;
 };
 
 function buildMetadata(
@@ -57,6 +58,7 @@ export async function recordAIUsageEvent(input: RecordAIUsageEventInput) {
       costUsd: input.usage.costUsd,
       cachedInputTokens: input.usage.cachedPromptTokens,
       reasoningTokens: input.usage.reasoningTokens,
+      durationMs: input.durationMs,
       metadata: buildMetadata(input.metadata, input.usage),
     });
   } catch (error) {

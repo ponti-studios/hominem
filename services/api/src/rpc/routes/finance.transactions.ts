@@ -130,7 +130,7 @@ async function replaceTransactionTags(
 
 export const transactionsRoutes = new Hono<AppContext>()
   .get('/list', authMiddleware, zValidator('query', transactionListSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('query');
     const accountId = input.accountId ?? input.account;
     const tagIds = input.tagIds ?? [];
@@ -191,7 +191,7 @@ export const transactionsRoutes = new Hono<AppContext>()
     );
   })
   .post('/create', authMiddleware, zValidator('json', transactionCreateSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
     const id = randomUUID();
     const transactionType = input.amount < 0 ? 'expense' : 'income';
@@ -236,7 +236,7 @@ export const transactionsRoutes = new Hono<AppContext>()
     );
   })
   .post('/update', authMiddleware, zValidator('json', transactionUpdateSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
 
     const existing = await db
@@ -292,7 +292,7 @@ export const transactionsRoutes = new Hono<AppContext>()
     });
   })
   .post('/delete', authMiddleware, zValidator('json', transactionDeleteSchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
 
     const result = await db

@@ -1,52 +1,49 @@
 # Hominem API
 
-A Bun-based Hono API with focused commands for local development and maintenance.
+A Hono API with shared authentication, data access, and worker integrations.
 
 ## Quick Start
 
 ```bash
-pnpm install
-pnpm dev
+just setup
+just dev api
 ```
 
 ## How To Think About The Commands
 
-| Need                               | Run                            | When to use it                                    |
-| ---------------------------------- | ------------------------------ | ------------------------------------------------- |
-| Start local development            | `pnpm dev`                  | Normal day-to-day API work                        |
-| Start the server once              | `pnpm start`                | Run the API without watch mode                    |
-| Check code style                   | `pnpm lint`                 | Before commits and PRs                            |
-| Format code                        | `pnpm format`               | Fix formatting issues quickly                     |
-| Check TypeScript                   | `pnpm typecheck`            | Before commits and PRs                            |
-| Run tests                          | `pnpm test`                 | Placeholder until the non-Storybook suite returns |
-| Run coverage                       | `pnpm test:coverage`        | Measure test coverage before larger changes       |
-| Run watch mode                     | `pnpm test:watch`           | Keep tests running while iterating                |
-| Run the auth middleware perf check | `pnpm perf:auth-middleware` | Inspect auth middleware performance               |
+| Need                               | Run                         | When to use it                          |
+| ---------------------------------- | --------------------------- | --------------------------------------- |
+| Start local development            | `just dev api`              | Normal day-to-day API work              |
+| Check the API                      | `just check api`            | Before commits and PRs                  |
+| Run API tests                      | `just test api`             | Run the test profile and API test suite |
+| Format API code                    | `just format write api`     | Apply formatting                        |
+| Check formatting                   | `just format check api`     | Validate formatting without edits       |
+| Run the auth middleware perf check | `pnpm perf:auth-middleware` | Inspect middleware performance          |
 
 ## Daily Workflow
 
 For most API changes, the loop is simple:
 
-1. Start with `pnpm dev`.
-2. Run `pnpm lint` and `pnpm typecheck` before you stop.
+1. Start with `just dev api`.
+2. Run `just check api` before you stop.
 
 ## Workflow Guide
 
 ### Local Development
 
-`pnpm dev` kills anything already bound to port 4040 and starts the API in watch mode.
+`just dev api` starts the API in watch mode through Turbo.
 
 The API listens on `http://localhost:4040`.
 
 ### Testing
 
-`pnpm test` is a placeholder until the non-Storybook suite is rewritten.
-
-`pnpm test:coverage` is the heavier reporting path.
+`just test api` supplies the checked-in test database and auth test profile. Do not run
+the API test script directly against an ambient `DATABASE_URL`.
 
 ### Quality And Type Safety
 
-`pnpm lint`, `pnpm format`, and `pnpm typecheck` cover the common pre-PR checks.
+`just check api` covers format checking, linting, typechecking, building, and tests.
+Use `just lint fix api` or `just format write api` for the two source-modifying operations.
 
 ## Configuration Model
 
@@ -71,4 +68,4 @@ The main API entry points are:
 - [test/](test) for test setup and support files.
 - [Dockerfile](Dockerfile) for container builds.
 
-If you are unsure where to start, use `pnpm dev` and then follow the command table above.
+If you are unsure where to start, use `just dev api` and then follow the command table above.

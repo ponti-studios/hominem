@@ -2,7 +2,6 @@ import type { AccountGetOutput } from '@hominem/rpc/finance';
 import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
 import { Badge } from '@hominem/ui/badge';
 import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { ArrowLeft, RefreshCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { redirect, useParams } from 'react-router';
@@ -168,21 +167,7 @@ export default function AccountDetailsPage({ loaderData }: Route.ComponentProps)
         isLoading={isLoading}
       />
 
-      {/* Monthly Spending Chart */}
-      {!account ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Monthly Spending</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 w-full flex items-center justify-center">
-              <div className="text-muted-foreground">No account selected</div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <AccountSpendingChart accountId={accountId} accountName={account.name} />
-      )}
+      <AccountSpendingChart accountId={accountId} accountName={account.name} />
 
       {/* Transactions Section */}
       <div className="space-y-4">

@@ -163,7 +163,7 @@ const useWebSocketStore = create<WebSocketStore>((set, get) => {
               parsedData === null ||
               typeof parsedData.type !== 'string'
             ) {
-              console.error('Received invalid WebSocket message structure:', parsedData);
+              console.error('Received invalid WebSocket message structure');
               return;
             }
 

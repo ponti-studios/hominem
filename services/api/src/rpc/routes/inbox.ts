@@ -44,7 +44,7 @@ function decodeInboxCursor(cursor: string | undefined): InboxCursor | null {
 export const inboxRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', zValidator('query', InboxQuerySchema), async (c) => {
-    const userId = c.get('userId')!;
+    const userId = c.get('auth')!.userId;
     const query = c.req.valid('query');
     const parsedLimit = query.limit ? Number.parseInt(query.limit, 10) : 50;
     const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 100) : 50;

@@ -49,6 +49,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       operation: 'structured_output',
       usage: result.usage,
       model: result.model,
+      durationMs: result.durationMs,
       metadata: {
         source: 'job_url',
       },
