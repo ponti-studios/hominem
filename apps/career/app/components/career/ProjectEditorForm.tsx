@@ -1,6 +1,7 @@
 import type { ProjectRecord as Project } from '@hominem/db';
 import {
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -215,9 +216,9 @@ export function ProjectEditorForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`project-title-${project?.id || 'new'}`} className="label">
+          <Label htmlFor={`project-title-${project?.id || 'new'}`} className="label">
             Project Title *
-          </label>
+          </Label>
           <Input
             id={`project-title-${project?.id || 'new'}`}
             type="text"
@@ -240,9 +241,9 @@ export function ProjectEditorForm({
         </div>
 
         <div className="flex flex-col gap-2">
-          <label htmlFor={`project-work-experience-${project?.id || 'new'}`} className="label">
+          <Label htmlFor={`project-work-experience-${project?.id || 'new'}`} className="label">
             Client / Work Experience
-          </label>
+          </Label>
           <Controller
             control={control}
             name="workExperienceId"
@@ -272,9 +273,9 @@ export function ProjectEditorForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor={`project-short-description-${project?.id || 'new'}`} className="label">
+        <Label htmlFor={`project-short-description-${project?.id || 'new'}`} className="label">
           Short Description
-        </label>
+        </Label>
         <Input
           id={`project-short-description-${project?.id || 'new'}`}
           type="text"
@@ -284,9 +285,9 @@ export function ProjectEditorForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor={`project-description-${project?.id || 'new'}`} className="label">
+        <Label htmlFor={`project-description-${project?.id || 'new'}`} className="label">
           Full Description *
-        </label>
+        </Label>
         <Textarea
           id={`project-description-${project?.id || 'new'}`}
           {...register('description', { required: 'Add a project description.' })}
@@ -311,9 +312,9 @@ export function ProjectEditorForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`project-live-url-${project?.id || 'new'}`} className="label">
+          <Label htmlFor={`project-live-url-${project?.id || 'new'}`} className="label">
             Live URL
-          </label>
+          </Label>
           <Input
             id={`project-live-url-${project?.id || 'new'}`}
             type="url"
@@ -322,9 +323,9 @@ export function ProjectEditorForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`project-github-url-${project?.id || 'new'}`} className="label">
+          <Label htmlFor={`project-github-url-${project?.id || 'new'}`} className="label">
             GitHub URL
-          </label>
+          </Label>
           <Input
             id={`project-github-url-${project?.id || 'new'}`}
             type="url"
@@ -336,9 +337,9 @@ export function ProjectEditorForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`project-image-url-${project?.id || 'new'}`} className="label">
+          <Label htmlFor={`project-image-url-${project?.id || 'new'}`} className="label">
             Image URL
-          </label>
+          </Label>
           <Input
             id={`project-image-url-${project?.id || 'new'}`}
             type="url"
@@ -347,9 +348,9 @@ export function ProjectEditorForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`project-video-url-${project?.id || 'new'}`} className="label">
+          <Label htmlFor={`project-video-url-${project?.id || 'new'}`} className="label">
             Video URL
-          </label>
+          </Label>
           <Input
             id={`project-video-url-${project?.id || 'new'}`}
             type="url"
@@ -360,9 +361,9 @@ export function ProjectEditorForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor={`project-technologies-${project?.id || 'new'}`} className="label">
+        <Label htmlFor={`project-technologies-${project?.id || 'new'}`} className="label">
           Skills
-        </label>
+        </Label>
         <Controller
           control={control}
           name="technologies"
@@ -380,9 +381,9 @@ export function ProjectEditorForm({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`project-status-${project?.id || 'new'}`} className="label">
+          <Label htmlFor={`project-status-${project?.id || 'new'}`} className="label">
             Status
-          </label>
+          </Label>
           <Controller
             control={control}
             name="status"
@@ -401,9 +402,9 @@ export function ProjectEditorForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`project-start-date-${project?.id || 'new'}`} className="label">
+          <Label htmlFor={`project-start-date-${project?.id || 'new'}`} className="label">
             Start Date
-          </label>
+          </Label>
           <Input
             id={`project-start-date-${project?.id || 'new'}`}
             type="date"
@@ -411,9 +412,9 @@ export function ProjectEditorForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`project-end-date-${project?.id || 'new'}`} className="label">
+          <Label htmlFor={`project-end-date-${project?.id || 'new'}`} className="label">
             End Date
-          </label>
+          </Label>
           <Input
             id={`project-end-date-${project?.id || 'new'}`}
             type="date"
@@ -424,9 +425,9 @@ export function ProjectEditorForm({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`project-sort-order-${project?.id || 'new'}`} className="label">
+          <Label htmlFor={`project-sort-order-${project?.id || 'new'}`} className="label">
             Sort Order
-          </label>
+          </Label>
           <Input
             id={`project-sort-order-${project?.id || 'new'}`}
             type="number"
@@ -434,14 +435,14 @@ export function ProjectEditorForm({
             min={0}
           />
         </div>
-        <label className="flex items-center gap-2 md:self-end">
+        <Label className="flex items-center gap-2 md:self-end">
           <input type="checkbox" {...register('isFeatured')} className="checkbox" />
           <span className="label">Featured Project</span>
-        </label>
-        <label className="flex items-center gap-2 md:self-end">
+        </Label>
+        <Label className="flex items-center gap-2 md:self-end">
           <input type="checkbox" {...register('isVisible')} className="checkbox" />
           <span className="label">Visible</span>
-        </label>
+        </Label>
       </div>
     </form>
   );

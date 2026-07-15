@@ -22,10 +22,23 @@ export async function saveResumeToDatabase(
   options: SaveResumeOptions = {},
 ): Promise<SaveResumeResult> {
   return runInTransaction(async (tx) => {
-    if (options.replacePortfolioId) {
+    // The root loader creates an empty portfolio for signed-in users. Resolve
+    // that row here as well so a concurrent loader/action cannot turn an
+    // otherwise valid import into a one-portfolio uniqueness violation.
+    const portfolioToReplaceId =
+      options.replacePortfolioId ??
+      (
+        await tx
+          .selectFrom('app.portfolios')
+          .select('id')
+          .where('ownerUserid', '=', ownerUserid)
+          .executeTakeFirst()
+      )?.id;
+
+    if (portfolioToReplaceId) {
       await tx
         .deleteFrom('app.portfolios')
-        .where('id', '=', options.replacePortfolioId)
+        .where('id', '=', portfolioToReplaceId)
         .where('ownerUserid', '=', ownerUserid)
         .execute();
     }

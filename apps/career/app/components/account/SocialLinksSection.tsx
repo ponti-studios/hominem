@@ -1,6 +1,5 @@
 import type { UserSocialLinksRecord } from '@hominem/db';
-import { Button } from '@hominem/ui';
-import { Card, CardContent, Input } from '@hominem/ui';
+import { Button, Card, CardContent, Input, Label } from '@hominem/ui';
 import { Github, Globe, Linkedin, SaveIcon, Twitter } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -67,13 +66,13 @@ export function SocialLinksSection({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* GitHub */}
               <div className="flex flex-col gap-1.5">
-                <label
+                <Label
                   htmlFor="github"
                   className="subheading-4 text-text-primary flex items-center gap-2"
                 >
                   <Github className="size-4 text-muted-foreground" />
                   GitHub
-                </label>
+                </Label>
                 <div className="flex">
                   <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-base">
                     github.com/
@@ -99,13 +98,13 @@ export function SocialLinksSection({
 
               {/* LinkedIn */}
               <div className="flex flex-col gap-1.5">
-                <label
+                <Label
                   htmlFor="linkedin"
                   className="subheading-4 text-text-primary flex items-center gap-2"
                 >
                   <Linkedin className="size-4 text-muted-foreground" />
                   LinkedIn
-                </label>
+                </Label>
                 <div className="flex">
                   <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-base">
                     linkedin.com/in/
@@ -131,13 +130,13 @@ export function SocialLinksSection({
 
               {/* Twitter */}
               <div className="flex flex-col gap-1.5">
-                <label
+                <Label
                   htmlFor="twitter"
                   className="subheading-4 text-text-primary flex items-center gap-2"
                 >
                   <Twitter className="size-4 text-muted-foreground" />
                   Twitter / X
-                </label>
+                </Label>
                 <div className="flex">
                   <span className="inline-flex items-center shrink-0 px-3 body-3 text-muted-foreground border border-r-0 rounded-l-md bg-base">
                     x.com/
@@ -163,13 +162,13 @@ export function SocialLinksSection({
 
               {/* Website */}
               <div className="flex flex-col gap-1.5">
-                <label
+                <Label
                   htmlFor="website"
                   className="subheading-4 text-text-primary flex items-center gap-2"
                 >
                   <Globe className="size-4 text-muted-foreground" />
                   Website
-                </label>
+                </Label>
                 <Input
                   id="website"
                   type="url"

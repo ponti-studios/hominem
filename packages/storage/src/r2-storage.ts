@@ -741,13 +741,14 @@ export class R2StorageService {
 
   async listUserFiles(userId: string): Promise<FileObject[]> {
     const prefix = `users/${userId}/${this.category}/`;
+    const client = this.client;
 
     const command = new ListObjectsV2Command({
       Bucket: this.bucketName,
       Prefix: prefix,
     });
 
-    const response = await this.client.send(command);
+    const response = await client.send(command);
 
     return (response.Contents || []).map((obj): FileObject => {
       const name = obj.Key?.replace(prefix, '') || '';

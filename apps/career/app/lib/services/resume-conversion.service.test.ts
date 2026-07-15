@@ -139,4 +139,30 @@ describe('resume conversion slug generation', () => {
     expect(projectCount.technologies).toEqual(['TypeScript', 'React']);
     expect(social_links.github).toBe('https://github.com/example');
   });
+
+  it('replaces a portfolio created before the import starts', async () => {
+    const user = await testDb.createUser({ name: 'Existing User' });
+    await testDb.createPortfolio({ user, slug: 'existing-portfolio' });
+
+    const result = await saveResumeToDatabase(
+      user.id,
+      makeConvertedResumeData({
+        portfolio: {
+          slug: 'imported-portfolio',
+          name: user.name,
+          email: user.email,
+        },
+      }),
+    );
+
+    const portfolios = await db
+      .selectFrom('app.portfolios')
+      .select(['id', 'slug'])
+      .where('ownerUserid', '=', user.id)
+      .execute();
+
+    expect(result.portfolioSlug).toBe('imported-portfolio');
+    expect(portfolios).toHaveLength(1);
+    expect(portfolios[0].slug).toBe('imported-portfolio');
+  });
 });

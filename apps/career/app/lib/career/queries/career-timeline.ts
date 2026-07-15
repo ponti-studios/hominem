@@ -1,14 +1,14 @@
 import type { WorkExperienceRecord } from '@hominem/db';
 import {
-  CareerEventRepository,
-  db,
-  JobApplicationRepository,
-  JobApplicationStatusHistoryRepository,
-  PortfolioRepository,
-  ProjectRepository,
-  SkillRepository,
-  TestimonialRepository,
-  WorkExperienceRepository,
+    CareerEventRepository,
+    db,
+    JobApplicationRepository,
+    JobApplicationStatusHistoryRepository,
+    PortfolioRepository,
+    ProjectRepository,
+    SkillRepository,
+    TestimonialRepository,
+    WorkExperienceRepository,
 } from '@hominem/db';
 
 export type TimelineEntryKind =
@@ -80,7 +80,7 @@ export async function getCareerStoryTimeline(ownerUserid: string): Promise<Caree
     return { chapters: [], unattributedEntries: [] };
   }
 
-  const [workExperiences, skills, projects, testimonials, careerEvents, applications] =
+  const [workExperiences, projects, testimonials, careerEvents, applications] =
     await Promise.all([
       WorkExperienceRepository.listByPortfolioId(db, portfolio.id),
       SkillRepository.listByPortfolioId(db, portfolio.id),
@@ -137,16 +137,6 @@ export async function getCareerStoryTimeline(ownerUserid: string): Promise<Caree
       title: `${verb} "${project.title}"`,
       subtitle: project.shortDescription ?? undefined,
       workExperienceId: project.workExperienceId,
-    });
-  }
-
-  for (const skill of skills) {
-    assign({
-      id: `skill:${skill.id}`,
-      date: skill.createdat,
-      kind: 'skill',
-      title: `Picked up ${skill.name}`,
-      workExperienceId: attributeByDateRange(skill.createdat, workExperiences),
     });
   }
 

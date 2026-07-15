@@ -1,9 +1,10 @@
 import type { TestimonialRecord as Testimonial } from '@hominem/db';
 import { db, TestimonialRepository } from '@hominem/db';
-import { EmptyState } from '@hominem/ui';
-import { Button } from '@hominem/ui';
 import {
+  Button,
+  EmptyState,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -138,7 +139,7 @@ function TestimonialForm({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="rounded-md border border-border bg-card p-4 bg-muted/50 space-y-4"
+      className="rounded-md border border-border bg-card p-4 space-y-4"
     >
       <FormErrorAlert title="Testimonial wasn’t saved" message={submissionError} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -174,9 +175,9 @@ function TestimonialForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`name-${testimonial?.id || 'new'}`} className="label">
+          <Label htmlFor={`name-${testimonial?.id || 'new'}`} className="label">
             Name *
-          </label>
+          </Label>
           <Input
             id={`name-${testimonial?.id || 'new'}`}
             type="text"
@@ -196,9 +197,9 @@ function TestimonialForm({
           ) : null}
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`title-${testimonial?.id || 'new'}`} className="label">
+          <Label htmlFor={`title-${testimonial?.id || 'new'}`} className="label">
             Job Title
-          </label>
+          </Label>
           <Input
             id={`title-${testimonial?.id || 'new'}`}
             type="text"
@@ -210,9 +211,9 @@ function TestimonialForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`company-${testimonial?.id || 'new'}`} className="label">
+          <Label htmlFor={`company-${testimonial?.id || 'new'}`} className="label">
             Company
-          </label>
+          </Label>
           <Input
             id={`company-${testimonial?.id || 'new'}`}
             type="text"
@@ -221,9 +222,9 @@ function TestimonialForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`rating-${testimonial?.id || 'new'}`} className="label">
+          <Label htmlFor={`rating-${testimonial?.id || 'new'}`} className="label">
             Rating (1-5)
-          </label>
+          </Label>
           <Controller
             control={control}
             name="rating"
@@ -249,9 +250,9 @@ function TestimonialForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor={`content-${testimonial?.id || 'new'}`} className="label">
+        <Label htmlFor={`content-${testimonial?.id || 'new'}`} className="label">
           Testimonial *
-        </label>
+        </Label>
         <Textarea
           id={`content-${testimonial?.id || 'new'}`}
           {...register('content', { required: 'Add the testimonial copy.' })}
@@ -276,9 +277,9 @@ function TestimonialForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <label htmlFor={`avatarUrl-${testimonial?.id || 'new'}`} className="label">
+          <Label htmlFor={`avatarUrl-${testimonial?.id || 'new'}`} className="label">
             Avatar URL (optional)
-          </label>
+          </Label>
           <Input
             id={`avatarUrl-${testimonial?.id || 'new'}`}
             type="url"
@@ -287,9 +288,9 @@ function TestimonialForm({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor={`linkedinUrl-${testimonial?.id || 'new'}`} className="label">
+          <Label htmlFor={`linkedinUrl-${testimonial?.id || 'new'}`} className="label">
             LinkedIn URL (optional)
-          </label>
+          </Label>
           <Input
             id={`linkedinUrl-${testimonial?.id || 'new'}`}
             type="url"

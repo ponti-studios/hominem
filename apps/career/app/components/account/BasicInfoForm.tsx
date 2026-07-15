@@ -1,5 +1,5 @@
 import type { PortfolioRecord } from '@hominem/db';
-import { Button, Input, Switch, Textarea } from '@hominem/ui';
+import { Button, Input, Label, Switch, Textarea } from '@hominem/ui';
 import { useEffect, useState } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 
@@ -108,16 +108,9 @@ export function BasicInfoForm({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1 md:col-span-2">
-            <label htmlFor="email" className="subheading-4 text-muted-foreground">
-              Email
-            </label>
-            <Input id="email" type="email" value={lockedEmail} disabled readOnly />
-          </div>
-
-          <div className="space-y-1 md:col-span-2">
-            <label htmlFor="portfolio-slug" className="subheading-4 text-muted-foreground">
+            <Label htmlFor="portfolio-slug" className="subheading-4 text-muted-foreground">
               Portfolio URL
-            </label>
+            </Label>
             <SlugEditor
               portfolioId={portfolio.id}
               initialSlug={portfolio.slug}
@@ -125,33 +118,39 @@ export function BasicInfoForm({
               onSave={(slug) => onUpdateSlug(slug)}
             />
           </div>
+          <div className="space-y-1 md:col-span-2">
+            <Label htmlFor="email" className="subheading-4 text-muted-foreground">
+              Email
+            </Label>
+            <Input id="email" type="email" value={lockedEmail} disabled readOnly />
+          </div>
 
           <div className="space-y-1 md:col-span-2">
-            <label htmlFor="name" className="subheading-4 text-muted-foreground">
+            <Label htmlFor="name" className="subheading-4 text-muted-foreground">
               Full Name
-            </label>
+            </Label>
             <Input id="name" {...register('name', { required: 'Name is required' })} />
             {errors.name && <p className="body-4 text-destructive">{errors.name.message}</p>}
           </div>
           <div className="space-y-1">
-            <label htmlFor="initials" className="subheading-4 text-muted-foreground">
+            <Label htmlFor="initials" className="subheading-4 text-muted-foreground">
               Initials
-            </label>
+            </Label>
             <Input id="initials" {...register('initials')} maxLength={10} />
           </div>
           <div className="space-y-1">
-            <label htmlFor="jobTitle" className="subheading-4 text-muted-foreground">
+            <Label htmlFor="jobTitle" className="subheading-4 text-muted-foreground">
               Job Title
-            </label>
+            </Label>
             <Input id="jobTitle" {...register('jobTitle', { required: 'Job title is required' })} />
             {errors.jobTitle && (
               <p className="body-4 text-destructive">{errors.jobTitle.message}</p>
             )}
           </div>
           <div className="space-y-1 md:col-span-2">
-            <label htmlFor="tagline" className="subheading-4 text-muted-foreground">
+            <Label htmlFor="tagline" className="subheading-4 text-muted-foreground">
               Tagline
-            </label>
+            </Label>
             <Input
               id="tagline"
               {...register('tagline', { required: 'Tagline is required' })}
@@ -160,9 +159,9 @@ export function BasicInfoForm({
             {errors.tagline && <p className="body-4 text-destructive">{errors.tagline.message}</p>}
           </div>
           <div className="space-y-1 md:col-span-2">
-            <label htmlFor="bio" className="subheading-4 text-muted-foreground">
+            <Label htmlFor="bio" className="subheading-4 text-muted-foreground">
               Bio
-            </label>
+            </Label>
             <Textarea
               id="bio"
               {...register('bio', { required: 'Bio is required' })}
@@ -177,9 +176,9 @@ export function BasicInfoForm({
       <EditorSection title="Contact">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1">
-            <label htmlFor="phone" className="subheading-4 text-muted-foreground">
+            <Label htmlFor="phone" className="subheading-4 text-muted-foreground">
               Phone
-            </label>
+            </Label>
             <Input id="phone" {...register('phone')} maxLength={50} />
           </div>
         </div>
@@ -188,9 +187,9 @@ export function BasicInfoForm({
       <EditorSection title="Location">
         <div className="space-y-4">
           <div className="space-y-1">
-            <label htmlFor="currentLocation" className="subheading-4 text-muted-foreground">
+            <Label htmlFor="currentLocation" className="subheading-4 text-muted-foreground">
               Location
-            </label>
+            </Label>
             <Input
               id="currentLocation"
               {...register('currentLocation', { required: 'Location is required' })}
@@ -221,7 +220,7 @@ export function BasicInfoForm({
         </div>
       </EditorSection>
 
-      <section className="border-t border-border pt-6">
+      <section className="pt-6">
         <div className="flex items-center justify-between rounded-2xl bg-muted/40 px-4 py-4">
           <p className="subheading-4 text-foreground">Open to opportunities</p>
           <Controller
@@ -275,7 +274,7 @@ function portfolioToFormValues(portfolio: PortfolioRecord, email: string): Basic
 
 function EditorSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-5 border-t border-border pt-6 first:border-t-0 first:pt-0">
+    <section className="space-y-5 border border-border p-4 rounded">
       <h3 className="subheading-3">{title}</h3>
       {children}
     </section>

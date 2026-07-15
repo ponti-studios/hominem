@@ -7,6 +7,7 @@ import {
   CardTitle,
   DatePicker,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -127,9 +128,9 @@ function DateField({
 
 function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.ReactNode }) {
   return (
-    <label htmlFor={htmlFor} className="subheading-4 text-muted-foreground">
+    <Label htmlFor={htmlFor} className="subheading-4 text-muted-foreground">
       {children}
-    </label>
+    </Label>
   );
 }
 

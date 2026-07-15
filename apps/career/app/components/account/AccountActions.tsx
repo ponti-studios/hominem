@@ -57,7 +57,7 @@ export function AccountActions({
           icon={LogOut}
           label={isSigningOut ? 'Signing Out...' : 'Sign Out'}
           onClick={() => onSignOut()}
-          variant="ghost"
+          variant="default"
           disabled={isSigningOut}
         />
       </div>

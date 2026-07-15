@@ -4,6 +4,7 @@ import {
   CardContent,
   DatePicker,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -337,9 +338,9 @@ export default function CreateJobApplication() {
             <Form method="post" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label htmlFor="position" className="subheading-4 text-muted-foreground">
+                  <Label htmlFor="position" className="subheading-4 text-muted-foreground">
                     Job Title *
-                  </label>
+                  </Label>
                   <Input
                     id="position"
                     name="position"
@@ -351,9 +352,9 @@ export default function CreateJobApplication() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="company" className="subheading-4 text-muted-foreground">
+                  <Label htmlFor="company" className="subheading-4 text-muted-foreground">
                     Company *
-                  </label>
+                  </Label>
                   <Input
                     id="company"
                     name="company"
@@ -387,9 +388,9 @@ export default function CreateJobApplication() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="status" className="subheading-4 text-muted-foreground">
+                  <Label htmlFor="status" className="subheading-4 text-muted-foreground">
                     Status
-                  </label>
+                  </Label>
                   <Select name="status" defaultValue={JobApplicationStatus.APPLIED}>
                     <SelectTrigger id="status" className="w-full">
                       <SelectValue placeholder="Select Status" />
@@ -406,9 +407,9 @@ export default function CreateJobApplication() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="location" className="subheading-4 text-muted-foreground">
+                <Label htmlFor="location" className="subheading-4 text-muted-foreground">
                   Location
-                </label>
+                </Label>
                 <Input
                   id="location"
                   name="location"
@@ -419,9 +420,9 @@ export default function CreateJobApplication() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="jobPosting" className="subheading-4 text-muted-foreground">
+                <Label htmlFor="jobPosting" className="subheading-4 text-muted-foreground">
                   Job Description
-                </label>
+                </Label>
                 <textarea
                   id="jobPosting"
                   name="jobPosting"
@@ -437,9 +438,9 @@ export default function CreateJobApplication() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="salaryQuoted" className="subheading-4 text-muted-foreground">
+                <Label htmlFor="salaryQuoted" className="subheading-4 text-muted-foreground">
                   Salary Range
-                </label>
+                </Label>
                 <Input
                   id="salaryQuoted"
                   name="salaryQuoted"
@@ -453,9 +454,9 @@ export default function CreateJobApplication() {
                 <h3 className="heading-3 text-foreground mb-4">Recruiter Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label htmlFor="recruiterName" className="subheading-4 text-muted-foreground">
+                    <Label htmlFor="recruiterName" className="subheading-4 text-muted-foreground">
                       Recruiter Name
-                    </label>
+                    </Label>
                     <Input
                       id="recruiterName"
                       name="recruiterName"
@@ -465,9 +466,9 @@ export default function CreateJobApplication() {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="recruiterEmail" className="subheading-4 text-muted-foreground">
+                    <Label htmlFor="recruiterEmail" className="subheading-4 text-muted-foreground">
                       Recruiter Email
-                    </label>
+                    </Label>
                     <Input
                       id="recruiterEmail"
                       name="recruiterEmail"
@@ -479,9 +480,9 @@ export default function CreateJobApplication() {
                 </div>
 
                 <div className="mt-6 space-y-2">
-                  <label htmlFor="recruiterLinkedin" className="subheading-4 text-muted-foreground">
+                  <Label htmlFor="recruiterLinkedin" className="subheading-4 text-muted-foreground">
                     Recruiter LinkedIn URL
-                  </label>
+                  </Label>
                   <Input
                     id="recruiterLinkedin"
                     name="recruiterLinkedin"
