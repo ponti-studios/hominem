@@ -28,6 +28,7 @@
     "@hominem/ui": "workspace:*",
     "@hominem/utils": "workspace:*",
     "@react-native-community/netinfo": "12.0.1",
+    "@sentry/react-native": "^8.18.0",
     "@shopify/flash-list": "2.0.2",
     "@tanstack/react-query": "5.100.10",
     "better-auth": "^1.6.11",

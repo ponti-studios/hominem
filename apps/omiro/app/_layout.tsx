@@ -1,4 +1,5 @@
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import * as Sentry from '@sentry/react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
   DefaultTheme,
@@ -255,4 +256,4 @@ function RootLayout() {
   );
 }
 
-export default RootLayout;
+export default Sentry.wrap(RootLayout);

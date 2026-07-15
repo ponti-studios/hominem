@@ -138,6 +138,7 @@ export default ({ config }: ConfigContext) => {
   const e2eTesting = isE2ETestingEnabled();
   const plugins: ExpoConfig['plugins'] = [
     'expo-router',
+    '@sentry/react-native/expo',
     [
       'expo-build-properties',
       {

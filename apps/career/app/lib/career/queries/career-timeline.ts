@@ -1,14 +1,14 @@
 import type { WorkExperienceRecord } from '@hominem/db';
 import {
-    CareerEventRepository,
-    db,
-    JobApplicationRepository,
-    JobApplicationStatusHistoryRepository,
-    PortfolioRepository,
-    ProjectRepository,
-    SkillRepository,
-    TestimonialRepository,
-    WorkExperienceRepository,
+  CareerEventRepository,
+  db,
+  JobApplicationRepository,
+  JobApplicationStatusHistoryRepository,
+  PortfolioRepository,
+  ProjectRepository,
+  SkillRepository,
+  TestimonialRepository,
+  WorkExperienceRepository,
 } from '@hominem/db';
 
 export type TimelineEntryKind =
@@ -80,15 +80,14 @@ export async function getCareerStoryTimeline(ownerUserid: string): Promise<Caree
     return { chapters: [], unattributedEntries: [] };
   }
 
-  const [workExperiences, projects, testimonials, careerEvents, applications] =
-    await Promise.all([
-      WorkExperienceRepository.listByPortfolioId(db, portfolio.id),
-      SkillRepository.listByPortfolioId(db, portfolio.id),
-      ProjectRepository.listByPortfolioId(db, portfolio.id),
-      TestimonialRepository.listByPortfolioId(db, portfolio.id),
-      CareerEventRepository.listUserCareerEvents(db, ownerUserid),
-      JobApplicationRepository.listUserJobApplicationsWithCompany(db, ownerUserid),
-    ]);
+  const [workExperiences, projects, testimonials, careerEvents, applications] = await Promise.all([
+    WorkExperienceRepository.listByPortfolioId(db, portfolio.id),
+    SkillRepository.listByPortfolioId(db, portfolio.id),
+    ProjectRepository.listByPortfolioId(db, portfolio.id),
+    TestimonialRepository.listByPortfolioId(db, portfolio.id),
+    CareerEventRepository.listUserCareerEvents(db, ownerUserid),
+    JobApplicationRepository.listUserJobApplicationsWithCompany(db, ownerUserid),
+  ]);
 
   const statusHistory = await JobApplicationStatusHistoryRepository.listForApplications(
     db,

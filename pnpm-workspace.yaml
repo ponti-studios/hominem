@@ -48,6 +48,7 @@ strictDepBuilds: true
 allowBuilds:
   '@openrouter/sdk': true
   '@railway/cli': true
+  '@sentry/cli': true
   '@swc/core': true
   core-js: false
   dtrace-provider: false

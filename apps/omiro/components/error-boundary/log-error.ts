@@ -1,4 +1,5 @@
 import { logger } from '@hominem/telemetry';
+import * as Sentry from '@sentry/react-native';
 import type { ErrorInfo } from 'react';
 
 import { posthog } from '~/services/posthog';
@@ -13,6 +14,17 @@ export function logError(
   },
 ) {
   logger.error('[ErrorBoundary]', error);
+  Sentry.captureException(error, {
+    contexts: {
+      react: {
+        componentStack: errorInfo?.componentStack ?? undefined,
+      },
+    },
+    tags: {
+      feature: context?.feature ?? 'unknown',
+      route: context?.route ?? 'unknown',
+    },
+  });
 
   if (typeof posthog.captureException === 'function') {
     posthog.captureException(error, {

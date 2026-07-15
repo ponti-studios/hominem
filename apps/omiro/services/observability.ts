@@ -1,7 +1,15 @@
 import { logger } from '@hominem/telemetry';
+import * as Sentry from '@sentry/react-native';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { posthog } from './posthog';
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  environment: process.env.APP_ENV ?? 'development',
+  sendDefaultPii: false,
+  tracesSampleRate: 0,
+});
 
 function flushPostHog() {
   posthog.flush().catch((error) => {

@@ -8,7 +8,9 @@
       "node": "24.14.1",
       "pnpm": "11.10.0",
       "env": {
-        "EXPO_RUNTIME_VERSION": "ios-r1"
+        "EXPO_RUNTIME_VERSION": "ios-r1",
+        "SENTRY_ORG": "ponti-studios",
+        "SENTRY_PROJECT": "omiro"
       }
     },
     "development": {
