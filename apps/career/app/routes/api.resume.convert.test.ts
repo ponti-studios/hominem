@@ -61,6 +61,7 @@ vi.mock('../lib/rate-limit', () => ({
 
 vi.mock('@hominem/services', () => ({
   recordAIUsageEvent: mocks.recordAIUsageEvent,
+  startAIUsageTimer: () => () => 0,
 }));
 
 vi.mock('@hominem/ai', () => ({

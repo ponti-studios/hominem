@@ -22,6 +22,7 @@ export type VoiceCleanupProviderError = {
   kind: 'provider-error';
   message: string;
   status: 401 | 429;
+  error: unknown;
 };
 
 export type VoiceCleanupServiceResult =
@@ -159,6 +160,7 @@ export async function cleanupVoiceInput(
         kind: 'provider-error',
         message: error instanceof Error ? error.message : 'Voice cleanup failed',
         status,
+        error,
       };
     }
 

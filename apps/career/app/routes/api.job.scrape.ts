@@ -34,9 +34,27 @@ export const action: ActionFunction = async ({ request, context }) => {
     const result = await scrapeJobPosting(user.id, jobUrl);
 
     if (!result.success) {
+      await recordAIUsageEvent({
+        eventId,
+        userId: user.id,
+        feature: 'career_job_scrape',
+        operation: 'structured_output',
+        model: result.model,
+        durationMs: result.durationMs,
+        status: 'failed',
+        error: result.error,
+        metadata: {
+          source: 'job_url',
+        },
+      });
       return data(
         {
-          error: result.error || 'Job posting scraping failed',
+          error:
+            result.error instanceof Error
+              ? result.error.message
+              : typeof result.error === 'string'
+                ? result.error
+                : 'Job posting scraping failed',
         } satisfies JobScrapeApiResponse,
         { status: 400 },
       );
@@ -49,6 +67,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       operation: 'structured_output',
       usage: result.usage,
       model: result.model,
+      status: 'succeeded',
       durationMs: result.durationMs,
       metadata: {
         source: 'job_url',

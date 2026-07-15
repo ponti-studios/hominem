@@ -8,7 +8,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 
-import { recordAIUsageEvent } from '../../application/ai-usage.service';
+import { recordAIUsageEvent, startAIUsageTimer } from '../../application/ai-usage.service';
 import {
   ChatsCreateSchema,
   ChatsMessagesQuerySchema,
@@ -186,6 +186,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     });
     const prompt = buildPrompt(message, history, resolvedNotes, resolvedFiles);
     const eventId = randomUUID();
+    const getDurationMs = startAIUsageTimer();
     const completion = streamChatCompletion({
       messages: [
         { role: 'system', content: CHAT_ASSISTANT_PROMPT },
@@ -216,6 +217,9 @@ const chatByIdRoutes = new Hono<AppContext>()
           feature: 'chat_stream',
           operation: 'chat_completion',
           usage,
+          status: streamError ? 'failed' : 'succeeded',
+          error: streamError,
+          durationMs: getDurationMs(),
           metadata: {
             chatId,
             noteCount: resolvedNotes.length,
@@ -296,6 +300,7 @@ export const chatsRoutes = new Hono<AppContext>()
 
     const prompt = buildPrompt(message, [], resolvedNotes, resolvedFiles);
     const eventId = randomUUID();
+    const getDurationMs = startAIUsageTimer();
     const completion = streamChatCompletion({
       messages: [
         { role: 'system', content: CHAT_ASSISTANT_PROMPT },
@@ -334,6 +339,9 @@ export const chatsRoutes = new Hono<AppContext>()
           feature: 'chat_stream',
           operation: 'chat_completion',
           usage,
+          status: streamError ? 'failed' : 'succeeded',
+          error: streamError,
+          durationMs: getDurationMs(),
           metadata: {
             chatId: chat.id,
             noteCount: resolvedNotes.length,

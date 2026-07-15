@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { createChatCompletion, getChatCompletionText, getChatCompletionUsage } from '@hominem/ai';
 import { db, ProjectRepository, WorkExperienceRepository } from '@hominem/db';
-import { recordAIUsageEvent } from '@hominem/services';
+import { recordAIUsageEvent, startAIUsageTimer } from '@hominem/services';
 import { z } from 'zod';
 
 const derivedSkillSchema = z.object({
@@ -69,13 +69,33 @@ export async function deriveSkillsFromCareerHistory(
   const userMessage = `Work History:\n${workSection}\n\nProjects:\n${projectSection}`;
 
   const eventId = randomUUID();
-  const result = await createChatCompletion({
-    responseFormat: { type: 'json_object' },
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: userMessage },
-    ],
-  });
+  const getDurationMs = startAIUsageTimer();
+  let result;
+  try {
+    result = await createChatCompletion({
+      responseFormat: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage },
+      ],
+    });
+  } catch (error) {
+    await recordAIUsageEvent({
+      eventId,
+      userId: ownerUserid,
+      feature: 'career_skills_derive',
+      operation: 'structured_output',
+      status: 'failed',
+      error,
+      durationMs: getDurationMs(),
+      metadata: {
+        portfolioId,
+        workExperienceCount: workExperiences.length,
+        projectCount: projects.length,
+      },
+    });
+    throw error;
+  }
   await recordAIUsageEvent({
     eventId,
     userId: ownerUserid,
@@ -83,6 +103,8 @@ export async function deriveSkillsFromCareerHistory(
     operation: 'structured_output',
     usage: getChatCompletionUsage(result),
     model: result.model,
+    status: 'succeeded',
+    durationMs: getDurationMs(),
     metadata: {
       portfolioId,
       workExperienceCount: workExperiences.length,

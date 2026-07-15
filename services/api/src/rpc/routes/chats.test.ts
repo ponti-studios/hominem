@@ -55,6 +55,7 @@ vi.mock('@hominem/telemetry', () => ({
 
 vi.mock('../../application/ai-usage.service', () => ({
   recordAIUsageEvent: mocks.recordAIUsageEvent,
+  startAIUsageTimer: () => () => 0,
 }));
 
 vi.mock('./chats.mapper', () => ({

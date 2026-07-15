@@ -7,7 +7,7 @@ import { redis as cache } from '@hominem/services/redis';
 import { logger } from '@hominem/telemetry';
 import { Worker } from 'bullmq';
 
-import { recordAIUsageEvent } from '../application/ai-usage.service';
+import { recordAIUsageEvent, startAIUsageTimer } from '../application/ai-usage.service';
 
 const EMBEDDING_DIMENSIONS = 1536;
 
@@ -47,7 +47,26 @@ async function processEmbeddingJob(data: EmbeddingGenerationJob) {
   const eventId = toDeterministicUuid(
     `${data.jobId}:${data.entityType}:${data.entityId}:embedding`,
   );
-  const embeddingResult = await generateEmbedding(content, { dimensions: EMBEDDING_DIMENSIONS });
+  const getDurationMs = startAIUsageTimer();
+  let embeddingResult: Awaited<ReturnType<typeof generateEmbedding>>;
+  try {
+    embeddingResult = await generateEmbedding(content, { dimensions: EMBEDDING_DIMENSIONS });
+  } catch (error) {
+    await recordAIUsageEvent({
+      eventId,
+      userId: data.userId,
+      feature: 'embedding',
+      operation: 'embedding',
+      status: 'failed',
+      error,
+      durationMs: getDurationMs(),
+      metadata: {
+        entityType: data.entityType,
+        entityId: data.entityId,
+      },
+    });
+    throw error;
+  }
   const embedding = embeddingResult.embedding;
   if (embedding.length === 0) {
     logger.error('[embeddings] generation returned empty vector', {
@@ -63,6 +82,8 @@ async function processEmbeddingJob(data: EmbeddingGenerationJob) {
     feature: 'embedding',
     operation: 'embedding',
     usage: embeddingResult.usage,
+    status: 'succeeded',
+    durationMs: getDurationMs(),
     metadata: {
       entityType: data.entityType,
       entityId: data.entityId,

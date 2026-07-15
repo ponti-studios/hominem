@@ -8,7 +8,7 @@ import {
   OpenRouterRequestError,
 } from '@hominem/ai';
 import { db, PortfolioRepository } from '@hominem/db';
-import { recordAIUsageEvent } from '@hominem/services';
+import { recordAIUsageEvent, startAIUsageTimer } from '@hominem/services';
 import {
   documentStorageService,
   isStorageServiceError,
@@ -330,9 +330,10 @@ export const action: ActionFunction = async ({ request, context }) => {
     }
 
     let aiContent: string;
+    const resumeParserSystemPrompt = await loadResumeParserSystemPrompt();
+    const eventId = randomUUID();
+    const getDurationMs = startAIUsageTimer();
     try {
-      const resumeParserSystemPrompt = await loadResumeParserSystemPrompt();
-      const eventId = randomUUID();
       const result = await createChatCompletion({
         responseFormat: {
           type: 'json_schema',
@@ -360,6 +361,8 @@ export const action: ActionFunction = async ({ request, context }) => {
         operation: 'structured_output',
         usage: getChatCompletionUsage(result),
         model: result.model,
+        status: 'succeeded',
+        durationMs: getDurationMs(),
         metadata: {
           fileId: uploadResult.id,
           extractedCharacterCount: pdfText.length,
@@ -368,6 +371,19 @@ export const action: ActionFunction = async ({ request, context }) => {
       });
       aiContent = getChatCompletionText(result);
     } catch (error) {
+      await recordAIUsageEvent({
+        eventId,
+        userId: user.id,
+        feature: 'career_resume_convert',
+        operation: 'structured_output',
+        status: 'failed',
+        error,
+        durationMs: getDurationMs(),
+        metadata: {
+          extractedCharacterCount: pdfText.length,
+          replaceExisting,
+        },
+      });
       logRouteError('Resume AI parsing request failed', error, {
         ownerUserid: user.id,
         fileName: file.name,

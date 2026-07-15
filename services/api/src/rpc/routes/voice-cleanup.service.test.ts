@@ -106,6 +106,7 @@ describe('voice cleanup service', () => {
       kind: 'provider-error',
       message: 'auth',
       status: 401,
+      error: expect.any(OpenRouterRequestError),
     });
   });
 
@@ -121,6 +122,7 @@ describe('voice cleanup service', () => {
       kind: 'provider-error',
       message: 'quota',
       status: 429,
+      error: expect.any(OpenRouterRequestError),
     });
   });
 

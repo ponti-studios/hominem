@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 
 import { createChatCompletion, getChatCompletionText, getChatCompletionUsage } from '@hominem/ai';
 import { db, SocialLinksRepository } from '@hominem/db';
-import { recordAIUsageEvent } from '@hominem/services';
+import { recordAIUsageEvent, startAIUsageTimer } from '@hominem/services';
 import { data, type ActionFunction } from 'react-router';
 import { z } from 'zod';
 
@@ -146,14 +146,30 @@ Please create a customized resume that highlights the most relevant experience a
 
     // Generate customized resume using the shared monorepo AI client
     const resumeEventId = randomUUID();
-    const result = await createChatCompletion({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      maxTokens: 4000,
-      temperature: 0.3,
-    });
+    const getResumeDurationMs = startAIUsageTimer();
+    let result;
+    try {
+      result = await createChatCompletion({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        maxTokens: 4000,
+        temperature: 0.3,
+      });
+    } catch (error) {
+      await recordAIUsageEvent({
+        eventId: resumeEventId,
+        userId: user.id,
+        feature: 'career_resume_customize',
+        operation: 'chat_completion',
+        status: 'failed',
+        error,
+        durationMs: getResumeDurationMs(),
+        metadata: { call: 'resume_generation' },
+      });
+      throw error;
+    }
     await recordAIUsageEvent({
       eventId: resumeEventId,
       userId: user.id,
@@ -161,6 +177,8 @@ Please create a customized resume that highlights the most relevant experience a
       operation: 'chat_completion',
       usage: getChatCompletionUsage(result),
       model: result.model,
+      status: 'succeeded',
+      durationMs: getResumeDurationMs(),
       metadata: {
         portfolioId: portfolio.id,
         hasStructuredJobPosting: Boolean(jobPostingData),
@@ -174,23 +192,39 @@ Please create a customized resume that highlights the most relevant experience a
 
     // Extract key insights from the job posting for additional context
     const analysisEventId = randomUUID();
-    const analysisResult = await createChatCompletion({
-      responseFormat: { type: 'json_object' },
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are an expert job posting analyzer. Return only valid JSON with requiredSkills, qualifications, cultureKeywords, and recommendedKeywords arrays.',
-        },
-        {
-          role: 'user',
-          content: `Analyze this job posting and extract the most important information:
+    const getAnalysisDurationMs = startAIUsageTimer();
+    let analysisResult;
+    try {
+      analysisResult = await createChatCompletion({
+        responseFormat: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are an expert job posting analyzer. Return only valid JSON with requiredSkills, qualifications, cultureKeywords, and recommendedKeywords arrays.',
+          },
+          {
+            role: 'user',
+            content: `Analyze this job posting and extract the most important information:
 
 ${finalJobPosting}`,
-        },
-      ],
-      temperature: 0.1,
-    });
+          },
+        ],
+        temperature: 0.1,
+      });
+    } catch (error) {
+      await recordAIUsageEvent({
+        eventId: analysisEventId,
+        userId: user.id,
+        feature: 'career_resume_customize',
+        operation: 'structured_output',
+        status: 'failed',
+        error,
+        durationMs: getAnalysisDurationMs(),
+        metadata: { call: 'job_analysis' },
+      });
+      throw error;
+    }
     await recordAIUsageEvent({
       eventId: analysisEventId,
       userId: user.id,
@@ -198,6 +232,8 @@ ${finalJobPosting}`,
       operation: 'structured_output',
       usage: getChatCompletionUsage(analysisResult),
       model: analysisResult.model,
+      status: 'succeeded',
+      durationMs: getAnalysisDurationMs(),
       metadata: {
         portfolioId: portfolio.id,
         hasStructuredJobPosting: Boolean(jobPostingData),

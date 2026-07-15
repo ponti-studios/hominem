@@ -30,6 +30,7 @@ vi.mock('@hominem/ai', () => ({
 
 vi.mock('@hominem/services', () => ({
   recordAIUsageEvent: mocks.recordAIUsageEvent,
+  startAIUsageTimer: () => () => 0,
 }));
 
 vi.mock('@hominem/db', () => ({

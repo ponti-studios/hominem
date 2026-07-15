@@ -41,6 +41,7 @@ vi.mock('@hominem/db', () => ({
 
 vi.mock('@hominem/services', () => ({
   recordAIUsageEvent: mocks.recordAIUsageEvent,
+  startAIUsageTimer: () => () => 0,
 }));
 
 vi.mock('../lib/logger', () => ({

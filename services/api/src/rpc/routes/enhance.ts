@@ -6,7 +6,7 @@ import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
-import { recordAIUsageEvent } from '../../application/ai-usage.service';
+import { recordAIUsageEvent, startAIUsageTimer } from '../../application/ai-usage.service';
 import { AIUsageQuerySchema } from '../../schemas/ai.schema';
 import { EnhanceTextInputSchema } from '../../schemas/enhance.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
@@ -45,6 +45,7 @@ export const enhanceRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const { text, instruction } = c.req.valid('json');
     const eventId = randomUUID();
+    const getDurationMs = startAIUsageTimer();
 
     try {
       const enhanced = await enhanceText({ text, instruction }, TEXT_ENHANCE_PROMPT);
@@ -54,12 +55,23 @@ export const enhanceRoutes = new Hono<AppContext>()
         feature: 'text_enhance',
         operation: 'chat_completion',
         usage: enhanced.usage,
+        status: 'succeeded',
+        durationMs: getDurationMs(),
         metadata: {
           instructionProvided: Boolean(instruction),
         },
       });
       return c.json({ text: enhanced.text });
     } catch (error) {
+      await recordAIUsageEvent({
+        eventId,
+        userId,
+        feature: 'text_enhance',
+        operation: 'chat_completion',
+        status: 'failed',
+        error,
+        durationMs: getDurationMs(),
+      });
       logger.error('[ai/enhance] OpenRouter error', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });

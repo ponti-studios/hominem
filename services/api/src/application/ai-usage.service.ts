@@ -1,1 +1,1 @@
-export { recordAIUsageEvent } from '@hominem/services';
+export { getAIUsageFailureDetails, recordAIUsageEvent, startAIUsageTimer } from '@hominem/services';

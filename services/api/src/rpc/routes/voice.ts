@@ -3,11 +3,11 @@ import { randomUUID } from 'node:crypto';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
-import { recordAIUsageEvent } from '../../application/ai-usage.service';
+import { recordAIUsageEvent, startAIUsageTimer } from '../../application/ai-usage.service';
 import { VoiceCleanupInputSchema } from '../../schemas/voice.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
-import { cleanupVoiceInput } from './voice-cleanup.service';
+import { cleanupVoiceInput, shouldBypassVoiceCleanup } from './voice-cleanup.service';
 
 export const authenticatedVoiceRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
@@ -16,23 +16,42 @@ export const authenticatedVoiceRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
     const eventId = randomUUID();
+    const getDurationMs = startAIUsageTimer();
+    const bypassed = shouldBypassVoiceCleanup(input.rawText);
 
     const result = await cleanupVoiceInput(input);
     if (result.kind === 'provider-error') {
+      await recordAIUsageEvent({
+        eventId,
+        userId,
+        feature: 'voice_cleanup',
+        operation: 'structured_output',
+        status: 'failed',
+        error: result.error,
+        durationMs: getDurationMs(),
+        metadata: {
+          source: input.source,
+          locale: input.locale ?? null,
+        },
+      });
       return c.json({ message: result.message }, result.status);
     }
 
-    await recordAIUsageEvent({
-      eventId,
-      userId,
-      feature: 'voice_cleanup',
-      operation: 'structured_output',
-      usage: result.usage,
-      metadata: {
-        source: input.source,
-        locale: input.locale ?? null,
-      },
-    });
+    if (!bypassed) {
+      await recordAIUsageEvent({
+        eventId,
+        userId,
+        feature: 'voice_cleanup',
+        operation: 'structured_output',
+        usage: result.usage,
+        status: 'succeeded',
+        durationMs: getDurationMs(),
+        metadata: {
+          source: input.source,
+          locale: input.locale ?? null,
+        },
+      });
+    }
 
     return c.json(result.output);
   });

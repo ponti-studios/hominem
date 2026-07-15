@@ -16,7 +16,7 @@ interface JobScrapingProviderResult {
   usage: AIUsageMetrics | null;
   model?: string;
   durationMs: number;
-  error?: string;
+  error?: unknown;
 }
 
 const extractedJobSchema = z.object({
@@ -81,7 +81,7 @@ export async function scrapeJobPosting(
       success: false,
       usage: null,
       durationMs: Math.round(performance.now() - startedAt),
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      error,
     };
   }
 }
