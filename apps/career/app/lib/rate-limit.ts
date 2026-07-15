@@ -71,17 +71,6 @@ class RateLimiter {
   }
 }
 
-// Default rate limiters
-export const apiRateLimit = new RateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 100, // 100 requests per 15 minutes
-});
-
-export const authRateLimit = new RateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  maxRequests: 5, // 5 auth attempts per 15 minutes
-});
-
 export const resumeConvertRateLimit = new RateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
   maxRequests: 3, // 3 resume conversions per 15 minutes
@@ -90,8 +79,6 @@ export const resumeConvertRateLimit = new RateLimiter({
 // Cleanup every 5 minutes
 setInterval(
   () => {
-    apiRateLimit.cleanup();
-    authRateLimit.cleanup();
     resumeConvertRateLimit.cleanup();
   },
   5 * 60 * 1000,
@@ -99,7 +86,7 @@ setInterval(
 
 export function getRateLimitHeaders(
   result: ReturnType<RateLimiter['isAllowed']>,
-  limiter = apiRateLimit,
+  limiter = resumeConvertRateLimit,
 ) {
   return {
     'X-RateLimit-Limit': String(limiter.maxRequests),

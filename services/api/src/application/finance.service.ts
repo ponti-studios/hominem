@@ -1,4 +1,4 @@
-import { FinanceQueryRepository } from '@hominem/db';
+import { db, FinanceQueryRepository } from '@hominem/db';
 import type { z } from 'zod';
 
 import {
@@ -13,7 +13,7 @@ export class FinanceService {
     ownerUserId: string,
     input: FinanceMonthlySummaryQuery,
   ): Promise<FinanceMonthlySummaryDto> {
-    const summary = await FinanceQueryRepository.monthlySummary(ownerUserId, input);
+    const summary = await FinanceQueryRepository.monthlySummary(db, ownerUserId, input);
     return financeMonthlySummarySchema.parse(summary);
   }
 }

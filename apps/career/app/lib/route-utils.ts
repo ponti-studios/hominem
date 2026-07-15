@@ -1,5 +1,3 @@
-import { logger } from './logger';
-
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -17,22 +15,6 @@ export function createSuccessResponse<T>(data?: T, message?: string): ApiRespons
     data,
     ...(message && { message }),
   };
-}
-
-export async function tryAsync<T>(
-  operation: () => Promise<T>,
-  errorMessage = 'Operation failed',
-): Promise<T | ApiResponse> {
-  try {
-    return await operation();
-  } catch (error) {
-    logger.error(
-      errorMessage,
-      error instanceof Error ? error : undefined,
-      error instanceof Error ? undefined : { error },
-    );
-    return createErrorResponse(errorMessage);
-  }
 }
 
 export function parseFormData<T>(formData: FormData, key: string): T | ApiResponse {

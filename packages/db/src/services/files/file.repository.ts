@@ -33,6 +33,11 @@ export interface UpsertFileInput {
   metadata?: Record<string, unknown> | null;
 }
 
+export interface DeleteFileCommand {
+  fileId: string;
+  userId: string;
+}
+
 function deriveFileType(mimetype: string): FileRecord['type'] {
   if (mimetype.startsWith('image/')) return 'image';
   if (mimetype.startsWith('audio/')) return 'audio';
@@ -181,11 +186,14 @@ export const FileRepository = {
   /**
    * Delete a file record.
    */
-  async delete(handle: DbHandle, fileId: string, userId: string): Promise<void> {
-    await handle
+  async delete(handle: DbHandle, command: DeleteFileCommand): Promise<void> {
+    const deleted = await handle
       .deleteFrom('app.files')
-      .where('id', '=', fileId)
-      .where('ownerUserid', '=', userId)
-      .execute();
+      .where('id', '=', command.fileId)
+      .where('ownerUserid', '=', command.userId)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!deleted) throw new NotFoundError('File', { fileId: command.fileId });
   },
 };

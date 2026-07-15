@@ -1,5 +1,6 @@
 import type { Selectable } from 'kysely';
 
+import { NotFoundError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppTestimonials } from '../../types/database';
 import { verifyPortfolioOwnership } from './ownership';
@@ -44,6 +45,23 @@ export interface UpdateTestimonialInput {
   rating?: number | null;
 }
 
+export interface CreateTestimonialCommand extends CreateTestimonialInput {
+  ownerUserid: string;
+}
+
+export interface UpdateTestimonialCommand {
+  ownerUserid: string;
+  testimonialId: string;
+  portfolioId: string;
+  input: UpdateTestimonialInput;
+}
+
+export interface DeleteTestimonialCommand {
+  ownerUserid: string;
+  testimonialId: string;
+  portfolioId: string;
+}
+
 function toTestimonialRecord(row: TestimonialRow): TestimonialRecord {
   return {
     id: row.id,
@@ -78,22 +96,21 @@ export const TestimonialRepository = {
 
   async createTestimonial(
     handle: DbHandle,
-    ownerUserid: string,
-    input: CreateTestimonialInput,
+    command: CreateTestimonialCommand,
   ): Promise<TestimonialRecord> {
-    await verifyPortfolioOwnership(handle, ownerUserid, input.portfolioId);
+    await verifyPortfolioOwnership(handle, command.ownerUserid, command.portfolioId);
 
     const created = await handle
       .insertInto('app.testimonials')
       .values({
-        portfolioId: input.portfolioId,
-        name: input.name,
-        title: input.title ?? null,
-        company: input.company ?? null,
-        content: input.content,
-        avatarUrl: input.avatarUrl ?? null,
-        linkedinUrl: input.linkedinUrl ?? null,
-        rating: input.rating ?? null,
+        portfolioId: command.portfolioId,
+        name: command.name,
+        title: command.title ?? null,
+        company: command.company ?? null,
+        content: command.content,
+        avatarUrl: command.avatarUrl ?? null,
+        linkedinUrl: command.linkedinUrl ?? null,
+        rating: command.rating ?? null,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -101,16 +118,11 @@ export const TestimonialRepository = {
     return toTestimonialRecord(created as TestimonialRow);
   },
 
-  async updateTestimonial(
-    handle: DbHandle,
-    ownerUserid: string,
-    testimonialId: string,
-    portfolioId: string,
-    input: UpdateTestimonialInput,
-  ): Promise<void> {
-    await verifyPortfolioOwnership(handle, ownerUserid, portfolioId);
+  async updateTestimonial(handle: DbHandle, command: UpdateTestimonialCommand): Promise<void> {
+    await verifyPortfolioOwnership(handle, command.ownerUserid, command.portfolioId);
+    const input = command.input;
 
-    await handle
+    const updated = await handle
       .updateTable('app.testimonials')
       .set({
         name: input.name,
@@ -121,23 +133,24 @@ export const TestimonialRepository = {
         linkedinUrl: input.linkedinUrl ?? null,
         rating: input.rating ?? null,
       })
-      .where('id', '=', testimonialId)
-      .where('portfolioId', '=', portfolioId)
-      .executeTakeFirstOrThrow();
+      .where('id', '=', command.testimonialId)
+      .where('portfolioId', '=', command.portfolioId)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!updated) throw new NotFoundError('Testimonial', { testimonialId: command.testimonialId });
   },
 
-  async deleteTestimonial(
-    handle: DbHandle,
-    ownerUserid: string,
-    testimonialId: string,
-    portfolioId: string,
-  ): Promise<void> {
-    await verifyPortfolioOwnership(handle, ownerUserid, portfolioId);
+  async deleteTestimonial(handle: DbHandle, command: DeleteTestimonialCommand): Promise<void> {
+    await verifyPortfolioOwnership(handle, command.ownerUserid, command.portfolioId);
 
-    await handle
+    const deleted = await handle
       .deleteFrom('app.testimonials')
-      .where('id', '=', testimonialId)
-      .where('portfolioId', '=', portfolioId)
-      .executeTakeFirstOrThrow();
+      .where('id', '=', command.testimonialId)
+      .where('portfolioId', '=', command.portfolioId)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!deleted) throw new NotFoundError('Testimonial', { testimonialId: command.testimonialId });
   },
 };

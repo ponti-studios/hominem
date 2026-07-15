@@ -46,11 +46,66 @@ export interface FullPortfolioRecord extends PortfolioRecord {
   testimonials: TestimonialRecord[];
 }
 
-export interface PublicFullPortfolioRecord extends PortfolioRecord {
+/** Work experiences, skills, and projects only — no testimonials. For callers (LLM prompt context) that never read testimonials. */
+export interface ResumePortfolioRecord extends PortfolioRecord {
+  work_experiences: WorkExperienceRecord[];
+  skills: SkillRecord[];
+  projects: ProjectRecord[];
+}
+
+/** Public-safe work experiences, skills, and projects only — no testimonials. For the public profile page, which doesn't render testimonials. */
+export interface PublicPortfolioProfileRecord extends PortfolioRecord {
   work_experiences: PublicWorkExperienceRecord[];
   skills: SkillRecord[];
   projects: ProjectRecord[];
-  testimonials: TestimonialRecord[];
+}
+
+export type TimelineEntryKind = 'career_event' | 'project' | 'testimonial' | 'status_change';
+
+export interface TimelineEntryRecord {
+  id: string;
+  kind: TimelineEntryKind;
+  date: string;
+  title: string;
+  subtitle?: string;
+  statusPill?: string;
+  workExperienceId: string | null;
+}
+
+export interface ChapterWithEntries {
+  workExperience: WorkExperienceRecord;
+  entries: TimelineEntryRecord[];
+}
+
+export interface PortfolioTimeline {
+  chapters: ChapterWithEntries[];
+  unattributedEntries: TimelineEntryRecord[];
+}
+
+interface TimelineEntryRow {
+  id: string;
+  kind: TimelineEntryKind;
+  date: string;
+  title: string;
+  subtitle: string | null;
+  statusPill: string | null;
+  workExperienceId: string | null;
+}
+
+function toTimelineEntryRecord(row: TimelineEntryRow): TimelineEntryRecord {
+  return {
+    id: row.id,
+    kind: row.kind,
+    date: String(row.date),
+    title: row.title,
+    subtitle: row.subtitle ?? undefined,
+    statusPill: row.statusPill ?? undefined,
+    workExperienceId: row.workExperienceId,
+  };
+}
+
+function byDateDesc(left: { date: string }, right: { date: string }): number {
+  return new Date(right.date).getTime() - new Date(left.date).getTime();
 }
 
 export interface CreateDefaultPortfolioInput {
@@ -132,18 +187,30 @@ async function loadFullPortfolio(
   };
 }
 
-async function loadPublicPortfolio(
+async function loadResumeContext(
   handle: DbHandle,
   portfolio: PortfolioRecord,
-): Promise<PublicFullPortfolioRecord> {
-  const [work_experiences, skills, projects, testimonials] = await Promise.all([
-    WorkExperienceRepository.listPublicByPortfolioId(handle, portfolio.id),
+): Promise<ResumePortfolioRecord> {
+  const [work_experiences, skills, projects] = await Promise.all([
+    WorkExperienceRepository.listByPortfolioId(handle, portfolio.id),
     SkillRepository.listByPortfolioId(handle, portfolio.id),
     ProjectRepository.listByPortfolioId(handle, portfolio.id),
-    TestimonialRepository.listByPortfolioId(handle, portfolio.id),
   ]);
 
-  return { ...portfolio, work_experiences, skills, projects, testimonials };
+  return { ...portfolio, work_experiences, skills, projects };
+}
+
+async function loadPublicProfile(
+  handle: DbHandle,
+  portfolio: PortfolioRecord,
+): Promise<PublicPortfolioProfileRecord> {
+  const [work_experiences, skills, projects] = await Promise.all([
+    WorkExperienceRepository.listPublicByPortfolioId(handle, portfolio.id),
+    SkillRepository.listVisibleByPortfolioId(handle, portfolio.id),
+    ProjectRepository.listVisibleByPortfolioId(handle, portfolio.id),
+  ]);
+
+  return { ...portfolio, work_experiences, skills, projects };
 }
 
 export const PortfolioRepository = {
@@ -170,6 +237,17 @@ export const PortfolioRepository = {
     return row ? toPortfolioRecord(row as PortfolioRow) : null;
   },
 
+  /** Just the id — for callers that only need to resolve or check existence of a user's portfolio, not read its fields. */
+  async getPortfolioIdByUserId(handle: DbHandle, ownerUserid: string): Promise<string | null> {
+    const row = await handle
+      .selectFrom('app.portfolios')
+      .select('id')
+      .where('ownerUserid', '=', ownerUserid)
+      .executeTakeFirst();
+
+    return row?.id ?? null;
+  },
+
   async loadFullPortfolioByUserId(
     handle: DbHandle,
     ownerUserid: string,
@@ -178,15 +256,156 @@ export const PortfolioRepository = {
     return portfolio ? loadFullPortfolio(handle, portfolio) : null;
   },
 
-  async loadFullPortfolioBySlug(
+  /** Work experiences, skills, and projects for LLM prompt context — skips the testimonials fetch, which resume generation never reads. */
+  async loadResumeContextByUserId(
+    handle: DbHandle,
+    ownerUserid: string,
+  ): Promise<ResumePortfolioRecord | null> {
+    const portfolio = await PortfolioRepository.getPortfolioByUserId(handle, ownerUserid);
+    return portfolio ? loadResumeContext(handle, portfolio) : null;
+  },
+
+  /** Work experiences, skills, and projects for the public profile page — skips the testimonials fetch, which that page doesn't render. */
+  async loadPublicProfileBySlug(
     handle: DbHandle,
     slug: string,
-  ): Promise<PublicFullPortfolioRecord | null> {
+  ): Promise<PublicPortfolioProfileRecord | null> {
     const portfolio = await PortfolioRepository.getPortfolioBySlug(handle, slug);
     if (!portfolio || !portfolio.isPublic || !portfolio.isActive) {
       return null;
     }
-    return loadPublicPortfolio(handle, portfolio);
+    return loadPublicProfile(handle, portfolio);
+  },
+
+  /**
+   * Career timeline for a user's portfolio: work-experience chapters, each
+   * populated with the career events, projects, testimonials, and job-application
+   * status changes that fall within it. Testimonials have no direct FK to a
+   * chapter, so they're attributed by date-range containment (most-recently-started
+   * chapter wins on overlap). Status changes are never attributed — an interview
+   * isn't necessarily at the chapter's employer — so they always land in
+   * `unattributedEntries`.
+   *
+   * All entry sources are pulled in a single UNION ALL query.
+   */
+  async getTimeline(handle: DbHandle, ownerUserid: string): Promise<PortfolioTimeline | null> {
+    const portfolioId = await PortfolioRepository.getPortfolioIdByUserId(handle, ownerUserid);
+    if (!portfolioId) return null;
+
+    const [workExperiences, entryRows] = await Promise.all([
+      WorkExperienceRepository.listByPortfolioId(handle, portfolioId),
+      sql<TimelineEntryRow>`
+        SELECT * FROM (
+          SELECT
+            'career_event:' || ce.id::text AS id,
+            'career_event'::text AS kind,
+            ce.event_date AS date,
+            replace(ce.event_type, '_', ' ') AS title,
+            ce.description AS subtitle,
+            NULL::text AS "statusPill",
+            ce.work_experience_id AS "workExperienceId"
+          FROM app.career_events ce
+          WHERE ce.owner_userid = ${ownerUserid}
+
+          UNION ALL
+
+          SELECT
+            'project:' || p.id::text,
+            'project',
+            COALESCE(p.end_date, p.start_date, p.createdat),
+            (CASE p.status
+              WHEN 'completed' THEN 'Shipped'
+              WHEN 'in-progress' THEN 'Started'
+              WHEN 'archived' THEN 'Archived'
+              ELSE 'Updated'
+            END) || ' "' || p.title || '"',
+            p.short_description,
+            NULL::text,
+            p.work_experience_id
+          FROM app.projects p
+          WHERE p.portfolio_id = ${portfolioId}
+
+          UNION ALL
+
+          SELECT
+            'testimonial:' || t.id::text,
+            'testimonial',
+            t.createdat,
+            'Feedback from ' || t.name,
+            t.content,
+            NULL::text,
+            attributed.id
+          FROM app.testimonials t
+          LEFT JOIN LATERAL (
+            SELECT we.id
+            FROM app.work_experiences we
+            WHERE we.portfolio_id = ${portfolioId}
+              AND we.start_date IS NOT NULL
+              AND we.start_date <= t.createdat
+              AND (we.end_date IS NULL OR we.end_date >= t.createdat)
+            ORDER BY we.start_date DESC
+            LIMIT 1
+          ) attributed ON true
+          WHERE t.portfolio_id = ${portfolioId}
+
+          UNION ALL
+
+          SELECT
+            'status:' || h.id::text,
+            'status_change',
+            h.changed_at,
+            ja.position || ' — status changed to ' || replace(h.new_status, '_', ' '),
+            c.name,
+            (CASE WHEN h.new_status IN ('OFFER', 'ACCEPTED', 'REJECTED', 'WITHDRAWN')
+              THEN h.new_status ELSE NULL END),
+            NULL::uuid
+          FROM app.job_application_status_history h
+          INNER JOIN app.job_applications ja ON ja.id = h.application_id
+          LEFT JOIN app.companies c ON c.id = ja.company_id
+          WHERE ja.owner_userid = ${ownerUserid}
+        ) combined
+        ORDER BY date DESC
+      `.execute(handle),
+    ]);
+
+    const chaptersByExperienceId = new Map<string, ChapterWithEntries>();
+    for (const workExperience of workExperiences) {
+      chaptersByExperienceId.set(workExperience.id, { workExperience, entries: [] });
+    }
+
+    const unattributedEntries: TimelineEntryRecord[] = [];
+
+    for (const row of entryRows.rows) {
+      const entry = toTimelineEntryRecord(row);
+      const chapter = entry.workExperienceId
+        ? chaptersByExperienceId.get(entry.workExperienceId)
+        : undefined;
+      if (chapter) {
+        chapter.entries.push(entry);
+      } else {
+        unattributedEntries.push(entry);
+      }
+    }
+
+    const chapters = [...chaptersByExperienceId.values()]
+      .sort((left, right) => {
+        const leftStart = left.workExperience.startDate
+          ? new Date(left.workExperience.startDate).getTime()
+          : 0;
+        const rightStart = right.workExperience.startDate
+          ? new Date(right.workExperience.startDate).getTime()
+          : 0;
+        return rightStart - leftStart;
+      })
+      .map((chapter) => ({
+        ...chapter,
+        entries: [...chapter.entries].sort(byDateDesc),
+      }));
+
+    return {
+      chapters,
+      unattributedEntries: unattributedEntries.sort(byDateDesc),
+    };
   },
 
   async isSlugAvailable(
@@ -211,8 +430,8 @@ export const PortfolioRepository = {
     handle: DbHandle,
     input: CreateDefaultPortfolioInput,
   ): Promise<PortfolioRecord> {
-    const existing = await PortfolioRepository.getPortfolioByUserId(handle, input.ownerUserid);
-    if (existing) {
+    const existingId = await PortfolioRepository.getPortfolioIdByUserId(handle, input.ownerUserid);
+    if (existingId) {
       throw new Error('User already has a portfolio');
     }
 
@@ -240,7 +459,13 @@ export const PortfolioRepository = {
   },
 
   async deletePortfolioByUserId(handle: DbHandle, ownerUserid: string): Promise<void> {
-    await handle.deleteFrom('app.portfolios').where('ownerUserid', '=', ownerUserid).execute();
+    const deleted = await handle
+      .deleteFrom('app.portfolios')
+      .where('ownerUserid', '=', ownerUserid)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!deleted) throw new NotFoundError('Portfolio', { ownerUserid });
   },
 
   async updatePortfolioSlug(
@@ -264,16 +489,16 @@ export const PortfolioRepository = {
     ownerUserid: string,
     profileImageUrl: string,
   ): Promise<void> {
-    const portfolio = await PortfolioRepository.getPortfolioByUserId(handle, ownerUserid);
-    if (!portfolio) {
-      throw new NotFoundError('Portfolio', { ownerUserid });
-    }
-
-    await handle
+    const updated = await handle
       .updateTable('app.portfolios')
       .set({ profileImageUrl: profileImageUrl })
-      .where('id', '=', portfolio.id)
-      .executeTakeFirstOrThrow();
+      .where('ownerUserid', '=', ownerUserid)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!updated) {
+      throw new NotFoundError('Portfolio', { ownerUserid });
+    }
   },
 
   async savePortfolioBasics(
@@ -281,9 +506,9 @@ export const PortfolioRepository = {
     ownerUserid: string,
     input: SavePortfolioBasicsInput,
   ): Promise<PortfolioRecord> {
-    const existing = await PortfolioRepository.getPortfolioByUserId(handle, ownerUserid);
+    const existingId = await PortfolioRepository.getPortfolioIdByUserId(handle, ownerUserid);
 
-    if (existing) {
+    if (existingId) {
       const updated = await handle
         .updateTable('app.portfolios')
         .set({
@@ -302,7 +527,7 @@ export const PortfolioRepository = {
           ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
           ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
         })
-        .where('id', '=', existing.id)
+        .where('id', '=', existingId)
         .returningAll()
         .executeTakeFirstOrThrow();
 

@@ -109,12 +109,11 @@ export async function action({ context, request }: Route.ActionArgs) {
         throw new Response('Missing or invalid applicationId or status', { status: 400 });
       }
 
-      await JobApplicationRepository.updateJobApplicationStatus(
-        db,
-        user.id,
+      await JobApplicationRepository.updateJobApplicationStatus(db, {
+        ownerUserid: user.id,
         applicationId,
-        status as JobApplicationStatus,
-      );
+        status: status as JobApplicationStatus,
+      });
 
       return { message: 'Job application updated successfully' };
     }
@@ -126,7 +125,10 @@ export async function action({ context, request }: Route.ActionArgs) {
         throw new Response('Missing or invalid applicationId', { status: 400 });
       }
 
-      await JobApplicationRepository.deleteJobApplication(db, user.id, applicationId);
+      await JobApplicationRepository.deleteJobApplication(db, {
+        ownerUserid: user.id,
+        applicationId,
+      });
 
       return { message: 'Job application deleted successfully' };
     }

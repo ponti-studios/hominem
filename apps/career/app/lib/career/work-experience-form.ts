@@ -207,7 +207,7 @@ export function normalizeCurrencyInput(value: unknown) {
   return Number.isFinite(parsed) ? Math.round(parsed * 100) : null;
 }
 
-export function normalizeDateInput(value: unknown) {
+function normalizeDateInput(value: unknown) {
   if (value === null || value === undefined || value === '') {
     return null;
   }

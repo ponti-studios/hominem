@@ -76,13 +76,12 @@ export const filesRoutes = new Hono<AppContext>()
       const userId = c.get('auth')!.userId;
       const fileId = c.req.param('fileId');
 
-      const exists = await FileRepository.existsForUser(db, fileId, userId);
-      if (!exists) {
+      if (!(await FileRepository.existsForUser(db, fileId, userId))) {
         throw new NotFoundError('File');
       }
 
       await fileStorageService.deleteFile(fileId, userId);
-      await FileRepository.delete(db, fileId, userId);
+      await FileRepository.delete(db, { fileId, userId });
 
       return c.json({ success: true, message: 'File deleted successfully' });
     } catch (error) {

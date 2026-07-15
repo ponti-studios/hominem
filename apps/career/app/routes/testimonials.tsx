@@ -416,7 +416,8 @@ export async function action({ request, context }: Route.ActionArgs) {
           // Insert new testimonial
           const { id: _id, ...insertData } = testimonialData;
 
-          const newTestimonial = await TestimonialRepository.createTestimonial(db, user.id, {
+          const newTestimonial = await TestimonialRepository.createTestimonial(db, {
+            ownerUserid: user.id,
             portfolioId: insertData.portfolioId,
             name: insertData.name,
             title: insertData.title,
@@ -445,12 +446,11 @@ export async function action({ request, context }: Route.ActionArgs) {
           };
         }
 
-        await TestimonialRepository.updateTestimonial(
-          db,
-          user.id,
-          id,
-          testimonialData.portfolioId,
-          {
+        await TestimonialRepository.updateTestimonial(db, {
+          ownerUserid: user.id,
+          testimonialId: id,
+          portfolioId: testimonialData.portfolioId,
+          input: {
             name: updateData.name,
             title: updateData.title,
             company: updateData.company,
@@ -459,7 +459,7 @@ export async function action({ request, context }: Route.ActionArgs) {
             linkedinUrl: updateData.linkedinUrl,
             rating: updateData.rating,
           },
-        );
+        });
 
         return { success: true, operation, message: 'Testimonial updated successfully' };
       } catch (error) {
@@ -484,7 +484,11 @@ export async function action({ request, context }: Route.ActionArgs) {
       }
 
       try {
-        await TestimonialRepository.deleteTestimonial(db, user.id, id, portfolioId);
+        await TestimonialRepository.deleteTestimonial(db, {
+          ownerUserid: user.id,
+          testimonialId: id,
+          portfolioId,
+        });
         return { success: true, operation, message: 'Testimonial deleted successfully' };
       } catch (error) {
         logger.error('Failed to delete testimonial', error, {

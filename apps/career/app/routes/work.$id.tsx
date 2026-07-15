@@ -65,7 +65,11 @@ export async function action({ context, request, params }: Route.ActionArgs) {
     }
 
     try {
-      await WorkExperienceRepository.deleteWorkExperience(db, user.id, id, portfolioId);
+      await WorkExperienceRepository.deleteWorkExperience(db, {
+        ownerUserid: user.id,
+        experienceId: id,
+        portfolioId,
+      });
 
       return { success: true, operation };
     } catch (error) {

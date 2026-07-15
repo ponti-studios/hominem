@@ -300,11 +300,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     }>;
 
     await runInTransaction((tx) =>
-      SkillRepository.replaceSkills(
-        tx,
-        user.id,
-        portfolio.id,
-        skillsData.map((skill, index) => ({
+      SkillRepository.replaceSkills(tx, {
+        ownerUserid: user.id,
+        portfolioId: portfolio.id,
+        skills: skillsData.map((skill, index) => ({
           name: skill.name,
           category: skill.category,
           level: skill.level ?? 70,
@@ -312,7 +311,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           proof: null,
           sortOrder: index,
         })),
-      ),
+      }),
     );
 
     return { success: true };

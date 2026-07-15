@@ -14,7 +14,7 @@ import type {
 
 import { JobApplicationStage, JobApplicationStatus } from '~/types/career';
 
-export interface CreateApplicationInput {
+interface CreateApplicationInput {
   companyName: string;
   companyWebsite?: string | null;
   companyDescription?: string | null;
@@ -251,7 +251,8 @@ export class JobApplicationsService {
       description: input.companyDescription ?? null,
     });
 
-    return JobApplicationRepository.createJobApplication(db, ownerUserid, {
+    return JobApplicationRepository.createJobApplication(db, {
+      ownerUserid,
       companyId: company.id,
       position: input.position,
       status: input.status ?? JobApplicationStatus.APPLIED,

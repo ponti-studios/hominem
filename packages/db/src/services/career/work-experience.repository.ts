@@ -1,6 +1,7 @@
-import type { Selectable } from 'kysely';
+import type { Selectable, UpdateObject } from 'kysely';
 import { sql } from 'kysely';
 
+import type { Database } from '../../db';
 import { NotFoundError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppWorkExperiences, JsonValue } from '../../types/database';
@@ -133,6 +134,22 @@ export interface UpdateWorkExperienceInput {
   exitNotes?: string | null;
 }
 
+export interface CreateWorkExperienceCommand extends CreateWorkExperienceInput {
+  ownerUserid: string;
+}
+
+export interface UpdateWorkExperienceCommand {
+  ownerUserid: string;
+  experienceId: string;
+  updates: UpdateWorkExperienceInput;
+}
+
+export interface DeleteWorkExperienceCommand {
+  ownerUserid: string;
+  experienceId: string;
+  portfolioId: string;
+}
+
 function toWorkExperienceRecord(row: WorkExperienceRow): WorkExperienceRecord {
   return {
     id: row.id,
@@ -240,10 +257,9 @@ export const WorkExperienceRepository = {
 
   async createWorkExperience(
     handle: DbHandle,
-    ownerUserid: string,
-    input: CreateWorkExperienceInput,
+    input: CreateWorkExperienceCommand,
   ): Promise<WorkExperienceRecord> {
-    await verifyPortfolioOwnership(handle, ownerUserid, input.portfolioId);
+    await verifyPortfolioOwnership(handle, input.ownerUserid, input.portfolioId);
 
     const created = await handle
       .insertInto('app.workExperiences')
@@ -270,22 +286,24 @@ export const WorkExperienceRepository = {
 
   async updateWorkExperience(
     handle: DbHandle,
-    ownerUserid: string,
-    experienceId: string,
-    updates: UpdateWorkExperienceInput,
+    command: UpdateWorkExperienceCommand,
   ): Promise<WorkExperienceRecord> {
     const existing = await WorkExperienceRepository.getWorkExperienceById(
       handle,
-      ownerUserid,
-      experienceId,
+      command.ownerUserid,
+      command.experienceId,
     );
     if (!existing) {
-      throw new NotFoundError('WorkExperience', { experienceId, ownerUserid });
+      throw new NotFoundError('WorkExperience', {
+        experienceId: command.experienceId,
+        ownerUserid: command.ownerUserid,
+      });
     }
 
-    // Build only the columns that were explicitly provided
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const set: Record<string, any> = {};
+    const updates = command.updates;
+
+    // Build only the columns that were explicitly provided.
+    const set: UpdateObject<Database, 'app.workExperiences'> = {};
     if (updates.role !== undefined) set.role = updates.role;
     if (updates.company !== undefined) set.company = updates.company;
     if (updates.description !== undefined) set.description = updates.description;
@@ -302,39 +320,44 @@ export const WorkExperienceRepository = {
     if (updates.baseSalary !== undefined) set.baseSalary = updates.baseSalary;
     if (updates.signingBonus !== undefined) set.signingBonus = updates.signingBonus;
     if (updates.annualBonus !== undefined) set.annualBonus = updates.annualBonus;
-    if (updates.employmentType !== undefined) set.employmentType = updates.employmentType;
-    if (updates.workArrangement !== undefined) set.workArrangement = updates.workArrangement;
+    if (updates.employmentType != null) set.employmentType = updates.employmentType;
+    if (updates.workArrangement != null) set.workArrangement = updates.workArrangement;
     if (updates.seniorityLevel !== undefined) set.seniorityLevel = updates.seniorityLevel;
     if (updates.department !== undefined) set.department = updates.department;
     if (updates.teamSize !== undefined) set.teamSize = updates.teamSize;
-    if (updates.directReports !== undefined) set.directReports = updates.directReports;
+    if (updates.directReports != null) set.directReports = updates.directReports;
     if (updates.reportsTo !== undefined) set.reportsTo = updates.reportsTo;
     if (updates.reasonForLeaving !== undefined) set.reasonForLeaving = updates.reasonForLeaving;
     if (updates.exitNotes !== undefined) set.exitNotes = updates.exitNotes;
 
     const updated = await handle
       .updateTable('app.workExperiences')
-      // biome-ignore lint/suspicious/noExplicitAny: dynamic column mapping
-      .set(set as any)
-      .where('id', '=', experienceId)
+      .set(set)
+      .where('id', '=', command.experienceId)
+      .where('portfolioId', '=', existing.portfolioId)
       .returningAll()
-      .executeTakeFirstOrThrow();
+      .executeTakeFirst();
+
+    if (!updated) {
+      throw new NotFoundError('WorkExperience', { experienceId: command.experienceId });
+    }
 
     return toWorkExperienceRecord(updated as WorkExperienceRow);
   },
 
   async deleteWorkExperience(
     handle: DbHandle,
-    ownerUserid: string,
-    experienceId: string,
-    portfolioId: string,
+    command: DeleteWorkExperienceCommand,
   ): Promise<void> {
-    await verifyPortfolioOwnership(handle, ownerUserid, portfolioId);
+    await verifyPortfolioOwnership(handle, command.ownerUserid, command.portfolioId);
 
-    await handle
+    const deleted = await handle
       .deleteFrom('app.workExperiences')
-      .where('id', '=', experienceId)
-      .where('portfolioId', '=', portfolioId)
-      .executeTakeFirstOrThrow();
+      .where('id', '=', command.experienceId)
+      .where('portfolioId', '=', command.portfolioId)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!deleted) throw new NotFoundError('WorkExperience', { experienceId: command.experienceId });
   },
 };

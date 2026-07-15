@@ -151,6 +151,21 @@ export interface UpdateJobApplicationInput {
   updatedat?: Date;
 }
 
+export interface CreateJobApplicationCommand extends CreateJobApplicationInput {
+  ownerUserid: string;
+}
+
+export interface UpdateJobApplicationStatusCommand {
+  ownerUserid: string;
+  applicationId: string;
+  status: string;
+}
+
+export interface DeleteJobApplicationCommand {
+  ownerUserid: string;
+  applicationId: string;
+}
+
 function toJobApplicationRecord(
   row: JobApplicationRow,
   company: CompanyRow | null,
@@ -216,24 +231,26 @@ function toJobApplicationRecord(
 export const JobApplicationRepository = {
   async createJobApplication(
     handle: DbHandle,
-    ownerUserid: string,
-    input: CreateJobApplicationInput,
+    input: CreateJobApplicationCommand,
   ): Promise<JobApplicationRecord> {
     const company = await handle
       .selectFrom('app.companies')
       .selectAll()
       .where('id', '=', input.companyId)
-      .where('ownerUserid', '=', ownerUserid)
+      .where('ownerUserid', '=', input.ownerUserid)
       .executeTakeFirst();
 
     if (!company) {
-      throw new NotFoundError('Company', { companyId: input.companyId, ownerUserid });
+      throw new NotFoundError('Company', {
+        companyId: input.companyId,
+        ownerUserid: input.ownerUserid,
+      });
     }
 
     const created = await handle
       .insertInto('app.jobApplications')
       .values({
-        ownerUserid: ownerUserid,
+        ownerUserid: input.ownerUserid,
         companyId: input.companyId,
         position: input.position,
         status: input.status,
@@ -267,28 +284,33 @@ export const JobApplicationRepository = {
 
   async updateJobApplicationStatus(
     handle: DbHandle,
-    ownerUserid: string,
-    applicationId: string,
-    status: string,
+    command: UpdateJobApplicationStatusCommand,
   ): Promise<void> {
-    await handle
+    const updated = await handle
       .updateTable('app.jobApplications')
-      .set({ status })
-      .where('id', '=', applicationId)
-      .where('ownerUserid', '=', ownerUserid)
-      .executeTakeFirstOrThrow();
+      .set({ status: command.status })
+      .where('id', '=', command.applicationId)
+      .where('ownerUserid', '=', command.ownerUserid)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!updated)
+      throw new NotFoundError('JobApplication', { applicationId: command.applicationId });
   },
 
   async deleteJobApplication(
     handle: DbHandle,
-    ownerUserid: string,
-    applicationId: string,
+    command: DeleteJobApplicationCommand,
   ): Promise<void> {
-    await handle
+    const deleted = await handle
       .deleteFrom('app.jobApplications')
-      .where('id', '=', applicationId)
-      .where('ownerUserid', '=', ownerUserid)
-      .executeTakeFirstOrThrow();
+      .where('id', '=', command.applicationId)
+      .where('ownerUserid', '=', command.ownerUserid)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!deleted)
+      throw new NotFoundError('JobApplication', { applicationId: command.applicationId });
   },
 
   async getApplicationById(

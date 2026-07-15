@@ -1,14 +1,14 @@
 import type { UserSocialLinksRecord } from '@hominem/db';
 
 import { jsonArray } from '../db-json';
-import type { FullPortfolio } from '../portfolio.server';
+import type { ResumePortfolio } from '../portfolio.server';
 
 /**
  * Formats portfolio data in a natural, LLM-friendly format
  * instead of JSON to improve AI comprehension and resume generation quality
  */
 export function formatPortfolioForLLM(
-  portfolioData: FullPortfolio,
+  portfolioData: ResumePortfolio,
   socialLinks: UserSocialLinksRecord | null,
 ): string {
   let formatted = 'CANDIDATE PROFILE:\n';

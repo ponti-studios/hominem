@@ -114,7 +114,7 @@ export const notesRoutes = new Hono<AppContext>()
     const { id } = c.req.valid('param');
 
     const note = await NoteRepository.load(db, id, userId);
-    await NoteRepository.hardDelete(db, id, userId);
+    await NoteRepository.hardDelete(db, { noteId: id, userId });
     await VectorDocumentRepository.deleteForEntity(db, 'note', id);
 
     return c.json(toNoteDto(note));

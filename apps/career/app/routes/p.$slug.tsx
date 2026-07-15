@@ -1,5 +1,5 @@
 import { jsonArray } from '../lib/db-json';
-import { getFullPortfolioBySlug } from '../lib/portfolio.server';
+import { getPublicPortfolioProfile } from '../lib/portfolio.server';
 import { Route } from './+types/p.$slug';
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {
@@ -35,7 +35,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     throw new Response('Portfolio not found', { status: 404 });
   }
 
-  const portfolio = await getFullPortfolioBySlug(slug);
+  const portfolio = await getPublicPortfolioProfile(slug);
   if (!portfolio) {
     throw new Response('Portfolio not found', { status: 404 });
   }

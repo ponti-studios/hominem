@@ -120,13 +120,17 @@ async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<
   const { Resend } = await import('resend');
   const resend = new Resend(env.RESEND_API_KEY);
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     to,
     from,
     subject,
     text,
     ...(html ? { html } : {}),
   });
+
+  if (error) {
+    throw new Error(`Resend failed to send email: ${error.message}`);
+  }
 }
 
 function shouldSkipVerificationOtpEmail() {

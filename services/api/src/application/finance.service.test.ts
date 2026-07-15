@@ -5,6 +5,7 @@ const repositories = vi.hoisted(() => ({
 }));
 
 vi.mock('@hominem/db', () => ({
+  db: {},
   FinanceQueryRepository: {
     monthlySummary: repositories.financeMonthlySummary,
   },
@@ -50,7 +51,7 @@ describe('FinanceService', () => {
 
     const result = await service.monthlySummary(userId, { month: '2026-03', limit: 25 });
 
-    expect(repositories.financeMonthlySummary).toHaveBeenCalledWith(userId, {
+    expect(repositories.financeMonthlySummary).toHaveBeenCalledWith({}, userId, {
       month: '2026-03',
       limit: 25,
     });

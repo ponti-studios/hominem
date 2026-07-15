@@ -7,7 +7,7 @@ const serverEnvSchema = z.object({
   OPENROUTER_API_KEY: z.string(),
 });
 
-export type ServerEnv = z.infer<typeof serverEnvSchema>;
+type ServerEnv = z.infer<typeof serverEnvSchema>;
 
 const validatedServerEnv = serverEnvSchema.parse(process.env);
 

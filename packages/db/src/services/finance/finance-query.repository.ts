@@ -1,7 +1,7 @@
 import type { Selectable } from 'kysely';
 
-import { db } from '../../db';
 import { ValidationError } from '../../errors';
+import type { DbHandle } from '../../transaction';
 import type {
   AppFinanceAccounts,
   AppFinanceInstitutions,
@@ -103,15 +103,16 @@ function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-export class FinanceQueryRepository {
-  static async monthlySummary(
+export const FinanceQueryRepository = {
+  async monthlySummary(
+    handle: DbHandle,
     ownerUserId: string,
     input: FinanceMonthlySummaryInput,
   ): Promise<FinanceMonthlySummaryRecord> {
     const range = parseMonth(input.month);
     const limit = boundedLimit(input.limit);
 
-    const rows = await db
+    const rows = await handle
       .selectFrom('app.financeTransactions as transaction')
       .innerJoin('app.financeAccounts as account', 'account.id', 'transaction.accountId')
       .leftJoin('app.financeInstitutions as institution', 'institution.id', 'account.institutionId')
@@ -180,5 +181,5 @@ export class FinanceQueryRepository {
         merchantName: row.merchantName,
       })),
     };
-  }
-}
+  },
+};

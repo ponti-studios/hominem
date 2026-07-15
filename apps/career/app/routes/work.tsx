@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useFetcher, useNavigate, useRevalidator } from 'react-router';
 
 import type { WorkExperienceMetadata } from '~/lib/career/queries/career-progression';
+import { formatMonthYear } from '~/lib/career/work-experience-form';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
 import { UploadResumeForm } from '../components/UploadResumeForm';
@@ -32,15 +33,6 @@ interface WorkExperienceFormValues {
   portfolioId: string;
 }
 
-function formatMonthYear(date: Date | string | null | undefined) {
-  if (!date) return 'Present';
-
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
 function WorkExperienceSummaryCard({
   experience,
   onEdit,
@@ -61,7 +53,8 @@ function WorkExperienceSummaryCard({
             </p>
             <span className="body-4 text-text-tertiary">·</span>
             <p className="body-4 text-text-tertiary">
-              {formatMonthYear(experience.startDate)} - {formatMonthYear(experience.endDate)}
+              {formatMonthYear(experience.startDate) ?? 'Present'} -{' '}
+              {formatMonthYear(experience.endDate) ?? 'Present'}
             </p>
           </div>
         </div>
@@ -71,7 +64,8 @@ function WorkExperienceSummaryCard({
         </p>
 
         <p className="body-4 hidden whitespace-nowrap text-text-tertiary md:block">
-          {formatMonthYear(experience.startDate)} - {formatMonthYear(experience.endDate)}
+          {formatMonthYear(experience.startDate) ?? 'Present'} -{' '}
+          {formatMonthYear(experience.endDate) ?? 'Present'}
         </p>
 
         <Button
@@ -275,7 +269,8 @@ export async function action({ request, context }: Route.ActionArgs) {
             endDate: stringToDate(insertData.endDate),
           };
 
-          const newExperience = await WorkExperienceRepository.createWorkExperience(db, user.id, {
+          const newExperience = await WorkExperienceRepository.createWorkExperience(db, {
+            ownerUserid: user.id,
             portfolioId: dbData.portfolioId,
             role: dbData.role,
             company: dbData.company,
@@ -314,17 +309,21 @@ export async function action({ request, context }: Route.ActionArgs) {
           endDate: stringToDate(updateData.endDate),
         };
 
-        await WorkExperienceRepository.updateWorkExperience(db, user.id, id, {
-          role: dbData.role,
-          company: dbData.company,
-          description: dbData.description,
-          startDate: dbData.startDate,
-          endDate: dbData.endDate,
-          action: dbData.action,
-          tags: dbData.tags,
-          metadata: dbData.metadata as Record<string, unknown> | undefined,
-          sortOrder: dbData.sortOrder,
-          isVisible: dbData.isVisible,
+        await WorkExperienceRepository.updateWorkExperience(db, {
+          ownerUserid: user.id,
+          experienceId: id,
+          updates: {
+            role: dbData.role,
+            company: dbData.company,
+            description: dbData.description,
+            startDate: dbData.startDate,
+            endDate: dbData.endDate,
+            action: dbData.action,
+            tags: dbData.tags,
+            metadata: dbData.metadata as Record<string, unknown> | undefined,
+            sortOrder: dbData.sortOrder,
+            isVisible: dbData.isVisible,
+          },
         });
 
         return { success: true, operation, message: 'Work experience updated successfully' };
@@ -350,7 +349,11 @@ export async function action({ request, context }: Route.ActionArgs) {
       }
 
       try {
-        await WorkExperienceRepository.deleteWorkExperience(db, user.id, id, portfolioId);
+        await WorkExperienceRepository.deleteWorkExperience(db, {
+          ownerUserid: user.id,
+          experienceId: id,
+          portfolioId,
+        });
         return { success: true, operation, message: 'Work experience deleted successfully' };
       } catch (error) {
         logger.error('Failed to delete work experience', error, {

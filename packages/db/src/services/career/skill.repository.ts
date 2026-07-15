@@ -1,5 +1,6 @@
 import type { Selectable } from 'kysely';
 
+import { NotFoundError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppSkills } from '../../types/database';
 import { verifyPortfolioOwnership } from './ownership';
@@ -30,6 +31,12 @@ export interface ReplaceSkillInput {
   level: number;
   aiDerived?: boolean;
   proof?: string | null;
+}
+
+export interface ReplaceSkillsCommand {
+  ownerUserid: string;
+  portfolioId: string;
+  skills: ReplaceSkillInput[];
 }
 
 function toSkillRecord(row: SkillRow): SkillRecord {
@@ -64,35 +71,42 @@ export const SkillRepository = {
     return (rows as SkillRow[]).map(toSkillRecord);
   },
 
-  async replaceSkills(
-    handle: DbHandle,
-    ownerUserid: string,
-    portfolioId: string,
-    skills: ReplaceSkillInput[],
-  ): Promise<void> {
-    await verifyPortfolioOwnership(handle, ownerUserid, portfolioId);
+  async listVisibleByPortfolioId(handle: DbHandle, portfolioId: string): Promise<SkillRecord[]> {
+    const rows = await handle
+      .selectFrom('app.skills')
+      .selectAll()
+      .where('portfolioId', '=', portfolioId)
+      .where('isVisible', '=', true)
+      .orderBy('sortOrder', 'asc')
+      .execute();
+
+    return (rows as SkillRow[]).map(toSkillRecord);
+  },
+
+  async replaceSkills(handle: DbHandle, command: ReplaceSkillsCommand): Promise<void> {
+    await verifyPortfolioOwnership(handle, command.ownerUserid, command.portfolioId);
 
     const current = await handle
       .selectFrom('app.skills')
       .select(['id'])
-      .where('portfolioId', '=', portfolioId)
+      .where('portfolioId', '=', command.portfolioId)
       .execute();
 
     const currentIds = current.map((item) => item.id);
-    const submittedIds = skills.flatMap((item) => (item.id ? [item.id] : []));
+    const submittedIds = command.skills.flatMap((item) => (item.id ? [item.id] : []));
     const toDelete = currentIds.filter((id) => !submittedIds.includes(id));
 
     if (toDelete.length > 0) {
       await handle
         .deleteFrom('app.skills')
-        .where('portfolioId', '=', portfolioId)
+        .where('portfolioId', '=', command.portfolioId)
         .where('id', 'in', toDelete)
         .execute();
     }
 
-    for (const [index, skill] of skills.entries()) {
+    for (const [index, skill] of command.skills.entries()) {
       if (skill.id) {
-        await handle
+        const updated = await handle
           .updateTable('app.skills')
           .set({
             name: skill.name,
@@ -102,13 +116,16 @@ export const SkillRepository = {
             ...(skill.proof !== undefined && { proof: skill.proof }),
           })
           .where('id', '=', skill.id)
-          .where('portfolioId', '=', portfolioId)
-          .execute();
+          .where('portfolioId', '=', command.portfolioId)
+          .returning('id')
+          .executeTakeFirst();
+
+        if (!updated) throw new NotFoundError('Skill', { skillId: skill.id });
       } else {
         await handle
           .insertInto('app.skills')
           .values({
-            portfolioId: portfolioId,
+            portfolioId: command.portfolioId,
             name: skill.name,
             category: skill.category ?? null,
             level: skill.level,

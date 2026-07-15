@@ -2,7 +2,8 @@ import { randomUUID } from 'node:crypto';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { authDb, db } from '../db';
+import { db } from '../db';
+import { authDb } from '../db';
 import { FinanceQueryRepository } from './finance/finance-query.repository';
 
 describe('personal data read capabilities', () => {
@@ -87,7 +88,7 @@ describe('personal data read capabilities', () => {
       ])
       .execute();
 
-    const summary = await FinanceQueryRepository.monthlySummary(userId, { month: '2026-03' });
+    const summary = await FinanceQueryRepository.monthlySummary(db, userId, { month: '2026-03' });
 
     expect(summary).toMatchObject({
       month: '2026-03',
@@ -167,7 +168,7 @@ describe('personal data read capabilities', () => {
       ])
       .execute();
 
-    const summary = await FinanceQueryRepository.monthlySummary(userId, {
+    const summary = await FinanceQueryRepository.monthlySummary(db, userId, {
       month: '2026-03',
       limit: 2,
     });

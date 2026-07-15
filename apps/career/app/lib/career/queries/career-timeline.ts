@@ -1,11 +1,7 @@
 import { db, PortfolioRepository } from '@hominem/db';
 import type { PortfolioTimeline } from '@hominem/db';
 
-export type {
-  ChapterWithEntries,
-  TimelineEntryKind,
-  TimelineEntryRecord as TimelineEntry,
-} from '@hominem/db';
+export type { TimelineEntryRecord as TimelineEntry } from '@hominem/db';
 
 export type CareerStoryTimeline = PortfolioTimeline;
 

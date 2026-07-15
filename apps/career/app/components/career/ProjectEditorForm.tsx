@@ -21,13 +21,13 @@ import { EditorFormActions } from '../EditorFormActions';
 import { FormErrorAlert } from '../FormErrorAlert';
 import { TagInput } from '../TagInput';
 
-export interface ProjectWorkExperienceOption {
+interface ProjectWorkExperienceOption {
   id: string;
   company: string;
   role: string;
 }
 
-export interface ProjectFormValues {
+interface ProjectFormValues {
   id?: string;
   title: string;
   description: string;

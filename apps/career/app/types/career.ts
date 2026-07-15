@@ -20,9 +20,3 @@ export enum JobApplicationStage {
   BACKGROUND_CHECK = 'BACKGROUND_CHECK',
   REFERENCE_CHECK = 'REFERENCE_CHECK',
 }
-
-export interface JobApplicationStageEntry {
-  stage: JobApplicationStage;
-  date: string;
-  notes?: string;
-}

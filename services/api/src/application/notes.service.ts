@@ -28,7 +28,11 @@ export class NoteService {
         excerpt,
       });
 
-      await NoteRepository.syncFiles(trx, created.id, userId, input.fileIds ?? []);
+      await NoteRepository.syncFiles(trx, {
+        noteId: created.id,
+        userId,
+        fileIds: input.fileIds ?? [],
+      });
       return NoteRepository.load(trx, created.id, userId);
     });
   }
@@ -42,14 +46,18 @@ export class NoteService {
       // Always recompute excerpt from current content
       const nextExcerpt = deriveExcerpt(nextContent);
 
-      await NoteRepository.update(trx, noteId, userId, {
-        title: nextTitle,
-        content: nextContent,
-        excerpt: nextExcerpt,
+      await NoteRepository.update(trx, {
+        noteId,
+        userId,
+        input: {
+          title: nextTitle,
+          content: nextContent,
+          excerpt: nextExcerpt,
+        },
       });
 
       if (input.fileIds) {
-        await NoteRepository.syncFiles(trx, noteId, userId, input.fileIds);
+        await NoteRepository.syncFiles(trx, { noteId, userId, fileIds: input.fileIds });
       }
 
       return NoteRepository.load(trx, noteId, userId);

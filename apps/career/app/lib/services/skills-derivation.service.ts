@@ -14,7 +14,7 @@ const derivedSkillSchema = z.object({
 
 const derivedSkillsSchema = z.array(derivedSkillSchema);
 
-export type DerivedSkill = z.infer<typeof derivedSkillSchema>;
+type DerivedSkill = z.infer<typeof derivedSkillSchema>;
 
 const SYSTEM_PROMPT = `You are a career analyst. Given a person's work history and projects, extract a list of concrete, demonstrable skills.
 

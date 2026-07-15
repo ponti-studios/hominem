@@ -125,27 +125,3 @@ export function parseScrapedJobPostingContent(content: string, jobUrl: string): 
     wordCount: normalizedFullText ? normalizedFullText.split(/\s+/).filter(Boolean).length : 0,
   };
 }
-
-export async function checkHealth(): Promise<{
-  status: string;
-  runtime?: string;
-  timestamp?: string;
-}> {
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/models', {
-      headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY ?? ''}` },
-    });
-
-    return {
-      status: response.ok ? 'healthy' : 'unhealthy',
-      runtime: 'openrouter',
-      timestamp: new Date().toISOString(),
-    };
-  } catch {
-    return {
-      status: 'unhealthy',
-      runtime: 'openrouter',
-      timestamp: new Date().toISOString(),
-    };
-  }
-}

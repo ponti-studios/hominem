@@ -51,7 +51,7 @@ vi.mock('../lib/logger', () => ({
 }));
 
 vi.mock('../lib/portfolio.server', () => ({
-  getFullUserPortfolio: mocks.getPortfolio,
+  getResumePortfolioContext: mocks.getPortfolio,
 }));
 
 vi.mock('../lib/utils/portfolio-formatter', () => ({

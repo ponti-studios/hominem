@@ -10,7 +10,7 @@ export class ApplicationFormError extends Error {
   }
 }
 
-export interface ParsedApplicationUpdate {
+interface ParsedApplicationUpdate {
   application: UpdateJobApplicationInput;
   company?: UpdateCompanyInput;
 }

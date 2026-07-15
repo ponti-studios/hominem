@@ -45,18 +45,17 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   try {
     await runInTransaction((tx) =>
-      SkillRepository.replaceSkills(
-        tx,
-        user.id,
-        portfolio.id,
-        derived.map((skill) => ({
+      SkillRepository.replaceSkills(tx, {
+        ownerUserid: user.id,
+        portfolioId: portfolio.id,
+        skills: derived.map((skill) => ({
           name: skill.name,
           category: skill.category,
           level: skill.level,
           ai_derived: true,
           proof: skill.proof,
         })),
-      ),
+      }),
     );
   } catch (error) {
     logger.error('Failed to save derived skills', error, {

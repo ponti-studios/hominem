@@ -1,40 +1,38 @@
-import type { FullPortfolioRecord, PortfolioRecord, PublicFullPortfolioRecord } from '@hominem/db';
+import type {
+  FullPortfolioRecord,
+  PortfolioRecord,
+  PublicPortfolioProfileRecord,
+  ResumePortfolioRecord,
+} from '@hominem/db';
 import { db, PortfolioRepository } from '@hominem/db';
 
 import { fetchCurrentPortfolio } from './api.server';
 import type { User } from './auth.server';
 
 export interface FullPortfolio extends FullPortfolioRecord {}
-export interface PublicPortfolio extends PublicFullPortfolioRecord {}
+export interface ResumePortfolio extends ResumePortfolioRecord {}
+export interface PublicPortfolioProfile extends PublicPortfolioProfileRecord {}
 
+/** Full record including testimonials — for the generic portfolio JSON API, which returns everything to the caller. */
 export async function getFullUserPortfolio(owner_userid: string): Promise<FullPortfolio | null> {
   return PortfolioRepository.loadFullPortfolioByUserId(db, owner_userid);
 }
 
-export async function getFullPortfolioBySlug(slug: string): Promise<PublicPortfolio | null> {
-  return PortfolioRepository.loadFullPortfolioBySlug(db, slug);
+/** Work experiences, skills, and projects only — for LLM prompt context, which never reads testimonials. */
+export async function getResumePortfolioContext(
+  owner_userid: string,
+): Promise<ResumePortfolio | null> {
+  return PortfolioRepository.loadResumeContextByUserId(db, owner_userid);
 }
 
-/**
- * Deletes a user's portfolio and all associated data
- * Due to CASCADE DELETE constraints, this will automatically remove:
- * - work_experiences
- * - skills
- * - projects
- * - testimonials
- * - analytics
- *
- * Social links are user-scoped (app.user_social_links), not portfolio-scoped,
- * so they are unaffected by portfolio deletion.
- */
-export async function deleteUserPortfolio(owner_userid: string): Promise<void> {
-  return PortfolioRepository.deletePortfolioByUserId(db, owner_userid);
+/** Work experiences, skills, and projects only — for the public profile page, which doesn't render testimonials. */
+export async function getPublicPortfolioProfile(
+  slug: string,
+): Promise<PublicPortfolioProfile | null> {
+  return PortfolioRepository.loadPublicProfileBySlug(db, slug);
 }
 
-export function portfolioDisplayName(user: {
-  name?: string | null;
-  email?: string | null;
-}): string {
+function portfolioDisplayName(user: { name?: string | null; email?: string | null }): string {
   const name = user.name?.trim();
   if (name) return name;
   const local = user.email?.split('@')[0]?.trim();

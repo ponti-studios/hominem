@@ -35,10 +35,13 @@ export type {
   ListNoteFeedInput,
   ListNotesInput,
   CreateNoteInput as NoteCreateInput,
+  NoteMutationCommand,
   NoteFeedPageRecord,
   NoteFeedRecord,
   NoteFileRecord,
   NoteRecord,
+  SyncNoteFilesCommand,
+  UpdateNoteCommand,
   UpdateNoteInput as NoteUpdateInput,
   SearchNoteResult,
   SearchNotesInput,
@@ -57,7 +60,11 @@ export type {
 } from './services/chats/chat.repository';
 
 export { FileRepository } from './services/files/file.repository';
-export type { FileRecord, UpsertFileInput } from './services/files/file.repository';
+export type {
+  DeleteFileCommand,
+  FileRecord,
+  UpsertFileInput,
+} from './services/files/file.repository';
 
 export { TaskRepository } from './services/tasks/task.repository';
 export type {
@@ -90,16 +97,24 @@ export type {
 
 export { PortfolioRepository } from './services/career/portfolio.repository';
 export type {
+  ChapterWithEntries,
   CreateDefaultPortfolioInput,
   FullPortfolioRecord,
-  PublicFullPortfolioRecord,
+  PublicPortfolioProfileRecord,
   PortfolioRecord,
+  PortfolioTimeline,
+  ResumePortfolioRecord,
   SavePortfolioBasicsInput,
+  TimelineEntryKind,
+  TimelineEntryRecord,
 } from './services/career/portfolio.repository';
 
 export { WorkExperienceRepository } from './services/career/work-experience.repository';
 export type {
+  CreateWorkExperienceCommand,
   CreateWorkExperienceInput,
+  DeleteWorkExperienceCommand,
+  UpdateWorkExperienceCommand,
   UpdateWorkExperienceInput,
   PublicWorkExperienceRecord,
   WorkExperienceRecord,
@@ -107,19 +122,29 @@ export type {
 export { redactWorkExperienceForPublic } from './services/career/work-experience.repository';
 
 export { SkillRepository } from './services/career/skill.repository';
-export type { ReplaceSkillInput, SkillRecord } from './services/career/skill.repository';
+export type {
+  ReplaceSkillInput,
+  ReplaceSkillsCommand,
+  SkillRecord,
+} from './services/career/skill.repository';
 
 export { ProjectRepository } from './services/career/project.repository';
 export type {
+  CreateProjectCommand,
   CreateProjectInput,
+  DeleteProjectCommand,
   ProjectRecord,
+  UpdateProjectCommand,
   UpdateProjectInput,
 } from './services/career/project.repository';
 
 export { TestimonialRepository } from './services/career/testimonial.repository';
 export type {
+  CreateTestimonialCommand,
   CreateTestimonialInput,
+  DeleteTestimonialCommand,
   TestimonialRecord,
+  UpdateTestimonialCommand,
   UpdateTestimonialInput,
 } from './services/career/testimonial.repository';
 
@@ -135,7 +160,10 @@ export type {
   CareerApplicationStage,
   CareerInterviewEntry,
   CreateJobApplicationInput,
+  CreateJobApplicationCommand,
+  DeleteJobApplicationCommand,
   JobApplicationRecord,
+  UpdateJobApplicationStatusCommand,
   UpdateJobApplicationInput,
 } from './services/career/job-application.repository';
 

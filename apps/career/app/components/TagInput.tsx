@@ -1,7 +1,7 @@
 import { FilterChip } from '@hominem/ui';
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 
-export interface TagInputProps {
+interface TagInputProps {
   id: string;
   value: string[];
   onChange: (tags: string[]) => void;

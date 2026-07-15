@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { getUserWorkExperiencesDesc } from '~/lib/career/queries/base';
 import { getProjectsByPortfolio } from '~/lib/career/queries/projects';
+import { formatMonthYear } from '~/lib/career/work-experience-form';
 import { portfolioContext, userContext } from '~/lib/middleware';
 
 import { Route } from './+types/projects';
@@ -18,20 +19,11 @@ export interface ProjectClientOption {
   role: string;
 }
 
-function formatMonthYear(date: Date | string | null | undefined) {
-  if (!date) return 'Present';
-
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
 function formatDateRange(
   startDate: Date | string | null | undefined,
   endDate: Date | string | null | undefined,
 ) {
-  return `${formatMonthYear(startDate)} - ${formatMonthYear(endDate)}`;
+  return `${formatMonthYear(startDate) ?? 'Present'} - ${formatMonthYear(endDate) ?? 'Present'}`;
 }
 
 function formatStatusLabel(status: string | null | undefined) {

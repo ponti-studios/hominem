@@ -15,7 +15,7 @@ import {
 
 import { logger } from '../lib/logger';
 import { userContext } from '../lib/middleware';
-import { getFullUserPortfolio } from '../lib/portfolio.server';
+import { getResumePortfolioContext } from '../lib/portfolio.server';
 import { formatPortfolioForLLM } from '../lib/utils/portfolio-formatter';
 
 const RESUME_CUSTOMIZE_PROMPT_URL = new URL('../lib/prompts/resume-customize.md', import.meta.url);
@@ -112,7 +112,7 @@ export const action: ActionFunction = async ({ request, context }) => {
     }
 
     // Fetch user's portfolio data
-    const portfolio = await getFullUserPortfolio(user.id);
+    const portfolio = await getResumePortfolioContext(user.id);
 
     if (!portfolio) {
       return data(

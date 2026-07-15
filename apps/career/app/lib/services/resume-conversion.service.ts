@@ -3,12 +3,12 @@ import { runInTransaction, SocialLinksRepository, sql, type DbHandle } from '@ho
 import type { ConvertedResumeData } from '../../types/resume';
 import { normalizePortfolioSlug } from '../../types/resume';
 
-export interface SaveResumeResult {
+interface SaveResumeResult {
   portfolioId: string;
   portfolioSlug: string;
 }
 
-export interface SaveResumeOptions {
+interface SaveResumeOptions {
   replacePortfolioId?: string;
 }
 

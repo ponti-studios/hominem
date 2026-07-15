@@ -5,7 +5,7 @@ import { serverEnv } from './env';
 
 export type { User };
 
-export const getServerAuth = (request: Request) =>
+const getServerAuth = (request: Request) =>
   sharedGetServerAuth(request, { apiBaseUrl: serverEnv().VITE_PUBLIC_API_URL });
 
 export const getServerSession = async (request: Request) => {

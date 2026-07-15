@@ -1,4 +1,3 @@
-export { getStatusColor } from '~/lib/utils/applicationUtils';
 export { ApplicationFilesTab } from './ApplicationFilesTab';
 export { ApplicationNotesTab } from './ApplicationNotesTab';
 export { ApplicationOverviewTab } from './ApplicationOverviewTab';

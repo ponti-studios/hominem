@@ -43,7 +43,7 @@ export function submitDelete(
   fetcher.submit(formData, { method: 'POST' });
 }
 
-export function submitWorkExperienceUpdates(
+function submitWorkExperienceUpdates(
   fetcher: ReturnType<typeof useFetcher>,
   clearSubmissionError: () => void,
   updates: UpdateWorkExperienceInput,

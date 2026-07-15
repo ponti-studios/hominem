@@ -1,5 +1,6 @@
 import type { Selectable } from 'kysely';
 
+import { NotFoundError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppProjects, JsonValue } from '../../types/database';
 import { verifyPortfolioOwnership } from './ownership';
@@ -69,6 +70,23 @@ export interface UpdateProjectInput {
   sortOrder?: number;
 }
 
+export interface CreateProjectCommand extends CreateProjectInput {
+  ownerUserid: string;
+}
+
+export interface UpdateProjectCommand {
+  ownerUserid: string;
+  projectId: string;
+  portfolioId: string;
+  input: UpdateProjectInput;
+}
+
+export interface DeleteProjectCommand {
+  ownerUserid: string;
+  projectId: string;
+  portfolioId: string;
+}
+
 function toProjectRecord(row: ProjectRow): ProjectRecord {
   return {
     id: row.id,
@@ -117,6 +135,18 @@ export const ProjectRepository = {
     return (rows as ProjectRow[]).map(toProjectRecord);
   },
 
+  async listVisibleByPortfolioId(handle: DbHandle, portfolioId: string): Promise<ProjectRecord[]> {
+    const rows = await handle
+      .selectFrom('app.projects')
+      .selectAll()
+      .where('portfolioId', '=', portfolioId)
+      .where('isVisible', '=', true)
+      .orderBy('sortOrder', 'asc')
+      .execute();
+
+    return (rows as ProjectRow[]).map(toProjectRecord);
+  },
+
   async listProjectsByWorkExperience(
     handle: DbHandle,
     portfolioId: string,
@@ -149,32 +179,28 @@ export const ProjectRepository = {
     return row ? toProjectRecord(row as ProjectRow) : null;
   },
 
-  async createProject(
-    handle: DbHandle,
-    ownerUserid: string,
-    input: CreateProjectInput,
-  ): Promise<ProjectRecord> {
-    await verifyPortfolioOwnership(handle, ownerUserid, input.portfolioId);
+  async createProject(handle: DbHandle, command: CreateProjectCommand): Promise<ProjectRecord> {
+    await verifyPortfolioOwnership(handle, command.ownerUserid, command.portfolioId);
 
     const created = await handle
       .insertInto('app.projects')
       .values({
-        portfolioId: input.portfolioId,
-        workExperienceId: input.workExperienceId ?? null,
-        title: input.title,
-        description: input.description,
-        shortDescription: input.shortDescription ?? null,
-        liveUrl: input.liveUrl ?? null,
-        githubUrl: input.githubUrl ?? null,
-        imageUrl: input.imageUrl ?? null,
-        videoUrl: input.videoUrl ?? null,
-        technologies: serializeJsonColumn(input.technologies ?? []),
-        status: input.status ?? 'completed',
-        startDate: input.startDate ? new Date(input.startDate) : null,
-        endDate: input.endDate ? new Date(input.endDate) : null,
-        isFeatured: input.isFeatured ?? false,
-        isVisible: input.isVisible ?? true,
-        sortOrder: input.sortOrder ?? 0,
+        portfolioId: command.portfolioId,
+        workExperienceId: command.workExperienceId ?? null,
+        title: command.title,
+        description: command.description,
+        shortDescription: command.shortDescription ?? null,
+        liveUrl: command.liveUrl ?? null,
+        githubUrl: command.githubUrl ?? null,
+        imageUrl: command.imageUrl ?? null,
+        videoUrl: command.videoUrl ?? null,
+        technologies: serializeJsonColumn(command.technologies ?? []),
+        status: command.status ?? 'completed',
+        startDate: command.startDate ? new Date(command.startDate) : null,
+        endDate: command.endDate ? new Date(command.endDate) : null,
+        isFeatured: command.isFeatured ?? false,
+        isVisible: command.isVisible ?? true,
+        sortOrder: command.sortOrder ?? 0,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -182,16 +208,11 @@ export const ProjectRepository = {
     return toProjectRecord(created as ProjectRow);
   },
 
-  async updateProject(
-    handle: DbHandle,
-    ownerUserid: string,
-    projectId: string,
-    portfolioId: string,
-    input: UpdateProjectInput,
-  ): Promise<void> {
-    await verifyPortfolioOwnership(handle, ownerUserid, portfolioId);
+  async updateProject(handle: DbHandle, command: UpdateProjectCommand): Promise<void> {
+    await verifyPortfolioOwnership(handle, command.ownerUserid, command.portfolioId);
+    const input = command.input;
 
-    await handle
+    const updated = await handle
       .updateTable('app.projects')
       .set({
         title: input.title,
@@ -210,23 +231,24 @@ export const ProjectRepository = {
         isVisible: input.isVisible ?? true,
         sortOrder: input.sortOrder ?? 0,
       })
-      .where('id', '=', projectId)
-      .where('portfolioId', '=', portfolioId)
-      .executeTakeFirstOrThrow();
+      .where('id', '=', command.projectId)
+      .where('portfolioId', '=', command.portfolioId)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!updated) throw new NotFoundError('Project', { projectId: command.projectId });
   },
 
-  async deleteProject(
-    handle: DbHandle,
-    ownerUserid: string,
-    projectId: string,
-    portfolioId: string,
-  ): Promise<void> {
-    await verifyPortfolioOwnership(handle, ownerUserid, portfolioId);
+  async deleteProject(handle: DbHandle, command: DeleteProjectCommand): Promise<void> {
+    await verifyPortfolioOwnership(handle, command.ownerUserid, command.portfolioId);
 
-    await handle
+    const deleted = await handle
       .deleteFrom('app.projects')
-      .where('id', '=', projectId)
-      .where('portfolioId', '=', portfolioId)
-      .executeTakeFirstOrThrow();
+      .where('id', '=', command.projectId)
+      .where('portfolioId', '=', command.portfolioId)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!deleted) throw new NotFoundError('Project', { projectId: command.projectId });
   },
 };

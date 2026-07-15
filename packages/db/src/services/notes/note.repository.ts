@@ -1,6 +1,7 @@
 import { buildContentPreview } from '@hominem/utils/text';
-import type { Selectable } from 'kysely';
+import type { Selectable, UpdateObject } from 'kysely';
 
+import type { Database } from '../../db';
 import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppFiles, AppNotes } from '../../types/database';
@@ -58,6 +59,19 @@ export interface UpdateNoteInput {
   title?: string | null;
   content?: string;
   excerpt?: string | null;
+}
+
+export interface NoteMutationCommand {
+  noteId: string;
+  userId: string;
+}
+
+export interface UpdateNoteCommand extends NoteMutationCommand {
+  input: UpdateNoteInput;
+}
+
+export interface SyncNoteFilesCommand extends NoteMutationCommand {
+  fileIds: string[];
 }
 
 export interface ListNotesInput {
@@ -436,8 +450,12 @@ export const NoteRepository = {
   /**
    * Insert a new note.
    */
-  async create(handle: DbHandle, input: CreateNoteInput): Promise<NoteRow> {
-    return (await handle
+  async create(handle: DbHandle, input: CreateNoteInput): Promise<NoteRecord> {
+    if (input.parentNoteId) {
+      await NoteRepository.getOwnedOrThrow(handle, input.parentNoteId, input.userId);
+    }
+
+    const created = await handle
       .insertInto('app.notes')
       .values({
         ownerUserid: input.userId,
@@ -447,31 +465,34 @@ export const NoteRepository = {
         ...(input.parentNoteId ? { parentNoteId: input.parentNoteId } : {}),
       })
       .returningAll()
-      .executeTakeFirstOrThrow()) as NoteRow;
+      .executeTakeFirstOrThrow();
+
+    return toNoteRecord(created as NoteRow, []);
   },
 
   /**
-   * Update an existing note. Caller must verify ownership first.
+   * Update an existing note with ownership enforcement.
    */
-  async update(
-    handle: DbHandle,
-    noteId: string,
-    userId: string,
-    input: UpdateNoteInput,
-  ): Promise<void> {
-    const sets: Record<string, unknown> = {
+  async update(handle: DbHandle, command: UpdateNoteCommand): Promise<void> {
+    const sets: UpdateObject<Database, 'app.notes'> = {
       updatedat: new Date().toISOString(),
     };
+    const input = command.input;
     if (input.title !== undefined) sets.title = input.title;
     if (input.content !== undefined) sets.content = input.content;
     if (input.excerpt !== undefined) sets.excerpt = input.excerpt;
 
-    await handle
+    const updated = await handle
       .updateTable('app.notes')
       .set(sets)
-      .where('id', '=', noteId)
-      .where('ownerUserid', '=', userId)
-      .executeTakeFirstOrThrow();
+      .where('id', '=', command.noteId)
+      .where('ownerUserid', '=', command.userId)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!updated) {
+      throw new NotFoundError('Note', { noteId: command.noteId });
+    }
   },
 
   /**
@@ -481,57 +502,62 @@ export const NoteRepository = {
    * Soft delete (archive) a note by ID with ownership enforcement.
    * Sets archivedAt timestamp; note remains in database but is filtered from queries.
    */
-  async archive(handle: DbHandle, noteId: string, userId: string): Promise<void> {
-    await handle
+  async archive(handle: DbHandle, command: NoteMutationCommand): Promise<void> {
+    const updated = await handle
       .updateTable('app.notes')
       .set({ archivedAt: new Date() })
-      .where('id', '=', noteId)
-      .where('ownerUserid', '=', userId)
-      .execute();
+      .where('id', '=', command.noteId)
+      .where('ownerUserid', '=', command.userId)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!updated) throw new NotFoundError('Note', { noteId: command.noteId });
   },
 
-  async unarchive(handle: DbHandle, noteId: string, userId: string): Promise<void> {
-    await handle
+  async unarchive(handle: DbHandle, command: NoteMutationCommand): Promise<void> {
+    const updated = await handle
       .updateTable('app.notes')
       .set({ archivedAt: null })
-      .where('id', '=', noteId)
-      .where('ownerUserid', '=', userId)
-      .execute();
+      .where('id', '=', command.noteId)
+      .where('ownerUserid', '=', command.userId)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!updated) throw new NotFoundError('Note', { noteId: command.noteId });
   },
 
   /**
    * Hard delete a note by ID with ownership enforcement.
    * Permanently removes note from database. Use sparingly; prefer archive() for soft delete.
    */
-  async hardDelete(handle: DbHandle, noteId: string, userId: string): Promise<void> {
-    await handle
+  async hardDelete(handle: DbHandle, command: NoteMutationCommand): Promise<void> {
+    const deleted = await handle
       .deleteFrom('app.notes')
-      .where('id', '=', noteId)
-      .where('ownerUserid', '=', userId)
-      .execute();
+      .where('id', '=', command.noteId)
+      .where('ownerUserid', '=', command.userId)
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!deleted) throw new NotFoundError('Note', { noteId: command.noteId });
   },
 
   /**
    * Sync note-file attachments. Validates file ownership, then replaces all.
    * MUST be called inside a transaction for atomicity.
    */
-  async syncFiles(
-    handle: DbHandle,
-    noteId: string,
-    userId: string,
-    fileIds: string[],
-  ): Promise<void> {
-    const uniqueFileIds = [...new Set(fileIds)];
+  async syncFiles(handle: DbHandle, command: SyncNoteFilesCommand): Promise<void> {
+    await NoteRepository.getOwnedOrThrow(handle, command.noteId, command.userId);
+    const uniqueFileIds = [...new Set(command.fileIds)];
 
     if (uniqueFileIds.length === 0) {
-      await handle.deleteFrom('app.noteFiles').where('noteId', '=', noteId).execute();
+      await handle.deleteFrom('app.noteFiles').where('noteId', '=', command.noteId).execute();
       return;
     }
 
     const ownedFiles = (await handle
       .selectFrom('app.files')
       .select('id')
-      .where('ownerUserid', '=', userId)
+      .where('ownerUserid', '=', command.userId)
       .where('id', 'in', uniqueFileIds)
       .execute()) as Array<{ id: string }>;
 
@@ -539,10 +565,10 @@ export const NoteRepository = {
       throw new ValidationError('One or more files are unavailable for this note');
     }
 
-    await handle.deleteFrom('app.noteFiles').where('noteId', '=', noteId).execute();
+    await handle.deleteFrom('app.noteFiles').where('noteId', '=', command.noteId).execute();
     await handle
       .insertInto('app.noteFiles')
-      .values(uniqueFileIds.map((fileId) => ({ noteId: noteId, fileId: fileId })))
+      .values(uniqueFileIds.map((fileId) => ({ noteId: command.noteId, fileId })))
       .execute();
   },
 };
