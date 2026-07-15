@@ -8,7 +8,7 @@ Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
   environment: process.env.APP_ENV ?? 'development',
   sendDefaultPii: false,
-  tracesSampleRate: 0,
+  tracesSampleRate: process.env.APP_ENV === 'production' ? 0.2 : 1.0,
 });
 
 function flushPostHog() {

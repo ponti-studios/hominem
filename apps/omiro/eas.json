@@ -17,6 +17,7 @@
       "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
+      "environment": "development",
       "env": {
         "EXPO_RUNTIME_VERSION": "ios-r1",
         "APP_ENV": "development",
@@ -28,6 +29,7 @@
       "extends": "base",
       "developmentClient": false,
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "EXPO_RUNTIME_VERSION": "ios-r1",
         "APP_ENV": "development",
@@ -40,6 +42,7 @@
       "extends": "base",
       "developmentClient": false,
       "distribution": "internal",
+      "environment": "preview",
       "autoIncrement": true,
       "env": {
         "EXPO_RUNTIME_VERSION": "ios-r1",
@@ -69,6 +72,7 @@
       "extends": "base",
       "developmentClient": false,
       "distribution": "store",
+      "environment": "production",
       "autoIncrement": true,
       "env": {
         "EXPO_RUNTIME_VERSION": "ios-r1",
