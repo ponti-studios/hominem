@@ -1,6 +1,9 @@
-import { colorSystems, radii, spacing as tokenSpacing, type ColorToken } from '@hominem/ui/tokens';
+import { radii, spacing as tokenSpacing, type ColorToken } from '@hominem/ui/tokens';
 
+import { colors } from './colors';
 import { fontFamiliesNative, fontSizes, fontWeights, lineHeights } from './typography';
+
+export { colors } from './colors';
 
 export const themeSpacing = {
   sm: tokenSpacing[2],
@@ -22,8 +25,6 @@ export const componentSizes = {
   lg: 32,
   xl: 44,
 } as const;
-
-export const colors = colorSystems.apple.dark;
 
 export const typography = {
   families: fontFamiliesNative,

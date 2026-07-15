@@ -6,7 +6,7 @@ import {
   type TextStyle,
 } from 'react-native';
 
-import { colors } from './theme';
+import { colors } from './colors';
 
 export const fontFamiliesNative = {
   primary: 'System',
