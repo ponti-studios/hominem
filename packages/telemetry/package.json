@@ -15,10 +15,10 @@
     }
   },
   "scripts": {
-    "build": "tsgo -p tsconfig.json",
+    "build": "tsc -p tsconfig.json",
     "lint": "oxlint src",
     "lint:fix": "oxlint src --fix",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "format": "oxfmt src --write",
     "format:check": "oxfmt src --check"
   }

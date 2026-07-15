@@ -28,7 +28,7 @@
     "start": "node dist/index.mjs",
     "start:worker": "node dist/worker.mjs",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "e2e:setup": "tsx scripts/e2e-setup.ts"
   },
   "dependencies": {

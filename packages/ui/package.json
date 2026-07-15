@@ -228,7 +228,7 @@
     "oxlint": "^1.71.0",
     "react-dom": "catalog:",
     "tailwindcss": "^4.1.18",
-    "typescript": "7.0.2",
+    "typescript": "6.0.3",
     "vite": "8.0.16"
   },
   "peerDependencies": {

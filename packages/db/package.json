@@ -24,8 +24,8 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "dev": "tsgo --watch --preserveWatchOutput",
-    "typecheck": "tsgo --noEmit",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "format": "oxfmt src --write",
     "format:check": "oxfmt src --check",

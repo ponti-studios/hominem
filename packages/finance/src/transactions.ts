@@ -505,7 +505,14 @@ export async function queryAnalyticsTransactionsByContract(input: {
     .execute();
 
   return result.map((row) => ({
-    ...row,
+    id: row.id,
+    userId: row.userId,
+    accountId: row.accountId,
     amount: toNumber(row.amount),
+    description: row.description,
+    postedOn: row.postedOn,
+    externalId: row.externalId,
+    merchantName: row.merchantName,
+    classification: row.classification,
   }));
 }

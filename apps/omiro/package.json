@@ -8,7 +8,7 @@
     "format:check": "oxfmt components app config constants hooks services tests types --check",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts",
-    "typecheck": "tsgo --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "expo lint",
     "lint:fix": "expo lint --fix"
   },
@@ -86,8 +86,7 @@
     "@expo/plist": "^0.7.0",
     "babel-preset-expo": "^57.0.1",
     "eslint": "^9.39.4",
-    "eslint-config-expo": "~57.0.0",
-    "typescript": "6.0.3"
+    "eslint-config-expo": "~57.0.0"
   },
   "expo": {
     "doctor": {
