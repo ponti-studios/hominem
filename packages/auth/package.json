@@ -65,7 +65,7 @@
     "@better-auth/passkey": "^1.6.11",
     "@hominem/db": "workspace:*",
     "@hominem/utils": "workspace:*",
-    "better-auth": "^1.6.11"
+    "better-auth": "^1.6.13"
   },
   "devDependencies": {
     "react": "catalog:",
