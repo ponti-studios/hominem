@@ -1,12 +1,13 @@
 import type { SkillRecord } from '@hominem/db';
 import { db, runInTransaction, SkillRepository } from '@hominem/db';
-import { Button } from '@hominem/ui';
 import {
+  Button,
   Card,
   CardContent,
   Field,
   FilterChip,
   Input,
+  PageHeader,
   Select,
   SelectContent,
   SelectItem,
@@ -23,7 +24,7 @@ import { logger } from '../lib/logger';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { Route } from './+types/skills';
 
-export const meta: Route.MetaFunction = () => [{ title: 'Skills | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Skills | career' }];
 
 type EditableSkill = Partial<SkillRecord> & {
   name: string;
@@ -138,35 +139,32 @@ function SkillsEditorSection({ skills: initialSkills, portfolioId }: SkillsEdito
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h2 className="heading-2 text-foreground">Skills</h2>
-        <div className="flex items-center gap-2">
+      <PageHeader title="Skills">
+        <Button
+          type="button"
+          variant="default"
+          size="icon"
+          onClick={() => setShowAddForm((v) => !v)}
+          aria-label="Add skill"
+        >
+          <PlusIcon className="size-4" />
+        </Button>
+        <deriveFetcher.Form method="POST" action="/api/skills/derive">
           <Button
-            type="button"
+            type="submit"
             variant="outline"
             size="icon"
-            onClick={() => setShowAddForm((v) => !v)}
-            aria-label="Add skill"
+            disabled={isDeriving}
+            aria-label={isDeriving ? 'Deriving skills' : 'Derive skills from work history'}
           >
-            <PlusIcon className="size-4" />
+            {isDeriving ? (
+              <LoaderPinwheel className="size-4 animate-spin" />
+            ) : (
+              <Sparkles className="size-4" />
+            )}
           </Button>
-          <deriveFetcher.Form method="POST" action="/api/skills/derive">
-            <Button
-              type="submit"
-              variant="outline"
-              size="icon"
-              disabled={isDeriving}
-              aria-label={isDeriving ? 'Deriving skills' : 'Derive skills from work history'}
-            >
-              {isDeriving ? (
-                <LoaderPinwheel className="size-4 animate-spin" />
-              ) : (
-                <Sparkles className="size-4" />
-              )}
-            </Button>
-          </deriveFetcher.Form>
-        </div>
-      </div>
+        </deriveFetcher.Form>
+      </PageHeader>
 
       <FormErrorAlert title="Skills weren't saved" message={submissionError} />
       <FormErrorAlert title="Couldn't derive skills" message={deriveError} />

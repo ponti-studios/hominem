@@ -19,9 +19,9 @@
     "url": "git+https://github.com/hackefeller/hominem.git"
   },
   "devDependencies": {
-    "@railway/cli": "5.25.1",
     "@expo/image-utils": "^0.10.1",
     "@expo/prebuild-config": "~56.0.16",
+    "@railway/cli": "5.25.1",
     "@types/node": "^25.4.0",
     "@types/pg": "^8.18.0",
     "@types/react": "catalog:",
@@ -34,7 +34,7 @@
     "oxlint": "^1.71.0",
     "tsx": "^4.10.0",
     "turbo": "^2.10.0",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "vitest": "4.1.0"
   },
   "overrides": {

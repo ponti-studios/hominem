@@ -1,17 +1,29 @@
 import type { ProjectRecord as Project, WorkExperienceRecord as WorkExperience } from '@hominem/db';
-import { Badge, Button, EmptyState, FilterSelect, Input } from '@hominem/ui';
-import { ChevronRightIcon, PlusIcon, XIcon } from 'lucide-react';
+import {
+  Button,
+  EmptyState,
+  EntityListCards,
+  EntityListTable,
+  FilterSelect,
+  PageHeader,
+  SearchFilterBar,
+  StatusBadge,
+  type EntityListColumn,
+  type StatusTone,
+} from '@hominem/ui';
+import { ChevronRightIcon, PlusIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
+import { RouterListLink } from '~/components/RouterListLink';
 import { getUserWorkExperiencesDesc } from '~/lib/career/queries/base';
 import { getProjectsByPortfolio } from '~/lib/career/queries/projects';
-import { formatMonthYear } from '~/lib/career/work-experience-form';
 import { portfolioContext, userContext } from '~/lib/middleware';
+import { formatDateRange } from '~/lib/utils/dateRange';
 
 import { Route } from './+types/projects';
 
-export const meta: Route.MetaFunction = () => [{ title: 'Projects | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Projects | career' }];
 
 export interface ProjectClientOption {
   id: string;
@@ -19,16 +31,44 @@ export interface ProjectClientOption {
   role: string;
 }
 
-function formatDateRange(
-  startDate: Date | string | null | undefined,
-  endDate: Date | string | null | undefined,
-) {
-  return `${formatMonthYear(startDate) ?? 'Present'} - ${formatMonthYear(endDate) ?? 'Present'}`;
-}
-
 function formatStatusLabel(status: string | null | undefined) {
   if (!status) return '—';
   return status.replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+const PROJECT_STATUS_TONE: Record<string, StatusTone> = {
+  'in-progress': 'warning',
+  completed: 'success',
+  archived: 'neutral',
+};
+
+function getProjectStatusTone(status: string | null | undefined): StatusTone {
+  return (status && PROJECT_STATUS_TONE[status]) || 'neutral';
+}
+
+const STATUS_SORT_PRIORITY: Record<string, number> = {
+  'in-progress': 0,
+  completed: 1,
+  archived: 2,
+};
+
+function getStatusSortPriority(status: string | null | undefined) {
+  if (!status) return 99;
+  return STATUS_SORT_PRIORITY[status] ?? 98;
+}
+
+function getTimelineSortValue(project: Project) {
+  return project.startDate ? new Date(project.startDate).getTime() : -Infinity;
+}
+
+export function sortProjectsByStatusAndTimeline(projects: Project[]): Project[] {
+  return [...projects].sort((left, right) => {
+    const statusDiff = getStatusSortPriority(left.status) - getStatusSortPriority(right.status);
+    if (statusDiff !== 0) {
+      return statusDiff;
+    }
+    return getTimelineSortValue(right) - getTimelineSortValue(left);
+  });
 }
 
 export function buildProjectClientOptions(
@@ -68,198 +108,6 @@ export function filterProjectsBySearch(
   });
 }
 
-function ProjectsHeader({ onAdd }: { onAdd: () => void }) {
-  return (
-    <div className="flex items-center justify-between">
-      <h2 className="heading-2 text-foreground">Projects</h2>
-      <Button type="button" onClick={onAdd} variant="outline" size="icon" aria-label="Add project">
-        <PlusIcon className="size-4" />
-      </Button>
-    </div>
-  );
-}
-
-function ProjectsFilters({
-  searchValue,
-  onSearchChange,
-  clientOptions,
-  selectedClientId,
-  onClientChange,
-  onClearFilters,
-}: {
-  searchValue: string;
-  onSearchChange: (value: string) => void;
-  clientOptions: ProjectClientOption[];
-  selectedClientId: string;
-  onClientChange: (clientId: string) => void;
-  onClearFilters: () => void;
-}) {
-  const hasFilters = Boolean(searchValue.trim() || selectedClientId);
-  const activeFilters = [
-    ...(searchValue.trim()
-      ? [
-          {
-            id: 'search',
-            label: `Search: ${searchValue.trim()}`,
-            onRemove: () => onSearchChange(''),
-          },
-        ]
-      : []),
-    ...(selectedClientId
-      ? [
-          {
-            id: 'client',
-            label: `Client: ${clientOptions.find((option) => option.id === selectedClientId)?.company || 'Selected'}`,
-            onRemove: () => onClientChange(''),
-          },
-        ]
-      : []),
-  ];
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="flex-1">
-          <Input
-            id="project-search"
-            value={searchValue}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search by project or client..."
-            aria-label="Search projects"
-          />
-        </div>
-
-        <div className="sm:w-48">
-          <FilterSelect
-            value={selectedClientId}
-            options={clientOptions.map((option) => ({
-              value: option.id,
-              label: option.company,
-            }))}
-            onChange={onClientChange}
-            placeholder="All clients"
-            id="project-client-filter"
-          />
-        </div>
-
-        {hasFilters ? (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onClearFilters}
-            className="gap-2 self-start lg:self-auto"
-          >
-            <XIcon className="size-4" />
-            Clear filters
-          </Button>
-        ) : null}
-      </div>
-
-      {activeFilters.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2">
-          {activeFilters.map((filter) => (
-            <Button
-              key={filter.id}
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={filter.onRemove}
-              className="h-8 gap-2 border-dashed"
-            >
-              <span>{filter.label}</span>
-              <XIcon className="size-3.5" />
-            </Button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function ProjectsDesktopTable({
-  projects,
-  clientLabelFor,
-  hrefFor,
-}: {
-  projects: Project[];
-  clientLabelFor: (project: Project) => string;
-  hrefFor: (project: Project) => string;
-}) {
-  return (
-    <div className="hidden md:block">
-      <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.7fr)] gap-3 bg-muted/20 px-4 py-3 ui-data-label">
-        <span>Project</span>
-        <span>Client</span>
-        <span>Timeline</span>
-        <span>Status</span>
-      </div>
-
-      <ul className="divide-y divide-border">
-        {projects.map((project) => (
-          <li key={project.id} className="transition-colors duration-150">
-            <Link
-              to={hrefFor(project)}
-              className="grid min-h-16 grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.7fr)] items-center gap-3 px-4 py-3"
-            >
-              <p className="body-2 truncate text-text-primary">
-                {project.title?.trim() || 'Untitled project'}
-              </p>
-              <p className="body-2 truncate text-text-secondary">{clientLabelFor(project)}</p>
-              <p className="body-4 whitespace-nowrap text-text-tertiary">
-                {formatDateRange(project.startDate, project.endDate)}
-              </p>
-              <div>
-                <Badge variant="outline">{formatStatusLabel(project.status)}</Badge>
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function ProjectsMobileList({
-  projects,
-  clientLabelFor,
-  hrefFor,
-}: {
-  projects: Project[];
-  clientLabelFor: (project: Project) => string;
-  hrefFor: (project: Project) => string;
-}) {
-  return (
-    <div className="md:hidden">
-      <ul className="divide-y divide-border">
-        {projects.map((project) => (
-          <li key={project.id} className="transition-colors duration-150">
-            <Link to={hrefFor(project)} className="block p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="body-2 truncate text-text-primary">
-                    {project.title?.trim() || 'Untitled project'}
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <p className="body-4 truncate text-text-secondary">{clientLabelFor(project)}</p>
-                    <span className="body-4 text-text-tertiary">·</span>
-                    <p className="body-4 text-text-tertiary">
-                      {formatDateRange(project.startDate, project.endDate)}
-                    </p>
-                  </div>
-                </div>
-                <div className="ml-4 flex items-center gap-3">
-                  <Badge variant="outline">{formatStatusLabel(project.status)}</Badge>
-                  <ChevronRightIcon className="size-5 text-muted-foreground" aria-hidden="true" />
-                </div>
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 export default function Projects({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -272,14 +120,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
   );
   const clientsById = useMemo(
     () =>
-      new Map(
-        clientOptions.map((workExperience) => [
-          workExperience.id,
-          workExperience.role
-            ? `${workExperience.company} · ${workExperience.role}`
-            : workExperience.company,
-        ]),
-      ),
+      new Map(clientOptions.map((workExperience) => [workExperience.id, workExperience.company])),
     [clientOptions],
   );
 
@@ -288,7 +129,8 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
 
   const filteredProjects = useMemo(() => {
     const byClient = filterProjectsByClient(loaderData.projects, selectedClientId || null);
-    return filterProjectsBySearch(byClient, searchValue, clientLabelFor);
+    const bySearch = filterProjectsBySearch(byClient, searchValue, clientLabelFor);
+    return sortProjectsByStatusAndTimeline(bySearch);
   }, [loaderData.projects, selectedClientId, searchValue, clientsById]);
 
   const hasFilters = Boolean(searchValue.trim() || selectedClientId);
@@ -315,18 +157,106 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
     setSearchParams(nextParams);
   };
 
+  const activeFilters = [
+    ...(searchValue.trim()
+      ? [
+          {
+            id: 'search',
+            label: `Search: ${searchValue.trim()}`,
+            onRemove: () => setSearchValue(''),
+          },
+        ]
+      : []),
+    ...(selectedClientId
+      ? [
+          {
+            id: 'client',
+            label: `Client: ${clientOptions.find((option) => option.id === selectedClientId)?.company || 'Selected'}`,
+            onRemove: () => handleClientChange(''),
+          },
+        ]
+      : []),
+  ];
+
+  const columns: EntityListColumn<Project>[] = [
+    {
+      key: 'title',
+      header: 'Project',
+      width: 'minmax(0,1.5fr)',
+      render: (project) => (
+        <p className="body-2 truncate text-text-primary">
+          {project.title?.trim() || 'Untitled project'}
+        </p>
+      ),
+    },
+    {
+      key: 'client',
+      header: 'Client',
+      width: 'minmax(0,1fr)',
+      render: (project) => (
+        <p className="body-2 truncate text-text-secondary">{clientLabelFor(project)}</p>
+      ),
+    },
+    {
+      key: 'timeline',
+      header: 'Timeline',
+      width: 'minmax(0,0.9fr)',
+      render: (project) => (
+        <p className="body-4 whitespace-nowrap text-text-tertiary">
+          {formatDateRange(project.startDate, project.endDate)}
+        </p>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      width: 'minmax(0,0.7fr)',
+      render: (project) => (
+        <StatusBadge
+          tone={getProjectStatusTone(project.status)}
+          label={formatStatusLabel(project.status)}
+        />
+      ),
+    },
+  ];
+
   return (
     <section className="flex flex-col gap-6">
-      <ProjectsHeader onAdd={() => navigate(newProjectHref)} />
+      <PageHeader title="Projects">
+        <Button
+          type="button"
+          onClick={() => navigate(newProjectHref)}
+          variant="default"
+          size="icon"
+          aria-label="Add project"
+        >
+          <PlusIcon className="size-4" />
+        </Button>
+      </PageHeader>
 
       <div className="flex flex-col gap-6">
-        <ProjectsFilters
+        <SearchFilterBar
+          searchId="project-search"
           searchValue={searchValue}
           onSearchChange={setSearchValue}
-          clientOptions={clientOptions}
-          selectedClientId={selectedClientId}
-          onClientChange={handleClientChange}
+          searchPlaceholder="Search by project or client..."
+          searchAriaLabel="Search projects"
+          activeFilters={activeFilters}
           onClearFilters={clearFilters}
+          filters={
+            <div className="sm:w-48">
+              <FilterSelect
+                value={selectedClientId}
+                options={clientOptions.map((option) => ({
+                  value: option.id,
+                  label: option.company,
+                }))}
+                onChange={handleClientChange}
+                placeholder="All clients"
+                id="project-client-filter"
+              />
+            </div>
+          }
         />
 
         {filteredProjects.length === 0 ? (
@@ -342,15 +272,43 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
           />
         ) : (
           <>
-            <ProjectsDesktopTable
-              projects={filteredProjects}
-              clientLabelFor={clientLabelFor}
+            <EntityListTable
+              items={filteredProjects}
+              columns={columns}
+              keyFor={(project) => project.id}
               hrefFor={hrefFor}
+              linkComponent={RouterListLink}
             />
-            <ProjectsMobileList
-              projects={filteredProjects}
-              clientLabelFor={clientLabelFor}
+            <EntityListCards
+              items={filteredProjects}
+              keyFor={(project) => project.id}
               hrefFor={hrefFor}
+              linkComponent={RouterListLink}
+              renderCard={(project) => (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="body-2 truncate text-text-primary">
+                      {project.title?.trim() || 'Untitled project'}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <p className="body-4 truncate text-text-secondary">
+                        {clientLabelFor(project)}
+                      </p>
+                      <span className="body-4 text-text-tertiary">·</span>
+                      <p className="body-4 text-text-tertiary">
+                        {formatDateRange(project.startDate, project.endDate)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="ml-4 flex items-center gap-3">
+                    <StatusBadge
+                      tone={getProjectStatusTone(project.status)}
+                      label={formatStatusLabel(project.status)}
+                    />
+                    <ChevronRightIcon className="size-5 text-muted-foreground" aria-hidden="true" />
+                  </div>
+                </div>
+              )}
             />
           </>
         )}

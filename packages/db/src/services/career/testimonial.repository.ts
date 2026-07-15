@@ -94,6 +94,22 @@ export const TestimonialRepository = {
     return (rows as TestimonialRow[]).map(toTestimonialRecord);
   },
 
+  async getTestimonialById(
+    handle: DbHandle,
+    ownerUserid: string,
+    testimonialId: string,
+  ): Promise<TestimonialRecord | null> {
+    const row = await handle
+      .selectFrom('app.testimonials as testimonial')
+      .innerJoin('app.portfolios as portfolio', 'portfolio.id', 'testimonial.portfolioId')
+      .selectAll('testimonial')
+      .where('portfolio.ownerUserid', '=', ownerUserid)
+      .where('testimonial.id', '=', testimonialId)
+      .executeTakeFirst();
+
+    return row ? toTestimonialRecord(row as TestimonialRow) : null;
+  },
+
   async createTestimonial(
     handle: DbHandle,
     command: CreateTestimonialCommand,

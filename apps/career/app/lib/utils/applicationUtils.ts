@@ -1,3 +1,4 @@
+import type { StatusTone } from '@hominem/ui';
 import { centsToDollars, formatCurrency } from '@hominem/utils/numbers';
 
 /**
@@ -9,21 +10,22 @@ export function getCompanyName(company: string | { name: string } | null | undef
   return company.name || 'Unknown Company';
 }
 
+const APPLICATION_STATUS_TONE: Record<string, StatusTone> = {
+  APPLIED: 'info',
+  PHONE_SCREEN: 'warning',
+  INTERVIEW: 'info',
+  FINAL_INTERVIEW: 'info',
+  OFFER: 'success',
+  ACCEPTED: 'success',
+  REJECTED: 'danger',
+  WITHDRAWN: 'neutral',
+};
+
 /**
- * Get the appropriate CSS classes for status badge styling
+ * Get the shared StatusBadge tone for an application status
  */
-export function getStatusColor(status: string): string {
-  const colors = {
-    APPLIED: 'border-accent/30 bg-accent/10 text-foreground',
-    PHONE_SCREEN: 'border-warning/30 bg-warning/10 text-foreground',
-    INTERVIEW: 'border-accent/30 bg-accent/10 text-foreground',
-    FINAL_INTERVIEW: 'border-accent/40 bg-accent/15 text-foreground',
-    OFFER: 'border-success/30 bg-success/10 text-foreground',
-    ACCEPTED: 'border-success/40 bg-success/15 text-foreground',
-    REJECTED: 'border-destructive/30 bg-destructive/10 text-foreground',
-    WITHDRAWN: 'bg-muted text-foreground',
-  };
-  return colors[status as keyof typeof colors] || 'bg-muted text-foreground';
+export function getApplicationStatusTone(status: string): StatusTone {
+  return APPLICATION_STATUS_TONE[status] ?? 'neutral';
 }
 
 /**

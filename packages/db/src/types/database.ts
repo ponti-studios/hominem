@@ -47,18 +47,22 @@ export interface AppAiUsageEvents {
   costUsd: Numeric | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
   durationMs: number | null;
+  errorCode: string | null;
+  errorStatus: number | null;
   feature: string;
   id: Generated<string>;
   inputTokens: number;
   metadata: Json | null;
-  model: string;
+  model: string | null;
   operation: string;
   outputTokens: number;
   ownerUserid: string;
   provider: string;
   reasoningTokens: number | null;
   requestId: string | null;
+  status: Generated<string>;
   totalTokens: number;
+  usageAvailable: Generated<boolean>;
 }
 
 export interface AppApplicationFiles {

@@ -38,6 +38,8 @@ export {
   AvatarImage,
 } from './components/avatar';
 export { Badge, badgeVariants } from './components/badge';
+export { StatusBadge } from './components/status-badge';
+export type { StatusBadgeProps, StatusTone } from './components/status-badge';
 export { Button, buttonVariants } from './components/button';
 export { Calendar } from './components/calendar';
 export type { CalendarProps } from './components/calendar';
@@ -134,10 +136,21 @@ export { ActiveFiltersBar } from './components/filters/active-filters-bar';
 export { FilterChip } from './components/filters/filter-chip';
 export { FilterControls } from './components/filters/filter-controls';
 export { FilterSelect } from './components/filters/filter-select';
+export { SearchFilterBar } from './components/filters/search-filter-bar';
 export type { ActiveFilter, ActiveFiltersBarProps } from './components/filters/active-filters-bar';
 export type { FilterChipProps } from './components/filters/filter-chip';
 export type { FilterControlsProps } from './components/filters/filter-controls';
 export type { FilterSelectOption, FilterSelectProps } from './components/filters/filter-select';
+export type { SearchFilterBarProps } from './components/filters/search-filter-bar';
+export { EntityListTable, EntityListCards } from './components/data/entity-list';
+export type {
+  EntityListColumn,
+  EntityListCardsProps,
+  EntityListLinkProps,
+  EntityListTableProps,
+} from './components/data/entity-list';
+export { PageHeader } from './components/layout/page-header';
+export type { PageHeaderProps } from './components/layout/page-header';
 export { InboxStreamRow } from './components/inbox/inbox-stream-row';
 export type {
   InboxStreamRowItem,

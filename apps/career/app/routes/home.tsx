@@ -11,13 +11,13 @@ import { Route } from './+types/home';
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Craftd - keep your job search from scattering' },
+    { title: 'career' },
     {
       name: 'description',
       content:
         'A private workspace for job seekers who need to reuse their best proof, tailor serious applications, and keep a long search organized.',
     },
-    { property: 'og:title', content: 'Craftd - keep your job search from scattering' },
+    { property: 'og:title', content: 'career - keep your job search from scattering' },
     {
       property: 'og:description',
       content:
@@ -80,7 +80,6 @@ function Dashboard({
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="heading-2">Your career story</h1>
-        <p className="body-3 text-muted-foreground">Newest at the top.</p>
       </div>
 
       <TimelineSpine timeline={timeline} />
@@ -97,7 +96,7 @@ function LandingPage() {
             <div className="max-w-2xl">
               <h1 className="display-1 mt-5 max-w-2xl">Keep your job search from scattering.</h1>
               <p className="body-1 mt-6 max-w-xl text-muted-foreground">
-                Craftd helps you reuse your best proof, tailor the applications that matter, and
+                career helps you reuse your best proof, tailor the applications that matter, and
                 remember what you sent when the search stretches on.
               </p>
 
@@ -146,7 +145,7 @@ function LandingPage() {
             </section>
 
             <footer className="flex items-center justify-between border-t border-border py-5 footnote text-muted-foreground">
-              <span>Craftd</span>
+              <span>career</span>
               <span>Less scrambling. More control.</span>
             </footer>
           </div>

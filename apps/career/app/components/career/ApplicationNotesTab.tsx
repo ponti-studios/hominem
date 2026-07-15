@@ -1,5 +1,14 @@
 import type { AppApplicationNotes, Selectable } from '@hominem/db';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
   Badge,
   Button,
   Card,
@@ -17,7 +26,7 @@ import {
   Textarea,
 } from '@hominem/ui';
 import { useState } from 'react';
-import { Form } from 'react-router';
+import { Form, useSubmit } from 'react-router';
 
 import { getApplicationNoteTone } from '~/lib/utils/applicationNoteUtils';
 
@@ -28,6 +37,7 @@ interface NotesTabProps {
 
 export function ApplicationNotesTab({ notes }: NotesTabProps) {
   const [showAddNote, setShowAddNote] = useState(false);
+  const submit = useSubmit();
 
   return (
     <div className="space-y-6">
@@ -122,20 +132,35 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                     <span className="body-3 text-muted-foreground whitespace-nowrap">
                       {new Date(note.createdat).toLocaleDateString()}
                     </span>
-                    <Form method="post" className="inline">
-                      <input type="hidden" name="operation" value="delete_note" />
-                      <input type="hidden" name="noteId" value={note.id} />
-                      <Button
-                        type="submit"
-                        variant="destructive"
-                        size="sm"
-                        onClick={(e) => {
-                          if (!confirm('Delete this note?')) e.preventDefault();
-                        }}
-                      >
-                        Delete
-                      </Button>
-                    </Form>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button type="button" variant="destructive" size="sm">
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground"
+                            onClick={() => {
+                              const formData = new FormData();
+                              formData.append('operation', 'delete_note');
+                              formData.append('noteId', note.id);
+                              submit(formData, { method: 'post' });
+                            }}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
                 <p className="whitespace-pre-wrap body-3 text-foreground/90">{note.content}</p>

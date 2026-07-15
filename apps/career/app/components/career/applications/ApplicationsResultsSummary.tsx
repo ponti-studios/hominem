@@ -1,4 +1,5 @@
 import { Button } from '@hominem/ui';
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 
 import type { ApplicationsResultsSummaryProps } from './types';
 
@@ -13,29 +14,29 @@ export function ApplicationsResultsSummary({
   }
 
   return (
-    <div className="flex items-center justify-end gap-2 body-3 text-muted-foreground">
+    <div className="flex shrink-0 items-center gap-1">
       <Button
         type="button"
         onClick={onPrevPage}
         disabled={page <= 1}
         variant="outline"
-        size="sm"
-        className="border-dashed"
+        size="icon"
+        aria-label="Previous page"
       >
-        Previous
+        <ChevronLeftIcon className="size-4" />
       </Button>
-      <span className="body-4 text-foreground">
-        Page {page} of {totalPages}
+      <span className="body-4 whitespace-nowrap px-1 text-foreground">
+        {page} of {totalPages}
       </span>
       <Button
         type="button"
         onClick={onNextPage}
         disabled={page >= totalPages}
         variant="outline"
-        size="sm"
-        className="border-dashed"
+        size="icon"
+        aria-label="Next page"
       >
-        Next
+        <ChevronRightIcon className="size-4" />
       </Button>
     </div>
   );

@@ -42,6 +42,7 @@
   },
   "scripts": {
     "typecheck": "tsgo --noEmit",
+    "test": "vitest run",
     "format": "oxfmt src --write",
     "format:check": "oxfmt src --check",
     "lint": "oxlint src",

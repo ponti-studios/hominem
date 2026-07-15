@@ -56,17 +56,15 @@ export function WorkExperienceDetail({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <button
-          type="button"
-          onClick={() => navigate('/work')}
-          data-testid="back-button"
-          className="body-3 inline-flex items-center gap-2 text-muted-foreground transition-colors"
-        >
-          <ArrowLeftIcon className="size-4" />
-          Back to work
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => navigate('/work')}
+        data-testid="back-button"
+        className="body-3 inline-flex items-center gap-2 self-start text-muted-foreground transition-colors"
+      >
+        <ArrowLeftIcon className="size-4" />
+        Back to work
+      </button>
 
       <FormErrorAlert title="Work experience wasn’t deleted" message={submissionError} />
 

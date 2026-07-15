@@ -26,6 +26,7 @@ vi.mock('@hominem/ai', () => ({
 
 vi.mock('./ai-usage', () => ({
   recordAIUsageEvent: mocks.recordAIUsageEvent,
+  startAIUsageTimer: () => () => 0,
 }));
 
 vi.mock('@hominem/telemetry', () => ({
@@ -68,6 +69,28 @@ describe('FileProcessorService', () => {
       expect.objectContaining({
         feature: 'file_image_analyze',
         usage: expect.objectContaining({ totalTokens: 9, costUsd: 0.09 }),
+      }),
+    );
+  });
+
+  it('records failed image analysis attempts without provider usage', async () => {
+    mocks.createChatCompletion.mockRejectedValueOnce(
+      Object.assign(new Error('quota'), { code: 'quota_exceeded', status: 429 }),
+    );
+
+    await FileProcessorService.processFile(
+      new TextEncoder().encode('tiny-image').buffer,
+      'image.png',
+      'image/png',
+      'file-id',
+      'user-id',
+    );
+
+    expect(mocks.recordAIUsageEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        feature: 'file_image_analyze',
+        status: 'failed',
+        error: expect.objectContaining({ code: 'quota_exceeded', status: 429 }),
       }),
     );
   });

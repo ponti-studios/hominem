@@ -6,7 +6,7 @@ import { LOG_MESSAGES, logger } from '@hominem/telemetry';
 import mammoth from 'mammoth';
 import PDFParser from 'pdf2json';
 
-import { recordAIUsageEvent } from './ai-usage.js';
+import { recordAIUsageEvent, startAIUsageTimer } from './ai-usage.js';
 
 export interface ProcessedFile {
   id: string;
@@ -65,9 +65,10 @@ export class FileProcessorService {
   ): Promise<ProcessedFile> {
     let textContent = '';
     if (buffer.byteLength < 20 * 1024 * 1024) {
+      const eventId = randomUUID();
+      const getDurationMs = startAIUsageTimer();
       try {
         const base64Image = Buffer.from(buffer).toString('base64');
-        const eventId = randomUUID();
         const response = await createChatCompletion({
           messages: [
             {
@@ -95,6 +96,8 @@ export class FileProcessorService {
           operation: 'chat_completion',
           usage: getChatCompletionUsage(response),
           model: response.model,
+          status: 'succeeded',
+          durationMs: getDurationMs(),
           metadata: {
             fileId: file.id,
             mimeType: file.mimetype,
@@ -104,6 +107,20 @@ export class FileProcessorService {
 
         textContent = getChatCompletionText(response);
       } catch (error) {
+        await recordAIUsageEvent({
+          eventId,
+          userId,
+          feature: 'file_image_analyze',
+          operation: 'chat_completion',
+          status: 'failed',
+          error,
+          durationMs: getDurationMs(),
+          metadata: {
+            fileId: file.id,
+            mimeType: file.mimetype,
+            sizeBytes: file.size,
+          },
+        });
         logger.warn(LOG_MESSAGES.IMAGE_ANALYZE_ERROR, { error });
       }
     }
@@ -152,8 +169,9 @@ export class FileProcessorService {
 
       let summary = '';
       if (textContent.length > 1000) {
+        const eventId = randomUUID();
+        const getDurationMs = startAIUsageTimer();
         try {
-          const eventId = randomUUID();
           const response = await createChatCompletion({
             messages: [
               {
@@ -177,6 +195,8 @@ export class FileProcessorService {
             operation: 'chat_completion',
             usage: getChatCompletionUsage(response),
             model: response.model,
+            status: 'succeeded',
+            durationMs: getDurationMs(),
             metadata: {
               fileId: file.id,
               mimeType: file.mimetype,
@@ -187,6 +207,21 @@ export class FileProcessorService {
 
           summary = getChatCompletionText(response);
         } catch (error) {
+          await recordAIUsageEvent({
+            eventId,
+            userId,
+            feature: 'file_document_summarize',
+            operation: 'chat_completion',
+            status: 'failed',
+            error,
+            durationMs: getDurationMs(),
+            metadata: {
+              fileId: file.id,
+              mimeType: file.mimetype,
+              sizeBytes: file.size,
+              extractedCharacterCount: textContent.length,
+            },
+          });
           logger.warn(LOG_MESSAGES.DOCUMENT_SUMMARIZE_ERROR, { error });
         }
       }

@@ -86,7 +86,8 @@
     "@expo/plist": "^0.7.0",
     "babel-preset-expo": "^57.0.1",
     "eslint": "^9.39.4",
-    "eslint-config-expo": "~57.0.0"
+    "eslint-config-expo": "~57.0.0",
+    "typescript": "6.0.3"
   },
   "expo": {
     "doctor": {

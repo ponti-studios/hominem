@@ -5,7 +5,7 @@ import { Route } from './+types/p.$slug';
 export const meta: Route.MetaFunction = ({ loaderData }) => {
   if (!loaderData) {
     return [
-      { title: 'Portfolio Not Found | Craftd' },
+      { title: 'Portfolio Not Found | career' },
       { name: 'description', content: 'The requested portfolio could not be found.' },
     ];
   }

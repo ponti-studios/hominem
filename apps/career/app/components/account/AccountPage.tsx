@@ -161,7 +161,7 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
 
       const portfolioUrl = `${window.location.origin}/p/${currentPortfolio.slug}`;
 
-      const response = await fetch('https://craftd-worker.fly.dev/trigger-task', {
+      const response = await fetch('https://career-worker.fly.dev/trigger-task', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -193,6 +193,8 @@ export function AccountPage({ loaderData }: { loaderData: AccountLoaderData }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <h2 className="heading-2 text-foreground">Account</h2>
+
       <div className="grid gap-10 xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.8fr)]">
         <section className="space-y-6">
           <section className="space-y-4">

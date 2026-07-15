@@ -1,69 +1,88 @@
-import { Badge } from '@hominem/ui';
-import { Link } from 'react-router';
+import { EntityListTable, StatusBadge, type EntityListColumn } from '@hominem/ui';
 
+import { RouterListLink } from '~/components/RouterListLink';
 import {
   formatApplicationDate,
   formatApplicationSalary,
   formatStatusText,
+  getApplicationStatusTone,
   getCompanyName,
-  getStatusColor,
 } from '~/lib/utils/applicationUtils';
+import type { ApplicationWithCompany } from '~/types/applications';
 
 import type { ApplicationsDesktopTableProps } from './types';
 
+const APPLICATIONS_COLUMNS: EntityListColumn<ApplicationWithCompany>[] = [
+  {
+    key: 'position',
+    header: 'Position',
+    width: 'minmax(0,1.5fr)',
+    render: (application) => (
+      <div className="min-w-0">
+        <p className="body-2 truncate text-text-primary">{application.position}</p>
+        <p className="body-4 truncate text-text-secondary">{getCompanyName(application.company)}</p>
+      </div>
+    ),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: 'minmax(0,0.9fr)',
+    render: (application) => (
+      <StatusBadge
+        tone={getApplicationStatusTone(application.status)}
+        label={formatStatusText(application.status)}
+      />
+    ),
+  },
+  {
+    key: 'applied',
+    header: 'Applied',
+    width: 'minmax(0,0.8fr)',
+    render: (application) => (
+      <p className="body-4 whitespace-nowrap text-text-tertiary">
+        {formatApplicationDate(application.applicationDate || application.startDate || null)}
+      </p>
+    ),
+  },
+  {
+    key: 'response',
+    header: 'Response',
+    width: 'minmax(0,0.8fr)',
+    render: (application) => (
+      <p className="body-4 whitespace-nowrap text-text-tertiary">
+        {formatApplicationDate(application.responseDate)}
+      </p>
+    ),
+  },
+  {
+    key: 'salary',
+    header: 'Salary',
+    width: 'minmax(0,0.9fr)',
+    render: (application) => (
+      <p className="body-4 whitespace-nowrap text-text-tertiary">
+        {formatApplicationSalary(application.salaryOffered || application.salaryQuoted)}
+      </p>
+    ),
+  },
+  {
+    key: 'source',
+    header: 'Source',
+    width: 'minmax(0,0.8fr)',
+    render: (application) => (
+      <p className="body-4 truncate capitalize text-text-tertiary">{application.source || '—'}</p>
+    ),
+  },
+];
+
 export function ApplicationsDesktopTable({ applications }: ApplicationsDesktopTableProps) {
   return (
-    <div className="hidden md:block">
-      <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)] gap-3 bg-muted/20 px-4 py-3 ui-data-label">
-        <span>Position</span>
-        <span>Status</span>
-        <span>Applied</span>
-        <span>Response</span>
-        <span>Salary</span>
-        <span>Source</span>
-      </div>
-
-      <ul className="divide-y divide-border">
-        {applications.map((application) => (
-          <li key={application.id} className="transition-colors duration-150">
-            <Link
-              to={`/applications/${application.id}`}
-              className="grid min-h-16 grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_minmax(0,0.8fr)_minmax(0,0.9fr)_minmax(0,0.8fr)] items-center gap-3 px-4 py-3"
-            >
-              <div className="min-w-0">
-                <p className="body-2 truncate text-text-primary">{application.position}</p>
-                <p className="body-4 truncate text-text-secondary">
-                  {getCompanyName(application.company)}
-                </p>
-              </div>
-
-              <div>
-                <Badge variant="outline" className={getStatusColor(application.status)}>
-                  {formatStatusText(application.status)}
-                </Badge>
-              </div>
-
-              <p className="body-4 whitespace-nowrap text-text-tertiary">
-                {formatApplicationDate(
-                  application.applicationDate || application.startDate || null,
-                )}
-              </p>
-
-              <p className="body-4 whitespace-nowrap text-text-tertiary">
-                {formatApplicationDate(application.responseDate)}
-              </p>
-
-              <p className="body-4 whitespace-nowrap text-text-tertiary">
-                {formatApplicationSalary(application.salaryOffered || application.salaryQuoted)}
-              </p>
-
-              <p className="body-4 truncate capitalize text-text-tertiary">
-                {application.source || '—'}
-              </p>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <EntityListTable
+      items={applications}
+      columns={APPLICATIONS_COLUMNS}
+      keyFor={(application) => application.id}
+      hrefFor={(application) => `/applications/${application.id}`}
+      linkComponent={RouterListLink}
+    />
   );
 }

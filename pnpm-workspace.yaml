@@ -26,6 +26,18 @@ overrides:
   kysely: '>=0.28.17'
   '@protobufjs/utf8': '>=1.1.1'
   protobufjs: '>=7.5.6'
+  # typescript-eslint needs a newer release to parse against typescript@7.0.2's
+  # restructured package.
+  '@typescript-eslint/eslint-plugin': 8.64.0
+  '@typescript-eslint/parser': 8.64.0
+  '@typescript-eslint/project-service': 8.64.0
+  '@typescript-eslint/scope-manager': 8.64.0
+  '@typescript-eslint/tsconfig-utils': 8.64.0
+  '@typescript-eslint/type-utils': 8.64.0
+  '@typescript-eslint/types': 8.64.0
+  '@typescript-eslint/typescript-estree': 8.64.0
+  '@typescript-eslint/utils': 8.64.0
+  '@typescript-eslint/visitor-keys': 8.64.0
   # Force every workspace + transitive consumer onto the catalog React.
   react: 'catalog:'
   react-dom: 'catalog:'

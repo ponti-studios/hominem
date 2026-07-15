@@ -22,6 +22,7 @@ export type AIUsageFeature =
   | 'file_document_summarize';
 
 export type AIUsageOperation = 'chat_completion' | 'structured_output' | 'embedding';
+export type AIUsageEventStatus = 'succeeded' | 'failed';
 
 export interface AIUsageEventRecord {
   id: string;
@@ -29,7 +30,11 @@ export interface AIUsageEventRecord {
   provider: string;
   feature: AIUsageFeature;
   operation: AIUsageOperation;
-  model: string;
+  model: string | null;
+  status: AIUsageEventStatus;
+  usageAvailable: boolean;
+  errorCode: string | null;
+  errorStatus: number | null;
   requestId: string | null;
   inputTokens: number;
   outputTokens: number;
@@ -48,7 +53,7 @@ export interface CreateAIUsageEventInput {
   provider: string;
   feature: AIUsageFeature;
   operation: AIUsageOperation;
-  model: string;
+  model?: string | null;
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
@@ -57,6 +62,10 @@ export interface CreateAIUsageEventInput {
   reasoningTokens?: number | null;
   costUsd?: number | null;
   durationMs?: number | null;
+  status?: AIUsageEventStatus;
+  usageAvailable?: boolean;
+  errorCode?: string | null;
+  errorStatus?: number | null;
   metadata?: unknown;
 }
 
@@ -68,6 +77,9 @@ export interface AIUsageQueryRange {
 
 export interface AIUsageSummaryRecord {
   requestCount: number;
+  succeededCount: number;
+  failedCount: number;
+  usageAvailableCount: number;
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
@@ -78,6 +90,9 @@ export interface AIUsageSummaryRecord {
 export interface AIUsageFeatureBreakdownRecord {
   feature: AIUsageFeature;
   requestCount: number;
+  succeededCount: number;
+  failedCount: number;
+  usageAvailableCount: number;
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
@@ -85,8 +100,11 @@ export interface AIUsageFeatureBreakdownRecord {
 }
 
 export interface AIUsageModelBreakdownRecord {
-  model: string;
+  model: string | null;
   requestCount: number;
+  succeededCount: number;
+  failedCount: number;
+  usageAvailableCount: number;
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
@@ -100,7 +118,11 @@ function toAIUsageEventRecord(row: AIUsageEventRow): AIUsageEventRecord {
     provider: row.provider,
     feature: row.feature as AIUsageFeature,
     operation: row.operation as AIUsageOperation,
-    model: row.model,
+    model: row.model ?? null,
+    status: row.status as AIUsageEventStatus,
+    usageAvailable: row.usageAvailable,
+    errorCode: row.errorCode ?? null,
+    errorStatus: row.errorStatus ?? null,
     requestId: row.requestId ?? null,
     inputTokens: row.inputTokens,
     outputTokens: row.outputTokens,
@@ -124,7 +146,11 @@ export const AIUsageEventRepository = {
         provider: input.provider,
         feature: input.feature,
         operation: input.operation,
-        model: input.model,
+        model: input.model ?? null,
+        status: input.status ?? 'succeeded',
+        usageAvailable: input.usageAvailable ?? true,
+        errorCode: input.errorCode ?? null,
+        errorStatus: input.errorStatus ?? null,
         requestId: input.requestId ?? null,
         inputTokens: input.inputTokens,
         outputTokens: input.outputTokens,
@@ -150,7 +176,11 @@ export const AIUsageEventRepository = {
         provider: input.provider,
         feature: input.feature,
         operation: input.operation,
-        model: input.model,
+        model: input.model ?? null,
+        status: input.status ?? 'succeeded',
+        usageAvailable: input.usageAvailable ?? true,
+        errorCode: input.errorCode ?? null,
+        errorStatus: input.errorStatus ?? null,
         requestId: input.requestId ?? null,
         inputTokens: input.inputTokens,
         outputTokens: input.outputTokens,
@@ -182,6 +212,9 @@ export const AIUsageEventRepository = {
     const row = await query
       .select([
         sql<number>`count(*)`.as('requestCount'),
+        sql<number>`count(*) FILTER (WHERE status = 'succeeded')`.as('succeededCount'),
+        sql<number>`count(*) FILTER (WHERE status = 'failed')`.as('failedCount'),
+        sql<number>`count(*) FILTER (WHERE usage_available)`.as('usageAvailableCount'),
         sql<number>`coalesce(sum(input_tokens), 0)`.as('promptTokens'),
         sql<number>`coalesce(sum(output_tokens), 0)`.as('completionTokens'),
         sql<number>`coalesce(sum(total_tokens), 0)`.as('totalTokens'),
@@ -192,6 +225,9 @@ export const AIUsageEventRepository = {
 
     return {
       requestCount: Number(row.requestCount ?? 0),
+      succeededCount: Number(row.succeededCount ?? 0),
+      failedCount: Number(row.failedCount ?? 0),
+      usageAvailableCount: Number(row.usageAvailableCount ?? 0),
       promptTokens: Number(row.promptTokens ?? 0),
       completionTokens: Number(row.completionTokens ?? 0),
       totalTokens: Number(row.totalTokens ?? 0),
@@ -219,6 +255,9 @@ export const AIUsageEventRepository = {
       .select([
         'feature',
         sql<number>`count(*)`.as('requestCount'),
+        sql<number>`count(*) FILTER (WHERE status = 'succeeded')`.as('succeededCount'),
+        sql<number>`count(*) FILTER (WHERE status = 'failed')`.as('failedCount'),
+        sql<number>`count(*) FILTER (WHERE usage_available)`.as('usageAvailableCount'),
         sql<number>`coalesce(sum(input_tokens), 0)`.as('promptTokens'),
         sql<number>`coalesce(sum(output_tokens), 0)`.as('completionTokens'),
         sql<number>`coalesce(sum(total_tokens), 0)`.as('totalTokens'),
@@ -233,6 +272,9 @@ export const AIUsageEventRepository = {
       (row): AIUsageFeatureBreakdownRecord => ({
         feature: row.feature as AIUsageFeature,
         requestCount: Number(row.requestCount ?? 0),
+        succeededCount: Number(row.succeededCount ?? 0),
+        failedCount: Number(row.failedCount ?? 0),
+        usageAvailableCount: Number(row.usageAvailableCount ?? 0),
         promptTokens: Number(row.promptTokens ?? 0),
         completionTokens: Number(row.completionTokens ?? 0),
         totalTokens: Number(row.totalTokens ?? 0),
@@ -259,6 +301,9 @@ export const AIUsageEventRepository = {
       .select([
         'model',
         sql<number>`count(*)`.as('requestCount'),
+        sql<number>`count(*) FILTER (WHERE status = 'succeeded')`.as('succeededCount'),
+        sql<number>`count(*) FILTER (WHERE status = 'failed')`.as('failedCount'),
+        sql<number>`count(*) FILTER (WHERE usage_available)`.as('usageAvailableCount'),
         sql<number>`coalesce(sum(input_tokens), 0)`.as('promptTokens'),
         sql<number>`coalesce(sum(output_tokens), 0)`.as('completionTokens'),
         sql<number>`coalesce(sum(total_tokens), 0)`.as('totalTokens'),
@@ -271,8 +316,11 @@ export const AIUsageEventRepository = {
 
     return rows.map(
       (row): AIUsageModelBreakdownRecord => ({
-        model: row.model,
+        model: row.model ?? null,
         requestCount: Number(row.requestCount ?? 0),
+        succeededCount: Number(row.succeededCount ?? 0),
+        failedCount: Number(row.failedCount ?? 0),
+        usageAvailableCount: Number(row.usageAvailableCount ?? 0),
         promptTokens: Number(row.promptTokens ?? 0),
         completionTokens: Number(row.completionTokens ?? 0),
         totalTokens: Number(row.totalTokens ?? 0),

@@ -60,7 +60,12 @@ export interface PublicPortfolioProfileRecord extends PortfolioRecord {
   projects: ProjectRecord[];
 }
 
-export type TimelineEntryKind = 'career_event' | 'project' | 'testimonial' | 'status_change';
+export type TimelineEntryKind =
+  | 'career_event'
+  | 'project'
+  | 'testimonial'
+  | 'application'
+  | 'status_change';
 
 export interface TimelineEntryRecord {
   id: string;
@@ -347,6 +352,20 @@ export const PortfolioRepository = {
             LIMIT 1
           ) attributed ON true
           WHERE t.portfolio_id = ${portfolioId}
+
+          UNION ALL
+
+          SELECT
+            'application:' || ja.id::text,
+            'application',
+            COALESCE(ja.application_date, ja.createdat),
+            'Applied for ' || ja.position,
+            c.name,
+            ja.status,
+            NULL::uuid
+          FROM app.job_applications ja
+          LEFT JOIN app.companies c ON c.id = ja.company_id
+          WHERE ja.owner_userid = ${ownerUserid}
 
           UNION ALL
 

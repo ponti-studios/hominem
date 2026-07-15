@@ -1,20 +1,21 @@
+import { StatusBadge } from '@hominem/ui';
 import {
+  ArrowLeftIcon,
   Briefcase,
   Calendar,
-  ChevronLeft,
   FileText,
   MapPin,
   MessageSquare,
   Paperclip,
 } from 'lucide-react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet, useNavigate } from 'react-router';
 
 import { QuickActionsDropdown } from '~/components/career';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { cn } from '~/lib/utils';
-import { formatStatusText, getStatusColor } from '~/lib/utils/applicationUtils';
+import { formatStatusText, getApplicationStatusTone } from '~/lib/utils/applicationUtils';
 
 import { Route } from './+types/applications.$id';
 
@@ -70,18 +71,20 @@ export default function ApplicationDetailLayout({ loaderData }: Route.ComponentP
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <header className="flex items-center justify-between">
-        <Link to="/applications" className="flex items-center body-3 text-muted-foreground">
-          <ChevronLeft className="size-5" />
-          Back to Applications
-        </Link>
-      </header>
+      <button
+        type="button"
+        onClick={() => navigate('/applications')}
+        data-testid="back-button"
+        className="body-3 inline-flex items-center gap-2 self-start text-muted-foreground transition-colors"
+      >
+        <ArrowLeftIcon className="size-4" />
+        Back to applications
+      </button>
 
       {/* Application Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
         <div className="space-y-2">
-          <h1 className="heading-3 md:heading-2 text-foreground">{application.position}</h1>
+          <h1 className="heading-2 text-foreground">{application.position}</h1>
           <div className="flex gap-2 body-3 text-muted-foreground">
             <p className="p-2 py-1 border rounded bg-surface">{company?.name}</p>
             {(application.jobPosting || application.location) && (
@@ -97,14 +100,11 @@ export default function ApplicationDetailLayout({ loaderData }: Route.ComponentP
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span
-            className={cn(
-              'px-4 py-2 text-sm font-semibold rounded-full',
-              getStatusColor(application.status),
-            )}
-          >
-            {formatStatusText(application.status)}
-          </span>
+          <StatusBadge
+            tone={getApplicationStatusTone(application.status)}
+            label={formatStatusText(application.status)}
+            className="text-sm"
+          />
           <QuickActionsDropdown actions={quickActions} />
         </div>
       </div>

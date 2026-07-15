@@ -10,13 +10,16 @@
     "lint": "oxlint app tests",
     "lint:fix": "oxlint app tests --fix",
     "format": "oxfmt app tests --write",
+    "generate:icons": "iconkit public/favicon.png",
     "format:check": "oxfmt app tests --check",
     "preview": "pnpm build && vite preview",
     "start": "react-router-serve ./build/server/index.js --port=${PORT:-3000}",
     "test": "vitest run --passWithNoTests",
     "test:ui": "vitest run --ui",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "react-router typegen && tsgo --noEmit"
+    "typecheck": "react-router typegen && tsgo --noEmit",
+    "gallery:screenshot": "tsx scripts/gallery-screenshot.ts",
+    "gallery:login": "tsx scripts/gallery-login.ts"
   },
   "dependencies": {
     "@hominem/ai": "workspace:*",
@@ -56,6 +59,7 @@
     "@vitest/coverage-v8": "4.1.2",
     "jsdom": "^26.1.0",
     "msw": "^2.12.13",
+    "playwright": "^1.61.1",
     "tailwindcss": "^4.1.8",
     "tsx": "^4.10.0",
     "tw-animate-css": "^1.3.4",

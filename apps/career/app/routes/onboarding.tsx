@@ -7,7 +7,7 @@ import type { UploadResumeApiResponse } from '~/lib/api-contracts';
 
 export function meta() {
   return [
-    { title: 'Import resume — Craftd' },
+    { title: 'Import resume — career' },
     {
       name: 'description',
       content: 'Update your portfolio from a resume PDF.',

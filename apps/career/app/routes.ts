@@ -26,6 +26,8 @@ export default [
         route('projects/new', 'routes/projects.new.tsx'),
         route('projects/:id', 'routes/projects.$id.tsx'),
         route('testimonials', 'routes/testimonials.tsx'),
+        route('testimonials/new', 'routes/testimonials.new.tsx'),
+        route('testimonials/:id', 'routes/testimonials.$id.tsx'),
         route('applications', 'routes/applications.tsx'),
         route('applications/new', 'routes/applications.new.tsx'),
         route('applications/:id', 'routes/applications.$id.tsx', [

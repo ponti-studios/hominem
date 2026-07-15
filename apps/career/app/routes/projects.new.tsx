@@ -8,7 +8,7 @@ import { portfolioContext, userContext } from '~/lib/middleware';
 
 import { Route } from './+types/projects.new';
 
-export const meta: Route.MetaFunction = () => [{ title: 'New Project | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'New Project | career' }];
 
 export async function loader({ context, request }: Route.LoaderArgs) {
   const user = context.get(userContext)!;

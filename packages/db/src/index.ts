@@ -91,6 +91,7 @@ export type {
   AIUsageFeatureBreakdownRecord,
   AIUsageModelBreakdownRecord,
   AIUsageOperation,
+  AIUsageEventStatus,
   AIUsageSummaryRecord,
   CreateAIUsageEventInput,
 } from './services/ai/ai-usage.repository';

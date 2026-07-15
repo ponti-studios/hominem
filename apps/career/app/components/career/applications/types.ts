@@ -1,5 +1,12 @@
 import type { ApplicationWithCompany } from '~/types/applications';
 
+export interface ApplicationsResultsSummaryProps {
+  page: number;
+  totalPages: number;
+  onPrevPage: () => void;
+  onNextPage: () => void;
+}
+
 export interface ApplicationsFiltersProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
@@ -10,13 +17,7 @@ export interface ApplicationsFiltersProps {
   selectedSource: string;
   onSourceChange: (source: string) => void;
   onClearFilters: () => void;
-}
-
-export interface ApplicationsResultsSummaryProps {
-  page: number;
-  totalPages: number;
-  onPrevPage: () => void;
-  onNextPage: () => void;
+  pagination: ApplicationsResultsSummaryProps;
 }
 
 export interface ApplicationsDesktopTableProps {

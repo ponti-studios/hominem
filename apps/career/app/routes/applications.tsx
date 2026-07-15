@@ -1,5 +1,5 @@
 import { db, JobApplicationRepository } from '@hominem/db';
-import { Button, useDebouncedValue } from '@hominem/ui';
+import { Button, PageHeader, useDebouncedValue } from '@hominem/ui';
 import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
@@ -8,7 +8,6 @@ import { ApplicationsDesktopTable } from '~/components/career/applications/Appli
 import { ApplicationsEmptyState } from '~/components/career/applications/ApplicationsEmptyState';
 import { ApplicationsFilters } from '~/components/career/applications/ApplicationsFilters';
 import { ApplicationsMobileList } from '~/components/career/applications/ApplicationsMobileList';
-import { ApplicationsResultsSummary } from '~/components/career/applications/ApplicationsResultsSummary';
 import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
@@ -143,23 +142,6 @@ export async function action({ context, request }: Route.ActionArgs) {
   }
 }
 
-function ApplicationsHeader({ onAdd }: { onAdd: () => void }) {
-  return (
-    <div className="flex items-center justify-between">
-      <h2 className="heading-2 text-foreground">Job Applications</h2>
-      <Button
-        type="button"
-        onClick={onAdd}
-        variant="outline"
-        size="icon"
-        aria-label="Add application"
-      >
-        <PlusIcon className="size-4" />
-      </Button>
-    </div>
-  );
-}
-
 export default function Applications({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -222,7 +204,17 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <ApplicationsHeader onAdd={() => navigate('/applications/new')} />
+      <PageHeader title="Job Applications">
+        <Button
+          type="button"
+          onClick={() => navigate('/applications/new')}
+          variant="default"
+          size="icon"
+          aria-label="Add application"
+        >
+          <PlusIcon className="size-4" />
+        </Button>
+      </PageHeader>
 
       <div className="flex flex-col gap-6">
         <ApplicationsFilters
@@ -235,13 +227,12 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
           selectedSource={filters.source}
           onSourceChange={handleSourceChange}
           onClearFilters={clearFilters}
-        />
-
-        <ApplicationsResultsSummary
-          page={pagination.page}
-          totalPages={pagination.totalPages}
-          onPrevPage={() => updateSearchParams({ page: String(pagination.page - 1) })}
-          onNextPage={() => updateSearchParams({ page: String(pagination.page + 1) })}
+          pagination={{
+            page: pagination.page,
+            totalPages: pagination.totalPages,
+            onPrevPage: () => updateSearchParams({ page: String(pagination.page - 1) }),
+            onNextPage: () => updateSearchParams({ page: String(pagination.page + 1) }),
+          }}
         />
 
         {applications.length === 0 ? (

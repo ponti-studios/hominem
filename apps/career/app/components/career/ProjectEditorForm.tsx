@@ -119,6 +119,7 @@ export function ProjectEditorForm({
     register,
     handleSubmit,
     reset,
+    trigger,
     formState: { errors, isDirty, isValid },
   } = useForm<ProjectFormValues>({
     defaultValues,
@@ -179,7 +180,7 @@ export function ProjectEditorForm({
   const handleReset = () => reset(defaultValues);
 
   const handleDelete = () => {
-    if (!project?.id || !confirm('Are you sure you want to delete this project?')) {
+    if (!project?.id) {
       return;
     }
 
@@ -211,6 +212,8 @@ export function ProjectEditorForm({
           submitLabel={isNew ? 'Create Project' : 'Save Changes'}
           onDelete={!isNew ? handleDelete : undefined}
           onReset={!isNew ? handleReset : undefined}
+          deleteConfirmTitle="Delete this project?"
+          deleteConfirmDescription="This removes the project from your portfolio. This can't be undone."
         />
       </div>
 
@@ -388,7 +391,13 @@ export function ProjectEditorForm({
             control={control}
             name="status"
             render={({ field }) => (
-              <Select value={field.value ?? 'completed'} onValueChange={field.onChange}>
+              <Select
+                value={field.value ?? 'completed'}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  trigger('endDate');
+                }}
+              >
                 <SelectTrigger id={`project-status-${project?.id || 'new'}`} className="w-full">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -418,8 +427,26 @@ export function ProjectEditorForm({
           <Input
             id={`project-end-date-${project?.id || 'new'}`}
             type="date"
-            {...register('endDate')}
+            {...register('endDate', {
+              validate: (value, formValues) =>
+                formValues.status !== 'completed' ||
+                Boolean(value) ||
+                'Add an end date, or change the status from Completed.',
+            })}
+            aria-describedby={
+              errors.endDate ? `project-end-date-${project?.id || 'new'}-error` : undefined
+            }
+            aria-invalid={errors.endDate ? true : undefined}
           />
+          {errors.endDate ? (
+            <p
+              id={`project-end-date-${project?.id || 'new'}-error`}
+              role="alert"
+              className="body-4 text-destructive"
+            >
+              {errors.endDate.message}
+            </p>
+          ) : null}
         </div>
       </div>
 

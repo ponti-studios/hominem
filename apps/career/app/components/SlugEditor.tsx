@@ -190,7 +190,7 @@ export function SlugEditor({ portfolioId, initialSlug, liveUrl, onSave }: SlugEd
       <div className="flex items-center gap-2">
         <div className="flex min-w-0 flex-1">
           <span className="inline-flex shrink-0 items-center rounded-l-md border border-r-0 bg-base px-3 body-3 text-muted-foreground">
-            craftd.dev/p/
+            career.dev/p/
           </span>
           <div className="relative min-w-0 flex-1">
             {statusIcon ? (

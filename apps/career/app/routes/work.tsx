@@ -1,85 +1,96 @@
 import type { WorkExperienceRecord as WorkExperience } from '@hominem/db';
-import { db, WorkExperienceRepository } from '@hominem/db';
-import { Button, EmptyState } from '@hominem/ui';
-import { stringToDate } from '@hominem/utils/dates';
-import { PencilLineIcon, PlusIcon, UploadIcon } from 'lucide-react';
-import { useState } from 'react';
+import {
+  Button,
+  EmptyState,
+  EntityListCards,
+  EntityListTable,
+  PageHeader,
+  SearchFilterBar,
+  type EntityListColumn,
+} from '@hominem/ui';
+import { ChevronRightIcon, PlusIcon, UploadIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useFetcher, useNavigate, useRevalidator } from 'react-router';
 
-import type { WorkExperienceMetadata } from '~/lib/career/queries/career-progression';
-import { formatMonthYear } from '~/lib/career/work-experience-form';
+import { RouterListLink } from '~/components/RouterListLink';
+import { UploadResumeForm } from '~/components/UploadResumeForm';
+import { getUserWorkExperiencesDesc } from '~/lib/career/queries/base';
+import {
+  handleWorkExperienceCreateAction,
+  type WorkExperienceCreateValues,
+} from '~/lib/career/work-actions';
+import { formatDateRange } from '~/lib/utils/dateRange';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
-import { UploadResumeForm } from '../components/UploadResumeForm';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
-import { logger } from '../lib/logger';
 import { portfolioContext, userContext } from '../lib/middleware';
-import { parseFormData } from '../lib/route-utils';
 import { Route } from './+types/work';
 
-interface WorkExperienceFormValues {
-  id?: string;
-  role: string;
-  company: string;
-  startDate?: string;
-  endDate?: string;
-  description: string;
-  achievements?: { value: string }[];
-  action?: string;
-  tags?: string[];
-  metadata?: WorkExperienceMetadata;
-  sortOrder?: number;
-  isVisible?: boolean;
-  portfolioId: string;
+export function filterWorkExperiencesBySearch(experiences: WorkExperience[], search: string) {
+  const query = search.trim().toLowerCase();
+  if (!query) {
+    return experiences;
+  }
+
+  return experiences.filter((experience) => {
+    const company = experience.company?.trim().toLowerCase() || '';
+    const role = experience.role?.trim().toLowerCase() || '';
+    return company.includes(query) || role.includes(query);
+  });
 }
 
-function WorkExperienceSummaryCard({
-  experience,
-  onEdit,
-}: {
-  experience: WorkExperience;
-  onEdit: (id: string) => void;
-}) {
+const WORK_COLUMNS: EntityListColumn<WorkExperience>[] = [
+  {
+    key: 'company',
+    header: 'Company',
+    width: 'minmax(0,1.1fr)',
+    render: (experience) => (
+      <p className="body-2 truncate text-text-primary">
+        {experience.company?.trim() || 'Untitled client'}
+      </p>
+    ),
+  },
+  {
+    key: 'role',
+    header: 'Role',
+    width: 'minmax(0,1fr)',
+    render: (experience) => (
+      <p className="body-2 truncate text-text-secondary">
+        {experience.role?.trim() || 'Untitled role'}
+      </p>
+    ),
+  },
+  {
+    key: 'timeline',
+    header: 'Timeline',
+    width: 'minmax(0,0.9fr)',
+    render: (experience) => (
+      <p className="body-4 whitespace-nowrap text-text-tertiary">
+        {formatDateRange(experience.startDate, experience.endDate)}
+      </p>
+    ),
+  },
+];
+
+function renderWorkCard(experience: WorkExperience) {
   return (
-    <li className="transition-colors duration-150">
-      <div className="grid min-h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_auto_auto]">
-        <div className="min-w-0">
-          <p className="body-2 truncate text-text-primary">
-            {experience.company?.trim() || 'Untitled client'}
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0 flex-1">
+        <p className="body-2 truncate text-text-primary">
+          {experience.company?.trim() || 'Untitled client'}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="body-4 truncate text-text-secondary">
+            {experience.role?.trim() || 'Untitled role'}
           </p>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 md:hidden">
-            <p className="body-4 truncate text-text-secondary">
-              {experience.role?.trim() || 'Untitled role'}
-            </p>
-            <span className="body-4 text-text-tertiary">·</span>
-            <p className="body-4 text-text-tertiary">
-              {formatMonthYear(experience.startDate) ?? 'Present'} -{' '}
-              {formatMonthYear(experience.endDate) ?? 'Present'}
-            </p>
-          </div>
+          <span className="body-4 text-text-tertiary">·</span>
+          <p className="body-4 text-text-tertiary">
+            {formatDateRange(experience.startDate, experience.endDate)}
+          </p>
         </div>
-
-        <p className="body-2 hidden truncate text-text-secondary md:block">
-          {experience.role?.trim() || 'Untitled role'}
-        </p>
-
-        <p className="body-4 hidden whitespace-nowrap text-text-tertiary md:block">
-          {formatMonthYear(experience.startDate) ?? 'Present'} -{' '}
-          {formatMonthYear(experience.endDate) ?? 'Present'}
-        </p>
-
-        <Button
-          type="button"
-          onClick={() => onEdit(experience.id)}
-          variant="ghost"
-          size="icon"
-          className="h-11 w-11 justify-self-end text-text-secondary"
-          aria-label={`Edit ${experience.role?.trim() || 'work experience'} at ${experience.company?.trim() || 'client'}`}
-        >
-          <PencilLineIcon className="size-4" />
-        </Button>
       </div>
-    </li>
+      <ChevronRightIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+    </div>
   );
 }
 
@@ -90,6 +101,12 @@ export default function Work({ loaderData }: Route.ComponentProps) {
   const { work_experiences, portfolioId } = loaderData;
   const experiences = work_experiences || [];
   const [showResumeUpload, setShowResumeUpload] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+
+  const filteredExperiences = useMemo(
+    () => filterWorkExperiencesBySearch(experiences, searchValue),
+    [experiences, searchValue],
+  );
 
   const { submissionError, clearSubmissionError } = useCareerEditorSubmission<WorkExperience>({
     fetcher: draftFetcher,
@@ -119,7 +136,7 @@ export default function Work({ loaderData }: Route.ComponentProps) {
         sortOrder: experiences.length,
         isVisible: true,
         portfolioId,
-      } satisfies WorkExperienceFormValues),
+      } satisfies WorkExperienceCreateValues),
     );
 
     clearSubmissionError();
@@ -131,35 +148,70 @@ export default function Work({ loaderData }: Route.ComponentProps) {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h2 className="heading-2 text-foreground">Work Experience</h2>
+      <PageHeader title="Work Experience">
         <Button
           type="button"
           onClick={handleAddNew}
-          variant="outline"
+          variant="default"
           size="icon"
           disabled={draftFetcher.state === 'submitting'}
           aria-label="Add new experience"
         >
           <PlusIcon className="size-4" />
         </Button>
-      </div>
+      </PageHeader>
 
       <FormErrorAlert title="Work experience wasn’t created" message={submissionError} />
 
       <div className="flex flex-col gap-6">
         {experiences.length > 0 ? (
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
-            <ul className="divide-y divide-border">
-              {experiences.map((experience) => (
-                <WorkExperienceSummaryCard
-                  key={experience.id}
-                  experience={experience}
-                  onEdit={(id) => navigate(`/work/${id}`)}
+          <>
+            <SearchFilterBar
+              searchId="work-search"
+              searchValue={searchValue}
+              onSearchChange={setSearchValue}
+              searchPlaceholder="Search by company or role..."
+              searchAriaLabel="Search work experience"
+              activeFilters={
+                searchValue.trim()
+                  ? [
+                      {
+                        id: 'search',
+                        label: `Search: ${searchValue.trim()}`,
+                        onRemove: () => setSearchValue(''),
+                      },
+                    ]
+                  : []
+              }
+              onClearFilters={() => setSearchValue('')}
+            />
+
+            {filteredExperiences.length === 0 ? (
+              <EmptyState
+                title="No experience matches your search"
+                description="Try adjusting your search"
+                variant="search"
+                size="md"
+              />
+            ) : (
+              <>
+                <EntityListTable
+                  items={filteredExperiences}
+                  columns={WORK_COLUMNS}
+                  keyFor={(experience) => experience.id}
+                  hrefFor={(experience) => `/work/${experience.id}`}
+                  linkComponent={RouterListLink}
                 />
-              ))}
-            </ul>
-          </div>
+                <EntityListCards
+                  items={filteredExperiences}
+                  keyFor={(experience) => experience.id}
+                  hrefFor={(experience) => `/work/${experience.id}`}
+                  linkComponent={RouterListLink}
+                  renderCard={renderWorkCard}
+                />
+              </>
+            )}
+          </>
         ) : showResumeUpload ? (
           <div className="mx-auto flex w-full max-w-md flex-col gap-4">
             <UploadResumeForm
@@ -215,11 +267,7 @@ export default function Work({ loaderData }: Route.ComponentProps) {
 export async function loader({ context }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   const portfolio = context.get(portfolioContext)!;
-  const work_experiences = await WorkExperienceRepository.listUserWorkExperiences(
-    db,
-    user.id,
-    'desc',
-  );
+  const work_experiences = await getUserWorkExperiencesDesc(user.id);
   return { work_experiences, portfolioId: portfolio.id };
 }
 
@@ -228,148 +276,6 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (!user) {
     return { success: false, error: 'Sign in again before saving your work experience.' };
   }
-  const formData = await request.formData();
-  const operation = formData.get('operation') as string;
 
-  switch (operation) {
-    case 'create':
-    case 'update': {
-      const workExperienceDataResult = parseFormData<WorkExperienceFormValues>(
-        formData,
-        'workExperienceData',
-      );
-
-      if ('success' in workExperienceDataResult && !workExperienceDataResult.success) {
-        return {
-          success: false,
-          operation,
-          error: 'Your work experience changes couldn’t be read.',
-        };
-      }
-
-      const workExperienceData = workExperienceDataResult as WorkExperienceFormValues;
-
-      if (!workExperienceData.portfolioId) {
-        return {
-          success: false,
-          operation,
-          error: 'Choose a portfolio before saving this work experience.',
-        };
-      }
-
-      try {
-        if (operation === 'create') {
-          // Insert new experience
-          const { id: _id, ...insertData } = workExperienceData;
-
-          // Convert date strings to Date objects for database
-          const dbData = {
-            ...insertData,
-            startDate: stringToDate(insertData.startDate),
-            endDate: stringToDate(insertData.endDate),
-          };
-
-          const newExperience = await WorkExperienceRepository.createWorkExperience(db, {
-            ownerUserid: user.id,
-            portfolioId: dbData.portfolioId,
-            role: dbData.role,
-            company: dbData.company,
-            description: dbData.description,
-            startDate: dbData.startDate,
-            endDate: dbData.endDate,
-            action: dbData.action,
-            tags: dbData.tags,
-            metadata: dbData.metadata as Record<string, unknown> | undefined,
-            sortOrder: dbData.sortOrder,
-            isVisible: dbData.isVisible,
-          });
-
-          return {
-            success: true,
-            operation,
-            message: 'Work experience created successfully',
-            data: newExperience,
-          };
-        }
-
-        // Update existing experience
-        const { id, ...updateData } = workExperienceData;
-        if (!id) {
-          return {
-            success: false,
-            operation,
-            error: 'Choose a work experience before saving your changes.',
-          };
-        }
-
-        // Convert date strings to Date objects for database
-        const dbData = {
-          ...updateData,
-          startDate: stringToDate(updateData.startDate),
-          endDate: stringToDate(updateData.endDate),
-        };
-
-        await WorkExperienceRepository.updateWorkExperience(db, {
-          ownerUserid: user.id,
-          experienceId: id,
-          updates: {
-            role: dbData.role,
-            company: dbData.company,
-            description: dbData.description,
-            startDate: dbData.startDate,
-            endDate: dbData.endDate,
-            action: dbData.action,
-            tags: dbData.tags,
-            metadata: dbData.metadata as Record<string, unknown> | undefined,
-            sortOrder: dbData.sortOrder,
-            isVisible: dbData.isVisible,
-          },
-        });
-
-        return { success: true, operation, message: 'Work experience updated successfully' };
-      } catch (error) {
-        logger.error(`Failed to ${operation} work experience`, error, { owner_userid: user.id });
-        return {
-          success: false,
-          operation,
-          error:
-            operation === 'create'
-              ? 'We couldn’t create this work experience. Try again.'
-              : 'We couldn’t save this work experience. Try again.',
-        };
-      }
-    }
-
-    case 'delete': {
-      const id = formData.get('id') as string;
-      const portfolioId = formData.get('portfolioId') as string;
-
-      if (!id || !portfolioId) {
-        return { success: false, operation, error: 'Choose a work experience before deleting it.' };
-      }
-
-      try {
-        await WorkExperienceRepository.deleteWorkExperience(db, {
-          ownerUserid: user.id,
-          experienceId: id,
-          portfolioId,
-        });
-        return { success: true, operation, message: 'Work experience deleted successfully' };
-      } catch (error) {
-        logger.error('Failed to delete work experience', error, {
-          workExperienceId: id,
-          portfolioId,
-          owner_userid: user.id,
-        });
-        return {
-          success: false,
-          operation,
-          error: 'We couldn’t delete this work experience. Try again.',
-        };
-      }
-    }
-
-    default:
-      throw new Response('Invalid operation', { status: 400 });
-  }
+  return handleWorkExperienceCreateAction(request, user.id);
 }

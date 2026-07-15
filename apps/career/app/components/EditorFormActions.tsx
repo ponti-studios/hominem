@@ -1,4 +1,15 @@
-import { Button } from '@hominem/ui';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  Button,
+} from '@hominem/ui';
 import { RotateCcwIcon, SaveIcon, Trash2Icon } from 'lucide-react';
 
 interface EditorFormActionsProps {
@@ -9,6 +20,8 @@ interface EditorFormActionsProps {
   submitLabel: string;
   onDelete?: () => void;
   onReset?: () => void;
+  deleteConfirmTitle?: string;
+  deleteConfirmDescription?: string;
 }
 
 export function EditorFormActions({
@@ -19,6 +32,8 @@ export function EditorFormActions({
   submitLabel,
   onDelete,
   onReset,
+  deleteConfirmTitle = 'Delete this item?',
+  deleteConfirmDescription = 'This action cannot be undone.',
 }: EditorFormActionsProps) {
   const isSubmitDisabled = isSaving || (!isDirty && !isNew) || !isValid;
 
@@ -51,17 +66,35 @@ export function EditorFormActions({
       </Button>
 
       {!isNew && onDelete ? (
-        <Button
-          type="button"
-          variant="destructive"
-          size="icon"
-          onClick={onDelete}
-          disabled={isSaving}
-          title="Delete"
-        >
-          <Trash2Icon />
-          <span className="sr-only">Delete</span>
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              disabled={isSaving}
+              title="Delete"
+            >
+              <Trash2Icon />
+              <span className="sr-only">Delete</span>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{deleteConfirmTitle}</AlertDialogTitle>
+              <AlertDialogDescription>{deleteConfirmDescription}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground"
+                onClick={onDelete}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       ) : null}
     </div>
   );

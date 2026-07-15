@@ -126,4 +126,48 @@ describe('AIUsageEventRepository', () => {
 
     expect(Number(mcpToday.count)).toBe(1);
   });
+
+  it('stores failed attempts without usage and exposes status counts', async () => {
+    const userId = await createUser();
+
+    await AIUsageEventRepository.createIfAbsent(db, {
+      id: randomUUID(),
+      userId,
+      provider: 'openrouter',
+      feature: 'text_enhance',
+      operation: 'chat_completion',
+      model: null,
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      status: 'failed',
+      usageAvailable: false,
+      errorCode: 'quota_exceeded',
+      errorStatus: 429,
+    });
+
+    const summary = await AIUsageEventRepository.getSummary(db, { userId });
+    expect(summary).toMatchObject({
+      requestCount: 1,
+      succeededCount: 0,
+      failedCount: 1,
+      usageAvailableCount: 0,
+      totalTokens: 0,
+      totalCostUsd: 0,
+    });
+
+    const row = await db
+      .selectFrom('app.aiUsageEvents')
+      .select(['status', 'usageAvailable', 'errorCode', 'errorStatus', 'model'])
+      .where('ownerUserid', '=', userId)
+      .executeTakeFirstOrThrow();
+
+    expect(row).toEqual({
+      status: 'failed',
+      usageAvailable: false,
+      errorCode: 'quota_exceeded',
+      errorStatus: 429,
+      model: null,
+    });
+  });
 });

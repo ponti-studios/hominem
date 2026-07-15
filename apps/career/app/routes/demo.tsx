@@ -5,10 +5,10 @@ import { Link } from 'react-router';
 
 export const meta: MetaFunction = () => {
   return [
-    { title: 'Sarah Chen | Craftd' },
+    { title: 'Sarah Chen | career' },
     {
       name: 'description',
-      content: 'Demo portfolio showcasing a Craftd professional portfolio',
+      content: 'Demo portfolio showcasing a career professional portfolio',
     },
   ];
 };
@@ -80,7 +80,7 @@ export default function Demo() {
       <div className="flex items-center justify-between gap-4">
         <Link to="/" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
           <ArrowLeft className="size-4" />
-          Back to Craftd
+          Back to career
         </Link>
         <Badge variant="outline">Demo Portfolio</Badge>
       </div>

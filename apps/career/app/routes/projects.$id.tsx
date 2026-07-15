@@ -9,7 +9,7 @@ import { userContext } from '~/lib/middleware';
 
 import { Route } from './+types/projects.$id';
 
-export const meta: Route.MetaFunction = () => [{ title: 'Edit Project | Craftd' }];
+export const meta: Route.MetaFunction = () => [{ title: 'Edit Project | career' }];
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const user = context.get(userContext)!;

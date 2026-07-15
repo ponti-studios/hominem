@@ -4,8 +4,8 @@ import {
   formatApplicationDate,
   formatApplicationSalary,
   formatStatusText,
+  getApplicationStatusTone,
   getCompanyName,
-  getStatusColor,
   getUniqueSources,
   getUniqueStatuses,
   hasActiveFilters,
@@ -33,27 +33,21 @@ describe('Application Utils', () => {
     });
   });
 
-  describe('getStatusColor', () => {
-    it('should return correct colors for known statuses', () => {
-      expect(getStatusColor('APPLIED')).toBe('border-accent/30 bg-accent/10 text-foreground');
-      expect(getStatusColor('PHONE_SCREEN')).toBe(
-        'border-warning/30 bg-warning/10 text-foreground',
-      );
-      expect(getStatusColor('INTERVIEW')).toBe('border-accent/30 bg-accent/10 text-foreground');
-      expect(getStatusColor('FINAL_INTERVIEW')).toBe(
-        'border-accent/40 bg-accent/15 text-foreground',
-      );
-      expect(getStatusColor('OFFER')).toBe('border-success/30 bg-success/10 text-foreground');
-      expect(getStatusColor('ACCEPTED')).toBe('border-success/40 bg-success/15 text-foreground');
-      expect(getStatusColor('REJECTED')).toBe(
-        'border-destructive/30 bg-destructive/10 text-foreground',
-      );
-      expect(getStatusColor('WITHDRAWN')).toBe('bg-muted text-foreground');
+  describe('getApplicationStatusTone', () => {
+    it('should return correct tones for known statuses', () => {
+      expect(getApplicationStatusTone('APPLIED')).toBe('info');
+      expect(getApplicationStatusTone('PHONE_SCREEN')).toBe('warning');
+      expect(getApplicationStatusTone('INTERVIEW')).toBe('info');
+      expect(getApplicationStatusTone('FINAL_INTERVIEW')).toBe('info');
+      expect(getApplicationStatusTone('OFFER')).toBe('success');
+      expect(getApplicationStatusTone('ACCEPTED')).toBe('success');
+      expect(getApplicationStatusTone('REJECTED')).toBe('danger');
+      expect(getApplicationStatusTone('WITHDRAWN')).toBe('neutral');
     });
 
-    it('should return default gray color for unknown statuses', () => {
-      expect(getStatusColor('UNKNOWN_STATUS')).toBe('bg-muted text-foreground');
-      expect(getStatusColor('')).toBe('bg-muted text-foreground');
+    it('should return the neutral tone for unknown statuses', () => {
+      expect(getApplicationStatusTone('UNKNOWN_STATUS')).toBe('neutral');
+      expect(getApplicationStatusTone('')).toBe('neutral');
     });
   });
 
