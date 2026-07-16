@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui';
+import { Button } from '@ponti-studios/ui/primitives';
 import { Download, Edit, LogOut, Trash2 } from 'lucide-react';
 import { useRevalidator } from 'react-router';
 

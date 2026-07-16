@@ -1,5 +1,5 @@
 import { useAuthContext } from '@hominem/auth/client/provider';
-import { useApiClient } from '@hominem/ui/hooks';
+import { useApiClient } from '@ponti-studios/ui/hooks';
 import { useQuery } from '@tanstack/react-query';
 
 // Define query keys

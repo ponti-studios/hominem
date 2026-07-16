@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui';
+import { Button } from '@ponti-studios/ui/primitives';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 

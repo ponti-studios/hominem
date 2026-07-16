@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui';
+import { Button } from '@ponti-studios/ui/primitives';
 import type { ReactNode } from 'react';
 
 import { cn } from '~/lib/utils';

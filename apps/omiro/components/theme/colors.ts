@@ -1,3 +1,1 @@
-import { colorSystems } from '@hominem/ui/tokens';
-
-export const colors = colorSystems.apple.dark;
+export { colors } from './ponti-tokens';

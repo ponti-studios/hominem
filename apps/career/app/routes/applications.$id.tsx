@@ -1,4 +1,3 @@
-import { StatusBadge } from '@hominem/ui';
 import {
   ArrowLeftIcon,
   Briefcase,
@@ -11,6 +10,7 @@ import {
 import { NavLink, Outlet, useNavigate } from 'react-router';
 
 import { QuickActionsDropdown } from '~/components/career';
+import { StatusBadge } from '~/components/patterns';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';

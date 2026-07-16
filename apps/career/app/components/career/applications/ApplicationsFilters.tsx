@@ -1,14 +1,13 @@
 import {
-  Button,
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-  FilterSelect,
-  SearchFilterBar,
-} from '@hominem/ui';
+} from '@ponti-studios/ui/overlays';
+import { Button } from '@ponti-studios/ui/primitives';
 import { ChevronDownIcon } from 'lucide-react';
 
+import { FilterSelect, SearchFilterBar } from '~/components/patterns';
 import { formatStatusText } from '~/lib/utils/applicationUtils';
 
 import { ApplicationsResultsSummary } from './ApplicationsResultsSummary';

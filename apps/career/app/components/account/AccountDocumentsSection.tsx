@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui';
+import { Button } from '@ponti-studios/ui/primitives';
 import { FileTextIcon, Loader2Icon, RefreshCwIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 

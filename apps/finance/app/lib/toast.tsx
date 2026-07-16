@@ -1,4 +1,4 @@
-import { cn } from '@hominem/ui';
+import { cn } from '@ponti-studios/ui/utilities';
 import { useSyncExternalStore } from 'react';
 
 export type ToastOptions = {

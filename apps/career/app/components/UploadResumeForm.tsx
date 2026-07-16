@@ -1,7 +1,8 @@
-import { Button, DropZone, type DropZoneStatus } from '@hominem/ui';
+import { Button } from '@ponti-studios/ui/primitives';
 import { LogIn } from 'lucide-react';
 import { useRef, useState } from 'react';
 
+import { DropZone, type DropZoneStatus } from '~/components/patterns';
 import type { UploadResumeApiResponse } from '~/lib/api-contracts';
 
 import type { ResumeConvertStage } from '../types/resume';

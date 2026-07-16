@@ -1,18 +1,20 @@
 import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Input,
-  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui';
+} from '@ponti-studios/ui/forms';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Label,
+} from '@ponti-studios/ui/primitives';
 import { AlertCircle, CheckCircle, Copy, Download, FileText, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useFetcher } from 'react-router';

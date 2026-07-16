@@ -1,7 +1,7 @@
 import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { colors } from '@hominem/ui/tokens';
+import { Button } from '@ponti-studios/ui/primitives';
+import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
+import { colors } from '@ponti-studios/ui/tokens';
 import { subMonths } from 'date-fns';
 import { useMemo, useState } from 'react';
 import {

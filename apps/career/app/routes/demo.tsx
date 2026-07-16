@@ -1,4 +1,4 @@
-import { Badge, buttonVariants, Card, CardContent } from '@hominem/ui';
+import { Badge, buttonVariants, Card, CardContent } from '@ponti-studios/ui/primitives';
 import { ArrowLeft } from 'lucide-react';
 import type { MetaFunction } from 'react-router';
 import { Link } from 'react-router';

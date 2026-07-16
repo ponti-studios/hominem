@@ -1,7 +1,13 @@
 import { useAuthContext } from '@hominem/auth/client/provider';
-import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@ponti-studios/ui/feedback';
+import { Button } from '@ponti-studios/ui/primitives';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@ponti-studios/ui/primitives';
 import { AlertCircle, Building2, Link } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { type PlaidLinkOnExit, type PlaidLinkOnSuccess, usePlaidLink } from 'react-plaid-link';

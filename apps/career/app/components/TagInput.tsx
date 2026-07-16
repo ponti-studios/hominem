@@ -1,4 +1,4 @@
-import { FilterChip } from '@hominem/ui';
+import { FilterChip } from '@ponti-studios/ui/data-display';
 import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 interface TagInputProps {

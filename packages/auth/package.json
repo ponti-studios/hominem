@@ -40,6 +40,10 @@
       "types": "./src/client/email-otp-route.ts",
       "default": "./src/client/email-otp-route.ts"
     },
+    "./client/email-otp-auth-flow": {
+      "types": "./src/client/email-otp-auth-flow.tsx",
+      "default": "./src/client/email-otp-auth-flow.tsx"
+    },
     "./client/passkey": {
       "types": "./src/client/passkey.ts",
       "default": "./src/client/passkey.ts"
@@ -62,6 +66,7 @@
     "lint:fix": "oxlint src --fix"
   },
   "dependencies": {
+    "@ponti-studios/ui": "0.1.2",
     "@better-auth/passkey": "^1.6.11",
     "@hominem/db": "workspace:*",
     "@hominem/utils": "workspace:*",

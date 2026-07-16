@@ -1,10 +1,11 @@
-import type { ColorToken } from '@hominem/ui/tokens';
 import {
   Text as RNText,
   type TextProps as RNTextProps,
   type StyleProp,
   type TextStyle,
 } from 'react-native';
+
+import type { ColorToken } from '~/components/theme/ponti-tokens';
 
 import { colors } from './colors';
 

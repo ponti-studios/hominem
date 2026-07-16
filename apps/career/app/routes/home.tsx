@@ -1,4 +1,4 @@
-import { buttonVariants } from '@hominem/ui';
+import { buttonVariants } from '@ponti-studios/ui/primitives';
 import { Link } from 'react-router';
 
 import { TimelineSpine } from '~/components/career/timeline/TimelineSpine';

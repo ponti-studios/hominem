@@ -1,4 +1,5 @@
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle } from '@hominem/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ponti-studios/ui/overlays';
+import { Button } from '@ponti-studios/ui/primitives';
 import { Upload } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 

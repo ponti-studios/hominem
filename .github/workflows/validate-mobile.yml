@@ -26,6 +26,10 @@ concurrency:
   group: validate-mobile-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   validate-mobile:
     runs-on: ubuntu-latest

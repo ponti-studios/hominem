@@ -23,7 +23,7 @@
     "@hominem/env": "workspace:*",
     "@hominem/queues": "workspace:*",
     "@hominem/rpc": "workspace:*",
-    "@hominem/ui": "workspace:*",
+    "@ponti-studios/ui": "0.1.2",
     "@hominem/utils": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.15",

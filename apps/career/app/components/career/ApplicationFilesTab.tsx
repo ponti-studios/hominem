@@ -1,7 +1,7 @@
 import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
-import { EmptyState } from '@hominem/ui';
-import { Button } from '@hominem/ui';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui';
+import { EmptyState } from '@ponti-studios/ui/feedback';
+import { Button } from '@ponti-studios/ui/primitives';
+import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 
 interface FilesTabProps {
   application: ApplicationWithCompany;

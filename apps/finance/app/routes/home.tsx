@@ -1,4 +1,4 @@
-import { buttonVariants } from '@hominem/ui';
+import { buttonVariants } from '@ponti-studios/ui/primitives';
 import { ChartLine, Gauge, Landmark, UploadCloud } from 'lucide-react';
 import { Link, redirect } from 'react-router';
 

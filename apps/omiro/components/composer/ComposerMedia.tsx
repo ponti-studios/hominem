@@ -1,9 +1,9 @@
-import { spacing } from '@hominem/ui/tokens';
 import React, { useCallback, useState } from 'react';
 import { ActionSheetIOS } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
 import { CameraModal } from '~/components/media/camera-modal';
+import { spacing } from '~/components/theme/ponti-tokens';
 import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
 

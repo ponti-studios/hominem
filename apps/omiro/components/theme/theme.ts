@@ -1,4 +1,4 @@
-import { radii, spacing as tokenSpacing, type ColorToken } from '@hominem/ui/tokens';
+import { radii, spacing as tokenSpacing, type ColorToken } from '~/components/theme/ponti-tokens';
 
 import { colors } from './colors';
 import { fontFamiliesNative, fontSizes, fontWeights, lineHeights } from './typography';

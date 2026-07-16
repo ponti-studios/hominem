@@ -1,7 +1,11 @@
 import type { ProjectRecord as Project, WorkExperienceRecord as WorkExperience } from '@hominem/db';
+import { EmptyState } from '@ponti-studios/ui/feedback';
+import { Button } from '@ponti-studios/ui/primitives';
+import { ChevronRightIcon, PlusIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
+
 import {
-  Button,
-  EmptyState,
   EntityListCards,
   EntityListTable,
   FilterSelect,
@@ -10,11 +14,7 @@ import {
   StatusBadge,
   type EntityListColumn,
   type StatusTone,
-} from '@hominem/ui';
-import { ChevronRightIcon, PlusIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
-
+} from '~/components/patterns';
 import { RouterListLink } from '~/components/RouterListLink';
 import { getUserWorkExperiencesDesc } from '~/lib/career/queries/base';
 import { getProjectsByPortfolio } from '~/lib/career/queries/projects';

@@ -1,5 +1,5 @@
 import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
-import { Card, CardContent } from '@hominem/ui/card';
+import { Card, CardContent } from '@ponti-studios/ui/primitives';
 import { Link, useNavigate } from 'react-router';
 
 import { Skeleton } from '~/components/skeleton';

@@ -1,4 +1,3 @@
-import { radii, spacing } from '@hominem/ui/tokens';
 import React from 'react';
 import { View } from 'react-native';
 import Animated, {
@@ -9,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { makeStyles, shadowsNative, useThemeColors } from '~/components/theme';
+import { radii, spacing } from '~/components/theme/ponti-tokens';
 
 interface ComposerShellProps {
   accessory?: React.ReactNode;

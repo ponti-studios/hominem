@@ -1,4 +1,4 @@
-import type { SortOption } from '@hominem/ui';
+import { SortOption } from '@ponti-studios/ui/hooks';
 import { useState } from 'react';
 
 interface UseSortOptions {

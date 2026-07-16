@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui';
+import { Button } from '@ponti-studios/ui/primitives';
 import { BriefcaseBusinessIcon } from 'lucide-react';
 
 import { SectionCard } from './section-ui';

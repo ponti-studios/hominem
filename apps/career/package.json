@@ -28,7 +28,7 @@
     "@hominem/db": "workspace:*",
     "@hominem/services": "workspace:*",
     "@hominem/storage": "workspace:*",
-    "@hominem/ui": "workspace:*",
+    "@ponti-studios/ui": "0.1.2",
     "@hominem/utils": "workspace:*",
     "@react-router/node": "8.2.0",
     "@react-router/serve": "8.2.0",

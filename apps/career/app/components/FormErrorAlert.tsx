@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
+import { Alert, AlertDescription, AlertTitle } from '@ponti-studios/ui/feedback';
 import { AlertCircle } from 'lucide-react';
 
 import { cn } from '~/lib/utils';

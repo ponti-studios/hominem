@@ -1,4 +1,5 @@
-import { Badge, EmptyState } from '@hominem/ui';
+import { EmptyState } from '@ponti-studios/ui/feedback';
+import { Badge } from '@ponti-studios/ui/primitives';
 import { CreditCard, Receipt } from 'lucide-react';
 
 import { Skeleton } from '~/components/skeleton';

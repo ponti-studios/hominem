@@ -1,4 +1,4 @@
-import { EmptyState } from '@hominem/ui';
+import { EmptyState } from '@ponti-studios/ui/feedback';
 
 import type { ApplicationsEmptyStateProps } from './types';
 

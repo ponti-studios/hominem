@@ -24,6 +24,10 @@ concurrency:
   group: db-migrations-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   db-migrations:
     runs-on: ubuntu-latest

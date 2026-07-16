@@ -1,5 +1,11 @@
-import { Label } from '@hominem/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ponti-studios/ui/forms';
+import { Label } from '@ponti-studios/ui/primitives';
 import { useId } from 'react';
 
 import { useFinanceAccounts } from '~/lib/hooks/use-finance-data';

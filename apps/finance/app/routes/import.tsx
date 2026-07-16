@@ -1,10 +1,12 @@
 import type { FileStatus, ImportRequestResponse } from '@hominem/queues';
-import { Alert, AlertDescription, Badge, Button, SectionIntro } from '@hominem/ui';
+import { Alert, AlertDescription } from '@ponti-studios/ui/feedback';
+import { Badge, Button } from '@ponti-studios/ui/primitives';
 import { memo, useCallback, useEffect, useMemo, type ReactNode } from 'react';
 
 import { DropZone } from '~/components/drop-zone';
 import { FileUploadStatus } from '~/components/file-upload-status';
 import { FileUploadStatusBadge } from '~/components/file-upload-status-badge';
+import { SectionIntro } from '~/components/patterns';
 import { useFileInput } from '~/lib/hooks/use-file-input';
 import { useImportTransactionsStore } from '~/lib/hooks/use-import-transactions-store';
 import { useToast } from '~/lib/hooks/use-toast';

@@ -1,10 +1,10 @@
-import { spacing } from '@hominem/ui/tokens';
 import React, { useEffect, useSyncExternalStore } from 'react';
 import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { getRecordingSnapshot, subscribeRecording } from '~/components/media/audio.service';
 import { makeStyles, useThemeColors } from '~/components/theme';
+import { spacing } from '~/components/theme/ponti-tokens';
 
 const BAR_COUNT = 12;
 const BAR_MAX_HEIGHT = 20;

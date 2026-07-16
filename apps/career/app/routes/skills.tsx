@@ -1,22 +1,21 @@
 import type { SkillRecord } from '@hominem/db';
 import { db, runInTransaction, SkillRepository } from '@hominem/db';
+import { FilterChip } from '@ponti-studios/ui/data-display';
 import {
-  Button,
-  Card,
-  CardContent,
   Field,
-  FilterChip,
   Input,
-  PageHeader,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui';
+} from '@ponti-studios/ui/forms';
+import { Button, Card, CardContent } from '@ponti-studios/ui/primitives';
 import { LoaderPinwheel, PlusIcon, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useFetcher } from 'react-router';
+
+import { PageHeader } from '~/components/patterns';
 
 import { FormErrorAlert } from '../components/FormErrorAlert';
 import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';

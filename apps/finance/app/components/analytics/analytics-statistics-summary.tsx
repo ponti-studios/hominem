@@ -1,6 +1,7 @@
-import { EmptyState, MetricCard, SurfacePanel } from '@hominem/ui';
+import { EmptyState } from '@ponti-studios/ui/feedback';
 import type { ReactNode } from 'react';
 
+import { MetricCard, SurfacePanel } from '~/components/patterns';
 import { Skeleton } from '~/components/skeleton';
 import { useTimeSeriesData } from '~/lib/hooks/use-time-series';
 import { formatCurrency } from '~/lib/number.utils';

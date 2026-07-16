@@ -1,8 +1,8 @@
 import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
-import { CHART_COLORS } from '@hominem/ui';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
 import { adjustDateRange, formatMonthYear } from '@hominem/utils/dates';
+import { CHART_COLORS } from '@ponti-studios/ui';
+import { Button } from '@ponti-studios/ui/primitives';
+import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 import type { Dispatch, SetStateAction } from 'react';
 import { useMemo } from 'react';
 import {

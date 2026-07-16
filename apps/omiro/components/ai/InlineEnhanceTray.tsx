@@ -1,8 +1,8 @@
-import { radii, spacing } from '@hominem/ui/tokens';
 import React from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
+import { radii, spacing } from '~/components/theme/ponti-tokens';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';

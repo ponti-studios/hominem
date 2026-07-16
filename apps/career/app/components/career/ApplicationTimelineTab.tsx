@@ -1,20 +1,22 @@
 import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Input,
-  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Textarea,
-} from '@hominem/ui';
+} from '@ponti-studios/ui/forms';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Label,
+} from '@ponti-studios/ui/primitives';
 import { useState } from 'react';
 import { Form } from 'react-router';
 

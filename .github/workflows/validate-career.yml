@@ -36,6 +36,10 @@ concurrency:
   group: validate-career-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   validate-career:
     runs-on: ubuntu-latest

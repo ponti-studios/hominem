@@ -1,7 +1,13 @@
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
 import { formatCurrency } from '@hominem/utils';
+import { Badge } from '@ponti-studios/ui/primitives';
+import { Button } from '@ponti-studios/ui/primitives';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@ponti-studios/ui/primitives';
 import { ArrowLeft, Building2, CreditCard, Eye, EyeOff, RefreshCcw } from 'lucide-react';
 
 import { RouteLink } from '~/components/route-link';

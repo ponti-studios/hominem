@@ -1,4 +1,4 @@
-import { cn } from '@hominem/ui';
+import { cn } from '@ponti-studios/ui/utilities';
 import type { ComponentProps } from 'react';
 
 export function Skeleton({ className, ...props }: ComponentProps<'div'>) {

@@ -20,6 +20,16 @@ packages/*     -> shared libraries: db, env, utils, ui, auth, rpc, telemetry, ho
 
 The default direction is from apps into shared packages, and from shared packages into `services/api` only when backend coordination is required.
 
+## Ponti UI package
+
+`@ponti-studios/ui` is installed from GitHub Packages, not copied into this repository. Before installing dependencies outside GitHub Actions, configure a user-level credential with a token that has `read:packages` access to the `ponti-studios` organization:
+
+```bash
+pnpm config set --location=user //npm.pkg.github.com/:_authToken "$NODE_AUTH_TOKEN"
+```
+
+After the initial package publication, grant this repository Actions read access in the package's **Package settings → Manage Actions access**. Railway builds also need the same read-only token configured in their user-level npm configuration; do not put it in this repository's `.npmrc`.
+
 ## Golden Path
 
 Use the smallest possible loop by default.

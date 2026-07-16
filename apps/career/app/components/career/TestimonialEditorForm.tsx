@@ -1,14 +1,14 @@
 import type { TestimonialRecord as Testimonial } from '@hominem/db';
 import {
   Input,
-  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Textarea,
-} from '@hominem/ui';
+} from '@ponti-studios/ui/forms';
+import { Label } from '@ponti-studios/ui/primitives';
 import { useMemo } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { useFetcher } from 'react-router';

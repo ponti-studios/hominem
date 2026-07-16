@@ -1,16 +1,13 @@
 import {
-  Button,
-  Card,
-  CardContent,
   DatePicker,
   Input,
-  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui';
+} from '@ponti-studios/ui/forms';
+import { Button, Card, CardContent, Label } from '@ponti-studios/ui/primitives';
 import { useState } from 'react';
 import { Form, Link, redirect } from 'react-router';
 

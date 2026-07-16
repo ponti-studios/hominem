@@ -1,12 +1,6 @@
 import { AuthProvider } from '@hominem/auth/client/provider';
-import {
-  Button,
-  buttonVariants,
-  Card,
-  CardContent,
-  COLOR_MODE_ATTRIBUTE,
-  COLOR_SYSTEM_ATTRIBUTE,
-} from '@hominem/ui';
+import { Button, buttonVariants, Card, CardContent } from '@ponti-studios/ui/primitives';
+import { COLOR_MODE_ATTRIBUTE, COLOR_SYSTEM_ATTRIBUTE } from '@ponti-studios/ui/tokens';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   data,

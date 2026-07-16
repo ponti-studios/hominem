@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui/button';
+import { Button } from '@ponti-studios/ui/primitives';
 
 import { useFinanceAccounts, useFinanceTransactions } from '~/lib/hooks/use-finance-data';
 import { toast } from '~/lib/toast';

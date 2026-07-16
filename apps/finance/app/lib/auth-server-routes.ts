@@ -1,6 +1,6 @@
 /**
  * Server-side auth route factory shims.
- * Replaces the old @hominem/ui/auth-server-routes package.
+ * Owns Finance's auth server routes; UI packages do not participate in this boundary.
  */
 import { redirect, data } from 'react-router';
 

@@ -1,4 +1,5 @@
-import { Button, Input } from '@hominem/ui';
+import { Input } from '@ponti-studios/ui/forms';
+import { Button } from '@ponti-studios/ui/primitives';
 import { Check, ExternalLink, Loader2, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSubmit } from 'react-router';

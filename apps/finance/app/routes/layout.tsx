@@ -1,4 +1,4 @@
-import { LoadingSpinner } from '@hominem/ui';
+import { Spinner } from '@ponti-studios/ui/feedback';
 import { Suspense } from 'react';
 import { Outlet } from 'react-router';
 
@@ -14,7 +14,7 @@ export default function Layout() {
         <Suspense
           fallback={
             <div className="flex flex-1 items-center justify-center py-16">
-              <LoadingSpinner variant="md" />
+              <Spinner size="md" />
             </div>
           }
         >

@@ -1,5 +1,4 @@
-import { EntityListTable, StatusBadge, type EntityListColumn } from '@hominem/ui';
-
+import { EntityListTable, StatusBadge, type EntityListColumn } from '~/components/patterns';
 import { RouterListLink } from '~/components/RouterListLink';
 import {
   formatApplicationDate,

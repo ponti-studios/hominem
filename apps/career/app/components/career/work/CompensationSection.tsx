@@ -1,5 +1,6 @@
 import type { WorkExperienceRecord } from '@hominem/db';
-import { Button, Field, Input } from '@hominem/ui';
+import { Field, Input } from '@ponti-studios/ui/forms';
+import { Button } from '@ponti-studios/ui/primitives';
 import { PencilIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';

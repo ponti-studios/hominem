@@ -1,4 +1,4 @@
-import { Badge, Card, CardContent } from '@hominem/ui';
+import { Badge, Card, CardContent } from '@ponti-studios/ui/primitives';
 
 import type { TimelineEntry } from '~/lib/career/queries/career-timeline';
 

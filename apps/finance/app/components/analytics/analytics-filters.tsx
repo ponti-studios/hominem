@@ -1,9 +1,9 @@
-import { Label } from '@hominem/ui';
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
-import { Card } from '@hominem/ui/card';
-import { DatePicker } from '@hominem/ui/date-picker';
-import { Switch } from '@hominem/ui/switch';
+import { DatePicker } from '@ponti-studios/ui/forms';
+import { Switch } from '@ponti-studios/ui/forms';
+import { Label } from '@ponti-studios/ui/primitives';
+import { Badge } from '@ponti-studios/ui/primitives';
+import { Button } from '@ponti-studios/ui/primitives';
+import { Card } from '@ponti-studios/ui/primitives';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Filter, X } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useId, useState } from 'react';

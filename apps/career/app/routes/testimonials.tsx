@@ -1,18 +1,17 @@
 import type { TestimonialRecord as Testimonial } from '@hominem/db';
+import { EmptyState } from '@ponti-studios/ui/feedback';
+import { Badge, Button } from '@ponti-studios/ui/primitives';
+import { ChevronRightIcon, PlusIcon, StarIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
+
 import {
-  Badge,
-  Button,
-  EmptyState,
   EntityListCards,
   EntityListTable,
   PageHeader,
   SearchFilterBar,
   type EntityListColumn,
-} from '@hominem/ui';
-import { ChevronRightIcon, PlusIcon, StarIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
-
+} from '~/components/patterns';
 import { RouterListLink } from '~/components/RouterListLink';
 import { getTestimonialsByPortfolio } from '~/lib/career/queries/testimonials';
 import { portfolioContext } from '~/lib/middleware';

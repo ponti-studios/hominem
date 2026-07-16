@@ -1,5 +1,5 @@
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
+import { Badge } from '@ponti-studios/ui/primitives';
+import { Button } from '@ponti-studios/ui/primitives';
 import { AlertCircleIcon, LinkIcon } from 'lucide-react';
 
 import type { Account } from '~/lib/types/account.types';

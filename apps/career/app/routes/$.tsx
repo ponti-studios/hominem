@@ -1,4 +1,4 @@
-import { Button } from '@hominem/ui';
+import { Button } from '@ponti-studios/ui/primitives';
 import { Home } from 'lucide-react';
 import { Link } from 'react-router';
 

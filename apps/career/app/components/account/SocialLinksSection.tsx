@@ -1,5 +1,6 @@
 import type { UserSocialLinksRecord } from '@hominem/db';
-import { Button, Card, CardContent, Input, Label } from '@hominem/ui';
+import { Input } from '@ponti-studios/ui/forms';
+import { Button, Card, CardContent, Label } from '@ponti-studios/ui/primitives';
 import { Github, Globe, Linkedin, SaveIcon, Twitter } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';

@@ -15,10 +15,6 @@ module.exports = defineConfig([
         {
           patterns: [
             {
-              group: ["**/packages/ui/src/**", "packages/ui/src/**"],
-              message: "Import shared UI through @hominem/ui public exports.",
-            },
-            {
               group: ["lucide-react-native"],
               message: "Use Apple SF Symbols on mobile.",
             }

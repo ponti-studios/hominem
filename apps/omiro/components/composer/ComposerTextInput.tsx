@@ -1,8 +1,8 @@
-import { spacing } from '@hominem/ui/tokens';
 import React from 'react';
 import { TextInput, View } from 'react-native';
 
 import { makeStyles, useThemeColors } from '~/components/theme';
+import { spacing } from '~/components/theme/ponti-tokens';
 
 interface ComposerTextInputProps {
   inputRef: React.RefObject<TextInput | null>;

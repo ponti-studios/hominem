@@ -42,6 +42,10 @@ verifyStoreIntegrity: true
 strictStorePkgContentCheck: true
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
+# First-party releases are published from the Ponti Studios GitHub Actions workflow
+# and must be consumable by Hominem immediately after release.
+minimumReleaseAgeExclude:
+  - '@ponti-studios/ui'
 trustPolicy: needsFix
 blockExoticSubdeps: true
 strictDepBuilds: true
