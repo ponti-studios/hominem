@@ -157,3 +157,81 @@ export function calculateRunway(input: z.infer<typeof runwayCalculationSchema>):
   }
   return { months: input.cashReserve / net };
 }
+
+export const affordabilityCheckInputSchema = z.object({
+  purchaseAmount: z.number().positive(),
+  currentBalance: z.number(),
+  monthlyIncome: z.number().nonnegative(),
+  monthlyExpenses: z.number().nonnegative(),
+  emergencyFundTarget: z.number().nonnegative().optional(),
+});
+
+export type AffordabilityVerdict = 'affordable' | 'caution' | 'not-affordable';
+
+export function calculateAffordability(input: z.infer<typeof affordabilityCheckInputSchema>): {
+  verdict: AffordabilityVerdict;
+  balanceAfterPurchase: number;
+  monthlySurplus: number;
+  monthsOfRunwayAfterPurchase: number;
+  percentOfMonthlyIncome: number;
+  emergencyFundTarget: number;
+  emergencyFundShortfall: number;
+  reasons: string[];
+} {
+  const { purchaseAmount, currentBalance, monthlyIncome, monthlyExpenses } = input;
+  const emergencyFundTarget = input.emergencyFundTarget ?? monthlyExpenses * 3;
+
+  const balanceAfterPurchase = currentBalance - purchaseAmount;
+  const monthlySurplus = monthlyIncome - monthlyExpenses;
+  const monthsOfRunwayAfterPurchase =
+    monthlySurplus >= 0 ? Number.POSITIVE_INFINITY : balanceAfterPurchase / -monthlySurplus;
+  const percentOfMonthlyIncome =
+    monthlyIncome > 0 ? (purchaseAmount / monthlyIncome) * 100 : Number.POSITIVE_INFINITY;
+  const emergencyFundShortfall = Math.max(0, emergencyFundTarget - balanceAfterPurchase);
+
+  const reasons: string[] = [];
+
+  if (balanceAfterPurchase < 0) {
+    reasons.push('This purchase would put your balance below zero.');
+  }
+  if (emergencyFundShortfall > 0) {
+    reasons.push(
+      `It would leave you ${emergencyFundShortfall.toFixed(2)} short of your emergency fund target.`,
+    );
+  }
+  if (monthsOfRunwayAfterPurchase !== Number.POSITIVE_INFINITY && monthsOfRunwayAfterPurchase < 6) {
+    reasons.push('Your spending already outpaces income, and this shortens your runway further.');
+  }
+  if (percentOfMonthlyIncome > 50) {
+    reasons.push(
+      `This purchase is ${percentOfMonthlyIncome.toFixed(0)}% of a month's income — a large single hit.`,
+    );
+  }
+
+  let verdict: AffordabilityVerdict;
+  if (balanceAfterPurchase < 0 || emergencyFundShortfall > 0) {
+    verdict = 'not-affordable';
+  } else if (
+    percentOfMonthlyIncome > 50 ||
+    (monthsOfRunwayAfterPurchase !== Number.POSITIVE_INFINITY && monthsOfRunwayAfterPurchase < 6)
+  ) {
+    verdict = 'caution';
+  } else {
+    verdict = 'affordable';
+  }
+
+  if (verdict === 'affordable') {
+    reasons.push('This fits comfortably within your balance and emergency fund target.');
+  }
+
+  return {
+    verdict,
+    balanceAfterPurchase,
+    monthlySurplus,
+    monthsOfRunwayAfterPurchase,
+    percentOfMonthlyIncome,
+    emergencyFundTarget,
+    emergencyFundShortfall,
+    reasons,
+  };
+}

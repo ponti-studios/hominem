@@ -1,5 +1,5 @@
 import { buttonVariants } from '@ponti-studios/ui/primitives';
-import { ChartLine, Gauge, Landmark, UploadCloud } from 'lucide-react';
+import { ChartLine, Gauge, Landmark, ShieldCheck, UploadCloud } from 'lucide-react';
 import { Link, redirect } from 'react-router';
 
 import { getServerSession } from '~/lib/auth.server';
@@ -24,6 +24,12 @@ const FEATURES = [
     title: 'Runway',
     description:
       'Know how long your savings will last at your current spend rate. A single number that tells you everything.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Can I afford this?',
+    description:
+      'Check a purchase against your balance, income, and emergency fund before you buy — not after.',
   },
   {
     icon: UploadCloud,

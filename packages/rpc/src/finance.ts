@@ -406,6 +406,31 @@ export type RunwayCalculateOutput = {
 }
 
 // ---------------------------------------------------------------------------
+// Affordability
+// ---------------------------------------------------------------------------
+
+export type AffordabilityCheckInput = {
+  purchaseAmount: number
+  currentBalance: number
+  monthlyIncome: number
+  monthlyExpenses: number
+  emergencyFundTarget?: number
+}
+
+export type AffordabilityVerdict = 'affordable' | 'caution' | 'not-affordable'
+
+export type AffordabilityCheckOutput = {
+  verdict: AffordabilityVerdict
+  balanceAfterPurchase: number
+  monthlySurplus: number
+  monthsOfRunwayAfterPurchase: number
+  percentOfMonthlyIncome: number
+  emergencyFundTarget: number
+  emergencyFundShortfall: number
+  reasons: string[]
+}
+
+// ---------------------------------------------------------------------------
 // Client
 // ---------------------------------------------------------------------------
 
