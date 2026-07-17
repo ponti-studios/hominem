@@ -17,7 +17,6 @@ runs:
       uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
-        registry-url: https://npm.pkg.github.com
 
     - name: setup-pnpm
       shell: bash
@@ -47,5 +46,3 @@ runs:
     - name: install-dependencies
       shell: bash
       run: ${{ inputs.install-command }}
-      env:
-        NODE_AUTH_TOKEN: ${{ github.token }}
