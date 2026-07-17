@@ -98,6 +98,7 @@ function ProtectedShell() {
               contentStyle: { backgroundColor: themeColors['bg-base'] },
               headerLargeTitle: false,
               headerShadowVisible: false,
+              headerTintColor: themeColors.foreground,
             }}
           >
             <Stack.Screen name="index" options={{ headerShown: true }} />
