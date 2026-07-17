@@ -1,4 +1,5 @@
-import { Button, Field, Textarea } from '@hominem/ui';
+import { Field, Textarea } from '@ponti-studios/ui/forms';
+import { Button } from '@ponti-studios/ui/primitives';
 import { PencilIcon, PlusIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm, type SubmitHandler } from 'react-hook-form';

@@ -9,9 +9,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@hominem/ui/alert-dialog';
-import { Button, buttonVariants } from '@hominem/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hominem/ui/card';
+} from '@ponti-studios/ui/overlays';
+import { Button, buttonVariants } from '@ponti-studios/ui/primitives';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@ponti-studios/ui/primitives';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 

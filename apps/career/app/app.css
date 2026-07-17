@@ -1,4 +1,4 @@
-@import '@hominem/ui/styles.css';
+@import '@ponti-studios/ui/styles.css';
 @import 'tw-animate-css';
 
 ::view-transition-old(application-tab-panel),
@@ -40,7 +40,7 @@
   }
 }
 
-@source '../../../packages/ui/src';
+@source '../node_modules/@ponti-studios/ui/src';
 
 @layer base {
   body {

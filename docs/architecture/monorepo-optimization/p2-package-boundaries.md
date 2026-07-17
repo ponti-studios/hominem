@@ -134,7 +134,7 @@ Root barrels make imports easy, but they weaken architecture when everything can
 Evidence:
 
 - [packages/db/src/index.ts](../../../packages/db/src/index.ts)
-- [packages/ui/src/index.ts](../../../packages/ui/src/index.ts)
+- [Ponti UI package](https://github.com/ponti-studios/labs/tree/main/packages/ui)
 - [packages/finance/src/index.ts](../../../packages/finance/src/index.ts)
 
 Target:
@@ -160,7 +160,7 @@ Target:
 apps/omiro, apps/finance
   -> @hominem/rpc
   -> @hominem/auth/client
-  -> @hominem/ui
+  -> @ponti-studios/ui
   -> @hominem/utils
 
 apps/career

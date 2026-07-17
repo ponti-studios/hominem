@@ -9,8 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-  Button,
-} from '@hominem/ui';
+} from '@ponti-studios/ui/overlays';
+import { Button } from '@ponti-studios/ui/primitives';
 import { ArrowLeftIcon, TrashIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useFetcher, useNavigate } from 'react-router';

@@ -23,7 +23,7 @@ overrides:
   uuid: '>=11.1.1'
   axios: '>=1.15.1'
   fast-xml-builder: '>=1.1.6'
-  kysely: '>=0.28.17'
+  kysely: 0.28.17
   '@protobufjs/utf8': '>=1.1.1'
   protobufjs: '>=7.5.6'
   # Force every workspace + transitive consumer onto the catalog React.
@@ -42,6 +42,10 @@ verifyStoreIntegrity: true
 strictStorePkgContentCheck: true
 minimumReleaseAge: 1440
 minimumReleaseAgeStrict: true
+# First-party releases are published from the Ponti Studios GitHub Actions workflow
+# and must be consumable by Hominem immediately after release.
+minimumReleaseAgeExclude:
+  - '@ponti-studios/ui'
 trustPolicy: needsFix
 blockExoticSubdeps: true
 strictDepBuilds: true

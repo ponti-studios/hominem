@@ -1,7 +1,7 @@
 import type { AccountGetOutput } from '@hominem/rpc/finance';
-import { Alert, AlertDescription, AlertTitle } from '@hominem/ui';
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@ponti-studios/ui/feedback';
+import { Badge } from '@ponti-studios/ui/primitives';
+import { Button } from '@ponti-studios/ui/primitives';
 import { ArrowLeft, RefreshCcw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { redirect, useParams } from 'react-router';

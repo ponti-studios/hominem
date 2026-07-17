@@ -16,7 +16,6 @@
     { "path": "packages/services" },
     { "path": "packages/storage" },
     { "path": "packages/telemetry" },
-    { "path": "packages/ui" },
     { "path": "packages/utils" },
     { "path": "services/api" },
     { "path": "apps/omiro" }

@@ -1,13 +1,19 @@
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ponti-studios/ui/forms';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@hominem/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hominem/ui/select';
+} from '@ponti-studios/ui/overlays';
+import { Badge } from '@ponti-studios/ui/primitives';
+import { Button } from '@ponti-studios/ui/primitives';
 import { LinkIcon, UnlinkIcon } from 'lucide-react';
 import { useState } from 'react';
 

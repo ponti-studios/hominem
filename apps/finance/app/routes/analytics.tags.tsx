@@ -1,6 +1,6 @@
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
-import { LoadingSpinner } from '@hominem/ui/loading-spinner';
+import { Spinner } from '@ponti-studios/ui/feedback';
+import { Badge } from '@ponti-studios/ui/primitives';
+import { Button } from '@ponti-studios/ui/primitives';
 import { format, subMonths } from 'date-fns';
 import { ArrowDown, ArrowUp, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -319,7 +319,7 @@ export default function TagsAnalyticsPage() {
         <div className="relative">
           {isFetching && !isLoading && (
             <div className="absolute inset-0 bg-emphasis-medium z-10 flex items-center justify-center">
-              <LoadingSpinner variant="md" />
+              <Spinner size="md" />
             </div>
           )}
           <table className="w-full text-sm" aria-label="Tags breakdown">

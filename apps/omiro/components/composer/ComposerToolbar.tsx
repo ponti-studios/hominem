@@ -1,4 +1,3 @@
-import { spacing } from '@hominem/ui/tokens';
 import type { SFSymbol } from 'expo-symbols';
 import React from 'react';
 import { View } from 'react-native';
@@ -6,6 +5,7 @@ import Reanimated, { LinearTransition, SlideInRight, SlideOutRight } from 'react
 
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
 import { makeStyles, useThemeColors } from '~/components/theme';
+import { spacing } from '~/components/theme/ponti-tokens';
 import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
 

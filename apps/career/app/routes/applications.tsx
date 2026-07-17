@@ -1,5 +1,6 @@
 import { db, JobApplicationRepository } from '@hominem/db';
-import { Button, PageHeader, useDebouncedValue } from '@hominem/ui';
+import { useDebouncedValue } from '@ponti-studios/ui/hooks';
+import { Button } from '@ponti-studios/ui/primitives';
 import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
@@ -8,6 +9,7 @@ import { ApplicationsDesktopTable } from '~/components/career/applications/Appli
 import { ApplicationsEmptyState } from '~/components/career/applications/ApplicationsEmptyState';
 import { ApplicationsFilters } from '~/components/career/applications/ApplicationsFilters';
 import { ApplicationsMobileList } from '~/components/career/applications/ApplicationsMobileList';
+import { PageHeader } from '~/components/patterns';
 import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';

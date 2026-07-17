@@ -1,6 +1,6 @@
-import { EntityListCards, StatusBadge } from '@hominem/ui';
 import { ChevronRightIcon } from 'lucide-react';
 
+import { EntityListCards, StatusBadge } from '~/components/patterns';
 import { RouterListLink } from '~/components/RouterListLink';
 import {
   formatApplicationDate,

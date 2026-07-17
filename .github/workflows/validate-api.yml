@@ -24,6 +24,10 @@ concurrency:
   group: validate-api-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   validate-api:
     runs-on: ubuntu-latest

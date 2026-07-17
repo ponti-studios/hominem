@@ -1,4 +1,3 @@
-import { radii, spacing } from '@hominem/ui/tokens';
 import { Image } from 'expo-image';
 import React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -7,6 +6,7 @@ import Animated from 'react-native-reanimated';
 import { useComposerAttachments } from '~/components/composer/ComposerContext';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import { createLayoutTransition } from '~/components/theme/animations';
+import { radii, spacing } from '~/components/theme/ponti-tokens';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import t from '~/translations';

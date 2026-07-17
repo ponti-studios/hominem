@@ -1,5 +1,6 @@
-import type { StatusTone } from '@hominem/ui';
 import { centsToDollars, formatCurrency } from '@hominem/utils/numbers';
+
+import { StatusTone } from '~/components/patterns';
 
 /**
  * Get a standardized company name from various company data formats

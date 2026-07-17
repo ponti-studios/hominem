@@ -8,8 +8,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-  Button,
-} from '@hominem/ui';
+} from '@ponti-studios/ui/overlays';
+import { Button } from '@ponti-studios/ui/primitives';
 import { RotateCcwIcon, SaveIcon, Trash2Icon } from 'lucide-react';
 
 interface EditorFormActionsProps {

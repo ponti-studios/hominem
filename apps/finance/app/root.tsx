@@ -1,15 +1,6 @@
 import { AuthProvider } from '@hominem/auth/client/provider';
-import {
-  Button,
-  buttonVariants,
-  Card,
-  CardContent,
-  COLOR_MODE_ATTRIBUTE,
-  COLOR_SYSTEM_ATTRIBUTE,
-  COMMON_FONT_LINKS,
-  COMMON_ICON_LINKS,
-  UpdateGuard,
-} from '@hominem/ui';
+import { Button, buttonVariants, Card, CardContent } from '@ponti-studios/ui/primitives';
+import { COLOR_MODE_ATTRIBUTE, COLOR_SYSTEM_ATTRIBUTE } from '@ponti-studios/ui/tokens';
 import type React from 'react';
 import {
   data,
@@ -21,6 +12,8 @@ import {
   Scripts,
   ScrollRestoration,
 } from 'react-router';
+
+import { COMMON_FONT_LINKS, COMMON_ICON_LINKS, UpdateGuard } from '~/components/patterns';
 
 import type { Route } from './+types/root';
 import { HonoProvider } from './lib/api';

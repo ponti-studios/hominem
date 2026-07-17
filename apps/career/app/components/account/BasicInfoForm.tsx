@@ -1,5 +1,6 @@
 import type { PortfolioRecord } from '@hominem/db';
-import { Button, Input, Label, Switch, Textarea } from '@hominem/ui';
+import { Input, Switch, Textarea } from '@ponti-studios/ui/forms';
+import { Button, Label } from '@ponti-studios/ui/primitives';
 import { useEffect, useState } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 

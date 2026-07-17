@@ -6,7 +6,7 @@ import type {
   InstitutionsListOutput,
   TransactionListOutput,
 } from '@hominem/rpc/finance';
-import type { SortOption } from '@hominem/ui/hooks';
+import type { SortOption } from '@ponti-studios/ui/hooks';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
 

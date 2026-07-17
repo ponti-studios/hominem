@@ -8,8 +8,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@hominem/ui/alert-dialog';
-import { Button } from '@hominem/ui/button';
+} from '@ponti-studios/ui/overlays';
+import { Button } from '@ponti-studios/ui/primitives';
 import { RefreshCcw, Trash2 } from 'lucide-react';
 
 import { useRemovePlaidConnection, useSyncPlaidItem } from '~/lib/hooks/use-plaid';

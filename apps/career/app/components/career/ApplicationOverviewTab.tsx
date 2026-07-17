@@ -1,19 +1,21 @@
 import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   DatePicker,
   Input,
-  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@hominem/ui';
+} from '@ponti-studios/ui/forms';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Label,
+} from '@ponti-studios/ui/primitives';
 import { Briefcase, Calendar, DollarSign, ExternalLink, MapPin, TrendingUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Form, useNavigation } from 'react-router';

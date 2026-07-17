@@ -1,7 +1,12 @@
+import { formatCurrency } from '@hominem/utils';
 import {
   Alert,
   AlertDescription,
   AlertTitle,
+  EmptyState,
+  Spinner,
+} from '@ponti-studios/ui/feedback';
+import {
   Badge,
   Button,
   Card,
@@ -10,11 +15,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  EmptyState,
-  LoadingSpinner,
-  SectionIntro,
-} from '@hominem/ui';
-import { formatCurrency } from '@hominem/utils';
+} from '@ponti-studios/ui/primitives';
 import {
   AlertTriangle,
   Building2,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
+import { SectionIntro } from '~/components/patterns';
 import { PlaidConnectButton, PlaidLink } from '~/components/plaid/plaid-link';
 import { RouteLink } from '~/components/route-link';
 import { createServerHonoClient } from '~/lib/api.server';
@@ -235,7 +237,7 @@ export default function AccountsPage({ loaderData }: Route.ComponentProps) {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <LoadingSpinner variant="md" />
+          <Spinner size="md" />
         </div>
       ) : null}
 

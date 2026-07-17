@@ -1,5 +1,6 @@
-import type { EntityListLinkProps } from '@hominem/ui';
 import { Link } from 'react-router';
+
+import { EntityListLinkProps } from '~/components/patterns';
 
 export function RouterListLink({ href, className, children }: EntityListLinkProps) {
   return (

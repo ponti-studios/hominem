@@ -1,4 +1,3 @@
-import { spacing } from '@hominem/ui/tokens';
 import React from 'react';
 import { View } from 'react-native';
 import Animated, {
@@ -11,6 +10,7 @@ import Animated, {
 import { RecordingLevelMeter } from '~/components/composer/RecordingLevelMeter';
 import { useElapsedTimer } from '~/components/composer/useElapsedTimer';
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
+import { spacing } from '~/components/theme/ponti-tokens';
 import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
 

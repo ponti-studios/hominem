@@ -1,9 +1,9 @@
-import { CHART_COLORS } from '@hominem/ui';
-import { Label } from '@hominem/ui';
-import { Badge } from '@hominem/ui/badge';
-import { Button } from '@hominem/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
-import { Input } from '@hominem/ui/input';
+import { CHART_COLORS } from '@ponti-studios/ui';
+import { Input } from '@ponti-studios/ui/forms';
+import { Label } from '@ponti-studios/ui/primitives';
+import { Badge } from '@ponti-studios/ui/primitives';
+import { Button } from '@ponti-studios/ui/primitives';
+import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 import { AlertTriangle, Calendar, DollarSign, TrendingDown } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
 import {

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@hominem/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 import { redirect, useParams } from 'react-router';
 
 import { Skeleton } from '~/components/skeleton';

@@ -1,7 +1,7 @@
+import { EmailOtpAuthFlow, type EmailOtpAuthCopy } from '@hominem/auth/client/email-otp-auth-flow';
 import { useEmailOtpAuthRoute } from '@hominem/auth/client/email-otp-route';
 import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { resolveOAuthResumeUrl } from '@hominem/auth/shared/redirect-policy';
-import { EmailOtpAuthFlow, translateUi } from '@hominem/ui';
 import { redirect, useLocation, useNavigate } from 'react-router';
 
 import { serverEnv } from '~/lib/env';
@@ -10,11 +10,27 @@ import { userContext } from '~/lib/middleware';
 import { Route } from './+types/index';
 import { AUTH_CONFIG } from './config';
 
+const authCopy = {
+  changeEmail: 'Use a different email',
+  codeLabel: 'Verification code',
+  emailHelper: 'Enter your email and we’ll send a one-time verification code.',
+  emailLabel: 'Email address',
+  emailPlaceholder: 'you@example.com',
+  emailTitle: 'Sign in to Career',
+  otpTitle: 'Check your email',
+  resend: 'Resend code',
+  resendLoading: 'Sending code',
+  submitEmail: 'Continue',
+  submitEmailLoading: 'Sending code',
+  verify: 'Verify and continue',
+  verifyLoading: 'Verifying code',
+} satisfies EmailOtpAuthCopy;
+
 export const meta: Route.MetaFunction = () => [
-  { title: translateUi('auth.emailEntry.title') },
+  { title: authCopy.emailTitle },
   {
     name: 'description',
-    content: translateUi('auth.emailEntry.helper'),
+    content: authCopy.emailHelper,
   },
 ];
 
@@ -44,12 +60,13 @@ export default function AuthEntryPage({ loaderData }: Route.ComponentProps) {
 
   return (
     <EmailOtpAuthFlow
+      copy={authCopy}
       email={auth.email}
       error={auth.error ?? undefined}
       isResending={auth.isResending}
       isSubmitting={auth.isSubmitting}
       otp={auth.otp}
-      otpHelperText={translateUi('auth.otpVerification.helper', { email: maskEmail(auth.email) })}
+      otpHelperText={`We sent a verification code to ${maskEmail(auth.email)}.`}
       step={auth.step}
       onChangeEmail={auth.changeEmail}
       onEmailChange={auth.handleEmailChange}
