@@ -2,11 +2,17 @@ import type { AIUsageMetrics } from '@hominem/ai';
 import {
   AIUsageEventRepository,
   db,
+  ForbiddenError,
   type AIUsageFeature,
   type AIUsageEventStatus,
   type AIUsageOperation,
 } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
+
+// Free-tier monthly cap on AI usage cost. Once a user's `cost_usd` sum for
+// the current calendar month reaches this, AI-cost-incurring routes refuse
+// new requests until the next month (see assertUnderMonthlyUsageLimit).
+export const MONTHLY_AI_USAGE_LIMIT_USD = 10;
 
 type RecordAIUsageEventInput = {
   eventId: string;
@@ -117,6 +123,47 @@ export async function recordAIUsageEvent(input: RecordAIUsageEventInput) {
       operation: input.operation,
       model: usage?.model ?? input.model ?? null,
       error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+}
+
+export interface MonthlyUsageStatus {
+  totalCostUsd: number;
+  limitUsd: number;
+  remainingUsd: number;
+  isOverLimit: boolean;
+  periodStart: string;
+  periodEnd: string;
+}
+
+function currentMonthRange(now = new Date()): { from: string; to: string } {
+  const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  return { from: periodStart.toISOString(), to: now.toISOString() };
+}
+
+export async function getMonthlyUsageStatus(userId: string): Promise<MonthlyUsageStatus> {
+  const { from, to } = currentMonthRange();
+  const summary = await AIUsageEventRepository.getSummary(db, { userId, from, to });
+
+  return {
+    totalCostUsd: summary.totalCostUsd,
+    limitUsd: MONTHLY_AI_USAGE_LIMIT_USD,
+    remainingUsd: Math.max(0, MONTHLY_AI_USAGE_LIMIT_USD - summary.totalCostUsd),
+    isOverLimit: summary.totalCostUsd >= MONTHLY_AI_USAGE_LIMIT_USD,
+    periodStart: from,
+    periodEnd: to,
+  };
+}
+
+// Called at the top of AI-cost-incurring routes (chat send, voice task
+// extraction, voice cleanup) before any provider call is made.
+export async function assertUnderMonthlyUsageLimit(userId: string): Promise<void> {
+  const status = await getMonthlyUsageStatus(userId);
+  if (status.isOverLimit) {
+    throw new ForbiddenError('Monthly AI usage limit reached', {
+      reason: 'usage_limit_exceeded',
+      limitUsd: status.limitUsd,
+      totalCostUsd: status.totalCostUsd,
     });
   }
 }

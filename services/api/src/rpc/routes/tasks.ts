@@ -6,7 +6,11 @@ import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
-import { recordAIUsageEvent, startAIUsageTimer } from '../../application/ai-usage.service';
+import {
+  assertUnderMonthlyUsageLimit,
+  recordAIUsageEvent,
+  startAIUsageTimer,
+} from '../../application/ai-usage.service';
 import {
   CreateTaskBatchSchema,
   CreateTaskSchema,
@@ -58,6 +62,9 @@ export const tasksRoutes = new Hono<AppContext>()
   .post('/extract', zValidator('json', ExtractTasksInputSchema), async (c) => {
     const userId = c.get('auth')!.userId;
     const { transcript } = c.req.valid('json');
+
+    await assertUnderMonthlyUsageLimit(userId);
+
     const eventId = randomUUID();
     const getDurationMs = startAIUsageTimer();
 
@@ -120,6 +127,9 @@ export const tasksRoutes = new Hono<AppContext>()
   .post('/voice', zValidator('json', VoiceTasksInputSchema), async (c) => {
     const userId = c.get('auth')!.userId;
     const { transcript, referenceDate, timezone } = c.req.valid('json');
+
+    await assertUnderMonthlyUsageLimit(userId);
+
     const eventId = randomUUID();
     const getDurationMs = startAIUsageTimer();
 
