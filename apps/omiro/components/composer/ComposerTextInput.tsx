@@ -45,7 +45,7 @@ export function ComposerTextInput({
 
 const useStyles = makeStyles((theme) => ({
   inputContainer: {
-    flex: 1,
+    flexShrink: 1,
     maxHeight: INPUT_MAX_H,
     minWidth: 0,
   },

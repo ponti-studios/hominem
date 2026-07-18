@@ -3596,7 +3596,7 @@ packages:
     hasBin: true
 
   '@ponti-studios/ui@0.1.2':
-    resolution: {integrity: sha512-0VG05FVX6fCMemlpZcBhF7gAonv2wqtK4AZqoyYhmwCBJ/J34BoNVVKnr5tTQM990Fh3UDLOTEoUkbtrCPQZ2w==, tarball: https://npm.pkg.github.com/download/@ponti-studios/ui/0.1.2/afdcdded5f87e4356109070bb94758337f3b3bb0}
+    resolution: {integrity: sha512-cvysds1L8VQCh1Sjo9tfVphiLxWaXPX78AZP4ny5sU40ZkxmjBMtYoeDlqhJykMqxVELSVeaWVUMYZHKznwKpA==}
     peerDependencies:
       react: 19.2.7
       react-dom: 19.2.7
