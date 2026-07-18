@@ -10,6 +10,7 @@ import { inboxRoutes } from './inbox';
 import { notesRoutes } from './notes';
 import { personalRoutes } from './personal';
 import { tasksRoutes } from './tasks';
+import { usageRoutes } from './usage';
 import { voiceRoutes } from './voice';
 
 export const economyRoutes = new Hono<AppContext>()
@@ -22,4 +23,5 @@ export const economyRoutes = new Hono<AppContext>()
   .route('/notes', notesRoutes)
   .route('/personal', personalRoutes)
   .route('/tasks', tasksRoutes)
+  .route('/usage', usageRoutes)
   .route('/voice', voiceRoutes);

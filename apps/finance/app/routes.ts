@@ -25,6 +25,7 @@ const routes = [
 
     // Finance tools
     route('finance/runway', 'routes/finance.runway.tsx'),
+    route('finance/affordability', 'routes/finance.affordability.tsx'),
     route('/account', 'routes/account.tsx'),
     route('/settings/security', 'routes/settings.security.tsx'),
     route('/auth/cli', 'routes/auth.cli.tsx'),

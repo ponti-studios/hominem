@@ -21,6 +21,10 @@ export function getArchivedChatsRoute(): RelativePathString {
   return '/(protected)/settings/archived-chats' as RelativePathString;
 }
 
+export function getOnDeviceCalendarSpikeRoute(): RelativePathString {
+  return '/(protected)/settings/on-device-calendar-spike' as RelativePathString;
+}
+
 export function getTasksRoute(): RelativePathString {
   return '/(protected)/tasks' as RelativePathString;
 }

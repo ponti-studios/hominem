@@ -43,6 +43,10 @@ export const queryKeys = {
     all: ['tasks'] as const,
     detail: (id: string) => ['tasks', 'detail', id] as const,
   },
+
+  usage: {
+    monthly: ['usage', 'monthly'] as const,
+  },
 } as const;
 
 export type QueryKeys = typeof queryKeys;

@@ -6,7 +6,11 @@ import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
-import { recordAIUsageEvent, startAIUsageTimer } from '../../application/ai-usage.service';
+import {
+  assertUnderMonthlyUsageLimit,
+  recordAIUsageEvent,
+  startAIUsageTimer,
+} from '../../application/ai-usage.service';
 import { AIUsageQuerySchema } from '../../schemas/ai.schema';
 import { EnhanceTextInputSchema } from '../../schemas/enhance.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
@@ -44,6 +48,9 @@ export const enhanceRoutes = new Hono<AppContext>()
   .post('/enhance', zValidator('json', EnhanceTextInputSchema), async (c) => {
     const userId = c.get('auth')!.userId;
     const { text, instruction } = c.req.valid('json');
+
+    await assertUnderMonthlyUsageLimit(userId);
+
     const eventId = randomUUID();
     const getDurationMs = startAIUsageTimer();
 

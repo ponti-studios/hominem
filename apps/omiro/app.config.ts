@@ -244,6 +244,8 @@ export default ({ config }: ConfigContext) => {
           'Allow Omiro to access your microphone to record voice notes on your device.',
         NSSpeechRecognitionUsageDescription:
           'Allow Omiro to transcribe recorded voice notes into text on your device.',
+        NSCalendarsFullAccessUsageDescription:
+          'Allow Omiro to read your calendar so on-device chat can answer questions about your schedule.',
       },
     },
     extra: {

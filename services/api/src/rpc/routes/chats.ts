@@ -8,7 +8,11 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 
-import { recordAIUsageEvent, startAIUsageTimer } from '../../application/ai-usage.service';
+import {
+  assertUnderMonthlyUsageLimit,
+  recordAIUsageEvent,
+  startAIUsageTimer,
+} from '../../application/ai-usage.service';
 import {
   ChatsCreateSchema,
   ChatsMessagesQuerySchema,
@@ -161,6 +165,7 @@ const chatByIdRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const chatId = getChatId(c);
 
+    await assertUnderMonthlyUsageLimit(userId);
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
     const { message, fileIds = [], noteIds = [] } = c.req.valid('json');
 

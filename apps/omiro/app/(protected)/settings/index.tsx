@@ -22,8 +22,13 @@ import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen
 import { useAuth } from '~/services/auth/auth-provider';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 import { resolveProtectedRouteState } from '~/services/auth/protected-route-state';
-import { getArchivedChatsRoute } from '~/services/navigation/routes';
+import { getArchivedChatsRoute, getOnDeviceCalendarSpikeRoute } from '~/services/navigation/routes';
+import { useMonthlyUsage } from '~/services/usage/use-usage-query';
 import t from '~/translations';
+
+function formatUsd(amount: number): string {
+  return `$${amount.toFixed(2)}`;
+}
 
 interface AccountState {
   name: string;
@@ -57,6 +62,7 @@ function Settings() {
     deletePasskey,
     isLoading: isPasskeyLoading,
   } = useMobilePasskeyAuth({ loadPasskeys: true });
+  const { data: monthlyUsage } = useMonthlyUsage();
   const initialName = currentUser?.name ?? '';
   const [state, dispatch] = useReducer(accountReducer, {
     name: initialName,
@@ -121,6 +127,10 @@ function Settings() {
 
   const onArchivedChatsPress = () => {
     router.push(getArchivedChatsRoute());
+  };
+
+  const onOnDeviceCalendarSpikePress = () => {
+    router.push(getOnDeviceCalendarSpikeRoute());
   };
 
   const onAddPasskeyPress = async () => {
@@ -297,6 +307,51 @@ function Settings() {
         </View>
       </View>
 
+      {monthlyUsage ? (
+        <View
+          testID="settings-usage-section"
+          style={[
+            styles.sectionCard,
+            {
+              backgroundColor: themeColors['bg-surface'],
+              borderColor: themeColors['border-default'],
+            },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: themeColors['text-secondary'] }]}>
+            AI usage this month
+          </Text>
+          <View style={styles.row}>
+            <View style={styles.rowLabelGroup}>
+              <AppIcon name="sparkles" />
+              <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
+                {formatUsd(monthlyUsage.totalCostUsd)} of {formatUsd(monthlyUsage.limitUsd)}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.usageTrack, { backgroundColor: themeColors['border-default'] }]}>
+            <View
+              style={[
+                styles.usageFill,
+                {
+                  width: `${Math.min(100, (monthlyUsage.totalCostUsd / monthlyUsage.limitUsd) * 100)}%`,
+                  backgroundColor: monthlyUsage.isOverLimit
+                    ? themeColors.destructive
+                    : themeColors.foreground,
+                },
+              ]}
+            />
+          </View>
+          {monthlyUsage.isOverLimit ? (
+            <Text style={[styles.statusText, { color: themeColors.destructive }]}>
+              {
+                "You've reached this month's free AI usage limit. It resets at the start of next month."
+              }
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+
       <View
         style={[
           styles.sectionCard,
@@ -321,6 +376,21 @@ function Settings() {
           </View>
           <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-muted']} />
         </Pressable>
+        {__DEV__ ? (
+          <Pressable
+            testID="settings-on-device-calendar-spike"
+            onPress={onOnDeviceCalendarSpikePress}
+            style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+          >
+            <View style={styles.rowLabelGroup}>
+              <AppIcon name="calendar" />
+              <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
+                On-device calendar spike (dev)
+              </Text>
+            </View>
+            <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-muted']} />
+          </Pressable>
+        ) : null}
       </View>
 
       {MOBILE_PASSKEY_ENABLED ? (
@@ -443,5 +513,16 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 13,
+  },
+  usageFill: {
+    borderRadius: 3,
+    height: 6,
+  },
+  usageTrack: {
+    borderRadius: 3,
+    height: 6,
+    marginTop: 4,
+    overflow: 'hidden',
+    width: '100%',
   },
 });

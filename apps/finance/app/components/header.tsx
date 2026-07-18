@@ -8,6 +8,7 @@ const LINKS: AppNavigationLink[] = [
   { href: '/finance', label: 'Finance' },
   { href: '/analytics', label: 'Analytics' },
   { href: '/accounts', label: 'Accounts' },
+  { href: '/finance/affordability', label: 'Afford It?' },
 ];
 
 const ACCOUNT_LINK: AppNavigationLink = { href: '/account', label: 'Account' };
