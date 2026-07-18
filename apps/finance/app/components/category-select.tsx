@@ -1,12 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@ponti-studios/ui/forms';
-import { Label } from '@ponti-studios/ui/primitives';
-import { useId } from 'react';
+import { EntitySelect } from '@ponti-studios/ui/forms';
 
 interface TagOption {
   id: string;
@@ -32,39 +24,18 @@ export function TagSelect({
   label = 'Tag',
   className,
 }: TagSelectProps) {
-  const id = useId();
-  const safeTags = tags || [];
-
   return (
-    <div className={`space-y-2 ${className || ''}`}>
-      <Label htmlFor={id}>{label}</Label>
-      <Select
-        name="tag"
-        value={selectedTag}
-        onValueChange={(v: string | null) => v != null && onTagChange(v)}
-      >
-        <SelectTrigger id={id}>
-          <SelectValue placeholder={placeholder} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All tags</SelectItem>
-          {isLoading ? (
-            <SelectItem value="loading" disabled>
-              Loading tags...
-            </SelectItem>
-          ) : safeTags.length === 0 ? (
-            <SelectItem value="no-tags" disabled>
-              No tags available
-            </SelectItem>
-          ) : (
-            safeTags.map((tag) => (
-              <SelectItem key={tag.id} value={tag.id}>
-                {tag.name}
-              </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
-    </div>
+    <EntitySelect
+      value={selectedTag}
+      onValueChange={onTagChange}
+      options={tags || []}
+      isLoading={isLoading}
+      placeholder={placeholder}
+      label={label}
+      className={className}
+      showLabel
+      allOptionLabel="All tags"
+      emptyLabel="No tags available"
+    />
   );
 }

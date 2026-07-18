@@ -1,8 +1,8 @@
 import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
+import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Card, CardContent } from '@ponti-studios/ui/primitives';
 import { Link, useNavigate } from 'react-router';
 
-import { Skeleton } from '~/components/skeleton';
 import { useTimeSeriesData } from '~/lib/hooks/use-time-series';
 import { formatCurrency } from '~/lib/number.utils';
 import { cn } from '~/lib/utils';

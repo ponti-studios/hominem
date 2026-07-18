@@ -1,4 +1,5 @@
 import { Spinner } from '@ponti-studios/ui/feedback';
+import { useSort } from '@ponti-studios/ui/hooks';
 import { Badge } from '@ponti-studios/ui/primitives';
 import { Button } from '@ponti-studios/ui/primitives';
 import { format, subMonths } from 'date-fns';
@@ -10,7 +11,6 @@ import { TransactionFilters } from '~/components/finance/transaction-filters';
 import { useTagBreakdown } from '~/lib/hooks/use-analytics';
 import { type FilterArgs, useFinanceAccounts } from '~/lib/hooks/use-finance-data';
 import { useSelectedAccount } from '~/lib/hooks/use-selected-account';
-import { useSort } from '~/lib/hooks/use-sort';
 import { formatCurrency } from '~/lib/number.utils';
 
 interface TagBreakdownRow {

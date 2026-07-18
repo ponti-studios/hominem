@@ -1,8 +1,8 @@
 import { EmptyState } from '@ponti-studios/ui/feedback';
+import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Badge } from '@ponti-studios/ui/primitives';
 import { CreditCard, Receipt } from 'lucide-react';
 
-import { Skeleton } from '~/components/skeleton';
 import type { useFinanceAccounts, useFinanceTransactions } from '~/lib/hooks/use-finance-data';
 import { cn } from '~/lib/utils';
 

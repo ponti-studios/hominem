@@ -1,7 +1,7 @@
+import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Badge } from '@ponti-studios/ui/primitives';
 import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 
-import { Skeleton } from '~/components/skeleton';
 import { useTagBreakdown } from '~/lib/hooks/use-analytics';
 import { formatCurrency } from '~/lib/number.utils';
 

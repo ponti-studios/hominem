@@ -1,7 +1,7 @@
+import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 import { redirect, useParams } from 'react-router';
 
-import { Skeleton } from '~/components/skeleton';
 import { createServerHonoClient } from '~/lib/api.server';
 import { requireAuth } from '~/lib/guards';
 import { useMonthlyStats } from '~/lib/hooks/use-monthly-stats';
