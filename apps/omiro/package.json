@@ -97,7 +97,8 @@
         "exclude": [
           "react-native-nitro-image",
           "omiro-intents",
-          "voice-transcriber"
+          "voice-transcriber",
+          "on-device-ai"
         ]
       }
     }

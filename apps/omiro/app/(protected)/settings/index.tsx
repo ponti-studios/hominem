@@ -22,7 +22,7 @@ import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen
 import { useAuth } from '~/services/auth/auth-provider';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 import { resolveProtectedRouteState } from '~/services/auth/protected-route-state';
-import { getArchivedChatsRoute } from '~/services/navigation/routes';
+import { getArchivedChatsRoute, getOnDeviceCalendarSpikeRoute } from '~/services/navigation/routes';
 import t from '~/translations';
 
 interface AccountState {
@@ -121,6 +121,10 @@ function Settings() {
 
   const onArchivedChatsPress = () => {
     router.push(getArchivedChatsRoute());
+  };
+
+  const onOnDeviceCalendarSpikePress = () => {
+    router.push(getOnDeviceCalendarSpikeRoute());
   };
 
   const onAddPasskeyPress = async () => {
@@ -321,6 +325,21 @@ function Settings() {
           </View>
           <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-muted']} />
         </Pressable>
+        {__DEV__ ? (
+          <Pressable
+            testID="settings-on-device-calendar-spike"
+            onPress={onOnDeviceCalendarSpikePress}
+            style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+          >
+            <View style={styles.rowLabelGroup}>
+              <AppIcon name="calendar" />
+              <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
+                On-device calendar spike (dev)
+              </Text>
+            </View>
+            <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-muted']} />
+          </Pressable>
+        ) : null}
       </View>
 
       {MOBILE_PASSKEY_ENABLED ? (
