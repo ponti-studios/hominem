@@ -12,7 +12,11 @@ import { formatCurrency } from '~/lib/number.utils';
 const VERDICT_COPY = {
   affordable: { label: 'You can afford it', variant: 'default' as const, icon: CheckCircle2 },
   caution: { label: 'Proceed with caution', variant: 'secondary' as const, icon: AlertTriangle },
-  'not-affordable': { label: "You can't afford it", variant: 'destructive' as const, icon: XCircle },
+  'not-affordable': {
+    label: "You can't afford it",
+    variant: 'destructive' as const,
+    icon: XCircle,
+  },
 };
 
 export default function AffordabilityPage() {

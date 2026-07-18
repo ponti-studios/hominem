@@ -50,10 +50,7 @@ export default function OnDeviceCalendarSpikeScreen() {
   }, [prompt]);
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.content}
-      testID="on-device-calendar-spike-screen"
-    >
+    <ScrollView contentContainerStyle={styles.content} testID="on-device-calendar-spike-screen">
       <Text style={[styles.heading, { color: themeColors.foreground }]}>
         On-device calendar spike
       </Text>
@@ -100,18 +97,22 @@ export default function OnDeviceCalendarSpikeScreen() {
         disabled={isLoading}
       />
 
-      {error ? (
-        <Text style={{ color: themeColors.destructive }}>{error}</Text>
-      ) : null}
+      {error ? <Text style={{ color: themeColors.destructive }}>{error}</Text> : null}
 
       {response ? (
         <View
           style={[
             styles.responseBox,
-            { borderColor: themeColors['border-default'], backgroundColor: themeColors['bg-surface'] },
+            {
+              borderColor: themeColors['border-default'],
+              backgroundColor: themeColors['bg-surface'],
+            },
           ]}
         >
-          <Text testID="on-device-calendar-spike-response" style={{ color: themeColors.foreground }}>
+          <Text
+            testID="on-device-calendar-spike-response"
+            style={{ color: themeColors.foreground }}
+          >
             {response}
           </Text>
         </View>
