@@ -105,12 +105,14 @@ function shouldSendEmails(): boolean {
 
 // A stable, non-PII identifier for correlating log lines about the same
 // recipient without writing raw email addresses to logs. The logger's
-// redaction only matches key names (e.g. `email`), not values, so a raw
-// address under any other key — `to`, `recipient`, etc. — would leak.
-function emailLogContext(email: string): { emailHash: string; emailDomain: string } {
+// redaction matches key names containing "email" (substring, case
+// insensitive) — so the field names here must avoid that substring too,
+// not just avoid holding a raw address, or they get redacted into
+// uselessness the same way a raw `email` field would.
+function emailLogContext(email: string): { recipientHash: string; recipientDomain: string } {
   return {
-    emailHash: createHash('sha256').update(email).digest('hex').slice(0, 12),
-    emailDomain: email.split('@')[1] ?? 'unknown',
+    recipientHash: createHash('sha256').update(email).digest('hex').slice(0, 12),
+    recipientDomain: email.split('@')[1] ?? 'unknown',
   };
 }
 
