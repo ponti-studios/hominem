@@ -120,7 +120,7 @@ async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<
   const { Resend } = await import('resend');
   const resend = new Resend(env.RESEND_API_KEY);
 
-  const { error } = await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     to,
     from,
     subject,
@@ -129,8 +129,17 @@ async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<
   });
 
   if (error) {
+    logger.error('[auth:email] resend rejected send', {
+      to,
+      subject,
+      from,
+      errorName: error.name,
+      errorMessage: error.message,
+    });
     throw new Error(`Resend failed to send email: ${error.message}`);
   }
+
+  logger.info('[auth:email] resend accepted send', { to, subject, resendId: data?.id ?? null });
 }
 
 function shouldSkipVerificationOtpEmail() {
@@ -189,6 +198,11 @@ function getAuthPlugins() {
       generateOTP: () => generateNumericOtp({ length: 6, isTest: !shouldSendEmails() }),
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (env.AUTH_TEST_OTP_ENABLED) {
+          logger.info('[auth:email-otp] routed to test OTP store, not sent', {
+            email,
+            type,
+            nodeEnv: env.NODE_ENV,
+          });
           enableTestOtpStore();
           recordTestOtp(email, otp, type);
           return;
@@ -200,10 +214,24 @@ function getAuthPlugins() {
         }
 
         if (shouldSkipVerificationOtpEmail()) {
+          logger.info('[auth:email-otp] verification email skipped', {
+            email,
+            type,
+            nodeEnv: env.NODE_ENV,
+          });
           return;
         }
 
-        await sendEmail(buildVerificationOtpEmail({ to: email, otp, type }));
+        try {
+          await sendEmail(buildVerificationOtpEmail({ to: email, otp, type }));
+        } catch (error) {
+          logger.error('[auth:email-otp] failed to deliver verification email', {
+            email,
+            type,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          throw error;
+        }
       },
     }),
     // Bearer lets getSession honor Authorization when clients send BA session tokens.
