@@ -1,9 +1,8 @@
 import { usePasskeys } from '@hominem/auth/client/passkey';
-import { PasskeyManagement } from '@ponti-studios/ui/forms';
-import { SectionIntro } from '@ponti-studios/ui/layout';
 import { useCallback } from 'react';
 import { redirect } from 'react-router';
 
+import { PasskeyManagement, SectionIntro } from '~/components/patterns';
 import { getServerAuth } from '~/lib/auth.server';
 
 export async function loader({ request }: { request: Request }) {

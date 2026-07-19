@@ -1,6 +1,6 @@
-import { FilterChip, SortControls } from '@ponti-studios/ui/data-display';
+import { FilterChip } from '@ponti-studios/ui/data-display';
 import { DatePicker, Input } from '@ponti-studios/ui/forms';
-import { type SortField, type SortOption } from '@ponti-studios/ui/hooks';
+import { type SortOption } from '@ponti-studios/ui/hooks';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,10 +13,9 @@ import { ListFilter, RefreshCcw } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { AccountSelect } from '~/components/account-select';
+import { SortControls } from '~/components/finance/sort-controls';
 import type { FilterArgs, useFinanceAccounts } from '~/lib/hooks/use-finance-data';
 import { useSelectedAccount } from '~/lib/hooks/use-selected-account';
-
-const SORTABLE_FIELDS: SortField[] = ['amount', 'date', 'description', 'category'];
 
 interface ActiveSortOption extends SortOption {
   onRemove: () => void;
@@ -225,7 +224,6 @@ export function TransactionFilters({
 
           <SortControls
             sortOptions={sortOptions || []}
-            sortableFields={SORTABLE_FIELDS}
             addSortOption={addSortOption}
             updateSortOption={updateSortOption}
             removeSortOption={removeSortOption}

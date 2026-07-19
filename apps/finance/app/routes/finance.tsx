@@ -1,13 +1,13 @@
-import { EmptyState, Skeleton } from '@ponti-studios/ui/feedback';
-import { useSort } from '@ponti-studios/ui/hooks';
-import { SectionIntro } from '@ponti-studios/ui/layout';
-import { PaginationControls } from '@ponti-studios/ui/navigation';
+import { EmptyState } from '@ponti-studios/ui/feedback';
 import { buttonVariants } from '@ponti-studios/ui/primitives';
 import { Receipt, UploadCloud } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
+import { PaginationControls } from '~/components/finance/pagination-controls';
 import { TransactionFilters } from '~/components/finance/transaction-filters';
+import { SectionIntro } from '~/components/patterns';
+import { Skeleton } from '~/components/skeleton';
 import { TransactionsList } from '~/components/transactions/transactions-list';
 import { createServerHonoClient } from '~/lib/api.server';
 import { requireAuth } from '~/lib/guards';
@@ -17,6 +17,7 @@ import {
   useFinanceTransactions,
 } from '~/lib/hooks/use-finance-data';
 import { useSelectedAccount } from '~/lib/hooks/use-selected-account';
+import { useSort } from '~/lib/hooks/use-sort';
 
 import type { Route } from './+types/finance';
 

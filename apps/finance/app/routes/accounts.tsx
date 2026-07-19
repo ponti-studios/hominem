@@ -6,7 +6,6 @@ import {
   EmptyState,
   Spinner,
 } from '@ponti-studios/ui/feedback';
-import { SectionIntro } from '@ponti-studios/ui/layout';
 import {
   Badge,
   Button,
@@ -28,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
+import { SectionIntro } from '~/components/patterns';
 import { PlaidConnectButton, PlaidLink } from '~/components/plaid/plaid-link';
 import { RouteLink } from '~/components/route-link';
 import { createServerHonoClient } from '~/lib/api.server';

@@ -1,8 +1,8 @@
 import type { Merchant } from '@hominem/rpc/finance';
-import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Badge } from '@ponti-studios/ui/primitives';
 import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 
+import { Skeleton } from '~/components/skeleton';
 import { useFinanceTopMerchants } from '~/lib/hooks/use-finance-top-merchants';
 import { formatCurrency } from '~/lib/number.utils';
 

@@ -1,39 +1,65 @@
-import { StatusBadge, type StatusBadgeConfig } from '@ponti-studios/ui/primitives';
-import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
-
-type PlaidConnectionStatus = 'active' | 'error' | 'pending_expiration' | 'revoked';
-
-const PLAID_STATUS_CONFIG: Record<PlaidConnectionStatus, StatusBadgeConfig> = {
-  active: {
-    label: 'Active',
-    variant: 'default',
-    className: 'bg-muted text-foreground border-border',
-    icon: <CheckCircle className="size-3 mr-1" />,
-  },
-  error: {
-    label: 'Error',
-    variant: 'destructive',
-    icon: <AlertCircle className="size-3 mr-1" />,
-  },
-  pending_expiration: {
-    label: 'Expiring Soon',
-    variant: 'secondary',
-    className: 'bg-warning-subtle text-warning border-warning-subtle',
-    icon: <Clock className="size-3 mr-1" />,
-  },
-  revoked: {
-    label: 'Revoked',
-    variant: 'outline',
-    className: 'text-muted-foreground',
-  },
-};
+import { Badge } from '@ponti-studios/ui/primitives';
+import { CheckCircle } from 'lucide-react';
 
 export function PlaidStatusBadge({ status }: { status: string | null }) {
-  return (
-    <StatusBadge
-      status={status as PlaidConnectionStatus | null}
-      config={PLAID_STATUS_CONFIG}
-      fallback={{ label: 'Unknown', variant: 'outline' }}
-    />
-  );
+  switch (status) {
+    case 'active':
+      return (
+        <Badge variant="default" className="bg-muted text-foreground border-border">
+          <CheckCircle className="size-3 mr-1" />
+          Active
+        </Badge>
+      );
+    case 'error':
+      return (
+        <Badge variant="destructive">
+          <svg
+            className="size-3 mr-1"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            role="img"
+            aria-label="Error icon"
+          >
+            <title>Error</title>
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          Error
+        </Badge>
+      );
+    case 'pending_expiration':
+      return (
+        <Badge variant="secondary" className="bg-warning-subtle text-warning border-warning-subtle">
+          <svg
+            className="size-3 mr-1"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            role="img"
+            aria-label="Clock icon"
+          >
+            <title>Pending Expiration</title>
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          Expiring Soon
+        </Badge>
+      );
+    case 'revoked':
+      return (
+        <Badge variant="outline" className="text-muted-foreground">
+          Revoked
+        </Badge>
+      );
+    default:
+      return <Badge variant="outline">Unknown</Badge>;
+  }
 }

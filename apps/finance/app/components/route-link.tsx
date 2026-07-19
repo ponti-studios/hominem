@@ -1,20 +1,29 @@
-import { RouteLink as SharedRouteLink } from '@ponti-studios/ui/navigation';
 import type { ReactNode } from 'react';
+import { type MouseEvent, useCallback } from 'react';
 import { Link, type LinkProps } from 'react-router';
 
 import { useRouteLoadingStore } from '../store/route-loading-store';
 
-type RouteLinkProps = LinkProps & { children: ReactNode };
+interface RouteLinkProps extends LinkProps {
+  children: ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
 
-export function RouteLink({ onClick, ...props }: RouteLinkProps) {
+export function RouteLink({ children, className, onClick, ...props }: RouteLinkProps) {
   const setIsRouteLoading = useRouteLoadingStore((state) => state.setIsRouteLoading);
 
+  const handleClick = useCallback(
+    (e: MouseEvent<HTMLAnchorElement>) => {
+      setIsRouteLoading(true);
+      if (onClick) onClick(e);
+    },
+    [setIsRouteLoading, onClick],
+  );
+
   return (
-    <SharedRouteLink
-      as={Link}
-      onNavigate={() => setIsRouteLoading(true)}
-      onClick={onClick}
-      {...props}
-    />
+    <Link {...props} className={className} style={props.style} onClick={handleClick}>
+      {children}
+    </Link>
   );
 }

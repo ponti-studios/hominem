@@ -1,4 +1,12 @@
-import { EntitySelect } from '@ponti-studios/ui/forms';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ponti-studios/ui/forms';
+import { Label } from '@ponti-studios/ui/primitives';
+import { useId } from 'react';
 
 import { useFinanceAccounts } from '~/lib/hooks/use-finance-data';
 
@@ -23,6 +31,8 @@ export function AccountSelect({
   className,
   showLabel = false,
 }: AccountSelectProps) {
+  const id = useId();
+
   // Use external data if provided, otherwise fetch internally
   const { data: internalAccounts, isLoading: internalLoading } = useFinanceAccounts();
   const accounts = Array.isArray(internalAccounts) ? internalAccounts : [];
@@ -35,18 +45,44 @@ export function AccountSelect({
     throw new Error('AccountSelect requires either setSelectedAccount or onAccountChange prop');
   }
 
-  return (
-    <EntitySelect
+  const selectElement = (
+    <Select
+      name="account"
       value={selectedAccount}
-      onValueChange={handleChange}
-      options={accounts}
-      isLoading={isLoading}
-      placeholder={placeholder}
-      label={label}
-      className={className}
-      showLabel={showLabel}
-      allOptionLabel="All accounts"
-      emptyLabel="No accounts available"
-    />
+      onValueChange={(v: string | null) => v != null && handleChange(v)}
+    >
+      <SelectTrigger id={id} className={className}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent className="max-h-[250px] overflow-y-auto">
+        <SelectItem value="all">All accounts</SelectItem>
+        {isLoading ? (
+          <SelectItem value="loading" disabled>
+            Loading accounts...
+          </SelectItem>
+        ) : accounts.length === 0 ? (
+          <SelectItem value="no-accounts" disabled>
+            No accounts available
+          </SelectItem>
+        ) : (
+          accounts.map((account: { id: string; name: string }) => (
+            <SelectItem key={account.id} value={account.id}>
+              {account.name}
+            </SelectItem>
+          ))
+        )}
+      </SelectContent>
+    </Select>
   );
+
+  if (showLabel) {
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={id}>{label}</Label>
+        {selectElement}
+      </div>
+    );
+  }
+
+  return selectElement;
 }

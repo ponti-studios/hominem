@@ -1,5 +1,4 @@
-import { Skeleton } from '@ponti-studios/ui/feedback';
-import { DatePicker, GroupBySelect } from '@ponti-studios/ui/forms';
+import { DatePicker } from '@ponti-studios/ui/forms';
 import { Switch } from '@ponti-studios/ui/forms';
 import { Label } from '@ponti-studios/ui/primitives';
 import { Badge } from '@ponti-studios/ui/primitives';
@@ -11,6 +10,8 @@ import { type Dispatch, type SetStateAction, useId, useState } from 'react';
 
 import { AccountSelect } from '~/components/account-select';
 import { TagSelect } from '~/components/category-select';
+import { GroupBySelect } from '~/components/group-by-select';
+import { Skeleton } from '~/components/skeleton';
 import { useFinanceTags } from '~/lib/hooks/use-analytics';
 import { useFinanceAccounts } from '~/lib/hooks/use-finance-data';
 

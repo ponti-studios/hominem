@@ -1,7 +1,6 @@
 import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
 import { adjustDateRange, formatMonthYear } from '@hominem/utils/dates';
 import { CHART_COLORS } from '@ponti-studios/ui';
-import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Button } from '@ponti-studios/ui/primitives';
 import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 import type { Dispatch, SetStateAction } from 'react';
@@ -19,6 +18,7 @@ import {
   YAxis,
 } from 'recharts';
 
+import { Skeleton } from '~/components/skeleton';
 import { useTimeSeriesData } from '~/lib/hooks/use-time-series';
 import { formatCurrency } from '~/lib/number.utils';
 
