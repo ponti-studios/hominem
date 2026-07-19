@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto';
+import { createHash, randomInt } from 'node:crypto';
 
 import { kyselyAdapter } from '@better-auth/kysely-adapter';
 import { passkey } from '@better-auth/passkey';
@@ -103,9 +103,20 @@ function shouldSendEmails(): boolean {
   return false;
 }
 
+// A stable, non-PII identifier for correlating log lines about the same
+// recipient without writing raw email addresses to logs. The logger's
+// redaction only matches key names (e.g. `email`), not values, so a raw
+// address under any other key — `to`, `recipient`, etc. — would leak.
+function emailLogContext(email: string): { emailHash: string; emailDomain: string } {
+  return {
+    emailHash: createHash('sha256').update(email).digest('hex').slice(0, 12),
+    emailDomain: email.split('@')[1] ?? 'unknown',
+  };
+}
+
 async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<void> {
   if (!shouldSendEmails()) {
-    logger.info('email_skipped', { to, subject });
+    logger.info('email_skipped', { ...emailLogContext(to), subject });
     return;
   }
 
@@ -120,7 +131,7 @@ async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<
   const { Resend } = await import('resend');
   const resend = new Resend(env.RESEND_API_KEY);
 
-  const { error } = await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     to,
     from,
     subject,
@@ -129,8 +140,21 @@ async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<
   });
 
   if (error) {
+    logger.error('[auth:email] resend rejected send', {
+      ...emailLogContext(to),
+      subject,
+      from,
+      errorName: error.name,
+      errorMessage: error.message,
+    });
     throw new Error(`Resend failed to send email: ${error.message}`);
   }
+
+  logger.info('[auth:email] resend accepted send', {
+    ...emailLogContext(to),
+    subject,
+    resendId: data?.id ?? null,
+  });
 }
 
 function shouldSkipVerificationOtpEmail() {
@@ -189,6 +213,11 @@ function getAuthPlugins() {
       generateOTP: () => generateNumericOtp({ length: 6, isTest: !shouldSendEmails() }),
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (env.AUTH_TEST_OTP_ENABLED) {
+          logger.info('[auth:email-otp] routed to test OTP store, not sent', {
+            ...emailLogContext(email),
+            type,
+            nodeEnv: env.NODE_ENV,
+          });
           enableTestOtpStore();
           recordTestOtp(email, otp, type);
           return;
@@ -200,10 +229,24 @@ function getAuthPlugins() {
         }
 
         if (shouldSkipVerificationOtpEmail()) {
+          logger.info('[auth:email-otp] verification email skipped', {
+            ...emailLogContext(email),
+            type,
+            nodeEnv: env.NODE_ENV,
+          });
           return;
         }
 
-        await sendEmail(buildVerificationOtpEmail({ to: email, otp, type }));
+        try {
+          await sendEmail(buildVerificationOtpEmail({ to: email, otp, type }));
+        } catch (error) {
+          logger.error('[auth:email-otp] failed to deliver verification email', {
+            ...emailLogContext(email),
+            type,
+            error,
+          });
+          throw error;
+        }
       },
     }),
     // Bearer lets getSession honor Authorization when clients send BA session tokens.
