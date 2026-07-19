@@ -240,6 +240,13 @@ const betterAuthOptions: BetterAuthOptions = {
   emailAndPassword: {
     enabled: false,
   },
+  session: {
+    // Sensitive mutations (e.g. passkey.addPasskey/deletePasskey) require the
+    // session to have been created within this window — Better Auth's own
+    // fresh-session check, replacing the removed Redis-backed step-up store.
+    // This is the Better Auth default made explicit, not a behavior change.
+    freshAge: 60 * 60 * 24, // 24 hours
+  },
   plugins: getAuthPlugins(),
 };
 

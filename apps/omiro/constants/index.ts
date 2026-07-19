@@ -7,6 +7,7 @@ const extra = (Constants.expoConfig?.extra ?? {}) as {
   appEnvironment?: string;
   e2eTesting?: boolean;
   mobilePasskeyEnabled?: string;
+  onDeviceAiSpikeEnabled?: string;
   appScheme?: string;
   releaseChannel?: string | null;
 };
@@ -74,4 +75,12 @@ const toBooleanFlag = (value: string | undefined) => value === 'true';
 
 export const MOBILE_PASSKEY_ENABLED = toBooleanFlag(
   extra.mobilePasskeyEnabled || process.env.EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED,
+);
+
+// Surfaces the on-device Apple Intelligence spike outside __DEV__ builds so
+// it's reachable in TestFlight. Only enabled per-build via
+// EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED — must not be on for a public App
+// Store release.
+export const ON_DEVICE_AI_SPIKE_ENABLED = toBooleanFlag(
+  extra.onDeviceAiSpikeEnabled || process.env.EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED,
 );

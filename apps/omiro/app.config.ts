@@ -40,6 +40,7 @@ function getExpoExtraConfig(
   apiBaseUrl: string;
   mobilePasskeyEnabled: string;
   noteNativeShellEnabled: string;
+  onDeviceAiSpikeEnabled: string;
   posthogApiKey: string;
   posthogHost: string;
 } {
@@ -48,6 +49,7 @@ function getExpoExtraConfig(
     apiBaseUrl: getEnvValue(env.EXPO_PUBLIC_API_BASE_URL, ''),
     mobilePasskeyEnabled: getEnvValue(env.EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED, 'false'),
     noteNativeShellEnabled: getEnvValue(env.EXPO_PUBLIC_NOTE_NATIVE_SHELL_ENABLED, 'false'),
+    onDeviceAiSpikeEnabled: getEnvValue(env.EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED, 'false'),
     posthogApiKey: getEnvValue(env.EXPO_PUBLIC_POSTHOG_API_KEY, ''),
     posthogHost: getEnvValue(env.EXPO_PUBLIC_POSTHOG_HOST, 'https://us.i.posthog.com'),
   };
