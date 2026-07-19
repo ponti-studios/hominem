@@ -4,14 +4,13 @@ import { baseSchema } from './base';
 
 // z.coerce.boolean() is `Boolean(value)` under the hood — since env vars are
 // always strings, Boolean("false") is `true` (any non-empty string is
-// truthy). That silently defeats an explicitly-set "false" env var. Parse
-// the literal strings instead, and fail loudly on anything else rather than
-// guessing.
+// truthy). That silently defeats an explicitly-set "false" env var. Compare
+// the literal string instead.
 function booleanEnvVar(defaultValue: boolean) {
   return z
-    .enum(['true', 'false'])
-    .default(defaultValue ? 'true' : 'false')
-    .transform((value) => value === 'true');
+    .string()
+    .optional()
+    .transform((value) => (value === undefined ? defaultValue : value === 'true'));
 }
 
 export const apiSchema = baseSchema.extend({
