@@ -1,10 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { configureStepUpStore, grantStepUp, hasRecentStepUp } from '@hominem/auth/server';
-import { STEP_UP_ACTIONS } from '@hominem/auth/step-up-actions';
-import type { StepUpAction } from '@hominem/auth/step-up-actions';
 import { authDb } from '@hominem/db';
-import { redis } from '@hominem/services/redis';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import type { Context } from 'hono';
@@ -18,9 +14,6 @@ import type { AppEnv } from '../server';
 
 export const authRoutes = new Hono<AppEnv>();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-configureStepUpStore(redis as any);
-
 const mobileE2eLoginSchema = z.object({
   email: z.string().email().optional(),
   name: z.string().min(1).max(128).optional(),
@@ -33,7 +26,6 @@ const testOtpQuerySchema = z.object({
 
 const AUTH_E2E_LOGIN_LIMIT_WINDOW_SECONDS = 60;
 const AUTH_E2E_LOGIN_LIMIT_MAX = 20;
-const STEP_UP_REAUTH_ACTION = 'passkey_reauth' as const;
 
 interface AuthRateLimitInput {
   bucket: string;
@@ -133,21 +125,6 @@ function getHeaderCarrier(c: { req: { raw: Request } }) {
   };
 }
 
-/**
- * Resolve the authenticated user ID for /api/auth routes.
- * Global JWT middleware skips /api/auth, so these routes check auth themselves.
- */
-async function resolveAuthUserId(c: {
-  get: (key: string) => { userId: string } | undefined;
-  req: { raw: Request };
-}): Promise<string | null> {
-  const fromMiddleware = c.get('auth')?.userId;
-  if (fromMiddleware) return fromMiddleware;
-
-  const betterAuthSession = await getBetterAuthSessionContext(c as Context<AppEnv>);
-  return betterAuthSession?.userId ?? null;
-}
-
 async function getBetterAuthSessionContext(
   c: Context<AppEnv>,
 ): Promise<BetterAuthSessionContext | null> {
@@ -244,48 +221,6 @@ async function callBetterAuthPluginEndpoint(input: {
   );
 }
 
-async function forwardBetterAuthPluginResponse(input: {
-  request: Request;
-  path: string;
-  method: 'GET' | 'POST';
-  preserveQuery?: boolean | undefined;
-  body?: Record<string, unknown> | undefined;
-}) {
-  const response = await callBetterAuthPluginEndpoint(input);
-  const responseText = await response.text();
-  const headers = copyHeadersWithSetCookie(response.headers);
-
-  return new Response(responseText, {
-    status: response.status,
-    headers,
-  });
-}
-
-async function userHasRegisteredPasskeys(userId: string) {
-  const existingPasskey = await authDb
-    .selectFrom('passkey')
-    .select('id')
-    .where('userId', '=', userId)
-    .limit(1)
-    .executeTakeFirst();
-
-  return Boolean(existingPasskey);
-}
-
-async function hasSatisfiedStepUp(userId: string, action: StepUpAction) {
-  if (await hasRecentStepUp(userId, action)) {
-    return true;
-  }
-  return hasRecentStepUp(userId, STEP_UP_REAUTH_ACTION);
-}
-
-async function requiresPasskeyRegisterStepUp(userId: string) {
-  if (!(await userHasRegisteredPasskeys(userId))) {
-    return false;
-  }
-  return !(await hasSatisfiedStepUp(userId, STEP_UP_ACTIONS.PASSKEY_REGISTER));
-}
-
 function jsonWithHeaders(body: Record<string, unknown>, status: number, headers?: Headers) {
   const responseHeaders = new Headers(headers);
   responseHeaders.set('content-type', 'application/json');
@@ -331,116 +266,12 @@ authRoutes.post('/logout', async (c) => {
   return jsonWithHeaders({ success: true }, 200, headers);
 });
 
-// ---------------------------------------------------------------------------
-// Step-up-guarded Better Auth passkey mutations
-// These shadow BA-native paths so clients cannot bypass re-auth policy.
-// ---------------------------------------------------------------------------
-
-authRoutes.get('/passkey/generate-register-options', async (c) => {
-  const userId = await resolveAuthUserId(c);
-  if (!userId) {
-    return c.json({ error: 'unauthorized' }, 401);
-  }
-
-  if (await requiresPasskeyRegisterStepUp(userId)) {
-    return c.json({ error: 'step_up_required', action: STEP_UP_ACTIONS.PASSKEY_REGISTER }, 403);
-  }
-
-  try {
-    return await forwardBetterAuthPluginResponse({
-      request: c.req.raw,
-      path: '/passkey/generate-register-options',
-      method: 'GET',
-    });
-  } catch {
-    return c.json({ error: 'passkey_options_failed' }, 400);
-  }
-});
-
-authRoutes.post('/passkey/verify-registration', async (c) => {
-  const userId = await resolveAuthUserId(c);
-  if (!userId) {
-    return c.json({ error: 'unauthorized' }, 401);
-  }
-
-  if (await requiresPasskeyRegisterStepUp(userId)) {
-    return c.json({ error: 'step_up_required', action: STEP_UP_ACTIONS.PASSKEY_REGISTER }, 403);
-  }
-
-  try {
-    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
-    return await forwardBetterAuthPluginResponse({
-      request: c.req.raw,
-      path: '/passkey/verify-registration',
-      method: 'POST',
-      body,
-    });
-  } catch {
-    return c.json({ error: 'passkey_registration_failed' }, 400);
-  }
-});
-
-authRoutes.post('/passkey/delete-passkey', async (c) => {
-  const userId = await resolveAuthUserId(c);
-  if (!userId) {
-    return c.json({ error: 'unauthorized' }, 401);
-  }
-
-  if (!(await hasSatisfiedStepUp(userId, STEP_UP_ACTIONS.PASSKEY_DELETE))) {
-    return c.json({ error: 'step_up_required', action: STEP_UP_ACTIONS.PASSKEY_DELETE }, 403);
-  }
-
-  try {
-    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
-    return await forwardBetterAuthPluginResponse({
-      request: c.req.raw,
-      path: '/passkey/delete-passkey',
-      method: 'POST',
-      body,
-    });
-  } catch {
-    return c.json({ error: 'passkey_delete_failed' }, 400);
-  }
-});
-
-/**
- * After a successful passkey authentication while already sessioned, grant a
- * short-lived re-auth proof used by step-up-protected mutations.
- */
-authRoutes.post('/passkey/verify-authentication', async (c) => {
-  try {
-    const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
-    const response = await callBetterAuthPluginEndpoint({
-      request: c.req.raw,
-      path: '/passkey/verify-authentication',
-      method: 'POST',
-      body,
-    });
-    const responseText = await response.text();
-    const headers = copyHeadersWithSetCookie(response.headers);
-
-    if (response.ok) {
-      const existingUserId = await resolveAuthUserId(c);
-      if (existingUserId) {
-        await grantStepUp(existingUserId, STEP_UP_REAUTH_ACTION).catch(() => null);
-        const requestedAction = body.action;
-        if (
-          typeof requestedAction === 'string' &&
-          Object.values(STEP_UP_ACTIONS).includes(requestedAction as StepUpAction)
-        ) {
-          await grantStepUp(existingUserId, requestedAction).catch(() => null);
-        }
-      }
-    }
-
-    return new Response(responseText, {
-      status: response.status,
-      headers,
-    });
-  } catch {
-    return c.json({ error: 'passkey_authentication_failed' }, 401);
-  }
-});
+// Passkey mutations (register/delete) are no longer shadowed here — they fall
+// through to the Better Auth catch-all handler (services/api/src/server.ts),
+// which enforces session freshness natively via `session.freshAge`
+// (services/api/src/auth/better-auth.ts). See the removed Redis-backed
+// step-up store in packages/auth/src/server.ts (git history) for the old
+// custom implementation this replaced.
 
 // ---------------------------------------------------------------------------
 // Test / e2e helpers (non-production)

@@ -52,36 +52,3 @@ export async function getServerAuth(request: Request, config: AuthConfig) {
     headers: new Headers(),
   };
 }
-
-// ---------------------------------------------------------------------------
-// Step-up helpers (Redis-backed)
-// ---------------------------------------------------------------------------
-
-type RedisClient = {
-  set: (key: string, value: string, mode?: string, ttl?: number) => Promise<unknown>;
-  get: (key: string) => Promise<string | null>;
-  del: (key: string) => Promise<unknown>;
-};
-
-let stepUpStoreClient: RedisClient | null = null;
-
-function stepUpKey(userId: string, action: string): string {
-  return `step-up:${action}:${userId}`;
-}
-
-const STEP_UP_TTL_SECONDS = 300; // 5 minutes
-
-export function configureStepUpStore(redisClient: RedisClient): void {
-  stepUpStoreClient = redisClient;
-}
-
-export async function grantStepUp(userId: string, action: string): Promise<void> {
-  if (!stepUpStoreClient) return;
-  await stepUpStoreClient.set(stepUpKey(userId, action), 'granted', 'EX', STEP_UP_TTL_SECONDS);
-}
-
-export async function hasRecentStepUp(userId: string, action: string): Promise<boolean> {
-  if (!stepUpStoreClient) return false;
-  const value = await stepUpStoreClient.get(stepUpKey(userId, action));
-  return value === 'granted';
-}
