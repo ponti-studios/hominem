@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto';
+import { createHash, randomInt } from 'node:crypto';
 
 import { kyselyAdapter } from '@better-auth/kysely-adapter';
 import { passkey } from '@better-auth/passkey';
@@ -103,9 +103,20 @@ function shouldSendEmails(): boolean {
   return false;
 }
 
+// A stable, non-PII identifier for correlating log lines about the same
+// recipient without writing raw email addresses to logs. The logger's
+// redaction only matches key names (e.g. `email`), not values, so a raw
+// address under any other key — `to`, `recipient`, etc. — would leak.
+function emailLogContext(email: string): { emailHash: string; emailDomain: string } {
+  return {
+    emailHash: createHash('sha256').update(email).digest('hex').slice(0, 12),
+    emailDomain: email.split('@')[1] ?? 'unknown',
+  };
+}
+
 async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<void> {
   if (!shouldSendEmails()) {
-    logger.info('email_skipped', { to, subject });
+    logger.info('email_skipped', { ...emailLogContext(to), subject });
     return;
   }
 
@@ -130,7 +141,7 @@ async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<
 
   if (error) {
     logger.error('[auth:email] resend rejected send', {
-      to,
+      ...emailLogContext(to),
       subject,
       from,
       errorName: error.name,
@@ -139,7 +150,11 @@ async function sendEmail({ to, subject, text, html }: SendEmailParams): Promise<
     throw new Error(`Resend failed to send email: ${error.message}`);
   }
 
-  logger.info('[auth:email] resend accepted send', { to, subject, resendId: data?.id ?? null });
+  logger.info('[auth:email] resend accepted send', {
+    ...emailLogContext(to),
+    subject,
+    resendId: data?.id ?? null,
+  });
 }
 
 function shouldSkipVerificationOtpEmail() {
@@ -199,7 +214,7 @@ function getAuthPlugins() {
       sendVerificationOTP: async ({ email, otp, type }) => {
         if (env.AUTH_TEST_OTP_ENABLED) {
           logger.info('[auth:email-otp] routed to test OTP store, not sent', {
-            email,
+            ...emailLogContext(email),
             type,
             nodeEnv: env.NODE_ENV,
           });
@@ -215,7 +230,7 @@ function getAuthPlugins() {
 
         if (shouldSkipVerificationOtpEmail()) {
           logger.info('[auth:email-otp] verification email skipped', {
-            email,
+            ...emailLogContext(email),
             type,
             nodeEnv: env.NODE_ENV,
           });
@@ -226,9 +241,9 @@ function getAuthPlugins() {
           await sendEmail(buildVerificationOtpEmail({ to: email, otp, type }));
         } catch (error) {
           logger.error('[auth:email-otp] failed to deliver verification email', {
-            email,
+            ...emailLogContext(email),
             type,
-            error: error instanceof Error ? error.message : String(error),
+            error,
           });
           throw error;
         }
