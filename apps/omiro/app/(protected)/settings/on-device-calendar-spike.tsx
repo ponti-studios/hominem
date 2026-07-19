@@ -8,10 +8,12 @@ import OnDeviceAIModule, {
   type OnDeviceAIAvailability,
 } from '~/modules/on-device-ai';
 
-// Spike screen only — not linked from production navigation copy/i18n.
-// Exercises the on-device FoundationModels + EventKit CalendarLookupTool
-// end to end. Requires a physical device with Apple Intelligence enabled;
-// the simulator cannot run FoundationModels sessions.
+// Experimental spike screen, gated in settings/index.tsx behind __DEV__ or
+// ON_DEVICE_AI_SPIKE_ENABLED (EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED) — never
+// part of unflagged production navigation. Exercises the on-device
+// FoundationModels + EventKit CalendarLookupTool end to end. Requires a
+// physical device with Apple Intelligence enabled; the simulator cannot run
+// FoundationModels sessions.
 export default function OnDeviceCalendarSpikeScreen() {
   const themeColors = useThemeColors();
   const [prompt, setPrompt] = useState('What do I have going on today?');

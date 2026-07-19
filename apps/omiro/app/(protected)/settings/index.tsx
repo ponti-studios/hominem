@@ -17,7 +17,7 @@ import { ProtectedRouteFallback } from '~/components/protected/protected-route-f
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
-import { MOBILE_PASSKEY_ENABLED } from '~/constants';
+import { MOBILE_PASSKEY_ENABLED, ON_DEVICE_AI_SPIKE_ENABLED } from '~/constants';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -367,7 +367,7 @@ function Settings() {
             onPress={onArchivedChatsPress}
             style={({ pressed }) => [
               styles.row,
-              __DEV__ ? undefined : styles.rowNoBorder,
+              __DEV__ || ON_DEVICE_AI_SPIKE_ENABLED ? undefined : styles.rowNoBorder,
               { borderBottomColor: themeColors['border-default'], opacity: pressed ? 0.7 : 1 },
             ]}
           >
@@ -379,7 +379,7 @@ function Settings() {
             </View>
             <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-muted']} />
           </Pressable>
-          {__DEV__ ? (
+          {__DEV__ || ON_DEVICE_AI_SPIKE_ENABLED ? (
             <Pressable
               testID="settings-on-device-calendar-spike"
               onPress={onOnDeviceCalendarSpikePress}
@@ -392,7 +392,7 @@ function Settings() {
               <View style={styles.rowLabelGroup}>
                 <RowIcon name="calendar" color="orange" />
                 <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
-                  On-device calendar spike (dev)
+                  On-device calendar spike (experimental)
                 </Text>
               </View>
               <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-muted']} />
