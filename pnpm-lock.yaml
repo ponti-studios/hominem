@@ -97,6 +97,9 @@ importers:
       '@hominem/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@hominem/env':
+        specifier: workspace:*
+        version: link:../../packages/env
       '@hominem/services':
         specifier: workspace:*
         version: link:../../packages/services
@@ -550,6 +553,9 @@ importers:
 
   packages/ai:
     dependencies:
+      '@hominem/env':
+        specifier: workspace:*
+        version: link:../env
       '@hominem/utils':
         specifier: workspace:*
         version: link:../utils
@@ -603,6 +609,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@hominem/env':
+        specifier: workspace:*
+        version: link:../env
       '@hominem/utils':
         specifier: workspace:*
         version: link:../utils
@@ -744,6 +753,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.529.0
         version: 3.1031.0
+      '@hominem/env':
+        specifier: workspace:*
+        version: link:../env
       '@hominem/utils':
         specifier: workspace:*
         version: link:../utils
@@ -14277,6 +14289,7 @@ snapshots:
 
   '@hominem/ai@file:packages/ai(@opentelemetry/api@1.9.1)':
     dependencies:
+      '@hominem/env': file:packages/env
       '@hominem/utils': file:packages/utils
       '@openrouter/sdk': 0.12.79
       '@tanstack/ai': 0.22.1(@opentelemetry/api@1.9.1)
@@ -14659,6 +14672,7 @@ snapshots:
 
   '@hominem/db@file:packages/db':
     dependencies:
+      '@hominem/env': file:packages/env
       '@hominem/utils': file:packages/utils
       kysely: 0.28.17
       pg: 8.20.0
@@ -14811,6 +14825,7 @@ snapshots:
     dependencies:
       '@aws-sdk/client-s3': 3.1031.0
       '@aws-sdk/s3-request-presigner': 3.1031.0
+      '@hominem/env': file:packages/env
       '@hominem/utils': file:packages/utils
       zod: 4.4.3
     transitivePeerDependencies:

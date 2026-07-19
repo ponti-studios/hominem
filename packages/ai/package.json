@@ -21,6 +21,7 @@
     "lint:fix": "oxlint src --fix"
   },
   "dependencies": {
+    "@hominem/env": "workspace:*",
     "@hominem/utils": "workspace:*",
     "@openrouter/sdk": "^0.12.35",
     "@tanstack/ai": "^0.22.1",

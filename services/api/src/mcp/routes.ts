@@ -11,8 +11,7 @@ import { handleMcpRequestWithSession, type McpHonoEnv } from './server';
 // Conditional imports — only register tools whose scope is in MCP_ENABLED_SCOPES
 // Use top-level await via ESM (services/api is ESM)
 const enabledScopes = new Set(
-  (process.env.MCP_ENABLED_SCOPES ?? '')
-    .split(',')
+  env.MCP_ENABLED_SCOPES.split(',')
     .map((scope: string) => scope.trim())
     .filter(Boolean),
 );
@@ -46,7 +45,7 @@ async function mcpAuthorizationMiddleware(c: Context<McpHonoEnv>, next: Next) {
   }
 
   // Rate limit check (production only — tests/dev share user IDs and would false-trigger)
-  if (process.env.NODE_ENV === 'production' && isRateLimited(auth.userId)) {
+  if (env.NODE_ENV === 'production' && isRateLimited(auth.userId)) {
     return new Response(
       JSON.stringify({ error: 'rate_limited', code: 'RATE_LIMITED', message: 'Too many requests' }),
       { status: 429, headers: { 'content-type': 'application/json' } },
@@ -54,7 +53,7 @@ async function mcpAuthorizationMiddleware(c: Context<McpHonoEnv>, next: Next) {
   }
 
   // Daily cost budget throttle (production only)
-  if (process.env.NODE_ENV === 'production') {
+  if (env.NODE_ENV === 'production') {
     const throttled = await checkCostBudget(auth.userId);
     if (throttled) return throttled;
   }
@@ -62,14 +61,7 @@ async function mcpAuthorizationMiddleware(c: Context<McpHonoEnv>, next: Next) {
   return next();
 }
 
-const configuredDailyCostBudgetCents = Number.parseInt(
-  process.env.MCP_DAILY_COST_BUDGET_CENTS ?? '100',
-  10,
-);
-const DAILY_COST_BUDGET_CENTS = Number.isFinite(configuredDailyCostBudgetCents)
-  ? configuredDailyCostBudgetCents
-  : 100;
-const DAILY_COST_BUDGET_USD = DAILY_COST_BUDGET_CENTS / 100;
+const DAILY_COST_BUDGET_USD = env.MCP_DAILY_COST_BUDGET_CENTS / 100;
 
 async function checkCostBudget(userId: string): Promise<Response | null> {
   try {
@@ -88,7 +80,7 @@ async function checkCostBudget(userId: string): Promise<Response | null> {
         JSON.stringify({
           error: 'cost_budget_exceeded',
           code: 'COST_BUDGET_EXCEEDED',
-          message: `Daily AI cost budget of $${(DAILY_COST_BUDGET_CENTS / 100).toFixed(2)} exceeded`,
+          message: `Daily AI cost budget of $${DAILY_COST_BUDGET_USD.toFixed(2)} exceeded`,
         }),
         { status: 429, headers: { 'content-type': 'application/json' } },
       );

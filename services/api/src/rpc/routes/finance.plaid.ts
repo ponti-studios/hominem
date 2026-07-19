@@ -18,8 +18,8 @@ export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 export const isUuid = (value: string): boolean => UUID_RE.test(value);
 
 import { API_BRAND } from '../../brand';
+import { env } from '../../env';
 import { InternalError, NotFoundError } from '../errors';
-import { env } from '../lib/env';
 import { PLAID_COUNTRY_CODES, PLAID_PRODUCTS, plaidClient } from '../lib/plaid';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
@@ -82,7 +82,7 @@ export const plaidRoutes = new Hono<AppContext>()
         itemId = exchangeResponse.data.providerItemId;
         requestId = exchangeResponse.data.request_id;
       } catch (error) {
-        if (process.env.NODE_ENV !== 'test') {
+        if (env.NODE_ENV !== 'test') {
           throw error;
         }
         const suffix = crypto.randomUUID().slice(0, 8);

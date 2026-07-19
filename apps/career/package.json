@@ -26,6 +26,7 @@
     "@hominem/api": "workspace:*",
     "@hominem/auth": "workspace:*",
     "@hominem/db": "workspace:*",
+    "@hominem/env": "workspace:*",
     "@hominem/services": "workspace:*",
     "@hominem/storage": "workspace:*",
     "@ponti-studios/ui": "0.1.2",

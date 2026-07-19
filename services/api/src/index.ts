@@ -6,7 +6,7 @@ import { initRuntime } from './runtime';
 import { createServer } from './server';
 
 const app = createServer();
-const port = Number.parseInt(env.PORT, 10);
+const port = env.PORT ?? 4040;
 const host = '0.0.0.0';
 
 logger.info(LOG_MESSAGES.SERVER_STARTED, { host, port });

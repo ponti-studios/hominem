@@ -13,6 +13,7 @@ import {
 } from '@tanstack/ai-openrouter/tools';
 import { z } from 'zod';
 
+import { env } from './env';
 import {
   createOpenRouterClient,
   DEFAULT_APP_TITLE,
@@ -73,7 +74,7 @@ export function createOpenRouterTextAdapter(options: OpenRouterTextAdapterOption
 
   const model = (options.model ?? DEFAULT_TEXT_MODEL) as Parameters<typeof createOpenRouterText>[0];
 
-  return createOpenRouterText(model, process.env.OPENROUTER_API_KEY ?? '', {
+  return createOpenRouterText(model, env.OPENROUTER_API_KEY ?? '', {
     httpReferer: options.httpReferer ?? DEFAULT_HTTP_REFERER,
     appTitle: options.appTitle ?? DEFAULT_APP_TITLE,
     appCategories: options.appCategories,

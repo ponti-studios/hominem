@@ -33,6 +33,7 @@
     "lint:fix": "oxlint src --fix"
   },
   "dependencies": {
+    "@hominem/env": "workspace:*",
     "@hominem/utils": "workspace:*",
     "kysely": "^0.28.17",
     "pg": "^8.20.0",
