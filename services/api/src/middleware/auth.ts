@@ -117,20 +117,27 @@ export const authMiddleware = (): MiddlewareHandler => {
     }
 
     // E2E-only: proxy user identity for cross-origin browser tests where
-    // SameSite=Lax prevents session cookies from being sent.
+    // SameSite=Lax prevents session cookies from being sent. Prefer the real,
+    // persisted Better Auth user row so the resolved identity can't diverge
+    // from actual session shape/claims once the row exists (e.g. after a
+    // seed route upserts it) — only fabricate a placeholder for the very
+    // first request before that row has been created.
     const proxyUserId = c.req.header('x-user-id');
     if (proxyUserId && isE2eProxyAuthAllowed(c)) {
+      const existingUser = await getUser(proxyUserId);
       setAuthContext(c, {
         userId: proxyUserId,
-        user: {
-          id: proxyUserId,
-          email: `proxy-${proxyUserId.slice(0, 8)}@hominem.e2e`,
-          emailVerified: true,
-          name: 'Proxy User',
-          image: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as User,
+        user:
+          existingUser ??
+          ({
+            id: proxyUserId,
+            email: `proxy-${proxyUserId.slice(0, 8)}@hominem.e2e`,
+            emailVerified: true,
+            name: 'Proxy User',
+            image: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          } as User),
         credential: 'e2e',
         scopes: isMcpRequest(path) ? parseScopes(c.req.header('x-mcp-scopes') ?? '') : [],
       });
