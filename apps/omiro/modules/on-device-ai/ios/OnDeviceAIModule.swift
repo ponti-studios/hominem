@@ -111,7 +111,7 @@ private struct CalendarLookupTool: Tool {
     }
 
     let store = EKEventStore()
-    let start = Date()
+    let start = Calendar.current.startOfDay(for: Date())
     guard let end = Calendar.current.date(byAdding: .day, value: days, to: start) else {
       onLog("tool_result", "lookupCalendarEvents returned 0 event(s)")
       return "No events found."
