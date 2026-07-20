@@ -44,5 +44,14 @@
     "coverage",
     ".react-router/cache",
     "*.tsbuildinfo"
+  ],
+  "references": [
+    { "path": "../../packages/ai" },
+    { "path": "../../packages/auth" },
+    { "path": "../../packages/db" },
+    { "path": "../../packages/env" },
+    { "path": "../../packages/services" },
+    { "path": "../../packages/storage" },
+    { "path": "../../packages/utils" }
   ]
 }

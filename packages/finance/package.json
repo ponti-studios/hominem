@@ -9,6 +9,7 @@
     "./*": "./src/*.ts"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "format": "pnpm exec oxfmt ./src --write",
     "format:check": "pnpm exec oxfmt ./src --check",

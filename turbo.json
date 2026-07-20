@@ -97,6 +97,7 @@
       "outputs": []
     },
     "typecheck": {
+      "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*", "../../.env", "../../.env.*"],
       "outputs": []
     }

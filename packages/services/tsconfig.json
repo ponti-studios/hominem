@@ -6,13 +6,12 @@
     "tsBuildInfoFile": "../../.cache/services.tsbuildinfo"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": [
-    "node_modules",
-    "build",
-    "dist",
-    ".turbo",
-    ".cache",
-    "coverage",
-    "*.tsbuildinfo"
+  "exclude": ["node_modules", "build", "dist", ".turbo", ".cache", "coverage", "*.tsbuildinfo"],
+  "references": [
+    { "path": "../ai" },
+    { "path": "../db" },
+    { "path": "../env" },
+    { "path": "../telemetry" },
+    { "path": "../utils" }
   ]
 }

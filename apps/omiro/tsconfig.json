@@ -45,5 +45,13 @@
     "android",
     "coverage",
     "*.tsbuildinfo"
+  ],
+  "references": [
+    { "path": "../../packages/auth" },
+    { "path": "../../packages/chat" },
+    { "path": "../../packages/env" },
+    { "path": "../../packages/storage" },
+    { "path": "../../packages/telemetry" },
+    { "path": "../../packages/utils" }
   ]
 }

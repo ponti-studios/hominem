@@ -5,9 +5,7 @@
     "outDir": "./build",
     "rootDir": "./src"
   },
-  "include": [
-    "src/**/*.ts"
-  ],
+  "include": ["src/**/*.ts"],
   "exclude": [
     "node_modules",
     "build",
@@ -21,5 +19,6 @@
     "**/__mocks__",
     "*.tsbuildinfo",
     ".react-router/cache"
-  ]
+  ],
+  "references": [{ "path": "../db" }, { "path": "../utils" }]
 }

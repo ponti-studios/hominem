@@ -17,5 +17,6 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "*.tsbuildinfo"]
+  "exclude": ["node_modules", "dist", "*.tsbuildinfo"],
+  "references": [{ "path": "../chat" }]
 }

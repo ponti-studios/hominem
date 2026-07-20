@@ -5,19 +5,23 @@
     "disableSolutionSearching": true
   },
   "files": [],
+  // Only lists composite projects with a safe outDir (packages/*/build).
+  // packages/rpc and services/api are deliberately excluded: both are
+  // non-composite boundary projects (see their own tsconfig.json comments)
+  // with no outDir, so a `tsc -b` run would emit generated .js/.d.ts files
+  // directly alongside their source instead of into a build directory.
   "references": [
     { "path": "packages/ai" },
     { "path": "packages/auth" },
     { "path": "packages/chat" },
     { "path": "packages/db" },
     { "path": "packages/env" },
+    { "path": "packages/finance" },
     { "path": "packages/queues" },
-    { "path": "packages/rpc" },
     { "path": "packages/services" },
     { "path": "packages/storage" },
     { "path": "packages/telemetry" },
     { "path": "packages/utils" },
-    { "path": "services/api" },
     { "path": "apps/omiro" }
   ],
   "exclude": [

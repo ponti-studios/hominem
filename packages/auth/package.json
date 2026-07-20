@@ -54,6 +54,7 @@
     }
   },
   "scripts": {
+    "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "format": "oxfmt src --write",
@@ -62,10 +63,10 @@
     "lint:fix": "oxlint src --fix"
   },
   "dependencies": {
-    "@ponti-studios/ui": "0.1.2",
     "@better-auth/passkey": "^1.6.11",
     "@hominem/db": "workspace:*",
     "@hominem/utils": "workspace:*",
+    "@ponti-studios/ui": "0.1.2",
     "better-auth": "^1.6.13"
   },
   "devDependencies": {

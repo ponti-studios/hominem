@@ -2,14 +2,19 @@
   "extends": "../../tsconfig.profiles/vite-app.json",
   "compilerOptions": {
     "tsBuildInfoFile": "../../.cache/app-finance.tsbuildinfo",
-    "rootDirs": [
-      ".",
-      "./.react-router/types"
-    ],
+    "rootDirs": [".", "./.react-router/types"],
+    // Not part of the root project-reference graph (this app builds via
+    // vite/react-router, not tsc), so composite mode's strict file-list
+    // enforcement only gets in the way of the @hominem/api/types path
+    // alias below, which points outside this project's own file set.
+    "composite": false,
+    // @hominem/api/types is type-only here (see app/lib/api.server.ts,
+    // packages/rpc/src/core/api-client.ts) — not a real dependency, so it
+    // isn't in package.json. Keep in sync with services/api/package.json's
+    // "./types" export.
     "paths": {
-      "~/*": [
-        "./app/*"
-      ]
+      "~/*": ["./app/*"],
+      "@hominem/api/types": ["../../services/api/src/rpc/app.ts"]
     }
   },
   "include": [
@@ -17,7 +22,7 @@
     "app/**/*.tsx",
     ".react-router/types/**/*",
     "vite.config.ts",
-    "vitest.config.ts",
+    "vitest.config.ts"
   ],
   "exclude": [
     "node_modules",
