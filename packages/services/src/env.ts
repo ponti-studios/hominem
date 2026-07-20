@@ -4,10 +4,6 @@ import 'dotenv/config';
 import * as z from 'zod';
 
 const servicesSchema = baseSchema.extend({
-  DB_MAX_CONNECTIONS: z.coerce.number().optional(),
-  DB_IDLE_TIMEOUT: z.coerce.number().optional(),
-  DB_MAX_LIFETIME: z.coerce.number().optional(),
-
   APP_BASE_URL: z.url().optional(),
 });
 

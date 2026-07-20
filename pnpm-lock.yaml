@@ -88,15 +88,15 @@ importers:
       '@hominem/ai':
         specifier: workspace:*
         version: link:../../packages/ai
-      '@hominem/api':
-        specifier: workspace:*
-        version: file:services/api(2336d87fe06c2775925f193fa377451c)
       '@hominem/auth':
         specifier: workspace:*
         version: file:packages/auth(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@date-fns/tz@1.4.1)(@opentelemetry/api@1.9.1)(@types/react-dom@19.1.7(@types/react@19.2.10))(@types/react@19.2.10)(better-call@1.3.5(zod@4.4.3))(nanostores@1.4.0)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@26.1.0(supports-color@8.1.1))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
       '@hominem/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@hominem/env':
+        specifier: workspace:*
+        version: link:../../packages/env
       '@hominem/services':
         specifier: workspace:*
         version: link:../../packages/services
@@ -212,9 +212,6 @@ importers:
 
   apps/finance:
     dependencies:
-      '@hominem/api':
-        specifier: workspace:*
-        version: file:services/api(8bd1711e3e090a4f46f06bc219f012c2)
       '@hominem/auth':
         specifier: workspace:*
         version: file:packages/auth(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@date-fns/tz@1.4.1)(@opentelemetry/api@1.9.1)(@types/react-dom@19.1.7(@types/react@19.2.10))(@types/react@19.2.10)(better-call@1.3.5(zod@4.4.3))(nanostores@1.4.0)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
@@ -226,7 +223,7 @@ importers:
         version: link:../../packages/queues
       '@hominem/rpc':
         specifier: workspace:*
-        version: file:packages/rpc(8bd1711e3e090a4f46f06bc219f012c2)
+        version: link:../../packages/rpc
       '@hominem/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -359,7 +356,7 @@ importers:
         version: link:../../packages/env
       '@hominem/rpc':
         specifier: workspace:*
-        version: file:packages/rpc(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@date-fns/tz@1.4.1)(@opentelemetry/api@1.9.1)(@types/react-dom@19.1.7(@types/react@19.2.10))(@types/react@19.2.10)(better-call@1.3.5(zod@4.4.3))(kysely@0.28.17)(nanostores@1.4.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
+        version: link:../../packages/rpc
       '@hominem/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -550,6 +547,9 @@ importers:
 
   packages/ai:
     dependencies:
+      '@hominem/env':
+        specifier: workspace:*
+        version: link:../env
       '@hominem/utils':
         specifier: workspace:*
         version: link:../utils
@@ -603,6 +603,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@hominem/env':
+        specifier: workspace:*
+        version: link:../env
       '@hominem/utils':
         specifier: workspace:*
         version: link:../utils
@@ -677,9 +680,6 @@ importers:
 
   packages/rpc:
     dependencies:
-      '@hominem/api':
-        specifier: workspace:*
-        version: link:../../services/api
       '@hominem/chat':
         specifier: workspace:*
         version: link:../chat
@@ -744,6 +744,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.529.0
         version: 3.1031.0
+      '@hominem/env':
+        specifier: workspace:*
+        version: link:../env
       '@hominem/utils':
         specifier: workspace:*
         version: link:../utils
@@ -811,7 +814,7 @@ importers:
         version: 0.10.8(hono@4.12.25)
       '@sentry/node':
         specifier: ^8.54.0
-        version: 8.55.1
+        version: 8.55.1(supports-color@8.1.1)
       better-auth:
         specifier: ^1.6.13
         version: 1.6.13(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@7.0.2))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
@@ -2548,19 +2551,8 @@ packages:
   '@hexagon/base64@1.1.28':
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
 
-  '@hominem/ai@file:packages/ai':
-    resolution: {directory: packages/ai, type: directory}
-
-  '@hominem/api@file:services/api':
-    resolution: {directory: services/api, type: directory}
-
   '@hominem/auth@file:packages/auth':
     resolution: {directory: packages/auth, type: directory}
-    peerDependencies:
-      react: 19.2.7
-
-  '@hominem/chat@file:packages/chat':
-    resolution: {directory: packages/chat, type: directory}
     peerDependencies:
       react: 19.2.7
 
@@ -2569,26 +2561,6 @@ packages:
 
   '@hominem/env@file:packages/env':
     resolution: {directory: packages/env, type: directory}
-
-  '@hominem/finance-services@file:packages/finance':
-    resolution: {directory: packages/finance, type: directory}
-
-  '@hominem/queues@file:packages/queues':
-    resolution: {directory: packages/queues, type: directory}
-
-  '@hominem/rpc@file:packages/rpc':
-    resolution: {directory: packages/rpc, type: directory}
-    peerDependencies:
-      react: 19.2.7
-
-  '@hominem/services@file:packages/services':
-    resolution: {directory: packages/services, type: directory}
-
-  '@hominem/storage@file:packages/storage':
-    resolution: {directory: packages/storage, type: directory}
-
-  '@hominem/telemetry@file:packages/telemetry':
-    resolution: {directory: packages/telemetry, type: directory}
 
   '@hominem/utils@file:packages/utils':
     resolution: {directory: packages/utils, type: directory}
@@ -13094,13 +13066,6 @@ snapshots:
       expo-network: 57.0.0(expo@57.0.2)(react@19.2.7)
       expo-web-browser: 57.0.0(expo@57.0.2)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.7)(supports-color@8.1.1))
 
-  '@better-auth/kysely-adapter@1.6.13(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(kysely@0.28.17)':
-    dependencies:
-      '@better-auth/core': 1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0)
-      '@better-auth/utils': 0.4.0
-    optionalDependencies:
-      kysely: 0.28.17
-
   '@better-auth/kysely-adapter@1.6.13(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.1)(kysely@0.28.17)':
     dependencies:
       '@better-auth/core': 1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0)
@@ -14275,223 +14240,6 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
-  '@hominem/ai@file:packages/ai(@opentelemetry/api@1.9.1)':
-    dependencies:
-      '@hominem/utils': file:packages/utils
-      '@openrouter/sdk': 0.12.79
-      '@tanstack/ai': 0.22.1(@opentelemetry/api@1.9.1)
-      '@tanstack/ai-openrouter': 0.9.8(@tanstack/ai@0.22.1(@opentelemetry/api@1.9.1))
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@opentelemetry/api'
-
-  '@hominem/api@file:services/api(2336d87fe06c2775925f193fa377451c)':
-    dependencies:
-      '@better-auth/kysely-adapter': 1.6.13(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(kysely@0.28.17)
-      '@better-auth/passkey': 1.6.11(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-auth@1.6.13(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@26.1.0(supports-color@8.1.1))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0))))(better-call@1.3.5(zod@4.4.3))(nanostores@1.4.0)
-      '@hominem/ai': file:packages/ai(@opentelemetry/api@1.9.1)
-      '@hominem/auth': file:packages/auth(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@date-fns/tz@1.4.1)(@opentelemetry/api@1.9.1)(@types/react-dom@19.1.7(@types/react@19.2.10))(@types/react@19.2.10)(better-call@1.3.5(zod@4.4.3))(nanostores@1.4.0)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@26.1.0(supports-color@8.1.1))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
-      '@hominem/db': file:packages/db
-      '@hominem/env': file:packages/env
-      '@hominem/finance-services': file:packages/finance
-      '@hominem/queues': file:packages/queues
-      '@hominem/services': file:packages/services(@opentelemetry/api@1.9.1)
-      '@hominem/storage': file:packages/storage
-      '@hominem/telemetry': file:packages/telemetry
-      '@hono/node-server': 1.19.14(hono@4.12.25)
-      '@hono/standard-validator': 0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.25)
-      '@hono/zod-validator': 0.7.6(hono@4.12.25)(zod@4.4.3)
-      '@modelcontextprotocol/sdk': 1.29.0(zod@4.4.3)
-      '@scalar/hono-api-reference': 0.10.8(hono@4.12.25)
-      '@sentry/node': 8.55.1
-      better-auth: 1.6.13(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@26.1.0(supports-color@8.1.1))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
-      bullmq: 5.66.4
-      dotenv: 17.2.3
-      hono: 4.12.25
-      hono-openapi: 1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.25))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.4)(openapi-types@12.1.3)(valibot@1.4.2(typescript@6.0.3))(zod@4.4.3))(@types/json-schema@7.0.15)(hono@4.12.25)(openapi-types@12.1.3)
-      pg: 8.20.0
-      resend: 6.12.4
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@better-auth/core'
-      - '@better-auth/utils'
-      - '@better-fetch/fetch'
-      - '@cfworker/json-schema'
-      - '@cloudflare/workers-types'
-      - '@date-fns/tz'
-      - '@emotion/is-prop-valid'
-      - '@lynx-js/react'
-      - '@opentelemetry/api'
-      - '@prisma/client'
-      - '@react-email/render'
-      - '@standard-community/standard-json'
-      - '@standard-community/standard-openapi'
-      - '@standard-schema/spec'
-      - '@sveltejs/kit'
-      - '@tanstack/react-start'
-      - '@tanstack/solid-start'
-      - '@types/json-schema'
-      - '@types/react'
-      - '@types/react-dom'
-      - aws-crt
-      - better-call
-      - better-sqlite3
-      - drizzle-kit
-      - drizzle-orm
-      - kysely
-      - mongodb
-      - mysql2
-      - nanostores
-      - next
-      - openapi-types
-      - pg-native
-      - prisma
-      - react
-      - react-dom
-      - solid-js
-      - supports-color
-      - svelte
-      - vitest
-      - vue
-
-  '@hominem/api@file:services/api(8bd1711e3e090a4f46f06bc219f012c2)':
-    dependencies:
-      '@better-auth/kysely-adapter': 1.6.13(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(kysely@0.28.17)
-      '@better-auth/passkey': 1.6.11(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-auth@1.6.13(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0))))(better-call@1.3.5(zod@4.4.3))(nanostores@1.4.0)
-      '@hominem/ai': file:packages/ai(@opentelemetry/api@1.9.1)
-      '@hominem/auth': file:packages/auth(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@date-fns/tz@1.4.1)(@opentelemetry/api@1.9.1)(@types/react-dom@19.1.7(@types/react@19.2.10))(@types/react@19.2.10)(better-call@1.3.5(zod@4.4.3))(nanostores@1.4.0)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
-      '@hominem/db': file:packages/db
-      '@hominem/env': file:packages/env
-      '@hominem/finance-services': file:packages/finance
-      '@hominem/queues': file:packages/queues
-      '@hominem/services': file:packages/services(@opentelemetry/api@1.9.1)
-      '@hominem/storage': file:packages/storage
-      '@hominem/telemetry': file:packages/telemetry
-      '@hono/node-server': 1.19.14(hono@4.12.25)
-      '@hono/standard-validator': 0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.25)
-      '@hono/zod-validator': 0.7.6(hono@4.12.25)(zod@4.4.3)
-      '@modelcontextprotocol/sdk': 1.29.0(zod@4.4.3)
-      '@scalar/hono-api-reference': 0.10.8(hono@4.12.25)
-      '@sentry/node': 8.55.1
-      better-auth: 1.6.13(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
-      bullmq: 5.66.4
-      dotenv: 17.2.3
-      hono: 4.12.25
-      hono-openapi: 1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.25))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.4)(openapi-types@12.1.3)(valibot@1.4.2(typescript@6.0.3))(zod@4.4.3))(@types/json-schema@7.0.15)(hono@4.12.25)(openapi-types@12.1.3)
-      pg: 8.20.0
-      resend: 6.12.4
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@better-auth/core'
-      - '@better-auth/utils'
-      - '@better-fetch/fetch'
-      - '@cfworker/json-schema'
-      - '@cloudflare/workers-types'
-      - '@date-fns/tz'
-      - '@emotion/is-prop-valid'
-      - '@lynx-js/react'
-      - '@opentelemetry/api'
-      - '@prisma/client'
-      - '@react-email/render'
-      - '@standard-community/standard-json'
-      - '@standard-community/standard-openapi'
-      - '@standard-schema/spec'
-      - '@sveltejs/kit'
-      - '@tanstack/react-start'
-      - '@tanstack/solid-start'
-      - '@types/json-schema'
-      - '@types/react'
-      - '@types/react-dom'
-      - aws-crt
-      - better-call
-      - better-sqlite3
-      - drizzle-kit
-      - drizzle-orm
-      - kysely
-      - mongodb
-      - mysql2
-      - nanostores
-      - next
-      - openapi-types
-      - pg-native
-      - prisma
-      - react
-      - react-dom
-      - solid-js
-      - supports-color
-      - svelte
-      - vitest
-      - vue
-
-  '@hominem/api@file:services/api(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@date-fns/tz@1.4.1)(@opentelemetry/api@1.9.1)(@types/react-dom@19.1.7(@types/react@19.2.10))(@types/react@19.2.10)(better-call@1.3.5(zod@4.4.3))(kysely@0.28.17)(nanostores@1.4.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))':
-    dependencies:
-      '@better-auth/kysely-adapter': 1.6.13(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(kysely@0.28.17)
-      '@better-auth/passkey': 1.6.11(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-auth@1.6.13(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0))))(better-call@1.3.5(zod@4.4.3))(nanostores@1.4.0)
-      '@hominem/ai': file:packages/ai(@opentelemetry/api@1.9.1)
-      '@hominem/auth': file:packages/auth(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@date-fns/tz@1.4.1)(@opentelemetry/api@1.9.1)(@types/react-dom@19.1.7(@types/react@19.2.10))(@types/react@19.2.10)(better-call@1.3.5(zod@4.4.3))(nanostores@1.4.0)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
-      '@hominem/db': file:packages/db
-      '@hominem/env': file:packages/env
-      '@hominem/finance-services': file:packages/finance
-      '@hominem/queues': file:packages/queues
-      '@hominem/services': file:packages/services(@opentelemetry/api@1.9.1)
-      '@hominem/storage': file:packages/storage
-      '@hominem/telemetry': file:packages/telemetry
-      '@hono/node-server': 1.19.14(hono@4.12.25)
-      '@hono/standard-validator': 0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.25)
-      '@hono/zod-validator': 0.7.6(hono@4.12.25)(zod@4.4.3)
-      '@modelcontextprotocol/sdk': 1.29.0(zod@4.4.3)
-      '@scalar/hono-api-reference': 0.10.8(hono@4.12.25)
-      '@sentry/node': 8.55.1
-      better-auth: 1.6.13(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
-      bullmq: 5.66.4
-      dotenv: 17.2.3
-      hono: 4.12.25
-      hono-openapi: 1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.25))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@7.0.2))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@7.0.2))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.4)(openapi-types@12.1.3)(valibot@1.4.2(typescript@7.0.2))(zod@4.4.3))(@types/json-schema@7.0.15)(hono@4.12.25)(openapi-types@12.1.3)
-      pg: 8.20.0
-      resend: 6.12.4
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@better-auth/core'
-      - '@better-auth/utils'
-      - '@better-fetch/fetch'
-      - '@cfworker/json-schema'
-      - '@cloudflare/workers-types'
-      - '@date-fns/tz'
-      - '@emotion/is-prop-valid'
-      - '@lynx-js/react'
-      - '@opentelemetry/api'
-      - '@prisma/client'
-      - '@react-email/render'
-      - '@standard-community/standard-json'
-      - '@standard-community/standard-openapi'
-      - '@standard-schema/spec'
-      - '@sveltejs/kit'
-      - '@tanstack/react-start'
-      - '@tanstack/solid-start'
-      - '@types/json-schema'
-      - '@types/react'
-      - '@types/react-dom'
-      - aws-crt
-      - better-call
-      - better-sqlite3
-      - drizzle-kit
-      - drizzle-orm
-      - kysely
-      - mongodb
-      - mysql2
-      - nanostores
-      - next
-      - openapi-types
-      - pg-native
-      - prisma
-      - react
-      - react-dom
-      - solid-js
-      - supports-color
-      - svelte
-      - vitest
-      - vue
-
   '@hominem/auth@file:packages/auth(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@date-fns/tz@1.4.1)(@opentelemetry/api@1.9.1)(@types/react-dom@19.1.7(@types/react@19.2.10))(@types/react@19.2.10)(better-call@1.3.5(zod@4.4.3))(nanostores@1.4.0)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@26.1.0(supports-color@8.1.1))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))':
     dependencies:
       '@better-auth/passkey': 1.6.11(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-auth@1.6.13(@opentelemetry/api@1.9.1)(pg@8.20.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.0(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@26.1.0(supports-color@8.1.1))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0))))(better-call@1.3.5(zod@4.4.3))(nanostores@1.4.0)
@@ -14652,13 +14400,9 @@ snapshots:
       - vitest
       - vue
 
-  '@hominem/chat@file:packages/chat(react@19.2.7)':
-    dependencies:
-      date-fns: 3.6.0
-      react: 19.2.7
-
   '@hominem/db@file:packages/db':
     dependencies:
+      '@hominem/env': file:packages/env
       '@hominem/utils': file:packages/utils
       kysely: 0.28.17
       pg: 8.20.0
@@ -14669,154 +14413,6 @@ snapshots:
   '@hominem/env@file:packages/env':
     dependencies:
       zod: 4.4.3
-
-  '@hominem/finance-services@file:packages/finance':
-    dependencies:
-      '@hominem/db': file:packages/db
-      '@hominem/utils': file:packages/utils
-      csv-parse: 5.6.0
-      effect: 3.21.4
-      kysely: 0.28.17
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - pg-native
-
-  '@hominem/queues@file:packages/queues':
-    dependencies:
-      '@hominem/telemetry': file:packages/telemetry
-      bullmq: 5.66.4
-      ioredis: 5.8.2
-    transitivePeerDependencies:
-      - supports-color
-
-  '@hominem/rpc@file:packages/rpc(8bd1711e3e090a4f46f06bc219f012c2)':
-    dependencies:
-      '@hominem/api': file:services/api(8bd1711e3e090a4f46f06bc219f012c2)
-      '@hominem/chat': file:packages/chat(react@19.2.7)
-      '@tanstack/react-query': 5.100.10(react@19.2.7)
-      hono: 4.12.25
-      react: 19.2.7
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@better-auth/core'
-      - '@better-auth/utils'
-      - '@better-fetch/fetch'
-      - '@cfworker/json-schema'
-      - '@cloudflare/workers-types'
-      - '@date-fns/tz'
-      - '@emotion/is-prop-valid'
-      - '@lynx-js/react'
-      - '@opentelemetry/api'
-      - '@prisma/client'
-      - '@react-email/render'
-      - '@standard-community/standard-json'
-      - '@standard-community/standard-openapi'
-      - '@standard-schema/spec'
-      - '@sveltejs/kit'
-      - '@tanstack/react-start'
-      - '@tanstack/solid-start'
-      - '@types/json-schema'
-      - '@types/react'
-      - '@types/react-dom'
-      - aws-crt
-      - better-call
-      - better-sqlite3
-      - drizzle-kit
-      - drizzle-orm
-      - kysely
-      - mongodb
-      - mysql2
-      - nanostores
-      - next
-      - openapi-types
-      - pg-native
-      - prisma
-      - react-dom
-      - solid-js
-      - supports-color
-      - svelte
-      - vitest
-      - vue
-
-  '@hominem/rpc@file:packages/rpc(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@date-fns/tz@1.4.1)(@opentelemetry/api@1.9.1)(@types/react-dom@19.1.7(@types/react@19.2.10))(@types/react@19.2.10)(better-call@1.3.5(zod@4.4.3))(kysely@0.28.17)(nanostores@1.4.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))':
-    dependencies:
-      '@hominem/api': file:services/api(@better-auth/core@1.6.13(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.5(zod@4.4.3))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.4.0))(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(@date-fns/tz@1.4.1)(@opentelemetry/api@1.9.1)(@types/react-dom@19.1.7(@types/react@19.2.10))(@types/react@19.2.10)(better-call@1.3.5(zod@4.4.3))(kysely@0.28.17)(nanostores@1.4.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vitest@4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.13.4(@types/node@25.6.0)(typescript@6.0.3))(vite@8.0.16(@types/node@25.6.0)(esbuild@0.27.7)(jiti@2.6.1)(terser@5.48.0)(tsx@4.21.0)(yaml@2.9.0)))
-      '@hominem/chat': file:packages/chat(react@19.2.7)
-      '@tanstack/react-query': 5.100.10(react@19.2.7)
-      hono: 4.12.25
-      react: 19.2.7
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@better-auth/core'
-      - '@better-auth/utils'
-      - '@better-fetch/fetch'
-      - '@cfworker/json-schema'
-      - '@cloudflare/workers-types'
-      - '@date-fns/tz'
-      - '@emotion/is-prop-valid'
-      - '@lynx-js/react'
-      - '@opentelemetry/api'
-      - '@prisma/client'
-      - '@react-email/render'
-      - '@standard-community/standard-json'
-      - '@standard-community/standard-openapi'
-      - '@standard-schema/spec'
-      - '@sveltejs/kit'
-      - '@tanstack/react-start'
-      - '@tanstack/solid-start'
-      - '@types/json-schema'
-      - '@types/react'
-      - '@types/react-dom'
-      - aws-crt
-      - better-call
-      - better-sqlite3
-      - drizzle-kit
-      - drizzle-orm
-      - kysely
-      - mongodb
-      - mysql2
-      - nanostores
-      - next
-      - openapi-types
-      - pg-native
-      - prisma
-      - react-dom
-      - solid-js
-      - supports-color
-      - svelte
-      - vitest
-      - vue
-
-  '@hominem/services@file:packages/services(@opentelemetry/api@1.9.1)':
-    dependencies:
-      '@hominem/ai': file:packages/ai(@opentelemetry/api@1.9.1)
-      '@hominem/db': file:packages/db
-      '@hominem/env': file:packages/env
-      '@hominem/telemetry': file:packages/telemetry
-      '@hominem/utils': file:packages/utils
-      bullmq: 5.66.4
-      dotenv: 17.2.3
-      ioredis: 5.8.2
-      mammoth: 1.12.0
-      pdf2json: 3.2.2
-      resend: 6.12.4
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@opentelemetry/api'
-      - '@react-email/render'
-      - pg-native
-      - supports-color
-
-  '@hominem/storage@file:packages/storage':
-    dependencies:
-      '@aws-sdk/client-s3': 3.1031.0
-      '@aws-sdk/s3-request-presigner': 3.1031.0
-      '@hominem/utils': file:packages/utils
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - aws-crt
-
-  '@hominem/telemetry@file:packages/telemetry': {}
 
   '@hominem/utils@file:packages/utils': {}
 
@@ -14972,7 +14568,7 @@ snapshots:
       eventsource: 3.0.7
       eventsource-parser: 3.1.0
       express: 5.2.1(supports-color@8.1.1)
-      express-rate-limit: 8.5.2(express@5.2.1(supports-color@8.1.1))
+      express-rate-limit: 8.5.2(express@5.2.1)
       hono: 4.12.25
       jose: 6.2.2
       json-schema-typed: 8.0.2
@@ -15172,7 +14768,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
       - supports-color
@@ -15181,7 +14777,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
       '@types/connect': 3.4.36
     transitivePeerDependencies:
@@ -15190,7 +14786,7 @@ snapshots:
   '@opentelemetry/instrumentation-dataloader@0.16.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -15198,7 +14794,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
       - supports-color
@@ -15207,7 +14803,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
       - supports-color
@@ -15216,21 +14812,21 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
   '@opentelemetry/instrumentation-generic-pool@0.43.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
   '@opentelemetry/instrumentation-graphql@0.47.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -15238,7 +14834,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
       - supports-color
@@ -15257,7 +14853,7 @@ snapshots:
   '@opentelemetry/instrumentation-ioredis@0.47.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/redis-common': 0.36.2
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
@@ -15266,7 +14862,7 @@ snapshots:
   '@opentelemetry/instrumentation-kafkajs@0.7.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
       - supports-color
@@ -15274,7 +14870,7 @@ snapshots:
   '@opentelemetry/instrumentation-knex@0.44.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
       - supports-color
@@ -15283,7 +14879,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
       - supports-color
@@ -15291,14 +14887,14 @@ snapshots:
   '@opentelemetry/instrumentation-lru-memoizer@0.44.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
   '@opentelemetry/instrumentation-mongodb@0.51.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
       - supports-color
@@ -15307,7 +14903,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
       - supports-color
@@ -15315,7 +14911,7 @@ snapshots:
   '@opentelemetry/instrumentation-mysql2@0.45.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
       '@opentelemetry/sql-common': 0.40.1(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
@@ -15324,7 +14920,7 @@ snapshots:
   '@opentelemetry/instrumentation-mysql@0.45.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
       '@types/mysql': 2.15.26
     transitivePeerDependencies:
@@ -15333,7 +14929,7 @@ snapshots:
   '@opentelemetry/instrumentation-nestjs-core@0.44.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
       - supports-color
@@ -15342,7 +14938,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.27.0
       '@opentelemetry/sql-common': 0.40.1(@opentelemetry/api@1.9.1)
       '@types/pg': 8.6.1
@@ -15353,7 +14949,7 @@ snapshots:
   '@opentelemetry/instrumentation-redis-4@0.46.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/redis-common': 0.36.2
       '@opentelemetry/semantic-conventions': 1.41.1
     transitivePeerDependencies:
@@ -15362,7 +14958,7 @@ snapshots:
   '@opentelemetry/instrumentation-tedious@0.18.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/semantic-conventions': 1.41.1
       '@types/tedious': 4.0.14
     transitivePeerDependencies:
@@ -15372,7 +14968,7 @@ snapshots:
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -15382,7 +14978,7 @@ snapshots:
       '@opentelemetry/api-logs': 0.51.1
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.7.4
-      require-in-the-middle: 7.5.2
+      require-in-the-middle: 7.5.2(supports-color@8.1.1)
       semver: 7.8.5
       shimmer: 1.2.1
     transitivePeerDependencies:
@@ -15394,19 +14990,19 @@ snapshots:
       '@opentelemetry/api-logs': 0.57.1
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.15.0
-      require-in-the-middle: 7.5.2
+      require-in-the-middle: 7.5.2(supports-color@8.1.1)
       semver: 7.8.5
       shimmer: 1.2.1
     transitivePeerDependencies:
       - supports-color
 
-  '@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.1)':
+  '@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/api-logs': 0.57.2
       '@types/shimmer': 1.2.0
       import-in-the-middle: 1.15.0
-      require-in-the-middle: 7.5.2
+      require-in-the-middle: 7.5.2(supports-color@8.1.1)
       semver: 7.7.4
       shimmer: 1.2.1
     transitivePeerDependencies:
@@ -17197,12 +16793,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@sentry/node@8.55.1':
+  '@sentry/node@8.55.1(supports-color@8.1.1)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/context-async-hooks': 1.30.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/instrumentation-amqplib': 0.46.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation-connect': 0.43.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation-dataloader': 0.16.0(@opentelemetry/api@1.9.1)
@@ -17232,17 +16828,17 @@ snapshots:
       '@opentelemetry/semantic-conventions': 1.40.0
       '@prisma/instrumentation': 5.22.0
       '@sentry/core': 8.55.1
-      '@sentry/opentelemetry': 8.55.1(@opentelemetry/api@1.9.1)(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/semantic-conventions@1.40.0)
+      '@sentry/opentelemetry': 8.55.1(@opentelemetry/api@1.9.1)(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/semantic-conventions@1.40.0)
       import-in-the-middle: 1.15.0
     transitivePeerDependencies:
       - supports-color
 
-  '@sentry/opentelemetry@8.55.1(@opentelemetry/api@1.9.1)(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/semantic-conventions@1.40.0)':
+  '@sentry/opentelemetry@8.55.1(@opentelemetry/api@1.9.1)(@opentelemetry/context-async-hooks@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/core@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/instrumentation@0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1))(@opentelemetry/sdk-trace-base@1.30.1(@opentelemetry/api@1.9.1))(@opentelemetry/semantic-conventions@1.40.0)':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/context-async-hooks': 1.30.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
-      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)
+      '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.1)(supports-color@8.1.1)
       '@opentelemetry/sdk-trace-base': 1.30.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/semantic-conventions': 1.40.0
       '@sentry/core': 8.55.1
@@ -17650,17 +17246,6 @@ snapshots:
 
   '@stablelib/base64@1.0.1': {}
 
-  '@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)':
-    dependencies:
-      '@standard-schema/spec': 1.1.0
-      '@types/json-schema': 7.0.15
-      quansync: 0.2.11
-    optionalDependencies:
-      effect: 3.21.4
-      valibot: 1.4.2(typescript@6.0.3)
-      zod: 4.4.3
-      zod-to-json-schema: 3.25.2(zod@4.4.3)
-
   '@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@7.0.2))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)':
     dependencies:
       '@standard-schema/spec': 1.1.0
@@ -17671,16 +17256,6 @@ snapshots:
       valibot: 1.4.2(typescript@7.0.2)
       zod: 4.4.3
       zod-to-json-schema: 3.25.2(zod@4.4.3)
-
-  '@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.4)(openapi-types@12.1.3)(valibot@1.4.2(typescript@6.0.3))(zod@4.4.3)':
-    dependencies:
-      '@standard-community/standard-json': 0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
-      '@standard-schema/spec': 1.1.0
-      openapi-types: 12.1.3
-    optionalDependencies:
-      effect: 3.21.4
-      valibot: 1.4.2(typescript@6.0.3)
-      zod: 4.4.3
 
   '@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@7.0.2))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.4)(openapi-types@12.1.3)(valibot@1.4.2(typescript@7.0.2))(zod@4.4.3)':
     dependencies:
@@ -20463,7 +20038,7 @@ snapshots:
 
   exponential-backoff@3.1.3: {}
 
-  express-rate-limit@8.5.2(express@5.2.1(supports-color@8.1.1)):
+  express-rate-limit@8.5.2(express@5.2.1):
     dependencies:
       express: 5.2.1(supports-color@8.1.1)
       ip-address: 10.2.0
@@ -20940,16 +20515,6 @@ snapshots:
   hoist-non-react-statics@3.3.2:
     dependencies:
       react-is: 16.13.1
-
-  hono-openapi@1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.25))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.4)(openapi-types@12.1.3)(valibot@1.4.2(typescript@6.0.3))(zod@4.4.3))(@types/json-schema@7.0.15)(hono@4.12.25)(openapi-types@12.1.3):
-    dependencies:
-      '@standard-community/standard-json': 0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3)
-      '@standard-community/standard-openapi': 0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@6.0.3))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.4)(openapi-types@12.1.3)(valibot@1.4.2(typescript@6.0.3))(zod@4.4.3)
-      '@types/json-schema': 7.0.15
-      openapi-types: 12.1.3
-    optionalDependencies:
-      '@hono/standard-validator': 0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.25)
-      hono: 4.12.25
 
   hono-openapi@1.3.0(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.25))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@7.0.2))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.21.4)(quansync@0.2.11)(valibot@1.4.2(typescript@7.0.2))(zod-to-json-schema@3.25.2(zod@4.4.3))(zod@4.4.3))(@standard-schema/spec@1.1.0)(effect@3.21.4)(openapi-types@12.1.3)(valibot@1.4.2(typescript@7.0.2))(zod@4.4.3))(@types/json-schema@7.0.15)(hono@4.12.25)(openapi-types@12.1.3):
     dependencies:
@@ -23153,7 +22718,7 @@ snapshots:
 
   require-from-string@2.0.2: {}
 
-  require-in-the-middle@7.5.2:
+  require-in-the-middle@7.5.2(supports-color@8.1.1):
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
       module-details-from-path: 1.0.4

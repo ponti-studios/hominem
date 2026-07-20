@@ -4,6 +4,11 @@
 - Never commit code. The user must review and commit the changes themselves.
 - `apps/omiro` should only support Apple devices. Do not add fallbacks for other platforms such as Android.
 
+## Adding a new package, app, or service
+
+- Never add a `workspace:*` dependency in `package.json` for an `import type`-only reference — pnpm/turbo don't know TypeScript erases type-only imports, so a real dependency edge drags the whole target package's build/test/lint/typecheck into every consumer's CI scope. Use a `paths` alias in your own `tsconfig.json` pointing at the real source file instead. See `CLAUDE.md`'s "Adding a new package, app, or service" section for the full checklist (tsconfig composite/references wiring, Dockerfile pattern, `validate-*.yml`/`deploy-*.yml` conventions) before scaffolding a new app.
+- A new deployable app's CI workflow must set every env var required by its own code _and_ its transitive `@hominem/*` dependencies — missing one silently breaks CI with an `EnvValidationError`, not an obviously-related error message.
+
 ## Expo and EAS
 
 - `apps/omiro` uses Expo managed workflow with Metro package exports enabled.

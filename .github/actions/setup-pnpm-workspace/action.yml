@@ -43,6 +43,23 @@ runs:
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
 
+    # Turbo's own cache entries are content-hash keyed (per task, independent
+    # of which workflow ran it), so one shared cache namespace here lets
+    # validate-api / validate-career / validate-mobile / validate-db all
+    # reuse each other's results for the shared core packages (ai, auth, db,
+    # env, services, storage, telemetry, utils, ...) instead of every
+    # workflow rebuilding/retesting/relinting them from scratch on every
+    # push. This is a local-filesystem stand-in for real remote caching
+    # (Vercel Remote Cache / self-hosted) — swap TURBO_TOKEN/TURBO_TEAM in
+    # once that's set up and this becomes redundant but harmless.
+    - name: setup-turbo-cache
+      uses: actions/cache@v5
+      with:
+        path: .turbo/cache
+        key: turbo-${{ runner.os }}-${{ github.sha }}
+        restore-keys: |
+          turbo-${{ runner.os }}-
+
     - name: install-dependencies
       shell: bash
       run: ${{ inputs.install-command }}

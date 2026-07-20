@@ -5,13 +5,22 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "incremental": true,
-    "tsBuildInfoFile": "../../.cache/app-omiro.tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
+    // tsserver-only (ignored by `tsc --noEmit`): doesn't inherit from
+    // tsconfig.base.json since this extends expo/tsconfig.base instead — see
+    // tsconfig.base.json for why this is set repo-wide.
+    "assumeChangesOnlyAffectDirectDependencies": true,
     "allowJs": true,
     "checkJs": false,
     "paths": {
       "expo-symbols": ["./node_modules/expo-symbols/build/index"],
       "@shopify/flash-list": ["./node_modules/@shopify/flash-list/dist/index"],
-      "~/*": ["./*"]
+      "~/*": ["./*"],
+      // @hominem/api/types is type-only (see packages/rpc/src/core/api-client.ts)
+      // and not a real dependency of this app or @hominem/rpc — see that
+      // package's tsconfig.json for the same alias. Keep in sync with
+      // services/api/package.json's "./types" export.
+      "@hominem/api/types": ["../../services/api/src/rpc/app.ts"]
     },
     "noEmit": true
   },
@@ -40,5 +49,13 @@
     "android",
     "coverage",
     "*.tsbuildinfo"
+  ],
+  "references": [
+    { "path": "../../packages/auth" },
+    { "path": "../../packages/chat" },
+    { "path": "../../packages/env" },
+    { "path": "../../packages/storage" },
+    { "path": "../../packages/telemetry" },
+    { "path": "../../packages/utils" }
   ]
 }

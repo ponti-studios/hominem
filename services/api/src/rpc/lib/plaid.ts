@@ -1,6 +1,6 @@
 import { Configuration, CountryCode, PlaidApi, PlaidEnvironments, Products } from 'plaid';
 
-import { env } from './env';
+import { env } from '../../env';
 
 const configuration = new Configuration({
   ...(PlaidEnvironments[env.PLAID_ENV] && { basePath: PlaidEnvironments[env.PLAID_ENV] }),

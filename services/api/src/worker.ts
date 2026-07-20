@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 
 import { logger } from '@hominem/telemetry';
 
+import { env } from './env';
 import { initRuntime } from './runtime';
 import { startEmbeddingGenerationWorker } from './workers/embedding-generation';
 import { startFileProcessingWorker } from './workers/file-processing';
@@ -18,7 +19,7 @@ const healthServer = createServer((req, res) => {
     res.end();
   }
 });
-healthServer.listen(Number(process.env.PORT ?? 3001));
+healthServer.listen(env.PORT ?? 3001);
 
 initRuntime('worker').installSignalHandlers(
   async () => {

@@ -4,6 +4,7 @@ import type { MiddlewareHandler } from 'hono';
 
 import { betterAuthMcpServer, betterAuthServer, MCP_SCOPES } from '../auth/better-auth';
 import type { AuthContext } from '../auth/types';
+import { env } from '../env';
 
 type AuthErrorCode = 'invalid_token' | 'expired_token' | 'invalid_session';
 const E2E_AUTH_SECRET_HEADER = 'x-e2e-auth-secret';
@@ -36,10 +37,10 @@ function toAuthUser(user: {
 }
 
 function isE2eProxyAuthAllowed(c: Parameters<MiddlewareHandler>[0]) {
-  if (process.env.NODE_ENV === 'production') return false;
-  if (process.env.AUTH_E2E_ENABLED !== 'true') return false;
+  if (env.NODE_ENV === 'production') return false;
+  if (!env.AUTH_E2E_ENABLED) return false;
 
-  const expectedSecret = process.env.AUTH_E2E_SECRET;
+  const expectedSecret = env.AUTH_E2E_SECRET;
   if (!expectedSecret) return false;
 
   return c.req.header(E2E_AUTH_SECRET_HEADER) === expectedSecret;
@@ -110,7 +111,7 @@ export const authMiddleware = (): MiddlewareHandler => {
         userId,
         sessionId,
         credential: 'session',
-        scopes: isMcpRequest(path) && process.env.NODE_ENV !== 'production' ? [...MCP_SCOPES] : [],
+        scopes: isMcpRequest(path) && env.NODE_ENV !== 'production' ? [...MCP_SCOPES] : [],
       });
       return await next();
     }

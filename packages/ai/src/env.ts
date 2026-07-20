@@ -1,6 +1,4 @@
 import { createServerEnv } from '@hominem/env';
 import { baseSchema } from '@hominem/env/base';
 
-export const env = createServerEnv(baseSchema, 'storage');
-
-export type StorageEnv = typeof env;
+export const env = createServerEnv(baseSchema, 'ai');

@@ -1,19 +1,10 @@
+import { createServerEnv } from '@hominem/env';
+import { baseSchema } from '@hominem/env/base';
 import 'dotenv/config';
 import * as z from 'zod';
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+const dbSchema = baseSchema.extend({
   DATABASE_URL: z.url(),
-  DB_MAX_CONNECTIONS: z.coerce.number().optional(),
-  DB_IDLE_TIMEOUT: z.coerce.number().optional(),
-  DB_MAX_LIFETIME: z.coerce.number().optional(),
 });
 
-const parsedEnv = envSchema.safeParse(process.env);
-
-if (!parsedEnv.success) {
-  console.error('❌ Invalid environment variables:', parsedEnv.error.format());
-  throw new Error('Invalid environment variables');
-}
-
-export const env = parsedEnv.data;
+export const env = createServerEnv(dbSchema, 'db');

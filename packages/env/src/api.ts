@@ -3,19 +3,28 @@ import * as z from 'zod';
 import { baseSchema } from './base';
 
 export const apiSchema = baseSchema.extend({
-  PORT: z.string().default('3000'),
+  // No schema default — Railway injects a distinct PORT per deployed
+  // service (api vs. worker), so a single hardcoded default here would be
+  // wrong for one of them. Each entrypoint supplies its own local-dev
+  // fallback (services/api/src/index.ts, services/api/src/worker.ts).
+  PORT: z.coerce.number().int().positive().optional(),
   API_URL: z.url().default('http://localhost:4040'),
   CAREER_URL: z.url().default('http://localhost:4451'),
   WEB_URL: z.url().default('http://localhost:4445'),
   FINANCE_URL: z.url().default('http://localhost:4444'),
   DATABASE_URL: z.url(),
-  BETTER_AUTH_SECRET: z.string().default('dev-better-auth-secret-change-me'),
+  // No default — a missing secret must fail loudly at boot, not silently run
+  // with a hardcoded, publicly-known value.
+  BETTER_AUTH_SECRET: z.string().min(1),
   AUTH_PASSKEY_RP_ID: z.string().default('api.ponti.io'),
   AUTH_PASSKEY_ORIGIN: z.url().default('https://api.ponti.io'),
   AUTH_COOKIE_DOMAIN: z.string().default(''),
-  AUTH_E2E_ENABLED: z.coerce.boolean().default(false),
+  // z.coerce.boolean() is `Boolean(value)` under the hood, so Boolean("false")
+  // is `true` — any non-empty string is truthy. z.stringbool() parses the
+  // literal string correctly instead.
+  AUTH_E2E_ENABLED: z.stringbool().default(false),
   AUTH_E2E_SECRET: z.string().default(''),
-  AUTH_TEST_OTP_ENABLED: z.coerce.boolean().default(process.env.NODE_ENV === 'test'),
+  AUTH_TEST_OTP_ENABLED: z.stringbool().default(process.env.NODE_ENV === 'test'),
   AUTH_TEST_OTP_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   AUTH_EMAIL_OTP_EXPIRES_SECONDS: z.coerce.number().int().positive().default(300),
   RESEND_API_KEY: z.string(),
@@ -28,7 +37,16 @@ export const apiSchema = baseSchema.extend({
   OPENROUTER_API_KEY: z.string(),
   OPENROUTER_VOICE_CLEANUP_MODEL: z.string().default('qwen/qwen3.5-flash-02-23'),
   SENTRY_DSN: z.string().optional(),
-  SAVE_VOICE_AUDIO: z.coerce.boolean().default(false),
+  SAVE_VOICE_AUDIO: z.stringbool().default(false),
+  // Comma-separated MCP tool scopes to register (see services/api/src/mcp/routes.ts).
+  MCP_ENABLED_SCOPES: z.string().default(''),
+  MCP_DAILY_COST_BUDGET_CENTS: z.coerce.number().int().positive().default(100),
+  OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
+  OTEL_EXPORTER_OTLP_PROTOCOL: z.string().optional(),
+  OTEL_TRACES_SAMPLER_ARG: z.coerce.number().default(1.0),
+  PLAID_CLIENT_ID: z.string().default(''),
+  PLAID_API_KEY: z.string().default(''),
+  PLAID_ENV: z.enum(['sandbox', 'development', 'production']).default('sandbox'),
 });
 
 export type ApiEnv = z.infer<typeof apiSchema>;

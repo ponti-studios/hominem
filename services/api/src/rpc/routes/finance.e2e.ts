@@ -4,6 +4,7 @@ import { db } from '@hominem/db';
 import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
 
+import { env } from '../../env';
 import { ForbiddenError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
@@ -19,8 +20,8 @@ function deterministicUuid(userId: string, label: string): string {
 }
 
 const e2eGuard = createMiddleware<AppContext>(async (c, next) => {
-  const enabled = process.env.NODE_ENV !== 'production' && process.env.AUTH_E2E_ENABLED === 'true';
-  const expectedSecret = process.env.AUTH_E2E_SECRET;
+  const enabled = env.NODE_ENV !== 'production' && env.AUTH_E2E_ENABLED;
+  const expectedSecret = env.AUTH_E2E_SECRET;
   const providedSecret = c.req.header('x-e2e-auth-secret');
 
   if (!enabled || !expectedSecret || providedSecret !== expectedSecret) {
