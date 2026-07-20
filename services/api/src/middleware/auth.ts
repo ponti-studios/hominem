@@ -111,7 +111,7 @@ export const authMiddleware = (): MiddlewareHandler => {
         userId,
         sessionId,
         credential: 'session',
-        scopes: isMcpRequest(path) && process.env.NODE_ENV !== 'production' ? [...MCP_SCOPES] : [],
+        scopes: isMcpRequest(path) && env.NODE_ENV !== 'production' ? [...MCP_SCOPES] : [],
       });
       return await next();
     }

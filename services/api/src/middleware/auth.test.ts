@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getSession: vi.fn(),
@@ -24,7 +24,6 @@ vi.mock('../auth/better-auth', () => ({
 }));
 
 import type { AuthContext } from '../auth/types';
-import { authMiddleware } from './auth';
 
 const user = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -36,10 +35,20 @@ const user = {
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
-function createApp() {
-  const app = new Hono().use('*', authMiddleware()).get('*', (c) => c.json(c.get('auth') ?? null));
+// The auth middleware reads env fields once at import time (validated,
+// process-wide config), so vi.stubEnv after import has no effect. Re-mock
+// the ../env module and re-import fresh per test to exercise different
+// NODE_ENV / AUTH_E2E_* combinations.
+async function createApp(envOverrides: Record<string, string | boolean> = {}) {
+  vi.resetModules();
+  vi.doMock('../env', async () => {
+    const actual = await vi.importActual<typeof import('../env')>('../env');
+    return { env: { ...actual.env, ...envOverrides } };
+  });
 
-  return app;
+  const { authMiddleware } = await import('./auth');
+
+  return new Hono().use('*', authMiddleware()).get('*', (c) => c.json(c.get('auth') ?? null));
 }
 
 describe('auth middleware', () => {
@@ -48,10 +57,7 @@ describe('auth middleware', () => {
     mocks.getMcpSession.mockReset();
     mocks.executeTakeFirst.mockReset();
     mocks.executeTakeFirst.mockResolvedValue(user);
-    vi.stubEnv('NODE_ENV', 'test');
   });
-
-  afterEach(() => vi.unstubAllEnvs());
 
   it('resolves a normal Better Auth session into the canonical context', async () => {
     mocks.getSession.mockResolvedValue({
@@ -59,7 +65,8 @@ describe('auth middleware', () => {
       session: { id: 'session-123' },
     });
 
-    const response = await createApp().request('/api/mcp', {
+    const app = await createApp();
+    const response = await app.request('/api/mcp', {
       headers: { 'x-mcp-scopes': 'admin:write' },
     });
     const auth = (await response.json()) as AuthContext;
@@ -74,13 +81,13 @@ describe('auth middleware', () => {
   });
 
   it('does not grant implicit MCP scopes to a production session', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
     mocks.getSession.mockResolvedValue({
       user,
       session: { id: 'session-123' },
     });
 
-    const response = await createApp().request('/api/mcp', {
+    const app = await createApp({ NODE_ENV: 'production' });
+    const response = await app.request('/api/mcp', {
       headers: { 'x-mcp-scopes': 'career:read' },
     });
     const auth = (await response.json()) as AuthContext;
@@ -91,7 +98,8 @@ describe('auth middleware', () => {
   it('resolves MCP OAuth without performing a second normal session lookup', async () => {
     mocks.getMcpSession.mockResolvedValue({ userId: user.id, scopes: 'career:read' });
 
-    const response = await createApp().request('/api/mcp', {
+    const app = await createApp();
+    const response = await app.request('/api/mcp', {
       headers: {
         authorization: 'Bearer mcp-token',
         'x-mcp-scopes': 'admin:write',
@@ -114,7 +122,8 @@ describe('auth middleware', () => {
       session: { id: 'session-123' },
     });
 
-    const response = await createApp().request('/api/mcp', {
+    const app = await createApp();
+    const response = await app.request('/api/mcp', {
       headers: { authorization: 'Bearer better-auth-session-token' },
     });
     const auth = (await response.json()) as AuthContext;
@@ -124,10 +133,9 @@ describe('auth middleware', () => {
   });
 
   it('allows E2E identity only with the configured secret', async () => {
-    vi.stubEnv('AUTH_E2E_ENABLED', 'true');
-    vi.stubEnv('AUTH_E2E_SECRET', 'test-secret');
+    const app = await createApp({ AUTH_E2E_ENABLED: true, AUTH_E2E_SECRET: 'test-secret' });
 
-    const response = await createApp().request('/api/mcp', {
+    const response = await app.request('/api/mcp', {
       headers: {
         'x-user-id': user.id,
         'x-e2e-auth-secret': 'test-secret',
@@ -145,10 +153,9 @@ describe('auth middleware', () => {
   });
 
   it('rejects E2E identity when the secret is missing or invalid', async () => {
-    vi.stubEnv('AUTH_E2E_ENABLED', 'true');
-    vi.stubEnv('AUTH_E2E_SECRET', 'test-secret');
+    const app = await createApp({ AUTH_E2E_ENABLED: true, AUTH_E2E_SECRET: 'test-secret' });
 
-    const response = await createApp().request('/api/mcp', {
+    const response = await app.request('/api/mcp', {
       headers: {
         'x-user-id': user.id,
         'x-e2e-auth-secret': 'wrong-secret',
@@ -159,11 +166,13 @@ describe('auth middleware', () => {
   });
 
   it('rejects E2E identity in production', async () => {
-    vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('AUTH_E2E_ENABLED', 'true');
-    vi.stubEnv('AUTH_E2E_SECRET', 'test-secret');
+    const app = await createApp({
+      NODE_ENV: 'production',
+      AUTH_E2E_ENABLED: true,
+      AUTH_E2E_SECRET: 'test-secret',
+    });
 
-    const response = await createApp().request('/api/mcp', {
+    const response = await app.request('/api/mcp', {
       headers: {
         'x-user-id': user.id,
         'x-e2e-auth-secret': 'test-secret',
