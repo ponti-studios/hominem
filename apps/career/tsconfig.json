@@ -6,8 +6,17 @@
     "noImplicitReturns": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
+    // Not part of the root project-reference graph (this app builds via
+    // vite/react-router, not tsc), so composite mode's strict file-list
+    // enforcement only gets in the way of the @hominem/api/career path
+    // alias below, which points outside this project's own file set.
+    "composite": false,
+    // @hominem/api/career is type-only here (see app/lib/api.server.ts) —
+    // not a real runtime dependency, so it isn't listed in package.json.
+    // Keep this path in sync with services/api/package.json's "./career" export.
     "paths": {
-      "~/*": ["./app/*"]
+      "~/*": ["./app/*"],
+      "@hominem/api/career": ["../../services/api/src/rpc/routes/career.ts"]
     },
     "types": ["vite/client", "node"]
   },

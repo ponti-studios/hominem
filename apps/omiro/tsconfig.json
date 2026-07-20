@@ -11,7 +11,12 @@
     "paths": {
       "expo-symbols": ["./node_modules/expo-symbols/build/index"],
       "@shopify/flash-list": ["./node_modules/@shopify/flash-list/dist/index"],
-      "~/*": ["./*"]
+      "~/*": ["./*"],
+      // @hominem/api/types is type-only (see packages/rpc/src/core/api-client.ts)
+      // and not a real dependency of this app or @hominem/rpc — see that
+      // package's tsconfig.json for the same alias. Keep in sync with
+      // services/api/package.json's "./types" export.
+      "@hominem/api/types": ["../../services/api/src/rpc/app.ts"]
     },
     "noEmit": true
   },
