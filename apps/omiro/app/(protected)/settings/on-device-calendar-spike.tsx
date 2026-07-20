@@ -1,8 +1,22 @@
+import type { SFSymbol } from 'expo-symbols';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, TextInput } from 'react-native';
+import Animated from 'react-native-reanimated';
 
-import { useThemeColors } from '~/components/theme';
+import { ChatThinkingIndicator } from '~/components/chat/chat-thinking-indicator';
+import {
+  fontSizes,
+  makeStyles,
+  radii,
+  spacing,
+  Text,
+  useThemeColors,
+  type ColorToken,
+} from '~/components/theme';
+import { createEnter, createLayoutTransition } from '~/components/theme/animations';
 import { Button } from '~/components/ui/button';
+import AppIcon from '~/components/ui/icon';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import OnDeviceAIModule, {
   type CalendarPermissionStatus,
   type OnDeviceAILogEvent,
@@ -11,8 +25,51 @@ import OnDeviceAIModule, {
 
 interface LogLine {
   key: string;
+  type: string;
   message: string;
   timestamp: number;
+}
+
+// Icon + tint per log event type, so the processing steps read like tool-call
+// chips (a completed step, a result, a failure) instead of an undifferentiated
+// stream of text.
+function stepPresentation(type: string): { icon: SFSymbol; tint: ColorToken } {
+  switch (type) {
+    case 'session_start':
+      return { icon: 'gearshape.fill', tint: 'text-tertiary' };
+    case 'prompt_sent':
+      return { icon: 'paperplane.fill', tint: 'text-tertiary' };
+    case 'tool_call':
+      return { icon: 'wrench.and.screwdriver.fill', tint: 'text-secondary' };
+    case 'tool_result':
+      return { icon: 'checkmark.circle.fill', tint: 'success' };
+    case 'tool_error':
+    case 'generation_error':
+      return { icon: 'exclamationmark.triangle.fill', tint: 'destructive' };
+    case 'response_received':
+      return { icon: 'text.bubble.fill', tint: 'success' };
+    default:
+      return { icon: 'circle.fill', tint: 'text-tertiary' };
+  }
+}
+
+function LogStepRow({ line, reducedMotion }: { line: LogLine; reducedMotion: boolean }) {
+  const styles = useLogStepStyles();
+  const themeColors = useThemeColors();
+  const { icon, tint } = stepPresentation(line.type);
+
+  return (
+    <Animated.View
+      entering={createEnter(reducedMotion)}
+      layout={createLayoutTransition(reducedMotion)}
+      style={styles.row}
+    >
+      <AppIcon name={icon} size={14} tintColor={themeColors[tint]} style={styles.icon} />
+      <Text color="text-secondary" style={styles.message}>
+        {new Date(line.timestamp).toLocaleTimeString()} — {line.message}
+      </Text>
+    </Animated.View>
+  );
 }
 
 // Experimental spike screen, gated in settings/index.tsx behind __DEV__ or
@@ -23,6 +80,8 @@ interface LogLine {
 // FoundationModels sessions.
 export default function OnDeviceCalendarSpikeScreen() {
   const themeColors = useThemeColors();
+  const reducedMotion = useReducedMotion();
+  const styles = useStyles();
   const [prompt, setPrompt] = useState('What do I have going on today?');
   const [response, setResponse] = useState('');
   const [availability, setAvailability] = useState<OnDeviceAIAvailability | null>(null);
@@ -39,7 +98,12 @@ export default function OnDeviceCalendarSpikeScreen() {
         logCounter.current += 1;
         setLogs((prev) => [
           ...prev,
-          { key: `${logCounter.current}`, message: event.message, timestamp: event.timestamp },
+          {
+            key: `${logCounter.current}`,
+            type: event.type,
+            message: event.message,
+            timestamp: event.timestamp,
+          },
         ]);
       },
     );
@@ -77,21 +141,11 @@ export default function OnDeviceCalendarSpikeScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.content} testID="on-device-calendar-spike-screen">
-      <Text style={[styles.heading, { color: themeColors.foreground }]}>
-        On-device calendar spike
-      </Text>
+      <Text style={styles.heading}>On-device calendar spike</Text>
 
       <Button label="Check status" onPress={() => void checkStatus()} variant="secondary" />
-      {availability ? (
-        <Text style={{ color: themeColors['text-secondary'] }}>
-          Model availability: {availability}
-        </Text>
-      ) : null}
-      {permission ? (
-        <Text style={{ color: themeColors['text-secondary'] }}>
-          Calendar permission: {permission}
-        </Text>
-      ) : null}
+      {availability ? <Text color="text-secondary">Model availability: {availability}</Text> : null}
+      {permission ? <Text color="text-secondary">Calendar permission: {permission}</Text> : null}
 
       {permission !== 'authorized' ? (
         <Button
@@ -123,11 +177,16 @@ export default function OnDeviceCalendarSpikeScreen() {
         disabled={isLoading}
       />
 
-      {error ? <Text style={{ color: themeColors.destructive }}>{error}</Text> : null}
+      {error ? (
+        <Animated.View entering={createEnter(reducedMotion)}>
+          <Text color="destructive">{error}</Text>
+        </Animated.View>
+      ) : null}
 
-      {logs.length > 0 ? (
-        <View
+      {logs.length > 0 || isLoading ? (
+        <Animated.View
           testID="on-device-calendar-spike-log"
+          layout={createLayoutTransition(reducedMotion)}
           style={[
             styles.logBox,
             {
@@ -136,19 +195,19 @@ export default function OnDeviceCalendarSpikeScreen() {
             },
           ]}
         >
-          <Text style={[styles.logHeading, { color: themeColors['text-secondary'] }]}>
+          <Text color="text-secondary" style={styles.logHeading}>
             Processing steps
           </Text>
           {logs.map((line) => (
-            <Text key={line.key} style={[styles.logLine, { color: themeColors['text-secondary'] }]}>
-              {new Date(line.timestamp).toLocaleTimeString()} — {line.message}
-            </Text>
+            <LogStepRow key={line.key} line={line} reducedMotion={reducedMotion} />
           ))}
-        </View>
+          {isLoading ? <ChatThinkingIndicator /> : null}
+        </Animated.View>
       ) : null}
 
       {response ? (
-        <View
+        <Animated.View
+          entering={createEnter(reducedMotion)}
           style={[
             styles.responseBox,
             {
@@ -157,52 +216,59 @@ export default function OnDeviceCalendarSpikeScreen() {
             },
           ]}
         >
-          <Text
-            testID="on-device-calendar-spike-response"
-            style={{ color: themeColors.foreground }}
-          >
-            {response}
-          </Text>
-        </View>
+          <Text testID="on-device-calendar-spike-response">{response}</Text>
+        </Animated.View>
       ) : null}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles(() => ({
   content: {
-    gap: 12,
-    padding: 16,
+    gap: spacing[3],
+    padding: spacing[4],
   },
   heading: {
-    fontSize: 20,
+    fontSize: fontSizes.xl,
     fontWeight: '600',
   },
   input: {
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: radii.md,
+    borderWidth: 1,
     minHeight: 60,
-    padding: 12,
+    padding: spacing[3],
   },
   logBox: {
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 4,
-    padding: 12,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    gap: spacing[1],
+    padding: spacing[3],
   },
   logHeading: {
-    fontSize: 12,
+    fontSize: fontSizes.caption1,
     fontWeight: '600',
     letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
-  logLine: {
-    fontFamily: 'Menlo',
-    fontSize: 12,
-  },
   responseBox: {
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: 12,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    padding: spacing[3],
   },
-});
+}));
+
+const useLogStepStyles = makeStyles(() => ({
+  icon: {
+    marginTop: 2,
+  },
+  message: {
+    flex: 1,
+    fontFamily: 'Menlo',
+    fontSize: fontSizes.caption1,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: spacing[2],
+    paddingVertical: spacing[1],
+  },
+}));
