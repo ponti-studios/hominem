@@ -49,6 +49,7 @@
         "APP_ENV": "production",
         "EXPO_PUBLIC_E2E_TESTING": "false",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "true",
+        "EXPO_PUBLIC_AUTH_PASSKEY_RP_ID": "api.ponti.io",
         "OMIRO_DEV_CLIENT": "false",
         "OMIRO_RELEASE_CHANNEL": "staging"
       },
@@ -61,6 +62,7 @@
         "EXPO_PUBLIC_API_BASE_URL": "http://localhost:4040",
         "EXPO_PUBLIC_E2E_TESTING": "false",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "true",
+        "EXPO_PUBLIC_AUTH_PASSKEY_RP_ID": "",
         "OMIRO_DEV_CLIENT": "false",
         "OMIRO_RELEASE_CHANNEL": "staging"
       },
@@ -79,6 +81,7 @@
         "APP_ENV": "production",
         "EXPO_PUBLIC_E2E_TESTING": "false",
         "EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED": "true",
+        "EXPO_PUBLIC_AUTH_PASSKEY_RP_ID": "api.ponti.io",
         "EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED": "true",
         "OMIRO_DEV_CLIENT": "false",
         "OMIRO_RELEASE_CHANNEL": "production"

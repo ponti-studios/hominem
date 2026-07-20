@@ -18,6 +18,13 @@ export const apiSchema = baseSchema.extend({
   BETTER_AUTH_SECRET: z.string().min(1),
   AUTH_PASSKEY_RP_ID: z.string().default('api.ponti.io'),
   AUTH_PASSKEY_ORIGIN: z.url().default('https://api.ponti.io'),
+  // Comma-separated `<AppleTeamID>.<bundleIdentifier>` pairs served from the
+  // apple-app-site-association well-known route so iOS can verify Omiro's
+  // passkey (webcredentials) association with AUTH_PASSKEY_RP_ID. Must stay
+  // in sync with apps/omiro/app.config.ts's APPLE_TEAM_ID and bundle ids.
+  AUTH_PASSKEY_APPLE_APP_IDS: z
+    .string()
+    .default('3QHJ2KN8AL.com.pontistudios.hakumi,3QHJ2KN8AL.com.pontistudios.hakumi.dev'),
   AUTH_COOKIE_DOMAIN: z.string().default(''),
   // z.coerce.boolean() is `Boolean(value)` under the hood, so Boolean("false")
   // is `true` — any non-empty string is truthy. z.stringbool() parses the

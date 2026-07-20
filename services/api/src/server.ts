@@ -17,6 +17,7 @@ import { authMiddleware } from './middleware/auth';
 import { authRateLimitMiddleware } from './middleware/auth-rate-limit';
 import { blockMaliciousProbes } from './middleware/block-probes';
 import { requestLogger } from './middleware/request-logger';
+import { appleAppSiteAssociationRoutes } from './routes/apple-app-site-association';
 import { authRoutes } from './routes/auth';
 import { imagesRoutes } from './routes/images';
 import { statusRoutes } from './routes/status';
@@ -112,6 +113,7 @@ function registerApiRoutes(app: Hono<AppEnv>) {
   app.route('/', rpcApp);
   // OAuth discovery for MCP clients — must be at root per RFC 8414 / RFC 9728
   app.route('/', oauthDiscoveryRoutes);
+  app.route('/', appleAppSiteAssociationRoutes);
   // Custom auth extras first (session/logout reshape for apps/finance, e2e helpers).
   // Unmatched /api/auth/* falls through to the Better Auth catch-all handler.
   app.route('/api/auth', authRoutes);

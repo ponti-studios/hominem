@@ -130,6 +130,16 @@ function allowsLocalNetworking(appEnvironment: AppEnvironment) {
   return appEnvironment === 'development';
 }
 
+// Must match services/api's AUTH_PASSKEY_RP_ID — iOS fetches
+// https://<domain>/.well-known/apple-app-site-association from this exact
+// host to verify the app's passkey (webcredentials) association before
+// native passkey ceremonies are allowed. Unset (e.g. local dev against a
+// plain-HTTP API) disables the entitlement rather than pointing it at a
+// host that can't serve the AASA file over HTTPS.
+function getPasskeyAssociatedDomain(env: Record<string, string | undefined>): string | null {
+  return env.EXPO_PUBLIC_AUTH_PASSKEY_RP_ID?.trim() || null;
+}
+
 export default ({ config }: ConfigContext) => {
   const appEnvironment = getAppEnvironment();
   const appEnvironmentConfig = getAppEnvironmentConfig(appEnvironment);
@@ -211,6 +221,7 @@ export default ({ config }: ConfigContext) => {
   }
 
   const extraConfig = getExpoExtraConfig(process.env);
+  const passkeyAssociatedDomain = getPasskeyAssociatedDomain(process.env);
 
   return {
     ...config,
@@ -234,6 +245,9 @@ export default ({ config }: ConfigContext) => {
       icon: brandAssets.icon,
       bundleIdentifier: appEnvironmentConfig.bundleIdentifier,
       supportsTablet: true,
+      ...(passkeyAssociatedDomain
+        ? { associatedDomains: [`webcredentials:${passkeyAssociatedDomain}`] }
+        : {}),
       entitlements: {
         'com.apple.developer.siri': true,
         'keychain-access-groups': [`$(AppIdentifierPrefix)${appEnvironmentConfig.bundleIdentifier}`],

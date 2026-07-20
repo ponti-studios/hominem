@@ -1,9 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
+import {
+  create as createPasskey,
+  get as getPasskey,
+  isSupported as isNativePasskeySupported,
+} from 'react-native-passkeys';
 
 import { E2E_TESTING } from '~/constants';
 import { authClient, AuthResult } from '~/services/auth/auth-client';
+
+type PasskeyRegistrationOptions = Parameters<typeof createPasskey>[0];
+type PasskeyAuthenticationOptions = Parameters<typeof getPasskey>[0];
 
 interface PasskeySignInResult {
   user: {
@@ -41,8 +48,7 @@ export function useMobilePasskeyAuth(
   const loadPasskeysEnabled = Boolean(options.loadPasskeys);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const isSupported = Number.parseInt(Platform.Version as string, 10) >= 16;
+  const isSupported = isNativePasskeySupported();
 
   const fetchPasskeys = useCallback(async () => {
     const response = (await authClient.$fetch('/passkey/list-user-passkeys', {
@@ -122,24 +128,52 @@ export function useMobilePasskeyAuth(
           };
         }
 
-        const { data: passkeyData, error: passkeyError } = await authClient.signIn.passkey();
+        const optionsResponse = (await authClient.$fetch('/passkey/generate-authenticate-options', {
+          method: 'GET',
+          throw: false,
+        })) as {
+          data?: PasskeyAuthenticationOptions | null;
+          error?: { message?: string } | null;
+        };
 
-        if (passkeyError) {
-          const message = toErrorMessage(passkeyError, 'Passkey sign-in failed');
-          setError(message);
+        if (optionsResponse.error || !optionsResponse.data) {
+          setError(optionsResponse.error?.message ?? 'Failed to start passkey sign-in');
           return null;
         }
 
-        if (!passkeyData?.user?.id || !passkeyData.user.email) {
+        const assertion = await getPasskey(optionsResponse.data);
+        if (!assertion) {
+          setError('Passkey sign-in was cancelled');
+          return null;
+        }
+
+        const { clientExtensionResults: _clientExtensionResults, ...responseBody } = assertion;
+
+        const verifyResponse = (await authClient.$fetch('/passkey/verify-authentication', {
+          method: 'POST',
+          body: { response: responseBody },
+          throw: false,
+        })) as {
+          data?: { user?: { id: string; email: string; name?: string | null } } | null;
+          error?: { message?: string } | null;
+        };
+
+        if (verifyResponse.error) {
+          setError(toErrorMessage(verifyResponse.error, 'Passkey sign-in failed'));
+          return null;
+        }
+
+        const userData = verifyResponse.data?.user;
+        if (!userData?.id || !userData.email) {
           setError('No data returned from passkey sign-in');
           return null;
         }
 
         return {
           user: {
-            id: passkeyData.user.id,
-            email: passkeyData.user.email,
-            ...(passkeyData.user.name ? { name: passkeyData.user.name } : {}),
+            id: userData.id,
+            email: userData.email,
+            ...(userData.name ? { name: userData.name } : {}),
           },
         };
       } catch (err) {
@@ -159,12 +193,44 @@ export function useMobilePasskeyAuth(
       setError(null);
 
       try {
-        const { error: passkeyError } = await authClient.passkey.addPasskey({
-          name,
-        });
+        const optionsResponse = (await authClient.$fetch('/passkey/generate-register-options', {
+          method: 'GET',
+          query: name ? { name } : undefined,
+          throw: false,
+        })) as {
+          data?: PasskeyRegistrationOptions | null;
+          error?: { message?: string } | null;
+        };
 
-        if (passkeyError) {
-          const message = toErrorMessage(passkeyError, 'Failed to add passkey');
+        if (optionsResponse.error || !optionsResponse.data) {
+          const message = toErrorMessage(
+            optionsResponse.error,
+            'Failed to start passkey registration',
+          );
+          setError(message);
+          return { success: false, error: message };
+        }
+
+        const credential = await createPasskey(optionsResponse.data);
+        if (!credential) {
+          const message = 'Passkey registration was cancelled';
+          setError(message);
+          return { success: false, error: message };
+        }
+
+        const { clientExtensionResults: _clientExtensionResults, ...responseBody } = credential;
+
+        const verifyResponse = (await authClient.$fetch('/passkey/verify-registration', {
+          method: 'POST',
+          body: { response: responseBody, name },
+          throw: false,
+        })) as {
+          data?: unknown;
+          error?: { message?: string } | null;
+        };
+
+        if (verifyResponse.error) {
+          const message = toErrorMessage(verifyResponse.error, 'Failed to add passkey');
           setError(message);
           return { success: false, error: message };
         }
