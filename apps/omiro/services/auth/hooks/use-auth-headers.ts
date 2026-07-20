@@ -1,19 +1,10 @@
-import type { RefObject } from 'react';
 import { useCallback } from 'react';
 
-import { getPersistedSessionCookieHeader } from '~/services/auth/session-cookie';
+import { authClient } from '~/services/auth/auth-client';
 
-export function useAuthHeaders(sessionCookieHeaderRef: RefObject<string | null>) {
-  const getAuthHeaders = useCallback(async () => {
-    const sessionCookieHeader =
-      sessionCookieHeaderRef.current ?? (await getPersistedSessionCookieHeader());
-    if (sessionCookieHeader) {
-      sessionCookieHeaderRef.current = sessionCookieHeader;
-      return { cookie: sessionCookieHeader } satisfies Record<string, string>;
-    }
-
-    return {} as Record<string, string>;
-  }, [sessionCookieHeaderRef]);
-
-  return getAuthHeaders;
+export function useAuthHeaders() {
+  return useCallback(async () => {
+    const cookie = authClient.getCookie();
+    return cookie ? ({ cookie } satisfies Record<string, string>) : ({} as Record<string, string>);
+  }, []);
 }

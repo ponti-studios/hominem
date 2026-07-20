@@ -6,16 +6,16 @@ describe('resolveProtectedRouteState', () => {
   it('keeps protected screens on a stable fallback while auth is still booting', () => {
     expect(
       resolveProtectedRouteState({
-        authStatus: 'booting',
+        isPending: true,
         isSignedIn: false,
       }),
     ).toEqual({ showFallback: true });
   });
 
-  it('keeps protected screens on a stable fallback during a signed-out transition', () => {
+  it('keeps protected screens on a stable fallback when signed out', () => {
     expect(
       resolveProtectedRouteState({
-        authStatus: 'signed_out',
+        isPending: false,
         isSignedIn: false,
       }),
     ).toEqual({ showFallback: true });
@@ -24,7 +24,7 @@ describe('resolveProtectedRouteState', () => {
   it('renders protected content once the session is restored', () => {
     expect(
       resolveProtectedRouteState({
-        authStatus: 'signed_in',
+        isPending: false,
         isSignedIn: true,
       }),
     ).toEqual({ showFallback: false });

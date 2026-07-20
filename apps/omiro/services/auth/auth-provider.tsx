@@ -1,29 +1,25 @@
 import type { User } from '@hominem/auth/types';
 import React, {
   createContext,
-  useContext,
-  useMemo,
-  useReducer,
-  useRef,
   useCallback,
-  useSyncExternalStore,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
   type PropsWithChildren,
 } from 'react';
 
 import { E2E_TESTING } from '~/constants';
-import { createAuthContextSnapshot } from '~/services/auth/auth-provider-state';
+import { captureAuthAnalyticsEvent } from '~/services/auth/analytics';
+import { authClient } from '~/services/auth/auth-client';
+import { clearLegacyDataOnce } from '~/services/auth/boot-legacy-data';
 import { useAuthHeaders } from '~/services/auth/hooks/use-auth-headers';
-import { useBootSequence } from '~/services/auth/hooks/use-boot-sequence';
 import { useEmailOtp } from '~/services/auth/hooks/use-email-otp';
-import { usePasskeyAuth } from '~/services/auth/hooks/use-passkey-auth';
 import { useResetAuthForE2E } from '~/services/auth/hooks/use-reset-auth-for-e2e';
 import { useSignOut } from '~/services/auth/hooks/use-sign-out';
 import { useUpdateProfile } from '~/services/auth/hooks/use-update-profile';
 import { clearPendingAuthEmail } from '~/services/auth/pending-email';
-import { type AuthStatusCompat } from '~/services/auth/provider-utils';
-import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
-import { authStateMachine, initialAuthState } from '~/services/auth/types';
-import { LocalStore } from '~/services/storage/local-store';
 
 type SignInResponse = {
   user: {
@@ -34,16 +30,15 @@ type SignInResponse = {
 };
 
 type AuthContextType = {
-  authStatus: AuthStatusCompat;
-  authError: Error | null;
-  isLoadingAuth: boolean;
+  isPending: boolean;
   isSignedIn: boolean;
+  isSigningOut: boolean;
   currentUser: User | null;
   requestEmailOtp: (email: string) => Promise<void>;
   verifyEmailOtp: (input: { email: string; otp: string; name?: string }) => Promise<void>;
   completePasskeySignIn: (input: SignInResponse) => Promise<void>;
   signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<User>) => Promise<User>;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
   getAuthHeaders: () => Promise<Record<string, string>>;
   handleUnauthorized: () => Promise<void>;
   resetAuthForE2E: () => Promise<void>;
@@ -57,119 +52,104 @@ export const useAuth = () => {
   return ctx;
 };
 
-function AuthProviderBody({ children }: PropsWithChildren) {
-  const [state, dispatch] = useReducer(authStateMachine, initialAuthState);
-  const authSnapshot = useMemo(() => createAuthContextSnapshot(state), [state]);
-  const sessionCookieHeaderRef = useRef<string | null>(null);
+function toUser(sessionUser: {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  name: string;
+  image?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}): User {
+  return {
+    id: sessionUser.id,
+    email: sessionUser.email,
+    name: sessionUser.name,
+    image: sessionUser.image ?? null,
+    emailVerified: sessionUser.emailVerified,
+    createdAt: new Date(sessionUser.createdAt).toISOString(),
+    updatedAt: new Date(sessionUser.updatedAt).toISOString(),
+  };
+}
 
-  const authContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
+export function AuthProvider({ children }: PropsWithChildren) {
+  const { data, isPending } = authClient.useSession();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const hasRunLegacyMigrationRef = useRef(false);
+  const hasRunE2EResetRef = useRef(false);
 
-  const { bootSession, abortControllerRef } = useBootSequence(authContext, sessionCookieHeaderRef);
-  const { requestEmailOtp, verifyEmailOtp } = useEmailOtp(authContext, sessionCookieHeaderRef);
-  const { completePasskeySignIn } = usePasskeyAuth(authContext, sessionCookieHeaderRef);
-  const { signOut } = useSignOut(authContext, sessionCookieHeaderRef);
+  const currentUser = useMemo(() => (data?.user ? toUser(data.user) : null), [data?.user]);
+  const isSignedIn = Boolean(currentUser) && !isSigningOut;
 
-  const subscribeBootSession = useCallback(
-    (_onStoreChange: () => void) => {
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-      void bootSession({ signal: controller.signal });
+  const { requestEmailOtp, verifyEmailOtp } = useEmailOtp();
+  const updateProfile = useUpdateProfile();
+  const getAuthHeaders = useAuthHeaders();
+  const resetAuthForE2E = useResetAuthForE2E();
+  const runSignOut = useSignOut(currentUser?.email);
 
-      return () => {
-        controller.abort();
-        if (abortControllerRef.current === controller) {
-          abortControllerRef.current = null;
-        }
-      };
-    },
-    [abortControllerRef, bootSession],
-  );
+  useEffect(() => {
+    if (hasRunLegacyMigrationRef.current) return;
+    hasRunLegacyMigrationRef.current = true;
+    void clearLegacyDataOnce();
+  }, []);
 
-  useSyncExternalStore(
-    subscribeBootSession,
-    () => 0,
-    () => 0,
-  );
+  useEffect(() => {
+    if (!E2E_TESTING || hasRunE2EResetRef.current) return;
+    hasRunE2EResetRef.current = true;
+    void resetAuthForE2E();
+  }, [resetAuthForE2E]);
 
-  const updateProfile = useUpdateProfile({ state, dispatch });
-  const getAuthHeaders = useAuthHeaders(sessionCookieHeaderRef);
-  const resetAuthForE2E = useResetAuthForE2E(dispatch);
-  const handleUnauthorized = useCallback(async () => {
-    if (state.status === 'signed_out' || state.status === 'signing_out') {
-      return;
+  const signOut = useCallback(async () => {
+    setIsSigningOut(true);
+    try {
+      await runSignOut();
+    } finally {
+      setIsSigningOut(false);
     }
+  }, [runSignOut]);
 
-    sessionCookieHeaderRef.current = null;
+  const completePasskeySignIn = useCallback(async (input: SignInResponse) => {
+    captureAuthAnalyticsEvent('auth_passkey_sign_in_succeeded', {
+      phase: 'passkey_sign_in',
+      email: input.user.email,
+    });
     clearPendingAuthEmail();
-    await Promise.all([clearPersistedSessionCookies(), LocalStore.clearAllData()]);
-    dispatch({ type: 'SESSION_EXPIRED' });
-  }, [dispatch, state.status]);
+  }, []);
 
-  const value: AuthContextType = {
-    ...authSnapshot,
-    requestEmailOtp,
-    verifyEmailOtp,
-    completePasskeySignIn,
-    signOut,
-    updateProfile,
-    getAuthHeaders,
-    handleUnauthorized,
-    resetAuthForE2E,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-function E2EAuthProvider({ children }: PropsWithChildren) {
-  const [state, dispatch] = useReducer(authStateMachine, initialAuthState);
-
-  const subscribeE2EInit = useCallback(
-    (_onStoreChange: () => void) => {
-      dispatch({ type: 'SESSION_EXPIRED' });
-      return () => {};
-    },
-    [dispatch],
-  );
-
-  useSyncExternalStore(
-    subscribeE2EInit,
-    () => 0,
-    () => 0,
-  );
-
-  const authContext = useMemo(() => ({ state, dispatch }), [state, dispatch]);
-  const authSnapshot = useMemo(() => createAuthContextSnapshot(state), [state]);
-  const sessionCookieHeaderRef = useRef<string | null>(null);
-  const { requestEmailOtp, verifyEmailOtp } = useEmailOtp(authContext, sessionCookieHeaderRef);
-  const { completePasskeySignIn } = usePasskeyAuth(authContext, sessionCookieHeaderRef);
-  const { signOut } = useSignOut(authContext, sessionCookieHeaderRef);
-  const updateProfile = useUpdateProfile({ state, dispatch });
-  const getAuthHeaders = useAuthHeaders(sessionCookieHeaderRef);
-  const resetAuthForE2E = useResetAuthForE2E(dispatch);
   const handleUnauthorized = useCallback(async () => {
-    sessionCookieHeaderRef.current = null;
-    dispatch({ type: 'SESSION_EXPIRED' });
-  }, [dispatch]);
+    await authClient.signOut().catch(() => undefined);
+  }, []);
 
-  const value: AuthContextType = {
-    ...authSnapshot,
-    requestEmailOtp,
-    verifyEmailOtp,
-    completePasskeySignIn,
-    signOut,
-    updateProfile,
-    getAuthHeaders,
-    handleUnauthorized,
-    resetAuthForE2E,
-  };
+  const value = useMemo<AuthContextType>(
+    () => ({
+      isPending,
+      isSignedIn,
+      isSigningOut,
+      currentUser,
+      requestEmailOtp,
+      verifyEmailOtp,
+      completePasskeySignIn,
+      signOut,
+      updateProfile,
+      getAuthHeaders,
+      handleUnauthorized,
+      resetAuthForE2E,
+    }),
+    [
+      isPending,
+      isSignedIn,
+      isSigningOut,
+      currentUser,
+      requestEmailOtp,
+      verifyEmailOtp,
+      completePasskeySignIn,
+      signOut,
+      updateProfile,
+      getAuthHeaders,
+      handleUnauthorized,
+      resetAuthForE2E,
+    ],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-export const AuthProvider = ({ children }: PropsWithChildren) => {
-  return E2E_TESTING ? (
-    <E2EAuthProvider>{children}</E2EAuthProvider>
-  ) : (
-    <AuthProviderBody>{children}</AuthProviderBody>
-  );
-};

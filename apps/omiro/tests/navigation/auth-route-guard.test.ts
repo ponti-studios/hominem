@@ -6,8 +6,9 @@ describe('resolveAuthRedirect', () => {
   it('redirects signed-out users away from protected routes', () => {
     expect(
       resolveAuthRedirect({
-        authStatus: 'signed_out',
+        isPending: false,
         isSignedIn: false,
+        isSigningOut: false,
         segments: ['(protected)', 'settings'],
       }),
     ).toBe('/(auth)');
@@ -16,8 +17,9 @@ describe('resolveAuthRedirect', () => {
   it('redirects signed-in users away from auth routes', () => {
     expect(
       resolveAuthRedirect({
-        authStatus: 'signed_in',
+        isPending: false,
         isSignedIn: true,
+        isSigningOut: false,
         segments: ['(auth)'],
       }),
     ).toBe('/(protected)');
@@ -26,16 +28,18 @@ describe('resolveAuthRedirect', () => {
   it('does not redirect while booting or signing out', () => {
     expect(
       resolveAuthRedirect({
-        authStatus: 'booting',
+        isPending: true,
         isSignedIn: false,
+        isSigningOut: false,
         segments: ['(auth)'],
       }),
     ).toBeNull();
 
     expect(
       resolveAuthRedirect({
-        authStatus: 'signing_out',
+        isPending: false,
         isSignedIn: false,
+        isSigningOut: true,
         segments: ['(protected)'],
       }),
     ).toBeNull();

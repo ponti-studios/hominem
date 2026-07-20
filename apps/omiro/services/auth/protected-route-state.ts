@@ -1,7 +1,5 @@
-import type { AuthStatusCompat } from './provider-utils';
-
 export interface ProtectedRouteStateInput {
-  authStatus: AuthStatusCompat;
+  isPending: boolean;
   isSignedIn: boolean;
 }
 
@@ -13,6 +11,6 @@ export function resolveProtectedRouteState(
   input: ProtectedRouteStateInput,
 ): ProtectedRouteStateOutput {
   return {
-    showFallback: input.authStatus === 'booting' || !input.isSignedIn,
+    showFallback: input.isPending || !input.isSignedIn,
   };
 }

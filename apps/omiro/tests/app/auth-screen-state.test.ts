@@ -6,7 +6,7 @@ describe('resolveAuthScreenState', () => {
   it('keeps the session probe silent while booting', () => {
     expect(
       resolveAuthScreenState({
-        authStatus: 'booting',
+        isPending: true,
         authError: null,
         passkeyError: null,
       }),
@@ -16,10 +16,10 @@ describe('resolveAuthScreenState', () => {
     });
   });
 
-  it('keeps the session probe silent after a restore failure', () => {
+  it('stops probing once the session check resolves', () => {
     expect(
       resolveAuthScreenState({
-        authStatus: 'degraded',
+        isPending: false,
         authError: null,
         passkeyError: null,
       }),
@@ -32,7 +32,7 @@ describe('resolveAuthScreenState', () => {
   it('still surfaces user-initiated auth errors', () => {
     expect(
       resolveAuthScreenState({
-        authStatus: 'signed_out',
+        isPending: false,
         authError: 'Unable to send verification code.',
         passkeyError: null,
       }),

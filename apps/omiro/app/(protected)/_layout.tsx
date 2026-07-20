@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
 
 function ProtectedShell() {
   const themeColors = useThemeColors();
-  const { authStatus, isSignedIn } = useAuth();
+  const { isPending, isSignedIn } = useAuth();
   const { isUnlocked, authenticate } = useAppLock();
   const prefersReducedMotion = useReducedMotion();
 
@@ -59,7 +59,7 @@ function ProtectedShell() {
         gestureDirection: 'horizontal' as const,
       };
 
-  if (authStatus === 'booting') {
+  if (isPending) {
     return <ProtectedRouteFallback />;
   }
 
