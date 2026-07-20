@@ -41,6 +41,35 @@ private final class OnDeviceAIException: Exception, @unchecked Sendable {
       message: "The on-device model failed to respond."
     )
   }
+
+  static var invalidDateRange: OnDeviceAIException {
+    OnDeviceAIException(
+      code: "INVALID_DATE_RANGE",
+      message: "The model returned a date range that could not be parsed."
+    )
+  }
+}
+
+// Shared "yyyy-MM-dd" formatter for the tool's date-range arguments. Fixed
+// POSIX locale and device time zone so parsing never depends on the user's
+// region settings, only on the format the model was told to produce.
+private func dayFormatter() -> DateFormatter {
+  let formatter = DateFormatter()
+  formatter.dateFormat = "yyyy-MM-dd"
+  formatter.locale = Locale(identifier: "en_US_POSIX")
+  formatter.timeZone = .current
+  return formatter
+}
+
+// Human-readable "today" anchor, e.g. "Monday, 2026-07-20". Given to the
+// model so it can resolve relative phrases ("this time last year", "end of
+// next month") into concrete dates itself, instead of the tool guessing at
+// day-count arithmetic on the model's behalf.
+private func todayAnchorString() -> String {
+  let formatter = DateFormatter()
+  formatter.dateFormat = "EEEE, yyyy-MM-dd"
+  formatter.timeZone = .current
+  return formatter.string(from: Date())
 }
 
 private struct OnDeviceAIResult: Record {
@@ -79,30 +108,53 @@ private func requestCalendarAuthorization() async -> EKAuthorizationStatus {
   return EKEventStore.authorizationStatus(for: .event)
 }
 
-// A single narrow tool: read-only event lookup over a bounded forward
-// window. This is the spike's entire surface area — no write access, no
-// other calendars, no attendee/organizer data exposed to the model.
+// A single narrow tool: read-only event lookup over an explicit date range.
+// This is the spike's entire surface area — no write access, no other
+// calendars, no attendee/organizer data exposed to the model.
+//
+// The tool itself does no relative-date reasoning ("last year", "next
+// month") — it only resolves the exact startDate/endDate the model gives
+// it, using Calendar day-boundary math. The model is told today's date and
+// is responsible for turning what the user said into concrete dates before
+// calling this tool. This split keeps date arithmetic (which broke once
+// already, see lookupCalendarEvents history) in Swift/Calendar, while
+// letting the model own open-ended natural-language interpretation, which
+// a fixed Swift parameter shape could never fully anticipate.
 @available(iOS 26.0, *)
 private struct CalendarLookupTool: Tool {
   let name = "lookupCalendarEvents"
-  let description =
-    "Looks up the user's calendar events starting today. Use this whenever the user asks about their schedule, meetings, or upcoming events."
+  let description: String
   // Only String payloads cross this closure so it can stay @Sendable without
   // wrapping tool-call detail in a bespoke Sendable event type.
   let onLog: @Sendable (String, String) -> Void
 
+  init(onLog: @escaping @Sendable (String, String) -> Void) {
+    self.onLog = onLog
+    self.description =
+      "Looks up the user's calendar events within an explicit date range. "
+      + "Today is \(todayAnchorString()). Resolve whatever the user said — "
+      + "\"today\", \"this time last year\", \"end of next month\" — into concrete "
+      + "startDate/endDate values yourself before calling; this tool does not "
+      + "interpret relative language."
+  }
+
   @Generable
   struct Arguments {
+    @Guide(description: "Start of the search range, formatted \"yyyy-MM-dd\". Inclusive.")
+    var startDate: String
+
     @Guide(
       description:
-        "Number of days from today to search forward, e.g. 1 for \"today\", 7 for \"this week\". Defaults to 1."
+        "End of the search range, formatted \"yyyy-MM-dd\". Inclusive — events any time on this day are included. May equal startDate for a single day."
     )
-    var daysAhead: Int?
+    var endDate: String
   }
 
   func call(arguments: Arguments) async throws -> String {
-    let days = max(1, min(arguments.daysAhead ?? 1, 30))
-    onLog("tool_call", "Model called lookupCalendarEvents(daysAhead: \(days))")
+    onLog(
+      "tool_call",
+      "Model called lookupCalendarEvents(startDate: \(arguments.startDate), endDate: \(arguments.endDate))"
+    )
 
     let status = EKEventStore.authorizationStatus(for: .event)
     guard status == .fullAccess else {
@@ -110,25 +162,44 @@ private struct CalendarLookupTool: Tool {
       throw OnDeviceAIException.missingPermission
     }
 
-    let store = EKEventStore()
-    let start = Calendar.current.startOfDay(for: Date())
-    guard let end = Calendar.current.date(byAdding: .day, value: days, to: start) else {
+    let formatter = dayFormatter()
+    guard
+      let parsedStart = formatter.date(from: arguments.startDate),
+      let parsedEnd = formatter.date(from: arguments.endDate)
+    else {
+      onLog(
+        "tool_error",
+        "lookupCalendarEvents failed: unparseable date range (\(arguments.startDate) - \(arguments.endDate))"
+      )
+      throw OnDeviceAIException.invalidDateRange
+    }
+
+    // Model may hand back the range in either order — normalize rather than
+    // erroring, since "endDate before startDate" is a model mistake, not a
+    // user-facing one.
+    let calendar = Calendar.current
+    let start = calendar.startOfDay(for: min(parsedStart, parsedEnd))
+    guard
+      let end = calendar.date(
+        byAdding: .day, value: 1, to: calendar.startOfDay(for: max(parsedStart, parsedEnd)))
+    else {
       onLog("tool_result", "lookupCalendarEvents returned 0 event(s)")
       return "No events found."
     }
 
+    let store = EKEventStore()
     let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
     let events = store.events(matching: predicate)
       .sorted { $0.startDate < $1.startDate }
 
     guard !events.isEmpty else {
       onLog("tool_result", "lookupCalendarEvents returned 0 event(s)")
-      return "No events found in the next \(days) day(s)."
+      return "No events found between \(arguments.startDate) and \(arguments.endDate)."
     }
 
-    let formatter = DateFormatter()
-    formatter.dateStyle = .medium
-    formatter.timeStyle = .short
+    let displayFormatter = DateFormatter()
+    displayFormatter.dateStyle = .medium
+    displayFormatter.timeStyle = .short
 
     // Capped at 20 — this is a spike, not a general-purpose export; a real
     // tool would need the same resultCap discipline the remote MCP tools
@@ -138,7 +209,7 @@ private struct CalendarLookupTool: Tool {
       let when =
         event.isAllDay
         ? "all day"
-        : "\(formatter.string(from: event.startDate)) - \(formatter.string(from: event.endDate))"
+        : "\(displayFormatter.string(from: event.startDate)) - \(displayFormatter.string(from: event.endDate))"
       return "- \(title): \(when)"
     }
 
@@ -160,7 +231,11 @@ private func runCalendarQuery(
   let session = LanguageModelSession(
     tools: [CalendarLookupTool(onLog: onLog)],
     instructions:
-      "You help the user understand their calendar. Call lookupCalendarEvents whenever asked about their schedule, meetings, or events — never guess. Be concise."
+      "You help the user understand their calendar. Today is \(todayAnchorString()). "
+      + "Call lookupCalendarEvents whenever asked about their schedule, meetings, or events — "
+      + "never guess. Before calling it, resolve whatever date or range the user implied "
+      + "(\"today\", \"this time last year\", \"end of next month\") into an explicit "
+      + "startDate/endDate using today's date as your anchor. Be concise."
   )
 
   onLog("prompt_sent", "Sending prompt to model: \"\(prompt)\"")
