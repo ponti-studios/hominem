@@ -5,7 +5,11 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "incremental": true,
-    "tsBuildInfoFile": "../../.cache/app-omiro.tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
+    // tsserver-only (ignored by `tsc --noEmit`): doesn't inherit from
+    // tsconfig.base.json since this extends expo/tsconfig.base instead — see
+    // tsconfig.base.json for why this is set repo-wide.
+    "assumeChangesOnlyAffectDirectDependencies": true,
     "allowJs": true,
     "checkJs": false,
     "paths": {

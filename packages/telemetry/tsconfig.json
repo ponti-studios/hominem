@@ -3,17 +3,9 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "./build",
-    "tsBuildInfoFile": "../../.cache/telemetry.tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
     "lib": ["ESNext"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": [
-    "node_modules",
-    "build",
-    "dist",
-    ".turbo",
-    ".cache",
-    "coverage",
-    "*.tsbuildinfo"
-  ]
+  "exclude": ["node_modules", "build", "dist", ".turbo", ".cache", "coverage", "*.tsbuildinfo"]
 }

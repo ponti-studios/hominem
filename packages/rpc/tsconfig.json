@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.profiles/react-bundler-lib.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "../../.cache/rpc.tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
     // This package has no build script (nothing consumes dist/ — downstream
     // packages resolve @hominem/rpc to src via package.json exports), so
     // composite mode plus a fixed rootDir/outDir only get in the way of the

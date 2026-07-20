@@ -3,7 +3,7 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "./build",
-    "tsBuildInfoFile": "../../.cache/db.tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
     "paths": {
       "@hominem/db/schema/*": ["./src/migrations/schema.ts"],
       "@hominem/db/services/*": ["./src/services/*"]

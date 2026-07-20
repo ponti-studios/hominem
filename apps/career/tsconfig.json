@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.profiles/vite-app.json",
   "compilerOptions": {
     "rootDirs": [".", "./.react-router/types"],
-    "tsBuildInfoFile": "../../.cache/app-career.tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
     "noImplicitReturns": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,

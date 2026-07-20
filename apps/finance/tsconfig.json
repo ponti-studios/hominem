@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.profiles/vite-app.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "../../.cache/app-finance.tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
     "rootDirs": [".", "./.react-router/types"],
     // Not part of the root project-reference graph (this app builds via
     // vite/react-router, not tsc), so composite mode's strict file-list

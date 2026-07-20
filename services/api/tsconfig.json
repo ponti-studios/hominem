@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.profiles/bundler-noemit.json",
   "compilerOptions": {
     "composite": false,
-    "tsBuildInfoFile": "../../.cache/service-api.tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
     "paths": {
       "@/*": ["./*"]
     }

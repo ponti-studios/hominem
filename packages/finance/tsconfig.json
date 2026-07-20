@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.profiles/package-bundler.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "../../.cache/finance.tsbuildinfo",
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo",
     "outDir": "./build",
     "rootDir": "./src"
   },
