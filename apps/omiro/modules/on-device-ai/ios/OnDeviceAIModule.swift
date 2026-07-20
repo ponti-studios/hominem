@@ -87,6 +87,9 @@ private struct CalendarLookupTool: Tool {
   let name = "lookupCalendarEvents"
   let description =
     "Looks up the user's calendar events starting today. Use this whenever the user asks about their schedule, meetings, or upcoming events."
+  // Only String payloads cross this closure so it can stay @Sendable without
+  // wrapping tool-call detail in a bespoke Sendable event type.
+  let onLog: @Sendable (String, String) -> Void
 
   @Generable
   struct Arguments {
@@ -98,15 +101,19 @@ private struct CalendarLookupTool: Tool {
   }
 
   func call(arguments: Arguments) async throws -> String {
+    let days = max(1, min(arguments.daysAhead ?? 1, 30))
+    onLog("tool_call", "Model called lookupCalendarEvents(daysAhead: \(days))")
+
     let status = EKEventStore.authorizationStatus(for: .event)
     guard status == .fullAccess else {
+      onLog("tool_error", "lookupCalendarEvents failed: calendar permission missing")
       throw OnDeviceAIException.missingPermission
     }
 
     let store = EKEventStore()
-    let days = max(1, min(arguments.daysAhead ?? 1, 30))
     let start = Date()
     guard let end = Calendar.current.date(byAdding: .day, value: days, to: start) else {
+      onLog("tool_result", "lookupCalendarEvents returned 0 event(s)")
       return "No events found."
     }
 
@@ -115,6 +122,7 @@ private struct CalendarLookupTool: Tool {
       .sorted { $0.startDate < $1.startDate }
 
     guard !events.isEmpty else {
+      onLog("tool_result", "lookupCalendarEvents returned 0 event(s)")
       return "No events found in the next \(days) day(s)."
     }
 
@@ -134,24 +142,31 @@ private struct CalendarLookupTool: Tool {
       return "- \(title): \(when)"
     }
 
+    onLog("tool_result", "lookupCalendarEvents returned \(events.count) event(s)")
     return lines.joined(separator: "\n")
   }
 }
 
 @available(iOS 26.0, *)
-private func runCalendarQuery(prompt: String) async throws -> String {
+private func runCalendarQuery(
+  prompt: String,
+  onLog: @escaping @Sendable (String, String) -> Void
+) async throws -> String {
   guard case .available = SystemLanguageModel.default.availability else {
     throw OnDeviceAIException.modelUnavailable
   }
 
+  onLog("session_start", "Starting on-device model session")
   let session = LanguageModelSession(
-    tools: [CalendarLookupTool()],
+    tools: [CalendarLookupTool(onLog: onLog)],
     instructions:
       "You help the user understand their calendar. Call lookupCalendarEvents whenever asked about their schedule, meetings, or events — never guess. Be concise."
   )
 
+  onLog("prompt_sent", "Sending prompt to model: \"\(prompt)\"")
   do {
     let response = try await session.respond(to: prompt)
+    onLog("response_received", "Model responded (\(response.content.count) chars)")
     return response.content
   } catch {
     os_log(
@@ -160,6 +175,7 @@ private func runCalendarQuery(prompt: String) async throws -> String {
       type: .error,
       String(describing: error)
     )
+    onLog("generation_error", "Model generation failed: \(String(describing: error))")
     throw OnDeviceAIException.generationFailed
   }
 }
@@ -167,6 +183,8 @@ private func runCalendarQuery(prompt: String) async throws -> String {
 public class OnDeviceAIModule: Module {
   public func definition() -> ModuleDefinition {
     Name("OnDeviceAI")
+
+    Events("onDeviceAILog")
 
     AsyncFunction("getAvailability") { () async -> String in
       guard #available(iOS 26.0, *) else { return "unsupported" }
@@ -195,8 +213,15 @@ public class OnDeviceAIModule: Module {
         throw OnDeviceAIException.modelUnavailable
       }
 
+      let emitLog: @Sendable (String, String) -> Void = { [weak self] type, message in
+        self?.sendEvent(
+          "onDeviceAILog",
+          ["type": type, "message": message, "timestamp": Date().timeIntervalSince1970 * 1000]
+        )
+      }
+
       do {
-        let text = try await runCalendarQuery(prompt: prompt)
+        let text = try await runCalendarQuery(prompt: prompt, onLog: emitLog)
         os_log("askCalendar AsyncFunction resolving successfully", log: onDeviceAILog, type: .info)
         return OnDeviceAIResult(text: text, isOnDevice: true)
       } catch {
