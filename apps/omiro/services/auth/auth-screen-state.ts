@@ -1,7 +1,5 @@
-import type { AuthStatusCompat } from '~/services/auth/provider-utils';
-
 export interface AuthScreenStateInput {
-  authStatus: AuthStatusCompat;
+  isPending: boolean;
   authError: string | null;
   passkeyError: string | null;
 }
@@ -13,7 +11,7 @@ export interface AuthScreenStateOutput {
 
 export function resolveAuthScreenState(input: AuthScreenStateInput): AuthScreenStateOutput {
   return {
-    isProbing: input.authStatus === 'booting',
+    isProbing: input.isPending,
     displayError: input.authError || input.passkeyError || null,
   };
 }

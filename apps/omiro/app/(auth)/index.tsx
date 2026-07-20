@@ -31,7 +31,7 @@ import { posthog } from '~/services/posthog';
 import t from '~/translations';
 
 function AuthScreen() {
-  const { authStatus, isSignedIn, completePasskeySignIn, requestEmailOtp } = useAuth();
+  const { isPending, isSignedIn, completePasskeySignIn, requestEmailOtp } = useAuth();
   const router = useRouter();
   const themeColors = useThemeColors();
   const [email, setEmail] = useState('');
@@ -136,7 +136,7 @@ function AuthScreen() {
   }
 
   const { isProbing, displayError } = resolveAuthScreenState({
-    authStatus,
+    isPending,
     authError,
     passkeyError,
   });

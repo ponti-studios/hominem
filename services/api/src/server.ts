@@ -112,7 +112,7 @@ function registerApiRoutes(app: Hono<AppEnv>) {
   app.route('/', rpcApp);
   // OAuth discovery for MCP clients — must be at root per RFC 8414 / RFC 9728
   app.route('/', oauthDiscoveryRoutes);
-  // Custom auth extras first (session adapter, step-up guards, e2e helpers).
+  // Custom auth extras first (session/logout reshape for apps/finance, e2e helpers).
   // Unmatched /api/auth/* falls through to the Better Auth catch-all handler.
   app.route('/api/auth', authRoutes);
   app.use('/api/auth/*', authRateLimitMiddleware());

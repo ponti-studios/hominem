@@ -1,65 +1,30 @@
-import type { User } from '@hominem/auth/types';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('~/services/storage/local-store', () => ({
-  LocalStore: {},
+const mocks = vi.hoisted(() => ({
+  updateUser: vi.fn(),
 }));
 
-import { saveUpdatedProfile } from '~/services/auth/hooks/use-update-profile';
+vi.mock('~/services/auth/auth-client', () => ({
+  authClient: { updateUser: mocks.updateUser },
+}));
 
-describe('saveUpdatedProfile', () => {
-  it('persists the merged profile and refreshes auth state', async () => {
-    const current: User = {
-      id: 'user-1',
-      email: 'user@example.com',
-      name: 'Old Name',
-      image: null,
-      emailVerified: true,
-      createdAt: new Date('2024-01-01T00:00:00.000Z').toISOString(),
-      updatedAt: new Date('2024-01-02T00:00:00.000Z').toISOString(),
-    };
-    const saved: User = {
-      ...current,
-      name: 'New Name',
-      updatedAt: new Date('2024-02-01T00:00:00.000Z').toISOString(),
-    };
-    const persist = vi.fn().mockResolvedValue(saved);
-    const dispatch = vi.fn();
+import { updateProfile } from '~/services/auth/hooks/use-update-profile';
 
-    await expect(
-      saveUpdatedProfile({
-        current,
-        updates: { name: 'New Name' },
-        dispatch,
-        persist,
-      }),
-    ).resolves.toEqual(saved);
+describe('updateProfile', () => {
+  it('calls Better Auth update-user with only the provided fields', async () => {
+    mocks.updateUser.mockResolvedValue({ data: { status: true }, error: null });
 
-    expect(persist).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'user-1',
-        name: 'New Name',
-        email: 'user@example.com',
-        updatedAt: expect.any(String),
-      }),
-    );
-    expect(dispatch).toHaveBeenCalledWith({ type: 'SESSION_LOADED', user: saved });
+    await updateProfile({ name: 'New Name' });
+
+    expect(mocks.updateUser).toHaveBeenCalledWith({ name: 'New Name' });
   });
 
-  it('rejects when there is no stored profile', async () => {
-    const persist = vi.fn();
-    const dispatch = vi.fn();
+  it('throws when Better Auth returns an error', async () => {
+    mocks.updateUser.mockResolvedValue({
+      data: null,
+      error: { message: 'Failed to update profile' },
+    });
 
-    await expect(
-      saveUpdatedProfile({
-        current: null,
-        updates: { name: 'New Name' },
-        dispatch,
-        persist,
-      }),
-    ).rejects.toThrow('No user profile to update');
-
-    expect(persist).not.toHaveBeenCalled();
-    expect(dispatch).not.toHaveBeenCalled();
+    await expect(updateProfile({ name: 'New Name' })).rejects.toThrow('Failed to update profile');
   });
 });

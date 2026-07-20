@@ -82,7 +82,7 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
 function Settings() {
   const router = useRouter();
   const themeColors = useThemeColors();
-  const { authStatus, isSignedIn, signOut, currentUser, updateProfile } = useAuth();
+  const { isPending, isSignedIn, signOut, currentUser, updateProfile } = useAuth();
   const {
     addPasskey,
     passkeys,
@@ -193,7 +193,7 @@ function Settings() {
     );
   };
 
-  const protectedRouteState = resolveProtectedRouteState({ authStatus, isSignedIn });
+  const protectedRouteState = resolveProtectedRouteState({ isPending, isSignedIn });
 
   if (protectedRouteState.showFallback) {
     return <ProtectedRouteFallback />;

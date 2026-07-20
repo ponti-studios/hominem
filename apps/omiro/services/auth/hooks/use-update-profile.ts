@@ -1,47 +1,24 @@
 import type { User } from '@hominem/auth/types';
 import { useCallback } from 'react';
 
-import type { AuthContext } from '~/services/auth/types';
-import { LocalStore } from '~/services/storage/local-store';
+import { authClient } from '~/services/auth/auth-client';
 
-export async function saveUpdatedProfile(input: {
-  current: User | null;
-  updates: Partial<User>;
-  dispatch: AuthContext['dispatch'];
-  persist: (profile: User) => Promise<User>;
-}): Promise<User> {
-  const { current, updates, dispatch, persist } = input;
+/**
+ * Better Auth's /update-user endpoint notifies the client's session atom on
+ * success, so authClient.useSession() picks up the change automatically —
+ * no manual refetch or local cache write needed here.
+ */
+export async function updateProfile(updates: Partial<User>): Promise<void> {
+  const result = await authClient.updateUser({
+    ...(updates.name !== undefined ? { name: updates.name } : {}),
+    ...(updates.image !== undefined ? { image: updates.image } : {}),
+  });
 
-  if (!current) throw new Error('No user profile to update');
-
-  const merged: User = {
-    ...current,
-    ...updates,
-    updatedAt: new Date().toISOString(),
-  };
-
-  const saved = await persist(merged);
-  if (!saved) throw new Error('Failed to update profile');
-
-  dispatch({ type: 'SESSION_LOADED', user: saved });
-  return saved;
+  if (result.error) {
+    throw new Error(result.error.message ?? 'Failed to update profile');
+  }
 }
 
-export function useUpdateProfile(context: AuthContext) {
-  const { dispatch } = context;
-
-  const updateProfile = useCallback(
-    async (updates: Partial<User>) => {
-      const current = await LocalStore.getUserProfile();
-      return saveUpdatedProfile({
-        current,
-        updates,
-        dispatch,
-        persist: LocalStore.upsertUserProfile,
-      });
-    },
-    [dispatch],
-  );
-
-  return updateProfile;
+export function useUpdateProfile() {
+  return useCallback(updateProfile, []);
 }

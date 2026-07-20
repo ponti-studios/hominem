@@ -1,17 +1,14 @@
-import type { AuthStatusCompat } from '~/services/auth/provider-utils';
-
 interface ResolveAuthRedirectInput {
-  authStatus: AuthStatusCompat;
+  isPending: boolean;
   isSignedIn: boolean;
+  isSigningOut: boolean;
   segments: string[];
 }
 
 type AuthRedirectTarget = '/(auth)' | '/(protected)';
 
-const NO_REDIRECT_STATUSES = new Set(['booting', 'signing_out']);
-
 export function resolveAuthRedirect(input: ResolveAuthRedirectInput): AuthRedirectTarget | null {
-  if (NO_REDIRECT_STATUSES.has(input.authStatus)) {
+  if (input.isPending || input.isSigningOut) {
     return null;
   }
 

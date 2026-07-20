@@ -80,7 +80,7 @@ function InnerRootLayout() {
   const pathname = usePathname();
   const segments = useSegments() as string[];
   const segmentKey = segments.join('/');
-  const { authStatus, isSignedIn, currentUser, resetAuthForE2E, signOut } = useAuth();
+  const { isPending, isSignedIn, isSigningOut, currentUser, resetAuthForE2E, signOut } = useAuth();
   const hasMarkedShellReady = React.useRef(false);
   const lastRedirectSignatureRef = React.useRef<string | null>(null);
   useEffect(() => {
@@ -96,31 +96,32 @@ function InnerRootLayout() {
     // Boot resolution decides whether we land on (auth) or (protected); hiding
     // the splash before that resolves flashes the wrong screen. The timeout is
     // a safety net in case boot never settles.
-    if (authStatus !== 'booting') {
+    if (!isPending) {
       hide();
       return;
     }
 
     const timeout = setTimeout(hide, 3000);
     return () => clearTimeout(timeout);
-  }, [authStatus]);
+  }, [isPending]);
 
   useEffect(() => {
     if (isSignedIn && currentUser?.id) {
       posthog.identify(currentUser.id, { email: currentUser.email ?? null });
-    } else if (authStatus === 'signed_out') {
+    } else if (!isPending && !isSignedIn) {
       posthog.reset();
     }
-  }, [authStatus, currentUser, isSignedIn]);
+  }, [currentUser, isPending, isSignedIn]);
 
   useEffect(() => {
-    if (!hasMarkedShellReady.current && authStatus !== 'booting') {
+    if (!hasMarkedShellReady.current && !isPending) {
       hasMarkedShellReady.current = true;
     }
 
     const target = resolveAuthRedirect({
-      authStatus,
+      isPending,
       isSignedIn,
+      isSigningOut,
       segments,
     });
     if (!target) {
@@ -137,10 +138,10 @@ function InnerRootLayout() {
     if (target) {
       router.replace(target as RelativePathString);
     }
-  }, [authStatus, isSignedIn, router, segmentKey, segments]);
+  }, [isPending, isSignedIn, isSigningOut, router, segmentKey, segments]);
 
   useEffect(() => {
-    if (authStatus === 'booting' || !isSignedIn || !currentUser?.id) {
+    if (isPending || !isSignedIn || !currentUser?.id) {
       return;
     }
 
@@ -157,7 +158,7 @@ function InnerRootLayout() {
     if (pathname !== target) {
       router.replace(target);
     }
-  }, [authStatus, currentUser?.id, isSignedIn, pathname, router]);
+  }, [currentUser?.id, isPending, isSignedIn, pathname, router]);
 
   return (
     <RootErrorBoundary
@@ -171,16 +172,11 @@ function InnerRootLayout() {
       </SafeAreaView>
       {E2E_TESTING ? (
         <>
-          {authStatus === 'booting' ? (
-            <View testID="auth-state-booting" style={styles.e2eIndicator} />
-          ) : null}
-          {authStatus === 'signed_out' ||
-          authStatus === 'otp_requested' ||
-          authStatus === 'verifying_otp' ||
-          authStatus === 'degraded' ? (
+          {isPending ? <View testID="auth-state-booting" style={styles.e2eIndicator} /> : null}
+          {!isPending && !isSignedIn && !isSigningOut ? (
             <View testID="auth-state-signed-out" style={styles.e2eIndicator} />
           ) : null}
-          {isSignedIn || authStatus === 'signing_out' ? (
+          {isSignedIn || isSigningOut ? (
             <View testID="auth-state-signed-in" style={styles.e2eIndicator} />
           ) : null}
           <Pressable

@@ -1,23 +1,17 @@
-import type { RefObject } from 'react';
 import { useCallback } from 'react';
 
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
 import { authClient } from '~/services/auth/auth-client';
 import { clearPendingAuthEmail } from '~/services/auth/pending-email';
-import { clearPersistedSessionCookies } from '~/services/auth/session-cookie';
-import type { AuthContext } from '~/services/auth/types';
 import { LocalStore } from '~/services/storage/local-store';
 
-export function useSignOut(context: AuthContext, sessionCookieHeaderRef: RefObject<string | null>) {
-  const { state, dispatch } = context;
-
-  const signOut = useCallback(async () => {
+export function useSignOut(currentEmail: string | null | undefined) {
+  return useCallback(async () => {
     const startedAt = Date.now();
 
-    dispatch({ type: 'SIGN_OUT_REQUESTED' });
     captureAuthAnalyticsEvent('auth_sign_out_started', {
       phase: 'sign_out',
-      email: state.user?.email ?? undefined,
+      email: currentEmail ?? undefined,
     });
 
     try {
@@ -26,31 +20,25 @@ export function useSignOut(context: AuthContext, sessionCookieHeaderRef: RefObje
         throw new Error(result.error.message ?? 'Failed to sign out. Please try again.');
       }
 
-      await clearPersistedSessionCookies();
-      sessionCookieHeaderRef.current = null;
       clearPendingAuthEmail();
       await LocalStore.clearAllData();
-      dispatch({ type: 'SIGN_OUT_SUCCESS' });
       captureAuthAnalyticsEvent('auth_sign_out_succeeded', {
         phase: 'sign_out',
         durationMs: Date.now() - startedAt,
-        email: state.user?.email ?? undefined,
+        email: currentEmail ?? undefined,
         statusCode: 200,
       });
     } catch (error) {
       const resolvedError =
         error instanceof Error ? error : new Error('Failed to sign out. Please try again.');
-      dispatch({ type: 'FATAL_ERROR', error: resolvedError });
       captureAuthAnalyticsFailure('auth_sign_out_failed', {
         phase: 'sign_out',
         durationMs: Date.now() - startedAt,
-        email: state.user?.email ?? undefined,
+        email: currentEmail ?? undefined,
         error: resolvedError,
         failureStage: 'network',
       });
       throw resolvedError;
     }
-  }, [dispatch, state.user?.email]);
-
-  return { signOut };
+  }, [currentEmail]);
 }
