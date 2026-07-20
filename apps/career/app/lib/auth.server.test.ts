@@ -9,15 +9,15 @@ vi.mock('./env', () => ({
 import { getServerSession } from './auth.server';
 
 const sessionPayload = {
-  isAuthenticated: true,
+  session: { id: 'session-123' },
   user: {
     id: 'auth-user-id',
     email: 'user@example.com',
     emailVerified: true,
     name: 'Test User',
     image: null,
-    createdat: new Date(),
-    updatedat: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
 };
 
@@ -26,7 +26,7 @@ describe('career auth server helpers', () => {
     vi.unstubAllGlobals();
   });
 
-  it('reads the current session from the shared auth API', async () => {
+  it('reads the current session from Better Auth directly', async () => {
     const fetchMock = vi.fn<typeof fetch>(async () => Response.json(sessionPayload));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -39,14 +39,26 @@ describe('career auth server helpers', () => {
     const [url, init] = fetchMock.mock.calls[0] ?? [];
     if (!(init?.headers instanceof Headers)) throw new Error('expected fetch Headers');
 
-    expect(String(url)).toMatch(/\/api\/auth\/session$/);
+    expect(String(url)).toMatch(/\/api\/auth\/get-session$/);
     expect(init.method).toBe('GET');
     expect(init.headers.get('cookie')).toBe('better-auth.session_token=session-token');
     expect(result.user?.id).toBe('auth-user-id');
     expect(result.headers).toBeInstanceOf(Headers);
   });
 
-  it('returns null auth data when the shared auth API has no session', async () => {
+  it('returns null auth data when Better Auth has no session', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json(null)),
+    );
+
+    await expect(getServerSession(new Request('http://localhost/'))).resolves.toEqual({
+      user: null,
+      headers: expect.any(Headers),
+    });
+  });
+
+  it('returns null auth data when the request fails', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => new Response(null, { status: 401 })),
@@ -56,24 +68,5 @@ describe('career auth server helpers', () => {
       user: null,
       headers: expect.any(Headers),
     });
-  });
-
-  it('uses the test auth cookie without calling the shared auth API', async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-    const testUser = {
-      id: '00000000-0000-0000-0000-000000000000',
-      email: 'test@example.com',
-      name: 'Test User',
-    };
-
-    const result = await getServerSession(
-      new Request('http://localhost/editor', {
-        headers: { cookie: `test-auth-user=${encodeURIComponent(JSON.stringify(testUser))}` },
-      }),
-    );
-
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(result.user?.id).toBe(testUser.id);
   });
 });

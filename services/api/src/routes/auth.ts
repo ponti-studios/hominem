@@ -232,6 +232,12 @@ function jsonWithHeaders(body: Record<string, unknown>, status: number, headers?
 
 // ---------------------------------------------------------------------------
 // Session / logout (SSR + first-party apps)
+//
+// getServerAuth (packages/auth/src/server.ts) now calls Better Auth's own
+// GET /api/auth/get-session directly instead of this reshaped endpoint.
+// This route stays because apps/finance still calls it directly (its
+// Playwright passkey spec and its logout action) — remove once those callers
+// migrate to the native Better Auth session/sign-out endpoints too.
 // ---------------------------------------------------------------------------
 
 authRoutes.get('/session', async (c) => {

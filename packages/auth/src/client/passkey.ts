@@ -8,7 +8,7 @@ export type Passkey = {
   createdAt?: string | Date | null;
 };
 
-type ApiError = { message?: string } | null | undefined;
+type ApiError = { message?: string; status?: number } | null | undefined;
 
 type ApiResult<TData = unknown> = {
   data?: TData | null;
@@ -112,7 +112,7 @@ export function usePasskeys(options: UsePasskeysOptions = {}): UsePasskeysResult
     const result = await authClient.passkey.addPasskey();
     if (result.error) {
       const message =
-        result.error.message?.includes('step_up') || result.error.message?.includes('403')
+        result.error.status === 403
           ? 'Re-authenticate with a passkey, then try again.'
           : (result.error.message ?? 'Failed to register passkey.');
       setAuthError(message);
@@ -130,11 +130,10 @@ export function usePasskeys(options: UsePasskeysOptions = {}): UsePasskeysResult
         throw: false,
       })) as ApiResult & { error?: { message?: string; status?: number; code?: string } | null };
       if (response.error) {
-        const raw = response.error.message ?? '';
         const message =
-          raw.includes('step_up') || response.error.status === 403
+          response.error.status === 403
             ? 'Re-authenticate with a passkey, then try again.'
-            : raw || 'Passkey deletion failed.';
+            : response.error.message || 'Passkey deletion failed.';
         setAuthError(message);
         throw new Error(message);
       }
