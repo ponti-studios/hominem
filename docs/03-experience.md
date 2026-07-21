@@ -33,7 +33,7 @@ The document has four layers. Each layer only uses primitives defined in the
 layer above it:
 
 1. **Foundations** — the closed set of tokens (color, spacing, radius, type,
-   elevation, motion).
+   elevation, iconography, motion).
 2. **Primitives** — the closed set of components, each with a fixed contract
    (variants, sizes, states).
 3. **Patterns** — how primitives compose into screens.
@@ -147,7 +147,20 @@ background tint or shadow to separate from the screen — that's what
 `space-150`/`space-200` are for (§1.2). If a component seems to need a
 third elevation step, it's composed wrong: flatten it (Rule 10, 10a).
 
-### 1.6 Motion
+### 1.6 Iconography
+
+- **Source:** SF Symbols by default, via `tintColor`. State (selected,
+  unselected, disabled, pressed) is expressed by recoloring the same glyph,
+  never by swapping to a different asset per state.
+- **Custom icon sets** (a bitmap replacing an SF Symbol because no symbol
+  fits) are legal only as a solid alpha mask — one flat shape, no internal
+  color or shading, on a transparent background — supplied at `@1x/@2x/@3x`.
+  This lets `tintColor` recolor it exactly like an SF Symbol, so it carries
+  selected/unselected state the same way every other icon in the system
+  does. A full-color or multi-tone bitmap icon is not a legal shortcut
+  around the token system, no matter how small the use case.
+
+### 1.7 Motion
 
 | Token             | Duration | Easing                          | Use                                  |
 | ----------------- | -------- | -------------------------------- | --------------------------------------|
@@ -217,9 +230,29 @@ shadcn's variant taxonomy, translated to this system's tokens.
 
 ### Segmented toggle
 
-- **Uses:** exactly two mutually exclusive views of the same content (e.g. Chats/Notes) — not a substitute for tabs with more than two options.
-- **Shape:** a `radius-full` track filled with `muted`; the selected segment is a `radius-full` chip filled with `accent`, `text-on-accent` label. Unselected segments are transparent, `text-secondary` label.
-- **Contract:** built from our own tokens — never the platform's native segmented control. The OS's default glass/translucent material doesn't carry any of our tokens (color, radius, motion) and renders inconsistently against a custom background; a real screen hit this exact problem (`app/(protected)/index.tsx`'s Chats/Notes toggle).
+- **Uses:** a small set of mutually exclusive views of the same content
+  (e.g. Chats/Notes/Tasks) — not a substitute for a screen's worth of tabs.
+- **Shape:** a `radius-full` track filled with `muted`; the selected
+  segment is a `radius-full` chip filled with `accent`. Unselected segments
+  are transparent.
+- **Label variants:** either a `text-on-accent`/`text-secondary` text
+  label per segment, or an icon per segment (Foundations §1.6) tinted
+  `text-on-accent`/`text-secondary` the same way — never both in the same
+  toggle. Icon-only segments require an `accessibilityLabel` per segment
+  (Rule 55).
+- **Size:** every segment is a minimum 44×44pt tap target (Rule 20, 74),
+  even when the visual glyph or label is smaller — the track and its
+  internal padding expand to guarantee this, they never shrink to fit a
+  cramped header. A track sized to match a neighboring icon button's
+  *visual* size without also matching its *tap* size (icon buttons get
+  this for free via `hitSlop`) is a contract violation, not a style
+  choice — this happened once already and produced a real sub-44pt
+  control.
+- **Contract:** built from our own tokens — never the platform's native
+  segmented control. The OS's default glass/translucent material doesn't
+  carry any of our tokens (color, radius, motion) and renders
+  inconsistently against a custom background; a real screen hit this
+  exact problem (`app/(protected)/index.tsx`'s Chats/Notes toggle).
 
 ### Pill / Badge
 
@@ -384,7 +417,7 @@ Pass/fail rules for how primitives assemble into a screen.
     its hierarchy calls for.
 64. Icons communicate state or action. Decorative icons are prohibited.
 65. Animation communicates a state change or spatial relationship, using
-    a `duration-*` token (§1.6).
+    a `duration-*` token (§1.7).
 66. Entertainment animation is prohibited — no motion token exists for it.
 67. Every animation resolves to `duration-instant` or off under reduced
     motion.
@@ -414,6 +447,23 @@ Pass/fail rules for how primitives assemble into a screen.
     order.
 79. The screen remains usable at the largest supported dynamic type size.
 80. Horizontal scrolling is never required to discover a primary action.
+
+### Native chrome
+
+81. A native header slot (`headerLeft`, `headerRight`, search bar
+    accessories) never toggles between a defined value and no value in
+    response to interaction state. If a slot has nothing to show in some
+    state, it renders an explicit alternate or empty view instead of
+    `undefined`/`null` — the OS reserves the slot's space regardless, and
+    may synthesize its own placeholder chrome for one that disappears. A
+    real screen hit this: `app/(protected)/index.tsx` set `headerLeft` to
+    `undefined` while its search bar was active, and iOS filled the
+    reserved slot with a non-functional "More" button.
+82. Chrome that only matters in one interaction state uses the platform's
+    on-demand idiom for it (e.g. an expand-on-tap search field) rather
+    than becoming permanently visible to sidestep a layout collision with
+    other header content. Solve the collision; don't spend ceremony
+    budget (§Ceremony budget) to avoid solving it.
 
 ---
 
