@@ -2,6 +2,9 @@
 
 The mobile app is an Expo app that targets iOS only.
 
+Its governing product, UI, and voice architecture live in the repository
+[Bible](../../README.md#the-bible), not in an app-local documentation directory.
+
 ## Quick Start
 
 ```bash
@@ -61,4 +64,4 @@ If the error still appears, the local generated `apps/omiro/ios` directory is li
 | Create a production iOS build | `just mobile build production` | App Store/TestFlight release builds |
 | Publish a production OTA update | `just mobile update production` | Ship a production-compatible OTA update |
 | Start Metro / Expo | `just mobile start` | When you want to attach to an existing native build |
-| Check the app docs | `apps/omiro/README.md` | When Zed or Swift diagnostics get confused |
+| Read Omiro's governing decisions | [Repository Bible](../../README.md#the-bible) | Before changing product, UI, or voice behavior |

@@ -1,9 +1,9 @@
-# Omiro UI Design Constitution
+# III. Experience
 
-A closed system, not a style guide. Every token, component, and screen rule
-below is exhaustive: if a value, variant, or pattern is not listed, it does
-not exist in this product. "It feels better" is not a valid exception, and
-neither is "just this once."
+The Omiro interface is a closed system, not a style guide. Every token,
+component, and screen rule below is exhaustive: if a value, variant, or pattern
+is not listed, it does not exist in this product. "It feels better" is not a
+valid exception, and neither is "just this once."
 
 ## Ceremony budget
 
@@ -19,9 +19,11 @@ This means:
 - No decorative containers. A "card" exists only where §2 explicitly
   grants one (Modal/Sheet). Everywhere else, a section is text and space,
   not a box.
-- No default borders. Whitespace separates content. A divider line
-  (List row, Primitives §2) and the Button `outline` variant (Primitives
-  §2) are the two named, rare exceptions — not a habit.
+- No default borders — with one standing exception: Input (Primitives §2)
+  is always a bordered box, because a text field has to read as a text
+  field. Outside of Input, whitespace separates content; a divider line
+  (List row) and the Button `outline` variant (Primitives §2) are the
+  two further named, rare exceptions — not a habit.
 - One radius, applied uniformly, plus the one that's a geometric necessity
   (a circle can't be "less round"). Not a scale to choose from.
 - A palette of two colors plus two state colors. Hierarchy within text is
@@ -185,9 +187,9 @@ shadcn's variant taxonomy, translated to this system's tokens.
 
 ### Input
 
-- **Sizes:** `default` only, 44pt height.
-- **Boundary:** no box border. A single bottom `divider` line, or a barely-tinted `foreground/38`-on-`background` fill — pick one system-wide, not per screen. Never both, never a full outline box.
-- **States:** default, focused, error, disabled. Focused and error are distinguished by an `accent`/`destructive` bottom line, not a background change.
+- **Sizes:** `default` only, 44pt minimum height (multiline inputs grow from that floor).
+- **Boundary:** a full bordered box — `radius`, `border-default`, transparent/`background` fill. This is the one component in the system with a border by default (Ceremony budget): a bottom hairline alone doesn't read as "type here," so Input doesn't get the whitespace-only treatment the rest of §3 does.
+- **States:** default, focused, error, disabled. Focused swaps the border to `accent`; error swaps it to `destructive`. Nothing else about the shape changes — no background shift, no size change.
 - **Contract:** placeholder describes expected input (Rule 31); error state shows an inline message, not just a color change (Rule 77).
 
 ### Section (replaces "card")
@@ -212,6 +214,12 @@ shadcn's variant taxonomy, translated to this system's tokens.
 - **Elevation:** `elevation-1` — the only component allowed above `elevation-0` (§1.5).
 - **Shape:** `radius`, applied to the top corners only for a sheet, all corners for a centered modal.
 - **Contract:** confirmation content only; substantial content gets a screen instead (Rule 53, 54). Never nests another modal or sheet (Rule 10).
+
+### Segmented toggle
+
+- **Uses:** exactly two mutually exclusive views of the same content (e.g. Chats/Notes) — not a substitute for tabs with more than two options.
+- **Shape:** a `radius-full` track filled with `muted`; the selected segment is a `radius-full` chip filled with `accent`, `text-on-accent` label. Unselected segments are transparent, `text-secondary` label.
+- **Contract:** built from our own tokens — never the platform's native segmented control. The OS's default glass/translucent material doesn't carry any of our tokens (color, radius, motion) and renders inconsistently against a custom background; a real screen hit this exact problem (`app/(protected)/index.tsx`'s Chats/Notes toggle).
 
 ### Pill / Badge
 

@@ -125,10 +125,7 @@ const ArchivedChatRow = memo(
       <View style={styles.rowWrap}>
         <Pressable
           onPress={() => onPressChat(chat.id)}
-          style={({ pressed }) => [
-            styles.chatRow,
-            { borderBottomColor: themeColors['border-subtle'], opacity: pressed ? 0.7 : 1 },
-          ]}
+          style={({ pressed }) => [styles.chatRow, pressed && styles.chatRowPressed]}
         >
           <AppIcon name="tray" size={14} tintColor={themeColors['text-secondary']} />
           <View style={styles.chatCopy}>
@@ -158,11 +155,13 @@ const styles = StyleSheet.create({
   },
   chatRow: {
     alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: 10,
     minHeight: 52,
     paddingVertical: 12,
+  },
+  chatRowPressed: {
+    opacity: 0.6,
   },
   chatTitle: {
     fontSize: 15,

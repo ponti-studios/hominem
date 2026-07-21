@@ -14,6 +14,7 @@ import {
   componentSizes,
   fontSizes,
   fontWeights,
+  lineHeights,
   radii,
   themeSpacing,
 } from '~/components/theme';
@@ -49,7 +50,10 @@ export function Button({
 }: ButtonProps) {
   const resolvedStyles = useMemo(() => {
     const baseStyle = {
-      paddingVertical: themeSpacing.md,
+      // Vertical padding must leave room for the text's line height (not
+      // just its font size) or descenders clip against the button edge —
+      // sm's shorter box needs tighter padding than md to make room.
+      paddingVertical: size === 'sm' ? themeSpacing.sm : themeSpacing.md,
       paddingHorizontal: themeSpacing.lg,
       borderRadius: radii.md,
       alignItems: 'center' as const,
@@ -134,9 +138,11 @@ const styles = StyleSheet.create({
   text: {
     fontSize: fontSizes.md,
     fontWeight: fontWeights.semibold,
+    lineHeight: lineHeights.bodySm,
   },
   textSm: {
     fontSize: fontSizes.footnote,
+    lineHeight: lineHeights.footnote,
   },
   pressed: {
     opacity: 0.7,

@@ -4,6 +4,8 @@ import type { ErrorInfo } from 'react';
 
 import { posthog } from '~/services/posthog';
 
+const isSentryEnabled = process.env.APP_ENV !== 'development';
+
 export function logError(
   error: Error,
   errorInfo?: ErrorInfo,
@@ -14,17 +16,19 @@ export function logError(
   },
 ) {
   logger.error('[ErrorBoundary]', error);
-  Sentry.captureException(error, {
-    contexts: {
-      react: {
-        componentStack: errorInfo?.componentStack ?? undefined,
+  if (isSentryEnabled) {
+    Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo?.componentStack ?? undefined,
+        },
       },
-    },
-    tags: {
-      feature: context?.feature ?? 'unknown',
-      route: context?.route ?? 'unknown',
-    },
-  });
+      tags: {
+        feature: context?.feature ?? 'unknown',
+        route: context?.route ?? 'unknown',
+      },
+    });
+  }
 
   if (typeof posthog.captureException === 'function') {
     posthog.captureException(error, {

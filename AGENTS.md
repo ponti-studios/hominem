@@ -4,6 +4,15 @@
 - Never commit code. The user must review and commit the changes themselves.
 - `apps/omiro` should only support Apple devices. Do not add fallbacks for other platforms such as Android.
 
+## Documentation
+
+- The root `README.md` is the front door to the Hominem Bible ([docs/](docs/)).
+- Durable product, architecture, design, security, and operational decisions in the appropriate numbered Bible part under the root `docs/` directory. 
+  - Do not create `docs/` directories inside apps, packages, or services.
+- Keep package READMEs to setup and local entrypoint information; link to the root Bible for governing decisions.
+- Write current rules and invariants, not incident narratives or temporary task lists. Git history preserves history; the work tracker owns temporary execution.
+- Update the relevant Bible document in the same change when a durable implementation decision changes.
+
 ## Adding a new package, app, or service
 
 - Never add a `workspace:*` dependency in `package.json` for an `import type`-only reference — pnpm/turbo don't know TypeScript erases type-only imports, so a real dependency edge drags the whole target package's build/test/lint/typecheck into every consumer's CI scope. Use a `paths` alias in your own `tsconfig.json` pointing at the real source file instead. See `CLAUDE.md`'s "Adding a new package, app, or service" section for the full checklist (tsconfig composite/references wiring, Dockerfile pattern, `validate-*.yml`/`deploy-*.yml` conventions) before scaffolding a new app.

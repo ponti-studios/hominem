@@ -1,5 +1,3 @@
-import ExpoSegmentedControl from '@expo/ui/community/segmented-control';
-import { Host, RNHostView } from '@expo/ui/swift-ui';
 import { Stack, useIsFocused, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
@@ -8,7 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Composer } from '~/components/composer/Composer';
 import { InboxList, type InboxListRef } from '~/components/inbox/InboxList';
+import { TasksPane } from '~/components/tasks/TasksPane';
 import { makeStyles, useThemeColors } from '~/components/theme';
+import { IconButton } from '~/components/ui/icon-button';
+import { SegmentedToggle } from '~/components/ui/segmented-toggle';
 import { buildInboxSections, type InboxTab } from '~/services/inbox/screen-state';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 import {
@@ -16,12 +17,10 @@ import {
   readInboxDraft,
   writeInboxDraft,
 } from '~/services/navigation/launch-state';
-import {
-  getArchivedChatsRoute,
-  getSettingsRoute,
-  getTasksRoute,
-} from '~/services/navigation/routes';
+import { getSettingsRoute } from '~/services/navigation/routes';
 import t from '~/translations';
+
+type InboxScreenTab = InboxTab | 'tasks';
 
 export default function InboxScreen() {
   const styles = useStyles();
@@ -40,24 +39,21 @@ export default function InboxScreen() {
     refetch,
   } = useInboxStreamItems({ enabled: isFocused });
   const listRef = useRef<InboxListRef>(null);
-  const [activeTab, setActiveTab] = useState<InboxTab>('notes');
+  const [activeTab, setActiveTab] = useState<InboxScreenTab>('notes');
   const [searchQuery, setSearchQuery] = useState('');
   const inboxDraft = readInboxDraft();
+  const isTasksTab = activeTab === 'tasks';
 
   const handleOpenSettings = useCallback(() => router.push(getSettingsRoute()), [router]);
-
-  const handleOpenArchivedChats = useCallback(() => router.push(getArchivedChatsRoute()), [router]);
-
-  const handleOpenTasks = useCallback(() => router.push(getTasksRoute()), [router]);
 
   const { searchResults, visibleItems } = useMemo(
     () =>
       buildInboxSections({
         items,
-        tab: activeTab,
+        tab: isTasksTab ? 'notes' : activeTab,
         searchQuery,
       }),
-    [activeTab, items, searchQuery],
+    [activeTab, isTasksTab, items, searchQuery],
   );
   const isSearching = searchQuery.trim().length > 0;
   const displayItems = isSearching ? searchResults : visibleItems;
@@ -79,83 +75,74 @@ export default function InboxScreen() {
             onChangeText: (event) => setSearchQuery(event.nativeEvent.text),
             tintColor: themeColors.foreground,
           },
+          headerLeft: () => (
+            <SegmentedToggle
+              onChange={setActiveTab}
+              options={[
+                { label: t.inbox.screen.chatsTab, value: 'chats' },
+                { label: t.inbox.screen.notesTab, value: 'notes' },
+                { label: t.inbox.screen.tasks, value: 'tasks' },
+              ]}
+              testID="inbox-tab-control"
+              value={activeTab}
+            />
+          ),
+          headerRight: () => (
+            <IconButton
+              accessibilityLabel={t.inbox.screen.openSettingsA11y}
+              icon="person.crop.circle"
+              onPress={handleOpenSettings}
+            />
+          ),
         }}
       />
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.View hidesSharedBackground>
-          <Host>
-            <RNHostView matchContents>
-              <ExpoSegmentedControl
-                selectedIndex={activeTab === 'notes' ? 1 : 0}
-                style={styles.segmentedControl}
-                testID="inbox-tab-control"
-                values={[t.inbox.screen.chatsTab, t.inbox.screen.notesTab]}
-                onChange={(event) =>
-                  setActiveTab(event.nativeEvent.selectedSegmentIndex === 1 ? 'notes' : 'chats')
-                }
-              />
-            </RNHostView>
-          </Host>
-        </Stack.Toolbar.View>
-      </Stack.Toolbar>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Menu
-          accessibilityLabel={t.inbox.screen.openMenuA11y}
-          icon="person.crop.circle"
-          title="Inbox"
-        >
-          <Stack.Toolbar.MenuAction icon="checklist" onPress={handleOpenTasks}>
-            {t.inbox.screen.tasks}
-          </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction icon="archivebox" onPress={handleOpenArchivedChats}>
-            {t.inbox.screen.archivedChats}
-          </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction icon="gearshape" onPress={handleOpenSettings}>
-            {t.inbox.screen.settings}
-          </Stack.Toolbar.MenuAction>
-        </Stack.Toolbar.Menu>
-      </Stack.Toolbar>
 
       <View style={styles.listWrap}>
         <View style={styles.listInner}>
-          <InboxList
-            contentPaddingBottom={insets.bottom + 164}
-            contentPaddingTop={4}
-            error={error}
-            isFetchingNextPage={isFetchingNextPage}
-            isLoading={isInitialLoading}
-            items={displayItems}
-            listRef={listRef}
-            tab={activeTab}
-            onEndReached={() => {
-              if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-            }}
-            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refetch} />}
-          />
+          {isTasksTab ? (
+            <TasksPane isFocused={isFocused} />
+          ) : (
+            <InboxList
+              contentPaddingBottom={insets.bottom + 164}
+              contentPaddingTop={4}
+              error={error}
+              isFetchingNextPage={isFetchingNextPage}
+              isLoading={isInitialLoading}
+              items={displayItems}
+              listRef={listRef}
+              tab={activeTab}
+              onEndReached={() => {
+                if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+              }}
+              refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refetch} />}
+            />
+          )}
         </View>
       </View>
 
-      <KeyboardStickyView
-        offset={{ closed: 0, opened: 40 }}
-        pointerEvents="box-none"
-        style={styles.composerDock}
-      >
-        {/* oxfmt-ignore */}
-        <View
-          style={[
-            styles.composerWrap,
-            { paddingBottom: Math.max(insets.bottom, 12) },
-          ]}
+      {isTasksTab ? null : (
+        <KeyboardStickyView
+          offset={{ closed: 0, opened: 40 }}
+          pointerEvents="box-none"
+          style={styles.composerDock}
         >
-          <Composer
-            mode="inbox"
-            entryMode={activeTab === 'chats' ? 'chat' : 'note'}
-            initialMessage={inboxDraft}
-            onDraftChange={writeInboxDraft}
-            onClearDraft={clearInboxDraft}
-          />
-        </View>
-      </KeyboardStickyView>
+          {/* oxfmt-ignore */}
+          <View
+            style={[
+              styles.composerWrap,
+              { paddingBottom: Math.max(insets.bottom, 12) },
+            ]}
+          >
+            <Composer
+              mode="inbox"
+              entryMode={activeTab === 'chats' ? 'chat' : 'note'}
+              initialMessage={inboxDraft}
+              onDraftChange={writeInboxDraft}
+              onClearDraft={clearInboxDraft}
+            />
+          </View>
+        </KeyboardStickyView>
+      )}
     </View>
   );
 }
@@ -180,9 +167,5 @@ const useStyles = makeStyles((theme) => ({
   },
   listWrap: {
     flex: 1,
-  },
-  segmentedControl: {
-    height: 32,
-    width: 168,
   },
 }));

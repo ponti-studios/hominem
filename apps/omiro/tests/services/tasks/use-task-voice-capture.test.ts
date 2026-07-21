@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getTaskVoiceCaptureErrorPresentation } from '~/services/tasks/use-task-voice-capture';
+import { getTaskVoiceCaptureErrorPresentation } from '~/services/tasks/taskVoiceCapture.helpers';
 
 describe('task voice capture error presentation', () => {
   it('describes transcription cleanup accurately after a failure', () => {

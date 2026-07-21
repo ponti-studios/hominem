@@ -7,7 +7,7 @@ import { env } from './env';
 type ShutdownTask = () => Promise<void> | void;
 
 export function initRuntime(serviceName: string) {
-  if (env.SENTRY_DSN) {
+  if (env.SENTRY_DSN && env.NODE_ENV !== 'development') {
     Sentry.init({
       dsn: env.SENTRY_DSN,
       environment: env.NODE_ENV,

@@ -6,6 +6,8 @@ import { getNativeErrorCode, useVoiceRecorder } from '~/hooks/useVoiceRecorder';
 import VoiceTranscriberModule, { VoiceTranscriberErrorCode } from '~/modules/voice-transcriber';
 
 import { useVoiceTasks } from './use-voice-tasks';
+export { getTaskVoiceCaptureErrorPresentation } from './taskVoiceCapture.helpers';
+import { getTaskVoiceCaptureErrorPresentation } from './taskVoiceCapture.helpers';
 
 export type TaskVoiceCaptureState = 'idle' | 'recording' | 'transcribing' | 'creating' | 'failed';
 
@@ -18,38 +20,6 @@ export type TaskVoiceCaptureErrorCode =
 export interface TaskVoiceCaptureError {
   code: TaskVoiceCaptureErrorCode;
   transcript?: string;
-}
-
-export interface TaskVoiceCaptureErrorPresentation {
-  title: string;
-  message: string;
-}
-
-export function getTaskVoiceCaptureErrorPresentation(
-  code: TaskVoiceCaptureErrorCode,
-): TaskVoiceCaptureErrorPresentation {
-  switch (code) {
-    case 'permission-denied':
-      return {
-        title: 'Microphone access required',
-        message: 'Allow microphone and speech recognition access to add tasks by voice.',
-      };
-    case 'recording-failed':
-      return {
-        title: 'Voice recording failed',
-        message: 'Omiro could not start recording right now.',
-      };
-    case 'transcription-failed':
-      return {
-        title: 'Voice transcription failed',
-        message: 'The transcript could not be generated. The temporary recording was cleaned up.',
-      };
-    case 'creation-failed':
-      return {
-        title: "Couldn't create tasks",
-        message: 'Your recording was transcribed, but the tasks could not be created.',
-      };
-  }
 }
 
 function createTaskVoiceCaptureError(
