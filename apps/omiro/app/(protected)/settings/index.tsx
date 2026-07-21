@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import type { SFSymbol } from 'expo-symbols';
 import React, { useEffect, useReducer, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -17,12 +16,10 @@ import { ProtectedRouteFallback } from '~/components/protected/protected-route-f
 import { componentSizes, fontSizes, radii, spacing, useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
-import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
 import OnDeviceAIModule, { type CalendarPermissionStatus } from '~/modules/on-device-ai';
 import { useAuth } from '~/services/auth/auth-provider';
-import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 import { resolveProtectedRouteState } from '~/services/auth/protected-route-state';
 import { getArchivedChatsRoute, getOnDeviceCalendarSpikeRoute } from '~/services/navigation/routes';
 import { useMonthlyUsage } from '~/services/usage/use-usage-query';
@@ -134,12 +131,6 @@ function Settings() {
   const router = useRouter();
   const themeColors = useThemeColors();
   const { isPending, isSignedIn, signOut, currentUser, updateProfile } = useAuth();
-  const {
-    addPasskey,
-    passkeys,
-    deletePasskey,
-    isLoading: isPasskeyLoading,
-  } = useMobilePasskeyAuth({ loadPasskeys: true });
   const { data: monthlyUsage } = useMonthlyUsage();
   const initialName = currentUser?.name ?? '';
   const [state, dispatch] = useReducer(accountReducer, {
@@ -221,39 +212,6 @@ function Settings() {
   const onCalendarPress = async () => {
     const status = await OnDeviceAIModule.requestCalendarPermissions();
     setCalendarPermission(status);
-  };
-
-  const onAddPasskeyPress = async () => {
-    const result = await addPasskey();
-    if (!result.success) {
-      Alert.alert(
-        t.settings.passkeys.addErrorTitle,
-        result.error ?? t.settings.passkeys.addErrorTitle,
-      );
-    }
-  };
-
-  const onDeletePasskeyPress = (id: string, passkeyName: string) => {
-    Alert.alert(
-      t.settings.passkeys.removeDialog.title,
-      t.settings.passkeys.removeDialog.message(passkeyName),
-      [
-        { text: t.settings.passkeys.removeDialog.cancel, style: 'cancel' },
-        {
-          text: t.settings.passkeys.removeDialog.confirm,
-          style: 'destructive',
-          onPress: async () => {
-            const result = await deletePasskey(id);
-            if (!result.success) {
-              Alert.alert(
-                t.settings.passkeys.removeDialog.errorTitle,
-                result.error ?? t.settings.passkeys.removeDialog.errorMessage,
-              );
-            }
-          },
-        },
-      ],
-    );
   };
 
   const protectedRouteState = resolveProtectedRouteState({ isPending, isSignedIn });
@@ -442,42 +400,6 @@ function Settings() {
           }
         />
       </View>
-
-      {/* Passkeys */}
-      {MOBILE_PASSKEY_ENABLED ? (
-        <View style={styles.section}>
-          <SectionLabel>{t.settings.sections.passkeys}</SectionLabel>
-          <SettingsRow
-            icon="plus"
-            label={isPasskeyLoading ? t.settings.passkeys.adding : t.settings.passkeys.add}
-            onPress={isPasskeyLoading ? undefined : () => void onAddPasskeyPress()}
-            accessory={
-              isPasskeyLoading ? <ActivityIndicator color={themeColors.foreground} /> : null
-            }
-          />
-          {passkeys.map((pk) => (
-            <SettingsRow
-              key={pk.id}
-              icon="key.fill"
-              label={pk.name}
-              accessory={
-                <Pressable hitSlop={8} onPress={() => onDeletePasskeyPress(pk.id, pk.name)}>
-                  {({ pressed }) => (
-                    <Text
-                      style={[
-                        styles.removeText,
-                        { color: themeColors.destructive, opacity: pressed ? 0.6 : 1 },
-                      ]}
-                    >
-                      {t.settings.passkeys.remove}
-                    </Text>
-                  )}
-                </Pressable>
-              }
-            />
-          ))}
-        </View>
-      ) : null}
 
       {/* Danger zone */}
       <View style={styles.section}>

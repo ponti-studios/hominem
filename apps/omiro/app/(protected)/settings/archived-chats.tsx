@@ -99,6 +99,7 @@ function ArchivedChatsSwiftUI({
   return (
     <FlashList
       contentContainerStyle={styles.listContent}
+      contentInsetAdjustmentBehavior="automatic"
       data={chats}
       keyExtractor={(chat) => chat.id}
       ListEmptyComponent={empty}

@@ -100,6 +100,7 @@ export default function TaskDetailScreen() {
       </Stack.Toolbar>
       <FlashList
         contentContainerStyle={styles.listContent}
+        contentInsetAdjustmentBehavior="automatic"
         data={data?.children ?? []}
         keyExtractor={(task) => task.id}
         ListEmptyComponent={

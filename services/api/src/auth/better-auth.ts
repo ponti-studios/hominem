@@ -1,7 +1,6 @@
 import { createHash, randomInt } from 'node:crypto';
 
 import { kyselyAdapter } from '@better-auth/kysely-adapter';
-import { passkey } from '@better-auth/passkey';
 import { authDb } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
 import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
@@ -20,7 +19,6 @@ if (env.AUTH_TEST_OTP_ENABLED) {
 function getTrustedOrigins() {
   const origins = new Set([
     env.API_URL,
-    env.AUTH_PASSKEY_ORIGIN,
     env.CAREER_URL,
     env.FINANCE_URL,
     env.WEB_URL,
@@ -205,11 +203,6 @@ function buildVerificationOtpEmail(input: {
 
 function getAuthPlugins() {
   const plugins: BetterAuthPlugin[] = [
-    passkey({
-      rpID: env.AUTH_PASSKEY_RP_ID,
-      rpName: API_BRAND.appName,
-      origin: getTrustedOrigins(),
-    }),
     emailOTP({
       expiresIn: env.AUTH_EMAIL_OTP_EXPIRES_SECONDS,
       generateOTP: () => generateNumericOtp({ length: 6, isTest: !shouldSendEmails() }),
@@ -274,7 +267,7 @@ function getAuthPlugins() {
   return plugins;
 }
 
-// Email OTP + passkey are the product auth surfaces. Password auth, device
+// Email OTP is the product auth surface. Password auth, device
 // authorization, JWT/JWKS, and one-time tokens are intentionally disabled until
 // a concrete client needs them (see kernel-better-auth surface map).
 const betterAuthOptions: BetterAuthOptions = {
@@ -286,10 +279,6 @@ const betterAuthOptions: BetterAuthOptions = {
     enabled: false,
   },
   session: {
-    // Sensitive mutations (e.g. passkey.addPasskey/deletePasskey) require the
-    // session to have been created within this window — Better Auth's own
-    // fresh-session check, replacing the removed Redis-backed step-up store.
-    // This is the Better Auth default made explicit, not a behavior change.
     freshAge: 60 * 60 * 24, // 24 hours
   },
   plugins: getAuthPlugins(),

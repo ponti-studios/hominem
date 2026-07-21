@@ -235,8 +235,8 @@ function jsonWithHeaders(body: Record<string, unknown>, status: number, headers?
 //
 // getServerAuth (packages/auth/src/server.ts) now calls Better Auth's own
 // GET /api/auth/get-session directly instead of this reshaped endpoint.
-// This route stays because apps/finance still calls it directly (its
-// Playwright passkey spec and its logout action) — remove once those callers
+// This route stays because apps/finance still calls it directly (its logout
+// action) — remove once those callers
 // migrate to the native Better Auth session/sign-out endpoints too.
 // ---------------------------------------------------------------------------
 
@@ -271,13 +271,6 @@ authRoutes.post('/logout', async (c) => {
   const headers = response ? copyHeadersWithSetCookie(response.headers) : new Headers();
   return jsonWithHeaders({ success: true }, 200, headers);
 });
-
-// Passkey mutations (register/delete) are no longer shadowed here — they fall
-// through to the Better Auth catch-all handler (services/api/src/server.ts),
-// which enforces session freshness natively via `session.freshAge`
-// (services/api/src/auth/better-auth.ts). See the removed Redis-backed
-// step-up store in packages/auth/src/server.ts (git history) for the old
-// custom implementation this replaced.
 
 // ---------------------------------------------------------------------------
 // Test / e2e helpers (non-production)

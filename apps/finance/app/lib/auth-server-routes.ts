@@ -143,18 +143,3 @@ export function createAuthLogoutRoute(config: ServerRouteConfig) {
   };
   return { action: handler, loader: handler };
 }
-
-// ── Passkey callback ──────────────────────────────────────────────────────────
-export function createAuthPasskeyCallbackRoute(config: AuthConfig) {
-  return {
-    action: async ({ request }: { request: Request }) => {
-      const url = new URL(request.url);
-      const next = url.searchParams.get('redirect');
-      const dest =
-        next && isAllowedRedirect(next, config.allowedRedirectPrefixes ?? [])
-          ? next
-          : (config.defaultRedirect ?? '/');
-      return redirect(dest);
-    },
-  };
-}

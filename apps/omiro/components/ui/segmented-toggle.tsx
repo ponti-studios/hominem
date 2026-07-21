@@ -1,17 +1,20 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { SFSymbol } from 'expo-symbols';
+import { Image, type ImageSourcePropType, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import {
-  colors,
-  componentSizes,
-  fontSizes,
-  fontWeights,
-  radii,
-  themeSpacing,
-} from '~/components/theme';
+import { colors, componentSizes, fontSizes, fontWeights, radii } from '~/components/theme';
+
+import AppIcon from './icon';
 
 interface SegmentedToggleOption<T extends string> {
-  label: string;
   value: T;
+  /** Text label. Mutually exclusive with `icon`/`sfSymbol` — a toggle is either all-text or all-icon. */
+  label?: string;
+  /** Custom PNG icon (Foundations §1.6): a solid alpha mask, tinted like an SF Symbol. */
+  icon?: ImageSourcePropType;
+  /** SF Symbol icon, for when no custom asset exists yet. */
+  sfSymbol?: SFSymbol;
+  /** Required when the option renders as an icon (Rule 55). */
+  accessibilityLabel?: string;
 }
 
 interface SegmentedToggleProps<T extends string> {
@@ -21,9 +24,13 @@ interface SegmentedToggleProps<T extends string> {
   value: T;
 }
 
+const ICON_SIZE = 20;
+
 /**
  * A flat toggle built from our own tokens — no native segmented control, so
- * no OS glass material to fight with.
+ * no OS glass material to fight with. Segments render as text or icons
+ * (never both in one toggle) and are always a 44x44pt tap target (Rule 20,
+ * 74) regardless of how small the glyph or label is.
  */
 export function SegmentedToggle<T extends string>({
   onChange,
@@ -32,18 +39,42 @@ export function SegmentedToggle<T extends string>({
   value,
 }: SegmentedToggleProps<T>) {
   return (
+    // A plain container wrapping accessible Pressable children gets
+    // flattened out of the iOS accessibility tree — its own testID never
+    // surfaces to tools that query that tree (Maestro included), even
+    // though the container itself renders fine. Each segment gets its own
+    // derived testID below so the toggle stays queryable per-option.
     <View style={styles.track} testID={testID}>
       {options.map((option) => {
         const selected = option.value === value;
+        const isIcon = Boolean(option.icon || option.sfSymbol);
+        const tintColor = selected ? colors['primary-foreground'] : colors['text-secondary'];
+
         return (
           <Pressable
             key={option.value}
+            accessibilityLabel={option.accessibilityLabel}
             accessibilityRole="button"
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            style={[styles.segment, selected && styles.segmentSelected]}
+            style={[
+              styles.segment,
+              isIcon ? styles.segmentIcon : styles.segmentLabel,
+              selected && styles.segmentSelected,
+            ]}
+            testID={testID ? `${testID}-${option.value}` : undefined}
           >
-            <Text style={[styles.label, selected && styles.labelSelected]}>{option.label}</Text>
+            {option.icon ? (
+              <Image
+                source={option.icon}
+                style={[styles.icon, { tintColor }]}
+                resizeMode="contain"
+              />
+            ) : option.sfSymbol ? (
+              <AppIcon name={option.sfSymbol} size={ICON_SIZE} tintColor={tintColor} />
+            ) : (
+              <Text style={[styles.label, selected && styles.labelSelected]}>{option.label}</Text>
+            )}
           </Pressable>
         );
       })}
@@ -52,6 +83,10 @@ export function SegmentedToggle<T extends string>({
 }
 
 const styles = StyleSheet.create({
+  icon: {
+    height: ICON_SIZE,
+    width: ICON_SIZE,
+  },
   label: {
     color: colors['text-secondary'],
     fontSize: fontSizes.footnote,
@@ -64,18 +99,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radii.full,
     justifyContent: 'center',
-    paddingHorizontal: themeSpacing.md,
+    minHeight: componentSizes.xl,
+  },
+  segmentIcon: {
+    width: componentSizes.xl,
+  },
+  segmentLabel: {
+    paddingHorizontal: componentSizes.md,
   },
   segmentSelected: {
     backgroundColor: colors.accent,
   },
   track: {
-    // Matches the nav bar's IconButton default size (componentSizes.lg) so
-    // the toggle sits at the same height as the buttons beside it.
+    // componentSizes.xl (44pt) guarantees every segment clears the
+    // platform's minimum tap target (Rule 20, 74) — this must never shrink
+    // to visually match a neighboring icon button's smaller *visual* size,
+    // since IconButton only clears 44pt via hitSlop, not its own frame.
     backgroundColor: colors.muted,
     borderRadius: radii.full,
     flexDirection: 'row',
-    height: componentSizes.lg,
     padding: 2,
   },
 });

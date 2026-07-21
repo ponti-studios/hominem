@@ -7,7 +7,6 @@ import VoiceTranscriberModule, { VoiceTranscriberErrorCode } from '~/modules/voi
 
 import { useVoiceTasks } from './use-voice-tasks';
 export { getTaskVoiceCaptureErrorPresentation } from './taskVoiceCapture.helpers';
-import { getTaskVoiceCaptureErrorPresentation } from './taskVoiceCapture.helpers';
 
 export type TaskVoiceCaptureState = 'idle' | 'recording' | 'transcribing' | 'creating' | 'failed';
 
@@ -20,13 +19,6 @@ export type TaskVoiceCaptureErrorCode =
 export interface TaskVoiceCaptureError {
   code: TaskVoiceCaptureErrorCode;
   transcript?: string;
-}
-
-function createTaskVoiceCaptureError(
-  code: TaskVoiceCaptureErrorCode,
-  transcript?: string,
-): TaskVoiceCaptureError {
-  return { code, transcript };
 }
 
 export function useTaskVoiceCapture() {
@@ -68,7 +60,7 @@ export function useTaskVoiceCapture() {
           } catch (deleteError) {
             logger.error('[task-voice-capture] orphaned file delete failed', deleteError as Error);
           }
-          setTaskError(createTaskVoiceCaptureError('creation-failed', rawText));
+          setTaskError({ code: 'creation-failed', transcript: rawText });
         } finally {
           setIsCreating(false);
         }
@@ -80,13 +72,12 @@ export function useTaskVoiceCapture() {
           logger.error('[task-voice-capture] orphaned file delete failed', deleteError as Error);
         }
         const code = getNativeErrorCode(transcriptionError);
-        setTaskError(
-          createTaskVoiceCaptureError(
+        setTaskError({
+          code:
             code === VoiceTranscriberErrorCode.MISSING_PERMISSION
               ? 'permission-denied'
               : 'transcription-failed',
-          ),
-        );
+        });
       } finally {
         setIsTranscribing(false);
       }
@@ -104,8 +95,8 @@ export function useTaskVoiceCapture() {
     recordingStartedAt,
   } = useVoiceRecorder<TaskVoiceCaptureError>({
     onRecordingStopped: processStoppedRecording,
-    createPermissionDeniedError: () => createTaskVoiceCaptureError('permission-denied'),
-    createRecordingFailedError: () => createTaskVoiceCaptureError('recording-failed'),
+    createPermissionDeniedError: () => ({ code: 'permission-denied' }),
+    createRecordingFailedError: () => ({ code: 'recording-failed' }),
   });
 
   const error = recorderError ?? taskError;

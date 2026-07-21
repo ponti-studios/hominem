@@ -18,8 +18,8 @@ appId: com.pontistudios.hakumi.dev
 #   - EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED=true, or a __DEV__ build, so the
 #     Calendar query action is visible
 - runFlow: startup.yaml
-- tapOn: Open inbox menu
-- tapOn: Settings
+- tapOn:
+    id: inbox-open-settings
 - assertVisible: Settings
 - tapOn:
     id: settings-calendar-action

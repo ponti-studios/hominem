@@ -11,6 +11,7 @@ import { colors, makeStyles, radii, Text, themeSpacing } from '~/components/them
 import { EmptyState } from '~/components/ui/EmptyState';
 import AppIcon from '~/components/ui/icon';
 import { getTaskDetailRoute } from '~/services/navigation/routes';
+import { filterTasks } from '~/services/tasks/screen-state';
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTaskDelete } from '~/services/tasks/use-task-delete';
@@ -30,6 +31,7 @@ type EditorState = { mode: 'create' } | { mode: 'edit'; task: TaskListItemModel 
 
 interface TasksPaneProps {
   isFocused: boolean;
+  searchQuery?: string;
 }
 
 /**
@@ -38,11 +40,12 @@ interface TasksPaneProps {
  * (Inbox screen) or as its own route (app/(protected)/tasks/index.tsx)
  * without duplicating logic or fighting the host screen's toolbar.
  */
-export function TasksPane({ isFocused }: TasksPaneProps) {
+export function TasksPane({ isFocused, searchQuery = '' }: TasksPaneProps) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { data: tasks = [], error, isFetching, refetch } = useTasksQuery({ enabled: isFocused });
+  const visibleTasks = filterTasks(tasks, searchQuery);
   const { mutate: toggleComplete } = useTaskComplete();
   const { mutate: deleteTask } = useTaskDelete();
   const { mutate: createTask, isPending: isCreating } = useTaskCreate();
@@ -110,7 +113,8 @@ export function TasksPane({ isFocused }: TasksPaneProps) {
     <View style={styles.container}>
       <FlashList
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 96 }]}
-        data={tasks}
+        contentInsetAdjustmentBehavior="automatic"
+        data={visibleTasks}
         keyExtractor={(task) => task.id}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
@@ -189,6 +193,7 @@ export function TasksPane({ isFocused }: TasksPaneProps) {
               styles.floatingButtonSecondary,
               pressed && styles.floatingButtonPressed,
             ]}
+            testID="tasks-voice-button"
           >
             <AppIcon name="mic.fill" size={20} tintColor={colors.foreground} />
           </Pressable>
@@ -201,6 +206,7 @@ export function TasksPane({ isFocused }: TasksPaneProps) {
               styles.floatingButtonPrimary,
               pressed && styles.floatingButtonPressed,
             ]}
+            testID="tasks-add-button"
           >
             <AppIcon name="plus" size={22} tintColor={colors['primary-foreground']} />
           </Pressable>

@@ -1,4 +1,3 @@
-import { passkeyClient } from '@better-auth/passkey/client';
 import type { Session, User } from 'better-auth';
 import { emailOTPClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
@@ -13,7 +12,7 @@ export {
 
 type AuthClientOptions = {
   baseURL: string;
-  plugins: [ReturnType<typeof emailOTPClient>, ReturnType<typeof passkeyClient>];
+  plugins: [ReturnType<typeof emailOTPClient>];
 };
 
 type AuthClient = ReturnType<typeof createAuthClient<AuthClientOptions>>;
@@ -40,7 +39,7 @@ export function AuthProvider({ children, config }: AuthProviderProps) {
       apiBaseUrl: config.apiBaseUrl,
       authClient: createAuthClient<AuthClientOptions>({
         baseURL: config.apiBaseUrl,
-        plugins: [emailOTPClient(), passkeyClient()],
+        plugins: [emailOTPClient()],
       }),
     };
   }, [config.apiBaseUrl]);

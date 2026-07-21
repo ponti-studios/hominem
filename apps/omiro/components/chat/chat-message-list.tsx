@@ -155,6 +155,7 @@ export function ChatMessageList({
     <FlashList
       ref={listRef}
       style={styles.list}
+      contentInsetAdjustmentBehavior="automatic"
       ListEmptyComponent={listEmptyComponent}
       ListFooterComponent={
         displayMessages.length > 0 ? (

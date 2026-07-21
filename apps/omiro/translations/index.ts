@@ -145,6 +145,7 @@ const t = {
       shortcutsLabel: 'Shortcuts',
       searchTitle: 'Search',
       searchPlaceholder: 'Search chats and notes',
+      searchTasksPlaceholder: 'Search tasks',
       searchEmpty: 'Search your recent chats and notes',
       searchResults: (count: number) => `${count} result${count !== 1 ? 's' : ''}`,
       closeSearch: 'Close search',
@@ -291,7 +292,6 @@ const t = {
       account: 'Account',
       privacy: 'Privacy',
       chats: 'Chats',
-      passkeys: 'Passkeys',
     },
     archivedChatsScreen: {
       title: 'Archived chats',
@@ -317,20 +317,6 @@ const t = {
     lockWithFaceId: 'Lock with Face ID',
     preventScreenshots: 'Prevent screenshots',
     archivedChats: 'Archived chats',
-    passkeys: {
-      add: 'Add passkey',
-      adding: 'Adding passkey',
-      remove: 'Remove',
-      removeDialog: {
-        title: 'Remove passkey',
-        message: (name: string) => `Remove “${name}”?`,
-        confirm: 'Remove',
-        cancel: 'Cancel',
-        errorTitle: 'Error',
-        errorMessage: 'Could not remove passkey.',
-      },
-      addErrorTitle: 'Could not add passkey',
-    },
     signOut: {
       label: 'Sign out',
       alertTitle: 'Sign out',
@@ -358,8 +344,6 @@ const t = {
       emailPlaceholder: 'you@example.com',
       emailLabel: 'Email address',
       submitButton: 'Continue',
-      passkeyButton: 'Use passkey',
-      passkeyLoadingButton: 'Connecting...',
       emailRequiredError: 'Email is required.',
       emailInvalidError: 'Enter a valid email address.',
       sendFailedError: 'Unable to send verification code.',
@@ -376,9 +360,6 @@ const t = {
       oneTimeVerificationCodeA11y: 'One-time verification code',
       timeRemainingA11y: (secondsLeft: number) =>
         `Time remaining: ${Math.floor(secondsLeft / 60)} minutes ${secondsLeft % 60} seconds`,
-    },
-    passkey: {
-      genericError: 'Passkey sign-in failed.',
     },
   },
   onboarding: {

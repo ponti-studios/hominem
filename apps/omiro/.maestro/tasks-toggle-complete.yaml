@@ -3,7 +3,6 @@ appId: com.pontistudios.hakumi.dev
 # Assumes seed data: a task_list titled "3 tasks" with a child task
 # "Renew passport" that is not yet completed.
 - runFlow: startup.yaml
-- tapOn: Open inbox menu
 - tapOn: Tasks
 - tapOn: "3 tasks"
 - assertVisible:

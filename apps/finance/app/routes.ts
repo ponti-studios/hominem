@@ -5,7 +5,6 @@ const routes = [
     route('/auth', 'routes/auth/index.tsx'),
     route('/auth/verify', 'routes/auth/verify.tsx'),
     route('/auth/logout', 'routes/auth/logout.tsx'),
-    route('/auth/passkey/callback', 'routes/auth/passkey.callback.tsx'),
   ]),
   layout('routes/layout.tsx', [
     index('routes/home.tsx'),
@@ -27,7 +26,6 @@ const routes = [
     route('finance/runway', 'routes/finance.runway.tsx'),
     route('finance/affordability', 'routes/finance.affordability.tsx'),
     route('/account', 'routes/account.tsx'),
-    route('/settings/security', 'routes/settings.security.tsx'),
     route('/auth/cli', 'routes/auth.cli.tsx'),
 
     // Catch-all 404 route

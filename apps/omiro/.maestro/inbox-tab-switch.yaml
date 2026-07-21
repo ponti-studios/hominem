@@ -1,19 +1,32 @@
 appId: com.pontistudios.hakumi.dev
 ---
-# Switches between the Notes and Chats tabs in the inbox.
-# Segments are tapped by text because each is part of a single native
-# segmented control (testID="inbox-tab-control") rather than separate
-# elements with their own testIDs.
+# Switches between the Chats, Notes, and Tasks tabs in the inbox. Segments
+# are tapped by text because each is part of a single custom SegmentedToggle
+# (testID="inbox-tab-control") rather than separate elements with their own
+# testIDs.
 - runFlow: startup.yaml
 - assertVisible:
     id: inbox-composer-input
 - assertVisible:
-    id: inbox-tab-control
+    id: inbox-tab-control-chats
 - tapOn: Chats
 - assertVisible: Chats
 - assertVisible:
     id: inbox-composer-input
 - tapOn: Notes
 - assertVisible: Notes
+- assertVisible:
+    id: inbox-composer-input
+# Tasks is embedded in this same screen (not a pushed route): the toggle
+# stays visible and there's no composer dock (Tasks has its own floating
+# add/voice buttons instead).
+- tapOn: Tasks
+- assertVisible:
+    id: inbox-tab-control-chats
+- assertVisible:
+    id: tasks-add-button
+- assertNotVisible:
+    id: inbox-composer-input
+- tapOn: Notes
 - assertVisible:
     id: inbox-composer-input

@@ -2,9 +2,11 @@ import { logger } from '@hominem/telemetry';
 import * as Sentry from '@sentry/react-native';
 import { AppState, type AppStateStatus } from 'react-native';
 
+import { APP_ENV } from '~/constants';
+
 import { posthog } from './posthog';
 
-const isSentryEnabled = process.env.APP_ENV !== 'development';
+const isSentryEnabled = APP_ENV !== 'development';
 
 if (isSentryEnabled) {
   Sentry.init({

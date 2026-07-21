@@ -2,8 +2,13 @@ appId: com.pontistudios.hakumi.dev
 ---
 # Assumes seed data: a task_list titled "3 tasks" with children
 # "Renew passport", "Book dentist appointment", "Email Sarah about the project budget".
+#
+# The Tasks tab is embedded in the inbox screen (SegmentedToggle state, not a
+# pushed route) — there is no back button from it. Only the "3 tasks" detail
+# screen is a real push, so exactly one BackButton pop returns to the Tasks
+# tab, and inbox-tab-control must still be visible afterward to prove we
+# landed back on the inbox screen rather than a further pushed screen.
 - runFlow: startup.yaml
-- tapOn: Open inbox menu
 - tapOn: Tasks
 - assertVisible: Tasks
 - assertVisible: "3 tasks"
@@ -13,7 +18,6 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible: Email Sarah about the project budget
 - tapOn:
     id: BackButton
-- assertVisible: Tasks
-- tapOn:
-    id: BackButton
-- assertVisible: Chats
+- assertVisible:
+    id: inbox-tab-control-chats
+- assertVisible: "3 tasks"
