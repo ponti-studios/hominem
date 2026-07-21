@@ -18,15 +18,25 @@ import {
   themeSpacing,
 } from '~/components/theme';
 
+/**
+ * shadcn's variant taxonomy (default/secondary/destructive/outline/ghost),
+ * translated to the design constitution's tokens. `outline` is the one
+ * variant with a border — the constitution's documented exception for a
+ * control that needs to read as tappable without a solid fill.
+ */
+type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost';
+
 interface ButtonProps {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
   size?: 'sm' | 'md';
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive-text';
+  variant?: ButtonVariant;
   testID?: string;
 }
+
+const COMPACT_HEIGHT = 36;
 
 export function Button({
   label,
@@ -45,41 +55,42 @@ export function Button({
       alignItems: 'center' as const,
       justifyContent: 'center' as const,
       alignSelf: 'stretch' as const,
-      height: componentSizes.xl,
+      height: size === 'sm' ? COMPACT_HEIGHT : componentSizes.xl,
     };
 
-    const variantStyles: Record<string, StyleProp<ViewStyle>> = {
+    const variantStyles: Record<ButtonVariant, StyleProp<ViewStyle>> = {
       primary: {
         backgroundColor: colors.primary,
-        borderWidth: 0,
       },
       secondary: {
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: colors.foreground,
+        backgroundColor: colors.muted,
       },
-      tertiary: {
-        backgroundColor: 'transparent',
-        borderWidth: 0,
+      destructive: {
+        backgroundColor: colors.destructive,
       },
-      'destructive-text': {
+      outline: {
         backgroundColor: 'transparent',
-        borderRadius: radii.md,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: colors['border-default'],
+      },
+      ghost: {
+        backgroundColor: 'transparent',
       },
     };
 
-    const textColor = {
+    const textColor: Record<ButtonVariant, string> = {
       primary: colors['primary-foreground'],
       secondary: colors.foreground,
-      tertiary: colors.foreground,
-      'destructive-text': colors.destructive,
+      destructive: colors['primary-foreground'],
+      outline: colors.foreground,
+      ghost: colors.foreground,
     };
 
     return {
       container: [baseStyle, variantStyles[variant], disabled && styles.disabled],
       text: textColor[variant],
     };
-  }, [disabled, variant]);
+  }, [disabled, size, variant]);
 
   const isInteractionDisabled = disabled || loading;
 

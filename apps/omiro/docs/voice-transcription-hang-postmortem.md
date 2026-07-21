@@ -1,5 +1,7 @@
 # Voice transcription hang: postmortem
 
+> Historical incident. This postmortem describes the former `SFSpeechRecognitionTask` implementation. The current native implementation uses iOS `SpeechAnalyzer`; the self-retaining delegate shown below is no longer present in the codebase. Keep this document as incident history, not as current implementation guidance.
+
 ## Symptom
 
 Recording worked fine — the mic UI showed the timer and level meter, and
@@ -175,3 +177,12 @@ indefinitely.
   `stopAndTranscribeRecording`, and `processStoppedRecording`, which is what
   made it possible to confirm the hang was strictly on the native side and
   not in the JS bridge call itself.
+
+## Current implementation note
+
+The native module was subsequently refactored to `SpeechAnalyzer`, which feeds
+the recorded file through an `AsyncStream<AnalyzerInput>` and collects finalized
+transcription results. See `apps/omiro/modules/voice-transcriber/ios/VoiceTranscriberModule.swift`
+for the current path. The original delegate-lifetime diagnosis remains valid
+for the implementation that produced this incident, but its concrete fix is
+not a description of the current object graph.

@@ -81,7 +81,7 @@ export function InlineEnhanceTray({
 
       <View style={styles.actions}>
         <View style={styles.actionSlot}>
-          <Button label={t.enhance.cancel} onPress={onCancel} variant="tertiary" size="sm" />
+          <Button label={t.enhance.cancel} onPress={onCancel} variant="ghost" size="sm" />
         </View>
         <View style={styles.actionSlot}>
           <Button

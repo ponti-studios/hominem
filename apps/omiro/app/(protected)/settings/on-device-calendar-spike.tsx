@@ -1,6 +1,6 @@
 import type { SFSymbol } from 'expo-symbols';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, TextInput } from 'react-native';
+import { ScrollView, TextInput, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { ChatThinkingIndicator } from '~/components/chat/chat-thinking-indicator';
@@ -17,18 +17,22 @@ import { createEnter, createLayoutTransition } from '~/components/theme/animatio
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
-import OnDeviceAIModule, {
-  type CalendarPermissionStatus,
-  type OnDeviceAILogEvent,
-  type OnDeviceAIAvailability,
-} from '~/modules/on-device-ai';
+import OnDeviceAIModule, { type OnDeviceAILogEvent } from '~/modules/on-device-ai';
 
 interface LogLine {
   key: string;
   type: string;
   message: string;
   timestamp: number;
+  durationMs?: number;
 }
+
+const promptSuggestions = [
+  'What’s next?',
+  'Tomorrow morning',
+  'Find me free time',
+  'What’s on this week?',
+];
 
 // Icon + tint per log event type, so the processing steps read like tool-call
 // chips (a completed step, a result, a failure) instead of an undifferentiated
@@ -53,6 +57,32 @@ function stepPresentation(type: string): { icon: SFSymbol; tint: ColorToken } {
   }
 }
 
+function stepLabel(type: string): string {
+  switch (type) {
+    case 'session_start':
+      return 'Session';
+    case 'prompt_sent':
+      return 'Prompt';
+    case 'tool_call':
+      return 'Calendar query';
+    case 'tool_result':
+      return 'Calendar result';
+    case 'response_received':
+      return 'Response';
+    case 'tool_error':
+    case 'generation_error':
+      return 'Error';
+    default:
+      return 'Step';
+  }
+}
+
+function formatDuration(durationMs: number | undefined): string {
+  if (durationMs === undefined) return '—';
+  if (durationMs < 1000) return `${Math.round(durationMs)} ms`;
+  return `${(durationMs / 1000).toFixed(1)} s`;
+}
+
 function LogStepRow({ line, reducedMotion }: { line: LogLine; reducedMotion: boolean }) {
   const styles = useLogStepStyles();
   const themeColors = useThemeColors();
@@ -65,9 +95,15 @@ function LogStepRow({ line, reducedMotion }: { line: LogLine; reducedMotion: boo
       style={styles.row}
     >
       <AppIcon name={icon} size={14} tintColor={themeColors[tint]} style={styles.icon} />
-      <Text color="text-secondary" style={styles.message}>
-        {new Date(line.timestamp).toLocaleTimeString()} — {line.message}
-      </Text>
+      <Animated.View style={styles.copy}>
+        <Text color="text-secondary" style={styles.meta}>
+          {new Date(line.timestamp).toLocaleTimeString()} · {stepLabel(line.type)} ·{' '}
+          {formatDuration(line.durationMs)}
+        </Text>
+        <Text color="text-secondary" style={styles.message}>
+          {line.message}
+        </Text>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -76,16 +112,14 @@ function LogStepRow({ line, reducedMotion }: { line: LogLine; reducedMotion: boo
 // ON_DEVICE_AI_SPIKE_ENABLED (EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED) — never
 // part of unflagged production navigation. Exercises the on-device
 // FoundationModels + EventKit CalendarLookupTool end to end. Requires a
-// physical device with Apple Intelligence enabled; the simulator cannot run
-// FoundationModels sessions.
+// device or simulator with Apple Intelligence enabled on supported host
+// hardware. The iOS Simulator uses the host Mac's Apple Intelligence model.
 export default function OnDeviceCalendarSpikeScreen() {
   const themeColors = useThemeColors();
   const reducedMotion = useReducedMotion();
   const styles = useStyles();
   const [prompt, setPrompt] = useState('What do I have going on today?');
   const [response, setResponse] = useState('');
-  const [availability, setAvailability] = useState<OnDeviceAIAvailability | null>(null);
-  const [permission, setPermission] = useState<CalendarPermissionStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [logs, setLogs] = useState<LogLine[]>([]);
@@ -103,25 +137,12 @@ export default function OnDeviceCalendarSpikeScreen() {
             type: event.type,
             message: event.message,
             timestamp: event.timestamp,
+            durationMs: event.durationMs,
           },
         ]);
       },
     );
     return () => subscription.remove();
-  }, []);
-
-  const checkStatus = useCallback(async () => {
-    const [nextAvailability, nextPermission] = await Promise.all([
-      OnDeviceAIModule.getAvailability(),
-      OnDeviceAIModule.getCalendarPermissions(),
-    ]);
-    setAvailability(nextAvailability);
-    setPermission(nextPermission);
-  }, []);
-
-  const requestPermission = useCallback(async () => {
-    const status = await OnDeviceAIModule.requestCalendarPermissions();
-    setPermission(status);
   }, []);
 
   const ask = useCallback(async () => {
@@ -141,41 +162,65 @@ export default function OnDeviceCalendarSpikeScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.content} testID="on-device-calendar-spike-screen">
-      <Text style={styles.heading}>On-device calendar spike</Text>
+      <View style={[styles.heroCard, { backgroundColor: themeColors['bg-elevated'] }]}>
+        <View style={[styles.heroOrb, { backgroundColor: themeColors.accent }]}>
+          <AppIcon name="calendar" size={24} tintColor={themeColors['primary-foreground']} />
+        </View>
+        <Text color="text-tertiary" style={styles.eyebrow}>
+          PRIVATE CALENDAR LENS
+        </Text>
+        <Text style={styles.heroTitle}>Make sense of your time.</Text>
+        <Text color="text-secondary" style={styles.heroCopy}>
+          Ask in plain English. Your calendar stays on this device.
+        </Text>
+      </View>
 
-      <Button label="Check status" onPress={() => void checkStatus()} variant="secondary" />
-      {availability ? <Text color="text-secondary">Model availability: {availability}</Text> : null}
-      {permission ? <Text color="text-secondary">Calendar permission: {permission}</Text> : null}
+      <View style={styles.suggestionSection}>
+        <Text color="text-secondary" style={styles.sectionLabel}>
+          TRY ASKING
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.suggestions}
+        >
+          {promptSuggestions.map((suggestion) => (
+            <Button
+              key={suggestion}
+              label={suggestion}
+              onPress={() => setPrompt(suggestion)}
+              variant="secondary"
+              size="sm"
+            />
+          ))}
+        </ScrollView>
+      </View>
 
-      {permission !== 'authorized' ? (
-        <Button
-          label="Request calendar access"
-          onPress={() => void requestPermission()}
-          variant="secondary"
+      <View style={[styles.askCard, { backgroundColor: themeColors['bg-surface'] }]}>
+        <Text style={styles.askLabel}>Ask anything</Text>
+        <TextInput
+          testID="on-device-calendar-spike-input"
+          value={prompt}
+          onChangeText={setPrompt}
+          multiline
+          placeholder="What do I have going on today?"
+          placeholderTextColor={themeColors['text-tertiary']}
+          style={[
+            styles.input,
+            {
+              backgroundColor: themeColors.background,
+              borderColor: themeColors['border-default'],
+              color: themeColors.foreground,
+            },
+          ]}
         />
-      ) : null}
-
-      <TextInput
-        testID="on-device-calendar-spike-input"
-        value={prompt}
-        onChangeText={setPrompt}
-        multiline
-        style={[
-          styles.input,
-          {
-            backgroundColor: themeColors.background,
-            borderColor: themeColors['border-default'],
-            color: themeColors.foreground,
-          },
-        ]}
-      />
-
-      <Button
-        testID="on-device-calendar-spike-ask-button"
-        label={isLoading ? 'Asking…' : 'Ask'}
-        onPress={() => void ask()}
-        disabled={isLoading}
-      />
+        <Button
+          testID="on-device-calendar-spike-ask-button"
+          label={isLoading ? 'Thinking…' : 'Ask calendar'}
+          onPress={() => void ask()}
+          disabled={isLoading}
+        />
+      </View>
 
       {error ? (
         <Animated.View entering={createEnter(reducedMotion)}>
@@ -196,7 +241,7 @@ export default function OnDeviceCalendarSpikeScreen() {
           ]}
         >
           <Text color="text-secondary" style={styles.logHeading}>
-            Processing steps
+            Live trace
           </Text>
           {logs.map((line) => (
             <LogStepRow key={line.key} line={line} reducedMotion={reducedMotion} />
@@ -216,6 +261,12 @@ export default function OnDeviceCalendarSpikeScreen() {
             },
           ]}
         >
+          <View style={styles.responseHeader}>
+            <AppIcon name="sparkles" size={16} tintColor={themeColors.accent} />
+            <Text color="text-secondary" style={styles.responseLabel}>
+              Your calendar says
+            </Text>
+          </View>
           <Text testID="on-device-calendar-spike-response">{response}</Text>
         </Animated.View>
       ) : null}
@@ -224,18 +275,50 @@ export default function OnDeviceCalendarSpikeScreen() {
 }
 
 const useStyles = makeStyles(() => ({
-  content: {
+  askCard: {
+    borderRadius: radii.lg,
     gap: spacing[3],
     padding: spacing[4],
   },
-  heading: {
-    fontSize: fontSizes.xl,
+  askLabel: {
+    fontSize: fontSizes.md,
     fontWeight: '600',
+  },
+  content: {
+    gap: spacing[4],
+    padding: spacing[4],
+  },
+  eyebrow: {
+    fontSize: fontSizes.caption1,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+  },
+  heroCard: {
+    borderRadius: radii.xl,
+    gap: spacing[2],
+    padding: spacing[5],
+  },
+  heroCopy: {
+    fontSize: fontSizes.md,
+  },
+  heroOrb: {
+    alignItems: 'center',
+    borderRadius: radii.icon,
+    height: 48,
+    justifyContent: 'center',
+    marginBottom: spacing[2],
+    width: 48,
+  },
+  heroTitle: {
+    fontSize: fontSizes.title1,
+    fontWeight: '700',
+    letterSpacing: -0.4,
   },
   input: {
     borderRadius: radii.md,
     borderWidth: 1,
-    minHeight: 60,
+    fontSize: fontSizes.md,
+    minHeight: 72,
     padding: spacing[3],
   },
   logBox: {
@@ -250,10 +333,33 @@ const useStyles = makeStyles(() => ({
     letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
+  responseHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing[2],
+    marginBottom: spacing[3],
+  },
+  responseLabel: {
+    fontSize: fontSizes.caption1,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
   responseBox: {
+    gap: spacing[3],
     borderRadius: radii.md,
     borderWidth: 1,
     padding: spacing[3],
+  },
+  sectionLabel: {
+    fontSize: fontSizes.caption1,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  suggestionSection: {
+    gap: spacing[2],
+  },
+  suggestions: {
+    gap: spacing[2],
   },
 }));
 
@@ -265,6 +371,14 @@ const useLogStepStyles = makeStyles(() => ({
     flex: 1,
     fontFamily: 'Menlo',
     fontSize: fontSizes.caption1,
+  },
+  meta: {
+    fontSize: fontSizes.caption1,
+    fontWeight: '600',
+  },
+  copy: {
+    flex: 1,
+    gap: spacing[1],
   },
   row: {
     flexDirection: 'row',

@@ -12,7 +12,9 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible:
     id: auth-screen
     optional: true
-- assertVisible:
-    id: inbox-composer-input
+- extendedWaitUntil:
+    visible:
+      id: inbox-composer-input
+    timeout: 30000
 - assertVisible:
     id: inbox-tab-control

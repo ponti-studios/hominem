@@ -25,6 +25,7 @@ export interface OnDeviceAILogEvent {
   type: string;
   message: string;
   timestamp: number;
+  durationMs?: number;
 }
 
 export type OnDeviceAIModuleType = {

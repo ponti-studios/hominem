@@ -149,11 +149,11 @@ private struct CalendarLookupTool: Tool {
 
   let name = "lookupCalendarEvents"
   let description: String
-  // Only String payloads cross this closure so it can stay @Sendable without
+  // Only primitive payloads cross this closure so it can stay @Sendable without
   // wrapping tool-call detail in a bespoke Sendable event type.
-  let onLog: @Sendable (String, String) -> Void
+  let onLog: @Sendable (String, String, Double?) -> Void
 
-  init(onLog: @escaping @Sendable (String, String) -> Void) {
+  init(onLog: @escaping @Sendable (String, String, Double?) -> Void) {
     self.onLog = onLog
     self.description =
       "Looks up the user's calendar events within an explicit date range, any time in the "
@@ -183,14 +183,21 @@ private struct CalendarLookupTool: Tool {
 
   func call(arguments: Arguments) async throws -> String {
     let dayPart = arguments.dayPart ?? .allDay
+    let dayPartLabel = dayPart == .allDay ? "all day" : dayPart.rawValue
+    let startedAt = Date()
     onLog(
       "tool_call",
-      "Model called lookupCalendarEvents(startDate: \(arguments.startDate), endDate: \(arguments.endDate), dayPart: \(dayPart.rawValue))"
+      "Dates \(arguments.startDate) → \(arguments.endDate) · \(dayPartLabel)",
+      nil
     )
 
     let status = EKEventStore.authorizationStatus(for: .event)
     guard status == .fullAccess else {
-      onLog("tool_error", "lookupCalendarEvents failed: calendar permission missing")
+      onLog(
+        "tool_error",
+        "Calendar permission missing",
+        Date().timeIntervalSince(startedAt) * 1000
+      )
       throw OnDeviceAIException.missingPermission
     }
 
@@ -204,7 +211,8 @@ private struct CalendarLookupTool: Tool {
       // model can immediately retry with a corrected call.
       onLog(
         "tool_error",
-        "lookupCalendarEvents failed: unparseable date range (\(arguments.startDate) - \(arguments.endDate))"
+        "Invalid date range \(arguments.startDate) → \(arguments.endDate)",
+        Date().timeIntervalSince(startedAt) * 1000
       )
       return
         "Could not parse that date range. startDate and endDate must both be formatted "
@@ -221,7 +229,7 @@ private struct CalendarLookupTool: Tool {
         byAdding: .day, value: 1, to: calendar.startOfDay(for: max(parsedStart, parsedEnd))),
       let maxEnd = calendar.date(byAdding: .day, value: Self.maxRangeDays, to: start)
     else {
-      onLog("tool_result", "lookupCalendarEvents returned 0 event(s)")
+      onLog("tool_result", "Found 0 events", Date().timeIntervalSince(startedAt) * 1000)
       return "No events found."
     }
     let end = min(requestedEnd, maxEnd)
@@ -240,7 +248,7 @@ private struct CalendarLookupTool: Tool {
     }
 
     guard !events.isEmpty else {
-      onLog("tool_result", "lookupCalendarEvents returned 0 event(s)")
+      onLog("tool_result", "Found 0 events", Date().timeIntervalSince(startedAt) * 1000)
       return "No events found between \(arguments.startDate) and \(arguments.endDate)."
     }
 
@@ -260,7 +268,11 @@ private struct CalendarLookupTool: Tool {
       return "- \(title): \(when)"
     }
 
-    onLog("tool_result", "lookupCalendarEvents returned \(events.count) event(s)")
+    onLog(
+      "tool_result",
+      "Found \(events.count) events",
+      Date().timeIntervalSince(startedAt) * 1000
+    )
     return lines.joined(separator: "\n")
   }
 }
@@ -268,27 +280,35 @@ private struct CalendarLookupTool: Tool {
 @available(iOS 26.0, *)
 private func runCalendarQuery(
   prompt: String,
-  onLog: @escaping @Sendable (String, String) -> Void
+  onLog: @escaping @Sendable (String, String, Double?) -> Void
 ) async throws -> String {
   guard case .available = SystemLanguageModel.default.availability else {
     throw OnDeviceAIException.modelUnavailable
   }
 
-  onLog("session_start", "Starting on-device model session")
+  onLog("session_start", "Start model session", nil)
+  let today = todayAnchorString()
+  let instructions: String = """
+    You help the user understand their calendar. Today is \(today). \
+    Call lookupCalendarEvents whenever asked about their schedule, meetings, or events — \
+    never guess. Before calling it, resolve whatever date or range the user implied \
+    ("today", "this time last year", "end of next month") into an explicit \
+    startDate/endDate using today's date as your anchor. Be concise.
+    """
   let session = LanguageModelSession(
     tools: [CalendarLookupTool(onLog: onLog)],
-    instructions:
-      "You help the user understand their calendar. Today is \(todayAnchorString()). "
-      + "Call lookupCalendarEvents whenever asked about their schedule, meetings, or events — "
-      + "never guess. Before calling it, resolve whatever date or range the user implied "
-      + "(\"today\", \"this time last year\", \"end of next month\") into an explicit "
-      + "startDate/endDate using today's date as your anchor. Be concise."
+    instructions: instructions
   )
 
-  onLog("prompt_sent", "Sending prompt to model: \"\(prompt)\"")
+  let promptStartedAt = Date()
+  onLog("prompt_sent", "Prompt · \(prompt)", nil)
   do {
     let response = try await session.respond(to: prompt)
-    onLog("response_received", "Model responded (\(response.content.count) chars)")
+    onLog(
+      "response_received",
+      "Response · \(response.content.count) characters",
+      Date().timeIntervalSince(promptStartedAt) * 1000
+    )
     return response.content
   } catch {
     os_log(
@@ -297,7 +317,11 @@ private func runCalendarQuery(
       type: .error,
       String(describing: error)
     )
-    onLog("generation_error", "Model generation failed: \(String(describing: error))")
+    onLog(
+      "generation_error",
+      "Model generation failed",
+      Date().timeIntervalSince(promptStartedAt) * 1000
+    )
     throw OnDeviceAIException.generationFailed
   }
 }
@@ -335,11 +359,16 @@ public class OnDeviceAIModule: Module {
         throw OnDeviceAIException.modelUnavailable
       }
 
-      let emitLog: @Sendable (String, String) -> Void = { [weak self] type, message in
-        self?.sendEvent(
-          "onDeviceAILog",
-          ["type": type, "message": message, "timestamp": Date().timeIntervalSince1970 * 1000]
-        )
+      let emitLog: @Sendable (String, String, Double?) -> Void = { [weak self] type, message, durationMs in
+        var payload: [String: Any] = [
+          "type": type,
+          "message": message,
+          "timestamp": Date().timeIntervalSince1970 * 1000,
+        ]
+        if let durationMs {
+          payload["durationMs"] = durationMs
+        }
+        self?.sendEvent("onDeviceAILog", payload)
       }
 
       do {

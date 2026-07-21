@@ -359,14 +359,14 @@ function VerifyScreen() {
                   label={t.auth.verify.resendButton}
                   onPress={() => void handleResendPress()}
                   disabled={isBusy}
-                  variant="tertiary"
+                  variant="ghost"
                   size="sm"
                 />
                 <Button
                   label={t.auth.verify.changeEmailLink}
                   onPress={handleChangeEmail}
                   disabled={isBusy}
-                  variant="tertiary"
+                  variant="ghost"
                   size="sm"
                 />
               </View>

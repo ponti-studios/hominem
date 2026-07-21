@@ -124,7 +124,7 @@ const Onboarding = () => {
               label={t.onboarding.continueWithoutName}
               onPress={() => void onSkipPress()}
               disabled={isSubmitting}
-              variant="tertiary"
+              variant="ghost"
             />
 
             <Button
@@ -132,7 +132,7 @@ const Onboarding = () => {
               label={t.onboarding.signOut}
               onPress={() => void signOut()}
               disabled={isSubmitting}
-              variant="tertiary"
+              variant="ghost"
             />
           </View>
         </View>

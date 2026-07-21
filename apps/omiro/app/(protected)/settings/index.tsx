@@ -14,12 +14,13 @@ import {
 } from 'react-native';
 
 import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
-import { useThemeColors } from '~/components/theme';
+import { componentSizes, fontSizes, radii, spacing, useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
-import { MOBILE_PASSKEY_ENABLED, ON_DEVICE_AI_SPIKE_ENABLED } from '~/constants';
+import { MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
+import OnDeviceAIModule, { type CalendarPermissionStatus } from '~/modules/on-device-ai';
 import { useAuth } from '~/services/auth/auth-provider';
 import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 import { resolveProtectedRouteState } from '~/services/auth/protected-route-state';
@@ -37,24 +38,6 @@ function getInitials(name: string, fallback: string): string {
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-}
-
-type BadgeColor = 'blue' | 'gray' | 'green' | 'orange' | 'purple';
-
-const BADGE_BACKGROUNDS: Record<BadgeColor, string> = {
-  blue: '#2B5FFF',
-  gray: '#5B5A62',
-  green: '#2E9E5B',
-  orange: '#D97A2C',
-  purple: '#7C5CFF',
-};
-
-function RowIcon({ name, color }: { name: SFSymbol; color: BadgeColor }) {
-  return (
-    <View style={[styles.rowIcon, { backgroundColor: BADGE_BACKGROUNDS[color] }]}>
-      <AppIcon name={name} size={14} tintColor="#FFFFFF" />
-    </View>
-  );
 }
 
 interface AccountState {
@@ -79,6 +62,74 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
   }
 }
 
+/** A List row (Primitives §2): icon + label on the left, one accessory on the
+ * right. No background, no border — rows are separated by space alone. */
+function SettingsRow({
+  icon,
+  label,
+  description,
+  onPress,
+  accessory,
+  destructive,
+  testID,
+}: {
+  icon: SFSymbol;
+  label: string;
+  description?: string;
+  onPress?: () => void;
+  accessory?: React.ReactNode;
+  destructive?: boolean;
+  testID?: string;
+}) {
+  const themeColors = useThemeColors();
+  const labelColor = destructive ? themeColors.destructive : themeColors.foreground;
+  const content = (
+    <View style={styles.row}>
+      <View style={styles.rowLabelGroup}>
+        <AppIcon
+          name={icon}
+          size={18}
+          tintColor={destructive ? themeColors.destructive : themeColors['icon-muted']}
+        />
+        <View style={styles.rowCopy}>
+          <Text style={[styles.rowLabel, { color: labelColor }]}>{label}</Text>
+          {description ? (
+            <Text style={[styles.rowDescription, { color: themeColors['text-secondary'] }]}>
+              {description}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+      {accessory}
+    </View>
+  );
+
+  if (!onPress) {
+    return (
+      <View testID={testID} style={styles.rowTouchable}>
+        {content}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      testID={testID}
+      onPress={onPress}
+      style={({ pressed }) => [styles.rowTouchable, pressed && styles.rowPressed]}
+    >
+      {content}
+    </Pressable>
+  );
+}
+
+function SectionLabel({ children }: { children: string }) {
+  const themeColors = useThemeColors();
+  return (
+    <Text style={[styles.sectionLabel, { color: themeColors['text-secondary'] }]}>{children}</Text>
+  );
+}
+
 function Settings() {
   const router = useRouter();
   const themeColors = useThemeColors();
@@ -98,6 +149,9 @@ function Settings() {
   });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [calendarPermission, setCalendarPermission] = useState<CalendarPermissionStatus | null>(
+    null,
+  );
 
   const normalizedName = state.name.trim();
   const initialNormalizedName = initialName.trim();
@@ -114,6 +168,10 @@ function Settings() {
 
     return () => clearTimeout(timeout);
   }, [saveStatus]);
+
+  useEffect(() => {
+    void OnDeviceAIModule.getCalendarPermissions().then(setCalendarPermission);
+  }, []);
 
   const onSavePress = async () => {
     if (!nameChanged) {
@@ -158,6 +216,11 @@ function Settings() {
 
   const onOnDeviceCalendarSpikePress = () => {
     router.push(getOnDeviceCalendarSpikeRoute());
+  };
+
+  const onCalendarPress = async () => {
+    const status = await OnDeviceAIModule.requestCalendarPermissions();
+    setCalendarPermission(status);
   };
 
   const onAddPasskeyPress = async () => {
@@ -273,28 +336,46 @@ function Settings() {
         </Text>
       ) : null}
 
-      {/* Usage hero */}
+      {/* Account */}
+      <View style={styles.section}>
+        <SectionLabel>Account</SectionLabel>
+        <SettingsRow
+          testID="settings-calendar-connect"
+          icon="calendar"
+          label="Calendar"
+          description={
+            calendarPermission === 'authorized'
+              ? 'Connected'
+              : calendarPermission === 'denied'
+                ? 'Access denied'
+                : 'Connect your calendar'
+          }
+          accessory={
+            <Button
+              testID="settings-calendar-action"
+              label={calendarPermission === 'authorized' ? 'Query' : 'Connect'}
+              onPress={() =>
+                calendarPermission === 'authorized'
+                  ? onOnDeviceCalendarSpikePress()
+                  : void onCalendarPress()
+              }
+              variant={calendarPermission === 'authorized' ? 'outline' : 'primary'}
+              size="sm"
+            />
+          }
+        />
+      </View>
+
+      {/* Usage */}
       {monthlyUsage ? (
-        <View
-          testID="settings-usage-section"
-          style={[styles.usageHero, { backgroundColor: themeColors['bg-elevated'] }]}
-        >
-          <View style={styles.usageHeroTop}>
-            <Text style={[styles.usageHeroLabel, { color: themeColors['text-secondary'] }]}>
-              AI usage this month
-            </Text>
-            <View style={[styles.usageHeroPill, { backgroundColor: themeColors['bg-surface'] }]}>
-              <Text style={[styles.usageHeroPillText, { color: themeColors.foreground }]}>
-                {usagePercent.toFixed(0)}%
-              </Text>
-            </View>
-          </View>
-          <View style={styles.usageHeroAmountRow}>
-            <Text style={[styles.usageHeroAmount, { color: themeColors.foreground }]}>
+        <View testID="settings-usage-section" style={styles.section}>
+          <SectionLabel>AI usage this month</SectionLabel>
+          <View style={styles.usageAmountRow}>
+            <Text style={[styles.usageAmount, { color: themeColors.foreground }]}>
               {formatUsd(monthlyUsage.totalCostUsd)}
             </Text>
-            <Text style={[styles.usageHeroCap, { color: themeColors['text-secondary'] }]}>
-              of {formatUsd(monthlyUsage.limitUsd)}
+            <Text style={[styles.usageCap, { color: themeColors['text-secondary'] }]}>
+              of {formatUsd(monthlyUsage.limitUsd)} · {usagePercent.toFixed(0)}%
             </Text>
           </View>
           <View style={[styles.usageTrack, { backgroundColor: themeColors['border-default'] }]}>
@@ -310,7 +391,7 @@ function Settings() {
               ]}
             />
           </View>
-          <Text style={[styles.usageHeroNote, { color: themeColors['text-tertiary'] }]}>
+          <Text style={[styles.usageNote, { color: themeColors['text-tertiary'] }]}>
             {monthlyUsage.isOverLimit
               ? "You've reached this month's free AI usage limit. It resets at the start of next month."
               : 'Resets at the start of next month.'}
@@ -320,17 +401,11 @@ function Settings() {
 
       {/* Privacy */}
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: themeColors['text-secondary'] }]}>
-          {t.settings.sections.privacy}
-        </Text>
-        <View style={[styles.sectionList, { backgroundColor: themeColors['bg-elevated'] }]}>
-          <View style={[styles.row, { borderBottomColor: themeColors['border-default'] }]}>
-            <View style={styles.rowLabelGroup}>
-              <RowIcon name="faceid" color="green" />
-              <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
-                {t.settings.lockWithFaceId}
-              </Text>
-            </View>
+        <SectionLabel>{t.settings.sections.privacy}</SectionLabel>
+        <SettingsRow
+          icon="faceid"
+          label={t.settings.lockWithFaceId}
+          accessory={
             <Switch
               value={state.appLock}
               onValueChange={(value) => {
@@ -338,14 +413,12 @@ function Settings() {
                 setAppLockEnabled(value);
               }}
             />
-          </View>
-          <View style={[styles.row, styles.rowNoBorder]}>
-            <View style={styles.rowLabelGroup}>
-              <RowIcon name="eye.slash" color="gray" />
-              <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
-                {t.settings.preventScreenshots}
-              </Text>
-            </View>
+          }
+        />
+        <SettingsRow
+          icon="eye.slash"
+          label={t.settings.preventScreenshots}
+          accessory={
             <Switch
               value={state.preventScreenshots}
               onValueChange={(value) => {
@@ -353,134 +426,72 @@ function Settings() {
                 setPreventScreenshots(value);
               }}
             />
-          </View>
-        </View>
+          }
+        />
       </View>
 
       {/* Chats */}
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: themeColors['text-secondary'] }]}>
-          {t.settings.sections.chats}
-        </Text>
-        <View style={[styles.sectionList, { backgroundColor: themeColors['bg-elevated'] }]}>
-          <Pressable
-            onPress={onArchivedChatsPress}
-            style={({ pressed }) => [
-              styles.row,
-              __DEV__ || ON_DEVICE_AI_SPIKE_ENABLED ? undefined : styles.rowNoBorder,
-              { borderBottomColor: themeColors['border-default'], opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <View style={styles.rowLabelGroup}>
-              <RowIcon name="archivebox" color="blue" />
-              <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
-                {t.settings.archivedChats}
-              </Text>
-            </View>
+        <SectionLabel>{t.settings.sections.chats}</SectionLabel>
+        <SettingsRow
+          icon="archivebox"
+          label={t.settings.archivedChats}
+          onPress={onArchivedChatsPress}
+          accessory={
             <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-muted']} />
-          </Pressable>
-          {__DEV__ || ON_DEVICE_AI_SPIKE_ENABLED ? (
-            <Pressable
-              testID="settings-on-device-calendar-spike"
-              onPress={onOnDeviceCalendarSpikePress}
-              style={({ pressed }) => [
-                styles.row,
-                styles.rowNoBorder,
-                { opacity: pressed ? 0.7 : 1 },
-              ]}
-            >
-              <View style={styles.rowLabelGroup}>
-                <RowIcon name="calendar" color="orange" />
-                <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
-                  On-device calendar spike (experimental)
-                </Text>
-              </View>
-              <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-muted']} />
-            </Pressable>
-          ) : null}
-        </View>
+          }
+        />
       </View>
 
       {/* Passkeys */}
       {MOBILE_PASSKEY_ENABLED ? (
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: themeColors['text-secondary'] }]}>
-            {t.settings.sections.passkeys}
-          </Text>
-          <View style={[styles.sectionList, { backgroundColor: themeColors['bg-elevated'] }]}>
-            <Pressable
-              onPress={() => void onAddPasskeyPress()}
-              disabled={isPasskeyLoading}
-              style={({ pressed }) => [
-                styles.row,
-                passkeys.length === 0 ? styles.rowNoBorder : undefined,
-                { borderBottomColor: themeColors['border-default'], opacity: pressed ? 0.7 : 1 },
-              ]}
-            >
-              <View style={styles.rowLabelGroup}>
-                <RowIcon name="plus" color="purple" />
-                <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
-                  {isPasskeyLoading ? t.settings.passkeys.adding : t.settings.passkeys.add}
-                </Text>
-              </View>
-              {isPasskeyLoading ? <ActivityIndicator color={themeColors.foreground} /> : null}
-            </Pressable>
-            {passkeys.map((pk, index) => (
-              <View
-                key={pk.id}
-                style={[
-                  styles.row,
-                  index === passkeys.length - 1
-                    ? styles.rowNoBorder
-                    : { borderBottomColor: themeColors['border-default'] },
-                ]}
-              >
-                <View style={styles.rowLabelGroup}>
-                  <RowIcon name="key.fill" color="purple" />
-                  <Text style={[styles.rowLabel, { color: themeColors.foreground }]}>
-                    {pk.name}
-                  </Text>
-                </View>
-                <Pressable
-                  hitSlop={8}
-                  onPress={() => onDeletePasskeyPress(pk.id, pk.name)}
-                  style={({ pressed }) => ({ opacity: pressed ? 0.65 : 1 })}
-                >
-                  <Text style={[styles.removeText, { color: themeColors.destructive }]}>
-                    {t.settings.passkeys.remove}
-                  </Text>
+          <SectionLabel>{t.settings.sections.passkeys}</SectionLabel>
+          <SettingsRow
+            icon="plus"
+            label={isPasskeyLoading ? t.settings.passkeys.adding : t.settings.passkeys.add}
+            onPress={isPasskeyLoading ? undefined : () => void onAddPasskeyPress()}
+            accessory={
+              isPasskeyLoading ? <ActivityIndicator color={themeColors.foreground} /> : null
+            }
+          />
+          {passkeys.map((pk) => (
+            <SettingsRow
+              key={pk.id}
+              icon="key.fill"
+              label={pk.name}
+              accessory={
+                <Pressable hitSlop={8} onPress={() => onDeletePasskeyPress(pk.id, pk.name)}>
+                  {({ pressed }) => (
+                    <Text
+                      style={[
+                        styles.removeText,
+                        { color: themeColors.destructive, opacity: pressed ? 0.6 : 1 },
+                      ]}
+                    >
+                      {t.settings.passkeys.remove}
+                    </Text>
+                  )}
                 </Pressable>
-              </View>
-            ))}
-          </View>
+              }
+            />
+          ))}
         </View>
       ) : null}
 
       {/* Danger zone */}
-      <View style={[styles.dangerList, { backgroundColor: themeColors['bg-elevated'] }]}>
-        <Pressable
+      <View style={styles.section}>
+        <SettingsRow
+          icon="rectangle.portrait.and.arrow.right"
+          label={t.settings.signOut.label}
           onPress={onLogoutPress}
-          style={({ pressed }) => [
-            styles.dangerRow,
-            { borderBottomColor: themeColors['border-default'], opacity: pressed ? 0.7 : 1 },
-          ]}
-        >
-          <Text style={[styles.dangerRowText, { color: themeColors.foreground }]}>
-            {t.settings.signOut.label}
-          </Text>
-        </Pressable>
-        <Pressable
+        />
+        <SettingsRow
+          icon="trash"
+          label={t.settings.deleteAccount.label}
           onPress={onDeleteAccountPress}
-          style={({ pressed }) => [
-            styles.dangerRow,
-            styles.rowNoBorder,
-            { opacity: pressed ? 0.7 : 1 },
-          ]}
-        >
-          <Text style={[styles.dangerRowText, { color: themeColors.destructive }]}>
-            {t.settings.deleteAccount.label}
-          </Text>
-        </Pressable>
+          destructive
+        />
       </View>
     </ScrollView>
   );
@@ -491,7 +502,7 @@ export default Settings;
 const styles = StyleSheet.create({
   avatar: {
     alignItems: 'center',
-    borderRadius: 26,
+    borderRadius: radii.xl,
     height: 52,
     justifyContent: 'center',
     width: 52,
@@ -499,20 +510,6 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 19,
     fontWeight: '700',
-  },
-  dangerList: {
-    borderRadius: 14,
-    marginTop: 8,
-    overflow: 'hidden',
-  },
-  dangerRow: {
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 14,
-  },
-  dangerRowText: {
-    fontSize: 15,
-    fontWeight: '600',
   },
   identity: {
     alignItems: 'center',
@@ -542,111 +539,81 @@ const styles = StyleSheet.create({
   },
   row: {
     alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     gap: 12,
     justifyContent: 'space-between',
-    minHeight: 48,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    minHeight: componentSizes.xl,
   },
-  rowIcon: {
-    alignItems: 'center',
-    borderRadius: 7,
-    height: 26,
-    justifyContent: 'center',
-    width: 26,
+  rowCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  rowDescription: {
+    fontSize: 13,
   },
   rowLabel: {
-    fontSize: 15,
+    fontSize: fontSizes.md,
   },
   rowLabelGroup: {
     alignItems: 'center',
-    flexDirection: 'row',
     flex: 1,
+    flexDirection: 'row',
     gap: 10,
   },
-  rowNoBorder: {
-    borderBottomWidth: 0,
+  rowPressed: {
+    opacity: 0.6,
+  },
+  rowTouchable: {
+    paddingHorizontal: 16,
   },
   saveRow: {
     alignItems: 'flex-start',
     paddingHorizontal: 16,
   },
   scrollContent: {
-    gap: 20,
+    gap: spacing[6],
     paddingBottom: 24,
     paddingTop: 12,
   },
   section: {
-    gap: 8,
+    gap: spacing[2],
   },
   sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.4,
+    fontSize: fontSizes.footnote,
+    fontWeight: '600',
     paddingHorizontal: 16,
-    textTransform: 'uppercase',
-  },
-  sectionList: {
-    borderRadius: 14,
-    overflow: 'hidden',
   },
   statusText: {
     fontSize: 13,
   },
-  usageFill: {
-    borderRadius: 4,
-    height: 8,
-  },
-  usageHero: {
-    borderRadius: 20,
-    gap: 12,
-    marginHorizontal: 16,
-    padding: 18,
-  },
-  usageHeroAmount: {
-    fontSize: 34,
+  usageAmount: {
+    fontSize: 28,
     fontVariant: ['tabular-nums'],
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.4,
   },
-  usageHeroAmountRow: {
+  usageAmountRow: {
     alignItems: 'baseline',
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
+    paddingHorizontal: 16,
   },
-  usageHeroCap: {
+  usageCap: {
     fontSize: 14,
     fontVariant: ['tabular-nums'],
   },
-  usageHeroLabel: {
+  usageFill: {
+    borderRadius: 4,
+    height: 4,
+  },
+  usageNote: {
     fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-  },
-  usageHeroNote: {
-    fontSize: 12,
-  },
-  usageHeroPill: {
-    borderRadius: 999,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-  },
-  usageHeroPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  usageHeroTop: {
-    alignItems: 'baseline',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    paddingHorizontal: 16,
   },
   usageTrack: {
     borderRadius: 4,
-    height: 8,
+    height: 4,
+    marginHorizontal: 16,
     overflow: 'hidden',
-    width: '100%',
   },
 });

@@ -42,7 +42,7 @@ export function getTaskVoiceCaptureErrorPresentation(
     case 'transcription-failed':
       return {
         title: 'Voice transcription failed',
-        message: 'Your recording was kept, but the transcript could not be generated.',
+        message: 'The transcript could not be generated. The temporary recording was cleaned up.',
       };
     case 'creation-failed':
       return {

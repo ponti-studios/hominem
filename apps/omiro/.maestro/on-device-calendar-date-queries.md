@@ -1,9 +1,6 @@
 # On-device calendar spike: date-query test drive
 
-This is a handoff doc for a **local Claude Code session** (one with an actual
-device/simulator and Xcode available — the session that wrote this could not
-run Maestro or compile Swift itself). Goal: drive 15 date-related prompts
-through the on-device calendar spike, capture what the model actually did,
+Goal: drive 15 date-related prompts through the on-device calendar spike, capture what the model actually did,
 and judge whether the date-range resolution machinery added in this branch
 (`claude/calendar-tomorrow-events-bug-8if6an`) holds up against realistic
 professional usage — not just the "today" bug it originally fixed.
@@ -34,16 +31,15 @@ reasoning like comparisons).
 
 ## Prerequisites
 
-1. Physical iOS device or Mac Catalyst target with **Apple Intelligence
-   enabled**. The simulator cannot run FoundationModels sessions — the app
-   will report `availability: unavailable` and every prompt will fail
-   immediately.
+1. An iOS device or iOS Simulator with **Apple Intelligence enabled**. On
+   current macOS/Xcode versions, the simulator can run FoundationModels using
+   the host Mac's Apple Intelligence model.
 2. `EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED=true`, or a `__DEV__` build, so
-   the "On-device calendar spike (experimental)" row is visible in Settings.
-3. **Calendar permission already granted.** iOS permission dialogs are a
-   system UI Maestro can't drive reliably. Launch the app once by hand, go
-   to the spike screen, tap "Request calendar access", and approve it,
-   *before* running the automated flow.
+   the Calendar row in Account settings is visible.
+3. A test account can be created and authenticated programmatically. Use the
+   test OTP `000000`; do not add a real password or credential to a flow. The
+   calendar permission must be granted once in the simulator's system UI, then
+   Account settings should show Calendar as `Connected`.
 4. Seed a few real events on the device's default calendar spanning past and
    future dates — today, tomorrow morning, later this week, next week, a
    month ago, a Monday or two this month. Without seed data every answer
@@ -57,6 +53,29 @@ reasoning like comparisons).
    ```
 
 ## Running it
+
+The account and app session can be driven with Maestro. For a fresh session:
+
+```yaml
+appId: com.pontistudios.hakumi.dev
+---
+- launchApp
+- tapOn:
+    id: auth-email-input
+- inputText: maestro.calendar.20260721@example.com
+- tapOn:
+    id: auth-send-otp
+- extendedWaitUntil:
+    visible:
+      id: auth-otp-input
+    timeout: 15000
+- inputText: "000000"
+- tapOn:
+    id: auth-verify-otp
+```
+
+After authentication, open the spike from Settings and grant Calendar access
+if the status is not yet `authorized`.
 
 Note: despite what `apps/omiro/CLAUDE.md` says, `just mobile test` actually
 runs the **vitest** suite (see `just/mobile.just`), not Maestro — there's no
@@ -84,13 +103,18 @@ just mobile dev
 
 ## How to read each screenshot
 
-Every screenshot shows the **"Processing steps" panel** above the response
-(now animated tool-call chips — see the log rendering added earlier this
-branch). Look for the `tool_call` row: it renders as
+Every screenshot shows the **"Processing steps" panel** above the response.
+Look for the `Calendar query` row: it renders the model-derived range as
 
 ```
-Model called lookupCalendarEvents(startDate: 2026-07-20, endDate: 2026-07-20, dayPart: allDay)
+6:38:35 PM · Calendar query · —
+Dates 2026-07-20 → 2026-07-20 · all day
 ```
+
+Each row has the compact shape `time · step · duration`, followed by the
+step detail. Calendar result rows show the EventKit lookup duration; response
+rows show model-generation duration. A dash means the step is an
+instantaneous marker rather than a timed operation.
 
 **This line is the actual signal to evaluate** — it's what the model
 resolved the prompt into, independent of what events happen to exist. The

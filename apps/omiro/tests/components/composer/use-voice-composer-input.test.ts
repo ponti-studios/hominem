@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createVoiceComposerError,
   deriveVoiceComposerState,
+  getVoiceComposerErrorPresentation,
   mergeTranscriptIntoDraft,
   maybeApplyCleanedTranscript,
   replaceTranscriptInDraft,
@@ -51,6 +52,12 @@ describe('voice composer input helpers', () => {
         error: createVoiceComposerError('transcription-failed'),
       }),
     ).toBe('failed');
+  });
+
+  it('describes transcription cleanup accurately after a failure', () => {
+    expect(getVoiceComposerErrorPresentation('transcription-failed').message).toContain(
+      'temporary recording was cleaned up',
+    );
   });
 
   it('appends a transcript on a new line when the draft already has content', () => {

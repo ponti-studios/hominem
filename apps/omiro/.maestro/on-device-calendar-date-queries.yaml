@@ -10,19 +10,19 @@ appId: com.pontistudios.hakumi.dev
 # expected to look like per prompt, and how to review the results.
 #
 # Requires:
-#   - a physical device with Apple Intelligence enabled (the simulator
-#     cannot run FoundationModels sessions)
-#   - calendar permission already granted to the dev build (grant it once
-#     manually via the "Request calendar access" button before running this
-#     flow — permission prompts are outside Maestro's control on iOS)
+#   - an iOS device or simulator with Apple Intelligence enabled; current
+#     macOS/Xcode versions allow the simulator to run FoundationModels using
+#     the host Mac's model
+#   - a test account signed in with the test OTP (000000), and Calendar
+#     connected from Account settings
 #   - EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED=true, or a __DEV__ build, so the
-#     settings row is visible
+#     Calendar query action is visible
 - runFlow: startup.yaml
 - tapOn: Open inbox menu
 - tapOn: Settings
 - assertVisible: Settings
 - tapOn:
-    id: settings-on-device-calendar-spike
+    id: settings-calendar-action
 - assertVisible:
     id: on-device-calendar-spike-screen
 
@@ -31,8 +31,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: What do I have today?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -44,8 +45,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: What's on my calendar tomorrow morning?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -57,8 +59,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: What do I have this week?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -70,8 +73,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: Am I free Thursday afternoon?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -83,8 +87,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: What's my next meeting?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -96,8 +101,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: How many meetings do I have this week versus last week?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -109,8 +115,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: What did I have going on this time last month?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -122,8 +129,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: What's on my calendar for the rest of the day?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -135,8 +143,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: Do I have anything conflicting with a 3pm call tomorrow?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -148,8 +157,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: What's my first thing tomorrow?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -161,8 +171,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: What do I have between now and Friday?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -174,8 +185,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: Show me everything I have next week.
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -187,8 +199,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: What did I do the week I was out sick?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -200,8 +213,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: What's on my calendar every Monday this month?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
@@ -213,8 +227,9 @@ appId: com.pontistudios.hakumi.dev
     id: on-device-calendar-spike-input
 - eraseText: 200
 - inputText: How much free time do I have this afternoon?
+- back
 - tapOn:
-    id: on-device-calendar-spike-ask-button
+    text: Ask
 - extendedWaitUntil:
     visible:
       id: on-device-calendar-spike-response
