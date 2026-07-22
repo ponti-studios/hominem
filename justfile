@@ -23,7 +23,7 @@ dev scope='all':
       api) filter=(--filter=@hominem/api) ;;
       career) filter=(--filter=@hominem/career) ;;
       finance) filter=(--filter=@hominem/finance) ;;
-      mobile) just mobile dev ; exit 0 ;;
+      mobile) cd "{{ ROOT_DIR }}/apps/omiro" && APP_ENV=development OMIRO_DEV_CLIENT=true pnpm exec expo run:ios ; exit 0 ;;
       *) echo "error: unknown scope '{{ scope }}'" >&2; exit 1 ;;
     esac
     cd "{{ ROOT_DIR }}"

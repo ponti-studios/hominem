@@ -1,9 +1,6 @@
 OMIRO_DIR := justfile_directory() / 'apps' / 'omiro'
 OMIRO_RUNTIME_VERSION := 'ios-r1'
 
-dev:
-    cd "{{ OMIRO_DIR }}" && APP_ENV=development OMIRO_DEV_CLIENT=true pnpm exec expo run:ios
-
 start:
     cd "{{ OMIRO_DIR }}" && pnpm exec expo start --ios
 
