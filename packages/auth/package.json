@@ -40,10 +40,6 @@
       "types": "./src/client/email-otp-route.ts",
       "default": "./src/client/email-otp-route.ts"
     },
-    "./client/email-otp-auth-flow": {
-      "types": "./src/client/email-otp-auth-flow.tsx",
-      "default": "./src/client/email-otp-auth-flow.tsx"
-    },
     "./server": {
       "types": "./src/server.ts",
       "default": "./src/server.ts"
@@ -61,7 +57,6 @@
   "dependencies": {
     "@hominem/db": "workspace:*",
     "@hominem/utils": "workspace:*",
-    "@ponti-studios/ui": "0.1.2",
     "better-auth": "^1.6.13"
   },
   "devDependencies": {

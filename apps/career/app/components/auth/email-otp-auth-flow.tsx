@@ -108,7 +108,6 @@ function OtpInput({
   );
 }
 
-/** Shared Hominem auth workflow composed from canonical Ponti controls. */
 export function EmailOtpAuthFlow({
   copy,
   email,
