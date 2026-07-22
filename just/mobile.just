@@ -3,7 +3,7 @@ start:
     cd "{{ OMIRO_DIR }}" && pnpm exec expo start --ios
 
 dev:
-    cd "{{ ROOT_DIR }}/apps/omiro" && APP_ENV=development pnpm exec expo run:ios
+    cd "{{ OMIRO_DIR }}/apps/omiro" && APP_ENV=development pnpm exec expo run:ios
 
 e2e:
     cd "{{ OMIRO_DIR }}" && APP_ENV=e2e pnpm exec expo run:ios
