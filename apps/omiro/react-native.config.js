@@ -1,5 +1,5 @@
 const usesDevelopmentClient =
-  (process.env.OMIRO_DEV_CLIENT ?? ((process.env.APP_ENV ?? 'development') === 'development').toString()) !== 'false'
+  (((process.env.APP_ENV ?? 'development') === 'development').toString()) !== 'false'
 
 module.exports = {
   dependencies: usesDevelopmentClient

@@ -11,7 +11,6 @@ import { colors, makeStyles, radii, Text, themeSpacing } from '~/components/them
 import { EmptyState } from '~/components/ui/EmptyState';
 import AppIcon from '~/components/ui/icon';
 import { getTaskDetailRoute } from '~/services/navigation/routes';
-import { filterTasks } from '~/services/tasks/screen-state';
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTaskDelete } from '~/services/tasks/use-task-delete';
@@ -36,16 +35,23 @@ interface TasksPaneProps {
 
 /**
  * The Tasks list, editor, voice-capture UI, and its own floating add/voice
- * buttons — fully self-contained so it can be embedded as a plain tab
- * (Inbox screen) or as its own route (app/(protected)/tasks/index.tsx)
- * without duplicating logic or fighting the host screen's toolbar.
+ * buttons — fully self-contained so it can be embedded as the Tasks context
+ * inside the Workspace without duplicating logic or fighting the host
+ * screen's toolbar.
  */
 export function TasksPane({ isFocused, searchQuery = '' }: TasksPaneProps) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { data: tasks = [], error, isFetching, refetch } = useTasksQuery({ enabled: isFocused });
-  const visibleTasks = filterTasks(tasks, searchQuery);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const visibleTasks = tasks.filter(
+    (task) =>
+      !normalizedQuery ||
+      [task.title, task.description].some((value) =>
+        value?.toLowerCase().includes(normalizedQuery),
+      ),
+  );
   const { mutate: toggleComplete } = useTaskComplete();
   const { mutate: deleteTask } = useTaskDelete();
   const { mutate: createTask, isPending: isCreating } = useTaskCreate();

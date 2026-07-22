@@ -149,6 +149,7 @@ const t = {
       searchEmpty: 'Search your recent chats and notes',
       searchResults: (count: number) => `${count} result${count !== 1 ? 's' : ''}`,
       closeSearch: 'Close search',
+      cancel: 'Cancel',
       emptyNotesTitle: 'No notes yet',
       emptyNotesDescription: 'Saved notes will appear here so you can reopen them quickly.',
       newAction: 'New',

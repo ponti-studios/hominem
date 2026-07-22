@@ -448,22 +448,23 @@ Pass/fail rules for how primitives assemble into a screen.
 79. The screen remains usable at the largest supported dynamic type size.
 80. Horizontal scrolling is never required to discover a primary action.
 
-### Native chrome
+### Interaction verification
 
-81. A native header slot (`headerLeft`, `headerRight`, search bar
-    accessories) never toggles between a defined value and no value in
-    response to interaction state. If a slot has nothing to show in some
-    state, it renders an explicit alternate or empty view instead of
-    `undefined`/`null` — the OS reserves the slot's space regardless, and
-    may synthesize its own placeholder chrome for one that disappears. A
-    real screen hit this: `app/(protected)/index.tsx` set `headerLeft` to
-    `undefined` while its search bar was active, and iOS filled the
-    reserved slot with a non-functional "More" button.
-82. Chrome that only matters in one interaction state uses the platform's
-    on-demand idiom for it (e.g. an expand-on-tap search field) rather
-    than becoming permanently visible to sidestep a layout collision with
-    other header content. Solve the collision; don't spend ceremony
-    budget (§Ceremony budget) to avoid solving it.
+81. A user-visible change is unverified until it is observed on its target
+    device or browser in every changed state: idle, active/focused or loading,
+    cancellation/error where applicable, and return/recovery.
+82. Before adding controls to a constrained region, the complete composition
+    must be verified at the smallest supported viewport or container. Each
+    control must remain visible, reachable, and legible; overlap, clipping,
+    and undiscoverable actions fail review.
+83. An interactive control passes only when automation or equivalent direct
+    observation proves both its activation and its resulting state. Rendering,
+    an accessible label, or a successful type check alone does not prove the
+    interaction works.
+84. App-owned controls require deterministic identifiers or another documented,
+    reliable observation path. A platform primitive that cannot supply one is
+    an implementation constraint to resolve or report before completion.
+
 
 ---
 
@@ -482,6 +483,8 @@ A screen fails review if:
 - the first viewport does not show the task and the primary action;
 - any required state (Rule 43) is missing;
 - any visible control is invalid for the current state; or
+- a changed interaction lacks target-environment evidence for its required
+  states and transitions (Rules 81–84); or
 - a reviewer cannot remove 20% of the UI without reducing functionality.
 
 The governing rule:

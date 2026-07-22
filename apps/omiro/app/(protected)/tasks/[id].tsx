@@ -1,6 +1,6 @@
 import type { Task } from '@hominem/rpc/types';
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import { Stack, useIsFocused, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useIsFocused, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, RefreshControl, View } from 'react-native';
 
@@ -9,6 +9,7 @@ import { TaskEditorSheet, type TaskEditorValues } from '~/components/tasks/TaskE
 import { TaskListItem } from '~/components/tasks/TaskListItem';
 import { makeStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
+import { INBOX_ROUTE } from '~/services/navigation/routes';
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTaskDelete } from '~/services/tasks/use-task-delete';
@@ -20,9 +21,11 @@ type EditorState = { mode: 'create' } | { mode: 'edit'; task: Task; isChild: boo
 
 export default function TaskDetailScreen() {
   const styles = useStyles();
+  const navigation = useNavigation();
   const router = useRouter();
   const isFocused = useIsFocused();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const canGoBack = navigation.canGoBack();
   const { data, error, isFetching, refetch } = useTaskQuery({ taskId: id, enabled: isFocused });
   const { mutate: toggleComplete } = useTaskComplete({ parentId: id });
   const { mutate: deleteChild } = useTaskDelete({ parentId: id });
@@ -40,11 +43,13 @@ export default function TaskDetailScreen() {
         text: t.tasks.deleteList.confirm,
         style: 'destructive',
         onPress: () => {
-          deleteList(id, { onSuccess: () => router.back() });
+          deleteList(id, {
+            onSuccess: () => (canGoBack ? router.back() : router.replace(INBOX_ROUTE)),
+          });
         },
       },
     ]);
-  }, [deleteList, id, router]);
+  }, [canGoBack, deleteList, id, router]);
 
   const handleEditParent = useCallback(() => {
     if (!data) return;
@@ -83,6 +88,13 @@ export default function TaskDetailScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: data?.task.title ?? '' }} />
+      {!canGoBack ? (
+        <Stack.Toolbar placement="left">
+          <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.replace(INBOX_ROUTE)}>
+            Inbox
+          </Stack.Toolbar.Button>
+        </Stack.Toolbar>
+      ) : null}
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button
           accessibilityLabel={t.tasks.addSubtaskA11y}

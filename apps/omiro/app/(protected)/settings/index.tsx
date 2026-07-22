@@ -21,7 +21,7 @@ import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen
 import OnDeviceAIModule, { type CalendarPermissionStatus } from '~/modules/on-device-ai';
 import { useAuth } from '~/services/auth/auth-provider';
 import { resolveProtectedRouteState } from '~/services/auth/protected-route-state';
-import { getArchivedChatsRoute, getOnDeviceCalendarSpikeRoute } from '~/services/navigation/routes';
+import { ARCHIVED_CHATS_ROUTE, ON_DEVICE_CALENDAR_SPIKE_ROUTE } from '~/services/navigation/routes';
 import { useMonthlyUsage } from '~/services/usage/use-usage-query';
 import t from '~/translations';
 
@@ -202,11 +202,11 @@ function Settings() {
   };
 
   const onArchivedChatsPress = () => {
-    router.push(getArchivedChatsRoute());
+    router.push(ARCHIVED_CHATS_ROUTE);
   };
 
   const onOnDeviceCalendarSpikePress = () => {
-    router.push(getOnDeviceCalendarSpikeRoute());
+    router.push(ON_DEVICE_CALENDAR_SPIKE_ROUTE);
   };
 
   const onCalendarPress = async () => {

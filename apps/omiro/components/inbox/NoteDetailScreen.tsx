@@ -16,7 +16,7 @@ import { useNoteFormatting } from '~/hooks/use-note-formatting';
 import { useInlineEnhance } from '~/services/ai';
 import { normalizeChatTitle, useStartChatFromInbox } from '~/services/chat';
 import { writeResumeTarget } from '~/services/navigation/launch-state';
-import { getInboxRoute } from '~/services/navigation/routes';
+import { INBOX_ROUTE } from '~/services/navigation/routes';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import { useNoteQuery } from '~/services/notes/use-note-query';
 import t from '~/translations';
@@ -87,7 +87,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const styles = useNoteStyles();
   const router = useRouter();
   const navigation = useNavigation();
-  const homeRoute = getInboxRoute();
+  const homeRoute = INBOX_ROUTE;
   const canGoBack = navigation.canGoBack();
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
@@ -193,7 +193,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
 interface NoteEditorBodyProps {
   note: Note;
   canGoBack: boolean;
-  homeRoute: ReturnType<typeof getInboxRoute>;
+  homeRoute: typeof INBOX_ROUTE;
   isRefreshing: boolean;
   refetch: () => void;
   save: ReturnType<typeof useNoteEditor>['save'];

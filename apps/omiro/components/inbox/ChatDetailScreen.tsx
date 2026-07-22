@@ -2,8 +2,8 @@ import type { SessionSource } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, StyleSheet, View } from 'react-native';
 import type { LayoutChangeEvent } from 'react-native';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,7 +32,7 @@ import { useCreateChat } from '~/services/chat/use-create-chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { writeResumeTarget } from '~/services/navigation/launch-state';
-import { getContentRoute, getInboxRoute } from '~/services/navigation/routes';
+import { INBOX_ROUTE, getContentRoute } from '~/services/navigation/routes';
 import { chatKeys } from '~/services/notes/query-keys';
 import t from '~/translations';
 
@@ -108,7 +108,7 @@ export function ChatDetailScreen() {
 
   const controller = useChatController({
     chatId,
-    onChatArchive: () => router.replace(getInboxRoute()),
+    onChatArchive: () => router.replace(INBOX_ROUTE),
     services,
     source,
   });
@@ -167,7 +167,7 @@ export function ChatDetailScreen() {
       />
       {!canGoBack ? (
         <Stack.Toolbar placement="left">
-          <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.replace(getInboxRoute())}>
+          <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.replace(INBOX_ROUTE)}>
             Inbox
           </Stack.Toolbar.Button>
         </Stack.Toolbar>

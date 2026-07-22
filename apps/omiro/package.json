@@ -13,7 +13,6 @@
     "lint:fix": "expo lint --fix"
   },
   "dependencies": {
-    "@bacons/apple-targets": "^4.0.7",
     "@better-auth/expo": "^1.6.11",
     "@expo/metro-runtime": "~57.0.3",
     "@expo/ui": "~57.0.3",
@@ -24,8 +23,8 @@
     "@hominem/rpc": "workspace:*",
     "@hominem/storage": "workspace:*",
     "@hominem/telemetry": "workspace:*",
-    "@ponti-studios/ui": "0.1.2",
     "@hominem/utils": "workspace:*",
+    "@ponti-studios/ui": "0.1.2",
     "@react-native-community/netinfo": "12.0.1",
     "@sentry/react-native": "^8.18.0",
     "@shopify/flash-list": "2.0.2",
@@ -35,6 +34,7 @@
     "expo-application": "~57.0.0",
     "expo-asset": "~57.0.3",
     "expo-audio": "~57.0.0",
+    "expo-blur": "~57.0.2",
     "expo-build-properties": "~57.0.3",
     "expo-camera": "^57.0.0",
     "expo-clipboard": "~57.0.0",
@@ -43,6 +43,7 @@
     "expo-dev-client": "~57.0.5",
     "expo-device": "~57.0.0",
     "expo-file-system": "~57.0.0",
+    "expo-glass-effect": "~57.0.1",
     "expo-haptics": "^57.0.0",
     "expo-image": "~57.0.0",
     "expo-image-picker": "~57.0.2",

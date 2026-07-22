@@ -195,10 +195,6 @@ export default ({ config }: ConfigContext) => {
     ],
   ];
 
-  if (!e2eTesting) {
-    plugins.push('@bacons/apple-targets');
-  }
-
   if (hasDevelopmentClient) {
     plugins.splice(1, 0, [
       'expo-dev-client',

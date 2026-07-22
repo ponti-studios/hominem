@@ -6,7 +6,7 @@ import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { useAuth } from '~/services/auth/auth-provider';
-import { getInboxRoute } from '~/services/navigation/routes';
+import { INBOX_ROUTE } from '~/services/navigation/routes';
 import t from '~/translations';
 
 const Onboarding = () => {
@@ -59,7 +59,7 @@ const Onboarding = () => {
   }
 
   if (currentUser?.name) {
-    return <Redirect href={getInboxRoute()} />;
+    return <Redirect href={INBOX_ROUTE} />;
   }
 
   return (

@@ -5,7 +5,6 @@ import { View } from 'react-native';
 
 import { Text, makeStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
-import type { InboxTab } from '~/services/inbox/screen-state';
 import t from '~/translations';
 
 import { InboxStreamItem } from './InboxStreamItem';
@@ -24,6 +23,7 @@ export type InboxListRow =
     };
 
 export type InboxListRef = FlashListRef<InboxListRow>;
+export type InboxTab = 'chats' | 'notes';
 
 interface InboxListProps {
   error?: Error | null;

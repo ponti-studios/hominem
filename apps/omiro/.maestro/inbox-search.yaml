@@ -1,35 +1,37 @@
 appId: com.pontistudios.hakumi.dev
 ---
-# Covers the native search bar across the Chats/Notes/Tasks tabs. headerLeft
-# is a single, structurally invariant icon toggle — it never changes shape
-# between idle and active search, so it stays visible and interactive the
-# whole time search is active. Switching tabs mid-search re-scopes the
-# query instead of closing it. Assumes seed data: a task_list titled
+# Covers expand-on-tap search across the Chats/Notes/Tasks contexts. The
+# native top toolbar keeps the context picker stable while the right action
+# group becomes a focused field with Cancel. Assumes seed data: a task_list titled
 # "3 tasks", and a standalone task "Buy groceries" (see tasks-navigation.yaml
 # / tasks-edit.yaml for the same fixtures).
 - runFlow: startup.yaml
 
 - assertVisible:
-    id: inbox-tab-control-chats
+    id: workspace-context-chats
 - tapOn: Search
-- assertVisible: Cancel
 - assertVisible:
-    id: inbox-tab-control-chats
+    id: workspace-search-input
+- assertVisible:
+    id: workspace-search-cancel
+- assertVisible:
+    id: workspace-context-chats
 - tapOn: Cancel
 - assertVisible:
     id: inbox-composer-input
-
-# Switching tabs while search is active re-scopes it instead of closing it.
+# Switching contexts while search is active re-scopes it instead of closing it.
 - tapOn:
-    id: inbox-tab-control-tasks
+    id: workspace-context-tasks
 - assertVisible: "3 tasks"
 - assertVisible: Buy groceries
 - tapOn: Search
-- assertVisible: Cancel
 - assertVisible:
-    id: inbox-tab-control-chats
+    id: workspace-search-input
+- assertVisible:
+    id: workspace-context-chats
 - inputText: groceries
 - assertVisible: Buy groceries
 - assertNotVisible: "3 tasks"
-- tapOn: Cancel
+- tapOn:
+    id: workspace-search-cancel
 - assertVisible: "3 tasks"

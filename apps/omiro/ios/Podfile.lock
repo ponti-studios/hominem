@@ -186,6 +186,8 @@ PODS:
     - ExpoModulesCore
   - ExpoAudio (57.0.0):
     - ExpoModulesCore
+  - ExpoBlur (57.0.2):
+    - ExpoModulesCore
   - ExpoCamera (57.0.0):
     - ExpoModulesCore
   - ExpoCameraBarcodeScanning (57.0.0):
@@ -202,7 +204,7 @@ PODS:
     - ExpoModulesCore
   - ExpoFont (57.0.0):
     - ExpoModulesCore
-  - ExpoGlassEffect (57.0.0):
+  - ExpoGlassEffect (57.0.1):
     - ExpoModulesCore
   - ExpoHaptics (57.0.0):
     - ExpoModulesCore
@@ -282,8 +284,6 @@ PODS:
     - ExpoModulesWorklets
     - React-RCTFabric
   - EXStructuredHeaders (57.0.0)
-  - ExtensionStorage (1.0.0):
-    - ExpoModulesCore
   - EXUpdates (57.0.6):
     - EASClient
     - EXManifests
@@ -2702,6 +2702,7 @@ DEPENDENCIES:
   - "expo-dev-menu-interface (from `../../../node_modules/.pnpm/expo-dev-menu-interface@57.0.0_expo@57.0.2/node_modules/expo-dev-menu-interface/ios`)"
   - "ExpoAsset (from `../../../node_modules/.pnpm/expo-asset@57.0.3_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-native+metr_7b78c99dc435a6f7dbf7cd632eb6fda5/node_modules/expo-asset/ios`)"
   - "ExpoAudio (from `../../../node_modules/.pnpm/expo-audio@57.0.0_expo-asset@57.0.3_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7__f8545d84f1fa8c456851c6fe23bbda2d/node_modules/expo-audio/ios`)"
+  - "ExpoBlur (from `../../../node_modules/.pnpm/expo-blur@57.0.2_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-native+metro_cf77e7bac69591cd1bf649e108681c49/node_modules/expo-blur/ios`)"
   - "ExpoCamera (from `../../../node_modules/.pnpm/expo-camera@57.0.0_@types+emscripten@1.41.5_expo@57.0.2_react-native-web@0.21.2_react-d_a4fab825b852f24b11a8e28d86e5c547/node_modules/expo-camera/ios/ExpoCamera.podspec`)"
   - "ExpoCameraBarcodeScanning (from `../../../node_modules/.pnpm/expo-camera@57.0.0_@types+emscripten@1.41.5_expo@57.0.2_react-native-web@0.21.2_react-d_a4fab825b852f24b11a8e28d86e5c547/node_modules/expo-camera/ios/ExpoCameraBarcodeScanning.podspec`)"
   - "ExpoClipboard (from `../../../node_modules/.pnpm/expo-clipboard@57.0.0_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-native+_d9bb9bcb8544070699f8564e1b55360c/node_modules/expo-clipboard/ios`)"
@@ -2710,7 +2711,7 @@ DEPENDENCIES:
   - "ExpoDomWebView (from `../../../node_modules/.pnpm/@expo+dom-webview@56.0.5_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-nati_9c80a739cfdc836183ab9e1280790dfd/node_modules/@expo/dom-webview/ios`)"
   - "ExpoFileSystem (from `../../../node_modules/.pnpm/expo-file-system@57.0.0_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-nativ_acad0c6c101de5e4373663caa7ccdf24/node_modules/expo-file-system/ios/ExpoFileSystem.podspec`)"
   - "ExpoFont (from `../../../node_modules/.pnpm/expo-font@57.0.0_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-native+metro_474d3a69b47406c6f20c77b8ed015331/node_modules/expo-font/ios/ExpoFont.podspec`)"
-  - "ExpoGlassEffect (from `../../../node_modules/.pnpm/expo-glass-effect@57.0.0_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-nati_ab3bcbad1d29860464ffaecbbefc725c/node_modules/expo-glass-effect/ios`)"
+  - "ExpoGlassEffect (from `../../../node_modules/.pnpm/expo-glass-effect@57.0.1_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-nati_b55370a3db05bc5e18e620c6cbdbe0fc/node_modules/expo-glass-effect/ios`)"
   - "ExpoHaptics (from `../../../node_modules/.pnpm/expo-haptics@57.0.0_expo@57.0.2/node_modules/expo-haptics/ios`)"
   - "ExpoImage (from `../../../node_modules/.pnpm/expo-image@57.0.0_expo@57.0.2_react-native-web@0.21.2_react-dom@19.2.7_react@19.2.7__re_e1bbb470cbbe9454709e67794113c4a2/node_modules/expo-image/ios/ExpoImage.podspec`)"
   - "ExpoImagePicker (from `../../../node_modules/.pnpm/expo-image-picker@57.0.2_expo@57.0.2/node_modules/expo-image-picker/ios`)"
@@ -2735,7 +2736,6 @@ DEPENDENCIES:
   - "ExpoSymbols (from `../../../node_modules/.pnpm/expo-symbols@57.0.0_expo-font@57.0.0_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_76b586ec51cbc2f30aa525f6db205b76/node_modules/expo-symbols/ios`)"
   - "ExpoUI (from `../../../node_modules/.pnpm/@expo+ui@57.0.3_@babel+core@7.29.7_@types+react-dom@19.1.7_@types+react@19.2.10__@types_79016d70ce6649260ab5dd3324c4ef4e/node_modules/@expo/ui/ios`)"
   - "EXStructuredHeaders (from `../../../node_modules/.pnpm/expo-structured-headers@57.0.0/node_modules/expo-structured-headers/ios`)"
-  - "ExtensionStorage (from `../../../node_modules/.pnpm/@bacons+apple-targets@4.0.7_expo@57.0.2_supports-color@8.1.1/node_modules/@bacons/apple-targets/ios`)"
   - "EXUpdates (from `../../../node_modules/.pnpm/expo-updates@57.0.6_expo-dev-client@57.0.5_expo@57.0.2_react-native@0.86.0_@babel+core@_18e40d8d5c7ace27ba07278b0b3e75da/node_modules/expo-updates/ios`)"
   - "EXUpdatesInterface (from `../../../node_modules/.pnpm/expo-updates-interface@57.0.0_expo@57.0.2/node_modules/expo-updates-interface/ios`)"
   - "FBLazyVector (from `../../../node_modules/.pnpm/react-native@0.86.0_@babel+core@7.29.7_@react-native+metro-config@0.86.0_@babel+core@7._3a66bab2c5cbed5a90a699b3d7ff3315/node_modules/react-native/Libraries/FBLazyVector`)"
@@ -2863,6 +2863,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/.pnpm/expo-asset@57.0.3_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-native+metr_7b78c99dc435a6f7dbf7cd632eb6fda5/node_modules/expo-asset/ios"
   ExpoAudio:
     :path: "../../../node_modules/.pnpm/expo-audio@57.0.0_expo-asset@57.0.3_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7__f8545d84f1fa8c456851c6fe23bbda2d/node_modules/expo-audio/ios"
+  ExpoBlur:
+    :path: "../../../node_modules/.pnpm/expo-blur@57.0.2_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-native+metro_cf77e7bac69591cd1bf649e108681c49/node_modules/expo-blur/ios"
   ExpoCamera:
     :podspec: "../../../node_modules/.pnpm/expo-camera@57.0.0_@types+emscripten@1.41.5_expo@57.0.2_react-native-web@0.21.2_react-d_a4fab825b852f24b11a8e28d86e5c547/node_modules/expo-camera/ios/ExpoCamera.podspec"
   ExpoCameraBarcodeScanning:
@@ -2880,7 +2882,7 @@ EXTERNAL SOURCES:
   ExpoFont:
     :podspec: "../../../node_modules/.pnpm/expo-font@57.0.0_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-native+metro_474d3a69b47406c6f20c77b8ed015331/node_modules/expo-font/ios/ExpoFont.podspec"
   ExpoGlassEffect:
-    :path: "../../../node_modules/.pnpm/expo-glass-effect@57.0.0_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-nati_ab3bcbad1d29860464ffaecbbefc725c/node_modules/expo-glass-effect/ios"
+    :path: "../../../node_modules/.pnpm/expo-glass-effect@57.0.1_expo@57.0.2_react-native@0.86.0_@babel+core@7.29.7_@react-nati_b55370a3db05bc5e18e620c6cbdbe0fc/node_modules/expo-glass-effect/ios"
   ExpoHaptics:
     :path: "../../../node_modules/.pnpm/expo-haptics@57.0.0_expo@57.0.2/node_modules/expo-haptics/ios"
   ExpoImage:
@@ -2929,8 +2931,6 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/.pnpm/@expo+ui@57.0.3_@babel+core@7.29.7_@types+react-dom@19.1.7_@types+react@19.2.10__@types_79016d70ce6649260ab5dd3324c4ef4e/node_modules/@expo/ui/ios"
   EXStructuredHeaders:
     :path: "../../../node_modules/.pnpm/expo-structured-headers@57.0.0/node_modules/expo-structured-headers/ios"
-  ExtensionStorage:
-    :path: "../../../node_modules/.pnpm/@bacons+apple-targets@4.0.7_expo@57.0.2_supports-color@8.1.1/node_modules/@bacons/apple-targets/ios"
   EXUpdates:
     :path: "../../../node_modules/.pnpm/expo-updates@57.0.6_expo-dev-client@57.0.5_expo@57.0.2_react-native@0.86.0_@babel+core@_18e40d8d5c7ace27ba07278b0b3e75da/node_modules/expo-updates/ios"
   EXUpdatesInterface:
@@ -3134,6 +3134,7 @@ SPEC CHECKSUMS:
   expo-dev-menu-interface: 7a59e803916fbfd1b96c75ff91ea8dddac7e722f
   ExpoAsset: 586e89aeaab2e23bfa90b9dce4d7d5e36815c039
   ExpoAudio: 4f27c2bc1cc08f003c2af070cedf25fefd9da5bb
+  ExpoBlur: 69e67b4fbfed6f7325377af2aefa8aa4f00cd2af
   ExpoCamera: d5b6fb548678b83bbb6fa24ccd7e992d23e60c9e
   ExpoCameraBarcodeScanning: e3db5f3bc7a0fb3e11bb06d20323126f6221f80c
   ExpoClipboard: 67d46a8be4a50ec610c7b2f4966c0475aec6d969
@@ -3142,7 +3143,7 @@ SPEC CHECKSUMS:
   ExpoDomWebView: 27205be8754f9992913b8a9a08e65019f2207075
   ExpoFileSystem: ffcd56066188802f263254b6b2e60f74b6a0bdae
   ExpoFont: 35fd7ad72f697d3a9656545909972d8b9f60d5da
-  ExpoGlassEffect: 72e96f2f6cae69f970238b80656d869d1a9a98ff
+  ExpoGlassEffect: 4b62afb489e6b84357701737ce002137c9d5fdbc
   ExpoHaptics: c6d063c3bfda1c1d6d7fdf237ffb612c4fc09954
   ExpoImage: 65b2a2279aab4791eb242156a4bd9b891fab8d12
   ExpoImagePicker: 27f4e9a5d797abc31c75237362f90ac012d1a8fe
@@ -3167,7 +3168,6 @@ SPEC CHECKSUMS:
   ExpoSymbols: db28b9ea52c96fe67ff9c362f5dbc6bee240ca2d
   ExpoUI: 811b7e03ff29d426b8690ad5afb4643be3846d02
   EXStructuredHeaders: 1423c3602a30eb078e03b63b251ef912267dd4c0
-  ExtensionStorage: 5796de20bf181317c376d693fedb64c6781a33ba
   EXUpdates: 57ecf2ff1ba1c574301bbb0f907d591277b595bc
   EXUpdatesInterface: 492cdb30f3889cc35d9e737a4b5fc3aec39d1131
   FBLazyVector: b3e7ad108f0d882e30445c5527d774e3fd432f3d
@@ -3266,6 +3266,6 @@ SPEC CHECKSUMS:
   VoiceTranscriber: 43d9df5c1357dc46127745b6a3ceb271acfa5d88
   Yoga: fe50ab299e578f397fef753cf309c6703a4db29b
 
-PODFILE CHECKSUM: 79b378418229a6b60df353e37ce02967fc2353c8
+PODFILE CHECKSUM: 8efc6f176af1f7703fe12ab60d38e103861629b5
 
 COCOAPODS: 1.16.2

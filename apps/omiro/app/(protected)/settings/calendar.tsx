@@ -110,9 +110,9 @@ export default function OnDeviceCalendarSpikeScreen() {
   const showLog = logs.length > 0 && !response;
 
   return (
-    <ScrollView contentContainerStyle={styles.content} testID="on-device-calendar-spike-screen">
+    <ScrollView contentContainerStyle={styles.content} testID="calendar-screen">
       <Input
-        testID="on-device-calendar-spike-input"
+        testID="calendar-input"
         value={prompt}
         onChangeText={setPrompt}
         multiline
@@ -120,7 +120,7 @@ export default function OnDeviceCalendarSpikeScreen() {
         style={styles.input}
       />
       <Button
-        testID="on-device-calendar-spike-ask-button"
+        testID="calendar-ask-button"
         label="Ask calendar"
         onPress={() => void ask()}
         loading={isLoading}
@@ -130,7 +130,7 @@ export default function OnDeviceCalendarSpikeScreen() {
 
       {showLog ? (
         <Animated.View
-          testID="on-device-calendar-spike-log"
+          testID="calendar-log"
           layout={createLayoutTransition(reducedMotion)}
           style={styles.log}
         >
@@ -142,7 +142,7 @@ export default function OnDeviceCalendarSpikeScreen() {
 
       {response ? (
         <Animated.View entering={createEnter(reducedMotion)}>
-          <Text testID="on-device-calendar-spike-response">{response}</Text>
+          <Text testID="calendar-response">{response}</Text>
         </Animated.View>
       ) : null}
     </ScrollView>

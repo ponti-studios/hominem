@@ -16,13 +16,8 @@ appId: com.pontistudios.hakumi.dev
     visible:
       id: inbox-composer-input
     timeout: 30000
-# SegmentedToggle's own container testID (inbox-tab-control) never surfaces
-# in the iOS accessibility tree — a plain View wrapping accessible Pressable
-# children gets flattened out of it, even though it renders fine. Each
-# segment carries its own derived id (inbox-tab-control-<value>); "chats" is
-# always present regardless of which tab is active, so it stands in here for
-# "the toggle has rendered."
+# The native Picker exposes one stable identifier per Workspace context.
 - extendedWaitUntil:
     visible:
-      id: inbox-tab-control-chats
+      id: workspace-context-chats
     timeout: 15000
