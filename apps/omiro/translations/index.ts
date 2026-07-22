@@ -1,3 +1,5 @@
+import type { ArtifactType } from '@hominem/chat';
+
 const t = {
   enhance: {
     title: 'Enhance text',
@@ -116,13 +118,13 @@ const t = {
         task: 'TASK',
         task_list: 'TASK LIST',
         tracker: 'TRACKER',
-      },
+      } satisfies Record<ArtifactType, string>,
       saveLabel: {
         note: 'SAVE NOTE',
         task: 'SAVE TASK',
         task_list: 'SAVE TASK LIST',
         tracker: 'SAVE REVIEW',
-      },
+      } satisfies Record<ArtifactType, string>,
       discard: 'DISCARD',
     },
   },

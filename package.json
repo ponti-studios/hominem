@@ -39,29 +39,6 @@
     "typescript": "6.0.3",
     "vitest": "4.1.0"
   },
-  "overrides": {
-    "@hono/zod-validator": "0.7.6",
-    "@opentelemetry/api": "1.8.0",
-    "@protobufjs/utf8": ">=1.1.1",
-    "@types/react": "catalog:",
-    "@types/react-dom": "catalog:",
-    "@xmldom/xmldom": "0.8.13",
-    "axios": ">=1.15.1",
-    "fast-xml-builder": ">=1.1.6",
-    "fast-xml-parser": ">=5.7.0",
-    "lucide-react": "0.576.0",
-    "markdown-it": ">=12.3.2",
-    "postcss": ">=8.5.10",
-    "prismjs": ">=1.30.0",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "react-markdown": "^10.1.0",
-    "react-syntax-highlighter": "^16.1.0",
-    "serialize-javascript": ">=7.0.3",
-    "tailwind-merge": "^3.2.0",
-    "uuid": ">=11.1.1",
-    "zod": "catalog:"
-  },
   "engines": {
     "node": ">=24.14.1"
   },

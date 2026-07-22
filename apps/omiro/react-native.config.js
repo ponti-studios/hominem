@@ -1,5 +1,4 @@
-const usesDevelopmentClient =
-  (((process.env.APP_ENV ?? 'development') === 'development').toString()) !== 'false'
+const usesDevelopmentClient = (process.env.APP_ENV ?? 'development') === 'development'
 
 module.exports = {
   dependencies: usesDevelopmentClient

@@ -13,7 +13,7 @@ just mobile prebuild development
 just mobile dev
 ```
 
-For staging or production release work, use the production native identity with an explicit runtime version:
+For staging or production release work, use the production native identity with Expo's fingerprint runtime policy:
 
 ```bash
 just mobile prebuild production
@@ -21,7 +21,7 @@ just mobile build staging
 just mobile update staging
 ```
 
-The repo defaults the current runtime line to `ios-r1`. When native compatibility changes, bump that value in `apps/omiro/app.config.ts`, `apps/omiro/eas.json`, `apps/omiro/.env.example`, and `just/mobile.just`.
+The runtime version is derived automatically from the native project fingerprint. Native changes require a new build before publishing an EAS Update; JavaScript-only changes can use the existing compatible build.
 
 ## Working In Zed
 

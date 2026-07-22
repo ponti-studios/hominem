@@ -8,7 +8,6 @@
       "node": "24.14.1",
       "pnpm": "11.10.0",
       "env": {
-        "EXPO_RUNTIME_VERSION": "ios-r1",
         "SENTRY_ORG": "ponti-studios",
         "SENTRY_PROJECT": "omiro"
       }
@@ -19,9 +18,7 @@
       "distribution": "internal",
       "environment": "development",
       "env": {
-        "EXPO_RUNTIME_VERSION": "ios-r1",
-        "APP_ENV": "development",
-        "EXPO_PUBLIC_E2E_TESTING": "false"
+        "APP_ENV": "development"
       }
     },
     "e2e": {
@@ -30,10 +27,7 @@
       "distribution": "internal",
       "environment": "preview",
       "env": {
-        "EXPO_RUNTIME_VERSION": "ios-r1",
-        "APP_ENV": "development",
-        "EXPO_PUBLIC_E2E_TESTING": "true",
-        "OMIRO_DEV_CLIENT": "false"
+        "APP_ENV": "e2e"
       }
     },
     "staging": {
@@ -43,22 +37,15 @@
       "environment": "preview",
       "autoIncrement": true,
       "env": {
-        "EXPO_RUNTIME_VERSION": "ios-r1",
-        "APP_ENV": "production",
-        "EXPO_PUBLIC_E2E_TESTING": "false",
-        "OMIRO_DEV_CLIENT": "false",
-        "OMIRO_RELEASE_CHANNEL": "staging"
+        "APP_ENV": "staging"
       },
       "channel": "staging"
     },
     "screenshots": {
       "extends": "staging",
       "env": {
-        "EXPO_RUNTIME_VERSION": "ios-r1",
         "EXPO_PUBLIC_API_BASE_URL": "http://localhost:4040",
-        "EXPO_PUBLIC_E2E_TESTING": "false",
-        "OMIRO_DEV_CLIENT": "false",
-        "OMIRO_RELEASE_CHANNEL": "staging"
+        "APP_ENV": "staging"
       },
       "ios": {
         "simulator": true
@@ -71,12 +58,8 @@
       "environment": "production",
       "autoIncrement": true,
       "env": {
-        "EXPO_RUNTIME_VERSION": "ios-r1",
         "APP_ENV": "production",
-        "EXPO_PUBLIC_E2E_TESTING": "false",
-        "EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED": "true",
-        "OMIRO_DEV_CLIENT": "false",
-        "OMIRO_RELEASE_CHANNEL": "production"
+        "EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED": "true"
       },
       "channel": "production"
     }

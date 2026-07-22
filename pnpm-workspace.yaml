@@ -3,16 +3,16 @@ packages:
   - 'services/*'
   - 'packages/*'
 
-# Single source of truth for shared dependency versions.
-# Reference from package.json with "catalog:" (e.g. "react": "catalog:").
 catalog:
-  react: 19.2.7
-  react-dom: 19.2.7
+  react: 19.2.3
+  react-dom: 19.2.3
   '@types/react': 19.2.10
   '@types/react-dom': 19.1.7
   zod: 4.4.3
 
 overrides:
+  '@hono/zod-validator': 0.7.6
+  '@opentelemetry/api': 1.8.0
   ua-parser-js: 1.0.39
   prismjs: '>=1.30.0'
   markdown-it: '>=12.3.2'
@@ -26,13 +26,15 @@ overrides:
   kysely: 0.28.17
   '@protobufjs/utf8': '>=1.1.1'
   protobufjs: '>=7.5.6'
-  # Force every workspace + transitive consumer onto the catalog React.
+  lucide-react: 0.576.0
   react: 'catalog:'
   react-dom: 'catalog:'
   '@types/react': 'catalog:'
   '@types/react-dom': 'catalog:'
+  react-markdown: '^10.1.0'
+  react-syntax-highlighter: '^16.1.0'
+  tailwind-merge: '^3.2.0'
 
-nodeVersion: 24.14.1
 engineStrict: true
 pmOnFail: error
 dedupePeerDependents: true
@@ -40,12 +42,6 @@ resolvePeersFromWorkspaceRoot: true
 injectWorkspacePackages: true
 verifyStoreIntegrity: true
 strictStorePkgContentCheck: true
-minimumReleaseAge: 1440
-minimumReleaseAgeStrict: true
-# First-party releases are published from the Ponti Studios GitHub Actions workflow
-# and must be consumable by Hominem immediately after release.
-minimumReleaseAgeExclude:
-  - '@ponti-studios/ui'
 trustPolicy: needsFix
 blockExoticSubdeps: true
 strictDepBuilds: true
@@ -66,3 +62,35 @@ peerDependencyRules:
     vite: '^8.0.0'
     '@opentelemetry/api': '1.9.1'
     valibot: '1.2.0 || ^1.3.0'
+minimumReleaseAgeExclude:
+  - '@expo/cli@57.0.10'
+  - '@expo/config-plugins@57.0.6'
+  - '@expo/config@57.0.6'
+  - '@expo/fingerprint@0.20.6'
+  - '@expo/image-utils@0.11.4'
+  - '@expo/metro-config@57.0.7'
+  - '@expo/metro-runtime@57.0.7'
+  - '@expo/prebuild-config@57.0.9'
+  - '@expo/require-utils@57.0.4'
+  - '@expo/router-server@57.0.4'
+  - '@ponti-studios/ui@0.3.0'
+  - babel-preset-expo@57.0.4
+  - expo-asset@57.0.7
+  - expo-audio@57.0.3
+  - expo-build-properties@57.0.7
+  - expo-constants@57.0.7
+  - expo-dev-client@57.0.8
+  - expo-dev-launcher@57.0.8
+  - expo-dev-menu@57.0.8
+  - expo-image-picker@57.0.6
+  - expo-linking@57.0.4
+  - expo-local-authentication@57.0.2
+  - expo-modules-autolinking@57.0.9
+  - expo-modules-core@57.0.7
+  - expo-modules-jsi@57.0.4
+  - expo-notifications@57.0.7
+  - expo-router@57.0.8
+  - expo-sharing@57.0.7
+  - expo-splash-screen@57.0.5
+  - expo-updates@57.0.9
+  - expo@57.0.8

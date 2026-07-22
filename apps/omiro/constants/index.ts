@@ -5,10 +5,8 @@ import * as Device from 'expo-device';
 const extra = (Constants.expoConfig?.extra ?? {}) as {
   apiBaseUrl?: string;
   appEnvironment?: string;
-  e2eTesting?: boolean;
   onDeviceAiSpikeEnabled?: string;
   appScheme?: string;
-  releaseChannel?: string | null;
 };
 
 const hostUri = Constants.expoConfig?.hostUri ?? Constants.manifest2?.extra?.expoClient?.hostUri;
@@ -49,11 +47,12 @@ const configuredApiBaseUrl = toDeviceReachableApiBaseUrl(
 const fallbackApiBaseUrl =
   localHost && Device.isDevice ? `http://${localHost}:4040` : 'http://localhost:4040';
 const appEnvironment = extra.appEnvironment ?? process.env.APP_ENV ?? 'development';
-const releaseChannel = extra.releaseChannel ?? process.env.OMIRO_RELEASE_CHANNEL ?? null;
-export const E2E_TESTING =
-  extra.e2eTesting === true || process.env.EXPO_PUBLIC_E2E_TESTING === 'true';
+const releaseChannel = ['staging', 'production'].includes(appEnvironment)
+  ? appEnvironment
+  : null;
+export const E2E_TESTING = appEnvironment === 'e2e';
 function isReleaseAppEnvironment(environment: string) {
-  return environment === 'production';
+  return ['staging', 'production'].includes(environment);
 }
 
 const isReleaseRuntime = isReleaseAppEnvironment(appEnvironment);

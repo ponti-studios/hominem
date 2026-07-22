@@ -23,29 +23,29 @@ dev scope='all':
       api) filter=(--filter=@hominem/api) ;;
       career) filter=(--filter=@hominem/career) ;;
       finance) filter=(--filter=@hominem/finance) ;;
-      mobile) cd "{{ ROOT_DIR }}/apps/omiro" && APP_ENV=development OMIRO_DEV_CLIENT=true pnpm exec expo run:ios ; exit 0 ;;
       *) echo "error: unknown scope '{{ scope }}'" >&2; exit 1 ;;
     esac
     cd "{{ ROOT_DIR }}"
     pnpm exec turbo run dev --ui stream "${filter[@]}"
 
-lint first='all' second='':
+_lint task scope='all':
     #!/usr/bin/env bash
-    case "{{ first }}:{{ second }}" in
-      fix:) task=lint:fix; scope=all ;;
-      fix:all|fix:api|fix:career|fix:finance|fix:mobile) task=lint:fix; scope="{{ second }}" ;;
-      all:|api:|career:|finance:|mobile:) task=lint; scope="{{ first }}" ;;
-      *) echo "error: use just lint [scope] or just lint fix [scope]" >&2; exit 1 ;;
-    esac
     case "$scope" in
       all) filter=() ;;
       api) filter=(--filter=@hominem/api...) ;;
       career) filter=(--filter=@hominem/career...) ;;
       finance) filter=(--filter=@hominem/finance...) ;;
       mobile) filter=(--filter=@hominem/omiro...) ;;
+      *) echo "error: unknown scope '{{ scope }}'" >&2; exit 1 ;;
     esac
     cd "{{ ROOT_DIR }}"
     pnpm exec turbo run "$task" "${filter[@]}"
+
+lint scope='all':
+    just _lint lint "{{ scope }}"
+
+lint-fix scope='all':
+    just _lint lint:fix "{{ scope }}"
 
 format first='write' second='':
     #!/usr/bin/env bash
