@@ -28,7 +28,7 @@ export default function NotFoundScreen() {
             size={componentSizes.lg}
             tintColor={themeColors['text-secondary']}
           />
-          <Text style={[styles.title, { color: themeColors.foreground }]}>
+          <Text style={[styles.title, { color: themeColors['text-primary'] }]}>
             {t.errors.notFound.title}
           </Text>
           <Text style={[styles.message, { color: themeColors['text-secondary'] }]}>

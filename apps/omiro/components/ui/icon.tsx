@@ -17,7 +17,7 @@ const AppIcon = ({ name, size = componentSizes.md, style, tintColor, ...rest }: 
     <SymbolView
       name={name}
       size={size}
-      tintColor={tintColor ?? themeColors['icon-primary']}
+      tintColor={tintColor ?? themeColors['text-primary']}
       style={[styles.icon, style, { height: size, width: size }]}
       {...rest}
     />

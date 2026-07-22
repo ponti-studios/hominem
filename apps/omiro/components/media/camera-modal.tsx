@@ -119,7 +119,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                 style={styles.sideButton}
                 accessibilityLabel={t.camera.closeA11y}
               >
-                <AppIcon name="xmark" size={20} tintColor={theme.colors.white} />
+                <AppIcon name="xmark" size={20} tintColor={theme.colors['text-on-accent']} />
               </Pressable>
 
               <Pressable
@@ -136,20 +136,24 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                 style={styles.sideButton}
                 accessibilityLabel={t.camera.flipCameraA11y}
               >
-                <AppIcon name="camera.rotate" size={20} tintColor={theme.colors.white} />
+                <AppIcon
+                  name="camera.rotate"
+                  size={20}
+                  tintColor={theme.colors['text-on-accent']}
+                />
               </Pressable>
             </View>
           </View>
         ) : (
           <View style={styles.permissionContainer}>
-            <Text variant="body" color="foreground">
+            <Text variant="body" color="text-primary">
               {t.camera.permission.message}
             </Text>
             <Pressable
               onPress={() => void handleRequestPermissions()}
               style={styles.permissionButton}
             >
-              <Text variant="body" color="foreground">
+              <Text variant="body" color="text-primary">
                 {t.camera.permission.grant}
               </Text>
             </Pressable>
@@ -167,7 +171,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
 
 const styles = StyleSheet.create({
   sheetBackground: {
-    backgroundColor: theme.colors.black,
+    backgroundColor: theme.colors['text-on-warning'],
   },
   dragHandle: {
     backgroundColor: theme.colors['border-default'],
@@ -176,7 +180,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.black,
+    backgroundColor: theme.colors['text-on-warning'],
   },
   cameraContainer: {
     flex: 1,
@@ -200,14 +204,14 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: theme.borderRadii.md,
-    backgroundColor: theme.colors['overlay-modal-medium'],
+    backgroundColor: theme.colors['overlay-scrim'],
   },
   captureButton: {
     width: 72,
     height: 72,
     borderRadius: theme.borderRadii.sm,
     borderWidth: 4,
-    borderColor: theme.colors.white,
+    borderColor: theme.colors['text-on-accent'],
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -218,7 +222,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: theme.borderRadii.md,
-    backgroundColor: theme.colors.white,
+    backgroundColor: theme.colors['text-on-accent'],
   },
   permissionContainer: {
     flex: 1,

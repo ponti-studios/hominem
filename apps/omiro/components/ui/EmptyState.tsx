@@ -1,5 +1,5 @@
 import type { SFSymbol } from 'expo-symbols';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
 
 import {
@@ -16,17 +16,17 @@ import AppIcon from './icon';
 const DEFAULT_BOTTOM_OFFSET = themeSpacing.xl * 3;
 
 interface EmptyStateProps {
-  action?: { label: string; onPress: () => void } | undefined;
-  bottomOffset?: number | undefined;
-  description?: string | undefined;
-  sfSymbol: SFSymbol;
+  action?: { label: string; onPress: () => void };
+  bottomOffset?: number;
+  imageSource?: ImageSourcePropType;
+  sfSymbol?: SFSymbol;
   title: string;
 }
 
 function EmptyState({
   action,
   bottomOffset = DEFAULT_BOTTOM_OFFSET,
-  description,
+  imageSource,
   sfSymbol,
   title,
 }: EmptyStateProps) {
@@ -38,17 +38,16 @@ function EmptyState({
       style={[styles.container, { paddingBottom: bottomOffset }]}
     >
       <View style={styles.content}>
-        <AppIcon
-          name={sfSymbol}
-          size={componentSizes.lg}
-          tintColor={themeColors['text-secondary']}
-        />
-        <Text style={[styles.title, { color: themeColors.foreground }]}>{title}</Text>
-        {description ? (
-          <Text style={[styles.description, { color: themeColors['text-secondary'] }]}>
-            {description}
-          </Text>
+        {imageSource ? (
+          <Image accessibilityIgnoresInvertColors source={imageSource} style={styles.asset} />
+        ) : sfSymbol ? (
+          <AppIcon
+            name={sfSymbol}
+            size={componentSizes.lg}
+            tintColor={themeColors['text-secondary']}
+          />
         ) : null}
+        <Text style={[styles.title, { color: themeColors['text-primary'] }]}>{title}</Text>
         {action ? (
           <Button label={action.label} onPress={action.onPress} variant="secondary" />
         ) : null}
@@ -62,6 +61,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
+  },
+  asset: {
+    height: 112,
+    resizeMode: 'contain',
+    width: 112,
   },
   content: {
     width: '100%',

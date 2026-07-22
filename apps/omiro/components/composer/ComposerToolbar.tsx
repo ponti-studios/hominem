@@ -115,7 +115,7 @@ export function ComposerToolbar({
               iconSize={TOOLBAR_ICON_SIZE}
               size={TOOL_BTN_SIZE}
               testID={secondaryAction.testID}
-              tintColor={themeColors['icon-muted']}
+              tintColor={themeColors['text-tertiary']}
               variant="surface"
               onPress={secondaryAction.onPress}
             />

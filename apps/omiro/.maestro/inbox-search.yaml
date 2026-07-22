@@ -1,20 +1,20 @@
 appId: com.pontistudios.hakumi.dev
 ---
 # Covers expand-on-tap search across the Chats/Notes/Tasks contexts. The
-# native top toolbar keeps the context picker stable while the right action
-# group becomes a focused field with Cancel. Assumes seed data: a task_list titled
+# focused state replaces the idle header composition with a field and Cancel.
+# Assumes seed data: a task_list titled
 # "3 tasks", and a standalone task "Buy groceries" (see tasks-navigation.yaml
 # / tasks-edit.yaml for the same fixtures).
 - runFlow: startup.yaml
 
-- assertVisible:
+- assertNotVisible:
     id: workspace-context-chats
 - tapOn: Search
 - assertVisible:
     id: workspace-search-input
 - assertVisible:
     id: workspace-search-cancel
-- assertVisible:
+- assertNotVisible:
     id: workspace-context-chats
 - tapOn: Cancel
 - assertVisible:

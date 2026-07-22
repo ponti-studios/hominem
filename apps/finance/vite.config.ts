@@ -24,8 +24,6 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
           name: 'Finance',
           short_name: 'Finance',
           description: 'Personal finance tracker',
-          theme_color: '#ffffff',
-          background_color: '#ffffff',
           display: 'standalone',
           start_url: '/',
           icons: [

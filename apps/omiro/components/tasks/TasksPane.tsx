@@ -26,6 +26,8 @@ import { SwipeableTaskRow } from './SwipeableTaskRow';
 import { TaskEditorSheet, type TaskEditorValues } from './TaskEditorSheet';
 import { TaskListItem } from './TaskListItem';
 
+const TASKS_EMPTY_STATE_ASSET = require('~/assets/states/tasks.empty.png');
+
 type EditorState = { mode: 'create' } | { mode: 'edit'; task: TaskListItemModel } | null;
 
 interface TasksPaneProps {
@@ -60,6 +62,7 @@ export function TasksPane({ isFocused, searchQuery = '' }: TasksPaneProps) {
   const voiceCapture = useTaskVoiceCapture();
   const [voiceResult, setVoiceResult] = useState<number | null>(null);
   const previousVoiceStateRef = useRef(voiceCapture.state);
+  const showEmptyState = visibleTasks.length === 0 && (Boolean(error) || !isFetching);
 
   useEffect(() => {
     const previousState = previousVoiceStateRef.current;
@@ -117,37 +120,31 @@ export function TasksPane({ isFocused, searchQuery = '' }: TasksPaneProps) {
 
   return (
     <View style={styles.container}>
-      <FlashList
-        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 96 }]}
-        contentInsetAdjustmentBehavior="automatic"
-        data={visibleTasks}
-        keyExtractor={(task) => task.id}
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            {error ? (
-              <EmptyState
-                action={{ label: t.tasks.loadErrorRetry, onPress: () => void refetch() }}
-                description={t.tasks.loadErrorDescription}
-                sfSymbol="arrow.clockwise.circle"
-                title={t.tasks.loadErrorTitle}
-              />
-            ) : (
-              <EmptyState
-                action={{
-                  label: t.tasks.emptyAction,
-                  onPress: () => setEditorState({ mode: 'create' }),
-                }}
-                description={t.tasks.emptyDescription}
-                sfSymbol="checklist"
-                title={t.tasks.emptyTitle}
-              />
-            )}
-          </View>
-        }
-        refreshControl={<RefreshControl refreshing={isFetching} onRefresh={() => void refetch()} />}
-        renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-      />
+      {showEmptyState ? (
+        <View style={styles.emptyWrap}>
+          {error ? (
+            <EmptyState
+              action={{ label: t.tasks.loadErrorRetry, onPress: () => void refetch() }}
+              sfSymbol="arrow.clockwise.circle"
+              title={t.tasks.loadErrorTitle}
+            />
+          ) : (
+            <EmptyState imageSource={TASKS_EMPTY_STATE_ASSET} title={t.tasks.emptyTitle} />
+          )}
+        </View>
+      ) : (
+        <FlashList
+          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 96 }]}
+          contentInsetAdjustmentBehavior="automatic"
+          data={visibleTasks}
+          keyExtractor={(task) => task.id}
+          refreshControl={
+            <RefreshControl refreshing={isFetching} onRefresh={() => void refetch()} />
+          }
+          renderItem={renderItem}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
       {voiceCapture.state === 'recording' ? (
         <View style={[styles.voiceBar, { bottom: insets.bottom }]}>
           <VoiceRecordingPanel
@@ -201,7 +198,7 @@ export function TasksPane({ isFocused, searchQuery = '' }: TasksPaneProps) {
             ]}
             testID="tasks-voice-button"
           >
-            <AppIcon name="mic.fill" size={20} tintColor={colors.foreground} />
+            <AppIcon name="mic.fill" size={20} tintColor={colors['text-primary']} />
           </Pressable>
           <Pressable
             accessibilityLabel={t.tasks.addTaskA11y}
@@ -214,7 +211,7 @@ export function TasksPane({ isFocused, searchQuery = '' }: TasksPaneProps) {
             ]}
             testID="tasks-add-button"
           >
-            <AppIcon name="plus" size={22} tintColor={colors['primary-foreground']} />
+            <AppIcon name="plus" size={22} tintColor={colors['text-on-accent']} />
           </Pressable>
         </View>
       ) : null}
@@ -245,7 +242,7 @@ const useStyles = makeStyles(() => ({
     flex: 1,
   },
   emptyWrap: {
-    paddingTop: 48,
+    flex: 1,
   },
   floatingActions: {
     flexDirection: 'row',
@@ -267,13 +264,14 @@ const useStyles = makeStyles(() => ({
     backgroundColor: colors.accent,
   },
   floatingButtonSecondary: {
-    backgroundColor: colors.muted,
+    backgroundColor: colors['surface-inset'],
   },
   listContent: {
+    flexGrow: 1,
     paddingBottom: 24,
   },
   voiceBar: {
-    backgroundColor: colors.background,
+    backgroundColor: colors['surface-canvas'],
     borderTopColor: colors['border-subtle'],
     borderTopWidth: 1,
     left: 0,

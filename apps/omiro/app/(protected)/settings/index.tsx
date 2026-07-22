@@ -79,14 +79,14 @@ function SettingsRow({
   testID?: string;
 }) {
   const themeColors = useThemeColors();
-  const labelColor = destructive ? themeColors.destructive : themeColors.foreground;
+  const labelColor = destructive ? themeColors.destructive : themeColors['text-primary'];
   const content = (
     <View style={styles.row}>
       <View style={styles.rowLabelGroup}>
         <AppIcon
           name={icon}
           size={18}
-          tintColor={destructive ? themeColors.destructive : themeColors['icon-muted']}
+          tintColor={destructive ? themeColors.destructive : themeColors['text-tertiary']}
         />
         <View style={styles.rowCopy}>
           <Text style={[styles.rowLabel, { color: labelColor }]}>{label}</Text>
@@ -232,8 +232,8 @@ function Settings() {
     >
       {/* Identity */}
       <View style={styles.identity}>
-        <View style={[styles.avatar, { backgroundColor: themeColors['bg-elevated'] }]}>
-          <Text style={[styles.avatarText, { color: themeColors.foreground }]}>
+        <View style={[styles.avatar, { backgroundColor: themeColors['surface-raised'] }]}>
+          <Text style={[styles.avatarText, { color: themeColors['text-primary'] }]}>
             {getInitials(state.name, currentUser?.email ?? '?')}
           </Text>
         </View>
@@ -244,9 +244,9 @@ function Settings() {
             placeholder={t.settings.name.placeholder}
             placeholderTextColor={themeColors['text-tertiary']}
             returnKeyType="done"
-            selectionColor={themeColors.foreground}
-            cursorColor={themeColors.foreground}
-            style={[styles.identityNameInput, { color: themeColors.foreground }]}
+            selectionColor={themeColors['text-primary']}
+            cursorColor={themeColors['text-primary']}
+            style={[styles.identityNameInput, { color: themeColors['text-primary'] }]}
             onChangeText={(text) => {
               dispatch({ type: 'set-name', name: text });
               setSaveError(null);
@@ -329,7 +329,7 @@ function Settings() {
         <View testID="settings-usage-section" style={styles.section}>
           <SectionLabel>AI usage this month</SectionLabel>
           <View style={styles.usageAmountRow}>
-            <Text style={[styles.usageAmount, { color: themeColors.foreground }]}>
+            <Text style={[styles.usageAmount, { color: themeColors['text-primary'] }]}>
               {formatUsd(monthlyUsage.totalCostUsd)}
             </Text>
             <Text style={[styles.usageCap, { color: themeColors['text-secondary'] }]}>
@@ -344,7 +344,7 @@ function Settings() {
                   width: `${usagePercent}%`,
                   backgroundColor: monthlyUsage.isOverLimit
                     ? themeColors.destructive
-                    : themeColors.foreground,
+                    : themeColors['text-primary'],
                 },
               ]}
             />
@@ -396,7 +396,7 @@ function Settings() {
           label={t.settings.archivedChats}
           onPress={onArchivedChatsPress}
           accessory={
-            <AppIcon name="chevron.right" size={12} tintColor={themeColors['icon-muted']} />
+            <AppIcon name="chevron.right" size={12} tintColor={themeColors['text-tertiary']} />
           }
         />
       </View>

@@ -1,49 +1,37 @@
 import {
-  colorSystems as canonicalColorSystems,
-  durations,
+  colorThemes,
   radii,
-  shadowsNative,
-  spacing,
+  shadows,
+  spacing as sharedSpacing,
+  transitionDurations,
+  type ColorMode,
+  type ColorTheme,
+  type ColorToken,
   type RadiusToken,
   type SpacingToken,
 } from '@ponti-studios/ui/tokens';
 
-const ponti = canonicalColorSystems.ponti.dark;
+export { colorThemes, radii, shadows, transitionDurations };
+export type { ColorMode, ColorTheme, ColorToken, RadiusToken, SpacingToken };
 
-/**
- * Native compatibility map. Omiro uses these names at its React Native style
- * boundary; every value is sourced from the canonical Ponti semantic palette.
- */
-export const colors = {
-  accent: ponti.accent,
-  background: ponti['surface-canvas'],
-  black: ponti['text-on-warning'],
-  'bg-base': ponti['surface-canvas'],
-  'bg-elevated': ponti['surface-raised'],
-  'bg-surface': ponti['surface-panel'],
-  'border-default': ponti['border-default'],
-  'border-faint': ponti['border-subtle'],
-  'border-subtle': ponti['border-subtle'],
-  destructive: ponti.destructive,
-  foreground: ponti['text-primary'],
-  'icon-muted': ponti['text-tertiary'],
-  'icon-primary': ponti['text-primary'],
-  muted: ponti['surface-inset'],
-  'overlay-modal-high': ponti['overlay-scrim'],
-  'overlay-modal-medium': ponti['overlay-scrim'],
-  primary: ponti.accent,
-  'primary-foreground': ponti['text-on-accent'],
-  'text-primary': ponti['text-primary'],
-  'text-secondary': ponti['text-secondary'],
-  'text-tertiary': ponti['text-tertiary'],
-  success: ponti.success,
-  warning: ponti.warning,
-  white: ponti['text-on-accent'],
-} as const;
+/** Keep Omiro's existing numeric spacing call sites over the string-keyed shared scale. */
+export const spacing: Record<number, number> = Object.fromEntries(
+  Object.entries(sharedSpacing)
+    .filter(([key]) => /^\d+$/.test(key))
+    .map(([key, value]) => [Number(key), value]),
+);
 
-export const colorSystems = { ponti: canonicalColorSystems.ponti } as const;
+const toPixels = (value: { value: number; unit: string }) => value.value;
+export const nativeShadows = Object.fromEntries(
+  Object.entries(shadows).map(([name, layers]) => [name, layers.map((layer) => ({
+    color: layer.color,
+    offsetX: toPixels(layer.offsetX),
+    offsetY: toPixels(layer.offsetY),
+    blurRadius: toPixels(layer.blur),
+    spreadDistance: toPixels(layer.spread),
+    inset: false,
+  }))]),
+);
 
-export type ColorToken = keyof typeof colors;
-
-export { durations, radii, shadowsNative, spacing };
-export type { RadiusToken, SpacingToken };
+/** Non-react consumers must select a concrete system theme explicitly. */
+export const colors = colorThemes.dark;

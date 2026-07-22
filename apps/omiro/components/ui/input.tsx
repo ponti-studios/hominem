@@ -37,7 +37,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         setFocused(false);
         onBlur?.(event);
       }}
-      style={[styles.input, { borderColor, color: colors.foreground }, style]}
+      style={[styles.input, { borderColor, color: colors['text-primary'] }, style]}
       {...props}
     />
   );

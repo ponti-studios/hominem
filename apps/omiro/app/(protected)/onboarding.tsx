@@ -73,7 +73,7 @@ const Onboarding = () => {
       >
         <View style={styles.card}>
           <View style={styles.hero}>
-            <Text style={[styles.title, { color: themeColors.foreground }]}>
+            <Text style={[styles.title, { color: themeColors['text-primary'] }]}>
               {t.onboarding.title}
             </Text>
             <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
@@ -90,14 +90,14 @@ const Onboarding = () => {
               autoCorrect={false}
               editable={!isSubmitting}
               returnKeyType="done"
-              cursorColor={themeColors.foreground}
-              selectionColor={themeColors.foreground}
+              cursorColor={themeColors['text-primary']}
+              selectionColor={themeColors['text-primary']}
               style={[
                 styles.input,
                 {
-                  backgroundColor: themeColors['bg-surface'],
+                  backgroundColor: themeColors['surface-panel'],
                   borderColor: themeColors['border-default'],
-                  color: themeColors.foreground,
+                  color: themeColors['text-primary'],
                 },
               ]}
               onChangeText={(text) => {

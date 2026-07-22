@@ -203,12 +203,12 @@ const navigationTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: theme.colors.background,
+    background: theme.colors['surface-canvas'],
     border: theme.colors['border-default'],
-    card: theme.colors.background,
+    card: theme.colors['surface-canvas'],
     notification: theme.colors.accent,
     primary: theme.colors.accent,
-    text: theme.colors.foreground,
+    text: theme.colors['text-primary'],
   },
 };
 

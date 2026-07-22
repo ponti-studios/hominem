@@ -50,7 +50,7 @@ const useStyles = makeStyles((theme) => ({
     minWidth: 0,
   },
   input: {
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: 16,
     lineHeight: 22,
     letterSpacing: 0,

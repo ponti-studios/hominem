@@ -120,7 +120,6 @@ export default function TaskDetailScreen() {
             <View style={styles.emptyWrap}>
               <EmptyState
                 action={{ label: t.tasks.loadErrorRetry, onPress: () => void refetch() }}
-                description={t.tasks.loadErrorDescription}
                 sfSymbol="arrow.clockwise.circle"
                 title={t.tasks.loadErrorTitle}
               />
@@ -154,7 +153,7 @@ export default function TaskDetailScreen() {
 
 const useStyles = makeStyles((theme) => ({
   container: {
-    backgroundColor: theme.colors['bg-base'],
+    backgroundColor: theme.colors['surface-canvas'],
     flex: 1,
   },
   emptyWrap: {

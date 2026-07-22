@@ -163,9 +163,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         >
           <EmptyState
             action={{ label: t.notes.editor.loadErrorRetry, onPress: () => void refetch() }}
-            description={
-              error ? t.notes.editor.loadErrorMessage : t.notes.editor.missingNoteMessage
-            }
             sfSymbol="arrow.clockwise.circle"
             title={error ? t.notes.editor.loadErrorTitle : t.notes.editor.missingNoteTitle}
           />
@@ -471,7 +468,7 @@ const useNoteStyles = makeStyles((theme) => ({
   },
   titleInput: {
     alignSelf: 'stretch',
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: 28,
     fontWeight: '700',
     lineHeight: 34,
@@ -487,7 +484,7 @@ const useNoteStyles = makeStyles((theme) => ({
     width: '72%',
   },
   placeholderDateline: {
-    backgroundColor: theme.colors['border-faint'],
+    backgroundColor: theme.colors['border-subtle'],
     borderRadius: theme.borderRadii.sm,
     height: 12,
     marginBottom: 14,
@@ -498,7 +495,7 @@ const useNoteStyles = makeStyles((theme) => ({
     paddingTop: 4,
   },
   placeholderLine: {
-    backgroundColor: theme.colors['border-faint'],
+    backgroundColor: theme.colors['border-subtle'],
     borderRadius: theme.borderRadii.sm,
     height: 16,
     width: '100%',
@@ -519,7 +516,7 @@ const useNoteStyles = makeStyles((theme) => ({
     fontSize: 17,
     lineHeight: 28,
     letterSpacing: -0.1,
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     paddingVertical: 0,
     paddingHorizontal: 0,
     minHeight: 240,
@@ -549,7 +546,7 @@ const useNoteStyles = makeStyles((theme) => ({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: theme.colors['bg-elevated'],
+    backgroundColor: theme.colors['surface-raised'],
     borderRadius: 10,
     borderCurve: 'continuous',
   },
@@ -576,32 +573,32 @@ const useNoteStyles = makeStyles((theme) => ({
 
 function markdownStyles(colors: ReturnType<typeof useThemeColors>) {
   return {
-    body: { color: colors.foreground, fontSize: 17, lineHeight: 28 },
-    heading1: { color: colors.foreground, fontSize: 24, fontWeight: '700' as const, marginTop: 12 },
-    heading2: { color: colors.foreground, fontSize: 20, fontWeight: '700' as const, marginTop: 10 },
-    heading3: { color: colors.foreground, fontSize: 18, fontWeight: '600' as const, marginTop: 8 },
-    strong: { color: colors.foreground, fontWeight: '700' as const },
-    em: { color: colors.foreground, fontStyle: 'italic' as const },
+    body: { color: colors['text-primary'], fontSize: 17, lineHeight: 28 },
+    heading1: { color: colors['text-primary'], fontSize: 24, fontWeight: '700' as const, marginTop: 12 },
+    heading2: { color: colors['text-primary'], fontSize: 20, fontWeight: '700' as const, marginTop: 10 },
+    heading3: { color: colors['text-primary'], fontSize: 18, fontWeight: '600' as const, marginTop: 8 },
+    strong: { color: colors['text-primary'], fontWeight: '700' as const },
+    em: { color: colors['text-primary'], fontStyle: 'italic' as const },
     link: { color: colors.accent, textDecorationLine: 'underline' as const },
     bullet_list: { marginVertical: 6 },
     ordered_list: { marginVertical: 6 },
     code_inline: {
-      color: colors.foreground,
-      backgroundColor: colors['bg-elevated'],
+      color: colors['text-primary'],
+      backgroundColor: colors['surface-raised'],
       borderRadius: 4,
       fontFamily: 'Menlo',
       paddingHorizontal: 4,
     },
     code_block: {
-      color: colors.foreground,
-      backgroundColor: colors['bg-elevated'],
+      color: colors['text-primary'],
+      backgroundColor: colors['surface-raised'],
       borderRadius: 8,
       fontFamily: 'Menlo',
       padding: 12,
     },
     fence: {
-      color: colors.foreground,
-      backgroundColor: colors['bg-elevated'],
+      color: colors['text-primary'],
+      backgroundColor: colors['surface-raised'],
       borderRadius: 8,
       fontFamily: 'Menlo',
       padding: 12,

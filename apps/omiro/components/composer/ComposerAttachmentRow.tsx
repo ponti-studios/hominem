@@ -47,7 +47,7 @@ export function ComposerAttachmentRow() {
                   />
                 )}
                 <View style={styles.thumbBadge} pointerEvents="none">
-                  <AppIcon name="xmark" size={spacing[2] * 2} tintColor={themeColors.white} />
+                  <AppIcon name="xmark" size={spacing[2] * 2} tintColor={themeColors['text-on-accent']} />
                 </View>
                 {uploading && (
                   <>
@@ -80,7 +80,7 @@ const useStyles = makeStyles((theme) => ({
     borderRadius: radii.md,
     borderCurve: 'continuous',
     overflow: 'hidden',
-    backgroundColor: theme.colors['bg-surface'],
+    backgroundColor: theme.colors['surface-panel'],
   },
   thumbImage: {
     width: spacing[4] * 3,
@@ -93,7 +93,7 @@ const useStyles = makeStyles((theme) => ({
     width: spacing[2] * 2,
     height: spacing[2] * 2,
     borderRadius: radii.sm,
-    backgroundColor: theme.colors['overlay-modal-high'],
+    backgroundColor: theme.colors['overlay-scrim'],
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -103,7 +103,7 @@ const useStyles = makeStyles((theme) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: theme.colors['overlay-modal-medium'],
+    backgroundColor: theme.colors['overlay-scrim'],
   },
   progressTrack: {
     position: 'absolute',
@@ -111,7 +111,7 @@ const useStyles = makeStyles((theme) => ({
     left: 0,
     right: 0,
     height: spacing[1],
-    backgroundColor: theme.colors['overlay-modal-medium'],
+    backgroundColor: theme.colors['overlay-scrim'],
   },
   progressFill: {
     backgroundColor: theme.colors.accent,

@@ -49,7 +49,7 @@ export function InlineEnhanceTray({
               style={({ pressed }) => [
                 styles.chip,
                 {
-                  backgroundColor: isActive ? themeColors['accent'] : themeColors['bg-elevated'],
+                  backgroundColor: isActive ? themeColors['accent'] : themeColors['surface-raised'],
                   opacity: pressed ? 0.75 : 1,
                 },
               ]}
@@ -70,8 +70,8 @@ export function InlineEnhanceTray({
         style={[
           styles.input,
           {
-            backgroundColor: themeColors['bg-elevated'],
-            color: themeColors.foreground,
+            backgroundColor: themeColors['surface-raised'],
+            color: themeColors['text-primary'],
           },
         ]}
         returnKeyType="done"
@@ -111,7 +111,7 @@ const useStyles = makeStyles((theme) => ({
   },
   iconWrap: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-surface'],
+    backgroundColor: theme.colors['surface-panel'],
     borderRadius: radii.full,
     height: spacing[6],
     justifyContent: 'center',
@@ -123,7 +123,7 @@ const useStyles = makeStyles((theme) => ({
     gap: spacing[1],
   },
   title: {
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: 15,
     fontWeight: '600',
     lineHeight: 20,
@@ -150,7 +150,7 @@ const useStyles = makeStyles((theme) => ({
     lineHeight: 16,
   },
   chipTextActive: {
-    color: theme.colors.white,
+    color: theme.colors['text-on-accent'],
   },
   input: {
     borderRadius: radii.md,

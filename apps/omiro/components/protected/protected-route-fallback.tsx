@@ -6,7 +6,7 @@ import { theme } from '~/components/theme';
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors['surface-canvas'],
   },
 });
 

@@ -1,7 +1,5 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-const APP_THEME_COLOR = '#FCF1E8';
-
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
 const APPLE_TEAM_ID = '3QHJ2KN8AL';
@@ -156,7 +154,6 @@ export default ({ config }: ConfigContext) => {
     [
       'expo-splash-screen',
       {
-        backgroundColor: APP_THEME_COLOR,
         image: brandAssets.splash,
         enableFullScreenImage_legacy: true,
         resizeMode: 'cover',
@@ -167,12 +164,7 @@ export default ({ config }: ConfigContext) => {
     'expo-audio',
     'expo-image',
     'expo-sharing',
-    [
-      'expo-notifications',
-      {
-        color: APP_THEME_COLOR,
-      },
-    ],
+    'expo-notifications',
     [
       'expo-camera',
       {
@@ -216,7 +208,7 @@ export default ({ config }: ConfigContext) => {
     platforms: ['ios'],
     orientation: 'portrait',
     icon: brandAssets.icon,
-    userInterfaceStyle: 'light',
+    userInterfaceStyle: 'automatic',
     assetBundlePatterns: ['assets/**/*', 'api/**/*', 'app/**/*', 'constants/**/*', 'hooks/**/*', 'navigation/**/*', 'services/**/*'],
     plugins,
     experiments: {

@@ -1,10 +1,6 @@
 import { Button, HStack, Host, TextField, useNativeState } from '@expo/ui/swift-ui';
+import { accessibilityIdentifier, frame, padding } from '@expo/ui/swift-ui/modifiers';
 import { Stack } from 'expo-router';
-import {
-  accessibilityIdentifier,
-  frame,
-  padding,
-} from '@expo/ui/swift-ui/modifiers';
 import { useEffect } from 'react';
 
 import { WorkspaceContextPicker, type WorkspaceContext } from './WorkspaceContextPicker.ios';
@@ -70,7 +66,10 @@ function WorkspaceToolbarActions({
   searchQuery,
   onSearchCancel,
   onSearchChange,
-}: Pick<WorkspaceToolbarProps, 'searchPlaceholder' | 'searchQuery' | 'onSearchCancel' | 'onSearchChange'>) {
+}: Pick<
+  WorkspaceToolbarProps,
+  'searchPlaceholder' | 'searchQuery' | 'onSearchCancel' | 'onSearchChange'
+>) {
   const queryState = useNativeState(searchQuery);
 
   useEffect(() => {
@@ -78,7 +77,7 @@ function WorkspaceToolbarActions({
   }, [queryState, searchQuery]);
 
   return (
-    <Host matchContents style={{ height: 44, width: 320 }}>
+    <Host matchContents>
       <HStack
         alignment="center"
         modifiers={[padding({ leading: 8, trailing: 4 }), frame({ height: 44, width: 320 })]}

@@ -12,7 +12,7 @@ interface ModalOverlayProps {
   children: ReactNode;
   position?: ModalOverlayPosition;
   dismissOnBackdropPress?: boolean;
-  backdropToken?: 'overlay-modal-medium' | 'overlay-modal-high';
+  backdropToken?: 'overlay-scrim' | 'overlay-scrim';
   animationType?: ModalProps['animationType'];
   statusBarTranslucent?: boolean;
 }
@@ -23,7 +23,7 @@ export function ModalOverlay({
   children,
   position = 'center',
   dismissOnBackdropPress = true,
-  backdropToken = 'overlay-modal-medium',
+  backdropToken = 'overlay-scrim',
   animationType = 'fade',
   statusBarTranslucent = false,
 }: ModalOverlayProps) {

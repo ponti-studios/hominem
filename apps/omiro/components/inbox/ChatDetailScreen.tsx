@@ -135,13 +135,7 @@ export function ChatDetailScreen() {
     [controller.canTransform, controller.isArchiving, controller.showDebug],
   );
   const emptyState = useMemo(
-    () => (
-      <EmptyState
-        sfSymbol="bubble.left"
-        title={t.chat.emptyState.title}
-        description={t.chat.emptyState.description}
-      />
-    ),
+    () => <EmptyState sfSymbol="bubble.left" title={t.chat.emptyState.title} />,
     [],
   );
   const errorState = useMemo(
@@ -150,7 +144,6 @@ export function ChatDetailScreen() {
         action={{ label: t.chat.loadErrorRetry, onPress: () => void controller.refetchMessages() }}
         sfSymbol="arrow.clockwise.circle"
         title={t.chat.loadErrorTitle}
-        description={t.chat.loadErrorDescription}
       />
     ),
     [controller],

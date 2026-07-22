@@ -142,7 +142,7 @@ const useStyles = makeStyles((theme) => ({
     paddingTop: 8,
   },
   container: {
-    backgroundColor: theme.colors['bg-base'],
+    backgroundColor: theme.colors['surface-canvas'],
     flex: 1,
   },
   listInner: {

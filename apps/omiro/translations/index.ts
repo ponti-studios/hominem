@@ -60,7 +60,6 @@ const t = {
       description: 'Ask a question, attach a photo, or record a voice note.',
     },
     loadErrorTitle: 'Conversation unavailable',
-    loadErrorDescription: "We couldn't load this conversation right now.",
     loadErrorRetry: 'Try again',
     conversationActionsLabel: 'Conversation actions',
     thinkingIndicator: 'Thinking...',
@@ -132,7 +131,6 @@ const t = {
       title: 'Inbox',
       subtitle: 'Capture something new, pick up an active chat, or skim what matters right now.',
       loadErrorTitle: 'Inbox unavailable',
-      loadErrorDescription: "We couldn't load your inbox right now.",
       retry: 'Try again',
       recentChats: 'Recents',
       recentNotes: 'Notes',
@@ -176,7 +174,7 @@ const t = {
       previewLabel: (kind: 'chat' | 'note') => (kind === 'chat' ? 'Chat preview' : 'Note preview'),
     },
     empty: {
-      title: 'Your inbox starts here',
+      title: 'No chats yet',
       description:
         'Capture a note, ask Omiro to connect the dots, or attach a file. Everything you add comes back here when you need it.',
       exampleInbox: 'Example inbox',
@@ -235,7 +233,6 @@ const t = {
     emptyTitle: 'No tasks yet',
     emptyDescription: 'Tasks created from your chats and notes will appear here.',
     loadErrorTitle: 'Tasks unavailable',
-    loadErrorDescription: "We couldn't load your tasks right now.",
     loadErrorRetry: 'Try again',
     tasksCount: (count: number) => `${count} task${count === 1 ? '' : 's'}`,
     deleteTask: {
@@ -254,7 +251,6 @@ const t = {
     itemActionsA11y: 'Task actions',
     open: 'Open',
     delete: 'Delete',
-    emptyAction: 'Add your first task',
     addTaskA11y: 'Add task',
     addSubtaskA11y: 'Add subtask',
     editor: {
@@ -301,7 +297,6 @@ const t = {
       emptyTitle: 'No archived chats yet',
       emptyCopy: 'Chats you archive will appear here for later reference.',
       loadErrorTitle: 'Archived chats unavailable',
-      loadErrorDescription: "We couldn't load archived chats right now.",
       loadErrorRetry: 'Try again',
     },
     name: {

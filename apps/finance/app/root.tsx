@@ -1,6 +1,10 @@
 import { AuthProvider } from '@hominem/auth/client/provider';
 import { Button, buttonVariants, Card, CardContent } from '@ponti-studios/ui/primitives';
-import { COLOR_MODE_ATTRIBUTE, COLOR_SYSTEM_ATTRIBUTE } from '@ponti-studios/ui/tokens';
+import {
+  COLOR_MODE_ATTRIBUTE,
+  COLOR_SYSTEM_ATTRIBUTE,
+  colorSystems,
+} from '@ponti-studios/ui/tokens';
 import type React from 'react';
 import {
   data,
@@ -41,7 +45,7 @@ export const meta: Route.MetaFunction = () => {
   return [
     { title: 'Florin' },
     { name: 'description', content: 'Manage your personal finances with Florin' },
-    { name: 'theme-color', content: '#141210' },
+    { name: 'theme-color', content: colorSystems.ponti.light['surface-canvas'] },
   ];
 };
 
@@ -50,10 +54,9 @@ export const links: Route.LinksFunction = () => [...COMMON_FONT_LINKS, ...COMMON
 const themeBootScript = `
 (() => {
   const root = document.documentElement;
-  const system = localStorage.getItem('hominem:ui-color-system') || root.getAttribute('${COLOR_SYSTEM_ATTRIBUTE}') || 'primer';
   const mode = localStorage.getItem('hominem:ui-color-mode') || root.getAttribute('${COLOR_MODE_ATTRIBUTE}') || 'system';
 
-  root.setAttribute('${COLOR_SYSTEM_ATTRIBUTE}', system === 'apple' ? 'apple' : 'primer');
+  root.setAttribute('${COLOR_SYSTEM_ATTRIBUTE}', 'ponti');
 
   if (mode === 'light' || mode === 'dark') {
     root.setAttribute('${COLOR_MODE_ATTRIBUTE}', mode);
@@ -65,7 +68,7 @@ const themeBootScript = `
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-color-system="primer" suppressHydrationWarning>
+    <html lang="en" data-color-system="ponti" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

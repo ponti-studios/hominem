@@ -73,13 +73,12 @@ function ArchivedChatsSwiftUI({
         {error ? (
           <EmptyState
             action={{ label: t.settings.archivedChatsScreen.loadErrorRetry, onPress: onRefresh }}
-            description={t.settings.archivedChatsScreen.loadErrorDescription}
             sfSymbol="arrow.clockwise.circle"
             title={t.settings.archivedChatsScreen.loadErrorTitle}
           />
         ) : (
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyTitle, { color: themeColors.foreground }]}>
+            <Text style={[styles.emptyTitle, { color: themeColors['text-primary'] }]}>
               {t.settings.archivedChatsScreen.emptyTitle}
             </Text>
             <Text style={[styles.emptyCopy, { color: themeColors['text-secondary'] }]}>
@@ -130,7 +129,7 @@ const ArchivedChatRow = memo(
         >
           <AppIcon name="tray" size={14} tintColor={themeColors['text-secondary']} />
           <View style={styles.chatCopy}>
-            <Text style={[styles.chatTitle, { color: themeColors.foreground }]}>
+            <Text style={[styles.chatTitle, { color: themeColors['text-primary'] }]}>
               {chat.title ?? t.inbox.item.untitledChat}
             </Text>
             <Text style={[styles.chatMeta, { color: themeColors['text-secondary'] }]}>

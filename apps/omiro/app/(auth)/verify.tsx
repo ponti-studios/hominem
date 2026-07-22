@@ -203,7 +203,7 @@ function VerifyScreen() {
         style={[
           styles.container,
           styles.successContainer,
-          { backgroundColor: themeColors.background },
+          { backgroundColor: themeColors['surface-canvas'] },
         ]}
       >
         <Animated.View entering={FadeIn.duration(300)} style={styles.successContent}>
@@ -214,7 +214,7 @@ function VerifyScreen() {
             iconSize={32}
             tintColor={themeColors.success}
           />
-          <Text style={[styles.successText, { color: themeColors.foreground }]}>
+          <Text style={[styles.successText, { color: themeColors['text-primary'] }]}>
             {t.auth.verify.signedIn}
           </Text>
         </Animated.View>
@@ -224,7 +224,7 @@ function VerifyScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: themeColors.background }]}
+      style={[styles.container, { backgroundColor: themeColors['surface-canvas'] }]}
       behavior="padding"
     >
       <ScrollView
@@ -239,7 +239,7 @@ function VerifyScreen() {
             <IconChip icon="lock.shield" />
 
             <View style={styles.copyBlock}>
-              <Text style={[styles.title, { color: themeColors.foreground }]}>
+              <Text style={[styles.title, { color: themeColors['text-primary'] }]}>
                 {t.auth.verify.title}
               </Text>
               <View style={styles.emailChipRow}>
@@ -251,10 +251,10 @@ function VerifyScreen() {
                   onPress={handleChangeEmail}
                   style={({ pressed }) => [
                     styles.emailChip,
-                    { backgroundColor: themeColors['bg-surface'], opacity: pressed ? 0.65 : 1 },
+                    { backgroundColor: themeColors['surface-panel'], opacity: pressed ? 0.65 : 1 },
                   ]}
                 >
-                  <Text style={[styles.emailChipText, { color: themeColors.foreground }]}>
+                  <Text style={[styles.emailChipText, { color: themeColors['text-primary'] }]}>
                     {maskEmail(resolvedEmail)}
                   </Text>
                   <AppIcon name="pencil" size={11} tintColor={themeColors['text-secondary']} />
@@ -268,7 +268,7 @@ function VerifyScreen() {
                   style={[
                     styles.inputRow,
                     {
-                      backgroundColor: themeColors['bg-surface'],
+                      backgroundColor: themeColors['surface-panel'],
                       borderColor: authError
                         ? themeColors.destructive
                         : themeColors['border-default'],
@@ -288,9 +288,9 @@ function VerifyScreen() {
                     autoFocus
                     returnKeyType="done"
                     editable={!isBusy}
-                    cursorColor={themeColors.foreground}
-                    selectionColor={themeColors.foreground}
-                    style={[styles.input, { color: themeColors.foreground }]}
+                    cursorColor={themeColors['text-primary']}
+                    selectionColor={themeColors['text-primary']}
+                    style={[styles.input, { color: themeColors['text-primary'] }]}
                     onChangeText={(value) => {
                       setOtp(normalizeOtp(value));
                     }}

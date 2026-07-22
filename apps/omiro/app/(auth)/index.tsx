@@ -90,7 +90,7 @@ function AuthScreen() {
   return (
     <>
       <KeyboardAvoidingView
-        style={[styles.container, { backgroundColor: themeColors.background }]}
+        style={[styles.container, { backgroundColor: themeColors['surface-canvas'] }]}
         behavior="padding"
       >
         <ScrollView
@@ -105,7 +105,7 @@ function AuthScreen() {
               <IconChip icon="envelope" />
 
               <View style={styles.copyBlock}>
-                <Text style={[styles.title, { color: themeColors.foreground }]}>
+                <Text style={[styles.title, { color: themeColors['text-primary'] }]}>
                   {t.auth.emailEntry.title}
                 </Text>
                 <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
@@ -127,16 +127,16 @@ function AuthScreen() {
                       autoCorrect={false}
                       autoFocus
                       editable={!isSubmitting}
-                      cursorColor={themeColors.foreground}
-                      selectionColor={themeColors.foreground}
+                      cursorColor={themeColors['text-primary']}
+                      selectionColor={themeColors['text-primary']}
                       style={[
                         styles.input,
                         {
-                          backgroundColor: themeColors['bg-surface'],
+                          backgroundColor: themeColors['surface-panel'],
                           borderColor: displayError
                             ? themeColors.destructive
                             : themeColors['border-default'],
-                          color: themeColors.foreground,
+                          color: themeColors['text-primary'],
                           opacity: isSubmitting ? 0.6 : 1,
                         },
                       ]}

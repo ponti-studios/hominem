@@ -184,17 +184,17 @@ function buildVerificationOtpEmail(input: {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">${API_BRAND.appName}</h1>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="margin: 0; font-size: 24px;">${API_BRAND.appName}</h1>
   </div>
-  <div style="background: #ffffff; padding: 30px; border: 1px solid #e1e1e1; border-top: none; border-radius: 0 0 12px 12px;">
+  <div style="padding: 30px; border: 1px solid; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="margin-top: 0;">Your verification code is:</p>
-    <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; border-radius: 8px; margin: 20px 0;">
+    <div style="padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; border: 1px solid; border-radius: 8px; margin: 20px 0;">
       ${input.otp}
     </div>
-    <p style="color: #666; font-size: 14px;">This code will expire in 5 minutes.</p>
-    <p style="color: #666; font-size: 14px;">If you didn't request this code, you can safely ignore this email.</p>
+    <p style="font-size: 14px;">This code will expire in 5 minutes.</p>
+    <p style="font-size: 14px;">If you didn't request this code, you can safely ignore this email.</p>
   </div>
 </body>
 </html>`,

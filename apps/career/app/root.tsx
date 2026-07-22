@@ -1,6 +1,10 @@
 import { AuthProvider } from '@hominem/auth/client/provider';
 import { Button, buttonVariants, Card, CardContent } from '@ponti-studios/ui/primitives';
-import { COLOR_MODE_ATTRIBUTE, COLOR_SYSTEM_ATTRIBUTE } from '@ponti-studios/ui/tokens';
+import {
+  COLOR_MODE_ATTRIBUTE,
+  COLOR_SYSTEM_ATTRIBUTE,
+  colorSystems,
+} from '@ponti-studios/ui/tokens';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   data,
@@ -75,10 +79,10 @@ export const links = () => [
 
 export const meta = () => [
   // Theme Color
-  { name: 'theme-color', content: '#141210' },
+  { name: 'theme-color', content: colorSystems.ponti.light['surface-canvas'] },
 
   // Microsoft Tile Icons
-  { name: 'msapplication-TileColor', content: '#141210' },
+  { name: 'msapplication-TileColor', content: colorSystems.ponti.light['surface-canvas'] },
   { name: 'msapplication-TileImage', content: '/icons/ms-icon-144x144.png' },
   { name: 'msapplication-square70x70logo', content: '/icons/ms-icon-70x70.png' },
   { name: 'msapplication-square150x150logo', content: '/icons/ms-icon-150x150.png' },
@@ -119,10 +123,9 @@ export const handle = {
 const themeBootScript = `
 (() => {
   const root = document.documentElement;
-  const system = localStorage.getItem('hominem:ui-color-system') || root.getAttribute('${COLOR_SYSTEM_ATTRIBUTE}') || 'primer';
   const mode = localStorage.getItem('hominem:ui-color-mode') || root.getAttribute('${COLOR_MODE_ATTRIBUTE}') || 'system';
 
-  root.setAttribute('${COLOR_SYSTEM_ATTRIBUTE}', system === 'apple' ? 'apple' : 'primer');
+  root.setAttribute('${COLOR_SYSTEM_ATTRIBUTE}', 'ponti');
 
   if (mode === 'light' || mode === 'dark') {
     root.setAttribute('${COLOR_MODE_ATTRIBUTE}', mode);
@@ -134,7 +137,7 @@ const themeBootScript = `
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-color-system="primer" suppressHydrationWarning>
+    <html lang="en" data-color-system="ponti" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

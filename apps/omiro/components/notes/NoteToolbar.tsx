@@ -149,7 +149,7 @@ export function NoteToolbar(props: NoteToolbarProps) {
 const useToolbarStyles = makeStyles((theme) => ({
   container: {
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors['surface-canvas'],
     borderTopColor: theme.colors['border-subtle'],
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',

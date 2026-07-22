@@ -1,5 +1,4 @@
 import { Stack } from 'expo-router';
-import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
@@ -70,7 +69,7 @@ function ProtectedShell() {
   if (!isUnlocked) {
     return (
       <View style={styles.centered}>
-        <Text variant="title1" color="foreground">
+        <Text variant="title1" color="text-primary">
           {APP_NAME}
         </Text>
         <Text variant="body" color="text-secondary">
@@ -95,10 +94,10 @@ function ProtectedShell() {
             initialRouteName="index"
             screenOptions={{
               ...screenOptions,
-              contentStyle: { backgroundColor: themeColors['bg-base'] },
+              contentStyle: { backgroundColor: themeColors['surface-canvas'] },
               headerLargeTitle: false,
               headerShadowVisible: false,
-              headerTintColor: themeColors.foreground,
+              headerTintColor: themeColors['text-primary'],
             }}
           >
             <Stack.Screen name="index" options={{ headerShown: true }} />

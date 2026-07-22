@@ -1,9 +1,8 @@
-import { radii, spacing as tokenSpacing, type ColorToken } from '~/components/theme/ponti-tokens';
+import { useColorScheme } from 'react-native';
 
-import { colors } from './colors';
+import { colorThemes, radii, spacing as tokenSpacing, type ColorTheme } from '~/components/theme/ponti-tokens';
+
 import { fontFamiliesNative, fontSizes, fontWeights, lineHeights } from './typography';
-
-export { colors } from './colors';
 
 export const themeSpacing = {
   sm: tokenSpacing[2],
@@ -16,7 +15,7 @@ const borderRadii = {
   sm: radii.sm,
   md: radii.md,
   lg: radii.lg,
-  icon: radii.icon,
+  icon: radii.md,
 } as const;
 
 export const componentSizes = {
@@ -33,24 +32,24 @@ export const typography = {
   lineHeights,
 } as const;
 
-export const theme = {
-  colors: colors,
+export const createTheme = (colors: ColorTheme) => ({
+  colors,
   spacing: themeSpacing,
   borderRadii,
   componentSizes,
   typography,
-} as const;
+} as const);
 
-export type Theme = {
-  colors: Record<ColorToken, string>;
-  spacing: typeof themeSpacing;
-  borderRadii: typeof borderRadii;
-  componentSizes: typeof componentSizes;
-  typography: typeof typography;
-};
+export type Theme = ReturnType<typeof createTheme>;
+
+export const theme = createTheme(colorThemes.dark);
 
 export function useThemeColors() {
-  return colors;
+  return useColorScheme() === 'dark' ? colorThemes.dark : colorThemes.light;
+}
+
+export function useTheme() {
+  return createTheme(useThemeColors());
 }
 
 export default theme;

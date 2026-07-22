@@ -64,10 +64,10 @@ export function Button({
 
     const variantStyles: Record<ButtonVariant, StyleProp<ViewStyle>> = {
       primary: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.accent,
       },
       secondary: {
-        backgroundColor: colors.muted,
+        backgroundColor: colors['surface-inset'],
       },
       destructive: {
         backgroundColor: colors.destructive,
@@ -83,11 +83,11 @@ export function Button({
     };
 
     const textColor: Record<ButtonVariant, string> = {
-      primary: colors['primary-foreground'],
-      secondary: colors.foreground,
-      destructive: colors['primary-foreground'],
-      outline: colors.foreground,
-      ghost: colors.foreground,
+      primary: colors['text-on-accent'],
+      secondary: colors['text-primary'],
+      destructive: colors['text-on-accent'],
+      outline: colors['text-primary'],
+      ghost: colors['text-primary'],
     };
 
     return {

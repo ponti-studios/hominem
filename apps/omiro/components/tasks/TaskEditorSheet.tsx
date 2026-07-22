@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   Text,
-  durations,
+  transitionDurations,
   fontSizes,
   makeStyles,
   radii,
@@ -125,14 +125,14 @@ export function TaskEditorSheet({
       visible={visible}
       onClose={onClose}
       dismissOnBackdropPress={!isSubmitting}
-      backdropToken="overlay-modal-high"
+      backdropToken="overlay-scrim"
       position="bottom"
       animationType="none"
       statusBarTranslucent
     >
       <KeyboardAvoidingView behavior="padding">
         <Animated.View
-          entering={FadeInUp.duration(durations.enter)}
+          entering={FadeInUp.duration(transitionDurations[150])}
           style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}
         >
           <View style={styles.handle} />
@@ -274,7 +274,7 @@ function Chip({ label, selected, onPress, testID }: ChipProps) {
         pressed && styles.chipPressed,
       ]}
     >
-      <Text color={selected ? 'white' : 'text-secondary'} style={styles.chipText}>
+      <Text color={selected ? 'text-on-accent' : 'text-secondary'} style={styles.chipText}>
         {label}
       </Text>
     </Pressable>
@@ -283,7 +283,7 @@ function Chip({ label, selected, onPress, testID }: ChipProps) {
 
 const useStyles = makeStyles((theme) => ({
   sheet: {
-    backgroundColor: theme.colors['bg-surface'],
+    backgroundColor: theme.colors['surface-panel'],
     borderColor: theme.colors['border-default'],
     borderTopLeftRadius: radii.md,
     borderTopRightRadius: radii.md,
@@ -303,11 +303,11 @@ const useStyles = makeStyles((theme) => ({
     gap: spacing[3],
   },
   divider: {
-    backgroundColor: theme.colors['border-faint'],
+    backgroundColor: theme.colors['border-subtle'],
     height: 1,
   },
   titleInput: {
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: fontSizes.md,
     paddingVertical: spacing[2],
   },
@@ -348,7 +348,7 @@ const useStyles = makeStyles((theme) => ({
     paddingVertical: spacing[1],
   },
   priorityEmojiButtonSelected: {
-    backgroundColor: theme.colors['bg-elevated'],
+    backgroundColor: theme.colors['surface-raised'],
     opacity: 1,
   },
   priorityEmoji: {
