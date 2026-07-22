@@ -30,7 +30,7 @@ dev scope='all':
 
 _lint task scope='all':
     #!/usr/bin/env bash
-    case "$scope" in
+    case "{{ scope }}" in
       all) filter=() ;;
       api) filter=(--filter=@hominem/api...) ;;
       career) filter=(--filter=@hominem/career...) ;;
@@ -39,7 +39,7 @@ _lint task scope='all':
       *) echo "error: unknown scope '{{ scope }}'" >&2; exit 1 ;;
     esac
     cd "{{ ROOT_DIR }}"
-    pnpm exec turbo run "$task" "${filter[@]}"
+    pnpm exec turbo run "{{ task }}" "${filter[@]}"
 
 lint scope='all':
     just _lint lint "{{ scope }}"
