@@ -107,6 +107,7 @@ dist/
 .expo/
 apps/mobile/android
 apps/mobile/ios
+apps/omiro/ios
 apps/omiro/ios/Pods
 
 # expo router

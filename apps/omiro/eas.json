@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": "18.13.1",
-    "appVersionSource": "remote",
+    "appVersionSource": "local",
     "promptToConfigurePushNotifications": false
   },
   "build": {
@@ -26,27 +26,18 @@
       "extends": "base",
       "developmentClient": false,
       "distribution": "internal",
-      "environment": "preview",
+      "environment": "development",
       "env": {
         "APP_ENV": "e2e"
       }
     },
-    "staging": {
-      "extends": "base",
-      "developmentClient": false,
-      "distribution": "internal",
-      "environment": "preview",
-      "autoIncrement": true,
-      "env": {
-        "APP_ENV": "staging"
-      },
-      "channel": "staging"
-    },
     "screenshots": {
-      "extends": "staging",
+      "extends": "base",
+      "distribution": "internal",
+      "environment": "development",
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "http://localhost:4040",
-        "APP_ENV": "staging"
+        "APP_ENV": "screenshots"
       },
       "ios": {
         "simulator": true
@@ -59,8 +50,7 @@
       "environment": "production",
       "autoIncrement": true,
       "env": {
-        "APP_ENV": "production",
-        "EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED": "true"
+        "APP_ENV": "production"
       },
       "channel": "production"
     }

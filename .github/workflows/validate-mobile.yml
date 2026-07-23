@@ -104,3 +104,8 @@ jobs:
 
       - name: validate-mobile
         run: just check mobile
+
+      - name: validate-omiro-cng
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: just mobile cng-check

@@ -60,12 +60,9 @@ function LogStepRow({ line, reducedMotion }: { line: LogLine; reducedMotion: boo
   );
 }
 
-// Experimental spike screen, gated in settings/index.tsx behind __DEV__ or
-// ON_DEVICE_AI_SPIKE_ENABLED (EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED) — never
-// part of unflagged production navigation. Exercises the on-device
-// FoundationModels + EventKit CalendarLookupTool end to end. Requires a
-// device or simulator with Apple Intelligence enabled on supported host
-// hardware. The iOS Simulator uses the host Mac's Apple Intelligence model.
+// Uses the on-device FoundationModels + EventKit CalendarLookupTool end to end.
+// Requires a device or simulator with Apple Intelligence enabled on supported
+// host hardware. The iOS Simulator uses the host Mac's Apple Intelligence model.
 export default function OnDeviceCalendarSpikeScreen() {
   const reducedMotion = useReducedMotion();
   const styles = useStyles();

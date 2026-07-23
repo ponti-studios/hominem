@@ -1,0 +1,7 @@
+ios
+node_modules
+.expo
+.env*
+*.log
+build
+dist

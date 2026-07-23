@@ -13,15 +13,15 @@ just mobile prebuild development
 just mobile dev
 ```
 
-For staging or production release work, use the production native identity with Expo's fingerprint runtime policy:
+For production release work, use the production native identity with Expo's app-version runtime policy:
 
 ```bash
 just mobile prebuild production
-just mobile build staging
-just mobile update staging
+just mobile build production
+just mobile update production
 ```
 
-The runtime version is derived automatically from the native project fingerprint. Native changes require a new build before publishing an EAS Update; JavaScript-only changes can use the existing compatible build.
+The runtime version is the committed app version. Native compatibility is checked separately from an immutable release manifest before publishing an EAS Update.
 
 ## Working In Zed
 
@@ -57,10 +57,8 @@ If the error still appears, the local generated `apps/omiro/ios` directory is li
 | Need | Run | When to use it |
 | --- | --- | --- |
 | Generate the dev iOS project | `just mobile prebuild development` | First-time setup or after native config changes during development |
-| Generate the production iOS project | `just mobile prebuild production` | Before staging or production release work |
+| Generate the production iOS project | `just mobile prebuild production` | Local CNG verification before a native release |
 | Launch the iOS app | `just mobile dev` | Daily mobile development |
-| Create a staging iOS build | `just mobile build staging` | TestFlight or internal QA on the production native identity |
-| Publish a staging OTA update | `just mobile update staging` | QA a production-compatible update before production |
 | Create a production iOS build | `just mobile build production` | App Store/TestFlight release builds |
 | Publish a production OTA update | `just mobile update production` | Ship a production-compatible OTA update |
 | Start Metro / Expo | `just mobile start` | When you want to attach to an existing native build |

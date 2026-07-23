@@ -1,0 +1,61 @@
+name: mobile-ota
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Green main commit containing the JavaScript-only fix
+        required: true
+        default: main
+        type: string
+      rollout_percentage:
+        description: Initial production rollout percentage
+        required: true
+        default: '10'
+        type: choice
+        options: ['10', '50', '100']
+
+concurrency:
+  group: mobile-ota-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish controlled production update
+    runs-on: ubuntu-latest
+    environment: omiro-production
+    timeout-minutes: 45
+
+    steps:
+      - name: checkout-release-ref
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: setup-pnpm-workspace
+        uses: ./.github/actions/setup-pnpm-workspace
+        with:
+          node-version: '24.14.1'
+
+      - name: validate-mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          just check mobile
+          just mobile cng-check
+
+      - name: publish-production-update
+        working-directory: apps/omiro
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: >-
+          pnpm dlx eas-cli@18.13.1 update
+          --platform ios
+          --channel production
+          --environment production
+          --rollout-percentage ${{ inputs.rollout_percentage }}
+          --message "Production OTA from ${{ inputs.ref }}"
+          --non-interactive

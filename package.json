@@ -30,7 +30,6 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@xmldom/xmldom": "0.8.13",
-    "eas-cli": "18.13.1",
     "knip": "^6.4.1",
     "oxfmt": "0.56.0",
     "oxlint": "^1.71.0",

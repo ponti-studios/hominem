@@ -1,11 +1,9 @@
 import { BRAND } from '@hominem/env/brand';
 import Constants from 'expo-constants';
-import * as Device from 'expo-device';
 
 const extra = (Constants.expoConfig?.extra ?? {}) as {
   apiBaseUrl?: string;
   appEnvironment?: string;
-  onDeviceAiSpikeEnabled?: string;
   appScheme?: string;
 };
 
@@ -15,9 +13,8 @@ const localHost = hostUri ? hostUri.split(':').shift() : null;
 function toDeviceReachableApiBaseUrl(
   baseUrl: string,
   host: string | null,
-  isPhysicalDevice: boolean,
 ) {
-  if (!baseUrl || !host || !isPhysicalDevice) {
+  if (!baseUrl || !host) {
     return baseUrl;
   }
 
@@ -42,15 +39,14 @@ const configuredApiBaseUrlRaw = extra.apiBaseUrl || process.env.EXPO_PUBLIC_API_
 const configuredApiBaseUrl = toDeviceReachableApiBaseUrl(
   configuredApiBaseUrlRaw,
   localHost ?? null,
-  Device.isDevice,
 );
 const fallbackApiBaseUrl =
-  localHost && Device.isDevice ? `http://${localHost}:4040` : 'http://localhost:4040';
+  localHost ? `http://${localHost}:4040` : 'http://localhost:4040';
 const appEnvironment = extra.appEnvironment ?? process.env.APP_ENV ?? 'development';
-const releaseChannel = ['staging', 'production'].includes(appEnvironment) ? appEnvironment : null;
+const releaseChannel = appEnvironment === 'production' ? appEnvironment : null;
 export const E2E_TESTING = appEnvironment === 'e2e';
 function isReleaseAppEnvironment(environment: string) {
-  return ['staging', 'production'].includes(environment);
+  return environment === 'production';
 }
 
 const isReleaseRuntime = isReleaseAppEnvironment(appEnvironment);
@@ -66,13 +62,3 @@ export const APP_ENV = appEnvironment;
 export const APP_SCHEME = extra.appScheme || 'hakumi';
 export const APP_NAME = BRAND.appName;
 export const RELEASE_CHANNEL = releaseChannel;
-
-const toBooleanFlag = (value: string | undefined) => value === 'true';
-
-// Surfaces the on-device Apple Intelligence spike outside __DEV__ builds so
-// it's reachable in TestFlight. Only enabled per-build via
-// EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED — must not be on for a public App
-// Store release.
-export const ON_DEVICE_AI_SPIKE_ENABLED = toBooleanFlag(
-  extra.onDeviceAiSpikeEnabled || process.env.EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED,
-);

@@ -64,9 +64,6 @@ importers:
       '@xmldom/xmldom':
         specifier: 0.8.13
         version: 0.8.13
-      eas-cli:
-        specifier: 18.13.1
-        version: 18.13.1(@types/node@25.9.5)(supports-color@8.1.1)(typescript@6.0.3)
       knip:
         specifier: ^6.4.1
         version: 6.27.0
@@ -456,9 +453,6 @@ importers:
       expo-network:
         specifier: ~57.0.1
         version: 57.0.1(expo@57.0.8)(react@19.2.3)
-      expo-notifications:
-        specifier: ~57.0.7
-        version: 57.0.7(expo@57.0.8)(react-native@0.86.0(@babel/core@7.29.7)(@react-native/metro-config@0.86.0(@babel/core@7.29.7))(@types/react@19.2.10)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(typescript@6.0.3)
       expo-router:
         specifier: ~57.0.8
         version: 57.0.8(1211b648b0a2e7968e27902776dbb05f)

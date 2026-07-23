@@ -3,7 +3,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
 const APPLE_TEAM_ID = '3QHJ2KN8AL';
-const RELEASE_CHANNELS = ['staging', 'production'] as const;
+const RELEASE_CHANNELS = ['production'] as const;
 const DEVELOPMENT_APP_CONFIG = Object.freeze({
   bundleIdentifier: 'com.pontistudios.hakumi.dev',
   displayName: 'Omiro Dev',
@@ -17,8 +17,8 @@ const PRODUCTION_APP_CONFIG = Object.freeze({
 const APP_ENVIRONMENTS = Object.freeze({
   development: DEVELOPMENT_APP_CONFIG,
   e2e: DEVELOPMENT_APP_CONFIG,
-  staging: PRODUCTION_APP_CONFIG,
   production: PRODUCTION_APP_CONFIG,
+  screenshots: PRODUCTION_APP_CONFIG,
 } as const);
 
 const ROOT_ASSETS_DIR = './assets';
@@ -40,7 +40,6 @@ function getExpoExtraConfig(
 ): {
   apiBaseUrl: string;
   noteNativeShellEnabled: string;
-  onDeviceAiSpikeEnabled: string;
   posthogApiKey: string;
   posthogHost: string;
 } {
@@ -48,7 +47,6 @@ function getExpoExtraConfig(
   return {
     apiBaseUrl: getEnvValue(env.EXPO_PUBLIC_API_BASE_URL, ''),
     noteNativeShellEnabled: getEnvValue(env.EXPO_PUBLIC_NOTE_NATIVE_SHELL_ENABLED, 'false'),
-    onDeviceAiSpikeEnabled: getEnvValue(env.EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED, 'false'),
     posthogApiKey: getEnvValue(env.EXPO_PUBLIC_POSTHOG_API_KEY, ''),
     posthogHost: getEnvValue(env.EXPO_PUBLIC_POSTHOG_HOST, 'https://us.i.posthog.com'),
   };
@@ -83,14 +81,14 @@ function getRuntimeVersion(appEnvironment: AppEnvironment): ExpoConfig['runtimeV
     return undefined;
   }
 
-  return { policy: 'fingerprint' };
+  return { policy: 'appVersion' };
 }
 
 function getUpdatesConfig(
   appEnvironment: AppEnvironment,
   releaseChannel: ReleaseChannel | null,
 ): ExpoConfig['updates'] {
-  if (!RELEASE_CHANNELS.includes(appEnvironment as ReleaseChannel)) {
+  if (appEnvironment !== 'production') {
     return {
       enabled: false,
       checkAutomatically: 'NEVER',
@@ -120,6 +118,7 @@ export default ({ config }: ConfigContext) => {
   const plugins: ExpoConfig['plugins'] = [
     'expo-router',
     '@sentry/react-native',
+    './plugins/withPrivacyManifest',
     [
       'expo-build-properties',
       {
@@ -148,7 +147,6 @@ export default ({ config }: ConfigContext) => {
     'expo-image',
     'expo-localization',
     'expo-sharing',
-    'expo-notifications',
     [
       'expo-camera',
       {
@@ -181,6 +179,15 @@ export default ({ config }: ConfigContext) => {
   }
 
   const extraConfig = getExpoExtraConfig(process.env);
+
+  if (appEnvironment === 'production') {
+    if (!extraConfig.apiBaseUrl) {
+      throw new Error('EXPO_PUBLIC_API_BASE_URL is required for production builds.');
+    }
+    if (/localhost|127\.0\.0\.1|::1/.test(extraConfig.apiBaseUrl)) {
+      throw new Error('Production builds cannot target a local API URL.');
+    }
+  }
 
   return {
     ...config,
@@ -241,6 +248,6 @@ export default ({ config }: ConfigContext) => {
 const ENVIRONMENT_ICON_NAMES = Object.freeze({
   development: 'icon.dev.png',
   e2e: 'icon.dev.png',
-  staging: 'icon.png',
   production: 'icon.png',
+  screenshots: 'icon.png',
 } as const satisfies Record<AppEnvironment, string>);

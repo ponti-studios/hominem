@@ -12,7 +12,7 @@ export interface ResumeTarget {
 export const INBOX_ROUTE = '/(protected)';
 export const SETTINGS_ROUTE = '/(protected)/settings' as RelativePathString;
 export const ARCHIVED_CHATS_ROUTE = '/(protected)/settings/archived-chats';
-export const ON_DEVICE_CALENDAR_SPIKE_ROUTE = '/(protected)/settings/calendar';
+export const ON_DEVICE_CALENDAR_ROUTE = '/(protected)/settings/calendar';
 
 export function getTaskDetailRoute(id: string) {
   return `/(protected)/tasks/${id}`;
