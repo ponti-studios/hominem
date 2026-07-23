@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 
-import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
+import { InlineEnhancePanel } from '~/components/ai/InlineEnhancePanel';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
@@ -400,21 +400,19 @@ function NoteEditorBody({
           />
         )}
 
-        {isEnhanceOpen ? (
-          <InlineEnhanceTray
-            instruction={enhanceInstruction}
-            onInstructionChange={setEnhanceInstruction}
-            onCancel={closeEnhance}
-            onConfirm={() =>
-              void runEnhance({
-                text: draft.content,
-                onEnhanced: (enhanced) => commitDraft({ title: draft.title, content: enhanced }),
-              })
-            }
-            isEnhancing={isEnhancing}
-            error={enhanceError}
-          />
-        ) : null}
+        <InlineEnhancePanel
+          enhance={{
+            isEnhanceOpen,
+            enhanceInstruction,
+            setEnhanceInstruction,
+            closeEnhance,
+            isEnhancing,
+            enhanceError,
+            runEnhance,
+          }}
+          text={draft.content}
+          onEnhanced={(enhanced) => commitDraft({ title: draft.title, content: enhanced })}
+        />
 
         {note.files.length > 0 ? (
           <View style={styles.filesSection}>

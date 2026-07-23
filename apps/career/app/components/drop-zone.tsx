@@ -1,5 +1,5 @@
 import { Button } from '@ponti-studios/ui/primitives';
-import { durations, easingWeb } from '@ponti-studios/ui/tokens';
+import { easing, transitionDurations } from '@ponti-studios/ui/tokens';
 import { cn } from '@ponti-studios/ui/utilities';
 import { FileIcon, UploadIcon, XIcon } from 'lucide-react';
 import {
@@ -55,8 +55,8 @@ export type DropZoneProps = {
 /** Compositor-friendly transitions: transform + opacity + paint colors only. */
 const motionStyle = {
   transitionProperty: 'transform, opacity, border-color, background-color',
-  transitionDuration: `${durations.enter}ms`,
-  transitionTimingFunction: easingWeb.standard,
+  transitionDuration: `${transitionDurations[200]}ms`,
+  transitionTimingFunction: easing['in-out'],
 } as const;
 
 function formatFileSize(bytes: number) {

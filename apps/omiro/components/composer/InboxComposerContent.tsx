@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useRef } from 'react';
 import { Alert, TextInput } from 'react-native';
 
-import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
+import { InlineEnhancePanel } from '~/components/ai/InlineEnhancePanel';
 import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
 import { ComposerShell } from '~/components/composer/ComposerShell';
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
@@ -48,24 +48,8 @@ export function InboxComposerContent({
     canOpenEnhance,
     canPickMedia,
     canToggleVoice,
-    handleVoicePress,
-    cancelVoiceRecording,
-    isVoiceBusy,
-    isCleaningVoice,
-    isRecording,
-    isRecordingElsewhere,
-    recordingStartedAt,
-    voiceState,
-    voiceError,
-    clearVoiceError,
-    isEnhanceOpen,
-    enhanceInstruction,
-    setEnhanceInstruction,
-    enhanceError,
-    isEnhancing,
-    toggleEnhance,
-    closeEnhance,
-    runEnhance,
+    voice,
+    enhance,
     clearComposer,
   } = useComposerController({
     initialMessage,
@@ -146,7 +130,7 @@ export function InboxComposerContent({
   return (
     <ComposerShell
       testID={shellTestId}
-      isRecording={isRecording}
+      isRecording={voice.isRecording}
       accessory={showAttachments ? <ComposerAttachmentRow /> : undefined}
       input={
         <ComposerTextInput
@@ -158,48 +142,36 @@ export function InboxComposerContent({
         />
       }
       inlinePanel={
-        isRecording ? (
+        voice.isRecording ? (
           <VoiceRecordingPanel
-            startedAt={recordingStartedAt}
-            onCancel={() => void cancelVoiceRecording()}
-            onDone={() => void handleVoicePress()}
+            startedAt={voice.recordingStartedAt}
+            onCancel={() => void voice.cancelVoiceRecording()}
+            onDone={() => void voice.handleVoicePress()}
           />
-        ) : voiceState === 'failed' && voiceError ? (
+        ) : voice.voiceState === 'failed' && voice.error ? (
           <InlineErrorBanner
-            message={getVoiceComposerErrorPresentation(voiceError.code).message}
-            onDismiss={clearVoiceError}
+            message={getVoiceComposerErrorPresentation(voice.error.code).message}
+            onDismiss={voice.clearError}
           />
-        ) : isEnhanceOpen ? (
-          <InlineEnhanceTray
-            instruction={enhanceInstruction}
-            onInstructionChange={setEnhanceInstruction}
-            onCancel={closeEnhance}
-            onConfirm={() =>
-              void runEnhance({
-                text: message,
-                onEnhanced: setMessage,
-              })
-            }
-            isEnhancing={isEnhancing}
-            error={enhanceError}
-          />
-        ) : undefined
+        ) : (
+          <InlineEnhancePanel enhance={enhance} text={message} onEnhanced={setMessage} />
+        )
       }
       toolbar={
         <ComposerToolbar
           mode="inbox"
-          isRecording={isRecording}
-          isRecordingElsewhere={isRecordingElsewhere}
-          isVoiceBusy={isVoiceBusy}
-          isEnhancing={isEnhancing}
-          isCleaningVoice={isCleaningVoice}
+          isRecording={voice.isRecording}
+          isRecordingElsewhere={voice.isRecordingElsewhere}
+          isVoiceBusy={voice.isBusy}
+          isEnhancing={enhance.isEnhancing}
+          isCleaningVoice={voice.isCleaningVoice}
           canPickMedia={canPickMedia}
           canToggleVoice={canToggleVoice}
           canEnhance={canOpenEnhance}
           canSubmit={canSubmit}
           isSubmitting={isSubmitting}
-          onVoicePress={() => void handleVoicePress()}
-          onEnhancePress={toggleEnhance}
+          onVoicePress={() => void voice.handleVoicePress()}
+          onEnhancePress={enhance.toggleEnhance}
           onSubmit={() => void (isChatEntryMode ? handleStartChat() : handleSave())}
           submitTestID={isChatEntryMode ? 'composer-submit-chat' : 'composer-submit-note'}
           submitAccessibilityLabel={

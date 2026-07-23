@@ -4,14 +4,7 @@ const t = {
   enhance: {
     title: 'Enhance text',
     subtitle: "Describe how you'd like to modify this text, or pick a suggestion.",
-    suggestions: [
-      'Fix grammar',
-      'Make concise',
-      'Make formal',
-      'Expand ideas',
-      'Simplify',
-      'Add bullet points',
-    ] as const,
+    suggestions: ['Fix', 'Concise', 'Formal', 'Expand', 'Simplify', 'Bullet list'] as const,
     instructionPlaceholder: 'e.g. Make it more engaging…',
     cancel: 'Cancel',
     confirm: 'Enhance',

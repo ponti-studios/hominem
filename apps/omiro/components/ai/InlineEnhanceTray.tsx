@@ -1,10 +1,8 @@
-import React from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import { radii, spacing } from '~/components/theme/tokens';
 import { Button } from '~/components/ui/button';
-import AppIcon from '~/components/ui/icon';
 import { Input } from '~/components/ui/input';
 import t from '~/translations';
 
@@ -29,8 +27,8 @@ export function InlineEnhanceTray({
   const styles = useStyles();
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { padding: spacing[3] }]}>
+      {/* <View style={styles.header}>
         <View style={styles.iconWrap}>
           <AppIcon name="wand.and.sparkles" size={16} tintColor={themeColors['text-secondary']} />
         </View>
@@ -38,7 +36,7 @@ export function InlineEnhanceTray({
           <Text style={styles.title}>{t.enhance.title}</Text>
           <Text style={styles.subtitle}>{t.enhance.subtitle}</Text>
         </View>
-      </View>
+      </View> */}
 
       <View style={styles.chips}>
         {t.enhance.suggestions.map((suggestion) => {
@@ -82,7 +80,7 @@ export function InlineEnhanceTray({
 
       <View style={styles.actions}>
         <View style={styles.actionSlot}>
-          <Button label={t.enhance.cancel} onPress={onCancel} variant="ghost" size="sm" />
+          <Button label={t.enhance.cancel} onPress={onCancel} variant="outline" size="sm" />
         </View>
         <View style={styles.actionSlot}>
           <Button

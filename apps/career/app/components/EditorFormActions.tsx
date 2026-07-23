@@ -67,18 +67,20 @@ export function EditorFormActions({
 
       {!isNew && onDelete ? (
         <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              type="button"
-              variant="destructive"
-              size="icon"
-              disabled={isSaving}
-              title="Delete"
-            >
-              <Trash2Icon />
-              <span className="sr-only">Delete</span>
-            </Button>
-          </AlertDialogTrigger>
+          <AlertDialogTrigger
+            render={
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                disabled={isSaving}
+                title="Delete"
+              >
+                <Trash2Icon />
+                <span className="sr-only">Delete</span>
+              </Button>
+            }
+          />
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{deleteConfirmTitle}</AlertDialogTitle>
