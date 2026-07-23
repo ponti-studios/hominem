@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -10,13 +10,23 @@ import {
 } from 'react-native';
 
 import {
-  colors,
   componentSizes,
   fontSizes,
   fontWeights,
+  lineHeights,
+  makeStyles,
   radii,
   themeSpacing,
+  useThemeColors,
 } from '~/components/theme';
+
+/**
+ * shadcn's variant taxonomy (default/secondary/destructive/outline/ghost),
+ * translated to the design constitution's tokens. `outline` is the one
+ * variant with a border — the constitution's documented exception for a
+ * control that needs to read as tappable without a solid fill.
+ */
+type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost';
 
 interface ButtonProps {
   label: string;
@@ -24,9 +34,32 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   size?: 'sm' | 'md';
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive-text';
+  variant?: ButtonVariant;
   testID?: string;
 }
+
+const COMPACT_HEIGHT = 36;
+
+const useStyles = makeStyles(() => ({
+  text: {
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
+    lineHeight: lineHeights.bodySm,
+  },
+  textSm: {
+    fontSize: fontSizes.footnote,
+    lineHeight: lineHeights.footnote,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  loading: {
+    opacity: 0.7,
+  },
+}));
 
 export function Button({
   label,
@@ -37,49 +70,55 @@ export function Button({
   variant = 'primary',
   testID,
 }: ButtonProps) {
+  const themeColors = useThemeColors();
+  const styles = useStyles();
   const resolvedStyles = useMemo(() => {
     const baseStyle = {
-      paddingVertical: themeSpacing.md,
+      // Vertical padding must leave room for the text's line height (not
+      // just its font size) or descenders clip against the button edge —
+      // sm's shorter box needs tighter padding than md to make room.
+      paddingVertical: size === 'sm' ? themeSpacing.sm : themeSpacing.md,
       paddingHorizontal: themeSpacing.lg,
       borderRadius: radii.md,
       alignItems: 'center' as const,
       justifyContent: 'center' as const,
       alignSelf: 'stretch' as const,
-      height: componentSizes.xl,
+      height: size === 'sm' ? COMPACT_HEIGHT : componentSizes.xl,
     };
 
-    const variantStyles: Record<string, StyleProp<ViewStyle>> = {
+    const variantStyles: Record<ButtonVariant, StyleProp<ViewStyle>> = {
       primary: {
-        backgroundColor: colors.primary,
-        borderWidth: 0,
+        backgroundColor: themeColors.accent,
       },
       secondary: {
-        backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: colors.foreground,
+        backgroundColor: themeColors['surface-inset'],
       },
-      tertiary: {
-        backgroundColor: 'transparent',
-        borderWidth: 0,
+      destructive: {
+        backgroundColor: themeColors.destructive,
       },
-      'destructive-text': {
+      outline: {
         backgroundColor: 'transparent',
-        borderRadius: radii.md,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: themeColors['border-default'],
+      },
+      ghost: {
+        backgroundColor: 'transparent',
       },
     };
 
-    const textColor = {
-      primary: colors['primary-foreground'],
-      secondary: colors.foreground,
-      tertiary: colors.foreground,
-      'destructive-text': colors.destructive,
+    const textColor: Record<ButtonVariant, string> = {
+      primary: themeColors['text-on-accent'],
+      secondary: themeColors['text-primary'],
+      destructive: themeColors['text-on-accent'],
+      outline: themeColors['text-primary'],
+      ghost: themeColors['text-primary'],
     };
 
     return {
       container: [baseStyle, variantStyles[variant], disabled && styles.disabled],
       text: textColor[variant],
     };
-  }, [disabled, variant]);
+  }, [disabled, size, variant, themeColors, styles.disabled]);
 
   const isInteractionDisabled = disabled || loading;
 
@@ -118,22 +157,3 @@ export function Button({
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  text: {
-    fontSize: fontSizes.md,
-    fontWeight: fontWeights.semibold,
-  },
-  textSm: {
-    fontSize: fontSizes.footnote,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  loading: {
-    opacity: 0.7,
-  },
-});

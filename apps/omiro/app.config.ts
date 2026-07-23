@@ -1,23 +1,24 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
-const APP_THEME_COLOR = '#FCF1E8';
-
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
 const APPLE_TEAM_ID = '3QHJ2KN8AL';
-const DEFAULT_RUNTIME_VERSION = 'ios-r1';
 const RELEASE_CHANNELS = ['staging', 'production'] as const;
+const DEVELOPMENT_APP_CONFIG = Object.freeze({
+  bundleIdentifier: 'com.pontistudios.hakumi.dev',
+  displayName: 'Omiro Dev',
+  scheme: 'hakumi-dev',
+});
+const PRODUCTION_APP_CONFIG = Object.freeze({
+  bundleIdentifier: 'com.pontistudios.hakumi',
+  displayName: 'Omiro',
+  scheme: 'hakumi',
+});
 const APP_ENVIRONMENTS = Object.freeze({
-  development: Object.freeze({
-    bundleIdentifier: 'com.pontistudios.hakumi.dev',
-    displayName: 'Omiro Dev',
-    scheme: 'hakumi-dev',
-  }),
-  production: Object.freeze({
-    bundleIdentifier: 'com.pontistudios.hakumi',
-    displayName: 'Omiro',
-    scheme: 'hakumi',
-  }),
+  development: DEVELOPMENT_APP_CONFIG,
+  e2e: DEVELOPMENT_APP_CONFIG,
+  staging: PRODUCTION_APP_CONFIG,
+  production: PRODUCTION_APP_CONFIG,
 } as const);
 
 const ROOT_ASSETS_DIR = './assets';
@@ -38,7 +39,6 @@ function getExpoExtraConfig(
   env: Record<string, string | undefined>,
 ): {
   apiBaseUrl: string;
-  mobilePasskeyEnabled: string;
   noteNativeShellEnabled: string;
   onDeviceAiSpikeEnabled: string;
   posthogApiKey: string;
@@ -47,7 +47,6 @@ function getExpoExtraConfig(
   const getEnvValue = (value: string | undefined, fallback: string): string => value ?? fallback;
   return {
     apiBaseUrl: getEnvValue(env.EXPO_PUBLIC_API_BASE_URL, ''),
-    mobilePasskeyEnabled: getEnvValue(env.EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED, 'false'),
     noteNativeShellEnabled: getEnvValue(env.EXPO_PUBLIC_NOTE_NATIVE_SHELL_ENABLED, 'false'),
     onDeviceAiSpikeEnabled: getEnvValue(env.EXPO_PUBLIC_ON_DEVICE_AI_SPIKE_ENABLED, 'false'),
     posthogApiKey: getEnvValue(env.EXPO_PUBLIC_POSTHOG_API_KEY, ''),
@@ -69,53 +68,34 @@ function getAppEnvironmentConfig(
   return APP_ENVIRONMENTS[getAppEnvironment(rawEnvironment)];
 }
 
-function getReleaseChannel(rawChannel = process.env.OMIRO_RELEASE_CHANNEL): ReleaseChannel | null {
-  if (!rawChannel) {
-    return null;
-  }
-
-  if (RELEASE_CHANNELS.includes(rawChannel as ReleaseChannel)) {
-    return rawChannel as ReleaseChannel;
-  }
-
-  throw new Error(`Unsupported OMIRO_RELEASE_CHANNEL: ${rawChannel}`);
+function getReleaseChannel(appEnvironment: AppEnvironment): ReleaseChannel | null {
+  return RELEASE_CHANNELS.includes(appEnvironment as ReleaseChannel)
+    ? (appEnvironment as ReleaseChannel)
+    : null;
 }
 
 function usesDevelopmentClient(appEnvironment: AppEnvironment) {
-  return appEnvironment === 'development' && process.env.OMIRO_DEV_CLIENT !== 'false';
+  return appEnvironment === 'development';
 }
 
-function isE2ETestingEnabled() {
-  return process.env.EXPO_PUBLIC_E2E_TESTING === 'true';
-}
-
-function getRuntimeVersion(appEnvironment: AppEnvironment): string | null {
-  if (appEnvironment !== 'production') {
-    return null;
+function getRuntimeVersion(appEnvironment: AppEnvironment): ExpoConfig['runtimeVersion'] {
+  if (!RELEASE_CHANNELS.includes(appEnvironment as ReleaseChannel)) {
+    return undefined;
   }
 
-  const runtimeVersion = process.env.EXPO_RUNTIME_VERSION?.trim();
-  if (runtimeVersion) {
-    return runtimeVersion;
-  }
-
-  return DEFAULT_RUNTIME_VERSION;
+  return { policy: 'fingerprint' };
 }
 
 function getUpdatesConfig(
   appEnvironment: AppEnvironment,
   releaseChannel: ReleaseChannel | null,
 ): ExpoConfig['updates'] {
-  if (appEnvironment !== 'production') {
+  if (!RELEASE_CHANNELS.includes(appEnvironment as ReleaseChannel)) {
     return {
       enabled: false,
       checkAutomatically: 'NEVER',
       fallbackToCacheTimeout: 0,
     };
-  }
-
-  if (releaseChannel === null) {
-    throw new Error('OMIRO_RELEASE_CHANNEL is required when APP_ENV=production.');
   }
 
   return {
@@ -127,20 +107,19 @@ function getUpdatesConfig(
 }
 
 function allowsLocalNetworking(appEnvironment: AppEnvironment) {
-  return appEnvironment === 'development';
+  return appEnvironment === 'development' || appEnvironment === 'e2e';
 }
 
 export default ({ config }: ConfigContext) => {
   const appEnvironment = getAppEnvironment();
   const appEnvironmentConfig = getAppEnvironmentConfig(appEnvironment);
   const brandAssets = getBrandAssetPaths(appEnvironment);
-  const releaseChannel = getReleaseChannel();
+  const releaseChannel = getReleaseChannel(appEnvironment);
   const runtimeVersion = getRuntimeVersion(appEnvironment);
   const hasDevelopmentClient = usesDevelopmentClient(appEnvironment);
-  const e2eTesting = isE2ETestingEnabled();
   const plugins: ExpoConfig['plugins'] = [
     'expo-router',
-    '@sentry/react-native/expo',
+    '@sentry/react-native',
     [
       'expo-build-properties',
       {
@@ -158,7 +137,6 @@ export default ({ config }: ConfigContext) => {
     [
       'expo-splash-screen',
       {
-        backgroundColor: APP_THEME_COLOR,
         image: brandAssets.splash,
         enableFullScreenImage_legacy: true,
         resizeMode: 'cover',
@@ -168,13 +146,9 @@ export default ({ config }: ConfigContext) => {
     'expo-asset',
     'expo-audio',
     'expo-image',
+    'expo-localization',
     'expo-sharing',
-    [
-      'expo-notifications',
-      {
-        color: APP_THEME_COLOR,
-      },
-    ],
+    'expo-notifications',
     [
       'expo-camera',
       {
@@ -197,10 +171,6 @@ export default ({ config }: ConfigContext) => {
     ],
   ];
 
-  if (!e2eTesting) {
-    plugins.push('@bacons/apple-targets');
-  }
-
   if (hasDevelopmentClient) {
     plugins.splice(1, 0, [
       'expo-dev-client',
@@ -222,7 +192,7 @@ export default ({ config }: ConfigContext) => {
     platforms: ['ios'],
     orientation: 'portrait',
     icon: brandAssets.icon,
-    userInterfaceStyle: 'light',
+    userInterfaceStyle: 'automatic',
     assetBundlePatterns: ['assets/**/*', 'api/**/*', 'app/**/*', 'constants/**/*', 'hooks/**/*', 'navigation/**/*', 'services/**/*'],
     plugins,
     experiments: {
@@ -240,6 +210,10 @@ export default ({ config }: ConfigContext) => {
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
+        // Opt out of iOS 26's Liquid Glass redesign for system chrome (nav
+        // bars, back buttons, toolbars) app-wide — restores the prior UIKit
+        // appearance instead of the translucent glass material.
+        UIDesignRequiresCompatibility: true,
         NSLocationWhenInUseUsageDescription:
           'Omiro may use your location only when you choose media that includes location details, so it can preserve context for your notes.',
         NSMicrophoneUsageDescription:
@@ -253,9 +227,7 @@ export default ({ config }: ConfigContext) => {
     extra: {
       appEnvironment,
       appScheme: appEnvironmentConfig.scheme,
-      e2eTesting,
       isDevClient: hasDevelopmentClient,
-      ...(releaseChannel ? { releaseChannel } : {}),
       ...extraConfig,
       eas: {
         projectId: EXPO_PROJECT_ID,
@@ -268,5 +240,7 @@ export default ({ config }: ConfigContext) => {
 
 const ENVIRONMENT_ICON_NAMES = Object.freeze({
   development: 'icon.dev.png',
+  e2e: 'icon.dev.png',
+  staging: 'icon.png',
   production: 'icon.png',
 } as const satisfies Record<AppEnvironment, string>);

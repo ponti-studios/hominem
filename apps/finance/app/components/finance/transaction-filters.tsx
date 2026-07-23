@@ -190,7 +190,7 @@ export function TransactionFilters({
                 Filters
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 space-y-3 p-3" align="end">
+            <DropdownMenuContent className="w-64 space-y-3 p-3">
               <DropdownMenuLabel>Apply filters</DropdownMenuLabel>
               <DropdownMenuSeparator />
 

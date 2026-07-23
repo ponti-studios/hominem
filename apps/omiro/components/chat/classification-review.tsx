@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   Text,
-  durations,
+  transitionDurations,
   fontFamiliesNative,
   fontSizes,
   makeStyles,
@@ -48,13 +48,13 @@ export function ClassificationReview({
       visible
       onClose={onReject}
       dismissOnBackdropPress={false}
-      backdropToken="overlay-modal-high"
+      backdropToken="overlay-scrim"
       position="bottom"
       animationType="none"
       statusBarTranslucent
     >
       <Animated.View
-        entering={FadeInUp.duration(durations.enter)}
+        entering={FadeInUp.duration(transitionDurations[150])}
         style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}
       >
         <View style={styles.handle} />
@@ -148,7 +148,7 @@ const useClassificationStyles = makeStyles((theme) => ({
     gap: spacing[1],
   },
   preview: {
-    backgroundColor: theme.colors.muted,
+    backgroundColor: theme.colors['surface-inset'],
     borderColor: theme.colors['border-default'],
     borderRadius: radii.md,
     borderWidth: 1,
@@ -159,7 +159,7 @@ const useClassificationStyles = makeStyles((theme) => ({
     fontFamily: fontFamiliesNative.mono,
   },
   sheet: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors['surface-canvas'],
     borderColor: theme.colors['border-default'],
     borderTopLeftRadius: radii.md,
     borderTopRightRadius: radii.md,

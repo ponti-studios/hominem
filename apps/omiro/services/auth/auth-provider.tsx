@@ -11,7 +11,6 @@ import React, {
 } from 'react';
 
 import { E2E_TESTING } from '~/constants';
-import { captureAuthAnalyticsEvent } from '~/services/auth/analytics';
 import { authClient } from '~/services/auth/auth-client';
 import { clearLegacyDataOnce } from '~/services/auth/boot-legacy-data';
 import { useAuthHeaders } from '~/services/auth/hooks/use-auth-headers';
@@ -19,15 +18,6 @@ import { useEmailOtp } from '~/services/auth/hooks/use-email-otp';
 import { useResetAuthForE2E } from '~/services/auth/hooks/use-reset-auth-for-e2e';
 import { useSignOut } from '~/services/auth/hooks/use-sign-out';
 import { useUpdateProfile } from '~/services/auth/hooks/use-update-profile';
-import { clearPendingAuthEmail } from '~/services/auth/pending-email';
-
-type SignInResponse = {
-  user: {
-    id: string;
-    email: string;
-    name?: string | null;
-  };
-};
 
 type AuthContextType = {
   isPending: boolean;
@@ -36,7 +26,6 @@ type AuthContextType = {
   currentUser: User | null;
   requestEmailOtp: (email: string) => Promise<void>;
   verifyEmailOtp: (input: { email: string; otp: string; name?: string }) => Promise<void>;
-  completePasskeySignIn: (input: SignInResponse) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<void>;
   getAuthHeaders: () => Promise<Record<string, string>>;
@@ -108,14 +97,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [runSignOut]);
 
-  const completePasskeySignIn = useCallback(async (input: SignInResponse) => {
-    captureAuthAnalyticsEvent('auth_passkey_sign_in_succeeded', {
-      phase: 'passkey_sign_in',
-      email: input.user.email,
-    });
-    clearPendingAuthEmail();
-  }, []);
-
   const handleUnauthorized = useCallback(async () => {
     await authClient.signOut().catch(() => undefined);
   }, []);
@@ -128,7 +109,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       currentUser,
       requestEmailOtp,
       verifyEmailOtp,
-      completePasskeySignIn,
       signOut,
       updateProfile,
       getAuthHeaders,
@@ -142,7 +122,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
       currentUser,
       requestEmailOtp,
       verifyEmailOtp,
-      completePasskeySignIn,
       signOut,
       updateProfile,
       getAuthHeaders,

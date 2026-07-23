@@ -212,7 +212,7 @@ const useStyles = makeStyles((theme) => ({
     paddingRight: 64,
   },
   rowPressed: {
-    backgroundColor: theme.colors['bg-surface'],
+    backgroundColor: theme.colors['surface-panel'],
   },
   rowPending: {
     opacity: 0.45,

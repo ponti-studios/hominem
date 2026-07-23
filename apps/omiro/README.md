@@ -2,6 +2,9 @@
 
 The mobile app is an Expo app that targets iOS only.
 
+Its governing product, UI, and voice architecture live in the repository
+[Bible](../../README.md#the-bible), not in an app-local documentation directory.
+
 ## Quick Start
 
 ```bash
@@ -10,7 +13,7 @@ just mobile prebuild development
 just mobile dev
 ```
 
-For staging or production release work, use the production native identity with an explicit runtime version:
+For staging or production release work, use the production native identity with Expo's fingerprint runtime policy:
 
 ```bash
 just mobile prebuild production
@@ -18,7 +21,7 @@ just mobile build staging
 just mobile update staging
 ```
 
-The repo defaults the current runtime line to `ios-r1`. When native compatibility changes, bump that value in `apps/omiro/app.config.ts`, `apps/omiro/eas.json`, `apps/omiro/.env.example`, and `just/mobile.just`.
+The runtime version is derived automatically from the native project fingerprint. Native changes require a new build before publishing an EAS Update; JavaScript-only changes can use the existing compatible build.
 
 ## Working In Zed
 
@@ -61,4 +64,4 @@ If the error still appears, the local generated `apps/omiro/ios` directory is li
 | Create a production iOS build | `just mobile build production` | App Store/TestFlight release builds |
 | Publish a production OTA update | `just mobile update production` | Ship a production-compatible OTA update |
 | Start Metro / Expo | `just mobile start` | When you want to attach to an existing native build |
-| Check the app docs | `apps/omiro/README.md` | When Zed or Swift diagnostics get confused |
+| Read Omiro's governing decisions | [Repository Bible](../../README.md#the-bible) | Before changing product, UI, or voice behavior |

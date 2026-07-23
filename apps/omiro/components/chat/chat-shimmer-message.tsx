@@ -7,9 +7,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { durations, makeStyles, radii, spacing } from '~/components/theme';
+import { makeStyles, radii, spacing, transitionDurations } from '~/components/theme';
 
-const SHIMMER_DURATION = durations.standard * 5;
+const SHIMMER_DURATION = transitionDurations[150] * 5;
 
 function usePulse() {
   const opacity = useDerivedValue(
@@ -56,7 +56,7 @@ export function ChatShimmerMessage({ variant = 'assistant' }: ChatShimmerMessage
 
 const useShimmerStyles = makeStyles((theme) => ({
   line: {
-    backgroundColor: theme.colors['bg-surface'],
+    backgroundColor: theme.colors['surface-panel'],
     borderRadius: radii.md,
     height: 16,
   },
@@ -76,7 +76,7 @@ const useShimmerStyles = makeStyles((theme) => ({
     width: '100%',
   },
   userRow: {
-    backgroundColor: theme.colors['bg-elevated'],
+    backgroundColor: theme.colors['surface-raised'],
     borderCurve: 'continuous',
     borderRadius: radii.lg,
     gap: spacing[2],

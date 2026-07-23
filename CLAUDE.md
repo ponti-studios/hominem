@@ -2,6 +2,30 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Decision authority
+
+The user owns product management and software architecture. Do not invent or infer architecture. In particular, do not introduce, remove, or relocate root destinations; change tabs into stacks or stacks into tabs; change route ownership; alter information architecture; or reinterpret a design reference without explicit user approval.
+
+When the request, PRD, spec, plan, task list, and code disagree:
+
+1. Stop implementation at the disagreement.
+2. State the exact conflict and the affected files.
+3. Ask the user which source is authoritative.
+
+Never repair an ambiguous spec by silently updating the spec to match an implementation. Unresolved product or architecture choices must be written as `OPEN — USER DECISION REQUIRED`. A technical limitation may be reported with alternatives, but the assistant must not choose among them.
+
+## Evidence and completion authority
+
+Do not declare a change complete because it compiles, builds, type-checks, or passes a broad test suite. Completion requires evidence that the exact changed behavior works in the environment where it runs.
+
+1. Choose the validation method from the changed behavior: target device/browser for visible or interactive behavior, asserted resulting state for external writes, and a minimal proof for framework or library assumptions.
+2. Validate every affected state transition, not only the idle render: entry, active/focused/loading state, cancellation/error where applicable, and return or recovery.
+3. Before composing a constrained UI, verify the full composition at the smallest supported viewport or container. If it does not fit, stop and report the constraint rather than changing the approved interaction.
+4. A failed, skipped, ambiguous, stale-build, or non-targeted validation is a blocker. Report what remains unproven; do not claim success or rewrite tests/specifications around an assumed result.
+5. Automation must have a deterministic way to select an app-owned control and observe its outcome. If the chosen native/framework primitive cannot provide that path, resolve the gap or report it before completion.
+
+For Omiro, a user-visible interaction requires Maestro evidence on the booted iPhone simulator and visual inspection of every changed state. A type check or unit test may supplement this evidence but never replace it.
+
 ## Repo structure
 
 pnpm monorepo orchestrated with Turbo. Key directories:
@@ -70,6 +94,65 @@ Do not rely on fallback database URLs. Set `DATABASE_URL` explicitly for local d
 - Uses Expo managed workflow
 - Maestro UI tests: always select by `testID` (`id:`), never by text — accessibility tree merging silently misses modals
 
+### Omiro navigation and components
+
+- Uses Expo Router file-based routes. Route files live in `apps/omiro/app/`; the `~` alias maps to the Omiro project root.
+- Navigation architecture is user-owned. Do not introduce a root tab bar, remove a context from the header, move Tasks into a separate root destination, or otherwise change the Chats/Notes/Tasks information architecture without explicit approval in the current user request and governing spec.
+- `app/(auth)/` contains unauthenticated screens. `app/(protected)/` requires auth and is guarded through `resolveAuthRedirect` in its layout. Auth redirect logic lives in `services/navigation/auth-route-guard.ts`.
+- Root provider order is `GestureHandlerRootView` → `SafeAreaProvider` → `KeyboardProvider` → `QueryClientProvider` → `AuthProvider` → `PostHogProvider`. Do not add a provider without checking that chain.
+- Use `makeStyles` and `theme` from `~/components/theme`; do not introduce hardcoded style values through raw `StyleSheet.create`.
+
+### Omiro commands
+
+```bash
+just mobile dev                  # launch on iOS simulator
+just mobile lint                 # lint
+just mobile prebuild development # Expo prebuild for development
+just mobile test                 # Omiro test lane
+```
+
+Maestro requires Java 17:
+
+```bash
+export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
+export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
+```
+
+## API implementation rules
+
+`services/api` is a Hono HTTP server and BullMQ worker. Its entry points are
+`src/index.ts` for HTTP and `src/worker.ts` for jobs.
+
+- `AppEnv` in `src/server.ts` declares Hono's context variable map. Auth middleware sets `ctx.var.user`, `ctx.var.userId`, and `ctx.var.auth`; route handlers read those values and do not re-fetch the user.
+- A route lives in `src/routes/<name>.ts` as a `Hono<AppEnv>` instance and is registered from `src/server.ts` with `app.route('/path', myRoutes)`. Apply `authJwtMiddleware` only when its route-specific protection is needed.
+- `src/rpc/app.ts` is the type-safe RPC contract consumed by clients through `@hominem/api/types`. Update affected clients in the same change as an RPC contract change.
+- Use `isServiceError` from `src/errors.ts` for known domain failures. Throw typed errors and let the global handler map them to HTTP responses.
+- Job handlers live in `src/workers/` and register in `src/worker.ts`. The worker is a separate process and shares no HTTP-server memory.
+- From `services/api`, build with `node build.mjs`; standard Turbo build is not its build path. Use `just test api` and `just dev api` for its normal lanes.
+
+## Database implementation rules
+
+`packages/db` is PostgreSQL access code and server-only. Client code uses
+`@hominem/rpc`, never the database package directly.
+
+### Migrations and generated types
+
+- `packages/db/src/types/database.ts` is generated by `kysely-codegen`; never edit it manually. After schema changes, run `just db migrate` then `just db codegen`.
+- Migrations live in `packages/db/migrations/`, use Goose SQL `Up` and `Down` markers, and are idempotent because CI runs `goose up` twice.
+- The schemas are `auth`, `app`, and `ops`. `pgcrypto`, `pg_trgm`, `unaccent`, `vector`, `earthdistance`, `ltree`, and `fuzzystrmatch` are already installed; do not create them again.
+
+### Repository boundary
+
+Each domain has one repository file under `packages/db/src/services/<domain>/<name>.repository.ts`; split only when a domain contains entities with separate lifecycles or tables.
+
+1. Keep the Kysely `Selectable<T>` row type private.
+2. Export a hand-written, JSON-serializable DTO; never expose or alias `Selectable<T>` publicly.
+3. Convert rows to DTOs in one explicit mapper.
+4. Export functions returning DTOs, never row types. Query-local casts are permitted before mapping, never on an exported result.
+5. Compose repositories in one direction. Put shared sibling checks in a leaf module rather than importing back into a parent domain.
+
+At the RPC layer, return repository DTOs directly with `c.json({ x })`; do not recreate a parallel response type. Use `runInTransaction` from `@hominem/db` for multi-table writes.
+
 ## Authentication and production incidents
 
 - Better Auth owns OTP delivery, session creation, renewal, and logout. Do not add custom token or session storage when the Better Auth surface already exists.
@@ -113,4 +196,4 @@ Keep it in sync with whatever `services/api/package.json`'s `exports` map says t
 
 ## Monorepo notes
 
-Each app/package can have its own `CLAUDE.md` for module-specific guidance. `.claude/rules/` files are loaded automatically alongside this file and can be scoped to specific paths.
+This root file is the sole `CLAUDE.md` authority for the repository. Path-scoped `.claude/rules/` files may add narrowly scoped guidance, but must not duplicate or contradict these rules.

@@ -77,10 +77,10 @@ export function IconButton({
     (disabled
       ? themeColors['text-tertiary']
       : variant === 'primary'
-        ? themeColors.background
+        ? themeColors['surface-canvas']
         : variant === 'ghost'
           ? themeColors['text-primary']
-          : themeColors['icon-primary']);
+          : themeColors['text-primary']);
 
   return (
     <Pressable
@@ -114,11 +114,11 @@ const useStyles = makeStyles((theme) => ({
     overflow: 'hidden',
   },
   surface: {
-    backgroundColor: theme.colors['bg-surface'],
+    backgroundColor: theme.colors['surface-panel'],
     borderWidth: 1,
     borderColor: theme.colors['border-default'],
   },
   primary: {
-    backgroundColor: theme.colors.foreground,
+    backgroundColor: theme.colors['text-primary'],
   },
 }));

@@ -293,9 +293,9 @@ export const PortfolioRepository = {
    *
    * All entry sources are pulled in a single UNION ALL query.
    */
-  async getTimeline(handle: DbHandle, ownerUserid: string): Promise<PortfolioTimeline | null> {
+  async getTimeline(handle: DbHandle, ownerUserid: string): Promise<PortfolioTimeline> {
     const portfolioId = await PortfolioRepository.getPortfolioIdByUserId(handle, ownerUserid);
-    if (!portfolioId) return null;
+    if (!portfolioId) return { chapters: [], unattributedEntries: [] };
 
     const [workExperiences, entryRows] = await Promise.all([
       WorkExperienceRepository.listByPortfolioId(handle, portfolioId),

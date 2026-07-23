@@ -10,7 +10,11 @@ import { ApplicationsEmptyState } from '~/components/career/applications/Applica
 import { ApplicationsFilters } from '~/components/career/applications/ApplicationsFilters';
 import { ApplicationsMobileList } from '~/components/career/applications/ApplicationsMobileList';
 import { PageHeader } from '~/components/patterns';
-import { getAllApplicationsWithCompany } from '~/lib/career/queries/job-applications';
+import {
+  filterJobApplications,
+  getAllApplicationsWithCompany,
+  sortAndPaginateJobApplications,
+} from '~/lib/career/queries/job-applications';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { buildApplicationsSearchParams } from '~/lib/utils/applicationsSearchParams';
@@ -64,11 +68,11 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       orderDirection: (searchParams.get('orderDirection') as 'asc' | 'desc') || 'desc',
     };
 
-    const [allApplications, paginatedApplications, filteredApplications] = await Promise.all([
-      getAllApplicationsWithCompany(user.id),
-      getAllApplicationsWithCompany(user.id, filter, pagination),
-      getAllApplicationsWithCompany(user.id, filter),
-    ]);
+    const allApplications = await getAllApplicationsWithCompany(user.id);
+    const filteredApplications = filter
+      ? filterJobApplications(allApplications, filter)
+      : allApplications;
+    const paginatedApplications = sortAndPaginateJobApplications(filteredApplications, pagination);
 
     return {
       user,

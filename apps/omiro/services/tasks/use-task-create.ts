@@ -68,19 +68,26 @@ export function useTaskCreate({ parentId }: UseTaskCreateOptions = {}) {
         : undefined;
 
       if (parentId) {
-        queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail(parentId), (current) =>
-          current ? { ...current, children: [...current.children, optimisticTask] } : current,
+        queryClient.setQueryData<TaskDetailOutput | undefined>(
+          taskKeys.detail(parentId),
+          (current: TaskDetailOutput | undefined) =>
+            current ? { ...current, children: [...current.children, optimisticTask] } : current,
         );
-        queryClient.setQueryData<TaskListItem[]>(taskKeys.all, (current) =>
-          current?.map((task) =>
-            task.id === parentId ? { ...task, childCount: (task.childCount ?? 0) + 1 } : task,
-          ),
+        queryClient.setQueryData<TaskListItem[] | undefined>(
+          taskKeys.all,
+          (current: TaskListItem[] | undefined) =>
+            current?.map((task) =>
+              task.id === parentId ? { ...task, childCount: (task.childCount ?? 0) + 1 } : task,
+            ),
         );
       } else {
-        queryClient.setQueryData<TaskListItem[]>(taskKeys.all, (current) => [
-          { ...optimisticTask, childCount: 0 },
-          ...(current ?? []),
-        ]);
+        queryClient.setQueryData<TaskListItem[] | undefined>(
+          taskKeys.all,
+          (current: TaskListItem[] | undefined) => [
+            { ...optimisticTask, childCount: 0 },
+            ...(current ?? []),
+          ],
+        );
       }
 
       return { optimisticId, previousAll, previousDetail };
@@ -94,21 +101,25 @@ export function useTaskCreate({ parentId }: UseTaskCreateOptions = {}) {
     },
     onSuccess: (createdTask, _input, context) => {
       if (parentId) {
-        queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail(parentId), (current) =>
-          current
-            ? {
-                ...current,
-                children: current.children.map((child) =>
-                  child.id === context?.optimisticId ? createdTask : child,
-                ),
-              }
-            : current,
+        queryClient.setQueryData<TaskDetailOutput | undefined>(
+          taskKeys.detail(parentId),
+          (current: TaskDetailOutput | undefined) =>
+            current
+              ? {
+                  ...current,
+                  children: current.children.map((child) =>
+                    child.id === context?.optimisticId ? createdTask : child,
+                  ),
+                }
+              : current,
         );
       } else {
-        queryClient.setQueryData<TaskListItem[]>(taskKeys.all, (current) =>
-          current?.map((task) =>
-            task.id === context?.optimisticId ? { ...createdTask, childCount: 0 } : task,
-          ),
+        queryClient.setQueryData<TaskListItem[] | undefined>(
+          taskKeys.all,
+          (current: TaskListItem[] | undefined) =>
+            current?.map((task) =>
+              task.id === context?.optimisticId ? { ...createdTask, childCount: 0 } : task,
+            ),
         );
         queryClient.setQueryData(taskKeys.detail(createdTask.id), {
           task: createdTask,

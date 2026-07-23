@@ -1,15 +1,10 @@
+import type { ArtifactType } from '@hominem/chat';
+
 const t = {
   enhance: {
     title: 'Enhance text',
     subtitle: "Describe how you'd like to modify this text, or pick a suggestion.",
-    suggestions: [
-      'Fix grammar',
-      'Make concise',
-      'Make formal',
-      'Expand ideas',
-      'Simplify',
-      'Add bullet points',
-    ] as const,
+    suggestions: ['Fix', 'Shorten', 'Expand', 'Bullets'] as const,
     instructionPlaceholder: 'e.g. Make it more engaging…',
     cancel: 'Cancel',
     confirm: 'Enhance',
@@ -60,7 +55,6 @@ const t = {
       description: 'Ask a question, attach a photo, or record a voice note.',
     },
     loadErrorTitle: 'Conversation unavailable',
-    loadErrorDescription: "We couldn't load this conversation right now.",
     loadErrorRetry: 'Try again',
     conversationActionsLabel: 'Conversation actions',
     thinkingIndicator: 'Thinking...',
@@ -117,13 +111,13 @@ const t = {
         task: 'TASK',
         task_list: 'TASK LIST',
         tracker: 'TRACKER',
-      },
+      } satisfies Record<ArtifactType, string>,
       saveLabel: {
         note: 'SAVE NOTE',
         task: 'SAVE TASK',
         task_list: 'SAVE TASK LIST',
         tracker: 'SAVE REVIEW',
-      },
+      } satisfies Record<ArtifactType, string>,
       discard: 'DISCARD',
     },
   },
@@ -132,7 +126,6 @@ const t = {
       title: 'Inbox',
       subtitle: 'Capture something new, pick up an active chat, or skim what matters right now.',
       loadErrorTitle: 'Inbox unavailable',
-      loadErrorDescription: "We couldn't load your inbox right now.",
       retry: 'Try again',
       recentChats: 'Recents',
       recentNotes: 'Notes',
@@ -145,9 +138,11 @@ const t = {
       shortcutsLabel: 'Shortcuts',
       searchTitle: 'Search',
       searchPlaceholder: 'Search chats and notes',
+      searchTasksPlaceholder: 'Search tasks',
       searchEmpty: 'Search your recent chats and notes',
       searchResults: (count: number) => `${count} result${count !== 1 ? 's' : ''}`,
       closeSearch: 'Close search',
+      cancel: 'Cancel',
       emptyNotesTitle: 'No notes yet',
       emptyNotesDescription: 'Saved notes will appear here so you can reopen them quickly.',
       newAction: 'New',
@@ -174,7 +169,7 @@ const t = {
       previewLabel: (kind: 'chat' | 'note') => (kind === 'chat' ? 'Chat preview' : 'Note preview'),
     },
     empty: {
-      title: 'Your inbox starts here',
+      title: 'No chats yet',
       description:
         'Capture a note, ask Omiro to connect the dots, or attach a file. Everything you add comes back here when you need it.',
       exampleInbox: 'Example inbox',
@@ -233,7 +228,6 @@ const t = {
     emptyTitle: 'No tasks yet',
     emptyDescription: 'Tasks created from your chats and notes will appear here.',
     loadErrorTitle: 'Tasks unavailable',
-    loadErrorDescription: "We couldn't load your tasks right now.",
     loadErrorRetry: 'Try again',
     tasksCount: (count: number) => `${count} task${count === 1 ? '' : 's'}`,
     deleteTask: {
@@ -252,7 +246,6 @@ const t = {
     itemActionsA11y: 'Task actions',
     open: 'Open',
     delete: 'Delete',
-    emptyAction: 'Add your first task',
     addTaskA11y: 'Add task',
     addSubtaskA11y: 'Add subtask',
     editor: {
@@ -291,7 +284,6 @@ const t = {
       account: 'Account',
       privacy: 'Privacy',
       chats: 'Chats',
-      passkeys: 'Passkeys',
     },
     archivedChatsScreen: {
       title: 'Archived chats',
@@ -300,7 +292,6 @@ const t = {
       emptyTitle: 'No archived chats yet',
       emptyCopy: 'Chats you archive will appear here for later reference.',
       loadErrorTitle: 'Archived chats unavailable',
-      loadErrorDescription: "We couldn't load archived chats right now.",
       loadErrorRetry: 'Try again',
     },
     name: {
@@ -317,20 +308,6 @@ const t = {
     lockWithFaceId: 'Lock with Face ID',
     preventScreenshots: 'Prevent screenshots',
     archivedChats: 'Archived chats',
-    passkeys: {
-      add: 'Add passkey',
-      adding: 'Adding passkey',
-      remove: 'Remove',
-      removeDialog: {
-        title: 'Remove passkey',
-        message: (name: string) => `Remove “${name}”?`,
-        confirm: 'Remove',
-        cancel: 'Cancel',
-        errorTitle: 'Error',
-        errorMessage: 'Could not remove passkey.',
-      },
-      addErrorTitle: 'Could not add passkey',
-    },
     signOut: {
       label: 'Sign out',
       alertTitle: 'Sign out',
@@ -358,8 +335,6 @@ const t = {
       emailPlaceholder: 'you@example.com',
       emailLabel: 'Email address',
       submitButton: 'Continue',
-      passkeyButton: 'Use passkey',
-      passkeyLoadingButton: 'Connecting...',
       emailRequiredError: 'Email is required.',
       emailInvalidError: 'Enter a valid email address.',
       sendFailedError: 'Unable to send verification code.',
@@ -376,9 +351,6 @@ const t = {
       oneTimeVerificationCodeA11y: 'One-time verification code',
       timeRemainingA11y: (secondsLeft: number) =>
         `Time remaining: ${Math.floor(secondsLeft / 60)} minutes ${secondsLeft % 60} seconds`,
-    },
-    passkey: {
-      genericError: 'Passkey sign-in failed.',
     },
   },
   onboarding: {

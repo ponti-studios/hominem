@@ -98,17 +98,19 @@ export function WorkExperienceDetail({
           </div>
 
           <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                className="self-start shrink-0 lg:self-auto"
-              >
-                <TrashIcon className="size-4" />
-                <span className="hidden sm:inline">Delete experience</span>
-              </Button>
-            </AlertDialogTrigger>
+            <AlertDialogTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="self-start shrink-0 lg:self-auto"
+                >
+                  <TrashIcon className="size-4" />
+                  <span className="hidden sm:inline">Delete experience</span>
+                </Button>
+              }
+            />
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete this work experience?</AlertDialogTitle>

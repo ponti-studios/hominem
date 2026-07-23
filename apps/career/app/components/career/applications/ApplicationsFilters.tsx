@@ -51,6 +51,16 @@ export function ApplicationsFilters({
       : []),
   ];
 
+  function getStatusText() {
+    switch (selectedStatuses.length) {
+      case 0:
+        return 'All statuses';
+      case 1:
+        return formatStatusText(selectedStatuses[0]);
+      default:
+        return `${selectedStatuses.length} statuses`;
+    }
+  }
   return (
     <SearchFilterBar
       searchId="application-search"
@@ -73,17 +83,11 @@ export function ApplicationsFilters({
                   className="w-full justify-between bg-background"
                   aria-label="Filter by status"
                 >
-                  <span className="truncate">
-                    {selectedStatuses.length === 0
-                      ? 'All statuses'
-                      : selectedStatuses.length === 1
-                        ? formatStatusText(selectedStatuses[0])
-                        : `${selectedStatuses.length} statuses`}
-                  </span>
+                  <span className="truncate">{getStatusText()}</span>
                   <ChevronDownIcon className="size-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuContent className="w-56">
                 {statuses.map((status) => (
                   <DropdownMenuCheckboxItem
                     key={status}

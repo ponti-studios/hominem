@@ -70,6 +70,6 @@ describe('Onboarding', () => {
 
   it('offers skip to work', () => {
     renderOnboarding();
-    expect(screen.getByRole('link', { name: /skip for now/i })).toHaveAttribute('href', '/work');
+    expect(screen.getByRole('button', { name: /skip for now/i })).toHaveAttribute('href', '/work');
   });
 });

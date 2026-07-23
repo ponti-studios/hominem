@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "ai-slop-cleaner": {
+      "source": "Alisban/oh-my-claudecode-fork",
+      "sourceType": "github",
+      "skillPath": "skills/ai-slop-cleaner/SKILL.md",
+      "computedHash": "67f7b92ba937593832028f479322601897e9fbb2a160adbaf3a97a9b43a7cccf"
+    },
+    "code-smell-detector": {
+      "source": "sethdford/claude-skills",
+      "sourceType": "github",
+      "skillPath": "engineer/code-quality/skills/code-smell-detector/SKILL.md",
+      "computedHash": "ee581d094578825b5e1496a13dcb6653919bd90f570940624a8784cba0db594e"
+    },
+    "deslop": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "skillPath": "cli-tool/components/skills/sentry/deslop/SKILL.md",
+      "computedHash": "4bf3f0284479c3e207648bf31ae8365b3d2373b77eaf9a5378f236bdd6eba9a7"
+    },
+    "tech-debt-audit": {
+      "source": "ksimback/tech-debt-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "dac48a567c5de01d3ab6c3e7a698f7b5c5fa5cae96c5bf85f30941e8eea1e060"
+    }
+  }
+}

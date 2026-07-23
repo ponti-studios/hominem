@@ -5,13 +5,12 @@ import type React from 'react';
 import {
   Pressable,
   type RefreshControlProps,
-  StyleSheet,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
 
-import { Text, fontFamiliesNative, fontSizes, spacing } from '~/components/theme';
+import { Text, fontFamiliesNative, fontSizes, makeStyles, spacing } from '~/components/theme';
 
 import { renderChatMessage } from './chat-message';
 import { ChatShimmerMessage } from './chat-shimmer-message';
@@ -19,6 +18,34 @@ import { ChatShimmerMessage } from './chat-shimmer-message';
 const CHAT_TURN_GAP = spacing[5];
 const AUTO_SCROLL_END_THRESHOLD = spacing[8];
 const keyExtractor = (item: ChatMessageItem) => item.id;
+
+const useStyles = makeStyles(() => ({
+  list: {
+    flex: 1,
+  },
+  dismissArea: {
+    flexGrow: 1,
+    minHeight: spacing[8],
+  },
+  emptySearch: {
+    alignItems: 'center',
+    paddingTop: spacing[7],
+  },
+  emptySearchText: {
+    fontFamily: fontFamiliesNative.mono,
+    fontSize: fontSizes.sm,
+  },
+  messagesContainer: {
+    flexGrow: 1,
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[1],
+    rowGap: CHAT_TURN_GAP,
+  },
+  shimmerContainer: {
+    flex: 1,
+    paddingTop: spacing[3],
+  },
+}));
 
 interface ChatMessageListProps {
   isMessagesLoading: boolean;
@@ -57,6 +84,7 @@ export function ChatMessageList({
   emptyState,
   refreshControl,
 }: ChatMessageListProps) {
+  const styles = useStyles();
   const hasSearchQuery = showSearch && searchQuery.length > 0;
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
   const listRef = useRef<FlashListRef<ChatMessageItem> | null>(null);
@@ -155,6 +183,7 @@ export function ChatMessageList({
     <FlashList
       ref={listRef}
       style={styles.list}
+      contentInsetAdjustmentBehavior="automatic"
       ListEmptyComponent={listEmptyComponent}
       ListFooterComponent={
         displayMessages.length > 0 ? (
@@ -173,31 +202,3 @@ export function ChatMessageList({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  list: {
-    flex: 1,
-  },
-  dismissArea: {
-    flexGrow: 1,
-    minHeight: spacing[8],
-  },
-  emptySearch: {
-    alignItems: 'center',
-    paddingTop: spacing[7],
-  },
-  emptySearchText: {
-    fontFamily: fontFamiliesNative.mono,
-    fontSize: fontSizes.sm,
-  },
-  messagesContainer: {
-    flexGrow: 1,
-    paddingHorizontal: spacing[4],
-    paddingTop: spacing[1],
-    rowGap: CHAT_TURN_GAP,
-  },
-  shimmerContainer: {
-    flex: 1,
-    paddingTop: spacing[3],
-  },
-});

@@ -1,7 +1,6 @@
 import { createHash, randomInt } from 'node:crypto';
 
 import { kyselyAdapter } from '@better-auth/kysely-adapter';
-import { passkey } from '@better-auth/passkey';
 import { authDb } from '@hominem/db';
 import { logger } from '@hominem/telemetry';
 import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
@@ -20,7 +19,6 @@ if (env.AUTH_TEST_OTP_ENABLED) {
 function getTrustedOrigins() {
   const origins = new Set([
     env.API_URL,
-    env.AUTH_PASSKEY_ORIGIN,
     env.CAREER_URL,
     env.FINANCE_URL,
     env.WEB_URL,
@@ -186,17 +184,17 @@ function buildVerificationOtpEmail(input: {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">${API_BRAND.appName}</h1>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="padding: 30px; border-radius: 12px 12px 0 0;">
+    <h1 style="margin: 0; font-size: 24px;">${API_BRAND.appName}</h1>
   </div>
-  <div style="background: #ffffff; padding: 30px; border: 1px solid #e1e1e1; border-top: none; border-radius: 0 0 12px 12px;">
+  <div style="padding: 30px; border: 1px solid; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="margin-top: 0;">Your verification code is:</p>
-    <div style="background: #f5f5f5; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; border-radius: 8px; margin: 20px 0;">
+    <div style="padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; border: 1px solid; border-radius: 8px; margin: 20px 0;">
       ${input.otp}
     </div>
-    <p style="color: #666; font-size: 14px;">This code will expire in 5 minutes.</p>
-    <p style="color: #666; font-size: 14px;">If you didn't request this code, you can safely ignore this email.</p>
+    <p style="font-size: 14px;">This code will expire in 5 minutes.</p>
+    <p style="font-size: 14px;">If you didn't request this code, you can safely ignore this email.</p>
   </div>
 </body>
 </html>`,
@@ -205,11 +203,6 @@ function buildVerificationOtpEmail(input: {
 
 function getAuthPlugins() {
   const plugins: BetterAuthPlugin[] = [
-    passkey({
-      rpID: env.AUTH_PASSKEY_RP_ID,
-      rpName: API_BRAND.appName,
-      origin: getTrustedOrigins(),
-    }),
     emailOTP({
       expiresIn: env.AUTH_EMAIL_OTP_EXPIRES_SECONDS,
       generateOTP: () => generateNumericOtp({ length: 6, isTest: !shouldSendEmails() }),
@@ -274,7 +267,7 @@ function getAuthPlugins() {
   return plugins;
 }
 
-// Email OTP + passkey are the product auth surfaces. Password auth, device
+// Email OTP is the product auth surface. Password auth, device
 // authorization, JWT/JWKS, and one-time tokens are intentionally disabled until
 // a concrete client needs them (see kernel-better-auth surface map).
 const betterAuthOptions: BetterAuthOptions = {
@@ -286,10 +279,6 @@ const betterAuthOptions: BetterAuthOptions = {
     enabled: false,
   },
   session: {
-    // Sensitive mutations (e.g. passkey.addPasskey/deletePasskey) require the
-    // session to have been created within this window — Better Auth's own
-    // fresh-session check, replacing the removed Redis-backed step-up store.
-    // This is the Better Auth default made explicit, not a behavior change.
     freshAge: 60 * 60 * 24, // 24 hours
   },
   plugins: getAuthPlugins(),

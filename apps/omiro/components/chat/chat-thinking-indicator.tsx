@@ -8,14 +8,21 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Text, durations, fontSizes, makeStyles, radii, spacing } from '~/components/theme';
+import {
+  Text,
+  fontSizes,
+  makeStyles,
+  radii,
+  spacing,
+  transitionDurations,
+} from '~/components/theme';
 import t from '~/translations';
 
-const DOT_UP_DURATION = durations.enter;
-const DOT_DOWN_DURATION = durations.exit;
-const DOT_RETURN_DURATION = durations.standard;
-const CYCLE_IDLE = durations.standard * 6;
-const STAGGER_OFFSET = durations.enter;
+const DOT_UP_DURATION = transitionDurations[150];
+const DOT_DOWN_DURATION = transitionDurations[100];
+const DOT_RETURN_DURATION = transitionDurations[150];
+const CYCLE_IDLE = transitionDurations[150] * 6;
+const STAGGER_OFFSET = transitionDurations[150];
 
 function useBounceDot(delayMs: number) {
   const translateY = useDerivedValue(
@@ -68,7 +75,7 @@ const useThinkingStyles = makeStyles((theme) => ({
     width: '100%',
   },
   dot: {
-    backgroundColor: theme.colors.foreground,
+    backgroundColor: theme.colors['text-primary'],
     borderRadius: radii.md,
     height: 8,
     opacity: 0.65,

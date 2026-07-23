@@ -1,10 +1,9 @@
 import { Stack } from 'expo-router';
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
-import { Text, theme, useThemeColors } from '~/components/theme';
+import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { APP_NAME } from '~/constants';
 import { useAppLock } from '~/hooks/use-app-lock';
@@ -14,7 +13,7 @@ import { useAuth } from '~/services/auth/auth-provider';
 import queryClient from '~/services/query-client';
 import t from '~/translations';
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   root: {
     flex: 1,
   },
@@ -27,10 +26,11 @@ const styles = StyleSheet.create({
   unlockButtonWrap: {
     minWidth: 160,
   },
-});
+}));
 
 function ProtectedShell() {
   const themeColors = useThemeColors();
+  const styles = useStyles();
   const { isPending, isSignedIn } = useAuth();
   const { isUnlocked, authenticate } = useAppLock();
   const prefersReducedMotion = useReducedMotion();
@@ -70,7 +70,7 @@ function ProtectedShell() {
   if (!isUnlocked) {
     return (
       <View style={styles.centered}>
-        <Text variant="title1" color="foreground">
+        <Text variant="title1" color="text-primary">
           {APP_NAME}
         </Text>
         <Text variant="body" color="text-secondary">
@@ -95,17 +95,17 @@ function ProtectedShell() {
             initialRouteName="index"
             screenOptions={{
               ...screenOptions,
-              contentStyle: { backgroundColor: themeColors['bg-base'] },
+              contentStyle: { backgroundColor: themeColors['surface-canvas'] },
               headerLargeTitle: false,
               headerShadowVisible: false,
-              headerTintColor: themeColors.foreground,
+              headerTintColor: themeColors['text-primary'],
             }}
           >
             <Stack.Screen name="index" options={{ headerShown: true }} />
             <Stack.Screen name="inbox/[kind]/[id]" options={{}} />
             <Stack.Screen name="settings/index" options={{ title: 'Settings' }} />
             <Stack.Screen name="settings/archived-chats" options={{ title: 'Archived Chats' }} />
-            <Stack.Screen name="tasks/index" options={{ title: 'Tasks' }} />
+            <Stack.Screen name="settings/calendar" options={{ title: 'Calendar' }} />
             <Stack.Screen name="tasks/[id]" options={{}} />
             <Stack.Screen name="onboarding" options={{ headerShown: true }} />
           </Stack>

@@ -4,6 +4,32 @@
 - Never commit code. The user must review and commit the changes themselves.
 - `apps/omiro` should only support Apple devices. Do not add fallbacks for other platforms such as Android.
 
+## Product and architecture authority
+
+- The user is the product manager and software architect. The assistant must not invent, infer, or silently select product behavior, information architecture, navigation hierarchy, route ownership, or platform architecture.
+- Treat user-stated product intent, approved PRDs, approved specs, and existing governing Bible rules as authoritative. If they conflict or leave an architectural choice open, stop and ask the user; do not resolve the conflict by choosing an architecture.
+- Before changing architecture, compare the proposed change against the current spec and explicitly report any mismatch. Implementation authority does not include product-decision authority.
+- Never rewrite a PRD, spec, plan, or task list to justify an implementation choice that the user did not approve. Mark unresolved decisions as `OPEN — USER DECISION REQUIRED`.
+- If implementation work reveals that the approved architecture cannot be expressed with the chosen library, report the constraint and alternatives without selecting one.
+
+## Evidence before completion
+
+- A change is complete only when its validation proves the exact behavior that changed in the environment where that behavior runs. Type checks, linting, a build, or unrelated tests are supporting evidence; none proves a user interaction, visual layout, external side effect, or deployment outcome.
+- Select validation from the risk, not from habit: verify user-visible or interactive changes on the target device/browser; verify external writes against the resulting external state; verify library/framework assumptions with a minimal working proof before building a feature on them.
+- For stateful interactions, test every affected state and transition, including entry, active/focused or loading state, cancellation or failure, and return to the prior state. A control that renders is not validated until its action and resulting state are observed.
+- Before composing controls into a constrained surface, prove that the full composition fits at the smallest supported viewport, device, or container. If the chosen primitive cannot meet the approved behavior within those constraints, stop and report the limitation; do not improvise a different product behavior.
+- Treat a failed, skipped, ambiguous, stale-build, or non-targeted validation as a blocker. State exactly what remains unproven. Never call work done, update acceptance tests as though it passed, or claim a result based on a test that did not exercise the changed behavior.
+- Automation needs a deterministic observation path. If an app-owned control or outcome cannot be selected or observed reliably, resolve that testability gap or report it before completion; do not replace it with a fuzzy assertion and call the interaction verified.
+
+## Documentation
+
+- The root `README.md` is the front door to the Hominem Bible ([docs/](docs/)).
+- Durable product, architecture, design, security, and operational decisions in the appropriate numbered Bible part under the root `docs/` directory. 
+  - Do not create `docs/` directories inside apps, packages, or services.
+- Keep package READMEs to setup and local entrypoint information; link to the root Bible for governing decisions.
+- Write current rules and invariants, not incident narratives or temporary task lists. Git history preserves history; the work tracker owns temporary execution.
+- Update the relevant Bible document in the same change when a durable implementation decision changes.
+
 ## Adding a new package, app, or service
 
 - Never add a `workspace:*` dependency in `package.json` for an `import type`-only reference — pnpm/turbo don't know TypeScript erases type-only imports, so a real dependency edge drags the whole target package's build/test/lint/typecheck into every consumer's CI scope. Use a `paths` alias in your own `tsconfig.json` pointing at the real source file instead. See `CLAUDE.md`'s "Adding a new package, app, or service" section for the full checklist (tsconfig composite/references wiring, Dockerfile pattern, `validate-*.yml`/`deploy-*.yml` conventions) before scaffolding a new app.

@@ -7,15 +7,13 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { TOOLBAR_ICON_SIZE, TOOL_BTN_SIZE } from '~/components/composer/constants';
 import { RecordingLevelMeter } from '~/components/composer/RecordingLevelMeter';
 import { useElapsedTimer } from '~/components/composer/useElapsedTimer';
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
-import { spacing } from '~/components/theme/ponti-tokens';
+import { spacing } from '~/components/theme/tokens';
 import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
-
-const TOOL_BTN_SIZE = 38; // ToolBtn / SecondaryBtn per composer spec
-const TOOLBAR_ICON_SIZE = 20; // toolbar action icon size
 
 interface VoiceRecordingPanelProps {
   startedAt: number | null;
@@ -43,10 +41,26 @@ export function VoiceRecordingPanel({
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.dot, dotOpacity]} />
-      <Text style={styles.timer}>{elapsed}</Text>
-      <View style={styles.meter}>
-        <RecordingLevelMeter />
+      <IconButton
+        accessibilityLabel={t.inboxComposer.composer.cancelRecordingA11y}
+        circular
+        disabled={false}
+        icon="xmark"
+        iconSize={TOOLBAR_ICON_SIZE}
+        size={TOOL_BTN_SIZE}
+        testID="composer-cancel-recording-button"
+        tintColor={themeColors['text-tertiary']}
+        variant="surface"
+        onPress={onCancel}
+      />
+      {/* Fills the entire row between the cancel and stop buttons, mirroring the
+          idle row's [attach] [text, flex-1] [mic] geometry. */}
+      <View style={styles.visualizer}>
+        <Animated.View style={[styles.dot, dotOpacity]} />
+        <Text style={styles.timer}>{elapsed}</Text>
+        <View style={styles.meter}>
+          <RecordingLevelMeter />
+        </View>
       </View>
       {onDone ? (
         <IconButton
@@ -56,21 +70,11 @@ export function VoiceRecordingPanel({
           icon="stop.fill"
           iconSize={TOOLBAR_ICON_SIZE}
           size={TOOL_BTN_SIZE}
+          testID="composer-stop-recording-button"
           variant="primary"
           onPress={onDone}
         />
       ) : null}
-      <IconButton
-        accessibilityLabel={t.inboxComposer.composer.cancelRecordingA11y}
-        circular
-        disabled={false}
-        icon="xmark"
-        iconSize={TOOLBAR_ICON_SIZE}
-        size={TOOL_BTN_SIZE}
-        tintColor={themeColors['icon-muted']}
-        variant="surface"
-        onPress={onCancel}
-      />
     </View>
   );
 }
@@ -80,7 +84,17 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[2],
-    paddingBottom: spacing[1],
+    width: '100%',
+  },
+  visualizer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    height: TOOL_BTN_SIZE,
+    paddingHorizontal: spacing[3],
+    borderRadius: TOOL_BTN_SIZE / 2,
+    backgroundColor: theme.colors['surface-panel'],
   },
   dot: {
     width: 8,

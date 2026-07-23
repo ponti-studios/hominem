@@ -1,5 +1,6 @@
 import type { Chat } from '@hominem/rpc/types';
 
-export interface ChatWithActivity extends Chat {
+export type ChatWithActivity = Chat & {
+  archivedAt: string | null;
   activityAt: string;
-}
+};

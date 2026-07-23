@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
-import { isServiceError, type ErrorCode } from '../errors';
+import { isServiceError, type ErrorCode, type ServiceError } from '../errors';
 import type { AppContext } from './auth';
 
 /**
@@ -19,7 +19,7 @@ export interface ApiErrorResponse {
   details?: Record<string, unknown> | undefined; // Additional error context
 }
 
-function findServiceError(value: unknown, depth = 0) {
+function findServiceError(value: unknown, depth = 0): ServiceError | null {
   if (isServiceError(value)) {
     return value;
   }

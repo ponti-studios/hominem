@@ -64,7 +64,7 @@ describe('mobile e2e login guard', () => {
           'x-e2e-auth-secret': 'test-secret',
         },
         body: JSON.stringify({
-          email: 'mobile-passkey-e2e@hominem.test',
+          email: 'mobile-e2e@hominem.test',
           name: 'Mobile E2E User',
         }),
       });
@@ -77,7 +77,7 @@ describe('mobile e2e login guard', () => {
       };
       expect(body.provider).toBe('better-auth');
       expect(body.user.id).toBeTruthy();
-      expect(body.user.email).toBe('mobile-passkey-e2e@hominem.test');
+      expect(body.user.email).toBe('mobile-e2e@hominem.test');
       expect(body.access_token).toBeUndefined();
     } finally {
       vi.doUnmock('../../env');

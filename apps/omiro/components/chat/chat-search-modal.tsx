@@ -1,8 +1,9 @@
 import type React from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, View, type TextInput } from 'react-native';
 
 import { Text, makeStyles, spacing } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import { Input } from '~/components/ui/input';
 import { ModalOverlay } from '~/components/ui/modal-overlay';
 import t from '~/translations';
 
@@ -37,7 +38,7 @@ export function ChatSearchModal({
               </Pressable>
             </View>
 
-            <TextInput
+            <Input
               key={visible ? 'visible' : 'hidden'}
               ref={searchInputRef}
               autoFocus
@@ -47,7 +48,7 @@ export function ChatSearchModal({
               returnKeyType="search"
               selectionColor={styles.input.color}
               cursorColor={styles.input.color}
-              style={styles.input}
+              style={[styles.input, { borderWidth: 0 }]}
               onChangeText={onChangeSearchQuery}
             />
 
@@ -91,11 +92,11 @@ const useChatSearchStyles = makeStyles((theme) => ({
     justifyContent: 'space-between',
   },
   input: {
-    backgroundColor: theme.colors['bg-surface'],
+    backgroundColor: theme.colors['surface-panel'],
     borderColor: theme.colors['border-default'],
     borderRadius: 12,
     borderWidth: 1,
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: 16,
     minHeight: 44,
     paddingHorizontal: spacing[3],
@@ -105,7 +106,7 @@ const useChatSearchStyles = makeStyles((theme) => ({
     color: theme.colors['text-tertiary'],
   },
   title: {
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     flex: 1,
     fontSize: 17,
     fontWeight: '600',
@@ -115,7 +116,7 @@ const useChatSearchStyles = makeStyles((theme) => ({
     paddingTop: spacing[7],
   },
   searchPanel: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors['surface-canvas'],
     borderColor: theme.colors['border-default'],
     borderRadius: SEARCH_PANEL_RADIUS,
     borderWidth: 1,

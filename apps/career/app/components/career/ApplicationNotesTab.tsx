@@ -137,11 +137,13 @@ export function ApplicationNotesTab({ notes }: NotesTabProps) {
                       {new Date(note.createdat).toLocaleDateString()}
                     </span>
                     <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button type="button" variant="destructive" size="sm">
-                          Delete
-                        </Button>
-                      </AlertDialogTrigger>
+                      <AlertDialogTrigger
+                        render={
+                          <Button type="button" variant="destructive" size="sm">
+                            Delete
+                          </Button>
+                        }
+                      />
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete this note?</AlertDialogTitle>

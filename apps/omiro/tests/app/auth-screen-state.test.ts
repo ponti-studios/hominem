@@ -8,7 +8,6 @@ describe('resolveAuthScreenState', () => {
       resolveAuthScreenState({
         isPending: true,
         authError: null,
-        passkeyError: null,
       }),
     ).toEqual({
       isProbing: true,
@@ -21,7 +20,6 @@ describe('resolveAuthScreenState', () => {
       resolveAuthScreenState({
         isPending: false,
         authError: null,
-        passkeyError: null,
       }),
     ).toEqual({
       isProbing: false,
@@ -34,7 +32,6 @@ describe('resolveAuthScreenState', () => {
       resolveAuthScreenState({
         isPending: false,
         authError: 'Unable to send verification code.',
-        passkeyError: null,
       }),
     ).toEqual({
       isProbing: false,

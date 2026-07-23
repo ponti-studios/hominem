@@ -1,16 +1,71 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import type { RelativePathString } from 'expo-router';
 import { Stack, useIsFocused, useRouter } from 'expo-router';
-import React, { memo, useCallback, useMemo } from 'react';
-import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { memo, useCallback, useMemo } from 'react';
+import { Pressable, RefreshControl, Text, View } from 'react-native';
 
-import { useThemeColors } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
 import AppIcon from '~/components/ui/icon';
 import { useArchivedChats } from '~/hooks/useArchivedChats';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { getContentRoute } from '~/services/navigation/routes';
 import t from '~/translations';
+
+const useStyles = makeStyles(() => ({
+  chatCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  chatMeta: {
+    fontSize: 12,
+  },
+  chatRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 52,
+    paddingVertical: 12,
+  },
+  chatRowPressed: {
+    opacity: 0.6,
+  },
+  chatTitle: {
+    fontSize: 15,
+  },
+  emptyWrap: {
+    paddingTop: 32,
+  },
+  emptyCopy: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  emptyState: {
+    gap: 2,
+    paddingVertical: 2,
+  },
+  emptyTitle: {
+    fontSize: 15,
+  },
+  header: {
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  helperText: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  listContent: {
+    paddingBottom: 24,
+  },
+  listFooter: {
+    height: 16,
+  },
+  rowWrap: {
+    paddingHorizontal: 16,
+  },
+}));
 
 export default function ArchivedChatsScreen() {
   const router = useRouter();
@@ -57,6 +112,7 @@ function ArchivedChatsSwiftUI({
   onRefresh: () => void;
 }) {
   const themeColors = useThemeColors();
+  const styles = useStyles();
   const header = useMemo(
     () => (
       <View style={styles.header}>
@@ -73,13 +129,12 @@ function ArchivedChatsSwiftUI({
         {error ? (
           <EmptyState
             action={{ label: t.settings.archivedChatsScreen.loadErrorRetry, onPress: onRefresh }}
-            description={t.settings.archivedChatsScreen.loadErrorDescription}
             sfSymbol="arrow.clockwise.circle"
             title={t.settings.archivedChatsScreen.loadErrorTitle}
           />
         ) : (
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyTitle, { color: themeColors.foreground }]}>
+            <Text style={[styles.emptyTitle, { color: themeColors['text-primary'] }]}>
               {t.settings.archivedChatsScreen.emptyTitle}
             </Text>
             <Text style={[styles.emptyCopy, { color: themeColors['text-secondary'] }]}>
@@ -99,6 +154,7 @@ function ArchivedChatsSwiftUI({
   return (
     <FlashList
       contentContainerStyle={styles.listContent}
+      contentInsetAdjustmentBehavior="automatic"
       data={chats}
       keyExtractor={(chat) => chat.id}
       ListEmptyComponent={empty}
@@ -120,19 +176,17 @@ const ArchivedChatRow = memo(
     onPressChat: (chatId: string) => void;
   }) => {
     const themeColors = useThemeColors();
+    const styles = useStyles();
 
     return (
       <View style={styles.rowWrap}>
         <Pressable
           onPress={() => onPressChat(chat.id)}
-          style={({ pressed }) => [
-            styles.chatRow,
-            { borderBottomColor: themeColors['border-subtle'], opacity: pressed ? 0.7 : 1 },
-          ]}
+          style={({ pressed }) => [styles.chatRow, pressed && styles.chatRowPressed]}
         >
           <AppIcon name="tray" size={14} tintColor={themeColors['text-secondary']} />
           <View style={styles.chatCopy}>
-            <Text style={[styles.chatTitle, { color: themeColors.foreground }]}>
+            <Text style={[styles.chatTitle, { color: themeColors['text-primary'] }]}>
               {chat.title ?? t.inbox.item.untitledChat}
             </Text>
             <Text style={[styles.chatMeta, { color: themeColors['text-secondary'] }]}>
@@ -147,56 +201,3 @@ const ArchivedChatRow = memo(
 );
 
 ArchivedChatRow.displayName = 'ArchivedChatRow';
-
-const styles = StyleSheet.create({
-  chatCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  chatMeta: {
-    fontSize: 12,
-  },
-  chatRow: {
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 10,
-    minHeight: 52,
-    paddingVertical: 12,
-  },
-  chatTitle: {
-    fontSize: 15,
-  },
-  emptyWrap: {
-    paddingTop: 32,
-  },
-  emptyCopy: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  emptyState: {
-    gap: 2,
-    paddingVertical: 2,
-  },
-  emptyTitle: {
-    fontSize: 15,
-  },
-  header: {
-    paddingBottom: 8,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  helperText: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  listContent: {
-    paddingBottom: 24,
-  },
-  listFooter: {
-    height: 16,
-  },
-  rowWrap: {
-    paddingHorizontal: 16,
-  },
-});

@@ -40,7 +40,7 @@ export function QuickActionsDropdown({ actions, className = '' }: QuickActionsDr
           Quick Actions
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="bottom" align="end" sideOffset={8} className="w-56">
+      <DropdownMenuContent sideOffset={8} className="w-56">
         {actions.map((action) => {
           const Icon = action.icon;
           return (

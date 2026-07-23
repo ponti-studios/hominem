@@ -24,8 +24,6 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
           name: 'Finance',
           short_name: 'Finance',
           description: 'Personal finance tracker',
-          theme_color: '#ffffff',
-          background_color: '#ffffff',
           display: 'standalone',
           start_url: '/',
           icons: [
@@ -123,7 +121,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
 
     ssr: {
-      noExternal: [/^@hominem\//, '@tanstack/react-query', 'better-auth', '@better-auth/passkey'],
+      noExternal: [/^@hominem\//, '@tanstack/react-query', 'better-auth'],
       external: ['node:fs', 'node:path', 'node:url', 'node:http'],
       resolve: {
         conditions: ['node'],

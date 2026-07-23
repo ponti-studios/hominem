@@ -149,7 +149,9 @@ function registerDocumentationRoutes(app: Hono<AppEnv>) {
 
 function registerErrorHandlers(app: Hono<AppEnv>) {
   app.onError((err, c) => {
-    Sentry.captureException(err);
+    if (env.SENTRY_DSN && env.NODE_ENV !== 'development') {
+      Sentry.captureException(err);
+    }
     logger.error('[services/api] Error', { error: err });
 
     if (isServiceError(err)) {

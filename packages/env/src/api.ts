@@ -16,8 +16,6 @@ export const apiSchema = baseSchema.extend({
   // No default — a missing secret must fail loudly at boot, not silently run
   // with a hardcoded, publicly-known value.
   BETTER_AUTH_SECRET: z.string().min(1),
-  AUTH_PASSKEY_RP_ID: z.string().default('api.ponti.io'),
-  AUTH_PASSKEY_ORIGIN: z.url().default('https://api.ponti.io'),
   AUTH_COOKIE_DOMAIN: z.string().default(''),
   // z.coerce.boolean() is `Boolean(value)` under the hood, so Boolean("false")
   // is `true` — any non-empty string is truthy. z.stringbool() parses the

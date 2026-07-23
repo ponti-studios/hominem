@@ -1,9 +1,9 @@
 import type { SessionSource } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
+import { RefreshControl, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,6 +17,7 @@ import {
 } from '~/components/chat';
 import { buildConversationActionsModel } from '~/components/chat/conversation-actions.model';
 import { Composer } from '~/components/composer/Composer';
+import { makeStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import {
@@ -24,7 +25,7 @@ import {
   getChatTitle,
   updateChatTitleCaches,
   useActiveChat,
-  useArchiveChat,
+  useChatArchive,
   useChatMessages,
   useSendMessage,
 } from '~/services/chat';
@@ -32,9 +33,29 @@ import { useCreateChat } from '~/services/chat/use-create-chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { writeResumeTarget } from '~/services/navigation/launch-state';
-import { getContentRoute, getInboxRoute } from '~/services/navigation/routes';
+import { INBOX_ROUTE, getContentRoute } from '~/services/navigation/routes';
 import { chatKeys } from '~/services/notes/query-keys';
 import t from '~/translations';
+
+const useStyles = makeStyles(() => ({
+  container: {
+    flex: 1,
+  },
+  reviewOverlay: {
+    bottom: 0,
+    left: 0,
+    top: 0,
+    pointerEvents: 'box-none',
+    position: 'absolute',
+    right: 0,
+  },
+  composerOverlay: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+  },
+}));
 
 function getConversationActionIcon(kind: string, type?: string) {
   if (kind === 'search') return 'magnifyingglass';
@@ -62,6 +83,7 @@ export function ChatDetailScreen() {
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const { data: activeChat } = useActiveChat(id);
+  const styles = useStyles();
   const chatId = activeChat?.id ?? id;
   const [composerHeight, setComposerHeight] = useState(0);
   const canGoBack = navigation.canGoBack();
@@ -75,7 +97,7 @@ export function ChatDetailScreen() {
 
   const services = useMemo<ChatServices>(
     () => ({
-      useArchiveChat,
+      useArchiveChat: useChatArchive,
       useChatMessages,
       useSendMessage,
       onContentCreated: async ({ source, updatedAt }) => {
@@ -108,7 +130,7 @@ export function ChatDetailScreen() {
 
   const controller = useChatController({
     chatId,
-    onChatArchive: () => router.replace(getInboxRoute()),
+    onChatArchive: () => router.replace(INBOX_ROUTE),
     services,
     source,
   });
@@ -135,13 +157,7 @@ export function ChatDetailScreen() {
     [controller.canTransform, controller.isArchiving, controller.showDebug],
   );
   const emptyState = useMemo(
-    () => (
-      <EmptyState
-        sfSymbol="bubble.left"
-        title={t.chat.emptyState.title}
-        description={t.chat.emptyState.description}
-      />
-    ),
+    () => <EmptyState sfSymbol="bubble.left" title={t.chat.emptyState.title} />,
     [],
   );
   const errorState = useMemo(
@@ -150,7 +166,6 @@ export function ChatDetailScreen() {
         action={{ label: t.chat.loadErrorRetry, onPress: () => void controller.refetchMessages() }}
         sfSymbol="arrow.clockwise.circle"
         title={t.chat.loadErrorTitle}
-        description={t.chat.loadErrorDescription}
       />
     ),
     [controller],
@@ -167,7 +182,7 @@ export function ChatDetailScreen() {
       />
       {!canGoBack ? (
         <Stack.Toolbar placement="left">
-          <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.replace(getInboxRoute())}>
+          <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.replace(INBOX_ROUTE)}>
             Inbox
           </Stack.Toolbar.Button>
         </Stack.Toolbar>
@@ -281,7 +296,7 @@ export function ChatDetailScreen() {
           }
         />
         <KeyboardStickyView
-          offset={{ closed: 0, opened: 0 }}
+          offset={{ closed: 0, opened: insets.bottom + 10 }}
           pointerEvents="box-none"
           style={[
             styles.composerOverlay,
@@ -308,23 +323,3 @@ export function ChatDetailScreen() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  reviewOverlay: {
-    bottom: 0,
-    left: 0,
-    top: 0,
-    pointerEvents: 'box-none',
-    position: 'absolute',
-    right: 0,
-  },
-  composerOverlay: {
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-  },
-});

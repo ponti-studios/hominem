@@ -1,8 +1,8 @@
-import { EmailOtpAuthFlow, type EmailOtpAuthCopy } from '@hominem/auth/client/email-otp-auth-flow';
 import { useEmailOtpAuthRoute } from '@hominem/auth/client/email-otp-route';
 import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { redirect, useLocation, useNavigate } from 'react-router';
 
+import { EmailOtpAuthFlow, type EmailOtpAuthCopy } from '~/components/auth/email-otp-auth-flow';
 import { getServerAuth } from '~/lib/auth.server';
 
 import type { Route } from './+types/index';

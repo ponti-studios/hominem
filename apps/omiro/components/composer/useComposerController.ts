@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useComposerAttachments } from '~/components/composer/ComposerContext';
 import { useComposerDraft } from '~/components/composer/useComposerDraft';
@@ -18,63 +18,48 @@ export function useComposerController({
   onDraftChange,
   onClearDraft,
 }: UseComposerControllerOptions) {
-  const {
-    getMessage,
-    message,
-    setMessage,
-    clearDraft: clearTextDraft,
-  } = useComposerDraft({
-    initialMessage,
-    onDraftChange,
-  });
+  const draft = useComposerDraft({ initialMessage, onDraftChange });
   const { attachments, errors, isUploading, clearAttachments } = useComposerAttachments();
   const uploadedAttachmentIds = attachments.flatMap((attachment) =>
     attachment.uploadedFile?.id ? [attachment.uploadedFile.id] : [],
   );
-  const hasContent = message.trim().length > 0 || uploadedAttachmentIds.length > 0;
+  const hasContent = draft.message.trim().length > 0 || uploadedAttachmentIds.length > 0;
 
-  const {
-    handleVoicePress,
-    cancelVoiceRecording,
-    isBusy: isVoiceBusy,
-    isCleaningVoice,
-    isRecording,
-    isRecordingElsewhere,
-    recordingStartedAt,
-    voiceState,
-    error: voiceError,
-    clearError: clearVoiceError,
-  } = useVoiceComposerInput({ getMessage, setMessage });
+  const voice = useVoiceComposerInput({
+    getMessage: draft.getMessage,
+    setMessage: draft.setMessage,
+  });
+  const enhance = useInlineEnhance();
 
-  const {
-    isEnhanceOpen,
-    enhanceInstruction,
-    setEnhanceInstruction,
-    enhanceError,
-    isEnhancing,
-    toggleEnhance,
-    closeEnhance,
-    runEnhance,
-  } = useInlineEnhance();
-
-  const isInteractionBusy = isSubmitting || isUploading || isVoiceBusy || isEnhancing;
+  const isInteractionBusy = isSubmitting || isUploading || voice.isBusy || enhance.isEnhancing;
   const canSubmit = hasContent && !isInteractionBusy;
-  const canOpenEnhance = hasContent && !isInteractionBusy && !isCleaningVoice;
+  const canOpenEnhance = hasContent && !isInteractionBusy && !voice.isCleaningVoice;
   const canPickMedia = !isInteractionBusy;
   const canToggleVoice =
-    isRecording || (!isInteractionBusy && !isCleaningVoice && !isRecordingElsewhere);
+    voice.isRecording ||
+    (!isInteractionBusy && !voice.isCleaningVoice && !voice.isRecordingElsewhere);
   const showAttachments = attachments.length > 0 || errors.length > 0 || isUploading;
 
+  const [isFocused, setIsFocused] = useState(false);
+  const handleInputFocus = useCallback(() => setIsFocused(true), []);
+  const handleInputBlur = useCallback(() => setIsFocused(false), []);
+
+  // The transcription-failed error no longer counts here — it renders as a popover
+  // above the composer (ComposerShell's errorBanner slot), not as inline body content,
+  // so it shouldn't force the composer itself into column layout.
+  const isInlinePanelOpen = voice.isRecording || enhance.isEnhanceOpen;
+  const isColumnLayout = isFocused || hasContent || showAttachments || isInlinePanelOpen;
+
   const clearComposer = useCallback(() => {
-    clearTextDraft();
+    draft.clearDraft();
     clearAttachments();
-    closeEnhance();
+    enhance.closeEnhance();
     onClearDraft?.();
-  }, [clearAttachments, clearTextDraft, closeEnhance, onClearDraft]);
+  }, [clearAttachments, draft.clearDraft, enhance.closeEnhance, onClearDraft]);
 
   return {
-    message,
-    setMessage,
+    message: draft.message,
+    setMessage: draft.setMessage,
     attachments,
     errors,
     isUploading,
@@ -85,24 +70,12 @@ export function useComposerController({
     canPickMedia,
     canToggleVoice,
     isInteractionBusy,
-    handleVoicePress,
-    cancelVoiceRecording,
-    isVoiceBusy,
-    isCleaningVoice,
-    isRecording,
-    isRecordingElsewhere,
-    recordingStartedAt,
-    voiceState,
-    voiceError,
-    clearVoiceError,
-    isEnhanceOpen,
-    enhanceInstruction,
-    setEnhanceInstruction,
-    enhanceError,
-    isEnhancing,
-    toggleEnhance,
-    closeEnhance,
-    runEnhance,
+    isFocused,
+    handleInputFocus,
+    handleInputBlur,
+    isColumnLayout,
+    voice,
+    enhance,
     clearComposer,
   };
 }

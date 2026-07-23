@@ -22,6 +22,7 @@
     "gallery:login": "tsx scripts/gallery-login.ts"
   },
   "dependencies": {
+    "@base-ui/react": "^1.6.0",
     "@hominem/ai": "workspace:*",
     "@hominem/auth": "workspace:*",
     "@hominem/db": "workspace:*",
@@ -29,7 +30,7 @@
     "@hominem/services": "workspace:*",
     "@hominem/storage": "workspace:*",
     "@hominem/utils": "workspace:*",
-    "@ponti-studios/ui": "0.1.2",
+    "@ponti-studios/ui": "0.3.0",
     "@react-router/node": "8.2.0",
     "@react-router/serve": "8.2.0",
     "@tanstack/react-query": "^5.80.6",
@@ -37,7 +38,7 @@
     "dotenv": "^16.5.0",
     "hono": "4.12.25",
     "isbot": "^5.1.27",
-    "lucide-react": "0.576.0",
+    "lucide-react": "1.25.0",
     "pdf2json": "^3.1.6",
     "react": "catalog:",
     "react-dom": "catalog:",

@@ -110,14 +110,14 @@ function MessageEditModal({
             onChangeText={onChangeDraft}
             placeholder={t.chat.messageEdit.placeholder}
             placeholderTextColor={themeColors['text-tertiary']}
-            selectionColor={themeColors.foreground}
-            cursorColor={themeColors.foreground}
+            selectionColor={themeColors['text-primary']}
+            cursorColor={themeColors['text-primary']}
             style={[
               styles.editInput,
               {
-                backgroundColor: themeColors['bg-surface'],
+                backgroundColor: themeColors['surface-panel'],
                 borderColor: themeColors['border-default'],
-                color: themeColors.foreground,
+                color: themeColors['text-primary'],
               },
             ]}
           />
@@ -480,8 +480,6 @@ export function renderChatMessage(
   );
 }
 
-export { ChatMessage };
-
 const useChatMessageStyles = makeStyles((theme) => ({
   actionTimestamp: {
     color: theme.colors['text-tertiary'],
@@ -499,7 +497,7 @@ const useChatMessageStyles = makeStyles((theme) => ({
     marginTop: spacing[1],
   },
   assistantMessageText: {
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: fontSizes.md,
     lineHeight: fontSizes.md * 1.6,
   },
@@ -528,7 +526,7 @@ const useChatMessageStyles = makeStyles((theme) => ({
     textAlignVertical: 'top',
   },
   editSheet: {
-    backgroundColor: theme.colors['bg-base'],
+    backgroundColor: theme.colors['surface-canvas'],
     borderColor: theme.colors['border-subtle'],
     borderRadius: radii.md,
     borderWidth: 1,
@@ -538,11 +536,11 @@ const useChatMessageStyles = makeStyles((theme) => ({
     width: '100%',
   },
   editTitle: {
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: 16,
   },
   focusItem: {
-    backgroundColor: theme.colors['bg-base'],
+    backgroundColor: theme.colors['surface-canvas'],
     borderColor: theme.colors['border-default'],
     borderRadius: radii.md,
     borderWidth: 1,
@@ -555,14 +553,14 @@ const useChatMessageStyles = makeStyles((theme) => ({
     gap: spacing[3],
   },
   reasoningText: {
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontFamily: fontFamiliesNative.mono,
     fontSize: fontSizes.xs,
     opacity: 0.8,
   },
   referencedNoteChip: {
     alignItems: 'center',
-    backgroundColor: theme.colors['bg-elevated'],
+    backgroundColor: theme.colors['surface-raised'],
     borderColor: theme.colors['border-default'],
     borderRadius: radii.sm,
     borderWidth: 1,
@@ -588,14 +586,14 @@ const useChatMessageStyles = makeStyles((theme) => ({
     // open, no background
   },
   rowUser: {
-    backgroundColor: theme.colors['bg-elevated'],
+    backgroundColor: theme.colors['surface-raised'],
     borderCurve: 'continuous',
     borderRadius: radii.lg,
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[2],
   },
   toolCall: {
-    backgroundColor: theme.colors['bg-base'],
+    backgroundColor: theme.colors['surface-canvas'],
     borderColor: theme.colors['border-subtle'],
     borderRadius: radii.md,
     borderWidth: 1,
@@ -608,7 +606,7 @@ const useChatMessageStyles = makeStyles((theme) => ({
     fontSize: fontSizes.xs,
   },
   toolCallName: {
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: fontSizes.xs,
     fontWeight: '600',
   },
@@ -620,7 +618,7 @@ const useChatMessageStyles = makeStyles((theme) => ({
     width: '100%',
   },
   transcriptSurface: {
-    backgroundColor: theme.colors['bg-base'],
+    backgroundColor: theme.colors['surface-canvas'],
     borderColor: theme.colors['border-default'],
     borderRadius: radii.md,
     borderWidth: 1,
@@ -630,7 +628,7 @@ const useChatMessageStyles = makeStyles((theme) => ({
     width: '100%',
   },
   userMessageText: {
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: fontSizes.md,
     lineHeight: fontSizes.md * 1.5,
   },

@@ -74,12 +74,10 @@ describeIntegration('finance budget integration', () => {
     const created = await createBudgetCategory({
       ownerUserid: ownerId,
       name: 'Food',
-      color: '#00AAFF',
     });
 
     expect(created.ownerUserid).toBe(ownerId);
     expect(created.name).toBe('Food');
-    expect(created.color).toBe('#00AAFF');
 
     const exists = await checkBudgetCategoryNameExists(ownerId, 'Food');
     expect(exists).toBe(true);

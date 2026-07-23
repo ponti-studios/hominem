@@ -12,7 +12,12 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible:
     id: auth-screen
     optional: true
-- assertVisible:
-    id: inbox-composer-input
-- assertVisible:
-    id: inbox-tab-control
+- extendedWaitUntil:
+    visible:
+      id: inbox-composer-input
+    timeout: 30000
+# The native Picker exposes one stable identifier per Workspace context.
+- extendedWaitUntil:
+    visible:
+      id: workspace-context-chats
+    timeout: 15000

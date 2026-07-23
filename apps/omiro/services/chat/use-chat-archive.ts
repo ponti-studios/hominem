@@ -64,5 +64,3 @@ export function useChatArchive({ chatId, onSuccess }: UseChatArchiveOptions) {
     },
   });
 }
-
-export const useArchiveChat = useChatArchive;

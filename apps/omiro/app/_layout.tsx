@@ -13,14 +13,14 @@ import {
 } from 'expo-router';
 import { PostHogProvider, type PostHog } from 'posthog-react-native';
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { logError } from '~/components/error-boundary/log-error';
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
-import { theme, makeStyles } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import { E2E_TESTING } from '~/constants';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { resolveAuthRedirect } from '~/navigation/auth-route-guard';
@@ -34,45 +34,41 @@ import { recordActiveDay } from '~/services/review-prompt/review-prompt';
 
 SplashScreen.preventAutoHideAsync();
 
-const useInnerStyles = makeStyles((t) =>
-  StyleSheet.create({
-    safeArea: {
-      flex: 1,
-    },
-    e2eIndicator: {
-      position: 'absolute',
-      top: t.spacing.sm,
-      left: t.spacing.sm,
-      width: 2,
-      height: 2,
-      opacity: 0.02,
-    },
-    e2eAction: {
-      position: 'absolute',
-      top: t.spacing.sm,
-      right: t.spacing.sm,
-      width: 16,
-      height: 16,
-      opacity: 0.02,
-    },
-    e2eActionAlt: {
-      position: 'absolute',
-      top: t.spacing.xl,
-      right: t.spacing.sm,
-      width: 16,
-      height: 16,
-      opacity: 0.02,
-    },
-  }),
-);
+const useInnerStyles = makeStyles((t) => ({
+  safeArea: {
+    flex: 1,
+  },
+  e2eIndicator: {
+    position: 'absolute',
+    top: t.spacing.sm,
+    left: t.spacing.sm,
+    width: 2,
+    height: 2,
+    opacity: 0.02,
+  },
+  e2eAction: {
+    position: 'absolute',
+    top: t.spacing.sm,
+    right: t.spacing.sm,
+    width: 16,
+    height: 16,
+    opacity: 0.02,
+  },
+  e2eActionAlt: {
+    position: 'absolute',
+    top: t.spacing.xl,
+    right: t.spacing.sm,
+    width: 16,
+    height: 16,
+    opacity: 0.02,
+  },
+}));
 
-const useRootStyles = makeStyles(() =>
-  StyleSheet.create({
-    gestureRoot: {
-      flex: 1,
-    },
-  }),
-);
+const useRootStyles = makeStyles(() => ({
+  gestureRoot: {
+    flex: 1,
+  },
+}));
 
 function InnerRootLayout() {
   const styles = useInnerStyles();
@@ -199,22 +195,23 @@ function InnerRootLayout() {
   );
 }
 
-const navigationTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: theme.colors.background,
-    border: theme.colors['border-default'],
-    card: theme.colors.background,
-    notification: theme.colors.accent,
-    primary: theme.colors.accent,
-    text: theme.colors.foreground,
-  },
-};
-
 function RootLayout() {
   const rootStyles = useRootStyles();
+  const themeColors = useThemeColors();
   useScreenCapture();
+
+  const navigationTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: themeColors['surface-canvas'],
+      border: themeColors['border-default'],
+      card: themeColors['surface-canvas'],
+      notification: themeColors.accent,
+      primary: themeColors.accent,
+      text: themeColors['text-primary'],
+    },
+  };
 
   useEffect(() => {
     if (E2E_TESTING) {

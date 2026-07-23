@@ -7,7 +7,6 @@ appId: com.pontistudios.hakumi.dev
 # label "Add subtask"), fills in the task editor sheet, and verifies the
 # new subtask appears in the list.
 - runFlow: startup.yaml
-- tapOn: Open inbox menu
 - tapOn: Tasks
 - assertVisible: "3 tasks"
 - tapOn: "3 tasks"

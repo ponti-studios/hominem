@@ -43,6 +43,28 @@ private final class OnDeviceAIException: Exception, @unchecked Sendable {
   }
 }
 
+// Shared "yyyy-MM-dd" formatter for the tool's date-range arguments. Fixed
+// POSIX locale and device time zone so parsing never depends on the user's
+// region settings, only on the format the model was told to produce.
+private func dayFormatter() -> DateFormatter {
+  let formatter = DateFormatter()
+  formatter.dateFormat = "yyyy-MM-dd"
+  formatter.locale = Locale(identifier: "en_US_POSIX")
+  formatter.timeZone = .current
+  return formatter
+}
+
+// Human-readable "today" anchor, e.g. "Monday, 2026-07-20". Given to the
+// model so it can resolve relative phrases ("this time last year", "end of
+// next month") into concrete dates itself, instead of the tool guessing at
+// day-count arithmetic on the model's behalf.
+private func todayAnchorString() -> String {
+  let formatter = DateFormatter()
+  formatter.dateFormat = "EEEE, yyyy-MM-dd"
+  formatter.timeZone = .current
+  return formatter.string(from: Date())
+}
+
 private struct OnDeviceAIResult: Record {
   @Field
   var text: String = ""
@@ -79,56 +101,160 @@ private func requestCalendarAuthorization() async -> EKAuthorizationStatus {
   return EKEventStore.authorizationStatus(for: .event)
 }
 
-// A single narrow tool: read-only event lookup over a bounded forward
-// window. This is the spike's entire surface area — no write access, no
-// other calendars, no attendee/organizer data exposed to the model.
+// Coarse time-of-day filter so "what was I doing in the morning" narrows
+// results without the model needing to reason about exact hours. Bounds are
+// fixed here — in local wall-clock hours via Calendar — rather than left to
+// the model, for the same reason day-boundary math is: it's the kind of
+// arithmetic that's easy for a model to get subtly wrong and hard to notice.
+@available(iOS 26.0, *)
+@Generable
+private enum DayPart: String, CaseIterable, Sendable {
+  case allDay
+  case morning
+  case afternoon
+  case evening
+  case night
+
+  /// Local hour-of-day bounds, upper exclusive. `allDay` applies no filter.
+  var hourRange: Range<Int>? {
+    switch self {
+    case .allDay: return nil
+    case .morning: return 5..<12
+    case .afternoon: return 12..<17
+    case .evening: return 17..<21
+    case .night: return 21..<24
+    }
+  }
+}
+
+// A single narrow tool: read-only event lookup over an explicit date range,
+// optionally narrowed to a part of the day. This is the spike's entire
+// surface area — no write access, no other calendars, no attendee/organizer
+// data exposed to the model.
+//
+// The tool itself does no relative-date reasoning ("last year", "next
+// month") — it only resolves the exact startDate/endDate the model gives
+// it, using Calendar day-boundary math. The model is told today's date and
+// is responsible for turning what the user said into concrete dates before
+// calling this tool. This split keeps date arithmetic (which broke once
+// already, see lookupCalendarEvents history) in Swift/Calendar, while
+// letting the model own open-ended natural-language interpretation, which a
+// fixed Swift parameter shape could never fully anticipate.
 @available(iOS 26.0, *)
 private struct CalendarLookupTool: Tool {
+  // EventKit's own guidance: predicateForEvents performs poorly over
+  // multi-year ranges. A model mistake ("startDate 1900-01-01") shouldn't be
+  // able to turn one tool call into a multi-second full-database scan.
+  static let maxRangeDays = 3650
+
   let name = "lookupCalendarEvents"
-  let description =
-    "Looks up the user's calendar events starting today. Use this whenever the user asks about their schedule, meetings, or upcoming events."
-  // Only String payloads cross this closure so it can stay @Sendable without
+  let description: String
+  // Only primitive payloads cross this closure so it can stay @Sendable without
   // wrapping tool-call detail in a bespoke Sendable event type.
-  let onLog: @Sendable (String, String) -> Void
+  let onLog: @Sendable (String, String, Double?) -> Void
+
+  init(onLog: @escaping @Sendable (String, String, Double?) -> Void) {
+    self.onLog = onLog
+    self.description =
+      "Looks up the user's calendar events within an explicit date range, any time in the "
+      + "past or future. Today is \(todayAnchorString()). Resolve whatever the user said — "
+      + "\"today\", \"this time last year\", \"end of next month\", \"in the morning\" — into "
+      + "concrete startDate/endDate/dayPart values yourself before calling; this tool does not "
+      + "interpret relative language."
+  }
 
   @Generable
   struct Arguments {
+    @Guide(description: "Start of the search range, formatted \"yyyy-MM-dd\". Inclusive.")
+    var startDate: String
+
     @Guide(
       description:
-        "Number of days from today to search forward, e.g. 1 for \"today\", 7 for \"this week\". Defaults to 1."
+        "End of the search range, formatted \"yyyy-MM-dd\". Inclusive — events any time on this day are included. May equal startDate for a single day."
     )
-    var daysAhead: Int?
+    var endDate: String
+
+    @Guide(
+      description:
+        "Part of the day to restrict results to, only if the user asked for one (e.g. \"in the morning\" -> morning). Defaults to allDay when the user didn't mention a time of day."
+    )
+    var dayPart: DayPart?
   }
 
   func call(arguments: Arguments) async throws -> String {
-    let days = max(1, min(arguments.daysAhead ?? 1, 30))
-    onLog("tool_call", "Model called lookupCalendarEvents(daysAhead: \(days))")
+    let dayPart = arguments.dayPart ?? .allDay
+    let dayPartLabel = dayPart == .allDay ? "all day" : dayPart.rawValue
+    let startedAt = Date()
+    onLog(
+      "tool_call",
+      "Dates \(arguments.startDate) → \(arguments.endDate) · \(dayPartLabel)",
+      nil
+    )
 
     let status = EKEventStore.authorizationStatus(for: .event)
     guard status == .fullAccess else {
-      onLog("tool_error", "lookupCalendarEvents failed: calendar permission missing")
+      onLog(
+        "tool_error",
+        "Calendar permission missing",
+        Date().timeIntervalSince(startedAt) * 1000
+      )
       throw OnDeviceAIException.missingPermission
     }
 
-    let store = EKEventStore()
-    let start = Date()
-    guard let end = Calendar.current.date(byAdding: .day, value: days, to: start) else {
-      onLog("tool_result", "lookupCalendarEvents returned 0 event(s)")
+    let formatter = dayFormatter()
+    guard
+      let parsedStart = formatter.date(from: arguments.startDate),
+      let parsedEnd = formatter.date(from: arguments.endDate)
+    else {
+      // A malformed date is a model mistake it can recover from, not an
+      // infrastructure failure — return guidance instead of throwing so the
+      // model can immediately retry with a corrected call.
+      onLog(
+        "tool_error",
+        "Invalid date range \(arguments.startDate) → \(arguments.endDate)",
+        Date().timeIntervalSince(startedAt) * 1000
+      )
+      return
+        "Could not parse that date range. startDate and endDate must both be formatted "
+        + "\"yyyy-MM-dd\". Today is \(todayAnchorString()). Retry with corrected dates."
+    }
+
+    // Model may hand back the range in either order — normalize rather than
+    // erroring, since "endDate before startDate" is a model mistake, not a
+    // user-facing one.
+    let calendar = Calendar.current
+    let start = calendar.startOfDay(for: min(parsedStart, parsedEnd))
+    guard
+      let requestedEnd = calendar.date(
+        byAdding: .day, value: 1, to: calendar.startOfDay(for: max(parsedStart, parsedEnd))),
+      let maxEnd = calendar.date(byAdding: .day, value: Self.maxRangeDays, to: start)
+    else {
+      onLog("tool_result", "Found 0 events", Date().timeIntervalSince(startedAt) * 1000)
       return "No events found."
     }
+    let end = min(requestedEnd, maxEnd)
 
+    let store = EKEventStore()
     let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
-    let events = store.events(matching: predicate)
+    var events = store.events(matching: predicate)
       .sorted { $0.startDate < $1.startDate }
 
-    guard !events.isEmpty else {
-      onLog("tool_result", "lookupCalendarEvents returned 0 event(s)")
-      return "No events found in the next \(days) day(s)."
+    if let hourRange = dayPart.hourRange {
+      events = events.filter { event in
+        guard !event.isAllDay else { return false }
+        let hour = calendar.component(.hour, from: event.startDate)
+        return hourRange.contains(hour)
+      }
     }
 
-    let formatter = DateFormatter()
-    formatter.dateStyle = .medium
-    formatter.timeStyle = .short
+    guard !events.isEmpty else {
+      onLog("tool_result", "Found 0 events", Date().timeIntervalSince(startedAt) * 1000)
+      return "No events found between \(arguments.startDate) and \(arguments.endDate)."
+    }
+
+    let displayFormatter = DateFormatter()
+    displayFormatter.dateStyle = .medium
+    displayFormatter.timeStyle = .short
 
     // Capped at 20 — this is a spike, not a general-purpose export; a real
     // tool would need the same resultCap discipline the remote MCP tools
@@ -138,11 +264,15 @@ private struct CalendarLookupTool: Tool {
       let when =
         event.isAllDay
         ? "all day"
-        : "\(formatter.string(from: event.startDate)) - \(formatter.string(from: event.endDate))"
+        : "\(displayFormatter.string(from: event.startDate)) - \(displayFormatter.string(from: event.endDate))"
       return "- \(title): \(when)"
     }
 
-    onLog("tool_result", "lookupCalendarEvents returned \(events.count) event(s)")
+    onLog(
+      "tool_result",
+      "Found \(events.count) events",
+      Date().timeIntervalSince(startedAt) * 1000
+    )
     return lines.joined(separator: "\n")
   }
 }
@@ -150,23 +280,35 @@ private struct CalendarLookupTool: Tool {
 @available(iOS 26.0, *)
 private func runCalendarQuery(
   prompt: String,
-  onLog: @escaping @Sendable (String, String) -> Void
+  onLog: @escaping @Sendable (String, String, Double?) -> Void
 ) async throws -> String {
   guard case .available = SystemLanguageModel.default.availability else {
     throw OnDeviceAIException.modelUnavailable
   }
 
-  onLog("session_start", "Starting on-device model session")
+  onLog("session_start", "Start model session", nil)
+  let today = todayAnchorString()
+  let instructions: String = """
+    You help the user understand their calendar. Today is \(today). \
+    Call lookupCalendarEvents whenever asked about their schedule, meetings, or events — \
+    never guess. Before calling it, resolve whatever date or range the user implied \
+    ("today", "this time last year", "end of next month") into an explicit \
+    startDate/endDate using today's date as your anchor. Be concise.
+    """
   let session = LanguageModelSession(
     tools: [CalendarLookupTool(onLog: onLog)],
-    instructions:
-      "You help the user understand their calendar. Call lookupCalendarEvents whenever asked about their schedule, meetings, or events — never guess. Be concise."
+    instructions: instructions
   )
 
-  onLog("prompt_sent", "Sending prompt to model: \"\(prompt)\"")
+  let promptStartedAt = Date()
+  onLog("prompt_sent", "Prompt · \(prompt)", nil)
   do {
     let response = try await session.respond(to: prompt)
-    onLog("response_received", "Model responded (\(response.content.count) chars)")
+    onLog(
+      "response_received",
+      "Response · \(response.content.count) characters",
+      Date().timeIntervalSince(promptStartedAt) * 1000
+    )
     return response.content
   } catch {
     os_log(
@@ -175,7 +317,11 @@ private func runCalendarQuery(
       type: .error,
       String(describing: error)
     )
-    onLog("generation_error", "Model generation failed: \(String(describing: error))")
+    onLog(
+      "generation_error",
+      "Model generation failed",
+      Date().timeIntervalSince(promptStartedAt) * 1000
+    )
     throw OnDeviceAIException.generationFailed
   }
 }
@@ -213,11 +359,16 @@ public class OnDeviceAIModule: Module {
         throw OnDeviceAIException.modelUnavailable
       }
 
-      let emitLog: @Sendable (String, String) -> Void = { [weak self] type, message in
-        self?.sendEvent(
-          "onDeviceAILog",
-          ["type": type, "message": message, "timestamp": Date().timeIntervalSince1970 * 1000]
-        )
+      let emitLog: @Sendable (String, String, Double?) -> Void = { [weak self] type, message, durationMs in
+        var payload: [String: Any] = [
+          "type": type,
+          "message": message,
+          "timestamp": Date().timeIntervalSince1970 * 1000,
+        ]
+        if let durationMs {
+          payload["durationMs"] = durationMs
+        }
+        self?.sendEvent("onDeviceAILog", payload)
       }
 
       do {

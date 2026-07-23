@@ -70,7 +70,7 @@ export const db = new Kysely<Database>({
   plugins: [new CamelCasePlugin()],
 });
 
-// better-auth manages its own tables (account, session, user, verification, passkey,
+// better-auth manages its own tables (account, session, user, verification,
 // jwks, deviceCode) and writes genuinely camelCase columns to Postgres directly, unlike
 // our app.* tables which are snake_case at rest. Those tables must bypass
 // CamelCasePlugin or it will mistranslate already-camelCase columns into snake_case SQL

@@ -43,7 +43,7 @@ the API test script directly against an ambient `DATABASE_URL`.
 ### Quality And Type Safety
 
 `just check api` covers format checking, linting, typechecking, building, and tests.
-Use `just lint fix api` or `just format write api` for the two source-modifying operations.
+Use `just lint-fix api` or `just format write api` for the two source-modifying operations.
 
 ## Configuration Model
 

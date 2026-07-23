@@ -7,7 +7,6 @@ type AuthAnalyticsPhase =
   | 'boot'
   | 'email_otp_request'
   | 'email_otp_verify'
-  | 'passkey_sign_in'
   | 'sign_out'
   | 'session_recovery';
 

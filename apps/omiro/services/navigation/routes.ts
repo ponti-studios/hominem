@@ -9,40 +9,19 @@ export interface ResumeTarget {
   updatedAt: string | null;
 }
 
-export function getInboxRoute(): RelativePathString {
-  return '/(protected)' as RelativePathString;
+export const INBOX_ROUTE = '/(protected)';
+export const SETTINGS_ROUTE = '/(protected)/settings' as RelativePathString;
+export const ARCHIVED_CHATS_ROUTE = '/(protected)/settings/archived-chats';
+export const ON_DEVICE_CALENDAR_SPIKE_ROUTE = '/(protected)/settings/calendar';
+
+export function getTaskDetailRoute(id: string) {
+  return `/(protected)/tasks/${id}`;
 }
 
-export function getSettingsRoute(): RelativePathString {
-  return '/(protected)/settings' as RelativePathString;
-}
-
-export function getArchivedChatsRoute(): RelativePathString {
-  return '/(protected)/settings/archived-chats' as RelativePathString;
-}
-
-export function getOnDeviceCalendarSpikeRoute(): RelativePathString {
-  return '/(protected)/settings/on-device-calendar-spike' as RelativePathString;
-}
-
-export function getTasksRoute(): RelativePathString {
-  return '/(protected)/tasks' as RelativePathString;
-}
-
-export function getTaskDetailRoute(id: string): RelativePathString {
-  return `/(protected)/tasks/${id}` as RelativePathString;
-}
-
-export function getContentRoute(
-  kind: ContentKind,
-  id: string,
-  params?: Record<string, string>,
-): RelativePathString {
-  const route = `/(protected)/inbox/${kind}/${id}`;
-  if (!params || Object.keys(params).length === 0) {
-    return route as RelativePathString;
+export function getContentRoute(kind: ContentKind, id: string) {
+  if (!id) {
+    throw new Error('Content route requires an id');
   }
 
-  const searchParams = new URLSearchParams(params);
-  return `${route}?${searchParams.toString()}` as RelativePathString;
+  return `/(protected)/inbox/${kind}/${id}`;
 }

@@ -1,10 +1,10 @@
 appId: com.pontistudios.hakumi.dev
 ---
-# Navigates from the inbox to the Settings screen via the toolbar menu,
-# then back to the inbox.
+# Navigates from the inbox to the Settings screen via the header's profile
+# icon button (a direct pressable, not a dropdown menu), then back.
 - runFlow: startup.yaml
-- tapOn: Open inbox menu
-- tapOn: Settings
+- tapOn:
+    id: inbox-open-settings
 - assertVisible: Settings
 - tapOn:
     id: BackButton

@@ -11,7 +11,7 @@ import {
   usePhotoOutput,
 } from 'react-native-vision-camera';
 
-import { Text, theme } from '~/components/theme';
+import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
@@ -26,8 +26,85 @@ type CameraModalProps = {
   onClose: () => void;
 };
 
+const useStyles = makeStyles((theme) => ({
+  sheetBackground: {
+    backgroundColor: theme.colors['surface-canvas'],
+  },
+  dragHandle: {
+    backgroundColor: theme.colors['border-default'],
+    width: 40,
+    height: 4,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors['surface-canvas'],
+  },
+  cameraContainer: {
+    flex: 1,
+  },
+  camera: {
+    ...StyleSheet.absoluteFill,
+  },
+  controls: {
+    alignItems: 'center',
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    left: 0,
+    paddingHorizontal: theme.spacing.xl,
+    position: 'absolute',
+    right: 0,
+  },
+  sideButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 48,
+    height: 48,
+    borderRadius: theme.borderRadii.md,
+    backgroundColor: theme.colors['overlay-scrim'],
+  },
+  captureButton: {
+    width: 72,
+    height: 72,
+    borderRadius: theme.borderRadii.sm,
+    borderWidth: 4,
+    borderColor: theme.colors['text-on-accent'],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureButtonDisabled: {
+    opacity: 0.5,
+  },
+  captureInner: {
+    width: 56,
+    height: 56,
+    borderRadius: theme.borderRadii.md,
+    backgroundColor: theme.colors['text-on-accent'],
+  },
+  permissionContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.xl,
+  },
+  permissionButton: {
+    borderWidth: 1,
+    borderColor: theme.colors['border-default'],
+    borderRadius: theme.borderRadii.md,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+  },
+  permissionCancel: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+  },
+}));
+
 export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
   const insets = useSafeAreaInsets();
+  const themeColors = useThemeColors();
+  const styles = useStyles();
   const modalRef = useRef<BottomSheetModal>(null);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
@@ -119,7 +196,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                 style={styles.sideButton}
                 accessibilityLabel={t.camera.closeA11y}
               >
-                <AppIcon name="xmark" size={20} tintColor={theme.colors.white} />
+                <AppIcon name="xmark" size={20} tintColor={themeColors['text-on-accent']} />
               </Pressable>
 
               <Pressable
@@ -136,20 +213,20 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
                 style={styles.sideButton}
                 accessibilityLabel={t.camera.flipCameraA11y}
               >
-                <AppIcon name="camera.rotate" size={20} tintColor={theme.colors.white} />
+                <AppIcon name="camera.rotate" size={20} tintColor={themeColors['text-on-accent']} />
               </Pressable>
             </View>
           </View>
         ) : (
           <View style={styles.permissionContainer}>
-            <Text variant="body" color="foreground">
+            <Text variant="body" color="text-primary">
               {t.camera.permission.message}
             </Text>
             <Pressable
               onPress={() => void handleRequestPermissions()}
               style={styles.permissionButton}
             >
-              <Text variant="body" color="foreground">
+              <Text variant="body" color="text-primary">
                 {t.camera.permission.grant}
               </Text>
             </Pressable>
@@ -164,78 +241,3 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
     </BottomSheetModal>
   );
 }
-
-const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: theme.colors.black,
-  },
-  dragHandle: {
-    backgroundColor: theme.colors['border-default'],
-    width: 40,
-    height: 4,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.black,
-  },
-  cameraContainer: {
-    flex: 1,
-  },
-  camera: {
-    ...StyleSheet.absoluteFill,
-  },
-  controls: {
-    alignItems: 'center',
-    bottom: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    left: 0,
-    paddingHorizontal: theme.spacing.xl,
-    position: 'absolute',
-    right: 0,
-  },
-  sideButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 48,
-    height: 48,
-    borderRadius: theme.borderRadii.md,
-    backgroundColor: theme.colors['overlay-modal-medium'],
-  },
-  captureButton: {
-    width: 72,
-    height: 72,
-    borderRadius: theme.borderRadii.sm,
-    borderWidth: 4,
-    borderColor: theme.colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  captureButtonDisabled: {
-    opacity: 0.5,
-  },
-  captureInner: {
-    width: 56,
-    height: 56,
-    borderRadius: theme.borderRadii.md,
-    backgroundColor: theme.colors.white,
-  },
-  permissionContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.xl,
-  },
-  permissionButton: {
-    borderWidth: 1,
-    borderColor: theme.colors['border-default'],
-    borderRadius: theme.borderRadii.md,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-  },
-  permissionCancel: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-  },
-});

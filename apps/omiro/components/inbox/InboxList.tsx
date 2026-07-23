@@ -5,11 +5,15 @@ import { View } from 'react-native';
 
 import { Text, makeStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
-import type { InboxTab } from '~/services/inbox/screen-state';
 import t from '~/translations';
 
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData } from './InboxStreamItem.types';
+
+const EMPTY_STATE_ASSETS = {
+  chats: require('~/assets/states/chats.empty.png'),
+  notes: require('~/assets/states/notes.empty.png'),
+} as const;
 
 export type InboxListRow =
   | {
@@ -24,6 +28,7 @@ export type InboxListRow =
     };
 
 export type InboxListRef = FlashListRef<InboxListRow>;
+export type InboxTab = 'chats' | 'notes';
 
 interface InboxListProps {
   error?: Error | null;
@@ -85,7 +90,6 @@ export function InboxList({
                 }
               : undefined
           }
-          description={t.inbox.screen.loadErrorDescription}
           sfSymbol="arrow.clockwise.circle"
           title={t.inbox.screen.loadErrorTitle}
         />
@@ -97,10 +101,7 @@ export function InboxList({
     return (
       <View style={styles.emptyWrap}>
         <EmptyState
-          description={
-            tab === 'notes' ? t.inbox.screen.emptyNotesDescription : t.inbox.empty.description
-          }
-          sfSymbol={tab === 'notes' ? 'doc.text' : 'bubble.left.and.bubble.right'}
+          imageSource={EMPTY_STATE_ASSETS[tab]}
           title={tab === 'notes' ? t.inbox.screen.emptyNotesTitle : t.inbox.empty.title}
         />
       </View>

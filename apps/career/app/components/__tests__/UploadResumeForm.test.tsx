@@ -108,7 +108,7 @@ describe('UploadResumeForm', () => {
     await user.click(screen.getByRole('button', { name: /upload resume/i }));
 
     expect(await screen.findByText('Please log in to upload your resume.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /sign in/i })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /sign in/i })).toHaveAttribute(
       'href',
       '/auth?next=/onboarding',
     );

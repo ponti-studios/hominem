@@ -5,6 +5,19 @@ Hominem is a product monorepo with two active surfaces:
 - api in `services/api`
 - omiro in `apps/omiro`
 
+## The Bible
+
+The repository's operating law lives in five parts:
+
+1. [Product](./docs/01-product.md)
+2. [System](./docs/02-system.md)
+3. [Experience](./docs/03-experience.md)
+4. [Voice](./docs/04-voice.md)
+5. [Operations](./docs/05-operations.md)
+
+Read the relevant part before changing a system boundary. Package READMEs are
+setup entrypoints only.
+
 The reusable mobile starter extracted from Omiro now lives in the standalone
 `/Users/charlesponti/Developer/ponti-mobile-starter` repo. Hominem continues to own the
 production Omiro app, while `ponti-mobile-starter` owns the reusable mobile shell,

@@ -3,10 +3,18 @@ import type { Note } from '@hominem/rpc/types';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Keyboard,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  TextInput,
+  View,
+} from 'react-native';
 import Markdown from 'react-native-markdown-display';
 
-import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
+import { InlineEnhancePanel } from '~/components/ai/InlineEnhancePanel';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
@@ -16,7 +24,7 @@ import { useNoteFormatting } from '~/hooks/use-note-formatting';
 import { useInlineEnhance } from '~/services/ai';
 import { normalizeChatTitle, useStartChatFromInbox } from '~/services/chat';
 import { writeResumeTarget } from '~/services/navigation/launch-state';
-import { getInboxRoute } from '~/services/navigation/routes';
+import { INBOX_ROUTE } from '~/services/navigation/routes';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import { useNoteQuery } from '~/services/notes/use-note-query';
 import t from '~/translations';
@@ -87,7 +95,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const styles = useNoteStyles();
   const router = useRouter();
   const navigation = useNavigation();
-  const homeRoute = getInboxRoute();
+  const homeRoute = INBOX_ROUTE;
   const canGoBack = navigation.canGoBack();
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
@@ -163,9 +171,6 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         >
           <EmptyState
             action={{ label: t.notes.editor.loadErrorRetry, onPress: () => void refetch() }}
-            description={
-              error ? t.notes.editor.loadErrorMessage : t.notes.editor.missingNoteMessage
-            }
             sfSymbol="arrow.clockwise.circle"
             title={error ? t.notes.editor.loadErrorTitle : t.notes.editor.missingNoteTitle}
           />
@@ -193,7 +198,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
 interface NoteEditorBodyProps {
   note: Note;
   canGoBack: boolean;
-  homeRoute: ReturnType<typeof getInboxRoute>;
+  homeRoute: typeof INBOX_ROUTE;
   isRefreshing: boolean;
   refetch: () => void;
   save: ReturnType<typeof useNoteEditor>['save'];
@@ -272,6 +277,17 @@ function NoteEditorBody({
   const handleDetach = (fileId: string) =>
     detachFile(fileId, note.files, draft.title, draft.content);
 
+  const handleToggleEnhance = useCallback(() => {
+    if (isEnhanceOpen) {
+      closeEnhance();
+      requestAnimationFrame(() => contentInputRef.current?.focus());
+      return;
+    }
+
+    Keyboard.dismiss();
+    toggleEnhance();
+  }, [closeEnhance, isEnhanceOpen, toggleEnhance]);
+
   const handleStartChat = useCallback(async () => {
     if (isStartingChat) return;
 
@@ -327,7 +343,7 @@ function NoteEditorBody({
           onPress={() => setIsPreviewing((current) => !current)}
         />
         <Stack.Toolbar.Menu accessibilityLabel={t.notes.editor.actionsLabel} icon="ellipsis.circle">
-          <Stack.Toolbar.MenuAction icon="sparkles" onPress={toggleEnhance}>
+          <Stack.Toolbar.MenuAction icon="sparkles" onPress={handleToggleEnhance}>
             {t.enhance.confirm}
           </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction
@@ -403,22 +419,6 @@ function NoteEditorBody({
           />
         )}
 
-        {isEnhanceOpen ? (
-          <InlineEnhanceTray
-            instruction={enhanceInstruction}
-            onInstructionChange={setEnhanceInstruction}
-            onCancel={closeEnhance}
-            onConfirm={() =>
-              void runEnhance({
-                text: draft.content,
-                onEnhanced: (enhanced) => commitDraft({ title: draft.title, content: enhanced }),
-              })
-            }
-            isEnhancing={isEnhancing}
-            error={enhanceError}
-          />
-        ) : null}
-
         {note.files.length > 0 ? (
           <View style={styles.filesSection}>
             <Text style={styles.filesLabel}>{t.notes.editor.attachments}</Text>
@@ -453,6 +453,28 @@ function NoteEditorBody({
         ) : null}
       </ScrollView>
 
+      {isEnhanceOpen ? (
+        <View style={styles.enhanceTray}>
+          <InlineEnhancePanel
+            enhance={{
+              isEnhanceOpen,
+              enhanceInstruction,
+              setEnhanceInstruction,
+              closeEnhance,
+              isEnhancing,
+              enhanceError,
+              runEnhance,
+            }}
+            text={draft.content}
+            onCancel={handleToggleEnhance}
+            onEnhanced={(enhanced) => {
+              commitDraft({ title: draft.title, content: enhanced });
+              requestAnimationFrame(() => contentInputRef.current?.focus());
+            }}
+          />
+        </View>
+      ) : null}
+
       <NoteToolbar
         onAction={(command) => handleContentChange(formatting.applyFormat(draft.content, command))}
       />
@@ -469,9 +491,14 @@ const useNoteStyles = makeStyles((theme) => ({
     paddingTop: 16,
     paddingBottom: COMPOSER_CLEARANCE,
   },
+  enhanceTray: {
+    backgroundColor: theme.colors['surface-canvas'],
+    paddingHorizontal: 16,
+    paddingBottom: theme.spacing.xl * 2,
+  },
   titleInput: {
     alignSelf: 'stretch',
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     fontSize: 28,
     fontWeight: '700',
     lineHeight: 34,
@@ -487,7 +514,7 @@ const useNoteStyles = makeStyles((theme) => ({
     width: '72%',
   },
   placeholderDateline: {
-    backgroundColor: theme.colors['border-faint'],
+    backgroundColor: theme.colors['border-subtle'],
     borderRadius: theme.borderRadii.sm,
     height: 12,
     marginBottom: 14,
@@ -498,7 +525,7 @@ const useNoteStyles = makeStyles((theme) => ({
     paddingTop: 4,
   },
   placeholderLine: {
-    backgroundColor: theme.colors['border-faint'],
+    backgroundColor: theme.colors['border-subtle'],
     borderRadius: theme.borderRadii.sm,
     height: 16,
     width: '100%',
@@ -519,7 +546,7 @@ const useNoteStyles = makeStyles((theme) => ({
     fontSize: 17,
     lineHeight: 28,
     letterSpacing: -0.1,
-    color: theme.colors.foreground,
+    color: theme.colors['text-primary'],
     paddingVertical: 0,
     paddingHorizontal: 0,
     minHeight: 240,
@@ -549,7 +576,7 @@ const useNoteStyles = makeStyles((theme) => ({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: theme.colors['bg-elevated'],
+    backgroundColor: theme.colors['surface-raised'],
     borderRadius: 10,
     borderCurve: 'continuous',
   },
@@ -576,32 +603,47 @@ const useNoteStyles = makeStyles((theme) => ({
 
 function markdownStyles(colors: ReturnType<typeof useThemeColors>) {
   return {
-    body: { color: colors.foreground, fontSize: 17, lineHeight: 28 },
-    heading1: { color: colors.foreground, fontSize: 24, fontWeight: '700' as const, marginTop: 12 },
-    heading2: { color: colors.foreground, fontSize: 20, fontWeight: '700' as const, marginTop: 10 },
-    heading3: { color: colors.foreground, fontSize: 18, fontWeight: '600' as const, marginTop: 8 },
-    strong: { color: colors.foreground, fontWeight: '700' as const },
-    em: { color: colors.foreground, fontStyle: 'italic' as const },
+    body: { color: colors['text-primary'], fontSize: 17, lineHeight: 28 },
+    heading1: {
+      color: colors['text-primary'],
+      fontSize: 24,
+      fontWeight: '700' as const,
+      marginTop: 12,
+    },
+    heading2: {
+      color: colors['text-primary'],
+      fontSize: 20,
+      fontWeight: '700' as const,
+      marginTop: 10,
+    },
+    heading3: {
+      color: colors['text-primary'],
+      fontSize: 18,
+      fontWeight: '600' as const,
+      marginTop: 8,
+    },
+    strong: { color: colors['text-primary'], fontWeight: '700' as const },
+    em: { color: colors['text-primary'], fontStyle: 'italic' as const },
     link: { color: colors.accent, textDecorationLine: 'underline' as const },
     bullet_list: { marginVertical: 6 },
     ordered_list: { marginVertical: 6 },
     code_inline: {
-      color: colors.foreground,
-      backgroundColor: colors['bg-elevated'],
+      color: colors['text-primary'],
+      backgroundColor: colors['surface-raised'],
       borderRadius: 4,
       fontFamily: 'Menlo',
       paddingHorizontal: 4,
     },
     code_block: {
-      color: colors.foreground,
-      backgroundColor: colors['bg-elevated'],
+      color: colors['text-primary'],
+      backgroundColor: colors['surface-raised'],
       borderRadius: 8,
       fontFamily: 'Menlo',
       padding: 12,
     },
     fence: {
-      color: colors.foreground,
-      backgroundColor: colors['bg-elevated'],
+      color: colors['text-primary'],
+      backgroundColor: colors['surface-raised'],
       borderRadius: 8,
       fontFamily: 'Menlo',
       padding: 12,

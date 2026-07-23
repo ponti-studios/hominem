@@ -1,6 +1,7 @@
+import { GlassView } from 'expo-glass-effect';
 import type { SFSymbol } from 'expo-symbols';
 import React from 'react';
-import { InputAccessoryView, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
+import { InputAccessoryView, Keyboard, ScrollView, View } from 'react-native';
 
 import type { FormatCommand } from '~/components/notes/note-formatting';
 import { makeStyles } from '~/components/theme';
@@ -139,9 +140,11 @@ export function NoteToolbar(props: NoteToolbarProps) {
   const styles = useToolbarStyles();
   return (
     <InputAccessoryView nativeID={NOTE_TOOLBAR_ID} backgroundColor="transparent">
-      <View style={styles.container}>
-        <ToolbarButtons {...props} />
-      </View>
+      <GlassView style={styles.glass}>
+        <View style={styles.container}>
+          <ToolbarButtons {...props} />
+        </View>
+      </GlassView>
     </InputAccessoryView>
   );
 }
@@ -149,12 +152,18 @@ export function NoteToolbar(props: NoteToolbarProps) {
 const useToolbarStyles = makeStyles((theme) => ({
   container: {
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
-    borderTopColor: theme.colors['border-subtle'],
-    borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.sm,
+    flex: 1,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  glass: {
+    alignSelf: 'stretch',
+    borderRadius: 12,
+    flexDirection: 'row',
+    height: 48,
+    marginHorizontal: 8,
+    overflow: 'hidden',
   },
   scroll: {
     flex: 1,

@@ -5,11 +5,8 @@ import * as Device from 'expo-device';
 const extra = (Constants.expoConfig?.extra ?? {}) as {
   apiBaseUrl?: string;
   appEnvironment?: string;
-  e2eTesting?: boolean;
-  mobilePasskeyEnabled?: string;
   onDeviceAiSpikeEnabled?: string;
   appScheme?: string;
-  releaseChannel?: string | null;
 };
 
 const hostUri = Constants.expoConfig?.hostUri ?? Constants.manifest2?.extra?.expoClient?.hostUri;
@@ -50,11 +47,10 @@ const configuredApiBaseUrl = toDeviceReachableApiBaseUrl(
 const fallbackApiBaseUrl =
   localHost && Device.isDevice ? `http://${localHost}:4040` : 'http://localhost:4040';
 const appEnvironment = extra.appEnvironment ?? process.env.APP_ENV ?? 'development';
-const releaseChannel = extra.releaseChannel ?? process.env.OMIRO_RELEASE_CHANNEL ?? null;
-export const E2E_TESTING =
-  extra.e2eTesting === true || process.env.EXPO_PUBLIC_E2E_TESTING === 'true';
+const releaseChannel = ['staging', 'production'].includes(appEnvironment) ? appEnvironment : null;
+export const E2E_TESTING = appEnvironment === 'e2e';
 function isReleaseAppEnvironment(environment: string) {
-  return environment === 'production';
+  return ['staging', 'production'].includes(environment);
 }
 
 const isReleaseRuntime = isReleaseAppEnvironment(appEnvironment);
@@ -72,10 +68,6 @@ export const APP_NAME = BRAND.appName;
 export const RELEASE_CHANNEL = releaseChannel;
 
 const toBooleanFlag = (value: string | undefined) => value === 'true';
-
-export const MOBILE_PASSKEY_ENABLED = toBooleanFlag(
-  extra.mobilePasskeyEnabled || process.env.EXPO_PUBLIC_MOBILE_PASSKEY_ENABLED,
-);
 
 // Surfaces the on-device Apple Intelligence spike outside __DEV__ builds so
 // it's reachable in TestFlight. Only enabled per-build via

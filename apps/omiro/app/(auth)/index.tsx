@@ -1,15 +1,7 @@
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { useCallback, useState } from 'react';
+import { KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -18,31 +10,72 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
-import { useThemeColors } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { IconChip } from '~/components/ui/icon-chip';
+import { Input } from '~/components/ui/input';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';
-import { E2E_TESTING, MOBILE_PASSKEY_ENABLED } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
 import { resolveAuthScreenState } from '~/services/auth/auth-screen-state';
-import { useMobilePasskeyAuth } from '~/services/auth/hooks/use-mobile-passkey-auth';
 import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
 import { posthog } from '~/services/posthog';
 import t from '~/translations';
 
+const useStyles = makeStyles(() => ({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
+  contentShell: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  card: {
+    width: '100%',
+    maxWidth: 420,
+    gap: 18,
+  },
+  copyBlock: {
+    gap: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  helperText: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  formSection: {
+    gap: 12,
+  },
+  input: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  errorText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+}));
+
 function AuthScreen() {
-  const { isPending, isSignedIn, completePasskeySignIn, requestEmailOtp } = useAuth();
+  const { isPending, isSignedIn, requestEmailOtp } = useAuth();
   const router = useRouter();
   const themeColors = useThemeColors();
+  const styles = useStyles();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const {
-    signIn: signInWithPasskey,
-    isLoading: isPasskeyLoading,
-    error: passkeyError,
-    isSupported: isPasskeySupported,
-  } = useMobilePasskeyAuth({ loadPasskeys: false });
   const normalizedEmail = normalizeEmail(email);
   const emailIsValid = isValidEmail(normalizedEmail);
 
@@ -97,55 +130,16 @@ function AuthScreen() {
     }
   }, [normalizedEmail, requestEmailOtp, router]);
 
-  const handlePasskeySignIn = useCallback(async () => {
-    posthog.capture('auth_passkey_pressed');
-    try {
-      setIsSubmitting(true);
-      setAuthError(null);
-      const result = await signInWithPasskey();
-      if (result) {
-        await completePasskeySignIn(result);
-      }
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : t.auth.passkey.genericError);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [completePasskeySignIn, signInWithPasskey]);
-
-  const handleE2EPasskey = useCallback(
-    async (mode: 'e2e-success' | 'e2e-cancel') => {
-      try {
-        setIsSubmitting(true);
-        setAuthError(null);
-        const result = await signInWithPasskey(mode);
-        if (result) {
-          await completePasskeySignIn(result);
-        }
-      } catch (error) {
-        setAuthError(error instanceof Error ? error.message : t.auth.passkey.genericError);
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [completePasskeySignIn, signInWithPasskey],
-  );
-
   if (isSignedIn) {
     return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
   }
 
-  const { isProbing, displayError } = resolveAuthScreenState({
-    isPending,
-    authError,
-    passkeyError,
-  });
-  const canUsePasskeys = MOBILE_PASSKEY_ENABLED && isPasskeySupported;
+  const { isProbing, displayError } = resolveAuthScreenState({ isPending, authError });
 
   return (
     <>
       <KeyboardAvoidingView
-        style={[styles.container, { backgroundColor: themeColors.background }]}
+        style={[styles.container, { backgroundColor: themeColors['surface-canvas'] }]}
         behavior="padding"
       >
         <ScrollView
@@ -160,7 +154,7 @@ function AuthScreen() {
               <IconChip icon="envelope" />
 
               <View style={styles.copyBlock}>
-                <Text style={[styles.title, { color: themeColors.foreground }]}>
+                <Text style={[styles.title, { color: themeColors['text-primary'] }]}>
                   {t.auth.emailEntry.title}
                 </Text>
                 <Text style={[styles.helperText, { color: themeColors['text-secondary'] }]}>
@@ -171,7 +165,7 @@ function AuthScreen() {
               {!isProbing ? (
                 <View style={styles.formSection}>
                   <Animated.View style={shakeStyle}>
-                    <TextInput
+                    <Input
                       testID="auth-email-input"
                       value={email}
                       placeholder={t.auth.emailEntry.emailPlaceholder}
@@ -182,16 +176,16 @@ function AuthScreen() {
                       autoCorrect={false}
                       autoFocus
                       editable={!isSubmitting}
-                      cursorColor={themeColors.foreground}
-                      selectionColor={themeColors.foreground}
+                      cursorColor={themeColors['text-primary']}
+                      selectionColor={themeColors['text-primary']}
                       style={[
                         styles.input,
                         {
-                          backgroundColor: themeColors['bg-surface'],
+                          backgroundColor: themeColors['surface-panel'],
                           borderColor: displayError
                             ? themeColors.destructive
                             : themeColors['border-default'],
-                          color: themeColors.foreground,
+                          color: themeColors['text-primary'],
                           opacity: isSubmitting ? 0.6 : 1,
                         },
                       ]}
@@ -233,108 +227,15 @@ function AuthScreen() {
                       variant="primary"
                     />
                   </Animated.View>
-
-                  {canUsePasskeys ? (
-                    <Button
-                      testID="auth-passkey-button"
-                      label={
-                        isPasskeyLoading
-                          ? t.auth.emailEntry.passkeyLoadingButton
-                          : t.auth.emailEntry.passkeyButton
-                      }
-                      onPress={() => void handlePasskeySignIn()}
-                      disabled={isSubmitting || isPasskeyLoading}
-                      variant="secondary"
-                    />
-                  ) : null}
                 </View>
               ) : null}
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {E2E_TESTING && MOBILE_PASSKEY_ENABLED ? (
-        <Pressable
-          onPress={() => void handleE2EPasskey('e2e-success')}
-          style={styles.e2ePasskeyAction}
-          testID="auth-e2e-passkey-success"
-        />
-      ) : null}
-
-      {E2E_TESTING && MOBILE_PASSKEY_ENABLED ? (
-        <Pressable
-          onPress={() => void handleE2EPasskey('e2e-cancel')}
-          style={styles.e2ePasskeyActionAlt}
-          testID="auth-e2e-passkey-cancel"
-        />
-      ) : null}
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  contentShell: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 420,
-    gap: 18,
-  },
-  copyBlock: {
-    gap: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  helperText: {
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  formSection: {
-    gap: 12,
-  },
-  input: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  errorText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  e2ePasskeyAction: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 16,
-    height: 16,
-    opacity: 0.02,
-  },
-  e2ePasskeyActionAlt: {
-    position: 'absolute',
-    top: 24,
-    right: 4,
-    width: 16,
-    height: 16,
-    opacity: 0.02,
-  },
-});
 
 const AuthWithErrorBoundary = () => (
   <FeatureErrorBoundary featureName="Auth">

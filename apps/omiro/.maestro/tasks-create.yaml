@@ -5,9 +5,9 @@ appId: com.pontistudios.hakumi.dev
 # tapping by fuzzy text inside the sheet can hit the merged accessibility
 # node covering the whole screen and dismiss the sheet via the backdrop.
 - runFlow: startup.yaml
-- tapOn: Open inbox menu
 - tapOn: Tasks
-- tapOn: Add task
+- tapOn:
+    id: tasks-add-button
 - assertVisible:
     id: task-editor-title-input
 - tapOn:

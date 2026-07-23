@@ -9,9 +9,9 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 1000
 - assertVisible:
-    id: 'inbox-tab-control'
+    id: 'workspace-context-chats'
 - assertVisible:
-    id: 'inbox-search-action'
+    id: 'workspace-search-button'
 - assertVisible:
     id: 'inbox-overflow-action'
 - assertVisible:
@@ -47,11 +47,11 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 1000
 - tapOn:
-    id: 'inbox-search-action'
+    id: 'workspace-search-button'
 - waitForAnimationToEnd:
     timeout: 2000
 - assertVisible:
-    id: 'inbox-search-input'
+    id: 'workspace-search-input'
 - tapOn: 'Close search'
 - waitForAnimationToEnd:
     timeout: 1000
@@ -68,3 +68,13 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible: 'Thinking...'
 - assertVisible:
     id: 'chat-composer-input'
+- tapOn:
+    id: 'BackButton'
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn:
+    id: 'workspace-search-button'
+- tapOn:
+    id: 'workspace-search-input'
+- inputText: 'Start a new chat from home'
+- assertVisible: 'Start a new chat from home'

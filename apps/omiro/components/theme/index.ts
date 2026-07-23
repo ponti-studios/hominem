@@ -1,31 +1,25 @@
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 
-import defaultTheme, {
-  componentSizes,
-  theme,
-  themeSpacing,
-  useThemeColors,
-  type Theme,
-} from './theme';
+import { componentSizes, theme, themeSpacing, useTheme, useThemeColors, type Theme } from './theme';
 
 export {
-  durations,
   radii,
-  shadowsNative,
+  shadows,
   spacing,
+  transitionDurations,
   type ColorToken,
   type RadiusToken,
   type SpacingToken,
-} from '~/components/theme/ponti-tokens';
-export { colors } from './theme';
+} from '~/components/theme/tokens';
+export { colors } from './tokens';
 export { fontFamiliesNative, fontSizes, fontWeights, lineHeights, Text } from './typography';
-export { componentSizes, theme, themeSpacing, useThemeColors };
-export { defaultTheme as default };
+export { componentSizes, theme, themeSpacing, useTheme, useThemeColors };
 export type { Theme };
 
 type StyleMap = Record<string, ViewStyle | TextStyle | ImageStyle>;
 
 export const makeStyles = <T extends StyleMap>(styles: (theme: Theme) => T & StyleMap) => {
-  const computed = styles(theme);
-  return () => computed;
+  return () => {
+    return styles(useTheme());
+  };
 };

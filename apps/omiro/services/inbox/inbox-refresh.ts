@@ -34,7 +34,8 @@ export function removeInboxStreamItem(queryClient: QueryClient, identity: InboxI
         pages: data.pages.map((page) => ({
           ...page,
           items: page.items.filter(
-            (item) => !(item.kind === identity.kind && item.entityId === identity.entityId),
+            (item: InboxStreamItem) =>
+              !(item.kind === identity.kind && item.entityId === identity.entityId),
           ),
         })),
       };
