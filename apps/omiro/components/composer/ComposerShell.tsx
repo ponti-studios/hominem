@@ -12,7 +12,10 @@ import Animated, {
 import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
 import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
 import { makeStyles, useThemeColors } from '~/components/theme';
-import { createLayoutTransition } from '~/components/theme/animations';
+import {
+  createComposerReflowTransition,
+  createLayoutTransition,
+} from '~/components/theme/animations';
 import { nativeShadows, radii, spacing } from '~/components/theme/tokens';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
@@ -86,7 +89,7 @@ export function ComposerShell({
         {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
         <Animated.View
           style={styles.contentArea}
-          layout={createLayoutTransition(prefersReducedMotion)}
+          layout={createComposerReflowTransition(prefersReducedMotion)}
         >
           {isRecording ? null : <View style={styles.inputRow}>{inputChild}</View>}
           {isColumnLayout && inlinePanel ? (
@@ -97,12 +100,17 @@ export function ComposerShell({
               and still claim a full row of vertical space. */}
           {isRecording ? null : (
             // Renders after inputRow so it paints on top when overlaid in row mode.
-            <View
+            // Animated + `layout` here (not just on the parent contentArea) is what
+            // makes the position:absolute (row overlay) <-> position:relative (column)
+            // flip interpolate as one continuous move instead of snapping — Reanimated
+            // measures this view's own before/after bounds regardless of position type.
+            <Animated.View
               style={isColumnLayout ? styles.controlsAnchorColumn : styles.controlsAnchorOverlay}
+              layout={createComposerReflowTransition(prefersReducedMotion)}
               pointerEvents={isColumnLayout ? 'auto' : 'box-none'}
             >
               {toolbarChild}
-            </View>
+            </Animated.View>
           )}
         </Animated.View>
       </Animated.View>

@@ -12,6 +12,7 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useDerivedValue,
+  useSharedValue,
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
@@ -60,6 +61,11 @@ export function IconButton({
   const styles = useStyles();
   const prefersReducedMotion = useReducedMotion();
 
+  const pressScale = useSharedValue(1);
+  const pressScaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }],
+  }));
+
   const rotation = useDerivedValue(() => {
     if (!isAnimating || prefersReducedMotion) {
       return withTiming(0, { duration: 120 });
@@ -83,27 +89,37 @@ export function IconButton({
           : themeColors['text-primary']);
 
   return (
-    <Pressable
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole={accessibilityRole}
-      disabled={disabled}
-      hitSlop={hitSlop}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.button,
-        { height: size, width: size },
-        variant === 'surface' ? styles.surface : null,
-        variant === 'primary' ? styles.primary : null,
-        circular ? { borderRadius: size / 2 } : null,
-        style,
-        disabled ? { opacity: disabledOpacity } : pressed ? { opacity: pressedOpacity } : null,
-      ]}
-      {...rest}
-    >
-      <Animated.View style={iconStyle}>
-        <AppIcon name={icon} size={iconSize} tintColor={resolvedTintColor} />
-      </Animated.View>
-    </Pressable>
+    <Animated.View style={pressScaleStyle}>
+      <Pressable
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
+        disabled={disabled}
+        hitSlop={hitSlop}
+        onPress={onPress}
+        onPressIn={() => {
+          if (!prefersReducedMotion) {
+            pressScale.value = withTiming(0.94, { duration: 100 });
+          }
+        }}
+        onPressOut={() => {
+          pressScale.value = withTiming(1, { duration: 150 });
+        }}
+        style={({ pressed }) => [
+          styles.button,
+          { height: size, width: size },
+          variant === 'surface' ? styles.surface : null,
+          variant === 'primary' ? styles.primary : null,
+          circular ? { borderRadius: size / 2 } : null,
+          style,
+          disabled ? { opacity: disabledOpacity } : pressed ? { opacity: pressedOpacity } : null,
+        ]}
+        {...rest}
+      >
+        <Animated.View style={iconStyle}>
+          <AppIcon name={icon} size={iconSize} tintColor={resolvedTintColor} />
+        </Animated.View>
+      </Pressable>
+    </Animated.View>
   );
 }
 

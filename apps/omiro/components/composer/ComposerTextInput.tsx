@@ -1,9 +1,12 @@
 import React from 'react';
-import { TextInput, View } from 'react-native';
+import { TextInput } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { ROW_MODE_INPUT_MARGIN } from '~/components/composer/constants';
 import { makeStyles, useThemeColors } from '~/components/theme';
+import { createComposerReflowTransition } from '~/components/theme/animations';
 import { spacing } from '~/components/theme/tokens';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 interface ComposerTextInputProps {
   inputRef: React.RefObject<TextInput | null>;
@@ -31,9 +34,13 @@ export function ComposerTextInput({
 }: ComposerTextInputProps) {
   const themeColors = useThemeColors();
   const styles = useStyles();
+  const prefersReducedMotion = useReducedMotion();
 
   return (
-    <View style={[styles.inputContainer, isColumnLayout ? null : styles.inputContainerRowMode]}>
+    <Animated.View
+      style={[styles.inputContainer, isColumnLayout ? null : styles.inputContainerRowMode]}
+      layout={createComposerReflowTransition(prefersReducedMotion)}
+    >
       <TextInput
         ref={inputRef}
         multiline
@@ -48,7 +55,7 @@ export function ComposerTextInput({
         style={styles.input}
         testID={testID}
       />
-    </View>
+    </Animated.View>
   );
 }
 

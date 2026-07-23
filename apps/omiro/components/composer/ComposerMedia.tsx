@@ -41,7 +41,7 @@ export function ComposerMedia({ accessibilityLabel, disabled = false }: Composer
         icon="plus"
         iconSize={TOOLBAR_ICON_SIZE}
         size={TOOL_BTN_SIZE}
-        variant="surface"
+        variant="ghost"
         circular
         disabled={disabled}
         disabledOpacity={0.4}
