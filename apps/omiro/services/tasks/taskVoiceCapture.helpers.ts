@@ -1,4 +1,4 @@
-import type { TaskVoiceCaptureErrorCode } from './use-task-voice-capture';
+import type { TaskVoiceCaptureErrorCode } from './taskVoiceCapture.types';
 
 export interface TaskVoiceCaptureErrorPresentation {
   title: string;

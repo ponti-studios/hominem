@@ -1,9 +1,9 @@
 import { Stack } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
-import { Text, theme, useThemeColors } from '~/components/theme';
+import { Text, makeStyles, useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { APP_NAME } from '~/constants';
 import { useAppLock } from '~/hooks/use-app-lock';
@@ -13,7 +13,7 @@ import { useAuth } from '~/services/auth/auth-provider';
 import queryClient from '~/services/query-client';
 import t from '~/translations';
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   root: {
     flex: 1,
   },
@@ -26,10 +26,11 @@ const styles = StyleSheet.create({
   unlockButtonWrap: {
     minWidth: 160,
   },
-});
+}));
 
 function ProtectedShell() {
   const themeColors = useThemeColors();
+  const styles = useStyles();
   const { isPending, isSignedIn } = useAuth();
   const { isUnlocked, authenticate } = useAppLock();
   const prefersReducedMotion = useReducedMotion();

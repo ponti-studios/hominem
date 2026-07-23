@@ -5,7 +5,7 @@ import {
   type TextStyle,
 } from 'react-native';
 
-import type { ColorToken } from '~/components/theme/ponti-tokens';
+import type { ColorToken } from '~/components/theme/tokens';
 
 import { colors } from './colors';
 

@@ -1,7 +1,7 @@
-import React, { forwardRef, useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { StyleSheet, TextInput, type TextInputProps } from 'react-native';
 
-import { colors, fontSizes, radii, themeSpacing } from '~/components/theme';
+import { fontSizes, makeStyles, radii, themeSpacing, useThemeColors } from '~/components/theme';
 
 /**
  * The Input primitive (Primitives §2 of the design constitution): a bordered
@@ -13,37 +13,7 @@ interface InputProps extends TextInputProps {
   error?: boolean;
 }
 
-export const Input = forwardRef<TextInput, InputProps>(function Input(
-  { style, error = false, onFocus, onBlur, ...props },
-  ref,
-) {
-  const [focused, setFocused] = useState(false);
-
-  const borderColor = error
-    ? colors.destructive
-    : focused
-      ? colors.accent
-      : colors['border-default'];
-
-  return (
-    <TextInput
-      ref={ref}
-      placeholderTextColor={colors['text-tertiary']}
-      onFocus={(event) => {
-        setFocused(true);
-        onFocus?.(event);
-      }}
-      onBlur={(event) => {
-        setFocused(false);
-        onBlur?.(event);
-      }}
-      style={[styles.input, { borderColor, color: colors['text-primary'] }, style]}
-      {...props}
-    />
-  );
-});
-
-const styles = StyleSheet.create({
+const useStyles = makeStyles(() => ({
   input: {
     borderRadius: radii.md,
     borderWidth: StyleSheet.hairlineWidth,
@@ -52,4 +22,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: themeSpacing.lg,
     paddingVertical: themeSpacing.md,
   },
+}));
+
+export const Input = forwardRef<TextInput, InputProps>(function Input(
+  { style, error = false, onFocus, onBlur, ...props },
+  ref,
+) {
+  const [focused, setFocused] = useState(false);
+  const styles = useStyles();
+  const themeColors = useThemeColors();
+
+  const borderColor = error
+    ? themeColors.destructive
+    : focused
+      ? themeColors.accent
+      : themeColors['border-default'];
+
+  return (
+    <TextInput
+      ref={ref}
+      placeholderTextColor={themeColors['text-tertiary']}
+      onFocus={(event) => {
+        setFocused(true);
+        onFocus?.(event);
+      }}
+      onBlur={(event) => {
+        setFocused(false);
+        onBlur?.(event);
+      }}
+      style={[styles.input, { borderColor, color: themeColors['text-primary'] }, style]}
+      {...props}
+    />
+  );
 });

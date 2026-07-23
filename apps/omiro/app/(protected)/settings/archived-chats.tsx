@@ -1,16 +1,71 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import type { RelativePathString } from 'expo-router';
 import { Stack, useIsFocused, useRouter } from 'expo-router';
-import React, { memo, useCallback, useMemo } from 'react';
-import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { memo, useCallback, useMemo } from 'react';
+import { Pressable, RefreshControl, Text, View } from 'react-native';
 
-import { useThemeColors } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import { EmptyState } from '~/components/ui/EmptyState';
 import AppIcon from '~/components/ui/icon';
 import { useArchivedChats } from '~/hooks/useArchivedChats';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { getContentRoute } from '~/services/navigation/routes';
 import t from '~/translations';
+
+const useStyles = makeStyles(() => ({
+  chatCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  chatMeta: {
+    fontSize: 12,
+  },
+  chatRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 52,
+    paddingVertical: 12,
+  },
+  chatRowPressed: {
+    opacity: 0.6,
+  },
+  chatTitle: {
+    fontSize: 15,
+  },
+  emptyWrap: {
+    paddingTop: 32,
+  },
+  emptyCopy: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  emptyState: {
+    gap: 2,
+    paddingVertical: 2,
+  },
+  emptyTitle: {
+    fontSize: 15,
+  },
+  header: {
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  helperText: {
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  listContent: {
+    paddingBottom: 24,
+  },
+  listFooter: {
+    height: 16,
+  },
+  rowWrap: {
+    paddingHorizontal: 16,
+  },
+}));
 
 export default function ArchivedChatsScreen() {
   const router = useRouter();
@@ -57,6 +112,7 @@ function ArchivedChatsSwiftUI({
   onRefresh: () => void;
 }) {
   const themeColors = useThemeColors();
+  const styles = useStyles();
   const header = useMemo(
     () => (
       <View style={styles.header}>
@@ -120,6 +176,7 @@ const ArchivedChatRow = memo(
     onPressChat: (chatId: string) => void;
   }) => {
     const themeColors = useThemeColors();
+    const styles = useStyles();
 
     return (
       <View style={styles.rowWrap}>
@@ -144,58 +201,3 @@ const ArchivedChatRow = memo(
 );
 
 ArchivedChatRow.displayName = 'ArchivedChatRow';
-
-const styles = StyleSheet.create({
-  chatCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  chatMeta: {
-    fontSize: 12,
-  },
-  chatRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
-    minHeight: 52,
-    paddingVertical: 12,
-  },
-  chatRowPressed: {
-    opacity: 0.6,
-  },
-  chatTitle: {
-    fontSize: 15,
-  },
-  emptyWrap: {
-    paddingTop: 32,
-  },
-  emptyCopy: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  emptyState: {
-    gap: 2,
-    paddingVertical: 2,
-  },
-  emptyTitle: {
-    fontSize: 15,
-  },
-  header: {
-    paddingBottom: 8,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  helperText: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  listContent: {
-    paddingBottom: 24,
-  },
-  listFooter: {
-    height: 16,
-  },
-  rowWrap: {
-    paddingHorizontal: 16,
-  },
-});

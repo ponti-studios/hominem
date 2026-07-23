@@ -5,21 +5,15 @@ import { useCallback, useState } from 'react';
 import { getNativeErrorCode, useVoiceRecorder } from '~/hooks/useVoiceRecorder';
 import VoiceTranscriberModule, { VoiceTranscriberErrorCode } from '~/modules/voice-transcriber';
 
+import type { TaskVoiceCaptureError, TaskVoiceCaptureState } from './taskVoiceCapture.types';
 import { useVoiceTasks } from './use-voice-tasks';
+
 export { getTaskVoiceCaptureErrorPresentation } from './taskVoiceCapture.helpers';
-
-export type TaskVoiceCaptureState = 'idle' | 'recording' | 'transcribing' | 'creating' | 'failed';
-
-export type TaskVoiceCaptureErrorCode =
-  | 'permission-denied'
-  | 'recording-failed'
-  | 'transcription-failed'
-  | 'creation-failed';
-
-export interface TaskVoiceCaptureError {
-  code: TaskVoiceCaptureErrorCode;
-  transcript?: string;
-}
+export type {
+  TaskVoiceCaptureError,
+  TaskVoiceCaptureErrorCode,
+  TaskVoiceCaptureState,
+} from './taskVoiceCapture.types';
 
 export function useTaskVoiceCapture() {
   const { mutateAsync: createVoiceTasks } = useVoiceTasks();

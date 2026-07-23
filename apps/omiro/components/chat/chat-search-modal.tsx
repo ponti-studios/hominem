@@ -1,8 +1,9 @@
 import type React from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, View, type TextInput } from 'react-native';
 
 import { Text, makeStyles, spacing } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import { Input } from '~/components/ui/input';
 import { ModalOverlay } from '~/components/ui/modal-overlay';
 import t from '~/translations';
 
@@ -37,7 +38,7 @@ export function ChatSearchModal({
               </Pressable>
             </View>
 
-            <TextInput
+            <Input
               key={visible ? 'visible' : 'hidden'}
               ref={searchInputRef}
               autoFocus
@@ -47,7 +48,7 @@ export function ChatSearchModal({
               returnKeyType="search"
               selectionColor={styles.input.color}
               cursorColor={styles.input.color}
-              style={styles.input}
+              style={[styles.input, { borderWidth: 0 }]}
               onChangeText={onChangeSearchQuery}
             />
 

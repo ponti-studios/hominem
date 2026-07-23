@@ -1,15 +1,15 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { theme } from '~/components/theme';
+import { makeStyles } from '~/components/theme';
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((theme) => ({
   root: {
     flex: 1,
     backgroundColor: theme.colors['surface-canvas'],
   },
-});
+}));
 
 export function ProtectedRouteFallback() {
+  const styles = useStyles();
   return <View testID="protected-route-fallback" style={styles.root} />;
 }

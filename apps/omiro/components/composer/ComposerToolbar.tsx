@@ -5,7 +5,7 @@ import Reanimated, { LinearTransition, SlideInRight, SlideOutRight } from 'react
 
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
 import { makeStyles, useThemeColors } from '~/components/theme';
-import { spacing } from '~/components/theme/ponti-tokens';
+import { spacing } from '~/components/theme/tokens';
 import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
 

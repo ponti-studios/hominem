@@ -47,9 +47,7 @@ const configuredApiBaseUrl = toDeviceReachableApiBaseUrl(
 const fallbackApiBaseUrl =
   localHost && Device.isDevice ? `http://${localHost}:4040` : 'http://localhost:4040';
 const appEnvironment = extra.appEnvironment ?? process.env.APP_ENV ?? 'development';
-const releaseChannel = ['staging', 'production'].includes(appEnvironment)
-  ? appEnvironment
-  : null;
+const releaseChannel = ['staging', 'production'].includes(appEnvironment) ? appEnvironment : null;
 export const E2E_TESTING = appEnvironment === 'e2e';
 function isReleaseAppEnvironment(environment: string) {
   return ['staging', 'production'].includes(environment);

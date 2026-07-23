@@ -574,9 +574,24 @@ const useNoteStyles = makeStyles((theme) => ({
 function markdownStyles(colors: ReturnType<typeof useThemeColors>) {
   return {
     body: { color: colors['text-primary'], fontSize: 17, lineHeight: 28 },
-    heading1: { color: colors['text-primary'], fontSize: 24, fontWeight: '700' as const, marginTop: 12 },
-    heading2: { color: colors['text-primary'], fontSize: 20, fontWeight: '700' as const, marginTop: 10 },
-    heading3: { color: colors['text-primary'], fontSize: 18, fontWeight: '600' as const, marginTop: 8 },
+    heading1: {
+      color: colors['text-primary'],
+      fontSize: 24,
+      fontWeight: '700' as const,
+      marginTop: 12,
+    },
+    heading2: {
+      color: colors['text-primary'],
+      fontSize: 20,
+      fontWeight: '700' as const,
+      marginTop: 10,
+    },
+    heading3: {
+      color: colors['text-primary'],
+      fontSize: 18,
+      fontWeight: '600' as const,
+      marginTop: 8,
+    },
     strong: { color: colors['text-primary'], fontWeight: '700' as const },
     em: { color: colors['text-primary'], fontStyle: 'italic' as const },
     link: { color: colors.accent, textDecorationLine: 'underline' as const },

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -10,13 +10,14 @@ import {
 } from 'react-native';
 
 import {
-  colors,
   componentSizes,
   fontSizes,
   fontWeights,
   lineHeights,
+  makeStyles,
   radii,
   themeSpacing,
+  useThemeColors,
 } from '~/components/theme';
 
 /**
@@ -39,6 +40,27 @@ interface ButtonProps {
 
 const COMPACT_HEIGHT = 36;
 
+const useStyles = makeStyles(() => ({
+  text: {
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
+    lineHeight: lineHeights.bodySm,
+  },
+  textSm: {
+    fontSize: fontSizes.footnote,
+    lineHeight: lineHeights.footnote,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  loading: {
+    opacity: 0.7,
+  },
+}));
+
 export function Button({
   label,
   onPress,
@@ -48,6 +70,8 @@ export function Button({
   variant = 'primary',
   testID,
 }: ButtonProps) {
+  const themeColors = useThemeColors();
+  const styles = useStyles();
   const resolvedStyles = useMemo(() => {
     const baseStyle = {
       // Vertical padding must leave room for the text's line height (not
@@ -64,18 +88,18 @@ export function Button({
 
     const variantStyles: Record<ButtonVariant, StyleProp<ViewStyle>> = {
       primary: {
-        backgroundColor: colors.accent,
+        backgroundColor: themeColors.accent,
       },
       secondary: {
-        backgroundColor: colors['surface-inset'],
+        backgroundColor: themeColors['surface-inset'],
       },
       destructive: {
-        backgroundColor: colors.destructive,
+        backgroundColor: themeColors.destructive,
       },
       outline: {
         backgroundColor: 'transparent',
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: colors['border-default'],
+        borderColor: themeColors['border-default'],
       },
       ghost: {
         backgroundColor: 'transparent',
@@ -83,18 +107,18 @@ export function Button({
     };
 
     const textColor: Record<ButtonVariant, string> = {
-      primary: colors['text-on-accent'],
-      secondary: colors['text-primary'],
-      destructive: colors['text-on-accent'],
-      outline: colors['text-primary'],
-      ghost: colors['text-primary'],
+      primary: themeColors['text-on-accent'],
+      secondary: themeColors['text-primary'],
+      destructive: themeColors['text-on-accent'],
+      outline: themeColors['text-primary'],
+      ghost: themeColors['text-primary'],
     };
 
     return {
       container: [baseStyle, variantStyles[variant], disabled && styles.disabled],
       text: textColor[variant],
     };
-  }, [disabled, size, variant]);
+  }, [disabled, size, variant, themeColors, styles.disabled]);
 
   const isInteractionDisabled = disabled || loading;
 
@@ -133,24 +157,3 @@ export function Button({
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  text: {
-    fontSize: fontSizes.md,
-    fontWeight: fontWeights.semibold,
-    lineHeight: lineHeights.bodySm,
-  },
-  textSm: {
-    fontSize: fontSizes.footnote,
-    lineHeight: lineHeights.footnote,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  loading: {
-    opacity: 0.7,
-  },
-});

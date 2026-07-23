@@ -1,21 +1,20 @@
 import { useRouter } from 'expo-router';
 import type { SFSymbol } from 'expo-symbols';
 import React, { useEffect, useReducer, useState } from 'react';
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Alert, Pressable, ScrollView, Switch, Text, View } from 'react-native';
 
 import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
-import { componentSizes, fontSizes, radii, spacing, useThemeColors } from '~/components/theme';
+import {
+  componentSizes,
+  fontSizes,
+  makeStyles,
+  radii,
+  spacing,
+  useThemeColors,
+} from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
+import { Input } from '~/components/ui/input';
 import { getAppLockEnabled, setAppLockEnabled } from '~/hooks/use-app-lock';
 import { getPreventScreenshots, setPreventScreenshots } from '~/hooks/use-screen-capture';
 import OnDeviceAIModule, { type CalendarPermissionStatus } from '~/modules/on-device-ai';
@@ -59,6 +58,125 @@ function accountReducer(state: AccountState, action: AccountAction): AccountStat
   }
 }
 
+const useStyles = makeStyles(() => ({
+  avatar: {
+    alignItems: 'center',
+    borderRadius: radii.xl,
+    height: 52,
+    justifyContent: 'center',
+    width: 52,
+  },
+  avatarText: {
+    fontSize: 19,
+    fontWeight: '700',
+  },
+  identity: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 16,
+  },
+  identityCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  identityEmail: {
+    fontSize: 13,
+  },
+  identityNameInput: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+    padding: 0,
+  },
+  identityStatus: {
+    paddingHorizontal: 16,
+  },
+  removeText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  row: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: componentSizes.xl,
+  },
+  rowCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  rowDescription: {
+    fontSize: 13,
+  },
+  rowLabel: {
+    fontSize: fontSizes.md,
+  },
+  rowLabelGroup: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  rowPressed: {
+    opacity: 0.6,
+  },
+  rowTouchable: {
+    paddingHorizontal: 16,
+  },
+  saveRow: {
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+  },
+  scrollContent: {
+    gap: spacing[6],
+    paddingBottom: 24,
+    paddingTop: 12,
+  },
+  section: {
+    gap: spacing[2],
+  },
+  sectionLabel: {
+    fontSize: fontSizes.footnote,
+    fontWeight: '600',
+    paddingHorizontal: 16,
+  },
+  statusText: {
+    fontSize: 13,
+  },
+  usageAmount: {
+    fontSize: 28,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '700',
+    letterSpacing: -0.4,
+  },
+  usageAmountRow: {
+    alignItems: 'baseline',
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+  },
+  usageCap: {
+    fontSize: 14,
+    fontVariant: ['tabular-nums'],
+  },
+  usageFill: {
+    borderRadius: 4,
+    height: 4,
+  },
+  usageNote: {
+    fontSize: 12,
+    paddingHorizontal: 16,
+  },
+  usageTrack: {
+    borderRadius: 4,
+    height: 4,
+    marginHorizontal: 16,
+    overflow: 'hidden',
+  },
+}));
+
 /** A List row (Primitives §2): icon + label on the left, one accessory on the
  * right. No background, no border — rows are separated by space alone. */
 function SettingsRow({
@@ -79,6 +197,7 @@ function SettingsRow({
   testID?: string;
 }) {
   const themeColors = useThemeColors();
+  const styles = useStyles();
   const labelColor = destructive ? themeColors.destructive : themeColors['text-primary'];
   const content = (
     <View style={styles.row}>
@@ -122,6 +241,7 @@ function SettingsRow({
 
 function SectionLabel({ children }: { children: string }) {
   const themeColors = useThemeColors();
+  const styles = useStyles();
   return (
     <Text style={[styles.sectionLabel, { color: themeColors['text-secondary'] }]}>{children}</Text>
   );
@@ -130,6 +250,7 @@ function SectionLabel({ children }: { children: string }) {
 function Settings() {
   const router = useRouter();
   const themeColors = useThemeColors();
+  const styles = useStyles();
   const { isPending, isSignedIn, signOut, currentUser, updateProfile } = useAuth();
   const { data: monthlyUsage } = useMonthlyUsage();
   const initialName = currentUser?.name ?? '';
@@ -238,7 +359,7 @@ function Settings() {
           </Text>
         </View>
         <View style={styles.identityCopy}>
-          <TextInput
+          <Input
             key={`name-${currentUser?.id ?? 'anonymous'}`}
             value={state.name}
             placeholder={t.settings.name.placeholder}
@@ -246,7 +367,7 @@ function Settings() {
             returnKeyType="done"
             selectionColor={themeColors['text-primary']}
             cursorColor={themeColors['text-primary']}
-            style={[styles.identityNameInput, { color: themeColors['text-primary'] }]}
+            style={[styles.identityNameInput, { borderWidth: 0, color: themeColors['text-primary'] }]}
             onChangeText={(text) => {
               dispatch({ type: 'set-name', name: text });
               setSaveError(null);
@@ -420,122 +541,3 @@ function Settings() {
 }
 
 export default Settings;
-
-const styles = StyleSheet.create({
-  avatar: {
-    alignItems: 'center',
-    borderRadius: radii.xl,
-    height: 52,
-    justifyContent: 'center',
-    width: 52,
-  },
-  avatarText: {
-    fontSize: 19,
-    fontWeight: '700',
-  },
-  identity: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 16,
-  },
-  identityCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  identityEmail: {
-    fontSize: 13,
-  },
-  identityNameInput: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-    padding: 0,
-  },
-  identityStatus: {
-    paddingHorizontal: 16,
-  },
-  removeText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  row: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'space-between',
-    minHeight: componentSizes.xl,
-  },
-  rowCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  rowDescription: {
-    fontSize: 13,
-  },
-  rowLabel: {
-    fontSize: fontSizes.md,
-  },
-  rowLabelGroup: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: 10,
-  },
-  rowPressed: {
-    opacity: 0.6,
-  },
-  rowTouchable: {
-    paddingHorizontal: 16,
-  },
-  saveRow: {
-    alignItems: 'flex-start',
-    paddingHorizontal: 16,
-  },
-  scrollContent: {
-    gap: spacing[6],
-    paddingBottom: 24,
-    paddingTop: 12,
-  },
-  section: {
-    gap: spacing[2],
-  },
-  sectionLabel: {
-    fontSize: fontSizes.footnote,
-    fontWeight: '600',
-    paddingHorizontal: 16,
-  },
-  statusText: {
-    fontSize: 13,
-  },
-  usageAmount: {
-    fontSize: 28,
-    fontVariant: ['tabular-nums'],
-    fontWeight: '700',
-    letterSpacing: -0.4,
-  },
-  usageAmountRow: {
-    alignItems: 'baseline',
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 16,
-  },
-  usageCap: {
-    fontSize: 14,
-    fontVariant: ['tabular-nums'],
-  },
-  usageFill: {
-    borderRadius: 4,
-    height: 4,
-  },
-  usageNote: {
-    fontSize: 12,
-    paddingHorizontal: 16,
-  },
-  usageTrack: {
-    borderRadius: 4,
-    height: 4,
-    marginHorizontal: 16,
-    overflow: 'hidden',
-  },
-});

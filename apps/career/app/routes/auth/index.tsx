@@ -3,10 +3,9 @@ import { maskEmail } from '@hominem/auth/shared/mask-email';
 import { resolveOAuthResumeUrl } from '@hominem/auth/shared/redirect-policy';
 import { redirect, useLocation, useNavigate } from 'react-router';
 
+import { EmailOtpAuthFlow, type EmailOtpAuthCopy } from '~/components/auth/email-otp-auth-flow';
 import { serverEnv } from '~/lib/env';
 import { userContext } from '~/lib/middleware';
-
-import { EmailOtpAuthFlow, type EmailOtpAuthCopy } from '~/components/auth/email-otp-auth-flow';
 
 import { Route } from './+types/index';
 import { AUTH_CONFIG } from './config';

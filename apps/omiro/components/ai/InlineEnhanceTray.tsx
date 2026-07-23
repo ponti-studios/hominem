@@ -1,10 +1,11 @@
 import React from 'react';
-import { Pressable, TextInput, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
-import { radii, spacing } from '~/components/theme/ponti-tokens';
+import { radii, spacing } from '~/components/theme/tokens';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
+import { Input } from '~/components/ui/input';
 import t from '~/translations';
 
 interface InlineEnhanceTrayProps {
@@ -62,7 +63,7 @@ export function InlineEnhanceTray({
         })}
       </View>
 
-      <TextInput
+      <Input
         value={instruction}
         onChangeText={onInstructionChange}
         placeholder={t.enhance.instructionPlaceholder}

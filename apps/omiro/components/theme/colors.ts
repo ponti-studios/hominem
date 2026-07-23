@@ -1,1 +1,1 @@
-export { colors, colorThemes } from './ponti-tokens';
+export { colors, colorThemes } from './tokens';

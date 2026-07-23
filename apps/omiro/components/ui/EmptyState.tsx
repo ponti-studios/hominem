@@ -1,12 +1,12 @@
 import type { SFSymbol } from 'expo-symbols';
-import { Image, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
+import { Image, Text, View, type ImageSourcePropType } from 'react-native';
 import Reanimated, { FadeIn } from 'react-native-reanimated';
 
 import {
   componentSizes,
   fontSizes,
   fontWeights,
-  lineHeights,
+  makeStyles,
   themeSpacing,
   useThemeColors,
 } from '../theme';
@@ -23,6 +23,31 @@ interface EmptyStateProps {
   title: string;
 }
 
+const useStyles = makeStyles(() => ({
+  container: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  asset: {
+    height: 112,
+    resizeMode: 'contain',
+    width: 112,
+  },
+  content: {
+    width: '100%',
+    maxWidth: 320,
+    alignItems: 'center',
+    gap: themeSpacing.md,
+    paddingHorizontal: themeSpacing.xl,
+  },
+  title: {
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.semibold,
+    textAlign: 'center',
+  },
+}));
+
 function EmptyState({
   action,
   bottomOffset = DEFAULT_BOTTOM_OFFSET,
@@ -31,6 +56,7 @@ function EmptyState({
   title,
 }: EmptyStateProps) {
   const themeColors = useThemeColors();
+  const styles = useStyles();
 
   return (
     <Reanimated.View
@@ -55,36 +81,6 @@ function EmptyState({
     </Reanimated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  asset: {
-    height: 112,
-    resizeMode: 'contain',
-    width: 112,
-  },
-  content: {
-    width: '100%',
-    maxWidth: 320,
-    alignItems: 'center',
-    gap: themeSpacing.md,
-    paddingHorizontal: themeSpacing.xl,
-  },
-  title: {
-    fontSize: fontSizes.lg,
-    fontWeight: fontWeights.semibold,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: fontSizes.subhead,
-    lineHeight: lineHeights.readable,
-    textAlign: 'center',
-  },
-});
 
 export { EmptyState };
 export type { EmptyStateProps };

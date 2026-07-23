@@ -1,7 +1,7 @@
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
-import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -10,9 +10,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
-import { useThemeColors } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { IconChip } from '~/components/ui/icon-chip';
+import { Input } from '~/components/ui/input';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import { useAuth } from '~/services/auth/auth-provider';
 import { resolveAuthScreenState } from '~/services/auth/auth-screen-state';
@@ -20,10 +21,58 @@ import { isValidEmail, normalizeEmail } from '~/services/auth/validation';
 import { posthog } from '~/services/posthog';
 import t from '~/translations';
 
+const useStyles = makeStyles(() => ({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
+  contentShell: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  card: {
+    width: '100%',
+    maxWidth: 420,
+    gap: 18,
+  },
+  copyBlock: {
+    gap: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  helperText: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  formSection: {
+    gap: 12,
+  },
+  input: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  errorText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+}));
+
 function AuthScreen() {
   const { isPending, isSignedIn, requestEmailOtp } = useAuth();
   const router = useRouter();
   const themeColors = useThemeColors();
+  const styles = useStyles();
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -116,7 +165,7 @@ function AuthScreen() {
               {!isProbing ? (
                 <View style={styles.formSection}>
                   <Animated.View style={shakeStyle}>
-                    <TextInput
+                    <Input
                       testID="auth-email-input"
                       value={email}
                       placeholder={t.auth.emailEntry.emailPlaceholder}
@@ -187,53 +236,6 @@ function AuthScreen() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  contentShell: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 420,
-    gap: 18,
-  },
-  copyBlock: {
-    gap: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  helperText: {
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  formSection: {
-    gap: 12,
-  },
-  input: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  errorText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-});
 
 const AuthWithErrorBoundary = () => (
   <FeatureErrorBoundary featureName="Auth">

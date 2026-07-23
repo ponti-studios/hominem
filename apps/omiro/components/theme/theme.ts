@@ -1,6 +1,11 @@
 import { useColorScheme } from 'react-native';
 
-import { colorThemes, radii, spacing as tokenSpacing, type ColorTheme } from '~/components/theme/ponti-tokens';
+import {
+  colorThemes,
+  radii,
+  spacing as tokenSpacing,
+  type ColorTheme,
+} from '~/components/theme/tokens';
 
 import { fontFamiliesNative, fontSizes, fontWeights, lineHeights } from './typography';
 
@@ -32,13 +37,14 @@ export const typography = {
   lineHeights,
 } as const;
 
-export const createTheme = (colors: ColorTheme) => ({
-  colors,
-  spacing: themeSpacing,
-  borderRadii,
-  componentSizes,
-  typography,
-} as const);
+export const createTheme = (colors: ColorTheme) =>
+  ({
+    colors,
+    spacing: themeSpacing,
+    borderRadii,
+    componentSizes,
+    typography,
+  }) as const;
 
 export type Theme = ReturnType<typeof createTheme>;
 
@@ -51,5 +57,3 @@ export function useThemeColors() {
 export function useTheme() {
   return createTheme(useThemeColors());
 }
-
-export default theme;

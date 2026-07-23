@@ -3,15 +3,7 @@ import { maskEmail } from '@hominem/auth/shared/mask-email';
 import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
-import {
-  KeyboardAvoidingView,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -20,7 +12,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { useThemeColors } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import { OTP_EXPIRES_SECONDS } from '~/config/auth-protocol';
 import { readPendingAuthEmail } from '~/services/auth/pending-email';
@@ -30,6 +22,7 @@ import { FeatureErrorBoundary } from '../../components/error-boundary/FeatureErr
 import { Button } from '../../components/ui/button';
 import AppIcon from '../../components/ui/icon';
 import { IconChip } from '../../components/ui/icon-chip';
+import { Input } from '../../components/ui/input';
 import { useAuth } from '../../services/auth/auth-provider';
 import { normalizeOtp } from '../../services/auth/validation';
 import { posthog } from '../../services/posthog';
@@ -53,6 +46,103 @@ function resolveSecondsLeft(tokenSentAt: number, now = Date.now()) {
   return Math.max(0, OTP_EXPIRES_SECONDS - Math.floor((now - tokenSentAt) / 1000));
 }
 
+const useStyles = makeStyles(() => ({
+  container: {
+    flex: 1,
+  },
+  successContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successContent: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  successText: {
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 80,
+  },
+  contentShell: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  card: {
+    width: '100%',
+    maxWidth: 420,
+    gap: 18,
+  },
+  copyBlock: {
+    gap: 8,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+  },
+  emailChipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  helperText: {
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  emailChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  emailChipText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  formSection: {
+    gap: 12,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    padding: 0,
+  },
+  countdown: {
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
+    marginLeft: 8,
+  },
+  errorText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  verifyButtonWrap: {
+    overflow: 'hidden',
+  },
+  tertiaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+  },
+}));
+
 function resolveAutoSubmitInput({
   resolvedEmail,
   token,
@@ -74,6 +164,7 @@ function resolveAutoSubmitInput({
 function VerifyScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
+  const styles = useStyles();
   const { isSignedIn, requestEmailOtp, verifyEmailOtp } = useAuth();
   const {
     email: emailParam,
@@ -276,7 +367,7 @@ function VerifyScreen() {
                     },
                   ]}
                 >
-                  <TextInput
+                  <Input
                     testID="auth-otp-input"
                     value={normalizedOtp}
                     placeholder={t.auth.verify.codePlaceholder}
@@ -290,7 +381,7 @@ function VerifyScreen() {
                     editable={!isBusy}
                     cursorColor={themeColors['text-primary']}
                     selectionColor={themeColors['text-primary']}
-                    style={[styles.input, { color: themeColors['text-primary'] }]}
+                    style={[styles.input, { borderWidth: 0, color: themeColors['text-primary'] }]}
                     onChangeText={(value) => {
                       setOtp(normalizeOtp(value));
                     }}
@@ -377,103 +468,6 @@ function VerifyScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  successContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  successContent: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  successText: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 80,
-  },
-  contentShell: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 420,
-    gap: 18,
-  },
-  copyBlock: {
-    gap: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  emailChipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  helperText: {
-    fontSize: 15,
-    lineHeight: 20,
-  },
-  emailChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  emailChipText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  formSection: {
-    gap: 12,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    padding: 0,
-  },
-  countdown: {
-    fontSize: 13,
-    fontVariant: ['tabular-nums'],
-    marginLeft: 8,
-  },
-  errorText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  verifyButtonWrap: {
-    overflow: 'hidden',
-  },
-  tertiaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-  },
-});
 
 const VerifyWithErrorBoundary = () => (
   <FeatureErrorBoundary featureName="AuthVerify">

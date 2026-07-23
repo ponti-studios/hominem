@@ -1,5 +1,5 @@
-import React, { memo } from 'react';
-import { Pressable, StyleSheet, type ColorValue, type ViewStyle } from 'react-native';
+import { memo } from 'react';
+import { Pressable, type ColorValue, type ViewStyle } from 'react-native';
 import Reanimated, {
   Extrapolation,
   interpolate,
@@ -7,6 +7,7 @@ import Reanimated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 
+import { makeStyles } from '~/components/theme';
 import AppIcon, { type IconProps } from '~/components/ui/icon';
 
 interface SwipeActionProps {
@@ -22,6 +23,17 @@ interface SwipeActionProps {
   style?: ViewStyle;
 }
 
+const useStyles = makeStyles(() => ({
+  container: {
+    height: '100%',
+  },
+  pressable: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+}));
+
 export const SwipeAction = memo(
   ({
     progress,
@@ -35,6 +47,7 @@ export const SwipeAction = memo(
     translateOffset = 24,
     style,
   }: SwipeActionProps) => {
+    const styles = useStyles();
     const animatedStyle = useAnimatedStyle(() => {
       const clampedProgress = Math.min(progress.value, 1);
 
@@ -77,14 +90,3 @@ export const SwipeAction = memo(
 );
 
 SwipeAction.displayName = 'SwipeAction';
-
-const styles = StyleSheet.create({
-  container: {
-    height: '100%',
-  },
-  pressable: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
-});

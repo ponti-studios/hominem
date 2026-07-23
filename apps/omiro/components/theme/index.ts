@@ -1,28 +1,20 @@
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native';
 
-import defaultTheme, {
-  componentSizes,
-  theme,
-  themeSpacing,
-  useTheme,
-  useThemeColors,
-  type Theme,
-} from './theme';
+import { componentSizes, theme, themeSpacing, useTheme, useThemeColors, type Theme } from './theme';
 
 export {
-  nativeShadows,
   radii,
+  shadows,
   shadows,
   spacing,
   transitionDurations,
   type ColorToken,
   type RadiusToken,
   type SpacingToken,
-} from '~/components/theme/ponti-tokens';
-export { colors } from './ponti-tokens';
+} from '~/components/theme/tokens';
+export { colors } from './tokens';
 export { fontFamiliesNative, fontSizes, fontWeights, lineHeights, Text } from './typography';
 export { componentSizes, theme, themeSpacing, useTheme, useThemeColors };
-export { defaultTheme as default };
 export type { Theme };
 
 type StyleMap = Record<string, ViewStyle | TextStyle | ImageStyle>;

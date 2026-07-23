@@ -10,7 +10,7 @@ import Animated, {
 import { RecordingLevelMeter } from '~/components/composer/RecordingLevelMeter';
 import { useElapsedTimer } from '~/components/composer/useElapsedTimer';
 import { Text, makeStyles, useThemeColors } from '~/components/theme';
-import { spacing } from '~/components/theme/ponti-tokens';
+import { spacing } from '~/components/theme/tokens';
 import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
 

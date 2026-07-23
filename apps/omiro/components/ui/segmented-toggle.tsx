@@ -1,7 +1,14 @@
 import type { SFSymbol } from 'expo-symbols';
-import { Image, type ImageSourcePropType, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, type ImageSourcePropType, Pressable, Text, View } from 'react-native';
 
-import { colors, componentSizes, fontSizes, fontWeights, radii } from '~/components/theme';
+import {
+  componentSizes,
+  fontSizes,
+  fontWeights,
+  makeStyles,
+  radii,
+  useThemeColors,
+} from '~/components/theme';
 
 import AppIcon from './icon';
 
@@ -26,6 +33,46 @@ interface SegmentedToggleProps<T extends string> {
 
 const ICON_SIZE = 20;
 
+const useStyles = makeStyles((theme) => ({
+  icon: {
+    height: ICON_SIZE,
+    width: ICON_SIZE,
+  },
+  label: {
+    color: theme.colors['text-secondary'],
+    fontSize: fontSizes.footnote,
+    fontWeight: fontWeights.semibold,
+  },
+  labelSelected: {
+    color: theme.colors['text-on-accent'],
+  },
+  segment: {
+    alignItems: 'center',
+    borderRadius: radii.full,
+    justifyContent: 'center',
+    minHeight: componentSizes.xl,
+  },
+  segmentIcon: {
+    width: componentSizes.xl,
+  },
+  segmentLabel: {
+    paddingHorizontal: componentSizes.md,
+  },
+  segmentSelected: {
+    backgroundColor: theme.colors.accent,
+  },
+  track: {
+    // componentSizes.xl (44pt) guarantees every segment clears the
+    // platform's minimum tap target (Rule 20, 74) — this must never shrink
+    // to visually match a neighboring icon button's smaller *visual* size,
+    // since IconButton only clears 44pt via hitSlop, not its own frame.
+    backgroundColor: theme.colors['surface-inset'],
+    borderRadius: radii.full,
+    flexDirection: 'row',
+    padding: 2,
+  },
+}));
+
 /**
  * A flat toggle built from our own tokens — no native segmented control, so
  * no OS glass material to fight with. Segments render as text or icons
@@ -38,6 +85,9 @@ export function SegmentedToggle<T extends string>({
   testID,
   value,
 }: SegmentedToggleProps<T>) {
+  const themeColors = useThemeColors();
+  const styles = useStyles();
+
   return (
     // A plain container wrapping accessible Pressable children gets
     // flattened out of the iOS accessibility tree — its own testID never
@@ -48,7 +98,7 @@ export function SegmentedToggle<T extends string>({
       {options.map((option) => {
         const selected = option.value === value;
         const isIcon = Boolean(option.icon || option.sfSymbol);
-        const tintColor = selected ? colors['text-on-accent'] : colors['text-secondary'];
+        const tintColor = selected ? themeColors['text-on-accent'] : themeColors['text-secondary'];
 
         return (
           <Pressable
@@ -81,43 +131,3 @@ export function SegmentedToggle<T extends string>({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  icon: {
-    height: ICON_SIZE,
-    width: ICON_SIZE,
-  },
-  label: {
-    color: colors['text-secondary'],
-    fontSize: fontSizes.footnote,
-    fontWeight: fontWeights.semibold,
-  },
-  labelSelected: {
-    color: colors['text-on-accent'],
-  },
-  segment: {
-    alignItems: 'center',
-    borderRadius: radii.full,
-    justifyContent: 'center',
-    minHeight: componentSizes.xl,
-  },
-  segmentIcon: {
-    width: componentSizes.xl,
-  },
-  segmentLabel: {
-    paddingHorizontal: componentSizes.md,
-  },
-  segmentSelected: {
-    backgroundColor: colors.accent,
-  },
-  track: {
-    // componentSizes.xl (44pt) guarantees every segment clears the
-    // platform's minimum tap target (Rule 20, 74) — this must never shrink
-    // to visually match a neighboring icon button's smaller *visual* size,
-    // since IconButton only clears 44pt via hitSlop, not its own frame.
-    backgroundColor: colors['surface-inset'],
-    borderRadius: radii.full,
-    flexDirection: 'row',
-    padding: 2,
-  },
-});

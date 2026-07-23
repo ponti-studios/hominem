@@ -2,7 +2,7 @@ import React from 'react';
 import { TextInput, View } from 'react-native';
 
 import { makeStyles, useThemeColors } from '~/components/theme';
-import { spacing } from '~/components/theme/ponti-tokens';
+import { spacing } from '~/components/theme/tokens';
 
 interface ComposerTextInputProps {
   inputRef: React.RefObject<TextInput | null>;

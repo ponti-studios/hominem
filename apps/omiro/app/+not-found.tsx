@@ -1,12 +1,13 @@
 import type { RelativePathString } from 'expo-router';
 import { Stack, useRouter } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import {
   componentSizes,
   fontSizes,
   fontWeights,
   lineHeights,
+  makeStyles,
   themeSpacing,
   useThemeColors,
 } from '~/components/theme';
@@ -14,9 +15,35 @@ import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
+const useStyles = makeStyles(() => ({
+  host: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  content: {
+    width: '100%',
+    maxWidth: 360,
+    alignItems: 'center',
+    gap: themeSpacing.md,
+  },
+  title: {
+    fontSize: fontSizes.title1,
+    fontWeight: fontWeights.bold,
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: fontSizes.md,
+    lineHeight: lineHeights.body,
+    textAlign: 'center',
+  },
+}));
+
 export default function NotFoundScreen() {
   const router = useRouter();
   const themeColors = useThemeColors();
+  const styles = useStyles();
 
   return (
     <>
@@ -46,28 +73,3 @@ export default function NotFoundScreen() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  host: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  content: {
-    width: '100%',
-    maxWidth: 360,
-    alignItems: 'center',
-    gap: themeSpacing.md,
-  },
-  title: {
-    fontSize: fontSizes.title1,
-    fontWeight: fontWeights.bold,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: fontSizes.md,
-    lineHeight: lineHeights.body,
-    textAlign: 'center',
-  },
-});

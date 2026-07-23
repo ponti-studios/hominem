@@ -4,7 +4,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 
 import { getRecordingSnapshot, subscribeRecording } from '~/components/media/audio.service';
 import { makeStyles, useThemeColors } from '~/components/theme';
-import { spacing } from '~/components/theme/ponti-tokens';
+import { spacing } from '~/components/theme/tokens';
 
 const BAR_COUNT = 12;
 const BAR_MAX_HEIGHT = 20;

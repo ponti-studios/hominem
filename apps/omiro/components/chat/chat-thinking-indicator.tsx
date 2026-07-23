@@ -8,7 +8,14 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Text, fontSizes, makeStyles, radii, spacing, transitionDurations } from '~/components/theme';
+import {
+  Text,
+  fontSizes,
+  makeStyles,
+  radii,
+  spacing,
+  transitionDurations,
+} from '~/components/theme';
 import t from '~/translations';
 
 const DOT_UP_DURATION = transitionDurations[150];

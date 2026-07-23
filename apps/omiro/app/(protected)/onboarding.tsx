@@ -1,17 +1,61 @@
 import type { RelativePathString } from 'expo-router';
 import { Redirect, Stack } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
-import { useThemeColors } from '~/components/theme';
+import { makeStyles, useThemeColors } from '~/components/theme';
 import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
 import { useAuth } from '~/services/auth/auth-provider';
 import { INBOX_ROUTE } from '~/services/navigation/routes';
 import t from '~/translations';
 
+const useStyles = makeStyles(() => ({
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+    gap: 24,
+  },
+  hero: {
+    gap: 10,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    lineHeight: 34,
+  },
+  helperText: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  formSection: {
+    gap: 12,
+  },
+  input: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  errorText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+}));
+
 const Onboarding = () => {
   const { isSignedIn, currentUser, updateProfile, signOut } = useAuth();
   const themeColors = useThemeColors();
+  const styles = useStyles();
   const [name, setName] = useState('');
   const [hasError, setHasError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,7 +126,7 @@ const Onboarding = () => {
           </View>
 
           <View style={styles.formSection}>
-            <TextInput
+            <Input
               value={name}
               placeholder={t.onboarding.namePlaceholder}
               placeholderTextColor={themeColors['text-tertiary']}
@@ -140,47 +184,5 @@ const Onboarding = () => {
     </>
   );
 };
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 480,
-    alignSelf: 'center',
-    gap: 24,
-  },
-  hero: {
-    gap: 10,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    lineHeight: 34,
-  },
-  helperText: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  formSection: {
-    gap: 12,
-  },
-  input: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  errorText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-});
 
 export default Onboarding;
