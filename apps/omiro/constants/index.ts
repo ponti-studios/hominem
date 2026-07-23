@@ -10,10 +10,7 @@ const extra = (Constants.expoConfig?.extra ?? {}) as {
 const hostUri = Constants.expoConfig?.hostUri ?? Constants.manifest2?.extra?.expoClient?.hostUri;
 const localHost = hostUri ? hostUri.split(':').shift() : null;
 
-function toDeviceReachableApiBaseUrl(
-  baseUrl: string,
-  host: string | null,
-) {
+function toDeviceReachableApiBaseUrl(baseUrl: string, host: string | null) {
   if (!baseUrl || !host) {
     return baseUrl;
   }
@@ -40,8 +37,7 @@ const configuredApiBaseUrl = toDeviceReachableApiBaseUrl(
   configuredApiBaseUrlRaw,
   localHost ?? null,
 );
-const fallbackApiBaseUrl =
-  localHost ? `http://${localHost}:4040` : 'http://localhost:4040';
+const fallbackApiBaseUrl = localHost ? `http://${localHost}:4040` : 'http://localhost:4040';
 const appEnvironment = extra.appEnvironment ?? process.env.APP_ENV ?? 'development';
 const releaseChannel = appEnvironment === 'production' ? appEnvironment : null;
 export const E2E_TESTING = appEnvironment === 'e2e';
