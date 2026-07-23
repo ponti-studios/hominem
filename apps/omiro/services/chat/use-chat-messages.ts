@@ -48,9 +48,9 @@ export const useChatMessages = ({ chatId }: { chatId: string }) => {
         param: { id: chatId },
         query: { limit: String(CHAT_MESSAGES_LIMIT) },
       });
-      const messages = await res.json();
+      const messages = (await res.json()) as RpcChatMessage[];
 
-      const nextMessages = messages.flatMap((message) => {
+      const nextMessages = messages.flatMap((message: RpcChatMessage) => {
         const output = toMessageOutput(message as RpcChatMessage);
         return output ? [output] : [];
       });

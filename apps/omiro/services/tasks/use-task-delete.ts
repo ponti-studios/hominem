@@ -18,16 +18,19 @@ export function useTaskDelete({ parentId }: UseTaskDeleteOptions = {}) {
       return res.json();
     },
     onSuccess: (_deletedTask, taskId) => {
-      queryClient.setQueryData<TaskListItem[]>(taskKeys.all, (current) =>
-        current?.filter((task) => task.id !== taskId),
+      queryClient.setQueryData<TaskListItem[] | undefined>(
+        taskKeys.all,
+        (current: TaskListItem[] | undefined) => current?.filter((task) => task.id !== taskId),
       );
       queryClient.removeQueries({ queryKey: taskKeys.detail(taskId) });
 
       if (parentId) {
-        queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail(parentId), (current) =>
-          current
-            ? { ...current, children: current.children.filter((child) => child.id !== taskId) }
-            : current,
+        queryClient.setQueryData<TaskDetailOutput | undefined>(
+          taskKeys.detail(parentId),
+          (current: TaskDetailOutput | undefined) =>
+            current
+              ? { ...current, children: current.children.filter((child) => child.id !== taskId) }
+              : current,
         );
       }
     },

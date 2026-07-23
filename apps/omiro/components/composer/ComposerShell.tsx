@@ -7,8 +7,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { makeStyles, shadows, useThemeColors } from '~/components/theme';
-import { radii, spacing } from '~/components/theme/tokens';
+import { makeStyles, useThemeColors } from '~/components/theme';
+import { nativeShadows, radii, spacing } from '~/components/theme/tokens';
 
 interface ComposerShellProps {
   accessory?: React.ReactNode;
@@ -58,7 +58,7 @@ export function ComposerShell({
 
 const useStyles = makeStyles((theme) => ({
   surface: {
-    boxShadow: shadows.sm,
+    boxShadow: nativeShadows.sm,
     backgroundColor: theme.colors['surface-canvas'],
     borderColor: theme.colors['border-subtle'],
     borderWidth: 1,

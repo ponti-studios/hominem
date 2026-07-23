@@ -80,7 +80,7 @@ function usesDevelopmentClient(appEnvironment: AppEnvironment) {
 
 function getRuntimeVersion(appEnvironment: AppEnvironment): ExpoConfig['runtimeVersion'] {
   if (!RELEASE_CHANNELS.includes(appEnvironment as ReleaseChannel)) {
-    return null;
+    return undefined;
   }
 
   return { policy: 'fingerprint' };

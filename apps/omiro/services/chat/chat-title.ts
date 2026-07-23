@@ -52,42 +52,48 @@ export function updateChatTitleCaches(
 ) {
   const { chatId, title, updatedAt } = input;
 
-  queryClient.setQueryData<Chat | null>(chatKeys.activeChat(chatId), (currentChat) =>
-    currentChat
-      ? (() => {
-          const nextChat = {
-            ...currentChat,
-            title,
-            ...(updatedAt ? { updatedAt } : null),
-          };
-          writeCachedChat(nextChat);
-          return nextChat;
-        })()
-      : currentChat,
+  queryClient.setQueryData<Chat | null>(
+    chatKeys.activeChat(chatId),
+    (currentChat: Chat | null | undefined) =>
+      currentChat
+        ? (() => {
+            const nextChat = {
+              ...currentChat,
+              title,
+              ...(updatedAt ? { updatedAt } : null),
+            };
+            writeCachedChat(nextChat);
+            return nextChat;
+          })()
+        : currentChat,
   );
 
-  queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.resumableChats, (sessions) =>
-    sessions?.map((session) =>
-      session.id === chatId
-        ? {
-            ...session,
-            title,
-            ...(updatedAt ? { updatedAt, activityAt: updatedAt } : null),
-          }
-        : session,
-    ),
+  queryClient.setQueryData<ChatWithActivity[] | undefined>(
+    chatKeys.resumableChats,
+    (sessions: ChatWithActivity[] | undefined) =>
+      sessions?.map((session) =>
+        session.id === chatId
+          ? {
+              ...session,
+              title,
+              ...(updatedAt ? { updatedAt, activityAt: updatedAt } : null),
+            }
+          : session,
+      ),
   );
 
-  queryClient.setQueryData<ChatWithActivity[] | undefined>(chatKeys.archivedChats, (sessions) =>
-    sessions?.map((session) =>
-      session.id === chatId
-        ? {
-            ...session,
-            title,
-            ...(updatedAt ? { updatedAt, activityAt: updatedAt } : null),
-          }
-        : session,
-    ),
+  queryClient.setQueryData<ChatWithActivity[] | undefined>(
+    chatKeys.archivedChats,
+    (sessions: ChatWithActivity[] | undefined) =>
+      sessions?.map((session) =>
+        session.id === chatId
+          ? {
+              ...session,
+              title,
+              ...(updatedAt ? { updatedAt, activityAt: updatedAt } : null),
+            }
+          : session,
+      ),
   );
 
   void queryClient.invalidateQueries({ queryKey: inboxKeys.pages() });

@@ -49,24 +49,30 @@ export function useTaskUpdate({ parentId }: UseTaskUpdateOptions = {}) {
         ? queryClient.getQueryData<TaskDetailOutput>(taskKeys.detail(parentId))
         : undefined;
 
-      queryClient.setQueryData<TaskListItem[]>(taskKeys.all, (current) =>
-        current?.map((task) => (task.id === input.taskId ? applyPatch(task, input) : task)),
+      queryClient.setQueryData<TaskListItem[] | undefined>(
+        taskKeys.all,
+        (current: TaskListItem[] | undefined) =>
+          current?.map((task) => (task.id === input.taskId ? applyPatch(task, input) : task)),
       );
 
       if (parentId) {
-        queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail(parentId), (current) =>
-          current
-            ? {
-                ...current,
-                children: current.children.map((child) =>
-                  child.id === input.taskId ? applyPatch(child, input) : child,
-                ),
-              }
-            : current,
+        queryClient.setQueryData<TaskDetailOutput | undefined>(
+          taskKeys.detail(parentId),
+          (current: TaskDetailOutput | undefined) =>
+            current
+              ? {
+                  ...current,
+                  children: current.children.map((child) =>
+                    child.id === input.taskId ? applyPatch(child, input) : child,
+                  ),
+                }
+              : current,
         );
       } else {
-        queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail(input.taskId), (current) =>
-          current ? { ...current, task: applyPatch(current.task, input) } : current,
+        queryClient.setQueryData<TaskDetailOutput | undefined>(
+          taskKeys.detail(input.taskId),
+          (current: TaskDetailOutput | undefined) =>
+            current ? { ...current, task: applyPatch(current.task, input) } : current,
         );
       }
 
@@ -81,8 +87,10 @@ export function useTaskUpdate({ parentId }: UseTaskUpdateOptions = {}) {
       }
     },
     onSuccess: (updatedTask) => {
-      queryClient.setQueryData<TaskListItem[]>(taskKeys.all, (current) =>
-        current?.map((task) => (task.id === updatedTask.id ? { ...task, ...updatedTask } : task)),
+      queryClient.setQueryData<TaskListItem[] | undefined>(
+        taskKeys.all,
+        (current: TaskListItem[] | undefined) =>
+          current?.map((task) => (task.id === updatedTask.id ? { ...task, ...updatedTask } : task)),
       );
     },
   });

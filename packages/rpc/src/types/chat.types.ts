@@ -32,7 +32,7 @@ import type { HonoClient } from '../core/api-client';
 
 type _ChatsListEndpoint = HonoClient['api']['chats']['$get'];
 export type ChatsListOutput = InferResponseType<_ChatsListEndpoint, 200>;
-export type Chat = ChatsListOutput[number];
+export type Chat = ChatsListOutput[number] & { archivedAt: string | null };
 
 // ============================================================================
 // CREATE
