@@ -367,7 +367,10 @@ function Settings() {
             returnKeyType="done"
             selectionColor={themeColors['text-primary']}
             cursorColor={themeColors['text-primary']}
-            style={[styles.identityNameInput, { borderWidth: 0, color: themeColors['text-primary'] }]}
+            style={[
+              styles.identityNameInput,
+              { borderWidth: 0, color: themeColors['text-primary'] },
+            ]}
             onChangeText={(text) => {
               dispatch({ type: 'set-name', name: text });
               setSaveError(null);

@@ -5,7 +5,6 @@ import { componentSizes, theme, themeSpacing, useTheme, useThemeColors, type The
 export {
   radii,
   shadows,
-  shadows,
   spacing,
   transitionDurations,
   type ColorToken,
