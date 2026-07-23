@@ -4,6 +4,7 @@ import { useTextEnhance } from './use-text-enhance';
 
 interface RunEnhanceParams {
   text: string;
+  instruction?: string;
   onEnhanced: (enhanced: string) => void;
 }
 
@@ -25,7 +26,7 @@ export function useInlineEnhance() {
   }, []);
 
   const runEnhance = useCallback(
-    async ({ text, onEnhanced }: RunEnhanceParams): Promise<boolean> => {
+    async ({ text, instruction, onEnhanced }: RunEnhanceParams): Promise<boolean> => {
       if (!text.trim() || isEnhancing) {
         return false;
       }
@@ -35,7 +36,7 @@ export function useInlineEnhance() {
       try {
         const enhanced = await enhance({
           text,
-          instruction: enhanceInstruction.trim() || undefined,
+          instruction: instruction?.trim() || enhanceInstruction.trim() || undefined,
         });
         onEnhanced(enhanced);
         closeEnhance();

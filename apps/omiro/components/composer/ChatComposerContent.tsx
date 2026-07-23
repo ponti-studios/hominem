@@ -2,13 +2,10 @@ import React, { useCallback, useRef } from 'react';
 import { TextInput } from 'react-native';
 
 import { InlineEnhancePanel } from '~/components/ai/InlineEnhancePanel';
+import { ComposerKit, useComposerController } from '~/components/composer';
 import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
 import { ComposerProvider } from '~/components/composer/ComposerContext';
-import { ComposerShell } from '~/components/composer/ComposerShell';
-import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
-import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
 import { InlineErrorBanner } from '~/components/composer/InlineErrorBanner';
-import { useComposerController } from '~/components/composer/useComposerController';
 import { getVoiceComposerErrorPresentation } from '~/components/composer/voiceComposerInput.helpers';
 import { VoiceRecordingPanel } from '~/components/composer/VoiceRecordingPanel';
 import { useActiveChat, useAutoUpdateChatTitle, useSendMessage } from '~/services/chat';
@@ -47,6 +44,9 @@ function ChatComposerContent({ chatId, testID }: ChatComposerContentProps) {
     voice,
     enhance,
     clearComposer,
+    isColumnLayout,
+    handleInputFocus,
+    handleInputBlur,
   } = useComposerController({
     initialMessage: persistedDraft,
     isSubmitting: isChatSending,
@@ -71,19 +71,11 @@ function ChatComposerContent({ chatId, testID }: ChatComposerContentProps) {
   ]);
 
   return (
-    <ComposerShell
+    <ComposerKit
       testID={testID ?? 'chat-composer'}
       isRecording={voice.isRecording}
+      isColumnLayout={isColumnLayout}
       accessory={showAttachments ? <ComposerAttachmentRow /> : undefined}
-      input={
-        <ComposerTextInput
-          inputRef={inputRef}
-          value={message}
-          onChangeText={setMessage}
-          placeholder={t.chat.input.messagePlaceholder}
-          testID="chat-composer-input"
-        />
-      }
       inlinePanel={
         voice.isRecording ? (
           <VoiceRecordingPanel
@@ -91,33 +83,45 @@ function ChatComposerContent({ chatId, testID }: ChatComposerContentProps) {
             onCancel={() => void voice.cancelVoiceRecording()}
             onDone={() => void voice.handleVoicePress()}
           />
-        ) : voice.voiceState === 'failed' && voice.error ? (
-          <InlineErrorBanner
-            message={getVoiceComposerErrorPresentation(voice.error.code).message}
-            onDismiss={voice.clearError}
-          />
         ) : (
           <InlineEnhancePanel enhance={enhance} text={message} onEnhanced={setMessage} />
         )
       }
-      toolbar={
-        <ComposerToolbar
-          mode="chat"
-          isRecording={voice.isRecording}
-          isRecordingElsewhere={voice.isRecordingElsewhere}
-          isVoiceBusy={voice.isBusy}
-          isEnhancing={enhance.isEnhancing}
-          isCleaningVoice={voice.isCleaningVoice}
-          canPickMedia={canPickMedia}
-          canToggleVoice={canToggleVoice}
-          canEnhance={canOpenEnhance}
-          canSubmit={canSubmit}
-          isSubmitting={isChatSending}
-          onVoicePress={() => void voice.handleVoicePress()}
-          onEnhancePress={enhance.toggleEnhance}
-          onSubmit={() => void handleSend()}
-        />
+      errorBanner={
+        voice.voiceState === 'failed' && voice.error ? (
+          <InlineErrorBanner
+            message={getVoiceComposerErrorPresentation(voice.error.code).message}
+            onDismiss={voice.clearError}
+          />
+        ) : undefined
       }
-    />
+    >
+      <ComposerKit.Input
+        inputRef={inputRef}
+        value={message}
+        onChangeText={setMessage}
+        placeholder={t.chat.input.messagePlaceholder}
+        testID="chat-composer-input"
+        isColumnLayout={isColumnLayout}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+      />
+      <ComposerKit.Toolbar
+        mode="chat"
+        isRecording={voice.isRecording}
+        isRecordingElsewhere={voice.isRecordingElsewhere}
+        isVoiceBusy={voice.isBusy}
+        isEnhancing={enhance.isEnhancing}
+        isCleaningVoice={voice.isCleaningVoice}
+        canPickMedia={canPickMedia}
+        canToggleVoice={canToggleVoice}
+        canEnhance={canOpenEnhance}
+        canSubmit={canSubmit}
+        isSubmitting={isChatSending}
+        onVoicePress={() => void voice.handleVoicePress()}
+        onEnhancePress={enhance.toggleEnhance}
+        onSubmit={() => void handleSend()}
+      />
+    </ComposerKit>
   );
 }

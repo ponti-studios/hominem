@@ -16,9 +16,15 @@ interface InlineEnhancePanelProps {
   enhance: EnhanceState;
   text: string;
   onEnhanced: (value: string) => void;
+  onCancel?: () => void;
 }
 
-export function InlineEnhancePanel({ enhance, text, onEnhanced }: InlineEnhancePanelProps) {
+export function InlineEnhancePanel({
+  enhance,
+  text,
+  onEnhanced,
+  onCancel,
+}: InlineEnhancePanelProps) {
   if (!enhance.isEnhanceOpen) {
     return null;
   }
@@ -27,7 +33,8 @@ export function InlineEnhancePanel({ enhance, text, onEnhanced }: InlineEnhanceP
     <InlineEnhanceTray
       instruction={enhance.enhanceInstruction}
       onInstructionChange={enhance.setEnhanceInstruction}
-      onCancel={enhance.closeEnhance}
+      onPresetSelect={(instruction) => void enhance.runEnhance({ instruction, text, onEnhanced })}
+      onCancel={onCancel ?? enhance.closeEnhance}
       onConfirm={() => void enhance.runEnhance({ text, onEnhanced })}
       isEnhancing={enhance.isEnhancing}
       error={enhance.enhanceError}

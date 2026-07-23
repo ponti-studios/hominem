@@ -296,7 +296,7 @@ export function ChatDetailScreen() {
           }
         />
         <KeyboardStickyView
-          offset={{ closed: 0, opened: 0 }}
+          offset={{ closed: 0, opened: insets.bottom + 10 }}
           pointerEvents="box-none"
           style={[
             styles.composerOverlay,

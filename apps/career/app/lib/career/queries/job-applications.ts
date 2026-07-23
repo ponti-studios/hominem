@@ -1,6 +1,8 @@
-import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
-
-import { extractJobApplications, getUserJobApplications } from './base';
+import {
+  db,
+  JobApplicationRepository,
+  type JobApplicationRecord as ApplicationWithCompany,
+} from '@hominem/db';
 
 export type JobApplicationFilter = {
   status?: string;
@@ -23,34 +25,37 @@ export type PaginationOptions = {
 
 export async function getAllApplicationsWithCompany(
   ownerUserid: string,
-  filter?: JobApplicationFilter,
-  pagination?: PaginationOptions,
 ): Promise<ApplicationWithCompany[]> {
-  let applications = extractJobApplications(
-    await getUserJobApplications(ownerUserid),
-  ) as ApplicationWithCompany[];
+  return JobApplicationRepository.listUserJobApplicationsWithCompany(db, ownerUserid);
+}
 
-  if (filter?.status) {
-    applications = applications.filter((application) => application.status === filter.status);
+export function filterJobApplications(
+  applications: ApplicationWithCompany[],
+  filter?: JobApplicationFilter,
+): ApplicationWithCompany[] {
+  if (!filter) return applications;
+
+  let result = applications;
+
+  if (filter.status) {
+    result = result.filter((application) => application.status === filter.status);
   }
 
-  if (filter?.statuses?.length) {
-    applications = applications.filter((application) =>
-      filter.statuses?.includes(application.status),
-    );
+  if (filter.statuses?.length) {
+    result = result.filter((application) => filter.statuses!.includes(application.status));
   }
 
-  if (filter?.companyId) {
-    applications = applications.filter((application) => application.companyId === filter.companyId);
+  if (filter.companyId) {
+    result = result.filter((application) => application.companyId === filter.companyId);
   }
 
-  if (filter?.source) {
-    applications = applications.filter((application) => application.source === filter.source);
+  if (filter.source) {
+    result = result.filter((application) => application.source === filter.source);
   }
 
-  if (filter?.search) {
+  if (filter.search) {
     const searchTerm = filter.search.toLowerCase();
-    applications = applications.filter((application) => {
+    result = result.filter((application) => {
       const companyName = application.company?.name.toLowerCase() || '';
       return (
         application.position.toLowerCase().includes(searchTerm) ||
@@ -60,24 +65,31 @@ export async function getAllApplicationsWithCompany(
     });
   }
 
-  if (filter?.startDate) {
-    applications = applications.filter(
+  if (filter.startDate) {
+    result = result.filter(
       (application) =>
         application.applicationDate && new Date(application.applicationDate) >= filter.startDate!,
     );
   }
 
-  if (filter?.endDate) {
-    applications = applications.filter(
+  if (filter.endDate) {
+    result = result.filter(
       (application) =>
         application.applicationDate && new Date(application.applicationDate) <= filter.endDate!,
     );
   }
 
+  return result;
+}
+
+export function sortAndPaginateJobApplications(
+  applications: ApplicationWithCompany[],
+  pagination?: PaginationOptions,
+): ApplicationWithCompany[] {
   const orderBy = pagination?.orderBy || 'applicationDate';
   const direction = pagination?.orderDirection === 'asc' ? 1 : -1;
 
-  applications = [...applications].sort((left, right) => {
+  const sorted = [...applications].sort((left, right) => {
     const leftValue = (() => {
       switch (orderBy) {
         case 'responseDate':
@@ -118,5 +130,5 @@ export async function getAllApplicationsWithCompany(
   const offset = pagination?.offset || 0;
   const limit = pagination?.limit || 1000;
 
-  return applications.slice(offset, offset + limit);
+  return sorted.slice(offset, offset + limit);
 }

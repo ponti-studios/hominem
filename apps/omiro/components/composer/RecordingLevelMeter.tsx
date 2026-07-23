@@ -6,7 +6,7 @@ import { getRecordingSnapshot, subscribeRecording } from '~/components/media/aud
 import { makeStyles, useThemeColors } from '~/components/theme';
 import { spacing } from '~/components/theme/tokens';
 
-const BAR_COUNT = 12;
+const BAR_COUNT = 24;
 const BAR_MAX_HEIGHT = 20;
 const BAR_MIN_HEIGHT = 3;
 
@@ -69,11 +69,14 @@ const useStyles = makeStyles(() => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[1],
+    justifyContent: 'space-between',
+    gap: spacing[1] / 2,
     height: BAR_MAX_HEIGHT,
+    width: '100%',
   },
   bar: {
-    width: 3,
+    flex: 1,
+    maxWidth: 3,
     borderRadius: 2,
   },
 }));

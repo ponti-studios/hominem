@@ -95,7 +95,7 @@ export function PlaidAccountStatus({
           Sync Now
         </Button>
         <AlertDialog>
-          <AlertDialogTrigger asChild>
+          <AlertDialogTrigger>
             <Button variant="destructive" size="sm" disabled={removeConnectionMutation.isLoading}>
               <Trash2 className="size-4 mr-2" />
               Remove Connection

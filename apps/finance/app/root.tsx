@@ -1,10 +1,6 @@
 import { AuthProvider } from '@hominem/auth/client/provider';
 import { Button, buttonVariants, Card, CardContent } from '@ponti-studios/ui/primitives';
-import {
-  COLOR_MODE_ATTRIBUTE,
-  COLOR_SYSTEM_ATTRIBUTE,
-  colorSystems,
-} from '@ponti-studios/ui/tokens';
+import { colorThemes } from '@ponti-studios/ui/tokens';
 import type React from 'react';
 import {
   data,
@@ -45,7 +41,7 @@ export const meta: Route.MetaFunction = () => {
   return [
     { title: 'Florin' },
     { name: 'description', content: 'Manage your personal finances with Florin' },
-    { name: 'theme-color', content: colorSystems.ponti.light['surface-canvas'] },
+    { name: 'theme-color', content: colorThemes.light['surface-canvas'] },
   ];
 };
 
@@ -54,14 +50,14 @@ export const links: Route.LinksFunction = () => [...COMMON_FONT_LINKS, ...COMMON
 const themeBootScript = `
 (() => {
   const root = document.documentElement;
-  const mode = localStorage.getItem('hominem:ui-color-mode') || root.getAttribute('${COLOR_MODE_ATTRIBUTE}') || 'system';
+  const mode = localStorage.getItem('hominem:ui-color-mode') || root.getAttribute('data-color-mode') || 'system';
 
-  root.setAttribute('${COLOR_SYSTEM_ATTRIBUTE}', 'ponti');
+  root.setAttribute('data-color-system', 'ponti');
 
   if (mode === 'light' || mode === 'dark') {
-    root.setAttribute('${COLOR_MODE_ATTRIBUTE}', mode);
+    root.setAttribute('data-color-mode', mode);
   } else {
-    root.removeAttribute('${COLOR_MODE_ATTRIBUTE}');
+    root.removeAttribute('data-color-mode');
   }
 })();
 `;

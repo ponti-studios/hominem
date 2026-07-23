@@ -1,7 +1,7 @@
+import { OTPField } from '@base-ui/react/otp-field';
 import { TextField } from '@ponti-studios/ui/forms';
 import { Button } from '@ponti-studios/ui/primitives';
 import { cn } from '@ponti-studios/ui/utilities';
-import { useEffect, useRef, type ChangeEvent, type ClipboardEvent } from 'react';
 
 const OTP_LENGTH = 6;
 
@@ -38,10 +38,6 @@ export interface EmailOtpAuthFlowProps {
   isSubmitting?: boolean;
 }
 
-function normalizeOtp(value: string) {
-  return value.replace(/\D/g, '').slice(0, OTP_LENGTH);
-}
-
 function AuthScaffold({
   children,
   helperText,
@@ -75,36 +71,29 @@ function OtpInput({
   onChange: (otp: string) => void;
   value: string;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => inputRef.current?.focus(), []);
-
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) =>
-    onChange(normalizeOtp(event.target.value));
-  const handlePaste = (event: ClipboardEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    onChange(normalizeOtp(event.clipboardData.getData('text')));
-  };
-
   return (
-    <input
-      ref={inputRef}
-      type="text"
-      inputMode="numeric"
-      autoComplete="one-time-code"
-      maxLength={OTP_LENGTH}
-      value={normalizeOtp(value)}
+    <OTPField.Root
+      id="otp-verification-code"
+      length={OTP_LENGTH}
       disabled={disabled}
-      onChange={handleChange}
-      onPaste={handlePaste}
-      placeholder="------"
+      value={value}
+      onValueChange={(val) => onChange(val)}
       aria-label="One-time verification code"
       aria-invalid={Boolean(error)}
-      className={cn(
-        'border-subtle bg-panel text-primary h-12 w-full rounded-md border px-3 text-base font-semibold tracking-[0.5em]',
-        error && 'border-destructive',
-      )}
-    />
+      className="flex items-center gap-2"
+    >
+      {Array.from({ length: OTP_LENGTH }, (_, index) => (
+        <OTPField.Input
+          key={index}
+          autoFocus={index === 0}
+          className={cn(
+            'border-subtle bg-panel text-primary h-12 w-10 rounded-md border text-center text-base font-semibold',
+            error && 'border-destructive',
+          )}
+          aria-label={`Character ${index + 1} of ${OTP_LENGTH}`}
+        />
+      ))}
+    </OTPField.Root>
   );
 }
 
@@ -160,8 +149,7 @@ export function EmailOtpAuthFlow({
     );
   }
 
-  const normalizedOtp = normalizeOtp(otp);
-  const canSubmit = normalizedOtp.length === OTP_LENGTH && !isSubmitting && !isResending;
+  const canSubmit = otp.length === OTP_LENGTH && !isSubmitting && !isResending;
 
   return (
     <AuthScaffold title={copy.otpTitle} helperText={otpHelperText}>

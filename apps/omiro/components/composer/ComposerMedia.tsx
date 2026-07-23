@@ -2,13 +2,11 @@ import React, { useCallback, useState } from 'react';
 import { ActionSheetIOS } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
+import { TOOLBAR_ICON_SIZE, TOOL_BTN_SIZE } from '~/components/composer/constants';
 import { CameraModal } from '~/components/media/camera-modal';
 import { spacing } from '~/components/theme/tokens';
 import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
-
-const MEDIA_BTN_SIZE = 38; // ToolBtn per composer spec
-const MEDIA_BTN_ICON_SIZE = 20; // toolbar action icon size
 
 interface ComposerMediaProps {
   accessibilityLabel: string;
@@ -41,14 +39,15 @@ export function ComposerMedia({ accessibilityLabel, disabled = false }: Composer
       <IconButton
         accessibilityLabel={accessibilityLabel}
         icon="plus"
-        iconSize={MEDIA_BTN_ICON_SIZE}
-        size={MEDIA_BTN_SIZE}
+        iconSize={TOOLBAR_ICON_SIZE}
+        size={TOOL_BTN_SIZE}
         variant="surface"
         circular
         disabled={disabled}
         disabledOpacity={0.4}
         pressedOpacity={0.65}
         hitSlop={spacing[2]}
+        testID="composer-attach-button"
         onPress={showPlusMenu}
       />
       <CameraModal

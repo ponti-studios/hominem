@@ -1,6 +1,11 @@
-import { Pressable, View } from 'react-native';
+import { Host, Picker, Label as SwiftUILabel } from '@expo/ui/swift-ui';
+import { environment, labelStyle, pickerStyle, tag } from '@expo/ui/swift-ui/modifiers';
+import type { SFSymbol } from 'expo-symbols';
+import { useEffect, useRef, useState } from 'react';
+import { useColorScheme, View } from 'react-native';
+import type { TextInput } from 'react-native';
 
-import { Text, makeStyles, useThemeColors } from '~/components/theme';
+import { makeStyles, Text, useThemeColors } from '~/components/theme';
 import { radii, spacing } from '~/components/theme/tokens';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
@@ -9,15 +14,27 @@ import t from '~/translations';
 interface InlineEnhanceTrayProps {
   instruction: string;
   onInstructionChange: (value: string) => void;
+  onPresetSelect: (value: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
   isEnhancing?: boolean;
   error?: string | null;
 }
 
+type EnhanceSuggestion = (typeof t.enhance.suggestions)[number];
+const CUSTOM_SELECTION = '__custom__';
+
+const suggestionIcons: Record<EnhanceSuggestion, SFSymbol> = {
+  Fix: 'textformat.abc.dottedunderline',
+  Shorten: 'arrow.down.right.and.arrow.up.left',
+  Expand: 'arrow.up.left.and.arrow.down.right',
+  Bullets: 'list.bullet',
+};
+
 export function InlineEnhanceTray({
   instruction,
   onInstructionChange,
+  onPresetSelect,
   onCancel,
   onConfirm,
   isEnhancing = false,
@@ -25,9 +42,32 @@ export function InlineEnhanceTray({
 }: InlineEnhanceTrayProps) {
   const themeColors = useThemeColors();
   const styles = useStyles();
+  const colorScheme = useColorScheme() === 'dark' ? 'dark' : 'light';
+  const customInputRef = useRef<TextInput>(null);
+  const [isCustomOpen, setIsCustomOpen] = useState(false);
+
+  useEffect(() => {
+    if (isCustomOpen) {
+      customInputRef.current?.focus();
+    }
+  }, [isCustomOpen]);
+
+  const handleSuggestionChange = (selection: string | number) => {
+    if (isEnhancing) {
+      return;
+    }
+
+    if (String(selection) === CUSTOM_SELECTION) {
+      setIsCustomOpen(true);
+      return;
+    }
+
+    setIsCustomOpen(false);
+    onPresetSelect(String(selection));
+  };
 
   return (
-    <View style={[styles.container, { padding: spacing[3] }]}>
+    <View style={[styles.container]}>
       {/* <View style={styles.header}>
         <View style={styles.iconWrap}>
           <AppIcon name="wand.and.sparkles" size={16} tintColor={themeColors['text-secondary']} />
@@ -38,60 +78,69 @@ export function InlineEnhanceTray({
         </View>
       </View> */}
 
-      <View style={styles.chips}>
-        {t.enhance.suggestions.map((suggestion) => {
-          const isActive = instruction === suggestion;
-          return (
-            <Pressable
-              key={suggestion}
-              onPress={() => onInstructionChange(suggestion)}
-              style={({ pressed }) => [
-                styles.chip,
-                {
-                  backgroundColor: isActive ? themeColors['accent'] : themeColors['surface-raised'],
-                  opacity: pressed ? 0.75 : 1,
-                },
-              ]}
-            >
-              <Text style={[styles.chipText, isActive ? styles.chipTextActive : null]}>
-                {suggestion}
-              </Text>
-            </Pressable>
-          );
-        })}
+      <View style={styles.pickerRow}>
+        <Host style={styles.pickerHost}>
+          <Picker
+            selection={isCustomOpen ? CUSTOM_SELECTION : instruction}
+            modifiers={[
+              environment({ key: 'colorScheme', value: colorScheme }),
+              pickerStyle('segmented'),
+            ]}
+            onSelectionChange={handleSuggestionChange}
+          >
+            {t.enhance.suggestions.map((suggestion) => (
+              <SwiftUILabel
+                key={suggestion}
+                title={suggestion}
+                systemImage={suggestionIcons[suggestion]}
+                modifiers={[labelStyle('iconOnly'), tag(suggestion)]}
+              />
+            ))}
+            <SwiftUILabel
+              title="Custom"
+              systemImage="square.and.pencil"
+              modifiers={[labelStyle('iconOnly'), tag(CUSTOM_SELECTION)]}
+            />
+          </Picker>
+        </Host>
       </View>
 
-      <Input
-        value={instruction}
-        onChangeText={onInstructionChange}
-        placeholder={t.enhance.instructionPlaceholder}
-        placeholderTextColor={themeColors['text-tertiary']}
-        style={[
-          styles.input,
-          {
-            backgroundColor: themeColors['surface-raised'],
-            color: themeColors['text-primary'],
-          },
-        ]}
-        returnKeyType="done"
-        onSubmitEditing={onConfirm}
-        editable={!isEnhancing}
-      />
+      {isCustomOpen ? (
+        <Input
+          ref={customInputRef}
+          value={instruction}
+          onChangeText={onInstructionChange}
+          placeholder={t.enhance.instructionPlaceholder}
+          placeholderTextColor={themeColors['text-tertiary']}
+          style={[
+            styles.input,
+            {
+              backgroundColor: themeColors['surface-raised'],
+              color: themeColors['text-primary'],
+            },
+          ]}
+          returnKeyType="done"
+          onSubmitEditing={onConfirm}
+          editable={!isEnhancing}
+        />
+      ) : null}
 
-      <View style={styles.actions}>
-        <View style={styles.actionSlot}>
-          <Button label={t.enhance.cancel} onPress={onCancel} variant="outline" size="sm" />
+      {isCustomOpen ? (
+        <View style={styles.actions}>
+          <View style={styles.actionSlot}>
+            <Button label={t.enhance.cancel} onPress={onCancel} variant="outline" size="sm" />
+          </View>
+          <View style={styles.actionSlot}>
+            <Button
+              label={t.enhance.confirm}
+              onPress={onConfirm}
+              variant="primary"
+              size="sm"
+              loading={isEnhancing}
+            />
+          </View>
         </View>
-        <View style={styles.actionSlot}>
-          <Button
-            label={t.enhance.confirm}
-            onPress={onConfirm}
-            variant="primary"
-            size="sm"
-            loading={isEnhancing}
-          />
-        </View>
-      </View>
+      ) : null}
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
@@ -132,24 +181,14 @@ const useStyles = makeStyles((theme) => ({
     fontSize: 13,
     lineHeight: 18,
   },
-  chips: {
+  pickerRow: {
+    alignItems: 'center',
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing[2],
   },
-  chip: {
-    borderRadius: radii.full,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[1] + 2,
-  },
-  chipText: {
-    color: theme.colors['text-secondary'],
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  chipTextActive: {
-    color: theme.colors['text-on-accent'],
+  pickerHost: {
+    flex: 1,
+    height: 44,
   },
   input: {
     borderRadius: radii.md,

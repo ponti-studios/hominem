@@ -3,12 +3,9 @@ import React, { useCallback, useRef } from 'react';
 import { Alert, TextInput } from 'react-native';
 
 import { InlineEnhancePanel } from '~/components/ai/InlineEnhancePanel';
+import { ComposerKit, useComposerController } from '~/components/composer';
 import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
-import { ComposerShell } from '~/components/composer/ComposerShell';
-import { ComposerTextInput } from '~/components/composer/ComposerTextInput';
-import { ComposerToolbar } from '~/components/composer/ComposerToolbar';
 import { InlineErrorBanner } from '~/components/composer/InlineErrorBanner';
-import { useComposerController } from '~/components/composer/useComposerController';
 import { getVoiceComposerErrorPresentation } from '~/components/composer/voiceComposerInput.helpers';
 import { VoiceRecordingPanel } from '~/components/composer/VoiceRecordingPanel';
 import { normalizeChatTitle, useStartChatFromInbox } from '~/services/chat';
@@ -51,6 +48,9 @@ export function InboxComposerContent({
     voice,
     enhance,
     clearComposer,
+    isColumnLayout,
+    handleInputFocus,
+    handleInputBlur,
   } = useComposerController({
     initialMessage,
     isSubmitting,
@@ -128,19 +128,11 @@ export function InboxComposerContent({
       };
 
   return (
-    <ComposerShell
+    <ComposerKit
       testID={shellTestId}
       isRecording={voice.isRecording}
+      isColumnLayout={isColumnLayout}
       accessory={showAttachments ? <ComposerAttachmentRow /> : undefined}
-      input={
-        <ComposerTextInput
-          inputRef={inputRef}
-          value={message}
-          onChangeText={setMessage}
-          placeholder={inputPlaceholder}
-          testID={inputTestId}
-        />
-      }
       inlinePanel={
         voice.isRecording ? (
           <VoiceRecordingPanel
@@ -148,40 +140,52 @@ export function InboxComposerContent({
             onCancel={() => void voice.cancelVoiceRecording()}
             onDone={() => void voice.handleVoicePress()}
           />
-        ) : voice.voiceState === 'failed' && voice.error ? (
-          <InlineErrorBanner
-            message={getVoiceComposerErrorPresentation(voice.error.code).message}
-            onDismiss={voice.clearError}
-          />
         ) : (
           <InlineEnhancePanel enhance={enhance} text={message} onEnhanced={setMessage} />
         )
       }
-      toolbar={
-        <ComposerToolbar
-          mode="inbox"
-          isRecording={voice.isRecording}
-          isRecordingElsewhere={voice.isRecordingElsewhere}
-          isVoiceBusy={voice.isBusy}
-          isEnhancing={enhance.isEnhancing}
-          isCleaningVoice={voice.isCleaningVoice}
-          canPickMedia={canPickMedia}
-          canToggleVoice={canToggleVoice}
-          canEnhance={canOpenEnhance}
-          canSubmit={canSubmit}
-          isSubmitting={isSubmitting}
-          onVoicePress={() => void voice.handleVoicePress()}
-          onEnhancePress={enhance.toggleEnhance}
-          onSubmit={() => void (isChatEntryMode ? handleStartChat() : handleSave())}
-          submitTestID={isChatEntryMode ? 'composer-submit-chat' : 'composer-submit-note'}
-          submitAccessibilityLabel={
-            isChatEntryMode
-              ? t.inbox.screen.startChatSubmitA11y
-              : t.inboxComposer.composer.saveNoteA11y
-          }
-          secondaryAction={secondaryAction}
-        />
+      errorBanner={
+        voice.voiceState === 'failed' && voice.error ? (
+          <InlineErrorBanner
+            message={getVoiceComposerErrorPresentation(voice.error.code).message}
+            onDismiss={voice.clearError}
+          />
+        ) : undefined
       }
-    />
+    >
+      <ComposerKit.Input
+        inputRef={inputRef}
+        value={message}
+        onChangeText={setMessage}
+        placeholder={inputPlaceholder}
+        testID={inputTestId}
+        isColumnLayout={isColumnLayout}
+        onFocus={handleInputFocus}
+        onBlur={handleInputBlur}
+      />
+      <ComposerKit.Toolbar
+        mode="inbox"
+        isRecording={voice.isRecording}
+        isRecordingElsewhere={voice.isRecordingElsewhere}
+        isVoiceBusy={voice.isBusy}
+        isEnhancing={enhance.isEnhancing}
+        isCleaningVoice={voice.isCleaningVoice}
+        canPickMedia={canPickMedia}
+        canToggleVoice={canToggleVoice}
+        canEnhance={canOpenEnhance}
+        canSubmit={canSubmit}
+        isSubmitting={isSubmitting}
+        onVoicePress={() => void voice.handleVoicePress()}
+        onEnhancePress={enhance.toggleEnhance}
+        onSubmit={() => void (isChatEntryMode ? handleStartChat() : handleSave())}
+        submitTestID={isChatEntryMode ? 'composer-submit-chat' : 'composer-submit-note'}
+        submitAccessibilityLabel={
+          isChatEntryMode
+            ? t.inbox.screen.startChatSubmitA11y
+            : t.inboxComposer.composer.saveNoteA11y
+        }
+        secondaryAction={secondaryAction}
+      />
+    </ComposerKit>
   );
 }

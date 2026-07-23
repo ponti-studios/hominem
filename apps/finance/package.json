@@ -18,6 +18,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@base-ui/react": "^1.6.0",
     "@hominem/auth": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/queues": "workspace:*",

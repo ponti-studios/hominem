@@ -3,7 +3,15 @@ import type { Note } from '@hominem/rpc/types';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Keyboard,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  TextInput,
+  View,
+} from 'react-native';
 import Markdown from 'react-native-markdown-display';
 
 import { InlineEnhancePanel } from '~/components/ai/InlineEnhancePanel';
@@ -269,6 +277,17 @@ function NoteEditorBody({
   const handleDetach = (fileId: string) =>
     detachFile(fileId, note.files, draft.title, draft.content);
 
+  const handleToggleEnhance = useCallback(() => {
+    if (isEnhanceOpen) {
+      closeEnhance();
+      requestAnimationFrame(() => contentInputRef.current?.focus());
+      return;
+    }
+
+    Keyboard.dismiss();
+    toggleEnhance();
+  }, [closeEnhance, isEnhanceOpen, toggleEnhance]);
+
   const handleStartChat = useCallback(async () => {
     if (isStartingChat) return;
 
@@ -324,7 +343,7 @@ function NoteEditorBody({
           onPress={() => setIsPreviewing((current) => !current)}
         />
         <Stack.Toolbar.Menu accessibilityLabel={t.notes.editor.actionsLabel} icon="ellipsis.circle">
-          <Stack.Toolbar.MenuAction icon="sparkles" onPress={toggleEnhance}>
+          <Stack.Toolbar.MenuAction icon="sparkles" onPress={handleToggleEnhance}>
             {t.enhance.confirm}
           </Stack.Toolbar.MenuAction>
           <Stack.Toolbar.MenuAction
@@ -400,20 +419,6 @@ function NoteEditorBody({
           />
         )}
 
-        <InlineEnhancePanel
-          enhance={{
-            isEnhanceOpen,
-            enhanceInstruction,
-            setEnhanceInstruction,
-            closeEnhance,
-            isEnhancing,
-            enhanceError,
-            runEnhance,
-          }}
-          text={draft.content}
-          onEnhanced={(enhanced) => commitDraft({ title: draft.title, content: enhanced })}
-        />
-
         {note.files.length > 0 ? (
           <View style={styles.filesSection}>
             <Text style={styles.filesLabel}>{t.notes.editor.attachments}</Text>
@@ -448,6 +453,28 @@ function NoteEditorBody({
         ) : null}
       </ScrollView>
 
+      {isEnhanceOpen ? (
+        <View style={styles.enhanceTray}>
+          <InlineEnhancePanel
+            enhance={{
+              isEnhanceOpen,
+              enhanceInstruction,
+              setEnhanceInstruction,
+              closeEnhance,
+              isEnhancing,
+              enhanceError,
+              runEnhance,
+            }}
+            text={draft.content}
+            onCancel={handleToggleEnhance}
+            onEnhanced={(enhanced) => {
+              commitDraft({ title: draft.title, content: enhanced });
+              requestAnimationFrame(() => contentInputRef.current?.focus());
+            }}
+          />
+        </View>
+      ) : null}
+
       <NoteToolbar
         onAction={(command) => handleContentChange(formatting.applyFormat(draft.content, command))}
       />
@@ -463,6 +490,11 @@ const useNoteStyles = makeStyles((theme) => ({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: COMPOSER_CLEARANCE,
+  },
+  enhanceTray: {
+    backgroundColor: theme.colors['surface-canvas'],
+    paddingHorizontal: 16,
+    paddingBottom: theme.spacing.xl * 2,
   },
   titleInput: {
     alignSelf: 'stretch',

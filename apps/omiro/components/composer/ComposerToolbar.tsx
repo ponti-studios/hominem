@@ -4,14 +4,15 @@ import { View } from 'react-native';
 import Reanimated, { LinearTransition, SlideInRight, SlideOutRight } from 'react-native-reanimated';
 
 import { ComposerMedia } from '~/components/composer/ComposerMedia';
+import {
+  PRIMARY_BTN_SIZE,
+  TOOLBAR_ICON_SIZE,
+  TOOL_BTN_SIZE,
+} from '~/components/composer/constants';
 import { makeStyles, useThemeColors } from '~/components/theme';
 import { spacing } from '~/components/theme/tokens';
 import { IconButton } from '~/components/ui/icon-button';
 import t from '~/translations';
-
-const TOOL_BTN_SIZE = 38; // ToolBtn / SecondaryBtn per composer spec
-const PRIMARY_BTN_SIZE = 42; // PrimaryBtn per composer spec
-const TOOLBAR_ICON_SIZE = 20; // toolbar action icon size
 
 interface ComposerToolbarProps {
   mode: 'inbox' | 'chat';
@@ -67,10 +68,12 @@ export function ComposerToolbar({
   return (
     <View style={styles.toolbar}>
       <View style={styles.leading}>
-        <ComposerMedia
-          accessibilityLabel={t.inboxComposer.composer.addAttachmentA11y}
-          disabled={!canPickMedia}
-        />
+        {isRecording ? null : (
+          <ComposerMedia
+            accessibilityLabel={t.inboxComposer.composer.addAttachmentA11y}
+            disabled={!canPickMedia}
+          />
+        )}
       </View>
       <Reanimated.View style={styles.trailing} layout={pillLayout}>
         {isRecording ? null : (
@@ -86,6 +89,7 @@ export function ComposerToolbar({
             iconSize={TOOLBAR_ICON_SIZE}
             isAnimating={isVoiceBusy}
             size={TOOL_BTN_SIZE}
+            testID="composer-mic-button"
             variant="surface"
             onPress={onVoicePress}
           />

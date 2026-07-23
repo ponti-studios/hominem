@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useComposerAttachments } from '~/components/composer/ComposerContext';
 import { useComposerDraft } from '~/components/composer/useComposerDraft';
@@ -40,6 +40,16 @@ export function useComposerController({
     (!isInteractionBusy && !voice.isCleaningVoice && !voice.isRecordingElsewhere);
   const showAttachments = attachments.length > 0 || errors.length > 0 || isUploading;
 
+  const [isFocused, setIsFocused] = useState(false);
+  const handleInputFocus = useCallback(() => setIsFocused(true), []);
+  const handleInputBlur = useCallback(() => setIsFocused(false), []);
+
+  // The transcription-failed error no longer counts here — it renders as a popover
+  // above the composer (ComposerShell's errorBanner slot), not as inline body content,
+  // so it shouldn't force the composer itself into column layout.
+  const isInlinePanelOpen = voice.isRecording || enhance.isEnhanceOpen;
+  const isColumnLayout = isFocused || hasContent || showAttachments || isInlinePanelOpen;
+
   const clearComposer = useCallback(() => {
     draft.clearDraft();
     clearAttachments();
@@ -60,6 +70,10 @@ export function useComposerController({
     canPickMedia,
     canToggleVoice,
     isInteractionBusy,
+    isFocused,
+    handleInputFocus,
+    handleInputBlur,
+    isColumnLayout,
     voice,
     enhance,
     clearComposer,
