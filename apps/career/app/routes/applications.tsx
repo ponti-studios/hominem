@@ -69,7 +69,9 @@ export async function loader({ context, request }: Route.LoaderArgs) {
     };
 
     const allApplications = await getAllApplicationsWithCompany(user.id);
-    const filteredApplications = filter ? filterJobApplications(allApplications, filter) : allApplications;
+    const filteredApplications = filter
+      ? filterJobApplications(allApplications, filter)
+      : allApplications;
     const paginatedApplications = sortAndPaginateJobApplications(filteredApplications, pagination);
 
     return {
