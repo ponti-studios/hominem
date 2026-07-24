@@ -1,4 +1,20 @@
-import type { Selectable, Session as DbSession, User as DbUser } from '@hominem/db';
+export interface User {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  name: string;
+  image: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
-export type User = Selectable<DbUser>;
-export type Session = Selectable<DbSession>;
+export interface Session {
+  id: string;
+  token: string;
+  userId: string;
+  expiresAt: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
