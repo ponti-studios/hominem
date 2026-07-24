@@ -16,7 +16,7 @@ profiles=("production")
 cd "$app_dir"
 for profile in "${profiles[@]}"; do
   echo "Resolving EAS build config for profile '$profile'..."
-  if ! pnpm dlx eas-cli@18.13.1 config --profile "$profile" --platform ios; then
+  if ! pnpm dlx eas-cli@21.2.0 config --profile "$profile" --platform ios; then
     echo "error: EAS build config for profile '$profile' failed to resolve." >&2
     echo "This usually means a required env var (e.g. EXPO_PUBLIC_API_BASE_URL) is missing" >&2
     echo "from the workflow step, or eas.json has a setting incompatible with app.config.ts" >&2

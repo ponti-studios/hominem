@@ -34,18 +34,18 @@ prebuild environment:
 build environment:
     #!/usr/bin/env bash
     case "{{ environment }}" in
-      development|e2e|production|screenshots) cd "{{ OMIRO_DIR }}" && pnpm dlx eas-cli@18.13.1 build --platform ios --profile "{{ environment }}" ;;
+      development|e2e|production|screenshots) cd "{{ OMIRO_DIR }}" && pnpm dlx eas-cli@21.2.0 build --platform ios --profile "{{ environment }}" ;;
       *) echo "error: unknown environment '{{ environment }}'" >&2; exit 1 ;;
     esac
 
 update environment:
     #!/usr/bin/env bash
     case "{{ environment }}" in
-      production) cd "{{ OMIRO_DIR }}" && APP_ENV=production pnpm dlx eas-cli@18.13.1 update --channel production ;;
+      production) cd "{{ OMIRO_DIR }}" && APP_ENV=production pnpm dlx eas-cli@21.2.0 update --channel production ;;
       *) echo "error: unknown environment '{{ environment }}'" >&2; exit 1 ;;
     esac
 
 release:
     #!/usr/bin/env bash
     cd "{{ OMIRO_DIR }}"
-    APP_ENV=production pnpm dlx eas-cli@18.13.1 build --platform ios --profile production --auto-submit --non-interactive
+    APP_ENV=production pnpm dlx eas-cli@21.2.0 build --platform ios --profile production --auto-submit --non-interactive

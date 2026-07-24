@@ -49,7 +49,7 @@ jobs:
       - name: build-and-submit-production
         working-directory: apps/omiro
         run: >-
-          pnpm dlx eas-cli@18.13.1 build
+          pnpm dlx eas-cli@21.2.0 build
           --platform ios
           --profile production
           --auto-submit
@@ -59,7 +59,7 @@ jobs:
         working-directory: apps/omiro
         run: |
           mkdir -p ../../artifacts
-          pnpm dlx eas-cli@18.13.1 build:list --platform ios --build-profile production --git-commit-hash "${GITHUB_SHA}" --limit 1 --json --non-interactive > ../../artifacts/omiro-release-build.json
+          pnpm dlx eas-cli@21.2.0 build:list --platform ios --build-profile production --git-commit-hash "${GITHUB_SHA}" --limit 1 --json --non-interactive > ../../artifacts/omiro-release-build.json
           node ../../scripts/create-omiro-release-manifest.mjs ../../artifacts/omiro-release-build.json ../../artifacts/omiro-release-manifest.json
 
       - name: upload-release-manifest
