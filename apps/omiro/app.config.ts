@@ -205,7 +205,6 @@ export default ({ config }: ConfigContext) => {
     experiments: {
       tsconfigPaths: true,
     },
-    newArchEnabled: true,
     ios: {
       appleTeamId: APPLE_TEAM_ID,
       icon: brandAssets.icon,
