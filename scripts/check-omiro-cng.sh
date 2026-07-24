@@ -25,7 +25,7 @@ mv "$app_dir/ios" "$temp_dir/ios-generated"
 fingerprint() {
   APP_ENV=production NODE_ENV=production \
     EXPO_PUBLIC_API_BASE_URL="${EXPO_PUBLIC_API_BASE_URL:-https://cng.invalid}" \
-    pnpm dlx eas-cli@18.13.1 fingerprint:generate \
+    pnpm dlx eas-cli@21.2.0 fingerprint:generate \
       --json --non-interactive --platform ios --build-profile production
 }
 

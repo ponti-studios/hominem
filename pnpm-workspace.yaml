@@ -79,9 +79,9 @@ minimumReleaseAgeExclude:
   - expo-audio@57.0.3
   - expo-build-properties@57.0.7
   - expo-constants@57.0.7
-  - expo-dev-client@57.0.8
-  - expo-dev-launcher@57.0.8
-  - expo-dev-menu@57.0.8
+  - expo-dev-client@57.0.8 || 57.0.9
+  - expo-dev-launcher@57.0.8 || 57.0.9
+  - expo-dev-menu@57.0.8 || 57.0.9
   - expo-image-picker@57.0.6
   - expo-linking@57.0.4
   - expo-local-authentication@57.0.2
@@ -92,5 +92,7 @@ minimumReleaseAgeExclude:
   - expo-router@57.0.8
   - expo-sharing@57.0.7
   - expo-splash-screen@57.0.5
-  - expo-updates@57.0.9
+  - expo-updates@57.0.9 || 57.0.10
   - expo@57.0.8
+  - '@sentry/expo-upload-sourcemaps@8.20.0'
+  - '@sentry/react-native@8.20.0'

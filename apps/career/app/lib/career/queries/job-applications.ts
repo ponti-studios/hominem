@@ -24,9 +24,7 @@ export type PaginationOptions = {
   orderDirection?: 'asc' | 'desc';
 };
 
-export async function getApplicationCards(
-  ownerUserid: string,
-): Promise<JobApplicationCard[]> {
+export async function getApplicationCards(ownerUserid: string): Promise<JobApplicationCard[]> {
   const results = await db
     .selectFrom('app.jobApplications as ja')
     .leftJoin('app.companies as c', 'c.id', 'ja.companyId')
@@ -44,7 +42,16 @@ export async function getApplicationCards(
     .orderBy('ja.applicationDate', 'desc')
     .execute();
 
-  type Row = { id: string; position: string; status: string; source: string | null; updatedat: string; applicationDate: string | null; companyId: string | null; companyName: string | null };
+  type Row = {
+    id: string;
+    position: string;
+    status: string;
+    source: string | null;
+    updatedat: string;
+    applicationDate: string | null;
+    companyId: string | null;
+    companyName: string | null;
+  };
   return (results as unknown as Row[]).map((row) => ({
     id: row.id,
     position: row.position,
@@ -52,9 +59,7 @@ export async function getApplicationCards(
     source: row.source,
     updatedat: String(row.updatedat),
     applicationDate: row.applicationDate ? String(row.applicationDate) : null,
-    company: row.companyId
-      ? { id: row.companyId, name: row.companyName ?? '' }
-      : null,
+    company: row.companyId ? { id: row.companyId, name: row.companyName ?? '' } : null,
   }));
 }
 
@@ -83,8 +88,7 @@ export function filterJobApplications(
     result = result.filter((application) => {
       const companyName = application.company?.name.toLowerCase() || '';
       return (
-        application.position.toLowerCase().includes(searchTerm) ||
-        companyName.includes(searchTerm)
+        application.position.toLowerCase().includes(searchTerm) || companyName.includes(searchTerm)
       );
     });
   }

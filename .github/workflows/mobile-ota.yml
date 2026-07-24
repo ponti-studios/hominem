@@ -52,7 +52,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: >-
-          pnpm dlx eas-cli@18.13.1 update
+          pnpm dlx eas-cli@21.2.0 update
           --platform ios
           --channel production
           --environment production

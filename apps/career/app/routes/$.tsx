@@ -5,7 +5,10 @@ import type { MetaFunction } from 'react-router';
 
 export const meta: MetaFunction = () => [
   { title: 'Page Not Found | career' },
-  { name: 'description', content: 'The page you are looking for does not exist or has been moved.' },
+  {
+    name: 'description',
+    content: 'The page you are looking for does not exist or has been moved.',
+  },
 ];
 
 export default function NotFoundPage() {

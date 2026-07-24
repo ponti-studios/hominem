@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": "18.13.1",
+    "version": ">= 21.2.0",
     "appVersionSource": "remote",
     "promptToConfigurePushNotifications": false
   },
@@ -10,8 +10,7 @@
       "pnpm": "11.10.0",
       "env": {
         "SENTRY_ORG": "ponti-studios",
-        "SENTRY_PROJECT": "omiro",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "SENTRY_PROJECT": "omiro"
       }
     },
     "development": {
