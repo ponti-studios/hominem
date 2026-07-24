@@ -20,6 +20,9 @@ test-watch:
 cng-check:
     bash "{{ justfile_directory() }}/scripts/check-omiro-cng.sh"
 
+build-config-check:
+    bash "{{ justfile_directory() }}/scripts/check-omiro-eas-build-config.sh"
+
 prebuild environment:
     #!/usr/bin/env bash
     case "{{ environment }}" in

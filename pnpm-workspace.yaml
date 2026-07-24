@@ -94,3 +94,5 @@ minimumReleaseAgeExclude:
   - expo-splash-screen@57.0.5
   - expo-updates@57.0.9
   - expo@57.0.8
+  - '@sentry/expo-upload-sourcemaps@8.20.0'
+  - '@sentry/react-native@8.20.0'
