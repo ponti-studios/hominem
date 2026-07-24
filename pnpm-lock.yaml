@@ -568,9 +568,6 @@ importers:
 
   packages/auth:
     dependencies:
-      '@hominem/db':
-        specifier: workspace:*
-        version: link:../db
       '@hominem/utils':
         specifier: workspace:*
         version: link:../utils
@@ -2240,12 +2237,6 @@ packages:
     resolution: {directory: packages/auth, type: directory}
     peerDependencies:
       react: 19.2.3
-
-  '@hominem/db@file:packages/db':
-    resolution: {directory: packages/db, type: directory}
-
-  '@hominem/env@file:packages/env':
-    resolution: {directory: packages/env, type: directory}
 
   '@hominem/utils@file:packages/utils':
     resolution: {directory: packages/utils, type: directory}
@@ -10783,7 +10774,6 @@ snapshots:
 
   '@hominem/auth@file:packages/auth(@opentelemetry/api@1.8.0)(pg@8.22.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.1.0(@opentelemetry/api@1.8.0)(@types/node@25.9.5)(jsdom@26.1.0)(msw@2.15.0(@types/node@25.9.5)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)))':
     dependencies:
-      '@hominem/db': file:packages/db
       '@hominem/utils': file:packages/utils
       better-auth: 1.6.23(@opentelemetry/api@1.8.0)(pg@8.22.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(vitest@4.1.0(@opentelemetry/api@1.8.0)(@types/node@25.9.5)(jsdom@26.1.0)(msw@2.15.0(@types/node@25.9.5)(typescript@6.0.3))(vite@8.0.16(@types/node@25.9.5)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0)))
       react: 19.2.3
@@ -10802,27 +10792,12 @@ snapshots:
       - mysql2
       - next
       - pg
-      - pg-native
       - prisma
       - react-dom
       - solid-js
       - svelte
       - vitest
       - vue
-
-  '@hominem/db@file:packages/db':
-    dependencies:
-      '@hominem/env': file:packages/env
-      '@hominem/utils': file:packages/utils
-      kysely: 0.28.17
-      pg: 8.22.0
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - pg-native
-
-  '@hominem/env@file:packages/env':
-    dependencies:
-      zod: 4.4.3
 
   '@hominem/utils@file:packages/utils': {}
 

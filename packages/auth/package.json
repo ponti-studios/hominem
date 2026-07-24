@@ -55,7 +55,6 @@
     "lint:fix": "oxlint src --fix"
   },
   "dependencies": {
-    "@hominem/db": "workspace:*",
     "@hominem/utils": "workspace:*",
     "better-auth": "^1.6.13"
   },
