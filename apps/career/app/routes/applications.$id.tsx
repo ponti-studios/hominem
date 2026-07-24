@@ -19,6 +19,15 @@ import { formatStatusText, getApplicationStatusTone } from '~/lib/utils/applicat
 
 import { Route } from './+types/applications.$id';
 
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  if (!loaderData?.application) {
+    return [{ title: 'Application | career' }];
+  }
+  const app = loaderData.application;
+  const company = app.company?.name ?? 'Unknown Company';
+  return [{ title: `${app.position} at ${company} | career` }];
+};
+
 export async function loader({ context, params }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   const { id } = params;

@@ -1,6 +1,6 @@
 import * as z from 'zod';
 
-import type { JobPosting } from '~/types/applications';
+import type { JobPosting } from '~/lib/services/job-scraping.service';
 import type { ConvertedResumeData, ResumeConvertStage } from '~/types/resume';
 
 export type UploadResumeApiResponse = {

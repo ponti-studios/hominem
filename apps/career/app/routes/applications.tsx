@@ -5,14 +5,13 @@ import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
-import { ApplicationsDesktopTable } from '~/components/career/applications/ApplicationsDesktopTable';
 import { ApplicationsEmptyState } from '~/components/career/applications/ApplicationsEmptyState';
 import { ApplicationsFilters } from '~/components/career/applications/ApplicationsFilters';
-import { ApplicationsMobileList } from '~/components/career/applications/ApplicationsMobileList';
+import { ApplicationsList } from '~/components/career/applications/ApplicationsList';
 import { PageHeader } from '~/components/patterns';
 import {
   filterJobApplications,
-  getAllApplicationsWithCompany,
+  getApplicationCards,
   sortAndPaginateJobApplications,
 } from '~/lib/career/queries/job-applications';
 import { logger } from '~/lib/logger';
@@ -23,9 +22,14 @@ import {
   getUniqueStatuses,
   hasActiveFilters,
 } from '~/lib/utils/applicationUtils';
-import type { JobApplicationStatus } from '~/types/career';
+
 
 import { Route } from './+types/applications';
+
+export const meta: Route.MetaFunction = () => [
+  { title: 'Applications | career' },
+  { name: 'description', content: 'Track and manage your job applications in one place.' },
+];
 
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 100;
@@ -61,14 +65,12 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       offset,
       orderBy: (searchParams.get('orderBy') || 'applicationDate') as
         | 'applicationDate'
-        | 'responseDate'
-        | 'offerDate'
         | 'companyName'
         | 'position',
       orderDirection: (searchParams.get('orderDirection') as 'asc' | 'desc') || 'desc',
     };
 
-    const allApplications = await getAllApplicationsWithCompany(user.id);
+    const allApplications = await getApplicationCards(user.id);
     const filteredApplications = filter
       ? filterJobApplications(allApplications, filter)
       : allApplications;
@@ -117,7 +119,7 @@ export async function action({ context, request }: Route.ActionArgs) {
       await JobApplicationRepository.updateJobApplicationStatus(db, {
         ownerUserid: user.id,
         applicationId,
-        status: status as JobApplicationStatus,
+        status,
       });
 
       return { message: 'Job application updated successfully' };
@@ -252,10 +254,7 @@ export default function Applications({ loaderData }: Route.ComponentProps) {
             }
           />
         ) : (
-          <>
-            <ApplicationsDesktopTable applications={applications} />
-            <ApplicationsMobileList applications={applications} />
-          </>
+          <ApplicationsList applications={applications} />
         )}
       </div>
     </section>

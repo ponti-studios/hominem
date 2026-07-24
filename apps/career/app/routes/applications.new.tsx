@@ -15,10 +15,15 @@ import type { JobScrapeApiRequest, JobScrapeApiResponse } from '~/lib/api-contra
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
-import type { JobPosting } from '~/types/applications';
+import type { JobPosting } from '~/lib/services/job-scraping.service';
 import { JobApplicationStatus } from '~/types/career';
 
 import { Route } from './+types/applications.new';
+
+export const meta: Route.MetaFunction = () => [
+  { title: 'New Application | career' },
+  { name: 'description', content: 'Add a new job application to track your search progress.' },
+];
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value)

@@ -16,6 +16,11 @@ import { parseFormData } from '~/lib/route-utils';
 
 import { Route } from './+types/work.$id';
 
+export const meta: Route.MetaFunction = () => [
+  { title: 'Edit Experience | career' },
+  { name: 'description', content: 'Edit your work experience details.' },
+];
+
 export async function loader({ context, params }: Route.LoaderArgs) {
   const user = context.get(userContext)!;
   const { id } = params;

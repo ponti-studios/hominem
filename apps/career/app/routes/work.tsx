@@ -26,6 +26,11 @@ import { useCareerEditorSubmission } from '../hooks/useCareerEditorSubmission';
 import { portfolioContext, userContext } from '../lib/middleware';
 import { Route } from './+types/work';
 
+export const meta: Route.MetaFunction = () => [
+  { title: 'Work Experience | career' },
+  { name: 'description', content: 'Manage your work history and professional experience.' },
+];
+
 export function filterWorkExperiencesBySearch(experiences: WorkExperience[], search: string) {
   const query = search.trim().toLowerCase();
   if (!query) {

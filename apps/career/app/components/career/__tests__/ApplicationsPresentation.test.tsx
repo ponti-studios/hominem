@@ -6,9 +6,8 @@ import { describe, expect, it } from 'vitest';
 import { makeApplicationWithCompany } from '~/test/factories/applications';
 import { JobApplicationStatus } from '~/types/career';
 
-import { ApplicationsDesktopTable } from '../applications/ApplicationsDesktopTable';
 import { ApplicationsEmptyState } from '../applications/ApplicationsEmptyState';
-import { ApplicationsMobileList } from '../applications/ApplicationsMobileList';
+import { ApplicationsList } from '../applications/ApplicationsList';
 
 const applications = [
   makeApplicationWithCompany({
@@ -20,17 +19,15 @@ const applications = [
 ];
 
 describe('applications presentation components', () => {
-  it('renders the same application details in desktop and mobile variants', () => {
+  it('renders application details in the list', () => {
     render(
       <MemoryRouter>
-        <ApplicationsDesktopTable applications={applications} />
-        <ApplicationsMobileList applications={applications} />
+        <ApplicationsList applications={applications} />
       </MemoryRouter>,
     );
 
-    expect(screen.getAllByText('Staff Engineer')).toHaveLength(2);
-    expect(screen.getAllByText('Example Co')).toHaveLength(2);
-    expect(screen.getAllByText('INTERVIEW')).toHaveLength(2);
+    expect(screen.getByText('Staff Engineer')).toBeInTheDocument();
+    expect(screen.getByText('Example Co')).toBeInTheDocument();
   });
 
   it('renders the base empty state copy', () => {

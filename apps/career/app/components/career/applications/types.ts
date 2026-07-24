@@ -1,5 +1,3 @@
-import type { ApplicationWithCompany } from '~/types/applications';
-
 export interface ApplicationsResultsSummaryProps {
   page: number;
   totalPages: number;
@@ -18,14 +16,6 @@ export interface ApplicationsFiltersProps {
   onSourceChange: (source: string) => void;
   onClearFilters: () => void;
   pagination: ApplicationsResultsSummaryProps;
-}
-
-export interface ApplicationsDesktopTableProps {
-  applications: ApplicationWithCompany[];
-}
-
-export interface ApplicationsMobileListProps {
-  applications: ApplicationWithCompany[];
 }
 
 export interface ApplicationsEmptyStateProps {

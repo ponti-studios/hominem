@@ -1,4 +1,4 @@
-import type { ApplicationWithCompany } from '~/types/applications';
+import type { JobApplicationRecord as ApplicationWithCompany } from '@hominem/db';
 import { JobApplicationStatus } from '~/types/career';
 
 type ApplicationOverrides = Partial<Omit<ApplicationWithCompany, 'company'>> & {

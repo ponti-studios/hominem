@@ -1,38 +1,67 @@
-import {
-  db,
-  JobApplicationRepository,
-  type JobApplicationRecord as ApplicationWithCompany,
-} from '@hominem/db';
+import { db } from '@hominem/db';
+
+export type JobApplicationCard = {
+  id: string;
+  position: string;
+  status: string;
+  source: string | null;
+  updatedat: string;
+  applicationDate: string | null;
+  company: { id: string; name: string } | null;
+};
 
 export type JobApplicationFilter = {
   status?: string;
   statuses?: string[];
-  companyId?: string;
   source?: string;
   search?: string;
-  startDate?: Date;
-  endDate?: Date;
-  salaryMin?: number;
-  salaryMax?: number;
 };
 
 export type PaginationOptions = {
   limit?: number;
   offset?: number;
-  orderBy?: 'applicationDate' | 'responseDate' | 'offerDate' | 'companyName' | 'position';
+  orderBy?: 'applicationDate' | 'companyName' | 'position';
   orderDirection?: 'asc' | 'desc';
 };
 
-export async function getAllApplicationsWithCompany(
+export async function getApplicationCards(
   ownerUserid: string,
-): Promise<ApplicationWithCompany[]> {
-  return JobApplicationRepository.listUserJobApplicationsWithCompany(db, ownerUserid);
+): Promise<JobApplicationCard[]> {
+  const results = await db
+    .selectFrom('app.jobApplications as ja')
+    .leftJoin('app.companies as c', 'c.id', 'ja.companyId')
+    .select([
+      'ja.id',
+      'ja.position',
+      'ja.status',
+      'ja.source',
+      'ja.updatedat',
+      'ja.applicationDate',
+      'c.id as company_id',
+      'c.name as company_name',
+    ])
+    .where('ja.ownerUserid', '=', ownerUserid)
+    .orderBy('ja.applicationDate', 'desc')
+    .execute();
+
+  type Row = { id: string; position: string; status: string; source: string | null; updatedat: string; applicationDate: string | null; companyId: string | null; companyName: string | null };
+  return (results as unknown as Row[]).map((row) => ({
+    id: row.id,
+    position: row.position,
+    status: row.status,
+    source: row.source,
+    updatedat: String(row.updatedat),
+    applicationDate: row.applicationDate ? String(row.applicationDate) : null,
+    company: row.companyId
+      ? { id: row.companyId, name: row.companyName ?? '' }
+      : null,
+  }));
 }
 
 export function filterJobApplications(
-  applications: ApplicationWithCompany[],
+  applications: JobApplicationCard[],
   filter?: JobApplicationFilter,
-): ApplicationWithCompany[] {
+): JobApplicationCard[] {
   if (!filter) return applications;
 
   let result = applications;
@@ -45,10 +74,6 @@ export function filterJobApplications(
     result = result.filter((application) => filter.statuses!.includes(application.status));
   }
 
-  if (filter.companyId) {
-    result = result.filter((application) => application.companyId === filter.companyId);
-  }
-
   if (filter.source) {
     result = result.filter((application) => application.source === filter.source);
   }
@@ -59,43 +84,24 @@ export function filterJobApplications(
       const companyName = application.company?.name.toLowerCase() || '';
       return (
         application.position.toLowerCase().includes(searchTerm) ||
-        companyName.includes(searchTerm) ||
-        (application.location || '').toLowerCase().includes(searchTerm)
+        companyName.includes(searchTerm)
       );
     });
-  }
-
-  if (filter.startDate) {
-    result = result.filter(
-      (application) =>
-        application.applicationDate && new Date(application.applicationDate) >= filter.startDate!,
-    );
-  }
-
-  if (filter.endDate) {
-    result = result.filter(
-      (application) =>
-        application.applicationDate && new Date(application.applicationDate) <= filter.endDate!,
-    );
   }
 
   return result;
 }
 
 export function sortAndPaginateJobApplications(
-  applications: ApplicationWithCompany[],
+  applications: JobApplicationCard[],
   pagination?: PaginationOptions,
-): ApplicationWithCompany[] {
+): JobApplicationCard[] {
   const orderBy = pagination?.orderBy || 'applicationDate';
   const direction = pagination?.orderDirection === 'asc' ? 1 : -1;
 
   const sorted = [...applications].sort((left, right) => {
     const leftValue = (() => {
       switch (orderBy) {
-        case 'responseDate':
-          return left.responseDate ? new Date(left.responseDate).getTime() : 0;
-        case 'offerDate':
-          return left.offerDate ? new Date(left.offerDate).getTime() : 0;
         case 'companyName':
           return left.company?.name.toLowerCase() || '';
         case 'position':
@@ -108,10 +114,6 @@ export function sortAndPaginateJobApplications(
 
     const rightValue = (() => {
       switch (orderBy) {
-        case 'responseDate':
-          return right.responseDate ? new Date(right.responseDate).getTime() : 0;
-        case 'offerDate':
-          return right.offerDate ? new Date(right.offerDate).getTime() : 0;
         case 'companyName':
           return right.company?.name.toLowerCase() || '';
         case 'position':

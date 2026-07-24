@@ -25,7 +25,7 @@ import type {
   JobAnalysis,
 } from '~/lib/api-contracts';
 import { getCompanyName } from '~/lib/utils/applicationUtils';
-import type { JobPosting } from '~/types/applications';
+import type { JobPosting } from '~/lib/services/job-scraping.service';
 
 interface ApplicationResumeTabProps {
   application: ApplicationWithCompany;
