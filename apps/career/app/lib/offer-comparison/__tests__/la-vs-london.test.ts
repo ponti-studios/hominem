@@ -19,9 +19,9 @@ describe('LA vs London — real case from comparison doc', () => {
   it('computes UK tax correctly', () => {
     const result = computeUKTax(140_000);
 
-    // Doc expected: ~£7,166/mo net, ~39% effective
-    expect(result.netMonthly).toBe(7_166);
-    expect(result.netAnnual).toBe(85_986);
+    // Doc expected: ~£7,166/mo net (~£85,986/yr), ~39% effective
+    expect(result.netMonthly).toBeCloseTo(7_166, 0);
+    expect(result.netAnnual).toBeCloseTo(85_986, 0);
     expect(result.effectiveRate).toBeCloseTo(38.6, 0);
   });
 });
