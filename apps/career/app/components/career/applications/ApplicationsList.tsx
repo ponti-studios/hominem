@@ -1,7 +1,7 @@
 import { ChevronRightIcon } from 'lucide-react';
 
-import { RouterListLink } from '~/components/RouterListLink';
 import { StatusBadge } from '~/components/patterns';
+import { RouterListLink } from '~/components/RouterListLink';
 import type { JobApplicationCard } from '~/lib/career/queries/job-applications';
 import {
   formatApplicationDate,
@@ -63,9 +63,7 @@ export function ApplicationsList({ applications }: ApplicationsListProps) {
                     <h3 className="body-2 truncate text-text-primary group-hover:text-accent transition-colors">
                       {application.position}
                     </h3>
-                    <p className="body-4 mt-0.5 text-text-secondary">
-                      {companyName}
-                    </p>
+                    <p className="body-4 mt-0.5 text-text-secondary">{companyName}</p>
                   </div>
                   <StatusBadge tone={statusTone} label={formatStatusText(application.status)} />
                 </div>

@@ -23,7 +23,6 @@ import {
   hasActiveFilters,
 } from '~/lib/utils/applicationUtils';
 
-
 import { Route } from './+types/applications';
 
 export const meta: Route.MetaFunction = () => [

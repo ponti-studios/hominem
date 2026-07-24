@@ -24,8 +24,8 @@ import type {
   CustomizeResumeApiResponse,
   JobAnalysis,
 } from '~/lib/api-contracts';
-import { getCompanyName } from '~/lib/utils/applicationUtils';
 import type { JobPosting } from '~/lib/services/job-scraping.service';
+import { getCompanyName } from '~/lib/utils/applicationUtils';
 
 interface ApplicationResumeTabProps {
   application: ApplicationWithCompany;
