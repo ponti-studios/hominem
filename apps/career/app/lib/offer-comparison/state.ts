@@ -25,6 +25,16 @@ export interface StateData {
   };
 }
 
+const SENTINEL = 999_000_000;
+
+function normalize(bracket: StateBracket): StateBracket {
+  return {
+    min: bracket.min,
+    max: bracket.max >= SENTINEL ? Infinity : bracket.max,
+    rate: bracket.rate,
+  };
+}
+
 export const STATES: Record<string, StateData> = {
   alabama: {
     slug: 'alabama',
@@ -46,7 +56,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 3000,
-          max: null,
+          max: 999999999,
           rate: 5,
         },
       ],
@@ -63,7 +73,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 6000,
-          max: null,
+          max: 999999999,
           rate: 5,
         },
       ],
@@ -98,14 +108,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 2.5,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 2.5,
         },
       ],
@@ -150,7 +160,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 38500,
-          max: null,
+          max: 999999999,
           rate: 4.7,
         },
       ],
@@ -182,7 +192,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 38500,
-          max: null,
+          max: 999999999,
           rate: 4.7,
         },
       ],
@@ -247,7 +257,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 1000000,
-          max: null,
+          max: 999999999,
           rate: 13.3,
         },
       ],
@@ -299,7 +309,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 2000000,
-          max: null,
+          max: 999999999,
           rate: 13.3,
         },
       ],
@@ -319,14 +329,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 4.4,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 4.4,
         },
       ],
@@ -376,7 +386,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 500000,
-          max: null,
+          max: 999999999,
           rate: 6.99,
         },
       ],
@@ -413,7 +423,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 1000000,
-          max: null,
+          max: 999999999,
           rate: 6.99,
         },
       ],
@@ -463,7 +473,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 60000,
-          max: null,
+          max: 999999999,
           rate: 6.6,
         },
       ],
@@ -500,7 +510,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 60000,
-          max: null,
+          max: 999999999,
           rate: 6.6,
         },
       ],
@@ -550,7 +560,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 1000000,
-          max: null,
+          max: 999999999,
           rate: 10.75,
         },
       ],
@@ -587,7 +597,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 1000000,
-          max: null,
+          max: 999999999,
           rate: 10.75,
         },
       ],
@@ -622,14 +632,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 5.19,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 5.19,
         },
       ],
@@ -704,7 +714,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 200000,
-          max: null,
+          max: 999999999,
           rate: 11,
         },
       ],
@@ -766,7 +776,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 400000,
-          max: null,
+          max: 999999999,
           rate: 11,
         },
       ],
@@ -786,14 +796,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 5.8,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 5.8,
         },
       ],
@@ -813,14 +823,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 4.95,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 4.95,
         },
       ],
@@ -840,14 +850,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 3.05,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 3.05,
         },
       ],
@@ -867,14 +877,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 3.8,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 3.8,
         },
       ],
@@ -904,7 +914,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 30000,
-          max: null,
+          max: 999999999,
           rate: 5.7,
         },
       ],
@@ -921,7 +931,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 60000,
-          max: null,
+          max: 999999999,
           rate: 5.7,
         },
       ],
@@ -941,14 +951,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 4,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 4,
         },
       ],
@@ -968,14 +978,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 3,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 3,
         },
       ],
@@ -1005,7 +1015,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 58050,
-          max: null,
+          max: 999999999,
           rate: 7.15,
         },
       ],
@@ -1022,7 +1032,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 116100,
-          max: null,
+          max: 999999999,
           rate: 7.15,
         },
       ],
@@ -1077,7 +1087,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 250000,
-          max: null,
+          max: 999999999,
           rate: 5.75,
         },
       ],
@@ -1119,7 +1129,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 300000,
-          max: null,
+          max: 999999999,
           rate: 5.75,
         },
       ],
@@ -1139,14 +1149,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 5,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 5,
         },
       ],
@@ -1166,14 +1176,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 4.25,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 4.25,
         },
       ],
@@ -1208,7 +1218,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 193240,
-          max: null,
+          max: 999999999,
           rate: 9.85,
         },
       ],
@@ -1230,7 +1240,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 321450,
-          max: null,
+          max: 999999999,
           rate: 9.85,
         },
       ],
@@ -1255,7 +1265,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 10000,
-          max: null,
+          max: 999999999,
           rate: 4,
         },
       ],
@@ -1267,7 +1277,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 10000,
-          max: null,
+          max: 999999999,
           rate: 4,
         },
       ],
@@ -1322,7 +1332,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 9191,
-          max: null,
+          max: 999999999,
           rate: 4.7,
         },
       ],
@@ -1364,7 +1374,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 9191,
-          max: null,
+          max: 999999999,
           rate: 4.7,
         },
       ],
@@ -1389,7 +1399,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 21100,
-          max: null,
+          max: 999999999,
           rate: 5.9,
         },
       ],
@@ -1401,7 +1411,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 42200,
-          max: null,
+          max: 999999999,
           rate: 5.9,
         },
       ],
@@ -1436,7 +1446,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 39900,
-          max: null,
+          max: 999999999,
           rate: 4.55,
         },
       ],
@@ -1458,7 +1468,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 79800,
-          max: null,
+          max: 999999999,
           rate: 4.55,
         },
       ],
@@ -1538,7 +1548,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 1000000,
-          max: null,
+          max: 999999999,
           rate: 10.75,
         },
       ],
@@ -1580,7 +1590,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 1000000,
-          max: null,
+          max: 999999999,
           rate: 10.75,
         },
       ],
@@ -1620,7 +1630,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 210000,
-          max: null,
+          max: 999999999,
           rate: 5.9,
         },
       ],
@@ -1647,7 +1657,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 315000,
-          max: null,
+          max: 999999999,
           rate: 5.9,
         },
       ],
@@ -1707,7 +1717,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 25000000,
-          max: null,
+          max: 999999999,
           rate: 10.9,
         },
       ],
@@ -1754,7 +1764,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 25000000,
-          max: null,
+          max: 999999999,
           rate: 10.9,
         },
       ],
@@ -1774,14 +1784,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 3.99,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 3.99,
         },
       ],
@@ -1811,7 +1821,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 244825,
-          max: null,
+          max: 999999999,
           rate: 2.5,
         },
       ],
@@ -1828,7 +1838,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 298075,
-          max: null,
+          max: 999999999,
           rate: 2.5,
         },
       ],
@@ -1858,7 +1868,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 100000,
-          max: null,
+          max: 999999999,
           rate: 3.5,
         },
       ],
@@ -1875,7 +1885,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 100000,
-          max: null,
+          max: 999999999,
           rate: 3.5,
         },
       ],
@@ -1910,7 +1920,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 7200,
-          max: null,
+          max: 999999999,
           rate: 4.5,
         },
       ],
@@ -1932,7 +1942,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 14400,
-          max: null,
+          max: 999999999,
           rate: 4.5,
         },
       ],
@@ -1967,7 +1977,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 125000,
-          max: null,
+          max: 999999999,
           rate: 9.9,
         },
       ],
@@ -1989,7 +1999,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 250000,
-          max: null,
+          max: 999999999,
           rate: 9.9,
         },
       ],
@@ -2009,14 +2019,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 3.07,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 3.07,
         },
       ],
@@ -2046,7 +2056,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 186450,
-          max: null,
+          max: 999999999,
           rate: 5.99,
         },
       ],
@@ -2063,7 +2073,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 186450,
-          max: null,
+          max: 999999999,
           rate: 5.99,
         },
       ],
@@ -2088,7 +2098,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 30000,
-          max: null,
+          max: 999999999,
           rate: 5.21,
         },
       ],
@@ -2100,7 +2110,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 30000,
-          max: null,
+          max: 999999999,
           rate: 5.21,
         },
       ],
@@ -2165,14 +2175,14 @@ export const STATES: Record<string, StateData> = {
       single: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 4.5,
         },
       ],
       married: [
         {
           min: 0,
-          max: null,
+          max: 999999999,
           rate: 4.5,
         },
       ],
@@ -2207,7 +2217,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 229550,
-          max: null,
+          max: 999999999,
           rate: 8.75,
         },
       ],
@@ -2229,7 +2239,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 279450,
-          max: null,
+          max: 999999999,
           rate: 8.75,
         },
       ],
@@ -2264,7 +2274,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 17000,
-          max: null,
+          max: 999999999,
           rate: 5.75,
         },
       ],
@@ -2286,7 +2296,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 17000,
-          max: null,
+          max: 999999999,
           rate: 5.75,
         },
       ],
@@ -2341,7 +2351,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 60000,
-          max: null,
+          max: 999999999,
           rate: 4.58,
         },
       ],
@@ -2368,7 +2378,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 60000,
-          max: null,
+          max: 999999999,
           rate: 4.58,
         },
       ],
@@ -2403,7 +2413,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 332720,
-          max: null,
+          max: 999999999,
           rate: 7.65,
         },
       ],
@@ -2425,7 +2435,7 @@ export const STATES: Record<string, StateData> = {
         },
         {
           min: 443630,
-          max: null,
+          max: 999999999,
           rate: 7.65,
         },
       ],
@@ -2454,7 +2464,14 @@ export const STATES: Record<string, StateData> = {
 
 const stateMap = new Map<string, StateData>();
 for (const key of Object.keys(STATES)) {
-  stateMap.set(key, STATES[key]);
+  const s = STATES[key];
+  stateMap.set(key, {
+    ...s,
+    brackets: {
+      single: s.brackets.single.map(normalize),
+      married: s.brackets.married.map(normalize),
+    },
+  });
 }
 
 export function getState(slug: string): StateData | undefined {
