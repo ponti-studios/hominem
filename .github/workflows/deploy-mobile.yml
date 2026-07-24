@@ -46,6 +46,7 @@ jobs:
         working-directory: apps/omiro
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_PUBLIC_API_BASE_URL: https://api.ponti.io
         run: >-
           pnpm dlx eas-cli@18.13.1 build
           --platform ios
