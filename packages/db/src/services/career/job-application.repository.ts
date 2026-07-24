@@ -343,26 +343,42 @@ export const JobApplicationRepository = {
     handle: DbHandle,
     ownerUserid: string,
   ): Promise<JobApplicationRecord[]> {
-    const applications = await handle
-      .selectFrom('app.jobApplications')
-      .selectAll()
-      .where('ownerUserid', '=', ownerUserid)
-      .orderBy('applicationDate', 'desc')
+    const results = await handle
+      .selectFrom('app.jobApplications as ja')
+      .leftJoin('app.companies as c', 'c.id', 'ja.companyId')
+      .selectAll('ja')
+      .select([
+        'c.id as company__id',
+        'c.ownerUserid as company__ownerUserid',
+        'c.name as company__name',
+        'c.website as company__website',
+        'c.industry as company__industry',
+        'c.size as company__size',
+        'c.location as company__location',
+        'c.description as company__description',
+        'c.createdat as company__createdat',
+        'c.updatedat as company__updatedat',
+      ])
+      .where('ja.ownerUserid', '=', ownerUserid)
+      .orderBy('ja.applicationDate', 'desc')
       .execute();
-    const companyIds = [...new Set(applications.map((application) => application.companyId))];
 
-    const companies =
-      companyIds.length === 0
-        ? []
-        : await handle
-            .selectFrom('app.companies')
-            .selectAll()
-            .where('id', 'in', companyIds)
-            .execute();
-    const companiesById = new Map(companies.map((company) => [company.id, company as CompanyRow]));
-
-    return (applications as JobApplicationRow[]).map((application) =>
-      toJobApplicationRecord(application, companiesById.get(application.companyId) ?? null),
-    );
+    return results.map((row) => {
+      const company = row.company__id
+        ? ({
+            id: row.company__id,
+            ownerUserid: row.company__ownerUserid,
+            name: row.company__name,
+            website: row.company__website,
+            industry: row.company__industry,
+            size: row.company__size,
+            location: row.company__location,
+            description: row.company__description,
+            createdat: row.company__createdat,
+            updatedat: row.company__updatedat,
+          } as CompanyRow)
+        : null;
+      return toJobApplicationRecord(row as JobApplicationRow, company);
+    });
   },
 };
