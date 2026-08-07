@@ -24,7 +24,7 @@ import {
 import { ValidationError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
-import { CHAT_ASSISTANT_PROMPT } from '../prompts';
+import { CHAT_ASSISTANT_PROMPT, CHAT_RESPONSE_LENGTH_GUIDANCE } from '../prompts';
 import { synthesizeChatReplySpeech } from './chat-speech.service';
 import { toChatDto, toChatMessageDto, toStoredUserMessageContent } from './chats.mapper';
 
@@ -88,6 +88,29 @@ async function synthesizeReplyAudioFile(
     });
     return null;
   }
+}
+
+// Rough chars/words-per-token headroom for each target: short caps at ~500-600
+// characters, medium at a 3-5 minute read (~600-1000 words), long at a full
+// essay (~1500-3000 words) with room for the model's outline-then-write pass.
+const RESPONSE_LENGTH_MAX_TOKENS = {
+  short: 250,
+  medium: 1600,
+  long: 6000,
+} as const satisfies Record<'short' | 'medium' | 'long', number>;
+
+function getSystemPrompt(responseLength?: 'short' | 'medium' | 'long'): string {
+  if (!responseLength) {
+    return CHAT_ASSISTANT_PROMPT;
+  }
+
+  return `${CHAT_ASSISTANT_PROMPT}\n\n${CHAT_RESPONSE_LENGTH_GUIDANCE[responseLength]}`;
+}
+
+// The "long" essay option plans an outline before writing, so give it room to
+// reason through structure before committing to prose.
+function getReasoningConfig(responseLength?: 'short' | 'medium' | 'long') {
+  return responseLength === 'long' ? { effort: 'medium' as const } : undefined;
 }
 
 async function enqueueChatEmbedding(userId: string, chatId: string) {
@@ -231,7 +254,13 @@ const chatByIdRoutes = new Hono<AppContext>()
 
     await assertUnderMonthlyUsageLimit(userId);
     await ChatRepository.getOwnedOrThrow(db, chatId, userId);
-    const { message, fileIds = [], noteIds = [], responseModality } = c.req.valid('json');
+    const {
+      message,
+      fileIds = [],
+      noteIds = [],
+      responseModality,
+      responseLength,
+    } = c.req.valid('json');
 
     const history = await ChatRepository.getMessages(db, chatId, 30, 0);
     const resolvedNotes = await ChatRepository.resolveReferencedNotes(db, userId, noteIds, message);
@@ -258,9 +287,11 @@ const chatByIdRoutes = new Hono<AppContext>()
     const getDurationMs = startAIUsageTimer();
     const completion = streamChatCompletion({
       messages: [
-        { role: 'system', content: CHAT_ASSISTANT_PROMPT },
+        { role: 'system', content: getSystemPrompt(responseLength) },
         { role: 'user', content: prompt },
       ],
+      maxTokens: responseLength ? RESPONSE_LENGTH_MAX_TOKENS[responseLength] : undefined,
+      reasoning: getReasoningConfig(responseLength),
     });
 
     return streamSSE(c, async (stream) => {
