@@ -29,7 +29,19 @@ booted_udid="$(xcrun simctl list devices booted -j | jq -r '.devices | to_entrie
 [[ -n "$booted_udid" ]] || fail 'no iOS simulator is booted'
 xcrun simctl get_app_container "$booted_udid" "$APP_ID" app >/dev/null 2>&1 || fail "$APP_ID is not installed on the booted simulator"
 
-curl --fail --silent --show-error --max-time 5 "$API_URL/" >/dev/null || fail "API is not reachable at $API_URL"
+status_json="$(curl --fail --silent --show-error --max-time 5 "$API_URL/api/status")" ||
+  fail "API is not reachable at $API_URL"
+
+# The suite assumes deterministic, no-cost providers (fixed replies, no real
+# LLM/email calls). An API not started with ENV=scripted silently makes real
+# OpenRouter calls instead, which is non-deterministic, costs real tokens,
+# and is what produced "Could not start chat" failures the first time this
+# ran against an ordinary `pnpm dev` API.
+ai_provider="$(jq -r '.providers.ai // empty' <<<"$status_json")"
+email_provider="$(jq -r '.providers.email // empty' <<<"$status_json")"
+if [[ "$ai_provider" != 'scripted' || "$email_provider" != 'scripted' ]]; then
+  fail "API at $API_URL is not running with ENV=scripted (ai=${ai_provider:-unknown}, email=${email_provider:-unknown}). Restart it with ENV=scripted before running this suite."
+fi
 
 # A cancelled Maestro run can leave its XCTest bridge holding port 7001. Do
 # this for every run, not just auth, before a new bridge is created.
@@ -41,7 +53,11 @@ sleep 1
 "$SCRIPT_DIR/maestro-auth.sh"
 
 if [[ $# -eq 0 ]]; then
-  set -- "$TESTS_DIR/flows"
+  # Pass the workspace root, not tests/flows: config.yaml's own flow
+  # patterns (flows/**, e2e/**, !subflows/**) are re-applied relative to
+  # whatever directory is passed here, so pointing at tests/flows makes
+  # Maestro look for tests/flows/flows/** and match nothing.
+  set -- "$TESTS_DIR"
 fi
 
 exec maestro test --config "$TESTS_DIR/config.yaml" "$@"

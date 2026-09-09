@@ -7,12 +7,30 @@ appId: com.pontistudios.hakumi.dev
 # runs auth-verify-otp.yaml with it injected via `-e OTP=...`.
 #
 # No-op when the app is already authenticated (auth screen not visible).
-- runFlow:
-    when:
-      visible: 'Apple[\s\u00A0]+Account Verification'
+#
+# This runs as its own `maestro test` process, separate from
+# reset-app-state.yaml's \u2014 the simulator can briefly drop to the home screen
+# between the two invocations (XCTest driver teardown/restart), so a single
+# instantaneous visibility check for auth-email-input can false-negative and
+# silently skip the whole flow. Bring the app forward and retry the check the
+# same way reset-app-state.yaml does, rather than checking once.
+- launchApp
+- repeat:
+    times: 10
+    while:
+      notVisible:
+        id: auth-email-input
     commands:
-      - tapOn: 'Not Now'
-      - launchApp
+      - runFlow:
+          when:
+            visible: 'Apple[\s\u00A0]+Account Verification'
+          commands:
+            - tapOn: 'Not Now'
+      - extendedWaitUntil:
+          visible:
+            id: auth-email-input
+          optional: true
+          timeout: 5000
 - runFlow:
     when:
       visible:
