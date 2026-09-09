@@ -10,13 +10,10 @@ vi.mock('react-router', async (importOriginal) => ({
 }));
 
 const mockArchiveMutate = vi.fn();
-const mockCreateChatMutate = vi.fn();
 const archiveState = { isPending: false };
-const createChatState = { isPending: false };
 
 vi.mock('~/hooks/use-chats', () => ({
   useArchiveChat: () => ({ mutate: mockArchiveMutate, isPending: archiveState.isPending }),
-  useCreateChat: () => ({ mutate: mockCreateChatMutate, isPending: createChatState.isPending }),
 }));
 
 import { ChatConversationActions } from './chat-conversation-actions';
@@ -25,7 +22,6 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   archiveState.isPending = false;
-  createChatState.isPending = false;
 });
 
 describe('ChatConversationActions', () => {
@@ -43,12 +39,6 @@ describe('ChatConversationActions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search messages' }));
     expect(onSearch).toHaveBeenCalledOnce();
 
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'Open conversation actions' }), {
-      button: 0,
-    });
-    await waitFor(() => expect(screen.getByRole('menuitem', { name: 'New chat' })).toBeTruthy());
-    fireEvent.click(screen.getByRole('menuitem', { name: 'New chat' }));
-    expect(mockCreateChatMutate).toHaveBeenCalledOnce();
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Open conversation actions' }), {
       button: 0,
     });
@@ -143,7 +133,7 @@ describe('ChatConversationActions', () => {
     );
   });
 
-  it('archives and starts a new chat through the scoped hooks', async () => {
+  it('archives a conversation through the scoped hook', async () => {
     render(
       <ChatConversationActions
         chatId="chat-42"
