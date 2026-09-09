@@ -2,9 +2,11 @@
 import { act } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { streamFromRequest } from '../../mocks/chat-transport';
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
-const mockTransport = { request: vi.fn() };
+const mockTransport = { request: vi.fn(), stream: vi.fn() };
+mockTransport.stream.mockImplementation(streamFromRequest((input) => mockTransport.request(input)));
 const mockGetAuthHeaders = vi.fn().mockResolvedValue({ cookie: 'session=test' });
 
 vi.mock('~/services/auth/auth-provider', () => ({

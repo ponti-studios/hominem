@@ -21,33 +21,33 @@ vi.mock('@hominem/rpc/react', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@hominem/rpc/react')>()),
   useApiClient: () => mockClient,
 }));
-vi.mock('@hominem/chat/transport/fetch', () => ({
-  fetchChatTransport: () => ({
-    request: ({ url, init }: { url: string; init: RequestInit }) => {
-      const match = url.match(/\/api\/chats\/([^/]+)\/messages\/([^/]+)\/regenerate$/);
-      if (match) {
-        return mockClient.api.chats[':id'].messages[':messageId'].regenerate.$post(
-          {
-            param: { id: match[1], messageId: match[2] },
-            json: JSON.parse(String(init.body ?? '{}')),
-          },
-          { init },
-        );
-      }
-      const cancel = url.match(/\/api\/chats\/([^/]+)\/generations\/([^/]+)\/cancel$/);
-      if (cancel) {
-        return mockClient.api.chats[':id'].generations[':generationId'].cancel.$post(
-          { param: { id: cancel[1], generationId: cancel[2] } },
-          { init },
-        );
-      }
-      if (url.includes('/generations/') && url.includes('/stream?afterSequence=')) {
-        return Promise.reject('transport failed');
-      }
-      return Promise.reject(new Error(`Unexpected chat URL: ${url}`));
-    },
-  }),
-}));
+vi.mock('@hominem/chat/transport/fetch', async () => {
+  const { streamFromRequest } = await import('./test-chat-transport');
+  const request = ({ url, init }: { url: string; init: RequestInit }) => {
+    const match = url.match(/\/api\/chats\/([^/]+)\/messages\/([^/]+)\/regenerate$/);
+    if (match) {
+      return mockClient.api.chats[':id'].messages[':messageId'].regenerate.$post(
+        {
+          param: { id: match[1], messageId: match[2] },
+          json: JSON.parse(String(init.body ?? '{}')),
+        },
+        { init },
+      );
+    }
+    const cancel = url.match(/\/api\/chats\/([^/]+)\/generations\/([^/]+)\/cancel$/);
+    if (cancel) {
+      return mockClient.api.chats[':id'].generations[':generationId'].cancel.$post(
+        { param: { id: cancel[1], generationId: cancel[2] } },
+        { init },
+      );
+    }
+    if (url.includes('/generations/') && url.includes('/stream?afterSequence=')) {
+      return Promise.reject('transport failed');
+    }
+    return Promise.reject(new Error(`Unexpected chat URL: ${url}`));
+  };
+  return { fetchChatTransport: () => ({ request, stream: streamFromRequest(request) }) };
+});
 
 import { useRegenerateMessage } from './use-regenerate-message';
 

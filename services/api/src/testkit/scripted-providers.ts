@@ -100,6 +100,11 @@ const toolNameRules: readonly ScriptedRule<string | null>[] = [
   },
   {
     matches: ({ toolNames, userText }) =>
+      toolNames.has('create_collection') && /\bB015-TOOL-CALL\b/i.test(userText),
+    resolve: () => 'create_collection',
+  },
+  {
+    matches: ({ toolNames, userText }) =>
       toolNames.has('create_collection') &&
       /collection/i.test(userText) &&
       !/\b(list|show)\b/i.test(userText),

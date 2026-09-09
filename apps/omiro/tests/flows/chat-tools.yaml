@@ -5,9 +5,11 @@ tags:
 # Task 011 Omiro evidence: tool and confirmation states.
 # Tool names are stable accessibility labels supplied by the chat tool card.
 #
-# The new-chat composer is always empty (fresh screen): no eraseText (up to
-# 100 blind backspaces on iOS) and hideKeyboard instead of the Android-only
-# pressKey BACK to reveal the submit button. Post-submit waits are
+# The new-chat composer is always empty (fresh screen), so no eraseText (up
+# to 100 blind backspaces on iOS) is needed. The submit button sits in a
+# KeyboardStickyView dock, so it stays visible and tappable with the keyboard
+# open — no hideKeyboard needed either (Maestro's OS-level dismiss gesture is
+# flaky on iOS simulator: "Couldn't hide the keyboard"). Post-submit waits are
 # extendedWaitUntil on the expected content, so generation latency is covered
 # and a stuck spinner fails instead of passing a settle-wait.
 
@@ -20,7 +22,6 @@ tags:
 - tapOn:
     id: 'new-chat-composer-input'
 - inputText: 'B006-OMIRO-TOOL-READY list my collections'
-- hideKeyboard
 - assertVisible:
     id: 'new-chat-submit'
 - tapOn:
@@ -45,7 +46,6 @@ tags:
 - tapOn:
     id: 'new-chat-composer-input'
 - inputText: 'B007-OMIRO-CONFIRM Create a private collection named Omiro B007.'
-- hideKeyboard
 - tapOn:
     id: 'new-chat-submit'
 - extendedWaitUntil:
@@ -76,7 +76,6 @@ tags:
 - tapOn:
     id: 'new-chat-composer-input'
 - inputText: 'B008-OMIRO-CONFIRM-REJECT Create a private collection named Omiro B008.'
-- hideKeyboard
 - tapOn:
     id: 'new-chat-submit'
 - extendedWaitUntil:
@@ -106,7 +105,6 @@ tags:
 - tapOn:
     id: 'new-chat-composer-input'
 - inputText: 'B009-OMIRO-TOOL-FAIL'
-- hideKeyboard
 - tapOn:
     id: 'new-chat-submit'
 

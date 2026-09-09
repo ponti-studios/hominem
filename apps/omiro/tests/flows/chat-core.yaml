@@ -54,7 +54,6 @@ tags:
     id: 'new-chat-composer-input'
 - evalScript: ${output.b003 = 'B003-OMIRO-NEW-CHAT-' + new Date().getTime()}
 - inputText: ${output.b003}
-- hideKeyboard
 - tapOn:
     id: 'new-chat-submit'
 - extendedWaitUntil:
@@ -65,8 +64,14 @@ tags:
 - takeScreenshot: /tmp/omiro-task003-b003-new-chat
 
 # B-004: return from the new chat detail to the inbox, then open the chat again.
+# The header back chevron is a native SwiftUI Stack.Toolbar.Button
+# (ExpoRouterToolbarModule) whose accessibilityLabel doesn't surface as an
+# XCUITest identifier, so Maestro's `id` selector never matches it — tap by
+# `text` instead (safe here: no focused input to merge this node with).
+- waitForAnimationToEnd:
+    timeout: 2000
 - tapOn:
-    id: 'BackButton'
+    text: 'BackButton'
 - waitForAnimationToEnd:
     timeout: 3000
 - assertVisible:

@@ -78,8 +78,8 @@ export function useSendMessage({ chatId }: { chatId: string }) {
     onGenerationTerminal: handleGenerationTerminal,
   });
 
-  // Shared by a fresh send and a retry of a failed one — both just drive a
-  // controller to completion and react to the same event stream.
+  // Sends and Retries of failed generations —
+  // Drives a controller to completion and react to the same event stream.
   // `targetGenerationId` — not the controller's own internal state.generationId,
   // which for a fresh send is an unrelated id ChatClient mints locally — is
   // what identifies which generationRef update this subscription owns.

@@ -1,91 +1,128 @@
-import { useEffect } from 'react';
-import { Text, View } from 'react-native';
+import { Canvas, Group, LinearGradient, Rect, vec } from '@shopify/react-native-skia';
+import { useEffect, useState } from 'react';
+import { Text, View, type LayoutChangeEvent } from 'react-native';
 import Animated, {
   cancelAnimation,
+  Easing,
   FadeOut,
   FadeOutUp,
-  useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
-  withDelay,
   withRepeat,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
-import { nativeMotionContracts, nativeMotionTiming } from '~/services/motion/native-motion';
+import { nativeMotionContracts } from '~/services/motion/native-motion';
 import t from '~/translations';
 
-const DOT_STAGGER_MS = nativeMotionContracts.duration.quick;
-const DOT_TRAVEL = nativeMotionContracts.distance.rowEnter / 2;
+// Mirrors the web Shimmer ("Thinking"): a muted label whose glyphs are
+// briefly "erased" to the page background by a soft-edged band sweeping
+// left to right. Keeps the same 1s linear loop, spread of 2px per character
+// (half the band's width-shaped ramp), and a sweep that travels from
+// -0.25x to 1.25x the label width -- the geometry of the web's 250%-wide
+// background layer.
+const SHIMMER_DURATION_MS = 1000;
+const SHIMMER_SPREAD_PER_CHAR = 2;
+// Fraction-of-width offsets for the band center across one sweep.
+const SWEEP_START = -0.25;
+const SWEEP_SPAN = 1.5;
 
-function usePrinterDot(delayMs: number, reducedMotion: boolean) {
-  const translateY = useSharedValue(0);
+function useShimmerProgress(reducedMotion: boolean) {
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    cancelAnimation(translateY);
+    cancelAnimation(progress);
 
     if (reducedMotion) {
-      translateY.value = 0;
+      progress.value = 0;
       return;
     }
 
-    translateY.value = withDelay(
-      delayMs,
-      withRepeat(
-        withSequence(
-          withTiming(-DOT_TRAVEL, nativeMotionTiming.enter),
-          withTiming(DOT_TRAVEL, nativeMotionTiming.enter),
-        ),
-        -1,
-        true,
-      ),
+    progress.value = withRepeat(
+      withTiming(1, { duration: SHIMMER_DURATION_MS, easing: Easing.linear }),
+      -1,
+      false,
     );
 
     return () => {
-      cancelAnimation(translateY);
+      cancelAnimation(progress);
     };
-  }, [delayMs, reducedMotion, translateY]);
+  }, [progress, reducedMotion]);
 
-  return useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
+  return progress;
 }
 
-export function ChatThinkingIndicator({ compact = false }: { compact?: boolean }) {
-  const { foreground: textPrimary } = useAppTheme().colors;
-  const styles = useStyles((theme) => ({
-    indicatorContent: { gap: 8, width: '100%' },
-    indicatorRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    dot: { borderRadius: 6, height: 8, width: 8 },
-    indicatorLabel: { marginLeft: 4, color: theme.colors.tertiary },
-    container: {},
-    compact: { paddingTop: 4 },
-    spacious: { paddingHorizontal: 16, paddingVertical: 8 },
+// Generic version of the erase-sweep: any muted label can shimmer, so the
+// same visual language covers streaming, regeneration, and save/stop states
+// instead of each one inventing its own spinner or card.
+export function ShimmerText({ label, style }: { label: string; style?: object }) {
+  const { background } = useAppTheme().colors;
+  const styles = useStyles(() => ({
+    sweep: { position: 'absolute', top: 0, left: 0 },
   }));
   const reducedMotion = useReducedMotion();
-  const dot1Style = usePrinterDot(0, reducedMotion);
-  const dot2Style = usePrinterDot(DOT_STAGGER_MS, reducedMotion);
-  const dot3Style = usePrinterDot(DOT_STAGGER_MS * 2, reducedMotion);
+  const progress = useShimmerProgress(reducedMotion);
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
+
+  const onLayout = (event: LayoutChangeEvent) => {
+    const { height, width } = event.nativeEvent.layout;
+    setSize({ height, width });
+  };
+
+  const spread = label.length * SHIMMER_SPREAD_PER_CHAR;
+  const bandWidth = spread * 2;
+
+  const bandTransform = useDerivedValue(() => {
+    const width = size?.width ?? 0;
+    const center = width * (SWEEP_START + SWEEP_SPAN * progress.value);
+    return [{ translateX: center - bandWidth / 2 }];
+  }, [bandWidth, progress, size]);
+
+  return (
+    <View collapsable={false} onLayout={onLayout}>
+      <Text style={style}>{label}</Text>
+      {size && !reducedMotion ? (
+        <View pointerEvents="none" style={styles.sweep}>
+          <Canvas style={{ height: size.height, width: size.width }}>
+            <Group transform={bandTransform}>
+              <Rect height={size.height} width={bandWidth} x={0} y={0}>
+                <LinearGradient
+                  colors={[`${background}00`, background, `${background}00`]}
+                  end={vec(bandWidth, 0)}
+                  positions={[0, 0.5, 1]}
+                  start={vec(0, 0)}
+                />
+              </Rect>
+            </Group>
+          </Canvas>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+export function ChatThinkingIndicator() {
+  const styles = useStyles((theme) => ({
+    container: { alignSelf: 'flex-start' },
+    row: { paddingTop: 4 },
+    label: { color: theme.colors.mutedForeground, fontSize: 14, lineHeight: 20 },
+  }));
+  const reducedMotion = useReducedMotion();
 
   return (
     <Animated.View
-      style={[styles.container, compact ? styles.compact : styles.spacious]}
       exiting={
         reducedMotion
           ? FadeOut.duration(nativeMotionContracts.duration.quick)
           : FadeOutUp.duration(nativeMotionContracts.duration.quick)
       }
+      style={styles.container}
       testID="chat-assistant-activity"
     >
-      <View style={styles.indicatorContent}>
-        <View style={styles.indicatorRow}>
-          <Animated.View style={[styles.dot, [{ backgroundColor: textPrimary }, dot1Style]]} />
-          <Animated.View style={[styles.dot, [{ backgroundColor: textPrimary }, dot2Style]]} />
-          <Animated.View style={[styles.dot, [{ backgroundColor: textPrimary }, dot3Style]]} />
-          {!compact ? <Text style={styles.indicatorLabel}>{t.chat.thinkingIndicator}</Text> : null}
-        </View>
+      <View style={styles.row}>
+        <ShimmerText label={t.chat.thinkingIndicator} style={styles.label} />
       </View>
     </Animated.View>
   );

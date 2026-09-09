@@ -78,73 +78,20 @@ function isAbortError(error: unknown): boolean {
   return isObject(error) && 'name' in error && error.name === 'AbortError';
 }
 
-function chatRequestError(response: Response): ChatHttpError {
-  return Object.assign(new Error(`Chat request failed: HTTP ${response.status}`), {
-    status: response.status,
-  });
+function chatRequestError(status: number): ChatHttpError {
+  return Object.assign(new Error(`Chat request failed: HTTP ${status}`), { status });
 }
 
-type StreamReadResult<T> = { done: true; value?: T } | { done: false; value: T };
-
-export async function consumeSseResponse(
-  response: Response,
-  onEvent: (event: GenerationEvent) => void,
-  onDone?: () => void,
-  options?: {
-    deduplicateEvent?: (event: GenerationEvent) => GenerationEvent | null;
-    parseEvent?: (input: unknown) => GenerationEvent;
-    onDurableSequence?: (sequence: number) => void;
-    idleTimeoutMs?: number;
-  },
-): Promise<void> {
-  if (!response.body) throw new Error('No response body');
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  const deduplicate = options?.deduplicateEvent ?? createGenerationEventDeduplicator();
-  const idleMs = options?.idleTimeoutMs ?? GENERATION_TIMING.clientIdleMs;
-  let sseState = createSseDecoder();
-  const parse = options?.parseEvent ?? ((data: string) => JSON.parse(data) as GenerationEvent);
-  const process = (outputs: ReturnType<typeof pushSseChunk<GenerationEvent>>['outputs']) => {
-    for (const output of outputs) {
-      if (output.kind === 'done') onDone?.();
-      if (output.kind === 'event') {
-        const event = deduplicate(output.event);
-        if (event) {
-          if (event.sequence !== null) options?.onDurableSequence?.(event.sequence);
-          onEvent(event);
-        }
-      }
+function combineSignals(signals: readonly AbortSignal[]): AbortSignal {
+  const controller = new AbortController();
+  for (const signal of signals) {
+    if (signal.aborted) {
+      controller.abort(signal.reason);
+      break;
     }
-  };
-  while (true) {
-    const step = await new Promise<StreamReadResult<Uint8Array>>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new SseIdleTimeoutError(idleMs)), idleMs);
-      reader.read().then(
-        (value) => {
-          clearTimeout(timer);
-          resolve(value);
-        },
-        (error: unknown) => {
-          clearTimeout(timer);
-          reject(error);
-        },
-      );
-    }).catch(async (error) => {
-      await reader.cancel().catch(() => undefined);
-      throw error;
-    });
-    if (step.done) break;
-    const result = pushSseChunk<GenerationEvent>(
-      sseState,
-      decoder.decode(step.value, { stream: true }),
-      parse,
-    );
-    sseState = result.state;
-    process(result.outputs);
+    signal.addEventListener('abort', () => controller.abort(signal.reason), { once: true });
   }
-  const trailing = pushSseChunk<GenerationEvent>(sseState, decoder.decode(), parse);
-  process(trailing.outputs);
-  process(finishSse<GenerationEvent>(trailing.state, parse).outputs);
+  return controller.signal;
 }
 
 function defaultId(): string {
@@ -241,7 +188,7 @@ export class ChatClient {
       url: `${this.options.baseUrl}/api/chats/${input.chatId}/generations/${input.generationId}`,
       init: { method: 'GET', headers },
     });
-    if (!response.ok) throw chatRequestError(response);
+    if (!response.ok) throw chatRequestError(response.status);
     return response.json();
   }
 
@@ -273,36 +220,75 @@ export class ChatClient {
       replayPath?: (generationId: string, afterSequence: number) => string,
       reconnect = true,
     ): Promise<GenerationClientState> => {
+      const idleMs = GENERATION_TIMING.clientIdleMs;
+      const idleController = new AbortController();
+      let idleTimer: ReturnType<typeof setTimeout> | undefined;
+      const armIdleTimer = () => {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => idleController.abort(), idleMs);
+      };
       try {
         const headers = new Headers(await this.options.headers?.());
         headers.set('Accept', 'text/event-stream');
         if (body !== undefined) headers.set('Content-Type', 'application/json');
-        const response = await this.options.transport.request({
-          url: `${this.options.baseUrl}${path}`,
-          init: {
-            method: body === undefined ? 'GET' : 'POST',
-            headers,
-            body: body === undefined ? undefined : JSON.stringify(body),
-          },
-          signal: controller.signal,
-        });
-        if (!response.ok) throw chatRequestError(response);
+
+        const deduplicate = createGenerationEventDeduplicator();
         let checkpointWrite = Promise.resolve();
-        await consumeSseResponse(
-          response,
-          (event) => {
+        let sseState = createSseDecoder();
+        const process = (outputs: ReturnType<typeof pushSseChunk<GenerationEvent>>['outputs']) => {
+          for (const output of outputs) {
+            if (output.kind !== 'event') continue;
+            const event = deduplicate(output.event);
+            if (!event) continue;
             current = reduceGenerationClientEvent(current, event);
             for (const listener of listeners) listener(current, event);
             const snapshot = current;
             checkpointWrite = checkpointWrite.then(() =>
               this.options.checkpointStore?.set(snapshot),
             );
-          },
-          undefined,
-          {
-            deduplicateEvent: createGenerationEventDeduplicator(),
-          },
-        );
+          }
+        };
+
+        armIdleTimer();
+        const idleTimeout = new Promise<never>((_, reject) => {
+          idleController.signal.addEventListener(
+            'abort',
+            () => reject(new SseIdleTimeoutError(idleMs)),
+            { once: true },
+          );
+        });
+        const streaming = this.options.transport
+          .stream({
+            url: `${this.options.baseUrl}${path}`,
+            init: {
+              method: body === undefined ? 'GET' : 'POST',
+              headers,
+              body: body === undefined ? undefined : JSON.stringify(body),
+            },
+            signal: combineSignals([controller.signal, idleController.signal]),
+            onChunk: (chunk) => {
+              armIdleTimer();
+              const result = pushSseChunk<GenerationEvent>(sseState, chunk, (data) =>
+                JSON.parse(data),
+              );
+              sseState = result.state;
+              process(result.outputs);
+            },
+          })
+          .catch((error: unknown) => {
+            // The idle timer's own abort races ahead of whatever rejection
+            // the transport produces from being cancelled — that rejection
+            // is expected and not the real failure, so swallow it here.
+            if (idleController.signal.aborted) return undefined;
+            throw error;
+          });
+
+        const result = await Promise.race([streaming, idleTimeout]);
+        clearTimeout(idleTimer);
+        if (result && !result.ok) throw chatRequestError(result.status);
+
+        process(finishSse<GenerationEvent>(sseState, (data) => JSON.parse(data)).outputs);
+
         await checkpointWrite;
         if (
           current.phase === 'committed' ||
@@ -313,6 +299,7 @@ export class ChatClient {
         }
         return current;
       } catch (error) {
+        clearTimeout(idleTimer);
         if (
           reconnect &&
           replayPath &&

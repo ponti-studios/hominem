@@ -193,7 +193,7 @@ export const ChatMessage = memo(function ChatMessage({
 
         <View style={styles.content}>
           <MessageContent content={content} enableMarkdown={!isStreaming} textStyle={textStyle}>
-            {!isUser && isStreaming ? <ChatThinkingIndicator compact /> : null}
+            {!isUser && isStreaming ? <ChatThinkingIndicator /> : null}
           </MessageContent>
 
           {failed && isUser ? (

@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { chatKeys } from '~/services/notes/query-keys';
 
+import { streamFromRequest } from '../../mocks/chat-transport';
 import { mockMmkvModule } from '../../mocks/mmkv';
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
@@ -46,7 +47,10 @@ vi.mock('@react-native-community/netinfo', () => ({
   default: { fetch: vi.fn().mockResolvedValue({ isConnected: true }) },
 }));
 vi.mock('@hominem/chat/transport/xhr', () => ({
-  xhrChatTransport: () => ({ request: mockTransportRequest }),
+  xhrChatTransport: () => ({
+    request: mockTransportRequest,
+    stream: streamFromRequest(mockTransportRequest),
+  }),
 }));
 vi.mock('~/services/chat/use-chat-messages', () => ({
   toMessageOutput: (message: { id: string; role: 'user'; content: string }) => ({

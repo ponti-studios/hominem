@@ -25,11 +25,16 @@ const mockClient = vi.hoisted(() => ({
 
 const mockChatTransport = vi.hoisted(() => ({
   request: vi.fn(),
+  stream: vi.fn(),
 }));
 
-vi.mock('@hominem/chat/transport/fetch', () => ({
-  fetchChatTransport: () => mockChatTransport,
-}));
+vi.mock('@hominem/chat/transport/fetch', async () => {
+  const { streamFromRequest } = await import('./test-chat-transport');
+  mockChatTransport.stream.mockImplementation(
+    streamFromRequest((input) => mockChatTransport.request(input)),
+  );
+  return { fetchChatTransport: () => mockChatTransport };
+});
 
 vi.mock('@hominem/rpc/react', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@hominem/rpc/react')>()),

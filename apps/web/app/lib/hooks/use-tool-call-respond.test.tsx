@@ -5,11 +5,15 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockTransport = vi.hoisted(() => ({ request: vi.fn() }));
+const mockTransport = vi.hoisted(() => ({ request: vi.fn(), stream: vi.fn() }));
 
-vi.mock('@hominem/chat/transport/fetch', () => ({
-  fetchChatTransport: () => mockTransport,
-}));
+vi.mock('@hominem/chat/transport/fetch', async () => {
+  const { streamFromRequest } = await import('./test-chat-transport');
+  mockTransport.stream.mockImplementation(
+    streamFromRequest((input) => mockTransport.request(input)),
+  );
+  return { fetchChatTransport: () => mockTransport };
+});
 
 import { useToolCallRespond } from './use-tool-call-respond';
 

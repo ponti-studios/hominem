@@ -30,21 +30,19 @@ vi.mock('~/components/media/audio-playback.service', () => ({ playAudioReply: vi
 vi.mock('@react-native-community/netinfo', () => ({ default: { fetch: mockNetInfoFetch } }));
 vi.mock('@hominem/chat/transport/xhr', () => ({
   xhrChatTransport: () => ({
-    request: async ({ signal }: { signal?: AbortSignal }) => {
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream<Uint8Array>({
-        start(streamController) {
-          void mockConsumeSseXhr({
-            onEvent: (event: GenerationEvent) =>
-              streamController.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`)),
-            signal,
-          }).then(
-            () => streamController.close(),
-            (error: unknown) => streamController.error(error),
-          );
-        },
+    request: async () => new Response('{}', { status: 200 }),
+    stream: async ({
+      signal,
+      onChunk,
+    }: {
+      signal?: AbortSignal;
+      onChunk: (chunk: string) => void;
+    }) => {
+      await mockConsumeSseXhr({
+        onEvent: (event: GenerationEvent) => onChunk(`data: ${JSON.stringify(event)}\n\n`),
+        signal,
       });
-      return new Response(stream);
+      return { ok: true, status: 200 };
     },
   }),
 }));

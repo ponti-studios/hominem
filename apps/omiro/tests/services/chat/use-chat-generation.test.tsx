@@ -16,32 +16,26 @@ const key = 'chat-generation:chat-1';
 
 vi.mock('@hominem/chat/transport/xhr', () => ({
   xhrChatTransport: () => ({
-    request: async ({
+    request: async () => new Response('{}', { status: 200 }),
+    stream: async ({
       url,
       init,
       signal,
+      onChunk,
     }: {
       url: string;
       init: RequestInit;
       signal?: AbortSignal;
+      onChunk: (chunk: string) => void;
     }) => {
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream<Uint8Array>({
-        start(streamController) {
-          void consumeGenerationSseXhr({
-            method: init.method,
-            url,
-            getReplayCursor: () => 12,
-            onEvent: (event: unknown) =>
-              streamController.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`)),
-            signal,
-          }).then(
-            () => streamController.close(),
-            (error: unknown) => streamController.error(error),
-          );
-        },
+      await consumeGenerationSseXhr({
+        method: init.method,
+        url,
+        getReplayCursor: () => 12,
+        onEvent: (event: unknown) => onChunk(`data: ${JSON.stringify(event)}\n\n`),
+        signal,
       });
-      return new Response(stream);
+      return { ok: true, status: 200 };
     },
   }),
 }));
