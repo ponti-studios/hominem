@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createBetterAuthServer } from '../auth/better-auth';
 import { createServer } from '../server';
-import * as resendMock from '../testkit/resend.mock';
+import { getScriptedEmail } from '../testkit/scripted-providers';
 import { createTestEnv } from '../testkit/server';
 
 const apiUrl = 'http://localhost:4040';
@@ -60,10 +60,6 @@ async function readMcpJson(response: Response): Promise<Record<string, unknown>>
 describe('MCP OAuth integration', () => {
   let app: ReturnType<typeof createServer>;
   const cookies = createCookieJar();
-  // Mocks Resend (an external vendor) at its outbound HTTP boundary, so the
-  // real Better Auth OTP flow runs end-to-end and this test reads back the
-  // real, randomly generated OTP a user would have received by email.
-  let stopResendMock: () => void;
 
   beforeAll(async () => {
     const testEnv = createTestEnv({
@@ -72,13 +68,15 @@ describe('MCP OAuth integration', () => {
       // desync this from the `apiUrl` constant this file asserts against.
       API_URL: apiUrl,
     });
-    stopResendMock = resendMock.installResendMock();
     const auth = createBetterAuthServer(testEnv);
     app = createServer({ env: testEnv, auth });
     // Route only requests aimed at this test's own API back into the local
     // app; anything else (e.g. the Better Auth OTP flow's outbound call to
-    // Resend) must keep going through the real global fetch so MSW's
-    // interception of it still applies.
+    // Resend) must keep going through the real global fetch, which the
+    // suite-wide scripted-providers dispatcher (testkit/setup.ts) is already
+    // intercepting, so the real Better Auth OTP flow runs end-to-end and this
+    // test reads back the real, randomly generated OTP a user would have
+    // received by email.
     const realFetch = globalThis.fetch;
     vi.stubGlobal('fetch', (input: string | URL | Request, init?: RequestInit) => {
       const url = input instanceof Request ? input.url : input.toString();
@@ -90,7 +88,6 @@ describe('MCP OAuth integration', () => {
   afterAll(() => {
     cookies.clear();
     vi.unstubAllGlobals();
-    stopResendMock();
   });
 
   it('completes discovery, API-hosted OTP login, PKCE, MCP access, and refresh', async () => {
@@ -146,7 +143,7 @@ describe('MCP OAuth integration', () => {
     );
     expect(precreateSendResponse.status).toBe(200);
 
-    const precreateOtp = resendMock.getScriptedEmail(userEmail)?.otp;
+    const precreateOtp = getScriptedEmail(userEmail)?.otp;
     expect(precreateOtp).toBeTruthy();
 
     const precreateSignInResponse = await app.request(`${apiUrl}/api/auth/sign-in/email-otp`, {
@@ -202,7 +199,7 @@ describe('MCP OAuth integration', () => {
     expect(sendOtpResponse.status).toBe(303);
     cookies.update(sendOtpResponse);
 
-    const otp = resendMock.getScriptedEmail(userEmail)?.otp;
+    const otp = getScriptedEmail(userEmail)?.otp;
     expect(otp).toBeTruthy();
 
     const verifyOtpResponse = await app.request(`${apiUrl}/login/verify`, {

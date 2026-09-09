@@ -9,18 +9,13 @@ import { initRuntime } from './runtime';
 import { createServer } from './server';
 
 const aiProvider = resolveAiProvider(env);
-if (aiProvider === 'scripted') {
-  if (env.NODE_ENV === 'production') {
-    throw new Error('Scripted providers are not allowed in production');
-  }
-  const { installOpenRouterMock } = await import('./testkit/openrouter.mock');
-  installOpenRouterMock();
+if (aiProvider === 'scripted' && env.NODE_ENV === 'production') {
+  throw new Error('Scripted providers are not allowed in production');
 }
 
 // Production always sends real email while other environments capture to the
 // scripted mailbox. ENV=scripted forces scripted AI and email together.
 const emailProvider = resolveEmailProvider(env);
-
 if (emailProvider === 'scripted' && env.NODE_ENV === 'production') {
   throw new Error('Scripted providers are not allowed in production');
 }
@@ -30,10 +25,17 @@ logger.info(LOG_MESSAGES.EMAIL_PROVIDER, {
   source: env.ENV === 'scripted' ? 'scripted-mode' : 'inferred',
 });
 
-if (emailProvider === 'scripted') {
-  const { installResendMock } = await import('./testkit/resend.mock');
+// One dispatcher owns every scripted external provider (see
+// testkit/scripted-providers.ts for why this must be a single install site
+// rather than one per provider).
+if (aiProvider === 'scripted' || emailProvider === 'scripted') {
+  const { installScriptedProviders } = await import('./testkit/scripted-providers');
   const { resolveScriptedMailboxPath } = await import('@hominem/utils/scripted-mailbox');
-  installResendMock({ mailboxFile: resolveScriptedMailboxPath(env.HOMINEM_SCRIPTED_MAILBOX) });
+  installScriptedProviders({
+    ai: aiProvider === 'scripted',
+    email: emailProvider === 'scripted',
+    mailboxFile: resolveScriptedMailboxPath(env.HOMINEM_SCRIPTED_MAILBOX),
+  });
 }
 
 const app = createServer();

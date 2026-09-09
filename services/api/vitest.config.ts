@@ -6,6 +6,7 @@ import { TEST_DATABASE_URL } from '@hominem/db/test/database-url';
 export default defineConfig({
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
+    setupFiles: ['./src/testkit/setup.ts'],
     hookTimeout: 30_000,
     env: {
       ENV: 'scripted',

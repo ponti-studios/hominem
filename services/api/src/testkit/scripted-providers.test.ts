@@ -1,14 +1,9 @@
 import { streamChatCompletion } from '@hominem/ai';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { installOpenRouterMock } from './openrouter.mock';
-
-let stopMock: (() => void) | undefined;
-
-beforeAll(() => {
-  stopMock = installOpenRouterMock();
-});
-afterAll(() => stopMock?.());
+// Install/teardown for the whole suite lives in testkit/setup.ts
+// (vitest.config.ts setupFiles) — every test file shares one dispatcher
+// install rather than managing its own.
 
 async function collect<T>(stream: AsyncIterable<T>) {
   const chunks: T[] = [];
@@ -227,5 +222,36 @@ describe('scripted OpenRouter provider', () => {
 
     expect(chunks).toHaveLength(2);
     expect(Date.now() - startedAt).toBeGreaterThanOrEqual(700);
+  });
+});
+
+describe('scripted Resend provider', () => {
+  it('captures the OTP from a scripted email and returns a scripted id', async () => {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        to: 'scripted-providers-test@hominem.test',
+        subject: 'Your code',
+        text: 'Your verification code is: 123456',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({ id: expect.stringMatching(/^scripted-email-/) });
+
+    const { getScriptedEmail } = await import('./scripted-providers');
+    expect(getScriptedEmail('scripted-providers-test@hominem.test')?.otp).toBe('123456');
+  });
+
+  it('rejects a malformed scripted email body', async () => {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ not: 'a valid resend body' }),
+    });
+
+    expect(response.status).toBe(400);
   });
 });
