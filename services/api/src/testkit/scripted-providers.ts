@@ -393,9 +393,6 @@ function rawHeaderPairs(headers: Record<string, string>): Buffer[] {
   ]);
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: undici's DispatchHandler type isn't exported cleanly across versions
-type AnyDispatchHandler = any;
-
 class ScriptedProvidersDispatcher extends Dispatcher {
   constructor(
     private readonly fallback: Dispatcher,
@@ -404,7 +401,7 @@ class ScriptedProvidersDispatcher extends Dispatcher {
     super();
   }
 
-  dispatch(options: Dispatcher.DispatchOptions, handler: AnyDispatchHandler): boolean {
+  dispatch(options: Dispatcher.DispatchOptions, handler: Dispatcher.DispatchHandler): boolean {
     const origin = typeof options.origin === 'string' ? options.origin : options.origin?.toString();
     const route = this.routes.find(
       (candidate) =>
@@ -422,7 +419,7 @@ class ScriptedProvidersDispatcher extends Dispatcher {
   private async serve(
     route: Route,
     options: Dispatcher.DispatchOptions,
-    handler: AnyDispatchHandler,
+    handler: Dispatcher.DispatchHandler,
   ): Promise<void> {
     try {
       handler.onConnect?.(() => undefined);
