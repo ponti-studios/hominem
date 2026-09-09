@@ -3,13 +3,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { expect, test } from '@playwright/test';
-
 import {
-  createE2eEmail,
+  createOtpTestEmail,
   signInWithOtp,
   startEmailOtpFlow,
   submitOtpCode,
-} from './auth.flow-helpers';
+} from '@ponti-studios/auth/testkit';
 
 const authDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.auth');
 const authStorageState = path.join(authDir, 'career-user.json');
@@ -19,7 +18,7 @@ const authStorageState = path.join(authDir, 'career-user.json');
 // state only needs covering once, here, rather than duplicated per app.
 test('rejects an invalid verification code', async ({ page, context }) => {
   await context.clearCookies();
-  await startEmailOtpFlow(page, createE2eEmail('career-invalid-otp'));
+  await startEmailOtpFlow(page, createOtpTestEmail('career-invalid-otp'));
   await submitOtpCode(page, '111111');
 
   await expect(page).toHaveURL(/\/login\?.*step=otp.*error=/, { timeout: 30_000 });
@@ -31,7 +30,6 @@ test('rejects an invalid verification code', async ({ page, context }) => {
 
 test('authenticate career e2e user', async ({ page }) => {
   await mkdir(authDir, { recursive: true });
-  await signInWithOtp(page, createE2eEmail('career-setup'));
-  await expect(page).toHaveURL(/\/work$/, { timeout: 30_000 });
+  await signInWithOtp(page, createOtpTestEmail('career-setup'), /\/work$/);
   await page.context().storageState({ path: authStorageState });
 });

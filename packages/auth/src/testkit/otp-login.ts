@@ -2,24 +2,28 @@ import { readLatestScriptedOtp, resolveScriptedMailboxPath } from '@hominem/util
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
+// Playwright helpers for the API-hosted email-OTP login
+// (services/api/src/routes/login), shared by every consuming app (career,
+// finance, web, and any future one — see docs/authentication.md). The
+// hosted login's own behavior — form fields, hydration timing, the OTP
+// digit inputs, the invalid-code error state — only needs covering once,
+// here, rather than reimplemented per app. Only the post-login landing URL
+// differs between apps, so every flow here takes it as a parameter instead
+// of hardcoding one app's redirect.
+
 const OTP_FETCH_TIMEOUT_MS = 15_000;
 const OTP_FETCH_RETRY_DELAY_MS = 500;
 
-export function createE2eEmail(prefix: string) {
+export function createOtpTestEmail(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}@hominem.test`;
 }
 
 /**
- * Career signs in through the API-hosted login (/auth redirects there).
- * The hosted login is a plain HTML form: email step ("Continue") then a
- * six-digit OTP step ("Verify"). Landing URL after success is the career
- * fallback, /work.
- *
- * The hosted login is shared across every app (career, finance, web, WH?T —
- * see docs/authentication.md), so its own behavior — including the invalid
- * code error state — only needs covering here, not duplicated per app.
+ * Fills the email step and submits it, landing on the hosted login's OTP
+ * step. The hosted login is a plain HTML form: email step ("Continue"),
+ * then a six-digit OTP step ("Verify").
  */
-export async function startEmailOtpFlow(page: Page, email: string) {
+export async function startEmailOtpFlow(page: Page, email: string): Promise<void> {
   await page.goto('/auth');
 
   // Wait for full React hydration: in Vite dev mode, React may still be
@@ -33,14 +37,21 @@ export async function startEmailOtpFlow(page: Page, email: string) {
     await expect(emailInput).toHaveValue(email);
   }).toPass({ timeout: 20_000 });
 
-  await page.getByRole('button', { name: 'Continue' }).click();
+  const continueButton = page.getByRole('button', { name: 'Continue' });
+  await expect(continueButton).toBeEnabled();
+  await continueButton.click();
+
   await expect(page).toHaveURL(/\/login\?.*step=otp.*email=/, { timeout: 30_000 });
 }
 
-async function fetchLatestSignInOtp(email: string) {
-  // OTPs are never exposed over the API: the scripted provider appends them
-  // to a same-host mailbox file, which this polls — the OTP send runs as a
-  // server background task, so the capture lands after the request responds.
+/**
+ * Polls the scripted mailbox for the most recent OTP sent to `email`. OTPs
+ * are never exposed over the API: the scripted email provider appends them
+ * to a same-host mailbox file (see @hominem/utils/scripted-mailbox), which
+ * this polls — the send runs as a server background task, so the capture
+ * lands after the request responds.
+ */
+export async function fetchLatestSignInOtp(email: string): Promise<string> {
   const mailboxFile = resolveScriptedMailboxPath();
   const deadline = Date.now() + OTP_FETCH_TIMEOUT_MS;
 
@@ -59,13 +70,17 @@ async function fetchLatestSignInOtp(email: string) {
 }
 
 /** Fills the six-digit OTP step and submits it, without asserting the outcome. */
-export async function submitOtpCode(page: Page, otp: string) {
+export async function submitOtpCode(page: Page, otp: string): Promise<void> {
+  const normalized = otp.replace(/\D/g, '').slice(0, 6);
+
+  // The hosted login's visible digit inputs are marked with data-otp-digit
+  // (see services/api/src/routes/login/pages.tsx) — not inputmode="numeric".
   const digits = page.locator('input[data-otp-digit]');
   await expect(digits).toHaveCount(6, { timeout: 15_000 });
   for (let i = 0; i < 6; i++) {
-    await digits.nth(i).fill(otp[i] ?? '');
+    await digits.nth(i).fill(normalized[i] ?? '');
   }
-  await expect(digits.first()).toHaveValue(otp[0] ?? '');
+  await expect(digits.first()).toHaveValue(normalized[0] ?? '');
 
   // The hosted login keeps the submitted OTP in a hidden form field; its
   // own JS syncs it from the digit inputs. Set it via evaluate (Playwright
@@ -77,14 +92,22 @@ export async function submitOtpCode(page: Page, otp: string) {
     input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
-  }, otp);
+  }, normalized);
 
   await page.getByRole('button', { name: 'Verify' }).click();
 }
 
-export async function signInWithOtp(page: Page, email: string) {
+/**
+ * Full sign-in flow: email step, fetch the real OTP from the scripted
+ * mailbox, submit it, and wait for the app's own post-login landing URL.
+ */
+export async function signInWithOtp(
+  page: Page,
+  email: string,
+  landingUrlPattern: RegExp,
+): Promise<void> {
   await startEmailOtpFlow(page, email);
   const otp = await fetchLatestSignInOtp(email);
   await submitOtpCode(page, otp);
-  await expect(page).toHaveURL(/\/work/, { timeout: 30_000 });
+  await expect(page).toHaveURL(landingUrlPattern, { timeout: 30_000 });
 }

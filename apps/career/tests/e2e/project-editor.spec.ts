@@ -28,7 +28,8 @@ async function createProject(page: Page) {
   // reconciling the SSR HTML when the page appears ready. A fill before
   // hydration is complete gets wiped when React takes over the DOM. Retry
   // until the fill value sticks — this is the reliable hydration signal
-  // (same race already worked around in tests/auth.flow-helpers.ts).
+  // (same race already worked around in @ponti-studios/auth/testkit's
+  // startEmailOtpFlow).
   const titleInput = page.getByLabel('Title');
   await titleInput.waitFor({ state: 'visible' });
   await expect(async () => {
