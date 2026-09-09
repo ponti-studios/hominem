@@ -19,6 +19,12 @@
       "skillPath": "cli-tool/components/skills/sentry/deslop/SKILL.md",
       "computedHash": "4bf3f0284479c3e207648bf31ae8365b3d2373b77eaf9a5378f236bdd6eba9a7"
     },
+    "react-doctor": {
+      "source": "millionco/react-doctor",
+      "sourceType": "github",
+      "skillPath": "skills/react-doctor/SKILL.md",
+      "computedHash": "2a003f397a4a94fc032019bc7fd97e938b4e2fae995c96df8603790db168dcc7"
+    },
     "tech-debt-audit": {
       "source": "ksimback/tech-debt-skill",
       "sourceType": "github",
