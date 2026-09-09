@@ -19,7 +19,7 @@
  *   eval "$(E2E_TEST_EMAIL=e2e-collaborator@test.hakumi.io E2E_EXPORT_PREFIX=E2E_COLLABORATOR pnpm --filter @hominem/api --silent e2e:setup 2>/dev/null | grep 'export ')"
  */
 
-import { readLatestScriptedOtp, resolveScriptedMailboxPath } from '@hominem/utils/scripted-mailbox';
+import { readLatestScriptedOtp, resolveScriptedMailboxPath } from '@hominem/utils/email';
 import 'dotenv/config';
 import z from 'zod';
 

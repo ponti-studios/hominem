@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { isObject } from './object.js';
+import { isObject } from '../object.js';
 
 // Local mailbox for OTPs captured by the scripted email provider.
 //

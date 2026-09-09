@@ -1,4 +1,4 @@
-import { readLatestScriptedOtp, resolveScriptedMailboxPath } from '@hominem/utils/scripted-mailbox';
+import { readLatestScriptedOtp, resolveScriptedMailboxPath } from '@hominem/utils/email';
 import type { Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
@@ -47,7 +47,7 @@ export async function startEmailOtpFlow(page: Page, email: string): Promise<void
 /**
  * Polls the scripted mailbox for the most recent OTP sent to `email`. OTPs
  * are never exposed over the API: the scripted email provider appends them
- * to a same-host mailbox file (see @hominem/utils/scripted-mailbox), which
+ * to a same-host mailbox file (see @hominem/utils/email), which
  * this polls — the send runs as a server background task, so the capture
  * lands after the request responds.
  */

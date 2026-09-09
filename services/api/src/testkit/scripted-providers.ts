@@ -1,5 +1,4 @@
-import { isObject } from '@hominem/utils';
-import { appendScriptedMailboxRecord } from '@hominem/utils/scripted-mailbox';
+import { resendMock } from '@hominem/services/email';
 import { Dispatcher, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
 
 // Single owner of every scripted external-provider response (OpenRouter,
@@ -267,73 +266,9 @@ async function openRouterResponder(rawBody: string): Promise<ScriptedResponse> {
   return { status: 200, headers, frames };
 }
 
-// ============================================================================
-// Resend: scripted email capture (OTP extraction, optional mailbox file)
-// ============================================================================
-
-type ScriptedEmail = {
-  to: string;
-  subject: string;
-  text: string;
-  otp: string | null;
-  capturedAt: Date;
-};
-
-const capturedEmails = new Map<string, ScriptedEmail>();
-let mailboxFile: string | null = null;
-
-function extractOtp(text: string): string | null {
-  return text.match(/verification code is: (\d{6})/i)?.[1] ?? null;
-}
-
-function isResendEmailBody(
-  value: unknown,
-): value is { to: string | string[]; subject: string; text: string } {
-  if (!isObject(value)) return false;
-  const to = Reflect.get(value, 'to');
-  return (
-    (typeof to === 'string' ||
-      (Array.isArray(to) && to.every((item) => typeof item === 'string'))) &&
-    typeof Reflect.get(value, 'subject') === 'string' &&
-    typeof Reflect.get(value, 'text') === 'string'
-  );
-}
-
-async function resendResponder(rawBody: string): Promise<ScriptedResponse> {
-  const body: unknown = rawBody ? JSON.parse(rawBody) : null;
-  if (!isResendEmailBody(body)) {
-    return {
-      status: 400,
-      headers: { 'content-type': 'application/json' },
-      frames: [{ data: JSON.stringify({ error: 'Invalid scripted email body' }) }],
-    };
-  }
-  const to = Array.isArray(body.to) ? body.to[0] : body.to;
-  if (to) {
-    const otp = extractOtp(body.text ?? '');
-    capturedEmails.set(to, {
-      to,
-      subject: body.subject,
-      text: body.text,
-      otp,
-      capturedAt: new Date(),
-    });
-    // Defense in depth behind index.ts refusing scripted+production at
-    // boot: the mailbox only ever exists on non-production hosts.
-    if (mailboxFile && process.env.NODE_ENV !== 'production' && otp) {
-      appendScriptedMailboxRecord(mailboxFile, { to, otp, subject: body.subject });
-    }
-  }
-  return {
-    status: 200,
-    headers: { 'content-type': 'application/json' },
-    frames: [{ data: JSON.stringify({ id: `scripted-email-${capturedEmails.size}` }) }],
-  };
-}
-
-export function getScriptedEmail(to: string): ScriptedEmail | null {
-  return capturedEmails.get(to) ?? null;
-}
+// Resend's scripted mock (OTP capture, optional mailbox file) lives with the
+// real `resend` sender at @hominem/services/email, so both are one import.
+export const getScriptedEmail = resendMock.getScriptedEmail;
 
 // ============================================================================
 // Shared undici dispatcher
@@ -357,13 +292,6 @@ const OPENROUTER_ROUTE: Route = {
   path: '/api/v1/chat/completions',
   method: 'POST',
   responder: openRouterResponder,
-};
-
-const RESEND_ROUTE: Route = {
-  origin: 'https://api.resend.com',
-  path: '/emails',
-  method: 'POST',
-  responder: resendResponder,
 };
 
 const STATUS_TEXT: Record<number, string> = {
@@ -461,9 +389,8 @@ export function installScriptedProviders(
     routes.push(OPENROUTER_ROUTE);
   }
   if (options.email) {
-    capturedEmails.clear();
-    mailboxFile = options.mailboxFile ?? null;
-    routes.push(RESEND_ROUTE);
+    resendMock.resetResendMock(options.mailboxFile ?? null);
+    routes.push(resendMock.route);
   }
   if (routes.length === 0) {
     return () => undefined;
@@ -474,6 +401,5 @@ export function installScriptedProviders(
   return () => {
     if (installedFallback) setGlobalDispatcher(installedFallback);
     installedFallback = null;
-    mailboxFile = null;
   };
 }

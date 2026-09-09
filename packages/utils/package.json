@@ -34,9 +34,9 @@
       "types": "./build/numbers.d.ts",
       "default": "./src/numbers.ts"
     },
-    "./scripted-mailbox": {
-      "types": "./build/scripted-mailbox.d.ts",
-      "default": "./src/scripted-mailbox.ts"
+    "./email": {
+      "types": "./build/email/index.d.ts",
+      "default": "./src/email/index.ts"
     },
     "./coerce": {
       "types": "./build/coerce.d.ts",

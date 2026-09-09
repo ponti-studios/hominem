@@ -10,13 +10,9 @@
       "types": "./build/index.d.ts",
       "default": "./src/index.ts"
     },
-    "./emails": {
-      "types": "./build/resend.d.ts",
-      "default": "./src/resend.ts"
-    },
-    "./resend": {
-      "types": "./build/resend.d.ts",
-      "default": "./src/resend.ts"
+    "./email": {
+      "types": "./build/email/index.d.ts",
+      "default": "./src/email/index.ts"
     },
     "./files": {
       "types": "./build/files.d.ts",

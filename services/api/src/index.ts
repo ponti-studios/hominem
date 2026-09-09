@@ -30,7 +30,7 @@ logger.info(LOG_MESSAGES.EMAIL_PROVIDER, {
 // rather than one per provider).
 if (aiProvider === 'scripted' || emailProvider === 'scripted') {
   const { installScriptedProviders } = await import('./testkit/scripted-providers');
-  const { resolveScriptedMailboxPath } = await import('@hominem/utils/scripted-mailbox');
+  const { resolveScriptedMailboxPath } = await import('@hominem/utils/email');
   installScriptedProviders({
     ai: aiProvider === 'scripted',
     email: emailProvider === 'scripted',
