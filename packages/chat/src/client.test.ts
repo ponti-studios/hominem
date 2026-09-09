@@ -8,6 +8,54 @@ function streamResponse(event: unknown): Response {
 }
 
 describe('ChatClient', () => {
+  it('start() sends the caller-supplied generationId in the request body, not a fallback id', async () => {
+    const sentBodies: unknown[] = [];
+    const client = new ChatClient({
+      baseUrl: 'https://chat.test',
+      transport: {
+        request: async ({ init }) => {
+          sentBodies.push(JSON.parse(init.body as string));
+          return streamResponse({
+            version: 1,
+            generationId: 'caller-supplied-id',
+            sequence: 1,
+            type: 'generation.committed',
+            payload: {
+              type: 'generation.committed',
+              message: {
+                id: 'message-1',
+                chatId: 'chat-1',
+                userId: 'user-1',
+                role: 'assistant',
+                content: 'done',
+                files: null,
+                toolCalls: null,
+                reasoning: null,
+                parentMessageId: null,
+                createdAt: '2026-01-01',
+                updatedAt: '2026-01-01',
+              },
+            },
+          });
+        },
+      },
+      // A createId that would only be used if start() failed to forward the
+      // caller's generationId — asserting against it, not this value, is
+      // what would catch a regression back to the fallback id.
+      createId: () => 'fallback-id-should-not-be-used',
+    });
+
+    const generation = client.start({
+      generationId: 'caller-supplied-id',
+      title: 'New chat',
+      message: 'hello',
+    });
+    await generation.done;
+
+    expect(sentBodies).toEqual([expect.objectContaining({ generationId: 'caller-supplied-id' })]);
+    expect(generation.state.generationId).toBe('caller-supplied-id');
+  });
+
   it('streams events, checkpoints each state, and removes terminal checkpoints', async () => {
     const checkpoints: string[] = [];
     const client = new ChatClient({

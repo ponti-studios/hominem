@@ -156,6 +156,7 @@ export class ChatClient {
 
   send(input: ChatMessageInput): ChatGenerationController {
     return this.createGenerationWith({
+      generationId: input.generationId,
       path: `/api/chats/${input.chatId}/stream`,
       body: input,
       replayPath: (generationId, afterSequence) =>
@@ -170,7 +171,11 @@ export class ChatClient {
     fileIds?: readonly string[];
     responseLength?: 'short' | 'medium' | 'long';
   }): ChatGenerationController {
-    return this.createGenerationWith({ path: '/api/chats/start-stream', body: input });
+    return this.createGenerationWith({
+      generationId: input.generationId,
+      path: '/api/chats/start-stream',
+      body: input,
+    });
   }
 
   // Redoes the most recent attempt at a turn — whether it produced a reply

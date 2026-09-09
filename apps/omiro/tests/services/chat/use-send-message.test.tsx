@@ -242,7 +242,11 @@ describe('useSendMessage', () => {
       pending?.resolve();
     });
 
-    await waitFor(() => expect(result.current.generation).toMatchObject({ stage: 'cancelled' }));
+    // A terminal phase (committed or cancelled) clears the generation
+    // rather than leaving a lingering cancelled-stage object — same as
+    // every other terminal-phase assertion in this file and in
+    // use-regenerate-message.test.tsx / use-chat-generation.test.tsx.
+    await waitFor(() => expect(result.current.generation).toBeNull());
   });
 
   it('refetches persisted messages when a tool requires confirmation', async () => {
