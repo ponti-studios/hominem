@@ -21,6 +21,10 @@ import type { ChatMessageView as ChatMessage } from '~/lib/types/chat';
 const getSpeechUrl = (chatId: string, messageId: string) =>
   `${import.meta.env.VITE_PUBLIC_API_URL}/api/chats/${chatId}/messages/${messageId}/speech`;
 
+const getMessageSpeechUrl = (message: ChatMessage, chatId: string) =>
+  message.files?.find((file) => file.type === 'audio' && file.url)?.url ??
+  getSpeechUrl(chatId, message.id);
+
 interface ChatConversationProps {
   chatId: string;
   display: ReturnType<typeof useChatDisplayMessages>;
@@ -154,6 +158,7 @@ export const ChatConversation = memo(function ChatConversation({
       currentMessageId === messageId ? null : currentMessageId,
     );
   }, []);
+
   // Regenerate can target a user message directly (right after editing it,
   // with no assistant reply left to show progress on) as well as the usual
   // assistant message. For a user-message target there's no row to overlay
@@ -263,7 +268,7 @@ export const ChatConversation = memo(function ChatConversation({
                   onRetryRegenerate={onRetryRegenerate}
                   onEdit={onUpdateMessage}
                   isDeleting={isDeleting}
-                  speechSrc={getSpeechUrl(chatId, message.id)}
+                  speechSrc={getMessageSpeechUrl(message, chatId)}
                 />
               ))}
               {display.isThinking || isRegeneratingUserMessage ? (

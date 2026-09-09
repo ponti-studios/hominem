@@ -1,13 +1,5 @@
 ---
 name: hominem-resource
-kind: skill
-tags:
-  - api
-  - schema
-  - mcp
-  - rpc
-  - zod
-  - web
 description: >
   Add a new resource (domain) to the hominem API: shared Zod schemas in
   services/api/src/schemas, one implementation in
@@ -24,6 +16,13 @@ metadata:
   author: project
   version: "1.1"
   category: API
+  tags:
+    - api
+    - schema
+    - mcp
+    - rpc
+    - zod
+    - web
 when:
   - adding a resource that must be reachable over MCP and/or HTTP/RPC and/or a web UI
   - reviewing whether new tool/route/hook code follows the shared-implementation pattern

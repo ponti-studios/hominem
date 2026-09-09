@@ -1,3 +1,5 @@
+import { createApiClient } from '@hominem/rpc';
+
 import { serverEnv } from '~/lib/env.server';
 import { userContext } from '~/lib/middleware';
 
@@ -13,10 +15,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   const cookie = request.headers.get('cookie');
-  const response = await fetch(new URL('/api/usage', serverEnv.HOMINEM_INTERNAL_API_URL), {
-    headers: cookie ? { cookie } : undefined,
-    signal: request.signal,
-  });
+  const response = await createApiClient({
+    baseUrl: serverEnv.HOMINEM_INTERNAL_API_URL,
+    request,
+    throwOnError: false,
+  }).api.usage.$get(
+    {},
+    {
+      headers: cookie ? { cookie } : undefined,
+      init: { signal: request.signal },
+    },
+  );
 
   return new Response(response.body, {
     status: response.status,

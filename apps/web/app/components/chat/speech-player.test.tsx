@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -184,5 +184,17 @@ describe('SpeechPlayer', () => {
 
     expect(play).toHaveBeenCalledOnce();
     expect(screen.getByText('AI is speaking')).not.toBeNull();
+  });
+
+  it('keeps a clear manual play action when autoplay is blocked', async () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockRejectedValue(
+      new DOMException('User activation is required', 'NotAllowedError'),
+    );
+    renderPlayer({ autoPlay: true });
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Play response' })).not.toBeNull(),
+    );
+    expect(screen.getByText(/Automatic playback was blocked/)).not.toBeNull();
   });
 });

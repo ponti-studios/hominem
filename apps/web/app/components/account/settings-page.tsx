@@ -2,6 +2,7 @@ import { Archive, ArrowLeft, Brain, ChevronRight, Pencil, Trash2, X } from 'luci
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
+import { CollaborationNotifications } from '~/components/collaboration-notifications';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Textarea } from '~/components/ui/textarea';
@@ -61,18 +62,8 @@ export function AccountSettingsPage({ user }: { user: User }) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <div className="mb-8 flex items-center gap-3">
-        <Button aria-label="Back to chat" asChild size="icon-sm" variant="ghost">
-          <Link to="/">
-            <ArrowLeft />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Account settings</h1>
-          <p className="text-sm text-muted-foreground">Manage your account and chat history.</p>
-        </div>
-      </div>
+    <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 space-y-4">
+      <h1 className="text-2xl font-semibold tracking-tight pl-2">Account settings</h1>
 
       <div className="space-y-8 rounded-xl border border-border bg-card p-5 sm:p-7">
         <section className="space-y-4">
@@ -124,6 +115,12 @@ export function AccountSettingsPage({ user }: { user: User }) {
             </Button>
           </section>
         ) : null}
+
+        <section className="space-y-3 border-t border-border pt-6">
+          <div className="rounded-lg border border-border p-4">
+            <CollaborationNotifications />
+          </div>
+        </section>
 
         <section className="space-y-3 border-t border-border pt-6">
           <h2 className="text-base font-semibold">Chats</h2>
@@ -314,20 +311,9 @@ export function MemoriesPage() {
   const { data: memories, error, isPending, refetch } = useMemories();
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-      <div className="mb-8 flex items-center gap-3">
-        <Button aria-label="Back to account settings" asChild size="icon-sm" variant="ghost">
-          <Link to="/settings">
-            <ArrowLeft />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Memories</h1>
-          <p className="text-sm text-muted-foreground">
-            Facts and preferences the assistant remembers about you.
-          </p>
-        </div>
-      </div>
+    <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 space-y-4">
+      <h1 className="text-2xl font-semibold tracking-tight pl-2">Memories</h1>
+
       <div className="rounded-xl border border-border bg-card p-5 sm:p-7">
         {isPending ? <p className="text-sm text-muted-foreground">Loading memories…</p> : null}
         {error ? (

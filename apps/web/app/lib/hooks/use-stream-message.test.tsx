@@ -279,6 +279,7 @@ describe('useStreamMessage', () => {
       message: 'Hello',
       fileIds: ['file-1'],
       responseLength: 'long',
+      responseModality: 'audio',
       onAccepted,
       onCommitted,
     });
@@ -288,6 +289,11 @@ describe('useStreamMessage', () => {
     expect(request?.[1]).toEqual(
       expect.objectContaining({
         init: expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      }),
+    );
+    expect(request?.[0]).toEqual(
+      expect.objectContaining({
+        json: expect.objectContaining({ responseModality: 'audio' }),
       }),
     );
     await waitFor(() => expect(result.current.status).toBe('committed'));

@@ -1,3 +1,5 @@
+import { createApiClient } from '@hominem/rpc';
+
 import { getClientEnv } from '../env.client';
 
 export type SpeechPlaybackTelemetry = {
@@ -18,17 +20,19 @@ function sendSpeechEvent(input: {
 }) {
   try {
     const { VITE_PUBLIC_API_URL: apiUrl } = getClientEnv();
-    void fetch(`${apiUrl}/api/telemetry/events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      keepalive: true,
-      body: JSON.stringify({
-        version: 1,
-        type: 'speech_playback',
-        ...input,
-      }),
-    }).catch(() => undefined);
+    const client = createApiClient({ baseUrl: apiUrl });
+    void client.api.telemetry.events
+      .$post(
+        {
+          json: {
+            version: 1,
+            type: 'speech_playback',
+            ...input,
+          },
+        },
+        { init: { keepalive: true } },
+      )
+      .catch(() => undefined);
   } catch {
     // Telemetry must never interfere with audio playback.
   }

@@ -1,3 +1,5 @@
+import { createApiClient } from '@hominem/rpc';
+
 import { serverEnv } from '~/lib/env.server';
 import { userContext } from '~/lib/middleware';
 
@@ -13,17 +15,31 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   const requestUrl = new URL(request.url);
-  const apiUrl = new URL('/api/usage/timeseries', serverEnv.HOMINEM_INTERNAL_API_URL);
-  for (const key of ['from', 'to', 'granularity']) {
-    const value = requestUrl.searchParams.get(key);
-    if (value) apiUrl.searchParams.set(key, value);
+  const from = requestUrl.searchParams.get('from');
+  const to = requestUrl.searchParams.get('to');
+  const granularity = requestUrl.searchParams.get('granularity');
+  if (!from || !to || (granularity !== 'day' && granularity !== 'month')) {
+    return Response.json({ error: 'Invalid usage timeseries query' }, { status: 400 });
   }
 
   const cookie = request.headers.get('cookie');
-  const response = await fetch(apiUrl, {
-    headers: cookie ? { cookie } : undefined,
-    signal: request.signal,
-  });
+  const response = await createApiClient({
+    baseUrl: serverEnv.HOMINEM_INTERNAL_API_URL,
+    request,
+    throwOnError: false,
+  }).api.usage['timeseries'].$get(
+    {
+      query: {
+        from,
+        to,
+        granularity,
+      },
+    },
+    {
+      headers: cookie ? { cookie } : undefined,
+      init: { signal: request.signal },
+    },
+  );
 
   return new Response(response.body, {
     status: response.status,

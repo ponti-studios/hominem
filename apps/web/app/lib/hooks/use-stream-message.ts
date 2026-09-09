@@ -58,6 +58,7 @@ interface StreamInput {
   retryOfGenerationId?: string;
   fileIds?: string[];
   responseLength?: ResponseLength;
+  responseModality?: 'text' | 'audio';
   onAccepted?: (userMessage: ChatMessageDto | null) => void;
   onCommitted?: (message: ChatMessageDto) => void;
   onCancelled?: () => void;
@@ -204,6 +205,7 @@ export function useStreamMessage({ chatId }: { chatId: string }) {
             message: input.message ?? '',
             ...(input.fileIds && input.fileIds.length > 0 ? { fileIds: input.fileIds } : {}),
             ...(input.responseLength ? { responseLength: input.responseLength } : {}),
+            ...(input.responseModality ? { responseModality: input.responseModality } : {}),
           });
       activeGenerationRef.current = generation;
       const generationId = generation.state.generationId;

@@ -1,6 +1,6 @@
 ---
 name: hominem-development
-description: Run the local development, validation, and production user-data merge commands for this repo (just/pnpm loop, local OpenTelemetry stack, merge-user-data tool). Use when starting local dev, choosing a validation command, or merging a user's local data into production.
+description: Run the local development, validation, and production user-data merge commands for this repo (just/pnpm loop, local OpenTelemetry stack, merge-user-data tool). Use when starting local dev, choosing a validation command, or merging a user's local data into production. For pre-push validation via `pnpm run check` with failure triage, or crafting a Conventional Commits message, use hominem-workflow instead.
 ---
 
 # Hominem development

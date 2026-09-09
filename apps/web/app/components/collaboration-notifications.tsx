@@ -15,7 +15,7 @@ export function CollaborationNotifications() {
   const [accepted, setAccepted] = useState<Set<string>>(new Set());
 
   return (
-    <div className="w-80 border-b px-2 py-3">
+    <div className="space-y-3">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-semibold text-sm">Notifications</h2>
         {invites.count > 0 ? (

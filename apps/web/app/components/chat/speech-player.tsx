@@ -10,7 +10,14 @@ import {
 } from '~/lib/telemetry/speech';
 import { cn } from '~/lib/utils';
 
-type SpeechState = 'idle' | 'loading' | 'playing' | 'paused' | 'stopping' | 'error';
+type SpeechState =
+  | 'idle'
+  | 'loading'
+  | 'playing'
+  | 'paused'
+  | 'stopping'
+  | 'error'
+  | 'autoplay-blocked';
 const personaTransitionMs = 200;
 
 export interface SpeechPlayerProps {
@@ -190,10 +197,18 @@ export function SpeechPlayer({
     try {
       await audio.play();
       if (request !== playRequestRef.current) return;
-    } catch {
+    } catch (error) {
       if (request !== playRequestRef.current) return;
-      setState('error');
-      telemetryRef.current?.failed('Audio play request was rejected');
+      const autoplayBlocked =
+        error instanceof DOMException
+          ? error.name === 'NotAllowedError'
+          : error instanceof Error && error.name === 'NotAllowedError';
+      setState(autoplayBlocked ? 'autoplay-blocked' : 'error');
+      telemetryRef.current?.failed(
+        autoplayBlocked
+          ? 'Browser blocked automatic audio playback'
+          : 'Audio play request was rejected',
+      );
       telemetryRef.current = null;
       scheduleDeactivation();
     }
@@ -208,7 +223,13 @@ export function SpeechPlayer({
       <div className="relative flex size-7 shrink-0 items-center justify-center" data-speech-action>
         <MessageAction
           aria-hidden={showBrowserControls}
-          aria-label={state === 'error' ? 'Retry response audio' : 'Listen to response'}
+          aria-label={
+            state === 'autoplay-blocked'
+              ? 'Play response'
+              : state === 'error'
+                ? 'Retry response audio'
+                : 'Listen to response'
+          }
           className={cn(
             controlTransition,
             showBrowserControls
@@ -217,7 +238,13 @@ export function SpeechPlayer({
           )}
           onClick={() => void handleListen()}
           tabIndex={showBrowserControls ? -1 : 0}
-          tooltip={state === 'error' ? 'Retry response audio' : 'Listen to response'}
+          tooltip={
+            state === 'autoplay-blocked'
+              ? 'Play response'
+              : state === 'error'
+                ? 'Retry response audio'
+                : 'Listen to response'
+          }
         >
           <Headphones aria-hidden="true" />
         </MessageAction>
@@ -262,9 +289,11 @@ function ChatMessageStatus({ state }: { state: SpeechState }) {
         ? 'AI is speaking'
         : state === 'paused'
           ? 'Response audio paused'
-          : state === 'error'
-            ? 'Unable to play response audio'
-            : 'Listen to response';
+          : state === 'autoplay-blocked'
+            ? 'Automatic playback was blocked. Play response to listen.'
+            : state === 'error'
+              ? 'Unable to play response audio'
+              : 'Listen to response';
 
   return (
     <span aria-live="polite" className="sr-only select-none">

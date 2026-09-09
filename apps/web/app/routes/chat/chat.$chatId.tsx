@@ -1,4 +1,6 @@
-import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
+import { createApiClient } from '@hominem/rpc';
+import type { ChatsGetMessagesOutput } from '@hominem/rpc/types/chat.types';
+import type { NotesGetOutput } from '@hominem/rpc/types/notes.types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@ponti-studios/ui/overlays';
 import { domAnimation, LazyMotion, m } from 'motion/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -27,37 +29,36 @@ import { useWalkieTalkieMode } from '~/lib/hooks/use-walkie-talkie-mode';
 
 import type { Route } from './+types/chat.$chatId';
 
-type ChatMessageLoaderData = ChatMessageDto[];
+type ChatMessageLoaderData = ChatsGetMessagesOutput;
 
-type NoteLoaderData = {
-  id: string;
-  title?: string | null;
-  excerpt?: string | null;
-};
+type NoteLoaderData = Pick<NotesGetOutput, 'id' | 'title' | 'excerpt'>;
 
 export async function loader({ request, params }: Route.LoaderArgs) {
+  const apiClient = createApiClient({
+    baseUrl: serverEnv.HOMINEM_INTERNAL_API_URL,
+    request,
+    throwOnError: false,
+  });
   const cookie = request.headers.get('cookie');
   const headers = cookie ? { cookie } : undefined;
 
-  const messagesResponse = await fetch(
-    new URL(
-      `/api/chats/${params.chatId}/messages?limit=50`,
-      serverEnv.HOMINEM_INTERNAL_API_URL,
-    ).toString(),
-    { headers, signal: request.signal },
+  const messagesResponse = await apiClient.api.chats[':id'].messages.$get(
+    {
+      param: { id: params.chatId },
+      query: { limit: '50' },
+    },
+    { headers, init: { signal: request.signal } },
   );
-  const messages = messagesResponse.ok
-    ? ((await messagesResponse.json()) as ChatMessageLoaderData)
-    : undefined;
+  const messages = messagesResponse.ok ? await messagesResponse.json() : undefined;
 
   const noteId = new URL(request.url).searchParams.get('noteId');
   let seedNote: NoteLoaderData | null = null;
   if (noteId) {
-    const noteResponse = await fetch(
-      new URL(`/api/notes/${noteId}`, serverEnv.HOMINEM_INTERNAL_API_URL).toString(),
-      { headers, signal: request.signal },
+    const noteResponse = await apiClient.api.notes[':id'].$get(
+      { param: { id: noteId } },
+      { headers, init: { signal: request.signal } },
     );
-    seedNote = noteResponse.ok ? ((await noteResponse.json()) as NoteLoaderData) : null;
+    seedNote = noteResponse.ok ? await noteResponse.json() : null;
   }
 
   return data({ seedNote, messages, messagesStatus: messagesResponse.status });

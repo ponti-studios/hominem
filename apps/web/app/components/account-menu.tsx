@@ -1,7 +1,6 @@
 import { Library, LogOut, Settings } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 
-import { CollaborationNotifications } from '~/components/collaboration-notifications';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,7 +42,6 @@ export function AccountMenu({ user }: { user: User }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
-        <CollaborationNotifications />
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/collections" viewTransition>

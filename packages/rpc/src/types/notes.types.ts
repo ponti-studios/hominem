@@ -1,3 +1,10 @@
+import type { InferResponseType } from 'hono/client';
+
+import type { HonoClient } from '../core/api-client';
+
+type _NotesGetEndpoint = HonoClient['api']['notes'][':id']['$get'];
+export type NotesGetOutput = InferResponseType<_NotesGetEndpoint, 200>;
+
 export type NoteFile = {
   id: string;
   originalName: string;

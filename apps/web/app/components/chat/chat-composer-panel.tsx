@@ -141,6 +141,7 @@ export function ChatComposerPanel({
       message: messageToSend,
       fileIds: filesToSend.map((file) => file.id),
       responseLength,
+      responseModality: shouldAutoSpeak ? 'audio' : 'text',
       onAccepted: (userMessage) => {
         accepted = true;
         setIsRetryable(false);

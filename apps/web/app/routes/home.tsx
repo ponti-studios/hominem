@@ -1,3 +1,5 @@
+import { createApiClient } from '@hominem/rpc';
+import type { ChatsListOutput } from '@hominem/rpc/types/chat.types';
 import { useState } from 'react';
 import { data, redirect, useNavigate } from 'react-router';
 
@@ -10,22 +12,23 @@ import { useStartChat } from '~/lib/hooks/use-start-chat';
 
 import type { Route } from './+types/home';
 
-type ChatListItem = { id: string; updatedAt: string };
-type ChatListPage = { items: ChatListItem[] };
-
 // React Router requires route loaders to be exported from route modules.
 // This is intentionally a framework boundary, not a component module export.
 // eslint-disable-next-line react-doctor/only-export-components
 export async function loader({ request }: Route.LoaderArgs) {
+  const apiClient = createApiClient({
+    baseUrl: serverEnv.HOMINEM_INTERNAL_API_URL,
+    request,
+    throwOnError: false,
+  });
   const cookie = request.headers.get('cookie');
   const headers = cookie ? { cookie } : undefined;
-  const apiUrl = serverEnv.HOMINEM_INTERNAL_API_URL;
 
-  const listResponse = await fetch(new URL('/api/chats?limit=1', apiUrl).toString(), {
-    headers,
-    signal: request.signal,
-  });
-  const chats = listResponse.ok ? ((await listResponse.json()) as ChatListPage).items : [];
+  const listResponse = await apiClient.api.chats.$get(
+    { query: { limit: '1' } },
+    { headers, init: { signal: request.signal } },
+  );
+  const chats: ChatsListOutput['items'] = listResponse.ok ? (await listResponse.json()).items : [];
 
   if (chats[0]?.id) {
     throw redirect(`/chat/${chats[0].id}`);

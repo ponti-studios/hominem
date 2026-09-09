@@ -1,22 +1,22 @@
 ---
 name: hominem-workflow
-kind: skill
-tags:
-  - hominem
-  - build
-  - validation
-  - git
-license: MIT
 description: >
   Hominem monorepo development workflow: pre-push validation via `pnpm run check`
   with failure triage, and the Conventional Commits message contract with the
   hominem scope list. Load the relevant reference below; use conventional-commit
-  for the full generic commit spec.
+  for the full generic commit spec. For starting local dev or choosing a
+  validation command day-to-day, use hominem-development instead.
+license: MIT
 compatibility: Hominem monorepo.
 metadata:
   author: project
   version: "1.0"
   category: Engineering
+  tags:
+    - hominem
+    - build
+    - validation
+    - git
 when:
   - running pre-push validation (pnpm run check) across the monorepo
   - triaging typecheck, lint, build, or test failures
