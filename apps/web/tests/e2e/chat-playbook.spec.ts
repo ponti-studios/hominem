@@ -15,7 +15,7 @@ type Evidence = {
 
 const evidenceByPage = new WeakMap<Page, Evidence>();
 const test = base;
-const apiUrl = process.env.API_URL ?? 'https://api.lvh.me:4200';
+const apiUrl = process.env.API_URL ?? 'https://api.lvh.me';
 const runId = Date.now().toString(36).toUpperCase();
 
 function revision() {
@@ -89,8 +89,8 @@ test.afterEach(async ({ page }, testInfo) => {
         scenarioId: testInfo.title.match(/^[A-Z]+-\d+/)?.[0] ?? testInfo.title,
         title: testInfo.title,
         revision: process.env.GIT_REVISION ?? revision(),
-        webUrl: process.env.WEB_URL ?? 'https://web.lvh.me:4200',
-        apiUrl: process.env.API_URL ?? 'https://api.lvh.me:4200',
+        webUrl: process.env.WEB_URL ?? 'https://web.lvh.me',
+        apiUrl: process.env.API_URL ?? 'https://api.lvh.me',
         browser: testInfo.project.use.browserName ?? 'chromium',
         viewport: page.viewportSize(),
         ...evidence,

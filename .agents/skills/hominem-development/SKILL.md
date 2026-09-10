@@ -15,22 +15,37 @@ Stop services you started once you're done with them, unless the user is
 actively using them.
 
 `.claude/launch.json`'s `career`/`finance`/`web` entries open the Browser
-pane at `http://localhost:<port>`, not the portless `https://<name>.lvh.me:4200`
+pane at `http://localhost:<port>`, not the portless `https://<name>.lvh.me`
 URL, even though `pnpm dev` itself still runs those apps through portless.
-This is deliberate: a Claude Code cloud/remote session's outbound traffic is
-sandboxed through its own egress proxy, and that proxy does not support
-non-443 HTTPS ports (see `/root/.ccr/README.md` inside such a session) —
-portless's proxy listens on 4200, so requests to `*.lvh.me:4200` fail there,
-which is why JS/CSS/HMR asset requests get silently blocked in the Browser
-pane while the initial SSR HTML sometimes still renders. Loading the app's
-own fixed local port instead avoids that proxy path entirely. The tradeoff:
-`localhost` doesn't share the cross-subdomain `AUTH_COOKIE_DOMAIN=lvh.me`
-session cookie (see [docs/authentication.md](../../../docs/authentication.md)),
-so a login performed through the Browser pane on `localhost` won't persist
-across apps the way it does when testing directly against the portless
-`lvh.me` origins (e.g. via `curl`/Playwright, which aren't proxied the same
-way). For an authenticated preview, drive the portless origins directly
-instead of the Browser pane.
+The Claude Code (desktop app) Browser pane blocks JS/CSS/HMR asset requests
+to `*.lvh.me` outright, regardless of port. Confirmed empirically
+(2026-09-10) via `fetch()` run from inside the pane: requests to `lvh.me`,
+`web.lvh.me`, and `api.lvh.me` all fail the same way at both port 443 (the
+proxy's current port, see below) and port 4200 (its old port), while
+ordinary public domains (`example.com`, `google.com`) load fine in the same
+pane. That rules out port as the cause — this is a domain/TLD-based block,
+not a port-based one, and switching the proxy's port does not fix it. It
+matches the Consequences section of
+[the local dev domain ADR](../../../docs/decisions/auth.local-tld.md), which
+separately documented `.test`/`.localhost` loading freely in this same pane
+while `lvh.me`/`localtest.me` don't — consistent with an allowlist in the
+pane's own safety layer keyed on TLD.
+
+(A *different*, previously-observed restriction applies to a Claude Code
+cloud/remote session's own egress proxy, which does not support non-443
+HTTPS ports — see `/root/.ccr/README.md` inside such a session. That one is
+genuinely port-based, but it's a separate sandbox from the desktop Browser
+pane tested above; don't conflate the two.)
+
+Either way, loading the app's own fixed local port in the Browser pane
+avoids the block entirely. The tradeoff: `localhost` doesn't share the
+cross-subdomain `AUTH_COOKIE_DOMAIN=lvh.me` session cookie (see
+[docs/authentication.md](../../../docs/authentication.md)), so a login
+performed through the Browser pane on `localhost` won't persist across apps
+the way it does when testing directly against the portless `lvh.me` origins
+(e.g. via `curl`/Playwright, which aren't subject to the pane's block). For
+an authenticated preview, drive the portless origins directly instead of
+the Browser pane.
 
 ## First-time setup: env files in a new worktree
 
@@ -89,19 +104,28 @@ registrable domain works. See
 [the local dev domain ADR](../../../docs/decisions/auth.local-tld.md) for the full
 investigation and the alternatives ruled out.
 
-Before the first `pnpm dev`, start the proxy once on an unprivileged port —
-binding the default port 443 needs `sudo`, which can hang when portless's
-elevation prompt isn't attached to an interactive terminal:
+The proxy runs on port 443 (the default HTTPS port, so origins need no
+`:port` suffix — just `https://<name>.lvh.me`), bound as a **root-owned
+launchd service** installed once via:
 
 ```bash
-pnpm exec portless proxy start --port 4200 --tld lvh.me
+sudo pnpm exec portless service install --tld lvh.me
 ```
 
-This trusts a local CA (one-time, may prompt for your password directly —
-that prompt does work) and starts the HTTPS proxy on port 4200. Portless
-remembers this configuration, so subsequent `pnpm dev` runs auto-attach to
-the running proxy instead of trying to start their own. `.env.example`
-defaults already point at `https://<name>.lvh.me:4200`.
+This writes `/Library/LaunchDaemons/sh.portless.proxy.plist`
+(`RunAtLoad`/`KeepAlive` both true), so the proxy starts at boot and
+restarts itself if it ever dies — no per-session `sudo` needed, and no
+elevation-prompt-hangs-in-a-non-interactive-session problem, since nothing
+short of a reboot or `sudo portless service uninstall` ever needs to start
+it again. (Portless used to run on an unprivileged port, 4200, started ad
+hoc per session specifically to dodge the `sudo` requirement — the repo
+moved off that in favor of port 443 plus this always-on service; see
+[the local dev domain ADR](../../../docs/decisions/auth.local-tld.md) for
+the record of that tradeoff.) Check `pnpm exec portless service status`
+if you're unsure whether it's installed and running. Once it's up,
+`pnpm dev` runs auto-attach to it instead of trying to start their own.
+`.env.example` defaults already point at `https://<name>.lvh.me` (no
+port).
 
 Each of `api`/`web`/`career`/`finance`'s `package.json` has its own
 `"portless": { "name", "script": "dev:app" }` key — that's what portless
@@ -121,10 +145,10 @@ SSR `useContext` failure even though the workspace install is now consistent.
 Smoke-test the actual origins selected for the run:
 
 ```bash
-curl -k -o /dev/null -w '%{http_code}\n' https://api.lvh.me:4200/
-curl -k -o /dev/null -w '%{http_code}\n' https://web.lvh.me:4200/chats
-curl -k -o /dev/null -w '%{http_code}\n' https://career.lvh.me:4200/
-curl -k -o /dev/null -w '%{http_code}\n' https://finance.lvh.me:4200/
+curl -k -o /dev/null -w '%{http_code}\n' https://api.lvh.me/
+curl -k -o /dev/null -w '%{http_code}\n' https://web.lvh.me/chats
+curl -k -o /dev/null -w '%{http_code}\n' https://career.lvh.me/
+curl -k -o /dev/null -w '%{http_code}\n' https://finance.lvh.me/
 ```
 
 The Web `/chats` endpoint returning `302` is expected when the browser is not

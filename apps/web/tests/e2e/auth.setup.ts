@@ -20,7 +20,7 @@ test('prepare the authenticated chat browser state', async ({ page, context }) =
   const separator = sessionCookie.indexOf('=');
   if (separator <= 0) throw new Error('E2E_SESSION_COOKIE must be a name=value cookie');
 
-  const webUrl = process.env.WEB_URL ?? 'https://web.lvh.me:4200';
+  const webUrl = process.env.WEB_URL ?? 'https://web.lvh.me';
   const webHost = new URL(webUrl).hostname;
   const isLocalhost = webHost === 'localhost' || webHost === '127.0.0.1';
 

@@ -22,7 +22,7 @@ test('prepare the authenticated collaborator browser state', async ({ page, cont
     throw new Error('E2E_COLLABORATOR_SESSION_COOKIE must be a name=value cookie');
   }
 
-  const webUrl = process.env.WEB_URL ?? 'https://web.lvh.me:4200';
+  const webUrl = process.env.WEB_URL ?? 'https://web.lvh.me';
   const webHost = new URL(webUrl).hostname;
   const isLocalhost = webHost === 'localhost' || webHost === '127.0.0.1';
 

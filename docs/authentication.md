@@ -32,7 +32,7 @@ derives every cookie attribute from env config:
   origin. Local development sets it to `lvh.me` for the same reason: under
   the [portless](https://github.com/vercel-labs/portless) proxy (see the
   `hominem-development` skill), api/web/career/finance each get their own
-  `https://<name>.lvh.me:4200` subdomain rather than sharing one host on
+  `https://<name>.lvh.me` subdomain rather than sharing one host on
   different ports, so without a shared `AUTH_COOKIE_DOMAIN` the cookie set
   during hosted login stays scoped to `api.lvh.me` and the other apps never
   see it. This has to be `lvh.me` (a real, ICANN-registered domain with
