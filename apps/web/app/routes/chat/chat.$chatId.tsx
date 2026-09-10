@@ -79,7 +79,6 @@ export default function ChatPage({
   const { chatId } = params;
   const navigate = useNavigate();
   const isOnline = useOnlineStatus();
-  const [isRetryable, setIsRetryable] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDebugOpen, setIsDebugOpen] = useState(false);
@@ -282,12 +281,10 @@ export default function ChatPage({
                 currentChatTitle={currentChat?.title}
                 display={display}
                 isOnline={isOnline}
-                isRetryable={isRetryable}
                 onRequestAutoSpeak={setAutoSpeakMessageId}
                 regeneration={regeneration}
                 responseLength={responseLength}
                 seedNote={seedNote}
-                setIsRetryable={setIsRetryable}
                 streamMessage={streamMessage}
                 updateChatTitle={updateChatTitle}
                 walkieTalkieMode={walkieTalkieMode}

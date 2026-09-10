@@ -1,6 +1,6 @@
 import { AlertCircle, Mic, Paperclip, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import { Persona } from '~/components/chat/persona';
 import {
@@ -45,7 +45,7 @@ interface ChatComposerProps {
   fileInputTestId?: string;
 }
 
-export function ChatComposer({
+function ChatComposerImpl({
   className,
   draft,
   isSubmitting = false,
@@ -216,3 +216,5 @@ export function ChatComposer({
     </div>
   );
 }
+
+export const ChatComposer = memo(ChatComposerImpl);
