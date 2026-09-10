@@ -39,6 +39,8 @@ interface UploadState {
   progress: number;
   uploadedFiles: UploadedFile[];
   errors: string[];
+  /** the File objects that failed on the last attempt, kept so retry can resubmit them without re-selection */
+  failedFiles: File[];
 }
 
 interface UseFileUploadReturn {
@@ -129,6 +131,7 @@ export function useFileUpload(): UseFileUploadReturn {
     progress: 0,
     uploadedFiles: [],
     errors: [],
+    failedFiles: [],
   });
   const uppyRef = useRef<InstanceType<Awaited<ReturnType<typeof loadUppyModules>>['Uppy']> | null>(
     null,
@@ -235,6 +238,7 @@ export function useFileUpload(): UseFileUploadReturn {
         isUploading: true,
         progress: 0,
         errors: [],
+        failedFiles: [],
       }));
 
       try {
@@ -258,7 +262,15 @@ export function useFileUpload(): UseFileUploadReturn {
           }
         });
 
+        // match each failed result back to the original File by name so retry can
+        // resubmit exactly those files without the user re-selecting them
+        const remainingFiles = [...fileArray];
+        const failedFiles: File[] = [];
         const uploadErrors = (result?.failed ?? []).map((failedFile) => {
+          const matchIndex = remainingFiles.findIndex((file) => file.name === failedFile.name);
+          if (matchIndex !== -1) {
+            failedFiles.push(...remainingFiles.splice(matchIndex, 1));
+          }
           const errorMessage = getUploadErrorMessage(failedFile.error);
           return `${failedFile.name}: ${errorMessage}`;
         });
@@ -270,6 +282,7 @@ export function useFileUpload(): UseFileUploadReturn {
           progress: 100,
           uploadedFiles: [...prev.uploadedFiles, ...newFiles],
           errors: uploadErrors,
+          failedFiles,
         }));
 
         uppy.clear();
@@ -284,6 +297,7 @@ export function useFileUpload(): UseFileUploadReturn {
           isUploading: false,
           progress: 0,
           errors: [errorMessage],
+          failedFiles: fileArray,
         }));
 
         throw error;
@@ -311,6 +325,7 @@ export function useFileUpload(): UseFileUploadReturn {
       progress: 0,
       uploadedFiles: [],
       errors: [],
+      failedFiles: [],
     });
   }, []);
 

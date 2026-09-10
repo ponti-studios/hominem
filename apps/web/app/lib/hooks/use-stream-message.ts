@@ -68,7 +68,7 @@ interface StreamInput {
 
 export function useStreamMessage({ chatId }: { chatId: string }) {
   const queryClient = useQueryClient();
-  const chatClient = useChatClient();
+  const chatClient = useChatClient(chatId);
   // Read browser-only recovery state after hydration so SSR and the first
   // client render produce the same composer controls.
   const [restoredCheckpoint, setRestoredCheckpoint] =

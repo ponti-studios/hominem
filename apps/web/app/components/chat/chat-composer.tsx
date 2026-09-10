@@ -1,6 +1,6 @@
 import { AlertCircle, Mic, Paperclip, X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import { Persona } from '~/components/chat/persona';
 import {
@@ -27,6 +27,7 @@ interface ChatComposerProps {
   isSubmitting?: boolean;
   isOffline?: boolean;
   isStreaming?: boolean;
+  isUploading?: boolean;
   hasContext?: boolean;
   attachments?: ChatComposerFile[];
   error?: string | null;
@@ -44,12 +45,13 @@ interface ChatComposerProps {
   fileInputTestId?: string;
 }
 
-export function ChatComposer({
+function ChatComposerImpl({
   className,
   draft,
   isSubmitting = false,
   isOffline = false,
   isStreaming = false,
+  isUploading = false,
   hasContext = false,
   attachments = [],
   error,
@@ -152,11 +154,14 @@ export function ChatComposer({
         <PromptInputFooter className="!justify-end !gap-0.5 !pb-1 !pt-0">
           <PromptInputTools>
             {onAttachFiles ? (
-              <PromptInputButton asChild tooltip="Attach file">
-                <label className="cursor-pointer">
+              <PromptInputButton asChild tooltip={isUploading ? 'Uploading…' : 'Attach file'}>
+                <label
+                  className={cn('cursor-pointer', isUploading && 'cursor-not-allowed opacity-50')}
+                >
                   <Paperclip aria-hidden="true" size={16} />
                   <input
                     data-testid={fileInputTestId}
+                    disabled={isUploading}
                     hidden
                     multiple
                     onChange={(event) => {
@@ -211,3 +216,5 @@ export function ChatComposer({
     </div>
   );
 }
+
+export const ChatComposer = memo(ChatComposerImpl);

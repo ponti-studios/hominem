@@ -29,8 +29,8 @@ We considered four options:
 
 Local dev's portless TLD is `lvh.me`, not `.localhost`:
 
-- `pnpm exec portless proxy start --port 4200 --tld lvh.me`
-- `services/api/.env(.example)`: `API_URL`/`WEB_URL`/`CAREER_URL`/`FINANCE_URL` point at `https://<name>.lvh.me:4200`, and `AUTH_COOKIE_DOMAIN="lvh.me"`.
+- `sudo pnpm exec portless proxy start --port 443 --tld lvh.me`
+- `services/api/.env(.example)`: `API_URL`/`WEB_URL`/`CAREER_URL`/`FINANCE_URL` point at `https://<name>.lvh.me` (no port — see the 2026-09-10 consequence below), and `AUTH_COOKIE_DOMAIN="lvh.me"`.
 - `apps/{career,finance,web}/.env(.example)`: `VITE_PUBLIC_API_URL`/`HOMINEM_INTERNAL_API_URL`/`PUBLIC_APP_URL` point at the matching `.lvh.me` origins.
 - Documented in the `hominem-development` and `hominem-auth-e2e` skills, and in [docs/authentication.md](../authentication.md), including the specific "don't reach for `--tld test`, it hits the identical wall" note, so this isn't rediscovered the hard way.
 
@@ -43,3 +43,5 @@ Local dev's portless TLD is `lvh.me`, not `.localhost`:
 **Known limitation, not a project blocker:** the Claude Code Browser pane used for interactive verification in this repo blocks sub-resource loads (`ERR_BLOCKED_BY_CLIENT`) on both `lvh.me` and `localtest.me` — a real domain but not `.localhost` — while `.test` and `.localhost` load freely in that same pane. This looks like a `*.localhost`-specific allowlist in that tool's own safety layer, not a real end-user Chrome restriction (real Chrome, tested directly via `document.cookie` on `lvh.me`, has no such issue), so it doesn't change the decision — but it does mean that specific tool can't be used to visually click through the login flow on `lvh.me`; curl-based verification (as used above) or a real browser is required instead.
 
 **Not done:** dropping subdomain-based local dev (option 2). Revisit if `lvh.me`'s external-DNS dependency ever becomes a real practical problem — the fallback is well understood (shared host, per-app ports, no `Domain=` cookie needed), just at the cost of no longer catching cross-subdomain-cookie bugs like this one in local dev.
+
+**2026-09-10: portless proxy moved from port 4200 to port 443.** Motivation was independent of this ADR's TLD decision. Before switching, we tested empirically whether the Browser pane's blocked-asset behavior noted above was port-specific: `fetch()` from inside the pane to `lvh.me`/`web.lvh.me`/`api.lvh.me` failed identically at both port 443 and port 4200, while `example.com`/`google.com` loaded fine — confirming the block is domain/TLD-based, not port-based, so the port change does **not** fix the Browser pane limitation described above; that limitation stands as documented. Binding port 443 needs root, so starting the proxy now always needs `sudo` (portless was originally put on 4200 specifically to avoid that, per the `hominem-development` skill's setup section) — this reintroduces the risk of the elevation prompt hanging in a non-interactive session, so the proxy should be started from an interactive terminal or kept running via a machine-startup service rather than started ad hoc by `pnpm dev` or an agent.

@@ -1,31 +1,25 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { ChatComposer } from '~/components/chat/chat-composer';
-import { getAutomaticChatTitle } from '~/lib/chat/chat-title';
 import { useChatComposerState } from '~/lib/hooks/use-chat-composer-state';
+import { useChatComposerSubmission } from '~/lib/hooks/use-chat-composer-submission';
 import type { useChatDisplayMessages } from '~/lib/hooks/use-chat-display-messages';
 import type { useRegenerateMessage } from '~/lib/hooks/use-regenerate-message';
 import type { useResponseLength } from '~/lib/hooks/use-response-length';
-import { useSpeechToText } from '~/lib/hooks/use-speech-to-text';
+import { getSpeechErrorMessage, useSpeechToText } from '~/lib/hooks/use-speech-to-text';
 import type { useStreamMessage } from '~/lib/hooks/use-stream-message';
 
-type SeedNote = {
-  id: string;
-  title?: string | null;
-  excerpt?: string | null;
-};
+type SeedNote = { id: string; title?: string | null; excerpt?: string | null };
 
 interface ChatComposerPanelProps {
   chatId: string;
   currentChatTitle?: string;
   display: ReturnType<typeof useChatDisplayMessages>;
   isOnline: boolean;
-  isRetryable: boolean;
   onRequestAutoSpeak: (messageId: string) => void;
   regeneration: ReturnType<typeof useRegenerateMessage>;
   responseLength: ReturnType<typeof useResponseLength>['responseLength'];
   seedNote: SeedNote | null;
-  setIsRetryable: (value: boolean) => void;
   streamMessage: ReturnType<typeof useStreamMessage>;
   updateChatTitle: { mutate: (input: { chatId: string; title: string }) => void };
   walkieTalkieMode: boolean;
@@ -36,24 +30,91 @@ export function ChatComposerPanel({
   currentChatTitle,
   display,
   isOnline,
-  isRetryable,
   onRequestAutoSpeak,
   regeneration,
   responseLength,
   seedNote,
-  setIsRetryable,
   streamMessage,
   updateChatTitle,
   walkieTalkieMode,
 }: ChatComposerPanelProps) {
   const composer = useChatComposerState({ chatId, seedNote });
   const speech = useSpeechToText({ onTranscript: composer.setDraft });
+  const submission = useChatComposerSubmission({
+    chatId,
+    currentChatTitle,
+    composer,
+    display,
+    isOnline,
+    onRequestAutoSpeak,
+    responseLength,
+    speech,
+    streamMessage,
+    updateChatTitle,
+    walkieTalkieMode,
+  });
   const { setPendingAssistantMessage } = display;
   const streamStartedAtRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (streamMessage.status === 'failed') setIsRetryable(true);
-  }, [setIsRetryable, streamMessage.status]);
+  const contextContent = useMemo(
+    () =>
+      composer.suggestions.length > 0 || composer.selectedNotesForSend.length > 0 ? (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {composer.selectedNotesForSend.map((note) => (
+            <button
+              key={note.id}
+              type="button"
+              className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+              onClick={() => composer.removeSelectedNote(note.id)}
+            >
+              {note.title || 'Untitled'} ×
+            </button>
+          ))}
+          {composer.suggestions.map((note) => (
+            <button
+              key={note.id}
+              type="button"
+              className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground"
+              onClick={() => composer.selectSuggestion(note)}
+            >
+              {note.title || 'Untitled'}
+            </button>
+          ))}
+        </div>
+      ) : null,
+    [
+      composer.removeSelectedNote,
+      composer.selectSuggestion,
+      composer.selectedNotesForSend,
+      composer.suggestions,
+    ],
+  );
+
+  const attachFiles = useCallback(
+    (files: FileList | null) => void composer.attachFiles(files),
+    [composer.attachFiles],
+  );
+  const stop = useCallback(() => void streamMessage.cancel(), [streamMessage.cancel]);
+  const submit = useCallback(() => void submission.submit(), [submission.submit]);
+  const toggleVoice = useCallback(
+    () => speech.toggle(composer.draft),
+    [composer.draft, speech.toggle],
+  );
+  const retry = useMemo(
+    () =>
+      composer.uploadState.errors.length > 0 && isOnline
+        ? () => void composer.retryFailedUpload()
+        : submission.isRetryable && isOnline
+          ? submission.retryGeneration
+          : undefined,
+    [
+      composer.retryFailedUpload,
+      composer.uploadState.errors.length,
+      isOnline,
+      submission.isRetryable,
+      submission.retryGeneration,
+    ],
+  );
 
   useEffect(() => {
     if (
@@ -64,9 +125,6 @@ export function ChatComposerPanel({
       return;
     }
 
-    // this timestamp should stay the same for the whole stream, not reset per
-    // token — nothing actually reads it, but a fresh value every delta would
-    // wrongly suggest a write happens on every token
     streamStartedAtRef.current ??= new Date().toISOString();
     const startedAt = streamStartedAtRef.current;
     setPendingAssistantMessage({
@@ -100,127 +158,21 @@ export function ChatComposerPanel({
     streamMessage.toolSteps,
   ]);
 
-  const handleSend = useCallback(async () => {
-    if (
-      !isOnline ||
-      streamMessage.isStreaming ||
-      streamMessage.status === 'stopping' ||
-      regeneration.isRegenerating ||
-      (composer.draftWithSeed.trim().length === 0 &&
-        composer.attachedFiles.length === 0 &&
-        composer.selectedNotesForSend.length === 0)
-    ) {
-      return;
-    }
-    const shouldAutoSpeak = speech.isListening || walkieTalkieMode;
-    if (speech.isListening) speech.stop();
-
-    const messageToSend = composer.draftWithSeed;
-    const filesToSend = composer.attachedFiles;
-    let accepted = false;
-    setIsRetryable(false);
-
-    const now = new Date().toISOString();
-    display.setOptimisticUserMessage({
-      id: `optimistic-${crypto.randomUUID()}`,
-      chatId,
-      userId: '',
-      role: 'user',
-      content: messageToSend,
-      files: null,
-      toolCalls: null,
-      reasoning: null,
-      parentMessageId: null,
-      createdAt: now,
-      updatedAt: now,
-    });
-    display.setPendingAssistantMessage(null);
-    composer.clear();
-
-    await streamMessage.stream({
-      message: messageToSend,
-      fileIds: filesToSend.map((file) => file.id),
-      responseLength,
-      responseModality: shouldAutoSpeak ? 'audio' : 'text',
-      onAccepted: (userMessage) => {
-        accepted = true;
-        setIsRetryable(false);
-        if (userMessage) display.setOptimisticUserMessage(userMessage);
-        const title = getAutomaticChatTitle(userMessage?.content ?? '');
-        if (currentChatTitle === 'New chat' && title) {
-          updateChatTitle.mutate({ chatId, title });
-        }
-      },
-      onCommitted: (message) => {
-        display.setPendingAssistantMessage(message);
-        if (shouldAutoSpeak) onRequestAutoSpeak(message.id);
-      },
-      onCancelled: () => {
-        composer.setDraft(messageToSend);
-        if (!accepted) setIsRetryable(true);
-      },
-      onFailed: () => {
-        composer.restore({ attachments: filesToSend, draft: messageToSend });
-        if (!accepted) setIsRetryable(true);
-      },
-    });
-
-    display.setOptimisticUserMessage(null);
-    display.setPendingAssistantMessage(null);
-  }, [
-    chatId,
-    composer,
-    currentChatTitle,
-    display,
-    isOnline,
-    onRequestAutoSpeak,
-    regeneration.isRegenerating,
-    responseLength,
-    setIsRetryable,
-    speech,
-    streamMessage,
-    updateChatTitle,
-    walkieTalkieMode,
-  ]);
+  const error = !isOnline
+    ? 'You are offline. Your draft and attachments are preserved.'
+    : composer.uploadState.errors.length > 0
+      ? composer.uploadState.errors.join(', ')
+      : speech.error
+        ? getSpeechErrorMessage(speech.error)
+        : streamMessage.error?.message;
 
   return (
     <ChatComposer
       attachments={composer.attachedFiles}
       className="mx-auto w-full max-w-3xl"
-      contextContent={
-        composer.suggestions.length > 0 || composer.selectedNotesForSend.length > 0 ? (
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            {composer.selectedNotesForSend.map((note) => (
-              <button
-                key={note.id}
-                type="button"
-                className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
-                onClick={() => composer.removeSelectedNote(note.id)}
-              >
-                {note.title || 'Untitled'} ×
-              </button>
-            ))}
-            {composer.suggestions.map((note) => (
-              <button
-                key={note.id}
-                type="button"
-                className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground"
-                onClick={() => composer.selectSuggestion(note)}
-              >
-                {note.title || 'Untitled'}
-              </button>
-            ))}
-          </div>
-        ) : null
-      }
+      contextContent={contextContent}
       draft={composer.draft}
-      error={
-        !isOnline
-          ? 'You are offline. Your draft and attachments are preserved.'
-          : composer.uploadState.errors.length > 0
-            ? composer.uploadState.errors.join(', ')
-            : streamMessage.error?.message
-      }
+      error={error}
       statusMessage={
         streamMessage.isRetrying
           ? 'Trying again…'
@@ -236,27 +188,16 @@ export function ChatComposerPanel({
         regeneration.isRegenerating
       }
       isStreaming={streamMessage.isStreaming}
+      isUploading={composer.uploadState.isUploading}
       isVoiceSupported={speech.isSupported}
       isListening={speech.isListening}
-      onAttachFiles={(files) => void composer.attachFiles(files)}
+      onAttachFiles={attachFiles}
       onChangeDraft={composer.setDraft}
       onRemoveAttachment={composer.removeAttachment}
-      onStop={() => void streamMessage.cancel()}
-      onSubmit={() => void handleSend()}
-      onRetry={
-        isRetryable && isOnline
-          ? () => {
-              setIsRetryable(false);
-              void streamMessage.retry({
-                responseLength,
-                onCommitted: (message) => display.setPendingAssistantMessage(message),
-                onFailed: () => setIsRetryable(true),
-                onSettled: () => display.setPendingAssistantMessage(null),
-              });
-            }
-          : undefined
-      }
-      onToggleVoice={() => speech.toggle(composer.draft)}
+      onStop={stop}
+      onSubmit={submit}
+      onRetry={retry}
+      onToggleVoice={toggleVoice}
     />
   );
 }

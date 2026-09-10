@@ -35,7 +35,7 @@ export function ChatNavigation() {
 
   return (
     <div className="flex items-center gap-1">
-      <ChatStartButton className="gap-2" size="sm" />
+      {location.pathname === '/chats' ? null : <ChatStartButton className="gap-2" size="sm" />}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

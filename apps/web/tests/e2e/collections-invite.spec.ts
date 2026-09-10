@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 
-const apiUrl = process.env.API_URL ?? 'https://api.lvh.me:4200';
+const apiUrl = process.env.API_URL ?? 'https://api.lvh.me';
 const runId = Date.now().toString(36).toUpperCase();
 const collaboratorEmail =
   process.env.E2E_COLLABORATOR_USER_EMAIL ?? 'e2e-collaborator@test.hakumi.io';

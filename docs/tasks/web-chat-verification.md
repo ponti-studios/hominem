@@ -3,7 +3,7 @@ title: 'Verify web chat parity and accessibility states'
 status: 'Proposed'
 priority: 'high'
 labels: [web, chat, browser, accessibility]
-depends_on: [composer-parity.md, motion-and-persistence.md]
+depends_on: [motion-and-persistence.md]
 blocks: []
 estimated_size: 'L'
 ---
@@ -19,6 +19,13 @@ In scope: route, hook, component, Playwright, keyboard, screen-reader, and
 responsive verification for capabilities documented in chat.capabilities.md.
 Out of scope: implementing missing product behavior discovered during
 verification; those become separate tasks.
+
+Composer attachment/voice parity (`composer-parity.md`) is complete and its
+task spec removed; W-003's browser verification for those flows should build
+on the decisions and focused unit/component tests recorded in
+[chat.composer-audio-modality.md](../decisions/chat.composer-audio-modality.md)
+and [chat.composer-error-recovery.md](../decisions/chat.composer-error-recovery.md),
+not re-derive them.
 
 ## Work sequence
 
