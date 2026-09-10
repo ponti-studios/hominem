@@ -1,12 +1,17 @@
 // @vitest-environment jsdom
 
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockUploadFiles = vi.fn();
 const mockAddSource = vi.fn();
 const mockRemoveSource = vi.fn();
 let sourcesData: Array<{ id: string; chatId: string; noteId: string; title: string | null }> = [];
+let uploadStateOverride: { errors: string[]; failedFiles: File[]; isUploading: boolean } = {
+  errors: [],
+  failedFiles: [],
+  isUploading: false,
+};
 
 vi.mock('~/hooks/use-notes', () => ({
   useNoteSearch: (query: string) => ({
@@ -25,7 +30,7 @@ vi.mock('~/hooks/use-notes', () => ({
 vi.mock('./use-file-upload', () => ({
   useFileUpload: () => ({
     uploadFiles: mockUploadFiles,
-    uploadState: { errors: [] },
+    uploadState: uploadStateOverride,
   }),
 }));
 
@@ -38,6 +43,11 @@ vi.mock('./use-chat-sources', () => ({
 import { useChatComposerState } from './use-chat-composer-state';
 
 describe('useChatComposerState', () => {
+  beforeEach(() => {
+    uploadStateOverride = { errors: [], failedFiles: [], isUploading: false };
+    mockUploadFiles.mockReset();
+  });
+
   it('attaches a seeded note as a chat source', async () => {
     sourcesData = [];
     renderHook(() =>
@@ -178,5 +188,49 @@ describe('useChatComposerState', () => {
       expect(restored.current.draft).toBe('Draft text for reload');
       expect(restored.current.attachedFiles[0]?.id).toBe('file-1');
     });
+  });
+
+  it('retries only the files that previously failed to upload', async () => {
+    window.localStorage.clear();
+    sourcesData = [];
+    const failedFile = new File(['bad'], 'bad.pdf', { type: 'application/pdf' });
+    uploadStateOverride = {
+      errors: ['bad.pdf: Rejected'],
+      failedFiles: [failedFile],
+      isUploading: false,
+    };
+    mockUploadFiles.mockResolvedValueOnce([
+      { id: 'file-2', originalName: 'bad.pdf', url: '/files/bad.pdf' },
+    ]);
+    const { result } = renderHook(() => useChatComposerState({ chatId: 'chat-1', seedNote: null }));
+
+    await act(async () => result.current.retryFailedUpload());
+
+    expect(mockUploadFiles).toHaveBeenCalledWith([failedFile]);
+    expect(result.current.attachedFiles[0]?.id).toBe('file-2');
+  });
+
+  it('ignores attachFiles while an upload is already in flight', async () => {
+    window.localStorage.clear();
+    sourcesData = [];
+    uploadStateOverride = { errors: [], failedFiles: [], isUploading: true };
+    const { result } = renderHook(() =>
+      useChatComposerState({ chatId: 'chat-busy', seedNote: null }),
+    );
+    const file = new File(['brief'], 'brief.pdf', { type: 'application/pdf' });
+
+    await act(async () => result.current.attachFiles([file]));
+
+    expect(mockUploadFiles).not.toHaveBeenCalled();
+    expect(result.current.attachedFiles).toHaveLength(0);
+  });
+
+  it('does nothing when retried with no previously failed uploads', async () => {
+    sourcesData = [];
+    const { result } = renderHook(() => useChatComposerState({ chatId: 'chat-1', seedNote: null }));
+
+    await act(async () => result.current.retryFailedUpload());
+
+    expect(mockUploadFiles).not.toHaveBeenCalled();
   });
 });

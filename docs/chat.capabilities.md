@@ -142,9 +142,11 @@ This part covers user-facing behavior and client ownership only. A feature is
 exists but does not match Omiro's behavior or is stubbed, and **present** when
 the web client has a working equivalent. Remaining implementation work for
 this gap map is tracked as standardized Linear-style tasks in `docs/tasks/`
-(`composer-parity.md`, `motion-and-persistence.md`,
-`web-chat-verification.md`); earlier phases of this project were completed
-and their task specs removed.
+(`motion-and-persistence.md`, `web-chat-verification.md`); earlier phases of
+this project, including `composer-parity.md`, were completed and their task
+specs removed — see [chat.composer-audio-modality.md](decisions/chat.composer-audio-modality.md)
+and [chat.composer-error-recovery.md](decisions/chat.composer-error-recovery.md)
+for what that phase decided and built.
 
 ### Executive summary
 
@@ -182,8 +184,8 @@ The largest missing areas are:
 | Delete message | **Partial** | `useChatMessages.ts` exposes `deleteMessage`, but its implementation is `async () => undefined`. | No delete UI or real client mutation is wired. |
 | Copy/share message | **Missing** | No chat message copy/share controls or message action component was found. | Missing native/web clipboard and share/download behavior for individual responses. `ConversationDownload` only downloads the whole conversation and is not used by the chat route. |
 | Speech playback | **Present** | `components/chat/speech-player.tsx`, `lib/telemetry/speech.ts`, route integration. | Web uses committed assistant audio for audio responses, falls back to the speech endpoint for text-only/older messages, and exposes a manual action when browser autoplay is blocked. |
-| Voice input | **Partial** | `lib/hooks/use-speech-to-text.ts`, chat route microphone control. | Browser speech recognition inserts text and can request an audio response; web still lacks Omiro's recording panel, native iOS transcription boundary, and cleanup pipeline. |
-| File attachments | **Present** | `lib/hooks/use-file-upload.ts`, chat route file input and attachment chips. | Upload, removal, and error display exist; dedicated parity coverage for chat attachment failure/retry is absent. |
+| Voice input | **Partial** | `lib/hooks/use-speech-to-text.ts`, chat route microphone control. | Browser speech recognition inserts text and can request an audio response. Permission-denied, microphone-unavailable, and transcription-failed are now distinct, recoverable errors (press-mic-again clears them, matching Omiro's retry pattern); see [chat.composer-error-recovery.md](decisions/chat.composer-error-recovery.md). Web still lacks — by design, not gap — Omiro's recording panel, native iOS transcription boundary, and LLM cleanup pass, since the browser Speech API has no recording file or intermediate draft needing one. |
+| File attachments | **Present** | `lib/hooks/use-file-upload.ts`, chat route file input and attachment chips. | Upload, removal, and per-file retry (resubmits the exact failed file by identity, no re-selection) exist and are covered by focused tests; a second pick can't race an in-flight upload. See [chat.composer-error-recovery.md](decisions/chat.composer-error-recovery.md). |
 | Referenced notes | **Present** | `useNoteSearch`, hashtag suggestions, selected-note chips, and `noteIds` send payload. | Web has note references, but not Omiro's rendered referenced-note presentation or chat-to-note ownership/link flows. |
 | Reasoning display | **Partial** | `components/ai-elements/reasoning.tsx` exists. | The chat route renders `message.content` and tool calls but does not render the message `reasoning` field through the `Reasoning` component. |
 | Tool-call rendering | **Present** | `components/ai-elements/tool.tsx`, route tool-call rendering. | Web renders pending/completed/rejected calls and previews. |
@@ -250,15 +252,18 @@ telemetry tests:
 - `components/chat/speech-player.test.tsx`
 - `lib/telemetry/speech.test.ts`
 
-No chat route, stream lifecycle, message mutation, attachment, tool approval,
-archive, navigation, or accessibility acceptance tests were found under
-`apps/web`. The following should be treated as unverified even where code is
-present:
+No chat route, stream lifecycle, message mutation, tool approval, archive,
+navigation, or accessibility acceptance tests were found under `apps/web`.
+Attachment and voice composer behavior now have focused unit/component
+coverage (`use-file-upload.lifecycle.test.ts`, `use-chat-composer-state.test.tsx`,
+`use-speech-to-text.test.ts`, `chat-composer.test.tsx`), including upload
+failure/retry, permission-denied/microphone-unavailable/transcription-failed
+voice errors, and duplicate-action guards — but still no browser-level
+acceptance flow. The following should be treated as unverified even where
+code is present:
 
 - first send and committed assistant response;
 - browser cancellation and server cancellation semantics;
-- attachment upload/removal/failure;
-- voice transcription and draft insertion;
 - tool approval/rejection and follow-up response;
 - archived-chat navigation and active-list removal;
 - missing/deleted chat recovery;

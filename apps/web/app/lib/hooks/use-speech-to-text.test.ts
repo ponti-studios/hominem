@@ -3,10 +3,15 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { getSpeechRecognitionConstructor, useSpeechToText } from './use-speech-to-text';
+import {
+  getSpeechErrorMessage,
+  getSpeechRecognitionConstructor,
+  useSpeechToText,
+} from './use-speech-to-text';
 
 type RecognitionResult = { isFinal: boolean; 0: { transcript: string } };
 type RecognitionEvent = { resultIndex: number; results: RecognitionResult[] };
+type RecognitionErrorEvent = { error: string };
 
 class TestRecognition extends EventTarget {
   static instance: TestRecognition | null = null;
@@ -16,7 +21,7 @@ class TestRecognition extends EventTarget {
   started = 0;
   stopped = 0;
   onresult: ((event: RecognitionEvent) => void) | null = null;
-  onerror: (() => void) | null = null;
+  onerror: ((event: RecognitionErrorEvent) => void) | null = null;
   onend: (() => void) | null = null;
 
   constructor() {
@@ -37,6 +42,14 @@ afterEach(() => {
   Reflect.deleteProperty(window, 'SpeechRecognition');
   Reflect.deleteProperty(window, 'webkitSpeechRecognition');
   TestRecognition.instance = null;
+});
+
+describe('getSpeechErrorMessage', () => {
+  it('gives a distinct, human-readable message per error category', () => {
+    expect(getSpeechErrorMessage('permission-denied')).toMatch(/permission/i);
+    expect(getSpeechErrorMessage('microphone-unavailable')).toMatch(/microphone/i);
+    expect(getSpeechErrorMessage('transcription-failed')).toMatch(/transcription/i);
+  });
 });
 
 describe('useSpeechToText', () => {
@@ -85,8 +98,80 @@ describe('useSpeechToText', () => {
     );
     expect(transcripts).toEqual(['seed final interim']);
 
-    act(() => recognition?.onerror?.());
+    act(() => recognition?.onerror?.({ error: 'network' }));
     expect(result.current.isListening).toBe(false);
+    expect(result.current.error).toBe('transcription-failed');
+  });
+
+  it('maps recognition error codes to recoverable voice error states', async () => {
+    Object.defineProperty(window, 'SpeechRecognition', {
+      configurable: true,
+      value: TestRecognition,
+    });
+    const { result } = renderHook(() => useSpeechToText({ onTranscript: () => undefined }));
+    await waitFor(() => expect(result.current.isSupported).toBe(true));
+
+    act(() => result.current.start());
+    expect(result.current.error).toBeNull();
+    act(() => TestRecognition.instance?.onerror?.({ error: 'not-allowed' }));
+    expect(result.current.error).toBe('permission-denied');
+
+    act(() => result.current.start());
+    act(() => TestRecognition.instance?.onerror?.({ error: 'service-not-allowed' }));
+    expect(result.current.error).toBe('permission-denied');
+
+    act(() => result.current.start());
+    act(() => TestRecognition.instance?.onerror?.({ error: 'audio-capture' }));
+    expect(result.current.error).toBe('microphone-unavailable');
+
+    // ordinary silence and a manual stop are not user-facing failures
+    act(() => result.current.start());
+    act(() => TestRecognition.instance?.onerror?.({ error: 'no-speech' }));
+    expect(result.current.error).toBeNull();
+
+    act(() => result.current.start());
+    act(() => TestRecognition.instance?.onerror?.({ error: 'aborted' }));
+    expect(result.current.error).toBeNull();
+  });
+
+  it('ignores a duplicate start while already listening', async () => {
+    Object.defineProperty(window, 'SpeechRecognition', {
+      configurable: true,
+      value: TestRecognition,
+    });
+    const { result } = renderHook(() => useSpeechToText({ onTranscript: () => undefined }));
+    await waitFor(() => expect(result.current.isSupported).toBe(true));
+
+    act(() => result.current.start());
+    const firstInstance = TestRecognition.instance;
+    act(() => result.current.start());
+
+    // a second start (e.g. a double click before React re-renders) must not
+    // create a second recognition instance and leak the first one
+    expect(TestRecognition.instance).toBe(firstInstance);
+    expect(firstInstance?.started).toBe(1);
+    expect(result.current.isListening).toBe(true);
+  });
+
+  it('clears the error on demand and when a new listen starts', async () => {
+    Object.defineProperty(window, 'SpeechRecognition', {
+      configurable: true,
+      value: TestRecognition,
+    });
+    const { result } = renderHook(() => useSpeechToText({ onTranscript: () => undefined }));
+    await waitFor(() => expect(result.current.isSupported).toBe(true));
+
+    act(() => result.current.start());
+    act(() => TestRecognition.instance?.onerror?.({ error: 'not-allowed' }));
+    expect(result.current.error).toBe('permission-denied');
+
+    act(() => result.current.clearError());
+    expect(result.current.error).toBeNull();
+
+    act(() => TestRecognition.instance?.onerror?.({ error: 'not-allowed' }));
+    expect(result.current.error).toBe('permission-denied');
+    act(() => result.current.start());
+    expect(result.current.error).toBeNull();
   });
 
   it('falls back to webkit recognition and supports toggle and end', async () => {

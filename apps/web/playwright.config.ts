@@ -14,6 +14,7 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: webUrl,
+    ignoreHTTPSErrors: true,
     permissions: ['clipboard-read', 'clipboard-write'],
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',

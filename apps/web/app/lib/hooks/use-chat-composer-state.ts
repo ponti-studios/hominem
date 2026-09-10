@@ -170,15 +170,23 @@ export function useChatComposerState({
   const removeSelectedNote = useCallback((noteId: string) => removeSource(noteId), [removeSource]);
 
   const attachFiles = useCallback(
-    async (fileList: FileList | null) => {
+    async (fileList: FileList | File[] | null) => {
       if (!fileList || fileList.length === 0) return;
+      // an upload already in flight owns the shared Uppy instance; a second
+      // concurrent call would race it rather than queue behind it
+      if (uploadState.isUploading) return;
 
       const uploaded = await uploadFiles(fileList);
       if (uploaded.length === 0) return;
 
       setAttachedFiles((current) => [...current, ...uploaded]);
     },
-    [uploadFiles],
+    [uploadFiles, uploadState.isUploading],
+  );
+
+  const retryFailedUpload = useCallback(
+    () => attachFiles(uploadState.failedFiles),
+    [attachFiles, uploadState.failedFiles],
   );
 
   const removeAttachment = useCallback((fileId: string) => {
@@ -205,6 +213,7 @@ export function useChatComposerState({
     removeAttachment,
     removeSelectedNote,
     restore,
+    retryFailedUpload,
     selectedNotesForSend,
     selectSuggestion,
     setDraft,

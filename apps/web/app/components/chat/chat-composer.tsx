@@ -27,6 +27,7 @@ interface ChatComposerProps {
   isSubmitting?: boolean;
   isOffline?: boolean;
   isStreaming?: boolean;
+  isUploading?: boolean;
   hasContext?: boolean;
   attachments?: ChatComposerFile[];
   error?: string | null;
@@ -50,6 +51,7 @@ export function ChatComposer({
   isSubmitting = false,
   isOffline = false,
   isStreaming = false,
+  isUploading = false,
   hasContext = false,
   attachments = [],
   error,
@@ -152,11 +154,14 @@ export function ChatComposer({
         <PromptInputFooter className="!justify-end !gap-0.5 !pb-1 !pt-0">
           <PromptInputTools>
             {onAttachFiles ? (
-              <PromptInputButton asChild tooltip="Attach file">
-                <label className="cursor-pointer">
+              <PromptInputButton asChild tooltip={isUploading ? 'Uploading…' : 'Attach file'}>
+                <label
+                  className={cn('cursor-pointer', isUploading && 'cursor-not-allowed opacity-50')}
+                >
                   <Paperclip aria-hidden="true" size={16} />
                   <input
                     data-testid={fileInputTestId}
+                    disabled={isUploading}
                     hidden
                     multiple
                     onChange={(event) => {

@@ -221,7 +221,8 @@ describe('useFileUpload lifecycle', () => {
 
   it('keeps valid uploads and reports failed or malformed results', async () => {
     const { result } = renderHook(() => useFileUpload());
-    const pending = result.current.uploadFiles(files('brief.pdf', 'bad.pdf'));
+    const [briefFile, badFile] = files('brief.pdf', 'bad.pdf');
+    const pending = result.current.uploadFiles([briefFile!, badFile!]);
     await waitFor(() => expect(state.current).not.toBeNull());
     const uppy = state.current;
     if (!uppy) throw new Error('Expected Uppy instance');
@@ -240,12 +241,15 @@ describe('useFileUpload lifecycle', () => {
     expect(result.current.uploadState).toMatchObject({
       state: 'error',
       errors: ['bad.pdf: Rejected', 'other.pdf: Unsupported'],
+      // "other.pdf" has no matching input File, so only the matched failure is retryable
+      failedFiles: [badFile],
     });
   });
 
   it('normalizes thrown upload failures and supports remove/reset', async () => {
     const { result } = renderHook(() => useFileUpload());
-    const pending = result.current.uploadFiles(files('brief.pdf'));
+    const [briefFile] = files('brief.pdf');
+    const pending = result.current.uploadFiles([briefFile!]);
     await waitFor(() => expect(state.current).not.toBeNull());
     const uppy = state.current;
     if (!uppy) throw new Error('Expected Uppy instance');
@@ -259,13 +263,17 @@ describe('useFileUpload lifecycle', () => {
       isUploading: false,
       progress: 0,
       errors: ['Upload failed'],
+      // the whole batch is retryable when the request itself throws
+      failedFiles: [briefFile],
     });
 
     uppy.uploadError = new Error('offline error');
-    const errorPending = result.current.uploadFiles(files('error.pdf'));
+    const [errorFile] = files('error.pdf');
+    const errorPending = result.current.uploadFiles([errorFile!]);
     await waitFor(() => expect(uppy.files).toHaveLength(2));
     uppy.releaseUpload();
     await expect(errorPending).rejects.toThrow('offline error');
+    await waitFor(() => expect(result.current.uploadState.failedFiles).toEqual([errorFile]));
 
     act(() => result.current.removeFile('missing'));
     await act(async () => result.current.clearAll());
@@ -275,8 +283,31 @@ describe('useFileUpload lifecycle', () => {
       progress: 0,
       uploadedFiles: [],
       errors: [],
+      failedFiles: [],
     });
     expect(uppy.cancelCalls).toBe(1);
+  });
+
+  it('clears failedFiles once a retried upload succeeds', async () => {
+    const { result } = renderHook(() => useFileUpload());
+    const [badFile] = files('bad.pdf');
+    const firstAttempt = result.current.uploadFiles([badFile!]);
+    await waitFor(() => expect(state.current).not.toBeNull());
+    const uppy = state.current;
+    if (!uppy) throw new Error('Expected Uppy instance');
+    uppy.result = { successful: [], failed: [{ name: 'bad.pdf', error: new Error('Rejected') }] };
+    uppy.releaseUpload();
+    await firstAttempt;
+    await waitFor(() => expect(result.current.uploadState.failedFiles).toEqual([badFile]));
+
+    const retry = result.current.uploadFiles(result.current.uploadState.failedFiles);
+    await waitFor(() => expect(uppy.files).toHaveLength(1));
+    uppy.result = { successful: [{ response: { body: validBody } }], failed: [] };
+    uppy.releaseUpload();
+    await retry;
+
+    await waitFor(() => expect(result.current.uploadState.state).toBe('done'));
+    expect(result.current.uploadState.failedFiles).toEqual([]);
   });
 
   it('resets an upload state before Uppy has been initialized', async () => {
@@ -290,6 +321,7 @@ describe('useFileUpload lifecycle', () => {
       progress: 0,
       uploadedFiles: [],
       errors: [],
+      failedFiles: [],
     });
 
     unmount();

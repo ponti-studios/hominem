@@ -7,7 +7,7 @@ import { chatQueryKeys } from '~/lib/query-keys';
 import { useChatClient } from './use-chat-client';
 
 export function useToolCallRespond({ chatId }: { chatId: string }) {
-  const chatClient = useChatClient();
+  const chatClient = useChatClient(chatId);
   const queryClient = useQueryClient();
   const isResponding = useSignal(false);
 

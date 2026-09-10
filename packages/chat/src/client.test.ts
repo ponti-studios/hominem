@@ -82,6 +82,49 @@ describe('ChatClient', () => {
     expect(generation.state.generationId).toBe('caller-supplied-id');
   });
 
+  it('respondToToolCall() never sends a generationId in the body — the server derives the generation from messageId/toolCallId and rejects a client-supplied one', async () => {
+    const sentBodies: unknown[] = [];
+    const request = async ({ init }: ChatClientTransportRequest) => {
+      sentBodies.push(JSON.parse(init.body as string));
+      return streamResponse({
+        version: 1,
+        generationId: 'server-generation-id',
+        sequence: 1,
+        type: 'generation.committed',
+        payload: {
+          type: 'generation.committed',
+          message: {
+            id: 'message-1',
+            chatId: 'chat-1',
+            userId: 'user-1',
+            role: 'assistant',
+            content: 'done',
+            files: null,
+            toolCalls: null,
+            reasoning: null,
+            parentMessageId: null,
+            createdAt: '2026-01-01',
+            updatedAt: '2026-01-01',
+          },
+        },
+      });
+    };
+    const client = new ChatClient({
+      baseUrl: 'https://chat.test',
+      transport: { request, stream: streamFromRequest(request) },
+    });
+
+    const generation = client.respondToToolCall({
+      chatId: 'chat-1',
+      messageId: 'message-1',
+      toolCallId: 'tool-call-1',
+      body: { approved: true },
+    });
+    await generation.done;
+
+    expect(sentBodies).toEqual([{ approved: true }]);
+  });
+
   it('streams events, checkpoints each state, and removes terminal checkpoints', async () => {
     const checkpoints: string[] = [];
     const request = async () =>
@@ -131,6 +174,42 @@ describe('ChatClient', () => {
 
     expect(generation.state).toMatchObject({ phase: 'committed', text: 'done' });
     expect(checkpoints).toEqual(['generation-1:1', 'removed:generation-1']);
+  });
+
+  it('keeps the checkpoint for a failed generation instead of removing it — consumers read it back after a reload to offer retry', async () => {
+    const checkpoints: string[] = [];
+    const request = async () =>
+      streamResponse({
+        version: 1,
+        generationId: 'generation-1',
+        sequence: 1,
+        type: 'generation.failed',
+        payload: { type: 'generation.failed', message: 'provider failure' },
+      });
+    const client = new ChatClient({
+      baseUrl: 'https://chat.test',
+      transport: { request, stream: streamFromRequest(request) },
+      checkpointStore: {
+        get: () => null,
+        set: (state) => {
+          checkpoints.push(`${state.generationId}:${state.phase}`);
+        },
+        remove: (generationId) => {
+          checkpoints.push(`removed:${generationId}`);
+        },
+      },
+      createId: () => 'generation-1',
+    });
+
+    const generation = client.createGeneration();
+    await generation.start({
+      path: '/api/chats/chat-1/stream',
+      body: { chatId: 'chat-1', message: 'hello' },
+      generationId: 'generation-1',
+    });
+
+    expect(generation.state.phase).toBe('failed');
+    expect(checkpoints).toEqual(['generation-1:failed']);
   });
 
   it('replays from the durable checkpoint after a stream disconnects', async () => {

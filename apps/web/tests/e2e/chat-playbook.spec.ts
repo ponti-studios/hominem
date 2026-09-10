@@ -217,6 +217,11 @@ async function regenerateAndWaitForNewGeneration(page: Page) {
   const requestPromise = page.waitForRequest(
     (request) => request.method() === 'POST' && request.url().endsWith('/regenerate'),
   );
+  // Message actions are hidden until the row is hovered or focused
+  // (`invisible group-hover:visible` in chat-message-actions.tsx), so the
+  // button isn't in the accessibility tree — and therefore isn't findable by
+  // getByRole — until the row is actually hovered first.
+  await page.locator('[data-chat-message]').last().hover();
   await page.getByRole('button', { name: 'Regenerate response' }).click();
   const request = await requestPromise;
   const body = JSON.parse(request.postData() ?? '{}') as { generationId?: string };
@@ -291,7 +296,9 @@ test('SEND-05 regenerates the latest assistant response once', async ({ page }) 
   await waitForResponse(page, 'Scripted response: SEND-05-REGENERATE');
   await expectSingleMessage(page, 'SEND-05-REGENERATE', 'user');
   await expectSingleMessage(page, 'Scripted response: SEND-05-REGENERATE');
-  await expectCommitted(page, chat);
+  // Regenerating deletes the superseded run (see RECOVER-01), so
+  // chat.generationId (the pre-regeneration run) is gone — only the
+  // regenerated id is still expected to resolve.
   await expectGenerationStatus(page, chat.chatId, regeneratedGenerationId, 'committed');
 });
 
@@ -328,6 +335,10 @@ test('TOOL-04 retains a failed tool card and exposes recovery', async ({ page })
   const chat = await startChat(page, 'List my collections SCRIPT:TOOL_FAIL');
   await expect(page.getByLabel('Error')).toBeVisible({ timeout: 20_000 });
   await waitForResponse(page, 'The tool request failed.');
+  // Message actions are hidden until the row is hovered or focused
+  // (`invisible group-hover:visible` in chat-message-actions.tsx), so a
+  // hover is required before getByRole can find them at all.
+  await page.locator('[data-chat-message]').last().hover();
   await expect(page.getByRole('button', { name: 'Regenerate response' })).toBeVisible();
   await expectCommitted(page, chat);
 });
@@ -486,11 +497,17 @@ test('UI-02 shows a centered load error with recovery', async ({ page }, testInf
 test('UI-03 edits and deletes a disposable user message', async ({ page }) => {
   await startChat(page, 'UI-03-EDIT-ME');
   await waitForResponse(page, 'Scripted response: UI-03-EDIT-ME');
+  // Message actions are hidden until the row is hovered or focused
+  // (`invisible group-hover:visible` in chat-message-actions.tsx), so a
+  // hover is required before getByRole can find them at all.
+  const userMessage = page.locator('[data-chat-message]').first();
+  await userMessage.hover();
   await page.getByRole('button', { name: 'Edit message' }).click();
   const editor = page.getByRole('textbox', { name: 'Edit message' });
   await editor.fill('UI-03-EDITED');
   await page.getByRole('button', { name: 'Save edit' }).click();
   await expectSingleMessage(page, 'UI-03-EDITED', 'user');
+  await userMessage.hover();
   await page.getByRole('button', { name: 'Delete user message' }).click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
   await page.getByRole('button', { name: 'Delete message' }).click();
@@ -500,15 +517,22 @@ test('UI-03 edits and deletes a disposable user message', async ({ page }) => {
 test('UI-04 exercises copy, share, listen, and regenerate controls', async ({ page }) => {
   const chat = await startChat(page, 'UI-04-ACTIONS');
   await waitForResponse(page, 'Scripted response: UI-04-ACTIONS');
+  // Message actions are hidden until the row is hovered or focused
+  // (`invisible group-hover:visible` in chat-message-actions.tsx), so a
+  // hover is required before getByRole can find them at all.
+  await page.locator('[data-chat-message]').first().hover();
   await page.getByRole('button', { name: 'Copy user message' }).click();
   await expect(page.getByRole('button', { name: 'Copied user message' })).toBeVisible();
+  await page.locator('[data-chat-message]').last().hover();
   await expect(page.getByRole('button', { name: 'Copy assistant message' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Share assistant message' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Listen to response' })).toBeVisible();
   const regeneratedGenerationId = await regenerateAndWaitForNewGeneration(page);
   await waitForGenerationStatus(page, chat.chatId, regeneratedGenerationId, 'committed');
   await waitForResponse(page, 'Scripted response: UI-04-ACTIONS');
-  await expectCommitted(page, chat);
+  // Regenerating deletes the superseded run (see RECOVER-01), so
+  // chat.generationId (the pre-regeneration run) is gone — only the
+  // regenerated id is still expected to resolve.
   await expectGenerationStatus(page, chat.chatId, regeneratedGenerationId, 'committed');
 });
 
@@ -526,7 +550,13 @@ test('UI-05 keeps the chat usable at the smallest supported viewport', async ({ 
 test('UI-06 exposes keyboard-reachable named chat controls', async ({ page }) => {
   await startChat(page, 'UI-06-ACCESSIBILITY');
   await waitForResponse(page, 'Scripted response: UI-06-ACCESSIBILITY');
+  const userMessage = page.locator('[data-chat-message]').first();
+  const assistantMessage = page.locator('[data-chat-message]').last();
   for (const name of ['Copy user message', 'Copy assistant message', 'Regenerate response']) {
+    // Message actions are hidden until the row is hovered or focused
+    // (`invisible group-hover:visible` in chat-message-actions.tsx), so a
+    // hover is required before getByRole can find them at all.
+    await (name === 'Copy user message' ? userMessage : assistantMessage).hover();
     const control = page.getByRole('button', { name });
     await expect(control).toBeVisible();
     await control.focus();

@@ -6,7 +6,7 @@ import { useChatComposerState } from '~/lib/hooks/use-chat-composer-state';
 import type { useChatDisplayMessages } from '~/lib/hooks/use-chat-display-messages';
 import type { useRegenerateMessage } from '~/lib/hooks/use-regenerate-message';
 import type { useResponseLength } from '~/lib/hooks/use-response-length';
-import { useSpeechToText } from '~/lib/hooks/use-speech-to-text';
+import { getSpeechErrorMessage, useSpeechToText } from '~/lib/hooks/use-speech-to-text';
 import type { useStreamMessage } from '~/lib/hooks/use-stream-message';
 
 type SeedNote = {
@@ -219,7 +219,9 @@ export function ChatComposerPanel({
           ? 'You are offline. Your draft and attachments are preserved.'
           : composer.uploadState.errors.length > 0
             ? composer.uploadState.errors.join(', ')
-            : streamMessage.error?.message
+            : speech.error
+              ? getSpeechErrorMessage(speech.error)
+              : streamMessage.error?.message
       }
       statusMessage={
         streamMessage.isRetrying
@@ -236,6 +238,7 @@ export function ChatComposerPanel({
         regeneration.isRegenerating
       }
       isStreaming={streamMessage.isStreaming}
+      isUploading={composer.uploadState.isUploading}
       isVoiceSupported={speech.isSupported}
       isListening={speech.isListening}
       onAttachFiles={(files) => void composer.attachFiles(files)}
@@ -244,17 +247,19 @@ export function ChatComposerPanel({
       onStop={() => void streamMessage.cancel()}
       onSubmit={() => void handleSend()}
       onRetry={
-        isRetryable && isOnline
-          ? () => {
-              setIsRetryable(false);
-              void streamMessage.retry({
-                responseLength,
-                onCommitted: (message) => display.setPendingAssistantMessage(message),
-                onFailed: () => setIsRetryable(true),
-                onSettled: () => display.setPendingAssistantMessage(null),
-              });
-            }
-          : undefined
+        composer.uploadState.errors.length > 0 && isOnline
+          ? () => void composer.retryFailedUpload()
+          : isRetryable && isOnline
+            ? () => {
+                setIsRetryable(false);
+                void streamMessage.retry({
+                  responseLength,
+                  onCommitted: (message) => display.setPendingAssistantMessage(message),
+                  onFailed: () => setIsRetryable(true),
+                  onSettled: () => display.setPendingAssistantMessage(null),
+                });
+              }
+            : undefined
       }
       onToggleVoice={() => speech.toggle(composer.draft)}
     />

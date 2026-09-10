@@ -175,6 +175,33 @@ describe('ChatComposer', () => {
     expect(onRemoveAttachment).toHaveBeenCalledWith('file-1');
   });
 
+  it('disables the attach control while an upload is in progress', () => {
+    render(
+      <ChatComposer
+        draft=""
+        isUploading
+        onAttachFiles={() => undefined}
+        onChangeDraft={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+
+    expect(screen.getByTestId('chat-file-input').getAttribute('disabled')).not.toBeNull();
+  });
+
+  it('keeps the attach control enabled outside of an upload', () => {
+    render(
+      <ChatComposer
+        draft=""
+        onAttachFiles={() => undefined}
+        onChangeDraft={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+
+    expect(screen.getByTestId('chat-file-input').getAttribute('disabled')).toBeNull();
+  });
+
   it('transforms the voice button into Persona while preserving the composer controls', () => {
     const onToggleVoice = vi.fn();
     render(

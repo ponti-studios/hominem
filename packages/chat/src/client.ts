@@ -47,6 +47,7 @@ export type ChatGenerationController = {
     body: unknown;
     generationId?: string;
     replayPath?: (generationId: string, afterSequence: number) => string;
+    includeGenerationIdInBody?: boolean;
   }) => Promise<GenerationClientState>;
   resume: (input: { path: string; generationId: string }) => Promise<GenerationClientState>;
   cancel: () => void;
@@ -153,13 +154,16 @@ export class ChatClient {
     toolCallId: string;
     body: Record<string, unknown>;
   }): ChatGenerationController {
+    // The server derives the generation to continue from messageId/toolCallId
+    // alone and rejects a client-supplied generationId in the body
+    // (ChatsToolCallRespondSchema is `.strict()` with no such field) — unlike
+    // send/start/regenerate, there's no valid client-known id to send here.
     return this.createGenerationWith({
-      generationId:
-        typeof input.body.generationId === 'string' ? input.body.generationId : undefined,
       path: `/api/chats/${input.chatId}/messages/${input.messageId}/tool-calls/${input.toolCallId}/respond`,
       body: input.body,
       replayPath: (generationId, afterSequence) =>
         `/api/chats/${input.chatId}/generations/${generationId}/stream?afterSequence=${afterSequence}`,
+      includeGenerationIdInBody: false,
     });
   }
 
@@ -197,6 +201,7 @@ export class ChatClient {
     path: string;
     body: unknown;
     replayPath?: (generationId: string, afterSequence: number) => string;
+    includeGenerationIdInBody?: boolean;
   }): ChatGenerationController {
     const generation = this.createGeneration(input.generationId);
     queueMicrotask(() => {
@@ -290,11 +295,13 @@ export class ChatClient {
         process(finishSse<GenerationEvent>(sseState, (data) => JSON.parse(data)).outputs);
 
         await checkpointWrite;
-        if (
-          current.phase === 'committed' ||
-          current.phase === 'cancelled' ||
-          current.phase === 'failed'
-        ) {
+        // A failed generation's checkpoint is deliberately kept, not removed
+        // here alongside committed/cancelled: consumers (both web and Omiro)
+        // read it back after a reload/relaunch to offer retry on a
+        // generation that failed before the user had a chance to act on it.
+        // It's the consumer's job to clear it once superseded — by starting
+        // a new send/regenerate/retry, whose own checkpoint takes its place.
+        if (current.phase === 'committed' || current.phase === 'cancelled') {
           await this.options.checkpointStore?.remove?.(current.generationId);
         }
         return current;
@@ -344,16 +351,21 @@ export class ChatClient {
       body,
       generationId,
       replayPath,
+      includeGenerationIdInBody = true,
     }: {
       path: string;
       body: unknown;
       generationId?: string;
       replayPath?: (generationId: string, afterSequence: number) => string;
+      includeGenerationIdInBody?: boolean;
     }) => {
       const result = (async () => {
         const id = generationId ?? current.generationId;
         current = createGenerationClientState(id);
-        return consume(path, { ...(body as object), generationId: id }, replayPath);
+        const requestBody = includeGenerationIdInBody
+          ? { ...(body as object), generationId: id }
+          : body;
+        return consume(path, requestBody, replayPath);
       })();
       result.then(resolveDone, rejectDone);
       return result;

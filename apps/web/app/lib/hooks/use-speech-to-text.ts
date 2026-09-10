@@ -10,6 +10,10 @@ interface SpeechRecognitionEventLike {
   results: ArrayLike<SpeechRecognitionResultLike>;
 }
 
+interface SpeechRecognitionErrorEventLike {
+  error: string;
+}
+
 interface SpeechRecognitionLike extends EventTarget {
   continuous: boolean;
   interimResults: boolean;
@@ -17,8 +21,45 @@ interface SpeechRecognitionLike extends EventTarget {
   start: () => void;
   stop: () => void;
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
   onend: (() => void) | null;
+}
+
+/**
+ * Recoverable voice input failure states, mirroring Omiro's voice composer
+ * error categories (permission, device availability, transcription).
+ * 'no-speech' and 'aborted' are not included: they fire on ordinary silence
+ * or a manual stop and aren't user-facing failures.
+ */
+export type VoiceRecognitionError =
+  | 'permission-denied'
+  | 'microphone-unavailable'
+  | 'transcription-failed';
+
+function mapRecognitionErrorCode(code: string): VoiceRecognitionError | null {
+  switch (code) {
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return 'permission-denied';
+    case 'audio-capture':
+      return 'microphone-unavailable';
+    case 'no-speech':
+    case 'aborted':
+      return null;
+    default:
+      return 'transcription-failed';
+  }
+}
+
+export function getSpeechErrorMessage(error: VoiceRecognitionError): string {
+  switch (error) {
+    case 'permission-denied':
+      return 'Microphone access was denied. Enable microphone permissions to use voice input.';
+    case 'microphone-unavailable':
+      return 'No microphone is available for voice input.';
+    case 'transcription-failed':
+      return 'Voice transcription failed. Try again.';
+  }
 }
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
@@ -47,9 +88,13 @@ export function useSpeechToText({ onTranscript }: UseSpeechToTextOptions) {
   // mount once we can safely check for the browser API.
   const [isSupported, setIsSupported] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [error, setError] = useState<VoiceRecognitionError | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const seedRef = useRef('');
   const finalTextRef = useRef('');
+  // mirrors isListening synchronously: two clicks in the same tick both read
+  // stale React state, so toggle/start need a ref to reject the second one
+  const isListeningRef = useRef(false);
 
   useEffect(() => {
     setIsSupported(getSpeechRecognitionConstructor(window) !== null);
@@ -60,14 +105,23 @@ export function useSpeechToText({ onTranscript }: UseSpeechToTextOptions) {
 
   const stop = useCallback(() => {
     recognitionRef.current?.stop();
+    isListeningRef.current = false;
     setIsListening(false);
   }, []);
 
+  const clearError = useCallback(() => setError(null), []);
+
   const start = useCallback(
     (seed = '') => {
+      // guards against a second start (e.g. a double click) while recognition
+      // is already active — starting a new one would leak the old instance
+      if (isListeningRef.current) return;
+
       const Recognition = getSpeechRecognitionConstructor(window);
       if (!Recognition) return;
 
+      isListeningRef.current = true;
+      setError(null);
       seedRef.current = seed;
       finalTextRef.current = '';
 
@@ -92,8 +146,15 @@ export function useSpeechToText({ onTranscript }: UseSpeechToTextOptions) {
           .trim();
         onTranscript(combined);
       };
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
+      recognition.onerror = (event) => {
+        isListeningRef.current = false;
+        setIsListening(false);
+        setError(mapRecognitionErrorCode(event.error));
+      };
+      recognition.onend = () => {
+        isListeningRef.current = false;
+        setIsListening(false);
+      };
 
       recognitionRef.current = recognition;
       recognition.start();
@@ -104,14 +165,14 @@ export function useSpeechToText({ onTranscript }: UseSpeechToTextOptions) {
 
   const toggle = useCallback(
     (seed = '') => {
-      if (isListening) {
+      if (isListeningRef.current) {
         stop();
       } else {
         start(seed);
       }
     },
-    [isListening, start, stop],
+    [start, stop],
   );
 
-  return { isSupported, isListening, start, stop, toggle };
+  return { isSupported, isListening, error, clearError, start, stop, toggle };
 }

@@ -15,7 +15,7 @@ export type RegenerationStatus =
   | 'failed';
 
 export function useRegenerateMessage({ chatId }: { chatId: string }) {
-  const chatClient = useChatClient();
+  const chatClient = useChatClient(chatId);
   const queryClient = useQueryClient();
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [status, setStatus] = useState<RegenerationStatus>('idle');
