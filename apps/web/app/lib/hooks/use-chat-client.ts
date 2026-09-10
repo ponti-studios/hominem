@@ -6,7 +6,7 @@ import {
 } from '@hominem/chat/client';
 import type { GenerationClientState } from '@hominem/chat/client';
 import { fetchChatTransport } from '@hominem/chat/transport/fetch';
-import { useRef } from 'react';
+import { useMemo } from 'react';
 
 // Keyed by chatId, not the generationId the store's own get/set/remove
 // signature takes — a reload knows the chatId (it's in the URL) but not
@@ -45,15 +45,15 @@ function createCheckpointStore(chatId: string) {
 }
 
 export function useChatClient(chatId: string) {
-  const clientRef = useRef<ChatClient | null>(null);
-  if (!clientRef.current) {
-    clientRef.current = new ChatClient({
-      baseUrl: import.meta.env.VITE_PUBLIC_API_URL,
-      transport: fetchChatTransport((input, init) =>
-        fetch(input, { ...init, credentials: 'include' }),
-      ),
-      checkpointStore: createCheckpointStore(chatId),
-    });
-  }
-  return clientRef.current;
+  return useMemo(
+    () =>
+      new ChatClient({
+        baseUrl: import.meta.env.VITE_PUBLIC_API_URL,
+        transport: fetchChatTransport((input, init) =>
+          fetch(input, { ...init, credentials: 'include' }),
+        ),
+        checkpointStore: createCheckpointStore(chatId),
+      }),
+    [chatId],
+  );
 }
