@@ -5,7 +5,6 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, {
   FadeIn,
   FadeInDown,
-  LinearTransition,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -166,14 +165,17 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
 
   // Only rows that arrived after the first paint slide in; historical rows,
   // pagination appends, and filter switches mount static.
+  //
+  // Deliberately no `layout` animation here: FlashList recycles cells and
+  // repositions them as you scroll, and a Reanimated layout animation treats
+  // each reposition as a layout change to animate -- so the row's text visibly
+  // slides from its previous occupant's position to the new one, reading as a
+  // flash of overlapping titles. Removal gaps close instantly instead.
   const entering = isNew
     ? reducedMotion
       ? FadeIn.duration(nativeMotionTiming.quick.duration)
       : FadeInDown.duration(nativeMotionTiming.quick.duration)
     : undefined;
-  const layout = reducedMotion
-    ? undefined
-    : LinearTransition.duration(nativeMotionTiming.quick.duration);
 
   const handleDelete = useCallback(() => {
     if (alertTimerRef.current) {
@@ -267,12 +269,7 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
   }, [handleArchive, handleDelete, isChat]);
 
   return (
-    <Reanimated.View
-      entering={entering}
-      layout={layout}
-      style={leavingStyle}
-      testID={`inbox-item-${item.kind}`}
-    >
+    <Reanimated.View entering={entering} style={leavingStyle} testID={`inbox-item-${item.kind}`}>
       <View style={styles.wrapper}>
         <Reanimated.View
           style={[

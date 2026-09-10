@@ -105,10 +105,16 @@ export const ChatMessage = memo(function ChatMessage({
         ? FadeIn.duration(nativeMotionContracts.duration.quick)
         : FadeInDown.duration(nativeMotionContracts.duration.quick)
       : undefined;
-  // Lets the row's height settle smoothly when the typing indicator goes
-  // away, Markdown reflows, or a failure/retry banner shows or clears --
-  // no-op for rows whose height never changes.
-  const rowLayout = reducedMotion
+  // Lets the message's height settle smoothly when the typing indicator
+  // goes away, Markdown reflows, or a failure/retry banner shows or clears
+  // -- no-op for rows whose height never changes. Applied to the inner
+  // content View, not this row's own root: FlashList recycles and
+  // repositions row roots as you scroll, and a layout animation on the row
+  // root animates *that* reposition too, so a recycled row's text visibly
+  // slides in from its previous occupant's position (ghosting) instead of
+  // just appearing. Scoping it to the subtree that actually reflows avoids
+  // that while keeping the smooth height transition.
+  const contentLayout = reducedMotion
     ? undefined
     : LinearTransition.duration(nativeMotionContracts.duration.quick);
   // If a message is already failed the moment this row mounts, that's
@@ -162,7 +168,6 @@ export const ChatMessage = memo(function ChatMessage({
 
   return (
     <Animated.View
-      layout={rowLayout}
       entering={rowEntering}
       style={[styles.message, isUser ? styles.messageUser : styles.messageAssistant]}
     >
@@ -191,7 +196,7 @@ export const ChatMessage = memo(function ChatMessage({
           visible={isEditing}
         />
 
-        <View style={styles.content}>
+        <Animated.View layout={contentLayout} style={styles.content}>
           <MessageContent content={content} enableMarkdown={!isStreaming} textStyle={textStyle}>
             {!isUser && isStreaming ? <ChatThinkingIndicator /> : null}
           </MessageContent>
@@ -224,7 +229,7 @@ export const ChatMessage = memo(function ChatMessage({
           {showDebug && !isStreaming ? (
             <MessageDebug hasReasoning={hasReasoning} message={message} />
           ) : null}
-        </View>
+        </Animated.View>
       </Pressable>
       <ActiveMessageActions
         actions={{ canDelete, canEdit, canRegenerate }}
