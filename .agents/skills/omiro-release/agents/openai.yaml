@@ -1,0 +1,4 @@
+interface:
+  display_name: "Omiro Release"
+  short_description: "Validate and ship Omiro through GitHub, EAS, or a local IPA"
+  default_prompt: "Prepare the Omiro production release, report blockers, and follow the authorized release path."
