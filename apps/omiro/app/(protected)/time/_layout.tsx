@@ -19,7 +19,7 @@ export default function TimeStackLayout() {
           // same grabber drag through the well-exercised resize-between-
           // detents path instead.
           sheetAllowedDetents: [0.6, 0.95],
-          sheetInitialDetentIndex: 'last',
+          sheetInitialDetentIndex: 1,
           title: 'Time block',
         }}
       />

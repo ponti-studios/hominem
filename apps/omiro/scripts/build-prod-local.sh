@@ -16,4 +16,5 @@ export SENTRY_PROJECT="${SENTRY_PROJECT:-omiro}"
 : "${SENTRY_AUTH_TOKEN:?Set SENTRY_AUTH_TOKEN in .env.local or export it before building.}"
 
 node scripts/verify-release-identity.mjs
-pnpm exec eas build --platform ios --profile production --local
+mkdir -p build
+npx eas-cli build --platform ios --profile production --local --output build/prod-local.ipa
