@@ -3,7 +3,7 @@
 # expo managed workflow (Continuous Native Generation)
 .expo/
 expo-env.d.ts
-/ios/
+/ios
 
 # metro
 .metro-health-check*

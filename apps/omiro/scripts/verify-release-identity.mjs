@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// Preflight guard for production releases. Resolves the app config the same
-// way `eas build`/`eas submit` will and refuses to proceed if it doesn't
-// match the identity registered in App Store Connect (ascAppId 6760221796
-// in eas.json's submit.production.ios). This is the check that would have
-// caught the incident where a locally-run "production" build silently
-// shipped the dev app identity (com.pontistudios.hakumi.dev) to Apple.
-//
-// Keep these in sync with app.config.js's PRODUCTION_APP_CONFIG.
+
+/**
+ * Preflight guard for production releases. Resolves the app config the same way `eas build`/`eas submit` will
+ * and refuses to proceed if it doesn't match the identity registered in App Store Connect in eas.json.
+ *
+ * This is the check that would have caught the incident where a locally-run "production" build silently
+ * shipped the dev app identity (com.pontistudios.hakumi.dev) to Apple.
+ *
+ * Keep these in sync with app.config.js's PRODUCTION_APP_CONFIG.
+ */
 const EXPECTED = {
   bundleIdentifier: 'com.pontistudios.hakumi',
   name: 'Omiro',
