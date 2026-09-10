@@ -2,19 +2,19 @@ appId: com.pontistudios.hakumi.dev
 tags:
   - smoke
 ---
-# Task 011 Omiro evidence: B-001 through B-005.
+# Omiro evidence: SEND-01 through SEND-05.
 # Run this file before the tools/recovery/action groups. Each scenario leaves a
 # screenshot behind so the visual state can be reviewed alongside API evidence.
 #
-# Message texts carry a per-run timestamp suffix (output.b002/b003) so a
+# Message texts carry a per-run timestamp suffix (output.send02/send03) so a
 # re-run never matches a previous run's rows with assertVisible.
 
 - runFlow: ../subflows/reset-to-home.yaml
 - assertVisible:
     id: 'inbox-composer-input'
-- takeScreenshot: /tmp/omiro-task003-b001-home
+- takeScreenshot: /tmp/omiro-send01-home
 
-# B-001: open the most recent completed chat directly.
+# SEND-01: open the most recent completed chat directly.
 - tapOn:
     id: 'inbox-item-chat-open'
     index: 0
@@ -22,26 +22,26 @@ tags:
     timeout: 4000
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro-task003-b001-direct-load
+- takeScreenshot: /tmp/omiro-send01-direct-load
 
-# B-002: send one message and verify the response appears once. The composer
+# SEND-02: send one message and verify the response appears once. The composer
 # on an existing chat can hold a draft, so it is cleared first. extendedWaitUntil
 # covers generation latency AND asserts the content (a settle-wait would pass
 # on a stuck spinner).
 - tapOn:
     id: 'chat-composer-input'
 - eraseText: 100
-- evalScript: ${output.b002 = 'B002-OMIRO-NORMAL-SEND-' + new Date().getTime()}
-- inputText: ${output.b002}
+- evalScript: ${output.send02 = 'SEND-02-OMIRO-NORMAL-SEND-' + new Date().getTime()}
+- inputText: ${output.send02}
 - tapOn:
     id: 'composer-submit-message'
 - extendedWaitUntil:
-    visible: ${output.b002}
+    visible: ${output.send02}
     timeout: 30000
-- takeScreenshot: /tmp/omiro-task003-b002-send-complete
+- takeScreenshot: /tmp/omiro-send02-send-complete
 
-# B-003: create a chat through the normal new-chat entry point. Reset to the
-# inbox first so this scenario does not depend on B-002's detail route. The
+# SEND-03: create a chat through the normal new-chat entry point. Reset to the
+# inbox first so this scenario does not depend on SEND-02's detail route. The
 # new-chat composer is always empty (fresh screen), so no eraseText: clearing
 # it would burn up to 100 blind backspaces on iOS for nothing.
 - runFlow: ../subflows/open-dev-home.yaml
@@ -52,18 +52,18 @@ tags:
     id: 'new-chat-composer-input'
 - tapOn:
     id: 'new-chat-composer-input'
-- evalScript: ${output.b003 = 'B003-OMIRO-NEW-CHAT-' + new Date().getTime()}
-- inputText: ${output.b003}
+- evalScript: ${output.send03 = 'SEND-03-OMIRO-NEW-CHAT-' + new Date().getTime()}
+- inputText: ${output.send03}
 - tapOn:
     id: 'new-chat-submit'
 - extendedWaitUntil:
-    visible: ${output.b003}
+    visible: ${output.send03}
     timeout: 30000
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro-task003-b003-new-chat
+- takeScreenshot: /tmp/omiro-send03-new-chat
 
-# B-004: return from the new chat detail to the inbox, then open the chat again.
+# SEND-04: return from the new chat detail to the inbox, then open the chat again.
 # The header back chevron is a native SwiftUI Stack.Toolbar.Button
 # (ExpoRouterToolbarModule) whose accessibilityLabel doesn't surface as an
 # XCUITest identifier, so Maestro's `id` selector never matches it — tap by
@@ -83,21 +83,21 @@ tags:
     timeout: 4000
 - assertVisible:
     id: 'chat-composer-input'
-- assertVisible: ${output.b003}
-- takeScreenshot: /tmp/omiro-task003-b004-navigation
+- assertVisible: ${output.send03}
+- takeScreenshot: /tmp/omiro-send04-navigation
 
-# B-005: activate the latest assistant message, regenerate it, and verify the
+# SEND-05: activate the latest assistant message, regenerate it, and verify the
 # chat remains usable. The durable generation/message duplicate check belongs in
 # the API evidence record for the chat opened by this flow.
 - tapOn:
-    text: 'Scripted response: ${output.b003}'
+    text: 'Scripted response: ${output.send03}'
 - waitForAnimationToEnd:
     timeout: 500
 - tapOn:
     text: 'arrow.clockwise'
 - extendedWaitUntil:
-    visible: 'Scripted response: ${output.b003}'
+    visible: 'Scripted response: ${output.send03}'
     timeout: 30000
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro-task003-b005-regeneration
+- takeScreenshot: /tmp/omiro-send05-regeneration

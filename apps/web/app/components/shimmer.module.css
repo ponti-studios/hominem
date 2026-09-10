@@ -1,0 +1,14 @@
+.shimmerText {
+  --bg: linear-gradient(
+    90deg,
+    #0000 calc(50% - var(--spread)),
+    var(--color-background),
+    #0000 calc(50% + var(--spread))
+  );
+  background-image:
+    var(--bg), linear-gradient(var(--color-muted-foreground), var(--color-muted-foreground));
+  background-repeat: no-repeat, padding-box;
+  background-size:
+    250% 100%,
+    auto;
+}

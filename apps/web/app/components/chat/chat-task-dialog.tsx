@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ChatTaskReview } from '~/components/chat/chat-task-review';
-import { Shimmer } from '~/components/chat/shimmer';
+import { Shimmer } from '~/components/shimmer';
 import { Button } from '~/components/ui/button';
 import {
   Dialog,

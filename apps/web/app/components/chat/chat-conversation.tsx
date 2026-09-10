@@ -9,7 +9,7 @@ import {
   ConversationScrollButton,
 } from '~/components/chat/conversation';
 import { Message, MessageContent } from '~/components/chat/message';
-import { Shimmer } from '~/components/chat/shimmer';
+import { Shimmer } from '~/components/shimmer';
 import { Button } from '~/components/ui/button';
 import type { ChatLoadState } from '~/lib/chat/compute-chat-load-state';
 import type { useChatDisplayMessages } from '~/lib/hooks/use-chat-display-messages';

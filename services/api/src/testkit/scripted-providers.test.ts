@@ -111,7 +111,7 @@ describe('scripted OpenRouter provider', () => {
         messages: [
           {
             role: 'user',
-            content: 'B008-OMIRO-CONFIRM-REJECT Create a private collection.',
+            content: 'SCRIPT:CONFIRM_REJECT Create a private collection.',
           },
         ],
         tools: [
@@ -150,7 +150,9 @@ describe('scripted OpenRouter provider', () => {
     const chunks = await collect(
       streamChatCompletion({
         model: 'test-model',
-        messages: [{ role: 'user', content: 'List my collections and reply with TOOL-B009-FAIL.' }],
+        messages: [
+          { role: 'user', content: 'List my collections and reply with SCRIPT:TOOL_FAIL.' },
+        ],
         tools: [
           {
             type: 'function',
@@ -169,7 +171,7 @@ describe('scripted OpenRouter provider', () => {
       streamChatCompletion({
         model: 'test-model',
         messages: [
-          { role: 'user', content: 'List my collections and reply with TOOL-B009-FAIL.' },
+          { role: 'user', content: 'List my collections and reply with SCRIPT:TOOL_FAIL.' },
           { role: 'assistant', content: null, toolCalls: [] },
           {
             role: 'tool',
@@ -187,7 +189,7 @@ describe('scripted OpenRouter provider', () => {
   it('surfaces one provider failure, then serves the scripted retry response', async () => {
     const request = {
       model: 'test-model',
-      messages: [{ role: 'user' as const, content: 'PROVIDER-B010-FAIL' }],
+      messages: [{ role: 'user' as const, content: 'SCRIPT:PROVIDER_FAIL' }],
     };
 
     await expect(collect(streamChatCompletion(request))).rejects.toThrow(
@@ -195,7 +197,7 @@ describe('scripted OpenRouter provider', () => {
     );
 
     const retry = await collect(streamChatCompletion(request));
-    expect(retry[0]?.choices[0]?.delta?.content).toBe('Scripted response: PROVIDER-B010-FAIL');
+    expect(retry[0]?.choices[0]?.delta?.content).toBe('Scripted response: SCRIPT:PROVIDER_FAIL');
   });
 
   it('delays the cancel-before-execution control', async () => {
@@ -204,7 +206,7 @@ describe('scripted OpenRouter provider', () => {
       streamChatCompletion({
         model: 'test-model',
         responseFormat: { type: 'json_object' },
-        messages: [{ role: 'user', content: 'B011-CANCEL-BEFORE' }],
+        messages: [{ role: 'user', content: 'SCRIPT:CANCEL_BEFORE' }],
       }),
     );
 
@@ -216,7 +218,7 @@ describe('scripted OpenRouter provider', () => {
     const chunks = await collect(
       streamChatCompletion({
         model: 'test-model',
-        messages: [{ role: 'user', content: 'B013-DISCONNECT' }],
+        messages: [{ role: 'user', content: 'SCRIPT:DISCONNECT' }],
       }),
     );
 

@@ -3,7 +3,7 @@ import { AnimatePresence, m } from 'motion/react';
 import { ChatMessageToolCall } from '~/components/chat/chat-message-tool-call';
 import { MessageResponse } from '~/components/chat/message';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '~/components/chat/reasoning';
-import { Shimmer } from '~/components/chat/shimmer';
+import { Shimmer } from '~/components/shimmer';
 import type { ChatMessageView } from '~/lib/types/chat';
 import { cn } from '~/lib/utils';
 
@@ -89,7 +89,7 @@ export function ChatMessageBody({
             </div>
           ) : (
             <>
-              {message.isStreaming ? (
+              {message.isStreaming && !message.content?.trim() ? (
                 <p
                   aria-label="Response is streaming"
                   className="text-sm text-muted-foreground"

@@ -41,9 +41,9 @@ the OpenRouter HTTP boundary, including collection tool calls and their
 post-approval completion. The following exact message markers expose the
 timing needed by the Browser playbook:
 
-- `B011-CANCEL-BEFORE` delays provider response so cancellation can win before
+- `SCRIPT:CANCEL_BEFORE` delays provider response so cancellation can win before
   execution.
-- `B012-STREAM`, `B013-DISCONNECT`, `B014-REPLAY`, and `B017-ACTIVE-RELOAD`
+- `SCRIPT:STREAM`, `SCRIPT:DISCONNECT`, `SCRIPT:REPLAY`, and `SCRIPT:ACTIVE_RELOAD`
   stream response frames with deterministic gaps for cancellation,
   disconnect, and replay/reload handoff checks.
 

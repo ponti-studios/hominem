@@ -18,7 +18,7 @@ import { Streamdown } from 'streamdown';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import { cn } from '~/lib/utils';
 
-import { Shimmer } from './shimmer';
+import { Shimmer } from '../shimmer';
 import { useStreamdownPlugins } from './use-streamdown-plugins';
 
 interface ReasoningContextValue {

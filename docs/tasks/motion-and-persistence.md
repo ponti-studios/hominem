@@ -24,18 +24,18 @@ loading semantics. Out of scope: new navigation or server architecture.
 | ID | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
 | --- | --- | --- | --- | --- | --- |
 | W-001 | Confirm motion contract | Web design/docs | — | [chat.design.md#web-parity](../chat.design.md#web-parity) | **OPEN — USER DECISION REQUIRED.** Adapted from Omiro's contract; human design sign-off is still required. |
-| W-002 | Implement motion | Web chat transcript | W-001 | `use-new-message-ids.ts`/`.test.ts`, `chat-message.tsx` (`AnimatePresence initial={isNewMessage}`), e2e B-027/B-028 | Implementation exists, pending W-001 approval. |
-| W-003 | Implement persistence | Web composer/lifecycle | W-001 | `use-chat-composer-state.ts`/`.test.tsx`, e2e B-026 | Implementation exists, pending W-001 approval. |
+| W-002 | Implement motion | Web chat transcript | W-001 | `use-new-message-ids.ts`/`.test.ts`, `chat-message.tsx` (`AnimatePresence initial={isNewMessage}`), e2e UI-08/UI-09 | Implementation exists, pending W-001 approval. |
+| W-003 | Implement persistence | Web composer/lifecycle | W-001 | `use-chat-composer-state.ts`/`.test.tsx`, e2e UI-07 | Implementation exists, pending W-001 approval. |
 | W-004 | Separate loading modes | Web routes/hooks | W-002, W-003 | `compute-chat-load-state.ts`/`.test.ts` | Implementation exists, pending W-001 approval. |
 
 ## Acceptance criteria
 
 | AC | Criterion | Enforced by |
 | --- | --- | --- |
-| AC-001 | A submitted message has one visible transcript representation | `apps/web/tests/e2e/chat-playbook.spec.ts` (B-001–B-025, e.g. B-002, B-014) |
-| AC-002 | Reduced motion removes travel while retaining state feedback | `apps/web/tests/e2e/chat-playbook.spec.ts` B-027 |
-| AC-003 | Reload preserves only approved draft and resume state | `apps/web/tests/e2e/chat-playbook.spec.ts` B-026; `apps/web/app/lib/hooks/use-chat-composer-state.test.tsx` |
-| AC-004 | Motion never delays core interaction or recovery | `apps/web/tests/e2e/chat-playbook.spec.ts` B-028 |
+| AC-001 | A submitted message has one visible transcript representation | `apps/web/tests/e2e/chat-playbook.spec.ts` (SEND-01–UI-06, i.e. the original 25-scenario set, e.g. SEND-02, RECOVER-05) |
+| AC-002 | Reduced motion removes travel while retaining state feedback | `apps/web/tests/e2e/chat-playbook.spec.ts` UI-08 |
+| AC-003 | Reload preserves only approved draft and resume state | `apps/web/tests/e2e/chat-playbook.spec.ts` UI-07; `apps/web/app/lib/hooks/use-chat-composer-state.test.tsx` |
+| AC-004 | Motion never delays core interaction or recovery | `apps/web/tests/e2e/chat-playbook.spec.ts` UI-09 |
 
 ## Exit gate
 
@@ -51,8 +51,8 @@ npx playwright test --config playwright.config.ts
 
 The API dev server must be running with `ENV=scripted` (selects the scripted
 AI/email providers the playbook asserts against — see
-`services/api/AGENTS.md`). Smallest-viewport coverage is B-024 (existing);
-new-message entrance and reduced motion are B-026–B-028 (added this task).
+`services/api/AGENTS.md`). Smallest-viewport coverage is UI-05 (existing);
+new-message entrance and reduced motion are UI-07–UI-09 (added this task).
 
 **Known blocker, not part of this task's scope**: in this session's dev
 environment (Node 24.18.0, `msw` 2.15.0), the scripted OpenRouter mock
@@ -60,6 +60,6 @@ environment (Node 24.18.0, `msw` 2.15.0), the scripted OpenRouter mock
 `installOpenRouterMock()` when `ENV=scripted`) silently fails to intercept —
 requests fall through to the real OpenRouter API instead of returning
 `Scripted response: ...` text (`onUnhandledRequest: 'bypass'` hides this).
-Confirmed pre-existing and unrelated to this task: the baseline `B-001` test
+Confirmed pre-existing and unrelated to this task: the baseline `SEND-01` test
 fails identically with or without this task's changes. File this as its own
 fix if CI doesn't already avoid it (different Node version, most likely).

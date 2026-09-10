@@ -132,10 +132,17 @@ describe('ChatMessage', () => {
     expect(screen.queryByRole('button', { name: 'Listen to response' })).toBeNull();
   });
 
-  it('exposes a distinct accessible streaming state inside the message', () => {
-    render(<ChatMessage message={message({ content: 'Partial answer', isStreaming: true })} />);
+  it('shows the thinking indicator only before content starts arriving', () => {
+    const { rerender } = render(
+      <ChatMessage message={message({ content: '', isStreaming: true })} />,
+    );
 
     expect(screen.getByRole('status', { name: 'Response is streaming' })).toBeTruthy();
+    expect(screen.getByLabelText('Message streaming')).toBeTruthy();
+
+    rerender(<ChatMessage message={message({ content: 'Partial answer', isStreaming: true })} />);
+
+    expect(screen.queryByRole('status', { name: 'Response is streaming' })).toBeNull();
     expect(screen.getByLabelText('Message streaming')).toBeTruthy();
   });
 

@@ -7,9 +7,10 @@ import { memo, useMemo } from 'react';
 
 import { cn } from '~/lib/utils';
 
+import styles from './shimmer.module.css';
+
 type MotionHTMLProps = MotionProps & Record<string, unknown>;
 
-// cache these at module level so we're not recreating them on every render
 const motionComponentCache = new Map<
   keyof JSX.IntrinsicElements,
   React.ComponentType<MotionHTMLProps>
@@ -56,18 +57,12 @@ const ShimmerComponent = ({
     <MotionComponent
       animate={{ backgroundPosition: '0% center' }}
       className={cn(
-        'relative inline-block bg-[length:250%_100%,auto] bg-clip-text text-transparent',
-        '[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--color-background),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]',
+        styles.shimmerText,
+        'relative inline-block bg-clip-text text-transparent',
         className,
       )}
       initial={{ backgroundPosition: '100% center' }}
-      style={
-        {
-          '--spread': `${dynamicSpread}px`,
-          backgroundImage:
-            'var(--bg), linear-gradient(var(--color-muted-foreground), var(--color-muted-foreground))',
-        } as CSSProperties
-      }
+      style={{ '--spread': `${dynamicSpread}px` } as CSSProperties}
       transition={{
         duration,
         ease: 'linear',

@@ -12,6 +12,8 @@ import { useReducedMotion } from 'motion/react';
 
 import { Shimmer } from './shimmer';
 
+import styles from './shimmer.module.css';
+
 afterEach(cleanup);
 
 describe('Shimmer', () => {
@@ -22,6 +24,7 @@ describe('Shimmer', () => {
 
     const node = screen.getByText('Thinking...');
     expect(node.tagName).toBe('P');
+    expect(node.className).toContain(styles.shimmerText);
   });
 
   it('renders as the given element', () => {

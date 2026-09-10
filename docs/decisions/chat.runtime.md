@@ -21,3 +21,16 @@ services, a database, React Query, Expo, or a specific provider.
 Applications retain product-specific reactions such as cache invalidation,
 optimistic UI, haptics, audio, navigation, and presentation. They consume the
 package's typed lifecycle events rather than reproducing chat protocol logic.
+
+## Consequences
+
+Web and Omiro confirmation, send, start, regenerate, retry, cancellation, and
+reload recovery all use the shared client/controller. The callback-based
+`chat-sdk.ts` compatibility surface and the root projection reducer exports
+were removed as part of this consolidation — do not reintroduce a
+callback-shaped compatibility layer alongside the package runtime. The API
+generation route delegates SSE framing to the package runtime and writes
+final context accounting once per committed provider response; Hono retains
+only authentication, validation, and adapter composition. Evidence and the
+scenario matrix for this boundary live in
+[chat.browser-playbook.md](../chat.browser-playbook.md).

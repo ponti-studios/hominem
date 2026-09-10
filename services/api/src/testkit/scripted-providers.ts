@@ -100,7 +100,7 @@ const toolNameRules: readonly ScriptedRule<string | null>[] = [
   },
   {
     matches: ({ toolNames, userText }) =>
-      toolNames.has('create_collection') && /\bB015-TOOL-CALL\b/i.test(userText),
+      toolNames.has('create_collection') && /\bSCRIPT:TOOL_CALL\b/i.test(userText),
     resolve: () => 'create_collection',
   },
   {
@@ -128,8 +128,8 @@ const contentRules: readonly ScriptedRule<string>[] = [
     resolve: () => 'The tool request failed.',
   },
   {
-    matches: ({ hasToolResult, userText }) => hasToolResult && /TOOL-B006-READY/i.test(userText),
-    resolve: () => 'TOOL-B006-READY',
+    matches: ({ hasToolResult, userText }) => hasToolResult && /SCRIPT:TOOL_READY/i.test(userText),
+    resolve: () => 'SCRIPT:TOOL_READY',
   },
   {
     matches: ({ hasToolResult }) => hasToolResult,
@@ -148,7 +148,7 @@ const contentRules: readonly ScriptedRule<string>[] = [
 function openRouterResponseBody(request: OpenRouterRequest) {
   const context = createContext(request);
   const toolName = firstMatchingRule(toolNameRules, context);
-  const shouldFailTool = /TOOL-B009-FAIL/i.test(context.userText);
+  const shouldFailTool = /SCRIPT:TOOL_FAIL/i.test(context.userText);
   const id = `scripted-${++requestNumber}`;
   const toolCall = {
     index: 0,
@@ -176,7 +176,7 @@ function openRouterResponseBody(request: OpenRouterRequest) {
       })
     : content;
   const isInitialConfirmationRejection =
-    /B008-OMIRO-CONFIRM-REJECT/i.test(context.userText) && !context.hasToolResult;
+    /SCRIPT:CONFIRM_REJECT/i.test(context.userText) && !context.hasToolResult;
   const isRejectedRequest = /\b(reject|rejected|deny|denied)\b/i.test(context.userText);
   const delta =
     toolName && (!isRejectedRequest || isInitialConfirmationRejection)
@@ -226,7 +226,7 @@ async function openRouterResponder(rawBody: string): Promise<ScriptedResponse> {
     .filter((message) => message.role === 'user')
     .map((message) => (typeof message.content === 'string' ? message.content : ''))
     .join('\n');
-  const failureMarker = userText.match(/PROVIDER-B010-FAIL(?:-[A-Z0-9]+)?/i)?.[0].toUpperCase();
+  const failureMarker = userText.match(/SCRIPT:PROVIDER_FAIL(?:-[A-Z0-9]+)?/i)?.[0].toUpperCase();
   if (!body.response_format && failureMarker && !failedProviderRequests.has(failureMarker)) {
     failedProviderRequests.add(failureMarker);
     return {
@@ -241,11 +241,11 @@ async function openRouterResponder(rawBody: string): Promise<ScriptedResponse> {
   const response = openRouterResponseBody(body);
   const controlledStream =
     body.stream &&
-    ['B012-STREAM', 'B013-DISCONNECT', 'B014-REPLAY', 'B017-ACTIVE-RELOAD'].some((control) =>
-      hasControl(userText, control),
+    ['SCRIPT:STREAM', 'SCRIPT:DISCONNECT', 'SCRIPT:REPLAY', 'SCRIPT:ACTIVE_RELOAD'].some(
+      (control) => hasControl(userText, control),
     );
   const delayBeforeMs =
-    body.stream && hasControl(userText, 'B011-CANCEL-BEFORE') ? CONTROLLED_DELAY_MS * 12 : 0;
+    body.stream && hasControl(userText, 'SCRIPT:CANCEL_BEFORE') ? CONTROLLED_DELAY_MS * 12 : 0;
   const headers = { 'content-type': body.stream ? 'text/event-stream' : 'application/json' };
 
   if (!controlledStream) {
@@ -256,8 +256,8 @@ async function openRouterResponder(rawBody: string): Promise<ScriptedResponse> {
     };
   }
 
-  const frameDelayMs = ['B013-DISCONNECT', 'B014-REPLAY', 'B017-ACTIVE-RELOAD'].some((control) =>
-    hasControl(userText, control),
+  const frameDelayMs = ['SCRIPT:DISCONNECT', 'SCRIPT:REPLAY', 'SCRIPT:ACTIVE_RELOAD'].some(
+    (control) => hasControl(userText, control),
   )
     ? CONTROLLED_DELAY_MS * 2
     : CONTROLLED_DELAY_MS;

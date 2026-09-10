@@ -31,7 +31,7 @@ test.describe.configure({ mode: 'serial' });
 test.beforeEach(async ({ page }, testInfo) => {
   const evidence: Evidence = {
     startedAt: new Date().toISOString(),
-    runLabel: `task-003-${testInfo.project.name}-${Date.now().toString(36)}`,
+    runLabel: `chat-playbook-${testInfo.project.name}-${Date.now().toString(36)}`,
     consoleErrors: [],
     pageErrors: [],
     requestFailures: [],
@@ -86,7 +86,7 @@ test.afterEach(async ({ page }, testInfo) => {
   await testInfo.attach('evidence.json', {
     body: JSON.stringify(
       {
-        scenarioId: testInfo.title.match(/^B-\d+/)?.[0] ?? testInfo.title,
+        scenarioId: testInfo.title.match(/^[A-Z]+-\d+/)?.[0] ?? testInfo.title,
         title: testInfo.title,
         revision: process.env.GIT_REVISION ?? revision(),
         webUrl: process.env.WEB_URL ?? 'https://web.lvh.me:4200',
@@ -239,71 +239,71 @@ async function expectSingleMessage(
   await expect(message).toHaveCount(1);
 }
 
-test('B-001 opens a completed disposable chat directly', async ({ page }) => {
-  const chat = await startChat(page, 'B001-DIRECT');
-  await waitForResponse(page, 'Scripted response: B001-DIRECT');
+test('SEND-01 opens a completed disposable chat directly', async ({ page }) => {
+  const chat = await startChat(page, 'SEND-01-DIRECT');
+  await waitForResponse(page, 'Scripted response: SEND-01-DIRECT');
   await expectCommitted(page, chat);
   await page.reload();
-  await expectSingleMessage(page, 'B001-DIRECT', 'user');
-  await expectSingleMessage(page, 'Scripted response: B001-DIRECT');
+  await expectSingleMessage(page, 'SEND-01-DIRECT', 'user');
+  await expectSingleMessage(page, 'Scripted response: SEND-01-DIRECT');
 });
 
-test('B-002 sends a normal message and preserves it after refresh', async ({ page }) => {
-  const chat = await startChat(page, 'B002-READY');
-  await waitForResponse(page, 'Scripted response: B002-READY');
+test('SEND-02 sends a normal message and preserves it after refresh', async ({ page }) => {
+  const chat = await startChat(page, 'SEND-02-READY');
+  await waitForResponse(page, 'Scripted response: SEND-02-READY');
   await expectCommitted(page, chat);
-  await expectSingleMessage(page, 'B002-READY', 'user');
+  await expectSingleMessage(page, 'SEND-02-READY', 'user');
   await page.reload();
-  await expectSingleMessage(page, 'Scripted response: B002-READY');
+  await expectSingleMessage(page, 'Scripted response: SEND-02-READY');
 });
 
-test('B-003 creates a chat through the new-chat entry point', async ({ page }) => {
-  const chat = await startChat(page, 'B003-NEW-CHAT');
-  await waitForResponse(page, 'Scripted response: B003-NEW-CHAT');
+test('SEND-03 creates a chat through the new-chat entry point', async ({ page }) => {
+  const chat = await startChat(page, 'SEND-03-NEW-CHAT');
+  await waitForResponse(page, 'Scripted response: SEND-03-NEW-CHAT');
   await page.goto('/chats');
-  await expect(page.getByRole('link', { name: /B003-NEW-CHAT/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /SEND-03-NEW-CHAT/ }).first()).toBeVisible();
   expect(chat.chatId).toMatch(/^[0-9a-f-]{36}$/);
 });
 
-test('B-004 navigates list, detail, back, and detail without stale history', async ({ page }) => {
-  const chat = await startChat(page, 'B004-NAVIGATION');
-  await waitForResponse(page, 'Scripted response: B004-NAVIGATION');
+test('SEND-04 navigates list, detail, back, and detail without stale history', async ({ page }) => {
+  const chat = await startChat(page, 'SEND-04-NAVIGATION');
+  await waitForResponse(page, 'Scripted response: SEND-04-NAVIGATION');
   await page.goto('/chats');
   await page
-    .getByRole('link', { name: /B004-NAVIGATION/ })
+    .getByRole('link', { name: /SEND-04-NAVIGATION/ })
     .first()
     .click();
   await expect(page).toHaveURL(new RegExp(`/chat/${chat.chatId}$`));
-  await expectSingleMessage(page, 'B004-NAVIGATION', 'user');
+  await expectSingleMessage(page, 'SEND-04-NAVIGATION', 'user');
   await page.goBack();
   await page
-    .getByRole('link', { name: /B004-NAVIGATION/ })
+    .getByRole('link', { name: /SEND-04-NAVIGATION/ })
     .first()
     .click();
-  await expectSingleMessage(page, 'Scripted response: B004-NAVIGATION');
+  await expectSingleMessage(page, 'Scripted response: SEND-04-NAVIGATION');
 });
 
-test('B-005 regenerates the latest assistant response once', async ({ page }) => {
-  const chat = await startChat(page, 'B005-REGENERATE');
-  await waitForResponse(page, 'Scripted response: B005-REGENERATE');
+test('SEND-05 regenerates the latest assistant response once', async ({ page }) => {
+  const chat = await startChat(page, 'SEND-05-REGENERATE');
+  await waitForResponse(page, 'Scripted response: SEND-05-REGENERATE');
   const regeneratedGenerationId = await regenerateAndWaitForNewGeneration(page);
   await waitForGenerationStatus(page, chat.chatId, regeneratedGenerationId, 'committed');
-  await waitForResponse(page, 'Scripted response: B005-REGENERATE');
-  await expectSingleMessage(page, 'B005-REGENERATE', 'user');
-  await expectSingleMessage(page, 'Scripted response: B005-REGENERATE');
+  await waitForResponse(page, 'Scripted response: SEND-05-REGENERATE');
+  await expectSingleMessage(page, 'SEND-05-REGENERATE', 'user');
+  await expectSingleMessage(page, 'Scripted response: SEND-05-REGENERATE');
   await expectCommitted(page, chat);
   await expectGenerationStatus(page, chat.chatId, regeneratedGenerationId, 'committed');
 });
 
-test('B-006 completes a successful tool call', async ({ page }) => {
-  const chat = await startChat(page, 'List my collections TOOL-B006-READY');
+test('TOOL-01 completes a successful tool call', async ({ page }) => {
+  const chat = await startChat(page, 'List my collections SCRIPT:TOOL_READY');
   await expect(page.getByLabel('Completed')).toBeVisible({ timeout: 20_000 });
-  await waitForResponse(page, 'TOOL-B006-READY');
+  await waitForResponse(page, 'SCRIPT:TOOL_READY');
   await expectCommitted(page, chat);
 });
 
-test('B-007 approves a confirmation-required tool', async ({ page }) => {
-  const chat = await startChat(page, 'Create a private collection named B007 approval check.');
+test('TOOL-02 approves a confirmation-required tool', async ({ page }) => {
+  const chat = await startChat(page, 'Create a private collection named TOOL-02 approval check.');
   await expect(page.getByRole('button', { name: 'Approve tool action' })).toBeVisible({
     timeout: 20_000,
   });
@@ -312,8 +312,8 @@ test('B-007 approves a confirmation-required tool', async ({ page }) => {
   await expectCommitted(page, chat);
 });
 
-test('B-008 rejects a confirmation-required tool without success state', async ({ page }) => {
-  const chat = await startChat(page, 'Create a private collection named B008 rejection check.');
+test('TOOL-03 rejects a confirmation-required tool without success state', async ({ page }) => {
+  const chat = await startChat(page, 'Create a private collection named TOOL-03 rejection check.');
   await expect(page.getByRole('button', { name: 'Reject tool action' })).toBeVisible({
     timeout: 20_000,
   });
@@ -324,18 +324,18 @@ test('B-008 rejects a confirmation-required tool without success state', async (
   await expectCommitted(page, chat);
 });
 
-test('B-009 retains a failed tool card and exposes recovery', async ({ page }) => {
-  const chat = await startChat(page, 'List my collections TOOL-B009-FAIL');
+test('TOOL-04 retains a failed tool card and exposes recovery', async ({ page }) => {
+  const chat = await startChat(page, 'List my collections SCRIPT:TOOL_FAIL');
   await expect(page.getByLabel('Error')).toBeVisible({ timeout: 20_000 });
   await waitForResponse(page, 'The tool request failed.');
   await expect(page.getByRole('button', { name: 'Regenerate response' })).toBeVisible();
   await expectCommitted(page, chat);
 });
 
-test('B-010 shows friendly provider recovery and retries without a duplicate user message', async ({
+test('RECOVER-01 shows friendly provider recovery and retries without a duplicate user message', async ({
   page,
 }) => {
-  const message = `Provider failure B010 PROVIDER-B010-FAIL-${runId}`;
+  const message = `Provider failure RECOVER-01 SCRIPT:PROVIDER_FAIL-${runId}`;
   const assistantResponse = `Scripted response: ${message}`;
   const chat = await startChat(page, message);
   await expect(page.getByText('I couldn’t finish that response. Please try again.')).toBeVisible({
@@ -366,40 +366,40 @@ test('B-010 shows friendly provider recovery and retries without a duplicate use
   await expectMessageCount(page, chat.chatId, message, 1);
 });
 
-test('B-011 cancels before provider execution', async ({ page }) => {
-  await startChat(page, 'B011-CANCEL-BEFORE');
+test('RECOVER-02 cancels before provider execution', async ({ page }) => {
+  await startChat(page, 'SCRIPT:CANCEL_BEFORE');
   await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
   await page.getByRole('button', { name: 'Stop' }).click();
   await expect(page.getByText('Stopped.')).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText('Scripted response: B011-CANCEL-BEFORE')).toHaveCount(0);
+  await expect(page.getByText('Scripted response: SCRIPT:CANCEL_BEFORE')).toHaveCount(0);
 });
 
-test('B-012 cancels while streaming without false success', async ({ page }) => {
-  await startChat(page, 'B012-STREAM');
+test('RECOVER-03 cancels while streaming without false success', async ({ page }) => {
+  await startChat(page, 'SCRIPT:STREAM');
   await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
   await page.getByRole('button', { name: 'Stop' }).click();
   await expect(page.getByText('Stopped.')).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText('Scripted response: B012-STREAM')).toHaveCount(0);
+  await expect(page.getByText('Scripted response: SCRIPT:STREAM')).toHaveCount(0);
 });
 
-test('B-013 recovers after active-generation reload', async ({ page }) => {
-  await startChat(page, 'B013-DISCONNECT');
+test('RECOVER-04 recovers after active-generation reload', async ({ page }) => {
+  await startChat(page, 'SCRIPT:DISCONNECT');
   await page.waitForTimeout(250);
   await page.reload();
-  await waitForResponse(page, 'Scripted response: B013-DISCONNECT');
+  await waitForResponse(page, 'Scripted response: SCRIPT:DISCONNECT');
 });
 
-test('B-014 keeps overlapping replay state single after reload', async ({ page }) => {
-  await startChat(page, 'B014-REPLAY');
+test('RECOVER-05 keeps overlapping replay state single after reload', async ({ page }) => {
+  await startChat(page, 'SCRIPT:REPLAY');
   await page.waitForTimeout(250);
   await page.reload();
-  await waitForResponse(page, 'Scripted response: B014-REPLAY');
+  await waitForResponse(page, 'Scripted response: SCRIPT:REPLAY');
   await page.reload();
-  await expectSingleMessage(page, 'Scripted response: B014-REPLAY');
+  await expectSingleMessage(page, 'Scripted response: SCRIPT:REPLAY');
 });
 
-test('B-015 keeps confirmation actionable after reload', async ({ page }) => {
-  await startChat(page, 'Create a private collection named B015 reload confirmation check.');
+test('RECOVER-06 keeps confirmation actionable after reload', async ({ page }) => {
+  await startChat(page, 'Create a private collection named RECOVER-06 reload confirmation check.');
   await expect(page.getByRole('button', { name: 'Approve tool action' })).toBeVisible({
     timeout: 20_000,
   });
@@ -407,37 +407,39 @@ test('B-015 keeps confirmation actionable after reload', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Approve tool action' })).toBeVisible();
 });
 
-test('B-016 reconstructs a completed chat in a fresh page', async ({ page }) => {
-  const chat = await startChat(page, 'B016-FRESH-LAUNCH');
-  await waitForResponse(page, 'Scripted response: B016-FRESH-LAUNCH');
+test('LAUNCH-01 reconstructs a completed chat in a fresh page', async ({ page }) => {
+  const chat = await startChat(page, 'LAUNCH-01-FRESH-LAUNCH');
+  await waitForResponse(page, 'Scripted response: LAUNCH-01-FRESH-LAUNCH');
   const freshPage = await page.context().newPage();
   await freshPage.goto(`/chat/${chat.chatId}`);
-  await expect(freshPage.getByText('Scripted response: B016-FRESH-LAUNCH')).toBeVisible();
+  await expect(freshPage.getByText('Scripted response: LAUNCH-01-FRESH-LAUNCH')).toBeVisible();
   await freshPage.close();
 });
 
-test('B-017 recovers an active generation after reload', async ({ page }) => {
-  await startChat(page, 'B017-ACTIVE-RELOAD');
+test('LAUNCH-02 recovers an active generation after reload', async ({ page }) => {
+  await startChat(page, 'SCRIPT:ACTIVE_RELOAD');
   await page.waitForTimeout(250);
   await page.reload();
-  await waitForResponse(page, 'Scripted response: B017-ACTIVE-RELOAD');
+  await waitForResponse(page, 'Scripted response: SCRIPT:ACTIVE_RELOAD');
 });
 
-test('B-018 does not render an unowned chat', async ({ page }) => {
+test('LAUNCH-03 does not render an unowned chat', async ({ page }) => {
   await page.goto('/chat/00000000-0000-4000-8000-000000000018');
   await expect(page.getByText('Conversation unavailable')).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole('textbox', { name: 'Chat message' })).toHaveCount(0);
 });
 
-test('B-019 denies an unowned chat operation without changing durable state', async ({ page }) => {
+test('LAUNCH-04 denies an unowned chat operation without changing durable state', async ({
+  page,
+}) => {
   await page.goto('/chat/00000000-0000-4000-8000-000000000019');
   await expect(page.getByText('Conversation unavailable')).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Regenerate response' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Delete user message' })).toHaveCount(0);
 });
 
-test('B-020 shows a recoverable load error', async ({ page }, testInfo) => {
-  const chat = await startChat(page, 'B020-LOAD-ERROR');
+test('UI-01 shows a recoverable load error', async ({ page }, testInfo) => {
+  const chat = await startChat(page, 'UI-01-LOAD-ERROR');
   await page.goto('/chats');
   let intercepted = false;
   await page.route(`**/api/chats/${chat.chatId}/messages*`, (route) => {
@@ -459,8 +461,8 @@ test('B-020 shows a recoverable load error', async ({ page }, testInfo) => {
   await expect(page.getByRole('button', { name: 'Retry loading' })).toBeVisible();
 });
 
-test('B-021 shows a centered load error with recovery', async ({ page }, testInfo) => {
-  const chat = await startChat(page, 'B021-LOAD-ERROR');
+test('UI-02 shows a centered load error with recovery', async ({ page }, testInfo) => {
+  const chat = await startChat(page, 'UI-02-LOAD-ERROR');
   await page.goto('/chats');
   let intercepted = false;
   await page.route(`**/api/chats/${chat.chatId}/messages*`, (route) => {
@@ -481,23 +483,23 @@ test('B-021 shows a centered load error with recovery', async ({ page }, testInf
   await expect(page.getByRole('button', { name: 'Retry loading' })).toBeVisible();
 });
 
-test('B-022 edits and deletes a disposable user message', async ({ page }) => {
-  await startChat(page, 'B022-EDIT-ME');
-  await waitForResponse(page, 'Scripted response: B022-EDIT-ME');
+test('UI-03 edits and deletes a disposable user message', async ({ page }) => {
+  await startChat(page, 'UI-03-EDIT-ME');
+  await waitForResponse(page, 'Scripted response: UI-03-EDIT-ME');
   await page.getByRole('button', { name: 'Edit message' }).click();
   const editor = page.getByRole('textbox', { name: 'Edit message' });
-  await editor.fill('B022-EDITED');
+  await editor.fill('UI-03-EDITED');
   await page.getByRole('button', { name: 'Save edit' }).click();
-  await expectSingleMessage(page, 'B022-EDITED', 'user');
+  await expectSingleMessage(page, 'UI-03-EDITED', 'user');
   await page.getByRole('button', { name: 'Delete user message' }).click();
   await expect(page.getByRole('alertdialog')).toBeVisible();
   await page.getByRole('button', { name: 'Delete message' }).click();
-  await expect(page.getByText('B022-EDITED')).toHaveCount(0);
+  await expect(page.getByText('UI-03-EDITED')).toHaveCount(0);
 });
 
-test('B-023 exercises copy, share, listen, and regenerate controls', async ({ page }) => {
-  const chat = await startChat(page, 'B023-ACTIONS');
-  await waitForResponse(page, 'Scripted response: B023-ACTIONS');
+test('UI-04 exercises copy, share, listen, and regenerate controls', async ({ page }) => {
+  const chat = await startChat(page, 'UI-04-ACTIONS');
+  await waitForResponse(page, 'Scripted response: UI-04-ACTIONS');
   await page.getByRole('button', { name: 'Copy user message' }).click();
   await expect(page.getByRole('button', { name: 'Copied user message' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Copy assistant message' })).toBeVisible();
@@ -505,15 +507,15 @@ test('B-023 exercises copy, share, listen, and regenerate controls', async ({ pa
   await expect(page.getByRole('button', { name: 'Listen to response' })).toBeVisible();
   const regeneratedGenerationId = await regenerateAndWaitForNewGeneration(page);
   await waitForGenerationStatus(page, chat.chatId, regeneratedGenerationId, 'committed');
-  await waitForResponse(page, 'Scripted response: B023-ACTIONS');
+  await waitForResponse(page, 'Scripted response: UI-04-ACTIONS');
   await expectCommitted(page, chat);
   await expectGenerationStatus(page, chat.chatId, regeneratedGenerationId, 'committed');
 });
 
-test('B-024 keeps the chat usable at the smallest supported viewport', async ({ page }) => {
+test('UI-05 keeps the chat usable at the smallest supported viewport', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
-  await startChat(page, 'B024-VIEWPORT');
-  await waitForResponse(page, 'Scripted response: B024-VIEWPORT');
+  await startChat(page, 'UI-05-VIEWPORT');
+  await waitForResponse(page, 'Scripted response: UI-05-VIEWPORT');
   await expect(page.getByRole('textbox', { name: 'Chat message' })).toBeVisible();
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > window.innerWidth,
@@ -521,9 +523,9 @@ test('B-024 keeps the chat usable at the smallest supported viewport', async ({ 
   expect(overflow).toBeFalsy();
 });
 
-test('B-025 exposes keyboard-reachable named chat controls', async ({ page }) => {
-  await startChat(page, 'B025-ACCESSIBILITY');
-  await waitForResponse(page, 'Scripted response: B025-ACCESSIBILITY');
+test('UI-06 exposes keyboard-reachable named chat controls', async ({ page }) => {
+  await startChat(page, 'UI-06-ACCESSIBILITY');
+  await waitForResponse(page, 'Scripted response: UI-06-ACCESSIBILITY');
   for (const name of ['Copy user message', 'Copy assistant message', 'Regenerate response']) {
     const control = page.getByRole('button', { name });
     await expect(control).toBeVisible();
@@ -532,26 +534,26 @@ test('B-025 exposes keyboard-reachable named chat controls', async ({ page }) =>
   }
   const composer = page.getByRole('textbox', { name: 'Chat message' });
   await composer.focus();
-  await composer.fill('B025-KEYBOARD');
+  await composer.fill('UI-06-KEYBOARD');
   await composer.press('ControlOrMeta+Enter');
-  await waitForResponse(page, 'Scripted response: B025-KEYBOARD');
-  await expectSingleMessage(page, 'B025-ACCESSIBILITY', 'user');
-  await expectSingleMessage(page, 'B025-KEYBOARD', 'user');
+  await waitForResponse(page, 'Scripted response: UI-06-KEYBOARD');
+  await expectSingleMessage(page, 'UI-06-ACCESSIBILITY', 'user');
+  await expectSingleMessage(page, 'UI-06-KEYBOARD', 'user');
 });
 
-test('B-026 preserves an unsent composer draft across reload, and only the draft', async ({
+test('UI-07 preserves an unsent composer draft across reload, and only the draft', async ({
   page,
 }) => {
-  await startChat(page, 'B026-DRAFT-SEED');
-  await waitForResponse(page, 'Scripted response: B026-DRAFT-SEED');
+  await startChat(page, 'UI-07-DRAFT-SEED');
+  await waitForResponse(page, 'Scripted response: UI-07-DRAFT-SEED');
   const composer = page.getByRole('textbox', { name: 'Chat message' });
-  await composer.fill('B026-UNSENT-DRAFT');
+  await composer.fill('UI-07-UNSENT-DRAFT');
   await page.reload();
   await expect(page.getByRole('textbox', { name: 'Chat message' })).toHaveValue(
-    'B026-UNSENT-DRAFT',
+    'UI-07-UNSENT-DRAFT',
   );
-  await expectSingleMessage(page, 'B026-DRAFT-SEED', 'user');
-  await expectSingleMessage(page, 'Scripted response: B026-DRAFT-SEED');
+  await expectSingleMessage(page, 'UI-07-DRAFT-SEED', 'user');
+  await expectSingleMessage(page, 'Scripted response: UI-07-DRAFT-SEED');
   // Regression guard: the persisted-draft `useState` initializer used to read
   // localStorage synchronously on first client render, diffing against the
   // empty SSR output and producing a React hydration-mismatch console error.
@@ -563,25 +565,25 @@ test('B-026 preserves an unsent composer draft across reload, and only the draft
   await expect(page.getByRole('textbox', { name: 'Chat message' })).toHaveValue('');
 });
 
-test('B-027 sends and reads a message under prefers-reduced-motion without errors', async ({
+test('UI-08 sends and reads a message under prefers-reduced-motion without errors', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await startChat(page, 'B027-REDUCED-MOTION');
-  await waitForResponse(page, 'Scripted response: B027-REDUCED-MOTION');
-  await expectSingleMessage(page, 'B027-REDUCED-MOTION', 'user');
-  await expectSingleMessage(page, 'Scripted response: B027-REDUCED-MOTION');
+  await startChat(page, 'UI-08-REDUCED-MOTION');
+  await waitForResponse(page, 'Scripted response: UI-08-REDUCED-MOTION');
+  await expectSingleMessage(page, 'UI-08-REDUCED-MOTION', 'user');
+  await expectSingleMessage(page, 'Scripted response: UI-08-REDUCED-MOTION');
   const evidence = evidenceByPage.get(page);
   expect(evidence?.consoleErrors ?? []).toEqual([]);
 });
 
-test('B-028 keeps the composer interactive immediately after send, before the reply arrives', async ({
+test('UI-09 keeps the composer interactive immediately after send, before the reply arrives', async ({
   page,
 }) => {
-  await startChat(page, 'B028-NO-BLOCK');
+  await startChat(page, 'UI-09-NO-BLOCK');
   const composer = page.getByRole('textbox', { name: 'Chat message' });
   await expect(composer).toHaveValue('');
   await composer.fill('typed while the reply is still generating');
   await expect(composer).toHaveValue('typed while the reply is still generating');
-  await waitForResponse(page, 'Scripted response: B028-NO-BLOCK');
+  await waitForResponse(page, 'Scripted response: UI-09-NO-BLOCK');
 });

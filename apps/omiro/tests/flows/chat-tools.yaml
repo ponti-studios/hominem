@@ -2,8 +2,9 @@ appId: com.pontistudios.hakumi.dev
 tags:
   - regression
 ---
-# Task 011 Omiro evidence: tool and confirmation states.
-# Tool names are stable accessibility labels supplied by the chat tool card.
+# Omiro evidence: tool and confirmation states (TOOL-01 through
+# TOOL-04). Tool names are stable accessibility labels supplied by the chat
+# tool card.
 #
 # The new-chat composer is always empty (fresh screen), so no eraseText (up
 # to 100 blind backspaces on iOS) is needed. The submit button sits in a
@@ -21,7 +22,7 @@ tags:
     id: 'new-chat-composer-input'
 - tapOn:
     id: 'new-chat-composer-input'
-- inputText: 'B006-OMIRO-TOOL-READY list my collections'
+- inputText: 'TOOL-01-OMIRO-TOOL-READY list my collections'
 - assertVisible:
     id: 'new-chat-submit'
 - tapOn:
@@ -31,11 +32,11 @@ tags:
       id: 'chat-composer-input'
     timeout: 30000
 
-# B-006: successful tool call.
+# TOOL-01: successful tool call.
 - assertVisible: 'list_collections'
-- takeScreenshot: /tmp/omiro-task003-b006-tool-success
+- takeScreenshot: /tmp/omiro-tool01-tool-success
 
-# B-007 uses a fresh chat so its approval result cannot match an earlier
+# TOOL-02 uses a fresh chat so its approval result cannot match an earlier
 # assistant response or confirmation card.
 - runFlow: ../subflows/reset-to-home.yaml
 - openLink: 'hakumi-dev:///new-chat'
@@ -45,7 +46,7 @@ tags:
     id: 'new-chat-composer-input'
 - tapOn:
     id: 'new-chat-composer-input'
-- inputText: 'B007-OMIRO-CONFIRM Create a private collection named Omiro B007.'
+- inputText: 'TOOL-02-OMIRO-CONFIRM Create a private collection named Omiro TOOL-02.'
 - tapOn:
     id: 'new-chat-submit'
 - extendedWaitUntil:
@@ -53,9 +54,9 @@ tags:
       id: 'chat-composer-input'
     timeout: 30000
 
-# B-007: confirmation-required tool, then approve.
+# TOOL-02: confirmation-required tool, then approve.
 - assertVisible: 'Approve create_collection'
-- takeScreenshot: /tmp/omiro-task003-b007-confirmation-pending
+- takeScreenshot: /tmp/omiro-tool02-confirmation-pending
 - tapOn:
     id: 'tool-confirm-approve'
 - extendedWaitUntil:
@@ -63,9 +64,9 @@ tags:
     timeout: 30000
 - assertNotVisible:
     id: 'tool-confirm-approve'
-- takeScreenshot: /tmp/omiro-task003-b007-approved
+- takeScreenshot: /tmp/omiro-tool02-approved
 
-# B-008 also uses a fresh chat so the rejection targets exactly one pending
+# TOOL-03 also uses a fresh chat so the rejection targets exactly one pending
 # confirmation.
 - runFlow: ../subflows/reset-to-home.yaml
 - openLink: 'hakumi-dev:///new-chat'
@@ -75,7 +76,7 @@ tags:
     id: 'new-chat-composer-input'
 - tapOn:
     id: 'new-chat-composer-input'
-- inputText: 'B008-OMIRO-CONFIRM-REJECT Create a private collection named Omiro B008.'
+- inputText: 'SCRIPT:CONFIRM_REJECT Create a private collection named Omiro TOOL-03.'
 - tapOn:
     id: 'new-chat-submit'
 - extendedWaitUntil:
@@ -83,9 +84,9 @@ tags:
       id: 'chat-composer-input'
     timeout: 30000
 
-# B-008: confirmation-required tool, then reject.
+# TOOL-03: confirmation-required tool, then reject.
 - assertVisible: 'Reject create_collection'
-- takeScreenshot: /tmp/omiro-task003-b008-confirmation-pending
+- takeScreenshot: /tmp/omiro-tool03-confirmation-pending
 - tapOn:
     id: 'tool-confirm-reject'
 - extendedWaitUntil:
@@ -93,9 +94,9 @@ tags:
     timeout: 30000
 - assertNotVisible:
     id: 'tool-confirm-reject'
-- takeScreenshot: /tmp/omiro-task003-b008-rejected
+- takeScreenshot: /tmp/omiro-tool03-rejected
 
-# B-009 uses a fresh chat for an isolated failed tool card.
+# TOOL-04 uses a fresh chat for an isolated failed tool card.
 - runFlow: ../subflows/reset-to-home.yaml
 - openLink: 'hakumi-dev:///new-chat'
 - waitForAnimationToEnd:
@@ -104,13 +105,16 @@ tags:
     id: 'new-chat-composer-input'
 - tapOn:
     id: 'new-chat-composer-input'
-- inputText: 'B009-OMIRO-TOOL-FAIL'
+- inputText: 'SCRIPT:TOOL_FAIL'
 - tapOn:
     id: 'new-chat-submit'
 
-# B-009: failed tool card remains visible. The scripted provider marks the
+# TOOL-04: failed tool card remains visible. The scripted provider marks the
 # malformed tool arguments with this marker; no success assertion is allowed.
+# (Previously sent as `B009-OMIRO-TOOL-FAIL`, which never matched the
+# testkit's `TOOL-B009-FAIL` trigger — this scenario silently never exercised
+# the forced-failure path until this rename fixed the marker.)
 - extendedWaitUntil:
-    visible: 'B009-OMIRO-TOOL-FAIL'
+    visible: 'SCRIPT:TOOL_FAIL'
     timeout: 30000
-- takeScreenshot: /tmp/omiro-task003-b009-tool-failure
+- takeScreenshot: /tmp/omiro-tool04-tool-failure
