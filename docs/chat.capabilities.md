@@ -119,8 +119,10 @@ contract identifies the transport boundary. Motion/UX design decisions live in
   expose controls in `MessageToolCalls`?
 - Should cancellation and regeneration receive dedicated Maestro flows before
   either capability is considered fully verified?
-- Should chat attachment and voice behavior be treated as chat acceptance
-  criteria, or only as shared-composer coverage?
+- ~~Should chat attachment and voice behavior be treated as chat acceptance
+  criteria, or only as shared-composer coverage?~~ Resolved: shared-composer
+  coverage. See
+  [chat.composer-audio-modality.md](decisions/chat.composer-audio-modality.md).
 
 ### Recommended follow-up order
 

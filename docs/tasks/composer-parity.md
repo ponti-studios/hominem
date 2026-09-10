@@ -23,7 +23,7 @@ deduplication. Out of scope: unapproved Omiro audio or walkie-talkie behavior.
 
 | ID | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
 | --- | --- | --- | --- | --- | --- |
-| W-001 | Confirm approved behavior | Web product/docs | — | recorded decision | Audio response and Omiro cleanup behavior are explicit or marked open. |
+| W-001 | Confirm approved behavior | Web product/docs | — | [chat.composer-audio-modality.md](../decisions/chat.composer-audio-modality.md) | Done — audio response and walkie-talkie are approved as shared-composer coverage; Omiro cleanup pipeline remains an open gap tracked under W-003. |
 | W-002 | Implement attachment states | Web composer | W-001 | focused component tests | Upload, remove, retry, and attachment-only states preserve draft text. |
 | W-003 | Implement voice states | Web composer/speech hook | W-001 | browser/component tests | Permission, unsupported, transcription, and cleanup failures are recoverable. |
 | W-004 | Prevent duplicate actions | Web composer | W-002, W-003 | interaction tests | Busy states prevent duplicate send, upload, and voice actions. |
@@ -31,7 +31,7 @@ deduplication. Out of scope: unapproved Omiro audio or walkie-talkie behavior.
 ## Acceptance criteria
 
 - [ ] AC-001: Attachment and voice state transitions are visible and recoverable.
-- [ ] AC-002: Approved modality behavior is recorded before implementation.
+- [x] AC-002: Approved modality behavior is recorded before implementation. See [chat.composer-audio-modality.md](../decisions/chat.composer-audio-modality.md).
 - [ ] AC-003: Focused Web tests and typecheck pass.
 
 ## Exit gate
