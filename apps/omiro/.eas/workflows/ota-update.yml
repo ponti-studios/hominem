@@ -36,6 +36,9 @@ jobs:
       # See production-release.yml's submit_ios job for why this is needed:
       # the runner's preinstalled pnpm doesn't match the repo's pinned
       # version, and pnpm-workspace.yaml's pmOnFail: error makes that fail
-      # the automatic dependency install instead of warning.
+      # the automatic dependency install instead of warning. `corepack
+      # enable` first, since corepack isn't enabled by default on this
+      # runner and `prepare --activate` alone doesn't intercept `pnpm`
+      # calls without it.
       before_install_node_modules:
-        - run: corepack prepare pnpm@11.23.0 --activate
+        - run: corepack enable pnpm && corepack prepare pnpm@11.23.0 --activate

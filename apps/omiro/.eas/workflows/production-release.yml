@@ -63,8 +63,11 @@ jobs:
       # this repo's pinned packageManager version, and pnpm-workspace.yaml's
       # pmOnFail: error (intentional, paired with the repo's other
       # supply-chain hardening settings) makes that a hard failure rather
-      # than a silent auto-download. Activate the pinned version explicitly
-      # before EAS's automatic install step runs, instead of loosening that
-      # policy repo-wide.
+      # than a silent auto-download. `corepack prepare --activate` alone is
+      # not enough here: corepack isn't enabled on this runner, so `pnpm`
+      # resolves straight to the preinstalled binary regardless of what was
+      # prepared — `corepack enable pnpm` first, then activate the pinned
+      # version, before EAS's automatic install step runs, instead of
+      # loosening that policy repo-wide.
       before_install_node_modules:
-        - run: corepack prepare pnpm@11.23.0 --activate
+        - run: corepack enable pnpm && corepack prepare pnpm@11.23.0 --activate
