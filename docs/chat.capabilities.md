@@ -120,8 +120,9 @@ contract identifies the transport boundary. Motion/UX design decisions live in
 - Should cancellation and regeneration receive dedicated Maestro flows before
   either capability is considered fully verified?
 - ~~Should chat attachment and voice behavior be treated as chat acceptance
-  criteria, or only as shared-composer coverage?~~ Resolved: shared-composer
-  coverage. See
+  criteria, or only as shared-composer coverage?~~ Resolved: composer-level
+  coverage, evaluated per platform (Web and Omiro each implement their own
+  composer — there is no shared `@hominem/chat` controller). See
   [chat.composer-audio-modality.md](decisions/chat.composer-audio-modality.md).
 
 ### Recommended follow-up order
