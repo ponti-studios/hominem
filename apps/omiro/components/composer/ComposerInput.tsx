@@ -5,9 +5,7 @@ import { useAppTheme } from '~/components/theme';
 import { TextField } from '~/components/ui';
 import t from '~/translations';
 
-import type { ComposerProps } from './composer.types';
-import type { ComposerEntryKind } from './composerInference';
-import { inferComposerEntryKind } from './composerInference';
+import type { ComposerEntryKind, ComposerProps } from './composer.types';
 import { getComposerSubmissionConfig } from './composerSubmission.helpers';
 import type { ComposerMessageStore } from './useComposerMessageStore';
 import { useComposerMessageStore } from './useComposerMessageStore';
@@ -45,9 +43,9 @@ function ComposerInputComponent({
   onChangeMessage,
 }: ComposerInputProps) {
   const message = useComposerMessageStore(messageStore, (value) => value);
-  const inferredEntryKind = useComposerMessageStore(messageStore, inferComposerEntryKind);
-  const selectedEntryKind =
-    manualEntryKind ?? (entryMode === 'mixed' ? inferredEntryKind : entryMode);
+  // Mixed mode defaults to note and only changes via the explicit
+  // ComposerKindToggle -- typing plain text should never flip it to chat.
+  const selectedEntryKind = manualEntryKind ?? (entryMode === 'mixed' ? 'note' : entryMode);
   const { destructive, tertiary } = useAppTheme().colors;
   const handleChangeMessage = useCallback(
     (text: string) =>

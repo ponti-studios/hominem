@@ -2,7 +2,7 @@ import { useApiClient } from '@hominem/rpc/react';
 import type { Note } from '@hominem/rpc/types';
 import { logger } from '@hominem/telemetry';
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { patchInboxEntity } from '~/services/inbox/inbox-entities';
@@ -14,14 +14,18 @@ import { createDebouncedNoteSaver, type NoteSavePayload } from './debounced-note
 
 const NOTE_SAVE_DEBOUNCE_MS = 600;
 
+export type NoteSaveStatus = 'saving' | 'saved' | 'error';
+
 export function useNoteEditor(noteId: string) {
   const client = useApiClient();
   const queryClient = useQueryClient();
   const hasShownSaveErrorRef = useRef(false);
+  const [saveStatus, setSaveStatus] = useState<NoteSaveStatus>('saved');
 
   const commitServerResponse = useCallback(
     (updatedNote: Note) => {
       hasShownSaveErrorRef.current = false;
+      setSaveStatus('saved');
       queryClient.setQueryData<Note>(noteKeys.detail(updatedNote.id), updatedNote);
       patchInboxEntity(
         queryClient,
@@ -55,6 +59,7 @@ export function useNoteEditor(noteId: string) {
         delayMs: NOTE_SAVE_DEBOUNCE_MS,
         onError: (error) => {
           logger.error('[note-editor] save failed', error as Error);
+          setSaveStatus('error');
           void queryClient.invalidateQueries({ queryKey: noteKeys.detail(noteId) });
           if (hasShownSaveErrorRef.current) {
             return;
@@ -72,14 +77,17 @@ export function useNoteEditor(noteId: string) {
 
   const save = useCallback(
     (title: string | null, content: string, fileIds: string[]) => {
+      setSaveStatus('saving');
       saver.schedule({ title: title || null, content, fileIds });
     },
     [saver],
   );
 
   const flushSave = useCallback(
-    (title: string, content: string, fileIds: string[]) =>
-      saver.persistNow({ title: title || null, content, fileIds }),
+    (title: string, content: string, fileIds: string[]) => {
+      setSaveStatus('saving');
+      return saver.persistNow({ title: title || null, content, fileIds });
+    },
     [saver],
   );
 
@@ -117,5 +125,5 @@ export function useNoteEditor(noteId: string) {
     [saver, updateCache],
   );
 
-  return { save, flushSave, updateCache, detachFile };
+  return { save, flushSave, updateCache, detachFile, saveStatus };
 }

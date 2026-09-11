@@ -9,14 +9,12 @@ import AppIcon from '~/components/ui/icon';
 import { setActiveEnhanceSession } from '~/services/ai/active-enhance-session';
 import t from '~/translations';
 
-import type { ComposerProps, ComposerSubmitKind } from './composer.types';
+import type { ComposerEntryKind, ComposerProps, ComposerSubmitKind } from './composer.types';
 import { ComposerAttachButton } from './ComposerAttachButton';
 import {
   deriveComposerContentCapabilities,
   type ComposerCapabilitiesVoiceInput,
 } from './composerCapabilities.helpers';
-import type { ComposerEntryKind } from './composerInference';
-import { inferComposerEntryKind } from './composerInference';
 import { ComposerKindToggle } from './ComposerKindToggle';
 import { getComposerSubmissionConfig } from './composerSubmission.helpers';
 import type { ComposerMessageStore } from './useComposerMessageStore';
@@ -68,9 +66,9 @@ function ComposerToolbarComponent({
   onSubmit,
 }: ComposerToolbarProps) {
   const router = useRouter();
-  const inferredEntryKind = useComposerMessageStore(messageStore, inferComposerEntryKind);
-  const selectedEntryKind =
-    manualEntryKind ?? (entryMode === 'mixed' ? inferredEntryKind : entryMode);
+  // Mixed mode defaults to note and only changes via the explicit
+  // ComposerKindToggle -- typing plain text should never flip it to chat.
+  const selectedEntryKind = manualEntryKind ?? (entryMode === 'mixed' ? 'note' : entryMode);
   const hasContent =
     useComposerMessageStore(messageStore, (value) => value.trim().length > 0) ||
     uploadedAttachmentCount > 0;
@@ -172,6 +170,7 @@ function ComposerToolbarComponent({
           }
           disabled={!canSubmit}
           icon="arrow.up"
+          isLoading={state.isSubmitting}
           testID={presentation.submitTestID}
           onPress={() =>
             onSubmit(presentation.primarySubmitKind, messageStore.getMessage(), canSubmit)

@@ -79,9 +79,14 @@ function useNoteScreenStyles() {
     placeholderLines: { gap: 14, paddingTop: 4 },
     errorContainer: { flex: 1 },
     editorContainer: { flex: 1 },
-    dateline: { ...theme.textVariants.overline, color: theme.colors.tertiary, marginBottom: 14 },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
+    metaText: { ...theme.textVariants.overline, color: theme.colors.tertiary },
+    metaSeparator: { ...theme.textVariants.overline, color: theme.colors.border },
     divider: { height: 1, backgroundColor: theme.colors.border, marginBottom: 20 },
     previewEmptyText: { color: theme.colors.tertiary, fontStyle: 'italic', minHeight: 240 },
+    savePill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 4 },
+    saveDot: { width: 6, height: 6, borderRadius: 3 },
+    saveText: { ...theme.textVariants.caption1, color: theme.colors.mutedForeground },
     attachmentsSection: { marginTop: 24, gap: 8 },
     attachmentsHeader: {
       fontWeight: '500',
@@ -89,19 +94,43 @@ function useNoteScreenStyles() {
       color: theme.colors.tertiary,
       textTransform: 'uppercase',
     },
-    attachmentsList: { gap: 6 },
-    attachmentCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      backgroundColor: theme.colors.popover,
-      borderRadius: 10,
+    attachmentsStrip: { gap: 10, paddingBottom: 4 },
+    attachmentThumb: {
+      width: 72,
+      height: 72,
+      borderRadius: 12,
+      backgroundColor: theme.colors.muted,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      overflow: 'hidden',
+      justifyContent: 'flex-end',
     },
-    attachmentIcon: { width: 14, height: 14 },
-    attachmentName: { flex: 1, fontSize: 13, color: theme.colors.mutedForeground },
-    removeButton: { alignItems: 'center', justifyContent: 'center', width: 24, height: 24 },
+    attachmentThumbImage: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+    attachmentThumbIcon: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    attachmentThumbBadge: {
+      backgroundColor: withAlpha(theme.colors.overlayScrim, 0.55),
+      paddingHorizontal: 5,
+      paddingVertical: 2,
+      margin: 5,
+      borderRadius: 4,
+      alignSelf: 'flex-start',
+    },
+    attachmentThumbBadgeText: {
+      ...theme.textVariants.caption2,
+      color: '#ffffff',
+      maxWidth: 52,
+    },
+    attachmentThumbRemove: {
+      position: 'absolute',
+      top: 4,
+      right: 4,
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: withAlpha(theme.colors.overlayScrim, 0.55),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     enhanceTray: {
       backgroundColor: theme.colors.background,
       paddingTop: 16,
@@ -158,7 +187,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   const styles = useNoteScreenStyles();
 
   const { data: note, error, isInitialLoading, isRefreshing, refetch } = useNoteQuery({ noteId });
-  const { save, flushSave, updateCache, detachFile } = useNoteEditor(noteId);
+  const { save, flushSave, updateCache, detachFile, saveStatus } = useNoteEditor(noteId);
   const { mutate: deleteNote } = useNoteDelete({ noteId });
 
   const handleDeleteNote = useCallback(() => {
@@ -222,6 +251,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
       flushSave={flushSave}
       updateCache={updateCache}
       detachFile={detachFile}
+      saveStatus={saveStatus}
       onDeleteNote={handleDeleteNote}
     />
   );
@@ -235,6 +265,7 @@ interface NoteEditorBodyProps {
   flushSave: ReturnType<typeof useNoteEditor>['flushSave'];
   updateCache: ReturnType<typeof useNoteEditor>['updateCache'];
   detachFile: ReturnType<typeof useNoteEditor>['detachFile'];
+  saveStatus: ReturnType<typeof useNoteEditor>['saveStatus'];
   onDeleteNote: () => void;
 }
 
@@ -246,6 +277,7 @@ function NoteEditorBody({
   flushSave,
   updateCache,
   detachFile,
+  saveStatus,
   onDeleteNote,
 }: NoteEditorBodyProps) {
   const styles = useNoteScreenStyles();
@@ -272,13 +304,17 @@ function NoteEditorBody({
   const { mutateAsync: addChatSource } = useAddChatSource();
 
   const {
-    tertiary,
     primary: primaryColor,
     foreground: textPrimary,
     mutedForeground: textSecondary,
     border: borderDefault,
     popover,
+    success: successColor,
+    destructive: destructiveColor,
   } = useAppTheme().colors;
+
+  const wordCount = draft.content.trim().length > 0 ? draft.content.trim().split(/\s+/).length : 0;
+  const readMinutes = Math.round(wordCount / 200);
 
   const mdColors: Record<string, string> = {
     primary: primaryColor,
@@ -379,10 +415,23 @@ function NoteEditorBody({
   ]);
 
   const dateline = formatNoteDateline(note);
+  const saveStatusLabel =
+    saveStatus === 'saving'
+      ? t.notes.editor.statusSaving
+      : saveStatus === 'error'
+        ? t.notes.editor.statusError
+        : t.notes.editor.statusSaved;
+  const saveStatusColor = saveStatus === 'error' ? destructiveColor : successColor;
 
   return (
     <>
       <Stack.Toolbar placement="right">
+        <Stack.Toolbar.View>
+          <View style={styles.savePill}>
+            <View style={[styles.saveDot, { backgroundColor: saveStatusColor }]} />
+            <Text style={styles.saveText}>{saveStatusLabel}</Text>
+          </View>
+        </Stack.Toolbar.View>
         <Stack.Toolbar.Button
           accessibilityLabel={isPreviewing ? t.notes.editor.editMode : t.notes.editor.previewMode}
           icon={isPreviewing ? 'pencil' : 'eye'}
@@ -421,6 +470,7 @@ function NoteEditorBody({
       >
         <TextField
           multiline
+          focusBorder={false}
           value={draft.title}
           onChangeText={handleTitleChange}
           placeholder={t.notes.editor.titlePlaceholder}
@@ -428,11 +478,10 @@ function NoteEditorBody({
           selectionColor={primaryColor}
           style={{
             alignSelf: 'stretch',
-            borderRadius: 0,
-            borderWidth: 0,
             color: textPrimary,
-            fontSize: 28,
+            fontSize: 27,
             fontWeight: '700' as const,
+            letterSpacing: -0.4,
             lineHeight: 34,
             marginBottom: 6,
             minHeight: 36,
@@ -443,7 +492,17 @@ function NoteEditorBody({
           textAlignVertical="top"
         />
 
-        <Text style={styles.dateline}>{dateline}</Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.metaText}>{dateline}</Text>
+          {wordCount > 0 ? (
+            <>
+              <Text style={styles.metaSeparator}>·</Text>
+              <Text style={styles.metaText}>{t.notes.editor.wordCount(wordCount)}</Text>
+              <Text style={styles.metaSeparator}>·</Text>
+              <Text style={styles.metaText}>{t.notes.editor.readTime(readMinutes)}</Text>
+            </>
+          ) : null}
+        </View>
 
         <View style={styles.divider} />
 
@@ -457,6 +516,7 @@ function NoteEditorBody({
           <TextField
             ref={contentInputRef}
             multiline
+            focusBorder={false}
             value={draft.content}
             selection={formatting.controlledSelection}
             onChangeText={handleContentChange}
@@ -466,15 +526,13 @@ function NoteEditorBody({
             cursorColor={primaryColor}
             selectionColor={primaryColor}
             style={{
-              borderRadius: 0,
-              borderWidth: 0,
-              fontSize: 17,
-              lineHeight: 28,
+              fontSize: 16.5,
+              lineHeight: 27,
               letterSpacing: -0.1,
               color: textPrimary,
               paddingVertical: 0,
               paddingHorizontal: 0,
-              minHeight: 240,
+              minHeight: 120,
             }}
             textAlignVertical="top"
             scrollEnabled={false}
@@ -486,32 +544,48 @@ function NoteEditorBody({
         {note.files.length > 0 ? (
           <View style={styles.attachmentsSection}>
             <Text style={styles.attachmentsHeader}>{t.notes.editor.attachments}</Text>
-            <View style={styles.attachmentsList}>
-              {note.files.map((file) => (
-                <View key={file.id} style={[styles.attachmentCard, { borderCurve: 'continuous' }]}>
-                  <Image
-                    source="sf:paperclip"
-                    style={styles.attachmentIcon}
-                    tintColor={textSecondary}
-                    contentFit="contain"
-                  />
-                  <Text style={styles.attachmentName} numberOfLines={1}>
-                    {file.originalName}
-                  </Text>
-                  <Pressable
-                    accessibilityLabel={t.notes.editor.removeFile(file.originalName)}
-                    accessibilityRole="button"
-                    hitSlop={6}
-                    onPress={() => {
-                      void handleDetach(file.id);
-                    }}
-                    style={styles.removeButton}
-                  >
-                    <AppIcon name="xmark" size={12} tintColor={tertiary} />
-                  </Pressable>
-                </View>
-              ))}
-            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.attachmentsStrip}
+            >
+              {note.files.map((file) => {
+                const isImage = file.mimetype.startsWith('image/');
+                const extension = file.originalName.split('.').pop()?.toUpperCase() ?? '';
+
+                return (
+                  <View key={file.id} style={styles.attachmentThumb}>
+                    {isImage ? (
+                      <Image
+                        source={{ uri: file.url }}
+                        style={styles.attachmentThumbImage}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View style={styles.attachmentThumbIcon}>
+                        <AppIcon name="doc" size={20} tintColor={textSecondary} />
+                      </View>
+                    )}
+                    <View style={styles.attachmentThumbBadge}>
+                      <Text style={styles.attachmentThumbBadgeText} numberOfLines={1}>
+                        {extension || file.originalName}
+                      </Text>
+                    </View>
+                    <Pressable
+                      accessibilityLabel={t.notes.editor.removeFile(file.originalName)}
+                      accessibilityRole="button"
+                      hitSlop={6}
+                      onPress={() => {
+                        void handleDetach(file.id);
+                      }}
+                      style={styles.attachmentThumbRemove}
+                    >
+                      <AppIcon name="xmark" size={10} tintColor="#ffffff" />
+                    </Pressable>
+                  </View>
+                );
+              })}
+            </ScrollView>
           </View>
         ) : null}
       </ScrollView>

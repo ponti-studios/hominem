@@ -240,6 +240,7 @@ export default function ChatToNoteSheetScreen() {
                 accessibilityLabel={t.chat.noteDraft.acceptA11y}
                 icon="checkmark"
                 disabled={createNote.isPending}
+                isLoading={createNote.isPending}
                 testID="note-draft-accept"
                 onPress={() => {
                   void handleAccept();

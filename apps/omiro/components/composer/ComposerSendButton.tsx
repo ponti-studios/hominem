@@ -1,5 +1,5 @@
 import type { SFSymbol } from 'expo-symbols';
-import { Pressable } from 'react-native';
+import { ActivityIndicator, Pressable } from 'react-native';
 
 import { useAppTheme, useStyles } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
@@ -8,6 +8,7 @@ interface ComposerSendButtonProps {
   accessibilityLabel: string;
   disabled?: boolean;
   icon: SFSymbol;
+  isLoading?: boolean;
   onPress: () => void;
   testID?: string;
 }
@@ -20,6 +21,7 @@ export function ComposerSendButton({
   accessibilityLabel,
   disabled = false,
   icon,
+  isLoading = false,
   onPress,
   testID,
 }: ComposerSendButtonProps) {
@@ -38,17 +40,21 @@ export function ComposerSendButton({
     <Pressable
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
-      disabled={disabled}
+      disabled={disabled || isLoading}
       onPress={onPress}
       testID={testID}
       style={({ pressed }) => [
         styles.sendButton,
         { backgroundColor: primary },
         pressed && { opacity: 0.8 },
-        disabled && { opacity: 0.4 },
+        (disabled || isLoading) && { opacity: 0.4 },
       ]}
     >
-      <AppIcon name={icon} size={16} tintColor={primaryForeground} />
+      {isLoading ? (
+        <ActivityIndicator color={primaryForeground} size="small" />
+      ) : (
+        <AppIcon name={icon} size={16} tintColor={primaryForeground} />
+      )}
     </Pressable>
   );
 }
