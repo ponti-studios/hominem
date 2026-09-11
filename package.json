@@ -40,7 +40,8 @@
     "test": "DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:4433/hominem-test turbo run test",
     "typecheck": "turbo run typecheck",
     "ui:check-canonical": "test ! -e packages/ui && ! rg -n '@hominem/ui' --glob '!node_modules/**' --glob '!package.json' .",
-    "check:dts": "bash scripts/check-src-declarations.sh"
+    "check:dts": "bash scripts/check-src-declarations.sh",
+    "portless-kill": "bash scripts/portless-kill.sh"
   },
   "devDependencies": {
     "@expo/image-utils": "^0.11.4",

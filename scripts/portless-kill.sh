@@ -1,0 +1,1 @@
+kill "$(portless list | grep "$1" | sed -E 's/.*\(pid ([0-9]+)\).*/\1/')"

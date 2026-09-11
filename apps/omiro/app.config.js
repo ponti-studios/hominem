@@ -98,10 +98,6 @@ function usesDevelopmentClient(appEnvironment) {
   return appEnvironment === 'development';
 }
 
-function allowsLocalNetworking(appEnvironment) {
-  return appEnvironment === 'development' || appEnvironment === 'e2e';
-}
-
 function createConfig({ config }) {
   const appEnvironment = getAppEnvironment();
   const appEnvironmentConfig = getAppEnvironmentConfig(appEnvironment);
@@ -137,7 +133,7 @@ function createConfig({ config }) {
           infoPlist: {
             NSAppTransportSecurity: {
               NSAllowsArbitraryLoads: false,
-              NSAllowsLocalNetworking: allowsLocalNetworking(appEnvironment),
+              NSAllowsLocalNetworking: appEnvironment === 'development' || appEnvironment === 'e2e',
             },
           },
         },

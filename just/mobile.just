@@ -35,9 +35,9 @@ prebuild env:
 # Runs apps/omiro/.eas/workflows/production-release.yml: build, verify app
 # identity, wait for approval, then submit to TestFlight/App Store.
 release:
-    cd apps/omiro && pnpm exec eas workflow:run .eas/workflows/production-release.yml
+    cd apps/omiro && APP_ENV=production pnpm exec eas workflow:run .eas/workflows/production-release.yml
 
 # Runs apps/omiro/.eas/workflows/ota-update.yml to publish a JS-only update
 # to the production EAS Update branch.
 update message:
-    cd apps/omiro && pnpm exec eas workflow:run .eas/workflows/ota-update.yml -F message="{{ message }}"
+    cd apps/omiro && APP_ENV=production pnpm exec eas workflow:run .eas/workflows/ota-update.yml -F message="{{ message }}"
