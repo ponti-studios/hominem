@@ -4,16 +4,16 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-if [[ -f .env.local ]]; then
+if [[ -f .eas-prod.local ]]; then
   set -a
-  source .env.local
+  source .eas-prod.local
   set +a
 fi
 
 export APP_ENV=production
 export SENTRY_ORG="${SENTRY_ORG:-ponti-studios}"
 export SENTRY_PROJECT="${SENTRY_PROJECT:-omiro}"
-: "${SENTRY_AUTH_TOKEN:?Set SENTRY_AUTH_TOKEN in .env.local or export it before building.}"
+: "${SENTRY_AUTH_TOKEN:?Set SENTRY_AUTH_TOKEN in .eas-prod.local or export it before building. Run 'pnpm eas:pull:prod' to fetch it.}"
 
 node scripts/verify-release-identity.mjs
 mkdir -p build

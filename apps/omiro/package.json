@@ -32,7 +32,8 @@
     "typecheck": "rm -rf .cache && tsc --noEmit -p tsconfig.json",
     "update": "APP_ENV=production npx eas-cli update --branch production",
     "verify:release": "node scripts/verify-release-identity.mjs",
-    "doctor": "npx react-doctor@latest"
+    "doctor": "npx react-doctor@latest",
+    "eas:pull:prod": "npx eas-cli env:pull production --path .eas-prod.local"
   },
   "dependencies": {
     "@better-auth/expo": "1.7.1",

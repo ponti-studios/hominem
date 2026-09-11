@@ -72,7 +72,9 @@ describe('getAppEnvironment', () => {
     delete process.env.EAS_BUILD_PROFILE;
     delete process.env.APP_ENV;
 
-    expect(() => getAppEnvironment()).toThrow(/EAS_BUILD_PROFILE is missing/);
+    expect(() => getAppEnvironment()).toThrow(
+      /EAS_BUILD is set but neither EAS_BUILD_PROFILE nor APP_ENV is set/,
+    );
   });
 
   it('throws under CI with no APP_ENV rather than defaulting', () => {
