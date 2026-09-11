@@ -7,8 +7,8 @@ import Animated, {
   LinearTransition,
 } from 'react-native-reanimated';
 
-import { transitionDurations, useAppTheme, useStyles } from '~/components/theme';
-import { Card } from '~/components/ui';
+import { transitionDurations, useAppTheme, useStyles, withAlpha } from '~/components/theme';
+import { BlurCard } from '~/components/ui';
 import { InlineErrorBanner } from '~/components/ui/InlineErrorBanner';
 import { VoiceRecordingPanel } from '~/components/voice/VoiceRecordingPanel';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
@@ -121,7 +121,7 @@ function ComposerContent(props: ComposerProps) {
     controller.voice.isWalkieTalkie && !isRecording && submission.isSubmitting;
   const showVoicePanel = isRecording || isWalkieTalkieSending;
   const focused = controller.isFocused;
-  const borderColor = focused ? primary : isRecording ? destructive : borderDefault;
+  const borderColor = focused ? primary : isRecording ? destructive : withAlpha(borderDefault, 0.5);
 
   const errorBanner =
     controller.voice.voiceState === 'failed' && controller.voice.error ? (
@@ -145,14 +145,9 @@ function ComposerContent(props: ComposerProps) {
     <Animated.View style={styles.composer} layout={bannerLayout} testID={presentation.shellTestID}>
       {controller.showAttachments ? <ComposerAttachmentRow /> : undefined}
 
-      <Card
-        style={{
-          borderColor,
-          borderCurve: 'continuous',
-          borderRadius: 24,
-          boxShadow: theme.shadows.sm,
-          paddingBottom: 4,
-        }}
+      <BlurCard
+        style={{ borderColor }}
+        contentStyle={{ paddingBottom: 4 }}
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
       >
         {errorBanner ? (
@@ -219,7 +214,7 @@ function ComposerContent(props: ComposerProps) {
             </Animated.View>
           </Animated.View>
         )}
-      </Card>
+      </BlurCard>
     </Animated.View>
   );
 }

@@ -75,7 +75,7 @@ function ComposerToolbarComponent({
     useComposerMessageStore(messageStore, (value) => value.trim().length > 0) ||
     uploadedAttachmentCount > 0;
   const { primary } = useAppTheme().colors;
-  const styles = useStyles((theme) => ({
+  const styles = useStyles(() => ({
     trailingActions: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -85,7 +85,6 @@ function ComposerToolbarComponent({
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: theme.colors.card,
       paddingVertical: 4,
     },
     leadingActions: { flexDirection: 'row', alignItems: 'center' },

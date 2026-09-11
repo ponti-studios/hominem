@@ -20,6 +20,16 @@ interface ListRowProps {
   // the default hairline-divided table row.
   divider?: boolean;
   leading?: ReactNode;
+  // 'center' (default) centers the icon against the whole title+subtitle
+  // block as one unit -- fine as long as the icon is meant to represent the
+  // row overall. 'top' anchors both the icon and the title+subtitle block
+  // to the row's top edge instead, so `leadingStyle`'s own height can line
+  // the icon up with just the title line (see InboxStreamItem) -- centering
+  // only the icon while the block stays centered as a whole would anchor
+  // them to two different reference points and drift apart whenever the
+  // row has slack height (e.g. a single-line title leaves more than a
+  // 2-line title would).
+  leadingAlign?: 'center' | 'top';
   leadingStyle?: StyleProp<ViewStyle>;
   onAccessibilityAction?: (event: AccessibilityActionEvent) => void;
   onLongPress?: () => void;
@@ -28,6 +38,8 @@ interface ListRowProps {
   subtitle?: string | null;
   testID?: string;
   title: string;
+  // Defaults to 2. Pass 1 for a single-line, "..."-truncated title.
+  titleNumberOfLines?: number;
   titleStyle?: StyleProp<TextStyle>;
   trailing?: ReactNode;
 }
@@ -38,6 +50,7 @@ export function ListRow({
   actionTestID,
   divider = true,
   leading,
+  leadingAlign = 'center',
   leadingStyle,
   onAccessibilityAction,
   onLongPress,
@@ -46,6 +59,7 @@ export function ListRow({
   subtitle,
   testID,
   title,
+  titleNumberOfLines = 2,
   titleStyle,
   trailing,
 }: ListRowProps) {
@@ -63,6 +77,7 @@ export function ListRow({
     rowFlat: { borderBottomWidth: 0 } satisfies ViewStyle,
     pressed: { backgroundColor: currentTheme.colors.muted } satisfies ViewStyle,
     leading: { width: 24 } satisfies ViewStyle,
+    alignTop: { alignSelf: 'flex-start' } satisfies ViewStyle,
     content: { flex: 1, gap: 2, minWidth: 0 } satisfies ViewStyle,
     title: {
       ...currentTheme.textVariants.body,
@@ -90,9 +105,17 @@ export function ListRow({
       ]}
       testID={testID ?? actionTestID}
     >
-      {leading ? <View style={[styles.leading, leadingStyle]}>{leading}</View> : null}
-      <View style={styles.content}>
-        <Text numberOfLines={2} style={[styles.title, titleStyle]}>
+      {leading ? (
+        <View style={[styles.leading, leadingAlign === 'top' && styles.alignTop, leadingStyle]}>
+          {leading}
+        </View>
+      ) : null}
+      <View style={[styles.content, leadingAlign === 'top' && styles.alignTop]}>
+        <Text
+          ellipsizeMode="tail"
+          numberOfLines={titleNumberOfLines}
+          style={[styles.title, titleStyle]}
+        >
           {title}
         </Text>
         {subtitle ? (

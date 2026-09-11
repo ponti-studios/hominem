@@ -6,7 +6,7 @@ import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanim
 import { useVoiceComposerInput } from '~/components/composer/useVoiceComposerInput';
 import { getVoiceComposerErrorPresentation } from '~/components/composer/voiceComposerInput.helpers';
 import { useAppTheme, useStyles } from '~/components/theme';
-import { Card, IconButton, TextField } from '~/components/ui';
+import { BlurCard, IconButton, TextField } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import { InlineErrorBanner } from '~/components/ui/InlineErrorBanner';
 import { VoiceRecordingPanel } from '~/components/voice/VoiceRecordingPanel';
@@ -19,20 +19,16 @@ interface TimeComposerProps {
 }
 
 function useTimeComposerStyles() {
-  return useStyles((theme) => ({
+  return useStyles(() => ({
     composerCard: {
       width: '100%',
+    },
+    composerCardContent: {
       gap: 8,
       padding: 12,
-      border: 1,
-      borderColor: theme.colors.border,
     },
     actionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 },
     loadingState: { alignItems: 'center', justifyContent: 'center', minHeight: 44 },
-    fieldEditor: {
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-    },
     textField: {
       borderRadius: 0,
       borderWidth: 0,
@@ -113,16 +109,9 @@ export function TimeComposer({ onOpenEvent }: TimeComposerProps) {
           entering={FadeIn.duration(reducedMotion ? 150 : 180)}
           exiting={FadeOut.duration(120)}
         >
-          <Card
-            style={[
-              styles.composerCard,
-              {
-                borderCurve: 'continuous',
-                borderRadius: 24,
-                borderWidth: 0,
-                boxShadow: theme.shadows.none,
-              },
-            ]}
+          <BlurCard
+            contentStyle={styles.composerCardContent}
+            style={styles.composerCard}
             testID="time-composer"
           >
             {voiceErrorBanner}
@@ -137,23 +126,21 @@ export function TimeComposer({ onOpenEvent }: TimeComposerProps) {
                 }}
               />
             ) : (
-              <View style={styles.fieldEditor}>
-                <TextField
-                  editable={!disabled}
-                  focusBorder={false}
-                  ref={inputRef}
-                  onChangeText={setPrompt}
-                  onSubmitEditing={ask}
-                  placeholder="Add or search anything..."
-                  returnKeyType="send"
-                  submitBehavior="submit"
-                  testID="time-composer-input"
-                  value={value}
-                  multiline
-                  numberOfLines={5}
-                  style={styles.textField}
-                />
-              </View>
+              <TextField
+                editable={!disabled}
+                focusBorder={false}
+                ref={inputRef}
+                onChangeText={setPrompt}
+                onSubmitEditing={ask}
+                placeholder="Add or search anything..."
+                returnKeyType="send"
+                submitBehavior="submit"
+                testID="time-composer-input"
+                value={value}
+                multiline
+                numberOfLines={5}
+                style={styles.textField}
+              />
             )}
             {voice.isRecording ? null : (
               <>
@@ -187,7 +174,7 @@ export function TimeComposer({ onOpenEvent }: TimeComposerProps) {
                 </View>
               </>
             )}
-          </Card>
+          </BlurCard>
         </Animated.View>
       ) : isParsing ? (
         <TimeResultSurface

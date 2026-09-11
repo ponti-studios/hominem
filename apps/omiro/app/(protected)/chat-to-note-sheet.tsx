@@ -90,9 +90,9 @@ export default function ChatToNoteSheetScreen() {
 
   const runGeneration = useCallback(
     async (preset: NotePreset, customText: string) => {
-      if (isGenerating) {
-        return;
-      }
+      // Prevent multiple simultaneous generations
+      if (isGenerating) return;
+
       setSaveError(null);
       setPhase({ kind: 'loading' });
       const trimmedCustom = customText.trim();
@@ -142,6 +142,7 @@ export default function ChatToNoteSheetScreen() {
     setSaveError(null);
     try {
       const note = await createNote.mutateAsync({ text: phase.text, title });
+
       updateChatTitleCaches(queryClient, {
         chatId,
         title: note.title ?? title,
@@ -163,25 +164,31 @@ export default function ChatToNoteSheetScreen() {
 
       {showForm ? (
         <>
-          <Text style={styles.label}>{t.chat.noteDraft.typeLabel}</Text>
-          <MenuView
-            actions={t.chat.noteDraft.presets.map((preset) => ({
-              id: preset,
-              title: preset,
-              state: preset === selectedPreset ? ('on' as const) : undefined,
-            }))}
-            onPressAction={handleSelectPreset}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}
           >
-            <Pressable
-              style={styles.selectRow}
-              accessibilityRole="button"
-              accessibilityLabel={`${t.chat.noteDraft.typeLabel}, ${selectedPreset}`}
+            <Text style={styles.label}>{t.chat.noteDraft.typeLabel}</Text>
+            <MenuView
+              actions={t.chat.noteDraft.presets.map((preset) => ({
+                id: preset,
+                title: preset,
+                state: preset === selectedPreset ? ('on' as const) : undefined,
+              }))}
+              onPressAction={handleSelectPreset}
             >
-              <Text style={styles.selectRowLabel}>{selectedPreset}</Text>
-              <AppIcon name="chevron.up.chevron.down" size={14} tintColor={mutedForeground} />
-            </Pressable>
-          </MenuView>
-
+              <Pressable
+                style={styles.selectRow}
+                accessibilityRole="button"
+                accessibilityLabel={`${t.chat.noteDraft.typeLabel}, ${selectedPreset}`}
+              >
+                <Text style={styles.selectRowLabel}>{selectedPreset}</Text>
+                <AppIcon name="chevron.up.chevron.down" size={14} tintColor={mutedForeground} />
+              </Pressable>
+            </MenuView>
+          </View>
           <Text style={styles.label}>{t.chat.noteDraft.instructionsLabel}</Text>
           <TextField
             ref={customInputRef}

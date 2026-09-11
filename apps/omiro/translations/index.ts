@@ -446,6 +446,7 @@ const t = {
       openChatA11y: 'Open chat',
       saveNoteA11y: 'Save note',
       dismissErrorHint: 'Tap to dismiss',
+      retry: 'Retry',
       voiceErrors: {
         permissionDenied: 'Allow microphone and speech recognition access to record a voice note.',
         recordingFailed: 'Omiro could not start recording right now.',

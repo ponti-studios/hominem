@@ -45,7 +45,6 @@ function useTimeBlockDetailStyles() {
     loadingText: { color: theme.colors.mutedForeground },
     errorState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 16 },
     errorText: { color: theme.colors.destructive },
-    editor: { flex: 1 },
     scrollView: { flex: 1 },
     header: { gap: 12 },
     intentBadge: {
@@ -199,218 +198,213 @@ export function TimeBlockDetail({
           </Stack.Toolbar.Menu>
         </Stack.Toolbar>
       ) : null}
-      <View style={styles.editor} testID="time-block-editor">
-        <ScrollView
-          contentContainerStyle={{ gap: 16, padding: 16 }}
-          contentInsetAdjustmentBehavior="automatic"
-          keyboardShouldPersistTaps="handled"
-          style={styles.scrollView}
-        >
-          <View style={styles.header}>
-            <View style={[styles.intentBadge, { backgroundColor: intentColor }]}>
-              <AppIcon
-                name={isTask ? 'checkmark.circle.fill' : 'calendar'}
-                size={12}
-                tintColor="#ffffff"
+      <ScrollView
+        contentContainerStyle={{ gap: 16, padding: 16 }}
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        style={styles.scrollView}
+        testID="time-block-editor"
+      >
+        <View style={styles.header}>
+          <View style={[styles.intentBadge, { backgroundColor: intentColor }]}>
+            <AppIcon
+              name={isTask ? 'checkmark.circle.fill' : 'calendar'}
+              size={12}
+              tintColor="#ffffff"
+            />
+            <Text style={[styles.intentLabel, { color: '#ffffff' }]}>
+              {isTask ? 'Task' : (event?.calendarTitle ?? 'Event')}
+            </Text>
+          </View>
+          <Pressable
+            accessibilityLabel="Edit title"
+            disabled={readOnlyEvent}
+            onPress={() => setActiveField('title')}
+            testID="time-block-edit-title"
+          >
+            {activeField === 'title' ? (
+              <TextField
+                autoFocus
+                onChangeText={setDraftTitle}
+                style={{ fontSize: 26, fontWeight: '700', paddingHorizontal: 0 }}
+                testID="time-block-title"
+                value={draftTitle}
               />
-              <Text style={[styles.intentLabel, { color: '#ffffff' }]}>
-                {isTask ? 'Task' : (event?.calendarTitle ?? 'Event')}
-              </Text>
-            </View>
-            <Pressable
-              accessibilityLabel="Edit title"
-              disabled={readOnlyEvent}
-              onPress={() => setActiveField('title')}
-              testID="time-block-edit-title"
-            >
-              {activeField === 'title' ? (
-                <TextField
-                  autoFocus
-                  onChangeText={setDraftTitle}
-                  style={{ fontSize: 26, fontWeight: '700', paddingHorizontal: 0 }}
-                  testID="time-block-title"
-                  value={draftTitle}
-                />
-              ) : (
-                <Text style={styles.title}>{draftTitle}</Text>
-              )}
-            </Pressable>
-            {isTask && task?.status === 'completed' ? (
-              <Text style={styles.completedLabel}>Completed</Text>
-            ) : null}
-            {readOnlyEvent ? (
-              <Text style={styles.readOnlyNotice}>This calendar is read-only in Omiro.</Text>
-            ) : null}
-          </View>
+            ) : (
+              <Text style={styles.title}>{draftTitle}</Text>
+            )}
+          </Pressable>
+          {isTask && task?.status === 'completed' ? (
+            <Text style={styles.completedLabel}>Completed</Text>
+          ) : null}
+          {readOnlyEvent ? (
+            <Text style={styles.readOnlyNotice}>This calendar is read-only in Omiro.</Text>
+          ) : null}
+        </View>
 
-          <View style={styles.fields}>
-            <FieldCard
-              align={activeField === 'time' ? 'flex-start' : 'center'}
-              icon="clock.fill"
-              iconColor={chartBlue}
-              label="When"
-              onPress={
-                readOnlyEvent
-                  ? undefined
-                  : () => {
-                      if (isTask) {
-                        isSchedulingRef.current = true;
-                      }
-                      setActiveField('time');
+        <View style={styles.fields}>
+          <FieldCard
+            align={activeField === 'time' ? 'flex-start' : 'center'}
+            icon="clock.fill"
+            iconColor={chartBlue}
+            label="When"
+            onPress={
+              readOnlyEvent
+                ? undefined
+                : () => {
+                    if (isTask) {
+                      isSchedulingRef.current = true;
                     }
-              }
-              testID="time-block-edit-time"
-            >
-              {activeField === 'time' && draftStart && draftEnd ? (
-                <View style={styles.timeEditor}>
-                  <DateTimePicker
-                    display="compact"
-                    mode="datetime"
-                    onValueChange={(_, date) => setDraftStart(date)}
-                    testID="time-block-start-picker"
-                    value={draftStart}
-                  />
-                  <DateTimePicker
-                    display="compact"
-                    minimumDate={draftStart}
-                    mode="datetime"
-                    onValueChange={(_, date) => setDraftEnd(date)}
-                    testID="time-block-end-picker"
-                    value={draftEnd}
-                  />
-                  <TextField
-                    keyboardType="number-pad"
-                    onChangeText={setDraftDuration}
-                    placeholder="Duration in minutes"
-                    testID="time-block-duration"
-                    value={draftDuration}
-                  />
-                </View>
-              ) : draftStart && draftEnd ? (
-                <Text style={styles.timeValue}>{formatInterval(draftStart, draftEnd)}</Text>
-              ) : (
-                <Text style={styles.unsetValue}>Set a time</Text>
-              )}
-            </FieldCard>
-            <FieldCard
-              align={activeField === 'location' ? 'flex-start' : 'center'}
-              icon="mappin.and.ellipse"
-              iconColor={chartTeal}
-              label="Location"
-              onPress={readOnlyEvent ? undefined : () => setActiveField('location')}
-              testID="time-block-edit-location"
-            >
-              {activeField === 'location' ? (
-                <LocationSearchField
-                  onChange={setDraftLocation}
-                  testID="time-block-location"
-                  value={draftLocation}
+                    setActiveField('time');
+                  }
+            }
+            testID="time-block-edit-time"
+          >
+            {activeField === 'time' && draftStart && draftEnd ? (
+              <View style={styles.timeEditor}>
+                <DateTimePicker
+                  display="compact"
+                  mode="datetime"
+                  onValueChange={(_, date) => setDraftStart(date)}
+                  testID="time-block-start-picker"
+                  value={draftStart}
                 />
-              ) : (
-                <Text
-                  style={[
-                    styles.fieldValue,
-                    draftLocation ? styles.foreground : styles.mutedForeground,
-                  ]}
-                >
-                  {draftLocation || 'Add location'}
-                </Text>
-              )}
-            </FieldCard>
-            <FieldCard
-              align={activeField === 'notes' ? 'flex-start' : 'center'}
-              icon="note.text"
-              iconColor={chartOrange}
-              label="Notes"
-              onPress={readOnlyEvent ? undefined : () => setActiveField('notes')}
-              testID="time-block-edit-notes"
-            >
-              {activeField === 'notes' ? (
+                <DateTimePicker
+                  display="compact"
+                  minimumDate={draftStart}
+                  mode="datetime"
+                  onValueChange={(_, date) => setDraftEnd(date)}
+                  testID="time-block-end-picker"
+                  value={draftEnd}
+                />
                 <TextField
-                  autoFocus
-                  multiline
-                  onChangeText={setDraftNotes}
-                  placeholder="Add notes"
-                  testID="time-block-notes"
-                  value={draftNotes}
-                />
-              ) : (
-                <Text
-                  style={[
-                    styles.fieldValue,
-                    draftNotes ? styles.foreground : styles.mutedForeground,
-                  ]}
-                >
-                  {draftNotes || 'Add notes'}
-                </Text>
-              )}
-            </FieldCard>
-            {isTask ? (
-              <FieldCard
-                align={activeField === 'people' ? 'flex-start' : 'center'}
-                icon="person.2.fill"
-                iconColor={chartPurple}
-                label="People"
-                onPress={() => setActiveField('people')}
-                testID="time-block-edit-people"
-              >
-                {activeField === 'people' ? (
-                  <TaskPeoplePicker selected={draftPeople} onChange={setDraftPeople} />
-                ) : (
-                  <Text
-                    style={[
-                      styles.fieldValue,
-                      draftPeople.length > 0 ? styles.foreground : styles.mutedForeground,
-                    ]}
-                  >
-                    {draftPeople.map((person) => person.displayName).join(', ') || 'Add people'}
-                  </Text>
-                )}
-              </FieldCard>
-            ) : null}
-            {!isTask && event?.participants.length ? (
-              <FieldCard icon="person.2.fill" iconColor={chartPurple} label="People">
-                <Text style={styles.participants}>{event.participants.join(', ')}</Text>
-              </FieldCard>
-            ) : null}
-            {!isTask && event?.recurrenceDescription ? (
-              <FieldCard icon="arrow.triangle.2.circlepath" iconColor={chartGray} label="Repeats">
-                <Text style={styles.fieldValue}>Recurring event</Text>
-              </FieldCard>
-            ) : null}
-          </View>
-        </ScrollView>
-        {!readOnlyEvent && (isDirty || isTask) ? (
-          <KeyboardStickyView>
-            <View style={styles.footer}>
-              <View style={styles.footerActions}>
-                {isTask ? (
-                  <Button
-                    disabled={isTogglingTask}
-                    label={task?.status === 'completed' ? 'Reopen' : 'Complete'}
-                    onPress={() =>
-                      task &&
-                      toggleTask({ taskId: task.id, completed: task.status !== 'completed' })
-                    }
-                    style={{ borderRadius: 999 }}
-                    testID="time-block-complete"
-                    variant="secondary"
-                  />
-                ) : null}
-                <Button
-                  label="Save changes"
-                  loading={saving}
-                  onPress={() => {
-                    void saveChanges();
-                  }}
-                  style={{ borderRadius: 999 }}
-                  testID="time-block-save"
+                  keyboardType="number-pad"
+                  onChangeText={setDraftDuration}
+                  placeholder="Duration in minutes"
+                  testID="time-block-duration"
+                  value={draftDuration}
                 />
               </View>
+            ) : draftStart && draftEnd ? (
+              <Text style={styles.timeValue}>{formatInterval(draftStart, draftEnd)}</Text>
+            ) : (
+              <Text style={styles.unsetValue}>Set a time</Text>
+            )}
+          </FieldCard>
+          <FieldCard
+            align={activeField === 'location' ? 'flex-start' : 'center'}
+            icon="mappin.and.ellipse"
+            iconColor={chartTeal}
+            label="Location"
+            onPress={readOnlyEvent ? undefined : () => setActiveField('location')}
+            testID="time-block-edit-location"
+          >
+            {activeField === 'location' ? (
+              <LocationSearchField
+                onChange={setDraftLocation}
+                testID="time-block-location"
+                value={draftLocation}
+              />
+            ) : (
+              <Text
+                style={[
+                  styles.fieldValue,
+                  draftLocation ? styles.foreground : styles.mutedForeground,
+                ]}
+              >
+                {draftLocation || 'Add location'}
+              </Text>
+            )}
+          </FieldCard>
+          <FieldCard
+            align={activeField === 'notes' ? 'flex-start' : 'center'}
+            icon="note.text"
+            iconColor={chartOrange}
+            label="Notes"
+            onPress={readOnlyEvent ? undefined : () => setActiveField('notes')}
+            testID="time-block-edit-notes"
+          >
+            {activeField === 'notes' ? (
+              <TextField
+                autoFocus
+                multiline
+                onChangeText={setDraftNotes}
+                placeholder="Add notes"
+                testID="time-block-notes"
+                value={draftNotes}
+              />
+            ) : (
+              <Text
+                style={[styles.fieldValue, draftNotes ? styles.foreground : styles.mutedForeground]}
+              >
+                {draftNotes || 'Add notes'}
+              </Text>
+            )}
+          </FieldCard>
+          {isTask ? (
+            <FieldCard
+              align={activeField === 'people' ? 'flex-start' : 'center'}
+              icon="person.2.fill"
+              iconColor={chartPurple}
+              label="People"
+              onPress={() => setActiveField('people')}
+              testID="time-block-edit-people"
+            >
+              {activeField === 'people' ? (
+                <TaskPeoplePicker selected={draftPeople} onChange={setDraftPeople} />
+              ) : (
+                <Text
+                  style={[
+                    styles.fieldValue,
+                    draftPeople.length > 0 ? styles.foreground : styles.mutedForeground,
+                  ]}
+                >
+                  {draftPeople.map((person) => person.displayName).join(', ') || 'Add people'}
+                </Text>
+              )}
+            </FieldCard>
+          ) : null}
+          {!isTask && event?.participants.length ? (
+            <FieldCard icon="person.2.fill" iconColor={chartPurple} label="People">
+              <Text style={styles.participants}>{event.participants.join(', ')}</Text>
+            </FieldCard>
+          ) : null}
+          {!isTask && event?.recurrenceDescription ? (
+            <FieldCard icon="arrow.triangle.2.circlepath" iconColor={chartGray} label="Repeats">
+              <Text style={styles.fieldValue}>Recurring event</Text>
+            </FieldCard>
+          ) : null}
+        </View>
+      </ScrollView>
+      {!readOnlyEvent && (isDirty || isTask) ? (
+        <KeyboardStickyView>
+          <View style={styles.footer}>
+            <View style={styles.footerActions}>
+              {isTask ? (
+                <Button
+                  disabled={isTogglingTask}
+                  label={task?.status === 'completed' ? 'Reopen' : 'Complete'}
+                  onPress={() =>
+                    task && toggleTask({ taskId: task.id, completed: task.status !== 'completed' })
+                  }
+                  style={{ borderRadius: 999 }}
+                  testID="time-block-complete"
+                  variant="secondary"
+                />
+              ) : null}
+              <Button
+                label="Save changes"
+                loading={saving}
+                onPress={() => {
+                  void saveChanges();
+                }}
+                style={{ borderRadius: 999 }}
+                testID="time-block-save"
+              />
             </View>
-          </KeyboardStickyView>
-        ) : null}
-      </View>
+          </View>
+        </KeyboardStickyView>
+      ) : null}
     </>
   );
 }

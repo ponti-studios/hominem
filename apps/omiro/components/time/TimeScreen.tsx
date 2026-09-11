@@ -17,6 +17,7 @@ import { TimeStream } from './TimeStream';
 export function TimeScreen() {
   const router = useRouter();
   const { inset: composerInset, safeAreaBottom } = useComposerDockMetrics();
+  const [composerHeight, setComposerHeight] = useState(0);
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [toastKey, setToastKey] = useState(0);
   const [toastExpanded, setToastExpanded] = useState(false);
@@ -52,7 +53,11 @@ export function TimeScreen() {
 
   return (
     <View style={styles.container} testID="time-screen">
-      <TimeStream contentPaddingBottom={composerInset} onError={showError} onOpenItem={openItem} />
+      <TimeStream
+        contentPaddingBottom={composerInset + composerHeight}
+        onError={showError}
+        onOpenItem={openItem}
+      />
       {errorToast !== null ? (
         <View
           key={toastKey}
@@ -87,7 +92,11 @@ export function TimeScreen() {
           </IconButton>
         </View>
       ) : null}
-      <ComposerDock safeAreaBottom={safeAreaBottom} testID="time-composer-dock">
+      <ComposerDock
+        onHeightChange={setComposerHeight}
+        safeAreaBottom={safeAreaBottom}
+        testID="time-composer-dock"
+      >
         <TimeComposer onOpenEvent={openEvent} />
       </ComposerDock>
     </View>

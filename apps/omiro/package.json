@@ -36,7 +36,6 @@
   },
   "dependencies": {
     "@better-auth/expo": "1.7.1",
-    "@expo/metro-runtime": "~57.0.15",
     "@expo/ui": "~57.0.17",
     "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
@@ -58,6 +57,7 @@
     "expo-application": "~57.0.2",
     "expo-asset": "~57.0.16",
     "expo-audio": "~57.0.4",
+    "expo-blur": "~57.0.2",
     "expo-build-properties": "~57.0.17",
     "expo-clipboard": "~57.0.1",
     "expo-constants": "~57.0.17",

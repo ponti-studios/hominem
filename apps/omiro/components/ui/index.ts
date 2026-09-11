@@ -1,5 +1,6 @@
 export { EmptyState } from './EmptyState';
 export { IconButton } from './icon-button';
+export { BlurCard } from './BlurCard';
 export {
   Card,
   CardAction,

@@ -1,5 +1,5 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, Text, View } from 'react-native';
 
 import { Composer } from '~/components/composer/Composer';
@@ -35,16 +35,21 @@ interface StreamScreenProps {
 
 export function StreamScreen({ filter }: StreamScreenProps) {
   const { inset: composerInset, safeAreaBottom } = useComposerDockMetrics();
+  const [composerHeight, setComposerHeight] = useState(0);
   const inbox = useInboxStreamItems();
   const { isFetching: isFetchingTasks, refetch: refetchTasks } = useTasksQuery();
   const styles = useStyles((theme) => ({
     container: { flex: 1, backgroundColor: theme.colors.background },
+    // Without this, an unstyled FlashList nested in a `flex: 1` parent
+    // isn't bounded to the space Yoga reserved for it -- it renders past
+    // its own box and overlaps the composer dock sibling below it.
+    list: { flex: 1 },
     content: { paddingBottom: 16 },
     emptyText: { paddingHorizontal: 16, color: theme.colors.mutedForeground },
   }));
 
   const items = useMemo(() => filterItems(inbox.items, filter), [inbox.items, filter]);
-  const inset = useMemo(() => ({ bottom: composerInset }), [composerInset]);
+  const composerSpace = composerInset + composerHeight;
 
   // Seeded with whatever the first settled render holds (including empty),
   // then grows with every commit -- the same gating ChatMessageList uses so
@@ -74,9 +79,12 @@ export function StreamScreen({ filter }: StreamScreenProps) {
   return (
     <View style={styles.container} testID="stream-screen">
       <FlashList
-        contentContainerStyle={styles.content}
-        contentInset={inset}
-        contentInsetAdjustmentBehavior="automatic"
+        style={styles.list}
+        // Real reserved space, not `contentInset` -- inset only affects
+        // overscroll/bounce boundaries on iOS, so it can't keep a row that
+        // lands at a normal (non-bounced) resting scroll position from
+        // ending up underneath the floating composer dock.
+        contentContainerStyle={[styles.content, { paddingBottom: composerSpace }]}
         data={items}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={
@@ -98,10 +106,14 @@ export function StreamScreen({ filter }: StreamScreenProps) {
           }}
         />
         renderItem={renderItem}
-        scrollIndicatorInsets={inset}
+        scrollIndicatorInsets={{ bottom: composerSpace }}
         showsVerticalScrollIndicator={false}
       />
-      <ComposerDock safeAreaBottom={safeAreaBottom} testID="stream-composer-dock">
+      <ComposerDock
+        onHeightChange={setComposerHeight}
+        safeAreaBottom={safeAreaBottom}
+        testID="stream-composer-dock"
+      >
         <Composer
           entryMode="mixed"
           initialMessage={readAllDraft()}

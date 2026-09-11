@@ -1,10 +1,19 @@
 import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
 import { type ReactElement, useEffect, useRef } from 'react';
 import {
+  StyleSheet,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   type RefreshControlProps,
 } from 'react-native';
+
+const styles = StyleSheet.create({
+  // Without an explicit flex, an unstyled FlashList nested in a `flex: 1`
+  // parent isn't bounded to the space Yoga reserved for it -- it renders
+  // past its own box and visually overlaps whatever sibling sits below it
+  // (here, the floating composer dock) instead of stopping short of it.
+  list: { flex: 1 },
+});
 
 interface StreamListProps<T> {
   contentPaddingBottom?: number;
@@ -58,8 +67,13 @@ export function StreamList<T>({
   return (
     <FlashList
       ref={listRef}
-      contentInset={{ bottom: contentPaddingBottom, top: contentPaddingTop }}
-      contentInsetAdjustmentBehavior="automatic"
+      style={styles.list}
+      // Real reserved space, not `contentInset` -- inset only affects
+      // overscroll/bounce boundaries on iOS, so it can't keep a row that
+      // lands at a normal (non-bounced) resting scroll position from ending
+      // up underneath the floating composer dock. `contentContainerStyle`
+      // padding is layout space the list can never scroll content into.
+      contentContainerStyle={{ paddingBottom: contentPaddingBottom, paddingTop: contentPaddingTop }}
       data={data}
       keyboardDismissMode="on-drag"
       keyExtractor={keyExtractor}

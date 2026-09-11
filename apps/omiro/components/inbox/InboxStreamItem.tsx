@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, {
+  Extrapolation,
   FadeIn,
   FadeInDown,
+  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -43,6 +45,14 @@ const EXIT_FLY_DISTANCE = 400;
 
 const EXIT_COMMIT_DELAY_MS = nativeMotionTiming.exit.duration + 10;
 
+// How rounded the row's trailing corners get, and how dark the scrim over
+// the icon+title gets, once the swipe has traveled the full reveal width --
+// both interpolate directly off `dragX`, so closing the swipe (dragX
+// animating back to 0 or snapping there when the gesture is abandoned)
+// reverses them for free instead of needing a separate close animation.
+const SWIPE_CORNER_RADIUS = 16;
+const SWIPE_DARKEN_OPACITY = 0.18;
+
 // iOS drops a new Alert.alert presented synchronously from inside another
 // alert's button onPress -- the second alert races the first alert's dismiss
 // animation and intermittently never appears (observed repeatedly in the
@@ -51,6 +61,9 @@ const EXIT_COMMIT_DELAY_MS = nativeMotionTiming.exit.duration + 10;
 // the dismissal has settled. Long enough to clear the ~300ms dismiss
 // animation, short enough to feel immediate.
 const ALERT_CONFIRM_DEFER_MS = 350;
+
+// Ensure that title + icon share same height for vertical alignment
+const TITLE_LINE_HEIGHT = 22;
 
 function instantOr(config: WithTimingConfig, reducedMotion: boolean): WithTimingConfig {
   'worklet';
@@ -67,8 +80,23 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
   const { destructive, destructiveForeground, mutedForeground, primary, primaryForeground } =
     useAppTheme().colors;
   const styles = useStyles((theme) => ({
-    row: { paddingHorizontal: theme.spacing.xl, paddingVertical: theme.spacing.lg },
+    // Opaque -- without a real background here the row is transparent
+    // everywhere except glyph pixels, so the revealed archive/delete panel
+    // (which fades in by opacity alone, not by how far the row has slid)
+    // bleeds straight through the icon+title area the instant a swipe
+    // starts, not just in the strip actually uncovered by the drag.
+    row: {
+      backgroundColor: theme.colors.background,
+      paddingHorizontal: theme.spacing.xl,
+      paddingVertical: theme.spacing.lg,
+    },
     wrapper: { position: 'relative', overflow: 'hidden' },
+    // Clips the row's square-cornered background to `dragStyle`'s animated
+    // trailing radius, so the peel-back effect actually shows rounded
+    // corners instead of a rounded box with a square panel still visible
+    // inside it.
+    dragSurface: { overflow: 'hidden' },
+    swipeScrim: { backgroundColor: '#000' },
     actionPanel: {
       position: 'absolute',
       top: 0,
@@ -85,13 +113,19 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
     actionLabel: { ...theme.textVariants.caption1, fontWeight: '600' },
     title: {
       fontFamily: fontFamilies.sans,
-      fontWeight: '700' as const,
       fontSize: 17,
-      lineHeight: 22,
+      lineHeight: TITLE_LINE_HEIGHT,
     },
     // Aligns the icon to the title's own line instead of the vertical center
-    // of the whole title+subtitle block.
-    leading: { alignSelf: 'flex-start' as const, paddingTop: 3 },
+    // of the whole title+subtitle block -- a box exactly as tall as the
+    // title's line height, with the icon centered inside it, rather than a
+    // hand-tuned paddingTop that only happened to line up for one icon size.
+    // Pair with `leadingAlign="top"` below so the title+subtitle block is
+    // anchored to this same top edge instead of centering as a whole unit.
+    leading: {
+      height: TITLE_LINE_HEIGHT,
+      justifyContent: 'center' as const,
+    },
   }));
 
   const leaving = useSharedValue(1);
@@ -158,7 +192,27 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
   }, [closeSwipe, leaving]);
 
   const leavingStyle = useAnimatedStyle(() => ({ opacity: leaving.value }));
-  const dragStyle = useAnimatedStyle(() => ({ transform: [{ translateX: dragX.value }] }));
+  const dragStyle = useAnimatedStyle(() => {
+    const radius = interpolate(
+      dragX.value,
+      [-ACTION_WIDTH, 0],
+      [SWIPE_CORNER_RADIUS, 0],
+      Extrapolation.CLAMP,
+    );
+    return {
+      borderBottomRightRadius: radius,
+      borderTopRightRadius: radius,
+      transform: [{ translateX: dragX.value }],
+    };
+  });
+  const swipeScrimStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      dragX.value,
+      [-ACTION_WIDTH, 0],
+      [SWIPE_DARKEN_OPACITY, 0],
+      Extrapolation.CLAMP,
+    ),
+  }));
   const actionPanelStyle = useAnimatedStyle(() => ({
     opacity: Math.min(1, Math.abs(dragX.value) / ACTION_WIDTH),
   }));
@@ -301,7 +355,7 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
           </Pressable>
         </Reanimated.View>
         <GestureDetector gesture={swipe}>
-          <Reanimated.View style={dragStyle}>
+          <Reanimated.View style={[styles.dragSurface, dragStyle]}>
             <ListRow
               accessibilityActions={[
                 {
@@ -312,18 +366,25 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
               accessibilityLabel={primaryText}
               actionTestID={`inbox-item-${isChat ? 'chat' : 'note'}-open`}
               divider={false}
-              leading=<AppIcon
-                name={isChat ? 'bubble.left' : 'note.text'}
-                size={18}
-                tintColor={mutedForeground}
-              />
+              leading={
+                <AppIcon
+                  name={isChat ? 'bubble.left' : 'note.text'}
+                  size={18}
+                  tintColor={mutedForeground}
+                />
+              }
+              leadingAlign="top"
               leadingStyle={styles.leading}
               onAccessibilityAction={handleAccessibilityAction}
               onPress={onOpen}
               style={styles.row}
-              subtitle={previewText !== titleText ? previewText : null}
               title={primaryText}
+              titleNumberOfLines={1}
               titleStyle={styles.title}
+            />
+            <Reanimated.View
+              pointerEvents="none"
+              style={[StyleSheet.absoluteFill, styles.swipeScrim, swipeScrimStyle]}
             />
           </Reanimated.View>
         </GestureDetector>
