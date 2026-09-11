@@ -114,6 +114,28 @@ maintain app-owned auth state — apps must not add custom tokens, localStorage
 auth, or duplicate OTP state. The hosted login and the forwarded cookie are
 the only credential surface.
 
+When the API calls Better Auth's native endpoints on a user's behalf
+(OTP send/verify, consent, sign-out, profile updates), it stamps the
+request's `Origin` header with the configured API origin regardless of what
+the incoming request carried — the browser's surface host can differ
+from `API_URL` behind a proxy, and Better Auth's CSRF check only trusts the
+configured origins.
+
+### Account settings
+
+The API also hosts `/auth/settings`, a web mirror of the account sections of
+the Omiro settings screen: editable name + email, monthly AI usage (fetched
+client-side from the authenticated `/api/usage/monthly` RPC route), and a
+sign-out action backed by the same `/logout` POST the web apps use.
+Signed-out visitors are redirected through hosted login with a resume back to
+`/auth/settings` so they land here after authenticating. The sign-out POST
+accepts an optional `next` form field (trusted via the same
+`resolveResume` check) and 303s there after clearing the session cookie — it
+is additive; a `/logout` POST without `next` keeps rendering the signed-out
+page. Like `/login`, the page is server-rendered Hono JSX enhanced by a plain
+client bundle (`settings.ts` → `public/settings.js`) with full degradation
+when JavaScript is unavailable.
+
 ## Session and OTP rules
 
 - Better Auth stores OTP rate-limit state in its database-backed `rateLimit`

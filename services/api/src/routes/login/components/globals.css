@@ -1,0 +1,70 @@
+/* Native browser-driven transitions between full page loads in this flow
+   (email step -> OTP step -> consent, etc.). Progressive enhancement only:
+   unsupported browsers just navigate normally, no fallback needed. */
+@view-transition {
+  navigation: auto;
+}
+
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #fcfcfd;
+  color: #1c2024;
+  --auth-background: #fcfcfd;
+  --auth-card: #f9f9fb;
+  --auth-panel: #f0f0f3;
+  --auth-text: #1c2024;
+  --auth-muted: #70747c;
+  --auth-primary: #000;
+  --auth-primary-text: #fff;
+  --auth-border: #cdced6;
+  --auth-danger: #c82c31;
+  --auth-danger-background: #fff4f3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    background: #111113;
+    color: #edeef0;
+    --auth-background: #111113;
+    --auth-card: #18191b;
+    --auth-panel: #212225;
+    --auth-text: #edeef0;
+    --auth-muted: #b0b4ba;
+    --auth-primary: #fff;
+    --auth-primary-text: #111113;
+    --auth-border: #43484e;
+    --auth-danger: #ff9592;
+    --auth-danger-background: #321b1b;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--auth-background);
+}
+button,
+input {
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

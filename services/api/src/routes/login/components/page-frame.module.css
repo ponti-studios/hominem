@@ -1,0 +1,147 @@
+/* The auth page shell: background page, a faint monochrome dot grid,
+   the brand lockup, and the card every page renders inside. The shared
+   content layout classes (auth-content, auth-heading, card-copy) live here
+   too because every page uses them, and the keyframes + view-transition
+   glue sit beside the classes that reference them so the scoped names stay
+   consistent within this module. */
+.auth-page {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 64px 16px;
+  background: var(--auth-background);
+  color: var(--auth-text);
+  overflow: clip;
+}
+/* A faint, purely monochrome dot grid — texture rather than decoration, so
+   the page reads as designed instead of a bare form even with zero color. */
+.auth-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--auth-border) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(circle at 50% 40%, #000 0%, transparent 70%);
+  opacity: 0;
+  animation: auth-grid-in 1.2s ease-out 0.1s forwards;
+}
+@keyframes auth-grid-in {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+}
+.auth-layout {
+  position: relative;
+  width: min(100%, 512px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--auth-text);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.brand-lockup:hover {
+  opacity: 0.85;
+}
+.brand-logo {
+  display: block;
+  border-radius: 6px;
+}
+.auth-card {
+  width: 100%;
+  padding: 40px 48px;
+  border: 1px solid var(--auth-border);
+  border-radius: 8px;
+  color: var(--auth-text);
+  background: var(--auth-card);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  view-transition-name: auth-card;
+  animation: auth-card-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Smoother, slightly longer cross-fade than the browser default for the
+   card during a cross-document view transition. The name matches the
+   scoped view-transition-name above because they compile together. */
+::view-transition-old(auth-card),
+::view-transition-new(auth-card) {
+  animation-duration: 0.35s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+.auth-content {
+  width: 100%;
+  max-width: 384px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+}
+/* Inline error, rendered by any page that fails mid-flow. Lives here
+   because its entrance reuses the auth-card-in keyframe above. */
+.alert {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--auth-danger) 35%, transparent);
+  border-radius: 6px;
+  color: var(--auth-danger);
+  background: var(--auth-danger-background);
+  font-size: 13px;
+  line-height: 1.45;
+  animation: auth-card-in 0.3s ease-out both;
+}
+.auth-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+.auth-heading h2,
+.auth-card h2 {
+  margin: 0;
+}
+.auth-card h2 {
+  color: var(--auth-text);
+  font-size: 30px;
+  font-weight: 600;
+}
+.card-copy {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.card-copy strong {
+  color: var(--auth-text);
+}
+@media (max-width: 540px) {
+  .auth-card {
+    padding: 32px 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-grid {
+    opacity: 0.5;
+    animation: none;
+  }
+}

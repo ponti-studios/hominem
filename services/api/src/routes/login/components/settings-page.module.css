@@ -1,0 +1,185 @@
+/* The web mirror of the omiro settings screen: account identity (editable
+   name + email), monthly AI usage, and sign-out — in the auth page's own
+   light/dark token language. */
+.section {
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+.sectionLabel {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.identityRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: var(--auth-panel);
+  color: var(--auth-text);
+  font-size: 19px;
+  font-weight: 700;
+}
+.nameInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--auth-border);
+  border-radius: 6px;
+  outline: none;
+  color: var(--auth-text);
+  background: var(--auth-panel);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.nameInput:focus {
+  border-color: var(--auth-primary);
+  background: var(--auth-card);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--auth-primary) 12%, transparent);
+}
+.email {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 13px;
+}
+.saveRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.saveButton {
+  margin: 0;
+  padding: 6px 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 6px;
+  background: var(--auth-panel);
+  color: var(--auth-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.saveButton:hover {
+  border-color: var(--auth-primary);
+}
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.saveStatus {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 13px;
+}
+.saveStatus[data-error] {
+  color: var(--auth-danger);
+}
+.usageSummary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.usageAmount {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums;
+}
+.usageLimit {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.usageBar {
+  height: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--auth-border);
+}
+.usageBarFill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--auth-primary);
+  transition: width 0.4s ease;
+}
+.usageReset {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.usageReset[data-over-limit] {
+  color: var(--auth-danger);
+}
+.dangerButton {
+  width: 100%;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--auth-danger) 35%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--auth-danger);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.dangerButton:hover {
+  background: var(--auth-danger-background);
+}
+.confirm {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 8px;
+  background: var(--auth-panel);
+  text-align: left;
+}
+.confirmCopy {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.confirmCancel {
+  margin: 0;
+  padding: 6px 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 6px;
+  background: var(--auth-card);
+  color: var(--auth-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.confirmSignOut {
+  margin: 0;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--auth-danger);
+  color: var(--auth-danger-background);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}

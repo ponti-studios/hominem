@@ -12,3 +12,14 @@ export const loginClientBuildOptions = {
     codeSplitting: false,
   },
 };
+
+export const settingsClientBuildOptions = {
+  tsconfig: './tsconfig.json',
+  platform: 'browser',
+  input: 'src/routes/login/settings.ts',
+  output: {
+    file: 'public/settings.js',
+    format: 'iife',
+    codeSplitting: false,
+  },
+};

@@ -7,6 +7,11 @@ import { etag } from 'hono/etag';
 import { betterAuthServer } from '../../auth/better-auth';
 import { env } from '../../env';
 import type { AuthDependencies } from '../auth/shared';
+import { AuthErrorPage } from './components/auth-error-page';
+import { ConsentPage } from './components/consent-page';
+import { LoginPage } from './components/login-page';
+import { LogoutPage } from './components/logout-page';
+import { SettingsPage } from './components/settings-page';
 import {
   emailSchema,
   getFormValue,
@@ -16,11 +21,11 @@ import {
   resolvePostAuthResume,
   resolveResume,
 } from './helpers';
-import { AuthErrorPage, ConsentPage, LoginPage, LogoutPage } from './pages';
 
 const logoPath = join(process.cwd(), 'public', 'logo.hominem.500x500.webp');
 const cssPath = join(process.cwd(), 'public', 'login.css');
 const jsPath = join(process.cwd(), 'public', 'login.js');
+const settingsJsPath = join(process.cwd(), 'public', 'settings.js');
 
 function serveAsset(path: string, contentType: string) {
   return serveStatic({
@@ -41,7 +46,12 @@ async function callBetterAuth(input: {
 }) {
   const headers = new Headers(input.request.headers);
   headers.set('content-type', 'application/json');
-  if (!headers.has('origin')) headers.set('origin', input.env.API_URL);
+  // Stamp the origin unconditionally: these calls run server-side on behalf
+  // of the API, so the incoming request's Origin (e.g. the browser's
+  // portless-443 host) must never leak into Better Auth's CSRF check — only
+  // the configured API origin is a trusted origin (surface-host examples:
+  // the proxy serves api.lvh.me on 443 while API_URL is api.lvh.me:4200).
+  headers.set('origin', input.env.API_URL);
   return input.auth.handler(
     new Request(new URL(`/api/auth${input.path}`, input.env.API_URL), {
       method: 'POST',
@@ -70,6 +80,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
   const loginRoutes = new Hono()
     .use('/login.css', etag(), serveAsset(cssPath, 'text/css; charset=UTF-8'))
     .use('/login.js', etag(), serveAsset(jsPath, 'text/javascript; charset=UTF-8'))
+    .use('/settings.js', etag(), serveAsset(settingsJsPath, 'text/javascript; charset=UTF-8'))
     .use('/logo.hominem.500x500.webp', etag(), serveAsset(logoPath, 'image/webp'))
     .get('/login', async (c) => {
       const url = new URL(c.req.url);
@@ -99,6 +110,51 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
           step={step}
         />,
       );
+    })
+    .get('/auth/settings', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (session?.user) {
+        return c.html(
+          <SettingsPage
+            loginNextUrl={new URL('/auth/settings', inputEnv.API_URL).toString()}
+            user={session.user}
+          />,
+        );
+      }
+      // Signed out: take them through hosted login, then drop them back here.
+      const settingsUrl = new URL('/auth/settings', inputEnv.API_URL).toString();
+      return c.redirect(
+        loginUrlWithEnv({ resumeQuery: `next=${encodeURIComponent(settingsUrl)}`, step: 'email' }),
+        303,
+      );
+    })
+    .post('/auth/settings/profile', async (c) => {
+      const form = await c.req.parseBody();
+      const name = getFormValue(form, 'name').trim();
+      if (!name) return c.json({ error: 'Name cannot be empty.' }, 400);
+      const response = await callBetterAuth({
+        body: { name },
+        path: '/update-user',
+        request: c.req.raw,
+        auth,
+        env: inputEnv,
+      });
+      if (!response.ok) {
+        const message = await response.text().catch(() => null);
+        return new Response(JSON.stringify({ error: message || 'Could not save name.' }), {
+          headers: { 'content-type': 'application/json' },
+          status: response.status,
+        });
+      }
+      // Forward Better Auth's refreshed session cookies (the session payload
+      // snapshot the new name) so the browser keeps an up-to-date session.
+      const body = await response.text().catch(() => null);
+      const headers = copySetCookieHeaders(response.headers);
+      headers.set('content-type', 'application/json');
+      return new Response(body ?? JSON.stringify({ ok: true }), {
+        status: response.status,
+        headers,
+      });
     })
     .get('/consent', async (c) => {
       const query = new URL(c.req.url).searchParams.toString();
@@ -137,6 +193,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       return c.html(<LogoutPage signedOut={!session} />);
     })
     .post('/logout', async (c) => {
+      const form = await c.req.parseBody();
       const response = await callBetterAuth({
         body: {},
         path: '/sign-out',
@@ -144,6 +201,15 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         auth,
         env: inputEnv,
       });
+      // Optional post-sign-out destination (used by /auth/settings): redirect
+      // there once the session is cleared, falling back to the signed-out page.
+      const next = getFormValue(form, 'next');
+      const resume = next ? resolveResumeWithEnv(`next=${encodeURIComponent(next)}`) : null;
+      if (resume) {
+        const headers = new Headers(response.headers);
+        headers.set('location', resume.url);
+        return new Response(null, { headers, status: 303 });
+      }
       const pageResponse = await c.html(<LogoutPage signedOut />);
       const headers = copySetCookieHeaders(response.headers);
       headers.set('content-type', pageResponse.headers.get('content-type') ?? 'text/html');

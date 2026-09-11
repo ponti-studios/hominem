@@ -12,6 +12,7 @@ vi.mock('../auth/better-auth', () => ({
     handler: mocks.handler,
   },
   getTrustedOrigins: () => [
+    'http://localhost:4040',
     'https://career.ponti.io',
     'https://finance.ponti.io',
     'https://labs.ponti.io',
@@ -175,5 +176,100 @@ describe('API login route', () => {
     await expect(response.text()).resolves.toContain('Signed out');
     const request = mocks.handler.mock.calls[0]?.[0] as Request;
     expect(request.url).toContain('/api/auth/sign-out');
+  });
+
+  it('redirects to the login page after sign-out when a next is given', async () => {
+    mocks.handler.mockResolvedValue(
+      new Response(null, {
+        headers: {
+          'set-cookie': 'better-auth.session_token=; Max-Age=0; Path=/; HttpOnly',
+        },
+        status: 200,
+      }),
+    );
+    const next = 'http://localhost:4040/login?next=http%3A%2F%2Flocalhost%3A4040%2Fauth%2Fsettings';
+
+    const response = await createApp().request('http://localhost/logout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ next }).toString(),
+    });
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe(next);
+    // the cleared session cookie still travels with the redirect
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
+    const request = mocks.handler.mock.calls[0]?.[0] as Request;
+    expect(request.url).toContain('/api/auth/sign-out');
+  });
+
+  it('redirects signed-out visitors to hosted login with a settings resume', async () => {
+    const response = await createApp().request('http://localhost/auth/settings');
+
+    expect(response.status).toBe(303);
+    const location = response.headers.get('location');
+    expect(location).toContain('/login?');
+    expect(decodeURIComponent(location ?? '')).toContain('http://localhost:4040/auth/settings');
+    expect(decodeURIComponent(location ?? '')).toContain('step=email');
+  });
+
+  it('renders the account settings page for a signed-in session', async () => {
+    mocks.getSession.mockResolvedValue({
+      user: { id: 'u1', name: 'Ada Lovelace', email: 'ada@example.com' },
+    });
+
+    const response = await createApp().request('http://localhost/auth/settings');
+
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain('Manage your Hominem account.');
+    expect(html).toContain('value="Ada Lovelace"');
+    expect(html).toContain('ada@example.com');
+    expect(html).toContain('data-settings-signout');
+    expect(html).toContain('/settings.js');
+  });
+
+  it('serves the settings browser bundle', async () => {
+    const response = await createApp().request('http://localhost/settings.js');
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('text/javascript; charset=utf-8');
+    await expect(response.text()).resolves.toContain('data-settings-usage');
+  });
+
+  it('updates the profile name through Better Auth', async () => {
+    mocks.handler.mockResolvedValue(
+      new Response(JSON.stringify({ status: true }), {
+        headers: {
+          'content-type': 'application/json',
+          'set-cookie': 'better-auth.session_token=refreshed; Path=/; HttpOnly',
+        },
+        status: 200,
+      }),
+    );
+
+    const response = await createApp().request('http://localhost/auth/settings/profile', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ name: 'Ada Lovelace' }).toString(),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ status: true });
+    expect(response.headers.get('set-cookie')).toContain('refreshed');
+    const request = mocks.handler.mock.calls[0]?.[0] as Request;
+    expect(request.url).toContain('/api/auth/update-user');
+    await expect(request.json()).resolves.toEqual({ name: 'Ada Lovelace' });
+  });
+
+  it('rejects an empty profile name', async () => {
+    const response = await createApp().request('http://localhost/auth/settings/profile', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ name: '   ' }).toString(),
+    });
+
+    expect(response.status).toBe(400);
+    expect(mocks.handler).not.toHaveBeenCalled();
   });
 });

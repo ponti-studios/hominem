@@ -1,0 +1,85 @@
+/* Animated submit control: the ring + helper message state and the solid
+   button state that replaces it on completion. The submit button itself
+   (LoginPage's child) carries .fill so it can't be a cross-module
+   descendant selector — the classes compile together on the same element. */
+.progress-button {
+  position: relative;
+  width: 100%;
+  height: 44px;
+  margin-top: 12px;
+  display: grid;
+  place-items: center;
+}
+.progress-button__border,
+.progress-button__action {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.2s ease;
+}
+/* The fill makes the button match the ring exactly (same 44px height and
+   full width), so the state swap between the ring + helper message and the
+   solid button never changes the button's size. */
+.fill {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  margin: 0;
+}
+.progress-button__border {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+/* No viewBox on the <svg>, so 1 user unit = 1px here: geometry set via CSS
+   (not a fixed-size viewBox stretched to the button's real, variable width)
+   keeps the stroke and corner radius uniform regardless of button width. */
+.progress-button__track,
+.progress-button__progress {
+  x: 1px;
+  y: 1px;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  rx: 6px;
+  fill: none;
+  stroke-width: 2;
+}
+.progress-button__track {
+  stroke: var(--auth-border);
+}
+.progress-button__gradient-start {
+  stop-color: var(--auth-primary);
+  stop-opacity: 0.35;
+}
+.progress-button__gradient-end {
+  stop-color: var(--auth-primary);
+  stop-opacity: 1;
+}
+.progress-button__progress {
+  stroke: url('#progress-button-gradient');
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: calc(100 - var(--progress, 0));
+}
+/* A round linecap still paints a stray dot for a zero-length dash, so hide
+   the progress stroke outright at zero instead of relying on dash math. */
+.progress-button[data-progress-zero] .progress-button__progress {
+  stroke: none;
+}
+.progress-button__helper {
+  position: relative;
+  display: inline-flex;
+  gap: 6px;
+  color: var(--auth-muted);
+  font-size: 13px;
+}
+.progress-button__arrow {
+  color: var(--auth-primary);
+}
+.progress-button[data-complete='false'] .progress-button__action {
+  opacity: 0;
+  pointer-events: none;
+}
+.progress-button[data-complete='true'] .progress-button__border,
+.progress-button[data-complete='true'] .progress-button__helper {
+  opacity: 0;
+}

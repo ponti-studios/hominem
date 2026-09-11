@@ -1,0 +1,863 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<title>Chat Generation Round Trip</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --paper: #f5f6f8;
+    --panel: #ffffff;
+    --panel-2: #eef0f4;
+    --ink: #181c24;
+    --ink-dim: #565f6f;
+    --line: #ced3de;
+    --line-strong: #aab1c0;
+    --stream: #0f7a8c;
+    --stream-ink: #0a5e6d;
+    --durable: #6d4fe0;
+    --warn: #a8590c;
+    --new: #b0234d;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #10131a;
+      --panel: #171b24;
+      --panel-2: #1d2230;
+      --ink: #e9ebf1;
+      --ink-dim: #99a1b3;
+      --line: #2c3140;
+      --line-strong: #3c4356;
+      --stream: #3ecbd8;
+      --stream-ink: #7fe0ea;
+      --durable: #a894ff;
+      --warn: #e8a64f;
+      --new: #ff6f96;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #10131a;
+    --panel: #171b24;
+    --panel-2: #1d2230;
+    --ink: #e9ebf1;
+    --ink-dim: #99a1b3;
+    --line: #2c3140;
+    --line-strong: #3c4356;
+    --stream: #3ecbd8;
+    --stream-ink: #7fe0ea;
+    --durable: #a894ff;
+    --warn: #e8a64f;
+    --new: #ff6f96;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    padding: 48px 24px 64px;
+  }
+
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  header.page {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 700px;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--stream-ink);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(28px, 4vw, 38px);
+    font-weight: 700;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  .dek {
+    margin: 0;
+    color: var(--ink-dim);
+    font-size: 16px;
+    line-height: 1.55;
+    max-width: 66ch;
+  }
+
+  figure {
+    margin: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px 22px 18px;
+  }
+
+  .diagram-scroll {
+    overflow-x: auto;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-width: 880px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+  }
+
+  figcaption {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-dim);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  figcaption strong { color: var(--ink); font-weight: 600; }
+
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+  .notes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .note {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .note .swatch {
+    width: 22px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  .note h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .note p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+  }
+
+  .banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--new);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--ink-dim);
+  }
+
+  .banner strong { color: var(--ink); }
+
+  footer {
+    color: var(--ink-dim);
+    font-size: 12.5px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    line-height: 1.7;
+  }
+
+  /* ===== plain-english section ===== */
+
+  .plain {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 26px 26px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .plain .eyebrow { color: var(--warn); }
+
+  .plain-figure {
+    margin: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 18px 14px;
+  }
+
+  .plain-figure svg {
+    min-width: 720px;
+    font-family: "IBM Plex Sans", ui-sans-serif, sans-serif;
+  }
+
+  .plain-figure figcaption {
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  .story {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    counter-reset: step;
+  }
+
+  .story li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 12px;
+    align-items: baseline;
+  }
+
+  .story li::before {
+    content: counter(step);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--stream-ink);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .story p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+
+  .story .analogy {
+    font-style: italic;
+    color: var(--ink-dim);
+  }
+
+  /* step-by-step reveal, shared timeline across both animated diagrams:
+     every element uses the same animation-duration so animation-delay
+     is a pure phase offset that repeats identically on every loop. */
+  .step-card, .step-line, .step-pulse {
+    animation-duration: 8s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+  }
+
+  .step-card {
+    animation-name: cardIn;
+    opacity: 0;
+  }
+
+  @keyframes cardIn {
+    0%   { opacity: 0; transform: translateY(7px); }
+    6%   { opacity: 1; transform: translateY(0); }
+    82%  { opacity: 1; transform: translateY(0); }
+    92%  { opacity: 0; transform: translateY(0); }
+    100% { opacity: 0; }
+  }
+
+  .step-line {
+    animation-name: lineDraw;
+    opacity: 0;
+  }
+
+  @keyframes lineDraw {
+    0%   { opacity: 0; stroke-dashoffset: 100; }
+    6%   { opacity: 1; }
+    16%  { stroke-dashoffset: 0; }
+    82%  { opacity: 1; stroke-dashoffset: 0; }
+    92%  { opacity: 0; }
+    100% { opacity: 0; stroke-dashoffset: 100; }
+  }
+
+  .step-pulse {
+    animation-name: pulseOn;
+  }
+
+  @keyframes pulseOn {
+    0%, 20%   { opacity: 0; }
+    26%       { opacity: 1; }
+    45%       { opacity: 0.4; }
+    52%       { opacity: 1; }
+    72%       { opacity: 1; }
+    84%, 100% { opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .step-card, .step-line, .step-pulse {
+      animation: none !important;
+      opacity: 1 !important;
+      stroke-dashoffset: 0 !important;
+      transform: none !important;
+    }
+  }
+</style>
+
+<main>
+  <header class="page">
+    <div class="eyebrow">Chat SDK · request lifecycle · re-audited 2026-09</div>
+    <h1>One message, one round trip</h1>
+    <p class="dek">
+      What actually happens between a keystroke in the composer and tokens
+      landing back on screen, as of the current
+      <span class="mono">reduceGeneration()</span> /
+      <span class="mono">interpreter.execute()</span> pair. The prior version of
+      this diagram named a single monolithic machine, a "live-bus," and four SSE
+      event types — none of that survived the rewrite to an event-sourced
+      pipeline with Postgres as the durable spine.
+    </p>
+  </header>
+
+  <div class="banner">
+    <span class="swatch" style="width:10px;height:10px;border-radius:50%;background:var(--new);flex:none"></span>
+    <span><strong>Magenta</strong> marks concepts that didn't exist in the previous diagram: preview-before-confirm, retry-with-backoff, effect idempotency, and the Postgres-backed replay path.</span>
+  </div>
+
+  <section class="plain">
+    <header class="page">
+      <div class="eyebrow">Skip the jargon</div>
+      <h1 style="font-size:clamp(24px,3.4vw,32px)">What happens when the app asks a model something</h1>
+      <p class="dek">
+        Same system as the diagrams below, told as what it resembles: ordering
+        at a counter where the kitchen calls out each word as it's cooked, and
+        keeps a running order book so nothing gets lost.
+      </p>
+    </header>
+
+    <figure class="plain-figure">
+      <div class="diagram-scroll">
+        <svg viewBox="0 0 1040 380" role="img" aria-label="Animated diagram: you place an order at a counter, the counter logs it and hands it to a kitchen, the kitchen calls out the answer to you while also writing it into an order book, in that order, on a repeating loop.">
+          <!-- lines, drawn in process order -->
+          <path pathLength="100" d="M210,190 L280,190" fill="none" stroke="var(--stream)" stroke-width="1.8" stroke-dasharray="100" class="step-line" style="animation-delay:0.4s"></path>
+          <path pathLength="100" d="M470,190 L580,140" fill="none" stroke="var(--stream)" stroke-width="1.8" stroke-dasharray="100" class="step-line" style="animation-delay:1.4s"></path>
+          <path pathLength="100" d="M690,160 L690,248" fill="none" stroke="var(--durable)" stroke-width="1.8" stroke-dasharray="100" class="step-line" style="animation-delay:2.6s"></path>
+          <path pathLength="100" d="M580,108 L300,108 L210,170" fill="none" stroke="var(--stream-ink)" stroke-width="2" stroke-dasharray="100" class="step-line" style="animation-delay:3.6s"></path>
+
+          <!-- cards, appearing in process order -->
+          <g class="step-card" style="animation-delay:0s">
+            <rect x="40" y="150" width="170" height="100" rx="10" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+            <text x="125" y="182" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">You</text>
+            <text x="125" y="202" text-anchor="middle" font-size="12" fill="var(--ink-dim)">"Summarize this contract"</text>
+            <text x="125" y="222" text-anchor="middle" font-size="11" fill="var(--ink-dim)">1 · you ask</text>
+          </g>
+
+          <g class="step-card" style="animation-delay:1s">
+            <rect x="280" y="150" width="190" height="100" rx="10" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+            <text x="375" y="182" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">The counter</text>
+            <text x="375" y="202" text-anchor="middle" font-size="12" fill="var(--ink-dim)">writes the order down,</text>
+            <text x="375" y="218" text-anchor="middle" font-size="12" fill="var(--ink-dim)">passes the ticket along</text>
+            <text x="375" y="238" text-anchor="middle" font-size="11" fill="var(--ink-dim)">2 · logged first</text>
+          </g>
+
+          <g class="step-card" style="animation-delay:2s">
+            <rect x="580" y="60" width="220" height="100" rx="10" fill="var(--panel)" stroke="var(--stream)" stroke-width="1.6"></rect>
+            <text x="690" y="92" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">The kitchen</text>
+            <text x="690" y="112" text-anchor="middle" font-size="12" fill="var(--ink-dim)">calls out each word</text>
+            <text x="690" y="128" text-anchor="middle" font-size="12" fill="var(--ink-dim)">as it's cooked</text>
+            <text x="690" y="148" text-anchor="middle" font-size="11" fill="var(--ink-dim)">3 · the model answers</text>
+          </g>
+
+          <g class="step-card" style="animation-delay:3s">
+            <rect x="580" y="250" width="220" height="100" rx="10" fill="var(--panel)" stroke="var(--durable)" stroke-width="1.5"></rect>
+            <text x="690" y="282" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">The order book</text>
+            <text x="690" y="302" text-anchor="middle" font-size="12" fill="var(--ink-dim)">every word gets a line,</text>
+            <text x="690" y="318" text-anchor="middle" font-size="12" fill="var(--ink-dim)">so nothing is ever lost</text>
+            <text x="690" y="338" text-anchor="middle" font-size="11" fill="var(--ink-dim)">4 · written as it happens</text>
+          </g>
+
+          <g class="step-pulse" style="animation-delay:3.6s">
+            <text x="150" y="145" text-anchor="middle" font-size="11.5" fill="var(--stream-ink)">↖ the reply arrives</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Each step lights up in the order it actually happens: your message goes out, the counter logs it, the kitchen answers, the order book records it, and the reply reaches you — then the loop resets to show it again.</figcaption>
+    </figure>
+
+    <ol class="story">
+      <li><p><strong>You place an order.</strong> Typing a message and hitting send is like walking up to a counter and asking for something — <span class="analogy">"Can you summarize this contract?"</span></p></li>
+      <li><p><strong>The counter writes it down before doing anything else.</strong> The app's server logs your request permanently first, then hands it to the kitchen — so a crash a second later can't make your order vanish.</p></li>
+      <li><p><strong>The kitchen calls out words as they're cooked, not all at once.</strong> That's why the answer appears to type itself: you're seeing it arrive a few words at a time instead of waiting for the whole thing to be plated.</p></li>
+      <li><p><strong>Every word gets written into the order book as it goes out.</strong> If your phone drops the connection mid-answer, reopening the chat doesn't start over — it asks the order book "what did I miss after word 42?" and picks up there.</p></li>
+      <li><p><strong>If you cancel, the kitchen finishes its current step first.</strong> It checks "has this been cancelled?" between steps rather than dropping a spoon mid-stir — so you never get a sentence torn off for no reason.</p></li>
+    </ol>
+
+    <figure class="plain-figure">
+      <div class="diagram-scroll">
+        <svg viewBox="0 0 1040 300" role="img" aria-label="Animated diagram: the kitchen wants to do something unusual, the line to a waiting card draws, the waiting card fades in and pulses, then a line draws to each possible outcome — proceed if you approve, or stop if you decline.">
+          <path pathLength="100" d="M210,150 L370,150" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="100" class="step-line" style="animation-delay:0.6s"></path>
+          <path pathLength="100" d="M680,120 L830,80" fill="none" stroke="var(--durable)" stroke-width="1.8" stroke-dasharray="100" class="step-line" style="animation-delay:2.4s"></path>
+          <path pathLength="100" d="M680,180 L830,220" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="100" class="step-line" style="animation-delay:3.2s"></path>
+
+          <g class="step-card" style="animation-delay:0s">
+            <rect x="40" y="100" width="170" height="100" rx="10" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+            <text x="125" y="140" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)">The kitchen</text>
+            <text x="125" y="160" text-anchor="middle" font-size="12" fill="var(--ink-dim)">wants to check the</text>
+            <text x="125" y="176" text-anchor="middle" font-size="12" fill="var(--ink-dim)">weather, or your calendar</text>
+            <text x="125" y="192" text-anchor="middle" font-size="11" fill="var(--ink-dim)">1 · something unusual</text>
+          </g>
+
+          <g class="step-card" style="animation-delay:1.2s">
+            <rect x="370" y="90" width="310" height="120" rx="12" fill="var(--panel)" stroke="var(--warn)" stroke-width="1.8"></rect>
+            <circle cx="410" cy="150" r="14" fill="none" stroke="var(--warn)" stroke-width="2"></circle>
+            <text x="410" y="155" text-anchor="middle" font-size="14" fill="var(--warn)">?</text>
+            <text x="530" y="122" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">Waits for you</text>
+            <text x="530" y="142" text-anchor="middle" font-size="12" fill="var(--ink-dim)">shows what it's about to do,</text>
+            <text x="530" y="158" text-anchor="middle" font-size="12" fill="var(--ink-dim)">then does nothing until you</text>
+            <text x="530" y="174" text-anchor="middle" font-size="12" fill="var(--ink-dim)">say yes or no</text>
+            <text x="530" y="198" text-anchor="middle" font-size="11" fill="var(--ink-dim)">2 · paused, not stalled</text>
+          </g>
+          <circle cx="410" cy="150" r="14" fill="none" stroke="var(--warn)" stroke-width="2.5" class="step-pulse" style="animation-delay:1.8s"></circle>
+
+          <g class="step-card" style="animation-delay:2.8s">
+            <rect x="830" y="40" width="180" height="80" rx="10" fill="var(--panel)" stroke="var(--durable)" stroke-width="1.5"></rect>
+            <text x="920" y="72" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--ink)">You say "go ahead"</text>
+            <text x="920" y="90" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">kitchen proceeds</text>
+            <text x="920" y="106" text-anchor="middle" font-size="10.5" fill="var(--ink-dim)">3a · approved</text>
+          </g>
+
+          <g class="step-card" style="animation-delay:3.6s">
+            <rect x="830" y="170" width="180" height="80" rx="10" fill="var(--panel)" stroke="var(--warn)" stroke-width="1.5"></rect>
+            <text x="920" y="202" text-anchor="middle" font-size="13.5" font-weight="700" fill="var(--ink)">You say "no thanks"</text>
+            <text x="920" y="220" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">kitchen skips the step</text>
+            <text x="920" y="236" text-anchor="middle" font-size="10.5" fill="var(--ink-dim)">3b · declined</text>
+          </g>
+
+          <text x="530" y="260" text-anchor="middle" font-size="12" fill="var(--ink-dim)">both outcomes are shown here — only one happens per real request</text>
+        </svg>
+      </div>
+      <figcaption>Not every step needs your say-so — most run automatically. But anything unusual (looking something up outside the conversation, touching your calendar, sending something on your behalf) pauses here first. The question mark pulses to show the kitchen is genuinely idle, not stalling: it does not guess, retry, or proceed on a timer. It waits.</figcaption>
+    </figure>
+
+    <p class="dek" style="max-width:70ch">
+      Everything past this point is the same story again, in the vocabulary
+      the code actually uses — the counter is the API route, the kitchen is
+      the model provider and tool registry, and the order book is the
+      Postgres event log.
+    </p>
+  </section>
+
+  <figure>
+    <div class="diagram-scroll">
+      <svg viewBox="0 0 1560 840" role="img" aria-label="Diagram of a chat message's round trip: from the composer through ChatClient and the generation HTTP route, into the generation machine's pure reducer and interpreter loop with its provider, tool, persistence and control ports, out through an AsyncEventQueue and SSE response, back through the client's dedupe-and-merge reducer to a re-rendered message bubble. A dashed line shows the four-step cancellation handshake driven by a database status poll rather than an in-memory flag.">
+        <defs>
+          <marker id="arrowStream" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--stream)"></path>
+          </marker>
+          <marker id="arrowDurable" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--durable)"></path>
+          </marker>
+          <marker id="arrowWarn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--warn)"></path>
+          </marker>
+        </defs>
+
+        <!-- ===== outer loop container ===== -->
+        <rect x="990" y="65" width="530" height="490" rx="12" fill="none" stroke="var(--stream)" stroke-width="1.6"></rect>
+        <text x="1010" y="98" class="mono" font-size="13" fill="var(--stream-ink)" letter-spacing="0.06em">GENERATION MACHINE</text>
+        <text x="1010" y="122" font-size="19" font-weight="700" fill="var(--ink)">createGenerationRunner().generate()</text>
+
+        <rect x="1010" y="182" width="490" height="330" rx="10" fill="var(--panel-2)" stroke="var(--line)" stroke-dasharray="4 4"></rect>
+
+        <!-- reduce node -->
+        <rect x="1030" y="202" width="220" height="58" rx="8" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+        <text x="1140" y="225" text-anchor="middle" font-size="14.5" font-weight="600" fill="var(--ink)">reduceGeneration()</text>
+        <text x="1140" y="243" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)" class="mono">pure dispatcher</text>
+
+        <!-- interpreter node -->
+        <rect x="1270" y="202" width="210" height="58" rx="8" fill="var(--panel)" stroke="var(--stream)" stroke-width="1.6"></rect>
+        <text x="1375" y="225" text-anchor="middle" font-size="14.5" font-weight="600" fill="var(--ink)">interpreter.execute()</text>
+        <text x="1375" y="243" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)" class="mono">the only I/O</text>
+
+        <line x1="1250" y1="231" x2="1263" y2="231" stroke="var(--stream)" stroke-width="1.8" marker-end="url(#arrowStream)"></line>
+        <text x="1256" y="197" text-anchor="middle" font-size="12" fill="var(--stream-ink)">GenerationCommand[]</text>
+
+        <!-- fan nodes -->
+        <rect x="1030" y="326" width="105" height="62" rx="7" fill="var(--panel)" stroke="var(--line-strong)"></rect>
+        <text x="1082" y="349" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">provider.open()</text>
+        <text x="1082" y="365" text-anchor="middle" font-size="11" fill="var(--ink-dim)">.retry() · OpenRouter</text>
+        <text x="1082" y="380" text-anchor="middle" font-size="10.5" fill="var(--new)">+ appendToolResult()</text>
+
+        <rect x="1157" y="326" width="105" height="62" rx="7" fill="var(--panel)" stroke="var(--line-strong)"></rect>
+        <text x="1209" y="349" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">tools.execute()</text>
+        <text x="1209" y="365" text-anchor="middle" font-size="11" fill="var(--ink-dim)">tool registry</text>
+        <text x="1209" y="380" text-anchor="middle" font-size="10.5" fill="var(--new)">+ tools.preview()</text>
+
+        <rect x="1284" y="326" width="105" height="62" rx="7" fill="var(--panel)" stroke="var(--durable)" stroke-width="1.5"></rect>
+        <text x="1336" y="349" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">events.persist()</text>
+        <text x="1336" y="365" text-anchor="middle" font-size="11" fill="var(--ink-dim)">durable append</text>
+        <text x="1336" y="380" text-anchor="middle" font-size="10.5" fill="var(--ink-dim)">+ events.emit()</text>
+
+        <rect x="1411" y="326" width="89" height="62" rx="7" fill="var(--panel)" stroke="var(--line-strong)"></rect>
+        <text x="1455" y="349" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--ink)">generation</text>
+        <text x="1455" y="363" text-anchor="middle" font-size="11" fill="var(--ink-dim)">.save() .stop()</text>
+        <text x="1455" y="378" text-anchor="middle" font-size="10" fill="var(--new)">control.waitBeforeRetry()</text>
+
+        <!-- interpreter -> fan -->
+        <line x1="1330" y1="260" x2="1090" y2="322" stroke="var(--stream)" stroke-width="1.3" marker-end="url(#arrowStream)"></line>
+        <line x1="1350" y1="260" x2="1212" y2="322" stroke="var(--stream)" stroke-width="1.3" marker-end="url(#arrowStream)"></line>
+        <line x1="1370" y1="260" x2="1338" y2="322" stroke="var(--stream)" stroke-width="1.3" marker-end="url(#arrowStream)"></line>
+        <line x1="1395" y1="260" x2="1455" y2="322" stroke="var(--stream)" stroke-width="1.3" marker-end="url(#arrowStream)"></line>
+
+        <!-- fan -> loop back to reduce -->
+        <path d="M1030,357 C 960,357 960,222 1028,222" fill="none" stroke="var(--stream)" stroke-width="1.4" stroke-dasharray="1 5" stroke-linecap="round" marker-end="url(#arrowStream)"></path>
+        <text x="935" y="290" font-size="11.5" fill="var(--stream-ink)" transform="rotate(-90 935 290)" text-anchor="middle">new GenerationInput</text>
+
+        <!-- persist -> postgres -->
+        <line x1="1336" y1="388" x2="1336" y2="432" stroke="var(--durable)" stroke-width="1.5" marker-end="url(#arrowDurable)"></line>
+        <path d="M1291,432 h90 a4,4 0 0 1 4,4 v34 a4,4 0 0 1 -4,4 h-90 a4,4 0 0 1 -4,-4 v-34 a4,4 0 0 1 4,-4 z" fill="var(--panel)" stroke="var(--durable)" stroke-width="1.3"></path>
+        <ellipse cx="1336" cy="436" rx="49" ry="5" fill="none" stroke="var(--durable)" stroke-width="1.1"></ellipse>
+        <text x="1336" y="458" text-anchor="middle" font-size="10.5" fill="var(--ink-dim)">app.chatGenerationEvents</text>
+
+        <text x="1336" y="486" text-anchor="middle" font-size="10.5" fill="var(--ink-dim)">↳ folds into app.chatGenerationRuns</text>
+
+        <!-- ===== top row ===== -->
+        <g>
+          <rect x="30" y="65" width="180" height="94" rx="10" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+          <rect x="240" y="65" width="220" height="94" rx="10" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+          <rect x="490" y="65" width="230" height="94" rx="10" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+          <rect x="750" y="65" width="210" height="94" rx="10" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+        </g>
+
+        <text x="120" y="98" text-anchor="middle" font-size="16" font-weight="700" fill="var(--ink)" font-family="'IBM Plex Sans'">Chat UI</text>
+        <text x="120" y="120" text-anchor="middle" font-size="12" fill="var(--ink-dim)">composer +</text>
+        <text x="120" y="136" text-anchor="middle" font-size="12" fill="var(--ink-dim)">message list</text>
+
+        <text x="350" y="98" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Sans'">ChatClient.send()</text>
+        <text x="350" y="118" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">shared client class</text>
+        <text x="350" y="134" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">via useStreamMessage() (web) /</text>
+        <text x="350" y="150" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">useSendMessage() (omiro)</text>
+
+        <text x="605" y="98" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Sans'">POST /api/chats/:id/generation</text>
+        <text x="605" y="118" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">createChatHttpHandler()</text>
+        <text x="605" y="134" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">Web Request/Response, not Hono-native</text>
+
+        <text x="855" y="98" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Sans'">executeGenerationTurn()</text>
+        <text x="855" y="118" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">builds provider/tools/store/</text>
+        <text x="855" y="134" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">publisher ports, starts the run</text>
+
+        <!-- top arrows -->
+        <line x1="210" y1="110" x2="236" y2="110" stroke="var(--stream)" stroke-width="1.8" marker-end="url(#arrowStream)"></line>
+        <line x1="460" y1="110" x2="486" y2="110" stroke="var(--stream)" stroke-width="1.8" marker-end="url(#arrowStream)"></line>
+        <line x1="720" y1="110" x2="746" y2="110" stroke="var(--stream)" stroke-width="1.8" marker-end="url(#arrowStream)"></line>
+        <line x1="960" y1="110" x2="986" y2="110" stroke="var(--stream)" stroke-width="1.8" marker-end="url(#arrowStream)"></line>
+
+        <!-- ===== bottom row (right to left) ===== -->
+        <rect x="1076" y="640" width="230" height="94" rx="10" fill="var(--panel)" stroke="var(--stream)" stroke-width="1.5"></rect>
+        <rect x="792" y="640" width="260" height="94" rx="10" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+        <rect x="538" y="640" width="230" height="94" rx="10" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+        <rect x="234" y="640" width="280" height="94" rx="10" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+        <rect x="30" y="640" width="180" height="94" rx="10" fill="var(--panel)" stroke="var(--stream)" stroke-width="1.6"></rect>
+
+        <text x="1191" y="672" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Sans'">AsyncEventQueue</text>
+        <text x="1191" y="692" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">backpressured in-process feed</text>
+        <text x="1191" y="708" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">for the running generation</text>
+
+        <text x="922" y="672" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Sans'">createGenerationSseResponse()</text>
+        <text x="922" y="692" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">16 event types, id: = sequence,</text>
+        <text x="922" y="708" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">heartbeat comment, [DONE]</text>
+
+        <text x="653" y="672" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Sans'">ChatClient.consume()</text>
+        <text x="653" y="692" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">dedupe by sequence</text>
+        <text x="653" y="708" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">idle-timeout → replay from</text>
+        <text x="653" y="724" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">lastDurableSequence on drop</text>
+
+        <text x="374" y="672" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Sans'">reduceGenerationClientEvent()</text>
+        <text x="374" y="692" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">merges text/reasoning deltas +</text>
+        <text x="374" y="708" text-anchor="middle" font-size="11.5" fill="var(--ink-dim)">tool steps into client state</text>
+
+        <text x="120" y="675" text-anchor="middle" font-size="16" font-weight="700" fill="var(--ink)" font-family="'IBM Plex Sans'">Re-render</text>
+        <text x="120" y="695" text-anchor="middle" font-size="12" fill="var(--ink-dim)">setState grows the</text>
+        <text x="120" y="711" text-anchor="middle" font-size="12" fill="var(--ink-dim)">message bubble</text>
+
+        <!-- bottom arrows, right to left -->
+        <line x1="1076" y1="685" x2="1056" y2="685" stroke="var(--stream)" stroke-width="1.8" marker-end="url(#arrowStream)"></line>
+        <line x1="792" y1="685" x2="772" y2="685" stroke="var(--stream)" stroke-width="1.8" marker-end="url(#arrowStream)"></line>
+        <line x1="538" y1="685" x2="518" y2="685" stroke="var(--stream)" stroke-width="1.8" marker-end="url(#arrowStream)"></line>
+        <line x1="234" y1="685" x2="214" y2="685" stroke="var(--stream)" stroke-width="1.8" marker-end="url(#arrowStream)"></line>
+
+        <!-- connector: emit port down/around into AsyncEventQueue box -->
+        <polyline points="1455,388 1455,590 1191,590 1191,636" fill="none" stroke="var(--stream)" stroke-width="1.6" marker-end="url(#arrowStream)"></polyline>
+
+        <!-- left ascending return -->
+        <line x1="120" y1="640" x2="120" y2="163" stroke="var(--stream)" stroke-width="1.9" marker-end="url(#arrowStream)"></line>
+
+        <!-- cancellation, dashed, 4-step handshake -->
+        <path d="M350,159 L1035,200" fill="none" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="6 5" marker-end="url(#arrowWarn)"></path>
+        <text x="640" y="180" text-anchor="middle" font-size="11.5" fill="var(--warn)">cancel_requested → stop-effects → effect-stopped → cancelled</text>
+        <text x="640" y="196" text-anchor="middle" font-size="10.5" fill="var(--warn)">— polled by re-reading chatGenerationRuns.status, not an in-memory flag</text>
+
+        <!-- legend -->
+        <g transform="translate(30,788)">
+          <line x1="0" y1="0" x2="26" y2="0" stroke="var(--stream)" stroke-width="2.2"></line>
+          <text x="34" y="4" font-size="13" fill="var(--ink-dim)" font-family="'IBM Plex Sans'">request → streamed tokens</text>
+
+          <line x1="270" y1="0" x2="296" y2="0" stroke="var(--durable)" stroke-width="2.2"></line>
+          <text x="304" y="4" font-size="13" fill="var(--ink-dim)" font-family="'IBM Plex Sans'">durable write to Postgres</text>
+
+          <line x1="530" y1="0" x2="556" y2="0" stroke="var(--warn)" stroke-width="2.2" stroke-dasharray="5 4"></line>
+          <text x="564" y="4" font-size="13" fill="var(--ink-dim)" font-family="'IBM Plex Sans'">cancellation poll</text>
+
+          <circle cx="810" cy="0" r="4.5" fill="var(--new)"></circle>
+          <text x="824" y="4" font-size="13" fill="var(--ink-dim)" font-family="'IBM Plex Sans'">new since the last diagram</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>
+      The top row is the outbound leg. It no longer ends at a generic
+      "chat generation service" — <strong>ChatClient</strong> is a shared
+      class both apps' hooks call into, and the route it hits is a
+      framework-agnostic handler (<span class="mono">createChatHttpHandler()</span>)
+      mounted inside Hono, not a Hono handler itself. Inside the loop,
+      <strong>reduceGeneration()</strong> is now a pure dispatcher across
+      several reducer functions (<span class="mono">reduceProviderTurnCompleted()</span>,
+      <span class="mono">reduceToolResult()</span>, <span class="mono">reduceCancelRequested()</span>,
+      and more), while <strong>interpreter.execute()</strong> is still the only
+      place that touches the provider, the tool registry, or Postgres — it just
+      has more ports now, including an explicit retry path and a distinct
+      <span class="mono">generation.stop()</span> used only during cancellation.
+      The bottom row is the return leg, and it's the part that changed most:
+      there is no "live-bus." A per-request <strong>AsyncEventQueue</strong>
+      feeds the live SSE response directly; a separate Postgres
+      LISTEN/NOTIFY channel (confusingly, using the same name as the durable
+      event table) exists purely so a reconnecting client — or a second API
+      instance during a rolling deploy — can replay events it missed.
+    </figcaption>
+  </figure>
+
+  <div class="notes">
+    <div class="note">
+      <div class="swatch" style="background:var(--stream)"></div>
+      <h3>Still one loop, several reducer functions</h3>
+      <p>Text deltas, tool calls, retries, and cancellation all flow through the same reduce → command → effect → input cycle — <span class="mono">reduceGeneration()</span> just dispatches to a distinct pure function per input type now, instead of one big switch.</p>
+    </div>
+    <div class="note">
+      <div class="swatch" style="background:var(--durable)"></div>
+      <h3>Event log and projection are separate tables</h3>
+      <p><span class="mono">app.chatGenerationEvents</span> is the append-only source of truth; <span class="mono">app.chatGenerationRuns</span> is a denormalized status projection folded from it — a formal event-sourcing split the old diagram didn't have.</p>
+    </div>
+    <div class="note">
+      <div class="swatch" style="background:var(--new)"></div>
+      <h3>Tool results are idempotency-cached</h3>
+      <p><span class="mono">app.chatGenerationToolEffects</span> (or a Redis-backed equivalent) keys tool results by <span class="mono">(generationId, idempotencyKey, toolName)</span> so a retried effect can't run a side-effecting tool twice.</p>
+    </div>
+  </div>
+
+  <header class="page">
+    <div class="eyebrow">Inside one provider turn</div>
+    <h1 style="font-size:clamp(24px,3.4vw,32px)">What happens after the model asks for a tool</h1>
+    <p class="dek">
+      The branch inside <span class="mono">reduceProviderTurnCompleted()</span>
+      that fires on <span class="mono">provider-turn-completed</span>. The core shape held up
+      — approve/reject still funnel through the same execute path, rejection
+      still skips it — but there's a new step before the user ever sees a
+      confirmation prompt.
+    </p>
+  </header>
+
+  <figure>
+    <div class="diagram-scroll">
+      <svg viewBox="0 0 1200 1080" role="img" aria-label="Flowchart of the tool-call and confirmation branch inside reduceGeneration: after a provider turn completes, calls with no requested tools go to saving or failed; a call needing confirmation is first previewed, then waits in an awaiting_confirmation phase for an approve or reject input; approved and non-confirmed calls run through execute-tool and reduceToolResult, rejected calls skip straight to reduceToolResult with a synthesized error; remaining pending calls loop back to execute-tool, and once none are left the machine opens the next provider turn.">
+        <defs>
+          <marker id="arrowStream2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--stream)"></path>
+          </marker>
+          <marker id="arrowDurable2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--durable)"></path>
+          </marker>
+          <marker id="arrowWarn2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--warn)"></path>
+          </marker>
+          <marker id="arrowNew2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--new)"></path>
+          </marker>
+        </defs>
+
+        <!-- entry pill -->
+        <rect x="410" y="24" width="380" height="52" rx="26" fill="var(--panel-2)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+        <text x="600" y="47" text-anchor="middle" font-size="13.5" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Mono'">provider-turn-completed</text>
+        <text x="600" y="65" text-anchor="middle" font-size="10.5" fill="var(--ink-dim)" font-family="'IBM Plex Mono'">{ requiredToolCall, confirmationCallIds[] }</text>
+        <line x1="600" y1="76" x2="600" y2="104" stroke="var(--line-strong)" stroke-width="1.6" marker-end="url(#arrowStream2)"></line>
+
+        <!-- D1 -->
+        <polygon points="600,104 712,156 600,208 488,156" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.5"></polygon>
+        <text x="600" y="151" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">named tool</text>
+        <text x="600" y="167" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">calls found?</text>
+
+        <!-- D1 no branch -> right -->
+        <line x1="712" y1="156" x2="846" y2="118" stroke="var(--warn)" stroke-width="1.4" marker-end="url(#arrowWarn2)"></line>
+        <text x="778" y="121" font-size="11.5" fill="var(--warn)">no, required</text>
+        <rect x="850" y="92" width="230" height="52" rx="8" fill="var(--panel)" stroke="var(--warn)" stroke-width="1.5"></rect>
+        <text x="965" y="114" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink)">phase: failed</text>
+        <text x="965" y="132" text-anchor="middle" font-size="11" fill="var(--ink-dim)">model skipped a required lookup</text>
+
+        <line x1="712" y1="156" x2="846" y2="186" stroke="var(--stream)" stroke-width="1.4" marker-end="url(#arrowStream2)"></line>
+        <text x="778" y="206" font-size="11.5" fill="var(--stream-ink)">no, optional</text>
+        <rect x="850" y="162" width="230" height="52" rx="8" fill="var(--panel)" stroke="var(--stream)" stroke-width="1.5"></rect>
+        <text x="965" y="184" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink)">phase: saving</text>
+        <text x="965" y="202" text-anchor="middle" font-size="11" fill="var(--ink-dim)">save-generation() → committed</text>
+
+        <!-- D1 yes branch -> down -->
+        <line x1="600" y1="208" x2="600" y2="234" stroke="var(--stream)" stroke-width="1.6" marker-end="url(#arrowStream2)"></line>
+        <text x="618" y="226" font-size="11.5" fill="var(--stream-ink)">yes</text>
+
+        <rect x="480" y="236" width="240" height="46" rx="8" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"></rect>
+        <text x="600" y="264" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Mono'">first = calls[0]</text>
+
+        <line x1="600" y1="282" x2="600" y2="294" stroke="var(--line-strong)" stroke-width="1.5" marker-end="url(#arrowStream2)"></line>
+
+        <!-- D2 -->
+        <polygon points="600,294 712,346 600,398 488,346" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.5"></polygon>
+        <text x="600" y="341" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--ink)">first.id in</text>
+        <text x="600" y="357" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--ink)">confirmationCallIds?</text>
+
+        <!-- D2 no -> left box -->
+        <line x1="488" y1="346" x2="300" y2="346" stroke="var(--stream)" stroke-width="1.6" marker-end="url(#arrowStream2)"></line>
+        <text x="395" y="336" text-anchor="middle" font-size="11.5" fill="var(--stream-ink)">no</text>
+        <rect x="90" y="321" width="210" height="50" rx="8" fill="var(--panel)" stroke="var(--stream)" stroke-width="1.5"></rect>
+        <text x="195" y="343" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Mono'">runNextToolCall()</text>
+        <text x="195" y="360" text-anchor="middle" font-size="11" fill="var(--ink-dim)">runs immediately</text>
+
+        <!-- D2 yes -> down to preview -->
+        <line x1="600" y1="398" x2="600" y2="418" stroke="var(--new)" stroke-width="1.6" marker-end="url(#arrowNew2)"></line>
+        <text x="622" y="412" font-size="11.5" fill="var(--new)">yes</text>
+
+        <rect x="480" y="420" width="240" height="50" rx="8" fill="var(--panel)" stroke="var(--new)" stroke-width="1.6"></rect>
+        <text x="600" y="441" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Mono'">preview-tool()</text>
+        <text x="600" y="458" text-anchor="middle" font-size="10.5" fill="var(--new)">new — shows the effect before it runs</text>
+
+        <line x1="600" y1="470" x2="600" y2="488" stroke="var(--durable)" stroke-width="1.6" marker-end="url(#arrowDurable2)"></line>
+
+        <rect x="470" y="490" width="260" height="66" rx="8" fill="var(--panel)" stroke="var(--durable)" stroke-width="1.6"></rect>
+        <text x="600" y="516" text-anchor="middle" font-size="13.5" font-weight="600" fill="var(--ink)">phase: awaiting_confirmation</text>
+        <text x="600" y="534" text-anchor="middle" font-size="11" fill="var(--ink-dim)">persists confirmation.required</text>
+        <text x="600" y="549" text-anchor="middle" font-size="11" fill="var(--ink-dim)">— generation is paused here —</text>
+
+        <!-- split to approve / reject -->
+        <line x1="520" y1="556" x2="335" y2="606" stroke="var(--durable)" stroke-width="1.5" marker-end="url(#arrowDurable2)"></line>
+        <line x1="680" y1="556" x2="855" y2="606" stroke="var(--warn)" stroke-width="1.5" marker-end="url(#arrowWarn2)"></line>
+
+        <rect x="215" y="610" width="240" height="50" rx="8" fill="var(--panel)" stroke="var(--durable)" stroke-width="1.5"></rect>
+        <text x="335" y="632" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Mono'">confirmation-approved</text>
+        <text x="335" y="649" text-anchor="middle" font-size="11" fill="var(--ink-dim)">re-queues first, runNextToolCall()</text>
+
+        <rect x="735" y="610" width="240" height="50" rx="8" fill="var(--panel)" stroke="var(--warn)" stroke-width="1.5"></rect>
+        <text x="855" y="632" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Mono'">confirmation-rejected</text>
+        <text x="855" y="649" text-anchor="middle" font-size="11" fill="var(--ink-dim)">synthesizes an error ToolResult</text>
+
+        <!-- shared execute / finish column -->
+        <rect x="490" y="726" width="220" height="56" rx="9" fill="var(--panel)" stroke="var(--stream)" stroke-width="1.7"></rect>
+        <text x="600" y="750" text-anchor="middle" font-size="13.5" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Mono'">execute-tool()</text>
+        <text x="600" y="768" text-anchor="middle" font-size="11" fill="var(--ink-dim)">ports.tools.execute(), effect-cached</text>
+
+        <rect x="490" y="826" width="220" height="56" rx="9" fill="var(--panel)" stroke="var(--stream)" stroke-width="1.7"></rect>
+        <text x="600" y="850" text-anchor="middle" font-size="13.5" font-weight="600" fill="var(--ink)" font-family="'IBM Plex Mono'">reduceToolResult()</text>
+        <text x="600" y="868" text-anchor="middle" font-size="11" fill="var(--ink-dim)">persist tool.completed / tool.failed</text>
+
+        <line x1="600" y1="782" x2="600" y2="820" stroke="var(--stream)" stroke-width="1.6" marker-end="url(#arrowStream2)"></line>
+
+        <!-- feed-ins to execute-tool -->
+        <path d="M195,371 C 195,630 470,760 486,760" fill="none" stroke="var(--stream)" stroke-width="1.4" marker-end="url(#arrowStream2)"></path>
+        <path d="M335,660 C 335,720 470,742 486,744" fill="none" stroke="var(--durable)" stroke-width="1.4" marker-end="url(#arrowDurable2)"></path>
+
+        <!-- rejected skips straight to reduceToolResult -->
+        <path d="M855,660 C 855,770 730,850 714,850" fill="none" stroke="var(--warn)" stroke-width="1.4" stroke-dasharray="6 5" marker-end="url(#arrowWarn2)"></path>
+        <text x="880" y="750" text-anchor="middle" font-size="11" fill="var(--warn)" transform="rotate(78 880 750)">no execution — rejection is the result</text>
+
+        <!-- D3 -->
+        <line x1="600" y1="882" x2="600" y2="898" stroke="var(--line-strong)" stroke-width="1.5" marker-end="url(#arrowStream2)"></line>
+        <polygon points="600,898 712,948 600,998 488,948" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.5"></polygon>
+        <text x="600" y="943" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">more pending</text>
+        <text x="600" y="959" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">calls?</text>
+
+        <!-- D3 yes -> loop back -->
+        <path d="M488,948 C 340,948 340,754 486,754" fill="none" stroke="var(--stream)" stroke-width="1.5" stroke-dasharray="1 5" stroke-linecap="round" marker-end="url(#arrowStream2)"></path>
+        <text x="360" y="855" text-anchor="middle" font-size="11.5" fill="var(--stream-ink)" transform="rotate(-90 360 855)">yes — runNextToolCall() on the next queued call</text>
+
+        <!-- D3 no -> down -->
+        <line x1="600" y1="998" x2="600" y2="1018" stroke="var(--durable)" stroke-width="1.6" marker-end="url(#arrowDurable2)"></line>
+        <text x="620" y="1012" font-size="11.5" fill="var(--durable)">no</text>
+        <rect x="400" y="1020" width="400" height="56" rx="9" fill="var(--panel-2)" stroke="var(--durable)" stroke-width="1.6"></rect>
+        <text x="600" y="1044" text-anchor="middle" font-size="13" font-weight="600" fill="var(--ink)">phase: running, iteration + 1, new turnId</text>
+        <text x="600" y="1062" text-anchor="middle" font-size="11" fill="var(--ink-dim)">open-provider-turn() — model sees the tool results next</text>
+
+        <!-- legend -->
+        <g transform="translate(30,1000)">
+          <line x1="0" y1="0" x2="26" y2="0" stroke="var(--stream)" stroke-width="2.2"></line>
+          <text x="34" y="4" font-size="12.5" fill="var(--ink-dim)" font-family="'IBM Plex Sans'">runs without asking</text>
+        </g>
+        <g transform="translate(220,1000)">
+          <line x1="0" y1="0" x2="26" y2="0" stroke="var(--durable)" stroke-width="2.2"></line>
+          <text x="34" y="4" font-size="12.5" fill="var(--ink-dim)" font-family="'IBM Plex Sans'">waits on the user</text>
+        </g>
+        <g transform="translate(400,1000)">
+          <line x1="0" y1="0" x2="26" y2="0" stroke="var(--warn)" stroke-width="2.2" stroke-dasharray="5 4"></line>
+          <text x="34" y="4" font-size="12.5" fill="var(--ink-dim)" font-family="'IBM Plex Sans'">denied / failed, no execution</text>
+        </g>
+        <g transform="translate(660,1000)">
+          <circle cx="6" cy="0" r="4.5" fill="var(--new)"></circle>
+          <text x="20" y="4" font-size="12.5" fill="var(--ink-dim)" font-family="'IBM Plex Sans'">new since the last diagram</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>
+      The confirmation branch now checks membership in a list —
+      <span class="mono">confirmationCallIds</span> — rather than a per-call
+      boolean, though the machine still only ever acts on
+      <span class="mono">calls[0]</span> per turn. The genuinely new step is
+      <strong>preview-tool()</strong>: before a confirmation-required call ever
+      reaches <span class="mono">awaiting_confirmation</span>, its tool
+      definition's <span class="mono">.preview()</span> runs so the user sees
+      what the call would actually do, not just its name and arguments.
+      Approve and reject still diverge exactly as before — approval re-queues
+      the call through the same <span class="mono">execute-tool()</span> path
+      as an unconfirmed call, and rejection synthesizes an error result and
+      calls <span class="mono">reduceToolResult()</span> directly, never
+      touching the tool registry. There is still no literal function named
+      <span class="mono">finishTool</span> — that's <span class="mono">reduceToolResult()</span>
+      in the current code — and tool calls in one turn still run strictly one
+      at a time, never in parallel.
+    </figcaption>
+  </figure>
+
+  <footer>
+    Key names: reduceGeneration() · interpreter.execute() · createGenerationRunner() · ChatClient ·
+    createChatHttpHandler() · executeGenerationTurn() · AsyncEventQueue · createGenerationSseResponse() ·
+    reduceGenerationClientEvent() · reduceProviderTurnCompleted() · reduceToolResult() · runNextToolCall() ·
+    ChatGenerationStore · GenerationAdapters
+  </footer>
+</main>
+
+</body></html>

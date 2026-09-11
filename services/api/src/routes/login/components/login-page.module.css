@@ -1,0 +1,17 @@
+/* The OTP step's footer: resend-code and change-email actions. */
+.auth-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+.auth-links form {
+  display: contents;
+}
+@media (max-width: 540px) {
+  .auth-links {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,76 @@
+/* Form primitives shared by every page: the field/label/input pair and
+   the solid primary + text secondary buttons. The inline error alert lives
+   in page-frame.module.css because it reuses that module's entrance
+   keyframe. */
+.field {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+.field label {
+  color: var(--auth-text);
+  font-size: 12px;
+  font-weight: 500;
+}
+.field input {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--auth-border);
+  border-radius: 6px;
+  outline: none;
+  color: var(--auth-text);
+  background: var(--auth-panel);
+  box-shadow: 0 0 0 0 var(--auth-border);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.field input:focus {
+  border-color: var(--auth-primary);
+  background: var(--auth-card);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--auth-primary) 12%, transparent);
+}
+.primary-button {
+  width: 100%;
+  min-height: 36px;
+  margin-top: 12px;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--auth-primary-text);
+  background: var(--auth-primary);
+  font-weight: 600;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+.primary-button:hover {
+  opacity: 0.88;
+}
+.primary-button:active {
+  transform: scale(0.98);
+}
+.secondary-button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--auth-primary);
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition:
+    text-decoration-color 0.2s ease,
+    opacity 0.15s ease;
+}
+.secondary-button:hover {
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+}
+.secondary-button:active {
+  opacity: 0.7;
+}

@@ -1,0 +1,85 @@
+/* The OTP digits borrow the word-game tile skin (what): a rounded, 2px-
+   bordered box with a heavy centered glyph, an ink border + pop on the
+   active tile, and a red flash when the submitted code is wrong — mapped
+   onto the auth page's own light/dark tokens. The error state keys off
+   the verify form's data-error attribute rather than the alert's class,
+   because the alert lives in another module and cross-module class
+   selectors can't be scoped consistently. */
+.otp-field {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 1.6vw, 10px);
+}
+/* Tile box: staggered entrance lives here so the input inside carries no
+   animation of its own — its :focus pop can't be masked by a fill. */
+.otp-tile {
+  display: block;
+  width: clamp(44px, 11vw, 56px);
+  height: clamp(48px, 12vw, 58px);
+  opacity: 0;
+  animation: otp-tile-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+.otp-input {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  text-align: center;
+  border: 2px solid var(--auth-border);
+  border-radius: 12px;
+  outline: none;
+  color: var(--auth-text);
+  caret-color: var(--auth-primary);
+  background: var(--auth-card);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--auth-text) 10%, transparent);
+  font-size: clamp(20px, 5.5vw, 24px);
+  font-weight: 800;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Active tile: ink border + soft ring + a pop, echoing the tile's
+   "typed" state. */
+.otp-input:focus {
+  border-color: var(--auth-text);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--auth-text) 10%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--auth-text) 14%, transparent);
+  transform: scale(1.04);
+}
+.otp-input:active {
+  transform: scale(0.96);
+}
+/* Wrong code: the verify page re-renders with the error alert above the
+   form and data-error on it; every tile flashes a danger border once. */
+form[data-error] .otp-input {
+  border-color: var(--auth-danger);
+  animation: otp-input-error 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+form[data-error] .otp-input:focus {
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--auth-text) 10%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--auth-danger) 22%, transparent);
+}
+@keyframes otp-input-error {
+  0%,
+  100% {
+    border-color: var(--auth-danger);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--auth-danger) 45%, transparent);
+  }
+}
+@keyframes otp-tile-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
