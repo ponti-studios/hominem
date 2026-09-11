@@ -9,6 +9,15 @@ const t = {
     cancel: 'Cancel',
     confirm: 'Enhance',
   },
+  stream: {
+    emptyState: {
+      all: 'Capture a thought to start your inbox.',
+      notes: {
+        title: 'Your notes will show up here',
+        description: "Jot down an idea, a list, or something you don't want to forget.",
+      },
+    },
+  },
   notes: {
     editor: {
       titlePlaceholder: 'Title',
@@ -33,6 +42,11 @@ const t = {
       startChatErrorTitle: 'Could not start chat',
       startChatErrorOffline: 'You appear to be offline. Please reconnect and try again.',
       startChatErrorGeneric: 'We could not start that chat right now. Please try again.',
+      statusSaving: 'Saving…',
+      statusSaved: 'Saved',
+      statusError: "Couldn't save",
+      wordCount: (count: number) => `${count} word${count === 1 ? '' : 's'}`,
+      readTime: (minutes: number) => (minutes < 1 ? '<1 min read' : `${minutes} min read`),
     },
     toolbar: {
       bold: 'Bold',
@@ -275,9 +289,9 @@ const t = {
       actionsLabel: 'Item actions',
       chatLabel: 'Chat',
       noteLabel: 'Note',
-      archiveChat: 'Archive chat',
+      archiveChat: 'Archive',
       deleteNote: {
-        title: 'Delete note',
+        title: 'Delete',
         menu: 'Delete',
         message: 'This cannot be undone.',
         cancel: 'Cancel',

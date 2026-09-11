@@ -53,6 +53,12 @@ const EXIT_COMMIT_DELAY_MS = nativeMotionTiming.exit.duration + 10;
 const SWIPE_CORNER_RADIUS = 16;
 const SWIPE_DARKEN_OPACITY = 0.18;
 
+// The colored, tappable circle inside the swipe action -- deliberately
+// smaller than ACTION_WIDTH so it floats with margin, Apple Mail-style,
+// instead of filling the whole revealed strip edge to edge.
+const ACTION_PILL_SIZE = 25;
+const ACTION_PILL_RADIUS = 4;
+
 // iOS drops a new Alert.alert presented synchronously from inside another
 // alert's button onPress -- the second alert races the first alert's dismiss
 // animation and intermittently never appears (observed repeatedly in the
@@ -97,20 +103,33 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
     // inside it.
     dragSurface: { overflow: 'hidden' },
     swipeScrim: { backgroundColor: '#000' },
+    // Apple Mail/Reminders style: the revealed strip is a neutral backdrop,
+    // not the action's own color -- the color lives on the pill itself,
+    // which floats with margin on all sides instead of filling the strip.
     actionPanel: {
       position: 'absolute',
       top: 0,
       right: 0,
       bottom: 0,
       width: ACTION_WIDTH,
+      //   backgroundColor: theme.colors.muted,
+      background: 'transparent',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     actionButton: {
-      flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
       gap: theme.spacing.xs,
     },
-    actionLabel: { ...theme.textVariants.caption1, fontWeight: '600' },
+    actionPill: {
+      width: ACTION_PILL_SIZE,
+      height: ACTION_PILL_SIZE,
+      borderRadius: ACTION_PILL_RADIUS,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    actionLabel: { ...theme.textVariants.caption1, color: theme.colors.mutedForeground },
     title: {
       fontFamily: fontFamilies.sans,
       fontSize: 17,
@@ -325,13 +344,7 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
   return (
     <Reanimated.View entering={entering} style={leavingStyle} testID={`inbox-item-${item.kind}`}>
       <View style={styles.wrapper}>
-        <Reanimated.View
-          style={[
-            styles.actionPanel,
-            { backgroundColor: isChat ? primary : destructive },
-            actionPanelStyle,
-          ]}
-        >
+        <Reanimated.View style={[styles.actionPanel, actionPanelStyle]}>
           <Pressable
             accessibilityLabel={isChat ? t.inbox.item.archiveChat : t.inbox.item.deleteNote.menu}
             accessibilityRole="button"
@@ -339,17 +352,14 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
             style={styles.actionButton}
             testID={`inbox-item-${isChat ? 'chat' : 'note'}-${isChat ? 'archive' : 'delete'}`}
           >
-            <AppIcon
-              name={isChat ? 'archivebox' : 'trash'}
-              size={20}
-              tintColor={isChat ? primaryForeground : destructiveForeground}
-            />
-            <Text
-              style={[
-                styles.actionLabel,
-                { color: isChat ? primaryForeground : destructiveForeground },
-              ]}
-            >
+            <View style={[styles.actionPill, { backgroundColor: isChat ? primary : destructive }]}>
+              <AppIcon
+                name={isChat ? 'archivebox' : 'trash'}
+                size={16}
+                tintColor={isChat ? primaryForeground : destructiveForeground}
+              />
+            </View>
+            <Text style={styles.actionLabel}>
               {isChat ? t.inbox.item.archiveChat : t.inbox.item.deleteNote.menu}
             </Text>
           </Pressable>

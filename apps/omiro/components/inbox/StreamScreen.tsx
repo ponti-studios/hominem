@@ -1,6 +1,6 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshControl, Text, View } from 'react-native';
+import { RefreshControl, View } from 'react-native';
 
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
@@ -12,6 +12,7 @@ import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData } from './InboxStreamItem.types';
 import { getEnteringItemIds } from './stream-rows';
+import { StreamEmptyState } from './StreamEmptyState';
 
 export type StreamFilter = 'all' | 'chats' | 'notes';
 
@@ -45,7 +46,6 @@ export function StreamScreen({ filter }: StreamScreenProps) {
     // its own box and overlaps the composer dock sibling below it.
     list: { flex: 1 },
     content: { paddingBottom: 16 },
-    emptyText: { paddingHorizontal: 16, color: theme.colors.mutedForeground },
   }));
 
   const items = useMemo(() => filterItems(inbox.items, filter), [inbox.items, filter]);
@@ -87,11 +87,7 @@ export function StreamScreen({ filter }: StreamScreenProps) {
         contentContainerStyle={[styles.content, { paddingBottom: composerSpace }]}
         data={items}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={
-          !inbox.isInitialLoading ? (
-            <Text style={styles.emptyText}>Capture a thought to start your inbox.</Text>
-          ) : null
-        }
+        ListEmptyComponent={!inbox.isInitialLoading ? <StreamEmptyState filter={filter} /> : null}
         onEndReached={() => {
           if (inbox.hasNextPage && !inbox.isFetchingNextPage) {
             void inbox.fetchNextPage();
