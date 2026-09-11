@@ -1,119 +1,150 @@
 ---
 name: omiro-release
-description: Build, guard, and submit an Omiro production release via EAS (TestFlight/App Store). Use when asked to release, ship, publish, or submit Omiro to the App Store/TestFlight, cut a production build, bump version/build numbers, run `eas build`/`eas submit`/`just mobile release`, or publish an OTA update.
+description: Prepare, build, and release Omiro through local EAS artifacts, GitHub validation/deployment, or approval-gated EAS workflows. Use for readiness, TestFlight, App Store, OTA, EAS builds, and release troubleshooting.
 ---
 
-Omiro ships through two EAS Workflows, not ad hoc `eas build`/`eas submit`
-calls. Both require a manual approval step and a passing identity check
-before anything reaches Apple.
+# Omiro Release
 
-## Overview
+Use this skill for Omiro production readiness and releases. It owns preflight,
+local signed artifacts, GitHub-driven deployment, EAS workflows, TestFlight,
+and JS-only OTA updates.
 
-| Path | Trigger | Jobs |
+## Authorization boundary
+
+Preflight checks are read-only or local and may run when asked for release
+readiness. Building, publishing an OTA, uploading an IPA, merging/pushing to
+`main`, and triggering an EAS workflow change external state. Do those only
+when the user explicitly asks for that action. Never turn a readiness request
+into a release.
+
+## Choose the path
+
+| Goal | Path | Result |
 | --- | --- | --- |
-| Store release | `just mobile release` | `build_ios` → `guard_identity` → `approve` → `submit_ios` |
-| OTA update | `just mobile update "<message>"` | `approve` → `publish_update` (production channel only) |
+| Determine release readiness | Preflight below | Evidence and blockers; no release |
+| Normal CI release from `main` | GitHub Actions | `validate-mobile` → `deploy-mobile` → EAS approval → TestFlight |
+| Manually start a cloud store release | `just mobile release` | EAS build → identity guard → approval → TestFlight |
+| Explicitly run an ad hoc cloud build/submit | `pnpm build:prod`, then `pnpm submit` | EAS cloud build → `--latest` submission |
+| Create and upload an explicitly requested local IPA | `pnpm build:prod:local`, then `pnpm submit:local` | Locally signed IPA → App Store Connect/TestFlight |
+| Ship a JS-only fix | `just mobile update "<message>"` | EAS approval → production OTA channel |
 
-Workflow files: `apps/omiro/.eas/workflows/production-release.yml`,
-`apps/omiro/.eas/workflows/ota-update.yml`. Nothing reaches App Store
-Connect, or gets published OTA, without passing `guard_identity` and a
-human approval.
+The cloud release workflow is
+`apps/omiro/.eas/workflows/production-release.yml`; the OTA workflow is
+`apps/omiro/.eas/workflows/ota-update.yml`.
 
-## Non-negotiable rule: export `APP_ENV=production` before any local EAS command
+For the detailed Sentry, production verification, local IPA, TestFlight, and
+OTA operational reference, read
+[references/production-operations.md](references/production-operations.md)
+when the selected release path requires it.
 
-```bash
-export APP_ENV=production
-```
+## Preflight
 
-Run this before any local `eas build`, `eas submit`, or `eas config`
-invocation targeting production — even `eas submit --id <build_id>`, where
-it's cosmetically irrelevant to the actual submission. Reason: Expo's CLI
-auto-loads `.env.*.local` files during local config evaluation, before
-`eas.json`'s per-profile `env` block applies. A gitignored,
-machine-local `.env.development.local` with a stray `APP_ENV` can silently
-resolve the wrong app identity — this is exactly how a "production" build
-once shipped with the dev bundle ID (`com.pontistudios.hakumi.dev`) and got
-rejected by Apple with `-19000` ("No suitable application records were
-found"). Real EAS Workflow runs aren't exposed to this — they trust
-`EAS_BUILD_PROFILE`, not `APP_ENV` — but any locally-initiated command is.
+Before recommending or starting a production release:
 
-## The identity guard
+1. Inspect `git status --short --branch`. Do not call a dirty or uncommitted
+   intended release ready.
+2. Read `apps/omiro/README.md`, `apps/omiro/AGENTS.md`, `apps/omiro/eas.json`,
+   and the applicable EAS workflow. Confirm the marketing version in
+   `apps/omiro/app.config.js` is intentional, the production profile targets
+   the store distribution, and EAS owns the iOS build-number increment.
+3. Run `git diff --check`, then the narrow checks before the repository gate:
 
-`apps/omiro/scripts/verify-release-identity.mjs` runs `expo config --json`
-(the same resolution path a real build uses) and asserts the result
-matches production identity (`com.pontistudios.hakumi`, `Omiro`,
-`appEnvironment: production`) before a build or submit proceeds. Wired
-into `pnpm build:prod`, `pnpm submit`, and the `guard_identity` job (which
-separately re-checks the *built artifact's* `app_identifier` and
-`distribution` outputs against the same expected values). If it fails,
-trust it — fix the underlying env resolution rather than bypassing it.
+   ```bash
+   pnpm --filter=@hominem/omiro format:check
+   pnpm --filter=@hominem/omiro lint
+   pnpm --filter=@hominem/omiro typecheck
+   pnpm --filter=@hominem/omiro test
+   npx react-doctor@latest --verbose --scope changed
+   pnpm run check
+   ```
 
-## pnpm version pinning gotcha
+   Run relevant Web/API checks when shared behavior or API contracts changed.
+   Treat failures as blockers unless they are demonstrably pre-existing and
+   reported with the exact command and failure.
+4. Before a local Expo/EAS production command, resolve the production identity:
 
-`eas.json`'s `build.base.pnpm` pin (`11.23.0`) only applies to `type: build`
-jobs. `submit` and `update` job types run on a separate generic runner that
-installs dependencies independently and never consults that field. If
-either fails with:
+   ```bash
+   export APP_ENV=production
+   pnpm --filter=@hominem/omiro verify:release
+   pnpm --filter=@hominem/omiro export:embed:ios
+   ```
 
-```
-This project is configured to use 11.23.0 of pnpm. Your current pnpm is v11.x
-```
+   The guard and embed must resolve to `Omiro` with
+   `com.pontistudios.hakumi`. Fix environment resolution if they do not;
+   never bypass `scripts/verify-release-identity.mjs`.
+5. For native modules, permissions, app config, assets, entitlements, or a
+   store binary, run `just mobile prebuild production` and collect appropriate
+   simulator/device evidence. `apps/omiro/ios` is CNG-generated: do not edit it.
 
-the fix is a `before_install_node_modules` hook on *that specific job*
-(already present on `submit_ios` and `publish_update` in the workflow
-files):
+For a readiness report, include blockers, commands/tests run, manual evidence,
+unverified scope, and the next authorized action.
 
-```yaml
-hooks:
-  before_install_node_modules:
-    - run: corepack prepare pnpm@11.23.0 --activate
-```
+## GitHub and EAS cloud releases
 
-Do **not** fix this by loosening `pmOnFail`, `engineStrict`,
-`verifyStoreIntegrity`, `strictStorePkgContentCheck`, `trustPolicy`,
-`blockExoticSubdeps`, or `strictDepBuilds` in root `pnpm-workspace.yaml` —
-those are deliberate repo-wide supply-chain hardening shared by every app
-in the monorepo, not something to relax for one job.
+`validate-mobile.yml` runs for the configured Omiro/shared paths on pull
+requests and pushes to `main`. A successful `main` validation triggers
+`deploy-mobile.yml`, which checks out that validated SHA and starts the EAS
+production-release workflow with `EXPO_TOKEN`. The EAS workflow builds iOS,
+asserts `com.pontistudios.hakumi` and store distribution, then waits for EAS
+manual approval before TestFlight submission.
 
-## `apps/omiro/ios/` is gitignored and CNG-generated
+For a manually requested cloud release, run `just mobile release` from the
+repository root. It starts the same EAS workflow; do not replace it with an
+ad hoc build/submit sequence unless the user specifically requests that path.
 
-Never hand-edit it or expect changes there to persist — a fresh
-`just mobile prebuild production` regenerates it from
-`apps/omiro/app.config.ts`.
+If the user explicitly requests the ad hoc cloud CLI path, run
+`pnpm build:prod` first and only then `pnpm submit`. The latter uses EAS's
+`--latest` cloud-build selector; it does not submit a local IPA. Keep
+`APP_ENV=production` exported for both commands and preserve the identity
+guard.
 
-## Commands
+The `build.base.pnpm` pin applies only to EAS build jobs. Submit and update
+jobs need their own Corepack hook in the workflow; preserve the existing hook
+and never loosen root pnpm supply-chain settings to work around a runner
+version mismatch.
 
-```bash
-just mobile prebuild <env>       # Expo prebuild (development|production)
-just mobile release              # runs production-release.yml end to end
-just mobile update "<message>"   # runs ota-update.yml (production channel)
-pnpm build:prod                  # ad hoc local build, gated on the identity guard
-pnpm submit                      # ad hoc local submit, gated on the identity guard
-```
+## Explicitly requested local IPA
+
+`pnpm build:prod:local` runs `apps/omiro/scripts/build-prod-local.sh`. It
+loads and exports gitignored `.env.local`, forces `APP_ENV=production`, checks
+the production identity, and invokes `eas build --local`.
+
+EAS Secret variables cannot be retrieved by a local build. Keep
+`SENTRY_AUTH_TOKEN` only in `.env.local` or another local secret manager; do
+not print, commit, or downgrade its EAS Secret visibility. The wrapper supplies
+the `ponti-studios`/`omiro` Sentry org/project defaults. Do not use
+`SENTRY_DISABLE_AUTO_UPLOAD` or `SENTRY_ALLOW_FAILURE` for a TestFlight IPA:
+source maps and dSYMs must upload.
+
+`pnpm submit:local` runs `apps/omiro/scripts/submit-prod-local.sh`. It selects
+the newest local `*.ipa`, re-checks the production identity, prints the
+selected path, and passes it explicitly to `eas submit --path`. Do not use
+`pnpm submit` for a local IPA: its `--latest` selector means the latest EAS
+cloud build. Before submitting, confirm the selected IPA is the intended
+artifact and that its App Store Connect credentials are available; the local
+script deliberately chooses the newest IPA and does not ask for approval.
+
+## OTA updates
+
+An IPA submission never creates an OTA. Use `just mobile update "<message>"`
+only for an approved JS-only change. It starts the EAS approval-gated OTA
+workflow on the production branch and affects only installed builds with a
+matching runtime version. Native dependencies, permissions, config plugins,
+or other native changes require a new store binary.
 
 ## Troubleshooting
 
-- **`build` job fails on pnpm mismatch** — verify the `"pnpm": "11.23.0"`
-  pin is present in `eas.json`'s `build.base`. Do not remove it; a stale
-  warning in older notes about Corepack conflicts (`npm ERR! EEXIST`)
-  describes a different failure mode than what the current EAS build image
-  actually does without the pin.
-- **`submit`/`update` job fails on the *same* pnpm error after `build`
-  passed** — that job's runner doesn't read `eas.json`'s `build.base.pnpm`.
-  Add/verify the `before_install_node_modules` Corepack hook on that job
-  (see above), not the base pin.
-- **`eas submit --id <build_id>` logs "Looking up credentials configuration
-  for com.pontistudios.hakumi.dev"** — alarming but harmless if `APP_ENV`
-  wasn't exported: `--id` pins the exact artifact being uploaded, and the
-  ASC App ID comes from `eas.json`'s `submit.production` profile, not local
-  bundle-id resolution. Still export `APP_ENV=production` first to avoid
-  the scare and stay consistent with the rule above.
-
-## See also
-
-- The APP_ENV/identity-guard incident (`-19000` dev bundle ID) and the pnpm
-  runner mismatch are captured in this skill's sections above; the original
-  writeup was folded in and the long-form doc removed.
-- General EAS build, submit, and workflow-YAML mechanics (not Omiro-specific)
-  are covered by Expo's own EAS documentation and the workflow files under
-  `apps/omiro/.eas/workflows/`.
+- **Wrong app identity / `-19000`**: an ambient `.env.*.local` value likely
+  selected the dev app. Export `APP_ENV=production` before local EAS commands
+  and trust the identity guard.
+- **Sentry auth token missing locally**: sourcing `.env.local` alone does not
+  export shell variables to Xcode. Use `pnpm build:prod:local`, which exports
+  the file before starting EAS.
+- **Expo Doctor says local module iOS/Android directories are ignored**: check
+  `.easignore` as well as `.gitignore`; top-level generated directories need
+  anchored `/ios` and `/android` rules so `modules/*/[ios|android]` is included.
+- **Submit/update pnpm mismatch**: repair the affected workflow job's
+  Corepack hook; do not relax pnpm workspace security policy.
+- **`eas submit --id` mentions the dev bundle ID**: with a known artifact ID
+  it is harmless, but always export `APP_ENV=production` to keep local config
+  evaluation consistent.
