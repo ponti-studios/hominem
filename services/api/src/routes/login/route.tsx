@@ -7,6 +7,8 @@ import { etag } from 'hono/etag';
 import { betterAuthServer } from '../../auth/better-auth';
 import { env } from '../../env';
 import type { AuthDependencies } from '../auth/shared';
+import { AIFootprintPage } from './components/ai-footprint-page';
+import { AIUsagePage } from './components/ai-usage-page';
 import { AuthErrorPage } from './components/auth-error-page';
 import { ConsentPage } from './components/consent-page';
 import { LoginPage } from './components/login-page';
@@ -26,6 +28,8 @@ const logoPath = join(process.cwd(), 'public', 'logo.hominem.500x500.webp');
 const cssPath = join(process.cwd(), 'public', 'login.css');
 const jsPath = join(process.cwd(), 'public', 'login.js');
 const settingsJsPath = join(process.cwd(), 'public', 'settings.js');
+const settingsAiJsPath = join(process.cwd(), 'public', 'settings-ai.js');
+const settingsAiFootprintJsPath = join(process.cwd(), 'public', 'settings-ai-footprint.js');
 
 function serveAsset(path: string, contentType: string) {
   return serveStatic({
@@ -73,19 +77,41 @@ function copySetCookieHeaders(headers: Headers) {
 
 export function createLoginRoutes(dependencies: AuthDependencies) {
   const { env: inputEnv, auth } = dependencies;
-  const resolveResumeWithEnv = (query: string) => resolveResume(query, inputEnv);
-  const resolvePostAuthResumeWithEnv = (query: string) => resolvePostAuthResume(query, inputEnv);
-  const loginUrlWithEnv = (value: Parameters<typeof loginUrl>[0]) => loginUrl(value, inputEnv);
+  const resolveResumeWithEnv = (query: string, origin?: string) =>
+    resolveResume(query, inputEnv, origin);
+  const resolvePostAuthResumeWithEnv = (query: string, origin?: string) =>
+    resolvePostAuthResume(query, inputEnv, origin);
+  const loginUrlWithEnv = (value: Parameters<typeof loginUrl>[0], origin?: string) =>
+    loginUrl({ ...value, origin }, inputEnv);
+  // Redirects are followed by the browser, so they must point at the host
+  // the browser reached, not the env's internal port (identical in
+  // production). The proxy terminates TLS and forwards plain HTTP without
+  // x-forwarded-proto, so take the scheme from the canonical API_URL and
+  // the host from the actual request.
+  const requestOrigin = (c: { req: { url: string } }) => {
+    const url = new URL(inputEnv.API_URL);
+    const requestUrl = new URL(c.req.url);
+    url.hostname = requestUrl.hostname;
+    url.port = requestUrl.port;
+    return url.origin;
+  };
 
   const loginRoutes = new Hono()
     .use('/login.css', etag(), serveAsset(cssPath, 'text/css; charset=UTF-8'))
     .use('/login.js', etag(), serveAsset(jsPath, 'text/javascript; charset=UTF-8'))
     .use('/settings.js', etag(), serveAsset(settingsJsPath, 'text/javascript; charset=UTF-8'))
+    .use('/settings-ai.js', etag(), serveAsset(settingsAiJsPath, 'text/javascript; charset=UTF-8'))
+    .use(
+      '/settings-ai-footprint.js',
+      etag(),
+      serveAsset(settingsAiFootprintJsPath, 'text/javascript; charset=UTF-8'),
+    )
     .use('/logo.hominem.500x500.webp', etag(), serveAsset(logoPath, 'image/webp'))
     .get('/login', async (c) => {
       const url = new URL(c.req.url);
+      const origin = requestOrigin(c);
       const resumeQuery = url.searchParams.toString();
-      const resume = resolveResumeWithEnv(resumeQuery);
+      const resume = resolveResumeWithEnv(resumeQuery, origin);
       if (!resume)
         return c.html(
           <AuthErrorPage
@@ -113,18 +139,50 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
     })
     .get('/auth/settings', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      const origin = requestOrigin(c);
       if (session?.user) {
         return c.html(
           <SettingsPage
-            loginNextUrl={new URL('/auth/settings', inputEnv.API_URL).toString()}
+            loginNextUrl={new URL('/auth/settings', origin).toString()}
             user={session.user}
           />,
         );
       }
       // Signed out: take them through hosted login, then drop them back here.
-      const settingsUrl = new URL('/auth/settings', inputEnv.API_URL).toString();
+      const settingsUrl = new URL('/auth/settings', origin).toString();
       return c.redirect(
-        loginUrlWithEnv({ resumeQuery: `next=${encodeURIComponent(settingsUrl)}`, step: 'email' }),
+        loginUrlWithEnv(
+          { resumeQuery: `next=${encodeURIComponent(settingsUrl)}`, step: 'email' },
+          origin,
+        ),
+        303,
+      );
+    })
+    .get('/auth/settings/ai', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      const origin = requestOrigin(c);
+      if (session?.user) {
+        return c.html(<AIUsagePage />);
+      }
+      const settingsAiUrl = new URL('/auth/settings/ai', origin).toString();
+      return c.redirect(
+        loginUrlWithEnv(
+          { resumeQuery: `next=${encodeURIComponent(settingsAiUrl)}`, step: 'email' },
+          origin,
+        ),
+        303,
+      );
+    })
+    .get('/auth/settings/ai/footprint', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      const origin = requestOrigin(c);
+      if (session?.user) return c.html(<AIFootprintPage />);
+      const footprintUrl = new URL('/auth/settings/ai/footprint', origin).toString();
+      return c.redirect(
+        loginUrlWithEnv(
+          { resumeQuery: `next=${encodeURIComponent(footprintUrl)}`, step: 'email' },
+          origin,
+        ),
         303,
       );
     })
@@ -161,7 +219,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       const consent = resolveConsentQuery(query);
       if (!consent) return c.html(<AuthErrorPage error="invalid_request" />, 400);
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
-      if (!session) return c.redirect(new URL(`/login?${query}`, inputEnv.API_URL).toString(), 303);
+      if (!session) return c.redirect(new URL(`/login?${query}`, requestOrigin(c)).toString(), 303);
       const clientResponse = await auth.handler(
         new Request(
           `${inputEnv.API_URL}/api/auth/oauth2/public-client?client_id=${encodeURIComponent(consent.clientId)}`,
@@ -204,7 +262,9 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       // Optional post-sign-out destination (used by /auth/settings): redirect
       // there once the session is cleared, falling back to the signed-out page.
       const next = getFormValue(form, 'next');
-      const resume = next ? resolveResumeWithEnv(`next=${encodeURIComponent(next)}`) : null;
+      const resume = next
+        ? resolveResumeWithEnv(`next=${encodeURIComponent(next)}`, requestOrigin(c))
+        : null;
       if (resume) {
         const headers = new Headers(response.headers);
         headers.set('location', resume.url);
@@ -219,9 +279,13 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       const form = await c.req.parseBody();
       const email = getFormValue(form, 'email');
       const resumeQuery = getFormValue(form, 'resume');
-      if (!resolveResumeWithEnv(resumeQuery) || !emailSchema.safeParse(email).success)
+      const origin = requestOrigin(c);
+      if (!resolveResumeWithEnv(resumeQuery, origin) || !emailSchema.safeParse(email).success)
         return c.redirect(
-          loginUrlWithEnv({ error: 'Enter a valid email address.', resumeQuery, step: 'email' }),
+          loginUrlWithEnv(
+            { error: 'Enter a valid email address.', resumeQuery, step: 'email' },
+            origin,
+          ),
           303,
         );
       const response = await callBetterAuth({
@@ -233,15 +297,18 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       });
       if (!response.ok)
         return c.redirect(
-          loginUrlWithEnv({
-            email,
-            error: 'Unable to send a verification code. Try again.',
-            resumeQuery,
-            step: 'email',
-          }),
+          loginUrlWithEnv(
+            {
+              email,
+              error: 'Unable to send a verification code. Try again.',
+              resumeQuery,
+              step: 'email',
+            },
+            origin,
+          ),
           303,
         );
-      return c.redirect(loginUrlWithEnv({ email, resumeQuery, step: 'otp' }), 303);
+      return c.redirect(loginUrlWithEnv({ email, resumeQuery, step: 'otp' }, origin), 303);
     })
     .post('/consent/decision', async (c) => {
       const form = await c.req.parseBody();
@@ -275,15 +342,19 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       const email = getFormValue(form, 'email');
       const resumeQuery = getFormValue(form, 'resume');
       const otp = getFormValue(form, 'otp');
-      const resume = resolveResumeWithEnv(resumeQuery);
+      const origin = requestOrigin(c);
+      const resume = resolveResumeWithEnv(resumeQuery, origin);
       if (!resume || !emailSchema.safeParse(email).success || !otpSchema.safeParse(otp).success)
         return c.redirect(
-          loginUrlWithEnv({
-            email,
-            error: 'Enter the six-digit verification code.',
-            resumeQuery,
-            step: 'otp',
-          }),
+          loginUrlWithEnv(
+            {
+              email,
+              error: 'Enter the six-digit verification code.',
+              resumeQuery,
+              step: 'otp',
+            },
+            origin,
+          ),
           303,
         );
       const response = await callBetterAuth({
@@ -295,15 +366,18 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       });
       if (!response.ok && (response.status < 300 || response.status >= 400))
         return c.redirect(
-          loginUrlWithEnv({
-            email,
-            error: 'Verification failed. Check your code and try again.',
-            resumeQuery,
-            step: 'otp',
-          }),
+          loginUrlWithEnv(
+            {
+              email,
+              error: 'Verification failed. Check your code and try again.',
+              resumeQuery,
+              step: 'otp',
+            },
+            origin,
+          ),
           303,
         );
-      const postAuthResume = resolvePostAuthResumeWithEnv(resumeQuery) ?? resume;
+      const postAuthResume = resolvePostAuthResumeWithEnv(resumeQuery, origin) ?? resume;
       const headers = new Headers(response.headers);
       headers.set('location', postAuthResume.url);
       return new Response(null, { headers, status: 303 });

@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   getMonthlyUsageStatus: vi.fn(),
   getAIUsageTimeseries: vi.fn(),
   getSpeechUsageHealth: vi.fn(),
+  getAIUsagePageReport: vi.fn(),
 }));
 
 vi.mock('../../application/ai-usage.service', () => mocks);
@@ -69,6 +70,65 @@ describe('usage routes', () => {
     const response = await createApp(false).request('/api/usage');
 
     expect(response.status).toBe(401);
+  });
+
+  it('returns the composite AI-usage page payload', async () => {
+    const page = {
+      range: { from: '2026-08-01T00:00:00.000Z', to: '2026-08-22T00:00:00.000Z' },
+      monthly: {
+        totalCostUsd: 4,
+        limitUsd: 10,
+        remainingUsd: 6,
+        isOverLimit: false,
+        periodStart: '2026-08-01T00:00:00.000Z',
+        periodEnd: '2026-08-22T00:00:00.000Z',
+      },
+      summary: {
+        requestCount: 3,
+        succeededCount: 2,
+        failedCount: 1,
+        usageAvailableCount: 2,
+        promptTokens: 1000,
+        outputTokens: 250,
+        totalTokens: 1250,
+        cachedInputTokens: 400,
+        reasoningTokens: 60,
+        totalCostUsd: 4,
+        failedCostUsd: 0.5,
+        lastRecordedAt: null,
+      },
+      byFeature: [{ feature: 'chat_stream', totalCostUsd: 3, requestCount: 2 }],
+      byModel: [{ model: 'gpt-5', totalCostUsd: 3, requestCount: 2 }],
+      byOperation: [{ operation: 'chat_completion', totalCostUsd: 3, requestCount: 2 }],
+      daily: [{ bucketStart: '2026-08-01T00:00:00.000Z', totalCostUsd: 4, requestCount: 3 }],
+      monthlyTrend: [{ bucketStart: '2026-03-01T00:00:00.000Z', totalCostUsd: 9, requestCount: 8 }],
+      topConversations: [
+        {
+          chatId: 'c1',
+          title: 'A chat',
+          requestCount: 2,
+          totalTokens: 1000,
+          totalCostUsd: 3,
+          lastUsedAt: '2026-08-20T00:00:00.000Z',
+        },
+      ],
+      extremes: {
+        cheapest: null,
+        mostExpensive: {
+          costUsd: 2.5,
+          feature: 'chat_stream',
+          model: 'gpt-5',
+          occurredAt: '2026-08-14T00:00:00.000Z',
+        },
+      },
+    };
+    mocks.getAIUsagePageReport.mockResolvedValue(page);
+
+    const response = await createApp().request('/api/usage/ai');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(page);
+    expect(mocks.getAIUsagePageReport).toHaveBeenCalledWith(testUser.id);
   });
 
   it('returns the current-month usage report for the authenticated user', async () => {

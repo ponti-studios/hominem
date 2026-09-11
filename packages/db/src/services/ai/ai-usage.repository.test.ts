@@ -3,7 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { authDb, db, sql } from '../../db';
-import { AIUsageEventRepository } from './ai-usage.repository';
+import {
+  AIUsageEventRepository,
+  type AIUsageEventStatus,
+  type AIUsageFeature,
+  type AIUsageOperation,
+} from './ai-usage.repository';
 
 describe('AIUsageEventRepository', () => {
   const userIds: string[] = [];
@@ -258,5 +263,135 @@ describe('AIUsageEventRepository', () => {
         totalCostUsd: 0.4,
       },
     ]);
+  });
+
+  it('breaks usage down by operation, conversation, and call extremes', async () => {
+    const userId = await createUser();
+    const chatId = randomUUID();
+    await db
+      .insertInto('app.chats')
+      .values({ id: chatId, ownerUserid: userId, title: 'Research trip' })
+      .execute();
+
+    const events: Array<{
+      feature: AIUsageFeature;
+      operation: AIUsageOperation;
+      model: string;
+      costUsd: number;
+      cached: number;
+      reasoning: number;
+      metadata: { chatId: string } | null;
+      status?: AIUsageEventStatus;
+    }> = [
+      {
+        feature: 'chat_stream',
+        operation: 'chat_completion',
+        model: 'model-a',
+        costUsd: 1.2,
+        cached: 100,
+        reasoning: 30,
+        metadata: { chatId },
+      },
+      {
+        feature: 'chat_stream',
+        operation: 'chat_completion',
+        model: 'model-a',
+        costUsd: 0.8,
+        cached: 0,
+        reasoning: 0,
+        metadata: { chatId },
+      },
+      {
+        feature: 'embedding',
+        operation: 'embedding',
+        model: 'embed-3',
+        costUsd: 0.02,
+        cached: 0,
+        reasoning: 0,
+        metadata: null,
+      },
+      {
+        feature: 'file_document_summarize',
+        operation: 'structured_output',
+        model: 'model-b',
+        costUsd: 0.5,
+        cached: 0,
+        reasoning: 0,
+        metadata: null,
+        status: 'failed',
+      },
+    ];
+
+    for (const event of events) {
+      await AIUsageEventRepository.createIfAbsent(db, {
+        id: randomUUID(),
+        userId,
+        provider: 'openrouter',
+        feature: event.feature,
+        operation: event.operation,
+        model: event.model,
+        promptTokens: 500,
+        outputTokens: 100,
+        totalTokens: 600,
+        cachedInputTokens: event.cached,
+        reasoningTokens: event.reasoning,
+        costUsd: event.costUsd,
+        usageAvailable: true,
+        metadata: event.metadata,
+        status: event.status,
+        durationMs: 100,
+      });
+    }
+
+    const summary = await AIUsageEventRepository.getSummary(db, { userId });
+    expect(summary).toMatchObject({
+      requestCount: 4,
+      succeededCount: 3,
+      failedCount: 1,
+      cachedInputTokens: 100,
+      reasoningTokens: 30,
+      totalCostUsd: 2.52,
+      failedCostUsd: 0.5,
+    });
+
+    const byOperation = await AIUsageEventRepository.getOperationBreakdown(db, { userId });
+    expect(
+      byOperation.map((entry) => [entry.operation, entry.totalCostUsd, entry.requestCount]),
+    ).toEqual([
+      ['chat_completion', 2, 2],
+      ['structured_output', 0.5, 1],
+      ['embedding', 0.02, 1],
+    ]);
+
+    const conversations = await AIUsageEventRepository.getTopConversations(db, { userId });
+    expect(conversations).toEqual([
+      {
+        chatId,
+        title: 'Research trip',
+        requestCount: 2,
+        totalTokens: 1200,
+        totalCostUsd: 2,
+        lastUsedAt: expect.any(String),
+      },
+    ]);
+
+    const extremes = await AIUsageEventRepository.getExtremes(db, { userId });
+    expect(extremes).toEqual({
+      cheapest: {
+        costUsd: 0.02,
+        feature: 'embedding',
+        model: 'embed-3',
+        occurredAt: expect.any(String),
+      },
+      mostExpensive: {
+        costUsd: 1.2,
+        feature: 'chat_stream',
+        model: 'model-a',
+        occurredAt: expect.any(String),
+      },
+    });
+
+    await db.deleteFrom('app.aiUsageEvents').where('ownerUserid', '=', userId).execute();
+    await db.deleteFrom('app.chats').where('id', '=', chatId).execute();
   });
 });

@@ -1,0 +1,62 @@
+.page {
+  display: grid;
+  gap: 18px;
+}
+.summary {
+  gap: 18px;
+}
+.summaryHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.steps {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.steps li {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.stepNumber {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--auth-primary-text);
+  background: var(--auth-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+.steps strong {
+  display: block;
+  margin: 4px 0;
+  color: var(--auth-text);
+  font-size: 14px;
+}
+.steps p {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.note {
+  background: color-mix(in srgb, var(--auth-panel) 72%, var(--auth-card));
+}
+.backLink {
+  color: var(--auth-muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.backLink:hover {
+  color: var(--auth-text);
+  text-decoration: underline;
+}

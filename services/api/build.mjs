@@ -2,6 +2,8 @@ import { build } from 'rolldown';
 
 import {
   loginClientBuildOptions,
+  settingsAiClientBuildOptions,
+  settingsAiFootprintClientBuildOptions,
   settingsClientBuildOptions,
 } from './scripts/login-client-bundle.mjs';
 import { buildLoginStyles } from './scripts/login-styles.mjs';
@@ -35,5 +37,10 @@ await Promise.all([
   ),
   ...(target === 'worker'
     ? []
-    : [build(loginClientBuildOptions), build(settingsClientBuildOptions)]),
+    : [
+        build(loginClientBuildOptions),
+        build(settingsClientBuildOptions),
+        build(settingsAiClientBuildOptions),
+        build(settingsAiFootprintClientBuildOptions),
+      ]),
 ]);

@@ -23,3 +23,25 @@ export const settingsClientBuildOptions = {
     codeSplitting: false,
   },
 };
+
+export const settingsAiClientBuildOptions = {
+  tsconfig: './tsconfig.json',
+  platform: 'browser',
+  input: 'src/routes/login/settings-ai.ts',
+  output: {
+    file: 'public/settings-ai.js',
+    format: 'iife',
+    codeSplitting: false,
+  },
+};
+
+export const settingsAiFootprintClientBuildOptions = {
+  tsconfig: './tsconfig.json',
+  platform: 'browser',
+  input: 'src/routes/login/settings-ai-footprint.ts',
+  output: {
+    file: 'public/settings-ai-footprint.js',
+    format: 'iife',
+    codeSplitting: false,
+  },
+};

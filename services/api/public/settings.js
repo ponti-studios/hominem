@@ -100,23 +100,6 @@
       }
     });
   }
-  const signOutButton = document.querySelector('[data-settings-signout]');
-  const confirmBox = document.querySelector('[data-settings-confirm]');
-  const cancelButton = document.querySelector('[data-settings-cancel]');
-  const confirmSignOutButton = document.querySelector('[data-settings-confirm-signout]');
-  if (signOutButton && confirmBox && cancelButton && confirmSignOutButton) {
-    const form = signOutButton.form;
-    signOutButton.addEventListener('click', (event) => {
-      event.preventDefault();
-      confirmBox.hidden = false;
-    });
-    cancelButton.addEventListener('click', () => {
-      confirmBox.hidden = true;
-    });
-    confirmSignOutButton.addEventListener('click', () => {
-      form?.requestSubmit();
-    });
-  }
   loadUsage();
   //#endregion
 })();

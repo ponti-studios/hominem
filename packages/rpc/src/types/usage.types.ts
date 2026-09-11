@@ -15,7 +15,10 @@ export type UsageSummary = {
   promptTokens: number;
   outputTokens: number;
   totalTokens: number;
+  cachedInputTokens: number;
+  reasoningTokens: number;
   totalCostUsd: number;
+  failedCostUsd: number;
   lastRecordedAt: string | null;
 };
 

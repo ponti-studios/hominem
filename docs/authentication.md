@@ -109,10 +109,18 @@ auth screens. They build a trusted absolute return URL from `PUBLIC_APP_URL`
 and redirect to the API's hosted login (`<API URL>/login?next=...`). The API
 validates the return origin against its trusted origins
 (`getTrustedOrigins()` in `better-auth.ts`) before redirecting back after OTP
-verification. First-party web apps do not host duplicate OTP screens or
+verification; the incoming request's own origin is additionally trusted as a
+resume target. First-party web apps do not host duplicate OTP screens or
 maintain app-owned auth state — apps must not add custom tokens, localStorage
 auth, or duplicate OTP state. The hosted login and the forwarded cookie are
 the only credential surface.
+
+Redirect targets the browser follows (login URL, resume URLs, sign-out next)
+are built from the host the request actually reached, with the scheme taken
+from `API_URL` — the portless proxy serves hosts on 443 while the env URLs
+carry each app's internal port, and a Location header pointing at that
+internal port would be unreachable from the browser. In production the
+request host and `API_URL` are the same, so the behavior is identical.
 
 When the API calls Better Auth's native endpoints on a user's behalf
 (OTP send/verify, consent, sign-out, profile updates), it stamps the
@@ -135,6 +143,17 @@ is additive; a `/logout` POST without `next` keeps rendering the signed-out
 page. Like `/login`, the page is server-rendered Hono JSX enhanced by a plain
 client bundle (`settings.ts` → `public/settings.js`) with full degradation
 when JavaScript is unavailable.
+
+`/auth/settings/ai` is the deep-dive version of the same usage section: a
+per-month breakdown page (status + pacing, daily spend, ranked drivers by
+feature/model/operation/day, six-month trend, failure/unpriced waste, cache
+and reasoning efficiency, cheapest/most expensive calls, and the most
+expensive conversations). It renders from a single authenticated RPC payload
+(`GET /api/usage/ai`, composed from the `ai_usage_events` fact table — see
+`getAIUsagePageReport` in `@hominem/ai`) and is enhanced by
+`settings-ai.ts` → `public/settings-ai.js`. Both settings pages share the
+session-gate pattern: signed-out visitors hit hosted login with a resume
+back to the page they tried to open.
 
 ## Session and OTP rules
 

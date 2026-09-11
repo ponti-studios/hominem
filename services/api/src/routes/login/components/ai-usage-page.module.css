@@ -1,0 +1,318 @@
+/* The hosted AI-usage report page (/auth/settings/ai): a calm, editorial
+   control room for budget pacing, cost drivers, efficiency, and conversations. */
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.85fr);
+  gap: 18px;
+}
+.card {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--auth-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--auth-panel) 62%, var(--auth-card));
+  text-align: left;
+}
+.hero {
+  grid-column: 1 / -1;
+  min-height: 208px;
+  align-content: space-between;
+  padding: 26px;
+  border-color: var(--auth-primary);
+  color: var(--auth-primary-text);
+  background: var(--auth-primary);
+}
+.cardTitle {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.hero .cardTitle,
+.hero .muted,
+.hero .pacing {
+  color: color-mix(in srgb, var(--auth-primary-text) 72%, transparent);
+}
+.hero .bigNumber {
+  color: var(--auth-primary-text);
+}
+.muted {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.statusRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.bigNumber {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: clamp(42px, 8vw, 72px);
+  font-weight: 750;
+  letter-spacing: -0.07em;
+  font-variant-numeric: tabular-nums;
+}
+.bar {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--auth-primary-text) 22%, transparent);
+}
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--auth-primary-text);
+  transition: width 0.4s ease;
+}
+.barFill[data-over] {
+  background: var(--auth-danger);
+}
+.pacing {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.pacing[data-over] {
+  color: var(--auth-danger);
+}
+.spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 92px;
+}
+.sparkBar {
+  flex: 1;
+  min-width: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--auth-primary);
+  opacity: 0.85;
+}
+.sparkBar[data-zero] {
+  background: var(--auth-border);
+}
+.driverHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.seg {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--auth-border);
+  border-radius: 6px;
+  background: var(--auth-card);
+}
+.segButton {
+  margin: 0;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--auth-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.segButton[aria-pressed='true'] {
+  background: var(--auth-border);
+  color: var(--auth-text);
+}
+.drivers {
+  display: grid;
+  gap: 8px;
+}
+.driverRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  align-items: baseline;
+}
+.driverMain {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.driverName {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.driverCost {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.driverMeta {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 12px;
+}
+.shareTrack {
+  grid-column: 1 / -1;
+  height: 3px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--auth-border);
+}
+.shareFill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--auth-primary);
+}
+.trend {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 112px;
+}
+.trendCol {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-width: 24px;
+}
+.trendBar {
+  align-self: stretch;
+  border-radius: 3px 3px 0 0;
+  background: var(--auth-primary);
+  opacity: 0.85;
+}
+.trendBar[data-zero] {
+  background: var(--auth-border);
+}
+.trendLabel {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 10px;
+}
+.twoCol {
+  display: grid;
+  gap: 12px;
+}
+.impactHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.impactLink {
+  color: var(--auth-text);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.impactLink:hover {
+  text-decoration: underline;
+}
+.impactGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.impactItem {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 10px;
+  background: var(--auth-card);
+}
+.impactValue {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.tally {
+  display: grid;
+  gap: 6px;
+}
+.tallyRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tallyLabel {
+  margin: 0;
+  color: var(--auth-muted);
+  font-size: 13px;
+}
+.tallyValue {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.tallyValue[data-bad] {
+  color: var(--auth-danger);
+}
+.backLink {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 2px;
+}
+.backLink a {
+  color: var(--auth-primary);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.backLink a:hover {
+  text-decoration: underline;
+}
+@media (min-width: 480px) {
+  .twoCol {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 700px) {
+  .card:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .card:nth-child(3) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+  .card:nth-child(4) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .card:nth-child(5) {
+    grid-column: 1;
+    grid-row: 4;
+  }
+  .card:nth-child(6) {
+    grid-column: 2;
+    grid-row: 4;
+  }
+}
+@media (max-width: 699px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+  .hero,
+  .backLink {
+    grid-column: auto;
+  }
+}

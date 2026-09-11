@@ -1,5 +1,5 @@
 import { toNullableNumber, toRequiredNumber } from '@hominem/utils';
-import { sql, type Insertable, type Selectable } from 'kysely';
+import { sql, type Insertable, type Selectable, type SqlBool } from 'kysely';
 
 import { ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
@@ -140,7 +140,10 @@ export interface AIUsageSummaryRecord {
   promptTokens: number;
   outputTokens: number;
   totalTokens: number;
+  cachedInputTokens: number;
+  reasoningTokens: number;
   totalCostUsd: number;
+  failedCostUsd: number;
   lastRecordedAt: string | null;
 }
 
@@ -154,6 +157,34 @@ export interface AIUsageFeatureBreakdownRecord {
   outputTokens: number;
   totalTokens: number;
   totalCostUsd: number;
+}
+
+export interface AIUsageOperationBreakdownRecord {
+  operation: AIUsageOperation;
+  requestCount: number;
+  succeededCount: number;
+  failedCount: number;
+  usageAvailableCount: number;
+  promptTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  totalCostUsd: number;
+}
+
+export interface AIUsageConversationRecord {
+  chatId: string;
+  title: string | null;
+  requestCount: number;
+  totalTokens: number;
+  totalCostUsd: number;
+  lastUsedAt: string;
+}
+
+export interface AIUsageExtremeRecord {
+  costUsd: number;
+  feature: AIUsageFeature;
+  model: string | null;
+  occurredAt: string;
 }
 
 export interface AIUsageModelBreakdownRecord {
@@ -316,6 +347,11 @@ export const AIUsageEventRepository = {
         sql<number>`coalesce(sum(output_tokens), 0)`.as('outputTokens'),
         sql<number>`coalesce(sum(total_tokens), 0)`.as('totalTokens'),
         sql<Numeric>`coalesce(sum(cost_usd), 0)`.as('totalCostUsd'),
+        sql<Numeric>`coalesce(sum(cost_usd) FILTER (WHERE status = 'failed'), 0)`.as(
+          'failedCostUsd',
+        ),
+        sql<number>`coalesce(sum(cached_input_tokens), 0)`.as('cachedInputTokens'),
+        sql<number>`coalesce(sum(reasoning_tokens), 0)`.as('reasoningTokens'),
         sql<Date | string | null>`max(createdat)`.as('lastRecordedAt'),
       ])
       .executeTakeFirstOrThrow();
@@ -328,7 +364,10 @@ export const AIUsageEventRepository = {
       promptTokens: Number(row.promptTokens ?? 0),
       outputTokens: Number(row.outputTokens ?? 0),
       totalTokens: Number(row.totalTokens ?? 0),
+      cachedInputTokens: Number(row.cachedInputTokens ?? 0),
+      reasoningTokens: Number(row.reasoningTokens ?? 0),
       totalCostUsd: toRequiredNumber(row.totalCostUsd),
+      failedCostUsd: toRequiredNumber(row.failedCostUsd),
       lastRecordedAt:
         row.lastRecordedAt == null ? null : new Date(row.lastRecordedAt).toISOString(),
     };
@@ -459,5 +498,170 @@ export const AIUsageEventRepository = {
       usageAvailableCount: Number(row.usageAvailableCount ?? 0),
       totalCostUsd: toRequiredNumber(row.totalCostUsd),
     }));
+  },
+
+  async getOperationBreakdown(
+    handle: DbHandle,
+    input: AIUsageQueryRange,
+  ): Promise<AIUsageOperationBreakdownRecord[]> {
+    let query = handle.selectFrom('app.aiUsageEvents').where('ownerUserid', '=', input.userId);
+
+    if (input.from) {
+      query = query.where('createdat', '>=', new Date(input.from).toISOString());
+    }
+
+    if (input.to) {
+      query = query.where('createdat', '<=', new Date(input.to).toISOString());
+    }
+
+    const rows = await query
+      .select([
+        'operation',
+        sql<number>`count(*)`.as('requestCount'),
+        sql<number>`count(*) FILTER (WHERE status = 'succeeded')`.as('succeededCount'),
+        sql<number>`count(*) FILTER (WHERE status = 'failed')`.as('failedCount'),
+        sql<number>`count(*) FILTER (WHERE usage_available)`.as('usageAvailableCount'),
+        sql<number>`coalesce(sum(input_tokens), 0)`.as('promptTokens'),
+        sql<number>`coalesce(sum(output_tokens), 0)`.as('outputTokens'),
+        sql<number>`coalesce(sum(total_tokens), 0)`.as('totalTokens'),
+        sql<Numeric>`coalesce(sum(cost_usd), 0)`.as('totalCostUsd'),
+      ])
+      .groupBy('operation')
+      .orderBy(sql`coalesce(sum(cost_usd), 0)`, 'desc')
+      .orderBy(sql`coalesce(sum(total_tokens), 0)`, 'desc')
+      .execute();
+
+    return rows.map(
+      (row): AIUsageOperationBreakdownRecord => ({
+        operation: parseAIUsageOperation(row.operation),
+        requestCount: Number(row.requestCount ?? 0),
+        succeededCount: Number(row.succeededCount ?? 0),
+        failedCount: Number(row.failedCount ?? 0),
+        usageAvailableCount: Number(row.usageAvailableCount ?? 0),
+        promptTokens: Number(row.promptTokens ?? 0),
+        outputTokens: Number(row.outputTokens ?? 0),
+        totalTokens: Number(row.totalTokens ?? 0),
+        totalCostUsd: toRequiredNumber(row.totalCostUsd),
+      }),
+    );
+  },
+
+  // Most-expensive conversations of the period, keyed off the chatId each
+  // chat_stream event carries in its metadata JSON. Titles are joined from
+  // the chats table for a user-facing list.
+  async getTopConversations(
+    handle: DbHandle,
+    input: AIUsageQueryRange,
+    limit = 5,
+  ): Promise<AIUsageConversationRecord[]> {
+    const chatIdCol = sql<string>`metadata ->> 'chatId'`;
+    let query = handle
+      .selectFrom('app.aiUsageEvents')
+      .where('ownerUserid', '=', input.userId)
+      .where(sql<SqlBool>`metadata ->> 'chatId' IS NOT NULL`)
+      .where(sql<SqlBool>`cost_usd > 0`);
+
+    if (input.from) {
+      query = query.where('createdat', '>=', new Date(input.from).toISOString());
+    }
+
+    if (input.to) {
+      query = query.where('createdat', '<=', new Date(input.to).toISOString());
+    }
+
+    const rows = await query
+      .select([
+        chatIdCol.as('chatId'),
+        sql<number>`count(*)`.as('requestCount'),
+        sql<number>`coalesce(sum(total_tokens), 0)`.as('totalTokens'),
+        sql<Numeric>`coalesce(sum(cost_usd), 0)`.as('totalCostUsd'),
+        sql<Date | string>`max(createdat)`.as('lastUsedAt'),
+      ])
+      .groupBy(chatIdCol)
+      .orderBy(sql`coalesce(sum(cost_usd), 0)`, 'desc')
+      .limit(limit)
+      .execute();
+
+    const chatIds = rows.map((row) => row.chatId);
+    const chats =
+      chatIds.length > 0
+        ? await handle
+            .selectFrom('app.chats')
+            .select(['id', 'title'])
+            .where('id', 'in', chatIds)
+            .execute()
+        : [];
+    const titleById = new Map(chats.map((chat) => [chat.id, chat.title]));
+
+    return rows.map((row) => ({
+      chatId: row.chatId,
+      title: titleById.get(row.chatId) ?? null,
+      requestCount: Number(row.requestCount ?? 0),
+      totalTokens: Number(row.totalTokens ?? 0),
+      totalCostUsd: toRequiredNumber(row.totalCostUsd),
+      lastUsedAt: new Date(row.lastUsedAt).toISOString(),
+    }));
+  },
+
+  // The single cheapest and most expensive billed calls of the period.
+  async getExtremes(
+    handle: DbHandle,
+    input: AIUsageQueryRange,
+  ): Promise<{
+    cheapest: AIUsageExtremeRecord | null;
+    mostExpensive: AIUsageExtremeRecord | null;
+  }> {
+    let query = handle
+      .selectFrom('app.aiUsageEvents')
+      .where('ownerUserid', '=', input.userId)
+      .where(sql<SqlBool>`cost_usd > 0`);
+
+    if (input.from) {
+      query = query.where('createdat', '>=', new Date(input.from).toISOString());
+    }
+
+    if (input.to) {
+      query = query.where('createdat', '<=', new Date(input.to).toISOString());
+    }
+
+    const toExtreme = (row: {
+      costUsd: string;
+      feature: string;
+      model: string | null;
+      occurredAt: Date | string;
+    }): AIUsageExtremeRecord => ({
+      costUsd: toRequiredNumber(row.costUsd),
+      feature: parseAIUsageFeature(row.feature),
+      model: row.model ?? null,
+      occurredAt: new Date(row.occurredAt).toISOString(),
+    });
+
+    const [cheapestRow, expensiveRow] = await Promise.all([
+      query
+        .select([
+          sql<Numeric>`cost_usd`.as('costUsd'),
+          'feature',
+          'model',
+          sql<Date>`createdat`.as('occurredAt'),
+        ])
+        .orderBy('costUsd', 'asc')
+        .limit(1)
+        .executeTakeFirst(),
+      query
+        .select([
+          sql<Numeric>`cost_usd`.as('costUsd'),
+          'feature',
+          'model',
+          sql<Date>`createdat`.as('occurredAt'),
+        ])
+        .orderBy('costUsd', 'desc')
+        .limit(1)
+        .executeTakeFirst(),
+    ]);
+
+    return {
+      cheapest: cheapestRow ? toExtreme(cheapestRow) : null,
+      mostExpensive: expensiveRow ? toExtreme(expensiveRow) : null,
+    };
   },
 };

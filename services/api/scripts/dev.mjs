@@ -1,18 +1,23 @@
 #!/usr/bin/env node
 // Dev entry point: runs the server under tsx watch, and in the same
 // process keeps the hosted-login page's client bundles rebuilt
-// (public/login.js from browser.ts, public/settings.js from settings.ts)
-// plus the CSS modules compiled to public/login.css + styles.generated.ts.
-// Those are committed build artifacts that tsx watch has no reason to know
-// about, so without this they silently drift from their sources during
-// local dev.
+// (public/login.js from browser.ts, public/settings.js from settings.ts,
+// public/settings-ai.js from settings-ai.ts) plus the CSS modules compiled
+// to public/login.css + styles.generated.ts. Those are committed build
+// artifacts that tsx watch has no reason to know about, so without this
+// they silently drift from their sources during local dev.
 import { spawn } from 'node:child_process';
 import { watch as watchDir } from 'node:fs';
 import { join } from 'node:path';
 
 import { watch } from 'rolldown';
 
-import { loginClientBuildOptions, settingsClientBuildOptions } from './login-client-bundle.mjs';
+import {
+  loginClientBuildOptions,
+  settingsAiClientBuildOptions,
+  settingsAiFootprintClientBuildOptions,
+  settingsClientBuildOptions,
+} from './login-client-bundle.mjs';
 import { buildLoginStyles } from './login-styles.mjs';
 
 // Resolve tsx from this package's own node_modules/.bin rather than relying
@@ -66,12 +71,32 @@ settingsWatcher.on('event', (event) => {
   }
 });
 
+const settingsAiWatcher = watch(settingsAiClientBuildOptions);
+settingsAiWatcher.on('event', (event) => {
+  if (event.code === 'BUNDLE_END') {
+    console.log(`[settings-ai.js] rebuilt in ${event.duration}ms`);
+  } else if (event.code === 'ERROR') {
+    console.error('[settings-ai.js] build failed:', event.error);
+  }
+});
+
+const settingsAiFootprintWatcher = watch(settingsAiFootprintClientBuildOptions);
+settingsAiFootprintWatcher.on('event', (event) => {
+  if (event.code === 'BUNDLE_END') {
+    console.log(`[settings-ai-footprint.js] rebuilt in ${event.duration}ms`);
+  } else if (event.code === 'ERROR') {
+    console.error('[settings-ai-footprint.js] build failed:', event.error);
+  }
+});
+
 let shuttingDown = false;
 const shutdown = () => {
   if (shuttingDown) return;
   shuttingDown = true;
   clientWatcher.close();
   settingsWatcher.close();
+  settingsAiWatcher.close();
+  settingsAiFootprintWatcher.close();
   server.kill();
 };
 process.on('SIGINT', shutdown);
@@ -80,5 +105,7 @@ process.on('SIGTERM', shutdown);
 server.on('exit', (code) => {
   clientWatcher.close();
   settingsWatcher.close();
+  settingsAiWatcher.close();
+  settingsAiFootprintWatcher.close();
   process.exit(code ?? 0);
 });

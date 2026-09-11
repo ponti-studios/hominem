@@ -7,6 +7,9 @@ import {
   type AIUsageOperation,
   type AIUsageSummaryRecord,
   type AIUsageTimeseriesGranularity,
+  type AIUsageConversationRecord,
+  type AIUsageExtremeRecord,
+  type AIUsageOperationBreakdownRecord,
 } from '@hominem/db/ai';
 import type { AIUsageTimeseriesRecord } from '@hominem/db/ai';
 import { db } from '@hominem/db/core';
@@ -219,6 +222,123 @@ export async function getAIUsageTimeseries(input: {
     range: { from: input.from, to: input.to },
     granularity: input.granularity,
     points,
+  };
+}
+
+export interface AIUsagePageReport {
+  range: { from: string; to: string };
+  monthly: MonthlyUsageStatus;
+  summary: AIUsageSummaryRecord;
+  byFeature: AIUsageFeatureBreakdownRecord[];
+  byModel: AIUsageModelBreakdownRecord[];
+  byOperation: AIUsageOperationBreakdownRecord[];
+  daily: AIUsageAggregatedPoint[];
+  monthlyTrend: AIUsageAggregatedPoint[];
+  topConversations: AIUsageConversationRecord[];
+  extremes: {
+    cheapest: AIUsageExtremeRecord | null;
+    mostExpensive: AIUsageExtremeRecord | null;
+  };
+}
+
+export interface AIUsageAggregatedPoint {
+  bucketStart: string;
+  bucketEnd: string;
+  requestCount: number;
+  usageAvailableCount: number;
+  totalCostUsd: number;
+}
+
+// The timeseries rows come back grouped by (bucket, model); the page works
+// with per-bucket totals, so collapse the model dimension here.
+function aggregateTimeseries(points: AIUsageTimeseriesRecord[]): AIUsageAggregatedPoint[] {
+  const byBucket = new Map<string, AIUsageAggregatedPoint>();
+  for (const point of points) {
+    const existing = byBucket.get(point.bucketStart);
+    if (existing) {
+      existing.requestCount += point.requestCount;
+      existing.usageAvailableCount += point.usageAvailableCount;
+      existing.totalCostUsd += point.totalCostUsd;
+    } else {
+      const start = new Date(point.bucketStart);
+      byBucket.set(point.bucketStart, {
+        bucketStart: point.bucketStart,
+        bucketEnd: addBucket(start, 'day').toISOString(),
+        requestCount: point.requestCount,
+        usageAvailableCount: point.usageAvailableCount,
+        totalCostUsd: point.totalCostUsd,
+      });
+    }
+  }
+  return [...byBucket.values()].sort((a, b) => a.bucketStart.localeCompare(b.bucketStart));
+}
+
+function addBucket(date: Date, granularity: AIUsageTimeseriesGranularity): Date {
+  if (granularity === 'day') {
+    const next = new Date(date);
+    next.setUTCDate(next.getUTCDate() + 1);
+    return next;
+  }
+  const next = new Date(date);
+  next.setUTCMonth(next.getUTCMonth() + 1);
+  return next;
+}
+
+function monthsAgo(months: number, now = new Date()): Date {
+  const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  date.setUTCMonth(date.getUTCMonth() - months);
+  return date;
+}
+
+// Everything the hosted AI-usage page needs in one payload: the monthly
+// status, the summary (now including failure cost and cache/reasoning
+// token totals), the three breakdown axes, day + month series (collapsed
+// across models), the top conversations, and the cheapest/most expensive
+// calls of the month.
+export async function getAIUsagePageReport(userId: string): Promise<AIUsagePageReport> {
+  const range = currentMonthRange();
+  const query = { userId, from: range.from, to: range.to };
+  const [
+    summary,
+    byFeature,
+    byModel,
+    byOperation,
+    topConversations,
+    extremes,
+    daily,
+    monthlyTrend,
+  ] = await Promise.all([
+    AIUsageEventRepository.getSummary(db, query),
+    AIUsageEventRepository.getFeatureBreakdown(db, query),
+    AIUsageEventRepository.getModelBreakdown(db, query),
+    AIUsageEventRepository.getOperationBreakdown(db, query),
+    AIUsageEventRepository.getTopConversations(db, query, 5),
+    AIUsageEventRepository.getExtremes(db, query),
+    getAIUsageTimeseries({
+      userId,
+      from: range.from,
+      to: range.to,
+      granularity: 'day',
+    }).then((report) => aggregateTimeseries(report.points)),
+    getAIUsageTimeseries({
+      userId,
+      from: monthsAgo(5).toISOString(),
+      to: range.to,
+      granularity: 'month',
+    }).then((report) => aggregateTimeseries(report.points)),
+  ]);
+
+  return {
+    range,
+    monthly: buildMonthlyUsageStatus(summary, range.from, range.to),
+    summary,
+    byFeature,
+    byModel,
+    byOperation,
+    daily,
+    monthlyTrend,
+    topConversations,
+    extremes,
   };
 }
 

@@ -209,8 +209,19 @@ describe('API login route', () => {
     expect(response.status).toBe(303);
     const location = response.headers.get('location');
     expect(location).toContain('/login?');
-    expect(decodeURIComponent(location ?? '')).toContain('http://localhost:4040/auth/settings');
+    // Redirect targets use the incoming request's origin so the browser can
+    // actually follow them through the proxy (in dev that is 443, not the
+    // env's internal :4200).
+    expect(decodeURIComponent(location ?? '')).toContain('http://localhost/auth/settings');
     expect(decodeURIComponent(location ?? '')).toContain('step=email');
+  });
+
+  it('serves the login page for a request-origin resume (portless-style next)', async () => {
+    const next = encodeURIComponent('http://localhost/auth/settings');
+    const response = await createApp().request(`http://localhost/login?next=${next}`);
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toContain('a one-time code — no password to remember');
   });
 
   it('renders the account settings page for a signed-in session', async () => {
@@ -235,6 +246,34 @@ describe('API login route', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('text/javascript; charset=utf-8');
     await expect(response.text()).resolves.toContain('data-settings-usage');
+  });
+
+  it('redirects signed-out visitors to hosted login with an AI-settings resume', async () => {
+    const response = await createApp().request('http://localhost/auth/settings/ai');
+
+    expect(response.status).toBe(303);
+    const location = response.headers.get('location');
+    expect(location).toContain('/login?');
+    expect(decodeURIComponent(location ?? '')).toContain('http://localhost/auth/settings/ai');
+  });
+
+  it('renders the AI-usage page for a signed-in session and serves its bundle', async () => {
+    mocks.getSession.mockResolvedValue({
+      user: { id: 'u1', name: 'Ada Lovelace', email: 'ada@example.com' },
+    });
+
+    const response = await createApp().request('http://localhost/auth/settings/ai');
+
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain('Where your Hominem AI budget went');
+    expect(html).toContain('data-uai-period');
+    expect(html).toContain('Back to account');
+    expect(html).toContain('/settings-ai.js');
+
+    const bundle = await createApp().request('http://localhost/settings-ai.js');
+    expect(bundle.status).toBe(200);
+    await expect(bundle.text()).resolves.toContain('data-uai-seg');
   });
 
   it('updates the profile name through Better Auth', async () => {

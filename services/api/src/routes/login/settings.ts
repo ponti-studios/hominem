@@ -1,9 +1,9 @@
 // Client-side enhancement for the hosted /auth/settings page: loads the
-// monthly AI usage report, saves the account name through Better Auth's
-// same-origin update-user endpoint, and gates the sign-out form behind a
-// confirmation. Bundled to public/settings.js (see login-client-bundle.mjs).
-// Everything the page needs to work degraded (plain form submit for sign-out,
-// server-rendered name/email) survives without this file.
+// monthly AI usage report and saves the account name through the API's
+// same-origin /auth/settings/profile endpoint. Bundled to public/settings.js
+// (see login-client-bundle.mjs). Everything the page needs to work degraded
+// (plain form submit for sign-out, server-rendered name/email) survives
+// without this file.
 
 const usdFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -120,26 +120,6 @@ if (nameInput && saveButton && saveStatus) {
       saveButton.disabled = false;
       saveButton.textContent = 'Save';
     }
-  });
-}
-
-const signOutButton = document.querySelector<HTMLButtonElement>('[data-settings-signout]');
-const confirmBox = document.querySelector<HTMLElement>('[data-settings-confirm]');
-const cancelButton = document.querySelector<HTMLButtonElement>('[data-settings-cancel]');
-const confirmSignOutButton = document.querySelector<HTMLButtonElement>(
-  '[data-settings-confirm-signout]',
-);
-if (signOutButton && confirmBox && cancelButton && confirmSignOutButton) {
-  const form = signOutButton.form;
-  signOutButton.addEventListener('click', (event) => {
-    event.preventDefault();
-    confirmBox.hidden = false;
-  });
-  cancelButton.addEventListener('click', () => {
-    confirmBox.hidden = true;
-  });
-  confirmSignOutButton.addEventListener('click', () => {
-    form?.requestSubmit();
   });
 }
 

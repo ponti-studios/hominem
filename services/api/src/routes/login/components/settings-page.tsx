@@ -1,5 +1,5 @@
 import { PageFrame } from './page-frame';
-import { pageFrame, settingsPage } from './styles.generated';
+import { pageFrame, settingsPage, shared } from './styles.generated';
 
 type SettingsUser = {
   id: string;
@@ -71,6 +71,10 @@ export function SettingsPage({ user, loginNextUrl }: { user: SettingsUser; login
           <p class={settingsPage.usageReset} data-settings-usage-reset />
         </section>
 
+        <a class={shared.secondaryButton} href="/auth/settings/ai">
+          AI usage details →
+        </a>
+
         <section class={settingsPage.section}>
           <form action="/logout" method="post">
             <input name="next" type="hidden" value={loginNextUrl} />
@@ -78,21 +82,6 @@ export function SettingsPage({ user, loginNextUrl }: { user: SettingsUser; login
               Sign out
             </button>
           </form>
-          <div class={settingsPage.confirm} data-settings-confirm hidden>
-            <p class={settingsPage.confirmCopy}>Are you sure you want to sign out?</p>
-            <div class={settingsPage.confirmActions}>
-              <button class={settingsPage.confirmCancel} data-settings-cancel type="button">
-                Cancel
-              </button>
-              <button
-                class={settingsPage.confirmSignOut}
-                data-settings-confirm-signout
-                type="button"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
         </section>
       </div>
     </PageFrame>

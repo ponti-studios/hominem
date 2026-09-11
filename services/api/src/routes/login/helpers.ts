@@ -19,11 +19,22 @@ export function getFormValue(form: Record<string, string | File>, name: string) 
   return typeof value === 'string' ? value : '';
 }
 
-export function resolveResume(query: string, inputEnv = env): Resume | null {
+export function resolveResume(
+  query: string,
+  inputEnv = env,
+  requestOrigin?: string,
+): Resume | null {
   const params = new URLSearchParams(query);
   const next = params.get('next');
   if (next !== null) {
-    const url = resolveAppRedirectUrl(next, getTrustedOrigins(inputEnv));
+    // The incoming request's own origin is implicitly trusted: it's the host
+    // the browser actually reached (the portless proxy surfaces hosts on 443
+    // while the env URLs carry the app's internal port), and allowing a
+    // resume back to the auth host itself is harmless.
+    const trustedOrigins = requestOrigin
+      ? [...getTrustedOrigins(inputEnv), requestOrigin]
+      : getTrustedOrigins(inputEnv);
+    const url = resolveAppRedirectUrl(next, trustedOrigins);
     return url ? { mode: 'app', url } : null;
   }
 
@@ -57,8 +68,12 @@ function clearSatisfiedLoginConstraints(url: string): string {
 // redirect target: an 'oauth' resume needs the just-satisfied login
 // constraints cleared first (see clearSatisfiedLoginConstraints); an 'app'
 // resume points at another origin entirely and carries no such params.
-export function resolvePostAuthResume(query: string, inputEnv = env): Resume | null {
-  const resume = resolveResume(query, inputEnv);
+export function resolvePostAuthResume(
+  query: string,
+  inputEnv = env,
+  requestOrigin?: string,
+): Resume | null {
+  const resume = resolveResume(query, inputEnv, requestOrigin);
   if (!resume || resume.mode !== 'oauth') return resume;
   return { mode: 'oauth', url: clearSatisfiedLoginConstraints(resume.url) };
 }
@@ -67,12 +82,18 @@ export function loginUrl(
   input: {
     email?: string;
     error?: string;
+    origin?: string;
     resumeQuery: string;
     step: 'email' | 'otp';
   },
   inputEnv = env,
 ) {
-  const url = new URL('/login', inputEnv.API_URL);
+  // Redirect targets are consumed by the browser, so build them from the
+  // origin the browser actually used (the incoming request's origin) rather
+  // than the configured API_URL — behind the portless proxy those differ in
+  // development (443 vs the env's internal port), and match in production.
+  const base = input.origin ?? inputEnv.API_URL;
+  const url = new URL('/login', base);
   const query = new URLSearchParams(input.resumeQuery);
   query.set('step', input.step);
   if (input.email) query.set('email', input.email);

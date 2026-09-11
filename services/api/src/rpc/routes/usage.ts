@@ -6,6 +6,7 @@ import {
   getAIUsageTimeseries,
   getMonthlyAIUsageReport,
   getMonthlyUsageStatus,
+  getAIUsagePageReport,
 } from '../../application/ai-usage.service';
 import { getSpeechUsageHealth } from '../../application/speech-usage.service';
 import { ForbiddenError } from '../errors';
@@ -27,6 +28,11 @@ export const usageRoutes = new Hono<AppContext>()
   .get('/', async (c) => {
     const userId = c.get('auth')!.userId;
     return c.json(await getMonthlyAIUsageReport(userId));
+  })
+  // Everything the hosted /auth/settings/ai page renders, in one payload.
+  .get('/ai', async (c) => {
+    const userId = c.get('auth')!.userId;
+    return c.json(await getAIUsagePageReport(userId));
   })
   .get('/timeseries', zValidator('query', usageTimeseriesSchema), async (c) => {
     const userId = c.get('auth')!.userId;
