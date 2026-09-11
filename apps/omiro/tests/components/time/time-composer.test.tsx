@@ -24,6 +24,9 @@ vi.mock('~/components/theme', () => ({
     factory({ colors: { border: '' } }),
 }));
 vi.mock('~/components/ui', () => ({
+  BlurCard: ({ children, testID }: { children: React.ReactNode; testID?: string }) => (
+    <section data-testid={testID}>{children}</section>
+  ),
   Card: ({ children, testID }: { children: React.ReactNode; testID?: string }) => (
     <section data-testid={testID}>{children}</section>
   ),
