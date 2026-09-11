@@ -64,9 +64,6 @@ jobs:
     environment: production
     env:
       APP_ENV: production
-      # TODO: remove once the submission-config resolution failure below is
-      # root-caused — this only exists to surface eas-cli's swallowed error.
-      EXPO_DEBUG: "1"
     params:
       build_id: ${{ needs.build_ios.outputs.build_id }}
       profile: production

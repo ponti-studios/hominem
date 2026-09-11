@@ -9,53 +9,41 @@ const appEnvironmentSchema = z.enum(['development', 'e2e', 'production', 'screen
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
 const APPLE_TEAM_ID = '3QHJ2KN8AL';
-const DEVELOPMENT_APP_CONFIG = Object.freeze({
+
+// development and e2e share the dev app identity/icon; production and
+// screenshots share the real one. Nothing else varies by environment.
+const DEV_APP_CONFIG = Object.freeze({
   bundleIdentifier: 'com.pontistudios.hakumi.dev',
   displayName: 'Omiro Dev',
   scheme: 'hakumi-dev',
+  icon: './assets/icon.dev.png',
 });
+
 const PRODUCTION_APP_CONFIG = Object.freeze({
   bundleIdentifier: 'com.pontistudios.hakumi',
   displayName: 'Omiro',
   scheme: 'hakumi',
-});
-const APP_ENVIRONMENTS = Object.freeze({
-  development: DEVELOPMENT_APP_CONFIG,
-  e2e: DEVELOPMENT_APP_CONFIG,
-  production: PRODUCTION_APP_CONFIG,
-  screenshots: PRODUCTION_APP_CONFIG,
+  icon: './assets/icon.png',
 });
 
-const ROOT_ASSETS_DIR = './assets';
-
-const ENVIRONMENT_ICON_NAMES = Object.freeze({
-  development: 'icon.dev.png',
-  e2e: 'icon.dev.png',
-  production: 'icon.png',
-  screenshots: 'icon.png',
-});
-
-function getBrandAssetPaths(appEnvironment) {
-  const icon = `${ROOT_ASSETS_DIR}/${ENVIRONMENT_ICON_NAMES[appEnvironment]}`;
-  return {
-    icon,
-    splash: `${ROOT_ASSETS_DIR}/logo.splash-screen.png`,
-  };
-}
+const SPLASH_IMAGE = './assets/logo.splash-screen.png';
 
 // EAS sets EAS_BUILD_PROFILE on the builder, and unlike APP_ENV it can't get
 // shadowed by a stray local .env file (we got bit once by a "production"
 // build picking up .env.development.local and shipping the dev identity to
-// the App Store). So on the builder, EAS_BUILD_PROFILE wins and a
-// conflicting APP_ENV throws instead of us just guessing.
+// the App Store). So whenever a build profile is actually present,
+// EAS_BUILD_PROFILE wins and a conflicting APP_ENV throws instead of us just
+// guessing.
+//
+// EAS_BUILD is also set to "true" on submit/update job runners (e.g. the
+// `testflight` workflow job type), which have no build profile at all — only
+// EAS_BUILD_PROFILE tells us whether we're actually in a build, so we check
+// that directly instead of gating on EAS_BUILD.
 function getAppEnvironment() {
   const appEnv = process.env.APP_ENV;
+  const profile = process.env.EAS_BUILD_PROFILE;
 
-  if (process.env.EAS_BUILD === 'true') {
-    const profile = process.env.EAS_BUILD_PROFILE;
-    if (!profile) {
-      throw new Error('EAS_BUILD is set but EAS_BUILD_PROFILE is missing.');
-    }
+  if (profile) {
     const resolvedProfile = appEnvironmentSchema.parse(profile);
     if (appEnv && appEnv !== resolvedProfile) {
       throw new Error(
@@ -63,6 +51,10 @@ function getAppEnvironment() {
       );
     }
     return resolvedProfile;
+  }
+
+  if (process.env.EAS_BUILD === 'true' && !appEnv) {
+    throw new Error('EAS_BUILD is set but neither EAS_BUILD_PROFILE nor APP_ENV is set.');
   }
 
   if (appEnv) {
@@ -76,34 +68,12 @@ function getAppEnvironment() {
   return 'development';
 }
 
-function getAppEnvironmentConfig(appEnvironment) {
-  return APP_ENVIRONMENTS[appEnvironment];
-}
-
-// Only production ships to the App Store, so only it gets a fingerprint
-// runtimeVersion + EAS Update URL. The channel itself comes from eas.json's
-// build profile, not here, so the two can't drift apart.
-function getRuntimeVersion(appEnvironment) {
-  return appEnvironment === 'production' ? { policy: 'fingerprint' } : undefined;
-}
-
-function getUpdatesConfig(appEnvironment) {
-  if (appEnvironment !== 'production') {
-    return { enabled: false, checkAutomatically: 'NEVER', fallbackToCacheTimeout: 0 };
-  }
-  return { url: `https://u.expo.dev/${EXPO_PROJECT_ID}` };
-}
-
-function usesDevelopmentClient(appEnvironment) {
-  return appEnvironment === 'development';
-}
-
 function createConfig({ config }) {
   const appEnvironment = getAppEnvironment();
-  const appEnvironmentConfig = getAppEnvironmentConfig(appEnvironment);
-  const brandAssets = getBrandAssetPaths(appEnvironment);
-  const hasDevelopmentClient = usesDevelopmentClient(appEnvironment);
-  const runtimeVersion = getRuntimeVersion(appEnvironment);
+  const isDevIdentity = appEnvironment === 'development' || appEnvironment === 'e2e';
+  const isProduction = appEnvironment === 'production';
+  const hasDevelopmentClient = appEnvironment === 'development';
+  const appEnvironmentConfig = isDevIdentity ? DEV_APP_CONFIG : PRODUCTION_APP_CONFIG;
   const plugins = [
     'expo-router',
     [
@@ -133,7 +103,7 @@ function createConfig({ config }) {
           infoPlist: {
             NSAppTransportSecurity: {
               NSAllowsArbitraryLoads: false,
-              NSAllowsLocalNetworking: appEnvironment === 'development' || appEnvironment === 'e2e',
+              NSAllowsLocalNetworking: isDevIdentity,
             },
           },
         },
@@ -142,7 +112,7 @@ function createConfig({ config }) {
     [
       'expo-splash-screen',
       {
-        image: brandAssets.splash,
+        image: SPLASH_IMAGE,
         enableFullScreenImage_legacy: true,
         resizeMode: 'cover',
       },
@@ -189,7 +159,7 @@ function createConfig({ config }) {
     owner: EXPO_OWNER,
     platforms: ['ios'],
     orientation: 'portrait',
-    icon: brandAssets.icon,
+    icon: appEnvironmentConfig.icon,
     userInterfaceStyle: 'automatic',
     backgroundColor: '#111113',
     assetBundlePatterns: ['assets/**/*', 'api/**/*', 'app/**/*', 'constants/**/*', 'hooks/**/*', 'navigation/**/*', 'services/**/*'],
@@ -197,11 +167,16 @@ function createConfig({ config }) {
     experiments: {
       tsconfigPaths: true,
     },
-    ...(runtimeVersion ? { runtimeVersion } : {}),
-    updates: getUpdatesConfig(appEnvironment),
+    // Only production ships to the App Store, so only it gets a fingerprint
+    // runtimeVersion + EAS Update URL. The channel itself comes from
+    // eas.json's build profile, not here, so the two can't drift apart.
+    ...(isProduction ? { runtimeVersion: { policy: 'fingerprint' } } : {}),
+    updates: isProduction
+      ? { url: `https://u.expo.dev/${EXPO_PROJECT_ID}` }
+      : { enabled: false, checkAutomatically: 'NEVER', fallbackToCacheTimeout: 0 },
     ios: {
       appleTeamId: APPLE_TEAM_ID,
-      icon: brandAssets.icon,
+      icon: appEnvironmentConfig.icon,
       bundleIdentifier: appEnvironmentConfig.bundleIdentifier,
       supportsTablet: true,
       entitlements: {
