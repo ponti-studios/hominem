@@ -154,5 +154,5 @@ prove a broader boundary implicitly. Record the evidence honestly:
   persistence boundaries.
 - Playwright/Maestro proves behavior in the real browser/device environment.
 
-The repository-wide completion and artifact requirements remain governed by
-[`docs/evidence.md`](evidence.md).
+For repository completion and artifact requirements:
+[`hominem-evidence` skill](../.agents/skills/hominem-evidence/SKILL.md).
