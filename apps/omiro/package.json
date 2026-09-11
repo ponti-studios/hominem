@@ -6,8 +6,8 @@
   "scripts": {
     "build:dev": "npx eas-cli build --platform ios --profile development",
     "build:e2e": "npx eas-cli build --platform ios --profile e2e",
-    "build:prod": "node scripts/verify-release-identity.mjs && npx eas-cli build --platform ios --profile production",
     "build:prod:local": "bash scripts/build-prod-local.sh",
+    "build:prod:remote": "node scripts/verify-release-identity.mjs && npx eas-cli build --platform ios --profile production",
     "build:screenshots": "npx eas-cli build --platform ios --profile screenshots",
     "dev": "APP_ENV=development expo start --clear",
     "eas-build-post-install": "pnpm --filter @ponti-studios/auth build",

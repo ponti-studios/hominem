@@ -24,7 +24,7 @@ into a release.
 | Determine release readiness | Preflight below | Evidence and blockers; no release |
 | Normal CI release from `main` | GitHub Actions | `validate-mobile` → `deploy-mobile` → EAS approval → TestFlight |
 | Manually start a cloud store release | `just mobile release` | EAS build → identity guard → approval → TestFlight |
-| Explicitly run an ad hoc cloud build/submit | `pnpm build:prod`, then `pnpm submit` | EAS cloud build → `--latest` submission |
+| Explicitly run an ad hoc cloud build/submit | `pnpm build:prod:remote`, then `pnpm submit` | EAS cloud build → `--latest` submission |
 | Create and upload an explicitly requested local IPA | `pnpm build:prod:local`, then `pnpm submit:local` | Locally signed IPA → App Store Connect/TestFlight |
 | Ship a JS-only fix | `just mobile update "<message>"` | EAS approval → production OTA channel |
 
@@ -93,7 +93,7 @@ repository root. It starts the same EAS workflow; do not replace it with an
 ad hoc build/submit sequence unless the user specifically requests that path.
 
 If the user explicitly requests the ad hoc cloud CLI path, run
-`pnpm build:prod` first and only then `pnpm submit`. The latter uses EAS's
+`pnpm build:prod:remote` first and only then `pnpm submit`. The latter uses EAS's
 `--latest` cloud-build selector; it does not submit a local IPA. Keep
 `APP_ENV=production` exported for both commands and preserve the identity
 guard.
