@@ -1,13 +1,5 @@
 import { build } from 'rolldown';
 
-import {
-  loginClientBuildOptions,
-  settingsAiClientBuildOptions,
-  settingsAiFootprintClientBuildOptions,
-  settingsClientBuildOptions,
-} from './scripts/login-client-bundle.mjs';
-import { buildLoginStyles } from './scripts/login-styles.mjs';
-
 const sharedConfig = {
   tsconfig: './tsconfig.json',
   platform: 'node',
@@ -27,20 +19,8 @@ const nodeEntries =
         ['src/worker.ts', 'dist/worker.mjs'],
       ];
 
-// The login page's stylesheet artifacts are committed, but rebuild them so
-// the dist bundle can never ship a stale public/login.css or class map.
-await buildLoginStyles();
-
 await Promise.all([
   ...nodeEntries.map(([input, file]) =>
     build({ ...sharedConfig, input, output: { file, format: 'esm', codeSplitting: false } }),
   ),
-  ...(target === 'worker'
-    ? []
-    : [
-        build(loginClientBuildOptions),
-        build(settingsClientBuildOptions),
-        build(settingsAiClientBuildOptions),
-        build(settingsAiFootprintClientBuildOptions),
-      ]),
 ]);

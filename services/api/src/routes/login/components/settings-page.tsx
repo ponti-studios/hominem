@@ -1,5 +1,5 @@
+import { pageFrame, settingsPage, shared } from '../styles';
 import { PageFrame } from './page-frame';
-import { pageFrame, settingsPage, shared } from './styles.generated';
 
 type SettingsUser = {
   id: string;
@@ -21,7 +21,7 @@ export function SettingsPage({ user, loginNextUrl }: { user: SettingsUser; login
   const initials = getInitials(name, email);
 
   return (
-    <PageFrame script="/settings.js" title="Settings | Hominem">
+    <PageFrame entry="settings" title="Settings | Hominem">
       <div class={pageFrame.authContent}>
         <div class={pageFrame.authHeading}>
           <h2 id="settings-title">Account</h2>

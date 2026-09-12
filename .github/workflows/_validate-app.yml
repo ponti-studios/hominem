@@ -40,6 +40,7 @@ jobs:
       RESEND_FROM_NAME: 'Test Sender'
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
       BETTER_AUTH_SECRET: 'ci-test-better-auth-secret-32-characters'
+      API_URL: http://localhost:4040
       HOMINEM_INTERNAL_API_URL: http://localhost:3000
       PUBLIC_APP_URL: ${{ inputs.public-app-url }}
       VITE_PUBLIC_API_URL: http://localhost:3000

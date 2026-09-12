@@ -1248,6 +1248,9 @@ importers:
       undici:
         specifier: ^7.29.0
         version: 7.29.1
+      vite:
+        specifier: 'catalog:'
+        version: 8.2.2(@types/node@25.4.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0)
 
   services/deepeval:
     devDependencies:

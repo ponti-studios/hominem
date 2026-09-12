@@ -15,6 +15,13 @@ storybook-static/
 .cache/
 *.tsbuildinfo
 
+# Vite emits these hosted-login assets locally and into services/api/dist/public
+services/api/public/login.css
+services/api/public/login.js
+services/api/public/settings.js
+services/api/public/settings-ai.js
+services/api/public/settings-ai-footprint.js
+
 # signing
 *.p8
 *.p12

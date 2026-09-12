@@ -1,5 +1,5 @@
+import { consentPage, pageFrame, shared } from '../styles';
 import { PageFrame } from './page-frame';
-import { consentPage, pageFrame, shared } from './styles.generated';
 
 type ConsentPageProps = {
   clientName: string;

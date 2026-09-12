@@ -1,8 +1,8 @@
 import { emailSchema, loginUrl, type ResumeMode } from '../helpers';
+import { loginPage, pageFrame, progressButton, shared } from '../styles';
 import { OtpField } from './otp-field';
 import { PageFrame } from './page-frame';
 import { AnimatedProgressButton } from './progress-button';
-import { loginPage, pageFrame, progressButton, shared } from './styles.generated';
 
 type LoginPageProps = {
   email: string;

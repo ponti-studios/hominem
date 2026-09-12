@@ -1,4 +1,4 @@
-import { otpField } from './styles.generated';
+import { otpField } from '../styles';
 
 export function OtpField() {
   return (

@@ -177,13 +177,12 @@ login appears to succeed but the other apps never see the session and bounce
 back to `/login`. See [docs/authentication.md](../../../docs/authentication.md)
 for the full cookie-domain mechanism.
 
-`services/api`'s hosted login page ships a client bundle
-(`public/login.js`) built from `src/routes/login/browser.ts` — this is a
-committed artifact, not compiled at request time, so a source-only edit to
-`browser.ts` has no effect until it's rebuilt. `pnpm dev`/`dev:api` handles
-this automatically (see [services/api/AGENTS.md](../../../services/api/AGENTS.md)); an out-of-band build needs
-`node build.mjs` run from `services/api`, with the regenerated
-`public/login.js` committed alongside the source change.
+`services/api`'s hosted login page uses Vite for its browser assets. In local
+development, Vite runs in middleware mode inside the API process, so HMR is
+available at the same Portless origin as the Hono routes. Production builds
+emit content-hashed assets plus a manifest under `dist/public`; no generated
+CSS or browser bundle is committed. `pnpm build --filter=@hominem/api...`
+builds those assets before bundling the API.
 
 ## Smallest loop by default
 
