@@ -1,15 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
 
-import {
-  convertSchemaToJsonSchema,
-  createChatCompletion,
-  getChatCompletionText,
-  getChatCompletionUsage,
-  OpenRouterRequestError,
-  recordAIUsageEvent,
-  startAIUsageTimer,
-} from '@hominem/ai';
+import { OpenRouterRequestError, recordAIUsageEvent, startAIUsageTimer } from '@hominem/ai';
+import { parseResumeWithAI, ResumeParseError } from '@hominem/career-services/resume';
 import { CareerRepository } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
 import {
@@ -26,33 +18,13 @@ import { userContext } from '../lib/middleware';
 import { getRateLimitHeaders, resumeConvertRateLimit } from '../lib/rate-limit';
 import { extractPdfText } from '../lib/services/pdf-text.server';
 import { saveResumeToDatabase } from '../lib/services/resume-conversion.service';
-import type { ConvertedResumeData, ResumeConvertStage } from '../types/resume';
-import { resumeSchema } from '../types/resume';
+import type { ResumeConvertStage } from '../types/resume';
 
 const MAX_EXTRACTED_RESUME_TEXT_LENGTH = 80_000;
 const PDF_RESUME_VALIDATION = {
   maxSizeBytes: 10 * 1024 * 1024,
   allowedTypes: ['application/pdf'],
 } as const;
-const RESUME_PARSER_PROMPT_URL = new URL('../lib/prompts/resume-parser.md', import.meta.url);
-let resumeParserSystemPromptPromise: Promise<string> | null = null;
-const resumeParserJsonSchema = convertSchemaToJsonSchema(resumeSchema);
-
-async function loadResumeParserSystemPrompt(): Promise<string> {
-  if (!resumeParserSystemPromptPromise) {
-    resumeParserSystemPromptPromise = readFile(RESUME_PARSER_PROMPT_URL, 'utf8').then((content) =>
-      content.trim(),
-    );
-  }
-
-  return resumeParserSystemPromptPromise;
-}
-
-function parseJsonObject(content: string): unknown {
-  const trimmed = content.trim();
-  const jsonMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  return JSON.parse(jsonMatch?.[1] ?? trimmed);
-}
 
 function errorResponse(
   error: string,
@@ -117,6 +89,20 @@ function resolveAiParseFailure(error: unknown) {
 
   return {
     error: 'Could not parse the resume with AI right now. Try again in a moment.',
+    status: 502,
+  };
+}
+
+function resolveResumeParseFailure(error: ResumeParseError): { error: string; status: number } {
+  if (error.kind === 'schema-validation') {
+    return {
+      error: `${error.message} Try again, or update the PDF with clearer resume sections. Your PDF was saved so you can retry.`,
+      status: 422,
+    };
+  }
+
+  return {
+    error: `${error.message} Try again, or upload a simpler resume PDF. Your PDF was saved so you can retry.`,
     status: 502,
   };
 }
@@ -331,37 +317,18 @@ export const action: ActionFunction = async ({ request, context }) => {
       );
     }
 
-    let aiContent: string;
-    const resumeParserSystemPrompt = await loadResumeParserSystemPrompt();
     const eventId = randomUUID();
     const getDurationMs = startAIUsageTimer();
+    let parsedResume: Awaited<ReturnType<typeof parseResumeWithAI>>['data'];
     try {
-      const result = await createChatCompletion({
-        responseFormat: {
-          type: 'json_schema',
-          jsonSchema: {
-            name: 'resume_parser',
-            schema: resumeParserJsonSchema,
-          },
-        },
-        messages: [
-          {
-            role: 'system',
-            content: resumeParserSystemPrompt,
-          },
-          {
-            role: 'user',
-            content: `Parse this resume into structured JSON. Resume text:\n${pdfText}`,
-          },
-        ],
-      });
+      const parsed = await parseResumeWithAI(pdfText);
       await recordAIUsageEvent({
         eventId,
         userId: user.id,
         feature: 'career_resume_convert',
         operation: 'structured_output',
-        usage: getChatCompletionUsage(result),
-        model: result.model,
+        usage: parsed.usage,
+        model: parsed.model,
         status: 'succeeded',
         durationMs: getDurationMs(),
         metadata: {
@@ -370,8 +337,39 @@ export const action: ActionFunction = async ({ request, context }) => {
           replaceExisting,
         },
       });
-      aiContent = getChatCompletionText(result);
+      parsedResume = parsed.data;
     } catch (error) {
+      if (error instanceof ResumeParseError) {
+        // The completion itself succeeded (that's what incurred cost) — the
+        // failure happened in the JSON/schema handling that runs after, so
+        // this is still a 'succeeded' usage event, same as the direct call.
+        await recordAIUsageEvent({
+          eventId,
+          userId: user.id,
+          feature: 'career_resume_convert',
+          operation: 'structured_output',
+          usage: error.usage,
+          model: error.model,
+          status: 'succeeded',
+          durationMs: getDurationMs(),
+          metadata: {
+            fileId: uploadResult.id,
+            extractedCharacterCount: pdfText.length,
+            replaceExisting,
+          },
+        });
+        logRouteError(error.message, error, {
+          ownerUserid: user.id,
+          fileName: file.name,
+          ...(error.kind === 'schema-validation' ? { issues: error.issues } : {}),
+          ...storedFile,
+        });
+        const failure = resolveResumeParseFailure(error);
+        return errorResponse(failure.error, failure.status, error.kind, true, {
+          fileUrl: uploadResult.url,
+        });
+      }
+
       await recordAIUsageEvent({
         eventId,
         userId: user.id,
@@ -396,64 +394,10 @@ export const action: ActionFunction = async ({ request, context }) => {
       });
     }
 
-    if (!aiContent.trim()) {
-      logger.error('Resume AI parsing returned empty content', undefined, {
-        ownerUserid: user.id,
-        fileName: file.name,
-        ...storedFile,
-      });
-      return errorResponse(
-        'The AI parser returned an empty response. Try again, or upload a simpler resume PDF. Your PDF was saved so you can retry.',
-        502,
-        'ai-parse',
-        true,
-        { fileUrl: uploadResult.url },
-      );
-    }
-
-    let parsedResume: unknown;
-    try {
-      parsedResume = parseJsonObject(aiContent);
-    } catch (error) {
-      logRouteError('Resume AI parsing returned invalid JSON', error, {
-        ownerUserid: user.id,
-        fileName: file.name,
-        ...storedFile,
-      });
-      return errorResponse(
-        'The AI parser returned malformed resume data. Try again, or upload a simpler resume PDF. Your PDF was saved so you can retry.',
-        502,
-        'ai-parse',
-        true,
-        { fileUrl: uploadResult.url },
-      );
-    }
-
-    const {
-      success,
-      data,
-      error: schemaError,
-    } = resumeSchema.safeParse(parsedResume as ConvertedResumeData);
-    if (!success) {
-      logger.error('Resume AI parsing failed schema validation', undefined, {
-        ownerUserid: user.id,
-        fileName: file.name,
-        issues: schemaError.issues,
-        ...storedFile,
-      });
-      return errorResponse(
-        'The parsed resume data was incomplete or invalid. Try again, or update the PDF with clearer resume sections. Your PDF was saved so you can retry.',
-        422,
-        'schema-validation',
-        true,
-        { fileUrl: uploadResult.url },
-      );
-    }
-
     let portfolioId: string;
     let portfolioSlug: string;
     try {
-      const saveResult = await saveResumeToDatabase(user.id, data, {
+      const saveResult = await saveResumeToDatabase(user.id, parsedResume, {
         replaceProfileId: replaceExisting ? (existingPortfolio?.id ?? undefined) : undefined,
       });
       portfolioId = saveResult.profileId;
@@ -476,7 +420,7 @@ export const action: ActionFunction = async ({ request, context }) => {
 
     return {
       message: 'Resume uploaded and processed successfully',
-      data,
+      data: parsedResume,
       saved: true,
       portfolio_id: portfolioId,
       portfolioSlug,

@@ -36,6 +36,11 @@ vi.mock('@hominem/ai', () => ({
   startAIUsageTimer: () => () => 0,
 }));
 
+vi.mock('@hominem/career-services', () => ({
+  RESUME_CUSTOMIZE_MODEL: 'test-resume-customize-model',
+  JOB_ANALYSIS_MODEL: 'test-job-analysis-model',
+}));
+
 vi.mock('@hominem/db/core', () => ({
   db: {},
 }));

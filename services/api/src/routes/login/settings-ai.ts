@@ -61,6 +61,7 @@ const FEATURE_LABELS: Record<string, string> = {
   chat_speech: 'Voice',
   embedding: 'Embeddings',
   mcp_tool_call: 'MCP tools',
+  career_resume_analyze: 'Resume analysis',
   career_resume_convert: 'Resume',
   career_resume_customize: 'Resume edits',
   career_job_scrape: 'Job search',

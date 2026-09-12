@@ -1,11 +1,14 @@
 import { Buffer } from 'node:buffer';
+import { randomUUID } from 'node:crypto';
 
+import { recordAIUsageEvent, startAIUsageTimer } from '@hominem/ai';
 import {
   buildResumeImportDiff,
   extractPdfText,
   parseResumeWithAI,
   ResumeParseError,
 } from '@hominem/career-services/resume';
+import type { ConvertedResumeData } from '@hominem/career-services/types';
 import { SocialLinksRepository } from '@hominem/db/career';
 import { CareerRepository } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
@@ -63,7 +66,52 @@ async function processResumeAnalysisJob(data: ResumeAnalysisQueuePayload): Promi
     }
 
     await publish(data.jobId, { stage: 'ai-parse' });
-    const parsed = await parseResumeWithAI(pdfText);
+    const eventId = randomUUID();
+    const getDurationMs = startAIUsageTimer();
+    let parsed: ConvertedResumeData;
+    try {
+      const result = await parseResumeWithAI(pdfText);
+      await recordAIUsageEvent({
+        eventId,
+        userId: data.userId,
+        feature: 'career_resume_analyze',
+        operation: 'structured_output',
+        usage: result.usage,
+        model: result.model,
+        status: 'succeeded',
+        durationMs: getDurationMs(),
+        metadata: { fileId: data.fileId, extractedCharacterCount: pdfText.length },
+      });
+      parsed = result.data;
+    } catch (error) {
+      if (error instanceof ResumeParseError) {
+        // The completion itself succeeded (that's what incurred cost) — the
+        // failure happened in the JSON/schema handling that runs after.
+        await recordAIUsageEvent({
+          eventId,
+          userId: data.userId,
+          feature: 'career_resume_analyze',
+          operation: 'structured_output',
+          usage: error.usage,
+          model: error.model,
+          status: 'succeeded',
+          durationMs: getDurationMs(),
+          metadata: { fileId: data.fileId, extractedCharacterCount: pdfText.length },
+        });
+      } else {
+        await recordAIUsageEvent({
+          eventId,
+          userId: data.userId,
+          feature: 'career_resume_analyze',
+          operation: 'structured_output',
+          status: 'failed',
+          error,
+          durationMs: getDurationMs(),
+          metadata: { extractedCharacterCount: pdfText.length },
+        });
+      }
+      throw error;
+    }
 
     await publish(data.jobId, { stage: 'diffing' });
     const [currentProfile, currentSocial] = await Promise.all([

@@ -29,6 +29,7 @@ const featureLabels: Record<string, string> = {
   chat_speech: 'Chat speech',
   embedding: 'Embeddings',
   mcp_tool_call: 'MCP tool calls',
+  career_resume_analyze: 'Resume analysis',
   career_resume_convert: 'Resume conversion',
   career_resume_customize: 'Resume customization',
   career_job_scrape: 'Job scraping',

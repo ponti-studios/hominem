@@ -890,6 +890,9 @@ importers:
       '@hominem/db':
         specifier: workspace:*
         version: link:../db
+      '@hominem/env':
+        specifier: workspace:*
+        version: link:../env
       '@hominem/queues':
         specifier: workspace:*
         version: link:../queues
@@ -13967,6 +13970,7 @@ snapshots:
     dependencies:
       '@hominem/ai': file:packages/ai(react@19.2.8)
       '@hominem/db': file:packages/db(react@19.2.8)
+      '@hominem/env': file:packages/env
       '@hominem/queues': file:packages/queues(pg@8.23.0)(supports-color@8.1.1)
       pdf2json: 4.0.3
       zod: 4.4.3

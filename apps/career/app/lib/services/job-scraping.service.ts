@@ -1,10 +1,10 @@
 import {
   createChatCompletion,
-  JOB_EXTRACTION_MODEL,
   getChatCompletionText,
   getChatCompletionUsage,
   type AIUsageMetrics,
 } from '@hominem/ai';
+import { JOB_EXTRACTION_MODEL } from '@hominem/career-services';
 import { isObject } from '@hominem/utils';
 import { z } from 'zod';
 

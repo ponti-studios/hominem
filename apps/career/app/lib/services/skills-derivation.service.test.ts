@@ -32,6 +32,10 @@ vi.mock('@hominem/ai', () => ({
   startAIUsageTimer: () => () => 0,
 }));
 
+vi.mock('@hominem/career-services', () => ({
+  SKILLS_DERIVATION_MODEL: 'test-skills-derivation-model',
+}));
+
 vi.mock('@hominem/db/career', () => ({
   db: {},
   CareerRepository: {

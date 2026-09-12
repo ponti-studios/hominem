@@ -7,6 +7,7 @@ import {
   recordAIUsageEvent,
   startAIUsageTimer,
 } from '@hominem/ai';
+import { SKILLS_DERIVATION_MODEL } from '@hominem/career-services';
 import { ProjectRepository } from '@hominem/db/career';
 import { CareerRepository } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
@@ -80,6 +81,7 @@ export async function deriveSkillsFromCareerHistory(
   let result;
   try {
     result = await createChatCompletion({
+      model: SKILLS_DERIVATION_MODEL,
       responseFormat: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },

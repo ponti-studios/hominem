@@ -8,6 +8,7 @@ import {
   recordAIUsageEvent,
   startAIUsageTimer,
 } from '@hominem/ai';
+import { JOB_ANALYSIS_MODEL, RESUME_CUSTOMIZE_MODEL } from '@hominem/career-services';
 import { SocialLinksRepository } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
 import { data, type ActionFunction } from 'react-router';
@@ -148,6 +149,7 @@ Please create a customized resume that highlights the most relevant experience a
     let result;
     try {
       result = await createChatCompletion({
+        model: RESUME_CUSTOMIZE_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -192,6 +194,7 @@ Please create a customized resume that highlights the most relevant experience a
     let analysisResult;
     try {
       analysisResult = await createChatCompletion({
+        model: JOB_ANALYSIS_MODEL,
         responseFormat: { type: 'json_object' },
         messages: [
           {

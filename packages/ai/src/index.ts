@@ -3,7 +3,6 @@ export {
   AUDIO_TTS_VOICE,
   CHAT_MODEL,
   ENHANCE_MODEL,
-  JOB_EXTRACTION_MODEL,
   normalizeOpenRouterError,
   OpenRouterRequestError,
   TASK_EXTRACTION_MODEL,

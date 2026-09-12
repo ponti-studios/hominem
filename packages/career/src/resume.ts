@@ -5,6 +5,8 @@ import {
   convertSchemaToJsonSchema,
   createChatCompletion,
   getChatCompletionText,
+  getChatCompletionUsage,
+  type AIUsageMetrics,
 } from '@hominem/ai';
 import { CareerSocialLinksRecord } from '@hominem/db/career';
 import type { CareerProfileRecord } from '@hominem/db/career';
@@ -18,128 +20,12 @@ import type {
 import PDFParser from 'pdf2json';
 import { z } from 'zod';
 
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const presentDateValues = new Set(['present', 'current', 'now']);
+import { RESUME_PARSE_MODEL } from './models';
+import { normalizePortfolioSlug, resumeSchema, type ConvertedResumeData } from './types';
 
-function normalizeOptionalString(value: unknown): string | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
+export { normalizePortfolioSlug, resumeSchema };
+export type { ConvertedResumeData };
 
-export function normalizePortfolioSlug(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 50)
-    .replace(/-$/g, '');
-}
-
-function normalizeResumeDate(value: unknown): string | null {
-  const trimmed = normalizeOptionalString(value);
-  if (!trimmed) return null;
-  if (presentDateValues.has(trimmed.toLowerCase())) return null;
-
-  const monthMatch = /^(\d{4})-(\d{2})$/.exec(trimmed);
-  const normalized = monthMatch ? `${trimmed}-01` : trimmed;
-  return normalized;
-}
-
-function isValidResumeDate(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
-}
-
-const nonBlankString = z.string().trim().min(1);
-const optionalString = z.preprocess(normalizeOptionalString, z.string().nullable());
-const resumeDate = z.preprocess(
-  normalizeResumeDate,
-  z
-    .string()
-    .refine(isValidResumeDate, 'Expected a valid date in YYYY-MM-DD or YYYY-MM format.')
-    .nullable(),
-);
-
-export const resumeSchema = z.object({
-  portfolio: z.object({
-    slug: z
-      .string()
-      .transform(normalizePortfolioSlug)
-      .pipe(z.string().min(3).max(50).regex(slugPattern)),
-    title: nonBlankString,
-    name: nonBlankString,
-    initials: optionalString,
-    job_title: nonBlankString,
-    bio: nonBlankString,
-    tagline: nonBlankString,
-    current_location: nonBlankString,
-    email: z.string().trim().email(),
-    phone: optionalString,
-    availability_status: z.boolean(),
-    open_to_remote: z.boolean().optional().default(false),
-    is_public: z.boolean(),
-    is_active: z.boolean(),
-  }),
-  social_links: z
-    .object({
-      github: optionalString,
-      linkedin: optionalString,
-      twitter: optionalString,
-      website: optionalString,
-    })
-    .nullable(),
-  workExperience: z
-    .array(
-      z.object({
-        company: nonBlankString,
-        description: nonBlankString,
-        role: nonBlankString,
-        start_date: resumeDate,
-        end_date: resumeDate,
-      }),
-    )
-    .default([]),
-  skills: z
-    .array(
-      z.object({
-        name: nonBlankString,
-        level: z.number().finite().min(1).max(100),
-        category: optionalString,
-        description: optionalString,
-        years_of_experience: z.number().finite().min(0).optional().nullable(),
-        certifications: z.array(nonBlankString).default([]),
-      }),
-    )
-    .default([]),
-  projects: z
-    .array(
-      z.object({
-        title: nonBlankString,
-        description: nonBlankString,
-        short_description: optionalString,
-        technologies: z.array(nonBlankString).default([]),
-        live_url: optionalString,
-        github_url: optionalString,
-        status: z.enum(['in-progress', 'completed', 'archived']),
-      }),
-    )
-    .default([]),
-  stats: z
-    .array(
-      z.object({
-        label: nonBlankString,
-        value: nonBlankString,
-      }),
-    )
-    .default([]),
-});
-
-export type ConvertedResumeData = z.infer<typeof resumeSchema>;
 const resumeParserJsonSchema = convertSchemaToJsonSchema(resumeSchema);
 
 const RESUME_PARSER_PROMPT_URL = new URL('./prompts/resume-parser.md', import.meta.url);
@@ -164,17 +50,29 @@ export class ResumeParseError extends Error {
   kind: 'ai-parse' | 'schema-validation';
   issues?: z.ZodIssue[];
   cause?: unknown;
+  // Set whenever the underlying AI completion succeeded (the failure happened
+  // in the JSON/schema handling that runs after) so callers can still record
+  // the AI usage/cost event that was actually incurred.
+  usage: AIUsageMetrics | null;
+  model: string | null;
 
   constructor(
     kind: 'ai-parse' | 'schema-validation',
     message: string,
-    options?: { issues?: z.ZodIssue[]; cause?: unknown },
+    options?: {
+      issues?: z.ZodIssue[];
+      cause?: unknown;
+      usage?: AIUsageMetrics | null;
+      model?: string | null;
+    },
   ) {
     super(message);
     this.name = 'ResumeParseError';
     this.kind = kind;
     this.issues = options?.issues;
     this.cause = options?.cause;
+    this.usage = options?.usage ?? null;
+    this.model = options?.model ?? null;
   }
 }
 
@@ -197,11 +95,20 @@ export async function extractPdfText(file: File): Promise<string> {
   });
 }
 
-// Throws ResumeParseError if the AI parse or the schema validation fails
-export async function parseResumeWithAI(pdfText: string): Promise<ConvertedResumeData> {
+export type ParsedResume = {
+  data: ConvertedResumeData;
+  usage: AIUsageMetrics | null;
+  model: string;
+};
+
+// Throws ResumeParseError if the AI parse or the schema validation fails. The
+// underlying completion may have still succeeded (and incurred cost) even
+// when this throws — see ResumeParseError.usage/model.
+export async function parseResumeWithAI(pdfText: string): Promise<ParsedResume> {
   const systemPrompt = await loadResumeParserSystemPrompt();
 
   const result = await createChatCompletion({
+    model: RESUME_PARSE_MODEL,
     responseFormat: {
       type: 'json_schema',
       jsonSchema: {
@@ -215,9 +122,15 @@ export async function parseResumeWithAI(pdfText: string): Promise<ConvertedResum
     ],
   });
 
+  const usage = getChatCompletionUsage(result);
+  const model = result.model;
+
   const aiContent = getChatCompletionText(result);
   if (!aiContent.trim()) {
-    throw new ResumeParseError('ai-parse', 'The AI parser returned an empty response.');
+    throw new ResumeParseError('ai-parse', 'The AI parser returned an empty response.', {
+      usage,
+      model,
+    });
   }
 
   let parsedResume: unknown;
@@ -226,6 +139,8 @@ export async function parseResumeWithAI(pdfText: string): Promise<ConvertedResum
   } catch (error) {
     throw new ResumeParseError('ai-parse', 'The AI parser returned malformed resume data.', {
       cause: error,
+      usage,
+      model,
     });
   }
 
@@ -234,11 +149,11 @@ export async function parseResumeWithAI(pdfText: string): Promise<ConvertedResum
     throw new ResumeParseError(
       'schema-validation',
       'The parsed resume data was incomplete or invalid.',
-      { issues: schemaError.issues },
+      { issues: schemaError.issues, usage, model },
     );
   }
 
-  return data;
+  return { data, usage, model };
 }
 
 function truncateSlugBase(slug: string, suffix = ''): string {

@@ -1,4 +1,4 @@
-import type { ConvertedResumeData } from '@hominem/career-services/resume';
+import type { ConvertedResumeData } from '@hominem/career-services/types';
 import {
   ProjectRepository,
   SkillRepository,

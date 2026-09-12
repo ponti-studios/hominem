@@ -8,7 +8,11 @@ import {
   recordAIUsageEvent,
   startAIUsageTimer,
 } from '@hominem/ai';
+import { createServerEnv } from '@hominem/env';
+import { aiSchema } from '@hominem/env/ai';
 import { LOG_MESSAGES, logger } from '@hominem/telemetry';
+
+const FILE_ANALYSIS_MODEL = createServerEnv(aiSchema, 'ai').FILE_ANALYSIS_MODEL;
 
 const MAX_IMAGE_ANALYSIS_BYTES = 20 * 1024 * 1024;
 const DOCUMENT_SUMMARY_THRESHOLD = 1000;
@@ -29,6 +33,7 @@ export async function describeImageForChat(
   try {
     const base64Image = Buffer.from(buffer).toString('base64');
     const response = await createChatCompletion({
+      model: FILE_ANALYSIS_MODEL,
       messages: [
         {
           role: 'user',
@@ -88,6 +93,7 @@ export async function summarizeDocumentForChat(
   const getDurationMs = startAIUsageTimer();
   try {
     const response = await createChatCompletion({
+      model: FILE_ANALYSIS_MODEL,
       messages: [
         {
           role: 'system',

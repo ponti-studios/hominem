@@ -18,6 +18,7 @@ export type AIUsageFeature =
   | 'chat_speech'
   | 'embedding'
   | 'mcp_tool_call'
+  | 'career_resume_analyze'
   | 'career_resume_convert'
   | 'career_resume_customize'
   | 'career_job_scrape'
@@ -39,6 +40,7 @@ const AI_USAGE_FEATURES: readonly AIUsageFeature[] = [
   'chat_speech',
   'embedding',
   'mcp_tool_call',
+  'career_resume_analyze',
   'career_resume_convert',
   'career_resume_customize',
   'career_job_scrape',

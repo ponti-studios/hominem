@@ -2,12 +2,13 @@ import { get } from 'node:https';
 
 import {
   createChatCompletion,
-  JOB_EXTRACTION_MODEL,
   getChatCompletionText,
   getChatCompletionUsage,
   type AIUsageMetrics,
 } from '@hominem/ai';
 import { z } from 'zod';
+
+import { JOB_EXTRACTION_MODEL } from './models';
 
 export interface CareerImportDraft {
   jobTitle: string;
