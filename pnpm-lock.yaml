@@ -176,7 +176,7 @@ importers:
         version: link:../../packages/queues
       '@hominem/rpc':
         specifier: workspace:*
-        version: file:packages/rpc(@playwright/test@1.62.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
+        version: file:packages/rpc(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.63.0)(better-call@1.4.0(zod@4.4.3))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
       '@hominem/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -251,8 +251,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.63.0
+        version: 1.63.0
       '@react-router/dev':
         specifier: 'catalog:'
         version: 8.3.0(@react-router/serve@8.3.0(react-router@8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@8.1.1)(typescript@6.0.3))(react-router@8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@25.4.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0))
@@ -321,7 +321,7 @@ importers:
         version: link:../../packages/queues
       '@hominem/rpc':
         specifier: workspace:*
-        version: file:packages/rpc(@playwright/test@1.62.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
+        version: file:packages/rpc(@playwright/test@1.63.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
       '@hominem/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -384,8 +384,8 @@ importers:
         version: 5.0.15(@types/react@19.2.18)(immer@11.1.18)(react@19.2.8)(use-sync-external-store@1.7.0(react@19.2.8))
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.63.0
+        version: 1.63.0
       '@react-router/dev':
         specifier: 'catalog:'
         version: 8.3.0(@react-router/serve@8.3.0(react-router@8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@8.1.1)(typescript@6.0.3))(react-router@8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@25.4.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0))
@@ -439,7 +439,7 @@ importers:
         version: link:../../packages/env
       '@hominem/rpc':
         specifier: workspace:*
-        version: file:packages/rpc(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.62.1)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
+        version: file:packages/rpc(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.63.0)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
       '@hominem/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -547,7 +547,7 @@ importers:
         version: 57.0.2(expo@57.0.22)(react@19.2.8)
       expo-router:
         specifier: ~57.0.21
-        version: 57.0.21(aceaab5307794b8c7d3063f3d0a7f2f6)
+        version: 57.0.21(673b466abe57f4b774d7a258027b9275)
       expo-screen-capture:
         specifier: ^57.0.3
         version: 57.0.3(expo@57.0.22)(react@19.2.8)
@@ -659,7 +659,7 @@ importers:
         version: link:../../packages/env
       '@hominem/rpc':
         specifier: workspace:*
-        version: file:packages/rpc(@playwright/test@1.62.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
+        version: file:packages/rpc(@playwright/test@1.63.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
       '@hominem/storage':
         specifier: workspace:*
         version: link:../../packages/storage
@@ -791,8 +791,8 @@ importers:
         version: 4.4.3
     devDependencies:
       '@playwright/test':
-        specifier: 1.62.1
-        version: 1.62.1
+        specifier: 1.63.0
+        version: 1.63.0
       '@react-router/dev':
         specifier: 'catalog:'
         version: 8.3.0(@react-router/serve@8.3.0(react-router@8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@8.1.1)(typescript@6.0.3))(react-router@8.3.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@8.1.1)(typescript@6.0.3)(vite@8.2.2(@types/node@25.4.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0))
@@ -876,8 +876,8 @@ importers:
         version: link:../utils
     devDependencies:
       '@playwright/test':
-        specifier: ^1.62.1
-        version: 1.62.1
+        specifier: ^1.63.0
+        version: 1.63.0
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.8.0)(@types/node@25.4.0)(@vitest/coverage-v8@4.1.11)(jsdom@30.0.1(@noble/hashes@2.4.0))(msw@2.15.0(@types/node@25.4.0)(typescript@6.0.3))(vite@8.2.2(@types/node@25.4.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.13)(yaml@2.9.0))
@@ -1023,7 +1023,7 @@ importers:
     dependencies:
       '@hominem/api':
         specifier: workspace:*
-        version: file:services/api(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.62.1)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
+        version: file:services/api(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.63.0)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
       '@hominem/chat':
         specifier: workspace:*
         version: link:../chat
@@ -4132,15 +4132,15 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@playwright/test@1.62.1':
-    resolution: {integrity: sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ==}
+  '@playwright/test@1.63.0':
+    resolution: {integrity: sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ==}
     engines: {node: '>=20'}
     hasBin: true
 
   '@ponti-studios/auth@file:packages/auth':
     resolution: {directory: packages/auth, type: directory}
     peerDependencies:
-      '@playwright/test': ^1.62.1
+      '@playwright/test': ^1.63.0
     peerDependenciesMeta:
       '@playwright/test':
         optional: true
@@ -8084,11 +8084,6 @@ packages:
     resolution: {integrity: sha512-hcg3ZmepS30/7BSFqRvoo3DOMQu7IjqxO5nCDt+zM9XWjb33Wg7ziNT+Qvqbuc3+gWpzO02JubVyk2G4Zvo1OQ==}
     engines: {node: '>=10'}
 
-  fsevents@2.3.2:
-    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
-    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
-    os: [darwin]
-
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -10006,18 +10001,8 @@ packages:
   pkg-types@2.3.3:
     resolution: {integrity: sha512-j/lCFdcppV0JxWpCEITdbDltBxPP6cHT+yNJ6Go2OgoSA9518X847X9z0p6LtA4Nc16+eQzCZjRrWanTGvHJ5w==}
 
-  playwright-core@1.62.1:
-    resolution: {integrity: sha512-wPYSwEBJY9GHraISXqyqtx0na0LpO3XEX7jNDhntbex7tzUS7kLnZsOlFruFJB4Hi/rhDMjXGqHewDZ68nYZVw==}
-    engines: {node: '>=20'}
-    hasBin: true
-
   playwright-core@1.63.0:
     resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
-    engines: {node: '>=20'}
-    hasBin: true
-
-  playwright@1.62.1:
-    resolution: {integrity: sha512-0M+L3LAD8/nm554LOla9Ayx0j0tmFZ0FBcoQ7F1VuVHpM/XpiC8RcDzBQB8W5+hA8L22THxELzeF+2WcUzvcLg==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -13371,7 +13356,7 @@ snapshots:
       ws: 8.21.3
       zod: 3.25.76
     optionalDependencies:
-      expo-router: 57.0.21(aceaab5307794b8c7d3063f3d0a7f2f6)
+      expo-router: 57.0.21(673b466abe57f4b774d7a258027b9275)
       react-native: 0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1)
     transitivePeerDependencies:
       - '@expo/dom-webview'
@@ -13735,7 +13720,7 @@ snapshots:
       react: 19.2.8
     optionalDependencies:
       '@expo/metro-runtime': 57.0.15(@expo/log-box@57.0.4)(expo@57.0.22)(react-dom@19.2.8(react@19.2.8))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)
-      expo-router: 57.0.21(aceaab5307794b8c7d3063f3d0a7f2f6)
+      expo-router: 57.0.21(673b466abe57f4b774d7a258027b9275)
       react-dom: 19.2.8(react@19.2.8)
     transitivePeerDependencies:
       - supports-color
@@ -13816,7 +13801,7 @@ snapshots:
       - pg-native
       - react
 
-  '@hominem/api@file:services/api(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.62.1)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
+  '@hominem/api@file:services/api(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.63.0)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
     dependencies:
       '@better-auth/cimd': 1.7.1(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/oauth-provider@1.7.1(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.1(@opentelemetry/api@1.8.0)(pg@8.23.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.4.3)))(better-auth@1.7.1(@opentelemetry/api@1.8.0)(pg@8.23.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.4.3))
       '@better-auth/expo': 1.7.1(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(better-auth@1.7.1(@opentelemetry/api@1.8.0)(pg@8.23.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))
@@ -13838,7 +13823,7 @@ snapshots:
       '@hono/zod-validator': 0.7.6(hono@4.13.5)(zod@4.4.3)
       '@modelcontextprotocol/server': 2.0.0
       '@opentelemetry/api': 1.8.0
-      '@ponti-studios/auth': file:packages/auth(@playwright/test@1.62.1)
+      '@ponti-studios/auth': file:packages/auth(@playwright/test@1.63.0)
       '@scalar/hono-api-reference': 0.12.1(hono@4.13.5)
       '@sentry/node': 10.74.0(@opentelemetry/core@2.11.0(@opentelemetry/api@1.8.0))(@opentelemetry/exporter-trace-otlp-http@0.203.0(@opentelemetry/api@1.8.0))(supports-color@8.1.1)
       better-auth: 1.7.1(@opentelemetry/api@1.8.0)(pg@8.23.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11)
@@ -13891,7 +13876,7 @@ snapshots:
       - vitest
       - vue
 
-  '@hominem/api@file:services/api(@playwright/test@1.62.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
+  '@hominem/api@file:services/api(@playwright/test@1.63.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
     dependencies:
       '@better-auth/cimd': 1.7.1(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/oauth-provider@1.7.1(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(better-auth@1.7.1(@opentelemetry/api@1.8.0)(pg@8.23.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.4.3)))(better-auth@1.7.1(@opentelemetry/api@1.8.0)(pg@8.23.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(better-call@1.4.0(zod@4.4.3))
       '@better-auth/expo': 1.7.1(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(better-auth@1.7.1(@opentelemetry/api@1.8.0)(pg@8.23.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))
@@ -13913,7 +13898,7 @@ snapshots:
       '@hono/zod-validator': 0.7.6(hono@4.13.5)(zod@4.4.3)
       '@modelcontextprotocol/server': 2.0.0
       '@opentelemetry/api': 1.8.0
-      '@ponti-studios/auth': file:packages/auth(@playwright/test@1.62.1)
+      '@ponti-studios/auth': file:packages/auth(@playwright/test@1.63.0)
       '@scalar/hono-api-reference': 0.12.1(hono@4.13.5)
       '@sentry/node': 10.74.0(@opentelemetry/core@2.11.0(@opentelemetry/api@1.8.0))(@opentelemetry/exporter-trace-otlp-http@0.203.0(@opentelemetry/api@1.8.0))(supports-color@8.1.1)
       better-auth: 1.7.1(@opentelemetry/api@1.8.0)(pg@8.23.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.11)
@@ -14027,9 +14012,9 @@ snapshots:
       - redis
       - supports-color
 
-  '@hominem/rpc@file:packages/rpc(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.62.1)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
+  '@hominem/rpc@file:packages/rpc(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.63.0)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
     dependencies:
-      '@hominem/api': file:services/api(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.62.1)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
+      '@hominem/api': file:services/api(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.63.0)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
       '@hominem/chat': file:packages/chat(react@19.2.8)
       '@tanstack/react-query': 5.101.4(react@19.2.8)
       hono: 4.13.5
@@ -14076,9 +14061,58 @@ snapshots:
       - vitest
       - vue
 
-  '@hominem/rpc@file:packages/rpc(@playwright/test@1.62.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
+  '@hominem/rpc@file:packages/rpc(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.63.0)(better-call@1.4.0(zod@4.4.3))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
     dependencies:
-      '@hominem/api': file:services/api(@playwright/test@1.62.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
+      '@hominem/api': file:services/api(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.63.0)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.22)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.22))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
+      '@hominem/chat': file:packages/chat(react@19.2.8)
+      '@tanstack/react-query': 5.101.4(react@19.2.8)
+      hono: 4.13.5
+      react: 19.2.8
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@better-auth/core'
+      - '@better-auth/utils'
+      - '@better-fetch/fetch'
+      - '@cloudflare/workers-types'
+      - '@lynx-js/react'
+      - '@opentelemetry/core'
+      - '@opentelemetry/exporter-trace-otlp-http'
+      - '@playwright/test'
+      - '@prisma/client'
+      - '@react-email/render'
+      - '@sveltejs/kit'
+      - '@tanstack/react-start'
+      - '@tanstack/solid-start'
+      - better-call
+      - better-sqlite3
+      - bufferutil
+      - bullmq-otel
+      - drizzle-kit
+      - drizzle-orm
+      - expo-constants
+      - expo-linking
+      - expo-network
+      - expo-secure-store
+      - expo-web-browser
+      - ioredis
+      - kysely
+      - mongodb
+      - mysql2
+      - next
+      - pg-native
+      - prisma
+      - react-dom
+      - redis
+      - solid-js
+      - supports-color
+      - svelte
+      - utf-8-validate
+      - vitest
+      - vue
+
+  '@hominem/rpc@file:packages/rpc(@playwright/test@1.63.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
+    dependencies:
+      '@hominem/api': file:services/api(@playwright/test@1.63.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)
       '@hominem/chat': file:packages/chat(react@19.2.8)
       '@tanstack/react-query': 5.101.4(react@19.2.8)
       hono: 4.13.5
@@ -15124,15 +15158,15 @@ snapshots:
   '@oxlint/binding-win32-x64-msvc@1.82.0':
     optional: true
 
-  '@playwright/test@1.62.1':
+  '@playwright/test@1.63.0':
     dependencies:
-      playwright: 1.62.1
+      playwright: 1.63.0
 
-  '@ponti-studios/auth@file:packages/auth(@playwright/test@1.62.1)':
+  '@ponti-studios/auth@file:packages/auth(@playwright/test@1.63.0)':
     dependencies:
       '@hominem/utils': file:packages/utils
     optionalDependencies:
-      '@playwright/test': 1.62.1
+      '@playwright/test': 1.63.0
 
   '@ponti-studios/ui@1.7.0(@types/react@19.2.18)(date-fns@4.4.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
@@ -19062,7 +19096,7 @@ snapshots:
       expo: 57.0.22(@babel/core@7.29.7(supports-color@8.1.1))(@expo/dom-webview@57.0.1)(@expo/metro-runtime@57.0.15)(expo-router@57.0.21)(react-dom@19.2.8(react@19.2.8))(react-native-web@0.21.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-native-worklets@0.10.1(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)(supports-color@8.1.1))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)(supports-color@8.1.1)(typescript@6.0.3)
       react: 19.2.8
 
-  expo-router@57.0.21(aceaab5307794b8c7d3063f3d0a7f2f6):
+  expo-router@57.0.21(673b466abe57f4b774d7a258027b9275):
     dependencies:
       '@expo/log-box': 57.0.4(@expo/dom-webview@57.0.1)(expo@57.0.22)(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)
       '@expo/metro-runtime': 57.0.15(@expo/log-box@57.0.4)(expo@57.0.22)(react-dom@19.2.8(react@19.2.8))(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)
@@ -19426,9 +19460,6 @@ snapshots:
       graceful-fs: 4.2.11
       jsonfile: 6.2.1
       universalify: 2.0.1
-
-  fsevents@2.3.2:
-    optional: true
 
   fsevents@2.3.3:
     optional: true
@@ -21944,15 +21975,7 @@ snapshots:
       exsolve: 1.1.1
       pathe: 2.0.3
 
-  playwright-core@1.62.1: {}
-
   playwright-core@1.63.0: {}
-
-  playwright@1.62.1:
-    dependencies:
-      playwright-core: 1.62.1
-    optionalDependencies:
-      fsevents: 2.3.2
 
   playwright@1.63.0:
     dependencies:
