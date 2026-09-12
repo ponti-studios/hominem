@@ -26,7 +26,7 @@
     "@hominem/env": "workspace:*",
     "@hominem/telemetry": "workspace:*",
     "@hominem/utils": "workspace:*",
-    "@openrouter/sdk": "^0.12.35",
+    "@openrouter/sdk": "^1.2.113",
     "zod": "catalog:"
   }
 }
