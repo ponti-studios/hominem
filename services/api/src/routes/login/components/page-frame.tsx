@@ -1,18 +1,20 @@
-import { pageFrame } from './styles.generated';
+import { loginAssets, type LoginEntry } from '../assets';
+import { pageFrame } from '../styles';
 
 type PageFrameProps = {
   children: unknown;
   wide?: boolean;
-  script?: string;
+  entry?: LoginEntry;
   title?: string;
 };
 
 export function PageFrame({
   children,
   wide = false,
-  script = '/login.js',
+  entry = 'login',
   title = 'Secure access | Hominem',
 }: PageFrameProps) {
+  const assets = loginAssets(entry);
   return (
     <html lang="en">
       <head>
@@ -21,8 +23,12 @@ export function PageFrame({
         <meta content="#fcfcfd" media="(prefers-color-scheme: light)" name="theme-color" />
         <meta content="#111113" media="(prefers-color-scheme: dark)" name="theme-color" />
         <title>{title}</title>
-        <link href="/login.css?v=ai-usage-3" rel="stylesheet" />
-        <script defer src={script} />
+        {assets.styles.map((href) => (
+          <link href={href} rel="stylesheet" />
+        ))}
+        {assets.scripts.map((src) => (
+          <script defer src={src} type="module" />
+        ))}
       </head>
       <body>
         <div class={pageFrame.authPage}>

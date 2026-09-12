@@ -2,8 +2,8 @@
 // composite GET /api/usage/ai payload and fills the skeleton's data hooks.
 // All user-derived strings (chat titles) go through textContent via el(),
 // never innerHTML — the page mirrors user content as-is.
-// Bundled to public/settings-ai.js (see login-client-bundle.mjs).
-import { aiUsagePage as styles } from './components/styles.generated';
+// Vite serves this module during development and emits its hashed production asset.
+import { aiUsagePage as styles } from './styles';
 
 type UsageStatus = {
   limitUsd: number;

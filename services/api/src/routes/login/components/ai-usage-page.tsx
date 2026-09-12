@@ -1,13 +1,13 @@
+import { aiUsagePage, pageFrame } from '../styles';
 import { PageFrame } from './page-frame';
-import { aiUsagePage, pageFrame } from './styles.generated';
 
 // The AI-usage report page: a server-rendered skeleton with data hooks for
-// settings-ai.js to fill from GET /api/usage/ai (same-origin, session
+// the Vite settings-ai entry to fill from GET /api/usage/ai (same-origin, session
 // cookie). Every number/card degrades to its progress text if the client
 // bundle or the fetch fails.
 export function AIUsagePage() {
   return (
-    <PageFrame script="/settings-ai.js?v=footprint-2" title="AI usage | Hominem" wide>
+    <PageFrame entry="settings-ai" title="AI usage | Hominem" wide>
       <div class={`${pageFrame.authContent} ${pageFrame.authContentWide}`}>
         <div class={pageFrame.authHeading}>
           <h2 id="usage-title">AI usage</h2>

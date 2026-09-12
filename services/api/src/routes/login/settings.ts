@@ -1,9 +1,9 @@
 // Client-side enhancement for the hosted /auth/settings page: loads the
 // monthly AI usage report and saves the account name through the API's
-// same-origin /auth/settings/profile endpoint. Bundled to public/settings.js
-// (see login-client-bundle.mjs). Everything the page needs to work degraded
-// (plain form submit for sign-out, server-rendered name/email) survives
-// without this file.
+// same-origin /auth/settings/profile endpoint. Vite serves this module during
+// development and emits its hashed production asset. Everything the page needs
+// to work degraded (plain form submit for sign-out, server-rendered name/email)
+// survives without this module.
 
 const usdFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',

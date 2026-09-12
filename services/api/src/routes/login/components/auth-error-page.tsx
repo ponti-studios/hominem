@@ -1,6 +1,6 @@
 import type { ResumeMode } from '../helpers';
+import { authErrorPage, pageFrame } from '../styles';
 import { PageFrame } from './page-frame';
-import { authErrorPage, pageFrame } from './styles.generated';
 
 type AuthErrorPageProps = {
   description?: string;

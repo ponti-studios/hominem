@@ -1,4 +1,4 @@
-import { progressButton } from './styles.generated';
+import { progressButton } from '../styles';
 
 type AnimatedProgressButtonProps = {
   children: unknown;

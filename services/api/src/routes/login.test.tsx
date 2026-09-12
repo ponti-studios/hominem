@@ -85,12 +85,14 @@ describe('API login route', () => {
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
   });
 
-  it('serves the login browser bundle', async () => {
-    const response = await createApp().request('http://localhost/login.js');
+  it('renders Vite development entries for the login page', async () => {
+    const response = await createApp().request(`http://localhost/login?${oauthQuery}`);
 
     expect(response.status).toBe(200);
-    expect(response.headers.get('content-type')).toBe('text/javascript; charset=utf-8');
-    await expect(response.text()).resolves.toContain('data-otp-digit');
+    const html = await response.text();
+    expect(html).toContain('/@vite/client');
+    expect(html).toContain('/src/routes/login/client-assets.ts');
+    expect(html).toContain('/src/routes/login/browser.ts');
   });
 
   it('serves static assets with cache validators and no HEAD body', async () => {
@@ -237,15 +239,7 @@ describe('API login route', () => {
     expect(html).toContain('value="Ada Lovelace"');
     expect(html).toContain('ada@example.com');
     expect(html).toContain('data-settings-signout');
-    expect(html).toContain('/settings.js');
-  });
-
-  it('serves the settings browser bundle', async () => {
-    const response = await createApp().request('http://localhost/settings.js');
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get('content-type')).toBe('text/javascript; charset=utf-8');
-    await expect(response.text()).resolves.toContain('data-settings-usage');
+    expect(html).toContain('/src/routes/login/settings.ts');
   });
 
   it('redirects signed-out visitors to hosted login with an AI-settings resume', async () => {
@@ -269,11 +263,7 @@ describe('API login route', () => {
     expect(html).toContain('Where your Hominem AI budget went');
     expect(html).toContain('data-uai-period');
     expect(html).toContain('Back to account');
-    expect(html).toContain('/settings-ai.js');
-
-    const bundle = await createApp().request('http://localhost/settings-ai.js');
-    expect(bundle.status).toBe(200);
-    await expect(bundle.text()).resolves.toContain('data-uai-seg');
+    expect(html).toContain('/src/routes/login/settings-ai.ts');
   });
 
   it('updates the profile name through Better Auth', async () => {

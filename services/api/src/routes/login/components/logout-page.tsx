@@ -1,5 +1,5 @@
+import { pageFrame, shared } from '../styles';
 import { PageFrame } from './page-frame';
-import { pageFrame, shared } from './styles.generated';
 
 export function LogoutPage({ signedOut = false }: { signedOut?: boolean } = {}) {
   return (

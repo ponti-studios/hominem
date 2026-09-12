@@ -1,9 +1,9 @@
+import { aiFootprintPage, aiUsagePage, pageFrame } from '../styles';
 import { PageFrame } from './page-frame';
-import { aiFootprintPage, aiUsagePage, pageFrame } from './styles.generated';
 
 export function AIFootprintPage() {
   return (
-    <PageFrame script="/settings-ai-footprint.js?v=1" title="AI footprint | Hominem" wide>
+    <PageFrame entry="settings-ai-footprint" title="AI footprint | Hominem" wide>
       <div class={`${pageFrame.authContent} ${pageFrame.authContentWide}`}>
         <div class={pageFrame.authHeading}>
           <a class={aiFootprintPage.backLink} href="/auth/settings/ai">

@@ -24,12 +24,11 @@ import {
   resolveResume,
 } from './helpers';
 
-const logoPath = join(process.cwd(), 'public', 'logo.hominem.500x500.webp');
-const cssPath = join(process.cwd(), 'public', 'login.css');
-const jsPath = join(process.cwd(), 'public', 'login.js');
-const settingsJsPath = join(process.cwd(), 'public', 'settings.js');
-const settingsAiJsPath = join(process.cwd(), 'public', 'settings-ai.js');
-const settingsAiFootprintJsPath = join(process.cwd(), 'public', 'settings-ai-footprint.js');
+const publicRoot = join(
+  process.cwd(),
+  process.env.NODE_ENV === 'production' ? 'dist/public' : 'public',
+);
+const logoPath = join(publicRoot, 'logo.hominem.500x500.webp');
 
 function serveAsset(path: string, contentType: string) {
   return serveStatic({
@@ -97,14 +96,13 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
   };
 
   const loginRoutes = new Hono()
-    .use('/login.css', etag(), serveAsset(cssPath, 'text/css; charset=UTF-8'))
-    .use('/login.js', etag(), serveAsset(jsPath, 'text/javascript; charset=UTF-8'))
-    .use('/settings.js', etag(), serveAsset(settingsJsPath, 'text/javascript; charset=UTF-8'))
-    .use('/settings-ai.js', etag(), serveAsset(settingsAiJsPath, 'text/javascript; charset=UTF-8'))
     .use(
-      '/settings-ai-footprint.js',
+      '/assets/*',
       etag(),
-      serveAsset(settingsAiFootprintJsPath, 'text/javascript; charset=UTF-8'),
+      serveStatic({
+        root: publicRoot,
+        onFound: (_path, c) => c.header('cache-control', 'public, max-age=31536000, immutable'),
+      }),
     )
     .use('/logo.hominem.500x500.webp', etag(), serveAsset(logoPath, 'image/webp'))
     .get('/login', async (c) => {
