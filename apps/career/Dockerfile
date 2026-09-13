@@ -1,4 +1,4 @@
-FROM node:26.8.1-alpine AS builder
+FROM node:26.8.2-alpine AS builder
 
 WORKDIR /app
 
@@ -26,7 +26,7 @@ RUN pnpm --filter @ponti-studios/auth build
 RUN pnpm --filter @hominem/career run build
 RUN pnpm --filter @hominem/career --prod deploy /app/deploy
 
-FROM node:26.8.1-alpine AS server
+FROM node:26.8.2-alpine AS server
 
 WORKDIR /app
 
