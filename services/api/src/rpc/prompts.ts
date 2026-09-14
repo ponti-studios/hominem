@@ -76,10 +76,18 @@ Decide how many tasks to return based on what's actually in the conversation:
 - If it describes several distinct actionable items, return one task per item — go through the conversation systematically and make sure every distinct item is included, no matter how many there are, not just the first few
 - If the conversation contains no actionable items, return an empty list
 
+Decide how to group tasks:
+
+- Most conversations produce only standalone tasks — leave them ungrouped by default
+- Only group items into a named group when they are genuinely sequential or parallel steps toward one shared goal or outcome — e.g. multiple concrete steps of "plan a trip to London" (book flight, book hotel, apply for visa). A group must contain at least two tasks
+- Do NOT group items just because the user mentioned them in the same message, the same sentence, or the same day. Mentioning several unrelated errands together (gym membership, accountant, faucet) is NOT a shared goal — those stay standalone even though they were said in one breath
+- When you do group, write a short, direct group title describing the shared outcome (e.g. "Plan London trip"), in the same imperative/noun-phrase style as a task title
+- A single conversation may produce zero groups (all standalone), one group, multiple groups, or one or more groups plus separate standalone items left over — decide independently for each item
+
 Rules:
 
-- Return only the JSON required by the schema
-- Never combine unrelated action items into a single task
+- Return only the JSON required by the schema: "groups" (each with a "title" and 2+ "tasks") and "tasks" (ungrouped standalone items) — every actionable item you find must appear exactly once, either inside one group's "tasks" or in the top-level "tasks" list, never both
+- Never combine unrelated action items into a single task, and never group unrelated tasks together just because they appear in the same group — only group genuinely related steps
 - Never split a single action item into multiple tasks
 - Never silently omit a real actionable item because there's only one, or because it was implied rather than stated directly
 - Never extract a vague, uncommitted "maybe someday" mention as a task
@@ -88,16 +96,21 @@ Examples:
 
 Conversation:
 User: I just realized my library book is three weeks overdue.
-Output: {"tasks":[{"title":"Return the overdue library book"}]}
+Output: {"groups":[],"tasks":[{"title":"Return the overdue library book"}]}
 
 Conversation:
 User: This week I need to renew my gym membership, follow up with the accountant about the tax filing, and fix the leaky faucet in the bathroom.
-Output: {"tasks":[{"title":"Renew gym membership"},{"title":"Follow up with the accountant about the tax filing"},{"title":"Fix the leaky bathroom faucet"}]}
+Output: {"groups":[],"tasks":[{"title":"Renew gym membership"},{"title":"Follow up with the accountant about the tax filing"},{"title":"Fix the leaky bathroom faucet"}]}
 
 Conversation:
 User: I need to call the plumber about the leak. Also I've been thinking that maybe I'll repaint the kitchen at some point, no idea when though.
-Output: {"tasks":[{"title":"Call the plumber about the leak"}]}
-(the repainting mention is a vague someday-thought, not a real commitment — it is correctly left out)`;
+Output: {"groups":[],"tasks":[{"title":"Call the plumber about the leak"}]}
+(the repainting mention is a vague someday-thought, not a real commitment — it is correctly left out)
+
+Conversation:
+User: For the London trip I still need to book my flight, book a hotel near King's Cross, and apply for my visa. Also, completely separate — I need to cancel my old gym membership before it auto-renews next week.
+Output: {"groups":[{"title":"Plan London trip","tasks":[{"title":"Book flight to London"},{"title":"Book hotel near King's Cross"},{"title":"Apply for UK visa"}]}],"tasks":[{"title":"Cancel gym membership before it auto-renews"}]}
+(the three trip steps share one goal and are grouped; the gym cancellation is unrelated and stays standalone even though it was mentioned in the same message)`;
 
 export const VOICE_TASK_EXTRACTION_PROMPT = `You extract structured tasks from a spoken, hands-free quick-capture — not a conversation. The user
 tapped a microphone and said one or more things they need to do. The message begins with a reference

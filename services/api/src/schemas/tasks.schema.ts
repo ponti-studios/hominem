@@ -76,17 +76,27 @@ export const ParseTimeBlockInputSchema = z.object({
   calendarContext: z.string().max(20000).optional(),
 });
 
-export const CreateTaskBatchSchema = z.object({
-  tasks: z
-    .array(
-      z.object({
-        title: z.string().trim().min(1).max(120),
-        description: z.string().trim().max(2000).optional(),
-      }),
-    )
-    .min(1)
-    .max(10),
+const ExtractedTaskDraftSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  description: z.string().trim().max(2000).optional(),
 });
+
+export const CreateTaskBatchSchema = z
+  .object({
+    groups: z
+      .array(
+        z.object({
+          title: z.string().trim().min(1).max(120),
+          tasks: z.array(ExtractedTaskDraftSchema).min(2).max(20),
+        }),
+      )
+      .max(10)
+      .optional(),
+    tasks: z.array(ExtractedTaskDraftSchema).max(20).optional(),
+  })
+  .refine((data) => (data.groups?.length ?? 0) + (data.tasks?.length ?? 0) > 0, {
+    message: 'At least one task or group is required',
+  });
 
 export const TaskParamSchema = z.object({ id: z.uuid() });
 

@@ -66,9 +66,9 @@ const taskCoreRoutes = new Hono<AppContext>()
   })
   .post('/batch', zValidator('json', CreateTaskBatchSchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    const { tasks } = c.req.valid('json');
+    const { groups, tasks } = c.req.valid('json');
 
-    const result = await persistExtractedTasks(userId, tasks);
+    const result = await persistExtractedTasks(userId, { groups, tasks });
     return c.json(result, 201);
   })
   .get('/:id', zValidator('param', TaskParamSchema), async (c) => {
