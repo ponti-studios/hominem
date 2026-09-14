@@ -4,8 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import t from '~/translations';
 
-import { SettingsRow } from './SettingsRow';
-import { SectionLabel } from './SettingsRow';
+import { SectionLabel, SettingsRow } from './SettingsRow';
 
 function formatUpdateDate(date: Date | null) {
   if (!date) {
