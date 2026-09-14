@@ -58,7 +58,7 @@ describe('generation runner', () => {
   it('owns persistence and publication around a provider turn', async () => {
     const store = createStore();
     const published: ChatServerPersistedEvent[] = [];
-    const recordCompletion = vi.fn();
+    const onUsage = vi.fn();
     const runner = createGenerationRunner({
       provider: ({ onUsage }) => ({
         open: () =>
@@ -87,31 +87,27 @@ describe('generation runner', () => {
           published.push(event);
         },
       },
-      context: { recordCompletion },
     });
 
     const result = await runner.generate({
       generationId: 'generation-1',
       chatId: 'chat-1',
       userId: 'user-1',
-      model: { model: 'test', messages: [], tools: [] },
+      model: { model: 'test', messages: [], tools: [], onUsage },
       startContext,
     });
 
     expect(result.state.assistantText).toBe('Hello');
     expect(store.appendEvent).toHaveBeenCalled();
     expect(published).toEqual(store.events);
-    expect(recordCompletion).toHaveBeenCalledOnce();
-
-    await runner.generate({
-      generationId: 'generation-2',
-      chatId: 'chat-1',
-      userId: 'user-1',
-      model: { model: 'test', messages: [], tools: [] },
-      startContext,
+    // The runner forwards onUsage untouched: accumulation is the caller's job,
+    // so there is exactly one accumulator per generation.
+    expect(onUsage).toHaveBeenCalledWith({
+      promptTokens: 1,
+      outputTokens: 1,
+      totalTokens: 2,
+      costUsd: null,
     });
-
-    expect(recordCompletion).toHaveBeenCalledTimes(2);
   });
 
   it('routes canonical HTTP commands and replay through Web Responses', async () => {

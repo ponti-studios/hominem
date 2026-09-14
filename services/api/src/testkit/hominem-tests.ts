@@ -2,18 +2,20 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
-import { convertSchemaToJsonSchema, type AIUsageMetrics, type ChatFunctionTool } from '@hominem/ai';
 import {
-  parseGenerationWireEvent,
-  type GenerationInput,
-  type GenerationEvent,
-} from '@hominem/chat';
+  convertSchemaToJsonSchema,
+  OpenRouterRequestError,
+  type AIUsageMetrics,
+  type ChatFunctionTool,
+  type ChatStreamChunk,
+  type OpenRouterClientOptions,
+} from '@hominem/ai';
+import { parseGenerationWireEvent, type GenerationEvent } from '@hominem/chat';
 import {
   createGenerationClientState,
   reduceGenerationClientEvent,
   type GenerationClientState,
 } from '@hominem/chat/client';
-import type { ChatModel } from '@hominem/chat/server';
 import { AIUsageEventRepository } from '@hominem/db/ai';
 import { ChatRepository } from '@hominem/db/chats';
 import { ChatGenerationRepository } from '@hominem/db/chats';
@@ -32,7 +34,26 @@ import {
   createChatStartGenerationRoute,
 } from '../rpc/routes/chats.$chatId.generation';
 
-export type ScriptedProviderTurn = readonly GenerationInput[];
+// Scripted turns speak OpenRouter, not the generation machine: each turn is
+// SSE-style stream chunks (content deltas, tool-call deltas, or a thrown
+// provider error), and per-turn usage rides on the last chunk the way a
+// real usage trailer does. The real OpenRouterChatModel stays in the loop,
+// so route tests exercise the production provider path end to end.
+export type ScriptedToolCallDelta = {
+  index: number;
+  id?: string;
+  name?: string;
+  argumentsFragment?: string;
+};
+
+export type ScriptedChunk = {
+  content?: string | null;
+  reasoning?: string | null;
+  toolCalls?: readonly ScriptedToolCallDelta[];
+  error?: { message: string; status?: number };
+};
+
+export type ScriptedProviderTurn = readonly ScriptedChunk[];
 
 export type ScriptedProvider = {
   readonly turns: readonly ScriptedProviderTurn[];
@@ -69,41 +90,23 @@ export function scriptedProvider(
 }
 
 export function textTurn(text: string, reasoning?: string): ScriptedProviderTurn {
-  return [
-    {
-      type: 'provider-chunk',
-      chunk: { content: text, ...(reasoning ? { reasoning } : {}) },
-    },
-    { type: 'provider-turn-completed', requiredToolCall: false, confirmationCallIds: [] },
-  ];
+  return [{ content: text, ...(reasoning ? { reasoning } : {}) }];
 }
 
 export function fragmentedToolCallTurn(
   name: string,
   id: string,
   argumentFragments: readonly string[],
-  options: { requiresConfirmation?: boolean } = {},
 ): ScriptedProviderTurn {
-  return [
-    ...argumentFragments.map((argumentsFragment, index) => ({
-      type: 'provider-chunk' as const,
-      chunk: {
-        toolCalls: [
-          {
-            index: 0,
-            ...(index === 0
-              ? { id, function: { name, arguments: argumentsFragment } }
-              : { function: { arguments: argumentsFragment } }),
-          },
-        ],
+  return argumentFragments.map((argumentsFragment, index) => ({
+    toolCalls: [
+      {
+        index: 0,
+        ...(index === 0 ? { id, name } : {}),
+        argumentsFragment,
       },
-    })),
-    {
-      type: 'provider-turn-completed',
-      requiredToolCall: true,
-      confirmationCallIds: options.requiresConfirmation ? [id] : [],
-    },
-  ];
+    ],
+  }));
 }
 
 export function multipleToolCallTurn(
@@ -111,57 +114,102 @@ export function multipleToolCallTurn(
 ): ScriptedProviderTurn {
   return [
     {
-      type: 'provider-chunk',
-      chunk: {
-        toolCalls: calls.map((call, index) => ({
-          index,
-          id: call.id,
-          function: { name: call.name, arguments: call.arguments },
-        })),
-      },
+      toolCalls: calls.map((call, index) => ({
+        index,
+        id: call.id,
+        name: call.name,
+        argumentsFragment: call.arguments,
+      })),
     },
-    { type: 'provider-turn-completed', requiredToolCall: true, confirmationCallIds: [] },
   ];
 }
 
 export function providerFailureTurn(
   message: string,
-  options: { transient?: boolean; attempt?: number; maxAttempts?: number } = {},
+  options: { transient?: boolean } = {},
 ): ScriptedProviderTurn {
-  return [
-    {
-      type: 'provider-turn-failed',
-      message,
-      transient: options.transient ?? false,
-      attempt: options.attempt ?? 0,
-      maxAttempts: options.maxAttempts ?? 2,
-    },
-  ];
+  // Transient maps to the statuses the real retry classifier treats as
+  // retryable (see isTransient in chat-generation-provider.ts).
+  return [{ error: { message, status: options.transient ? 429 : 400 } }];
 }
 
-class ScriptedChatModel implements ChatModel {
-  constructor(
-    private readonly script: ScriptedProvider,
-    private readonly onUsage?: (usage: AIUsageMetrics | null) => void,
-  ) {}
+function toChunkUsage(usage: AIUsageMetrics | null | undefined) {
+  if (usage == null) return undefined;
+  return {
+    promptTokens: usage.promptTokens,
+    completionTokens: usage.outputTokens,
+    totalTokens: usage.totalTokens,
+    ...(usage.costUsd != null ? { cost: usage.costUsd } : {}),
+    ...(usage.cachedPromptTokens != null
+      ? { promptTokensDetails: { cachedTokens: usage.cachedPromptTokens } }
+      : {}),
+    ...(usage.reasoningTokens != null
+      ? { completionTokensDetails: { reasoningTokens: usage.reasoningTokens } }
+      : {}),
+  };
+}
 
-  open() {
-    return this.nextTurn();
-  }
+function toStreamChunk(
+  chunk: ScriptedChunk,
+  options: { usage?: AIUsageMetrics | null; last?: boolean },
+): ChatStreamChunk {
+  return {
+    id: `scripted-chunk-${Date.now()}`,
+    object: 'chat.completion.chunk',
+    created: Math.floor(Date.now() / 1000),
+    model: 'scripted-model',
+    ...(options.usage ? { usage: toChunkUsage(options.usage) } : {}),
+    choices: [
+      {
+        index: 0,
+        delta: {
+          ...(chunk.content != null ? { content: chunk.content } : {}),
+          ...(chunk.reasoning != null ? { reasoning: chunk.reasoning } : {}),
+          ...(chunk.toolCalls
+            ? {
+                toolCalls: chunk.toolCalls.map((call) => ({
+                  index: call.index,
+                  ...(call.id !== undefined ? { id: call.id } : {}),
+                  type: 'function' as const,
+                  function: {
+                    ...(call.name !== undefined ? { name: call.name } : {}),
+                    ...(call.argumentsFragment !== undefined
+                      ? { arguments: call.argumentsFragment }
+                      : {}),
+                  },
+                })),
+              }
+            : {}),
+        },
+        finishReason: options.last ? 'stop' : null,
+      },
+    ],
+  };
+}
 
-  retry() {
-    return this.nextTurn();
-  }
+function createScriptedOpenRouterClient(
+  script: ScriptedProvider,
+): OpenRouterClientOptions['client'] {
+  return {
+    chat: {
+      send: async () => scriptedStream(script),
+    },
+  } as unknown as OpenRouterClientOptions['client'];
+}
 
-  appendToolResult() {}
-
-  private async *nextTurn(): AsyncIterable<GenerationInput> {
-    this.script.calls += 1;
-    this.onUsage?.(this.script.usage[this.script.cursor] ?? null);
-    const turn = this.script.turns[this.script.cursor++] ?? [];
-    for (const input of turn) {
-      yield input;
+async function* scriptedStream(script: ScriptedProvider): AsyncGenerator<ChatStreamChunk> {
+  const turn = script.turns[script.cursor] ?? [];
+  const usage = script.usage[script.cursor];
+  script.cursor += 1;
+  script.calls += 1;
+  for (const [index, chunk] of turn.entries()) {
+    if (chunk.error) {
+      throw new OpenRouterRequestError(chunk.error.message, { status: chunk.error.status });
     }
+    yield toStreamChunk(chunk, {
+      ...(index === turn.length - 1 ? { usage } : {}),
+      last: index === turn.length - 1,
+    });
   }
 }
 
@@ -400,7 +448,7 @@ export class HominemTests {
       beforeCancellationCommit: () => this.failureController.consume('cancellation-commit'),
     };
     const service = createChatGenerationService({
-      modelFactory: (input) => new ScriptedChatModel(provider, input.onUsage),
+      openRouterClient: createScriptedOpenRouterClient(provider),
       planChatTools: async () =>
         provider.plan ?? { capabilities: [], requiresLookup: false, tools: [], usage: null },
       toolRuntime: createToolRuntime(this.userId, this.testTools),

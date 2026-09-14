@@ -1,3 +1,5 @@
+import { isObject } from '@hominem/utils';
+
 import type { GenerationStartContext } from './generation-events';
 import type { GenerationAdapters } from './generation-interpreter';
 import { generate as runGeneration } from './generation-interpreter';
@@ -94,14 +96,6 @@ export type GenerationRunnerOptions<
   store?: ChatServerStore<TEvent>;
   publisher?: { accept: (event: TEvent) => Promise<void> | void };
   emit?: (event: GenerationDeltaEventPayload) => Promise<void> | void;
-  context?: {
-    recordCompletion: (input: {
-      generationId: string;
-      chatId: string;
-      userId: string;
-      usage: unknown;
-    }) => Promise<void> | void;
-  };
   isCancelled?: (input: {
     generationId: string;
     chatId: string;
@@ -126,27 +120,6 @@ export type ChatServerGenerationResult = {
   toolResults: Map<string, ToolResult>;
   pendingPreview: ToolResult | null;
 };
-
-function addUsageTotals(current: unknown, next: unknown): unknown {
-  if (!isObject(next)) return current;
-  if (!isObject(current)) return next;
-  const previous = current as Record<string, unknown>;
-  const incoming = next as Record<string, unknown>;
-  const sum = (key: string) =>
-    typeof previous[key] === 'number' && typeof incoming[key] === 'number'
-      ? previous[key] + incoming[key]
-      : incoming[key];
-  return {
-    ...incoming,
-    promptTokens: sum('promptTokens'),
-    outputTokens: sum('outputTokens'),
-    totalTokens: sum('totalTokens'),
-    costUsd:
-      typeof previous.costUsd === 'number' && typeof incoming.costUsd === 'number'
-        ? previous.costUsd + incoming.costUsd
-        : incoming.costUsd,
-  };
-}
 
 function parseArguments(call: GenerationToolCall): Record<string, unknown> {
   if (!call.arguments) return {};
@@ -192,16 +165,14 @@ export function createGenerationRunner<
         generationId: input.generationId,
         chatId: input.chatId,
       };
-      let usage: unknown = null;
 
+      // Usage accumulation lives with the caller (see executeGenerationTurn's
+      // typed addUsage): the provider's onUsage is forwarded untouched so there
+      // is exactly one accumulator per generation.
       const model = provider({
         ...input.model,
         requiresConfirmation: (toolName) =>
           tools.getDefinition(toolName)?.requiresConfirmation ?? false,
-        onUsage: (next) => {
-          usage = addUsageTotals(usage, next);
-          input.model.onUsage?.(next);
-        },
       });
 
       const state = await runGeneration({
@@ -280,15 +251,6 @@ export function createGenerationRunner<
           },
         },
       });
-
-      if (state.phase === 'committed' && usage) {
-        await options.context?.recordCompletion({
-          generationId: input.generationId,
-          chatId: input.chatId,
-          userId: input.userId,
-          usage,
-        });
-      }
 
       return { state, toolResults, pendingPreview };
     },
@@ -510,4 +472,3 @@ export function createChatHttpHandler(
     }
   };
 }
-import { isObject } from '@hominem/utils';

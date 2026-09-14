@@ -4,15 +4,14 @@ import {
   chatMessageSnapshotSchema,
   type ChatMessageJsonObject,
   type GenerationDeltaEventPayload,
-  type GenerationHistoryEventPayload,
   type GenerationEffectStore,
+  type GenerationHistoryEventPayload,
   type GenerationToolCall,
   type ToolResult,
 } from '@hominem/chat';
 import type { GenerationRunnerOptions } from '@hominem/chat/server';
 import { createGenerationRunner } from '@hominem/chat/server';
-import type { ChatMessageToolCallRecord } from '@hominem/db/chats';
-import type { ChatGenerationEventRecord } from '@hominem/db/chats';
+import type { ChatGenerationEventRecord, ChatMessageToolCallRecord } from '@hominem/db/chats';
 
 import { callTool, getToolDefinition } from '../mcp/tool-registry';
 import { OpenRouterChatModel } from './chat-generation-provider';
@@ -29,18 +28,46 @@ export class ToolInputError extends Error {
 
 const generationRunner = createGenerationRunner<ChatGenerationEventRecord>();
 
+// Boundary events the machine emits but execute persists itself. Execute
+// pre-writes started/accepted/phase_changed:running before the first turn
+// and commits saving/failed/committed/cancelled in the same transaction as
+// the message snapshot (transactional atomicity: the boundary set must land
+// together with the snapshot or not at all), while mid-run events
+// (tool.*, confirmation.*, retry_scheduled, other phases) go through
+// per-event transactions. The machine's copies below must be dropped here —
+// otherwise every boundary event would be written twice, once by the
+// runner's persist funnel and once by execute's transactional path.
+export const EXECUTE_OWNED_EVENT_TYPES = [
+  'generation.started',
+  'generation.committed',
+  'generation.cancelled',
+  'generation.failed',
+] as const;
+
+export function isExecuteOwnedEvent(event: GenerationHistoryEventPayload): boolean {
+  if ((EXECUTE_OWNED_EVENT_TYPES as readonly string[]).includes(event.type)) return true;
+  return (
+    event.type === 'generation.phase_changed' &&
+    (event.phase === 'running' || event.phase === 'saving')
+  );
+}
+
 function parseArguments(call: GenerationToolCall): ChatMessageJsonObject {
+  // If there are no arguments, return an empty object.
   if (!call.arguments) return {};
+
   let value: unknown;
   try {
     value = JSON.parse(call.arguments);
   } catch {
     throw new ToolInputError(call.name);
   }
+
   const parsed = chatMessageJsonObjectSchema.safeParse(value);
   if (!parsed.success) {
     throw new ToolInputError(call.name);
   }
+
   return parsed.data;
 }
 
@@ -118,10 +145,26 @@ export async function executeGenerationTurn(
       usage = addUsage(usage, next);
     },
   };
-  const model = input.modelFactory
-    ? input.modelFactory(modelOptions)
-    : new OpenRouterChatModel(modelOptions);
+  // OpenRouter is the only supported provider: the model is always built
+  // here, never via a factory. Test-only scripting arrives one layer down
+  // as input.openRouterClient (canned SSE chunks through the real model
+  // class), so the provider closure below only ever returns this instance —
+  // the runner forwards onUsage untouched and usage is accumulated exactly
+  // once, here. (The runner used to wrap onUsage with its own generic
+  // accumulator plus a recordCompletion hook; both were removed with the
+  // deferred Redis context-window cache — see the context-window
+  // placeholder task.)
+  const model = new OpenRouterChatModel({
+    ...modelOptions,
+    ...(input.openRouterClient ? { client: input.openRouterClient } : {}),
+  });
 
+  // The model is prebuilt with the engine's own onUsage accumulator, so the
+  // closure intentionally ignores the runner's model input: the runner
+  // forwards onUsage untouched and usage is accumulated exactly once, here.
+  // (The runner used to wrap onUsage with its own generic accumulator plus a
+  // recordCompletion hook; both were removed with the deferred Redis
+  // context-window cache — see the context-window placeholder task.)
   const operation: GenerationRunnerOptions<ChatGenerationEventRecord> = {
     provider: () => model,
     effectTimeoutsMs: input.effectTimeoutsMs,
@@ -202,21 +245,7 @@ export async function executeGenerationTurn(
     },
     store: {
       appendEvent: async ({ event, idempotencyKey }) => {
-        const UNSOPPORTED_EVENT_TYPES = [
-          'generation.started',
-          'generation.committed',
-          'generation.cancelled',
-          'generation.failed',
-        ];
-        if (UNSOPPORTED_EVENT_TYPES.includes(event.type)) {
-          return null;
-        }
-        if (
-          event.type === 'generation.phase_changed' &&
-          (event.phase === 'running' || event.phase === 'saving')
-        ) {
-          return null;
-        }
+        if (isExecuteOwnedEvent(event)) return null;
         const record = await input.eventStore?.append({ event, idempotencyKey });
         if (record) await input.durableEvents?.accept(record);
         return record ?? null;
@@ -247,15 +276,6 @@ export async function executeGenerationTurn(
       await input.liveEvents?.accept(event);
     },
     isCancelled: () => input.cancellation?.isRequested?.() ?? false,
-    context: input.context
-      ? {
-          recordCompletion: (completion) =>
-            input.context!.recordCompletion({
-              ...completion,
-              usage: completion.usage as AIUsageMetrics,
-            }),
-        }
-      : undefined,
   };
 
   const result = await generationRunner.generate(

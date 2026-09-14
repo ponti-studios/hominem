@@ -45,6 +45,33 @@ describe('HominemTests', () => {
     otherTest = undefined;
   });
 
+  it('writes each boundary event exactly once: no double-write, no loss', async () => {
+    test = await HominemTests.create({
+      provider: scriptedProvider([textTurn('Boundary reply')]),
+    });
+
+    const result = await test.chat.start({ title: 'SDK ownership', message: 'Count me' });
+    const inspected = await test.inspect(result.generationId);
+    const types = inspected.events.map((event) => event.payload.type);
+    const count = (type: string, phase?: string) =>
+      types.filter(
+        (candidate, index) =>
+          candidate === type &&
+          (phase === undefined ||
+            (inspected.events[index]?.payload as { phase?: string }).phase === phase),
+      ).length;
+
+    expect(result.clientState.phase).toBe('committed');
+    // Execute-owned boundary events: the engine drops the machine's copies,
+    // so each must appear exactly once — twice means a filter arm was
+    // removed, zero means execute stopped writing it.
+    expect(count('generation.started')).toBe(1);
+    expect(count('generation.accepted')).toBe(1);
+    expect(count('generation.phase_changed', 'running')).toBe(1);
+    expect(count('generation.phase_changed', 'saving')).toBe(1);
+    expect(count('generation.committed')).toBe(1);
+  });
+
   it('runs a scripted start generation through the real route and database', async () => {
     const usage = {
       provider: 'openrouter' as const,
@@ -335,9 +362,7 @@ describe('HominemTests', () => {
       execute: async ({ input }) => inputSchema.parse(input),
     };
     const provider = scriptedProvider([
-      fragmentedToolCallTurn('sdk_confirm', 'call-confirm', ['{"value":"approved"}'], {
-        requiresConfirmation: true,
-      }),
+      fragmentedToolCallTurn('sdk_confirm', 'call-confirm', ['{"value":"approved"}']),
       textTurn('Approval completed'),
     ]);
     test = await HominemTests.create({ provider });
@@ -477,9 +502,7 @@ describe('HominemTests', () => {
       },
     };
     const provider = scriptedProvider([
-      fragmentedToolCallTurn('sdk_rejected_tool', 'call-reject', ['{"value":"no"}'], {
-        requiresConfirmation: true,
-      }),
+      fragmentedToolCallTurn('sdk_rejected_tool', 'call-reject', ['{"value":"no"}']),
       textTurn('Rejection acknowledged'),
     ]);
     test = await HominemTests.create({ provider });
