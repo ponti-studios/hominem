@@ -130,11 +130,16 @@ describe('useStartChat', () => {
   });
 
   it('surfaces a durable generation failure to the mutation', async () => {
-    mockClient.api.chats['start-stream'].$post.mockResolvedValueOnce(
+    // The server is expected to echo back whatever generationId the client
+    // injected into the request body (see client.ts's inner start()) --
+    // reflect that here instead of a disconnected hardcoded id, since
+    // completed.phase (what the mutation now checks) only updates for
+    // events whose generationId matches the one the client generated.
+    mockClient.api.chats['start-stream'].$post.mockImplementationOnce(async ({ json }) =>
       streamResponse([
         JSON.stringify({
           version: 1,
-          generationId: 'g1',
+          generationId: json.generationId,
           sequence: 1,
           type: 'generation.failed',
           payload: { type: 'generation.failed', message: 'Unable to start chat' },
