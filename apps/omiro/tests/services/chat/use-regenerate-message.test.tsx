@@ -34,6 +34,11 @@ const {
 
 vi.mock('~/services/storage/mmkv', () => mockMmkvModule());
 vi.mock('expo-crypto', () => ({ randomUUID: mockRandomUUID }));
+vi.mock('expo-haptics', () => ({
+  impactAsync: vi.fn().mockResolvedValue(undefined),
+  ImpactFeedbackStyle: { Light: 'light' },
+}));
+vi.mock('~/components/media/audio-playback.service', () => ({ playAudioReply: vi.fn() }));
 vi.mock('~/services/auth/auth-provider', () => ({
   useAuth: () => ({ getAuthHeaders: mockGetAuthHeaders }),
 }));

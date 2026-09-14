@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-const apiUrl = (process.env.API_URL ?? 'http://localhost:4040').replace(/\/$/, '');
+const apiUrl = (process.env.API_URL ?? 'https://api.lvh.me').replace(/\/$/, '');
 const sessionCookie = process.env.E2E_SESSION_COOKIE;
 const chatId = process.env.SPEECH_SMOKE_CHAT_ID;
 const messageId = process.env.SPEECH_SMOKE_MESSAGE_ID;

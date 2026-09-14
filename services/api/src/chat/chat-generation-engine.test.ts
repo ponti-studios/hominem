@@ -591,3 +591,65 @@ describe('chat generation service', () => {
     });
   });
 });
+
+describe('generation event ownership', () => {
+  // Writer for every durable history event type. 'execute' = persisted by
+  // chat-generation-execute.ts in its transactional path (the engine drops
+  // the machine's copy); 'engine' = the machine's copy passes through the
+  // engine filter into the per-event eventStore. 'split' = writer depends on
+  // the phase (see phase assertions below). Add a row here before adding a
+  // payload variant — the exhaustiveness test fails until you do.
+  const EVENT_WRITERS = {
+    'generation.started': 'execute',
+    'generation.accepted': 'execute',
+    'generation.phase_changed': 'split',
+    'generation.cancel_requested': 'engine',
+    'generation.checkpointed': 'engine',
+    'tool.requested': 'engine',
+    'tool.completed': 'engine',
+    'tool.failed': 'engine',
+    'confirmation.required': 'engine',
+    'confirmation.approved': 'engine',
+    'confirmation.rejected': 'engine',
+    'generation.retry_scheduled': 'engine',
+    'generation.committed': 'execute',
+    'generation.cancelled': 'execute',
+    'generation.failed': 'execute',
+  } as const;
+
+  it('classifies every history event variant', async () => {
+    const { GenerationHistoryEventPayloadSchema } = await import('@hominem/chat');
+    const optionTypes = GenerationHistoryEventPayloadSchema.options
+      .map((option) => option.shape.type.value)
+      .sort();
+    expect(Object.keys(EVENT_WRITERS).sort()).toEqual(optionTypes);
+  });
+
+  it('drops exactly the execute-owned boundary events', async () => {
+    const { isExecuteOwnedEvent } = await import('./chat-generation-engine');
+    const eventOf = (type: keyof typeof EVENT_WRITERS) =>
+      ({ type }) as unknown as Parameters<typeof isExecuteOwnedEvent>[0];
+
+    for (const [type, writer] of Object.entries(EVENT_WRITERS)) {
+      if (type === 'generation.phase_changed') continue;
+      // 'generation.accepted' is execute-only: the machine never emits it,
+      // so there is no machine copy for the filter to drop.
+      const expected = writer === 'execute' && type !== 'generation.accepted';
+      expect(isExecuteOwnedEvent(eventOf(type as keyof typeof EVENT_WRITERS))).toBe(expected);
+    }
+  });
+
+  it('splits phase_changed by phase', async () => {
+    const { isExecuteOwnedEvent } = await import('./chat-generation-engine');
+    const phaseEvent = (phase: string) =>
+      ({ type: 'generation.phase_changed', phase }) as unknown as Parameters<
+        typeof isExecuteOwnedEvent
+      >[0];
+
+    expect(isExecuteOwnedEvent(phaseEvent('running'))).toBe(true);
+    expect(isExecuteOwnedEvent(phaseEvent('saving'))).toBe(true);
+    expect(isExecuteOwnedEvent(phaseEvent('awaiting_confirmation'))).toBe(false);
+    expect(isExecuteOwnedEvent(phaseEvent('preparing'))).toBe(false);
+    expect(isExecuteOwnedEvent(phaseEvent('cancel_requested'))).toBe(false);
+  });
+});

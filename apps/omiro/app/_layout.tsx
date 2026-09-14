@@ -19,7 +19,11 @@ import React, { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import {
+  initialWindowMetrics,
+  SafeAreaProvider,
+  SafeAreaView,
+} from 'react-native-safe-area-context';
 
 import { logError } from '~/components/error-boundary/log-error';
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
@@ -198,7 +202,7 @@ function RootLayout() {
     <RestyleThemeProvider theme={restyleTheme}>
       <ThemeProvider value={navigationTheme}>
         <PersistQueryClientProvider client={queryClient} persistOptions={mobilePersistOptions}>
-          <SafeAreaProvider>
+          <SafeAreaProvider initialMetrics={initialWindowMetrics}>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
                 <AuthProvider>

@@ -302,15 +302,14 @@ describe('generation machine', () => {
     ]);
   });
 
-  it('fails when a required tool call is missing', () => {
+  it('moves to saving when a required tool call is missing, instead of failing', () => {
     const step = reduceGeneration(createGenerationState('generation-1'), {
       type: 'provider-turn-completed',
       requiredToolCall: true,
       confirmationCallIds: [],
     });
 
-    expect(step.state.phase).toBe('failed');
-    expect(step.state.lastError).toBe('The model did not perform the required lookup');
+    expect(step.state.phase).toBe('saving');
   });
 
   it('fails immediately for non-transient provider errors', () => {

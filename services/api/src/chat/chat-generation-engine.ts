@@ -4,15 +4,14 @@ import {
   chatMessageSnapshotSchema,
   type ChatMessageJsonObject,
   type GenerationDeltaEventPayload,
-  type GenerationHistoryEventPayload,
   type GenerationEffectStore,
+  type GenerationHistoryEventPayload,
   type GenerationToolCall,
   type ToolResult,
 } from '@hominem/chat';
 import type { GenerationRunnerOptions } from '@hominem/chat/server';
 import { createGenerationRunner } from '@hominem/chat/server';
-import type { ChatMessageToolCallRecord } from '@hominem/db/chats';
-import type { ChatGenerationEventRecord } from '@hominem/db/chats';
+import type { ChatGenerationEventRecord, ChatMessageToolCallRecord } from '@hominem/db/chats';
 
 import { callTool, getToolDefinition } from '../mcp/tool-registry';
 import { OpenRouterChatModel } from './chat-generation-provider';
@@ -29,18 +28,64 @@ export class ToolInputError extends Error {
 
 const generationRunner = createGenerationRunner<ChatGenerationEventRecord>();
 
+/**
+ * Boundary events that execute persists itself.
+ *
+ * Rule: if execute is the one true writer for a transition, the runner's persist
+ * funnel must ignore the machine's duplicate copy. Otherwise the same event gets
+ * written twice.
+ *
+ * Current execute-owned transitions:
+ * - generation.started + generation.phase_changed (running): written together as a
+ *   startup burst before the first provider turn opens
+ * - generation.phase_changed (saving): written immediately before commitGeneration
+ *   begins, not inside that transaction
+ * - generation.committed: written in the same transaction as the message snapshot
+ * - generation.failed: written from the catch path in its own transaction
+ * - generation.cancelled: written elsewhere in chat-generation-lifecycle.ts,
+ *   alongside cancel_requested
+ */
+export const EXECUTE_OWNED_EVENT_TYPES = [
+  'generation.started',
+  'generation.committed',
+  'generation.cancelled',
+  'generation.failed',
+] as const;
+
+/**
+ * Returns true when execute is the source of truth for the event.
+ *
+ * The machine may emit a copy during normal lifecycle transitions, but execute is
+ * responsible for persisting the canonical boundary event.
+ */
+export function isExecuteOwnedEvent(event: GenerationHistoryEventPayload): boolean {
+  // oxlint-disable-next-line typescript/consistent-type-assertions
+  const type = event.type as (typeof EXECUTE_OWNED_EVENT_TYPES)[number];
+
+  if (EXECUTE_OWNED_EVENT_TYPES.includes(type)) return true;
+
+  return (
+    event.type === 'generation.phase_changed' &&
+    (event.phase === 'running' || event.phase === 'saving')
+  );
+}
+
 function parseArguments(call: GenerationToolCall): ChatMessageJsonObject {
+  // If there are no arguments, return an empty object.
   if (!call.arguments) return {};
+
   let value: unknown;
   try {
     value = JSON.parse(call.arguments);
   } catch {
     throw new ToolInputError(call.name);
   }
+
   const parsed = chatMessageJsonObjectSchema.safeParse(value);
   if (!parsed.success) {
     throw new ToolInputError(call.name);
   }
+
   return parsed.data;
 }
 
@@ -118,10 +163,22 @@ export async function executeGenerationTurn(
       usage = addUsage(usage, next);
     },
   };
-  const model = input.modelFactory
-    ? input.modelFactory(modelOptions)
-    : new OpenRouterChatModel(modelOptions);
+  // OpenRouter is the only supported provider: the model is always built
+  // here, never via a factory. Test-only scripting arrives one layer down
+  // as input.openRouterClient (canned SSE chunks through the real model
+  // class), so the provider closure below only ever returns this instance —
+  // the runner forwards onUsage untouched and usage is accumulated exactly
+  // once, here. (The runner used to wrap onUsage with its own generic usage
+  // accumulator plus a completion-recording hook for the deferred Redis
+  // context-window cache; both were deleted along with that cache — see
+  // the context-window placeholder task.)
+  const model = new OpenRouterChatModel({
+    ...modelOptions,
+    ...(input.openRouterClient ? { client: input.openRouterClient } : {}),
+  });
 
+  // The model is prebuilt with the engine's own onUsage accumulator above,
+  // so the closure intentionally ignores the runner's model input.
   const operation: GenerationRunnerOptions<ChatGenerationEventRecord> = {
     provider: () => model,
     effectTimeoutsMs: input.effectTimeoutsMs,
@@ -202,21 +259,7 @@ export async function executeGenerationTurn(
     },
     store: {
       appendEvent: async ({ event, idempotencyKey }) => {
-        const UNSOPPORTED_EVENT_TYPES = [
-          'generation.started',
-          'generation.committed',
-          'generation.cancelled',
-          'generation.failed',
-        ];
-        if (UNSOPPORTED_EVENT_TYPES.includes(event.type)) {
-          return null;
-        }
-        if (
-          event.type === 'generation.phase_changed' &&
-          (event.phase === 'running' || event.phase === 'saving')
-        ) {
-          return null;
-        }
+        if (isExecuteOwnedEvent(event)) return null;
         const record = await input.eventStore?.append({ event, idempotencyKey });
         if (record) await input.durableEvents?.accept(record);
         return record ?? null;
@@ -247,15 +290,6 @@ export async function executeGenerationTurn(
       await input.liveEvents?.accept(event);
     },
     isCancelled: () => input.cancellation?.isRequested?.() ?? false,
-    context: input.context
-      ? {
-          recordCompletion: (completion) =>
-            input.context!.recordCompletion({
-              ...completion,
-              usage: completion.usage as AIUsageMetrics,
-            }),
-        }
-      : undefined,
   };
 
   const result = await generationRunner.generate(

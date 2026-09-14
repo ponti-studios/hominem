@@ -1,11 +1,16 @@
-import type { AIUsageMetrics, ChatFunctionTool, ChatMessages, ChatRequest } from '@hominem/ai';
+import type {
+  AIUsageMetrics,
+  ChatFunctionTool,
+  ChatMessages,
+  ChatRequest,
+  OpenRouterClientOptions,
+} from '@hominem/ai';
 import type {
   ChatSnapshot,
   GenerationHistoryEventPayload,
   GenerationInput,
   GenerationState,
 } from '@hominem/chat';
-import type { ChatModel } from '@hominem/chat/server';
 import type { ChatGenerationRunRecord, ChatMessageToolCallRecord } from '@hominem/db/chats';
 import type { embeddingQueue } from '@hominem/queues';
 
@@ -16,18 +21,6 @@ export type ChatToolRuntime = {
   callTool: typeof callTool;
   getToolDefinition: typeof getToolDefinition;
 };
-
-export type ChatGenerationModelFactory = (input: {
-  model: string;
-  messages: ChatMessages[];
-  tools: ChatFunctionTool[];
-  maxTokens?: number;
-  reasoning?: ChatRequest['reasoning'];
-  requiresToolCall?: boolean;
-  requiresConfirmation?: (toolName: string) => boolean;
-  // Missing usage must not invalidate otherwise valid generation semantics.
-  onUsage?: (usage: AIUsageMetrics | null) => void;
-}) => ChatModel;
 
 export type ChatGenerationFailureHooks = {
   beforeEventAppend?: (event: GenerationHistoryEventPayload) => void | Promise<void>;
@@ -45,17 +38,13 @@ export interface GenerationEngineInput {
   maxIterations?: number;
   requiresToolCall?: boolean;
   toolRuntime?: ChatToolRuntime;
-  modelFactory?: ChatGenerationModelFactory;
+  // Test-only scripted OpenRouter client (serves canned SSE chunks).
+  // Production never sets this: OpenRouter is the only supported provider,
+  // so there is no model-factory seam — a second provider is an explicit
+  // future task, not an option field.
+  openRouterClient?: OpenRouterClientOptions['client'];
   initialState?: GenerationState;
   initialInput?: GenerationInput;
-  context?: {
-    recordCompletion: (input: {
-      generationId: string;
-      chatId: string;
-      userId: string;
-      usage: AIUsageMetrics;
-    }) => Promise<void> | void;
-  };
 }
 
 export interface GenerationEngineResult {
@@ -72,7 +61,8 @@ export interface GenerationEngineResult {
 }
 
 export type ChatGenerationDependencies = {
-  modelFactory?: ChatGenerationModelFactory;
+  // Test-only; see GenerationEngineInput.openRouterClient.
+  openRouterClient?: OpenRouterClientOptions['client'];
   toolRuntime?: ChatToolRuntime;
   planChatTools?: typeof planChatTools;
   failureHooks?: ChatGenerationFailureHooks;

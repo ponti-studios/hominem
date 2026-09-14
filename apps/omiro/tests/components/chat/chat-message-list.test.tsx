@@ -36,6 +36,9 @@ vi.mock('~/components/theme', () => ({
     }),
 }));
 vi.mock('~/components/chat/chat-message', () => ({ ChatMessage: () => <div /> }));
+vi.mock('~/components/chat/chat-message-edit-modal', () => ({
+  MessageEditModal: () => <div />,
+}));
 vi.mock('~/components/chat/chat-shimmer-message', () => ({
   ChatShimmerMessage: () => <div />,
 }));

@@ -13,41 +13,74 @@ type TaskExtractionInput = OpenRouterClientOptions & {
   model?: string;
 };
 
-type ExtractedTask = {
+export type ExtractedTask = {
   title: string;
   description?: string;
 };
 
-type TaskExtractionOutput = {
+export type ExtractedTaskGroup = {
+  title: string;
   tasks: ExtractedTask[];
 };
 
-type TaskExtractionResult = {
+type TaskExtractionOutput = {
+  groups: ExtractedTaskGroup[];
   tasks: ExtractedTask[];
+};
+
+type TaskExtractionResult = TaskExtractionOutput & {
   usage: AIUsageMetrics | null;
 };
 
 // OpenRouter's structured-output mode marks optional fields nullable rather than
 // omitting them, so the model returns `description: null` instead of leaving it
-// out — accept both and normalize to `undefined` for callers.
+// out — accept both and normalize to `undefined` for callers. The same applies
+// to the `groups`/`tasks` arrays themselves: a model may return `null` for an
+// unused array rather than omitting it or returning `[]`.
+const RawExtractedTaskSchema = z.object({
+  title: z.string(),
+  description: z.string().nullable().optional(),
+});
+
 const RawTaskExtractionOutputSchema = z.object({
-  tasks: z
+  groups: z
     .array(
       z.object({
         title: z.string(),
-        description: z.string().nullable().optional(),
+        // No min(2) here: the model sometimes returns a one-item "group",
+        // and that must not fail the whole extraction — singletons are
+        // demoted to standalone items below.
+        tasks: z.array(RawExtractedTaskSchema),
       }),
     )
-    .max(10),
+    .nullable()
+    .optional(),
+  tasks: z.array(RawExtractedTaskSchema).nullable().optional(),
 });
 
-function parseTaskExtractionOutput(value: unknown): TaskExtractionOutput {
-  const parsed = RawTaskExtractionOutputSchema.parse(value);
+function normalizeExtractedTask(task: z.infer<typeof RawExtractedTaskSchema>): ExtractedTask {
   return {
-    tasks: parsed.tasks.map((task) => ({
-      title: task.title,
-      ...(task.description ? { description: task.description } : {}),
-    })),
+    title: task.title,
+    ...(task.description ? { description: task.description } : {}),
+  };
+}
+
+export function parseTaskExtractionOutput(value: unknown): TaskExtractionOutput {
+  const parsed = RawTaskExtractionOutputSchema.parse(value);
+  // A group left with fewer than 2 tasks is demoted to standalone items:
+  // the batch endpoint requires 2+ tasks per group, and one malformed
+  // group must not fail the whole extraction. Same rule the review UI
+  // applies after item rejection (regroupAcceptedItems).
+  const groups: ExtractedTaskGroup[] = [];
+  const demoted: ExtractedTask[] = [];
+  for (const group of parsed.groups ?? []) {
+    const tasks = group.tasks.map(normalizeExtractedTask);
+    if (tasks.length < 2) demoted.push(...tasks);
+    else groups.push({ title: group.title, tasks });
+  }
+  return {
+    groups,
+    tasks: [...(parsed.tasks ?? []).map(normalizeExtractedTask), ...demoted],
   };
 }
 
@@ -63,7 +96,8 @@ export async function extractTasks(
         model,
         schema: RawTaskExtractionOutputSchema,
         schemaName: 'task_extraction',
-        schemaDescription: 'Extracted actionable tasks from free-form transcript text.',
+        schemaDescription:
+          'Extracted actionable tasks from free-form transcript text, clustered into related groups plus standalone items.',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: input.transcript },

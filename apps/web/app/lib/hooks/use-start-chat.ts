@@ -1,4 +1,3 @@
-import { getGenerationFailureMessage } from '@hominem/chat';
 import type { GenerationHistoryEvent as GenerationDomainEvent } from '@hominem/chat';
 import { ChatClient } from '@hominem/chat/client';
 import type { ChatGenerationController, GenerationClientState } from '@hominem/chat/client';
@@ -72,8 +71,6 @@ export function useStartChat() {
       generationRef.current = generation;
       generation.subscribe((_state, event) => {
         if (!('payload' in event)) return;
-        const failureMessage = getGenerationFailureMessage(event);
-        if (failureMessage) throw new Error(failureMessage);
         if (event.type === 'generation.accepted') {
           chatIdRef.current = event.payload.chatId;
           queryClient.setQueryData(chatQueryKeys.get(event.payload.chatId), event.payload.chat);
@@ -92,7 +89,10 @@ export function useStartChat() {
         }
       });
       try {
-        await generation.done;
+        const completed = await generation.done;
+        if (completed.phase === 'failed') {
+          throw new Error(completed.error ?? 'Generation failed.');
+        }
         await queryClient.invalidateQueries({ queryKey: chatQueryKeys.list });
       } finally {
         generationRef.current = null;

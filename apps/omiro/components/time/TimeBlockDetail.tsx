@@ -1,5 +1,5 @@
 import DateTimePicker from '@expo/ui/community/datetime-picker';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import type { SFSymbol } from 'expo-symbols';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -12,10 +12,12 @@ import type {
   TimeBlockDetailSource,
 } from '~/components/time/use-time-block-editor-state';
 import { useTimeBlockEditorState } from '~/components/time/use-time-block-editor-state';
+import { ListRow } from '~/components/ui';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 import { TextField } from '~/components/ui/text-field';
 import { formatClockTime } from '~/services/date/format-date';
+import { getTaskDetailRoute } from '~/services/navigation/routes';
 
 export type { TimeBlockDetailSource } from '~/components/time/use-time-block-editor-state';
 
@@ -66,6 +68,9 @@ function useTimeBlockDetailStyles() {
     unsetValue: { ...theme.textVariants.body, color: theme.colors.mutedForeground },
     participants: { ...theme.textVariants.body },
     fieldValue: { ...theme.textVariants.body },
+    subtasks: { gap: 8 },
+    subtasksHeading: { ...theme.textVariants.caption1, color: theme.colors.mutedForeground },
+    subtasksList: { borderRadius: 16, backgroundColor: theme.colors.card, overflow: 'hidden' },
     footer: {
       borderTopWidth: 1,
       borderColor: theme.colors.border,
@@ -156,14 +161,17 @@ export function TimeBlockDetail({
     saveChanges,
     saving,
     task,
+    taskChildren,
     toggleTask,
   } = useTimeBlockEditorState({ id, initialActiveField, onClose, source });
+  const router = useRouter();
   const {
     chart1: chartBlue,
     chart2: chartPurple,
     chart3: chartTeal,
     chart4: chartOrange,
     chart5: chartGray,
+    success: successColor,
   } = useAppTheme().colors;
   const styles = useTimeBlockDetailStyles();
 
@@ -375,6 +383,32 @@ export function TimeBlockDetail({
             </FieldCard>
           ) : null}
         </View>
+
+        {isTask && taskChildren.length > 0 ? (
+          <View style={styles.subtasks} testID="time-block-subtasks">
+            <Text style={styles.subtasksHeading}>
+              {taskChildren.length} sub-task{taskChildren.length === 1 ? '' : 's'}
+            </Text>
+            <View style={styles.subtasksList}>
+              {taskChildren.map((child) => (
+                <ListRow
+                  accessibilityLabel={child.title}
+                  key={child.id}
+                  leading={
+                    <AppIcon
+                      name={child.status === 'completed' ? 'checkmark.circle.fill' : 'circle'}
+                      size={20}
+                      tintColor={successColor}
+                    />
+                  }
+                  onPress={() => router.push(getTaskDetailRoute(child.id))}
+                  testID={`time-block-subtask-${child.id}`}
+                  title={child.title}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
       {!readOnlyEvent && (isDirty || isTask) ? (
         <KeyboardStickyView>

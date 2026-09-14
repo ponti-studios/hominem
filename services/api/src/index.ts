@@ -116,6 +116,12 @@ async function startServer() {
     server: {
       hmr: { server: apiServer },
       middlewareMode: { server: apiServer },
+      // Vite's own preflight handling only allows localhost/127.0.0.1 origins
+      // by default, which short-circuits OPTIONS requests from our lvh.me
+      // dev domains before they ever reach the app's CORS middleware below.
+      // Disable it here so createCorsMiddleware (server.ts) is the only
+      // CORS authority.
+      cors: false,
     },
   });
   apiServer.listen(port, host);

@@ -50,6 +50,9 @@ export function ChatTaskReview({
               type="checkbox"
             />
             <span>
+              {task.groupTitle ? (
+                <span className="block text-xs text-muted-foreground">{task.groupTitle}</span>
+              ) : null}
               <span className="block font-medium">{task.title}</span>
               {task.description ? (
                 <span className="text-muted-foreground">{task.description}</span>

@@ -91,7 +91,10 @@ describe('useTaskExtraction', () => {
 
   it('extracts tasks from the transcript for a task_list extraction', async () => {
     mockTasksExtractPost.mockResolvedValue({
-      json: async () => ({ tasks: [{ title: 'Book venue' }, { title: 'Send invites' }] }),
+      json: async () => ({
+        groups: [],
+        tasks: [{ title: 'Book venue' }, { title: 'Send invites' }],
+      }),
     });
     const { result } = renderTaskExtraction();
 
@@ -107,8 +110,8 @@ describe('useTaskExtraction', () => {
         proposedType: 'task_list',
         proposedTitle: '2 tasks',
         items: [
-          { id: 'task-proposal-0', title: 'Book venue' },
-          { id: 'task-proposal-1', title: 'Send invites' },
+          { id: 'task-proposal-standalone-0', title: 'Book venue' },
+          { id: 'task-proposal-standalone-1', title: 'Send invites' },
         ],
       }),
     );
@@ -126,13 +129,34 @@ describe('useTaskExtraction', () => {
     expect(mockAlert).toHaveBeenCalledWith('Could not prepare review', 'Please try again.');
   });
 
-  it('accepting a batch review (items present) creates all tasks and reports the parent', async () => {
+  it('accepting a batch review (a group present) creates the group and reports its parent', async () => {
     mockTasksExtractPost.mockResolvedValue({
-      json: async () => ({ tasks: [{ title: 'Book venue' }] }),
+      json: async () => ({
+        groups: [
+          {
+            title: 'Launch tasks',
+            tasks: [{ title: 'Book venue' }, { title: 'Send invites' }],
+          },
+        ],
+        tasks: [],
+      }),
     });
     mockTasksBatchPost.mockResolvedValue({
       json: async () => ({
-        parent: { id: 'parent-1', title: 'Launch tasks', artifactType: 'task', updatedAt: 't' },
+        groups: [
+          {
+            parent: {
+              id: 'parent-1',
+              title: 'Launch tasks',
+              artifactType: 'task_list',
+              updatedAt: 't',
+            },
+            tasks: [
+              { id: 'task-1', title: 'Book venue', artifactType: 'task' },
+              { id: 'task-2', title: 'Send invites', artifactType: 'task' },
+            ],
+          },
+        ],
         tasks: [],
       }),
     });
@@ -146,17 +170,25 @@ describe('useTaskExtraction', () => {
     });
 
     expect(mockTasksBatchPost).toHaveBeenCalledWith({
-      json: { tasks: [{ title: 'Book venue' }] },
+      json: {
+        groups: [
+          {
+            title: 'Launch tasks',
+            tasks: [{ title: 'Book venue' }, { title: 'Send invites' }],
+          },
+        ],
+        tasks: [],
+      },
     });
     expect(onContentCreated).toHaveBeenCalledWith(
       expect.objectContaining({
-        source: { kind: 'artifact', id: 'parent-1', title: 'Launch tasks', type: 'task' },
+        source: { kind: 'artifact', id: 'parent-1', title: 'Launch tasks', type: 'task_list' },
       }),
     );
   });
 
   it('rejects an empty batch review with an alert rather than creating anything', async () => {
-    mockTasksExtractPost.mockResolvedValue({ json: async () => ({ tasks: [] }) });
+    mockTasksExtractPost.mockResolvedValue({ json: async () => ({ groups: [], tasks: [] }) });
     const { result } = renderTaskExtraction();
 
     await act(async () => {

@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeOut,
-  FadeOutUp,
-  LinearTransition,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
-import { transitionDurations, useAppTheme, useStyles, withAlpha } from '~/components/theme';
+import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
 import { BlurCard } from '~/components/ui';
 import { InlineErrorBanner } from '~/components/ui/InlineErrorBanner';
 import { VoiceRecordingPanel } from '~/components/voice/VoiceRecordingPanel';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { nativeMotionAnimations } from '~/services/motion/native-motion';
 
 import type { ComposerProps, ComposerSubmitKind } from './composer.types';
 import { ComposerAttachmentRow } from './ComposerAttachmentRow';
@@ -131,15 +126,13 @@ function ComposerContent(props: ComposerProps) {
       />
     ) : undefined;
 
-  const bannerLayout = prefersReducedMotion
-    ? undefined
-    : LinearTransition.duration(transitionDurations[150]);
+  const bannerLayout = prefersReducedMotion ? undefined : nativeMotionAnimations.layoutQuick;
   const bannerEntering = prefersReducedMotion
-    ? FadeIn.duration(transitionDurations[150])
-    : FadeInDown.duration(transitionDurations[150]);
+    ? nativeMotionAnimations.fadeInQuick
+    : nativeMotionAnimations.fadeInDownQuick;
   const bannerExiting = prefersReducedMotion
-    ? FadeOut.duration(transitionDurations[100])
-    : FadeOutUp.duration(transitionDurations[100]);
+    ? nativeMotionAnimations.fadeOutQuick
+    : nativeMotionAnimations.fadeOutUpQuick;
 
   return (
     <Animated.View style={styles.composer} layout={bannerLayout} testID={presentation.shellTestID}>
@@ -151,15 +144,18 @@ function ComposerContent(props: ComposerProps) {
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
       >
         {errorBanner ? (
-          <Animated.View entering={bannerEntering} exiting={bannerExiting} layout={bannerLayout}>
-            {errorBanner}
+          // Split: entering/exiting on the outer view, layout on the inner
+          // one -- same reasoning as chat-message.tsx and the two Animated.Views
+          // just below. Both on one node fight over opacity.
+          <Animated.View entering={bannerEntering} exiting={bannerExiting}>
+            <Animated.View layout={bannerLayout}>{errorBanner}</Animated.View>
           </Animated.View>
         ) : undefined}
 
         {showVoicePanel ? (
           <Animated.View
-            entering={FadeIn.duration(transitionDurations[150])}
-            exiting={FadeOut.duration(transitionDurations[100])}
+            entering={nativeMotionAnimations.fadeInQuick}
+            exiting={nativeMotionAnimations.fadeOutQuick}
             key="voice-panel"
           >
             <VoiceRecordingPanel
@@ -175,8 +171,8 @@ function ComposerContent(props: ComposerProps) {
           </Animated.View>
         ) : (
           <Animated.View
-            entering={FadeIn.duration(transitionDurations[150])}
-            exiting={FadeOut.duration(transitionDurations[100])}
+            entering={nativeMotionAnimations.fadeInQuick}
+            exiting={nativeMotionAnimations.fadeOutQuick}
             key="composer-fields"
           >
             <Animated.View style={styles.fields} layout={bannerLayout}>

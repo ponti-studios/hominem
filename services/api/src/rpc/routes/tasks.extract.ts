@@ -31,7 +31,7 @@ export const taskExtractRoutes = new Hono<AppContext>()
     const getDurationMs = startAIUsageTimer();
 
     try {
-      const { tasks, usage } = await extractTasks({ transcript }, TASK_EXTRACTION_PROMPT);
+      const { groups, tasks, usage } = await extractTasks({ transcript }, TASK_EXTRACTION_PROMPT);
       await recordAIUsageEvent({
         eventId,
         userId,
@@ -41,7 +41,7 @@ export const taskExtractRoutes = new Hono<AppContext>()
         status: 'succeeded',
         durationMs: getDurationMs(),
       });
-      return c.json({ tasks });
+      return c.json({ groups, tasks });
     } catch (error) {
       const usage = getStructuredOutputUsage(error);
       await recordAIUsageEvent({
@@ -112,6 +112,6 @@ export const taskExtractRoutes = new Hono<AppContext>()
       return c.json({ error: 'Voice task extraction failed' }, 500);
     }
 
-    const result = await persistExtractedTasks(userId, tasks);
+    const result = await persistExtractedTasks(userId, { tasks });
     return c.json(result, 201);
   });

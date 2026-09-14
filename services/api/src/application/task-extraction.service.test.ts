@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatVoiceTaskReferenceDate,
   normalizeVoiceTaskDueAt,
+  parseTaskExtractionOutput,
   parseVoiceTaskExtractionOutput,
 } from './task-extraction.service';
 
@@ -55,6 +56,46 @@ describe('parseVoiceTaskExtractionOutput', () => {
           dueAt: '2026-07-09T19:00:00.000Z',
         },
       ],
+    });
+  });
+});
+
+describe('parseTaskExtractionOutput', () => {
+  it('keeps valid groups and standalone tasks', () => {
+    expect(
+      parseTaskExtractionOutput({
+        groups: [
+          {
+            title: 'Plan London trip',
+            tasks: [{ title: 'Book flight' }, { title: 'Book hotel' }],
+          },
+        ],
+        tasks: [{ title: 'Cancel gym membership' }],
+      }),
+    ).toEqual({
+      groups: [
+        {
+          title: 'Plan London trip',
+          tasks: [{ title: 'Book flight' }, { title: 'Book hotel' }],
+        },
+      ],
+      tasks: [{ title: 'Cancel gym membership' }],
+    });
+  });
+
+  it('demotes a one-item group to standalone instead of failing', () => {
+    expect(
+      parseTaskExtractionOutput({
+        groups: [{ title: 'Almost a group', tasks: [{ title: 'Lone task' }] }],
+        tasks: [],
+      }),
+    ).toEqual({ groups: [], tasks: [{ title: 'Lone task' }] });
+  });
+
+  it('treats null arrays as empty', () => {
+    expect(parseTaskExtractionOutput({ groups: null, tasks: null })).toEqual({
+      groups: [],
+      tasks: [],
     });
   });
 });

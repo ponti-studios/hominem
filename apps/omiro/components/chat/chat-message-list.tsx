@@ -8,6 +8,7 @@ import { useStyles } from '~/components/theme';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
 
 import { ChatMessage } from './chat-message';
+import { MessageEditModal } from './chat-message-edit-modal';
 import { ChatShimmerMessage } from './chat-shimmer-message';
 
 const AUTO_SCROLL_TO_BOTTOM_THRESHOLD = 0.25;
@@ -95,12 +96,18 @@ export function ChatMessageList({
   );
   const hasSearchQuery = showSearch && searchQuery.length > 0;
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
+  // A single shared edit modal + its draft state, instead of every row
+  // carrying its own -- at most one message is ever being edited at a time,
+  // and RN's Modal already no-ops when never opened, so this only saves the
+  // per-row useStyles/useState overhead, but it's one source of truth
+  // either way (same reasoning as activeActionMessageId above).
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [draftMessage, setDraftMessage] = useState('');
   const listRef = useRef<FlashListRef<ChatMessageItem> | null>(null);
   const prevCountRef = useRef(renderedMessages.length);
   const prevLastMessageIdRef = useRef(renderedMessages.at(-1)?.id ?? null);
   const announcedMessagesRef = useRef(new Map<string, ChatMessageItem>());
   const didInitializeAnnouncementsRef = useRef(false);
-  const didInitialScrollRef = useRef(false);
 
   useEffect(() => {
     const previousMessages = announcedMessagesRef.current;
@@ -152,19 +159,6 @@ export function ChatMessageList({
     return () => cancelAnimationFrame(frame);
   }, [renderedMessages, showSearch]);
 
-  useEffect(() => {
-    if (hasSearchQuery || didInitialScrollRef.current || renderedMessages.length === 0) {
-      return;
-    }
-
-    const frame = requestAnimationFrame(() => {
-      listRef.current?.scrollToEnd({ animated: false });
-      didInitialScrollRef.current = true;
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [hasSearchQuery, renderedMessages.length]);
-
   const onActivate = useCallback(
     (messageId: string) =>
       setActiveActionMessageId((currentMessageId) =>
@@ -172,6 +166,35 @@ export function ChatMessageList({
       ),
     [],
   );
+
+  const editingMessage = editingMessageId
+    ? (renderedMessages.find((candidate) => candidate.id === editingMessageId) ?? null)
+    : null;
+
+  const onRequestEdit = useCallback(
+    (messageId: string) => {
+      const message = renderedMessages.find((candidate) => candidate.id === messageId);
+      if (!message) {
+        return;
+      }
+      setEditingMessageId(messageId);
+      setDraftMessage(message.message);
+    },
+    [renderedMessages],
+  );
+
+  const closeEditModal = useCallback(() => {
+    setEditingMessageId(null);
+  }, []);
+
+  const saveEditModal = useCallback(() => {
+    const trimmedContent = draftMessage.trim();
+    if (!editingMessageId || !trimmedContent) {
+      return;
+    }
+    onEdit?.(editingMessageId, trimmedContent);
+    setEditingMessageId(null);
+  }, [draftMessage, editingMessageId, onEdit]);
 
   const renderItem = useCallback<ListRenderItem<ChatMessageItem>>(
     ({ item }) => {
@@ -181,15 +204,31 @@ export function ChatMessageList({
       // only messages added after that.
       const isNewMessage =
         didInitializeAnnouncementsRef.current && !announcedMessagesRef.current.has(item.id);
+      // Same "haven't we already seen this id" tracking as isNewMessage above,
+      // but for the failed-state transition specifically: a message that was
+      // already failed the first time we saw it (chat open, pagination, or a
+      // row recycled by FlashList into a message we haven't tracked yet)
+      // shouldn't replay its retry-banner entrance; one that just flipped
+      // from not-failed to failed while we were watching (live retry
+      // failure, stream interrupted) should. Can't derive this from a
+      // mount-scoped ref inside ChatMessage itself -- FlashList recycles the
+      // same component instance across different messages, so "just
+      // mounted" doesn't mean "just became this message."
+      const previousMessage = announcedMessagesRef.current.get(item.id);
+      const isNewlyFailed =
+        didInitializeAnnouncementsRef.current &&
+        Boolean(item.failed || item.error) &&
+        !(previousMessage?.failed || previousMessage?.error);
       return (
         <ChatMessage
           formatTimestamp={formatTimestamp}
           isNewMessage={isNewMessage}
+          isNewlyFailed={isNewlyFailed}
           message={item}
           {...{
             isActive: !item.isStreaming && activeActionMessageId === item.id,
             onActivate: item.isStreaming ? undefined : onActivate,
-            onEdit: item.isStreaming ? undefined : onEdit,
+            onRequestEdit: item.isStreaming || !onEdit ? undefined : onRequestEdit,
             onRegenerate: item.isStreaming ? undefined : onRegenerate,
             onDelete: item.isStreaming ? undefined : onDelete,
             onRetry,
@@ -206,6 +245,7 @@ export function ChatMessageList({
       formatTimestamp,
       onDelete,
       onEdit,
+      onRequestEdit,
       onRegenerate,
       onRetry,
       onToolCallRespond,
@@ -236,40 +276,50 @@ export function ChatMessageList({
   }
 
   return (
-    <FlashList
-      ref={listRef}
-      style={styles.list}
-      pointerEvents={generation ? 'box-none' : 'auto'}
-      contentInsetAdjustmentBehavior="automatic"
-      ListEmptyComponent={listEmptyComponent}
-      ListFooterComponent={
-        renderedMessages.length > 0 ? (
-          <Pressable
-            accessibilityLabel="Chat message list bottom"
-            onPress={() => setActiveActionMessageId(null)}
-            style={styles.bottomSentinel}
-            testID="chat-message-list-bottom-sentinel"
-          />
-        ) : null
-      }
-      contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 8 }}
-      ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
-      // Composer sits in normal flow at rest (bottomInset 0, nothing extra
-      // reserved). When the keyboard's open it lifts by translating instead
-      // of resizing, so bottomInset just covers that transient overlap.
-      contentInset={{ bottom: bottomInset }}
-      scrollIndicatorInsets={{ bottom: bottomInset }}
-      data={renderedMessages}
-      keyExtractor={keyExtractor}
-      maintainVisibleContentPosition={{
-        startRenderingFromBottom: true,
-        autoscrollToBottomThreshold: AUTO_SCROLL_TO_BOTTOM_THRESHOLD,
-      }}
-      onScrollBeginDrag={() => setActiveActionMessageId(null)}
-      renderItem={renderItem}
-      refreshControl={refreshControl}
-      scrollEnabled={renderedMessages.length > 0 || refreshControl !== undefined}
-      testID="chat-message-list"
-    />
+    <>
+      <MessageEditModal
+        content={editingMessage?.message ?? ''}
+        draftMessage={draftMessage}
+        onCancel={closeEditModal}
+        onChangeDraft={setDraftMessage}
+        onSave={saveEditModal}
+        visible={editingMessageId !== null}
+      />
+      <FlashList
+        ref={listRef}
+        style={styles.list}
+        pointerEvents={generation ? 'box-none' : 'auto'}
+        contentInsetAdjustmentBehavior="automatic"
+        ListEmptyComponent={listEmptyComponent}
+        ListFooterComponent={
+          renderedMessages.length > 0 ? (
+            <Pressable
+              accessibilityLabel="Chat message list bottom"
+              onPress={() => setActiveActionMessageId(null)}
+              style={styles.bottomSentinel}
+              testID="chat-message-list-bottom-sentinel"
+            />
+          ) : null
+        }
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 8 }}
+        ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+        // Composer sits in normal flow at rest (bottomInset 0, nothing extra
+        // reserved). When the keyboard's open it lifts by translating instead
+        // of resizing, so bottomInset just covers that transient overlap.
+        contentInset={{ bottom: bottomInset }}
+        scrollIndicatorInsets={{ bottom: bottomInset }}
+        data={renderedMessages}
+        keyExtractor={keyExtractor}
+        maintainVisibleContentPosition={{
+          startRenderingFromBottom: true,
+          autoscrollToBottomThreshold: AUTO_SCROLL_TO_BOTTOM_THRESHOLD,
+        }}
+        onScrollBeginDrag={() => setActiveActionMessageId(null)}
+        renderItem={renderItem}
+        refreshControl={refreshControl}
+        scrollEnabled={renderedMessages.length > 0 || refreshControl !== undefined}
+        testID="chat-message-list"
+      />
+    </>
   );
 }

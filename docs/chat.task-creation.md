@@ -28,23 +28,34 @@ reimplementation of the flow.
 1. **Extract** - the transcript is sent to `POST /api/tasks/extract`
    (`services/api/src/rpc/routes/tasks.extract.ts`), which calls
    `extractTasks` (`services/api/src/application/task-extraction.service.ts`, OpenRouter structured output)
-   with `TASK_EXTRACTION_PROMPT` and returns a
-   list of `{ title }` drafts. Rate-limited (`ai-task-extract`, 20/min) and
-   gated by the caller's monthly AI usage limit.
+   with `TASK_EXTRACTION_PROMPT` and returns `{ groups, tasks }`: named
+   groups of genuinely related steps (2+ tasks each) plus standalone
+   items. Rate-limited (`ai-task-extract`, 20/min) and gated by the
+   caller's monthly AI usage limit. A model-returned one-item group is
+   demoted to standalone at parse time so it cannot fail the extraction.
 2. **Review** - the drafts render as a shared lifecycle/proposal model in a
    platform-specific review surface (`ClassificationReview` on mobile and
-   `ChatTaskReview` on web) as a `task_list`-typed proposal; the user can
-   accept or reject before anything is persisted. Proposal items receive
-   stable client-local IDs so duplicate titles remain independently usable.
-3. **Create** - on accept, `POST /api/tasks/batch`
-   (`CreateTaskBatchSchema`: 1-10 tasks, each title <=120 chars) persists the
-   result:
-   - **Exactly one task** -> a single row with `artifactType: 'task'`, no
-     parent (`{ parent: null, tasks: [task] }`).
-   - **More than one** -> `persistExtractedTasks`
-     (`services/api/src/application/tasks.service.ts`) creates a parent row
-     with `artifactType: 'task_list'` (title auto-derived as `${n} tasks`)
-     plus child task rows under it via `parentTaskId`.
+   `ChatTaskReview` (`chat-task-review.tsx`, with per-item group titles
+   and per-item reject tracked locally) on web) as a `task_list`-typed
+   proposal; the user can accept or reject before anything is persisted.
+   Proposal items receive stable client-local IDs plus their extraction
+   group index (titles are display-only and not unique) so duplicate
+   titles remain independently usable.
+3. **Create** - on accept, the hook reconstitutes `{groups, tasks}` from
+   the accepted subset (a group left with fewer than 2 items after
+   rejection is demoted to standalone), splits acceptance into as many
+   `POST /api/tasks/batch` calls as the endpoint caps require (10 groups
+   / 20 standalone / 20 per group per call; groups stay atomic across
+   calls), and persists via `persistExtractedTasks`
+   (`services/api/src/application/tasks.service.ts`):
+   - **Each group** -> a parent row with `artifactType: 'task_list'` titled
+     with the model's group title, plus child task rows under it via
+     `parentTaskId`.
+   - **Each standalone draft** -> its own top-level row with
+     `artifactType: 'task'`, no parent.
+   - **Nothing accepted** -> nothing is sent; all writes happen in one
+     transaction per batch call (except the single-standalone fast path).
+   Response shape is `{ groups: [{ parent, tasks }], tasks }`.
 
 The hook then resolves a canonical `SessionSource` (`kind: 'artifact'`, the
 created row's real `artifactType`) so the surrounding chat state updates

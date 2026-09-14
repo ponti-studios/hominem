@@ -4,6 +4,7 @@ import {
   type ChatMessages,
   type ChatRequest,
   type ChatStreamChunk,
+  type OpenRouterClientOptions,
   getChatCompletionUsage,
   OpenRouterRequestError,
   streamChatCompletion,
@@ -104,6 +105,9 @@ export type OpenRouterChatModelOptions = {
   requiresToolCall?: boolean;
   requiresConfirmation?: (toolName: string) => boolean;
   maxAttempts?: number;
+  // Test-only scripted OpenRouter client (canned SSE chunks). Production
+  // never sets this — OpenRouter is the only supported provider.
+  client?: OpenRouterClientOptions['client'];
   // Usage is provider metadata and may be absent even when the response is valid.
   onUsage?: (usage: AIUsageMetrics | null) => void;
 };
@@ -189,7 +193,10 @@ export class OpenRouterChatModel implements ChatModel {
           maxTokens: this.options.maxTokens,
           reasoning: this.options.reasoning,
         },
-        { signal: controller.signal },
+        {
+          signal: controller.signal,
+          ...(this.options.client ? { client: this.options.client } : {}),
+        },
       );
 
       const iterator = completion[Symbol.asyncIterator]();

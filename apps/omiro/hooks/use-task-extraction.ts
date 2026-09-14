@@ -2,8 +2,9 @@ import {
   buildExtractedTasksProposal as buildSharedProposal,
   useTaskExtraction as useSharedTaskExtraction,
   type CreatedTaskRef,
-  type ExtractedTask,
+  type CreateTasksInput,
   type ExtractedTasksCreated,
+  type ExtractedTasksOutput,
 } from '@hominem/chat/react';
 import type { ArtifactType, ChatMessageItem, SessionSource } from '@hominem/chat/types';
 import { useApiClient } from '@hominem/rpc/react';
@@ -35,8 +36,11 @@ const toCreatedRef = (task: {
   ...(task.updatedAt ? { updatedAt: task.updatedAt } : {}),
 });
 
-export function buildExtractedTasksProposal(previewContent: string, tasks: { title: string }[]) {
-  return buildSharedProposal(previewContent, tasks, {
+export function buildExtractedTasksProposal(
+  previewContent: string,
+  extraction: ExtractedTasksOutput,
+) {
+  return buildSharedProposal(previewContent, extraction, {
     noTasksFoundTitle: t.chat.actions.noTasksFoundTitle,
     noTasksFoundDescription: t.chat.actions.noTasksFoundDescription,
     tasksFoundTitle: (count: number) => t.chat.actions.tasksFoundTitle(count),
@@ -69,7 +73,7 @@ export function useTaskExtraction({
 
   const createTasksBatch = useMutation({
     mutationKey: ['chat-task-batch', chatId],
-    mutationFn: async (input: { tasks: { title: string; description?: string }[] }) => {
+    mutationFn: async (input: CreateTasksInput) => {
       const res = await client.api.tasks.batch.$post({ json: input });
       return res.json();
     },
@@ -82,10 +86,13 @@ export function useTaskExtraction({
     messages: proposalMessages,
     source,
     extractTasks: (transcript: string) => extractTasksFromTranscript({ transcript }),
-    createTasks: async (tasks: ExtractedTask[]) => {
-      const result = await createTasksBatch.mutateAsync({ tasks });
+    createTasks: async ({ groups, tasks }: CreateTasksInput) => {
+      const result = await createTasksBatch.mutateAsync({ groups, tasks });
       return {
-        parent: result.parent ? toCreatedRef(result.parent) : null,
+        groups: result.groups.map((group) => ({
+          parent: toCreatedRef(group.parent),
+          tasks: group.tasks.map(toCreatedRef),
+        })),
         tasks: result.tasks.map(toCreatedRef),
       };
     },

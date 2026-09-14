@@ -29,48 +29,12 @@ function writeJSONValue<T>(key: string, value: T) {
   storage.set(key, JSON.stringify(value));
 }
 
-export function readAllDraft(): string {
-  return storage.getString(ALL_DRAFT_KEY) ?? '';
+function readDraft(key: string): string {
+  return storage.getString(key) ?? '';
 }
 
-export function writeAllDraft(value: string) {
+function writeDraft(key: string, value: string) {
   const normalized = value.trim();
-  if (normalized.length === 0) {
-    storage.remove(ALL_DRAFT_KEY);
-    return;
-  }
-
-  storage.set(ALL_DRAFT_KEY, value);
-}
-
-export function clearAllDraft() {
-  storage.remove(ALL_DRAFT_KEY);
-}
-
-export function readNewChatDraft(): string {
-  return storage.getString(NEW_CHAT_DRAFT_KEY) ?? '';
-}
-
-export function writeNewChatDraft(value: string) {
-  if (!value.trim()) {
-    storage.remove(NEW_CHAT_DRAFT_KEY);
-    return;
-  }
-
-  storage.set(NEW_CHAT_DRAFT_KEY, value);
-}
-
-export function clearNewChatDraft() {
-  storage.remove(NEW_CHAT_DRAFT_KEY);
-}
-
-export function readChatDraft(chatId: string): string {
-  return storage.getString(getChatDraftKey(chatId)) ?? '';
-}
-
-export function writeChatDraft(chatId: string, value: string) {
-  const normalized = value.trim();
-  const key = getChatDraftKey(chatId);
   if (normalized.length === 0) {
     storage.remove(key);
     return;
@@ -79,8 +43,44 @@ export function writeChatDraft(chatId: string, value: string) {
   storage.set(key, value);
 }
 
+function clearDraft(key: string) {
+  storage.remove(key);
+}
+
+export function readAllDraft(): string {
+  return readDraft(ALL_DRAFT_KEY);
+}
+
+export function writeAllDraft(value: string) {
+  writeDraft(ALL_DRAFT_KEY, value);
+}
+
+export function clearAllDraft() {
+  clearDraft(ALL_DRAFT_KEY);
+}
+
+export function readNewChatDraft(): string {
+  return readDraft(NEW_CHAT_DRAFT_KEY);
+}
+
+export function writeNewChatDraft(value: string) {
+  writeDraft(NEW_CHAT_DRAFT_KEY, value);
+}
+
+export function clearNewChatDraft() {
+  clearDraft(NEW_CHAT_DRAFT_KEY);
+}
+
+export function readChatDraft(chatId: string): string {
+  return readDraft(getChatDraftKey(chatId));
+}
+
+export function writeChatDraft(chatId: string, value: string) {
+  writeDraft(getChatDraftKey(chatId), value);
+}
+
 export function clearChatDraft(chatId: string) {
-  storage.remove(getChatDraftKey(chatId));
+  clearDraft(getChatDraftKey(chatId));
 }
 
 export function writeResumeTarget(target: ResumeTarget) {

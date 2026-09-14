@@ -11,6 +11,8 @@ import { streamFromRequest } from '../../mocks/chat-transport';
 import { mockMmkvModule } from '../../mocks/mmkv';
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
+const mockImpactAsync = vi.fn().mockResolvedValue(undefined);
+const mockPlayAudioReply = vi.fn();
 const mockRandomUUID = vi.fn();
 const mockGetAuthHeaders = vi.fn().mockResolvedValue({});
 const mockTransportRequest = vi.fn();
@@ -38,8 +40,29 @@ const userMessage = {
   updatedAt: '2026-01-01',
 } satisfies ChatMessageDto;
 
+const committedMessageWithAudio = {
+  id: 'assistant-1',
+  chatId: 'chat-1',
+  userId: 'user-1',
+  role: 'assistant',
+  content: 'A durable reply.',
+  files: [{ type: 'audio', url: 'https://example.com/reply.m4a', mimeType: 'audio/mp4' }],
+  toolCalls: null,
+  reasoning: null,
+  parentMessageId: null,
+  createdAt: '2026-01-01',
+  updatedAt: '2026-01-01',
+} satisfies ChatMessageDto;
+
 vi.mock('~/services/storage/mmkv', () => mockMmkvModule());
 vi.mock('expo-crypto', () => ({ randomUUID: mockRandomUUID }));
+vi.mock('expo-haptics', () => ({
+  impactAsync: mockImpactAsync,
+  ImpactFeedbackStyle: { Light: 'light' },
+}));
+vi.mock('~/components/media/audio-playback.service', () => ({
+  playAudioReply: mockPlayAudioReply,
+}));
 vi.mock('~/services/auth/auth-provider', () => ({
   useAuth: () => ({ getAuthHeaders: mockGetAuthHeaders }),
 }));
@@ -53,16 +76,26 @@ vi.mock('@hominem/chat/transport/xhr', () => ({
   }),
 }));
 vi.mock('~/services/chat/use-chat-messages', () => ({
-  toMessageOutput: (message: { id: string; role: 'user'; content: string }) => ({
-    id: message.id,
-    role: message.role,
-    message: message.content,
-  }),
+  toMessageOutput: (message: {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    files?: { type: string; url: string }[] | null;
+  }) => {
+    const audioFile = message.files?.find((file) => file.type === 'audio');
+    return {
+      id: message.id,
+      role: message.role,
+      message: message.content,
+      audio: audioFile ? { url: audioFile.url } : null,
+    };
+  },
 }));
 vi.mock('~/services/inbox/inbox-refresh', () => ({ invalidateInboxQueries: vi.fn() }));
 vi.mock('~/constants', () => ({ API_BASE_URL: 'http://localhost:4040' }));
 
 const { useStartChat } = await import('~/services/chat/use-start-chat');
+const { takeGenerationHandoff } = await import('~/services/chat/generation-handoff');
 
 describe('useStartChat', () => {
   beforeEach(() => {
@@ -101,6 +134,96 @@ describe('useStartChat', () => {
     expect(queryClient.getQueryData(chatKeys.messages('chat-1'))).toEqual([
       expect.objectContaining({ id: 'user-1', message: 'Hello' }),
     ]);
+  });
+
+  it('hands off the live controller with the accepted userMessageId', async () => {
+    const { result } = renderHookWithQueryClient(() => useStartChat());
+
+    await act(async () => {
+      await result.current.startChat({ title: 'Test', message: 'Hello' });
+    });
+
+    const handoff = takeGenerationHandoff('chat-1');
+    expect(handoff?.userMessageId).toBe('user-1');
+    expect(handoff?.controller.state.generationId).toBe('generation-1');
+  });
+
+  it('gives the first assistant reply in a new chat the same haptic + audio treatment as any other reply', async () => {
+    mockTransportRequest.mockImplementationOnce(async () => {
+      const accepted: GenerationEvent = {
+        version: 1,
+        type: 'generation.accepted',
+        generationId: 'generation-1',
+        sequence: 1,
+        payload: { type: 'generation.accepted', chatId: 'chat-1', chat, userMessage },
+      };
+      const committed: GenerationEvent = {
+        version: 1,
+        type: 'generation.committed',
+        generationId: 'generation-1',
+        sequence: 2,
+        payload: { type: 'generation.committed', message: committedMessageWithAudio },
+      };
+      const body = [accepted, committed]
+        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+        .join('');
+      return new Response(body);
+    });
+
+    const { result, queryClient } = renderHookWithQueryClient(() => useStartChat());
+
+    await act(async () => {
+      await result.current.startChat({ title: 'Test', message: 'Hello' });
+    });
+
+    expect(queryClient.getQueryData(chatKeys.messages('chat-1'))).toEqual([
+      expect.objectContaining({ id: 'user-1', message: 'Hello' }),
+      expect.objectContaining({ id: 'assistant-1', message: 'A durable reply.' }),
+    ]);
+    expect(mockImpactAsync).toHaveBeenCalledOnce();
+    expect(mockPlayAudioReply).toHaveBeenCalledWith('assistant-1', 'https://example.com/reply.m4a');
+  });
+
+  it('does not duplicate the assistant reply if commit is delivered more than once', async () => {
+    mockTransportRequest.mockImplementationOnce(async () => {
+      const accepted: GenerationEvent = {
+        version: 1,
+        type: 'generation.accepted',
+        generationId: 'generation-1',
+        sequence: 1,
+        payload: { type: 'generation.accepted', chatId: 'chat-1', chat, userMessage },
+      };
+      const committedMessage = { ...committedMessageWithAudio, files: null };
+      const committedOnce: GenerationEvent = {
+        version: 1,
+        type: 'generation.committed',
+        generationId: 'generation-1',
+        sequence: 2,
+        payload: { type: 'generation.committed', message: committedMessage },
+      };
+      // A distinct sequence so the client's own dedupe (keyed on
+      // generationId:sequence) doesn't swallow this before it ever reaches
+      // applyGenerationCommitted -- the cache-level by-message-id dedupe is
+      // what's actually under test here.
+      const committedAgain: GenerationEvent = { ...committedOnce, sequence: 3 };
+      const body = [accepted, committedOnce, committedAgain]
+        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+        .join('');
+      return new Response(body);
+    });
+
+    const { result, queryClient } = renderHookWithQueryClient(() => useStartChat());
+
+    await act(async () => {
+      await result.current.startChat({ title: 'Test', message: 'Hello' });
+    });
+
+    expect(queryClient.getQueryData(chatKeys.messages('chat-1'))).toEqual([
+      expect.objectContaining({ id: 'user-1', message: 'Hello' }),
+      expect.objectContaining({ id: 'assistant-1', message: 'A durable reply.' }),
+    ]);
+    expect(mockImpactAsync).toHaveBeenCalledTimes(2);
+    expect(mockPlayAudioReply).not.toHaveBeenCalled();
   });
 
   it('surfaces a durable generation failure from the stream', async () => {
