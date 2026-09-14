@@ -1,4 +1,8 @@
-import { ChatClient, parseGenerationClientCheckpoint } from '@hominem/chat/client';
+import {
+  ChatClient,
+  parseGenerationClientCheckpoint,
+  toGenerationClientCheckpoint,
+} from '@hominem/chat/client';
 import type { ChatGenerationController, GenerationClientState } from '@hominem/chat/client';
 import { xhrChatTransport } from '@hominem/chat/transport/xhr';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -7,6 +11,7 @@ import { API_BASE_URL } from '~/constants';
 import { storage } from '~/services/storage/mmkv';
 
 import type { ChatGenerationState } from './chat-generation';
+import { takeGenerationHandoff, type PendingGenerationHandoff } from './generation-handoff';
 
 const resumingGenerationIds = new Set<string>();
 
@@ -14,16 +19,35 @@ function generationStorageKey(id: string) {
   return `chat-generation:${id}`;
 }
 
-function restoreGeneration(chatId: string): ChatGenerationState | null {
+// userMessageId rides alongside the shared, strictly-typed checkpoint —
+// it's an Omiro-only concern (Retry needs it; the wire checkpoint schema
+// doesn't carry it), so it's stripped before validating the rest and
+// re-attached after, rather than widening the shared schema for one field.
+function readStoredCheckpoint(chatId: string): {
+  checkpoint: ReturnType<typeof parseGenerationClientCheckpoint>;
+  userMessageId?: string;
+} | null {
   const raw = storage.getString(generationStorageKey(chatId));
   if (!raw) return null;
+  const { userMessageId, ...rest } = JSON.parse(raw) as { userMessageId?: unknown };
+  const checkpoint = parseGenerationClientCheckpoint(rest);
+  return {
+    checkpoint,
+    ...(typeof userMessageId === 'string' ? { userMessageId } : {}),
+  };
+}
+
+function restoreGeneration(chatId: string): ChatGenerationState | null {
   try {
-    const checkpoint = parseGenerationClientCheckpoint(JSON.parse(raw));
+    const stored = readStoredCheckpoint(chatId);
+    if (!stored) return null;
+    const { checkpoint, userMessageId } = stored;
     return {
       id: checkpoint.generationId,
       chatId,
       stage: checkpoint.phase === 'cancel_requested' ? 'stopping' : checkpoint.phase,
       lastDurableSequence: checkpoint.lastDurableSequence,
+      ...(userMessageId ? { userMessageId } : {}),
     };
   } catch {
     storage.remove(generationStorageKey(chatId));
@@ -37,28 +61,56 @@ function restoreGeneration(chatId: string): ChatGenerationState | null {
 // seed this hook's initial state before the consuming screen ever mounts.
 export function persistGenerationCheckpoint(
   chatId: string,
-  state: Pick<ChatGenerationState, 'id' | 'stage' | 'lastDurableSequence'>,
+  state: Pick<ChatGenerationState, 'id' | 'stage' | 'lastDurableSequence' | 'userMessageId'>,
 ) {
+  const checkpoint = parseGenerationClientCheckpoint({
+    generationId: state.id,
+    phase: state.stage === 'stopping' ? 'cancel_requested' : state.stage,
+    lastDurableSequence: state.lastDurableSequence,
+  });
   storage.set(
     generationStorageKey(chatId),
     JSON.stringify({
-      generationId: state.id,
-      phase: state.stage === 'stopping' ? 'cancel_requested' : state.stage,
-      lastDurableSequence: state.lastDurableSequence,
+      ...checkpoint,
+      ...(state.userMessageId ? { userMessageId: state.userMessageId } : {}),
     }),
   );
 }
 
+// Backs the ChatClient's own internal resume bookkeeping (`get`/`set` keyed
+// by generationId, used by its start/resume mid-stream logic) — sharing the
+// same MMKV slot `persistGenerationCheckpoint` seeds and `restoreGeneration`
+// reads. `set` used to write the full `GenerationClientState` verbatim,
+// which the strict wire checkpoint schema then rejected on the next read
+// (extra fields), silently deleting the checkpoint after the first streamed
+// update. Normalizing through `toGenerationClientCheckpoint` here keeps
+// every writer to this key on the one schema `restoreGeneration` expects,
+// and preserves any `userMessageId` already seeded rather than clobbering it —
+// ChatClient itself never knows about that field.
 function checkpointStore(chatId: string) {
   return {
     get: (_id: string) => {
-      const raw = storage.getString(generationStorageKey(chatId));
-      if (!raw) return null;
-      const state: GenerationClientState = JSON.parse(raw);
-      return state;
+      try {
+        const stored = readStoredCheckpoint(chatId);
+        if (!stored) return null;
+        return { ...stored.checkpoint } as GenerationClientState;
+      } catch {
+        return null;
+      }
     },
-    set: (state: GenerationClientState) =>
-      storage.set(generationStorageKey(chatId), JSON.stringify(state)),
+    set: (state: GenerationClientState) => {
+      let userMessageId: string | undefined;
+      try {
+        userMessageId = readStoredCheckpoint(chatId)?.userMessageId;
+      } catch {
+        // Malformed existing value — drop it rather than propagate it forward.
+      }
+      const checkpoint = toGenerationClientCheckpoint(state);
+      storage.set(
+        generationStorageKey(chatId),
+        JSON.stringify({ ...checkpoint, ...(userMessageId ? { userMessageId } : {}) }),
+      );
+    },
     remove: (_id: string) => {
       storage.remove(generationStorageKey(chatId));
     },
@@ -86,7 +138,34 @@ export function useChatGeneration({
       }),
   );
   const controllerRef = useRef<ChatGenerationController | null>(null);
-  const [initialGeneration] = useState(() => restoreGeneration(chatId));
+
+  // Lazy, one-time take: React may invoke this render body twice under
+  // StrictMode in dev, but the sentinel guard means only the first pass
+  // actually consumes the handoff -- a second pass (or a real second mount)
+  // finds it already gone and falls back to the normal MMKV restore below,
+  // which is correct, just not the fast path.
+  const handoffRef = useRef<{ taken?: PendingGenerationHandoff } | null>(null);
+  if (handoffRef.current === null) {
+    handoffRef.current = { taken: takeGenerationHandoff(chatId) };
+  }
+
+  const [initialGeneration] = useState<ChatGenerationState | null>(() => {
+    const handoff = handoffRef.current?.taken;
+    if (handoff) {
+      const state = handoff.controller.state;
+      // Already finished by the time this screen mounted -- the message is
+      // already in the query cache from the handoff site; nothing to stream.
+      if (state.phase === 'committed' || state.phase === 'cancelled') return null;
+      return {
+        id: state.generationId,
+        chatId,
+        stage: state.phase === 'cancel_requested' ? 'stopping' : state.phase,
+        lastDurableSequence: state.lastDurableSequence,
+        ...(handoff.userMessageId ? { userMessageId: handoff.userMessageId } : {}),
+      };
+    }
+    return restoreGeneration(chatId);
+  });
   const generationRef = useRef<ChatGenerationState | null>(initialGeneration);
   const [generation, setGenerationState] = useState(generationRef.current);
 
@@ -169,9 +248,32 @@ export function useChatGeneration({
     }
   }, [bindController, chatId, client]);
 
+  // Adopts a handed-off controller in place of opening a new SSE connection:
+  // subscribes to the same controller the previous screen already had
+  // streaming, rather than calling client.resumeGeneration() (which would
+  // start a second one). Mirrors resumeGeneration's own lifecycle handling
+  // so the two converge to the same steady state once bound.
+  const adoptHandoff = useCallback(
+    async (handoff: PendingGenerationHandoff, initial: ChatGenerationState) => {
+      const unsubscribe = bindController(handoff.controller, initial);
+      try {
+        await handoff.controller.done;
+      } finally {
+        unsubscribe();
+        if (controllerRef.current === handoff.controller) controllerRef.current = null;
+      }
+    },
+    [bindController],
+  );
+
   useEffect(() => {
+    const handoff = handoffRef.current?.taken;
+    if (handoff && generationRef.current) {
+      void adoptHandoff(handoff, generationRef.current).catch(() => undefined);
+      return;
+    }
     if (generationRef.current) void resumeGeneration().catch(() => undefined);
-  }, [resumeGeneration]);
+  }, [adoptHandoff, resumeGeneration]);
 
   const cancelGeneration = useCallback(async () => {
     const current = generationRef.current;

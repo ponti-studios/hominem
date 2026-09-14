@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type { ChatGenerationController, GenerationClientState } from '@hominem/chat/client';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,7 +9,57 @@ vi.mock('~/services/storage/mmkv', () => mockMmkvModule());
 vi.mock('~/constants', () => ({ API_BASE_URL: 'http://localhost:4040' }));
 
 const { storage } = await import('~/services/storage/mmkv');
-const { useChatGeneration } = await import('~/services/chat/use-chat-generation');
+const { useChatGeneration, persistGenerationCheckpoint } =
+  await import('~/services/chat/use-chat-generation');
+const { registerGenerationHandoff } = await import('~/services/chat/generation-handoff');
+
+// Minimal ChatGenerationController test double: enough surface for
+// useChatGeneration's adoption path (state getter, subscribe, done), not a
+// full ChatClient. `emit` pushes a new state to subscribers; `finish`
+// resolves `done` the way a real controller does once the stream ends.
+function createFakeController(
+  initialState: Partial<GenerationClientState> & { generationId: string },
+) {
+  let state = {
+    text: '',
+    reasoning: '',
+    toolSteps: [],
+    error: null,
+    lastDurableSequence: 0,
+    phase: 'preparing',
+    ...initialState,
+  } as GenerationClientState;
+  const listeners = new Set<(state: GenerationClientState) => void>();
+  let resolveDone!: (value: GenerationClientState) => void;
+  const done = new Promise<GenerationClientState>((resolve) => {
+    resolveDone = resolve;
+  });
+  const controller = {
+    get state() {
+      return state;
+    },
+    signal: new AbortController().signal,
+    done,
+    subscribe: (listener: (state: GenerationClientState) => void) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    start: () => controller,
+    resume: () => controller,
+    cancel: () => undefined,
+  } as unknown as ChatGenerationController;
+  return {
+    controller,
+    emit: (next: Partial<GenerationClientState>) => {
+      state = { ...state, ...next };
+      for (const listener of listeners) listener(state);
+    },
+    finish: (final: Partial<GenerationClientState>) => {
+      state = { ...state, ...final };
+      resolveDone(state);
+    },
+  };
+}
 
 const getAuthHeaders = vi.fn().mockResolvedValue({});
 const { consumeGenerationSseXhr } = vi.hoisted(() => ({ consumeGenerationSseXhr: vi.fn() }));
@@ -94,6 +145,99 @@ describe('useChatGeneration', () => {
     });
 
     act(() => result.current.setGeneration(null));
+    expect(storage.getString(key)).toBeUndefined();
+  });
+
+  it('round-trips userMessageId seeded by a caller outside this hook', () => {
+    persistGenerationCheckpoint('chat-1', {
+      id: 'generation-1',
+      stage: 'preparing',
+      lastDurableSequence: 0,
+      userMessageId: 'user-message-1',
+    });
+
+    const { result } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
+
+    expect(result.current.generation).toEqual({
+      id: 'generation-1',
+      chatId: 'chat-1',
+      stage: 'preparing',
+      lastDurableSequence: 0,
+      userMessageId: 'user-message-1',
+    });
+  });
+
+  it('preserves a seeded userMessageId across ChatClient-driven checkpoint writes', async () => {
+    persistGenerationCheckpoint('chat-1', {
+      id: 'generation-1',
+      stage: 'preparing',
+      lastDurableSequence: 0,
+      userMessageId: 'user-message-1',
+    });
+    consumeGenerationSseXhr.mockImplementationOnce(
+      async ({ onEvent }: { onEvent: (event: unknown) => void }) => {
+        onEvent({
+          version: 1,
+          generationId: 'generation-1',
+          sequence: 1,
+          type: 'generation.phase_changed',
+          payload: { type: 'generation.phase_changed', phase: 'running' },
+        });
+      },
+    );
+
+    const { result } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
+
+    await waitFor(() => expect(result.current.generation).toMatchObject({ stage: 'running' }));
+    expect(result.current.generation).toMatchObject({ userMessageId: 'user-message-1' });
+    expect(JSON.parse(storage.getString(key)!)).toMatchObject({ userMessageId: 'user-message-1' });
+  });
+
+  it('adopts a handed-off controller without opening a new SSE connection', async () => {
+    const { controller, emit } = createFakeController({
+      generationId: 'generation-1',
+      phase: 'preparing',
+      lastDurableSequence: 0,
+    });
+    registerGenerationHandoff('chat-1', { controller, userMessageId: 'user-message-1' });
+
+    const { result } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
+
+    // Available from the very first render -- no MMKV read, no stream call.
+    expect(result.current.generation).toEqual({
+      id: 'generation-1',
+      chatId: 'chat-1',
+      stage: 'preparing',
+      lastDurableSequence: 0,
+      userMessageId: 'user-message-1',
+    });
+    expect(consumeGenerationSseXhr).not.toHaveBeenCalled();
+
+    act(() => emit({ phase: 'running', lastDurableSequence: 3 }));
+
+    await waitFor(() => expect(result.current.generation).toMatchObject({ stage: 'running' }));
+    expect(consumeGenerationSseXhr).not.toHaveBeenCalled();
+    // The normal setGeneration -> persistGenerationCheckpoint path already
+    // covers resume-after-reload from here on, same as any other generation.
+    expect(JSON.parse(storage.getString(key)!)).toEqual({
+      generationId: 'generation-1',
+      phase: 'running',
+      lastDurableSequence: 3,
+      userMessageId: 'user-message-1',
+    });
+  });
+
+  it('treats an already-finished handoff as nothing in flight', () => {
+    const { controller } = createFakeController({
+      generationId: 'generation-1',
+      phase: 'committed',
+      lastDurableSequence: 9,
+    });
+    registerGenerationHandoff('chat-1', { controller, userMessageId: 'user-message-1' });
+
+    const { result } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
+
+    expect(result.current.generation).toBeNull();
     expect(storage.getString(key)).toBeUndefined();
   });
 

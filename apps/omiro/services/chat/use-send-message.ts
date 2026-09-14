@@ -2,23 +2,17 @@ import type { GenerationPhase } from '@hominem/chat';
 import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
-import * as Haptics from 'expo-haptics';
 import { useCallback, useRef } from 'react';
 
 import type { ChatMessageItem } from '~/components/chat';
-import { playAudioReply } from '~/components/media/audio-playback.service';
 import { getChatResponseLength } from '~/hooks/use-chat-response-length';
 import { useAuth } from '~/services/auth/auth-provider';
-import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
+import { chatKeys } from '~/services/notes/query-keys';
 
-import { invalidateChatQueries } from './chat-cache';
+import { applyGenerationCommitted, invalidateChatQueries } from './chat-cache';
 import { OFFLINE_UNAVAILABLE_ERROR } from './chat-errors';
 import { useChatGeneration } from './use-chat-generation';
 import { toMessageOutput } from './use-chat-messages';
-
-function triggerAssistantCompletionHaptic() {
-  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-}
 
 function fallbackId() {
   if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
@@ -123,20 +117,7 @@ export function useSendMessage({ chatId }: { chatId: string }) {
           return;
         }
         if (event.type === 'generation.committed') {
-          const committed = toMessageOutput(event.payload.message);
-          if (committed) {
-            queryClient.setQueryData<ChatMessageItem[]>(
-              chatKeys.messages(chatId),
-              (currentMessages = []) => [
-                ...currentMessages.filter((item) => item.id !== committed.id),
-                committed,
-              ],
-            );
-            if (committed.audio?.url) playAudioReply(committed.id, committed.audio.url);
-          }
-          triggerAssistantCompletionHaptic();
-          void queryClient.invalidateQueries({ queryKey: inboxKeys.pages() });
-          void invalidateChatQueries(queryClient, chatId);
+          applyGenerationCommitted({ queryClient, chatId, message: event.payload.message });
           setGeneration(null);
         }
       });

@@ -1,7 +1,6 @@
-import { getGenerationFailureMessage } from '@hominem/chat';
 import type { GenerationHistoryEvent as GenerationDomainEvent } from '@hominem/chat';
 import { ChatClient } from '@hominem/chat/client';
-import type { ChatGenerationController, GenerationClientState } from '@hominem/chat/client';
+import type { ChatGenerationController } from '@hominem/chat/client';
 import { xhrChatTransport } from '@hominem/chat/transport/xhr';
 import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -13,12 +12,12 @@ import { API_BASE_URL } from '~/constants';
 import { getChatResponseLength } from '~/hooks/use-chat-response-length';
 import { useAuth } from '~/services/auth/auth-provider';
 import { OFFLINE_UNAVAILABLE_ERROR } from '~/services/chat/chat-errors';
-import { persistGenerationCheckpoint } from '~/services/chat/use-chat-generation';
+import { registerGenerationHandoff } from '~/services/chat/generation-handoff';
 import { toMessageOutput } from '~/services/chat/use-chat-messages';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
 
-import { invalidateChatQueries } from './chat-cache';
+import { applyGenerationCommitted, invalidateChatQueries } from './chat-cache';
 
 interface StartChatOptions {
   onAccepted?: (event: Extract<GenerationDomainEvent, { type: 'generation.accepted' }>) => void;
@@ -29,19 +28,6 @@ type StartChatInput = {
   message: string;
   fileIds?: string[];
 };
-
-function createCheckpointStore() {
-  const checkpoints = new Map<string, GenerationClientState>();
-  return {
-    get: (generationId: string) => checkpoints.get(generationId) ?? null,
-    set: (state: GenerationClientState) => {
-      checkpoints.set(state.generationId, state);
-    },
-    remove: (generationId: string) => {
-      checkpoints.delete(generationId);
-    },
-  };
-}
 
 export function useStartChat() {
   const { getAuthHeaders } = useAuth();
@@ -54,7 +40,6 @@ export function useStartChat() {
       baseUrl: API_BASE_URL,
       headers: getAuthHeaders,
       transport: xhrChatTransport(),
-      checkpointStore: createCheckpointStore(),
     });
   }
 
@@ -81,8 +66,6 @@ export function useStartChat() {
       generationRef.current = generation;
       generation.subscribe((_state, event) => {
         if (!('payload' in event)) return;
-        const failureMessage = getGenerationFailureMessage(event);
-        if (failureMessage) throw new Error(failureMessage);
         if (event.type === 'generation.accepted') {
           startedChatIdRef.current = event.payload.chatId;
           const userMessage = event.payload.userMessage
@@ -94,32 +77,35 @@ export function useStartChat() {
             userMessage ? [userMessage] : [],
           );
           void reconcileStartedChat(event.payload.chatId);
-          // Seed the MMKV checkpoint the new chat screen's own useChatGeneration
-          // restores on mount, so "Thinking" is visible from its first render
-          // instead of appearing a beat late. Accepted tradeoff: that screen's
-          // auto-resume effect will then open a second, independent SSE
-          // connection to this same generation -- verified harmless (it only
-          // updates local state / idempotently invalidates queries), just a
-          // wasted extra connection for the life of one generation.
-          persistGenerationCheckpoint(event.payload.chatId, {
-            id: event.generationId,
-            stage: 'preparing',
-            lastDurableSequence: event.sequence ?? 0,
+          // Hand the live controller to whichever screen mounts next at this
+          // chatId: router.replace to the chat route unmounts this screen
+          // (and this ChatClient with it), so the destination screen's own
+          // useChatGeneration needs a way to pick up the generation already
+          // in flight. Adopting the controller directly -- rather than
+          // seeding a checkpoint and letting that screen resume from
+          // storage -- means one SSE connection total, and userMessageId
+          // travels as a plain object property instead of needing to
+          // survive a round trip through MMKV.
+          registerGenerationHandoff(event.payload.chatId, {
+            controller: generation,
+            ...(event.payload.userMessage ? { userMessageId: event.payload.userMessage.id } : {}),
           });
           onAccepted?.(event);
         }
         if (event.type === 'generation.committed' && startedChatIdRef.current) {
-          const assistantMessage = toMessageOutput(event.payload.message);
-          if (!assistantMessage) return;
-          queryClient.setQueryData<ChatMessageItem[]>(
-            chatKeys.messages(startedChatIdRef.current),
-            (messages = []) => [...messages, assistantMessage],
-          );
+          applyGenerationCommitted({
+            queryClient,
+            chatId: startedChatIdRef.current,
+            message: event.payload.message,
+          });
         }
       });
 
       try {
-        await generation.done;
+        const completed = await generation.done;
+        if (completed.phase === 'failed') {
+          throw new Error(completed.error ?? 'Generation failed.');
+        }
       } catch (error) {
         if (startedChatIdRef.current) void reconcileStartedChat(startedChatIdRef.current);
         throw error;
