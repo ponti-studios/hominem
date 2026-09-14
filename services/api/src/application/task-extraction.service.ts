@@ -31,14 +31,12 @@ type TaskExtractionResult = {
 // omitting them, so the model returns `description: null` instead of leaving it
 // out — accept both and normalize to `undefined` for callers.
 const RawTaskExtractionOutputSchema = z.object({
-  tasks: z
-    .array(
-      z.object({
-        title: z.string(),
-        description: z.string().nullable().optional(),
-      }),
-    )
-    .max(10),
+  tasks: z.array(
+    z.object({
+      title: z.string(),
+      description: z.string().nullable().optional(),
+    }),
+  ),
 });
 
 function parseTaskExtractionOutput(value: unknown): TaskExtractionOutput {

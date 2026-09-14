@@ -73,7 +73,7 @@ For each task:
 Decide how many tasks to return based on what's actually in the conversation:
 
 - If the conversation describes exactly one actionable item, return exactly one task
-- If it describes several distinct actionable items, return one task per item (up to 10) — go through the conversation systematically and make sure every distinct item is included, not just the first one or two
+- If it describes several distinct actionable items, return one task per item — go through the conversation systematically and make sure every distinct item is included, no matter how many there are, not just the first few
 - If the conversation contains no actionable items, return an empty list
 
 Rules:
