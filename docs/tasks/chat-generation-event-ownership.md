@@ -62,10 +62,10 @@ semantics (next task); effect persistence (later task).
 
 ## Acceptance criteria
 
-- [ ] AC-001: `rg -n "UNSOPPORTED" packages services` returns nothing.
-- [ ] AC-002: Exhaustiveness test covers every `GenerationHistoryEventPayload` variant and fails if a variant is added unclassified.
-- [ ] AC-003: Behavioral test fails if any filter arm is removed (double-write) or any boundary write is lost.
-- [ ] AC-004: Engine + testkit suites green; no behavior change.
+- [x] AC-001: `rg -n "UNSOPPORTED" packages services` returns nothing.
+- [x] AC-002: Exhaustiveness test covers every `GenerationHistoryEventPayload` variant and fails if a variant is added unclassified.
+- [x] AC-003: Behavioral test fails if any filter arm is removed (double-write) or any boundary write is lost.
+- [x] AC-004: Engine + testkit suites green; no behavior change.
 
 ## Exit gate
 
