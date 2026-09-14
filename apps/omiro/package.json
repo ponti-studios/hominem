@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build:dev": "npx eas-cli build --platform ios --profile development",
+    "build:dev:device": "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer APP_ENV=development expo run:ios --device",
     "build:e2e": "npx eas-cli build --platform ios --profile e2e",
     "build:prod:local": "bash scripts/build-prod-local.sh",
     "build:prod:remote": "node scripts/verify-release-identity.mjs && npx eas-cli build --platform ios --profile production",

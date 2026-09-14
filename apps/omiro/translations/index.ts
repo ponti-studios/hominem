@@ -360,6 +360,15 @@ const t = {
       account: 'Account',
       privacy: 'Privacy',
       chats: 'Chats',
+      about: 'About',
+    },
+    about: {
+      version: 'Version',
+      update: 'Update',
+      onLatestBuild: 'Running the latest build',
+      updated: 'Updated',
+      developmentBuild: 'Development build',
+      unknown: 'Unknown',
     },
     archivedChatsScreen: {
       title: 'Archived chats',

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
+import { AboutSection } from '~/components/settings/AboutSection';
 import { AccountIdentitySection } from '~/components/settings/AccountIdentitySection';
 import { DangerZoneSection } from '~/components/settings/DangerZoneSection';
 import { PrivacySection } from '~/components/settings/PrivacySection';
@@ -131,6 +132,8 @@ function Settings() {
           accessory=<AppIcon name="chevron.right" size={12} tintColor={tertiaryColor} />
         />
       </View>
+
+      <AboutSection />
 
       <DangerZoneSection onLogoutPress={onLogoutPress} />
     </ScrollView>
