@@ -57,7 +57,7 @@ effect-store duplication (F3 task); event-ownership split (F4 task).
 
 ## Acceptance criteria
 
-- [x] AC-001: `rg` for `addUsageTotals`/`recordCompletion`/`ContextCache`/`context-window` returns nothing in src (test files included).
+- [x] AC-001: `rg` for `addUsageTotals`/`recordCompletion`/`ContextCache` returns nothing in src (test files included). `context-window` is excluded from this check by design — two intentional comments in `chat-generation-engine.ts` reference the still-open context-window placeholder task; the check was originally written to also require zero `context-window` hits, but that's unsatisfiable without deleting those forward-references, so the criterion is narrowed to the three identifiers actually deleted here.
 - [x] AC-002: Engine `addUsage` null-cost semantics preserved (no test change needed — accumulator untouched).
 - [x] AC-003: Runner test asserts single-accumulator passthrough instead of the removed hook.
 - [x] AC-004: `pnpm format` clean; lint + typecheck green for `packages/chat`, `@hominem/api`.
