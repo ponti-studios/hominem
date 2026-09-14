@@ -139,32 +139,34 @@ export function useChatGeneration({
   );
   const controllerRef = useRef<ChatGenerationController | null>(null);
 
-  // Lazy, one-time take: React may invoke this render body twice under
-  // StrictMode in dev, but the sentinel guard means only the first pass
-  // actually consumes the handoff -- a second pass (or a real second mount)
-  // finds it already gone and falls back to the normal MMKV restore below,
-  // which is correct, just not the fast path.
-  const handoffRef = useRef<{ taken?: PendingGenerationHandoff } | null>(null);
-  if (handoffRef.current === null) {
-    handoffRef.current = { taken: takeGenerationHandoff(chatId) };
-  }
-
-  const [initialGeneration] = useState<ChatGenerationState | null>(() => {
-    const handoff = handoffRef.current?.taken;
-    if (handoff) {
-      const state = handoff.controller.state;
-      // Already finished by the time this screen mounted -- the message is
-      // already in the query cache from the handoff site; nothing to stream.
-      if (state.phase === 'committed' || state.phase === 'cancelled') return null;
-      return {
+  // One-time take, done inside useState's lazy initializer rather than by
+  // mutating a ref during render: React may invoke this initializer twice
+  // under StrictMode in dev, but only the first call actually consumes the
+  // handoff -- a second call (or a real second mount) finds it already gone
+  // and falls back to the normal MMKV restore below, which is correct, just
+  // not the fast path.
+  const [{ initialGeneration, handoff }] = useState<{
+    initialGeneration: ChatGenerationState | null;
+    handoff: PendingGenerationHandoff | null;
+  }>(() => {
+    const taken = takeGenerationHandoff(chatId) ?? null;
+    if (!taken) return { initialGeneration: restoreGeneration(chatId), handoff: null };
+    const state = taken.controller.state;
+    // Already finished by the time this screen mounted -- the message is
+    // already in the query cache from the handoff site; nothing to stream.
+    if (state.phase === 'committed' || state.phase === 'cancelled') {
+      return { initialGeneration: null, handoff: null };
+    }
+    return {
+      initialGeneration: {
         id: state.generationId,
         chatId,
         stage: state.phase === 'cancel_requested' ? 'stopping' : state.phase,
         lastDurableSequence: state.lastDurableSequence,
-        ...(handoff.userMessageId ? { userMessageId: handoff.userMessageId } : {}),
-      };
-    }
-    return restoreGeneration(chatId);
+        ...(taken.userMessageId ? { userMessageId: taken.userMessageId } : {}),
+      },
+      handoff: taken,
+    };
   });
   const generationRef = useRef<ChatGenerationState | null>(initialGeneration);
   const [generation, setGenerationState] = useState(generationRef.current);
@@ -267,13 +269,12 @@ export function useChatGeneration({
   );
 
   useEffect(() => {
-    const handoff = handoffRef.current?.taken;
     if (handoff && generationRef.current) {
       void adoptHandoff(handoff, generationRef.current).catch(() => undefined);
       return;
     }
     if (generationRef.current) void resumeGeneration().catch(() => undefined);
-  }, [adoptHandoff, resumeGeneration]);
+  }, [adoptHandoff, handoff, resumeGeneration]);
 
   const cancelGeneration = useCallback(async () => {
     const current = generationRef.current;
