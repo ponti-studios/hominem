@@ -1,4 +1,4 @@
-import { Library, LogOut, Settings } from 'lucide-react';
+import { Library, ListTodo, LogOut, Settings } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 
 import {
@@ -43,6 +43,12 @@ export function AccountMenu({ user }: { user: User }) {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/tasks" viewTransition>
+            <ListTodo />
+            Tasks
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/collections" viewTransition>
             <Library />

@@ -1,4 +1,4 @@
-import type { ExtractedTask } from '@hominem/chat/react';
+import type { CreateTasksInput } from '@hominem/chat/react';
 import { useTaskExtraction } from '@hominem/chat/react';
 import type { ChatMessageSnapshot } from '@hominem/chat/schemas';
 import type { ArtifactType } from '@hominem/chat/types';
@@ -38,8 +38,8 @@ export function ChatTaskDialog({
       if (!response.ok) throw new Error('Task extraction failed.');
       return response.json();
     },
-    createTasks: async (tasks: ExtractedTask[]) => {
-      const response = await client.api.tasks.batch.$post({ json: { tasks } });
+    createTasks: async ({ groups, tasks }: CreateTasksInput) => {
+      const response = await client.api.tasks.batch.$post({ json: { groups, tasks } });
       if (!response.ok) throw new Error('Task creation failed.');
       const result = await response.json();
       const toCreatedRef = (task: {
@@ -54,7 +54,10 @@ export function ChatTaskDialog({
         ...(task.updatedAt ? { updatedAt: task.updatedAt } : {}),
       });
       return {
-        parent: result.parent ? toCreatedRef(result.parent) : null,
+        groups: result.groups.map((group) => ({
+          parent: toCreatedRef(group.parent),
+          tasks: group.tasks.map(toCreatedRef),
+        })),
         tasks: result.tasks.map(toCreatedRef),
       };
     },
