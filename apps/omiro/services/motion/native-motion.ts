@@ -1,5 +1,12 @@
 import type { WithTimingConfig } from 'react-native-reanimated';
-import { Easing } from 'react-native-reanimated';
+import {
+  Easing,
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  FadeOutUp,
+  LinearTransition,
+} from 'react-native-reanimated';
 
 const portableMotion = {
   distance: { rowEnter: '0.5rem', sceneReveal: '2rem' },
@@ -44,6 +51,19 @@ export const nativeMotionContracts = {
   interruption: portableMotion.interruption.policy,
   reducedMotion: portableMotion.reducedMotion.policy,
 } as const;
+
+// Shared entering/exiting/layout builders for the chat + composer surface --
+// one instance per shape, reused everywhere instead of every component
+// constructing its own `.duration(nativeMotionContracts.duration.quick)`
+// call. See chat-message.tsx, chat-message-actions.tsx, ComposerAttachmentRow.tsx,
+// Composer.tsx for the split-node pattern these are used with.
+export const nativeMotionAnimations = {
+  fadeInQuick: FadeIn.duration(nativeMotionContracts.duration.quick),
+  fadeOutQuick: FadeOut.duration(nativeMotionContracts.duration.quick),
+  fadeInDownQuick: FadeInDown.duration(nativeMotionContracts.duration.quick),
+  fadeOutUpQuick: FadeOutUp.duration(nativeMotionContracts.duration.quick),
+  layoutQuick: LinearTransition.duration(nativeMotionContracts.duration.quick),
+};
 
 export const nativeMotionTiming = {
   quick: {

@@ -1,31 +1,28 @@
 import type { ChatMessageItem } from '@hominem/chat';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeOut,
-  FadeOutUp,
-  LinearTransition,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
-import { nativeMotionContracts } from '~/services/motion/native-motion';
+import { nativeMotionAnimations } from '~/services/motion/native-motion';
 import t from '~/translations';
 
 import { ActiveMessageActions } from './chat-message-actions';
 import { MessageContent } from './chat-message-content';
 import { MessageDebug } from './chat-message-debug';
-import { MessageEditModal } from './chat-message-edit-modal';
 import { MessageToolCalls } from './chat-message-tool-calls';
 import { ChatThinkingIndicator } from './chat-thinking-indicator';
 
 type ChatMessageProps = {
   message: ChatMessageItem;
   showDebug?: boolean;
-  onEdit?: (messageId: string, content: string) => void;
+  // Requests that the parent list open its single shared edit modal for this
+  // message -- editing state (draft text, which message is being edited)
+  // lives once at the list level instead of duplicated per row, since at
+  // most one row is ever being edited at a time. See ChatMessageList.
+  onRequestEdit?: (messageId: string) => void;
   onRegenerate?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
   onRetry?: (messageId: string) => void;
@@ -39,12 +36,20 @@ type ChatMessageProps = {
   // or a page of history loaded. Gates the entrance animation so opening a
   // chat doesn't replay it for every existing message.
   isNewMessage?: boolean;
+  // True only for the render where this message's `failed` flag just
+  // flipped from false to true (a live retry failure or stream
+  // interruption), not a historical failure that was already there when
+  // this row loaded or recycled into view. Computed by the parent list from
+  // message-id-keyed state, not derived locally here -- FlashList recycles
+  // this component across different messages, so this component's own
+  // mount timing doesn't correspond to any one message's lifetime.
+  isNewlyFailed?: boolean;
 };
 
 export const ChatMessage = memo(function ChatMessage({
   message,
   showDebug = false,
-  onEdit,
+  onRequestEdit,
   onRegenerate,
   onDelete,
   onRetry,
@@ -54,6 +59,7 @@ export const ChatMessage = memo(function ChatMessage({
   onActivate,
   formatTimestamp,
   isNewMessage = false,
+  isNewlyFailed = false,
 }: ChatMessageProps) {
   const {
     foreground: textPrimary,
@@ -102,8 +108,8 @@ export const ChatMessage = memo(function ChatMessage({
   const rowEntering =
     isUser && isNewMessage
       ? reducedMotion
-        ? FadeIn.duration(nativeMotionContracts.duration.quick)
-        : FadeInDown.duration(nativeMotionContracts.duration.quick)
+        ? nativeMotionAnimations.fadeInQuick
+        : nativeMotionAnimations.fadeInDownQuick
       : undefined;
   // Lets the message's height settle smoothly when the typing indicator
   // goes away, Markdown reflows, or a failure/retry banner shows or clears
@@ -114,34 +120,26 @@ export const ChatMessage = memo(function ChatMessage({
   // slides in from its previous occupant's position (ghosting) instead of
   // just appearing. Scoping it to the subtree that actually reflows avoids
   // that while keeping the smooth height transition.
-  const contentLayout = reducedMotion
-    ? undefined
-    : LinearTransition.duration(nativeMotionContracts.duration.quick);
-  // If a message is already failed the moment this row mounts, that's
-  // historical (loaded on chat open, or a foreground/background reconcile),
-  // not something the user just watched happen -- so it shows up static,
-  // no animation. Flips to false after the first commit, so a *later*
-  // failure (stream interrupted, retry fails again) still animates in.
-  const skipInitialBannerEntranceRef = useRef(failed);
-  useEffect(() => {
-    skipInitialBannerEntranceRef.current = false;
-  }, []);
-  const bannerEntering = skipInitialBannerEntranceRef.current
-    ? undefined
-    : reducedMotion
-      ? FadeIn.duration(nativeMotionContracts.duration.quick)
-      : FadeInDown.duration(nativeMotionContracts.duration.quick);
+  const contentLayout = reducedMotion ? undefined : nativeMotionAnimations.layoutQuick;
+  // Only animate the retry/interrupted banner in when the failure is new
+  // this session (see isNewlyFailed prop doc) -- a historical failure just
+  // appears static instead of replaying its entrance every time the row
+  // loads or gets recycled into view.
+  const bannerEntering = isNewlyFailed
+    ? reducedMotion
+      ? nativeMotionAnimations.fadeInQuick
+      : nativeMotionAnimations.fadeInDownQuick
+    : undefined;
   const bannerExiting = reducedMotion
-    ? FadeOut.duration(nativeMotionContracts.duration.quick)
-    : FadeOutUp.duration(nativeMotionContracts.duration.quick);
+    ? nativeMotionAnimations.fadeOutQuick
+    : nativeMotionAnimations.fadeOutUpQuick;
+
   const timestamp = message.createdAt ? formatTimestamp(message.createdAt) : '';
   const canRegenerate = !isUser && !isStreaming && !failed && onRegenerate !== undefined;
-  const canEdit = isUser && !isStreaming && onEdit !== undefined;
+  const canEdit = isUser && !isStreaming && onRequestEdit !== undefined;
   const canDelete = !isStreaming && onDelete !== undefined;
   const hasReasoning = Boolean(message.reasoning && message.reasoning.trim().length > 0);
   const renderedToolCalls = message.toolCalls ?? [];
-  const [isEditing, setIsEditing] = useState(false);
-  const [draftMessage, setDraftMessage] = useState(content);
 
   const textStyle = useMemo(
     () => ({
@@ -151,20 +149,6 @@ export const ChatMessage = memo(function ChatMessage({
     }),
     [isUser, primaryForeground, textPrimary],
   );
-
-  const closeEdit = () => {
-    setDraftMessage(content);
-    setIsEditing(false);
-  };
-
-  const saveEdit = () => {
-    const trimmedContent = draftMessage.trim();
-    if (!trimmedContent) {
-      return;
-    }
-    onEdit?.(message.id, trimmedContent);
-    setIsEditing(false);
-  };
 
   return (
     <Animated.View
@@ -177,6 +161,7 @@ export const ChatMessage = memo(function ChatMessage({
         responding={isRespondingToToolCall}
         toolCalls={renderedToolCalls}
       />
+
       <Pressable
         onPress={isStreaming ? undefined : handleActivate}
         style={[isUser ? styles.userBubble : styles.assistantBubble, isUser && styles.continuous]}
@@ -187,14 +172,6 @@ export const ChatMessage = memo(function ChatMessage({
             <Text style={styles.reasoningText}>{message.reasoning}</Text>
           </View>
         ) : null}
-        <MessageEditModal
-          content={content}
-          draftMessage={draftMessage}
-          onCancel={closeEdit}
-          onChangeDraft={setDraftMessage}
-          onSave={saveEdit}
-          visible={isEditing}
-        />
 
         <Animated.View layout={contentLayout} style={styles.content}>
           <MessageContent content={content} enableMarkdown={!isStreaming} textStyle={textStyle}>
@@ -237,10 +214,7 @@ export const ChatMessage = memo(function ChatMessage({
         isUser={isUser}
         message={message}
         onDelete={onDelete}
-        onEdit={() => {
-          setDraftMessage(content);
-          setIsEditing(true);
-        }}
+        onEdit={() => onRequestEdit?.(message.id)}
         onRegenerate={onRegenerate}
         timestamp={timestamp}
       />

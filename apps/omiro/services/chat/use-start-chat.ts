@@ -13,6 +13,7 @@ import { API_BASE_URL } from '~/constants';
 import { getChatResponseLength } from '~/hooks/use-chat-response-length';
 import { useAuth } from '~/services/auth/auth-provider';
 import { OFFLINE_UNAVAILABLE_ERROR } from '~/services/chat/chat-errors';
+import { persistGenerationCheckpoint } from '~/services/chat/use-chat-generation';
 import { toMessageOutput } from '~/services/chat/use-chat-messages';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
@@ -93,6 +94,18 @@ export function useStartChat() {
             userMessage ? [userMessage] : [],
           );
           void reconcileStartedChat(event.payload.chatId);
+          // Seed the MMKV checkpoint the new chat screen's own useChatGeneration
+          // restores on mount, so "Thinking" is visible from its first render
+          // instead of appearing a beat late. Accepted tradeoff: that screen's
+          // auto-resume effect will then open a second, independent SSE
+          // connection to this same generation -- verified harmless (it only
+          // updates local state / idempotently invalidates queries), just a
+          // wasted extra connection for the life of one generation.
+          persistGenerationCheckpoint(event.payload.chatId, {
+            id: event.generationId,
+            stage: 'preparing',
+            lastDurableSequence: event.sequence ?? 0,
+          });
           onAccepted?.(event);
         }
         if (event.type === 'generation.committed' && startedChatIdRef.current) {

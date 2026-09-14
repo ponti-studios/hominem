@@ -1,17 +1,14 @@
 import type { ChatMessageItem } from '@hominem/chat';
 import { StyleSheet, Text, View } from 'react-native';
-import Reanimated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
+import Reanimated from 'react-native-reanimated';
 
 import { useAppTheme } from '~/components/theme';
+import { nativeMotionAnimations } from '~/services/motion/native-motion';
 
 import { ActionIconButton } from '../ui/action-icon-button';
 import { ChatCopyButton } from './chat-copy-button';
 import { ChatShareButton } from './chat-share-button';
 import { ChatSpeakButton } from './chat-speak-button';
-
-const ACTIONS_ENTERING = FadeInDown.duration(240).springify().damping(20).stiffness(220).mass(0.9);
-const ACTIONS_EXITING = FadeOutUp.duration(180).springify().damping(24).stiffness(260).mass(0.8);
-const ACTIONS_LAYOUT = LinearTransition.duration(200);
 
 export function ActiveMessageActions({
   isActive,
@@ -39,25 +36,30 @@ export function ActiveMessageActions({
   }
 
   return (
+    // Split across two nodes on purpose: entering/exiting (mount/unmount)
+    // lives on the outer view, layout (reposition while mounted, e.g. when
+    // a sibling message's height changes) lives on the inner one. Both on
+    // the same node fight over opacity -- see chat-message.tsx.
     <Reanimated.View
-      entering={ACTIONS_ENTERING}
-      exiting={ACTIONS_EXITING}
-      layout={ACTIONS_LAYOUT}
+      entering={nativeMotionAnimations.fadeInDownQuick}
+      exiting={nativeMotionAnimations.fadeOutUpQuick}
       style={styles.actionContainer}
     >
-      <View style={[styles.actions, isUser && styles.actionsEnd]}>
-        {timestamp ? <Text style={{ color: tertiary, fontSize: 12 }}>{timestamp}</Text> : null}
-        <ChatCopyButton message={message} />
-        <ChatSpeakButton message={message} />
-        <ChatShareButton message={message} />
-        {actions.canEdit ? <ActionIconButton icon="square.and.pencil" onPress={onEdit} /> : null}
-        {actions.canRegenerate ? (
-          <ActionIconButton icon="arrow.clockwise" onPress={() => onRegenerate?.(message.id)} />
-        ) : null}
-        {actions.canDelete ? (
-          <ActionIconButton icon="trash" isDestructive onPress={() => onDelete?.(message.id)} />
-        ) : null}
-      </View>
+      <Reanimated.View layout={nativeMotionAnimations.layoutQuick}>
+        <View style={[styles.actions, isUser && styles.actionsEnd]}>
+          {timestamp ? <Text style={{ color: tertiary, fontSize: 12 }}>{timestamp}</Text> : null}
+          <ChatCopyButton message={message} />
+          <ChatSpeakButton message={message} />
+          <ChatShareButton message={message} />
+          {actions.canEdit ? <ActionIconButton icon="square.and.pencil" onPress={onEdit} /> : null}
+          {actions.canRegenerate ? (
+            <ActionIconButton icon="arrow.clockwise" onPress={() => onRegenerate?.(message.id)} />
+          ) : null}
+          {actions.canDelete ? (
+            <ActionIconButton icon="trash" isDestructive onPress={() => onDelete?.(message.id)} />
+          ) : null}
+        </View>
+      </Reanimated.View>
     </Reanimated.View>
   );
 }

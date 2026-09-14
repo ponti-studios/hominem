@@ -31,6 +31,24 @@ function restoreGeneration(chatId: string): ChatGenerationState | null {
   }
 }
 
+// Writes the same MMKV checkpoint shape `restoreGeneration` reads, under the
+// same chatId-scoped key. Exported so a generation started from outside this
+// hook (e.g. the new-chat creation flow, which owns its own ChatClient) can
+// seed this hook's initial state before the consuming screen ever mounts.
+export function persistGenerationCheckpoint(
+  chatId: string,
+  state: Pick<ChatGenerationState, 'id' | 'stage' | 'lastDurableSequence'>,
+) {
+  storage.set(
+    generationStorageKey(chatId),
+    JSON.stringify({
+      generationId: state.id,
+      phase: state.stage === 'stopping' ? 'cancel_requested' : state.stage,
+      lastDurableSequence: state.lastDurableSequence,
+    }),
+  );
+}
+
 function checkpointStore(chatId: string) {
   return {
     get: (_id: string) => {
@@ -80,14 +98,7 @@ export function useChatGeneration({
         storage.remove(generationStorageKey(chatId));
         return;
       }
-      storage.set(
-        generationStorageKey(chatId),
-        JSON.stringify({
-          generationId: next.id,
-          phase: next.stage === 'stopping' ? 'cancel_requested' : next.stage,
-          lastDurableSequence: next.lastDurableSequence,
-        }),
-      );
+      persistGenerationCheckpoint(chatId, next);
     },
     [chatId],
   );
