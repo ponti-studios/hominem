@@ -15,6 +15,7 @@ import { db } from '@hominem/db/core';
 import { runInTransaction } from '@hominem/db/transaction';
 import { embeddingQueue } from '@hominem/queues';
 import { redis } from '@hominem/services/redis';
+import { logger } from '@hominem/telemetry';
 
 import { recordAIUsageEvent, startAIUsageTimer } from '../application/ai-usage.service';
 import { AsyncEventQueue } from './async-event-queue';
@@ -254,6 +255,13 @@ async function executeGeneration(
     deliver(committed.events);
   } catch (error) {
     streamError = error;
+    logger.error('chat_generation_failed', {
+      generationId: input.generationId,
+      chatId: input.chatId,
+      userId: input.userId,
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     try {
       await append({
         type: 'generation.failed',

@@ -39,15 +39,15 @@ function call(overrides: Partial<GenerationToolCall> = {}): GenerationToolCall {
 }
 
 describe('reduceProviderTurnCompleted', () => {
-  it('fails when a required tool call is missing', () => {
+  it('moves to saving when a required tool call is missing, instead of failing', () => {
     const step = reduceProviderTurnCompleted(baseState(), {
       type: 'provider-turn-completed',
       requiredToolCall: true,
       confirmationCallIds: [],
     });
 
-    expect(step.state.phase).toBe('failed');
-    expect(step.state.lastError).toBe('The model did not perform the required lookup');
+    expect(step.state.phase).toBe('saving');
+    expect(step.commands.at(-1)).toEqual({ type: 'save-generation' });
   });
 
   it('moves to saving when no tool call was requested and none is required', () => {

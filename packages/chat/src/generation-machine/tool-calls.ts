@@ -7,7 +7,6 @@
 // it's entirely about the tool-call queue — it just reads
 // `state.requestedToolCalls`, which `provider.ts` already built up.
 
-import { reduceGenerationFailed } from './lifecycle';
 import { persistCommand, phaseCommands, toolCallIdempotencyKey } from './shared';
 import type {
   GenerationHistoryEventPayload,
@@ -43,9 +42,11 @@ export function reduceProviderTurnCompleted(
 ): GenerationStep {
   const calls = state.requestedToolCalls.filter((call) => call.name);
   if (calls.length === 0) {
-    if (input.requiredToolCall) {
-      return reduceGenerationFailed(state, 'The model did not perform the required lookup');
-    }
+    // A required lookup that the model didn't honor (routing over-triggered,
+    // or the provider ignored a forced tool_choice) degrades to a normal
+    // reply instead of failing the whole generation — an unwanted answer
+    // beats no answer, and the router's classification is a heuristic, not
+    // a guarantee.
     return {
       state: { ...state, phase: 'saving', requestedToolCalls: [] },
       commands: [...phaseCommands(state.generationId, 'saving'), { type: 'save-generation' }],
