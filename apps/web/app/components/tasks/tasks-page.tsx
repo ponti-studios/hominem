@@ -5,21 +5,11 @@ import { Link } from 'react-router';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { useTasksList } from '~/hooks/use-tasks';
+import { formatTaskDate, taskPriorityVariant } from '~/lib/task-badges';
 
 import { CreateTaskDialog } from './create-task-dialog';
 
 type StatusFilter = 'all' | 'pending' | 'completed';
-
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  day: 'numeric',
-  month: 'short',
-});
-
-const priorityVariant: Record<string, 'destructive' | 'secondary' | 'outline'> = {
-  high: 'destructive',
-  medium: 'secondary',
-  low: 'outline',
-};
 
 export function TasksPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
@@ -100,7 +90,7 @@ export function TasksPage() {
                       {task.title}
                     </span>
                     {task.priority ? (
-                      <Badge variant={priorityVariant[task.priority] ?? 'outline'}>
+                      <Badge variant={taskPriorityVariant[task.priority] ?? 'outline'}>
                         {task.priority}
                       </Badge>
                     ) : null}
@@ -113,11 +103,9 @@ export function TasksPage() {
                   ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-4 text-sm text-muted-foreground">
-                  {task.dueAt ? (
-                    <span>Due {dateFormatter.format(new Date(task.dueAt))}</span>
-                  ) : null}
+                  {task.dueAt ? <span>Due {formatTaskDate(task.dueAt)}</span> : null}
                   {task.scheduledStartAt ? (
-                    <span>{dateFormatter.format(new Date(task.scheduledStartAt))}</span>
+                    <span>{formatTaskDate(task.scheduledStartAt)}</span>
                   ) : null}
                   <ChevronRight className="size-4" />
                 </div>
