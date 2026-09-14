@@ -24,7 +24,7 @@ import 'dotenv/config';
 import z from 'zod';
 
 const API_URL = (process.env.API_URL ?? 'https://api.lvh.me').replace(/\/$/, '');
-const ORIGIN = process.env.E2E_ORIGIN ?? process.env.WEB_URL ?? 'http://localhost:4445';
+const ORIGIN = process.env.E2E_ORIGIN ?? process.env.WEB_URL ?? 'https://web.lvh.me';
 const TEST_EMAIL = process.env.E2E_TEST_EMAIL ?? 'e2e@test.hakumi.io';
 const EXPORT_PREFIX = process.env.E2E_EXPORT_PREFIX ?? 'E2E';
 const OTP_POLL_TIMEOUT_MS = 15_000;
