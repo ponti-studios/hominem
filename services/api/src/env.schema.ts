@@ -14,7 +14,7 @@ export const apiSchema = runtimeSchema.extend({
   ...redisSchema.shape,
   PORT: z.coerce.number().int().positive().optional(),
   WORKER_PORT: z.coerce.number().int().positive().optional(),
-  API_URL: z.url().default('http://api.lvh.me'),
+  API_URL: z.url().default('https://api.lvh.me'),
   CAREER_URL: z.url().default('http://localhost:4451'),
   WEB_URL: z.url().default('http://web.lvh.me'),
   FINANCE_URL: z.url().default('http://finance.lvh.me'),

@@ -32,7 +32,8 @@ For most API changes, the loop is simple:
 
 `pnpm --filter @hominem/api dev` starts the API in watch mode through Turbo.
 
-The API listens on `http://localhost:4040`.
+The API process listens on port `4040`; browser-facing development traffic uses
+the Portless URL `https://api.lvh.me`.
 
 For local Browser chat and auth verification, set `ENV=scripted` in the API
 environment and restart the API. This mocks both the AI and email providers;
