@@ -27,9 +27,12 @@ export interface ExtractedTasksOutput {
 }
 
 // A group tag on a flattened review item — undefined for a standalone task.
+// groupTitle is display data only; groupIndex is the identity used to
+// reconstitute groups on accept (titles are not unique).
 export interface TaskProposalItem extends ExtractedTask {
   id: string;
   groupTitle?: string;
+  groupIndex?: number;
 }
 
 export interface CreatedTaskRef {
@@ -104,6 +107,7 @@ export function buildExtractedTasksProposal(
         ...task,
         id: `task-proposal-group${groupIndex}-${taskIndex}`,
         groupTitle: group.title,
+        groupIndex,
       })),
     ),
     ...tasks.map((task, taskIndex) => ({
@@ -139,37 +143,79 @@ export function buildExtractedTasksProposal(
 }
 
 // Reconstitute the {groups, tasks} shape the batch-create endpoint expects
-// from the flat, possibly partially-rejected review items. A group left with
+// from the flat, possibly partially-rejected review items. Groups are keyed
+// by their extraction index, not their title — the model can emit the same
+// title twice, and those must stay separate parents. A group left with
 // fewer than 2 items after rejection is demoted to standalone tasks, since
 // the server requires at least 2 tasks per group.
-function regroupAcceptedItems(items: TaskProposalItem[]): CreateTasksInput {
-  const groupOrder: string[] = [];
-  const groupedByTitle = new Map<string, ExtractedTask[]>();
+export function regroupAcceptedItems(items: TaskProposalItem[]): CreateTasksInput {
+  const groupOrder: number[] = [];
+  const grouped = new Map<number, { title: string; tasks: ExtractedTask[] }>();
   const standalone: ExtractedTask[] = [];
 
-  for (const { id: _id, groupTitle, ...task } of items) {
-    if (groupTitle === undefined) {
+  for (const { id: _id, groupTitle, groupIndex, ...task } of items) {
+    if (groupTitle === undefined || groupIndex === undefined) {
       standalone.push(task);
       continue;
     }
-    if (!groupedByTitle.has(groupTitle)) {
-      groupOrder.push(groupTitle);
-      groupedByTitle.set(groupTitle, []);
+    if (!grouped.has(groupIndex)) {
+      groupOrder.push(groupIndex);
+      grouped.set(groupIndex, { title: groupTitle, tasks: [] });
     }
-    groupedByTitle.get(groupTitle)!.push(task);
+    grouped.get(groupIndex)!.tasks.push(task);
   }
 
   const groups: { title: string; tasks: ExtractedTask[] }[] = [];
-  for (const title of groupOrder) {
-    const groupTasks = groupedByTitle.get(title)!;
-    if (groupTasks.length < 2) {
-      standalone.push(...groupTasks);
+  for (const index of groupOrder) {
+    const group = grouped.get(index)!;
+    if (group.tasks.length < 2) {
+      standalone.push(...group.tasks);
     } else {
-      groups.push({ title, tasks: groupTasks });
+      groups.push(group);
     }
   }
 
   return { groups, tasks: standalone };
+}
+
+// Batch endpoint caps — keep in sync with CreateTaskBatchSchema.
+const MAX_GROUPS_PER_BATCH = 10;
+const MAX_STANDALONE_PER_BATCH = 20;
+const MAX_TASKS_PER_GROUP = 20;
+
+// Split acceptance into as many batch calls as the endpoint caps require,
+// so a large review never fails on accept after passing review. Groups stay
+// atomic (never split across calls — one group is one parent row); only a
+// runaway group over the per-group cap is split, with a sub-2 tail demoted
+// to standalone under the same demotion rule as review rejection.
+export function chunkCreateInput(input: CreateTasksInput): CreateTasksInput[] {
+  const atomic: { title: string; tasks: ExtractedTask[] }[] = [];
+  const overflow: ExtractedTask[] = [];
+  for (const group of input.groups) {
+    if (group.tasks.length <= MAX_TASKS_PER_GROUP) {
+      atomic.push(group);
+      continue;
+    }
+    for (let i = 0; i < group.tasks.length; i += MAX_TASKS_PER_GROUP) {
+      const piece = group.tasks.slice(i, i + MAX_TASKS_PER_GROUP);
+      if (piece.length < 2) overflow.push(...piece);
+      else atomic.push({ title: group.title, tasks: piece });
+    }
+  }
+  const allStandalone = [...input.tasks, ...overflow];
+  const standaloneChunks: ExtractedTask[][] = [];
+  for (let i = 0; i < allStandalone.length; i += MAX_STANDALONE_PER_BATCH) {
+    standaloneChunks.push(allStandalone.slice(i, i + MAX_STANDALONE_PER_BATCH));
+  }
+  const groupChunks: { title: string; tasks: ExtractedTask[] }[][] = [];
+  for (let i = 0; i < atomic.length; i += MAX_GROUPS_PER_BATCH) {
+    groupChunks.push(atomic.slice(i, i + MAX_GROUPS_PER_BATCH));
+  }
+  const count = Math.max(groupChunks.length, standaloneChunks.length);
+  return Array.from({ length: count }, (_, i) => ({
+    groups: groupChunks[i] ?? [],
+    tasks: standaloneChunks[i] ?? [],
+  })).filter((chunk) => chunk.groups.length + chunk.tasks.length > 0);
 }
 
 // This hook only sends task_list; other ArtifactType values remain in the
@@ -202,7 +248,13 @@ export function useTaskExtraction({
           throw new Error('No tasks to create');
         }
 
-        const result = await createTasks(regroupAcceptedItems(review.items));
+        const input = regroupAcceptedItems(review.items);
+        const result: CreatedTasksResult = { groups: [], tasks: [] };
+        for (const chunk of chunkCreateInput(input)) {
+          const created = await createTasks(chunk);
+          result.groups.push(...created.groups);
+          result.tasks.push(...created.tasks);
+        }
         onTasksChanged?.();
         // Anchor to the first group (or first standalone task if none). When
         // the extraction produced multiple top-level items, only the first
