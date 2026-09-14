@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Reanimated from 'react-native-reanimated';
 
 import { useAppTheme } from '~/components/theme';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { nativeMotionAnimations } from '~/services/motion/native-motion';
 
 import { ActionIconButton } from '../ui/action-icon-button';
@@ -30,22 +31,27 @@ export function ActiveMessageActions({
   onDelete?: (messageId: string) => void;
 }) {
   const { tertiary } = useAppTheme().colors;
+  const reducedMotion = useReducedMotion();
 
   if (!isActive) {
     return null;
   }
+
+  const entering = reducedMotion
+    ? nativeMotionAnimations.fadeInQuick
+    : nativeMotionAnimations.fadeInDownQuick;
+  const exiting = reducedMotion
+    ? nativeMotionAnimations.fadeOutQuick
+    : nativeMotionAnimations.fadeOutUpQuick;
+  const layout = reducedMotion ? undefined : nativeMotionAnimations.layoutQuick;
 
   return (
     // Split across two nodes on purpose: entering/exiting (mount/unmount)
     // lives on the outer view, layout (reposition while mounted, e.g. when
     // a sibling message's height changes) lives on the inner one. Both on
     // the same node fight over opacity -- see chat-message.tsx.
-    <Reanimated.View
-      entering={nativeMotionAnimations.fadeInDownQuick}
-      exiting={nativeMotionAnimations.fadeOutUpQuick}
-      style={styles.actionContainer}
-    >
-      <Reanimated.View layout={nativeMotionAnimations.layoutQuick}>
+    <Reanimated.View entering={entering} exiting={exiting} style={styles.actionContainer}>
+      <Reanimated.View layout={layout}>
         <View style={[styles.actions, isUser && styles.actionsEnd]}>
           {timestamp ? <Text style={{ color: tertiary, fontSize: 12 }}>{timestamp}</Text> : null}
           <ChatCopyButton message={message} />
