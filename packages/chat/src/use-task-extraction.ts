@@ -16,8 +16,20 @@ export interface ExtractedTask {
   description?: string;
 }
 
+export interface ExtractedTaskGroup {
+  title: string;
+  tasks: ExtractedTask[];
+}
+
+export interface ExtractedTasksOutput {
+  groups: ExtractedTaskGroup[];
+  tasks: ExtractedTask[];
+}
+
+// A group tag on a flattened review item — undefined for a standalone task.
 export interface TaskProposalItem extends ExtractedTask {
   id: string;
+  groupTitle?: string;
 }
 
 export interface CreatedTaskRef {
@@ -27,9 +39,19 @@ export interface CreatedTaskRef {
   updatedAt?: string;
 }
 
-export interface CreatedTasksResult {
-  parent: CreatedTaskRef | null;
+export interface CreatedTaskGroupRef {
+  parent: CreatedTaskRef;
   tasks: CreatedTaskRef[];
+}
+
+export interface CreatedTasksResult {
+  groups: CreatedTaskGroupRef[];
+  tasks: CreatedTaskRef[];
+}
+
+export interface CreateTasksInput {
+  groups: { title: string; tasks: ExtractedTask[] }[];
+  tasks: ExtractedTask[];
 }
 
 export interface ExtractedTasksCreated {
@@ -55,8 +77,8 @@ export interface UseTaskExtractionInput {
   // `{ role, content }` before passing it in.
   messages: readonly Pick<ChatMessageSnapshot, 'role' | 'content'>[];
   source: SessionSource;
-  extractTasks: (transcript: string) => Promise<{ tasks: ExtractedTask[] }>;
-  createTasks: (tasks: ExtractedTask[]) => Promise<CreatedTasksResult>;
+  extractTasks: (transcript: string) => Promise<ExtractedTasksOutput>;
+  createTasks: (input: CreateTasksInput) => Promise<CreatedTasksResult>;
   onTasksChanged?: () => void;
   strings: TaskExtractionStrings;
   onErrorNotice: (title: string, message: string, error: unknown) => void;
@@ -70,22 +92,84 @@ type ProposalStrings = Pick<
 
 export function buildExtractedTasksProposal(
   previewContent: string,
-  tasks: ExtractedTask[],
+  extraction: ExtractedTasksOutput,
   strings: ProposalStrings,
 ): TaskExtractionReview {
+  const { groups, tasks } = extraction;
+  const totalCount = groups.reduce((count, group) => count + group.tasks.length, 0) + tasks.length;
+
+  const items: TaskProposalItem[] = [
+    ...groups.flatMap((group, groupIndex) =>
+      group.tasks.map((task, taskIndex) => ({
+        ...task,
+        id: `task-proposal-group${groupIndex}-${taskIndex}`,
+        groupTitle: group.title,
+      })),
+    ),
+    ...tasks.map((task, taskIndex) => ({
+      ...task,
+      id: `task-proposal-standalone-${taskIndex}`,
+    })),
+  ];
+
+  const proposedTitle =
+    totalCount === 0
+      ? strings.noTasksFoundTitle
+      : groups.length === 1 && tasks.length === 0
+        ? groups[0]!.title
+        : totalCount === 1
+          ? (items[0]?.title ?? strings.noTasksFoundTitle)
+          : strings.tasksFoundTitle(totalCount);
+
+  const proposedChanges =
+    totalCount === 0
+      ? [strings.noTasksFoundDescription]
+      : [
+          ...groups.map((group) => `${group.title} (${group.tasks.length} tasks)`),
+          ...tasks.map((task) => task.title),
+        ];
+
   return {
     proposedType: 'task_list' as const,
-    proposedTitle:
-      tasks.length === 0
-        ? strings.noTasksFoundTitle
-        : tasks.length === 1
-          ? (tasks[0]?.title ?? strings.noTasksFoundTitle)
-          : strings.tasksFoundTitle(tasks.length),
-    proposedChanges:
-      tasks.length === 0 ? [strings.noTasksFoundDescription] : tasks.map((task) => task.title),
+    proposedTitle,
+    proposedChanges,
     previewContent,
-    items: tasks.map((task, index) => ({ ...task, id: `task-proposal-${index}` })),
+    items,
   };
+}
+
+// Reconstitute the {groups, tasks} shape the batch-create endpoint expects
+// from the flat, possibly partially-rejected review items. A group left with
+// fewer than 2 items after rejection is demoted to standalone tasks, since
+// the server requires at least 2 tasks per group.
+function regroupAcceptedItems(items: TaskProposalItem[]): CreateTasksInput {
+  const groupOrder: string[] = [];
+  const groupedByTitle = new Map<string, ExtractedTask[]>();
+  const standalone: ExtractedTask[] = [];
+
+  for (const { id: _id, groupTitle, ...task } of items) {
+    if (groupTitle === undefined) {
+      standalone.push(task);
+      continue;
+    }
+    if (!groupedByTitle.has(groupTitle)) {
+      groupOrder.push(groupTitle);
+      groupedByTitle.set(groupTitle, []);
+    }
+    groupedByTitle.get(groupTitle)!.push(task);
+  }
+
+  const groups: { title: string; tasks: ExtractedTask[] }[] = [];
+  for (const title of groupOrder) {
+    const groupTasks = groupedByTitle.get(title)!;
+    if (groupTasks.length < 2) {
+      standalone.push(...groupTasks);
+    } else {
+      groups.push({ title, tasks: groupTasks });
+    }
+  }
+
+  return { groups, tasks: standalone };
 }
 
 // This hook only sends task_list; other ArtifactType values remain in the
@@ -106,8 +190,8 @@ export function useTaskExtraction({
     onTransform: async (type: ArtifactType): Promise<TaskExtractionReview> => {
       if (type === 'task_list') {
         const { previewContent } = buildArtifactProposal(messages, 'task_list');
-        const { tasks } = await extractTasks(previewContent);
-        return buildExtractedTasksProposal(previewContent, tasks, strings);
+        const extraction = await extractTasks(previewContent);
+        return buildExtractedTasksProposal(previewContent, extraction, strings);
       }
 
       throw new Error(`Unsupported extraction type: ${type}`);
@@ -118,9 +202,13 @@ export function useTaskExtraction({
           throw new Error('No tasks to create');
         }
 
-        const result = await createTasks(review.items.map(({ id: _id, ...task }) => task));
+        const result = await createTasks(regroupAcceptedItems(review.items));
         onTasksChanged?.();
-        const created = result.parent ?? result.tasks[0];
+        // Anchor to the first group (or first standalone task if none). When
+        // the extraction produced multiple top-level items, only the first
+        // is linked from chat — the rest are still created, just not
+        // individually reflected as a session source.
+        const created = result.groups[0]?.parent ?? result.tasks[0];
         if (!created) {
           throw new Error('No tasks to create');
         }
