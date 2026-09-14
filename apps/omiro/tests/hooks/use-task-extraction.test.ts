@@ -47,8 +47,18 @@ describe('buildExtractedTasksProposal', () => {
     expect(proposal.proposedTitle).toBe('Plan London trip');
     expect(proposal.proposedChanges).toEqual(['Plan London trip (2 tasks)']);
     expect(proposal.items).toEqual([
-      { id: 'task-proposal-group0-0', title: 'Book flight', groupTitle: 'Plan London trip' },
-      { id: 'task-proposal-group0-1', title: 'Book hotel', groupTitle: 'Plan London trip' },
+      {
+        id: 'task-proposal-group0-0',
+        title: 'Book flight',
+        groupTitle: 'Plan London trip',
+        groupIndex: 0,
+      },
+      {
+        id: 'task-proposal-group0-1',
+        title: 'Book hotel',
+        groupTitle: 'Plan London trip',
+        groupIndex: 0,
+      },
     ]);
   });
 
