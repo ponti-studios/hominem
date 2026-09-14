@@ -118,6 +118,7 @@ export function useTimeBlockEditorState({
   const initializedBlockKeyRef = useRef<string | null>(null);
 
   const task = taskQuery.data?.task;
+  const taskChildren = taskQuery.data?.children ?? [];
   const event = eventQuery.data ?? null;
   const block = isTask ? task : event;
   const isLoading = isTask ? taskQuery.isLoading : eventQuery.isLoading;
@@ -358,6 +359,7 @@ export function useTimeBlockEditorState({
     saveChanges,
     saving: isSavingTask || updateEvent.isPending,
     task,
+    taskChildren,
     title,
     toggleTask,
   };
