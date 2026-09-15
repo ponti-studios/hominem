@@ -31,26 +31,6 @@ const TOOL_DEFINITIONS: ModelConfig['tools'] = [
   {
     type: 'function',
     function: {
-      name: 'calendar_search',
-      description: 'Searches calendar events by title/description text, with optional date range.',
-      parameters: {
-        type: 'object',
-        properties: { query: { type: 'string' }, from: { type: 'string' }, to: { type: 'string' } },
-        required: ['query'],
-      },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'calendar_upcoming',
-      description: 'Lists non-cancelled calendar events in a bounded window starting now.',
-      parameters: { type: 'object', properties: { days: { type: 'integer' } } },
-    },
-  },
-  {
-    type: 'function',
-    function: {
       name: 'place_visit_history',
       description: 'Lists visits to restaurants, venues, and addresses.',
       parameters: { type: 'object', properties: { limit: { type: 'integer' } } },
@@ -98,8 +78,6 @@ const taskCompletion = new TaskCompletionMetric({ model: judgeModel, threshold: 
 const stepEfficiency = new StepEfficiencyMetric({ model: judgeModel, threshold: 0.7 });
 
 const toolResults: Record<string, unknown> = {
-  calendar_search: { events: [], count: 0 },
-  calendar_upcoming: { events: [], count: 0 },
   place_visit_history: { visits: [], count: 0 },
   trip_history: {
     trips: [

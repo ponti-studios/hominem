@@ -77,6 +77,10 @@ export const timeFixtureGateway: CalendarEventGateway = {
     await maybeFail();
     return { isOnDevice: true, text: `Fixture answer for ${prompt}` };
   },
+  interpret: async (prompt) => {
+    await maybeFail();
+    return { kind: 'answer', answer: `Fixture answer for ${prompt}` };
+  },
   createEvent: async (title, startDate, endDate, location): Promise<CalendarEvent> => {
     await maybeFail();
     const created = {
@@ -114,6 +118,27 @@ export const timeFixtureGateway: CalendarEventGateway = {
   listEvents: async (startDate: string, endDate: string): Promise<CalendarEvent[]> => {
     await maybeFail();
     return fixtureEvents.filter((event) => event.startDate < endDate && event.endDate > startDate);
+  },
+  presentDraft: async (draft) => {
+    await maybeFail();
+    fixtureEvents.push({
+      calendarTitle: 'Omiro test calendar',
+      endDate: draft.endDate,
+      id: `time-fixture-created-${fixtureEvents.length}`,
+      isAllDay: draft.isAllDay,
+      isEditable: true,
+      location: draft.location,
+      notes: draft.notes,
+      participants: [],
+      recurrenceDescription: null,
+      startDate: draft.startDate,
+      title: draft.title,
+    });
+    return 'saved';
+  },
+  presentEvent: async () => {
+    await maybeFail();
+    return 'saved';
   },
   requestPermission: async () => {
     scenario = 'authorized';

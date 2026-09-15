@@ -87,45 +87,6 @@ export interface AppAiUsageEvents {
   usageAvailable: Generated<boolean>;
 }
 
-export interface AppCalendarEventAttendees {
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  eventId: string;
-  id: Generated<string>;
-  personId: string | null;
-  role: Generated<string>;
-  source: string | null;
-}
-
-export interface AppCalendarEvents {
-  calendarId: string | null;
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  description: string | null;
-  endsAt: ColumnType<string, Date | string, Date | string> | null;
-  eventType: string | null;
-  externalUid: string | null;
-  id: Generated<string>;
-  isAllDay: Generated<boolean>;
-  metadata: Generated<Json>;
-  organizer: string | null;
-  ownerUserid: string;
-  placeId: string | null;
-  recurrenceRule: string | null;
-  source: string | null;
-  sourceRowId: string | null;
-  startsAt: ColumnType<string, Date | string, Date | string>;
-  status: string | null;
-  title: string;
-  tripId: string | null;
-  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppCalendars {
-  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
-  id: Generated<string>;
-  name: string;
-  ownerUserid: string;
-}
-
 export interface AppCareerApplicationFiles {
   applicationId: string;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1351,9 +1312,6 @@ export interface Verification {
 export interface DB {
   account: Account;
   'app.aiUsageEvents': AppAiUsageEvents;
-  'app.calendarEventAttendees': AppCalendarEventAttendees;
-  'app.calendarEvents': AppCalendarEvents;
-  'app.calendars': AppCalendars;
   'app.careerApplicationFiles': AppCareerApplicationFiles;
   'app.careerApplicationNotes': AppCareerApplicationNotes;
   'app.careerApplications': AppCareerApplications;

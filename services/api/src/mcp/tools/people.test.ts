@@ -10,8 +10,6 @@ const adaId = 'b1000001-0000-4000-8000-000000000001';
 const graceId = 'b1000001-0000-4000-8000-000000000002';
 const orgId = 'b1000003-0000-4000-8000-000000000001';
 const tagId = 'b1000004-0000-4000-8000-000000000001';
-const calendarId = 'b1000008-0000-4000-8000-000000000001';
-const eventId = 'b1000009-0000-4000-8000-000000000001';
 const tripId = 'b1000010-0000-4000-8000-000000000001';
 
 type TestPerson = Record<string, unknown>;
@@ -19,7 +17,6 @@ type TestResultContent = {
   people?: TestPerson[];
   count?: number;
   person?: TestPerson | null;
-  calendarEvents?: Array<Record<string, unknown>>;
   trips?: Array<Record<string, unknown>>;
   relations?: Array<Record<string, unknown>>;
   socialContacts?: Array<Record<string, unknown>>;
@@ -145,40 +142,6 @@ beforeAll(async () => {
     .execute();
 
   await db
-    .insertInto('app.calendars')
-    .values([{ id: calendarId, ownerUserid: userId, name: 'Work' }])
-    .onConflict((oc) => oc.column('id').doNothing())
-    .execute();
-
-  await db
-    .insertInto('app.calendarEvents')
-    .values([
-      {
-        id: eventId,
-        ownerUserid: userId,
-        calendarId,
-        title: 'Analytical Engine Demo',
-        startsAt: '2026-07-10T09:00:00.000Z',
-        status: 'confirmed',
-      },
-    ])
-    .onConflict((oc) => oc.column('id').doNothing())
-    .execute();
-
-  await db
-    .insertInto('app.calendarEventAttendees')
-    .values([
-      {
-        id: 'b1000008-0000-4000-8000-000000000001',
-        eventId,
-        personId: adaId,
-        role: 'organizer',
-      },
-    ])
-    .onConflict((oc) => oc.column('id').doNothing())
-    .execute();
-
-  await db
     .insertInto('app.travelTrips')
     .values([
       {
@@ -244,19 +207,11 @@ describe('people_lookup', () => {
 });
 
 describe('person_timeline', () => {
-  it('returns the person summary with calendar events, trips, and relations', async () => {
+  it('returns the person summary with trips and relations', async () => {
     const result = await callTool(userId, 'person_timeline', { personId: adaId });
     const data = resultContent(result);
 
     expect(data.person).toMatchObject({ displayName: 'Ada Lovelace', personType: 'friend' });
-    expect(data.calendarEvents).toEqual([
-      {
-        id: eventId,
-        title: 'Analytical Engine Demo',
-        startsAt: '2026-07-10 09:00:00+00',
-        role: 'organizer',
-      },
-    ]);
     expect(data.trips).toEqual([
       {
         id: tripId,
@@ -287,7 +242,6 @@ describe('person_timeline', () => {
     const data = resultContent(result);
 
     expect(data.person).toBeNull();
-    expect(data.calendarEvents).toEqual([]);
     expect(data.trips).toEqual([]);
     expect(data.relations).toEqual([]);
     expect(data.socialContacts).toEqual([]);

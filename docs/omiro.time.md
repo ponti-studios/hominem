@@ -1,15 +1,16 @@
 # Omiro Time
 
 Time is the iOS task-and-calendar surface. It combines database-backed tasks
-with EventKit calendar events in one chronological stream while keeping their
-source-specific adapters and mutations separate.
+with device-only EventKit calendar summaries in one chronological stream.
+EventKit is authoritative for calendar events; Hominem does not store or sync
+calendar data.
 
 ## Routes and screen composition
 
 - `/(protected)/time` renders `TimeScreen`.
 - `/(protected)/time/unscheduled` renders the dedicated unscheduled task list.
-- `/(protected)/time/task/[id]` and `/(protected)/time/event/[id]` open the
-  shared `TimeBlockDetail` surface with a source discriminator.
+- `/(protected)/time/task/[id]` opens the task detail surface. Event taps open
+  Apple's native EventKit editor rather than an app-owned event detail screen.
 
 `TimeScreen` contains `TimeStream`, an inline error surface, and the
 bottom-docked `TimeComposer`. The header exposes unscheduled tasks. In
@@ -18,10 +19,11 @@ real data remains the default.
 
 ## Data and native boundary
 
-`TimeStream` renders a `TimeItem` union containing either a task or an EventKit
-calendar event. Tasks use `services/tasks/`; calendar access goes through
-`services/calendar/calendar-event-gateway.ts` and the iOS `on-device-ai` Expo
-module. The gateway is replaced by a fixture gateway only for E2E testing.
+`TimeStream` renders a `TimeItem` union containing either a task or a compact
+EventKit calendar summary. Tasks use `services/tasks/`; calendar access goes
+through the iOS `on-device-ai` Expo module. The module owns one EventKit store
+and exposes only permission checks, summaries, native-editor presentation, and
+the typed on-device assistant result.
 
 Calendar queries are enabled when the Time screen is focused and calendar
 permission is authorized. Tasks remain available when Calendar permission is
@@ -30,10 +32,13 @@ or `notDetermined` at the JavaScript query boundary.
 
 ## Natural-language composer
 
-`useTimeComposer` builds context from current calendar events and tasks, then
-passes the request to `resolveTimeRequest`. Parsing is performed through the
-task time-block parse mutation; calendar lookup and writes use the calendar
-gateway.
+`useTimeComposer` sends the prompt and compact task busy intervals to one
+short-lived on-device Foundation Model session. Its native tools search EventKit,
+open the Apple event editor for calendar changes, find availability, and propose
+database-backed task drafts. No calendar context is sent over the network. If
+Apple Intelligence is unavailable, manual browsing and native event editing
+remain available while natural-language Time input explains that it is
+unavailable.
 
 The implemented interaction states are:
 
@@ -41,35 +46,29 @@ The implemented interaction states are:
 | --- | --- |
 | `idle` | Ready for a new request. |
 | `parsing` | A submitted prompt is being interpreted; duplicate submission is blocked. |
-| `draft` | A reviewed task or event is ready for explicit confirmation. |
+| `draft` | A reviewed database-backed task is ready for explicit confirmation. |
 | `answer` | A direct answer was found without a write action. |
 | `availability` | Openings were found and can be selected. |
-| `event-choice` | Multiple calendar events match and the user must choose one. |
 
 The composer clears its visible prompt only after a non-error interpretation
 result. Cancelling an answer, availability result, or event choice restores the
 submitted prompt. Parse errors restore the prompt and surface an inline error;
 they do not create data.
 
-Selecting an availability opening turns it into an event draft. Event drafts
-require a title, authorized Calendar access, and both start and end times.
-Task drafts may include a deadline, duration, exact schedule, scheduling window,
-and location. The user must confirm the draft before a mutation runs.
+Selecting an availability opening opens a native EventKit draft. Task drafts may
+include a deadline, duration, exact schedule, scheduling window, and location.
+The user must confirm task drafts before a database mutation runs.
 
 ## Time-block detail
 
-Tasks and calendar events use the same `TimeBlockDetail` screen but retain
-source-specific behavior:
+Tasks use Omiro's `TimeBlockDetail`. Calendar events use Apple's editor:
 
 - Tasks can be completed, edited, scheduled, unscheduled, or deleted through
   task mutations. Unscheduling removes the exact interval without deleting the
   task or its other scheduling information.
-- Calendar events use EventKit create/update/delete operations. Recurrence
-  edits carry an EventKit recurrence scope. Read-only events expose their data
-  without enabling edits.
-- Title, duration, location, notes, people, and date/time fields are edited on
-  the shared detail surface. Unsaved local edits remain visible after a failed
-  save, and leaving dirty state is guarded by discard confirmation.
+- `EKEventEditViewController` owns calendar create, edit, deletion, recurrence
+  scope, calendar selection, attendees, alarms, save, and cancellation. It
+  preserves native behavior for read-only calendars and recurring events.
 
 The route source is part of the URL and must not be inferred from a generic
 mixed-content ID.

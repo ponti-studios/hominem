@@ -7,6 +7,7 @@ import { Pressable, Text, View } from 'react-native';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
 import { useAppTheme, useStyles } from '~/components/theme';
 import { IconButton } from '~/components/ui';
+import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
 import { getTimeBlockRoute, UNSCHEDULED_ROUTE } from '~/services/navigation/routes';
 
 import AppIcon from '../ui/icon';
@@ -27,13 +28,22 @@ export function TimeScreen() {
     setErrorToast(message);
   }, []);
   const openItem = useCallback(
-    (item: { kind: 'event' | 'task'; value: { id: string } }) =>
-      router.push(getTimeBlockRoute(item.kind, item.value.id)),
-    [router],
+    async (item: { kind: 'event' | 'task'; value: { id: string } }) => {
+      if (item.kind === 'task') {
+        router.push(getTimeBlockRoute('task', item.value.id));
+        return;
+      }
+      try {
+        await calendarEventGateway.presentEvent(item.value.id);
+      } catch (error) {
+        showError(error instanceof Error ? error.message : 'Unable to open this calendar event.');
+      }
+    },
+    [router, showError],
   );
   const openEvent = useCallback(
-    (event: { id: string }) => router.push(getTimeBlockRoute('event', event.id)),
-    [router],
+    async (event: { id: string }) => openItem({ kind: 'event', value: event }),
+    [openItem],
   );
   const theme = useAppTheme();
   const styles = useStyles((theme) => ({

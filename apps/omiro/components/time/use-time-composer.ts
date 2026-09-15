@@ -1,20 +1,11 @@
-import { useIsFocused } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 
-import type { CalendarEvent } from '~/modules/on-device-ai';
+import type { CalendarEvent, TimeAssistantResult } from '~/modules/on-device-ai';
 import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
-import {
-  useCalendarEvents,
-  useCalendarPermission,
-  useCreateCalendarEvent,
-} from '~/services/calendar/calendar-queries';
 import { localTimeZone } from '~/services/date/format-date';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
-import { useTimeBlockParse } from '~/services/tasks/use-time-block-parse';
 
-import { resolveTimeRequest } from './time-request';
-import { buildCalendarContext } from './time-request-context';
 import type { EditableTimeBlockField, TimeInteractionState, TimeOpening } from './time-types';
 
 interface UseTimeComposerOptions {
@@ -23,25 +14,16 @@ interface UseTimeComposerOptions {
 }
 
 export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions) {
-  const isFocused = useIsFocused();
   const [prompt, setPrompt] = useState('');
   const [interaction, setInteraction] = useState<TimeInteractionState>({ kind: 'idle' });
-  const { data: permission = null } = useCalendarPermission({ enabled: isFocused });
-  const calendar = useCalendarEvents({ enabled: isFocused && permission === 'authorized' });
-  const { data: tasks = [] } = useTasksQuery({ enabled: isFocused });
+  const { data: tasks = [] } = useTasksQuery();
   const createTask = useTaskCreate();
-  const createEvent = useCreateCalendarEvent();
-  const parseTimeBlock = useTimeBlockParse();
-  const isSaving = createEvent.isPending || createTask.isPending;
-  const calendarContext = useMemo(
-    () => buildCalendarContext(calendar.events, tasks),
-    [calendar.events, tasks],
-  );
+  const isSaving = createTask.isPending;
 
   const fail = useCallback(
     (message: string, submittedPrompt: string) => {
       setPrompt(submittedPrompt);
-      setInteraction({ kind: 'idle' });
+      setInteraction({ kind: 'error', message, submittedPrompt });
       onError(message);
     },
     [onError],
@@ -54,40 +36,46 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
     }
 
     setInteraction({ kind: 'parsing', submittedPrompt });
-    const result = await resolveTimeRequest({
-      calendarContext,
-      events: calendar.events,
-      gateway: calendarEventGateway,
-      parse: ({ calendarContext: context, transcript }) =>
-        parseTimeBlock.mutateAsync({ transcript, calendarContext: context }),
-      permission,
-      prompt: submittedPrompt,
-      tasks,
-    });
-
-    if (result.kind === 'error') {
-      fail(result.message, result.submittedPrompt);
-      return;
+    try {
+      const result = await calendarEventGateway.interpret(
+        submittedPrompt,
+        tasks.flatMap((task) =>
+          task.scheduledStartAt && task.scheduledEndAt
+            ? [{ startDate: task.scheduledStartAt, endDate: task.scheduledEndAt }]
+            : [],
+        ),
+      );
+      if (result.kind === 'answer') {
+        setPrompt('');
+        setInteraction({ answer: result.answer, kind: 'answer' });
+        return;
+      }
+      if (result.kind === 'availability') {
+        setPrompt('');
+        setInteraction({
+          kind: 'availability',
+          openings: result.availability.map(({ startDate, endDate }) => ({
+            start: startDate,
+            end: endDate,
+          })),
+          block: nativeTimeBlock(result),
+          submittedPrompt,
+        });
+        return;
+      }
+      if (result.kind === 'taskDraft') {
+        setPrompt('');
+        setInteraction({ block: nativeTimeBlock(result), kind: 'draft', submittedPrompt });
+        return;
+      }
+      fail(result.kind === 'error' ? result.error : 'Time request was cancelled.', submittedPrompt);
+    } catch (error) {
+      fail(
+        error instanceof Error ? error.message : 'Unable to interpret that time request.',
+        submittedPrompt,
+      );
     }
-    if (result.kind === 'open-event') {
-      onOpenEvent(result.event);
-      setInteraction({ kind: 'idle' });
-      return;
-    }
-    setPrompt('');
-    setInteraction(result);
-  }, [
-    calendar.events,
-    calendarContext,
-    fail,
-    interaction.kind,
-    isSaving,
-    onOpenEvent,
-    parseTimeBlock,
-    permission,
-    prompt,
-    tasks,
-  ]);
+  }, [fail, interaction.kind, isSaving, prompt, tasks]);
 
   const chooseOpening = useCallback((opening: TimeOpening) => {
     setInteraction((current) => {
@@ -98,7 +86,7 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
         block: {
           ...current.block,
           end_time: opening.end,
-          primary_intent: 'add_event',
+          primary_intent: 'add_task',
           start_time: opening.start,
         },
         kind: 'draft',
@@ -156,25 +144,6 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
           schedulingWindowEndAt: block.scheduling_window_end,
           timeZone: localTimeZone(),
         });
-      } else if (
-        block.primary_intent === 'add_event' ||
-        block.primary_intent === 'add_recurring_event'
-      ) {
-        if (permission !== 'authorized') {
-          fail('Connect your iOS Calendar before adding an event.', submittedPrompt);
-          return;
-        }
-        if (!block.start_time || !block.end_time) {
-          fail('Choose a start and end time before adding this event.', submittedPrompt);
-          return;
-        }
-        await createEvent.mutateAsync({
-          endDate: block.end_time,
-          location: block.location,
-          recurrenceRule: block.recurrence_rule,
-          startDate: block.start_time,
-          title,
-        });
       } else {
         fail('Review this request before making a change.', submittedPrompt);
         return;
@@ -186,11 +155,13 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
         submittedPrompt,
       );
     }
-  }, [createEvent, createTask, fail, interaction, isSaving, permission]);
+  }, [createTask, fail, interaction, isSaving]);
 
   const cancelResult = useCallback(() => {
     const submittedPrompt =
-      interaction.kind === 'availability' || interaction.kind === 'event-choice'
+      interaction.kind === 'availability' ||
+      interaction.kind === 'error' ||
+      interaction.kind === 'event-choice'
         ? interaction.submittedPrompt
         : '';
     setPrompt(submittedPrompt);
@@ -208,5 +179,25 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
     setPrompt,
     submitDraft,
     updateDraft,
+  };
+}
+
+function nativeTimeBlock(
+  result: Extract<TimeAssistantResult, { kind: 'taskDraft' | 'availability' }>,
+) {
+  const draft = result.kind === 'taskDraft' ? result : null;
+  return {
+    primary_intent: 'add_task' as const,
+    title: draft?.taskTitle ?? null,
+    target_title: null,
+    participants: null,
+    location: draft?.taskLocation ?? null,
+    duration: draft?.taskDurationMinutes ?? null,
+    start_time: draft?.taskScheduledStartAt ?? null,
+    end_time: draft?.taskScheduledEndAt ?? null,
+    scheduling_window_start: draft?.taskSchedulingWindowStartAt ?? null,
+    scheduling_window_end: draft?.taskSchedulingWindowEndAt ?? null,
+    deadline_fixed: draft?.taskDueAt?.slice(0, 10) ?? null,
+    recurrence_rule: null,
   };
 }

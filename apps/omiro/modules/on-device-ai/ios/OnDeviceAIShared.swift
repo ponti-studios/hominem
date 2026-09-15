@@ -189,6 +189,51 @@ struct OnDeviceAIResult: Record {
   var isOnDevice: Bool = true
 }
 
+struct CalendarEventSummaryRecord: Record {
+  @Field var id: String = ""
+  @Field var title: String = ""
+  @Field var startDate: String = ""
+  @Field var endDate: String = ""
+  @Field var isAllDay: Bool = false
+  @Field var location: String?
+  @Field var calendarTitle: String?
+  @Field var isEditable: Bool = false
+}
+
+struct CalendarDraftRecord: Record {
+  @Field var title: String = ""
+  @Field var startDate: String = ""
+  @Field var endDate: String = ""
+  @Field var isAllDay: Bool = false
+  @Field var location: String?
+  @Field var notes: String?
+}
+
+struct TaskBusyIntervalRecord: Record {
+  @Field var startDate: String = ""
+  @Field var endDate: String = ""
+}
+
+struct TimeAssistantResultRecord: Record {
+  @Field var kind: String = "error"
+  @Field var answer: String?
+  @Field var taskTitle: String?
+  @Field var taskDueAt: String?
+  @Field var taskDurationMinutes: Int?
+  @Field var taskScheduledStartAt: String?
+  @Field var taskScheduledEndAt: String?
+  @Field var taskSchedulingWindowStartAt: String?
+  @Field var taskSchedulingWindowEndAt: String?
+  @Field var taskLocation: String?
+  @Field var availability: [AvailabilityChoiceRecord] = []
+  @Field var error: String?
+}
+
+struct AvailabilityChoiceRecord: Record {
+  @Field var startDate: String = ""
+  @Field var endDate: String = ""
+}
+
 func permissionStatusString(_ status: EKAuthorizationStatus) -> String {
   switch status {
   case .fullAccess:

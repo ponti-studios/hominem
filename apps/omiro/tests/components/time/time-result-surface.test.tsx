@@ -40,6 +40,9 @@ vi.mock('~/components/time/TimeDraftResult', () => ({
 vi.mock('~/components/time/TimeEventChoiceResult', () => ({
   TimeEventChoiceResult: () => <div data-testid="event-choice-result" />,
 }));
+vi.mock('~/components/time/TimeResultActions', () => ({
+  CancelRow: () => <div data-testid="cancel-row" />,
+}));
 
 const { TimeResultSurface } = await import('~/components/time/TimeResultSurface');
 
@@ -51,6 +54,21 @@ describe('TimeResultSurface', () => {
 
     expect(getByTestId('result')).toBeDefined();
     expect(getByText('You are free.')).toBeDefined();
+  });
+
+  it('renders a persistent error state', () => {
+    const { getByText } = render(
+      <TimeResultSurface
+        state={{
+          kind: 'error',
+          message: 'Apple Intelligence is unavailable.',
+          submittedPrompt: 'Lunch',
+        }}
+        testID="result"
+      />,
+    );
+
+    expect(getByText('Apple Intelligence is unavailable.')).toBeDefined();
   });
 
   it('renders supplied children for the parsing surface', () => {

@@ -71,13 +71,6 @@ export const personTimelineInputSchema = z.object({
   personId: z.string(),
 });
 
-const personTimelineCalendarEventSchema = z.object({
-  id: z.string(),
-  title: z.string().nullable(),
-  startsAt: z.string(),
-  role: z.string().nullable(),
-});
-
 const personTimelineTripSchema = z.object({
   id: z.string(),
   city: z.string().nullable(),
@@ -105,7 +98,6 @@ const personTimelineSocialContactSchema = z.object({
 
 export const personTimelineOutputSchema = z.object({
   person: personSummarySchema.nullable(),
-  calendarEvents: z.array(personTimelineCalendarEventSchema),
   trips: z.array(personTimelineTripSchema),
   relations: z.array(personTimelineRelationSchema),
   socialContacts: z.array(personTimelineSocialContactSchema),

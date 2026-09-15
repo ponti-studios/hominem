@@ -95,7 +95,8 @@ not a deterministic task extraction).
 - `POST /api/tasks/voice` - same idea for a voice transcript
   (`extractVoiceTasks`, same service and route module as `/extract`), its
   own rate-limit bucket (`ai-task-voice`).
-- `POST /api/tasks/parse` - time-block parsing for calendar scheduling
+- `POST /api/tasks/parse` - legacy time-block parsing retained temporarily for
+  older Omiro builds during device-only Calendar adoption
   (`extractTimeBlock` in
   `services/api/src/application/time-block-extraction.service.ts`, routed by
   `services/api/src/rpc/routes/tasks.parse.ts`); unrelated to task creation.

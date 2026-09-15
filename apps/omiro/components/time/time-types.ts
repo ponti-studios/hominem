@@ -1,9 +1,9 @@
 import type { TaskListItem, TasksParseOutput } from '@hominem/rpc/types';
 
-import type { CalendarEvent } from '~/modules/on-device-ai';
+import type { CalendarEvent, CalendarEventSummary } from '~/modules/on-device-ai';
 
 export type TimeItem =
-  | { kind: 'event'; value: CalendarEvent }
+  | { kind: 'event'; value: CalendarEventSummary }
   | { kind: 'task'; value: TaskListItem };
 
 export type TimeStreamRow = TimeItem;
@@ -25,6 +25,7 @@ export type EditableTimeBlockField =
 export type TimeInteractionState =
   | { kind: 'idle' }
   | { kind: 'parsing'; submittedPrompt: string }
+  | { kind: 'error'; message: string; submittedPrompt: string }
   | { kind: 'draft'; block: TimeBlock; submittedPrompt: string }
   | { kind: 'answer'; answer: string }
   | { kind: 'availability'; block: TimeBlock; openings: TimeOpening[]; submittedPrompt: string }

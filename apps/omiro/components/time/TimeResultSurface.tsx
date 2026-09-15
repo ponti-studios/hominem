@@ -14,10 +14,11 @@ import type { EditableTimeBlockField, TimeInteractionState, TimeOpening } from '
 import { TimeAvailabilityResult } from './TimeAvailabilityResult';
 import { TimeDraftResult } from './TimeDraftResult';
 import { TimeEventChoiceResult } from './TimeEventChoiceResult';
+import { CancelRow } from './TimeResultActions';
 
 type ResultState = Extract<
   TimeInteractionState,
-  { kind: 'answer' | 'event-choice' | 'availability' | 'draft' }
+  { kind: 'answer' | 'error' | 'event-choice' | 'availability' | 'draft' }
 >;
 
 interface TimeResultSurfaceProps {
@@ -62,7 +63,9 @@ export function TimeResultSurface({
           ? resultState.block.primary_intent === 'add_task'
             ? 'Draft task ready'
             : 'Draft event ready'
-          : undefined)
+          : resultState?.kind === 'error'
+            ? resultState.message
+            : undefined)
       }
       entering={reducedMotion ? FadeIn.duration(180) : FadeInUp.duration(220)}
       exiting={reducedMotion ? FadeOut.duration(140) : FadeOutDown.duration(180)}
@@ -116,6 +119,13 @@ function TimeResultContent({
   switch (state.kind) {
     case 'answer':
       return <Text style={answerStyle}>{state.answer}</Text>;
+    case 'error':
+      return (
+        <>
+          <Text style={answerStyle}>{state.message}</Text>
+          <CancelRow testID="time-error-cancel" onCancel={actions.onCancel} />
+        </>
+      );
     case 'event-choice':
       return <TimeEventChoiceResult candidates={state.candidates} {...actions} />;
     case 'availability':

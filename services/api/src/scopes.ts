@@ -2,7 +2,6 @@
 // scope string elsewhere. Turning tools on/off is a code change, not an env var.
 
 export const MCP_SCOPES = [
-  'calendar:read',
   'career:read',
   'career:write',
   'collections:read',

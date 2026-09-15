@@ -36,7 +36,7 @@ there is no custom widget to install.
 - Short description: Your personal data repository for ChatGPT.
 - Long description: Hominem securely connects ChatGPT to your personal data
   repository so you can review and explicitly update career, finance, health,
-  calendar, travel, media, people, places, collections, tags, and related
+  travel, media, people, places, collections, tags, and related
   personal records.
 - Category: Productivity
 - MCP server URL: `https://api.ponti.io/api/mcp`
