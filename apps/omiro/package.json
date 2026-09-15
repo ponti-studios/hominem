@@ -7,6 +7,8 @@
     "build:prod:local": "bash scripts/build-prod-local.sh",
     "dev": "APP_ENV=development expo start --dev-client --ios",
     "eas-build-post-install": "pnpm --filter @ponti-studios/auth build",
+    "eas:publish": "eas submit -p ios --profile production --path ./build/prod-local.ipa",
+    "eas:pull:prod": "npx eas-cli env:pull production --path .eas-prod.local",
     "export:embed:ios": "pnpm --filter @ponti-studios/auth build && APP_ENV=production expo export:embed --eager --platform ios --dev false",
     "format": "oxfmt env.ts components app config constants hooks services tests types --write",
     "format:check": "oxfmt env.ts components app config constants hooks services tests types --check",
@@ -22,8 +24,7 @@
     "test:watch": "vitest --config vitest.config.ts",
     "typecheck": "rm -rf .cache && tsc --noEmit -p tsconfig.json",
     "verify:release": "node scripts/verify-release-identity.mjs",
-    "doctor": "npx react-doctor@latest",
-    "eas:pull:prod": "npx eas-cli env:pull production --path .eas-prod.local"
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
     "@better-auth/expo": "1.7.1",

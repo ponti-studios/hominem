@@ -1,10 +1,9 @@
 name: deploy-mobile
 
+# Disabled: mobile builds/submits are now done locally instead of on EAS.
+# Re-enable by restoring the workflow_run trigger below.
 on:
-  workflow_run:
-    workflows: [validate-mobile]
-    types: [completed]
-    branches: [main]
+  workflow_dispatch: {}
 
 concurrency:
   group: deploy-mobile
