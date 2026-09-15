@@ -6,15 +6,6 @@ import { Input } from '~/components/ui/input';
 import type { TaskFormDraft, TaskFormPatch } from '~/hooks/use-task-form-draft';
 import { useTaskWhenParser, mapParsedBlockToDraftPatch } from '~/hooks/use-task-when-parser';
 
-import { QuickPickChips } from './quick-pick-chips';
-
-function localMidnight(offset: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + offset);
-  const pad = (value: number) => String(value).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T00:00`;
-}
-
 export function WhenInput({
   dueAt,
   scheduledStartAt,
@@ -72,21 +63,6 @@ export function WhenInput({
           {parser.isPending ? <LoaderCircle className="animate-spin" /> : <Sparkles />} Parse
         </Button>
       </div>
-      <QuickPickChips
-        options={[
-          { label: 'Today', value: 'today' },
-          { label: 'Tomorrow', value: 'tomorrow' },
-          { label: 'This weekend', value: 'weekend' },
-        ]}
-        onChange={(value) => {
-          if (value === 'weekend') {
-            applyParsedWhen({ dueAt: localMidnight(6) });
-          } else {
-            applyParsedWhen({ dueAt: localMidnight(value === 'today' ? 0 : 1) });
-          }
-          setMessage('Updated the due date.');
-        }}
-      />
       {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
       <div className="grid grid-cols-2 gap-3">
         <label className="space-y-1 text-xs text-muted-foreground">
