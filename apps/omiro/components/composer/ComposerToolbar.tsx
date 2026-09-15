@@ -77,15 +77,16 @@ function ComposerToolbarComponent({
     trailingActions: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 4,
+      gap: 2,
     },
     toolbar: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: 4,
+      paddingVertical: 2,
     },
     leadingActions: { flexDirection: 'row', alignItems: 'center' },
+    compactIcon: { width: 26, height: 26 },
   }));
 
   const voiceCapabilitiesInput: ComposerCapabilitiesVoiceInput = {
@@ -124,10 +125,11 @@ function ComposerToolbarComponent({
           <IconButton
             accessibilityLabel={t.inboxComposer.composer.enhanceTextA11y}
             disabled={!canOpenEnhance}
+            style={styles.compactIcon}
             variant="plain"
             onPress={openEnhance}
           >
-            <AppIcon name="wand.and.sparkles" size={20} />
+            <AppIcon name="wand.and.sparkles" size={16} />
           </IconButton>
         ) : null}
         {onToggleWalkieTalkie ? (
@@ -137,13 +139,14 @@ function ComposerToolbarComponent({
                 ? t.inboxComposer.composer.disableWalkieTalkieA11y
                 : t.inboxComposer.composer.enableWalkieTalkieA11y
             }
+            style={styles.compactIcon}
             testID="composer-walkie-talkie-toggle"
             variant="plain"
             onPress={onToggleWalkieTalkie}
           >
             <AppIcon
               name="antenna.radiowaves.left.and.right"
-              size={20}
+              size={16}
               tintColor={voice.isWalkieTalkie ? primary : undefined}
             />
           </IconButton>
@@ -155,13 +158,14 @@ function ComposerToolbarComponent({
               : t.inboxComposer.composer.startVoiceInputA11y
           }
           disabled={!capabilities.canToggleVoice}
+          style={styles.compactIcon}
           testID="composer-mic-button"
           variant="plain"
           onPress={() => {
             void voice.handleVoicePress();
           }}
         >
-          <AppIcon name="mic.fill" size={20} />
+          <AppIcon name="mic.fill" size={16} />
         </IconButton>
         <ComposerSendButton
           accessibilityLabel={
@@ -171,6 +175,7 @@ function ComposerToolbarComponent({
           disabled={!canSubmit}
           icon="arrow.up"
           isLoading={state.isSubmitting}
+          size={26}
           testID={presentation.submitTestID}
           onPress={() =>
             onSubmit(presentation.primarySubmitKind, messageStore.getMessage(), canSubmit)

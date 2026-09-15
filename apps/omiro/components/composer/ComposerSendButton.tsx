@@ -10,6 +10,8 @@ interface ComposerSendButtonProps {
   icon: SFSymbol;
   isLoading?: boolean;
   onPress: () => void;
+  /** Button diameter in points; icon scales with it. Defaults to 32. */
+  size?: number;
   testID?: string;
 }
 
@@ -23,13 +25,12 @@ export function ComposerSendButton({
   icon,
   isLoading = false,
   onPress,
+  size = 32,
   testID,
 }: ComposerSendButtonProps) {
   const { primary, primaryForeground } = useAppTheme().colors;
   const styles = useStyles(() => ({
     sendButton: {
-      width: 32,
-      height: 32,
       borderRadius: 999,
       alignItems: 'center',
       justifyContent: 'center',
@@ -45,7 +46,7 @@ export function ComposerSendButton({
       testID={testID}
       style={({ pressed }) => [
         styles.sendButton,
-        { backgroundColor: primary },
+        { width: size, height: size, backgroundColor: primary },
         pressed && { opacity: 0.8 },
         (disabled || isLoading) && { opacity: 0.4 },
       ]}
@@ -53,7 +54,7 @@ export function ComposerSendButton({
       {isLoading ? (
         <ActivityIndicator color={primaryForeground} size="small" />
       ) : (
-        <AppIcon name={icon} size={16} tintColor={primaryForeground} />
+        <AppIcon name={icon} size={size * 0.5} tintColor={primaryForeground} />
       )}
     </Pressable>
   );

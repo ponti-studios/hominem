@@ -40,11 +40,12 @@ export function ComposerAttachButton({ disabled }: ComposerAttachButtonProps) {
       <IconButton
         accessibilityLabel={t.inboxComposer.composer.addAttachmentA11y}
         disabled={disabled}
+        style={{ width: 26, height: 26 }}
         testID="composer-attach-button"
         variant="plain"
         onPress={showMenu}
       >
-        <AppIcon name="plus" size={20} />
+        <AppIcon name="plus" size={16} />
       </IconButton>
       <CameraModal
         visible={isCameraOpen}

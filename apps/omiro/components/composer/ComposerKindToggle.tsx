@@ -14,7 +14,7 @@ import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 import type { ComposerEntryKind } from './composer.types';
 
-const SEGMENT_SIZE = 34;
+const SEGMENT_SIZE = 26;
 const TRACK_PADDING = 2;
 // Matches the app's motion guidelines for on-screen movement (--ease-in-out).
 const MOVE_EASING = Easing.bezier(0.77, 0, 0.175, 1);
@@ -103,7 +103,7 @@ export function ComposerKindToggle({ selected, onSelect }: ComposerKindTogglePro
           >
             <AppIcon
               name={isSelected ? option.iconFilled : option.icon}
-              size={18}
+              size={14}
               tintColor={isSelected ? foreground : mutedForeground}
             />
           </Pressable>

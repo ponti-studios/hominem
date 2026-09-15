@@ -70,6 +70,7 @@ function ComposerInputComponent({
         style={{
           borderRadius: 0,
           borderWidth: 5,
+          fontSize: 15,
           minHeight: 0,
           paddingHorizontal: 0,
           paddingVertical: 2,
@@ -94,5 +95,5 @@ function ComposerInputComponent({
 export const ComposerInput = memo(ComposerInputComponent);
 
 const styles = StyleSheet.create({
-  container: { gap: 16 },
+  container: { gap: 8 },
 });

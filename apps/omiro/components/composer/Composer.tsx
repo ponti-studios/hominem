@@ -106,7 +106,7 @@ function ComposerContent(props: ComposerProps) {
   const theme = useAppTheme();
   const { primary, destructive, border: borderDefault } = theme.colors;
   const styles = useStyles(() => ({
-    composer: { width: '100%', gap: 12 },
+    composer: { width: '100%', gap: 8 },
     fields: { gap: 8 },
   }));
   const prefersReducedMotion = useReducedMotion();
@@ -139,8 +139,8 @@ function ComposerContent(props: ComposerProps) {
       {controller.showAttachments ? <ComposerAttachmentRow /> : undefined}
 
       <BlurCard
-        style={{ borderColor }}
-        contentStyle={{ paddingBottom: 4 }}
+        style={{ borderColor, borderRadius: 18 }}
+        contentStyle={{ padding: 10, paddingBottom: 6, gap: 10 }}
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
       >
         {errorBanner ? (
