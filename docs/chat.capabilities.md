@@ -142,8 +142,8 @@ This part covers user-facing behavior and client ownership only. A feature is
 **missing** when no web implementation was found, **partial** when a web seam
 exists but does not match Omiro's behavior or is stubbed, and **present** when
 the web client has a working equivalent. Remaining implementation work for
-this gap map is tracked as standardized Linear-style tasks in `docs/tasks/`
-(`motion-and-persistence.md`, `web-chat-verification.md`); earlier phases of
+this gap map is tracked as standardized Linear-style tasks in `docs/tasks/`,
+starting at `web-chat-reinventory-matrix.md`; earlier phases of
 this project, including `composer-parity.md`, were completed and their task
 specs removed — see [chat.composer-audio-modality.md](decisions/chat.composer-audio-modality.md)
 and [chat.composer-error-recovery.md](decisions/chat.composer-error-recovery.md)

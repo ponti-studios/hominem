@@ -20,8 +20,9 @@
   "scripts": {
     "prepare": "sh scripts/install-git-hooks.sh",
     "build": "turbo run build",
+    "precheck": "pnpm install --frozen-lockfile",
     "check": "DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:4433/hominem-test pnpm run check:all",
-    "check:all": "pnpm run check:dts && pnpm run lint && pnpm run build && pnpm run typecheck && pnpm run test",
+    "check:all": "pnpm run check:dts && pnpm run tasks:check && pnpm run lint && pnpm run build && pnpm run typecheck && pnpm run test",
     "clean:ts": "find . -name node_modules -prune -o -type d \\( -name .cache -o -name build -o -name dist \\) -print -exec rm -rf {} +",
     "dev": "turbo run dev --ui stream --filter='!@hominem/omiro'",
     "dev:api": "turbo run dev --filter @hominem/api",
@@ -39,8 +40,8 @@
     "lint:fix": "turbo run lint:fix",
     "test": "DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:4433/hominem-test turbo run test",
     "typecheck": "turbo run typecheck",
-    "ui:check-canonical": "test ! -e packages/ui && ! rg -n '@hominem/ui' --glob '!node_modules/**' --glob '!package.json' .",
     "check:dts": "bash scripts/check-src-declarations.sh",
+    "tasks:check": "bash scripts/check-task-frontmatter.sh",
     "portless-kill": "bash scripts/portless-kill.sh"
   },
   "devDependencies": {
