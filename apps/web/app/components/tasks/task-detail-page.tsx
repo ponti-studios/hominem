@@ -1,4 +1,4 @@
-import { Check, ChevronRight, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, ChevronRight, RotateCcw, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 
 import { Badge } from '~/components/ui/badge';
@@ -21,6 +21,7 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
   if (!task) {
     return (
       <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
+        <BackLink />
         {isPending ? <p className="text-sm text-muted-foreground">Loading task…</p> : null}
         {error ? (
           <div className="space-y-3 rounded-xl border border-border bg-card p-5">
@@ -66,6 +67,7 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
       <div className="mb-6 flex items-center gap-3">
+        <BackLink />
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-semibold tracking-tight">{task.title}</h1>
           {isCompleted ? (
@@ -152,5 +154,15 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
         </section>
       ) : null}
     </main>
+  );
+}
+
+function BackLink() {
+  return (
+    <Button aria-label="Back to tasks" asChild size="icon-sm" variant="ghost">
+      <Link to="/tasks" viewTransition>
+        <ArrowLeft />
+      </Link>
+    </Button>
   );
 }

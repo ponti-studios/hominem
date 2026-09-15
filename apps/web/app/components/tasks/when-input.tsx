@@ -21,21 +21,27 @@ export function WhenInput({
 }) {
   const parser = useTaskWhenParser();
   const lastParsed = useRef('');
+  const pendingText = useRef<string | null>(null);
   const [whenText, setWhenText] = useState('');
   const [message, setMessage] = useState<string | null>(null);
 
   async function parse() {
     const text = whenText.trim();
-    if (!text || text === lastParsed.current) return;
+    if (!text || text === lastParsed.current || pendingText.current === text) return;
+    pendingText.current = text;
     setMessage(null);
     try {
       const result = await parser.mutateAsync(text);
+      if (whenText.trim() !== text) return;
       const mapped = mapParsedBlockToDraftPatch(result.block);
       applyParsedWhen(mapped.patch);
       setMessage(mapped.note ?? 'Updated the schedule from that phrase.');
       lastParsed.current = text;
     } catch {
-      setMessage("Couldn't parse that — try the buttons below.");
+      if (whenText.trim() !== text) return;
+      setMessage("Couldn't parse that — try rephrasing or set the date and time below.");
+    } finally {
+      pendingText.current = null;
     }
   }
 
