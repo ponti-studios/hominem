@@ -16,19 +16,13 @@ function TaskRow({
   item: {
     id: string;
     title: string;
-    durationMinutes?: number | null;
     childCount?: number | null;
   };
 }) {
   const router = useRouter();
   const { success: successColor } = useAppTheme().colors;
   const childCount = item.childCount ?? 0;
-  const subtitle =
-    childCount > 0
-      ? `${childCount} sub-task${childCount === 1 ? '' : 's'}`
-      : item.durationMinutes
-        ? `${item.durationMinutes} min`
-        : null;
+  const subtitle = childCount > 0 ? `${childCount} sub-task${childCount === 1 ? '' : 's'}` : null;
   return (
     <ListRow
       accessibilityLabel={item.title}

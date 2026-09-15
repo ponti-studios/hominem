@@ -43,7 +43,6 @@ const taskCoreRoutes = new Hono<AppContext>()
         userId,
         priority: input.priority,
         dueAt: input.dueAt,
-        durationMinutes: input.durationMinutes,
         schedulingWindowStartAt: input.schedulingWindowStartAt,
         schedulingWindowEndAt: input.schedulingWindowEndAt,
         scheduledStartAt: input.scheduledStartAt,

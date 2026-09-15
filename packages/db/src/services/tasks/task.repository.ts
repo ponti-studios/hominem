@@ -21,7 +21,6 @@ export interface TaskRecord {
   status: string;
   priority: string;
   dueAt: string | null;
-  durationMinutes: number | null;
   schedulingWindowStartAt: string | null;
   schedulingWindowEndAt: string | null;
   scheduledStartAt: string | null;
@@ -42,7 +41,6 @@ export interface CreateTaskInput {
   parentTaskId?: string | null;
   priority?: string;
   dueAt?: string | null;
-  durationMinutes?: number | null;
   schedulingWindowStartAt?: string | null;
   schedulingWindowEndAt?: string | null;
   scheduledStartAt?: string | null;
@@ -56,7 +54,6 @@ export interface UpdateTaskInput {
   description?: string | null;
   priority?: string;
   dueAt?: string | null;
-  durationMinutes?: number | null;
   schedulingWindowStartAt?: string | null;
   schedulingWindowEndAt?: string | null;
   scheduledStartAt?: string | null;
@@ -95,7 +92,6 @@ function toTaskRecord(row: TaskRow, artifactType: 'task' | 'task_list'): TaskRec
     status: row.status,
     priority: row.priority,
     dueAt: row.dueAt ? new Date(row.dueAt).toISOString() : null,
-    durationMinutes: row.durationMinutes,
     schedulingWindowStartAt: row.schedulingWindowStartAt
       ? new Date(row.schedulingWindowStartAt).toISOString()
       : null,
@@ -191,7 +187,6 @@ export const TaskRepository = {
         primarySpaceId: null,
         ...(input.priority ? { priority: input.priority } : {}),
         dueAt: input.dueAt ? new Date(input.dueAt) : null,
-        durationMinutes: input.durationMinutes ?? null,
         schedulingWindowStartAt: input.schedulingWindowStartAt
           ? new Date(input.schedulingWindowStartAt)
           : null,
@@ -337,7 +332,6 @@ export const TaskRepository = {
           : {}),
         ...(patch.priority !== undefined ? { priority: patch.priority } : {}),
         ...(patch.dueAt !== undefined ? { dueAt: patch.dueAt ? new Date(patch.dueAt) : null } : {}),
-        ...(patch.durationMinutes !== undefined ? { durationMinutes: patch.durationMinutes } : {}),
         ...(patch.schedulingWindowStartAt !== undefined
           ? {
               schedulingWindowStartAt: patch.schedulingWindowStartAt

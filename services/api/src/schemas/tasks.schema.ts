@@ -5,7 +5,6 @@ const TaskPriority = z.enum(['low', 'medium', 'high']);
 const TaskParticipantSchema = z.uuid();
 
 const TaskTimeFields = {
-  durationMinutes: z.number().int().positive().nullable().optional(),
   schedulingWindowStartAt: z.iso.datetime({ offset: true }).nullable().optional(),
   schedulingWindowEndAt: z.iso.datetime({ offset: true }).nullable().optional(),
   scheduledStartAt: z.iso.datetime({ offset: true }).nullable().optional(),

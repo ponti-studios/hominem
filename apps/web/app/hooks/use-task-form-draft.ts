@@ -11,15 +11,11 @@ export interface TaskFormDraft {
   dueAt: string;
   scheduledStartAt: string;
   scheduledEndAt: string;
-  durationMinutes: string;
   location: string;
 }
 
 export type TaskFormPatch = Partial<
-  Pick<
-    TaskFormDraft,
-    'dueAt' | 'scheduledStartAt' | 'scheduledEndAt' | 'durationMinutes' | 'location'
-  >
+  Pick<TaskFormDraft, 'dueAt' | 'scheduledStartAt' | 'scheduledEndAt' | 'location'>
 >;
 
 export function toLocalInputValue(iso: string | null | undefined) {
@@ -35,8 +31,7 @@ export function fromLocalInputValue(value: string) {
 
 export function hasDetails(task: Task) {
   return (
-    task.priority !== 'medium' ||
-    Boolean(task.dueAt || task.scheduledStartAt || task.durationMinutes || task.location)
+    task.priority !== 'medium' || Boolean(task.dueAt || task.scheduledStartAt || task.location)
   );
 }
 
@@ -48,7 +43,6 @@ function draftFromTask(task?: Task): TaskFormDraft {
     dueAt: toLocalInputValue(task?.dueAt),
     scheduledStartAt: toLocalInputValue(task?.scheduledStartAt),
     scheduledEndAt: toLocalInputValue(task?.scheduledEndAt),
-    durationMinutes: task?.durationMinutes ? String(task.durationMinutes) : '',
     location: task?.location ?? '',
   };
 }
@@ -63,12 +57,6 @@ export function validateTaskDraft(draft: TaskFormDraft): string | null {
   }
   if (nextStart && nextEnd && new Date(nextEnd) <= new Date(nextStart)) {
     return 'End time must be after the start time.';
-  }
-  if (draft.durationMinutes.trim()) {
-    const duration = Number(draft.durationMinutes);
-    if (!Number.isInteger(duration) || duration <= 0) {
-      return 'Duration must be a whole number of minutes.';
-    }
   }
   return null;
 }
@@ -119,7 +107,6 @@ export function useTaskFormDraft(initialTask?: Task) {
       dueAt: fromLocalInputValue(draft.dueAt),
       scheduledStartAt: fromLocalInputValue(draft.scheduledStartAt),
       scheduledEndAt: fromLocalInputValue(draft.scheduledEndAt),
-      durationMinutes: draft.durationMinutes.trim() ? Number(draft.durationMinutes) : null,
       location: draft.location.trim() || null,
     }),
     [draft],
@@ -133,7 +120,6 @@ export function useTaskFormDraft(initialTask?: Task) {
       dueAt: fromLocalInputValue(draft.dueAt),
       scheduledStartAt: fromLocalInputValue(draft.scheduledStartAt),
       scheduledEndAt: fromLocalInputValue(draft.scheduledEndAt),
-      durationMinutes: draft.durationMinutes.trim() ? Number(draft.durationMinutes) : null,
       location: draft.location.trim() || null,
     }),
     [draft],
@@ -149,7 +135,6 @@ export function useTaskFormDraft(initialTask?: Task) {
       draft.dueAt !== initial.dueAt ||
       draft.scheduledStartAt !== initial.scheduledStartAt ||
       draft.scheduledEndAt !== initial.scheduledEndAt ||
-      draft.durationMinutes !== initial.durationMinutes ||
       draft.location.trim() !== initial.location
     );
   }, [draft, initialTask]);

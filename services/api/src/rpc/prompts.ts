@@ -202,8 +202,8 @@ start_time and end_time. The first occurrence is the next matching calendar date
 reference date, not the reference date itself. A named weekday means the next occurrence of that
 weekday after the reference date; for example, with a Saturday reference date, "Friday" means the
 following Friday, not the next calendar day. Do not invent participants, location,
-duration, dates, or times. duration is always an integer number of minutes and must be preserved
-whenever the user states a duration, including for flexible tasks with no exact start time. start_time and end_time
+duration, dates, or times. duration is always an integer number of minutes when the user states one; it is
+used only to find openings and is never stored on the task. start_time and end_time
 are the exact interval when the user supplies a fixed time or an appointment duration. For
 meetings and appointments without an explicit duration, infer a 60-minute duration and populate
 end_time. For flexible

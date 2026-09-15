@@ -3,17 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { CreateTaskSchema, UpdateTaskSchema } from './tasks.schema';
 
 describe('task time fields', () => {
-  it('accepts a flexible task with a duration and scheduling window', () => {
+  it('accepts a flexible task with a scheduling window', () => {
     const result = CreateTaskSchema.parse({
       artifactType: 'task',
       title: 'Write pitch deck',
-      durationMinutes: 120,
       schedulingWindowStartAt: '2026-07-29T15:00:00.000Z',
       schedulingWindowEndAt: '2026-07-30T01:00:00.000Z',
       timeZone: 'America/Los_Angeles',
     });
 
-    expect(result.durationMinutes).toBe(120);
+    expect(result.schedulingWindowStartAt).toBe('2026-07-29T15:00:00.000Z');
     expect(result.scheduledStartAt).toBeUndefined();
   });
 

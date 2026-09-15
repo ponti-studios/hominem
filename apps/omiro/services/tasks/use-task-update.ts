@@ -13,7 +13,6 @@ interface UpdateTaskInput {
   description?: string | null;
   priority?: 'low' | 'medium' | 'high';
   dueAt?: string | null;
-  durationMinutes?: number | null;
   schedulingWindowStartAt?: string | null;
   schedulingWindowEndAt?: string | null;
   scheduledStartAt?: string | null;
@@ -30,7 +29,6 @@ function applyPatch<T extends Task>(task: T, patch: UpdateTaskInput): T {
     ...(patch.description !== undefined ? { description: patch.description } : {}),
     ...(patch.priority !== undefined ? { priority: patch.priority } : {}),
     ...(patch.dueAt !== undefined ? { dueAt: patch.dueAt } : {}),
-    ...(patch.durationMinutes !== undefined ? { durationMinutes: patch.durationMinutes } : {}),
     ...(patch.schedulingWindowStartAt !== undefined
       ? { schedulingWindowStartAt: patch.schedulingWindowStartAt }
       : {}),

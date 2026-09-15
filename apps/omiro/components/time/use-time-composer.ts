@@ -148,7 +148,6 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
           dueAt: block.deadline_fixed
             ? new Date(`${block.deadline_fixed}T23:59:59`).toISOString()
             : null,
-          durationMinutes: block.duration,
           location: block.location,
           scheduledStartAt: block.start_time,
           scheduledEndAt: block.end_time,

@@ -1035,7 +1035,6 @@ export interface AppTasks {
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
   description: string | null;
   dueAt: ColumnType<string, Date | string, Date | string> | null;
-  durationMinutes: number | null;
   id: Generated<string>;
   location: string | null;
   ownerUserid: string;

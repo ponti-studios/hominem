@@ -33,7 +33,6 @@ function serverTask(id: string, overrides: Record<string, unknown> = {}) {
     status: 'pending',
     priority: 'medium',
     dueAt: null,
-    durationMinutes: null,
     schedulingWindowStartAt: null,
     schedulingWindowEndAt: null,
     scheduledStartAt: null,

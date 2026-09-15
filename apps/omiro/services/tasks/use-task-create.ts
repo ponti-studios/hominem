@@ -13,7 +13,6 @@ interface CreateTaskInput {
   description?: string | null;
   priority?: 'low' | 'medium' | 'high';
   dueAt?: string | null;
-  durationMinutes?: number | null;
   schedulingWindowStartAt?: string | null;
   schedulingWindowEndAt?: string | null;
   scheduledStartAt?: string | null;
@@ -31,7 +30,6 @@ function buildCreateTaskPayload(input: CreateTaskInput, parentId: string | undef
     artifactType: 'task' as const,
     priority: input.priority ?? 'medium',
     dueAt: input.dueAt ?? null,
-    durationMinutes: input.durationMinutes ?? null,
     schedulingWindowStartAt: input.schedulingWindowStartAt ?? null,
     schedulingWindowEndAt: input.schedulingWindowEndAt ?? null,
     scheduledStartAt: input.scheduledStartAt ?? null,
@@ -58,7 +56,6 @@ function buildOptimisticTask(
     status: 'pending',
     priority: payload.priority,
     dueAt: payload.dueAt,
-    durationMinutes: payload.durationMinutes,
     schedulingWindowStartAt: payload.schedulingWindowStartAt,
     schedulingWindowEndAt: payload.schedulingWindowEndAt,
     scheduledStartAt: payload.scheduledStartAt,

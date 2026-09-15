@@ -24,7 +24,6 @@ function MinimalTask(overrides: Partial<Task> = {}): Task {
     dueAt: null,
     scheduledStartAt: null,
     scheduledEndAt: null,
-    durationMinutes: null,
     location: null,
     ...overrides,
   } as Task;
@@ -102,7 +101,6 @@ describe('validateTaskDraft', () => {
     dueAt: '',
     scheduledStartAt: '',
     scheduledEndAt: '',
-    durationMinutes: '',
     location: '',
   };
 
@@ -118,12 +116,6 @@ describe('validateTaskDraft', () => {
         scheduledEndAt: '2026-09-15T10:00',
       }),
     ).toBe('End time must be after the start time.');
-  });
-
-  it('rejects a non-integer duration', () => {
-    expect(validateTaskDraft({ ...base, durationMinutes: '1.5' })).toBe(
-      'Duration must be a whole number of minutes.',
-    );
   });
 
   it('accepts a minimal valid draft', () => {

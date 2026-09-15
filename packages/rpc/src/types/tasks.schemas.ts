@@ -9,7 +9,6 @@ export const TaskRecordSchema = z.object({
   status: z.string(),
   priority: z.string(),
   dueAt: z.string().nullable(),
-  durationMinutes: z.number().int().nullable(),
   schedulingWindowStartAt: z.string().nullable(),
   schedulingWindowEndAt: z.string().nullable(),
   scheduledStartAt: z.string().nullable(),

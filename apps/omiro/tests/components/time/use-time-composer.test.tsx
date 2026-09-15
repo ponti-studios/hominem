@@ -374,7 +374,7 @@ describe('useTimeComposer', () => {
     });
 
     expect(mockCreateTaskMutateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Buy milk', durationMinutes: 30, location: 'Home' }),
+      expect.objectContaining({ title: 'Buy milk', location: 'Home' }),
     );
     expect(result.current.interaction).toEqual({ kind: 'idle' });
   });

@@ -32,7 +32,6 @@ const task = (overrides: Partial<TaskListItem> = {}): TaskListItem => ({
   createdAt: '2026-07-28T09:00:00.000Z',
   description: null,
   dueAt: null,
-  durationMinutes: null,
   id: 'task-1',
   location: null,
   ownerUserId: 'user-1',

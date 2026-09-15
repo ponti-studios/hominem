@@ -40,25 +40,18 @@ function timeBlockDraftReducer(
   return { ...state, [action.field]: action.value } as TimeBlockDraft;
 }
 
-// The event API only stores start/end, not a duration -- this derives the
-// implied duration the same way for the initial draft and the dirty check,
-// so the two can't quietly drift apart.
+// Neither tasks nor the event API store a duration -- this derives the
+// implied duration from start/end the same way for the initial draft and
+// the dirty check, so the two can't quietly drift apart.
 function computeOriginalSchedule(
   isTask: boolean,
-  task:
-    | {
-        scheduledStartAt?: string | null;
-        scheduledEndAt?: string | null;
-        durationMinutes?: number | null;
-      }
-    | undefined,
+  task: { scheduledStartAt?: string | null; scheduledEndAt?: string | null } | undefined,
   event: { startDate?: string | null; endDate?: string | null } | null,
 ) {
   const start = isTask ? task?.scheduledStartAt : event?.startDate;
   const end = isTask ? task?.scheduledEndAt : event?.endDate;
-  const duration = isTask
-    ? task?.durationMinutes
-    : start && end
+  const duration =
+    start && end
       ? Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60_000)
       : null;
   return { start, end, duration };
@@ -169,7 +162,6 @@ export function useTimeBlockEditorState({
     id,
     location,
     notes,
-    task?.durationMinutes,
     task?.scheduledEndAt,
     task?.scheduledStartAt,
     taskQuery.data?.participants,
@@ -204,7 +196,6 @@ export function useTimeBlockEditorState({
     notes,
     originalPeople,
     taskQuery.data?.participants,
-    task?.durationMinutes,
     task?.scheduledEndAt,
     task?.scheduledStartAt,
     title,
@@ -259,7 +250,6 @@ export function useTimeBlockEditorState({
         await updateTask({
           taskId: id,
           description: draftNotes.trim() || null,
-          durationMinutes,
           location: draftLocation.trim() || null,
           participants: draftPeople.map((person) => person.id),
           scheduledEndAt: isSchedulingRef.current ? draftEnd.toISOString() : null,

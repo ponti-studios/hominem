@@ -21,12 +21,6 @@ export function mapParsedBlockToDraftPatch(block: TimeBlock): ParsedWhenResult {
         ...base,
         scheduledStartAt: toLocalInputValue(block.start_time),
         scheduledEndAt: toLocalInputValue(block.end_time),
-        durationMinutes: String(
-          block.duration ??
-            Math.round(
-              (new Date(block.end_time).getTime() - new Date(block.start_time).getTime()) / 60000,
-            ),
-        ),
         dueAt: '',
       },
       note: null,
@@ -41,7 +35,6 @@ export function mapParsedBlockToDraftPatch(block: TimeBlock): ParsedWhenResult {
         ...base,
         scheduledStartAt: toLocalInputValue(block.start_time),
         scheduledEndAt: toLocalInputValue(end),
-        durationMinutes: String(block.duration),
         dueAt: '',
       },
       note: null,
@@ -54,7 +47,10 @@ export function mapParsedBlockToDraftPatch(block: TimeBlock): ParsedWhenResult {
     return { patch: { ...base, dueAt: `${block.deadline_fixed}T00:00` }, note: null };
   }
   if (block.duration) {
-    return { patch: { ...base, durationMinutes: String(block.duration) }, note: null };
+    return {
+      patch: base,
+      note: 'I caught the duration but not a date — pick a time below.',
+    };
   }
   if (block.scheduling_window_start || block.scheduling_window_end) {
     return {

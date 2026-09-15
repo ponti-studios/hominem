@@ -28,7 +28,6 @@ describe('mapParsedBlockToDraftPatch', () => {
     expect(result.patch).toMatchObject({
       scheduledStartAt: expect.stringContaining('14:00'),
       scheduledEndAt: expect.stringContaining('15:00'),
-      durationMinutes: '60',
       dueAt: '',
     });
   });
@@ -39,7 +38,6 @@ describe('mapParsedBlockToDraftPatch', () => {
       start_time: '2026-09-15T14:00:00-07:00',
       duration: 30,
     });
-    expect(result.patch.durationMinutes).toBe('30');
     expect(result.patch.scheduledEndAt).toContain('14:30');
   });
 
@@ -56,9 +54,9 @@ describe('mapParsedBlockToDraftPatch', () => {
   });
 
   it('maps a duration-only block without inventing a schedule', () => {
-    expect(mapParsedBlockToDraftPatch({ ...base, duration: 120 }).patch).toEqual({
-      durationMinutes: '120',
-    });
+    const result = mapParsedBlockToDraftPatch({ ...base, duration: 120 });
+    expect(result.patch).toEqual({});
+    expect(result.note).toContain('duration');
   });
 
   it('reports a vague scheduling window without committing a time', () => {

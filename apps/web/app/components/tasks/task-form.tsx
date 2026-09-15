@@ -13,7 +13,6 @@ import {
   type TaskFormDraft,
 } from '~/hooks/use-task-form-draft';
 
-import { DurationPicker } from './duration-picker';
 import { PriorityPicker } from './priority-picker';
 import { WhenInput } from './when-input';
 
@@ -118,13 +117,6 @@ export function TaskForm(props: TaskFormProps) {
                 scheduledEndAt={draft.scheduledEndAt}
                 scheduledStartAt={draft.scheduledStartAt}
                 setField={setField}
-              />
-            </fieldset>
-            <fieldset className="space-y-2">
-              <legend className="text-xs text-muted-foreground">Duration</legend>
-              <DurationPicker
-                onChange={(value) => setField('durationMinutes', value)}
-                value={draft.durationMinutes}
               />
             </fieldset>
             <label className="block space-y-2 text-xs">

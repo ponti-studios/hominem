@@ -25,7 +25,6 @@ function mockTask(
     createdAt: at(-24),
     description: null,
     dueAt: null,
-    durationMinutes: null,
     location: null,
     ownerUserId: 'preview-user',
     parentTaskId: null,
@@ -126,7 +125,6 @@ export function createTimePreviewScenarios(): TimePreviewScenario[] {
       const dayOffset = day * 24;
       return [
         mockTask({
-          durationMinutes: 45,
           id: `preview-busy-task-plan-${day + 1}`,
           priority: day % 4 === 0 ? 'high' : 'medium',
           scheduledStartAt: at(dayOffset + 8),
