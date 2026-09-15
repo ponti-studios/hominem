@@ -24,10 +24,6 @@ export const timeBlockRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
 
-    // Adoption evidence for the device-only Calendar rollout. Deliberately do
-    // not attach prompt, calendar, user, or request payload data to this log.
-    logger.info('[tasks/parse] legacy_invocation');
-
     await assertUnderMonthlyUsageLimit(userId);
 
     const eventId = randomUUID();

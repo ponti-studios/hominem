@@ -1,6 +1,6 @@
 ---
 title: 'Re-inventory web chat gap map and diff coverage'
-status: 'Proposed'
+status: 'Implemented'
 priority: 'high'
 labels: [web, chat]
 depends_on: []

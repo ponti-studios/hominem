@@ -4,7 +4,7 @@ status: 'Proposed'
 priority: 'high'
 labels: [omiro, calendar, ios, foundation-models]
 depends_on: []
-blocks: [remove-legacy-time-parser.md]
+blocks: []
 estimated_size: 'L'
 ---
 
@@ -37,8 +37,8 @@ Foundation Model and use native EventKit and EventKitUI tools.
   React Native, CocoaPods, or a simulator.
 - [ ] Apple editor handles calendar create, edit, delete, calendar selection,
   recurrence, attendees, alarms, save, and cancellation.
-- [ ] `/api/tasks/parse` remains only for older clients and receives no
-  calendar payload from current Omiro builds.
+- [ ] `/api/tasks/parse` remains supported for web task management and older
+  Omiro builds, and receives no calendar payload from current Omiro builds.
 - [ ] Calendar MCP tools, calendar scope, People calendar activity, exports,
   evaluations, metadata, and database tables are removed; travel trip history
   remains available.
@@ -47,6 +47,5 @@ Foundation Model and use native EventKit and EventKitUI tools.
 
 No production deployment occurs as part of this task. Before production schema
 deployment, the database runbook requires a verified private backup. The
-legacy parser is removed only by the dependent adoption task after fourteen
-consecutive zero-call days; after sixty days with calls it requires a product
-decision.
+server parser remains supported; any future removal requires an explicit
+product decision covering web task management and older Omiro clients.

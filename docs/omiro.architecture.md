@@ -71,8 +71,9 @@ Feature services own query keys and mutations:
 - `services/chat/` owns chat queries, generation, message edits, retries,
   archive, search, and tool-call responses.
 - `services/notes/` owns note queries and mutations.
-- `services/tasks/` owns task queries and mutations. The legacy server parser
-  remains only for older released clients during the documented adoption window.
+- `services/tasks/` owns task queries and mutations. The server time parser
+  remains a supported API surface for web task management and older released
+  clients during the device-only Calendar rollout.
 - `services/calendar/` owns the compact EventKit summary gateway and calendar queries.
 
 Draft text and resume targets are local state. `launch-state.ts` stores Stream,
