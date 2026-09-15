@@ -38,7 +38,10 @@ function NativeCalendarEventRoute({ id }: { id: string }) {
   const router = useRouter();
 
   useEffect(() => {
-    void calendarEventGateway.presentEvent(id).finally(() => router.replace(TIME_ROUTE));
+    void calendarEventGateway
+      .presentEvent(id)
+      .catch(() => undefined)
+      .finally(() => router.replace(TIME_ROUTE));
   }, [id, router]);
 
   return <Stack.Screen options={{ title: 'Calendar event' }} />;

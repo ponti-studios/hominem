@@ -23,11 +23,8 @@ CREATE INDEX IF NOT EXISTS app_tasks_owner_scheduling_window_idx
 
 -- +goose Down
 -- +goose StatementBegin
-
-DROP INDEX IF EXISTS app.app_tasks_owner_scheduling_window_idx;
-
-ALTER TABLE app.tasks
-  DROP CONSTRAINT IF EXISTS app_tasks_duration_positive_check,
-  DROP COLUMN IF EXISTS duration_minutes;
+-- This repair migration may only restore schema drift. The duration column,
+-- constraint, and index belong to the historical task-time migration, so this
+-- migration deliberately has no destructive rollback.
 
 -- +goose StatementEnd

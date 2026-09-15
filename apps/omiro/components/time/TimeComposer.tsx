@@ -103,6 +103,16 @@ export function TimeComposer({
     onClose();
   };
 
+  const handleChooseEvent = (id: string) => {
+    onClose();
+    setTimeout(() => chooseEvent(id), 250);
+  };
+
+  const handleChooseOpening = (opening: Parameters<NonNullable<typeof chooseOpening>>[0]) => {
+    onClose();
+    setTimeout(() => void chooseOpening(opening), 250);
+  };
+
   const showResult = state.kind !== 'idle' && state.kind !== 'parsing';
   const showVoiceProcessing =
     voice.voiceState === 'transcribing' || voice.voiceState === 'cleaning';
@@ -119,8 +129,8 @@ export function TimeComposer({
         <TimeResultSurface
           isSaving={isSaving}
           onCancel={cancelResult}
-          onChooseEvent={chooseEvent}
-          onChooseOpening={chooseOpening}
+          onChooseEvent={handleChooseEvent}
+          onChooseOpening={handleChooseOpening}
           onEditField={updateDraft}
           onRetry={retry}
           onSubmitDraft={handleSubmitDraft}

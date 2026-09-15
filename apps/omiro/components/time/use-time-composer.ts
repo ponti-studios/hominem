@@ -145,23 +145,31 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
     setInteraction({ kind: 'idle' });
   }, []);
 
-  const chooseOpening = useCallback((opening: TimeOpening) => {
-    setInteraction((current) => {
-      if (current.kind !== 'availability') {
-        return current;
+  const chooseOpening = useCallback(
+    async (opening: TimeOpening) => {
+      if (interaction.kind !== 'availability') {
+        return;
       }
-      return {
-        block: {
-          ...current.block,
-          end_time: opening.end,
-          primary_intent: 'add_task',
-          start_time: opening.start,
-        },
-        kind: 'draft',
-        submittedPrompt: current.submittedPrompt,
-      };
-    });
-  }, []);
+      const { submittedPrompt } = interaction;
+      setInteraction({ kind: 'idle' });
+      try {
+        await calendarEventGateway.presentDraft({
+          endDate: opening.end,
+          isAllDay: false,
+          location: null,
+          notes: null,
+          startDate: opening.start,
+          title: interaction.block.title ?? submittedPrompt,
+        });
+      } catch (error) {
+        fail(
+          error instanceof Error ? error.message : 'Unable to open a calendar draft.',
+          submittedPrompt,
+        );
+      }
+    },
+    [fail, interaction],
+  );
 
   const chooseEvent = useCallback(
     (id: string) => {

@@ -151,8 +151,11 @@ private struct FindAvailabilityTool: Tool {
     guard let start = iso8601Date(arguments.startDate), let end = iso8601Date(arguments.endDate), start < end else {
       return "Invalid date range. Use ISO 8601 timestamps."
     }
+    guard end.timeIntervalSince(start) <= 3650 * 24 * 60 * 60 else {
+      return "The date range must be no longer than ten years."
+    }
     let events = try await MainActor.run {
-      try OnDeviceAICalendarCoordinator.shared.events(from: start, to: end)
+      try OnDeviceAICalendarCoordinator.shared.events(from: start, to: end, limit: nil)
     }
     let choices = try CalendarAvailability.openings(
       events: events,

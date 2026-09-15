@@ -1,4 +1,5 @@
 import { MenuView, type MenuAction, type NativeActionEvent } from '@expo/ui/community/menu';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -8,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAppTheme, useStyles } from '~/components/theme';
 import { IconButton } from '~/components/ui';
 import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
+import { calendarKeys } from '~/services/calendar/calendar-queries';
 import { getTimeBlockRoute, UNSCHEDULED_ROUTE } from '~/services/navigation/routes';
 
 import AppIcon from '../ui/icon';
@@ -17,6 +19,7 @@ import { TimeStream } from './TimeStream';
 
 export function TimeScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { bottom: safeAreaBottom } = useSafeAreaInsets();
   const [extractionMode, setExtractionMode] = useState<TimeExtractionMode | null>(null);
   const [extractionSessionKey, setExtractionSessionKey] = useState(0);
@@ -40,12 +43,15 @@ export function TimeScreen() {
         return;
       }
       try {
-        await calendarEventGateway.presentEvent(item.value.id);
+        const result = await calendarEventGateway.presentEvent(item.value.id);
+        if (result === 'saved' || result === 'deleted') {
+          await queryClient.invalidateQueries({ queryKey: calendarKeys.events });
+        }
       } catch (error) {
         showError(error instanceof Error ? error.message : 'Unable to open this calendar event.');
       }
     },
-    [router, showError],
+    [queryClient, router, showError],
   );
   const openEvent = useCallback(
     async (event: { id: string }) => openItem({ kind: 'event', value: event }),

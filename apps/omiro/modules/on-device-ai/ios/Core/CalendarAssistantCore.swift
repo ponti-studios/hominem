@@ -134,7 +134,7 @@ public enum CalendarAvailability {
     durationMinutes: Int,
     limit: Int = 5
   ) throws -> [AvailabilityChoice] {
-    guard startDate < endDate, durationMinutes > 0, limit > 0 else {
+    guard startDate < endDate, durationMinutes > 0, durationMinutes <= Int.max / 60, limit > 0 else {
       throw CalendarAssistantError.invalidDateRange
     }
     let interval = TimeInterval(durationMinutes * 60)

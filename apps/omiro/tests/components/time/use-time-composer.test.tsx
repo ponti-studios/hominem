@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
 const interpret = vi.fn();
+const presentDraft = vi.fn().mockResolvedValue('saved');
 
 vi.mock('expo-crypto', () => ({ randomUUID: () => 'test-request-token' }));
 vi.mock('expo-router', () => ({ useIsFocused: () => true }));
@@ -12,6 +13,7 @@ vi.mock('~/services/calendar/calendar-event-gateway', () => ({
   calendarEventGateway: {
     cancelInterpretation: vi.fn(),
     interpret,
+    presentDraft,
     subscribeToProcessingStage: vi.fn(() => ({ remove: vi.fn() })),
   },
 }));
@@ -78,7 +80,7 @@ describe('useTimeComposer', () => {
     });
   });
 
-  it('turns an availability choice into a database-backed task draft', async () => {
+  it('opens the selected availability as a native calendar draft', async () => {
     interpret.mockResolvedValueOnce({
       availability: [
         { endDate: '2026-09-15T11:00:00.000Z', startDate: '2026-09-15T10:00:00.000Z' },
@@ -91,16 +93,21 @@ describe('useTimeComposer', () => {
 
     act(() => result.current.setPrompt('Find an hour tomorrow'));
     await act(async () => result.current.ask());
-    act(() =>
+    await act(async () =>
       result.current.chooseOpening({
         end: '2026-09-15T11:00:00.000Z',
         start: '2026-09-15T10:00:00.000Z',
       }),
     );
 
-    expect(result.current.interaction).toMatchObject({
-      block: expect.objectContaining({ primary_intent: 'add_task' }),
-      kind: 'draft',
+    expect(presentDraft).toHaveBeenCalledWith({
+      endDate: '2026-09-15T11:00:00.000Z',
+      isAllDay: false,
+      location: null,
+      notes: null,
+      startDate: '2026-09-15T10:00:00.000Z',
+      title: 'Find an hour tomorrow',
     });
+    expect(result.current.interaction).toEqual({ kind: 'idle' });
   });
 });

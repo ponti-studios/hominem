@@ -21,7 +21,8 @@ func availabilityMergesBusyIntervals() throws {
 
 @Test("availability rejects invalid requests")
 func availabilityRejectsInvalidRequests() {
+  let timestamp = Date()
   #expect(throws: CalendarAssistantError.invalidDateRange) {
-    try CalendarAvailability.openings(events: [], taskBusyIntervals: [], from: Date(), to: Date(), durationMinutes: 30)
+    try CalendarAvailability.openings(events: [], taskBusyIntervals: [], from: timestamp, to: timestamp, durationMinutes: 30)
   }
 }

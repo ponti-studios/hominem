@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).');
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).')
+  .refine((value) => {
+    const parsed = new Date(`${value}T00:00:00.000Z`);
+    return parsed.toISOString().slice(0, 10) === value;
+  }, 'Expected a valid calendar date.');
 
 export const tripHistoryInputSchema = z
   .object({

@@ -19,6 +19,7 @@ final class OnDeviceAICalendarCoordinator: NSObject, @preconcurrency EKEventEdit
     let formatter = ISO8601DateFormatter()
     return store.events(matching: predicate)
       .sorted { $0.startDate < $1.startDate }
+      .prefix(100)
       .map { event in
         var summary = CalendarEventSummaryRecord()
         summary.id = event.eventIdentifier ?? ""
@@ -33,14 +34,14 @@ final class OnDeviceAICalendarCoordinator: NSObject, @preconcurrency EKEventEdit
       }
   }
 
-  func events(from startDate: Date, to endDate: Date) throws -> [CalendarEventSummary] {
+  func events(from startDate: Date, to endDate: Date, limit: Int? = 20) throws -> [CalendarEventSummary] {
     guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
       throw OnDeviceAIException.missingPermission
     }
     let predicate = store.predicateForEvents(withStart: startDate, end: endDate, calendars: nil)
-    return store.events(matching: predicate)
-      .sorted { $0.startDate < $1.startDate }
-      .prefix(20)
+    let events = store.events(matching: predicate).sorted { $0.startDate < $1.startDate }
+    let boundedEvents = limit.map { Array(events.prefix($0)) } ?? events
+    return boundedEvents
       .map { event in
         CalendarEventSummary(
           id: event.eventIdentifier ?? "",

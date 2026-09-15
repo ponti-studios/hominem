@@ -20,6 +20,7 @@ export async function listTripHistory(
         .innerJoin('app.people as person', 'person.id', 'attendee.personId')
         .select('person.displayName as displayName')
         .where('attendee.tripId', '=', trip.id)
+        .where('person.ownerUserid', '=', ownerUserId)
         .execute();
       return {
         ...trip,
