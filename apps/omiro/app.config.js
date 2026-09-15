@@ -181,7 +181,6 @@ function createConfig({ config }) {
       supportsTablet: true,
       entitlements: {
         'com.apple.developer.siri': true,
-        'keychain-access-groups': [`$(AppIdentifierPrefix)${appEnvironmentConfig.bundleIdentifier}`],
       },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,

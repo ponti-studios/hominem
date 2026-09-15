@@ -4,6 +4,7 @@ import type {
   CalendarPermissionStatus,
   CalendarRecurrenceScope,
   OnDeviceAIResult,
+  TimeProcessingStageEvent,
 } from '~/modules/on-device-ai';
 
 import type { CalendarEventGateway } from './calendar-event-gateway';
@@ -52,6 +53,7 @@ const fixtureEvents: CalendarEvent[] = [
   },
 ];
 let scenario: TimeFixtureScenario = 'authorized';
+const processingStageListeners = new Set<(event: TimeProcessingStageEvent) => void>();
 
 function permission(): CalendarPermissionStatus {
   if (scenario === 'denied') {
@@ -76,6 +78,20 @@ export const timeFixtureGateway: CalendarEventGateway = {
   askSchedule: async (prompt): Promise<OnDeviceAIResult> => {
     await maybeFail();
     return { isOnDevice: true, text: `Fixture answer for ${prompt}` };
+  },
+  interpret: async (prompt, _taskBusyIntervals, requestToken) => {
+    const emit = (stage: TimeProcessingStageEvent['stage']) => {
+      processingStageListeners.forEach((listener) => listener({ requestToken, stage }));
+    };
+    emit('understanding');
+    await maybeFail();
+    emit('preparingSuggestion');
+    return { kind: 'answer', answer: `Fixture answer for ${prompt}` };
+  },
+  cancelInterpretation: async () => {},
+  subscribeToProcessingStage: (listener: (event: TimeProcessingStageEvent) => void) => {
+    processingStageListeners.add(listener);
+    return { remove: () => processingStageListeners.delete(listener) };
   },
   createEvent: async (title, startDate, endDate, location): Promise<CalendarEvent> => {
     await maybeFail();
@@ -114,6 +130,27 @@ export const timeFixtureGateway: CalendarEventGateway = {
   listEvents: async (startDate: string, endDate: string): Promise<CalendarEvent[]> => {
     await maybeFail();
     return fixtureEvents.filter((event) => event.startDate < endDate && event.endDate > startDate);
+  },
+  presentDraft: async (draft) => {
+    await maybeFail();
+    fixtureEvents.push({
+      calendarTitle: 'Omiro test calendar',
+      endDate: draft.endDate,
+      id: `time-fixture-created-${fixtureEvents.length}`,
+      isAllDay: draft.isAllDay,
+      isEditable: true,
+      location: draft.location,
+      notes: draft.notes,
+      participants: [],
+      recurrenceDescription: null,
+      startDate: draft.startDate,
+      title: draft.title,
+    });
+    return 'saved';
+  },
+  presentEvent: async () => {
+    await maybeFail();
+    return 'saved';
   },
   requestPermission: async () => {
     scenario = 'authorized';

@@ -18,7 +18,7 @@ export type OnDeviceAIAvailability = 'available' | 'unavailable' | 'unsupported'
 
 export type CalendarPermissionStatus = 'authorized' | 'denied' | 'notDetermined';
 
-export interface CalendarEvent {
+export interface CalendarEventSummary {
   id: string;
   title: string;
   startDate: string;
@@ -26,10 +26,58 @@ export interface CalendarEvent {
   isAllDay: boolean;
   location: string | null;
   calendarTitle: string | null;
-  notes: string | null;
-  participants: string[];
-  recurrenceDescription: string | null;
   isEditable: boolean;
+}
+
+// Legacy-only view model retained while the unreachable custom event detail
+// screen is removed. `listCalendarEventSummaries` never returns these fields.
+export interface CalendarEvent extends CalendarEventSummary {
+  notes?: string | null;
+  participants?: string[];
+  recurrenceDescription?: string | null;
+}
+
+export interface CalendarDraft {
+  title: string;
+  startDate: string;
+  endDate: string;
+  isAllDay: boolean;
+  location: string | null;
+  notes: string | null;
+}
+
+export interface TaskBusyInterval {
+  startDate: string;
+  endDate: string;
+}
+
+export type CalendarEditorResult = 'saved' | 'deleted' | 'cancelled';
+
+export type TimeAssistantResult =
+  | { kind: 'answer'; answer: string }
+  | {
+      kind: 'taskDraft';
+      taskTitle: string;
+      taskDueAt: string | null;
+      taskDurationMinutes: number | null;
+      taskScheduledStartAt: string | null;
+      taskScheduledEndAt: string | null;
+      taskSchedulingWindowStartAt: string | null;
+      taskSchedulingWindowEndAt: string | null;
+      taskLocation: string | null;
+    }
+  | { kind: 'availability'; availability: { startDate: string; endDate: string }[] }
+  | { kind: 'cancelled' }
+  | { kind: 'error'; error: string };
+
+export type TimeProcessingStage =
+  | 'understanding'
+  | 'checkingSchedule'
+  | 'preparingSuggestion';
+
+export interface TimeProcessingStageEvent {
+  stage: TimeProcessingStage;
+  requestToken: string;
 }
 
 export type CalendarEventPatch = {
@@ -61,6 +109,15 @@ export type OnDeviceAIModuleType = {
   getAvailability(): Promise<OnDeviceAIAvailability>;
   getCalendarPermissions(): Promise<CalendarPermissionStatus>;
   requestCalendarPermissions(): Promise<CalendarPermissionStatus>;
+  listCalendarEventSummaries(startDate: string, endDate: string): Promise<CalendarEventSummary[]>;
+  presentCalendarEvent(id: string): Promise<CalendarEditorResult>;
+  presentCalendarDraft(draft: CalendarDraft): Promise<CalendarEditorResult>;
+  interpretTimeRequest(
+    prompt: string,
+    taskBusyIntervals: TaskBusyInterval[],
+    requestToken: string,
+  ): Promise<TimeAssistantResult>;
+  cancelTimeAssistant(requestToken: string): Promise<void>;
   getCalendarEvents(startDate: string, endDate: string): Promise<CalendarEvent[]>;
   createCalendarEvent(
     title: string,
@@ -78,8 +135,8 @@ export type OnDeviceAIModuleType = {
   deleteCalendarEvent(id: string, recurrenceScope: CalendarRecurrenceScope): Promise<void>;
   askCalendar(prompt: string): Promise<OnDeviceAIResult>;
   addListener(
-    eventName: 'onDeviceAILog',
-    listener: (event: OnDeviceAILogEvent) => void,
+    eventName: 'onDeviceAILog' | 'onTimeAssistantStage',
+    listener: (event: OnDeviceAILogEvent | TimeProcessingStageEvent) => void,
   ): { remove: () => void };
 };
 

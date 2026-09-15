@@ -142,8 +142,8 @@ This part covers user-facing behavior and client ownership only. A feature is
 **missing** when no web implementation was found, **partial** when a web seam
 exists but does not match Omiro's behavior or is stubbed, and **present** when
 the web client has a working equivalent. Remaining implementation work for
-this gap map is tracked as standardized Linear-style tasks in `docs/tasks/`
-(`motion-and-persistence.md`, `web-chat-verification.md`); earlier phases of
+this gap map is tracked as standardized Linear-style tasks in `docs/tasks/`,
+starting at `web-chat-reinventory-matrix.md`; earlier phases of
 this project, including `composer-parity.md`, were completed and their task
 specs removed — see [chat.composer-audio-modality.md](decisions/chat.composer-audio-modality.md)
 and [chat.composer-error-recovery.md](decisions/chat.composer-error-recovery.md)
@@ -174,37 +174,37 @@ The largest missing areas are:
 | Start chat from the mixed composer | **Partial** | `components/chat-navigation.tsx` creates an empty chat; `routes/home.tsx` can create and redirect. | Web can create a blank chat, but does not submit the first message through Omiro's accepted-message start stream from a mixed composer. |
 | Browse recent chats | **Present** | `hooks/use-chats.ts`, `components/chat-navigation.tsx`, `routes/chats.tsx`. | Web has sidebar and paginated chat list equivalents, but not the mixed All stream or Omiro activity/indexing model. |
 | Chat detail route | **Present** | `routes/chat/chat.$chatId.tsx`, route registration in `app/routes.ts`. | Direct web route exists at `/chat/:chatId`; it does not use Omiro's protected inbox route or resume-target state. |
-| Resume target and deep-link recovery | **Partial** | Direct `/chat/:chatId` navigation works; the route loader seeds messages. | No equivalent of Omiro's local resume target, consumed launch state, missing-conversation screen, or `kind`-preserving content route was found. |
-| Load history and refresh | **Partial** | `lib/hooks/use-chat-messages.ts` fetches 50 messages with React Query; loader provides initial data. | No Omiro-style pull-to-refresh, restored-query loading distinction, explicit empty state, or visible retry state was found. |
+| Resume target and deep-link recovery | **Partial** | Direct `/chat/:chatId` navigation works; the route loader seeds messages; a missing-conversation screen exists (`ChatConversationState kind="not-found"`, "Conversation unavailable" with a start-new-chat action, `compute-chat-load-state.ts` 404 handling; e2e `LAUNCH-03`/`LAUNCH-04`, `UI-01`/`UI-02`). | No equivalent of Omiro's local resume target, consumed launch state, or `kind`-preserving content route was found. |
+| Load history and refresh | **Partial** | `lib/hooks/use-chat-messages.ts` fetches 50 messages with React Query; loader provides initial data; not-found and retry are exposed (`isNotFound`, `retry: messagesQuery.refetch`, `onRetryLoad` in the route; hook tests); restored-vs-initial semantics via `compute-chat-load-state.ts`. | No Omiro-style pull-to-refresh; explicit empty state unverified. |
 | Send message with optimistic user row | **Present** | `routes/chat/chat.$chatId.tsx`, `lib/hooks/use-stream-message.ts`. | Web seeds an optimistic row and reconciles it on `accepted`; it does not carry Omiro's generation-stage model or durable failed-row behavior. |
-| Assistant streaming lifecycle | **Partial** | `use-stream-message.ts` consumes `accepted`, `committed`, and `error`; the route shows `Shimmer` while thinking. | Web only renders the committed message, not Omiro's explicit preparing/saving lifecycle, cancellation recovery, or shared SSE parser. |
-| Cancel generation | **Partial** | `use-stream-message.ts` creates an `AbortController`; `PromptInputSubmit` exposes stop while streaming. | The controller signal is not passed into the RPC request, and the web client does not call the generation cancel endpoint, so server-side cancellation and durable cancellation state are not mirrored. |
-| Retry failed send/response | **Missing** | No retry control or retry mutation was found in `routes/chat/chat.$chatId.tsx`. | Missing Omiro failed user-row retry, interrupted assistant retry, retained last input, and retry acceptance states. |
-| Regenerate assistant response | **Missing** | No web regeneration hook, route action, or message control was found. | Missing regeneration transport, cache replacement, cancellation, retry, and approved ordering semantics. |
-| Edit user message | **Partial** | `useChatMessages.ts` exposes `updateMessage`, but its implementation is `async () => undefined`. | No edit UI or real PATCH mutation is wired. |
-| Delete message | **Partial** | `useChatMessages.ts` exposes `deleteMessage`, but its implementation is `async () => undefined`. | No delete UI or real client mutation is wired. |
-| Copy/share message | **Missing** | No chat message copy/share controls or message action component was found. | Missing native/web clipboard and share/download behavior for individual responses. `ConversationDownload` only downloads the whole conversation and is not used by the chat route. |
+| Assistant streaming lifecycle | **Present** | `use-stream-message.ts` consumes `accepted`, `committed`, `error`, and `generation.cancelled`; the route shows `Shimmer` while thinking; stopping/cancelled/failed states with durable checkpoint restore and replay (`use-stream-message.test.tsx`). | Stage vocabulary differs from Omiro's preparing/saving model; no shared SSE parser. |
+| Cancel generation | **Present** | `use-stream-message.ts` passes the abort signal into the request and calls the generation cancel endpoint before aborting (`chatClient.cancel`); durable cancelled state with cancel-failure and double-cancel guards (`use-stream-message.test.tsx`); regenerate and start-chat hooks share the pattern; e2e `RECOVER-02`, `RECOVER-03`. | Server and client cancellation agree; reload races covered by `RECOVER-04`/`RECOVER-05`. |
+| Retry failed send/response | **Present** | `retryGeneration` in `use-chat-composer-submission.ts` (gated on online); failed sends restore draft and attachments and mark the generation retryable (`onFailed`); e2e `RECOVER-01` retries without a duplicate user message. | Interrupted-assistant retry beyond generation retry unverified. |
+| Regenerate assistant response | **Present** | `lib/hooks/use-regenerate-message.ts` with transport, cancellation, and retry, wired into `chat.$chatId.tsx` with `responseLength`; e2e `SEND-05`, `UI-04`; hook tests and stories. | Cache replacement handled by message invalidation on settle. |
+| Edit user message | **Present** | `app/components/chat/use-chat-message-edit.ts` with edit UI in the message actions ("Edit message"); e2e `UI-03`; hook tests. | Covered by hook tests and e2e `UI-03`. |
+| Delete message | **Present** | Real `deleteMessage` mutation in `lib/hooks/use-chat-messages.ts`, `onDelete` wired in `chat.$chatId.tsx`; e2e `UI-03`; hook tests including missing-row and network-error paths. | Omiro's detail screen does not pass delete either, so parity meets the shared ceiling. |
+| Copy/share message | **Present** | `chat-message-actions.tsx`: clipboard copy with copied/failed states, `navigator.share` with shared/failed states, speech playback; e2e `UI-04`. | Per-message download not offered; whole-conversation download remains separate. |
 | Speech playback | **Present** | `components/chat/speech-player.tsx`, `lib/telemetry/speech.ts`, route integration. | Web uses committed assistant audio for audio responses, falls back to the speech endpoint for text-only/older messages, and exposes a manual action when browser autoplay is blocked. |
 | Voice input | **Partial** | `lib/hooks/use-speech-to-text.ts`, chat route microphone control. | Browser speech recognition inserts text and can request an audio response. Permission-denied, microphone-unavailable, and transcription-failed are now distinct, recoverable errors (press-mic-again clears them, matching Omiro's retry pattern); see [chat.composer-error-recovery.md](decisions/chat.composer-error-recovery.md). Web still lacks — by design, not gap — Omiro's recording panel, native iOS transcription boundary, and LLM cleanup pass, since the browser Speech API has no recording file or intermediate draft needing one. |
 | File attachments | **Present** | `lib/hooks/use-file-upload.ts`, chat route file input and attachment chips. | Upload, removal, and per-file retry (resubmits the exact failed file by identity, no re-selection) exist and are covered by focused tests; a second pick can't race an in-flight upload. See [chat.composer-error-recovery.md](decisions/chat.composer-error-recovery.md). |
 | Referenced notes | **Present** | `useNoteSearch`, hashtag suggestions, selected-note chips, and `noteIds` send payload. | Web has note references, but not Omiro's rendered referenced-note presentation or chat-to-note ownership/link flows. |
-| Reasoning display | **Partial** | `components/ai-elements/reasoning.tsx` exists. | The chat route renders `message.content` and tool calls but does not render the message `reasoning` field through the `Reasoning` component. |
+| Reasoning display | **Present** | `ReasoningTrigger` toggle in `chat-message-body.tsx`; `chat-message.test.tsx` renders reasoning alongside failures and opt-in debug details. | Collapsed by default behind the toggle. |
 | Tool-call rendering | **Present** | `components/ai-elements/tool.tsx`, route tool-call rendering. | Web renders pending/completed/rejected calls and previews. |
 | Tool-call approval/rejection | **Present** | `lib/hooks/use-tool-call-respond.ts`, `ToolApprovalActions`. | Web has the client control Omiro currently lacks; response streaming is drained and queries invalidated rather than rendered incrementally. |
-| Search within chat | **Missing** | No chat search hook, dialog, or message-search query was found. | Missing debounced search, result count, empty results state, and display-list swapping. |
-| Response-length settings | **Missing** | No chat response-length state or settings sheet was found. | Web does not expose Omiro's short/medium/long preference or include `responseLength` in its stream payload. |
-| Conversation debug mode | **Missing** | No debug toggle or message-debug rendering is wired in the route. | Missing user-accessible debug toggle and diagnostic message details. |
-| Archive from chat/inbox | **Partial** | `hooks/use-chats.ts` has `useArchiveChat`; archived route and settings page exist. | The hook invalidates the list only; the web UI does not expose archive from chat detail/list rows, optimistically remove items, clear resume state, or route away after archive. |
+| Search within chat | **Present** | `lib/hooks/use-chat-message-search.ts`, `chat-message-search.tsx` (debounced, result count, empty-results state, display-list swapping), toolbar search entry in `chat-conversation-actions.tsx`; hook tests. | — |
+| Response-length settings | **Present** | `lib/hooks/use-response-length.ts` (short/medium/long, persisted), `chat-response-settings.tsx`, menu entry in `chat-conversation-actions.tsx`, `responseLength` in the stream payload; tests. | — |
+| Conversation debug mode | **Present** | Debug toggle in the conversation actions menu (`isDebugOpen` in `chat.$chatId.tsx`), `showDebug` rendering "Debug details" in `chat-message-status.tsx`; `chat-conversation-actions.test.tsx`, `chat-message.test.tsx`, stories. | Acceptance beyond toggle and details rendering unverified. |
+| Archive from chat/inbox | **Present** | `useArchiveChat` in `hooks/use-chats.ts`, exposed from the detail actions menu and the chat list rows (`routes/chats.tsx`); archived route and settings page exist; hook and menu tests. | Optimistic list removal and post-archive routing unverified. |
 | Archived chat list | **Present** | `hooks/use-account-settings.ts`, `components/account/settings-page.tsx`, `routes/settings.archived-chats.tsx`. | Web lists recent archived chats and links to them; restoration/unarchive behavior is absent in both clients' current inventory. |
-| New chat from detail | **Missing** | New chat exists in `ChatNavigation`, not in `chat.$chatId.tsx`. | Missing the detail-toolbar action and route-local pending behavior. |
-| Automatic title update | **Partial** | Chat creation uses the fixed title `'New chat'`; no auto-title hook was found. | Missing Omiro's first-message title normalization, cache update, and preservation of custom titles. |
+| New chat from detail | **Partial** | Creation entries exist (`ChatNavigation`, `chat-start-button.tsx` creating with title `'New chat'`); missing-conversation recovery routes home (`onStartNewChat`). | No detail-toolbar new-chat action; no route-local pending behavior in `chat.$chatId.tsx`. |
+| Automatic title update | **Present** | First accepted message normalizes the title via `getAutomaticChatTitle`, preserving custom titles (`currentChatTitle === 'New chat'` guard in `use-chat-composer-submission.ts`); `useUpdateChatTitle` hook with tests. | Creation still starts from the fixed `'New chat'` title until the first accept. |
 | Chat-to-note transform | **Missing** | No chat transform action, draft builder, or note-draft route handoff was found. | Missing transcript extraction, empty-chat guard, truncation/title handling, and editable note handoff. |
-| Chat task extraction/review | **Missing** | No chat task-extraction hook or review overlay was found. | Missing pending review, accept/reject, task creation, error/retry, and inbox refresh behavior. |
+| Chat task extraction/review | **Present** | `ChatTaskDialog` (extract via `api.tasks.extract`, review overlay with accept/reject/retry in `ChatTaskReview`, persist via `api.tasks.batch`, task-query invalidation) launched from the conversation actions menu; `chat-task-review.test.tsx`. | Omiro has the same flow without a dedicated acceptance flow, so parity meets the shared ceiling. |
 | Linked note discussion flows | **Partial** | Web can seed a `noteId` query param and search/select notes in the composer. | Missing note-owned chat lifecycle, chat preview in the mixed inbox, summarize-to-note behavior, and linked navigation contract. |
 | New-message entrance | **Implemented** | `chat-message.tsx`'s `AnimatePresence initial={isNewMessage}` gates entrance to a row's own first mount; `use-new-message-ids.ts` tracks which ids are genuinely new versus present when the chat loaded; `ChatConversation` is remounted per `chatId` (`key={chatId}` in `chat.$chatId.tsx`) so bookkeeping resets on chat switch. Reduced motion (`useReducedMotion` from `motion/react`) drops translate and keeps the opacity feedback. See [chat.design.md](chat.design.md#web-parity). | No dedicated motion unit test or browser-level acceptance flow found yet. |
-| Offline state | **Missing** | No NetInfo-equivalent or explicit offline chat state was found. | Web stream failures become a generic hook error; draft preservation and offline-specific messaging are not implemented. |
+| Offline state | **Present** | `useOnlineStatus` hook with tests; send/retry gated on online; offline messaging with draft-and-attachment preservation in the composer ("You are offline. Your draft and attachments are preserved."), home page, and chat load error; `Offline` story. | Browser `onLine`-based; no NetInfo equivalent needed on web. |
 | Query persistence/restoration | **Partial** | React Router loader seeds initial messages and React Query caches them. Composer draft/attachment persistence is implemented (`use-chat-composer-state.ts`, `localStorage` keyed `chat-composer:<chatId>`, restored via lazy `useState` init and reset per chat via `key={chatId}` on `ChatComposerPanel`). Restored-versus-initial loading semantics are implemented (`compute-chat-load-state.ts`: `initial` vs. `ready`+`isRestoring` vs. `not-found`/`error`). | Missing Omiro's persisted query-state handling equivalent and a resume-scroll/focus target after restoring a draft. |
-| Chat accessibility/test IDs | **Partial** | Web uses semantic controls and one `data-testid="chat-file-input"`; chat controls mostly use labels/tooltips. | Omiro-specific test IDs and broad acceptance states are not mirrored; no chat-specific web flow tests were found. |
+| Chat accessibility/test IDs | **Partial** | Web uses semantic controls and labeled chat actions; chat-specific flow tests exist (`tests/e2e/chat-playbook.spec.ts`: `SEND`/`TOOL`/`RECOVER`/`LAUNCH`/`UI` suites) plus focused hook/component suites. | Omiro-specific test IDs are not mirrored; per-row a11y acceptance lives with the verification tasks. |
 
 ### Missing web ownership by subsystem
 
@@ -225,61 +225,63 @@ detail-level action surface.
 
 #### Message lifecycle
 
-The web has one stream hook, `useStreamMessage`, but no equivalent of Omiro's
-separate send, regenerate, edit, and archive services. `useChatMessages`
-advertises `deleteMessage` and `updateMessage` but both are no-op placeholders.
-This is the highest-risk parity gap because the UI contract suggests actions
-that cannot change persisted state.
+The web has separate stream (`use-stream-message.ts`), regenerate
+(`use-regenerate-message.ts`), edit (`use-chat-message-edit.ts`), message
+mutation (`use-chat-messages.ts` with a real `deleteMessage`), and archive
+(`useArchiveChat`) services, all with focused tests. The former no-op
+placeholders are real mutations now; the highest-risk remaining gap is
+chat-to-note, which has no web owner.
 
 #### Conversation actions
 
-There is no web chat action menu equivalent to Omiro's search/settings/debug/
-transform/archive menu. Archive exists as a hook and destination page, but it
-is not exposed from the active conversation. Search, response length, debug,
-auto-title, note transformation, and task extraction have no web owner.
+The detail toolbar owns a chat action menu (`chat-conversation-actions.tsx`:
+search, extract tasks, response settings, debug, archive). Search, response
+length, debug, auto-title, archive, and task extraction all have web owners
+now; note transformation (chat-to-note) is the one without.
 
 #### Shared composer capabilities
 
-Web has file upload and browser speech-to-text, but these are implemented as
-detail-local controls. They do not share Omiro's composer controller model for
-draft persistence, attachment lifecycle, voice cleanup, walkie-talkie audio
-responses, or mixed chat/note submission.
+Web has file upload and browser speech-to-text, implemented as detail-local
+controls with local draft persistence (`use-chat-composer-state.ts`). They do
+not share Omiro's composer controller model for attachment lifecycle, voice
+cleanup, or mixed chat/note submission.
 
 ### Verification gap
 
-The current web test inventory contains only focused speech-player and speech
-telemetry tests:
+The web test inventory now spans the e2e playbook plus focused suites:
 
-- `components/chat/speech-player.test.tsx`
-- `lib/telemetry/speech.test.ts`
+- `tests/e2e/chat-playbook.spec.ts`: `SEND-01..05`, `TOOL-01..04`,
+  `RECOVER-01..06`, `LAUNCH-01..04`, `UI-01..09`.
+- Focused suites: `use-chat-messages` (not-found, retry, delete paths;
+  plus MSW and `compute-chat-load-state` suites), `use-stream-message`
+  (abort signal, server cancel, durable cancelled state),
+  `use-regenerate-message`, `use-chat-composer-submission` (retry as a
+  separate action), `use-chat-composer-state`, `use-chat-message-search`,
+  `use-response-length`, `use-chats` (archive, title), `use-online-status`,
+  `chat-message` (reasoning, failures, debug details),
+  `chat-conversation-actions` (debug toggle, archive), `chat-task-review`,
+  `use-file-upload.lifecycle`, `use-speech-to-text`, `chat-composer`,
+  `chat-start-button`, `speech-player`, and speech telemetry.
 
-No chat route, stream lifecycle, message mutation, tool approval, archive,
-navigation, or accessibility acceptance tests were found under `apps/web`.
-Attachment and voice composer behavior now have focused unit/component
-coverage (`use-file-upload.lifecycle.test.ts`, `use-chat-composer-state.test.tsx`,
-`use-speech-to-text.test.ts`, `chat-composer.test.tsx`), including upload
-failure/retry, permission-denied/microphone-unavailable/transcription-failed
-voice errors, and duplicate-action guards — but still no browser-level
-acceptance flow. The following should be treated as unverified even where
-code is present:
+Treat as still unverified even where code is present:
 
-- first send and committed assistant response;
-- browser cancellation and server cancellation semantics;
-- tool approval/rejection and follow-up response;
-- archived-chat navigation and active-list removal;
-- missing/deleted chat recovery;
-- large-message scrolling and responsive composer behavior.
+- chat-to-note and mixed-inbox flows (unimplemented on web);
+- archived-chat navigation with active-list removal at e2e level;
+- large-message scrolling;
+- debug-mode acceptance beyond the toggle and details rendering.
 
 ### Recommended implementation order
 
-1. Establish a real web chat state boundary: replace the no-op message
-   mutations, add explicit stream error/cancellation state, and preserve drafts
-   on failure.
-2. Add the detail action surface: retry, regenerate, edit, delete, copy/share,
-   search, response settings, debug, and archive.
-3. Build the mixed All/inbox composer and list adapter so chat creation,
+Already complete from the previous order: real message mutations with
+explicit stream error/cancellation state and draft preservation on failure;
+the detail action surface except chat-to-note; task extraction and review.
+Remaining work, in order:
+
+1. Build the chat-to-note transform and linked note discussion behavior —
+   the last creation flows with no web owner.
+2. Build the mixed All/inbox composer and list adapter so chat creation,
    notes, drafts, and navigation follow one product entry model.
-4. Add chat-to-note and task-extraction/review flows, then linked note
-   discussion behavior.
-5. Reconcile voice, audio response, motion, offline, accessibility, and
-   acceptance-test parity.
+3. Add acceptance for debug mode, archived-chat navigation/removal, and
+   large-message scrolling.
+4. Reconcile any remaining voice, audio response, motion, and offline
+   leftovers against the corrected matrix.

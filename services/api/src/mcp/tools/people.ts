@@ -28,11 +28,11 @@ registerTool(
     name: 'person_timeline',
     title: 'Person timeline',
     description:
-      'A person\u2019s activity across identity, calendar, and travel: their summary, calendar events, trips, and relationships, newest first. Requires people, calendar, and travel read access.',
+      'A person\u2019s activity across identity, travel, and relationships, newest first. Requires people, travel, and social read access.',
     inputSchema: personTimelineInputSchema,
     outputSchema: personTimelineOutputSchema,
     readOnly: true,
-    scopes: ['people:read', 'calendar:read', 'travel:read', 'social:read'],
+    scopes: ['people:read', 'travel:read', 'social:read'],
     resultCap: 50,
   },
   async (ownerUserId, input) => getPersonTimeline({ ownerUserId, personId: input.personId }),

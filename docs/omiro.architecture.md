@@ -71,8 +71,10 @@ Feature services own query keys and mutations:
 - `services/chat/` owns chat queries, generation, message edits, retries,
   archive, search, and tool-call responses.
 - `services/notes/` owns note queries and mutations.
-- `services/tasks/` owns task queries, mutations, and Time parsing.
-- `services/calendar/` owns the EventKit gateway and calendar queries.
+- `services/tasks/` owns task queries and mutations. The server time parser
+  remains a supported API surface for web task management and older released
+  clients during the device-only Calendar rollout.
+- `services/calendar/` owns the compact EventKit summary gateway and calendar queries.
 
 Draft text and resume targets are local state. `launch-state.ts` stores Stream,
 New Chat, per-chat drafts, and a one-shot resume target in MMKV. Route parameters
@@ -84,8 +86,9 @@ feature-owned state.
 Local native modules are under `apps/omiro/modules/`:
 
 - `voice-transcriber` exposes iOS SpeechAnalyzer transcription to JavaScript.
-- `on-device-ai` exposes EventKit calendar operations and calendar-related
-  on-device functionality.
+- `on-device-ai` owns typed EventKit summaries, native calendar-editor
+  presentation, and calendar-related Foundation Model tools. It is the only
+  calendar write boundary.
 - `omiro-intents` exposes the supported Apple intent entry points.
 
 Shared UI packages may provide serializable design and motion contracts, but

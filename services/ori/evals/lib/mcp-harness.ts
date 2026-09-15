@@ -12,26 +12,6 @@ const tools = [
   {
     type: 'function',
     function: {
-      name: 'calendar_search',
-      description: 'Searches calendar events by title/description text, with optional date range.',
-      parameters: {
-        type: 'object',
-        properties: { query: { type: 'string' }, from: { type: 'string' }, to: { type: 'string' } },
-        required: ['query'],
-      },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'calendar_upcoming',
-      description: 'Lists non-cancelled calendar events in a bounded window starting now.',
-      parameters: { type: 'object', properties: { days: { type: 'integer' } } },
-    },
-  },
-  {
-    type: 'function',
-    function: {
       name: 'place_visit_history',
       description: 'Lists visits to restaurants, venues, and addresses.',
       parameters: { type: 'object', properties: { limit: { type: 'integer' } } },
@@ -59,8 +39,6 @@ const tools = [
 ] as const;
 
 const toolResults: Record<string, unknown> = {
-  calendar_search: { events: [], count: 0 },
-  calendar_upcoming: { events: [], count: 0 },
   place_visit_history: { visits: [], count: 0 },
   trip_history: {
     trips: [
@@ -75,19 +53,16 @@ const toolResults: Record<string, unknown> = {
   },
 };
 
-type ToolDomain = 'calendar' | 'career' | 'travel' | 'general' | 'all';
+type ToolDomain = 'career' | 'travel' | 'general' | 'all';
 
 const toolsByDomain: Record<Exclude<ToolDomain, 'all'>, readonly unknown[]> = {
-  calendar: tools.slice(0, 2),
-  career: [tools[4]],
-  travel: [tools[2], tools[3]],
+  career: [tools[2]],
+  travel: [tools[0], tools[1]],
   general: [],
 };
 
 const parseDomain = (content: string): ToolDomain => {
-  const match = content.match(
-    /\{[\s\S]*?"domain"\s*:\s*"(calendar|career|travel|general|all)"[\s\S]*?\}/i,
-  );
+  const match = content.match(/\{[\s\S]*?"domain"\s*:\s*"(career|travel|general|all)"[\s\S]*?\}/i);
   return (match?.[1]?.toLowerCase() as ToolDomain | undefined) ?? 'all';
 };
 
@@ -101,7 +76,7 @@ const routePrompt = async (prompt: string, model: string, apiKey: string): Promi
         {
           role: 'system',
           content:
-            'Classify the request into exactly one domain: calendar, career, travel, general, or all. Return only JSON: {"domain":"..."}. Use all when uncertain or when multiple domains may be needed.',
+            'Classify the request into exactly one domain: career, travel, general, or all. Return only JSON: {"domain":"..."}. Use all when uncertain or when multiple domains may be needed.',
         },
         { role: 'user', content: prompt },
       ],

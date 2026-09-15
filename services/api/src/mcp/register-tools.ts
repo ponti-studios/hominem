@@ -11,7 +11,7 @@ async function registerAll(): Promise<void> {
     enabledScopes.size === 0 || scopes.some((scope) => enabledScopes.has(scope));
 
   const imports: Array<Promise<unknown>> = [];
-  if (isEnabled('calendar:read', 'travel:read')) imports.push(import('./tools/calendar'));
+  if (isEnabled('travel:read')) imports.push(import('./tools/travel'));
   if (isEnabled('career:read', 'career:write')) imports.push(import('./tools/career'));
   if (isEnabled('collections:read', 'collections:write')) {
     imports.push(import('./tools/collections'));

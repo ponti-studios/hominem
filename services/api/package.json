@@ -36,7 +36,6 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "rm -rf .cache && tsc --noEmit",
     "e2e:setup": "tsx scripts/e2e-setup.ts",
-    "export-calendar": "tsx scripts/export-calendar.ts",
     "export-user": "tsx scripts/export-user.ts",
     "invite-user": "tsx scripts/invite-user.ts",
     "merge-user-data": "tsx scripts/merge-user-data.ts"

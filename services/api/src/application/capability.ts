@@ -6,7 +6,6 @@ import type { z } from 'zod';
 // type (rather than `string[]`) turns a typo'd scope into a compile error instead of a
 // tool that silently drops out of chat-tool routing at runtime.
 export const CAPABILITIES = [
-  'calendar',
   'career',
   'collections',
   'finance',

@@ -372,7 +372,7 @@ export function TimeBlockDetail({
               )}
             </FieldCard>
           ) : null}
-          {!isTask && event?.participants.length ? (
+          {!isTask && event?.participants?.length ? (
             <FieldCard icon="person.2.fill" iconColor={chartPurple} label="People">
               <Text style={styles.participants}>{event.participants.join(', ')}</Text>
             </FieldCard>

@@ -6,10 +6,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockAsk = vi.fn();
 const mockSetPrompt = vi.fn();
 const mockHandleVoicePress = vi.fn();
-let prompt = '';
 
+vi.mock('expo-haptics', () => ({
+  ImpactFeedbackStyle: { Light: 'light' },
+  NotificationFeedbackType: { Success: 'success' },
+  impactAsync: vi.fn(),
+  notificationAsync: vi.fn(),
+}));
 vi.mock('react-native', () => ({
   ActivityIndicator: () => <div />,
+  Pressable: ({ children, onPress }: { children: React.ReactNode; onPress?: () => void }) => (
+    <button onClick={onPress}>{children}</button>
+  ),
+  Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   View: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 vi.mock('react-native-reanimated', () => ({
@@ -19,17 +28,33 @@ vi.mock('react-native-reanimated', () => ({
   useReducedMotion: () => true,
 }));
 vi.mock('~/components/theme', () => ({
-  useAppTheme: () => ({ colors: { primary: '' }, shadows: { none: {} } }),
-  useStyles: (factory: (theme: { colors: Record<string, string> }) => unknown) =>
-    factory({ colors: { border: '' } }),
+  useAppTheme: () => ({
+    colors: {
+      border: '',
+      card: '',
+      foreground: '',
+      muted: '',
+      mutedForeground: '',
+      primary: '',
+      primaryForeground: '',
+    },
+    textVariants: { body: {}, caption1: {}, footnote: {}, subhead: {} },
+  }),
+  useStyles: (factory: (theme: unknown) => unknown) =>
+    factory({
+      colors: {
+        border: '',
+        card: '',
+        foreground: '',
+        muted: '',
+        mutedForeground: '',
+        primary: '',
+        primaryForeground: '',
+      },
+      textVariants: { body: {}, caption1: {}, footnote: {}, subhead: {} },
+    }),
 }));
 vi.mock('~/components/ui', () => ({
-  BlurCard: ({ children, testID }: { children: React.ReactNode; testID?: string }) => (
-    <section data-testid={testID}>{children}</section>
-  ),
-  Card: ({ children, testID }: { children: React.ReactNode; testID?: string }) => (
-    <section data-testid={testID}>{children}</section>
-  ),
   IconButton: ({
     children,
     disabled,
@@ -39,18 +64,20 @@ vi.mock('~/components/ui', () => ({
     children: React.ReactNode;
     disabled?: boolean;
     onPress?: () => void;
-    testID: string;
+    testID?: string;
   }) => (
     <button data-testid={testID} disabled={disabled} onClick={onPress}>
       {children}
     </button>
   ),
   TextField: ({
+    autoFocus: _autoFocus,
     onChangeText,
     onSubmitEditing,
     testID,
     value,
   }: {
+    autoFocus?: boolean;
     onChangeText?: (value: string) => void;
     onSubmitEditing?: () => void;
     testID: string;
@@ -65,44 +92,65 @@ vi.mock('~/components/ui', () => ({
   ),
 }));
 vi.mock('~/components/ui/icon', () => ({ default: () => null }));
+vi.mock('~/components/ui/InlineErrorBanner', () => ({
+  InlineErrorBanner: ({ message }: { message: string }) => <span>{message}</span>,
+}));
 vi.mock('~/components/composer/useVoiceComposerInput', () => ({
   useVoiceComposerInput: () => ({
+    clearError: vi.fn(),
+    error: null,
+    handleVoicePress: mockHandleVoicePress,
     isBusy: false,
+    isCleaningVoice: false,
     isRecording: false,
     isRecordingElsewhere: false,
-    handleVoicePress: mockHandleVoicePress,
+    recordingStartedAt: null,
+    voiceState: 'idle',
   }),
 }));
 vi.mock('~/components/voice/VoiceRecordingPanel', () => ({ VoiceRecordingPanel: () => <div /> }));
+vi.mock('~/components/time/TimeProcessingView', () => ({ TimeProcessingView: () => <div /> }));
+vi.mock('~/components/time/TimeResultSurface', () => ({ TimeResultSurface: () => <div /> }));
 vi.mock('~/components/time/use-time-composer', () => ({
   useTimeComposer: () => ({
     ask: mockAsk,
+    cancelProcessing: vi.fn(),
     cancelResult: vi.fn(),
     chooseEvent: vi.fn(),
     chooseOpening: vi.fn(),
     interaction: { kind: 'idle' },
     isSaving: false,
-    prompt,
+    processingStage: 'understanding',
+    prompt: 'Plan tomorrow',
+    reset: vi.fn(),
+    retry: vi.fn(),
     setPrompt: mockSetPrompt,
     submitDraft: vi.fn(),
     updateDraft: vi.fn(),
   }),
 }));
-vi.mock('~/components/time/TimeResultSurface', () => ({
-  TimeResultSurface: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
-vi.mock('~/translations', () => ({ default: { timeResult: { fieldLabels: { title: 'Title' } } } }));
 
 const { TimeComposer } = await import('~/components/time/TimeComposer');
 
 describe('TimeComposer', () => {
   beforeEach(() => {
-    prompt = 'Plan tomorrow';
     vi.clearAllMocks();
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callback(0);
+      return 0;
+    });
   });
 
-  it('forwards input, submit, and voice actions to its controller hooks', () => {
-    const { getByTestId } = render(<TimeComposer onOpenEvent={vi.fn()} />);
+  it('forwards text, submit, and voice actions from the sheet', () => {
+    const { getByTestId } = render(
+      <TimeComposer
+        initialMode="text"
+        onClose={vi.fn()}
+        onOpenEvent={vi.fn()}
+        onTaskCreated={vi.fn()}
+        visible
+      />,
+    );
 
     fireEvent.change(getByTestId('time-composer-input'), { target: { value: 'Plan today' } });
     fireEvent.click(getByTestId('time-composer-submit'));

@@ -48,7 +48,7 @@ export const legalRoutes = new Hono<AppEnv>()
          <h2>Information we process</h2>
          <ul>
            <li><strong>Account information:</strong> your name, email address, authentication records, and session information.</li>
-           <li><strong>Information you store:</strong> data you choose to keep in Hominem, which may include career history, applications, education, contacts, finance, health, calendar, travel, media, places, collections, tags, notes, and related files or links.</li>
+           <li><strong>Information you store:</strong> data you choose to keep in Hominem, which may include career history, applications, education, contacts, finance, health, travel, media, places, collections, tags, notes, and related files or links.</li>
            <li><strong>Connected-service information:</strong> data imported from services you connect or authorize, limited to the permissions and workflows you use.</li>
            <li><strong>Technical information:</strong> request metadata, security events, error information, and usage information needed to operate, secure, and improve the service.</li>
          </ul>

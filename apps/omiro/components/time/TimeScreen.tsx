@@ -1,24 +1,30 @@
 import { MenuView, type MenuAction, type NativeActionEvent } from '@expo/ui/community/menu';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
 import { useAppTheme, useStyles } from '~/components/theme';
 import { IconButton } from '~/components/ui';
+import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
+import { calendarKeys } from '~/services/calendar/calendar-queries';
 import { getTimeBlockRoute, UNSCHEDULED_ROUTE } from '~/services/navigation/routes';
 
 import AppIcon from '../ui/icon';
 import { useTimePreview } from './time-preview-store';
-import { TimeComposer } from './TimeComposer';
+import { TimeExtractionSheet, type TimeExtractionMode } from './TimeExtractionSheet';
 import { TimeStream } from './TimeStream';
 
 export function TimeScreen() {
   const router = useRouter();
-  const { inset: composerInset, safeAreaBottom } = useComposerDockMetrics();
-  const [composerHeight, setComposerHeight] = useState(0);
+  const queryClient = useQueryClient();
+  const { bottom: safeAreaBottom } = useSafeAreaInsets();
+  const [extractionMode, setExtractionMode] = useState<TimeExtractionMode | null>(null);
+  const [extractionSessionKey, setExtractionSessionKey] = useState(0);
   const [errorToast, setErrorToast] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
   const [toastKey, setToastKey] = useState(0);
   const [toastExpanded, setToastExpanded] = useState(false);
   const showError = useCallback((message: string) => {
@@ -26,18 +32,44 @@ export function TimeScreen() {
     setToastKey((key) => key + 1);
     setErrorToast(message);
   }, []);
+  const openExtraction = useCallback((mode: TimeExtractionMode) => {
+    setExtractionSessionKey((key) => key + 1);
+    setExtractionMode(mode);
+  }, []);
   const openItem = useCallback(
-    (item: { kind: 'event' | 'task'; value: { id: string } }) =>
-      router.push(getTimeBlockRoute(item.kind, item.value.id)),
-    [router],
+    async (item: { kind: 'event' | 'task'; value: { id: string } }) => {
+      if (item.kind === 'task') {
+        router.push(getTimeBlockRoute('task', item.value.id));
+        return;
+      }
+      try {
+        const result = await calendarEventGateway.presentEvent(item.value.id);
+        if (result === 'saved' || result === 'deleted') {
+          await queryClient.invalidateQueries({ queryKey: calendarKeys.events });
+        }
+      } catch (error) {
+        showError(error instanceof Error ? error.message : 'Unable to open this calendar event.');
+      }
+    },
+    [queryClient, router, showError],
   );
   const openEvent = useCallback(
-    (event: { id: string }) => router.push(getTimeBlockRoute('event', event.id)),
-    [router],
+    async (event: { id: string }) => openItem({ kind: 'event', value: event }),
+    [openItem],
   );
   const theme = useAppTheme();
   const styles = useStyles((theme) => ({
     container: { backgroundColor: theme.colors.background, flex: 1 },
+    floatingActions: {
+      position: 'absolute',
+      right: 16,
+      bottom: safeAreaBottom + 16,
+      alignItems: 'center',
+      gap: 10,
+    },
+    floatingButton: { width: 52, height: 52, boxShadow: theme.shadows.md },
+    floatingMic: { backgroundColor: theme.colors.card },
+    floatingAdd: { backgroundColor: theme.colors.primary },
     errorToast: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -49,12 +81,22 @@ export function TimeScreen() {
     },
     errorContent: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
     errorText: { ...theme.textVariants.footnote, color: theme.colors.destructive, flex: 1 },
+    successToast: {
+      marginHorizontal: 16,
+      marginBottom: safeAreaBottom + 8,
+      padding: 12,
+      borderRadius: 12,
+      backgroundColor: theme.colors.card,
+      borderColor: theme.colors.success,
+      borderWidth: 1,
+    },
+    successText: { ...theme.textVariants.footnote, color: theme.colors.success },
   }));
 
   return (
     <View style={styles.container} testID="time-screen">
       <TimeStream
-        contentPaddingBottom={composerInset + composerHeight}
+        contentPaddingBottom={safeAreaBottom + 104}
         onError={showError}
         onOpenItem={openItem}
       />
@@ -92,13 +134,42 @@ export function TimeScreen() {
           </IconButton>
         </View>
       ) : null}
-      <ComposerDock
-        onHeightChange={setComposerHeight}
-        safeAreaBottom={safeAreaBottom}
-        testID="time-composer-dock"
-      >
-        <TimeComposer onOpenEvent={openEvent} />
-      </ComposerDock>
+      {successToast !== null ? (
+        <View style={styles.successToast} testID="time-task-created">
+          <Text style={styles.successText}>{successToast}</Text>
+        </View>
+      ) : null}
+      {extractionMode === null ? (
+        <View style={styles.floatingActions} testID="time-extraction-actions">
+          <IconButton
+            accessibilityLabel="Start voice task extraction"
+            onPress={() => openExtraction('voice')}
+            style={[styles.floatingButton, styles.floatingMic]}
+            testID="time-floating-mic"
+          >
+            <AppIcon name="mic.fill" size={22} />
+          </IconButton>
+          <IconButton
+            accessibilityLabel="Open task extraction"
+            onPress={() => openExtraction('text')}
+            style={[styles.floatingButton, styles.floatingAdd]}
+            testID="time-floating-add"
+          >
+            <AppIcon name="plus" size={24} tintColor={theme.colors.primaryForeground} />
+          </IconButton>
+        </View>
+      ) : null}
+      <TimeExtractionSheet
+        initialMode={extractionMode ?? 'text'}
+        onClose={() => setExtractionMode(null)}
+        onOpenEvent={openEvent}
+        onTaskCreated={() => {
+          setSuccessToast('Task added to Time.');
+          setTimeout(() => setSuccessToast(null), 2400);
+        }}
+        sessionKey={extractionSessionKey}
+        visible={extractionMode !== null}
+      />
     </View>
   );
 }

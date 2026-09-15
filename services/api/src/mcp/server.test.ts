@@ -26,7 +26,7 @@ vi.mock('@better-auth/mcp', async (importOriginal) => ({
           headers: {
             'content-type': 'application/json',
             'www-authenticate':
-              'Bearer scope="calendar:read career:read" resource_metadata="http://localhost/.well-known/oauth-protected-resource/api/mcp"',
+              'Bearer scope="career:read travel:read" resource_metadata="http://localhost/.well-known/oauth-protected-resource/api/mcp"',
           },
         });
       }

@@ -5,8 +5,7 @@
 -- the finance Copilot import pipeline and categories.ts, and read by nothing.
 -- The vestigial writes are removed in packages/finance (apply-import-plan.ts,
 -- categories.ts); these columns and their dependent FK/check constraints and
--- the partial assigned_by_userid index now go (see
--- docs/features/notes-as-nodes.md, Decision 4).
+-- the partial assigned_by_userid index now go.
 ALTER TABLE app.tags
   DROP COLUMN IF EXISTS description,
   DROP COLUMN IF EXISTS icon,

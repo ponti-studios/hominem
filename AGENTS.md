@@ -1,14 +1,14 @@
 ## Rules
 
 - Follow YAGNI (You Aren't Gonna Need It) principle and one-liner solutions whenever possible.
-- Agents may commit code, but every commit must follow the Conventional Commits standard. Load the globally installed `conventional-commit` skill before staging, committing, or pushing.
+- `Git` commits must follow the Conventional Commits standard (see Git conventions below).
 - `apps/omiro` should only support Apple devices. Do not add fallbacks for other platforms such as Android.
-- Agents may start local dev services (Expo/Metro, `pnpm dev`, the API, workers, databases, Docker containers, etc.) when needed to test or verify a change. `api`/`web`/`career`/`finance` run through the [portless](https://github.com/vercel-labs/portless) proxy under `pnpm dev` (each gets a stable `https://<name>.lvh.me` URL — the proxy itself binds the default HTTPS port 443, so no port suffix — instead of a fixed port, which is what lets the same app run from multiple worktrees at once without a port collision — `lvh.me`, not `.localhost`, because cross-subdomain login cookies require a real domain), and a fresh worktree needs its git-ignored `.env` files bootstrapped first. Binding port 443 needs root, so the proxy runs as a root-owned launchd service installed once via `sudo pnpm exec portless service install --tld lvh.me` (starts at boot, restarts itself) rather than something `pnpm dev` or an agent starts per session. See the `hominem-development` skill for that setup and how to run services — read it before telling the user a service "won't start" in a new worktree.
+- Agents may start local dev services (Expo/Metro, `pnpm dev`, the API, workers, databases, Docker containers, etc.) when needed to test or verify a change. `api`/`web`/`career`/`finance` run through the [portless](https://github.com/vercel-labs/portless) proxy under `pnpm dev` (stable `https://<name>.lvh.me` URLs instead of fixed ports, which lets the same app run from multiple worktrees at once without a port collision — `lvh.me`, not `.localhost`, because cross-subdomain login cookies require a real domain), and a fresh worktree needs its git-ignored `.env` files bootstrapped first. The proxy itself needs a root-owned launchd service installed once (starts at boot, restarts itself) via `sudo pnpm exec portless service install --tld lvh.me` — confirm with the user before asking them to run anything with `sudo`. See the `hominem-development` skill for that setup and how to run services — read it before telling the user a service "won't start" in a new worktree.
 - **`packages/db` work (schema/migration changes, or any repository method) loads the `hominem-database` skill first.** It covers migration/codegen mechanics, the repository/DTO boundary, and the ownership-scoped-mutation convention. After any schema/migration change, run it yourself: `just db migrate` (and `just db migrate test` if a test DB is running) then `just db codegen`, against the already-running local dev/test databases — do not leave this as a follow-up for the user.
 - **Evidence**: A change is not complete until it meets the `hominem-evidence` skill's standard. Run that skill's checklist before reporting a change complete.
 - **Web auth**: Career and Finance redirect unauthenticated browsers to the API hosted login. Browser traffic uses the public API, while server auth/data calls require the private API URL (Railway-internal in production). Development and production use the same cookie mechanism with different env values. See [docs/authentication.md](docs/authentication.md). After changing auth config or deployment topology, run the `hominem-auth-production-verify` skill.
 - **Runbook skills**: `.agents/skills/` holds operational runbooks alongside app skills. A runbook skill that has a companion decision doc names that doc inside its own `SKILL.md` — the doc holds the "why", the skill holds the "how". Look there rather than expecting a list of pairings here; a list like that only goes stale.
-- After merging dependency or catalog updates, run `pnpm install --frozen-lockfile` and restart any SSR app before browser verification. A stale running process can load mismatched React versions and fail during SSR even when the installed workspace is correct.
+- `pnpm check` syncs dependencies first (`precheck` runs `pnpm install --frozen-lockfile`), so a lockfile or catalog change can't leave checks running against stale `node_modules`. Ad-hoc dev and browser verification still need a manual install plus an SSR restart. A stale running process can load mismatched React versions and fail during SSR even when the installed workspace is correct.
 - For local smoke checks, distinguish fixed-port services (`http://localhost:4040` / `:4445`) from Portless services (`https://api.lvh.me` / `https://web.lvh.me`). Do not treat an unauthenticated Web `302` to hosted login as a service failure.
 
 ## Decision authority
@@ -24,7 +24,9 @@
 pnpm monorepo orchestrated with Turbo. Key directories:
 
 - `apps/omiro` — Expo/React Native iOS app (Apple-only; no Android fallbacks). See [apps/omiro/AGENTS.md](apps/omiro/AGENTS.md).
-- `apps/career` — React Router v7 web app
+- `apps/career` — React Router web app
+- `apps/finance` — React Router web app
+- `apps/web` — React Router web app
 - `services/api` — Hono HTTP + BullMQ worker. See [services/api/AGENTS.md](services/api/AGENTS.md).
 - `packages/db` — PostgreSQL + Kysely + Goose migrations. See the `hominem-database` skill.
 - `packages/auth` — Better-auth (passkeys + OTP)
@@ -33,9 +35,9 @@ pnpm monorepo orchestrated with Turbo. Key directories:
 
 ## Commands
 
-Use `just` for its domain modules (`db`, `career`, `mcp`, `mobile`, `ui` — run `just --list` for the current set); use `pnpm` for dev/lint/format/typecheck/build/test and the full pre-push gate. Scope any pnpm task with `--filter=@hominem/<package>...`. Package scripts are internal Turbo primitives. `scripts/command` is a Bash command router invoked through `just`; use the `justfile` recipes as the public command interface.
+Use `just` for its domain modules (`otp`, `db`, `deploy`, `diagnostics`, `evals`, `mcp`, `mobile`, `ui` — run `just --list` for the current set); use `pnpm` for dev/lint/format/typecheck/build/test and the full pre-push gate. Scope any pnpm task with `--filter=@hominem/<package>...`. Package scripts are internal Turbo primitives. Use the `justfile` recipes as the public command interface.
 
-- `pnpm run check`: Runs full pre-push validation (lint → typecheck → build → test via turbo, with `DATABASE_URL` set)
+- `pnpm run check`: Runs full pre-push validation (check:dts → tasks:check → lint → build → typecheck → test via turbo, with `DATABASE_URL` set)
 
 ```bash
 pnpm --filter @hominem/api dev
@@ -68,7 +70,7 @@ just db migrate
 - Durable product, architecture, design, security, and operational decisions in the appropriate numbered documentation under the root `docs/` directory.
   - Do not create `docs/` directories inside apps, packages, or services.
 - Keep package READMEs to setup and local entrypoint information; link to the root documentation for governing decisions.
-- Write current rules and invariants, not incident narratives or temporary task lists. Git history preserves history; the work tracker owns temporary execution.
+- Write current rules and invariants, not incident narratives or temporary task lists. Git history preserves history; temporary execution state lives in the task files under `docs/tasks/`.
 - `docs/incidents/` is the one sanctioned exception to that rule: it's where a postmortem's play-by-play actually belongs. But a postmortem is not where a durable rule gets to live — if an incident teaches you something worth keeping, fold it into the relevant subject doc or an ADR in the same change, then let the incident writeup just be the record of what happened.
 - Update the relevant documentation in the same change when a durable implementation decision changes.
 
@@ -100,7 +102,7 @@ Keep it in sync with whatever `services/api/package.json`'s `exports` map says t
 **New deployable app or service:**
 
 1. `Dockerfile`, if it deploys via Railway/Docker: follow `services/api/Dockerfile` / `apps/career/Dockerfile` — `COPY` only `packages`, `services/api` (if you need its types), and your own app directory, never `COPY . .`, then `pnpm install --frozen-lockfile --filter @hominem/<name>...` (scoped install) before building. This keeps build time and context size flat as unrelated apps get added to the monorepo.
-2. `.github/workflows/validate-<name>.yml`: model it on `validate-career.yml`. Set every env var your app _and its transitive dependencies_ actually require in the job's `env:` block with fake test values — including ones you don't obviously need yourself (e.g. `DATABASE_URL` if you depend on `@hominem/db`, `BETTER_AUTH_SECRET` if anything in your dependency chain imports `services/api` for real). Use `./.github/actions/setup-pnpm-workspace` for setup — it caches both the pnpm store and turbo's local cache directory (`.turbo/cache`), shared across all `validate-*.yml` workflows, so your new workflow reuses whatever core packages an earlier workflow already built/tested on this branch instead of rebuilding them from scratch. This is the main lever keeping CI time from growing linearly with app count — see "CI and build performance" below.
+2. `.github/workflows/validate-<name>.yml`: model it on `validate-career.yml`. Set every env var your app _and its transitive dependencies_ actually require in the job's `env:` block with fake test values — including ones you don't obviously need yourself (e.g. `DATABASE_URL` if you depend on `@hominem/db`, `BETTER_AUTH_SECRET` if anything in your dependency chain imports `services/api` for real). Use `./.github/actions/setup-pnpm-workspace` for setup — it caches both the pnpm store and turbo's local cache directory (`.turbo/cache`), shared across all `validate-*.yml` workflows, so your new workflow reuses whatever core packages an earlier workflow already built/tested on this branch instead of rebuilding them from scratch. This is the main lever keeping CI time from growing linearly with app count — see "Build / CI" below.
 3. `deploy-<name>.yml`, if it deploys: trigger on `workflow_run: { workflows: [validate-<name>] }`. The workflow **name** (the `name:` field, not the filename) must match exactly — renaming a `validate-*.yml` workflow silently breaks its deploy trigger with no error.
 4. A new deployable app's CI workflow must set every env var required by its own code _and_ its transitive `@hominem/*` dependencies — missing one silently breaks CI with an `EnvValidationError`, not an obviously-related error message.
 
@@ -117,9 +119,12 @@ Documentation on type-checking in this monorepo can be found in `docs/type-syste
 
 ## Monorepo
 
-- This root file is the primary agent instruction authority for the repository. Nested `AGENTS.md` files in [apps/omiro/](apps/omiro/AGENTS.md) and [services/api/](services/api/AGENTS.md) add directory-scoped detail for agents working in those trees; they must not duplicate or contradict these root rules. `packages/db` has no nested `AGENTS.md` — its conventions live in the `hominem-database` skill instead, since that skill is already the required entry point for any schema/migration/repository work there (see the `packages/db` rule above).
-- The work tracker owns temporary execution.
-- **Execute task plans by dependency order, not by filename.** Use the Markdown files in `docs/tasks/` as the task source of truth; do not require a separate task index. A task's own `status` and `depends_on` frontmatter is the only ordering signal — pick any task that isn't `Implemented` and whose `depends_on` are all `Implemented`. If several qualify at once, they're genuinely independent; work one all the way through before starting another rather than interleaving. Treat a task blocked by an unfinished dependency as locked even when its code looks easy or useful as groundwork. Do not mark a task `Implemented` until its own observable evidence and all required validation are complete. If a task is `Blocked`, report the blocker and stop rather than working around it; only proceed past it after the user explicitly changes the plan. When earlier implementation already exists, reconcile its task record and evidence first, then resume with the next eligible task. A task's `docs/tasks/artifacts/` evidence is scratch, not durable record — it's gitignored, and once its parent task is `Implemented` there's no reason to keep it around.
+- The root `AGENTS.md` file is the primary authority for the repository. Nested `AGENTS.md` files add directory-scoped detail for agents working in those trees. These nested files must not duplicate or contradict these root rules. 
+- To work with the hominem database use the `.agents/skills/hominem-database` skill instead, since that skill is already the required entry point for any schema/migration/repository work there (see the `packages/db` rule above).
+- The task files under `docs/tasks/` are the work tracker: they own temporary execution.
+- **Execute task plans by dependency order, not by filename.** Use the Markdown files in `docs/tasks/` as the task source of truth; do not require a separate task index. A task's own `status` and `depends_on` frontmatter is the only ordering signal — pick any task that isn't `Implemented` and whose `depends_on` are all `Implemented`. Validate the edges with `pnpm run tasks:check`, which runs as part of `pnpm check`.
+- Treat a task blocked by an unfinished dependency as locked even when its code looks easy or useful as groundwork. If several tasks qualify at once, they're genuinely independent; work one all the way through before starting another rather than interleaving. If a task is `Blocked`, report the blocker and stop rather than working around it; only proceed past it after the user explicitly changes the plan.
+- Do not mark a task `Implemented` until its own observable evidence and all required validation are complete. When earlier implementation already exists, reconcile its task record and evidence first, then resume with the next eligible task. A task's `docs/tasks/artifacts/` evidence is scratch, not durable record — it's gitignored, and once its parent task is `Implemented` there's no reason to keep it around.
 
 ## Directory-scoped agent instructions
 

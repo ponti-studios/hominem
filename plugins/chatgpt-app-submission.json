@@ -4,34 +4,10 @@
   "app_info": {
     "display_name": "Hominem",
     "subtitle": "Your personal data repository",
-    "description": "Hominem securely connects ChatGPT to your personal data repository so you can review and update career history, job applications, education, skills, projects, certifications, social links, finance, health, calendar, travel, media, people, places, collections, and tags.",
+    "description": "Hominem securely connects ChatGPT to your personal data repository so you can review and update career history, job applications, education, skills, projects, certifications, social links, finance, health, travel, media, people, places, collections, and tags.",
     "category": "PRODUCTIVITY"
   },
   "tools": {
-    "calendar_search": {
-      "annotations": {
-        "readOnlyHint": true,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Only reads authenticated Hominem data and returns the result without changing state.",
-        "open_world_justification": "Operates only on the authenticated user’s private Hominem data and does not change public internet state or third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or perform an irreversible action."
-      }
-    },
-    "calendar_upcoming": {
-      "annotations": {
-        "readOnlyHint": true,
-        "openWorldHint": false,
-        "destructiveHint": false
-      },
-      "justifications": {
-        "read_only_justification": "Only reads authenticated Hominem data and returns the result without changing state.",
-        "open_world_justification": "Operates only on the authenticated user’s private Hominem data and does not change public internet state or third-party systems.",
-        "destructive_justification": "Does not delete, overwrite, revoke access, or perform an irreversible action."
-      }
-    },
     "trip_history": {
       "annotations": {
         "readOnlyHint": true,

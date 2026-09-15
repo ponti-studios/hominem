@@ -34,7 +34,7 @@ separate task, do not expand this one.
 | --- | --- | --- | --- | --- | --- |
 | W-001 | Replace local text/reasoning/toolSteps/status state + `statusFromPhase` + `localStorage` checkpoint with the shared client reducer + checkpoint store | `apps/web` hooks | — | hook unit tests | No phase-mapping function remains in web hooks |
 | W-002 | Focused hook coverage: resume-after-reload, failed-generation retry, cancel | `apps/web` hooks | W-001 | `use-stream-message.test.tsx`, `use-chat-messages` suites | Recovery paths covered |
-| W-003 | Browser verification: send, streaming, stop, failure, retry, regenerate, tool-confirm | Playwright | W-002 | screenshots/DOM/console artifacts per `web-chat-verification.md` evidence standard | Every named state observed in the target browser |
+| W-003 | Browser verification: send, streaming, stop, failure, retry, regenerate, tool-confirm | Playwright | W-002 | screenshots/DOM/console artifacts per `web-chat-browser-topup.md` evidence standard | Every named state observed in the target browser |
 
 ## Acceptance criteria
 

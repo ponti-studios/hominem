@@ -9,15 +9,17 @@ import Animated, {
 
 import { useAppTheme, useStyles } from '~/components/theme';
 import { Card } from '~/components/ui';
+import { Button } from '~/components/ui/button';
 
 import type { EditableTimeBlockField, TimeInteractionState, TimeOpening } from './time-types';
 import { TimeAvailabilityResult } from './TimeAvailabilityResult';
 import { TimeDraftResult } from './TimeDraftResult';
 import { TimeEventChoiceResult } from './TimeEventChoiceResult';
+import { CancelRow } from './TimeResultActions';
 
 type ResultState = Extract<
   TimeInteractionState,
-  { kind: 'answer' | 'event-choice' | 'availability' | 'draft' }
+  { kind: 'answer' | 'error' | 'event-choice' | 'availability' | 'draft' }
 >;
 
 interface TimeResultSurfaceProps {
@@ -28,6 +30,7 @@ interface TimeResultSurfaceProps {
   onChooseEvent?: (id: string) => void;
   onChooseOpening?: (opening: TimeOpening) => void;
   onEditField?: (field: EditableTimeBlockField, value: string) => void;
+  onRetry?: () => void;
   onSubmitDraft?: () => void;
   state?: TimeInteractionState;
   testID: string;
@@ -62,7 +65,9 @@ export function TimeResultSurface({
           ? resultState.block.primary_intent === 'add_task'
             ? 'Draft task ready'
             : 'Draft event ready'
-          : undefined)
+          : resultState?.kind === 'error'
+            ? resultState.message
+            : undefined)
       }
       entering={reducedMotion ? FadeIn.duration(180) : FadeInUp.duration(220)}
       exiting={reducedMotion ? FadeOut.duration(140) : FadeOutDown.duration(180)}
@@ -116,6 +121,16 @@ function TimeResultContent({
   switch (state.kind) {
     case 'answer':
       return <Text style={answerStyle}>{state.answer}</Text>;
+    case 'error':
+      return (
+        <>
+          <Text style={answerStyle}>{state.message}</Text>
+          {actions.onRetry ? (
+            <Button label="Try again" onPress={actions.onRetry} variant="secondary" />
+          ) : null}
+          <CancelRow testID="time-error-cancel" onCancel={actions.onCancel} />
+        </>
+      );
     case 'event-choice':
       return <TimeEventChoiceResult candidates={state.candidates} {...actions} />;
     case 'availability':

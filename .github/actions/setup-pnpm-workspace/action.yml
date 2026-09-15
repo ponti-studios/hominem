@@ -1,5 +1,5 @@
 name: setup-pnpm-workspace
-description: Set up the pinned Node.js and pnpm toolchain, install just, and restore the Turbo cache.
+description: Set up the pinned Node.js and pnpm toolchain, install workspace dependencies, install just, and restore the Turbo cache.
 
 inputs:
   node-version:
@@ -15,6 +15,10 @@ runs:
         runtime: node@${{ inputs.node-version }}
         cache: true
         cache-dependency-path: pnpm-lock.yaml
+
+    - name: install-dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
 
     - name: setup-just
       uses: taiki-e/install-action@1b0ab3d2f6e68837936954afdea248a125d3b906 # just
