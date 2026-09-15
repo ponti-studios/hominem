@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { toLocalInputValue } from './use-task-form-draft';
 import { mapParsedBlockToDraftPatch } from './use-task-when-parser';
 
 const base = {
@@ -19,33 +20,35 @@ const base = {
 
 describe('mapParsedBlockToDraftPatch', () => {
   it('maps a complete scheduled block and clears due', () => {
+    const start = '2026-09-15T14:00:00-07:00';
+    const end = '2026-09-15T15:00:00-07:00';
     const result = mapParsedBlockToDraftPatch({
       ...base,
-      start_time: '2026-09-15T14:00:00-07:00',
-      end_time: '2026-09-15T15:00:00-07:00',
+      start_time: start,
+      end_time: end,
       duration: 60,
     });
     expect(result.patch).toMatchObject({
-      scheduledStartAt: expect.stringContaining('14:00'),
-      scheduledEndAt: expect.stringContaining('15:00'),
+      scheduledStartAt: toLocalInputValue(start),
+      scheduledEndAt: toLocalInputValue(end),
       durationMinutes: '60',
       dueAt: '',
     });
   });
 
   it('derives the end from a start and duration', () => {
-    const result = mapParsedBlockToDraftPatch({
-      ...base,
-      start_time: '2026-09-15T14:00:00-07:00',
-      duration: 30,
-    });
+    const start = '2026-09-15T14:00:00-07:00';
+    const result = mapParsedBlockToDraftPatch({ ...base, start_time: start, duration: 30 });
     expect(result.patch.durationMinutes).toBe('30');
-    expect(result.patch.scheduledEndAt).toContain('14:30');
+    expect(result.patch.scheduledEndAt).toBe(
+      toLocalInputValue(new Date(new Date(start).getTime() + 30 * 60000).toISOString()),
+    );
   });
 
   it('treats a start without duration as a due moment', () => {
-    const result = mapParsedBlockToDraftPatch({ ...base, start_time: '2026-09-15T14:00:00-07:00' });
-    expect(result.patch.dueAt).toContain('14:00');
+    const start = '2026-09-15T14:00:00-07:00';
+    const result = mapParsedBlockToDraftPatch({ ...base, start_time: start });
+    expect(result.patch.dueAt).toBe(toLocalInputValue(start));
     expect(result.patch.scheduledStartAt).toBeUndefined();
   });
 
@@ -62,13 +65,14 @@ describe('mapParsedBlockToDraftPatch', () => {
   });
 
   it('reports a vague scheduling window without committing a time', () => {
+    const windowStart = '2026-09-21T00:00:00-07:00';
     const result = mapParsedBlockToDraftPatch({
       ...base,
-      scheduling_window_start: '2026-09-21T00:00:00-07:00',
+      scheduling_window_start: windowStart,
       scheduling_window_end: '2026-09-28T00:00:00-07:00',
     });
     expect(result.patch).toEqual({});
-    expect(result.note).toContain('Window: 2026-09-21');
+    expect(result.note).toContain(toLocalInputValue(windowStart).slice(0, 10));
   });
 
   it('keeps a location even when no time was found', () => {
