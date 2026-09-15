@@ -1,6 +1,10 @@
 import type { TaskListItem, TasksParseOutput } from '@hominem/rpc/types';
 
-import type { CalendarEvent, CalendarEventSummary } from '~/modules/on-device-ai';
+import type {
+  CalendarEvent,
+  CalendarEventSummary,
+  TimeProcessingStage,
+} from '~/modules/on-device-ai';
 
 export type TimeItem =
   | { kind: 'event'; value: CalendarEventSummary }
@@ -35,3 +39,5 @@ export interface TimeOpening {
   end: string;
   start: string;
 }
+
+export type { TimeProcessingStage };

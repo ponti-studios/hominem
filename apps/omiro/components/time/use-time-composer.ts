@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { randomUUID } from 'expo-crypto';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { CalendarEvent, TimeAssistantResult } from '~/modules/on-device-ai';
 import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
@@ -6,7 +7,12 @@ import { localTimeZone } from '~/services/date/format-date';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 
-import type { EditableTimeBlockField, TimeInteractionState, TimeOpening } from './time-types';
+import type {
+  EditableTimeBlockField,
+  TimeInteractionState,
+  TimeOpening,
+  TimeProcessingStage,
+} from './time-types';
 
 interface UseTimeComposerOptions {
   onError: (message: string) => void;
@@ -16,9 +22,20 @@ interface UseTimeComposerOptions {
 export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions) {
   const [prompt, setPrompt] = useState('');
   const [interaction, setInteraction] = useState<TimeInteractionState>({ kind: 'idle' });
+  const [processingStage, setProcessingStage] = useState<TimeProcessingStage>('understanding');
+  const requestTokenRef = useRef<string | null>(null);
   const { data: tasks = [] } = useTasksQuery();
   const createTask = useTaskCreate();
   const isSaving = createTask.isPending;
+
+  useEffect(() => {
+    const subscription = calendarEventGateway.subscribeToProcessingStage((event) => {
+      if (event.requestToken === requestTokenRef.current) {
+        setProcessingStage(event.stage);
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   const fail = useCallback(
     (message: string, submittedPrompt: string) => {
@@ -29,53 +46,104 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
     [onError],
   );
 
-  const ask = useCallback(async () => {
-    const submittedPrompt = prompt.trim();
-    if (!submittedPrompt || interaction.kind === 'parsing' || isSaving) {
+  const runPrompt = useCallback(
+    async (submittedPrompt: string) => {
+      if (!submittedPrompt || interaction.kind === 'parsing' || isSaving) {
+        return;
+      }
+
+      const requestToken = randomUUID();
+      requestTokenRef.current = requestToken;
+      setProcessingStage('understanding');
+      setInteraction({ kind: 'parsing', submittedPrompt });
+      try {
+        const result = await calendarEventGateway.interpret(
+          submittedPrompt,
+          tasks.flatMap((task) =>
+            task.scheduledStartAt && task.scheduledEndAt
+              ? [{ startDate: task.scheduledStartAt, endDate: task.scheduledEndAt }]
+              : [],
+          ),
+          requestToken,
+        );
+        if (requestTokenRef.current !== requestToken) {
+          return;
+        }
+        if (result.kind === 'answer') {
+          setPrompt('');
+          setInteraction({ answer: result.answer, kind: 'answer' });
+          return;
+        }
+        if (result.kind === 'availability') {
+          setPrompt('');
+          setInteraction({
+            kind: 'availability',
+            openings: result.availability.map(({ startDate, endDate }) => ({
+              start: startDate,
+              end: endDate,
+            })),
+            block: nativeTimeBlock(result),
+            submittedPrompt,
+          });
+          return;
+        }
+        if (result.kind === 'taskDraft') {
+          setPrompt('');
+          setInteraction({ block: nativeTimeBlock(result), kind: 'draft', submittedPrompt });
+          return;
+        }
+        fail(
+          result.kind === 'error' ? result.error : 'Time request was cancelled.',
+          submittedPrompt,
+        );
+      } catch (error) {
+        if (requestTokenRef.current !== requestToken) {
+          return;
+        }
+        fail(
+          error instanceof Error ? error.message : 'Unable to interpret that time request.',
+          submittedPrompt,
+        );
+      } finally {
+        if (requestTokenRef.current === requestToken) {
+          requestTokenRef.current = null;
+        }
+      }
+    },
+    [fail, interaction.kind, isSaving, tasks],
+  );
+
+  const ask = useCallback(() => {
+    void runPrompt(prompt.trim());
+  }, [prompt, runPrompt]);
+
+  const retry = useCallback(() => {
+    if (interaction.kind === 'error') {
+      void runPrompt(interaction.submittedPrompt);
+    }
+  }, [interaction, runPrompt]);
+
+  const cancelProcessing = useCallback(() => {
+    const requestToken = requestTokenRef.current;
+    if (!requestToken || interaction.kind !== 'parsing') {
       return;
     }
+    requestTokenRef.current = null;
+    void calendarEventGateway.cancelInterpretation(requestToken);
+    setPrompt(interaction.submittedPrompt);
+    setInteraction({ kind: 'idle' });
+  }, [interaction]);
 
-    setInteraction({ kind: 'parsing', submittedPrompt });
-    try {
-      const result = await calendarEventGateway.interpret(
-        submittedPrompt,
-        tasks.flatMap((task) =>
-          task.scheduledStartAt && task.scheduledEndAt
-            ? [{ startDate: task.scheduledStartAt, endDate: task.scheduledEndAt }]
-            : [],
-        ),
-      );
-      if (result.kind === 'answer') {
-        setPrompt('');
-        setInteraction({ answer: result.answer, kind: 'answer' });
-        return;
-      }
-      if (result.kind === 'availability') {
-        setPrompt('');
-        setInteraction({
-          kind: 'availability',
-          openings: result.availability.map(({ startDate, endDate }) => ({
-            start: startDate,
-            end: endDate,
-          })),
-          block: nativeTimeBlock(result),
-          submittedPrompt,
-        });
-        return;
-      }
-      if (result.kind === 'taskDraft') {
-        setPrompt('');
-        setInteraction({ block: nativeTimeBlock(result), kind: 'draft', submittedPrompt });
-        return;
-      }
-      fail(result.kind === 'error' ? result.error : 'Time request was cancelled.', submittedPrompt);
-    } catch (error) {
-      fail(
-        error instanceof Error ? error.message : 'Unable to interpret that time request.',
-        submittedPrompt,
-      );
+  const reset = useCallback(() => {
+    if (requestTokenRef.current) {
+      const requestToken = requestTokenRef.current;
+      requestTokenRef.current = null;
+      void calendarEventGateway.cancelInterpretation(requestToken);
     }
-  }, [fail, interaction.kind, isSaving, prompt, tasks]);
+    setPrompt('');
+    setProcessingStage('understanding');
+    setInteraction({ kind: 'idle' });
+  }, []);
 
   const chooseOpening = useCallback((opening: TimeOpening) => {
     setInteraction((current) => {
@@ -120,40 +188,34 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
 
   const submitDraft = useCallback(async () => {
     if (interaction.kind !== 'draft' || isSaving) {
-      return;
+      return false;
     }
     const { block, submittedPrompt } = interaction;
     const title = block.title?.trim();
     if (!title) {
-      fail('Add a title before saving this time block.', submittedPrompt);
-      return;
+      fail('Add a title before saving this task.', submittedPrompt);
+      return false;
     }
 
     try {
-      if (block.primary_intent === 'add_task') {
-        await createTask.mutateAsync({
-          title,
-          dueAt: block.deadline_fixed
-            ? new Date(`${block.deadline_fixed}T23:59:59`).toISOString()
-            : null,
-          durationMinutes: block.duration,
-          location: block.location,
-          scheduledStartAt: block.start_time,
-          scheduledEndAt: block.end_time,
-          schedulingWindowStartAt: block.scheduling_window_start,
-          schedulingWindowEndAt: block.scheduling_window_end,
-          timeZone: localTimeZone(),
-        });
-      } else {
-        fail('Review this request before making a change.', submittedPrompt);
-        return;
-      }
+      await createTask.mutateAsync({
+        title,
+        dueAt: block.deadline_fixed
+          ? new Date(`${block.deadline_fixed}T23:59:59`).toISOString()
+          : null,
+        durationMinutes: block.duration,
+        location: block.location,
+        scheduledStartAt: block.start_time,
+        scheduledEndAt: block.end_time,
+        schedulingWindowStartAt: block.scheduling_window_start,
+        schedulingWindowEndAt: block.scheduling_window_end,
+        timeZone: localTimeZone(),
+      });
       setInteraction({ kind: 'idle' });
+      return true;
     } catch (error) {
-      fail(
-        error instanceof Error ? error.message : 'Unable to save this time block.',
-        submittedPrompt,
-      );
+      fail(error instanceof Error ? error.message : 'Unable to save this task.', submittedPrompt);
+      return false;
     }
   }, [createTask, fail, interaction, isSaving]);
 
@@ -161,7 +223,8 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
     const submittedPrompt =
       interaction.kind === 'availability' ||
       interaction.kind === 'error' ||
-      interaction.kind === 'event-choice'
+      interaction.kind === 'event-choice' ||
+      interaction.kind === 'draft'
         ? interaction.submittedPrompt
         : '';
     setPrompt(submittedPrompt);
@@ -170,12 +233,16 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
 
   return {
     ask,
+    cancelProcessing,
     cancelResult,
     chooseEvent,
     chooseOpening,
     interaction,
     isSaving,
+    processingStage,
     prompt,
+    reset,
+    retry,
     setPrompt,
     submitDraft,
     updateDraft,

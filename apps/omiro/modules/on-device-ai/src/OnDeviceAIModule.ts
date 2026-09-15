@@ -70,6 +70,16 @@ export type TimeAssistantResult =
   | { kind: 'cancelled' }
   | { kind: 'error'; error: string };
 
+export type TimeProcessingStage =
+  | 'understanding'
+  | 'checkingSchedule'
+  | 'preparingSuggestion';
+
+export interface TimeProcessingStageEvent {
+  stage: TimeProcessingStage;
+  requestToken: string;
+}
+
 export type CalendarEventPatch = {
   title?: string;
   startDate?: string;
@@ -105,7 +115,9 @@ export type OnDeviceAIModuleType = {
   interpretTimeRequest(
     prompt: string,
     taskBusyIntervals: TaskBusyInterval[],
+    requestToken: string,
   ): Promise<TimeAssistantResult>;
+  cancelTimeAssistant(requestToken: string): Promise<void>;
   getCalendarEvents(startDate: string, endDate: string): Promise<CalendarEvent[]>;
   createCalendarEvent(
     title: string,
@@ -123,8 +135,8 @@ export type OnDeviceAIModuleType = {
   deleteCalendarEvent(id: string, recurrenceScope: CalendarRecurrenceScope): Promise<void>;
   askCalendar(prompt: string): Promise<OnDeviceAIResult>;
   addListener(
-    eventName: 'onDeviceAILog',
-    listener: (event: OnDeviceAILogEvent) => void,
+    eventName: 'onDeviceAILog' | 'onTimeAssistantStage',
+    listener: (event: OnDeviceAILogEvent | TimeProcessingStageEvent) => void,
   ): { remove: () => void };
 };
 

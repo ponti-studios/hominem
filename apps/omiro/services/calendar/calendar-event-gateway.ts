@@ -10,6 +10,7 @@ import OnDeviceAIModule, {
   type OnDeviceAIResult,
   type TaskBusyInterval,
   type TimeAssistantResult,
+  type TimeProcessingStageEvent,
 } from '~/modules/on-device-ai';
 
 export interface CalendarEventGateway {
@@ -17,7 +18,12 @@ export interface CalendarEventGateway {
   interpret: (
     prompt: string,
     taskBusyIntervals: TaskBusyInterval[],
+    requestToken: string,
   ) => Promise<TimeAssistantResult>;
+  cancelInterpretation: (requestToken: string) => Promise<void>;
+  subscribeToProcessingStage: (listener: (event: TimeProcessingStageEvent) => void) => {
+    remove: () => void;
+  };
   createEvent: (
     title: string,
     startDate: string,
@@ -41,8 +47,16 @@ export interface CalendarEventGateway {
 
 const productionCalendarEventGateway: CalendarEventGateway = {
   askSchedule: (prompt) => OnDeviceAIModule.askCalendar(prompt),
-  interpret: (prompt, taskBusyIntervals) =>
-    OnDeviceAIModule.interpretTimeRequest(prompt, taskBusyIntervals),
+  interpret: (prompt, taskBusyIntervals, requestToken) =>
+    OnDeviceAIModule.interpretTimeRequest(prompt, taskBusyIntervals, requestToken),
+  cancelInterpretation: (requestToken) => OnDeviceAIModule.cancelTimeAssistant(requestToken),
+  subscribeToProcessingStage: (listener) =>
+    OnDeviceAIModule.addListener(
+      'onTimeAssistantStage',
+      listener as (
+        event: TimeProcessingStageEvent | { type: string; message: string; timestamp: number },
+      ) => void,
+    ),
   createEvent: (title, startDate, endDate, location, recurrenceRule) =>
     OnDeviceAIModule.createCalendarEvent(title, startDate, endDate, location, recurrenceRule),
   deleteEvent: (id, recurrenceScope) => OnDeviceAIModule.deleteCalendarEvent(id, recurrenceScope),
@@ -77,8 +91,28 @@ async function resolveGateway(): Promise<CalendarEventGateway> {
 
 export const calendarEventGateway: CalendarEventGateway = {
   askSchedule: async (prompt) => (await resolveGateway()).askSchedule(prompt),
-  interpret: async (prompt, taskBusyIntervals) =>
-    (await resolveGateway()).interpret(prompt, taskBusyIntervals),
+  interpret: async (prompt, taskBusyIntervals, requestToken) =>
+    (await resolveGateway()).interpret(prompt, taskBusyIntervals, requestToken),
+  cancelInterpretation: async (requestToken) =>
+    (await resolveGateway()).cancelInterpretation(requestToken),
+  subscribeToProcessingStage: (listener) => {
+    let disposed = false;
+    let remove = () => {};
+    void resolveGateway().then((gateway) => {
+      const subscription = gateway.subscribeToProcessingStage(listener);
+      if (disposed) {
+        subscription.remove();
+      } else {
+        remove = subscription.remove;
+      }
+    });
+    return {
+      remove: () => {
+        disposed = true;
+        remove();
+      },
+    };
+  },
   createEvent: async (title, startDate, endDate, location, recurrenceRule) =>
     (await resolveGateway()).createEvent(title, startDate, endDate, location, recurrenceRule),
   deleteEvent: async (id, recurrenceScope) =>

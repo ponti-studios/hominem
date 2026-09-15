@@ -8,7 +8,7 @@ public class OnDeviceAIModule: Module {
   public func definition() -> ModuleDefinition {
     Name("OnDeviceAI")
 
-    Events("onDeviceAILog")
+    Events("onDeviceAILog", "onTimeAssistantStage")
 
     AsyncFunction("getAvailability") { () async -> String in
       guard #available(iOS 26.0, *) else { return "unsupported" }
@@ -49,7 +49,7 @@ public class OnDeviceAIModule: Module {
       try await OnDeviceAICalendarCoordinator.shared.presentDraft(draft)
     }
 
-    AsyncFunction("interpretTimeRequest") { (prompt: String, _ taskBusyIntervals: [TaskBusyIntervalRecord]) async throws -> TimeAssistantResultRecord in
+    AsyncFunction("interpretTimeRequest") { (prompt: String, _ taskBusyIntervals: [TaskBusyIntervalRecord], requestToken: String) async throws -> TimeAssistantResultRecord in
       guard #available(iOS 26.0, *) else {
         var unavailable = TimeAssistantResultRecord()
         unavailable.error = "Natural-language Time requests require Apple Intelligence on this device. You can still browse and edit Calendar manually."
@@ -61,8 +61,22 @@ public class OnDeviceAIModule: Module {
         }
         return TaskBusyInterval(startDate: start, endDate: end)
       }
-      let response = try await runTimeAssistant(prompt: prompt, taskBusyIntervals: intervals)
+      sendTimeAssistantStage("understanding", requestToken: requestToken)
+      let response = try await runTimeAssistant(
+        prompt: prompt,
+        taskBusyIntervals: intervals,
+        requestToken: requestToken,
+        onStage: { stage in
+          self.sendTimeAssistantStage(stage, requestToken: requestToken)
+        }
+      )
       return timeAssistantRecord(from: response)
+    }
+
+    AsyncFunction("cancelTimeAssistant") { (requestToken: String) in
+      Task {
+        await cancelTimeAssistant(requestToken: requestToken)
+      }
     }
 
     AsyncFunction("createCalendarEvent") { (
@@ -126,6 +140,13 @@ public class OnDeviceAIModule: Module {
       )
       return OnDeviceAIResult(text: response, isOnDevice: true)
     }
+  }
+
+  private func sendTimeAssistantStage(_ stage: String, requestToken: String) {
+    sendEvent("onTimeAssistantStage", [
+      "stage": stage,
+      "requestToken": requestToken,
+    ])
   }
 }
 

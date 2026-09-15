@@ -6,9 +6,14 @@ import { renderHookWithQueryClient } from '../../utils/render-hook';
 
 const interpret = vi.fn();
 
+vi.mock('expo-crypto', () => ({ randomUUID: () => 'test-request-token' }));
 vi.mock('expo-router', () => ({ useIsFocused: () => true }));
 vi.mock('~/services/calendar/calendar-event-gateway', () => ({
-  calendarEventGateway: { interpret },
+  calendarEventGateway: {
+    cancelInterpretation: vi.fn(),
+    interpret,
+    subscribeToProcessingStage: vi.fn(() => ({ remove: vi.fn() })),
+  },
 }));
 vi.mock('~/services/tasks/use-task-create', () => ({
   useTaskCreate: () => ({ isPending: false, mutateAsync: vi.fn() }),
@@ -39,7 +44,7 @@ describe('useTimeComposer', () => {
     act(() => result.current.setPrompt('Buy milk'));
     await act(async () => result.current.ask());
 
-    expect(interpret).toHaveBeenCalledWith('Buy milk', []);
+    expect(interpret).toHaveBeenCalledWith('Buy milk', [], expect.any(String));
     expect(result.current.interaction).toMatchObject({
       block: expect.objectContaining({
         duration: 30,

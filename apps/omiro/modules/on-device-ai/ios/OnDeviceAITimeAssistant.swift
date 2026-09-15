@@ -2,6 +2,32 @@ import Foundation
 import FoundationModels
 
 @available(iOS 26.0, *)
+private actor TimeAssistantCancellationStore {
+  private var cancelledTokens = Set<String>()
+
+  func cancel(_ requestToken: String) {
+    cancelledTokens.insert(requestToken)
+  }
+
+  func isCancelled(_ requestToken: String) -> Bool {
+    cancelledTokens.contains(requestToken)
+  }
+}
+
+@available(iOS 26.0, *)
+private let timeAssistantCancellationStore = TimeAssistantCancellationStore()
+
+@available(iOS 26.0, *)
+func cancelTimeAssistant(requestToken: String) async {
+  await timeAssistantCancellationStore.cancel(requestToken)
+}
+
+@available(iOS 26.0, *)
+private func isTimeAssistantCancelled(_ requestToken: String) async -> Bool {
+  await timeAssistantCancellationStore.isCancelled(requestToken)
+}
+
+@available(iOS 26.0, *)
 private actor TimeAssistantState {
   private var outcome: TimeAssistantResult?
 
@@ -18,6 +44,8 @@ private actor TimeAssistantState {
 private struct FindCalendarEventsTool: Tool {
   let name = "findCalendarEvents"
   let description = "Find calendar events in a bounded ISO 8601 time range. Use this before answering questions about calendar events or before editing an existing event."
+  let requestToken: String
+  let onStage: @Sendable (String) -> Void
 
   @Generable
   struct Arguments {
@@ -28,6 +56,8 @@ private struct FindCalendarEventsTool: Tool {
   }
 
   func call(arguments: Arguments) async throws -> String {
+    guard await !isTimeAssistantCancelled(requestToken) else { return "Request cancelled." }
+    onStage("checkingSchedule")
     guard let start = iso8601Date(arguments.startDate), let end = iso8601Date(arguments.endDate), start < end else {
       return "Invalid date range. Use ISO 8601 timestamps with an end after the start."
     }
@@ -50,6 +80,7 @@ private struct EditCalendarEventTool: Tool {
   let name = "editCalendarEvent"
   let description = "Open Apple's calendar editor to create, edit, or delete an event. Call this only after the user clearly asked for a calendar change. The editor is authoritative for calendar choice, attendees, alarms, recurrence, save, delete, and cancellation."
   let state: TimeAssistantState
+  let requestToken: String
 
   @Generable
   struct Arguments {
@@ -68,6 +99,7 @@ private struct EditCalendarEventTool: Tool {
   }
 
   func call(arguments: Arguments) async throws -> String {
+    guard await !isTimeAssistantCancelled(requestToken) else { return "Request cancelled." }
     let result: String
     switch arguments.action.lowercased() {
     case "create":
@@ -100,6 +132,8 @@ private struct FindAvailabilityTool: Tool {
   let description = "Find open time using calendar events and the user's database-backed task busy intervals. Use it for requests to find time or schedule work, never for a calendar write."
   let taskBusyIntervals: [TaskBusyInterval]
   let state: TimeAssistantState
+  let requestToken: String
+  let onStage: @Sendable (String) -> Void
 
   @Generable
   struct Arguments {
@@ -112,6 +146,8 @@ private struct FindAvailabilityTool: Tool {
   }
 
   func call(arguments: Arguments) async throws -> String {
+    guard await !isTimeAssistantCancelled(requestToken) else { return "Request cancelled." }
+    onStage("checkingSchedule")
     guard let start = iso8601Date(arguments.startDate), let end = iso8601Date(arguments.endDate), start < end else {
       return "Invalid date range. Use ISO 8601 timestamps."
     }
@@ -138,6 +174,7 @@ private struct ProposeTaskTool: Tool {
   let name = "proposeTask"
   let description = "Propose a database-backed task. Use this for a task request, never to create a calendar event."
   let state: TimeAssistantState
+  let requestToken: String
 
   @Generable
   struct Arguments {
@@ -152,6 +189,7 @@ private struct ProposeTaskTool: Tool {
   }
 
   func call(arguments: Arguments) async throws -> String {
+    guard await !isTimeAssistantCancelled(requestToken) else { return "Request cancelled." }
     let draft = TaskDraft(
       title: arguments.title,
       dueAt: arguments.dueAt.flatMap(iso8601Date),
@@ -168,7 +206,12 @@ private struct ProposeTaskTool: Tool {
 }
 
 @available(iOS 26.0, *)
-func runTimeAssistant(prompt: String, taskBusyIntervals: [TaskBusyInterval]) async throws -> TimeAssistantResult {
+func runTimeAssistant(
+  prompt: String,
+  taskBusyIntervals: [TaskBusyInterval],
+  requestToken: String,
+  onStage: @escaping @Sendable (String) -> Void
+) async throws -> TimeAssistantResult {
   guard case .available = SystemLanguageModel.default.availability else {
     return .error("Natural-language Time requests require Apple Intelligence on this device. You can still browse and edit Calendar manually.")
   }
@@ -176,10 +219,10 @@ func runTimeAssistant(prompt: String, taskBusyIntervals: [TaskBusyInterval]) asy
   let today = todayAnchorString()
   let session = LanguageModelSession(
     tools: [
-      FindCalendarEventsTool(),
-      EditCalendarEventTool(state: state),
-      FindAvailabilityTool(taskBusyIntervals: taskBusyIntervals, state: state),
-      ProposeTaskTool(state: state),
+      FindCalendarEventsTool(requestToken: requestToken, onStage: onStage),
+      EditCalendarEventTool(state: state, requestToken: requestToken),
+      FindAvailabilityTool(taskBusyIntervals: taskBusyIntervals, state: state, requestToken: requestToken, onStage: onStage),
+      ProposeTaskTool(state: state, requestToken: requestToken),
     ],
     instructions: """
       You are Omiro's on-device Time assistant. Today is \(today). Calendar data stays on this device.
@@ -187,5 +230,9 @@ func runTimeAssistant(prompt: String, taskBusyIntervals: [TaskBusyInterval]) asy
       """
   )
   let response = try await session.respond(to: prompt)
+  if await isTimeAssistantCancelled(requestToken) {
+    return .cancelled
+  }
+  onStage("preparingSuggestion")
   return await state.result() ?? .answer(response.content)
 }

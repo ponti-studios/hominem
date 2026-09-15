@@ -9,6 +9,7 @@ import Animated, {
 
 import { useAppTheme, useStyles } from '~/components/theme';
 import { Card } from '~/components/ui';
+import { Button } from '~/components/ui/button';
 
 import type { EditableTimeBlockField, TimeInteractionState, TimeOpening } from './time-types';
 import { TimeAvailabilityResult } from './TimeAvailabilityResult';
@@ -29,6 +30,7 @@ interface TimeResultSurfaceProps {
   onChooseEvent?: (id: string) => void;
   onChooseOpening?: (opening: TimeOpening) => void;
   onEditField?: (field: EditableTimeBlockField, value: string) => void;
+  onRetry?: () => void;
   onSubmitDraft?: () => void;
   state?: TimeInteractionState;
   testID: string;
@@ -123,6 +125,9 @@ function TimeResultContent({
       return (
         <>
           <Text style={answerStyle}>{state.message}</Text>
+          {actions.onRetry ? (
+            <Button label="Try again" onPress={actions.onRetry} variant="secondary" />
+          ) : null}
           <CancelRow testID="time-error-cancel" onCancel={actions.onCancel} />
         </>
       );

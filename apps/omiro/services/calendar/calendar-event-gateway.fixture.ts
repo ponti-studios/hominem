@@ -4,6 +4,7 @@ import type {
   CalendarPermissionStatus,
   CalendarRecurrenceScope,
   OnDeviceAIResult,
+  TimeProcessingStageEvent,
 } from '~/modules/on-device-ai';
 
 import type { CalendarEventGateway } from './calendar-event-gateway';
@@ -52,6 +53,7 @@ const fixtureEvents: CalendarEvent[] = [
   },
 ];
 let scenario: TimeFixtureScenario = 'authorized';
+const processingStageListeners = new Set<(event: TimeProcessingStageEvent) => void>();
 
 function permission(): CalendarPermissionStatus {
   if (scenario === 'denied') {
@@ -77,9 +79,19 @@ export const timeFixtureGateway: CalendarEventGateway = {
     await maybeFail();
     return { isOnDevice: true, text: `Fixture answer for ${prompt}` };
   },
-  interpret: async (prompt) => {
+  interpret: async (prompt, _taskBusyIntervals, requestToken) => {
+    const emit = (stage: TimeProcessingStageEvent['stage']) => {
+      processingStageListeners.forEach((listener) => listener({ requestToken, stage }));
+    };
+    emit('understanding');
     await maybeFail();
+    emit('preparingSuggestion');
     return { kind: 'answer', answer: `Fixture answer for ${prompt}` };
+  },
+  cancelInterpretation: async () => {},
+  subscribeToProcessingStage: (listener: (event: TimeProcessingStageEvent) => void) => {
+    processingStageListeners.add(listener);
+    return { remove: () => processingStageListeners.delete(listener) };
   },
   createEvent: async (title, startDate, endDate, location): Promise<CalendarEvent> => {
     await maybeFail();

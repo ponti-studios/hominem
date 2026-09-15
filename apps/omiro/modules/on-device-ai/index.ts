@@ -13,4 +13,6 @@ export type {
   OnDeviceAIResult,
   TaskBusyInterval,
   TimeAssistantResult,
+  TimeProcessingStage,
+  TimeProcessingStageEvent,
 } from './src/OnDeviceAIModule';

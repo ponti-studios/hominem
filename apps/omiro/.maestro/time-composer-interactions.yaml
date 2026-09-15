@@ -1,81 +1,63 @@
 appId: com.pontistudios.hakumi.dev
 ---
-# Exercises the Time composer (components/time/TimeComposer.tsx). Reaches
-# it via a direct deep link (hakumi-dev://time) rather than the nav drawer's
-# native menu (NavDrawerMenuButton.tsx renders a @expo/ui MenuView -- there's
-# no "workspace-context-*" tab strip anymore, see the now-stale
-# calendar-composer-states.yaml / inbox-tab-switch.yaml flows which predate
-# this navigation).
-#
-# KNOWN FLAKE, not caused by this flow or by the Composer/TimeComposer
-# changes it verifies: navigating to /time (by this deep link, or by the
-# menu, or by any route replacing the Time screen) frequently lands on
-# time-block-editor -- a real calendar event's editor (title "Edit US
-# Holidays", reached via getTimeBlockRoute in services/navigation/routes.ts)
-# -- instead of the Time composer root, and going Back from it can trigger
-# the exact same thing again shortly after, as if something re-triggers on
-# every Time-screen focus. Reproduced on a freshly reinstalled app with no
-# saved state, so it isn't leftover app storage or iOS scene restoration.
-# Investigated at length without finding the trigger; see the follow-up task
-# "Investigate Time nav landing on stale calendar event". The retry loop
-# below recovers from a single occurrence but is not a fix for the repeat.
-#
-# Covers the idle -> focused/typing -> idle round trip and the mic/submit
-# buttons' presence, i.e. the same states the idle Card <-> ResultSurface
-# crossfade in TimeComposer.tsx now animates between. Actually parsing a
-# request (time-composer-submit -> ResultSurface draft) depends on a
-# reachable LLM backend and calendar permission, so that leg is optional and
-# won't fail the flow if it doesn't resolve locally.
+# Exercises the floating Time extraction actions and native bottom sheet.
 - runFlow: startup.yaml
 
 - openLink: hakumi-dev://time
-- repeat:
-    while:
-      visible:
-        id: time-block-editor
-    times: 4
-    commands:
-      - tapOn:
-          id: BackButton
-          optional: true
 - extendedWaitUntil:
     visible:
-      id: time-composer-dock
+      id: time-floating-add
     timeout: 10000
 - assertVisible:
-    id: time-composer
+    id: time-floating-mic
+- takeScreenshot: time-floating-actions
+
+# Text mode opens as a native bottom sheet with the field ready for input.
+- tapOn:
+    id: time-floating-add
+- assertVisible:
+    id: time-extraction-sheet
 - assertVisible:
     id: time-composer-input
 - assertVisible:
     id: time-composer-mic-button
 - assertVisible:
     id: time-composer-submit
-- takeScreenshot: time-composer-idle
+- takeScreenshot: time-extraction-empty
 
-# Focused, empty.
 - tapOn:
     id: time-composer-input
-- takeScreenshot: time-composer-focused-empty
+- takeScreenshot: time-extraction-focused-empty
 
-# Typing.
 - inputText: Lunch with Sam tomorrow at noon
 - assertVisible:
     id: time-composer-submit
-- takeScreenshot: time-composer-typing
+- takeScreenshot: time-extraction-typing
 
-# Clear back to idle without submitting, confirm the composer survives the
-# round trip intact.
 - eraseText: 60
-- hideKeyboard
+- tapOn:
+    text: What do you want to plan?
 - assertVisible:
     id: time-composer-input
-- assertVisible:
-    id: time-composer
-- takeScreenshot: time-composer-idle-after-clear
+- takeScreenshot: time-extraction-idle-after-clear
 
-# Optional: attempt an actual parse. Soft assertions only (optional: true) --
-# this depends on network/auth/calendar-permission state this flow doesn't
-# control, unlike the deterministic UI checks above.
+# Dismiss the sheet and open voice mode from the floating microphone.
+- swipe:
+    start: '50%, 25%'
+    end: '50%, 95%'
+- assertVisible:
+    id: time-floating-mic
+- tapOn:
+    id: time-floating-mic
+- assertVisible:
+    id: composer-cancel-recording-button
+- assertVisible:
+    id: composer-stop-recording-button
+- takeScreenshot: time-extraction-voice
+- tapOn:
+    id: composer-cancel-recording-button
+
+# Actual model processing remains optional in this deterministic UI flow.
 - inputText: Lunch with Sam tomorrow at noon
 - tapOn:
     id: time-composer-submit
@@ -84,7 +66,7 @@ appId: com.pontistudios.hakumi.dev
       id: time-result
     timeout: 20000
     optional: true
-- takeScreenshot: time-composer-after-submit
+- takeScreenshot: time-extraction-after-submit
 - runFlow:
     when:
       visible:
@@ -107,7 +89,6 @@ appId: com.pontistudios.hakumi.dev
       - tapOn:
           id: time-availability-cancel
 
-# Back to the inbox for whatever flow runs next.
 - openLink: hakumi-dev://
 - assertVisible:
     id: inbox-composer-input
