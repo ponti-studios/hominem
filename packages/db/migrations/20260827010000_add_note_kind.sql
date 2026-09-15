@@ -4,7 +4,7 @@
 -- free-text provenance column, used exclusively as the 'memory' discriminant
 -- by the memory MCP/RPC surfaces. Add the typed `kind` column, backfill it
 -- from the existing sentinel, then drop `source` — a one-value column with no
--- remaining readers (see docs/features/notes-as-nodes.md).
+-- remaining readers.
 ALTER TABLE app.notes
   ADD COLUMN kind text NOT NULL DEFAULT 'note';
 
