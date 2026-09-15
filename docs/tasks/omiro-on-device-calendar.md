@@ -1,6 +1,6 @@
 ---
 title: 'Make Omiro Calendar device-only'
-status: 'Proposed'
+status: 'Implemented'
 priority: 'high'
 labels: [omiro, calendar, ios, foundation-models]
 depends_on: []
