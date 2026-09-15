@@ -342,8 +342,8 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
   }, [handleArchive, handleDelete, isChat]);
 
   return (
-    <Reanimated.View entering={entering} style={leavingStyle} testID={`inbox-item-${item.kind}`}>
-      <View style={styles.wrapper}>
+    <Reanimated.View entering={entering} testID={`inbox-item-${item.kind}`}>
+      <Reanimated.View style={[leavingStyle, styles.wrapper]}>
         <Reanimated.View style={[styles.actionPanel, actionPanelStyle]}>
           <Pressable
             accessibilityLabel={isChat ? t.inbox.item.archiveChat : t.inbox.item.deleteNote.menu}
@@ -398,7 +398,7 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
             />
           </Reanimated.View>
         </GestureDetector>
-      </View>
+      </Reanimated.View>
     </Reanimated.View>
   );
 });
