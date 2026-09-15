@@ -32,9 +32,10 @@ function filterItems(items: InboxStreamItemData[], filter: StreamFilter): InboxS
 
 interface StreamScreenProps {
   filter: StreamFilter;
+  topInset?: number;
 }
 
-export function StreamScreen({ filter }: StreamScreenProps) {
+export function StreamScreen({ filter, topInset = 0 }: StreamScreenProps) {
   const { inset: composerInset, safeAreaBottom } = useComposerDockMetrics();
   const [composerHeight, setComposerHeight] = useState(0);
   const inbox = useInboxStreamItems();
@@ -84,7 +85,10 @@ export function StreamScreen({ filter }: StreamScreenProps) {
         // overscroll/bounce boundaries on iOS, so it can't keep a row that
         // lands at a normal (non-bounced) resting scroll position from
         // ending up underneath the floating composer dock.
-        contentContainerStyle={[styles.content, { paddingBottom: composerSpace }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: topInset, paddingBottom: composerSpace },
+        ]}
         data={items}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={!inbox.isInitialLoading ? <StreamEmptyState filter={filter} /> : null}

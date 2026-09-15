@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 
-import { NavDrawerMenuButton } from '~/components/navigation/NavDrawerMenuButton';
+import { NavigationMenu } from '~/components/navigation/NavigationMenu';
 import { RootSceneGesture } from '~/components/navigation/RootSceneGesture';
 import { TimeHeaderActions, TimeScreen } from '~/components/time/TimeScreen';
 
@@ -11,7 +11,7 @@ export default function TimeRoute() {
         options={{
           title: 'Time',
           headerLargeTitle: false,
-          headerLeft: () => <NavDrawerMenuButton />,
+          headerLeft: () => <NavigationMenu />,
           headerRight: () => <TimeHeaderActions />,
         }}
       />

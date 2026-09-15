@@ -3,9 +3,9 @@ appId: com.pontistudios.hakumi.dev
 # Navigates from the inbox to Settings via the nav-drawer menu, then back.
 #
 # Settings isn't reached via a direct header button anymore -- the inbox
-# header only renders NavDrawerMenuButton (a MenuView), whose "Settings"
+# header only renders NavigationMenu (a MenuView), whose "Settings"
 # native menu item pushes the settings route (components/navigation/
-# NavDrawerMenuButton.tsx). Asserted by settings-usage-section's testID
+# NavigationMenu.tsx). Asserted by settings-usage-section's testID
 # rather than the screen's title text, since "Settings" also names the menu
 # item that triggers the navigation and could race a text-based assertion.
 #
@@ -15,7 +15,7 @@ appId: com.pontistudios.hakumi.dev
 # down. (There's also no in-screen close button to fall back on.)
 - runFlow: startup.yaml
 - tapOn:
-    id: nav-drawer-menu-button
+    id: navigation-menu
 - waitForAnimationToEnd:
     timeout: 2000
 - tapOn: Settings

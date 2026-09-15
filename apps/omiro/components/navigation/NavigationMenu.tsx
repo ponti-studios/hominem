@@ -3,9 +3,14 @@ import { useRouter, useSegments } from 'expo-router';
 
 import { IconButton } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
-import { SETTINGS_ROUTE, STREAM_ROUTE, TIME_ROUTE } from '~/services/navigation/routes';
+import {
+  SETTINGS_ROUTE,
+  STREAM_ROUTE,
+  TIME_ROUTE,
+  UNSCHEDULED_ROUTE,
+} from '~/services/navigation/routes';
 
-type Destination = 'stream' | 'time' | 'settings';
+type Destination = 'stream' | 'time' | 'tasks' | 'settings';
 
 const destinations: {
   key: Destination;
@@ -17,6 +22,12 @@ const destinations: {
   { key: 'time', label: 'Time', icon: 'clock.fill', route: TIME_ROUTE },
 ];
 
+const tasksDestination: { key: Destination; label: string; icon: MenuAction['image'] } = {
+  key: 'tasks',
+  label: 'Tasks',
+  icon: 'checkmark.circle.dotted',
+};
+
 const settingsDestination: { key: Destination; label: string; icon: MenuAction['image'] } = {
   key: 'settings',
   label: 'Settings',
@@ -24,7 +35,7 @@ const settingsDestination: { key: Destination; label: string; icon: MenuAction['
 };
 
 function getActiveDestination(segments: readonly string[]): Destination | null {
-  const [root, section] = segments;
+  const [root, section, subsection] = segments;
   if (root !== '(protected)') {
     return null;
   }
@@ -32,7 +43,7 @@ function getActiveDestination(segments: readonly string[]): Destination | null {
     return 'stream';
   }
   if (section === 'time') {
-    return 'time';
+    return subsection === 'unscheduled' ? 'tasks' : 'time';
   }
   if (section === 'settings') {
     return 'settings';
@@ -40,7 +51,7 @@ function getActiveDestination(segments: readonly string[]): Destination | null {
   return null;
 }
 
-export function NavDrawerMenuButton() {
+export function NavigationMenu() {
   const segments = useSegments();
   const active = getActiveDestination(segments);
   const router = useRouter();
@@ -52,6 +63,12 @@ export function NavDrawerMenuButton() {
       image: destination.icon,
       state: destination.key === active ? ('on' as const) : undefined,
     })),
+    {
+      id: tasksDestination.key,
+      title: tasksDestination.label,
+      image: tasksDestination.icon,
+      state: tasksDestination.key === active ? ('on' as const) : undefined,
+    },
     {
       id: settingsDestination.key,
       title: settingsDestination.label,
@@ -66,6 +83,10 @@ export function NavDrawerMenuButton() {
       router.push(SETTINGS_ROUTE);
       return;
     }
+    if (destination === 'tasks') {
+      router.push(UNSCHEDULED_ROUTE);
+      return;
+    }
 
     const route = destinations.find((item) => item.key === destination)?.route;
     if (route) {
@@ -74,10 +95,10 @@ export function NavDrawerMenuButton() {
   };
 
   return (
-    <MenuView actions={actions} onPressAction={onPressAction} testID="nav-drawer-menu-button">
+    <MenuView actions={actions} onPressAction={onPressAction} testID="navigation-menu">
       <IconButton
         accessibilityLabel="Open navigation menu"
-        testID="nav-drawer-menu-button"
+        testID="navigation-menu"
         variant="plain"
       >
         <AppIcon name="line.3.horizontal" size={20} />

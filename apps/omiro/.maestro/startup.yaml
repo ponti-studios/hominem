@@ -102,7 +102,7 @@ appId: com.pontistudios.hakumi.dev
       - tapOn:
           text: BackButton
           optional: true
-# If we're on the Time root (nav-drawer-menu-button visible, but not yet on
+# If we're on the Time root (navigation-menu visible, but not yet on
 # the inbox), use the nav drawer to get to "All" -- the same menu the
 # time-block-editor back step above can land on. Match by icon id
 # (tray.full.fill), not text: "All" also matches the inbox screen's own
@@ -110,12 +110,12 @@ appId: com.pontistudios.hakumi.dev
 - runFlow:
     when:
       visible:
-        id: nav-drawer-menu-button
+        id: navigation-menu
       notVisible:
         id: inbox-composer-input
     commands:
       - tapOn:
-          id: nav-drawer-menu-button
+          id: navigation-menu
       # Wait for the menu's open animation BEFORE tapping an item, not
       # after -- see the identical comment in time-composer-interactions.yaml
       # for why (tapping immediately raced the item settling into position).
@@ -129,5 +129,5 @@ appId: com.pontistudios.hakumi.dev
     timeout: 30000
 - extendedWaitUntil:
     visible:
-      id: nav-drawer-menu-button
+      id: navigation-menu
     timeout: 15000

@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { useAppTheme, useStyles } from '~/components/theme';
+import { useStyles } from '~/components/theme';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 const MOVE_EASING = Easing.bezier(0.77, 0, 0.175, 1);
@@ -30,7 +30,6 @@ export function SegmentedControl<T extends string>({
   onChange,
   testID,
 }: SegmentedControlProps<T>) {
-  const { primary, mutedForeground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     control: {
       flexDirection: 'row',
@@ -44,7 +43,7 @@ export function SegmentedControl<T extends string>({
       top: 2,
       bottom: 2,
       borderRadius: 8,
-      opacity: 0.15,
+      backgroundColor: '#000000',
     },
     segment: {
       flex: 1,
@@ -75,11 +74,7 @@ export function SegmentedControl<T extends string>({
     <View style={styles.control} testID={testID}>
       <Animated.View
         pointerEvents="none"
-        style={[
-          styles.thumb,
-          { backgroundColor: primary, width: `${100 / options.length}%` },
-          thumbStyle,
-        ]}
+        style={[styles.thumb, { width: `${100 / options.length}%` }, thumbStyle]}
       />
       {options.map((option) => {
         const isSelected = option.key === value;
@@ -95,7 +90,7 @@ export function SegmentedControl<T extends string>({
           >
             <Text
               numberOfLines={1}
-              style={[styles.label, { color: isSelected ? primary : mutedForeground }]}
+              style={[styles.label, { color: isSelected ? '#ffffff' : '#000000' }]}
             >
               {option.label}
             </Text>

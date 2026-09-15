@@ -10,7 +10,7 @@ import { useAppTheme, useStyles } from '~/components/theme';
 import { IconButton } from '~/components/ui';
 import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
 import { calendarKeys } from '~/services/calendar/calendar-queries';
-import { getTimeBlockRoute, UNSCHEDULED_ROUTE } from '~/services/navigation/routes';
+import { getTimeBlockRoute } from '~/services/navigation/routes';
 
 import AppIcon from '../ui/icon';
 import { useTimePreview } from './time-preview-store';
@@ -175,21 +175,7 @@ export function TimeScreen() {
 }
 
 export function TimeHeaderActions() {
-  const router = useRouter();
-
-  return (
-    <>
-      {__DEV__ ? <TimePreviewMenuButton /> : null}
-      <Pressable
-        accessibilityLabel="Open unscheduled tasks"
-        accessibilityRole="button"
-        onPress={() => router.push(UNSCHEDULED_ROUTE)}
-        testID="time-unscheduled-button"
-      >
-        <AppIcon name="checkmark.circle.dotted" size={24} />
-      </Pressable>
-    </>
-  );
+  return __DEV__ ? <TimePreviewMenuButton /> : null;
 }
 
 // __DEV__ only: lets a dev preview the Time stream's design with fixture
