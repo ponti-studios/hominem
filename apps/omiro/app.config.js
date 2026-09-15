@@ -4,14 +4,14 @@ const withSceneLifecycle = require('./plugins/withSceneLifecycle');
 
 // Keeping this schema local (instead of importing env.ts's) because Expo
 // evaluates this config during native builds, before that module is usable.
-const appEnvironmentSchema = z.enum(['development', 'e2e', 'production', 'screenshots']);
+const appEnvironmentSchema = z.enum(['development', 'e2e', 'production']);
 
 const EXPO_OWNER = 'pontistudios';
 const EXPO_PROJECT_ID = '4dfac82b-644f-4ff3-be42-e8f941287aa1';
 const APPLE_TEAM_ID = '3QHJ2KN8AL';
 
-// development and e2e share the dev app identity/icon; production and
-// screenshots share the real one. Nothing else varies by environment.
+// Development and E2E share the dev app identity/icon. Production is the
+// only environment allowed to resolve to the App Store identity.
 const DEV_APP_CONFIG = Object.freeze({
   bundleIdentifier: 'com.pontistudios.hakumi.dev',
   displayName: 'Omiro Dev',
@@ -73,7 +73,7 @@ function createConfig({ config }) {
   const isDevIdentity = appEnvironment === 'development' || appEnvironment === 'e2e';
   const isProduction = appEnvironment === 'production';
   const hasDevelopmentClient = appEnvironment === 'development';
-  const appEnvironmentConfig = isDevIdentity ? DEV_APP_CONFIG : PRODUCTION_APP_CONFIG;
+  const appEnvironmentConfig = isProduction ? PRODUCTION_APP_CONFIG : DEV_APP_CONFIG;
   const plugins = [
     'expo-router',
     [

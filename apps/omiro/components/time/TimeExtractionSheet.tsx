@@ -32,7 +32,11 @@ export function TimeExtractionSheet({
   const theme = useAppTheme();
   const snapPoints = useMemo(() => ['58%', '92%'], []);
   const styles = useStyles((currentTheme) => ({
-    content: { gap: 12, paddingHorizontal: 20, paddingBottom: insets.bottom + 20 },
+    content: {
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingBottom: insets.bottom + 20,
+    },
     title: { ...currentTheme.textVariants.title2, color: currentTheme.colors.foreground },
     description: {
       ...currentTheme.textVariants.footnote,
@@ -64,12 +68,12 @@ export function TimeExtractionSheet({
       onDismiss={onClose}
     >
       <BottomSheetView style={styles.content}>
-        <View testID="time-extraction-sheet">
+        <View
+          testID="time-extraction-sheet"
+          style={{ gap: theme.spacing.xl, paddingTop: theme.spacing['4xl'] }}
+        >
           <View>
             <Text style={styles.title}>What do you want to plan?</Text>
-            <Text style={styles.description}>
-              Ask about your schedule or turn an idea into a task.
-            </Text>
           </View>
           <TimeComposer
             initialMode={initialMode}

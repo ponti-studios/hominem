@@ -14,9 +14,9 @@ function formatUpdateDate(date: Date | null) {
 }
 
 /**
- * `expo-updates` is only enabled for the production build profile.
- * `dev/e2e/screenshots` builds do not have OTA updates, so it falls
- * back to a "development build" label.
+ * `expo-updates` is only enabled for production builds.
+ * Development and E2E builds do not have OTA updates, so they fall back to
+ * a "development build" label.
  *
  * @see app.config.js
  */

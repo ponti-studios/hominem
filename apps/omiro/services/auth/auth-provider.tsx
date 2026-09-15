@@ -11,7 +11,6 @@ import React, {
   type PropsWithChildren,
 } from 'react';
 
-import { E2E_TESTING } from '~/constants';
 import { authClient } from '~/services/auth/auth-client';
 import { clearLegacyDataOnce } from '~/services/auth/boot-legacy-data';
 import { clearLocalSessionState } from '~/services/auth/clear-local-session-state';
@@ -70,7 +69,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const { data, isPending } = authClient.useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const hasRunLegacyMigrationRef = useRef(false);
-  const hasRunE2EResetRef = useRef(false);
 
   const currentUser = useMemo(() => (data?.user ? toUser(data.user) : null), [data?.user]);
   const isSignedIn = Boolean(currentUser) && !isSigningOut;
@@ -88,14 +86,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
     hasRunLegacyMigrationRef.current = true;
     void clearLegacyDataOnce();
   }, []);
-
-  useEffect(() => {
-    if (!E2E_TESTING || hasRunE2EResetRef.current) {
-      return;
-    }
-    hasRunE2EResetRef.current = true;
-    void resetAuthForE2E();
-  }, [resetAuthForE2E]);
 
   const signOut = useCallback(async () => {
     setIsSigningOut(true);

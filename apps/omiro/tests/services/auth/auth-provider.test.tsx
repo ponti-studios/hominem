@@ -17,13 +17,7 @@ const mockClearAllData = vi.fn().mockResolvedValue(undefined);
 const mockCaptureEvent = vi.fn();
 const mockCaptureFailure = vi.fn();
 
-const { mockConstants } = vi.hoisted(() => ({ mockConstants: { E2E_TESTING: false } }));
-
-vi.mock('~/constants', () => ({
-  get E2E_TESTING() {
-    return mockConstants.E2E_TESTING;
-  },
-}));
+vi.mock('~/constants', () => ({ E2E_TESTING: false }));
 
 vi.mock('~/services/auth/auth-client', () => ({
   authClient: {
@@ -86,7 +80,6 @@ function fakeSessionUser(overrides: Partial<Record<string, unknown>> = {}) {
 
 describe('AuthProvider / useAuth', () => {
   afterEach(() => {
-    mockConstants.E2E_TESTING = false;
     vi.clearAllMocks();
     mockClearLegacyDataOnce.mockResolvedValue(undefined);
     mockClearPersistedQueryCache.mockResolvedValue(undefined);
@@ -234,25 +227,6 @@ describe('AuthProvider / useAuth', () => {
     renderHook(() => useAuth(), { wrapper: withProviders().Wrapper });
 
     await waitFor(() => expect(mockClearLegacyDataOnce).toHaveBeenCalledTimes(1));
-  });
-
-  it('runs the e2e auth reset automatically on mount when E2E_TESTING is enabled', async () => {
-    mockConstants.E2E_TESTING = true;
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
-    mockAuthSignOut.mockResolvedValueOnce({ error: null });
-    renderHook(() => useAuth(), { wrapper: withProviders().Wrapper });
-
-    await waitFor(() => expect(mockAuthSignOut).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(mockClearAllData).toHaveBeenCalledTimes(1));
-  });
-
-  it('does not run the e2e auth reset when E2E_TESTING is disabled', async () => {
-    mockConstants.E2E_TESTING = false;
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
-    renderHook(() => useAuth(), { wrapper: withProviders().Wrapper });
-
-    await waitFor(() => expect(mockClearLegacyDataOnce).toHaveBeenCalledTimes(1));
-    expect(mockAuthSignOut).not.toHaveBeenCalled();
   });
 
   it('updateProfile delegates to Better Auth updateUser', async () => {

@@ -1,7 +1,7 @@
 name: Production release
 
-# Run manually with `eas workflow:run production-release.yml` (or `just
-# mobile release`) from apps/omiro, or via the EAS dashboard.
+# Normally triggered by deploy-mobile after validate-mobile passes on main.
+# Operators may rerun it from the EAS dashboard when recovering the pipeline.
 on:
   workflow_dispatch: {}
 

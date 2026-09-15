@@ -3,10 +3,11 @@ name: run-omiro
 description: Build, run, and screenshot the omiro Expo/React Native app on the iOS Simulator. Use when asked to run omiro, start the mobile app, launch it on the simulator, take a screenshot of the app UI, or verify a mobile change actually works.
 ---
 
-Omiro is an Expo (React Native) dev-client app. Drive it with
-`.agents/skills/run-omiro/driver.sh` — it wraps `expo run:ios`,
-`xcrun simctl`, and the Metro bundler into single commands so an agent
-doesn't have to babysit background processes or guess simulator UDIDs.
+Omiro is an Expo (React Native) dev-client app. Developers use
+`just mobile run` and `just mobile rebuild`. For unattended agent automation
+only, `.agents/skills/run-omiro/driver.sh` wraps the underlying Expo and
+simulator operations so an agent does not have to babysit background processes
+or guess simulator UDIDs.
 
 All paths below are relative to the repo root. macOS + Xcode + a simulator
 runtime are required — there is no Linux/headless path for iOS Simulator
@@ -70,17 +71,14 @@ a moment even when Metro's cache is warm.
 ## Run (human path)
 
 ```bash
-APP_ENV=development npx expo run:ios --device "iPhone 17 Pro"
+just mobile rebuild # first run or native/config change
+just mobile run     # everyday JavaScript/TypeScript work
 ```
-
-Opens the Simulator app and a Metro terminal UI; leave running, `Ctrl-C`
-to stop. Useless for an agent (interactive, blocks the shell) — use the
-driver instead.
 
 ## Test
 
 ```bash
-pnpm --filter=@hominem/omiro test
+just mobile check
 ```
 
 ## Gotchas

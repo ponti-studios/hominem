@@ -200,8 +200,9 @@ lane instead:
 For Omiro work, use the app bootstrap loop in
 [apps/omiro/README.md](../../../apps/omiro/README.md):
 
-1. `just mobile prebuild development`
-2. `just mobile dev`
+1. First run or native/config change: `just mobile rebuild`
+2. Everyday JavaScript/TypeScript work: `just mobile run`
+3. Focused validation: `just mobile check`
 
 ## Canonical commands
 
@@ -214,7 +215,7 @@ For Omiro work, use the app bootstrap loop in
 - `just db migrate [test]` — apply database migrations
 - `just db codegen` — regenerate database types against the caller's `DATABASE_URL`
 - `pnpm --filter @hominem/api merge-user-data` — dry-run-first, insert-only local-to-production user-data merge (see below)
-- `just mobile <action>` — iOS development, test, build, update, release commands
+- `just mobile <action>` — Omiro run, rebuild, check, Maestro, and OTA commands
 - `cd ~/Developer/infra/foundation && just up` / `just health` / `just down` — local infrastructure, including the OTLP Collector and Jaeger
 
 Use the smallest relevant validation command first (`pnpm lint`/`typecheck`/

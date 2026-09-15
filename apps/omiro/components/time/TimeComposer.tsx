@@ -162,29 +162,15 @@ export function TimeComposer({
             ref={inputRef}
             onChangeText={setPrompt}
             onSubmitEditing={ask}
-            placeholder="Describe a task or ask about your schedule"
+            placeholder="create or find events"
             returnKeyType="send"
             submitBehavior="submit"
             testID="time-composer-input"
             value={value}
             multiline
-            numberOfLines={4}
+            numberOfLines={1}
             style={styles.textField}
           />
-          {!value ? (
-            <View style={styles.examples}>
-              {['Plan a focused hour tomorrow', 'What is open this afternoon?'].map((example) => (
-                <Pressable
-                  accessibilityLabel={`Use example: ${example}`}
-                  key={example}
-                  onPress={() => setPrompt(example)}
-                  style={styles.example}
-                >
-                  <Text style={styles.exampleText}>{example}</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
           {composerError ? (
             <InlineErrorBanner message={composerError} onDismiss={() => setComposerError(null)} />
           ) : null}
@@ -228,11 +214,12 @@ function useTimeComposerStyles() {
     },
     exampleText: { ...theme.textVariants.footnote, color: theme.colors.mutedForeground },
     textField: {
-      borderRadius: 0,
-      borderWidth: 0,
-      minHeight: 96,
-      paddingHorizontal: 0,
-      paddingVertical: 0,
+      borderRadius: theme.borderRadii.md,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      minHeight: 18,
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.md,
     },
     voiceProcessing: { alignItems: 'center', gap: 12, paddingVertical: 24 },
     voiceProcessingText: { ...theme.textVariants.subhead, color: theme.colors.mutedForeground },

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const APP_ENVIRONMENTS = ['development', 'e2e', 'production', 'screenshots'] as const;
+const APP_ENVIRONMENTS = ['development', 'e2e', 'production'] as const;
 
 const appEnvironmentSchema = z.enum(APP_ENVIRONMENTS);
 

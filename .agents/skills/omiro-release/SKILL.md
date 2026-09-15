@@ -23,8 +23,6 @@ into a release.
 | --- | --- | --- |
 | Determine release readiness | Preflight below | Evidence and blockers; no release |
 | Normal CI release from `main` | GitHub Actions | `validate-mobile` → `deploy-mobile` → EAS approval → TestFlight |
-| Manually start a cloud store release | `just mobile release` | EAS build → identity guard → approval → TestFlight |
-| Explicitly run an ad hoc cloud build/submit | `pnpm build:prod:remote`, then `pnpm submit` | EAS cloud build → `--latest` submission |
 | Create and upload an explicitly requested local IPA | `pnpm build:prod:local`, then `pnpm submit:local` | Locally signed IPA → App Store Connect/TestFlight |
 | Ship a JS-only fix | `just mobile update "<message>"` | EAS approval → production OTA channel |
 
@@ -73,8 +71,9 @@ Before recommending or starting a production release:
    `com.pontistudios.hakumi`. Fix environment resolution if they do not;
    never bypass `scripts/verify-release-identity.mjs`.
 5. For native modules, permissions, app config, assets, entitlements, or a
-   store binary, run `just mobile prebuild production` and collect appropriate
-   simulator/device evidence. `apps/omiro/ios` is CNG-generated: do not edit it.
+   store binary, run `pnpm --filter @hominem/omiro prebuild:prod` and collect
+   appropriate simulator/device evidence. `apps/omiro/ios` is CNG-generated:
+   do not edit it.
 
 For a readiness report, include blockers, commands/tests run, manual evidence,
 unverified scope, and the next authorized action.
@@ -84,19 +83,15 @@ unverified scope, and the next authorized action.
 `validate-mobile.yml` runs for the configured Omiro/shared paths on pull
 requests and pushes to `main`. A successful `main` validation triggers
 `deploy-mobile.yml`, which checks out that validated SHA and starts the EAS
-production-release workflow with `EXPO_TOKEN`. The EAS workflow builds iOS,
-asserts `com.pontistudios.hakumi` and store distribution, then waits for EAS
-manual approval before TestFlight submission.
+production-release workflow with `EXPO_TOKEN`. The EAS workflow waits for
+approval, builds iOS, asserts
+`com.pontistudios.hakumi` and store distribution, then submits to TestFlight.
 
-For a manually requested cloud release, run `just mobile release` from the
-repository root. It starts the same EAS workflow; do not replace it with an
-ad hoc build/submit sequence unless the user specifically requests that path.
-
-If the user explicitly requests the ad hoc cloud CLI path, run
-`pnpm build:prod:remote` first and only then `pnpm submit`. The latter uses EAS's
-`--latest` cloud-build selector; it does not submit a local IPA. Keep
-`APP_ENV=production` exported for both commands and preserve the identity
-guard.
+There is no routine local production-release command. Merging to `main` is the
+single standard trigger, and the EAS approval job is the human release gate.
+When recovering a failed trigger, rerun the exact validated SHA from GitHub or
+the EAS dashboard; do not assemble a separate build/submit sequence from a
+developer checkout.
 
 The `build.base.pnpm` pin applies only to EAS build jobs. Submit and update
 jobs need their own Corepack hook in the workflow; preserve the existing hook
@@ -106,23 +101,21 @@ version mismatch.
 ## Explicitly requested local IPA
 
 `pnpm build:prod:local` runs `apps/omiro/scripts/build-prod-local.sh`. It
-loads and exports gitignored `.env.local`, forces `APP_ENV=production`, checks
+loads and exports gitignored `.eas-prod.local`, forces `APP_ENV=production`, checks
 the production identity, and invokes `eas build --local`.
 
 EAS Secret variables cannot be retrieved by a local build. Keep
-`SENTRY_AUTH_TOKEN` only in `.env.local` or another local secret manager; do
+`SENTRY_AUTH_TOKEN` only in `.eas-prod.local` or another local secret manager; do
 not print, commit, or downgrade its EAS Secret visibility. The wrapper supplies
 the `ponti-studios`/`omiro` Sentry org/project defaults. Do not use
 `SENTRY_DISABLE_AUTO_UPLOAD` or `SENTRY_ALLOW_FAILURE` for a TestFlight IPA:
 source maps and dSYMs must upload.
 
 `pnpm submit:local` runs `apps/omiro/scripts/submit-prod-local.sh`. It selects
-the newest local `*.ipa`, re-checks the production identity, prints the
-selected path, and passes it explicitly to `eas submit --path`. Do not use
-`pnpm submit` for a local IPA: its `--latest` selector means the latest EAS
-cloud build. Before submitting, confirm the selected IPA is the intended
-artifact and that its App Store Connect credentials are available; the local
-script deliberately chooses the newest IPA and does not ask for approval.
+the expected local IPA, re-checks the production identity, prints the selected
+path, and passes it explicitly to `eas submit --path`. Before submitting,
+confirm the selected IPA is the intended artifact and that its App Store
+Connect credentials are available.
 
 ## OTA updates
 

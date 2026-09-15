@@ -11,16 +11,20 @@ the [`omiro-release` skill](../../.agents/skills/omiro-release/SKILL.md).
 ## Quick Start
 
 ```bash
-just setup
-just mobile prebuild development
-just mobile dev
+pnpm install
+just mobile rebuild
 ```
 
-For production native identity verification:
+`rebuild` generates the iOS project, builds and installs the development
+client, and launches it. After that, the normal JavaScript/TypeScript loop is:
 
 ```bash
-just mobile prebuild production
+just mobile run
 ```
+
+Use `rebuild` again only after changing native dependencies, Expo config,
+config plugins, permissions, entitlements, or local native modules. The
+generated `apps/omiro/ios` directory is not a source tree.
 
 ## API configuration
 
@@ -29,39 +33,63 @@ just mobile prebuild production
 or a reachable LAN/tunnel URL for a physical device. Production builds receive
 the value from the EAS production environment.
 
-## Working in Zed
+## Validate a change
 
-Swift diagnostics for local Expo modules require a generated iOS project and
-installed CocoaPods. If Zed reports `No such module 'ExpoModulesCore'`, run:
+Run the focused CI-equivalent lane before pushing:
 
 ```bash
-just mobile prebuild development
-just mobile dev
+just mobile check
 ```
 
-Use `just mobile prebuild production` when verifying the production identity.
-The generated `apps/omiro/ios` directory is not a source tree.
+For a user-visible interaction, run its Maestro flow. This command reuses the
+installed development client but owns an isolated E2E Metro session so
+test-only behavior cannot be missing or stale:
+
+```bash
+just mobile maestro apps/omiro/tests/flows/<flow>.yaml
+```
+
+The runner starts a scripted local API when needed and reuses one that is
+already running in scripted mode.
+
+Maestro also requires Java 17 and a booted iOS Simulator. See [AGENTS.md](AGENTS.md)
+for the evidence harness details.
+
+## Release
+
+The production binary has one standard path:
+
+```text
+merge to main -> validate-mobile -> deploy-mobile -> approve in EAS -> build -> TestFlight
+```
+
+Do not run a local release command for a normal release. For an approved
+JavaScript-only hotfix that does not change native dependencies or config, run:
+
+```bash
+just mobile update "<message>"
+```
+
+That workflow validates first, waits for approval, then publishes to the
+production update channel. Local IPA recovery procedures live only in the
+`omiro-release` operational runbook.
 
 ## Useful commands
 
 | Need | Run |
 | --- | --- |
-| Generate development iOS project | `just mobile prebuild development` |
-| Generate production iOS project | `just mobile prebuild production` |
-| Launch the iOS app | `just mobile dev` |
-| Run Omiro tests | `just mobile test` |
+| First run or native/config change | `just mobile rebuild` |
+| Everyday JS/TS development | `just mobile run` |
+| Format, lint, build API types, typecheck, test, and export | `just mobile check` |
 | Run Maestro evidence | `just mobile maestro [flow-or-directory]` |
-| Start a cloud production release | `just mobile release` |
-| Build a local signed IPA | `pnpm build:prod:local` |
-| Submit the newest local IPA | `pnpm submit:local` |
 | Publish an approved JS-only OTA | `just mobile update "<message>"` |
-| Start Metro / Expo | `just mobile start` |
 
 ## Testing
 
 Use the canonical `just mobile maestro` runner for iOS simulator evidence. It
-checks Java 17 and simulator prerequisites, authenticates the test app, and
-runs the requested flows. Individual flows assume that authenticated baseline.
+starts the installed development client in E2E mode, checks Java 17 and
+simulator prerequisites, authenticates the test app, and runs the requested
+flows. Individual flows assume that authenticated baseline.
 
 User-visible interaction changes require Maestro evidence and visual inspection
 of each changed acceptance state. Type checks and unit tests supplement, but do
