@@ -43,7 +43,13 @@ jobs:
           # or a clean checkout fails typecheck with TS6305 (output not built).
           (cd ../.. && pnpm build --filter=@hominem/api --filter=@hominem/omiro...)
           pnpm run typecheck
-          pnpm run test
+          # Override the job-level NODE_ENV=production for tests only: vitest
+          # defaults NODE_ENV to 'test' itself, but only when it isn't already
+          # set, so it inherits 'production' here and resolves react-dom's
+          # production build -- whose test-utils act() isn't the real
+          # dev-mode act(), breaking every render()/renderHook() in the suite
+          # with "TypeError: React.act is not a function".
+          NODE_ENV=test pnpm run test
           pnpm run export:embed:ios
     hooks:
       before_install_node_modules:
