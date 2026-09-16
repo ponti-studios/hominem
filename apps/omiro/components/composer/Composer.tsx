@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
 import { BlurCard } from '~/components/ui';
@@ -106,6 +107,7 @@ function ComposerContent(props: ComposerProps) {
 
   const theme = useAppTheme();
   const { primary, destructive, border: borderDefault } = theme.colors;
+  const insets = useSafeAreaInsets();
   const styles = useStyles(() => ({
     composer: { width: '100%', gap: 8 },
     fields: { gap: 8 },
@@ -149,6 +151,11 @@ function ComposerContent(props: ComposerProps) {
           borderTopColor: borderColor,
           boxShadow: 'none',
           backgroundColor: theme.colors.muted,
+          // Extends the card's own fill (not a same-colored sibling behind
+          // it) through the bottom safe area, so the rounded top corners
+          // stay visible instead of being masked by a square backdrop of
+          // the same color.
+          paddingBottom: insets.bottom,
         }}
         contentStyle={{ padding: 10, paddingBottom: 6, gap: 10 }}
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
