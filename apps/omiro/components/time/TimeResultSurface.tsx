@@ -126,7 +126,7 @@ function TimeResultContent({
         <>
           <Text style={answerStyle}>{state.message}</Text>
           {actions.onRetry ? (
-            <Button label="Try again" onPress={actions.onRetry} variant="secondary" />
+            <Button label="Try again" onPress={actions.onRetry} variant="primary" />
           ) : null}
           <CancelRow testID="time-error-cancel" onCancel={actions.onCancel} />
         </>

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -50,6 +50,53 @@ export function FloatingNavBar({ center, menu }: FloatingNavBarProps) {
       </View>
     </View>
   );
+}
+
+interface FloatingNavBarContent {
+  center: ReactNode;
+  menu: ReactNode;
+}
+
+interface FloatingNavBarContextValue {
+  content: FloatingNavBarContent | null;
+  setContent: (content: FloatingNavBarContent | null) => void;
+}
+
+const FloatingNavBarContext = createContext<FloatingNavBarContextValue | null>(null);
+
+// Wraps the Stack navigator so Stream and Time can render into one shared
+// FloatingNavBar instance mounted above the Stack, instead of each screen
+// mounting (and remounting on navigation) its own pill.
+export function FloatingNavBarProvider({ children }: { children: ReactNode }) {
+  const [content, setContent] = useState<FloatingNavBarContent | null>(null);
+  const value = useMemo(() => ({ content, setContent }), [content]);
+  return <FloatingNavBarContext.Provider value={value}>{children}</FloatingNavBarContext.Provider>;
+}
+
+// Screens call this to publish what the shared FloatingNavBar should show
+// while they're focused. Content is cleared only on unmount (not on every
+// content change) so switching between screens that both use it never
+// flashes an empty pill in between.
+export function useFloatingNavBarContent(content: FloatingNavBarContent) {
+  const ctx = useContext(FloatingNavBarContext);
+  if (!ctx) {
+    throw new Error('useFloatingNavBarContent must be used within a FloatingNavBarProvider');
+  }
+  const { setContent } = ctx;
+  useEffect(() => {
+    setContent(content);
+  }, [content, setContent]);
+  useEffect(() => () => setContent(null), [setContent]);
+}
+
+// The single FloatingNavBar instance, rendered once above the Stack. Renders
+// nothing when no focused screen has published content.
+export function SharedFloatingNavBar() {
+  const ctx = useContext(FloatingNavBarContext);
+  if (!ctx?.content) {
+    return null;
+  }
+  return <FloatingNavBar center={ctx.content.center} menu={ctx.content.menu} />;
 }
 
 const styles = StyleSheet.create({

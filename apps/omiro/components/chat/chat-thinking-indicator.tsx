@@ -1,19 +1,11 @@
 import { Canvas, Group, LinearGradient, Rect, vec } from '@shopify/react-native-skia';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Text, View, type LayoutChangeEvent } from 'react-native';
-import Animated, {
-  cancelAnimation,
-  Easing,
-  FadeOut,
-  FadeOutUp,
-  useDerivedValue,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { FadeOut, FadeOutUp, useDerivedValue } from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { useShimmerProgress } from '~/hooks/use-shimmer-progress';
 import { nativeMotionContracts } from '~/services/motion/native-motion';
 import t from '~/translations';
 
@@ -23,36 +15,10 @@ import t from '~/translations';
 // (half the band's width-shaped ramp), and a sweep that travels from
 // -0.25x to 1.25x the label width -- the geometry of the web's 250%-wide
 // background layer.
-const SHIMMER_DURATION_MS = 1000;
 const SHIMMER_SPREAD_PER_CHAR = 2;
 // Fraction-of-width offsets for the band center across one sweep.
 const SWEEP_START = -0.25;
 const SWEEP_SPAN = 1.5;
-
-function useShimmerProgress(reducedMotion: boolean) {
-  const progress = useSharedValue(0);
-
-  useEffect(() => {
-    cancelAnimation(progress);
-
-    if (reducedMotion) {
-      progress.value = 0;
-      return;
-    }
-
-    progress.value = withRepeat(
-      withTiming(1, { duration: SHIMMER_DURATION_MS, easing: Easing.linear }),
-      -1,
-      false,
-    );
-
-    return () => {
-      cancelAnimation(progress);
-    };
-  }, [progress, reducedMotion]);
-
-  return progress;
-}
 
 // Generic version of the erase-sweep: any muted label can shimmer, so the
 // same visual language covers streaming, regeneration, and save/stop states

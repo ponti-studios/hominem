@@ -3,6 +3,10 @@ import { useMemo } from 'react';
 import { Text, View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
+import {
+  FloatingNavBarProvider,
+  SharedFloatingNavBar,
+} from '~/components/navigation/FloatingNavBar';
 import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
 import { useAppTheme, useStyles } from '~/components/theme';
 import { Button } from '~/components/ui/button';
@@ -86,76 +90,80 @@ function ProtectedShell() {
     <FeatureErrorBoundary featureName="Protected">
       <ApiProvider queryClient={queryClient}>
         <View style={styles.container}>
-          <Stack
-            initialRouteName="index"
-            screenOptions={{
-              ...screenOptions,
-              contentStyle: { backgroundColor: background },
-              headerLargeTitle: false,
-              headerShadowVisible: false,
-              headerTintColor: textPrimary,
-            }}
-          >
-            <Stack.Screen name="index" />
-            <Stack.Screen name="new-chat" />
-            <Stack.Screen name="chats" options={{ headerShown: false }} />
-            <Stack.Screen name="stream" options={{ headerShown: false }} />
-            <Stack.Screen name="notes" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="time/[source]/[id]"
-              options={{
+          <FloatingNavBarProvider>
+            <Stack
+              initialRouteName="index"
+              screenOptions={{
+                ...screenOptions,
                 contentStyle: { backgroundColor: background },
-                presentation: 'formSheet',
-                sheetGrabberVisible: true,
-                // Was previously presented from a nested Stack navigator owned
-                // by time/_layout.tsx; that also lost its content on drag and
-                // was fixed by registering the route here instead (see git
-                // history). Single (default) detent, not [0.6, 0.95], because
-                // react-native-screens' iOS formSheet implementation (still
-                // present as of 4.27.0, the latest stable release) reacts to
-                // sheet-frame changes by finding this screen's
-                // ScrollView and force-correcting its frame via a KVO observer
-                // on `bounds` (RNSScreen.mm, applyFrameCorrectionForDescendant
-                // ScrollView) -- a workaround for a separate flicker bug
-                // (github.com/software-mansion/react-native-screens/pull/1852).
-                // With multiple detents, that correction races the sheet's own
-                // live detent-resize animation and can pin the ScrollView to a
-                // transient/invalid frame, blanking its content permanently.
-                // A single full-height detent removes the interactive-resize
-                // path entirely, matching settings/index (ScrollView, one
-                // detent) rather than chat-to-note-sheet (multiple detents, no
-                // ScrollView) -- both safe combinations already used above.
-                title: 'Time block',
+                headerLargeTitle: false,
+                headerShadowVisible: false,
+                headerTintColor: textPrimary,
               }}
-            />
-            <Stack.Screen
-              name="settings/index"
-              options={{
-                presentation: 'formSheet',
-                sheetGrabberVisible: true,
-                title: 'Settings',
-              }}
-            />
-            <Stack.Screen
-              name="enhance-sheet"
-              options={{
-                headerShown: false,
-                presentation: 'formSheet',
-                sheetAllowedDetents: 'fitToContents',
-                sheetGrabberVisible: true,
-              }}
-            />
-            <Stack.Screen
-              name="chat-to-note-sheet"
-              options={{
-                headerShown: false,
-                presentation: 'formSheet',
-                sheetGrabberVisible: true,
-                sheetAllowedDetents: [0.6, 0.95],
-                sheetInitialDetentIndex: 0,
-              }}
-            />
-          </Stack>
+            >
+              <Stack.Screen name="index" />
+              <Stack.Screen name="new-chat" />
+              <Stack.Screen name="chats" options={{ headerShown: false }} />
+              <Stack.Screen name="stream" options={{ headerShown: false }} />
+              <Stack.Screen name="time/index" options={{ headerShown: false }} />
+              <Stack.Screen name="notes" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="time/[source]/[id]"
+                options={{
+                  contentStyle: { backgroundColor: background },
+                  presentation: 'formSheet',
+                  sheetGrabberVisible: true,
+                  // Was previously presented from a nested Stack navigator owned
+                  // by time/_layout.tsx; that also lost its content on drag and
+                  // was fixed by registering the route here instead (see git
+                  // history). Single (default) detent, not [0.6, 0.95], because
+                  // react-native-screens' iOS formSheet implementation (still
+                  // present as of 4.27.0, the latest stable release) reacts to
+                  // sheet-frame changes by finding this screen's
+                  // ScrollView and force-correcting its frame via a KVO observer
+                  // on `bounds` (RNSScreen.mm, applyFrameCorrectionForDescendant
+                  // ScrollView) -- a workaround for a separate flicker bug
+                  // (github.com/software-mansion/react-native-screens/pull/1852).
+                  // With multiple detents, that correction races the sheet's own
+                  // live detent-resize animation and can pin the ScrollView to a
+                  // transient/invalid frame, blanking its content permanently.
+                  // A single full-height detent removes the interactive-resize
+                  // path entirely, matching settings/index (ScrollView, one
+                  // detent) rather than chat-to-note-sheet (multiple detents, no
+                  // ScrollView) -- both safe combinations already used above.
+                  title: 'Time block',
+                }}
+              />
+              <Stack.Screen
+                name="settings/index"
+                options={{
+                  presentation: 'formSheet',
+                  sheetGrabberVisible: true,
+                  title: 'Settings',
+                }}
+              />
+              <Stack.Screen
+                name="enhance-sheet"
+                options={{
+                  headerShown: false,
+                  presentation: 'formSheet',
+                  sheetAllowedDetents: 'fitToContents',
+                  sheetGrabberVisible: true,
+                }}
+              />
+              <Stack.Screen
+                name="chat-to-note-sheet"
+                options={{
+                  headerShown: false,
+                  presentation: 'formSheet',
+                  sheetGrabberVisible: true,
+                  sheetAllowedDetents: [0.6, 0.95],
+                  sheetInitialDetentIndex: 0,
+                }}
+              />
+            </Stack>
+            <SharedFloatingNavBar />
+          </FloatingNavBarProvider>
         </View>
       </ApiProvider>
     </FeatureErrorBoundary>

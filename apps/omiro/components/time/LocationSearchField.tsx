@@ -115,6 +115,7 @@ export function LocationSearchField({
             <Pressable
               key={suggestion}
               accessibilityLabel={`Use location ${suggestion}`}
+              onPress={() => onChange(suggestion)}
               style={({ pressed }) => [styles.suggestion, pressed && { opacity: 0.7 }]}
               testID="time-block-location-suggestion"
             >

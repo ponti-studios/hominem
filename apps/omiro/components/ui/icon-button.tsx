@@ -8,9 +8,10 @@ interface IconButtonProps {
   children: ReactNode;
   disabled?: boolean;
   onPress?: () => void;
+  onPressIn?: () => void;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-  variant?: 'bordered' | 'plain';
+  variant?: 'bordered' | 'plain' | 'solid';
 }
 
 export function IconButton({
@@ -18,6 +19,7 @@ export function IconButton({
   children,
   disabled = false,
   onPress,
+  onPressIn,
   style,
   testID,
   variant = 'bordered',
@@ -32,6 +34,10 @@ export function IconButton({
     } satisfies ViewStyle,
     bordered: { borderWidth: 1, borderColor: currentTheme.colors.border } satisfies ViewStyle,
     plain: { borderWidth: 0, borderColor: 'transparent' } satisfies ViewStyle,
+    solid: {
+      borderWidth: 0,
+      backgroundColor: currentTheme.colors.primary,
+    } satisfies ViewStyle,
     pressed: { opacity: 0.7 } satisfies ViewStyle,
     disabled: { opacity: 0.4 } satisfies ViewStyle,
   }));
@@ -41,9 +47,10 @@ export function IconButton({
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
+      onPressIn={onPressIn}
       style={({ pressed }) => [
         styles.button,
-        variant === 'plain' ? styles.plain : styles.bordered,
+        variant === 'plain' ? styles.plain : variant === 'solid' ? styles.solid : styles.bordered,
         style,
         pressed && styles.pressed,
         disabled && styles.disabled,

@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 
-import { useStyles } from '~/components/theme';
+import { useAppTheme, useStyles } from '~/components/theme';
 import { IconButton } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 
@@ -21,9 +21,10 @@ export function CancelRow({ onCancel, testID }: { onCancel?: () => void; testID:
 }
 
 export function CancelButton({ onCancel, testID }: { onCancel?: () => void; testID: string }) {
+  const { primaryForeground } = useAppTheme().colors;
   return (
-    <IconButton accessibilityLabel="Cancel" testID={testID} onPress={onCancel}>
-      <AppIcon name="xmark" size={20} />
+    <IconButton accessibilityLabel="Cancel" testID={testID} onPress={onCancel} variant="solid">
+      <AppIcon name="xmark" size={20} tintColor={primaryForeground} />
     </IconButton>
   );
 }

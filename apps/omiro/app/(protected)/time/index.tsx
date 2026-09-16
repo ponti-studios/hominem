@@ -1,23 +1,37 @@
-import { Stack } from 'expo-router';
+import { useMemo } from 'react';
+import { Text } from 'react-native';
 
+import {
+  useFloatingNavBarContent,
+  useFloatingNavBarMetrics,
+} from '~/components/navigation/FloatingNavBar';
 import { NavigationMenu } from '~/components/navigation/NavigationMenu';
 import { RootSceneGesture } from '~/components/navigation/RootSceneGesture';
+import { useAppTheme, useStyles } from '~/components/theme';
 import { TimeHeaderActions, TimeScreen } from '~/components/time/TimeScreen';
 
 export default function TimeRoute() {
+  const { contentInset } = useFloatingNavBarMetrics();
+  const { foreground } = useAppTheme().colors;
+  const styles = useStyles((theme) => ({
+    title: { ...theme.textVariants.subhead, color: foreground },
+  }));
+
+  const center = useMemo(() => <Text style={styles.title}>Time</Text>, [styles.title]);
+  const menu = useMemo(
+    () => (
+      <>
+        <TimeHeaderActions />
+        <NavigationMenu />
+      </>
+    ),
+    [],
+  );
+  useFloatingNavBarContent(useMemo(() => ({ center, menu }), [center, menu]));
+
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: 'Time',
-          headerLargeTitle: false,
-          headerLeft: () => <NavigationMenu />,
-          headerRight: () => <TimeHeaderActions />,
-        }}
-      />
-      <RootSceneGesture>
-        <TimeScreen />
-      </RootSceneGesture>
-    </>
+    <RootSceneGesture>
+      <TimeScreen topInset={contentInset} />
+    </RootSceneGesture>
   );
 }

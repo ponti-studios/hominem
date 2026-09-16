@@ -14,15 +14,17 @@ import { getTimeBlockRoute } from '~/services/navigation/routes';
 
 import AppIcon from '../ui/icon';
 import { useTimePreview } from './time-preview-store';
-import { TimeExtractionSheet, type TimeExtractionMode } from './TimeExtractionSheet';
+import { TimeFloatingComposer } from './TimeFloatingComposer';
 import { TimeStream } from './TimeStream';
 
-export function TimeScreen() {
+interface TimeScreenProps {
+  topInset?: number;
+}
+
+export function TimeScreen({ topInset = 0 }: TimeScreenProps = {}) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { bottom: safeAreaBottom } = useSafeAreaInsets();
-  const [extractionMode, setExtractionMode] = useState<TimeExtractionMode | null>(null);
-  const [extractionSessionKey, setExtractionSessionKey] = useState(0);
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [toastKey, setToastKey] = useState(0);
@@ -31,10 +33,6 @@ export function TimeScreen() {
     setToastExpanded(false);
     setToastKey((key) => key + 1);
     setErrorToast(message);
-  }, []);
-  const openExtraction = useCallback((mode: TimeExtractionMode) => {
-    setExtractionSessionKey((key) => key + 1);
-    setExtractionMode(mode);
   }, []);
   const openItem = useCallback(
     async (item: { kind: 'event' | 'task'; value: { id: string } }) => {
@@ -60,16 +58,6 @@ export function TimeScreen() {
   const theme = useAppTheme();
   const styles = useStyles((theme) => ({
     container: { backgroundColor: theme.colors.background, flex: 1 },
-    floatingActions: {
-      position: 'absolute',
-      right: 16,
-      bottom: safeAreaBottom + 16,
-      alignItems: 'center',
-      gap: 10,
-    },
-    floatingButton: { width: 52, height: 52, boxShadow: theme.shadows.md },
-    floatingMic: { backgroundColor: theme.colors.card },
-    floatingAdd: { backgroundColor: theme.colors.primary },
     errorToast: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -97,6 +85,7 @@ export function TimeScreen() {
     <View style={styles.container} testID="time-screen">
       <TimeStream
         contentPaddingBottom={safeAreaBottom + 104}
+        contentPaddingTop={topInset + 8}
         onError={showError}
         onOpenItem={openItem}
       />
@@ -139,36 +128,12 @@ export function TimeScreen() {
           <Text style={styles.successText}>{successToast}</Text>
         </View>
       ) : null}
-      {extractionMode === null ? (
-        <View style={styles.floatingActions} testID="time-extraction-actions">
-          <IconButton
-            accessibilityLabel="Start voice task extraction"
-            onPress={() => openExtraction('voice')}
-            style={[styles.floatingButton, styles.floatingMic]}
-            testID="time-floating-mic"
-          >
-            <AppIcon name="mic.fill" size={22} />
-          </IconButton>
-          <IconButton
-            accessibilityLabel="Open task extraction"
-            onPress={() => openExtraction('text')}
-            style={[styles.floatingButton, styles.floatingAdd]}
-            testID="time-floating-add"
-          >
-            <AppIcon name="plus" size={24} tintColor={theme.colors.primaryForeground} />
-          </IconButton>
-        </View>
-      ) : null}
-      <TimeExtractionSheet
-        initialMode={extractionMode ?? 'text'}
-        onClose={() => setExtractionMode(null)}
+      <TimeFloatingComposer
         onOpenEvent={openEvent}
         onTaskCreated={() => {
           setSuccessToast('Task added to Time.');
           setTimeout(() => setSuccessToast(null), 2400);
         }}
-        sessionKey={extractionSessionKey}
-        visible={extractionMode !== null}
       />
     </View>
   );

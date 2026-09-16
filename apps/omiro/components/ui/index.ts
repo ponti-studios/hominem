@@ -13,5 +13,6 @@ export {
 export { ListRow } from './list-row';
 export { SegmentedControl } from './SegmentedControl';
 export { AnimatedCanvasButton } from './animated-canvas-button';
+export { ShimmerProgressBar } from './shimmer-progress-bar';
 export { TextField } from './text-field';
 export { useColorMode } from '~/components/theme';

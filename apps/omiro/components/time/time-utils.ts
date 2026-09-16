@@ -217,37 +217,35 @@ export function findEventCandidates(
   );
 }
 
-export function formatDraftDetails(timeBlock: TimeBlock | null) {
+export function formatDraftWhen(timeBlock: TimeBlock | null): string | null {
   if (!timeBlock) {
-    return '';
+    return null;
   }
-  return [
-    timeBlock.start_time && timeBlock.end_time
-      ? `${new Date(timeBlock.start_time).toLocaleString(undefined, {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-        })} – ${formatClockTime(timeBlock.end_time)}`
-      : timeBlock.scheduling_window_start
-        ? `${new Date(timeBlock.scheduling_window_start).toLocaleDateString(undefined, {
-            weekday: 'long',
-            month: 'short',
-            day: 'numeric',
-          })}${timeBlock.duration ? ` · ${timeBlock.duration} min` : ''}`
-        : timeBlock.deadline_fixed
-          ? `Due ${new Date(`${timeBlock.deadline_fixed}T12:00:00`).toLocaleDateString(undefined, {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-            })}`
-          : timeBlock.duration
-            ? `Unscheduled · ${timeBlock.duration} min`
-            : 'Unscheduled',
-    timeBlock.location,
-    timeBlock.participants?.join(', ') ?? null,
-  ]
-    .filter((value): value is string => Boolean(value))
-    .join(' · ');
+  if (timeBlock.start_time && timeBlock.end_time) {
+    return `${new Date(timeBlock.start_time).toLocaleString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })} – ${formatClockTime(timeBlock.end_time)}`;
+  }
+  if (timeBlock.scheduling_window_start) {
+    return `${new Date(timeBlock.scheduling_window_start).toLocaleDateString(undefined, {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+    })}${timeBlock.duration ? ` · ${timeBlock.duration} min` : ''}`;
+  }
+  if (timeBlock.deadline_fixed) {
+    return `Due ${new Date(`${timeBlock.deadline_fixed}T12:00:00`).toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    })}`;
+  }
+  if (timeBlock.duration) {
+    return `Unscheduled · ${timeBlock.duration} min`;
+  }
+  return null;
 }

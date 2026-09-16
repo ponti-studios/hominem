@@ -20,6 +20,7 @@ import { TimeRow } from './TimeRow';
 
 interface TimeStreamProps {
   contentPaddingBottom: number;
+  contentPaddingTop?: number;
   onOpenItem: (item: TimeItem) => void;
   onError: (message: string) => void;
 }
@@ -31,6 +32,7 @@ interface TimeStreamRenderRow {
 
 export const TimeStream = memo(function TimeStream({
   contentPaddingBottom,
+  contentPaddingTop = 8,
   onOpenItem,
   onError,
 }: TimeStreamProps) {
@@ -142,7 +144,7 @@ export const TimeStream = memo(function TimeStream({
       ) : null}
       <StreamList
         contentPaddingBottom={contentPaddingBottom}
-        contentPaddingTop={8}
+        contentPaddingTop={contentPaddingTop}
         data={renderRows}
         keyExtractor={({ item }) =>
           `${item.kind}:${item.value.id}:${item.kind === 'event' ? item.value.startDate : ''}`

@@ -10,6 +10,7 @@ import {
 } from '~/components/composer/ComposerContext';
 import { useAppTheme, useStyles } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
+import { ShimmerProgressBar } from '~/components/ui/shimmer-progress-bar';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { nativeMotionAnimations } from '~/services/motion/native-motion';
 import t from '~/translations';
@@ -43,15 +44,7 @@ function useComposerAttachmentStyles() {
       left: 0,
       backgroundColor: theme.colors.overlayScrim,
     },
-    progressBarContainer: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 4,
-      backgroundColor: theme.colors.overlayScrim,
-    },
-    progressBarFill: { backgroundColor: theme.colors.primary, height: '100%' },
+    progressBarContainer: { position: 'absolute', bottom: 0, left: 0, right: 0 },
     errorText: { ...theme.textVariants.caption1, color: theme.colors.destructive },
   }));
 }
@@ -59,11 +52,15 @@ function useComposerAttachmentStyles() {
 function AttachmentItem({
   attachment,
   onRemove,
+  overlayScrim,
+  primary,
   primaryForeground,
   progress,
 }: {
   attachment: ComposerAttachment;
   onRemove: (id: string) => void;
+  overlayScrim: string;
+  primary: string;
   primaryForeground: string;
   progress: number;
 }) {
@@ -89,9 +86,14 @@ function AttachmentItem({
       {uploading && (
         <>
           <View style={styles.uploadOverlay} />
-          <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
-          </View>
+          <ShimmerProgressBar
+            borderRadius={0}
+            fillColor={primary}
+            height={4}
+            progress={progress / 100}
+            style={styles.progressBarContainer}
+            trackColor={overlayScrim}
+          />
         </>
       )}
     </Pressable>
@@ -101,7 +103,7 @@ function AttachmentItem({
 export function ComposerAttachmentRow() {
   const { attachments, errors, isUploading, progressByAssetId, onRemove } =
     useComposerAttachments();
-  const { primaryForeground } = useAppTheme().colors;
+  const { overlayScrim, primary, primaryForeground } = useAppTheme().colors;
   const styles = useComposerAttachmentStyles();
   const prefersReducedMotion = useReducedMotion();
   const renderAttachment = useCallback(
@@ -109,11 +111,13 @@ export function ComposerAttachmentRow() {
       <AttachmentItem
         attachment={item}
         onRemove={onRemove}
+        overlayScrim={overlayScrim}
+        primary={primary}
         primaryForeground={primaryForeground}
         progress={progressByAssetId[item.id] ?? 0}
       />
     ),
-    [onRemove, primaryForeground, progressByAssetId],
+    [onRemove, overlayScrim, primary, primaryForeground, progressByAssetId],
   );
 
   if (attachments.length === 0 && errors.length === 0 && !isUploading) {
