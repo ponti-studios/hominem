@@ -146,6 +146,7 @@ function ComposerContent(props: ComposerProps) {
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: borderColor,
           boxShadow: 'none',
+          backgroundColor: theme.colors.muted,
         }}
         contentStyle={{ padding: 10, paddingBottom: 6, gap: 10 }}
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}

@@ -14,16 +14,15 @@ interface NavBarProps {
 // A static bar pinned to the top of the layout, in normal flow above the
 // Stack (see (protected)/_layout.tsx) -- it reserves its own space so screen
 // content always starts below it instead of scrolling underneath it. Flat
-// and edge-to-edge, not a floating card: a bottom hairline separates it from
-// the content below instead of a shadow/margin implying it's overlaid.
+// and edge-to-edge, not a floating card: a muted tonal fill plus a bottom
+// hairline separate it from the content below, instead of a shadow/margin
+// implying it's overlaid.
 export function NavBar({ center, menu }: NavBarProps) {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <View
-      style={[styles.wrap, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}
-    >
+    <View style={[styles.wrap, { paddingTop: insets.top, backgroundColor: theme.colors.muted }]}>
       <View style={[styles.bar, { borderBottomColor: withAlpha(theme.colors.border, 0.5) }]}>
         <View style={styles.center}>{center}</View>
         {menu}

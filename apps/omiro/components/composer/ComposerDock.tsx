@@ -3,6 +3,8 @@ import { View } from 'react-native';
 import { KeyboardStickyView, useKeyboardState } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAppTheme } from '~/components/theme';
+
 import { getFloatingDockInset } from './composerDock.helpers';
 
 interface ComposerDockProps {
@@ -33,6 +35,8 @@ export function ComposerDock({
   safeAreaBottom,
   testID,
 }: ComposerDockProps) {
+  const theme = useAppTheme();
+
   return (
     <KeyboardStickyView
       offset={{ closed: 0, opened: safeAreaBottom }}
@@ -43,7 +47,7 @@ export function ComposerDock({
             }
           : undefined
       }
-      style={{ paddingBottom: safeAreaBottom }}
+      style={{ paddingBottom: safeAreaBottom, backgroundColor: theme.colors.muted }}
       testID={testID}
     >
       <View>{children}</View>
