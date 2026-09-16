@@ -12,6 +12,7 @@ export const OnDeviceAIErrorCode = {
   CALENDAR_UNAVAILABLE: 'CALENDAR_UNAVAILABLE',
   EVENT_NOT_FOUND: 'EVENT_NOT_FOUND',
   EVENT_READ_ONLY: 'EVENT_READ_ONLY',
+  CALENDAR_WRITE_FAILED: 'CALENDAR_WRITE_FAILED',
 } as const;
 
 export type OnDeviceAIAvailability = 'available' | 'unavailable' | 'unsupported';

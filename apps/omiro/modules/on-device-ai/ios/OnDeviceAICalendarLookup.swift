@@ -97,10 +97,12 @@ private struct CalendarLookupTool: Tool {
     }
     let end = min(requestedEnd, maxEnd)
 
-    let store = EKEventStore()
-    let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
-    var events = store.events(matching: predicate)
-      .sorted { $0.startDate < $1.startDate }
+    // Route through the Coordinator's shared store instead of standing up a
+    // fresh EKEventStore here -- a fresh store can read before a background
+    // CalDAV/Exchange sync has landed and silently return zero events.
+    var events = await MainActor.run {
+      OnDeviceAICalendarCoordinator.shared.rawEvents(from: start, to: end)
+    }
 
     if let hourRange = dayPart.hourRange {
       events = events.filter { event in

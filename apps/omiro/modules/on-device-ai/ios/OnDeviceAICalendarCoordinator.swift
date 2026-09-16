@@ -9,6 +9,25 @@ final class OnDeviceAICalendarCoordinator: NSObject, @preconcurrency EKEventEdit
 
   private let store = EKEventStore()
   private var editorContinuation: CheckedContinuation<String, Never>?
+  // Identifies the in-flight present(event:) call so a stale watchdog from a
+  // finished presentation can never resolve a later, unrelated one.
+  private var presentationToken: UUID?
+  // Set by the editor's own present(_:animated:completion:) callback once it
+  // actually reaches the screen; distinguishes "still being edited" from
+  // "never appeared" for the watchdog below.
+  private var presentedToken: UUID?
+  private static let editorPresentationGraceNanoseconds: UInt64 = 5_000_000_000
+
+  // Raw EKEvent access for callers (e.g. the askCalendar chat tool) that need
+  // more than the CalendarEventSummary/CalendarEventSummaryRecord shape.
+  // Routes through the shared store rather than letting each caller stand up
+  // its own EKEventStore -- see summaries()/events(from:to:) for why that
+  // matters (a fresh store can read before a background CalDAV sync lands).
+  // Callers are responsible for their own permission check first.
+  func rawEvents(from startDate: Date, to endDate: Date) -> [EKEvent] {
+    let predicate = store.predicateForEvents(withStart: startDate, end: endDate, calendars: nil)
+    return store.events(matching: predicate).sorted { $0.startDate < $1.startDate }
+  }
 
   func summaries(startDate: String, endDate: String) throws -> [CalendarEventSummaryRecord] {
     guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
@@ -22,7 +41,7 @@ final class OnDeviceAICalendarCoordinator: NSObject, @preconcurrency EKEventEdit
       .prefix(100)
       .map { event in
         var summary = CalendarEventSummaryRecord()
-        summary.id = event.eventIdentifier ?? ""
+        summary.id = stableEventId(event)
         summary.title = event.title ?? "Untitled event"
         summary.startDate = formatter.string(from: event.startDate)
         summary.endDate = formatter.string(from: event.endDate)
@@ -44,7 +63,7 @@ final class OnDeviceAICalendarCoordinator: NSObject, @preconcurrency EKEventEdit
     return boundedEvents
       .map { event in
         CalendarEventSummary(
-          id: event.eventIdentifier ?? "",
+          id: stableEventId(event),
           title: event.title ?? "Untitled event",
           startDate: event.startDate,
           endDate: event.endDate,
@@ -107,10 +126,36 @@ final class OnDeviceAICalendarCoordinator: NSObject, @preconcurrency EKEventEdit
     editor.eventStore = store
     editor.event = event
     editor.editViewDelegate = self
+
+    let token = UUID()
+    presentationToken = token
+    presentedToken = nil
+
     return await withCheckedContinuation { continuation in
       editorContinuation = continuation
-      controller.present(editor, animated: true)
+      // `present`'s completion handler confirms the editor actually made it
+      // on screen -- it fires on a normal presentation well within the grace
+      // period below, so a real in-progress edit is never affected by it,
+      // however long the user takes filling out the form afterward.
+      controller.present(editor, animated: true) { [weak self] in
+        self?.presentedToken = token
+      }
+      Task { @MainActor [weak self] in
+        try? await Task.sleep(nanoseconds: Self.editorPresentationGraceNanoseconds)
+        guard let self, self.presentationToken == token, self.presentedToken != token else { return }
+        // present(_:animated:completion:) never called back -- the editor
+        // never actually appeared (a rare UIKit presentation race). Resolve
+        // the caller instead of leaving its await hanging forever.
+        self.resolveEditor(with: "cancelled")
+      }
     }
+  }
+
+  private func resolveEditor(with result: String) {
+    guard let continuation = editorContinuation else { return }
+    editorContinuation = nil
+    presentationToken = nil
+    continuation.resume(returning: result)
   }
 
   func eventEditViewController(
@@ -125,8 +170,7 @@ final class OnDeviceAICalendarCoordinator: NSObject, @preconcurrency EKEventEdit
     @unknown default: result = "cancelled"
     }
     controller.dismiss(animated: true)
-    editorContinuation?.resume(returning: result)
-    editorContinuation = nil
+    resolveEditor(with: result)
   }
 
   private func foregroundViewController() -> UIViewController? {

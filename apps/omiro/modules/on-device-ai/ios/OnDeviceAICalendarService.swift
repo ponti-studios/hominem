@@ -51,7 +51,11 @@ func createCalendarEvent(
   event.location = location
   event.calendar = calendar
   event.recurrenceRules = try recurrenceRule(recurrenceRuleValue).map { [$0] }
-  try store.save(event, span: .thisEvent)
+  do {
+    try store.save(event, span: .thisEvent)
+  } catch {
+    throw OnDeviceAIException.writeFailed(error)
+  }
 
   return calendarEventRecord(event, formatter: ISO8601DateFormatter())
 }
@@ -122,7 +126,11 @@ func updateCalendarEvent(
   event.startDate = start
   event.endDate = end
 
-  try store.save(event, span: calendarSpan(recurrenceScope), commit: true)
+  do {
+    try store.save(event, span: calendarSpan(recurrenceScope), commit: true)
+  } catch {
+    throw OnDeviceAIException.writeFailed(error)
+  }
   return calendarEventRecord(event, formatter: ISO8601DateFormatter())
 }
 
@@ -145,5 +153,9 @@ func deleteCalendarEvent(id: String, recurrenceScope: String) throws {
     )
   }
 
-  try store.remove(event, span: calendarSpan(recurrenceScope), commit: true)
+  do {
+    try store.remove(event, span: calendarSpan(recurrenceScope), commit: true)
+  } catch {
+    throw OnDeviceAIException.writeFailed(error)
+  }
 }

@@ -41,6 +41,17 @@ final class OnDeviceAIException: Exception, @unchecked Sendable {
       message: "The on-device model failed to respond."
     )
   }
+
+  // Wraps a raw EventKit save/remove failure (iCloud account signed out
+  // mid-edit, a CalDAV write the server rejected, a permission race) in a
+  // stable code the JS side can branch on, instead of letting an
+  // unrecognized error shape cross the bridge.
+  static func writeFailed(_ underlying: Error) -> OnDeviceAIException {
+    OnDeviceAIException(
+      code: "CALENDAR_WRITE_FAILED",
+      message: "This calendar change couldn't be saved: \(underlying.localizedDescription)"
+    )
+  }
 }
 
 // Shared "yyyy-MM-dd" formatter for the tool's date-range arguments. Fixed
@@ -93,9 +104,17 @@ func calendarRange(startDate: String, endDate: String) throws -> (start: Date, e
   return (start, end)
 }
 
+// eventIdentifier is nil only for an unsaved event; calendarItemIdentifier is
+// always present and stable for anything actually persisted in the store, so
+// prefer it over a random UUID (which would defeat id-based de-dup on every
+// refetch) or an empty string (which would collide across every such event).
+func stableEventId(_ event: EKEvent) -> String {
+  event.eventIdentifier ?? event.calendarItemIdentifier
+}
+
 func calendarEventRecord(_ event: EKEvent, formatter: ISO8601DateFormatter) -> [String: Any] {
   [
-    "id": event.eventIdentifier ?? UUID().uuidString,
+    "id": stableEventId(event),
     "title": event.title ?? "Untitled event",
     "startDate": formatter.string(from: event.startDate),
     "endDate": formatter.string(from: event.endDate),
