@@ -116,13 +116,8 @@ public enum TimeAssistantResult: Codable, Equatable, Sendable {
   case error(String)
 }
 
-public protocol CalendarStore: Sendable {
-  func events(from startDate: Date, to endDate: Date) async throws -> [CalendarEventSummary]
-}
-
 public enum CalendarAssistantError: Error, Equatable, Sendable {
   case invalidDateRange
-  case unavailable
 }
 
 public enum CalendarAvailability {

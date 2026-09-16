@@ -1,7 +1,6 @@
 import EventKit
 import ExpoModulesCore
 import Foundation
-import FoundationModels
 import os.log
 
 public class OnDeviceAIModule: Module {
@@ -33,18 +32,6 @@ public class OnDeviceAIModule: Module {
       }
     }
 
-    AsyncFunction("getAvailability") { () async -> String in
-      guard #available(iOS 26.0, *) else { return "unsupported" }
-      switch SystemLanguageModel.default.availability {
-      case .available:
-        return "available"
-      case .unavailable:
-        return "unavailable"
-      @unknown default:
-        return "unavailable"
-      }
-    }
-
     AsyncFunction("getCalendarPermissions") { () async -> String in
       permissionStatusString(EKEventStore.authorizationStatus(for: .event))
     }
@@ -52,10 +39,6 @@ public class OnDeviceAIModule: Module {
     AsyncFunction("requestCalendarPermissions") { () async -> String in
       let status = await requestCalendarAuthorization()
       return permissionStatusString(status)
-    }
-
-    AsyncFunction("getCalendarEvents") { (startDate: String, endDate: String) throws -> [[String: Any]] in
-      try fetchCalendarEvents(startDate: startDate, endDate: endDate)
     }
 
     AsyncFunction("listCalendarEventSummaries") { (startDate: String, endDate: String) async throws -> [CalendarEventSummaryRecord] in

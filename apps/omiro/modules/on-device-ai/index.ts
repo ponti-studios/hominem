@@ -7,7 +7,6 @@ export type {
   CalendarEventSummary,
   CalendarEventPatch,
   CalendarRecurrenceScope,
-  OnDeviceAIAvailability,
   OnDeviceAILogEvent,
   OnDeviceAIModuleType,
   OnDeviceAIResult,

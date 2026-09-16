@@ -15,8 +15,6 @@ export const OnDeviceAIErrorCode = {
   CALENDAR_WRITE_FAILED: 'CALENDAR_WRITE_FAILED',
 } as const;
 
-export type OnDeviceAIAvailability = 'available' | 'unavailable' | 'unsupported';
-
 export type CalendarPermissionStatus = 'authorized' | 'denied' | 'notDetermined';
 
 export interface CalendarEventSummary {
@@ -104,7 +102,6 @@ export interface OnDeviceAILogEvent {
 }
 
 export type OnDeviceAIModuleType = {
-  getAvailability(): Promise<OnDeviceAIAvailability>;
   getCalendarPermissions(): Promise<CalendarPermissionStatus>;
   requestCalendarPermissions(): Promise<CalendarPermissionStatus>;
   listCalendarEventSummaries(startDate: string, endDate: string): Promise<CalendarEventSummary[]>;
@@ -116,7 +113,6 @@ export type OnDeviceAIModuleType = {
     requestToken: string,
   ): Promise<TimeAssistantResult>;
   cancelTimeAssistant(requestToken: string): Promise<void>;
-  getCalendarEvents(startDate: string, endDate: string): Promise<CalendarEvent[]>;
   createCalendarEvent(
     title: string,
     startDate: string,

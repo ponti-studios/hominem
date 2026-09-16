@@ -3,21 +3,6 @@ import Foundation
 
 private let sharedCalendarStore = EKEventStore()
 
-func fetchCalendarEvents(startDate: String, endDate: String) throws -> [[String: Any]] {
-  guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
-    throw OnDeviceAIException.missingPermission
-  }
-
-  let range = try calendarRange(startDate: startDate, endDate: endDate)
-  let formatter = ISO8601DateFormatter()
-
-  let store = sharedCalendarStore
-  let predicate = store.predicateForEvents(withStart: range.start, end: range.end, calendars: nil)
-  return store.events(matching: predicate)
-    .sorted { $0.startDate < $1.startDate }
-    .map { calendarEventRecord($0, formatter: formatter) }
-}
-
 func createCalendarEvent(
   title: String,
   startDate: String,
