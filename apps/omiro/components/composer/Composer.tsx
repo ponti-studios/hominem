@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
@@ -139,7 +140,13 @@ function ComposerContent(props: ComposerProps) {
       {controller.showAttachments ? <ComposerAttachmentRow /> : undefined}
 
       <BlurCard
-        style={{ borderColor, borderRadius: 18 }}
+        style={{
+          borderRadius: 0,
+          borderWidth: 0,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: borderColor,
+          boxShadow: 'none',
+        }}
         contentStyle={{ padding: 10, paddingBottom: 6, gap: 10 }}
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
       >

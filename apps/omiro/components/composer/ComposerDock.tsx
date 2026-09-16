@@ -43,7 +43,7 @@ export function ComposerDock({
             }
           : undefined
       }
-      style={{ paddingBottom: safeAreaBottom, paddingHorizontal: 8 }}
+      style={{ paddingBottom: safeAreaBottom }}
       testID={testID}
     >
       <View>{children}</View>

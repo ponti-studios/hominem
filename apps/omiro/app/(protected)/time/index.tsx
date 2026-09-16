@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Text } from 'react-native';
 
-import { useFloatingNavBarContent } from '~/components/navigation/FloatingNavBar';
+import { useNavBarContent } from '~/components/navigation/NavBar';
 import { NavigationMenu } from '~/components/navigation/NavigationMenu';
 import { RootSceneGesture } from '~/components/navigation/RootSceneGesture';
 import { useAppTheme, useStyles } from '~/components/theme';
@@ -23,7 +23,7 @@ export default function TimeRoute() {
     ),
     [],
   );
-  useFloatingNavBarContent(useMemo(() => ({ center, menu }), [center, menu]));
+  useNavBarContent(useMemo(() => ({ center, menu }), [center, menu]));
 
   return (
     <RootSceneGesture>

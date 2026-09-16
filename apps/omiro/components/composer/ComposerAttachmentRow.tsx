@@ -46,6 +46,7 @@ function useComposerAttachmentStyles() {
     },
     progressBarContainer: { position: 'absolute', bottom: 0, left: 0, right: 0 },
     errorText: { ...theme.textVariants.caption1, color: theme.colors.destructive },
+    row: { paddingHorizontal: 8 },
   }));
 }
 
@@ -132,7 +133,10 @@ export function ComposerAttachmentRow() {
       entering={nativeMotionAnimations.fadeInQuick}
       exiting={nativeMotionAnimations.fadeOutQuick}
     >
-      <Animated.View layout={prefersReducedMotion ? undefined : nativeMotionAnimations.layoutQuick}>
+      <Animated.View
+        layout={prefersReducedMotion ? undefined : nativeMotionAnimations.layoutQuick}
+        style={styles.row}
+      >
         {attachments.length > 0 && (
           <FlashList
             data={attachments}

@@ -3,10 +3,7 @@ import { useMemo } from 'react';
 import { Text, View } from 'react-native';
 
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
-import {
-  FloatingNavBarProvider,
-  SharedFloatingNavBar,
-} from '~/components/navigation/FloatingNavBar';
+import { NavBarProvider, SharedNavBar } from '~/components/navigation/NavBar';
 import { ProtectedRouteFallback } from '~/components/protected/protected-route-fallback';
 import { useAppTheme, useStyles } from '~/components/theme';
 import { Button } from '~/components/ui/button';
@@ -91,8 +88,8 @@ function ProtectedShell() {
     <FeatureErrorBoundary featureName="Protected">
       <ApiProvider queryClient={queryClient}>
         <View style={styles.container}>
-          <FloatingNavBarProvider>
-            <SharedFloatingNavBar />
+          <NavBarProvider>
+            <SharedNavBar />
             <View style={styles.stackContainer}>
               <Stack
                 initialRouteName="index"
@@ -166,7 +163,7 @@ function ProtectedShell() {
                 />
               </Stack>
             </View>
-          </FloatingNavBarProvider>
+          </NavBarProvider>
         </View>
       </ApiProvider>
     </FeatureErrorBoundary>

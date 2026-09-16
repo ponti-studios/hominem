@@ -5,7 +5,7 @@ import {
   streamFilterOptions,
   type StreamFilter,
 } from '~/components/inbox/StreamScreen';
-import { useFloatingNavBarContent } from '~/components/navigation/FloatingNavBar';
+import { useNavBarContent } from '~/components/navigation/NavBar';
 import { NavigationMenu } from '~/components/navigation/NavigationMenu';
 import { RootSceneGesture } from '~/components/navigation/RootSceneGesture';
 import { SegmentedControl } from '~/components/ui';
@@ -25,7 +25,7 @@ export default function StreamRoute() {
     [filter],
   );
   const menu = useMemo(() => <NavigationMenu />, []);
-  useFloatingNavBarContent(useMemo(() => ({ center, menu }), [center, menu]));
+  useNavBarContent(useMemo(() => ({ center, menu }), [center, menu]));
 
   return (
     <RootSceneGesture>
