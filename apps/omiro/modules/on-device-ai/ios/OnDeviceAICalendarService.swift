@@ -1,6 +1,8 @@
 import EventKit
 import Foundation
 
+private let sharedCalendarStore = EKEventStore()
+
 func fetchCalendarEvents(startDate: String, endDate: String) throws -> [[String: Any]] {
   guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
     throw OnDeviceAIException.missingPermission
@@ -9,7 +11,7 @@ func fetchCalendarEvents(startDate: String, endDate: String) throws -> [[String:
   let range = try calendarRange(startDate: startDate, endDate: endDate)
   let formatter = ISO8601DateFormatter()
 
-  let store = EKEventStore()
+  let store = sharedCalendarStore
   let predicate = store.predicateForEvents(withStart: range.start, end: range.end, calendars: nil)
   return store.events(matching: predicate)
     .sorted { $0.startDate < $1.startDate }
@@ -34,7 +36,7 @@ func createCalendarEvent(
     )
   }
 
-  let store = EKEventStore()
+  let store = sharedCalendarStore
   guard let calendar = store.defaultCalendarForNewEvents else {
     throw OnDeviceAIException(
       code: "CALENDAR_UNAVAILABLE",
@@ -59,7 +61,7 @@ func fetchCalendarEvent(id: String) throws -> [String: Any] {
     throw OnDeviceAIException.missingPermission
   }
 
-  let store = EKEventStore()
+  let store = sharedCalendarStore
   guard let event = store.event(withIdentifier: id) else {
     throw OnDeviceAIException(
       code: "EVENT_NOT_FOUND",
@@ -79,7 +81,7 @@ func updateCalendarEvent(
     throw OnDeviceAIException.missingPermission
   }
 
-  let store = EKEventStore()
+  let store = sharedCalendarStore
   guard let event = store.event(withIdentifier: id) else {
     throw OnDeviceAIException(
       code: "EVENT_NOT_FOUND",
@@ -129,7 +131,7 @@ func deleteCalendarEvent(id: String, recurrenceScope: String) throws {
     throw OnDeviceAIException.missingPermission
   }
 
-  let store = EKEventStore()
+  let store = sharedCalendarStore
   guard let event = store.event(withIdentifier: id) else {
     throw OnDeviceAIException(
       code: "EVENT_NOT_FOUND",
