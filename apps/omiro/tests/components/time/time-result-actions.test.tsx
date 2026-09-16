@@ -7,6 +7,7 @@ vi.mock('react-native', () => ({
   View: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 vi.mock('~/components/theme', () => ({
+  useAppTheme: () => ({ colors: { primaryForeground: '' } }),
   useStyles: (factory: (theme: object) => unknown) => factory({}),
 }));
 vi.mock('~/components/ui', () => ({

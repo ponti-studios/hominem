@@ -12,6 +12,7 @@ const mockCreateEvent = vi.fn();
 const mockUpdateEvent = vi.fn();
 const mockDeleteEvent = vi.fn();
 const mockOpenSettings = vi.fn();
+const mockSubscribeToStoreChange = vi.fn(() => ({ remove: vi.fn() }));
 
 vi.mock('~/services/calendar/calendar-event-gateway', () => ({
   calendarEventGateway: {
@@ -22,6 +23,7 @@ vi.mock('~/services/calendar/calendar-event-gateway', () => ({
     createEvent: mockCreateEvent,
     updateEvent: mockUpdateEvent,
     deleteEvent: mockDeleteEvent,
+    subscribeToStoreChange: mockSubscribeToStoreChange,
   },
 }));
 

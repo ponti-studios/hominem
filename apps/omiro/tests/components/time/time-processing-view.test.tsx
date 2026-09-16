@@ -26,6 +26,19 @@ vi.mock('~/components/ui/button', () => ({
     <button onClick={onPress}>{label}</button>
   ),
 }));
+// Avoids pulling in @shopify/react-native-skia, whose Platform module reads
+// a "Platform" export the mocked "react-native" above doesn't provide.
+// Renders every stage label (as the real component does) so text
+// assertions below still hold.
+vi.mock('~/components/time/StageCrossfade', () => ({
+  StageCrossfade: ({ stages }: { stages: { id: string; label: string }[] }) => (
+    <>
+      {stages.map((stage) => (
+        <span key={stage.id}>{stage.label}</span>
+      ))}
+    </>
+  ),
+}));
 
 const { TimeProcessingView } = await import('~/components/time/TimeProcessingView');
 

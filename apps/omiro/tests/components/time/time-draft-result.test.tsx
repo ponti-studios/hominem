@@ -6,10 +6,26 @@ import { describe, expect, it, vi } from 'vitest';
 import type { TimeBlock } from '~/components/time/time-types';
 
 vi.mock('react-native', () => ({
+  Pressable: ({
+    accessibilityLabel,
+    children,
+    disabled,
+    onPress,
+  }: {
+    accessibilityLabel?: string;
+    children: React.ReactNode;
+    disabled?: boolean;
+    onPress?: () => void;
+  }) => (
+    <button aria-label={accessibilityLabel} disabled={disabled} onClick={onPress}>
+      {children}
+    </button>
+  ),
   Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   View: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 vi.mock('~/components/theme', () => ({
+  useAppTheme: () => ({ colors: { border: '', muted: '', mutedForeground: '' } }),
   useStyles: (
     factory: (theme: {
       borderRadii: Record<string, number>;
@@ -57,6 +73,20 @@ vi.mock('~/components/ui', () => ({
   ),
 }));
 vi.mock('~/components/ui/icon', () => ({ default: () => null }));
+vi.mock('~/components/ui/button', () => ({
+  Button: ({ label, onPress, testID }: { label: string; onPress: () => void; testID?: string }) => (
+    <button data-testid={testID} onClick={onPress}>
+      {label}
+    </button>
+  ),
+}));
+// Avoids pulling in expo-location's native module chain, which loads
+// expo/src/winter/runtime.ts -- a CJS require() outside Vite's transform
+// pipeline that fails to resolve './ImportMetaRegistry' under vitest.
+vi.mock('~/components/time/LocationSearchField', () => ({
+  LocationSearchField: () => null,
+}));
+vi.mock('@expo/ui/community/datetime-picker', () => ({ default: () => null }));
 
 const { TimeDraftResult } = await import('~/components/time/TimeDraftResult');
 
