@@ -25,6 +25,7 @@ into a release.
 | Normal CI release from `main` | GitHub Actions | `validate-mobile` → `deploy-mobile` → EAS approval → TestFlight |
 | Create and upload an explicitly requested local IPA | `pnpm build:prod:local`, then `pnpm submit:local` | Locally signed IPA → App Store Connect/TestFlight |
 | Ship a JS-only fix | `just mobile update "<message>"` | EAS approval → production OTA channel |
+| Agent asks to commit, push, build, and submit in one go | [Commit → push → local build → submit](#commit-push-local-build-submit) | Working tree committed and pushed; locally signed IPA → App Store Connect/TestFlight |
 
 The cloud release workflow is
 `apps/omiro/.eas/workflows/production-release.yml`; the OTA workflow is
@@ -116,6 +117,40 @@ the expected local IPA, re-checks the production identity, prints the selected
 path, and passes it explicitly to `eas submit --path`. Before submitting,
 confirm the selected IPA is the intended artifact and that its App Store
 Connect credentials are available.
+
+## Commit, push, local build, submit
+
+Use this only when the user explicitly asks for exactly this sequence (e.g.
+"commit and push, build local, submit to EAS") — it is a convenience path for
+an agent shipping a locally signed IPA end-to-end, not a substitute for the
+normal `main` → `validate-mobile` → `deploy-mobile` CI release. It skips the
+CI validation gate, so only use it when the user asks for it by name.
+
+1. **Commit.** Load the `conventional-commit` skill and follow it exactly.
+   Stage specific paths (never a blind `git add -A`/`-u`); review
+   `git status` after staging for anything unexpected (secrets, unrelated
+   files) before committing.
+2. **Push.** Push the current branch to its tracked remote. If it has no
+   upstream yet, set one (`git push -u origin <branch>`). Never force-push
+   without the user asking for that specifically.
+3. **Build.** Run `pnpm --filter=@hominem/omiro build:prod:local` from the
+   repo root (or `pnpm build:prod:local` from `apps/omiro`). This sources
+   `.eas-prod.local` for `SENTRY_AUTH_TOKEN`, forces `APP_ENV=production`,
+   runs `scripts/verify-release-identity.mjs` as a preflight guard, and
+   invokes `eas build --local` to produce `apps/omiro/build/prod-local.ipa`.
+   Treat a failed identity guard as a hard stop — never bypass it.
+4. **Submit.** Run `pnpm --filter=@hominem/omiro eas:publish` (the raw
+   `eas submit -p ios --profile production --path ./build/prod-local.ipa`
+   npm script). Prefer `pnpm submit:local` instead when you want the
+   wrapper's extra identity re-check and explicit artifact selection —
+   both submit the same `build/prod-local.ipa` produced in step 3.
+5. **Report back** the commit hash, the pushed branch, the IPA path, and the
+   EAS submission URL / App Store Connect TestFlight link printed by the
+   submit command. Do not claim TestFlight processing is complete — Apple
+   processes the build asynchronously after a successful upload.
+
+If any step fails, stop and report the exact command and failure rather than
+improvising a different build/submit sequence — see Troubleshooting below.
 
 ## OTA updates
 
