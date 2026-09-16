@@ -1,17 +1,13 @@
 import { useMemo } from 'react';
 import { Text } from 'react-native';
 
-import {
-  useFloatingNavBarContent,
-  useFloatingNavBarMetrics,
-} from '~/components/navigation/FloatingNavBar';
+import { useFloatingNavBarContent } from '~/components/navigation/FloatingNavBar';
 import { NavigationMenu } from '~/components/navigation/NavigationMenu';
 import { RootSceneGesture } from '~/components/navigation/RootSceneGesture';
 import { useAppTheme, useStyles } from '~/components/theme';
 import { TimeHeaderActions, TimeScreen } from '~/components/time/TimeScreen';
 
 export default function TimeRoute() {
-  const { contentInset } = useFloatingNavBarMetrics();
   const { foreground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     title: { ...theme.textVariants.subhead, color: foreground },
@@ -31,7 +27,7 @@ export default function TimeRoute() {
 
   return (
     <RootSceneGesture>
-      <TimeScreen topInset={contentInset} />
+      <TimeScreen />
     </RootSceneGesture>
   );
 }

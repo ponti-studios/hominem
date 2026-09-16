@@ -5,17 +5,13 @@ import {
   streamFilterOptions,
   type StreamFilter,
 } from '~/components/inbox/StreamScreen';
-import {
-  useFloatingNavBarContent,
-  useFloatingNavBarMetrics,
-} from '~/components/navigation/FloatingNavBar';
+import { useFloatingNavBarContent } from '~/components/navigation/FloatingNavBar';
 import { NavigationMenu } from '~/components/navigation/NavigationMenu';
 import { RootSceneGesture } from '~/components/navigation/RootSceneGesture';
 import { SegmentedControl } from '~/components/ui';
 
 export default function StreamRoute() {
   const [filter, setFilter] = useState<StreamFilter>('all');
-  const { contentInset } = useFloatingNavBarMetrics();
 
   const center = useMemo(
     () => (
@@ -33,7 +29,7 @@ export default function StreamRoute() {
 
   return (
     <RootSceneGesture>
-      <StreamScreen filter={filter} topInset={contentInset} />
+      <StreamScreen filter={filter} topInset={8} />
     </RootSceneGesture>
   );
 }

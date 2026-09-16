@@ -7,34 +7,23 @@ import { useAppTheme, withAlpha } from '~/components/theme';
 export const FLOATING_NAV_BAR_HEIGHT = 44;
 const FLOATING_NAV_BAR_MARGIN = 8;
 
-// Space the floating bar occupies from the top of the screen -- callers use
-// this to reserve room at the head of scrolling content so the first row
-// starts just below the pill instead of directly underneath it.
-export function useFloatingNavBarMetrics() {
-  const insets = useSafeAreaInsets();
-  const top = insets.top + FLOATING_NAV_BAR_MARGIN;
-  return {
-    top,
-    contentInset: top + FLOATING_NAV_BAR_HEIGHT + FLOATING_NAV_BAR_MARGIN,
-  };
-}
-
 interface FloatingNavBarProps {
   center: ReactNode;
   menu: ReactNode;
 }
 
-// A pill that floats over scrolling content (used with `headerTransparent`)
-// instead of a fixed header row -- content scrolls underneath it. No
+// A static bar pinned to the top of the layout, in normal flow above the
+// Stack (see (protected)/_layout.tsx) -- it reserves its own space so screen
+// content always starts below it instead of scrolling underneath it. No
 // expo-blur here: the mobile design system disallows real blur
 // (oxlint.config.mjs, see BlurCard.tsx), so this is the same flat
 // translucent-card treatment BlurCard uses.
 export function FloatingNavBar({ center, menu }: FloatingNavBarProps) {
   const theme = useAppTheme();
-  const { top } = useFloatingNavBarMetrics();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View pointerEvents="box-none" style={[styles.wrap, { top }]}>
+    <View style={[styles.wrap, { paddingTop: insets.top + FLOATING_NAV_BAR_MARGIN }]}>
       <View
         style={[
           styles.pill,
@@ -101,10 +90,8 @@ export function SharedFloatingNavBar() {
 
 const styles = StyleSheet.create({
   wrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
     paddingHorizontal: 12,
+    paddingBottom: FLOATING_NAV_BAR_MARGIN,
   },
   pill: {
     height: FLOATING_NAV_BAR_HEIGHT,
