@@ -142,6 +142,8 @@ function ComposerContent(props: ComposerProps) {
       <BlurCard
         style={{
           borderRadius: 0,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
           borderWidth: 0,
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: borderColor,
