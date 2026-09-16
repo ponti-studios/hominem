@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import type { TextInput as RNTextInput } from 'react-native';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -23,6 +24,7 @@ import { TimeResultSurface } from './TimeResultSurface';
 import { useTimeComposer } from './use-time-composer';
 
 const BLUR_COLLAPSE_DELAY_MS = 180;
+const KEYBOARD_HOVER_GAP = 12;
 
 interface TimeFloatingComposerProps {
   onOpenEvent: (event: { id: string }) => void;
@@ -54,6 +56,7 @@ export function TimeFloatingComposer({ onOpenEvent, onTaskCreated }: TimeFloatin
   } = controller;
   const theme = useAppTheme();
   const styles = useFloatingComposerStyles(safeAreaBottom);
+  const keyboardOpenedOffset = safeAreaBottom + 16 - KEYBOARD_HOVER_GAP;
   const inputRef = useRef<RNTextInput>(null);
   const valueRef = useRef(value);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -157,7 +160,11 @@ export function TimeFloatingComposer({ onOpenEvent, onTaskCreated }: TimeFloatin
 
   if (showResult) {
     return (
-      <View style={styles.dock} testID="time-floating-composer">
+      <KeyboardStickyView
+        offset={{ closed: 0, opened: keyboardOpenedOffset }}
+        style={styles.dock}
+        testID="time-floating-composer"
+      >
         <TimeResultSurface
           isSaving={isSaving}
           onCancel={handleCancelResult}
@@ -169,7 +176,7 @@ export function TimeFloatingComposer({ onOpenEvent, onTaskCreated }: TimeFloatin
           state={state}
           testID="time-result"
         />
-      </View>
+      </KeyboardStickyView>
     );
   }
 
@@ -188,89 +195,99 @@ export function TimeFloatingComposer({ onOpenEvent, onTaskCreated }: TimeFloatin
           />
         </Animated.View>
       ) : null}
-      <Animated.View
-        layout={reducedMotion ? undefined : LinearTransition.duration(220)}
+      <KeyboardStickyView
+        offset={{ closed: 0, opened: keyboardOpenedOffset }}
         style={styles.dock}
         testID="time-floating-composer"
       >
-        <Card
-          style={[
-            styles.card,
-            expanded ? styles.cardExpanded : styles.cardCollapsed,
-            { boxShadow: theme.shadows.md },
-          ]}
-        >
-          {state.kind === 'parsing' ? (
-            <TimeProcessingView onCancel={handleCancelProcessing} stage={processingStage} />
-          ) : voice.isRecording ? (
-            <VoiceRecordingPanel
-              startedAt={voice.recordingStartedAt}
-              onCancel={() => {
-                void voice.cancelVoiceRecording();
-              }}
-              onDone={() => {
-                void voice.handleVoicePress();
-              }}
-            />
-          ) : showVoiceProcessing ? (
-            <View style={styles.voiceProcessing} testID="time-transcribing">
-              <ActivityIndicator color={theme.colors.primary} />
-              <Text style={styles.voiceProcessingText}>Transcribing your recording</Text>
-            </View>
-          ) : (
-            <>
-              {voiceErrorBanner}
-              <View style={focused ? styles.rowsFocused : styles.rowCollapsed}>
-                <TextField
-                  editable={!disabled}
-                  focusBorder={false}
-                  ref={inputRef}
-                  onBlur={handleInputBlur}
-                  onChangeText={setPrompt}
-                  onFocus={handleFocusPress}
-                  onSubmitEditing={ask}
-                  placeholder="create or find events"
-                  returnKeyType="send"
-                  submitBehavior="submit"
-                  testID="time-composer-input"
-                  value={value}
-                  multiline
-                  numberOfLines={1}
-                  style={styles.textField}
-                />
-                <View style={focused ? styles.focusedButtonsRow : styles.collapsedButtonsRow}>
-                  <IconButton
-                    accessibilityLabel="Start voice input"
-                    disabled={voice.isRecordingElsewhere || disabled}
-                    onPressIn={cancelPendingBlurCollapse}
-                    testID="time-composer-mic-button"
-                    onPress={handleMicPress}
-                    variant="solid"
-                  >
-                    <AppIcon name="mic.fill" size={20} tintColor={theme.colors.primaryForeground} />
-                  </IconButton>
-                  <IconButton
-                    accessibilityLabel="Interpret time request"
-                    disabled={disabled || !canSubmit}
-                    onPressIn={cancelPendingBlurCollapse}
-                    testID="time-composer-submit"
-                    onPress={ask}
-                    variant="solid"
-                  >
-                    <AppIcon name="arrow.up" size={20} tintColor={theme.colors.primaryForeground} />
-                  </IconButton>
-                </View>
+        <Animated.View layout={reducedMotion ? undefined : LinearTransition.duration(220)}>
+          <Card
+            style={[
+              styles.card,
+              expanded ? styles.cardExpanded : styles.cardCollapsed,
+              { boxShadow: theme.shadows.md },
+            ]}
+          >
+            {state.kind === 'parsing' ? (
+              <TimeProcessingView onCancel={handleCancelProcessing} stage={processingStage} />
+            ) : voice.isRecording ? (
+              <VoiceRecordingPanel
+                startedAt={voice.recordingStartedAt}
+                onCancel={() => {
+                  void voice.cancelVoiceRecording();
+                }}
+                onDone={() => {
+                  void voice.handleVoicePress();
+                }}
+              />
+            ) : showVoiceProcessing ? (
+              <View style={styles.voiceProcessing} testID="time-transcribing">
+                <ActivityIndicator color={theme.colors.primary} />
+                <Text style={styles.voiceProcessingText}>Transcribing your recording</Text>
               </View>
-              {composerError ? (
-                <InlineErrorBanner
-                  message={composerError}
-                  onDismiss={() => setComposerError(null)}
-                />
-              ) : null}
-            </>
-          )}
-        </Card>
-      </Animated.View>
+            ) : (
+              <>
+                {voiceErrorBanner}
+                <View style={focused ? styles.rowsFocused : styles.rowCollapsed}>
+                  <TextField
+                    editable={!disabled}
+                    focusBorder={false}
+                    ref={inputRef}
+                    onBlur={handleInputBlur}
+                    onChangeText={setPrompt}
+                    onFocus={handleFocusPress}
+                    onSubmitEditing={ask}
+                    placeholder="create or find events"
+                    returnKeyType="send"
+                    submitBehavior="submit"
+                    testID="time-composer-input"
+                    value={value}
+                    multiline
+                    numberOfLines={1}
+                    style={styles.textField}
+                  />
+                  <View style={focused ? styles.focusedButtonsRow : styles.collapsedButtonsRow}>
+                    <IconButton
+                      accessibilityLabel="Start voice input"
+                      disabled={voice.isRecordingElsewhere || disabled}
+                      onPressIn={cancelPendingBlurCollapse}
+                      testID="time-composer-mic-button"
+                      onPress={handleMicPress}
+                      variant="solid"
+                    >
+                      <AppIcon
+                        name="mic.fill"
+                        size={20}
+                        tintColor={theme.colors.primaryForeground}
+                      />
+                    </IconButton>
+                    <IconButton
+                      accessibilityLabel="Interpret time request"
+                      disabled={disabled || !canSubmit}
+                      onPressIn={cancelPendingBlurCollapse}
+                      testID="time-composer-submit"
+                      onPress={ask}
+                      variant="solid"
+                    >
+                      <AppIcon
+                        name="arrow.up"
+                        size={20}
+                        tintColor={theme.colors.primaryForeground}
+                      />
+                    </IconButton>
+                  </View>
+                </View>
+                {composerError ? (
+                  <InlineErrorBanner
+                    message={composerError}
+                    onDismiss={() => setComposerError(null)}
+                  />
+                ) : null}
+              </>
+            )}
+          </Card>
+        </Animated.View>
+      </KeyboardStickyView>
     </>
   );
 }
@@ -281,7 +298,8 @@ function useFloatingComposerStyles(safeAreaBottom: number) {
       position: 'absolute',
       left: 16,
       right: 16,
-      bottom: safeAreaBottom + 16,
+      bottom: 0,
+      paddingBottom: safeAreaBottom + 16,
     },
     backdrop: { position: 'absolute', top: -2000, left: -16, right: -16, bottom: -16 },
     backdropPressable: { flex: 1 },
