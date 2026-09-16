@@ -38,6 +38,10 @@ jobs:
           set -euo pipefail
           pnpm run format:check
           pnpm run lint
+          # typecheck relies on workspace packages' emitted .d.ts (TS project
+          # references) -- build them first, same as `just mobile check`,
+          # or a clean checkout fails typecheck with TS6305 (output not built).
+          (cd ../.. && pnpm build --filter=@hominem/api --filter=@hominem/omiro...)
           pnpm run typecheck
           pnpm run test
           pnpm run export:embed:ios
