@@ -38,6 +38,7 @@ export interface CalendarEventGateway {
   presentDraft: (draft: CalendarDraft) => Promise<CalendarEditorResult>;
   presentEvent: (id: string) => Promise<CalendarEditorResult>;
   requestPermission: () => Promise<CalendarPermissionStatus>;
+  subscribeToStoreChange: (listener: () => void) => { remove: () => void };
   updateEvent: (
     id: string,
     patch: CalendarEventPatch,
@@ -67,6 +68,8 @@ const productionCalendarEventGateway: CalendarEventGateway = {
   presentDraft: (draft) => OnDeviceAIModule.presentCalendarDraft(draft),
   presentEvent: (id) => OnDeviceAIModule.presentCalendarEvent(id),
   requestPermission: () => OnDeviceAIModule.requestCalendarPermissions(),
+  subscribeToStoreChange: (listener) =>
+    OnDeviceAIModule.addListener('onCalendarStoreChanged', listener),
   updateEvent: (id, patch, recurrenceScope) =>
     OnDeviceAIModule.updateCalendarEvent(id, patch, recurrenceScope),
 };
@@ -123,6 +126,24 @@ export const calendarEventGateway: CalendarEventGateway = {
   presentDraft: async (draft) => (await resolveGateway()).presentDraft(draft),
   presentEvent: async (id) => (await resolveGateway()).presentEvent(id),
   requestPermission: async () => (await resolveGateway()).requestPermission(),
+  subscribeToStoreChange: (listener) => {
+    let disposed = false;
+    let remove = () => {};
+    void resolveGateway().then((gateway) => {
+      const subscription = gateway.subscribeToStoreChange(listener);
+      if (disposed) {
+        subscription.remove();
+      } else {
+        remove = subscription.remove;
+      }
+    });
+    return {
+      remove: () => {
+        disposed = true;
+        remove();
+      },
+    };
+  },
   updateEvent: async (id, patch, recurrenceScope) =>
     (await resolveGateway()).updateEvent(id, patch, recurrenceScope),
 };

@@ -156,6 +156,7 @@ export const timeFixtureGateway: CalendarEventGateway = {
     scenario = 'authorized';
     return permission();
   },
+  subscribeToStoreChange: () => ({ remove: () => {} }),
   updateEvent: async (
     id: string,
     patch: CalendarEventPatch,

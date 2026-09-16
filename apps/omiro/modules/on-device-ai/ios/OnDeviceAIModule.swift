@@ -5,10 +5,33 @@ import FoundationModels
 import os.log
 
 public class OnDeviceAIModule: Module {
+  private var calendarChangeObserver: NSObjectProtocol?
+
   public func definition() -> ModuleDefinition {
     Name("OnDeviceAI")
 
-    Events("onDeviceAILog", "onTimeAssistantStage")
+    Events("onDeviceAILog", "onTimeAssistantStage", "onCalendarStoreChanged")
+
+    // EventKit syncs externally-hosted calendars (Google/Exchange via CalDAV)
+    // into the local store asynchronously, sometimes after our first read has
+    // already returned. Forward EKEventStoreChanged so JS can refetch once
+    // that background sync lands instead of being stuck on an empty result.
+    OnStartObserving {
+      self.calendarChangeObserver = NotificationCenter.default.addObserver(
+        forName: .EKEventStoreChanged,
+        object: nil,
+        queue: .main
+      ) { [weak self] _ in
+        self?.sendEvent("onCalendarStoreChanged", [:])
+      }
+    }
+
+    OnStopObserving {
+      if let observer = self.calendarChangeObserver {
+        NotificationCenter.default.removeObserver(observer)
+        self.calendarChangeObserver = nil
+      }
+    }
 
     AsyncFunction("getAvailability") { () async -> String in
       guard #available(iOS 26.0, *) else { return "unsupported" }

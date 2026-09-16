@@ -70,10 +70,7 @@ export type TimeAssistantResult =
   | { kind: 'cancelled' }
   | { kind: 'error'; error: string };
 
-export type TimeProcessingStage =
-  | 'understanding'
-  | 'checkingSchedule'
-  | 'preparingSuggestion';
+export type TimeProcessingStage = 'understanding' | 'checkingSchedule' | 'preparingSuggestion';
 
 export interface TimeProcessingStageEvent {
   stage: TimeProcessingStage;
@@ -138,6 +135,9 @@ export type OnDeviceAIModuleType = {
     eventName: 'onDeviceAILog' | 'onTimeAssistantStage',
     listener: (event: OnDeviceAILogEvent | TimeProcessingStageEvent) => void,
   ): { remove: () => void };
+  // Fires whenever EventKit's store changes, including once a
+  // background CalDAV/Exchange sync lands after our first read.
+  addListener(eventName: 'onCalendarStoreChanged', listener: () => void): { remove: () => void };
 };
 
 export default requireNativeModule<OnDeviceAIModuleType>('OnDeviceAI');

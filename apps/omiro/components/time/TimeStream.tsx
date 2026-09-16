@@ -168,7 +168,12 @@ export const TimeStream = memo(function TimeStream({
           ) : null
         }
         onEndReached={() => {
-          if (permission === 'authorized' && !scenario) {
+          if (
+            permission === 'authorized' &&
+            !scenario &&
+            calendar.hasNextPage &&
+            !calendar.isFetchingNextPage
+          ) {
             void calendar.loadNextPage();
           }
         }}

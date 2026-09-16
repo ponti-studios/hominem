@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { Linking } from 'react-native';
 
 import type {
@@ -16,7 +16,12 @@ import type {
 } from '~/modules/on-device-ai';
 
 import { calendarEventGateway } from './calendar-event-gateway';
-import { CALENDAR_PAGE_DAYS, getCalendarPage, mergeCalendarEvents } from './calendar-utils';
+import {
+  CALENDAR_MAX_LOOKAHEAD_DAYS,
+  CALENDAR_PAGE_DAYS,
+  getCalendarPage,
+  mergeCalendarEvents,
+} from './calendar-utils';
 
 interface CalendarPage {
   end: string;
@@ -86,7 +91,13 @@ export function useCalendarEvents({ enabled = true }: { enabled?: boolean } = {}
     CalendarPage
   >({
     enabled,
-    getNextPageParam: (lastPage) => nextPage(lastPage),
+    getNextPageParam: (lastPage) => {
+      const candidate = nextPage(lastPage);
+      const lookaheadMs = new Date(candidate.start).getTime() - startOfToday().getTime();
+      return lookaheadMs > CALENDAR_MAX_LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000
+        ? undefined
+        : candidate;
+    },
     initialPageParam: initialPage(),
     queryFn: async ({ pageParam }) => ({
       ...pageParam,
@@ -94,6 +105,15 @@ export function useCalendarEvents({ enabled = true }: { enabled?: boolean } = {}
     }),
     queryKey: calendarKeys.events,
   });
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    const subscription = calendarEventGateway.subscribeToStoreChange(() => {
+      void queryClient.invalidateQueries({ queryKey: calendarKeys.events });
+    });
+    return () => subscription.remove();
+  }, [enabled, queryClient]);
   const events = useMemo(
     () => mergeCalendarEvents([], query.data?.pages.flatMap((page) => page.events) ?? []),
     [query.data],

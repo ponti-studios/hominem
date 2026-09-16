@@ -2,6 +2,9 @@ import type { CalendarEvent } from '~/modules/on-device-ai';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const CALENDAR_PAGE_DAYS = 30;
+// Stop paginating forward once a page's start is this far out -- keeps a
+// short-viewport FlatList from auto-triggering onEndReached indefinitely.
+export const CALENDAR_MAX_LOOKAHEAD_DAYS = 365;
 
 export function getCalendarPage(
   loadedSince: Date,
