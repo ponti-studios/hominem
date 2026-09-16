@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
-import { BlurCard } from '~/components/ui';
 import { InlineErrorBanner } from '~/components/ui/InlineErrorBanner';
 import { VoiceRecordingPanel } from '~/components/voice/VoiceRecordingPanel';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
@@ -108,9 +107,19 @@ function ComposerContent(props: ComposerProps) {
   const theme = useAppTheme();
   const { primary, destructive, border: borderDefault } = theme.colors;
   const insets = useSafeAreaInsets();
-  const styles = useStyles(() => ({
+  const styles = useStyles((currentTheme) => ({
     composer: { width: '100%', gap: 8 },
     fields: { gap: 8 },
+    surface: {
+      borderCurve: 'continuous',
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      borderWidth: 0,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      overflow: 'hidden',
+      backgroundColor: currentTheme.colors.muted,
+    },
+    surfaceContent: { padding: 10, paddingBottom: 6, gap: 10 },
   }));
   const prefersReducedMotion = useReducedMotion();
 
@@ -141,93 +150,91 @@ function ComposerContent(props: ComposerProps) {
     <Animated.View style={styles.composer} layout={bannerLayout} testID={presentation.shellTestID}>
       {controller.showAttachments ? <ComposerAttachmentRow /> : undefined}
 
-      <BlurCard
-        style={{
-          borderRadius: 0,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          borderWidth: 0,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: borderColor,
-          boxShadow: 'none',
-          backgroundColor: theme.colors.muted,
-          // Extends the card's own fill (not a same-colored sibling behind
-          // it) through the bottom safe area, so the rounded top corners
-          // stay visible instead of being masked by a square backdrop of
-          // the same color.
-          paddingBottom: insets.bottom,
-        }}
-        contentStyle={{ padding: 10, paddingBottom: 6, gap: 10 }}
+      <View
+        collapsable={false}
+        style={[
+          styles.surface,
+          {
+            borderTopColor: borderColor,
+            // Extends the surface's own fill (not a same-colored sibling
+            // behind it) through the bottom safe area, so the rounded top
+            // corners stay visible instead of being masked by a square
+            // backdrop of the same color.
+            paddingBottom: insets.bottom,
+          },
+        ]}
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
       >
-        {errorBanner ? (
-          // Split: entering/exiting on the outer view, layout on the inner
-          // one -- same reasoning as chat-message.tsx and the two Animated.Views
-          // just below. Both on one node fight over opacity.
-          <Animated.View entering={bannerEntering} exiting={bannerExiting}>
-            <Animated.View layout={bannerLayout}>{errorBanner}</Animated.View>
-          </Animated.View>
-        ) : undefined}
+        <View style={styles.surfaceContent}>
+          {errorBanner ? (
+            // Split: entering/exiting on the outer view, layout on the inner
+            // one -- same reasoning as chat-message.tsx and the two Animated.Views
+            // just below. Both on one node fight over opacity.
+            <Animated.View entering={bannerEntering} exiting={bannerExiting}>
+              <Animated.View layout={bannerLayout}>{errorBanner}</Animated.View>
+            </Animated.View>
+          ) : undefined}
 
-        {showVoicePanel ? (
-          <Animated.View
-            entering={nativeMotionAnimations.fadeInQuick}
-            exiting={nativeMotionAnimations.fadeOutQuick}
-            key="voice-panel"
-          >
-            <VoiceRecordingPanel
-              startedAt={controller.voice.recordingStartedAt}
-              onCancel={() => {
-                void controller.voice.cancelVoiceRecording();
-              }}
-              onDone={() => {
-                void controller.voice.handleVoicePress();
-              }}
-              phase={isRecording ? 'recording' : 'sending'}
-            />
-          </Animated.View>
-        ) : (
-          <Animated.View
-            entering={nativeMotionAnimations.fadeInQuick}
-            exiting={nativeMotionAnimations.fadeOutQuick}
-            key="composer-fields"
-          >
-            <Animated.View style={styles.fields} layout={bannerLayout}>
-              <ComposerInput
-                composerProps={props}
-                messageStore={controller.messageStore}
-                entryMode={controller.entryMode}
-                manualEntryKind={controller.manualEntryKind}
-                onFocus={controller.handleInputFocus}
-                onBlur={controller.handleInputBlur}
-                onChangeMessage={controller.setMessage}
-              />
-              <ComposerToolbar
-                composerProps={props}
-                messageStore={controller.messageStore}
-                entryMode={controller.entryMode}
-                manualEntryKind={controller.manualEntryKind}
-                onManualEntryKindChange={controller.setManualEntryKind}
-                uploadedAttachmentCount={controller.uploadedAttachmentIds.length}
-                state={{
-                  isFocused: controller.isFocused,
-                  showAttachments: controller.showAttachments,
-                  isInteractionBusy: controller.isInteractionBusy,
-                  isSubmitting: submission.isSubmitting,
+          {showVoicePanel ? (
+            <Animated.View
+              entering={nativeMotionAnimations.fadeInQuick}
+              exiting={nativeMotionAnimations.fadeOutQuick}
+              key="voice-panel"
+            >
+              <VoiceRecordingPanel
+                startedAt={controller.voice.recordingStartedAt}
+                onCancel={() => {
+                  void controller.voice.cancelVoiceRecording();
                 }}
-                capabilities={{
-                  canPickMedia: controller.canPickMedia,
-                  canToggleVoice: controller.canToggleVoice,
+                onDone={() => {
+                  void controller.voice.handleVoicePress();
                 }}
-                voice={controller.voice}
-                onChangeMessage={controller.setMessage}
-                onToggleWalkieTalkie={props.mode === 'chat' ? onToggleWalkieTalkie : undefined}
-                onSubmit={handleActiveAreaSubmit}
+                phase={isRecording ? 'recording' : 'sending'}
               />
             </Animated.View>
-          </Animated.View>
-        )}
-      </BlurCard>
+          ) : (
+            <Animated.View
+              entering={nativeMotionAnimations.fadeInQuick}
+              exiting={nativeMotionAnimations.fadeOutQuick}
+              key="composer-fields"
+            >
+              <Animated.View style={styles.fields} layout={bannerLayout}>
+                <ComposerInput
+                  composerProps={props}
+                  messageStore={controller.messageStore}
+                  entryMode={controller.entryMode}
+                  manualEntryKind={controller.manualEntryKind}
+                  onFocus={controller.handleInputFocus}
+                  onBlur={controller.handleInputBlur}
+                  onChangeMessage={controller.setMessage}
+                />
+                <ComposerToolbar
+                  composerProps={props}
+                  messageStore={controller.messageStore}
+                  entryMode={controller.entryMode}
+                  manualEntryKind={controller.manualEntryKind}
+                  onManualEntryKindChange={controller.setManualEntryKind}
+                  uploadedAttachmentCount={controller.uploadedAttachmentIds.length}
+                  state={{
+                    isFocused: controller.isFocused,
+                    showAttachments: controller.showAttachments,
+                    isInteractionBusy: controller.isInteractionBusy,
+                    isSubmitting: submission.isSubmitting,
+                  }}
+                  capabilities={{
+                    canPickMedia: controller.canPickMedia,
+                    canToggleVoice: controller.canToggleVoice,
+                  }}
+                  voice={controller.voice}
+                  onChangeMessage={controller.setMessage}
+                  onToggleWalkieTalkie={props.mode === 'chat' ? onToggleWalkieTalkie : undefined}
+                  onSubmit={handleActiveAreaSubmit}
+                />
+              </Animated.View>
+            </Animated.View>
+          )}
+        </View>
+      </View>
     </Animated.View>
   );
 }
