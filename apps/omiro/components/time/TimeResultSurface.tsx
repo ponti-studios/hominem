@@ -120,7 +120,12 @@ function TimeResultContent({
 }) {
   switch (state.kind) {
     case 'answer':
-      return <Text style={answerStyle}>{state.answer}</Text>;
+      return (
+        <>
+          <Text style={answerStyle}>{state.answer}</Text>
+          <CancelRow testID="time-answer-cancel" onCancel={actions.onCancel} />
+        </>
+      );
     case 'error':
       return (
         <>
