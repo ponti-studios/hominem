@@ -114,11 +114,15 @@ function ComposerContent(props: ComposerProps) {
       borderCurve: 'continuous',
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
-      borderWidth: 0,
-      borderTopWidth: StyleSheet.hairlineWidth,
       overflow: 'hidden',
       backgroundColor: currentTheme.colors.muted,
     },
+    // A one-sided border (borderTopWidth) doesn't get clipped to
+    // borderRadius on iOS -- it renders as a flat rectangle detached from
+    // the rounded corners instead of following them. Drawing it as a plain
+    // View clipped by the parent's overflow: hidden instead gets the curve
+    // right.
+    surfaceHairline: { height: StyleSheet.hairlineWidth },
     surfaceContent: { padding: 10, paddingBottom: 6, gap: 10 },
   }));
   const prefersReducedMotion = useReducedMotion();
@@ -155,7 +159,6 @@ function ComposerContent(props: ComposerProps) {
         style={[
           styles.surface,
           {
-            borderTopColor: borderColor,
             // Extends the surface's own fill (not a same-colored sibling
             // behind it) through the bottom safe area, so the rounded top
             // corners stay visible instead of being masked by a square
@@ -165,6 +168,7 @@ function ComposerContent(props: ComposerProps) {
         ]}
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
       >
+        <View style={[styles.surfaceHairline, { backgroundColor: borderColor }]} />
         <View style={styles.surfaceContent}>
           {errorBanner ? (
             // Split: entering/exiting on the outer view, layout on the inner
