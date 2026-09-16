@@ -6,6 +6,11 @@
 expo-env.d.ts
 /ios
 
+# sourcekit-lsp build server config for VS Code -- embeds an absolute,
+# machine-specific DerivedData path, generated per-machine via
+# `xcode-build-server config`
+buildServer.json
+
 # metro
 .metro-health-check*
 

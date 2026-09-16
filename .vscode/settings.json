@@ -1,0 +1,9 @@
+{
+  // Use Xcode's own toolchain (not the swiftly-managed one on PATH) so
+  // sourcekit-lsp resolves iOS SDK modules (UIKit, EventKit, ExpoModulesCore,
+  // etc.) instead of macOS-only ones. Required for the omiro app's ios/*.swift
+  // files under apps/omiro/ios and apps/omiro/modules/*/ios; the standalone
+  // CalendarAssistantCore SwiftPM package (apps/omiro/modules/on-device-ai)
+  // builds fine either way since it's a plain macOS library target.
+  "swift.path": "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin"
+}
