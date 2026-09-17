@@ -131,7 +131,6 @@ export default function ProjectDetailRoute({ loaderData }: Route.ComponentProps)
             </Button>
             <Form
               method="post"
-              navigate={false}
               onSubmit={(e) => {
                 if (!confirm(`Delete "${project.title}"?`)) e.preventDefault();
               }}
