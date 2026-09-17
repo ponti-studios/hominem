@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { CalendarEvent, TimeAssistantResult } from '~/modules/on-device-ai';
 import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
-import { localTimeZone } from '~/services/date/format-date';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 
@@ -60,9 +59,7 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
         const result = await calendarEventGateway.interpret(
           submittedPrompt,
           tasks.flatMap((task) =>
-            task.scheduledStartAt && task.scheduledEndAt
-              ? [{ startDate: task.scheduledStartAt, endDate: task.scheduledEndAt }]
-              : [],
+            task.startAt && task.dueAt ? [{ startDate: task.startAt, endDate: task.dueAt }] : [],
           ),
           requestToken,
         );
@@ -208,16 +205,13 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
     try {
       await createTask.mutateAsync({
         title,
-        dueAt: block.deadline_fixed
-          ? new Date(`${block.deadline_fixed}T23:59:59`).toISOString()
-          : null,
-        durationMinutes: block.duration,
+        dueAt: block.end_time
+          ? block.end_time
+          : block.deadline_fixed
+            ? new Date(`${block.deadline_fixed}T23:59:59`).toISOString()
+            : null,
         location: block.location,
-        scheduledStartAt: block.start_time,
-        scheduledEndAt: block.end_time,
-        schedulingWindowStartAt: block.scheduling_window_start,
-        schedulingWindowEndAt: block.scheduling_window_end,
-        timeZone: localTimeZone(),
+        startAt: block.start_time,
       });
       setInteraction({ kind: 'idle' });
       return true;

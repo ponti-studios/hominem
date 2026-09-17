@@ -1,28 +1,19 @@
-import type { TaskDetailOutput, TaskListItem } from '@hominem/rpc/types';
 // @vitest-environment jsdom
 import { waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { taskKeys } from '~/services/tasks/query-keys';
+import type { TaskDetailOutput, TaskListItem } from '~/services/tasks/task-types';
 
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
-const mockPatch = vi.fn();
+const mockCompleteReminder = vi.fn();
 
-vi.mock('@hominem/rpc/react', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@hominem/rpc/react')>()),
-  useApiClient: () => ({
-    api: {
-      tasks: {
-        ':id': {
-          complete: {
-            $patch: mockPatch,
-          },
-        },
-      },
-    },
-  }),
+vi.mock('~/services/tasks/reminders-gateway', () => ({
+  remindersGateway: {
+    completeReminder: mockCompleteReminder,
+  },
 }));
 
 const { useTaskComplete } = await import('~/services/tasks/use-task-complete');
@@ -33,7 +24,6 @@ function taskListItem(id: string, overrides: Partial<TaskListItem> = {}): TaskLi
     title: `Task ${id}`,
     status: 'pending',
     completedAt: null,
-    childCount: 0,
     ...overrides,
   } as unknown as TaskListItem;
 }
@@ -44,7 +34,7 @@ describe('useTaskComplete', () => {
   });
 
   it('optimistically marks the task complete in the list cache', async () => {
-    mockPatch.mockImplementation(() => new Promise(() => {}));
+    mockCompleteReminder.mockImplementation(() => new Promise(() => {}));
     const { result, queryClient } = renderHookWithQueryClient(() => useTaskComplete());
     queryClient.setQueryData(taskKeys.all, [taskListItem('1'), taskListItem('2')]);
 
@@ -61,14 +51,10 @@ describe('useTaskComplete', () => {
     expect(tasks?.find((t) => t.id === '2')?.status).toBe('pending');
   });
 
-  it('optimistically updates the standalone task detail cache when there is no parent', async () => {
-    mockPatch.mockImplementation(() => new Promise(() => {}));
+  it('optimistically updates the task detail cache', async () => {
+    mockCompleteReminder.mockImplementation(() => new Promise(() => {}));
     const { result, queryClient } = renderHookWithQueryClient(() => useTaskComplete());
-    queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail('1'), {
-      task: taskListItem('1'),
-      participants: [],
-      children: [],
-    } as unknown as TaskDetailOutput);
+    queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail('1'), { task: taskListItem('1') });
 
     act(() => {
       result.current.mutate({ taskId: '1', completed: true });
@@ -76,66 +62,30 @@ describe('useTaskComplete', () => {
 
     await waitFor(() => {
       const detail = queryClient.getQueryData<TaskDetailOutput>(taskKeys.detail('1'));
-      expect((detail?.task as TaskListItem | undefined)?.status).toBe('completed');
+      expect(detail?.task.status).toBe('completed');
     });
   });
 
-  it('optimistically updates the parent detail cache children when a parentId is given', async () => {
-    mockPatch.mockImplementation(() => new Promise(() => {}));
-    const { result, queryClient } = renderHookWithQueryClient(() =>
-      useTaskComplete({ parentId: 'parent-1' }),
-    );
-    queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail('parent-1'), {
-      task: taskListItem('parent-1'),
-      participants: [],
-      children: [taskListItem('child-1')],
-    } as unknown as TaskDetailOutput);
-
-    act(() => {
-      result.current.mutate({ taskId: 'child-1', completed: true });
-    });
-
-    await waitFor(() => {
-      const detail = queryClient.getQueryData<TaskDetailOutput>(taskKeys.detail('parent-1'));
-      expect((detail?.children[0] as TaskListItem | undefined)?.status).toBe('completed');
-    });
-  });
-
-  it('rolls back the list, detail, and parent detail caches when the request fails', async () => {
-    mockPatch.mockRejectedValueOnce(new Error('network error'));
-    const { result, queryClient } = renderHookWithQueryClient(() =>
-      useTaskComplete({ parentId: 'parent-1' }),
-    );
-    const originalList = [taskListItem('child-1')];
-    const originalDetail = {
-      task: taskListItem('child-1'),
-      participants: [],
-      children: [],
-    } as unknown as TaskDetailOutput;
-    const originalParentDetail = {
-      task: taskListItem('parent-1'),
-      participants: [],
-      children: [taskListItem('child-1')],
-    } as unknown as TaskDetailOutput;
+  it('rolls back the list and detail caches when the request fails', async () => {
+    mockCompleteReminder.mockRejectedValueOnce(new Error('network error'));
+    const { result, queryClient } = renderHookWithQueryClient(() => useTaskComplete());
+    const originalList = [taskListItem('1')];
+    const originalDetail: TaskDetailOutput = { task: taskListItem('1') };
     queryClient.setQueryData(taskKeys.all, originalList);
-    queryClient.setQueryData(taskKeys.detail('child-1'), originalDetail);
-    queryClient.setQueryData(taskKeys.detail('parent-1'), originalParentDetail);
+    queryClient.setQueryData(taskKeys.detail('1'), originalDetail);
 
     await act(async () => {
-      await result.current
-        .mutateAsync({ taskId: 'child-1', completed: true })
-        .catch(() => undefined);
+      await result.current.mutateAsync({ taskId: '1', completed: true }).catch(() => undefined);
     });
 
     expect(queryClient.getQueryData(taskKeys.all)).toEqual(originalList);
-    expect(queryClient.getQueryData(taskKeys.detail('child-1'))).toEqual(originalDetail);
-    expect(queryClient.getQueryData(taskKeys.detail('parent-1'))).toEqual(originalParentDetail);
+    expect(queryClient.getQueryData(taskKeys.detail('1'))).toEqual(originalDetail);
   });
 
   it('reconciles the list cache with the server response on success', async () => {
-    mockPatch.mockResolvedValueOnce({
-      json: async () => taskListItem('1', { status: 'completed', title: 'Server title' }),
-    });
+    mockCompleteReminder.mockResolvedValueOnce(
+      taskListItem('1', { status: 'completed', title: 'Server title' }),
+    );
     const { result, queryClient } = renderHookWithQueryClient(() => useTaskComplete());
     queryClient.setQueryData(taskKeys.all, [taskListItem('1')]);
 
@@ -147,43 +97,20 @@ describe('useTaskComplete', () => {
     expect(tasks?.[0]?.title).toBe('Server title');
   });
 
-  it('reconciles the standalone detail cache with the server response on success', async () => {
-    mockPatch.mockResolvedValueOnce({
-      json: async () => taskListItem('1', { status: 'completed', title: 'Server title' }),
-    });
+  it('reconciles the detail cache with the server response on success', async () => {
+    mockCompleteReminder.mockResolvedValueOnce(
+      taskListItem('1', { status: 'completed', title: 'Server title' }),
+    );
     const { result, queryClient } = renderHookWithQueryClient(() => useTaskComplete());
     queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail('1'), {
       task: taskListItem('1', { title: 'Old title' }),
-      participants: [],
-      children: [],
-    } as unknown as TaskDetailOutput);
+    });
 
     await act(async () => {
       await result.current.mutateAsync({ taskId: '1', completed: true });
     });
 
     const detail = queryClient.getQueryData<TaskDetailOutput>(taskKeys.detail('1'));
-    expect((detail?.task as TaskListItem | undefined)?.title).toBe('Server title');
-  });
-
-  it('reconciles the parent detail children with the server response on success', async () => {
-    mockPatch.mockResolvedValueOnce({
-      json: async () => taskListItem('child-1', { status: 'completed', title: 'Server title' }),
-    });
-    const { result, queryClient } = renderHookWithQueryClient(() =>
-      useTaskComplete({ parentId: 'parent-1' }),
-    );
-    queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail('parent-1'), {
-      task: taskListItem('parent-1'),
-      participants: [],
-      children: [taskListItem('child-1', { title: 'Old title' })],
-    } as unknown as TaskDetailOutput);
-
-    await act(async () => {
-      await result.current.mutateAsync({ taskId: 'child-1', completed: true });
-    });
-
-    const detail = queryClient.getQueryData<TaskDetailOutput>(taskKeys.detail('parent-1'));
-    expect((detail?.children[0] as TaskListItem | undefined)?.title).toBe('Server title');
+    expect(detail?.task.title).toBe('Server title');
   });
 });

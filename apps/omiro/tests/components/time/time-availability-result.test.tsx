@@ -29,22 +29,21 @@ vi.mock('~/components/theme', () => ({
     }) => unknown,
   ) => factory({ colors: { mutedForeground: '' }, textVariants: { body: {}, headline: {} } }),
 }));
-vi.mock('~/components/ui', () => ({
-  IconButton: ({
-    children,
+vi.mock('~/components/ui/button', () => ({
+  Button: ({
+    label,
     onPress,
     testID,
   }: {
-    children: React.ReactNode;
+    label: string;
     onPress?: () => void;
-    testID: string;
+    testID?: string;
   }) => (
     <button data-testid={testID} onClick={onPress}>
-      {children}
+      {label}
     </button>
   ),
 }));
-vi.mock('~/components/ui/icon', () => ({ default: () => null }));
 
 const { TimeAvailabilityResult } = await import('~/components/time/TimeAvailabilityResult');
 

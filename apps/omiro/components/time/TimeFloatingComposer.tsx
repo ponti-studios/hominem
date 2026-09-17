@@ -197,7 +197,7 @@ export function TimeFloatingComposer({ onOpenEvent, onTaskCreated }: TimeFloatin
       ) : null}
       <KeyboardStickyView
         offset={{ closed: 0, opened: keyboardOpenedOffset }}
-        style={styles.dock}
+        style={[styles.dock, expanded ? { marginBottom: 12 } : { marginBottom: 8 }]}
         testID="time-floating-composer"
       >
         <Animated.View layout={reducedMotion ? undefined : LinearTransition.duration(220)}>
@@ -228,7 +228,12 @@ export function TimeFloatingComposer({ onOpenEvent, onTaskCreated }: TimeFloatin
             ) : (
               <>
                 {voiceErrorBanner}
-                <View style={focused ? styles.rowsFocused : styles.rowCollapsed}>
+                <View
+                  style={[
+                    focused ? styles.rowsFocused : styles.rowCollapsed,
+                    { borderRadius: theme.borderRadii.lg, padding: 0 },
+                  ]}
+                >
                   <TextField
                     editable={!disabled}
                     focusBorder={false}
@@ -296,10 +301,13 @@ function useFloatingComposerStyles(safeAreaBottom: number) {
   return useStyles((theme) => ({
     dock: {
       position: 'absolute',
-      left: 16,
-      right: 16,
-      bottom: 0,
-      paddingBottom: safeAreaBottom + 16,
+      left: 8,
+      right: 8,
+      bottom: safeAreaBottom,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: theme.borderRadii.xl,
+      backgroundColor: theme.colors.card,
     },
     backdrop: { position: 'absolute', top: -2000, left: -16, right: -16, bottom: -16 },
     backdropPressable: { flex: 1 },
@@ -309,8 +317,8 @@ function useFloatingComposerStyles(safeAreaBottom: number) {
       borderCurve: 'continuous',
       gap: 10,
     },
-    cardCollapsed: { borderRadius: 26, padding: 8 },
-    cardExpanded: { borderRadius: 22, padding: 12 },
+    cardCollapsed: { borderRadius: theme.borderRadii.xl, padding: 8 },
+    cardExpanded: { borderRadius: theme.borderRadii.xl, padding: 12 },
     rowCollapsed: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     rowsFocused: { gap: 10 },
     collapsedButtonsRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

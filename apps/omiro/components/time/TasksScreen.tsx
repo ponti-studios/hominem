@@ -1,78 +1,64 @@
-import { Stack, useRouter } from 'expo-router';
-import { RefreshControl, Text, View } from 'react-native';
+import { StackScreen } from 'expo-router/build/layouts/stack-utils';
+import { Alert, RefreshControl, Text, View } from 'react-native';
 
 import { StreamList } from '~/components/stream/StreamList';
 import { useAppTheme, useStyles } from '~/components/theme';
-import { IconButton, ListRow } from '~/components/ui';
+import { ListRow } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
-import { getTaskDetailRoute, getTaskScheduleRoute } from '~/services/navigation/routes';
+import { openReminderInSystemApp } from '~/services/tasks/open-reminder';
+import { taskDurationMinutes, type TaskListItem } from '~/services/tasks/task-types';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 
-import { getUnscheduledTasks } from './time-utils';
+import { getOpenTasks } from './time-utils';
 
-function TaskRow({
-  item,
-}: {
-  item: {
-    id: string;
-    title: string;
-    durationMinutes?: number | null;
-    childCount?: number | null;
-  };
-}) {
-  const router = useRouter();
+function TaskRow({ item }: { item: TaskListItem }) {
   const { success: successColor } = useAppTheme().colors;
-  const childCount = item.childCount ?? 0;
-  const subtitle =
-    childCount > 0
-      ? `${childCount} sub-task${childCount === 1 ? '' : 's'}`
-      : item.durationMinutes
-        ? `${item.durationMinutes} min`
-        : null;
+  const durationMinutes = taskDurationMinutes(item);
+  const subtitle = durationMinutes ? `${durationMinutes} min` : null;
+
   return (
     <ListRow
       accessibilityLabel={item.title}
-      leading=<AppIcon
-        name={childCount > 0 ? 'square.stack' : 'circle'}
-        size={20}
-        tintColor={successColor}
-      />
-      onPress={() => router.push(getTaskDetailRoute(item.id))}
+      leading={<AppIcon name="circle" size={20} tintColor={successColor} />}
+      onPress={() => {
+        void openReminderInSystemApp(item.id).catch(() => {
+          Alert.alert('Unable to open Reminders', 'Open the Reminders app to view this task.');
+        });
+      }}
       subtitle={subtitle}
       testID={`unscheduled-task-${item.id}`}
       title={item.title}
-      trailing={
-        <IconButton
-          accessibilityLabel={`Schedule ${item.title}`}
-          onPress={() => router.push(getTaskScheduleRoute(item.id))}
-          testID={`unscheduled-task-${item.id}-schedule`}
-        >
-          <AppIcon name="calendar.badge.plus" size={20} />
-        </IconButton>
-      }
     />
   );
 }
 
 export function TasksScreen() {
   const { data: tasks = [], isFetching, refetch } = useTasksQuery();
-  const unscheduledTasks = getUnscheduledTasks(tasks);
+  const openTasks = getOpenTasks(tasks);
   const styles = useStyles((theme) => ({
-    container: { flex: 1, backgroundColor: theme.colors.background },
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+      marginHorizontal: 8,
+      marginBottom: 50,
+      marginTop: 16,
+      //   @NOTE Border
+      //   borderRadius: theme.borderRadii.xl,
+      //   borderColor: theme.colors.border,
+      //   borderWidth: 1,
+    },
     emptyStateText: { color: theme.colors.mutedForeground, paddingHorizontal: 16, paddingTop: 24 },
   }));
 
   return (
     <View style={styles.container} testID="unscheduled-tasks-screen">
-      <Stack.Screen options={{ headerShown: true, title: 'Tasks' }} />
+      <StackScreen options={{ headerShown: false }} />
       <StreamList
-        contentPaddingTop={16}
-        data={unscheduledTasks}
+        contentPaddingTop={8}
+        data={openTasks}
         keyExtractor={(task) => task.id}
         ListEmptyComponent={
-          !isFetching ? (
-            <Text style={styles.emptyStateText}>Every open task has a time or deadline.</Text>
-          ) : null
+          !isFetching ? <Text style={styles.emptyStateText}>You have no open tasks.</Text> : null
         }
         refreshControl={
           <RefreshControl

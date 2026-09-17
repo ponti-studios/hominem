@@ -23,14 +23,6 @@ export function getTimeBlockRoute(source: TimeBlockSource, id: string) {
   return `/(protected)/time/${source}/${encodeURIComponent(id)}`;
 }
 
-export function getTaskDetailRoute(id: string) {
-  return getTimeBlockRoute('task', id);
-}
-
-export function getTaskScheduleRoute(id: string) {
-  return `${getTimeBlockRoute('task', id)}?mode=schedule`;
-}
-
 export function getContentRoute(kind: ContentKind, id: string) {
   if (!id) {
     throw new Error('Content route requires an id');

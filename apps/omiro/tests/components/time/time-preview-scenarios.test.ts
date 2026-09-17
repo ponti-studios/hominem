@@ -17,7 +17,7 @@ describe('Time preview scenarios', () => {
       27 * 24 * 60 * 60 * 1000,
     );
     expect(busy?.events.filter((event) => event.isAllDay)).not.toHaveLength(0);
-    expect(busy?.tasks.some((task) => task.scheduledStartAt !== null)).toBe(true);
-    expect(busy?.tasks.some((task) => !task.scheduledStartAt && !task.dueAt)).toBe(true);
+    expect(busy?.tasks.some((task) => task.startAt !== null)).toBe(true);
+    expect(busy?.tasks.some((task) => !task.startAt && !task.dueAt)).toBe(true);
   });
 });

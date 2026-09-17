@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { redirectSystemPath } from '~/app/+native-intent';
 
 describe('native Time intents', () => {
-  it('rewrites task deep links to the canonical Time workspace route', () => {
+  it('rewrites task deep links to the Tasks list route', () => {
     expect(redirectSystemPath({ initial: true, path: 'time/task/task-1' })).toBe(
-      '/(protected)/time/task/task-1',
+      '/(protected)/time/unscheduled',
     );
   });
 

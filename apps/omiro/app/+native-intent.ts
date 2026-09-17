@@ -2,9 +2,9 @@ import {
   NEW_CHAT_ROUTE,
   SETTINGS_ROUTE,
   STREAM_ROUTE,
+  UNSCHEDULED_ROUTE,
   getContentRoute,
   getTimeBlockRoute,
-  type TimeBlockSource,
 } from '~/services/navigation/routes';
 
 // Rewrites incoming iOS deep links before Expo Router processes them.
@@ -27,9 +27,16 @@ export function redirectSystemPath({
     return `/(auth)/${normalized}`;
   }
 
-  const timeBlockMatch = normalized.match(/^time\/(task|event)\/([^?]+)/);
-  if (timeBlockMatch) {
-    return getTimeBlockRoute(timeBlockMatch[1] as TimeBlockSource, timeBlockMatch[2]);
+  // Tasks no longer have an in-app detail screen -- send task deep links to
+  // the Tasks list instead, where the reminder can be opened in Reminders.app.
+  const taskBlockMatch = normalized.match(/^time\/task\/([^?]+)/);
+  if (taskBlockMatch) {
+    return UNSCHEDULED_ROUTE;
+  }
+
+  const eventBlockMatch = normalized.match(/^time\/event\/([^?]+)/);
+  if (eventBlockMatch) {
+    return getTimeBlockRoute('event', eventBlockMatch[1]);
   }
 
   // chat/<id> -> that chat

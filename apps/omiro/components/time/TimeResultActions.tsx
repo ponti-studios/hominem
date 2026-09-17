@@ -1,16 +1,13 @@
 import { View } from 'react-native';
 
-import { useAppTheme, useStyles } from '~/components/theme';
-import { IconButton } from '~/components/ui';
-import AppIcon from '~/components/ui/icon';
+import { useStyles } from '~/components/theme';
+import { Button } from '~/components/ui/button';
 
 export function CancelRow({ onCancel, testID }: { onCancel?: () => void; testID: string }) {
   const styles = useStyles(() => ({
     actions: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 8,
     },
   }));
   return (
@@ -21,10 +18,14 @@ export function CancelRow({ onCancel, testID }: { onCancel?: () => void; testID:
 }
 
 export function CancelButton({ onCancel, testID }: { onCancel?: () => void; testID: string }) {
-  const { primaryForeground } = useAppTheme().colors;
+  const styles = useStyles(() => ({ button: { flex: 1 } }));
   return (
-    <IconButton accessibilityLabel="Cancel" testID={testID} onPress={onCancel} variant="solid">
-      <AppIcon name="xmark" size={20} tintColor={primaryForeground} />
-    </IconButton>
+    <Button
+      label="Dismiss"
+      onPress={() => onCancel?.()}
+      style={styles.button}
+      testID={testID}
+      variant="outline"
+    />
   );
 }

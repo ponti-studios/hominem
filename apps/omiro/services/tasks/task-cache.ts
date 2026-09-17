@@ -1,4 +1,4 @@
-import type { Task, TaskDetailOutput, TaskListItem } from '@hominem/rpc/types';
+import type { Task, TaskDetailOutput, TaskListItem } from './task-types';
 
 export function mapTaskList(
   tasks: TaskListItem[] | undefined,
@@ -13,14 +13,8 @@ export function mapTaskDetail(
   taskId: string,
   update: (task: Task) => Task,
 ): TaskDetailOutput | undefined {
-  if (!detail) {
+  if (!detail || detail.task.id !== taskId) {
     return detail;
   }
-  if (detail.task.id === taskId) {
-    return { ...detail, task: update(detail.task) };
-  }
-  return {
-    ...detail,
-    children: detail.children.map((child) => (child.id === taskId ? update(child) : child)),
-  };
+  return { ...detail, task: update(detail.task) };
 }

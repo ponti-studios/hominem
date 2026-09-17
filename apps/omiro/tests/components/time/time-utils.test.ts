@@ -1,4 +1,3 @@
-import type { TaskListItem } from '@hominem/rpc/types';
 import { describe, expect, it } from 'vitest';
 
 import type { TimeBlock } from '~/components/time/time-types';
@@ -9,6 +8,7 @@ import {
   getAvailabilityRange,
 } from '~/components/time/time-utils';
 import type { CalendarEvent } from '~/modules/on-device-ai';
+import type { TaskListItem } from '~/services/tasks/task-types';
 
 const event = (overrides: Partial<CalendarEvent> = {}): CalendarEvent => ({
   calendarTitle: 'Work',
@@ -26,26 +26,17 @@ const event = (overrides: Partial<CalendarEvent> = {}): CalendarEvent => ({
 });
 
 const task = (overrides: Partial<TaskListItem> = {}): TaskListItem => ({
-  artifactType: 'task',
-  childCount: 0,
   completedAt: null,
   createdAt: '2026-07-28T09:00:00.000Z',
-  description: null,
-  dueAt: null,
-  durationMinutes: null,
+  notes: null,
+  dueAt: '2026-07-28T10:30:00.000Z',
   id: 'task-1',
   location: null,
-  ownerUserId: 'user-1',
-  parentTaskId: null,
+  listTitle: 'Omiro',
   priority: 'medium',
-  scheduledEndAt: '2026-07-28T10:30:00.000Z',
-  scheduledStartAt: '2026-07-28T10:00:00.000Z',
-  schedulingWindowEndAt: null,
-  schedulingWindowStartAt: null,
-  status: 'open',
-  timeZone: null,
+  startAt: '2026-07-28T10:00:00.000Z',
+  status: 'pending',
   title: 'Write brief',
-  updatedAt: '2026-07-28T09:00:00.000Z',
   ...overrides,
 });
 
@@ -118,8 +109,8 @@ describe('Time availability', () => {
       },
       tasks: [
         task({
-          scheduledStartAt: '2026-07-28T11:30:00.000Z',
-          scheduledEndAt: '2026-07-28T12:00:00.000Z',
+          startAt: '2026-07-28T11:30:00.000Z',
+          dueAt: '2026-07-28T12:00:00.000Z',
         }),
       ],
     });

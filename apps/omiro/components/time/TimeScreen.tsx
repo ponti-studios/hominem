@@ -1,7 +1,6 @@
 import { MenuView, type MenuAction, type NativeActionEvent } from '@expo/ui/community/menu';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
-import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +9,7 @@ import { useAppTheme, useStyles } from '~/components/theme';
 import { IconButton } from '~/components/ui';
 import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
 import { calendarKeys } from '~/services/calendar/calendar-queries';
-import { getTimeBlockRoute } from '~/services/navigation/routes';
+import { openReminderInSystemApp } from '~/services/tasks/open-reminder';
 
 import AppIcon from '../ui/icon';
 import { useTimePreview } from './time-preview-store';
@@ -22,7 +21,6 @@ interface TimeScreenProps {
 }
 
 export function TimeScreen({ topInset = 0 }: TimeScreenProps = {}) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { bottom: safeAreaBottom } = useSafeAreaInsets();
   const [errorToast, setErrorToast] = useState<string | null>(null);
@@ -37,7 +35,11 @@ export function TimeScreen({ topInset = 0 }: TimeScreenProps = {}) {
   const openItem = useCallback(
     async (item: { kind: 'event' | 'task'; value: { id: string } }) => {
       if (item.kind === 'task') {
-        router.push(getTimeBlockRoute('task', item.value.id));
+        try {
+          await openReminderInSystemApp(item.value.id);
+        } catch {
+          showError('Unable to open the Reminders app.');
+        }
         return;
       }
       try {
@@ -49,7 +51,7 @@ export function TimeScreen({ topInset = 0 }: TimeScreenProps = {}) {
         showError(error instanceof Error ? error.message : 'Unable to open this calendar event.');
       }
     },
-    [queryClient, router, showError],
+    [queryClient, showError],
   );
   const openEvent = useCallback(
     async (event: { id: string }) => openItem({ kind: 'event', value: event }),

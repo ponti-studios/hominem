@@ -1,19 +1,26 @@
-import { useApiClient } from '@hominem/rpc/react';
-import type { TaskListItem } from '@hominem/rpc/types';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 import { taskKeys } from './query-keys';
+import { remindersGateway } from './reminders-gateway';
+import type { TaskListItem } from './task-types';
 
 export function useTasksQuery({ enabled = true }: { enabled?: boolean } = {}) {
-  const client = useApiClient();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    const subscription = remindersGateway.subscribeToStoreChange(() => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.all });
+    });
+    return () => subscription.remove();
+  }, [enabled, queryClient]);
 
   return useQuery<TaskListItem[]>({
     queryKey: taskKeys.all,
-    queryFn: async () => {
-      const res = await client.api.tasks.$get();
-      const { tasks } = await res.json();
-      return tasks;
-    },
+    queryFn: () => remindersGateway.listReminders(),
     enabled,
     refetchOnMount: false,
     refetchOnWindowFocus: false,

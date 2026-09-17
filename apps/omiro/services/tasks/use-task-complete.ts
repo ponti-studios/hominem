@@ -1,11 +1,6 @@
-import { useApiClient } from '@hominem/rpc/react';
-import type { Task } from '@hominem/rpc/types';
-
+import { remindersGateway } from './reminders-gateway';
+import type { Task } from './task-types';
 import { useTaskPatchMutation } from './use-task-patch-mutation';
-
-interface UseTaskCompleteOptions {
-  parentId?: string;
-}
 
 interface CompleteTaskInput {
   taskId: string;
@@ -20,20 +15,10 @@ function applyCompleted<T extends Task>(task: T, { completed }: CompleteTaskInpu
   };
 }
 
-export function useTaskComplete({ parentId }: UseTaskCompleteOptions = {}) {
-  const client = useApiClient();
-
+export function useTaskComplete() {
   return useTaskPatchMutation<CompleteTaskInput>({
-    parentId,
-    mutationFn: async ({ taskId, completed }) => {
-      const res = await client.api.tasks[':id'].complete.$patch({
-        param: { id: taskId },
-        json: { completed },
-      });
-      return res.json();
-    },
+    mutationFn: ({ taskId, completed }) => remindersGateway.completeReminder(taskId, completed),
     getTaskId: (input) => input.taskId,
     applyOptimistic: applyCompleted,
-    alwaysUpdateOwnDetailOnSuccess: false,
   });
 }

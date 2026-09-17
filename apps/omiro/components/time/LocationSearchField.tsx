@@ -49,7 +49,7 @@ export function LocationSearchField({
 
   useEffect(() => {
     const trimmed = value.trim();
-    if (trimmed.length < MIN_QUERY_LENGTH || trimmed === value) {
+    if (trimmed.length < MIN_QUERY_LENGTH) {
       setSuggestions([]);
       setIsSearching(false);
       return;

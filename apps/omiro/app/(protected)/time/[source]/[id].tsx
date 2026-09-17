@@ -1,37 +1,19 @@
 import { Redirect, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 
-import { TimeBlockDetail } from '~/components/time/TimeBlockDetail';
 import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
 import { TIME_ROUTE } from '~/services/navigation/routes';
 
+// Only 'event' deep links reach here -- tasks have no in-app detail screen
+// and are opened directly in Reminders.app instead (see open-reminder.ts).
 export default function TimeBlockDetailRoute() {
-  const { id, mode, source } = useLocalSearchParams<{
-    id?: string;
-    mode?: string;
-    source?: string;
-  }>();
-  const router = useRouter();
+  const { id, source } = useLocalSearchParams<{ id?: string; source?: string }>();
 
-  if (!id || (source !== 'task' && source !== 'event')) {
+  if (!id || source !== 'event') {
     return <Redirect href={TIME_ROUTE} />;
   }
 
-  if (source === 'event') {
-    return <NativeCalendarEventRoute id={id} />;
-  }
-
-  return (
-    <>
-      <Stack.Screen options={{ title: 'Time block' }} />
-      <TimeBlockDetail
-        id={id}
-        initialActiveField={mode === 'schedule' ? 'time' : undefined}
-        onClose={() => router.back()}
-        source="task"
-      />
-    </>
-  );
+  return <NativeCalendarEventRoute id={id} />;
 }
 
 function NativeCalendarEventRoute({ id }: { id: string }) {

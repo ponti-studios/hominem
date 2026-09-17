@@ -8,7 +8,7 @@ import { renderHookWithQueryClient } from '../utils/render-hook';
 const mockTasksPost = vi.fn();
 const mockNotesPost = vi.fn();
 const mockTasksExtractPost = vi.fn();
-const mockTasksBatchPost = vi.fn();
+const mockCreateReminder = vi.fn();
 const mockAlert = vi.fn();
 
 vi.mock('@hominem/rpc/react', async (importOriginal) => {
@@ -20,13 +20,18 @@ vi.mock('@hominem/rpc/react', async (importOriginal) => {
         tasks: {
           $post: mockTasksPost,
           extract: { $post: mockTasksExtractPost },
-          batch: { $post: mockTasksBatchPost },
         },
         notes: { $post: mockNotesPost },
       },
     }),
   };
 });
+
+vi.mock('~/services/tasks/reminders-gateway', () => ({
+  remindersGateway: {
+    createReminder: mockCreateReminder,
+  },
+}));
 
 vi.mock('react-native', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-native')>();
@@ -129,7 +134,7 @@ describe('useTaskExtraction', () => {
     expect(mockAlert).toHaveBeenCalledWith('Could not prepare review', 'Please try again.');
   });
 
-  it('accepting a batch review (a group present) creates the group and reports its parent', async () => {
+  it('accepting a batch review (a group present) creates each reminder and reports the group parent', async () => {
     mockTasksExtractPost.mockResolvedValue({
       json: async () => ({
         groups: [
@@ -141,25 +146,13 @@ describe('useTaskExtraction', () => {
         tasks: [],
       }),
     });
-    mockTasksBatchPost.mockResolvedValue({
-      json: async () => ({
-        groups: [
-          {
-            parent: {
-              id: 'parent-1',
-              title: 'Launch tasks',
-              artifactType: 'task_list',
-              updatedAt: 't',
-            },
-            tasks: [
-              { id: 'task-1', title: 'Book venue', artifactType: 'task' },
-              { id: 'task-2', title: 'Send invites', artifactType: 'task' },
-            ],
-          },
-        ],
-        tasks: [],
+    mockCreateReminder.mockImplementation(({ title }: { title: string }) =>
+      Promise.resolve({
+        id: title === 'Launch tasks' ? 'parent-1' : title === 'Book venue' ? 'task-1' : 'task-2',
+        title,
+        createdAt: 't',
       }),
-    });
+    );
     const { result, onContentCreated } = renderTaskExtraction();
 
     await act(async () => {
@@ -169,20 +162,18 @@ describe('useTaskExtraction', () => {
       await result.current.handleAcceptReview();
     });
 
-    expect(mockTasksBatchPost).toHaveBeenCalledWith({
-      json: {
-        groups: [
-          {
-            title: 'Launch tasks',
-            tasks: [{ title: 'Book venue' }, { title: 'Send invites' }],
-          },
-        ],
-        tasks: [],
-      },
-    });
+    expect(mockCreateReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Launch tasks' }),
+    );
+    expect(mockCreateReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Book venue' }),
+    );
+    expect(mockCreateReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Send invites' }),
+    );
     expect(onContentCreated).toHaveBeenCalledWith(
       expect.objectContaining({
-        source: { kind: 'artifact', id: 'parent-1', title: 'Launch tasks', type: 'task_list' },
+        source: { kind: 'artifact', id: 'parent-1', title: 'Launch tasks', type: 'task' },
       }),
     );
   });
@@ -198,7 +189,7 @@ describe('useTaskExtraction', () => {
       await result.current.handleAcceptReview();
     });
 
-    expect(mockTasksBatchPost).not.toHaveBeenCalled();
+    expect(mockCreateReminder).not.toHaveBeenCalled();
     expect(mockAlert).toHaveBeenCalledWith('Could not save content', 'Please try again.');
     // A rejected accept goes back to the reviewing state instead of clearing it.
     expect(result.current.isReviewVisible).toBe(true);

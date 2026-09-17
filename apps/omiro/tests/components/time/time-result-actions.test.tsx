@@ -10,22 +10,21 @@ vi.mock('~/components/theme', () => ({
   useAppTheme: () => ({ colors: { primaryForeground: '' } }),
   useStyles: (factory: (theme: object) => unknown) => factory({}),
 }));
-vi.mock('~/components/ui', () => ({
-  IconButton: ({
-    children,
+vi.mock('~/components/ui/button', () => ({
+  Button: ({
+    label,
     onPress,
     testID,
   }: {
-    children: React.ReactNode;
+    label: string;
     onPress?: () => void;
-    testID: string;
+    testID?: string;
   }) => (
     <button data-testid={testID} onClick={onPress}>
-      {children}
+      {label}
     </button>
   ),
 }));
-vi.mock('~/components/ui/icon', () => ({ default: () => null }));
 
 const { CancelRow } = await import('~/components/time/TimeResultActions');
 

@@ -1,27 +1,25 @@
-import type { TaskListItem } from '@hominem/rpc/types';
 // @vitest-environment jsdom
 import { waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { TaskListItem } from '~/services/tasks/task-types';
+
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
-const mockGet = vi.fn();
+const mockListReminders = vi.fn();
+const mockSubscribeToStoreChange = vi.fn(() => ({ remove: vi.fn() }));
 
-vi.mock('@hominem/rpc/react', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@hominem/rpc/react')>()),
-  useApiClient: () => ({
-    api: {
-      tasks: {
-        $get: mockGet,
-      },
-    },
-  }),
+vi.mock('~/services/tasks/reminders-gateway', () => ({
+  remindersGateway: {
+    listReminders: mockListReminders,
+    subscribeToStoreChange: mockSubscribeToStoreChange,
+  },
 }));
 
 const { useTasksQuery } = await import('~/services/tasks/use-tasks-query');
 
 function taskListItem(id: string): TaskListItem {
-  return { id, title: `Task ${id}`, childCount: 0 } as unknown as TaskListItem;
+  return { id, title: `Task ${id}` } as unknown as TaskListItem;
 }
 
 describe('useTasksQuery', () => {
@@ -29,10 +27,8 @@ describe('useTasksQuery', () => {
     vi.clearAllMocks();
   });
 
-  it('fetches and unwraps the tasks list', async () => {
-    mockGet.mockResolvedValueOnce({
-      json: async () => ({ tasks: [taskListItem('1'), taskListItem('2')] }),
-    });
+  it('fetches and returns the tasks list', async () => {
+    mockListReminders.mockResolvedValueOnce([taskListItem('1'), taskListItem('2')]);
     const { result } = renderHookWithQueryClient(() => useTasksQuery());
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -41,7 +37,7 @@ describe('useTasksQuery', () => {
   });
 
   it('surfaces a query error', async () => {
-    mockGet.mockRejectedValueOnce(new Error('network error'));
+    mockListReminders.mockRejectedValueOnce(new Error('network error'));
     const { result } = renderHookWithQueryClient(() => useTasksQuery());
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -53,6 +49,6 @@ describe('useTasksQuery', () => {
     const { result } = renderHookWithQueryClient(() => useTasksQuery({ enabled: false }));
 
     expect(result.current.fetchStatus).toBe('idle');
-    expect(mockGet).not.toHaveBeenCalled();
+    expect(mockListReminders).not.toHaveBeenCalled();
   });
 });

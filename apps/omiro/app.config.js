@@ -192,6 +192,9 @@ function createConfig({ config }) {
           'Allow Omiro to transcribe recorded voice notes into text on your device.',
         NSCalendarsFullAccessUsageDescription:
           'Allow Omiro to read your calendar so on-device chat can answer questions about your schedule.',
+        NSRemindersFullAccessUsageDescription:
+          'Allow Omiro to read and write your reminders so tasks stay in sync with Apple Reminders.',
+        LSApplicationQueriesSchemes: ['x-apple-reminderkit', 'x-apple-reminder'],
       },
     },
     extra: {

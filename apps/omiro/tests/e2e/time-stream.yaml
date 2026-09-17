@@ -15,9 +15,3 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible:
     id: unscheduled-tasks-screen
 - takeScreenshot: /tmp/omiro-time-unscheduled-tab
-- tapOn:
-    id: unscheduled-task-.+-schedule
-- assertVisible:
-    id: time-block-editor
-- waitForAnimationToEnd
-- takeScreenshot: /tmp/omiro-time-unscheduled-schedule

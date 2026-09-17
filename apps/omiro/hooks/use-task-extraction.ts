@@ -3,16 +3,18 @@ import {
   useTaskExtraction as useSharedTaskExtraction,
   type CreatedTaskRef,
   type CreateTasksInput,
+  type ExtractedTask,
   type ExtractedTasksCreated,
   type ExtractedTasksOutput,
 } from '@hominem/chat/react';
-import type { ArtifactType, ChatMessageItem, SessionSource } from '@hominem/chat/types';
+import type { ChatMessageItem, SessionSource } from '@hominem/chat/types';
 import { useApiClient } from '@hominem/rpc/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { Alert } from 'react-native';
 
 import { taskKeys } from '~/services/tasks/query-keys';
+import { remindersGateway } from '~/services/tasks/reminders-gateway';
 import t from '~/translations';
 
 export type { ExtractedTasksCreated };
@@ -24,17 +26,18 @@ interface UseTaskExtractionInput {
   onContentCreated?: (content: ExtractedTasksCreated) => Promise<void>;
 }
 
-const toCreatedRef = (task: {
-  id: string;
-  title: string;
-  artifactType: ArtifactType;
-  updatedAt?: string | null;
-}): CreatedTaskRef => ({
-  id: task.id,
-  title: task.title,
-  type: task.artifactType,
-  ...(task.updatedAt ? { updatedAt: task.updatedAt } : {}),
-});
+async function createReminderRef(task: ExtractedTask): Promise<CreatedTaskRef> {
+  const reminder = await remindersGateway.createReminder({
+    title: task.title,
+    notes: task.description ?? null,
+  });
+  return {
+    id: reminder.id,
+    title: reminder.title,
+    type: 'task',
+    ...(reminder.createdAt ? { updatedAt: reminder.createdAt } : {}),
+  };
+}
 
 export function buildExtractedTasksProposal(
   previewContent: string,
@@ -71,31 +74,29 @@ export function useTaskExtraction({
     return json;
   };
 
+  // EventKit has no public parent/child reminder API, so a group's tasks are
+  // created as independent reminders -- the grouping only survives in this
+  // response, for the review UI to display, not in Reminders itself.
   const createTasksBatch = useMutation({
     mutationKey: ['chat-task-batch', chatId],
-    mutationFn: async (input: CreateTasksInput) => {
-      const res = await client.api.tasks.batch.$post({ json: input });
-      return res.json();
+    mutationFn: async ({ groups, tasks }: CreateTasksInput) => {
+      const createdGroups = await Promise.all(
+        groups.map(async (group) => ({
+          parent: await createReminderRef({ title: group.title }),
+          tasks: await Promise.all(group.tasks.map(createReminderRef)),
+        })),
+      );
+      const createdTasks = await Promise.all(tasks.map(createReminderRef));
+      return { groups: createdGroups, tasks: createdTasks };
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: taskKeys.all }),
   });
 
-  // The batch endpoint speaks transport shape (`artifactType`); the shared
-  // hook works in domain shape (`type`).
   return useSharedTaskExtraction({
     messages: proposalMessages,
     source,
     extractTasks: (transcript: string) => extractTasksFromTranscript({ transcript }),
-    createTasks: async ({ groups, tasks }: CreateTasksInput) => {
-      const result = await createTasksBatch.mutateAsync({ groups, tasks });
-      return {
-        groups: result.groups.map((group) => ({
-          parent: toCreatedRef(group.parent),
-          tasks: group.tasks.map(toCreatedRef),
-        })),
-        tasks: result.tasks.map(toCreatedRef),
-      };
-    },
+    createTasks: (input: CreateTasksInput) => createTasksBatch.mutateAsync(input),
     strings: {
       noTasksFoundTitle: t.chat.actions.noTasksFoundTitle,
       noTasksFoundDescription: t.chat.actions.noTasksFoundDescription,

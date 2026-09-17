@@ -1,6 +1,5 @@
-import type { TaskListItem } from '@hominem/rpc/types';
-
 import type { CalendarEvent } from '~/modules/on-device-ai';
+import type { TaskListItem } from '~/services/tasks/task-types';
 
 // Dev-only fixture scenarios for previewing the Time stream's design in
 // states that are a pain to reproduce with a real calendar/task backend
@@ -19,24 +18,15 @@ function mockTask(
   overrides: Partial<TaskListItem> & Pick<TaskListItem, 'id' | 'title'>,
 ): TaskListItem {
   return {
-    artifactType: 'task',
-    childCount: 0,
     completedAt: null,
     createdAt: at(-24),
-    description: null,
+    notes: null,
     dueAt: null,
-    durationMinutes: null,
+    startAt: null,
     location: null,
-    ownerUserId: 'preview-user',
-    parentTaskId: null,
+    listTitle: 'Omiro',
     priority: 'medium',
-    schedulingWindowEndAt: null,
-    schedulingWindowStartAt: null,
-    scheduledEndAt: null,
-    scheduledStartAt: null,
     status: 'pending',
-    timeZone: null,
-    updatedAt: at(-24),
     ...overrides,
   };
 }
@@ -126,10 +116,10 @@ export function createTimePreviewScenarios(): TimePreviewScenario[] {
       const dayOffset = day * 24;
       return [
         mockTask({
-          durationMinutes: 45,
           id: `preview-busy-task-plan-${day + 1}`,
           priority: day % 4 === 0 ? 'high' : 'medium',
-          scheduledStartAt: at(dayOffset + 8),
+          startAt: at(dayOffset + 8),
+          dueAt: at(dayOffset + 8.75),
           title: `Plan the day · day ${day + 1}`,
         }),
         mockTask({

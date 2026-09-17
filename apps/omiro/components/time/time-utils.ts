@@ -1,7 +1,6 @@
-import type { TaskListItem } from '@hominem/rpc/types';
-
 import type { CalendarEvent } from '~/modules/on-device-ai';
 import { formatClockTime } from '~/services/date/format-date';
+import type { TaskListItem } from '~/services/tasks/task-types';
 
 import type { TimeBlock, TimeItem, TimeOpening, TimeStreamRow } from './time-types';
 
@@ -17,9 +16,7 @@ export function itemDate(item: TimeItem | TimeStreamRow) {
   if (item.kind !== 'task' && item.kind !== 'event') {
     return null;
   }
-  return item.kind === 'task'
-    ? (item.value.scheduledStartAt ?? item.value.dueAt)
-    : item.value.startDate;
+  return item.kind === 'task' ? (item.value.startAt ?? item.value.dueAt) : item.value.startDate;
 }
 
 export function dayKey(item: TimeItem) {
@@ -58,7 +55,7 @@ export function eventTimeParts(event: CalendarEvent): TimeColumnParts {
 }
 
 export function taskTimeParts(task: TaskListItem): TimeColumnParts {
-  const date = task.scheduledStartAt ?? task.dueAt;
+  const date = task.startAt ?? task.dueAt;
   if (!date) {
     return { primary: '—' };
   }
@@ -88,7 +85,7 @@ function getScheduledTimeItems({
 }): TimeItem[] {
   const items: TimeItem[] = events.map((value) => ({ kind: 'event' as const, value }));
   for (const value of tasks) {
-    if (value.scheduledStartAt ?? value.dueAt) {
+    if (value.startAt ?? value.dueAt) {
       items.push({ kind: 'task', value });
     }
   }
@@ -129,9 +126,11 @@ export function buildTimeStreamRows({
 }
 
 export function getUnscheduledTasks(tasks: TaskListItem[]) {
-  return tasks.filter(
-    (task) => !task.scheduledStartAt && !task.dueAt && task.status !== 'completed',
-  );
+  return tasks.filter((task) => !task.startAt && !task.dueAt && task.status !== 'completed');
+}
+
+export function getOpenTasks(tasks: TaskListItem[]) {
+  return tasks.filter((task) => task.status !== 'completed');
 }
 
 export function getAvailabilityRange(block: TimeBlock, now = new Date()) {
@@ -167,8 +166,8 @@ export function findOpenings({
     addBusyInterval(new Date(event.startDate), new Date(event.endDate));
   }
   for (const task of tasks) {
-    if (task.scheduledStartAt && task.scheduledEndAt) {
-      addBusyInterval(new Date(task.scheduledStartAt), new Date(task.scheduledEndAt));
+    if (task.startAt && task.dueAt) {
+      addBusyInterval(new Date(task.startAt), new Date(task.dueAt));
     }
   }
   busy.sort((left, right) => left.start.getTime() - right.start.getTime());

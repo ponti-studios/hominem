@@ -1,31 +1,24 @@
-import type { TaskDetailOutput, TaskListItem } from '@hominem/rpc/types';
 // @vitest-environment jsdom
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { taskKeys } from '~/services/tasks/query-keys';
+import type { TaskListItem } from '~/services/tasks/task-types';
 
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
-const mockDelete = vi.fn();
+const mockDeleteReminder = vi.fn();
 
-vi.mock('@hominem/rpc/react', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@hominem/rpc/react')>()),
-  useApiClient: () => ({
-    api: {
-      tasks: {
-        ':id': {
-          $delete: mockDelete,
-        },
-      },
-    },
-  }),
+vi.mock('~/services/tasks/reminders-gateway', () => ({
+  remindersGateway: {
+    deleteReminder: mockDeleteReminder,
+  },
 }));
 
 const { useTaskDelete } = await import('~/services/tasks/use-task-delete');
 
 function taskListItem(id: string, overrides: Partial<TaskListItem> = {}): TaskListItem {
-  return { id, title: `Task ${id}`, childCount: 0, ...overrides } as unknown as TaskListItem;
+  return { id, title: `Task ${id}`, ...overrides } as unknown as TaskListItem;
 }
 
 describe('useTaskDelete', () => {
@@ -34,14 +27,10 @@ describe('useTaskDelete', () => {
   });
 
   it('removes the task from the list cache and its own detail cache on success', async () => {
-    mockDelete.mockResolvedValueOnce({ json: async () => ({ id: '1' }) });
+    mockDeleteReminder.mockResolvedValueOnce(undefined);
     const { result, queryClient } = renderHookWithQueryClient(() => useTaskDelete());
     queryClient.setQueryData(taskKeys.all, [taskListItem('1'), taskListItem('2')]);
-    queryClient.setQueryData(taskKeys.detail('1'), {
-      task: taskListItem('1'),
-      participants: [],
-      children: [],
-    });
+    queryClient.setQueryData(taskKeys.detail('1'), { task: taskListItem('1') });
 
     await act(async () => {
       await result.current.mutateAsync('1');
@@ -51,57 +40,8 @@ describe('useTaskDelete', () => {
     expect(queryClient.getQueryData(taskKeys.detail('1'))).toBeUndefined();
   });
 
-  it('removes the task from the parent detail children when a parentId is given', async () => {
-    mockDelete.mockResolvedValueOnce({ json: async () => ({ id: 'child-1' }) });
-    const { result, queryClient } = renderHookWithQueryClient(() =>
-      useTaskDelete({ parentId: 'parent-1' }),
-    );
-    queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail('parent-1'), {
-      task: taskListItem('parent-1'),
-      participants: [],
-      children: [taskListItem('child-1'), taskListItem('child-2')],
-    } as unknown as TaskDetailOutput);
-
-    await act(async () => {
-      await result.current.mutateAsync('child-1');
-    });
-
-    const detail = queryClient.getQueryData<TaskDetailOutput>(taskKeys.detail('parent-1'));
-    expect(detail?.children).toEqual([taskListItem('child-2')]);
-  });
-
-  it('decrements the parent childCount in the list cache when a parentId is given', async () => {
-    mockDelete.mockResolvedValueOnce({ json: async () => ({ id: 'child-1' }) });
-    const { result, queryClient } = renderHookWithQueryClient(() =>
-      useTaskDelete({ parentId: 'parent-1' }),
-    );
-    queryClient.setQueryData(taskKeys.all, [taskListItem('parent-1', { childCount: 2 })]);
-
-    await act(async () => {
-      await result.current.mutateAsync('child-1');
-    });
-
-    const list = queryClient.getQueryData<TaskListItem[]>(taskKeys.all);
-    expect(list?.find((task) => task.id === 'parent-1')?.childCount).toBe(1);
-  });
-
-  it('does not let the parent childCount go below zero', async () => {
-    mockDelete.mockResolvedValueOnce({ json: async () => ({ id: 'child-1' }) });
-    const { result, queryClient } = renderHookWithQueryClient(() =>
-      useTaskDelete({ parentId: 'parent-1' }),
-    );
-    queryClient.setQueryData(taskKeys.all, [taskListItem('parent-1', { childCount: 0 })]);
-
-    await act(async () => {
-      await result.current.mutateAsync('child-1');
-    });
-
-    const list = queryClient.getQueryData<TaskListItem[]>(taskKeys.all);
-    expect(list?.find((task) => task.id === 'parent-1')?.childCount).toBe(0);
-  });
-
-  it('does not touch a parent detail cache when no parentId is given', async () => {
-    mockDelete.mockResolvedValueOnce({ json: async () => ({ id: '1' }) });
+  it('calls the gateway with the task id', async () => {
+    mockDeleteReminder.mockResolvedValueOnce(undefined);
     const { result, queryClient } = renderHookWithQueryClient(() => useTaskDelete());
     queryClient.setQueryData(taskKeys.all, [taskListItem('1')]);
 
@@ -109,6 +49,6 @@ describe('useTaskDelete', () => {
       await result.current.mutateAsync('1');
     });
 
-    expect(mockDelete).toHaveBeenCalledWith({ param: { id: '1' } });
+    expect(mockDeleteReminder).toHaveBeenCalledWith('1');
   });
 });
