@@ -49,7 +49,10 @@ describe('API login route', () => {
     const response = await createApp().request(`http://localhost/login?${oauthQuery}`);
 
     expect(response.status).toBe(200);
-    await expect(response.text()).resolves.toContain('a one-time code — no password to remember');
+    const html = await response.text();
+    expect(html).toContain('<div id="root">');
+    expect(html).toContain('/src/routes/login/app/entries/login.tsx');
+    expect(html).toContain('"step":"email"');
     expect(mocks.getSession).toHaveBeenCalledOnce();
   });
 
@@ -67,7 +70,9 @@ describe('API login route', () => {
     const response = await createApp().request(`http://localhost/login?next=${next}`);
 
     expect(response.status).toBe(200);
-    await expect(response.text()).resolves.toContain('a one-time code — no password to remember');
+    const html = await response.text();
+    expect(html).toContain('<div id="root">');
+    expect(html).toContain('/src/routes/login/app/entries/login.tsx');
   });
 
   it('rejects an app redirect request to a non-allow-listed origin', async () => {
@@ -91,8 +96,7 @@ describe('API login route', () => {
     expect(response.status).toBe(200);
     const html = await response.text();
     expect(html).toContain('/@vite/client');
-    expect(html).toContain('/src/routes/login/client-assets.ts');
-    expect(html).toContain('/src/routes/login/browser.ts');
+    expect(html).toContain('/src/routes/login/app/entries/login.tsx');
   });
 
   it('serves static assets with cache validators and no HEAD body', async () => {
@@ -158,7 +162,9 @@ describe('API login route', () => {
     const response = await createApp().request('http://localhost/logout');
 
     expect(response.status).toBe(200);
-    await expect(response.text()).resolves.toContain('Signed out');
+    const html = await response.text();
+    expect(html).toContain('"signedOut":true');
+    expect(html).toContain('/src/routes/login/app/entries/logout.tsx');
   });
 
   it('clears the Better Auth session and renders the logout confirmation', async () => {
@@ -175,7 +181,8 @@ describe('API login route', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
-    await expect(response.text()).resolves.toContain('Signed out');
+    const html = await response.text();
+    expect(html).toContain('"signedOut":true');
     const request = mocks.handler.mock.calls[0]?.[0] as Request;
     expect(request.url).toContain('/api/auth/sign-out');
   });
@@ -223,7 +230,8 @@ describe('API login route', () => {
     const response = await createApp().request(`http://localhost/login?next=${next}`);
 
     expect(response.status).toBe(200);
-    await expect(response.text()).resolves.toContain('a one-time code — no password to remember');
+    const html = await response.text();
+    expect(html).toContain('/src/routes/login/app/entries/login.tsx');
   });
 
   it('renders the account settings page for a signed-in session', async () => {
@@ -235,11 +243,10 @@ describe('API login route', () => {
 
     expect(response.status).toBe(200);
     const html = await response.text();
-    expect(html).toContain('Manage your Hominem account.');
-    expect(html).toContain('value="Ada Lovelace"');
-    expect(html).toContain('ada@example.com');
-    expect(html).toContain('data-settings-signout');
-    expect(html).toContain('/src/routes/login/settings.ts');
+    expect(html).toContain('<div id="root">');
+    expect(html).toContain('"name":"Ada Lovelace"');
+    expect(html).toContain('"email":"ada@example.com"');
+    expect(html).toContain('/src/routes/login/app/entries/settings.tsx');
   });
 
   it('redirects signed-out visitors to hosted login with an AI-settings resume', async () => {
@@ -260,10 +267,8 @@ describe('API login route', () => {
 
     expect(response.status).toBe(200);
     const html = await response.text();
-    expect(html).toContain('Where your Hominem AI budget went');
-    expect(html).toContain('data-uai-period');
-    expect(html).toContain('Back to account');
-    expect(html).toContain('/src/routes/login/settings-ai.ts');
+    expect(html).toContain('<div id="root">');
+    expect(html).toContain('/src/routes/login/app/entries/settings-ai.tsx');
   });
 
   it('updates the profile name through Better Auth', async () => {

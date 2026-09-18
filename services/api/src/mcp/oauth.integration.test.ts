@@ -184,9 +184,10 @@ describe('MCP OAuth integration', () => {
       headers: { cookie: cookies.header() },
     });
     expect(loginPageResponse.status).toBe(200);
-    await expect(loginPageResponse.text()).resolves.toContain(
-      'a one-time code — no password to remember',
-    );
+    const loginPageHtml = await loginPageResponse.text();
+    expect(loginPageHtml).toContain('<div id="root">');
+    expect(loginPageHtml).toContain('/src/routes/login/app/entries/login.tsx');
+    expect(loginPageHtml).toContain('"step":"email"');
 
     const sendOtpResponse = await app.request(`${apiUrl}/login/send`, {
       method: 'POST',
