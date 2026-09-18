@@ -1,5 +1,9 @@
 import type { ChatUsage } from '@hominem/ai';
 import { streamChatCompletion } from '@hominem/ai';
+import {
+  MAX_TOOL_CALLS_PER_GENERATION,
+  TOOL_CALL_LIMIT_REACHED_MESSAGE,
+} from '@hominem/chat/server';
 import { openRouterCompletionUsage } from '@hominem/utils/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -98,6 +102,47 @@ describe('chat generation service', () => {
       }),
       expect.anything(),
     );
+  });
+
+  it('terminates at the tool-call cap when the model keeps re-invoking the same tool', async () => {
+    const toolCallChunk: StreamChunk = {
+      created: 0,
+      id: 'chunk-loop',
+      model: 'model-1',
+      object: 'chat.completion.chunk',
+      choices: [
+        {
+          index: 0,
+          finishReason: null,
+          delta: {
+            toolCalls: [
+              { index: 0, id: 'call-loop', function: { name: 'lookup', arguments: '{}' } },
+            ],
+          },
+        },
+      ],
+    };
+    // Every provider turn re-emits the same tool call — the loop we saw in
+    // production where flash-lite kept calling social_engagement_summary.
+    mockedStream.mockImplementation(() => chunks([toolCallChunk]));
+
+    const callTool = vi.fn().mockResolvedValue({ content: [{ type: 'text', text: 'result' }] });
+    const result = await executeGenerationTurn({
+      userId: 'user-1',
+      generationId: 'generation-1',
+      chatId: 'chat-1',
+      model: 'model-1',
+      messages: [{ role: 'user', content: 'question' }],
+      tools: [],
+      toolRuntime: {
+        callTool,
+        getToolDefinition: vi.fn(() => undefined),
+      },
+    });
+
+    expect(callTool).toHaveBeenCalledTimes(MAX_TOOL_CALLS_PER_GENERATION);
+    expect(result.assistantText).toBe(TOOL_CALL_LIMIT_REACHED_MESSAGE);
+    expect(result.pendingToolCall).toBeNull();
   });
 
   it('fails the turn instead of hanging forever when a tool call never resolves', async () => {

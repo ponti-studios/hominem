@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  MAX_TOOL_CALLS_PER_GENERATION,
   reduceConfirmationApproved,
   reduceConfirmationRejected,
   reduceProviderTurnCompleted,
   reduceToolResult,
+  TOOL_CALL_LIMIT_REACHED_MESSAGE,
 } from './tool-calls';
 import type { GenerationState, GenerationToolCall } from './types';
 
@@ -21,6 +23,7 @@ function baseState(overrides: Partial<GenerationState> = {}): GenerationState {
     pendingToolCalls: [],
     completedToolResults: [],
     activeToolCall: null,
+    toolCallCount: 0,
     pendingConfirmation: null,
     lastError: null,
     ...overrides,
@@ -176,5 +179,63 @@ describe('reduceConfirmationRejected', () => {
       state,
       commands: [],
     });
+  });
+});
+
+describe('tool-call cap', () => {
+  it('degrades to the limit reply when a completed turn would exceed the cap', () => {
+    const state = baseState({
+      requestedToolCalls: [call()],
+      toolCallCount: MAX_TOOL_CALLS_PER_GENERATION,
+    });
+    const step = reduceProviderTurnCompleted(state, {
+      type: 'provider-turn-completed',
+      requiredToolCall: false,
+      confirmationCallIds: [],
+    });
+
+    expect(step.state.phase).toBe('saving');
+    expect(step.state.assistantText).toBe(TOOL_CALL_LIMIT_REACHED_MESSAGE);
+    expect(step.state.activeToolCall).toBeNull();
+    expect(step.commands.at(-1)).toEqual({ type: 'save-generation' });
+    expect(step.commands.some((command) => command.type === 'execute-tool')).toBe(false);
+  });
+
+  it('stops chaining to the next call once the cap is reached', () => {
+    const first = call({ id: 'call-1', name: 'first' });
+    const second = call({ id: 'call-2', name: 'second' });
+    const state = baseState({
+      activeToolCall: first,
+      toolCallCount: MAX_TOOL_CALLS_PER_GENERATION,
+      pendingToolCalls: [second],
+      toolCalls: [first, second],
+    });
+
+    const step = reduceToolResult(state, {
+      callId: 'call-1',
+      toolName: 'first',
+      content: '{}',
+      error: false,
+    });
+
+    expect(step.state.phase).toBe('saving');
+    expect(step.state.assistantText).toBe(TOOL_CALL_LIMIT_REACHED_MESSAGE);
+    expect(step.commands.some((command) => command.type === 'execute-tool')).toBe(false);
+  });
+
+  it('lets calls within the cap run normally', () => {
+    const state = baseState({
+      requestedToolCalls: [call()],
+      toolCallCount: MAX_TOOL_CALLS_PER_GENERATION - 1,
+    });
+    const step = reduceProviderTurnCompleted(state, {
+      type: 'provider-turn-completed',
+      requiredToolCall: false,
+      confirmationCallIds: [],
+    });
+
+    expect(step.state.toolCallCount).toBe(MAX_TOOL_CALLS_PER_GENERATION);
+    expect(step.state.activeToolCall).toEqual(call());
+    expect(step.commands.at(-1)).toMatchObject({ type: 'execute-tool' });
   });
 });

@@ -20,6 +20,7 @@ function baseState(overrides: Partial<GenerationState> = {}): GenerationState {
     pendingToolCalls: [],
     completedToolResults: [],
     activeToolCall: null,
+    toolCallCount: 0,
     pendingConfirmation: null,
     lastError: null,
     ...overrides,

@@ -34,6 +34,7 @@ import type {
 
 export type * from './types';
 export { generationEventIdempotencyKey } from './shared';
+export { MAX_TOOL_CALLS_PER_GENERATION, TOOL_CALL_LIMIT_REACHED_MESSAGE } from './tool-calls';
 
 export function createGenerationState(generationId: string): GenerationState {
   return {
@@ -43,6 +44,7 @@ export function createGenerationState(generationId: string): GenerationState {
     turnId: null,
     assistantText: '',
     reasoningText: '',
+    toolCallCount: 0,
     requestedToolCalls: [],
     toolCalls: [],
     pendingToolCalls: [],
@@ -95,6 +97,7 @@ export function restoreGenerationState(
         state = {
           ...state,
           activeToolCall: payload.call,
+          toolCallCount: state.toolCallCount + 1,
           toolCalls: state.toolCalls.some((call) => call.id === payload.call.id)
             ? state.toolCalls
             : [...state.toolCalls, payload.call],

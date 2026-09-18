@@ -17,11 +17,43 @@ import type {
   ToolResult,
 } from './types';
 
-// Kicks off the next queued call as a running effect — not a dispatch-table entry itself
-function runNextToolCall(state: GenerationState, call: GenerationToolCall): GenerationStep {
+// Bounds how many tool calls a single generation may queue. A model that keeps
+// re-invoking a tool instead of producing a final answer would otherwise drive
+// the machine through thousands of calls over many minutes before the provider
+// request deadline finally fails it. The cap degrades to a committed reply so
+// the user gets a clear explanation instead of a generic failure.
+export const MAX_TOOL_CALLS_PER_GENERATION = 50;
+
+export const TOOL_CALL_LIMIT_REACHED_MESSAGE =
+  "I couldn't finish that request because it needed too many lookups. Please rephrase or narrow it.";
+
+// Terminates the generation with an explanatory reply instead of executing the
+// tool call that would exceed the cap. Mirrors reduceProviderTurnCompleted's
+// "unwanted answer beats no answer" degrade path: `assistantText` becomes the
+// committed message via save-generation.
+function toolCallLimitReached(state: GenerationState): GenerationStep {
   return {
     state: {
       ...state,
+      phase: 'saving',
+      assistantText: TOOL_CALL_LIMIT_REACHED_MESSAGE,
+      requestedToolCalls: [],
+      pendingToolCalls: [],
+      activeToolCall: null,
+    },
+    commands: [...phaseCommands(state.generationId, 'saving'), { type: 'save-generation' }],
+  };
+}
+
+// Kicks off the next queued call as a running effect — not a dispatch-table entry itself
+function runNextToolCall(state: GenerationState, call: GenerationToolCall): GenerationStep {
+  if (state.toolCallCount >= MAX_TOOL_CALLS_PER_GENERATION) {
+    return toolCallLimitReached(state);
+  }
+  return {
+    state: {
+      ...state,
+      toolCallCount: state.toolCallCount + 1,
       activeToolCall: call,
       pendingToolCalls: state.pendingToolCalls.slice(1),
     },

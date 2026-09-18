@@ -18,7 +18,12 @@ import { GENERATION_TIMING } from './generation-timing';
 
 // Recovery helpers remain server-private to consumers; applications should
 // not construct or reduce generation state directly.
-export { createGenerationState, restoreGenerationState } from './generation-machine';
+export {
+  createGenerationState,
+  MAX_TOOL_CALLS_PER_GENERATION,
+  restoreGenerationState,
+  TOOL_CALL_LIMIT_REACHED_MESSAGE,
+} from './generation-machine';
 export { reconstructProviderToolCalls } from './generation-machine/provider';
 export type ChatModel = GenerationAdapters['provider'];
 

@@ -11,6 +11,7 @@ import {
 } from '.';
 import type { GenerationStartContext } from '../generation-events';
 import { chatSnapshot, messageSnapshot } from '../generation-test-fixtures';
+import { MAX_TOOL_CALLS_PER_GENERATION, TOOL_CALL_LIMIT_REACHED_MESSAGE } from './tool-calls';
 
 const startContext = {
   chatId: 'chat-1',
@@ -549,5 +550,68 @@ describe('generation machine', () => {
       event: { type: 'generation.retry_scheduled', attempt: 1, maxAttempts: 2 },
       idempotencyKey: 'generation-1:generation.retry_scheduled:1',
     });
+  });
+
+  it('terminates a tool-call loop at the cap instead of running forever', async () => {
+    let executed = 0;
+    let turns = 0;
+    const finalState = await runGeneration({
+      generationId: 'generation-1',
+      startContext,
+      effects: {
+        execute: async (command) => {
+          if (command.type === 'open-provider-turn') {
+            turns += 1;
+            return (async function* (): AsyncGenerator<GenerationInput> {
+              yield {
+                type: 'provider-chunk',
+                chunk: {
+                  toolCalls: [
+                    {
+                      index: 0,
+                      id: 'call-loop',
+                      function: { name: 'search_memories', arguments: '{}' },
+                    },
+                  ],
+                },
+              };
+              yield {
+                type: 'provider-turn-completed',
+                requiredToolCall: false,
+                confirmationCallIds: [],
+              };
+            })();
+          }
+          if (command.type === 'execute-tool') {
+            executed += 1;
+            return {
+              type: 'tool-result',
+              result: {
+                callId: 'call-loop',
+                toolName: 'search_memories',
+                content: '{}',
+                error: false,
+              },
+            };
+          }
+          if (command.type === 'save-generation') {
+            return {
+              type: 'generation-saved',
+              message: messageSnapshot({
+                id: 'assistant-1',
+                chatId: 'chat-1',
+                content: TOOL_CALL_LIMIT_REACHED_MESSAGE,
+              }),
+            };
+          }
+          return undefined;
+        },
+      },
+    });
+
+    expect(executed).toBe(MAX_TOOL_CALLS_PER_GENERATION);
+    expect(turns).toBe(MAX_TOOL_CALLS_PER_GENERATION + 1);
+    expect(finalState.phase).toBe('committed');
+    expect(finalState.assistantText).toBe(TOOL_CALL_LIMIT_REACHED_MESSAGE);
   });
 });

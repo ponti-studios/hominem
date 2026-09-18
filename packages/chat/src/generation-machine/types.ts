@@ -80,6 +80,10 @@ export type GenerationState = GenerationLifecycleState & {
   turnId: string | null;
   assistantText: string;
   reasoningText: string;
+  // How many tool calls have been queued for execution in this generation.
+  // Bounded by MAX_TOOL_CALLS_PER_GENERATION so a model that keeps re-invoking
+  // a tool instead of producing an answer can't run the machine forever.
+  toolCallCount: number;
   requestedToolCalls: readonly GenerationToolCall[];
   toolCalls: readonly GenerationToolCall[];
   pendingToolCalls: readonly GenerationToolCall[];
