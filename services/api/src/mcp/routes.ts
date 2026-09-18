@@ -2,6 +2,7 @@ import { requireMcpAuth } from '@better-auth/mcp';
 import { createInsufficientScopeError } from 'better-auth/oauth2';
 import { Hono, type Context, type Next } from 'hono';
 
+import { MCP_TOKEN_PREFIX, resolveMcpToken } from '../application/mcp-tokens.service';
 import { betterAuthServer } from '../auth/better-auth';
 import { env } from '../env';
 import { setMcpAuthContext } from '../middleware/auth';
@@ -21,40 +22,64 @@ type McpDependencies = {
 function createMcpAuthorizationMiddleware(dependencies: McpDependencies) {
   const { env: inputEnv, auth } = dependencies;
 
+  // Shared by both auth paths: once a caller identity is resolved, authorize
+  // scopes, rate-limit in production, then run the route.
+  const runAuthorizedRequest = async (c: Context<McpHonoEnv>, next: Next) => {
+    const auth = c.get('auth');
+    if (!auth || !MCP_SCOPES.some((scope) => auth.scopes.includes(scope))) {
+      throw createInsufficientScopeError([...MCP_SCOPES]);
+    }
+
+    if (inputEnv.NODE_ENV === 'production') {
+      const rateLimitResult = await checkRateLimit(auth.userId);
+      if (rateLimitResult === 'unavailable') {
+        return new Response(JSON.stringify({ error: 'rate_limit_unavailable' }), {
+          status: 503,
+          headers: { 'content-type': 'application/json', 'retry-after': '5' },
+        });
+      }
+      if (rateLimitResult === 'limited') {
+        return new Response(JSON.stringify({ error: 'rate_limited' }), {
+          status: 429,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+    }
+
+    await next();
+    return c.res;
+  };
+
+  const unauthorized = () =>
+    new Response(JSON.stringify({ error: 'invalid_token' }), {
+      status: 401,
+      headers: { 'content-type': 'application/json' },
+    });
+
   return async (c: Context<McpHonoEnv>, next: Next) => {
+    const bearer = c.req.header('authorization') ?? '';
+    const rawToken = bearer.replace(/^Bearer\s+/i, '').trim();
+
+    // Personal `hmt_` tokens bypass the OAuth flow: resolved straight to the
+    // owning user and their token's scope allow-list (empty = all scopes).
+    if (rawToken.startsWith(MCP_TOKEN_PREFIX)) {
+      const resolved = await resolveMcpToken(rawToken);
+      if (!resolved) return unauthorized();
+      const scopes = resolved.scopes.length > 0 ? resolved.scopes : [...MCP_SCOPES];
+      const claims = {
+        sub: resolved.ownerUserId,
+        scope: scopes.join(' '),
+        client_id: 'hominem-mcp-token',
+      };
+      if (!(await setMcpAuthContext(c, claims, 'mcp-token'))) return unauthorized();
+      return runAuthorizedRequest(c, next);
+    }
+
     const verifiedHandler = requireMcpAuth(
       auth,
       async (_request, claims) => {
-        if (!(await setMcpAuthContext(c, claims))) {
-          return new Response(JSON.stringify({ error: 'invalid_token' }), {
-            status: 401,
-            headers: { 'content-type': 'application/json' },
-          });
-        }
-
-        const auth = c.get('auth');
-        if (!auth || !MCP_SCOPES.some((scope) => auth.scopes.includes(scope))) {
-          throw createInsufficientScopeError([...MCP_SCOPES]);
-        }
-
-        if (inputEnv.NODE_ENV === 'production') {
-          const rateLimitResult = await checkRateLimit(auth.userId);
-          if (rateLimitResult === 'unavailable') {
-            return new Response(JSON.stringify({ error: 'rate_limit_unavailable' }), {
-              status: 503,
-              headers: { 'content-type': 'application/json', 'retry-after': '5' },
-            });
-          }
-          if (rateLimitResult === 'limited') {
-            return new Response(JSON.stringify({ error: 'rate_limited' }), {
-              status: 429,
-              headers: { 'content-type': 'application/json' },
-            });
-          }
-        }
-
-        await next();
-        return c.res;
+        if (!(await setMcpAuthContext(c, claims))) return unauthorized();
+        return runAuthorizedRequest(c, next);
       },
       {
         resource: new URL('/api/mcp', inputEnv.API_URL).toString(),

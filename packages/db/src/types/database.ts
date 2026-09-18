@@ -566,6 +566,19 @@ export interface AppHealthSupplements {
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
+export interface AppMcpTokens {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  lastUsedAt: ColumnType<string, Date | string, Date | string> | null;
+  name: string;
+  ownerUserid: string;
+  revokedAt: ColumnType<string, Date | string, Date | string> | null;
+  scopes: Generated<string[]>;
+  tokenHash: string;
+  tokenPrefix: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
 export interface AppMediaCollectionItems {
   addedAt: ColumnType<string, Date | string, Date | string> | null;
   collectionId: string;
@@ -1346,6 +1359,7 @@ export interface DB {
   'app.healthObservations': AppHealthObservations;
   'app.healthProfiles': AppHealthProfiles;
   'app.healthSupplements': AppHealthSupplements;
+  'app.mcpTokens': AppMcpTokens;
   'app.mediaCollectionItems': AppMediaCollectionItems;
   'app.mediaCollections': AppMediaCollections;
   'app.mediaItemActivities': AppMediaItemActivities;

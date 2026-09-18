@@ -85,6 +85,7 @@ export function createAuthMiddleware(
 export async function setMcpAuthContext(
   c: Parameters<MiddlewareHandler>[0],
   claims: VerifiedJwtClaims,
+  credential: 'mcp-oauth' | 'mcp-token' = 'mcp-oauth',
 ): Promise<boolean> {
   const userId = typeof claims.sub === 'string' ? claims.sub : null;
   if (!userId) return false;
@@ -99,7 +100,7 @@ export async function setMcpAuthContext(
     user,
     userId: user.id,
     clientId,
-    credential: 'mcp-oauth',
+    credential,
     scopes,
   });
   return true;
