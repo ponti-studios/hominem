@@ -863,8 +863,8 @@ importers:
         specifier: workspace:*
         version: link:../utils
       '@openrouter/sdk':
-        specifier: ^0.12.35
-        version: 0.12.79
+        specifier: ^1.2.125
+        version: 1.2.125
       zod:
         specifier: 'catalog:'
         version: 4.4.3
@@ -2961,8 +2961,8 @@ packages:
   '@open-draft/until@2.1.0':
     resolution: {integrity: sha512-U69T3ItWHvLwGg5eJ0n3I62nWuE6ilHlmz7zM0npLBRvPRd7e6NYmg54vvRtP5mZG7kZqZCFVdsTWo7BPtBujg==}
 
-  '@openrouter/sdk@0.12.79':
-    resolution: {integrity: sha512-0ZpwtnuHh3/B1piW9kHCUIQy6PAsaK/vjFdZuHxmCdAenCyUNsLA2mFpmfHNWRNb+bOO3yBc4IALa264UyzmBA==}
+  '@openrouter/sdk@1.2.125':
+    resolution: {integrity: sha512-LJijD+HOVcT/agtTPYWlYt4qi4OMPaJKQ5tFYHHTazFHnNh20Mtiq8vi6mHlhnhKuin1WFLXkI6p00XYz11Yjg==}
 
   '@opentelemetry/api-logs@0.203.0':
     resolution: {integrity: sha512-9B9RU0H7Ya1Dx/Rkyc4stuBZSGVQF27WigitInx2QQoj6KUpEFYPKoWjdFTunJYxmXmh17HeBvbMa1EhGyPmqQ==}
@@ -13825,7 +13825,7 @@ snapshots:
       '@hominem/env': file:packages/env
       '@hominem/telemetry': file:packages/telemetry
       '@hominem/utils': file:packages/utils
-      '@openrouter/sdk': 0.12.79
+      '@openrouter/sdk': 1.2.125
       zod: 4.4.3
     transitivePeerDependencies:
       - pg-native
@@ -14437,9 +14437,9 @@ snapshots:
 
   '@open-draft/until@2.1.0': {}
 
-  '@openrouter/sdk@0.12.79':
+  '@openrouter/sdk@1.2.125':
     dependencies:
-      zod: 4.4.3
+      zod: 4.6.0
 
   '@opentelemetry/api-logs@0.203.0':
     dependencies:
