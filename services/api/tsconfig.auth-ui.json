@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // The client-rendered auth UI (React + Tailwind + React Query). It shares
+    // the server tsconfig's strict settings but must use React's JSX runtime,
+    // which the server config pins to hono/jsx. A per-file `@jsxImportSource`
+    // pragma does NOT override a tsconfig-set jsxImportSource (verified
+    // empirically), so this standalone config typechecks the React app with
+    // its own runtime. The Vite build reads the pragmas at bundle time.
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "noEmit": true,
+    "composite": false,
+    "incremental": false,
+    "tsBuildInfoFile": "./.cache/tsconfig.auth-ui.tsbuildinfo"
+  },
+  "include": ["src/routes/login/app/**/*.ts", "src/routes/login/app/**/*.tsx", "vite-env.d.ts"]
+}

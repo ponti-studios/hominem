@@ -55,6 +55,7 @@
     "coverage",
     "*.tsbuildinfo",
     "**/*.test.ts",
-    "**/*.test.tsx"
+    "**/*.test.tsx",
+    "src/routes/login/app"
   ]
 }

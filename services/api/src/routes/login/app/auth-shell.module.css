@@ -1,0 +1,59 @@
+/* The auth page shell: background page, a faint monochrome dot grid, the
+   brand lockup, and the card every page renders inside. Layout is Tailwind;
+   only the animated pieces (grid entrance, card entrance, cross-document
+   view-transition) live here so the scoped keyframe names stay consistent. */
+
+.auth-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--auth-border) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(circle at 50% 40%, #000 0%, transparent 70%);
+  opacity: 0;
+  animation: hominem-grid-in 1.2s ease-out 0.1s forwards;
+}
+
+@keyframes hominem-grid-in {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+}
+
+.auth-card {
+  view-transition-name: auth-card;
+  animation: hominem-card-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes hominem-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+::view-transition-old(auth-card),
+::view-transition-new(auth-card) {
+  animation-duration: 0.35s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Inline error, rendered by any page that fails mid-flow. */
+.alert {
+  animation: hominem-card-in 0.3s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-grid {
+    opacity: 0.5;
+    animation: none;
+  }
+}

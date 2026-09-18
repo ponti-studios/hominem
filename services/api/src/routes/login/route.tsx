@@ -4,16 +4,22 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { etag } from 'hono/etag';
 
+import {
+  createMcpToken,
+  listMcpTokens,
+  revokeMcpToken,
+} from '../../application/mcp-tokens.service';
 import { betterAuthServer } from '../../auth/better-auth';
 import { env } from '../../env';
+import {
+  createMcpTokenInputSchema,
+  createMcpTokenOutputSchema,
+  listMcpTokensOutputSchema,
+  revokeMcpTokenInputSchema,
+  revokeMcpTokenOutputSchema,
+} from '../../schemas/mcp-tokens.schema';
 import type { AuthDependencies } from '../auth/shared';
-import { AIFootprintPage } from './components/ai-footprint-page';
-import { AIUsagePage } from './components/ai-usage-page';
-import { AuthErrorPage } from './components/auth-error-page';
-import { ConsentPage } from './components/consent-page';
-import { LoginPage } from './components/login-page';
-import { LogoutPage } from './components/logout-page';
-import { SettingsPage } from './components/settings-page';
+import { renderAuthShell } from './app-shell';
 import {
   emailSchema,
   getFormValue,
@@ -112,10 +118,14 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       const resume = resolveResumeWithEnv(resumeQuery, origin);
       if (!resume)
         return c.html(
-          <AuthErrorPage
-            description="Open the sign-in link from the app or client you came from."
-            error="invalid_request"
-          />,
+          renderAuthShell({
+            entry: 'error',
+            init: {
+              description: 'Open the sign-in link from the app or client you came from.',
+              error: 'invalid_request',
+            },
+            title: 'Authorization stopped | Hominem',
+          }),
           400,
         );
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
@@ -126,13 +136,17 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
           ? 'otp'
           : 'email';
       return c.html(
-        <LoginPage
-          email={email}
-          error={url.searchParams.get('error') ?? undefined}
-          mode={resume.mode}
-          resumeQuery={resumeQuery}
-          step={step}
-        />,
+        renderAuthShell({
+          entry: 'login',
+          init: {
+            mode: resume.mode,
+            resumeQuery,
+            email,
+            step,
+            error: url.searchParams.get('error') ?? undefined,
+          },
+          title: 'Sign in to Hominem',
+        }),
       );
     })
     .get('/auth/settings', async (c) => {
@@ -140,10 +154,18 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       const origin = requestOrigin(c);
       if (session?.user) {
         return c.html(
-          <SettingsPage
-            loginNextUrl={new URL('/auth/settings', origin).toString()}
-            user={session.user}
-          />,
+          renderAuthShell({
+            entry: 'settings',
+            init: {
+              user: {
+                id: session.user.id,
+                name: session.user.name,
+                email: session.user.email,
+              },
+              loginNextUrl: new URL('/auth/settings', origin).toString(),
+            },
+            title: 'Settings | Hominem',
+          }),
         );
       }
       // Signed out: take them through hosted login, then drop them back here.
@@ -160,7 +182,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       const origin = requestOrigin(c);
       if (session?.user) {
-        return c.html(<AIUsagePage />);
+        return c.html(renderAuthShell({ entry: 'settings-ai', title: 'AI usage | Hominem' }));
       }
       const settingsAiUrl = new URL('/auth/settings/ai', origin).toString();
       return c.redirect(
@@ -174,7 +196,11 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
     .get('/auth/settings/ai/footprint', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       const origin = requestOrigin(c);
-      if (session?.user) return c.html(<AIFootprintPage />);
+      if (session?.user) {
+        return c.html(
+          renderAuthShell({ entry: 'settings-ai-footprint', title: 'AI footprint | Hominem' }),
+        );
+      }
       const footprintUrl = new URL('/auth/settings/ai/footprint', origin).toString();
       return c.redirect(
         loginUrlWithEnv(
@@ -183,6 +209,32 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         ),
         303,
       );
+    })
+    .get('/auth/settings/mcp-tokens', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      const result = await listMcpTokens({ ownerUserId: session.user.id });
+      return c.json(listMcpTokensOutputSchema.parse({ tokens: result, count: result.length }));
+    })
+    .post('/auth/settings/mcp-tokens', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      const body = await c.req.json().catch(() => null);
+      const parsed = createMcpTokenInputSchema.safeParse(body);
+      if (!parsed.success) return c.json({ error: 'Invalid token name.' }, 400);
+      const result = await createMcpToken({ ownerUserId: session.user.id, name: parsed.data.name });
+      return c.json(createMcpTokenOutputSchema.parse(result), 201);
+    })
+    .post('/auth/settings/mcp-tokens/:id/revoke', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      const parsed = revokeMcpTokenInputSchema.safeParse({ id: c.req.param('id') });
+      if (!parsed.success) return c.json({ error: 'Invalid token id.' }, 400);
+      const result = await revokeMcpToken({
+        ownerUserId: session.user.id,
+        id: parsed.data.id,
+      });
+      return c.json(revokeMcpTokenOutputSchema.parse(result));
     })
     .post('/auth/settings/profile', async (c) => {
       const form = await c.req.parseBody();
@@ -215,7 +267,16 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
     .get('/consent', async (c) => {
       const query = new URL(c.req.url).searchParams.toString();
       const consent = resolveConsentQuery(query);
-      if (!consent) return c.html(<AuthErrorPage error="invalid_request" />, 400);
+      if (!consent) {
+        return c.html(
+          renderAuthShell({
+            entry: 'error',
+            init: { error: 'invalid_request' },
+            title: 'Authorization stopped | Hominem',
+          }),
+          400,
+        );
+      }
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       if (!session) return c.redirect(new URL(`/login?${query}`, requestOrigin(c)).toString(), 303);
       const clientResponse = await auth.handler(
@@ -229,24 +290,42 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         client = await clientResponse.json();
       }
       return c.html(
-        <ConsentPage
-          clientName={client?.name ?? consent.clientId}
-          query={consent.query}
-          scopes={consent.scopes}
-        />,
+        renderAuthShell({
+          entry: 'consent',
+          init: {
+            clientName: client?.name ?? consent.clientId,
+            query: consent.query,
+            scopes: consent.scopes,
+          },
+          title: 'Authorize access | Hominem',
+        }),
       );
     })
     .get('/error', (c) =>
       c.html(
-        <AuthErrorPage
-          description={c.req.query('error_description')}
-          error={c.req.query('error')}
-        />,
+        renderAuthShell({
+          entry: 'error',
+          init: {
+            description: c.req.query('error_description'),
+            error: c.req.query('error'),
+            mode:
+              c.req.query('mode') === 'app' || c.req.query('mode') === 'oauth'
+                ? c.req.query('mode')
+                : undefined,
+          },
+          title: 'Authorization stopped | Hominem',
+        }),
       ),
     )
     .get('/logout', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
-      return c.html(<LogoutPage signedOut={!session} />);
+      return c.html(
+        renderAuthShell({
+          entry: 'logout',
+          init: { signedOut: !session },
+          title: 'Sign out | Hominem',
+        }),
+      );
     })
     .post('/logout', async (c) => {
       const form = await c.req.parseBody();
@@ -268,7 +347,13 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         headers.set('location', resume.url);
         return new Response(null, { headers, status: 303 });
       }
-      const pageResponse = await c.html(<LogoutPage signedOut />);
+      const pageResponse = await c.html(
+        renderAuthShell({
+          entry: 'logout',
+          init: { signedOut: true },
+          title: 'Sign out | Hominem',
+        }),
+      );
       const headers = copySetCookieHeaders(response.headers);
       headers.set('content-type', pageResponse.headers.get('content-type') ?? 'text/html');
       return new Response(await pageResponse.text(), { status: 200, headers });
@@ -314,7 +399,14 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       const consent = resolveConsentQuery(query);
 
       if (!consent) {
-        return c.html(<AuthErrorPage error="invalid_request" />, 400);
+        return c.html(
+          renderAuthShell({
+            entry: 'error',
+            init: { error: 'invalid_request' },
+            title: 'Authorization stopped | Hominem',
+          }),
+          400,
+        );
       }
 
       const response = await callBetterAuth({
@@ -326,13 +418,28 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       });
 
       if (!response.ok) {
-        return c.html(<AuthErrorPage error="access_denied" />, 400);
+        return c.html(
+          renderAuthShell({
+            entry: 'error',
+            init: { error: 'access_denied' },
+            title: 'Authorization stopped | Hominem',
+          }),
+          400,
+        );
       }
 
       const body: { redirect_uri?: string; redirect?: boolean; url?: string } | null =
         await response.json().catch(() => null);
       const redirectUrl = body?.redirect_uri ?? (body?.redirect ? body.url : undefined);
-      if (!redirectUrl) return c.html(<AuthErrorPage error="server_error" />, 500);
+      if (!redirectUrl)
+        return c.html(
+          renderAuthShell({
+            entry: 'error',
+            init: { error: 'server_error' },
+            title: 'Authorization stopped | Hominem',
+          }),
+          500,
+        );
       return c.redirect(redirectUrl, 303);
     })
     .post('/login/verify', async (c) => {

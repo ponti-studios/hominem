@@ -133,16 +133,15 @@ configured origins.
 
 The API also hosts `/auth/settings`, a web mirror of the account sections of
 the Omiro settings screen: editable name + email, monthly AI usage (fetched
-client-side from the authenticated `/api/usage/monthly` RPC route), and a
-sign-out action backed by the same `/logout` POST the web apps use.
+client-side from the authenticated `/api/usage/monthly` RPC route), MCP
+personal tokens (see below), and a sign-out action backed by the same
+`/logout` POST the web apps use.
 Signed-out visitors are redirected through hosted login with a resume back to
 `/auth/settings` so they land here after authenticating. The sign-out POST
 accepts an optional `next` form field (trusted via the same
 `resolveResume` check) and 303s there after clearing the session cookie — it
 is additive; a `/logout` POST without `next` keeps rendering the signed-out
-page. Like `/login`, the page is server-rendered Hono JSX enhanced by a plain
-client bundle (`settings.ts` → `public/settings.js`) with full degradation
-when JavaScript is unavailable.
+page.
 
 `/auth/settings/ai` is the deep-dive version of the same usage section: a
 per-month breakdown page (status + pacing, daily spend, ranked drivers by
@@ -150,10 +149,33 @@ feature/model/operation/day, six-month trend, failure/unpriced waste, cache
 and reasoning efficiency, cheapest/most expensive calls, and the most
 expensive conversations). It renders from a single authenticated RPC payload
 (`GET /api/usage/ai`, composed from the `ai_usage_events` fact table — see
-`getAIUsagePageReport` in `@hominem/ai`) and is enhanced by
-`settings-ai.ts` → `public/settings-ai.js`. Both settings pages share the
+`getAIUsagePageReport` in `@hominem/ai`). Both settings pages share the
 session-gate pattern: signed-out visitors hit hosted login with a resume
 back to the page they tried to open.
+
+### Auth UI architecture
+
+All hosted auth pages (`/login`, `/consent`, `/error`, `/logout`,
+`/auth/settings*`) are **client-rendered React** built by the API's own Vite
+pipeline (`vite.config.ts`, multi-page entries under
+`src/routes/login/app/entries/*.tsx`). The server routes render a minimal
+HTML shell (`src/routes/login/app-shell.tsx`) that injects the page's initial
+props on `window.__AUTH_INIT__` and the page bundle; the React entry mounts
+and renders. The stack matches the web apps: React 19, Tailwind v4
+(`@tailwindcss/vite`, auth design tokens mapped into the theme), CSS Modules
+(`import styles from './x.module.css'`), and React Query for the data pages
+(tokens, usage). The React app typechecks under its own
+`tsconfig.auth-ui.json` (React JSX runtime) because the server tsconfig pins
+`jsxImportSource` to `hono/jsx` for the shell.
+
+The server keeps every form-POST and redirect decision: login/OTP send and
+verify, consent decision, sign-out, profile and token mutations all remain
+same-origin routes that proxy to Better Auth with the API origin stamped, and
+the React forms submit natively against them (login/OTP/consent/logout) or
+through React Query (settings). This keeps CSRF/origin handling and the
+resume/redirect logic unchanged while moving only the rendering to the
+client. Unlike the previous server-rendered pages, JavaScript is now required
+to sign in — a deliberate tradeoff made when the auth UI moved to React.
 
 ## Session and OTP rules
 
@@ -191,8 +213,9 @@ The API owns the MCP OAuth 2.1 browser flow. Better Auth discovery,
 `/api/auth/oauth2/*` authorization/token/registration endpoints, and the
 API-hosted `/login` and `/consent` pages all run on the API origin. CIMD is
 preferred; unauthenticated Dynamic Client Registration remains temporarily
-enabled for Raycast compatibility. The `/login` page is server-rendered Hono
-JSX and sends OTP actions to Better Auth's native endpoints. Consent is a
+enabled for Raycast compatibility. The `/login` page is a client-rendered
+React page (see "Auth UI architecture") whose forms send OTP actions to the
+API routes that proxy Better Auth's native endpoints. Consent is a
 separate explicit approval step and does not create another session, token,
 or refresh mechanism. After Better Auth sets the session cookie, the page
 resumes the same `/api/auth/oauth2/authorize` request. Career is not required
@@ -205,6 +228,25 @@ grant:
 codex mcp logout hominem
 codex mcp login hominem
 ```
+
+## MCP personal tokens
+
+AI clients that cannot run the MCP OAuth browser flow (for example Muse's
+custom connectors, which only accept a static Bearer token) authenticate to
+`/api/mcp` with a personal access token instead. Tokens are minted and revoked
+from the hosted settings page (`/auth/settings` → MCP access, served by the
+API itself). The raw `hmt_` value is shown exactly once at creation and stored
+only as a SHA-256 hash; a revoked token stops authenticating immediately.
+
+The middleware resolves an `hmt_` bearer token before the OAuth path
+(`services/api/src/mcp/routes.ts`): the token resolves to its owner and scope
+allow-list, and the request proceeds with the same scope-presence and rate-limit
+checks as an OAuth grant. A token's `scopes` column is an allow-list from
+`MCP_SCOPES`; an empty array means "all scopes" and is resolved against the live
+scope set at request time, so new scopes reach existing all-scope tokens
+automatically and a scoped token only needs a non-empty array. When scoped
+tokens are introduced, the create endpoint accepts a scope list and the same
+resolution path applies unchanged.
 
 ## Production incident investigation
 

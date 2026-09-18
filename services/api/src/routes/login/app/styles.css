@@ -1,15 +1,11 @@
-/* Native browser-driven transitions between full page loads in this flow
-   (email step -> OTP step -> consent, etc.). Progressive enhancement only:
-   unsupported browsers just navigate normally, no fallback needed. */
-@view-transition {
-  navigation: auto;
-}
+@import 'tailwindcss';
+
+/* The auth UI's light/dark palette as CSS variables, then re-exposed as
+   Tailwind theme tokens via @theme inline so utilities like `bg-auth-card`
+   track the media-query flip at use time instead of build time. */
 
 :root {
   color-scheme: light;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-  background: #fcfcfd;
-  color: #1c2024;
   --auth-background: #fcfcfd;
   --auth-card: #f9f9fb;
   --auth-panel: #f0f0f3;
@@ -25,8 +21,6 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    background: #111113;
-    color: #edeef0;
     --auth-background: #111113;
     --auth-card: #18191b;
     --auth-panel: #212225;
@@ -40,19 +34,32 @@
   }
 }
 
-* {
-  box-sizing: border-box;
+@theme inline {
+  --color-auth-background: var(--auth-background);
+  --color-auth-card: var(--auth-card);
+  --color-auth-panel: var(--auth-panel);
+  --color-auth-text: var(--auth-text);
+  --color-auth-muted: var(--auth-muted);
+  --color-auth-primary: var(--auth-primary);
+  --color-auth-primary-text: var(--auth-primary-text);
+  --color-auth-border: var(--auth-border);
+  --color-auth-danger: var(--auth-danger);
+  --color-auth-danger-background: var(--auth-danger-background);
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
 }
-html,
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background: var(--auth-background);
+
+@layer base {
+  html,
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    background: var(--auth-background);
+    color: var(--auth-text);
+  }
 }
-button,
-input {
-  font: inherit;
+
+@view-transition {
+  navigation: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -19,7 +19,19 @@
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "vite-env.d.ts"],
-  "exclude": ["node_modules", "dist", "build", ".turbo", ".cache", "coverage", "*.tsbuildinfo"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    ".turbo",
+    ".cache",
+    "coverage",
+    "*.tsbuildinfo",
+    // The client-rendered auth UI compiles with React's JSX runtime under its
+    // own tsconfig.auth-ui.json; the server tsconfig pins hono/jsx for the
+    // hosted pages, so the React app is typechecked separately.
+    "src/routes/login/app"
+  ]
   // Deliberately NOT itself composite, and deliberately NO `references`
   // entries at all (see AGENTS.md's "Package that infers types across other
   // packages" section): rpc/app.ts's `typeof rpcApp` inference re-exports

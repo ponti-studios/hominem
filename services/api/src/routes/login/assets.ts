@@ -1,7 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-type LoginEntry = 'login' | 'settings' | 'settings-ai' | 'settings-ai-footprint';
+type LoginEntry =
+  | 'login'
+  | 'consent'
+  | 'logout'
+  | 'error'
+  | 'settings'
+  | 'settings-ai'
+  | 'settings-ai-footprint';
 
 type ManifestChunk = {
   css?: string[];
@@ -11,12 +18,14 @@ type ManifestChunk = {
 
 type Manifest = Record<string, ManifestChunk>;
 
-const entrySource: Record<LoginEntry | 'login-assets', string> = {
-  'login-assets': 'src/routes/login/client-assets.ts',
-  login: 'src/routes/login/browser.ts',
-  settings: 'src/routes/login/settings.ts',
-  'settings-ai': 'src/routes/login/settings-ai.ts',
-  'settings-ai-footprint': 'src/routes/login/settings-ai-footprint.ts',
+const entrySource: Record<LoginEntry, string> = {
+  login: 'src/routes/login/app/entries/login.tsx',
+  consent: 'src/routes/login/app/entries/consent.tsx',
+  logout: 'src/routes/login/app/entries/logout.tsx',
+  error: 'src/routes/login/app/entries/error.tsx',
+  settings: 'src/routes/login/app/entries/settings.tsx',
+  'settings-ai': 'src/routes/login/app/entries/settings-ai.tsx',
+  'settings-ai-footprint': 'src/routes/login/app/entries/settings-ai-footprint.tsx',
 };
 
 let productionManifest: Manifest | undefined;
@@ -53,25 +62,25 @@ function stylesFor(manifest: Manifest, source: string): string[] {
   return [...styles];
 }
 
+// Every entry imports app/mount.tsx, which imports styles.css (Tailwind +
+// auth tokens) — so the shared stylesheet rides along with the entry chunk
+// rather than needing its own synthetic entry.
 export function loginAssets(entry: LoginEntry) {
   if (process.env.NODE_ENV !== 'production') {
     return {
-      scripts: ['/@vite/client', '/src/routes/login/client-assets.ts', `/${entrySource[entry]}`],
+      scripts: ['/@vite/client', `/${entrySource[entry]}`],
       styles: [],
     };
   }
 
   const manifest = getProductionManifest();
-  const assetsSource = entrySource['login-assets'];
   const entrySourcePath = entrySource[entry];
-  const assetChunk = manifest[assetsSource];
   const entryChunk = manifest[entrySourcePath];
-  if (!assetChunk || !entryChunk)
-    throw new Error(`Missing Vite login asset entry for ${entrySourcePath}`);
+  if (!entryChunk) throw new Error(`Missing Vite login asset entry for ${entrySourcePath}`);
 
   return {
-    scripts: [`/${assetChunk.file}`, `/${entryChunk.file}`],
-    styles: stylesFor(manifest, assetsSource),
+    scripts: [`/${entryChunk.file}`],
+    styles: stylesFor(manifest, entrySourcePath),
   };
 }
 
