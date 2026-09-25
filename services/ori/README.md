@@ -1,8 +1,8 @@
 # Ori evaluations
 
-This service contains parallel Ori versions of the nine evaluation suites in
-`services/deepeval`. The original DeepEval service remains unchanged while the
-results are compared.
+This service is Hominem's single evaluation harness, covering the assistant,
+extraction, and MCP tool-selection suites. It replaced the earlier DeepEval
+service, which has been removed.
 
 The datasets under `data/` are versioned snapshots. The chat-assistant prompt is
 a snapshot of `services/api/src/rpc/prompts.ts`; the API parity test makes drift

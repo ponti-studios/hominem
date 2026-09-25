@@ -1,6 +1,6 @@
 ROOT_DIR := justfile_directory()
 ENV_FILE := ROOT_DIR / "services/api/.env"
-JOB_IMPORT_FIXTURE := ROOT_DIR / "services/deepeval/datasets/career-job-import/fixtures/whatnot-ashby-posting.html"
+JOB_IMPORT_FIXTURE := ROOT_DIR / "services/ori/data/career-job-import/fixtures/whatnot-ashby-posting.html"
 JOB_IMPORT_ORG := "whatnot"
 JOB_IMPORT_POSTING_ID := "7cfa0536-94de-42b7-9fe7-d646f4addc29"
 
@@ -8,7 +8,7 @@ _run suite:
     #!/usr/bin/env bash
     set -euo pipefail
     set -a; source '{{ ENV_FILE }}'; set +a
-    pnpm --filter @hominem/deepeval "eval:{{ suite }}"
+    pnpm --filter @hominem/ori "eval:{{ suite }}"
 
 # Run every eval suite.
 all: (_run "all")
@@ -45,4 +45,4 @@ career-job-import: (_run "career-job-import")
 
 # Typecheck every prompt, Golden dataset, and test file.
 typecheck:
-    pnpm --filter @hominem/deepeval typecheck
+    pnpm --filter @hominem/ori typecheck
