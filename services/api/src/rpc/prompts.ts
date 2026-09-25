@@ -204,9 +204,9 @@ weekday after the reference date; for example, with a Saturday reference date, "
 following Friday, not the next calendar day. Do not invent participants, location,
 duration, dates, or times. duration is always an integer number of minutes and must be preserved
 whenever the user states a duration, including for flexible tasks with no exact start time. start_time and end_time
-are the exact interval when the user supplies a fixed time or an appointment duration. For
-meetings and appointments without an explicit duration, infer a 60-minute duration and populate
-end_time. For flexible
+are the exact interval when the user supplies a fixed time or an appointment duration. A duration
+and end_time are populated only when the user states a duration or an explicit interval; never
+infer a default duration. For flexible
 blocks, leave start_time and end_time null and resolve the requested date or broad period into
 scheduling_window_start and scheduling_window_end. An explicit clock time always takes precedence
 over a scheduling window. Broad periods such as "tonight", "this afternoon", or "after lunch" are
