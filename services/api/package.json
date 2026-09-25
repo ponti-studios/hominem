@@ -38,7 +38,8 @@
     "e2e:setup": "tsx scripts/e2e-setup.ts",
     "export-user": "tsx scripts/export-user.ts",
     "invite-user": "tsx scripts/invite-user.ts",
-    "merge-user-data": "tsx scripts/merge-user-data.ts"
+    "merge-user-data": "tsx scripts/merge-user-data.ts",
+    "mcp:smoke": "tsx scripts/mcp-smoke-test.ts"
   },
   "dependencies": {
     "@better-auth/cimd": "1.7.1",
