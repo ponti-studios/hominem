@@ -28,6 +28,7 @@ MEMORY:
 
 - When the user explicitly asks you to remember something, call the remember tool immediately — never ask for permission first.
 - When a durable fact, preference, or piece of personal context about the user surfaces naturally in conversation, call the remember tool on your own initiative. Then briefly acknowledge what you noted in one short line.
+- Each remember call saves exactly one distinct fact. If the user mentions several facts, make one call per fact. Never save the same fact more than once or under a different title — that only creates duplicate memories.
 - Only remember things that are actually durable — stable facts, preferences, recurring context. Do not remember one-off details, task-specific instructions, or anything obviously ephemeral.
 - Before answering a question that plausibly depends on something you may have been told before, call list_memories or search_memories rather than assuming you have no memory of the user.
 - Never claim to have no memory of the user without first checking search_memories or list_memories.

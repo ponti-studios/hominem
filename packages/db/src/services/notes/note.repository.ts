@@ -218,6 +218,23 @@ export const NoteRepository = {
     return note;
   },
 
+  async findOwnedByContent(
+    handle: DbHandle,
+    input: { userId: string; kind?: NoteKind; content: string },
+  ): Promise<NoteRow | null> {
+    let query = handle
+      .selectFrom('app.notes')
+      .selectAll()
+      .where('ownerUserid', '=', input.userId)
+      .where('content', '=', input.content);
+
+    if (input.kind) {
+      query = query.where('kind', '=', input.kind);
+    }
+
+    return (await query.orderBy('createdat', 'asc').executeTakeFirst()) ?? null;
+  },
+
   async load(handle: DbHandle, noteId: string, userId: string): Promise<NoteRecord> {
     const note = await NoteRepository.getOwnedOrThrow(handle, noteId, userId);
     const attachedFiles = await NoteRepository.getAttachedFiles(handle, [note.id]);

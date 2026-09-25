@@ -38,6 +38,20 @@ function toMemorySummary(note: {
   return { id: note.id, title: note.title, excerpt: note.excerpt, createdAt: note.createdAt };
 }
 
+function toMemorySummaryRow(note: {
+  id: string;
+  title: string | null;
+  excerpt: string | null;
+  createdat: string;
+}) {
+  return {
+    id: note.id,
+    title: note.title,
+    excerpt: note.excerpt,
+    createdAt: new Date(note.createdat).toISOString(),
+  };
+}
+
 registerTool(
   {
     name: 'remember',
@@ -45,7 +59,10 @@ registerTool(
     description:
       'Saves a durable fact, preference, or piece of personal context as a memory. Call this ' +
       'immediately when the user asks to be remembered something, or when a lasting fact about ' +
-      'them surfaces naturally in conversation — no confirmation needed before saving.',
+      'them surfaces naturally in conversation — no confirmation needed before saving. ' +
+      'Each call saves exactly one distinct fact: if the user mentions several facts, make one ' +
+      'call per fact. Never save the same fact more than once or under multiple titles — an ' +
+      'identical fact already in memory is returned as-is instead of being saved again.',
     inputSchema: rememberInputSchema,
     outputSchema: rememberOutputSchema,
     readOnly: false,
@@ -53,6 +70,13 @@ registerTool(
     resultCap: 1,
   },
   async (ownerUserId, input) => {
+    const existing = await NoteRepository.findOwnedByContent(db, {
+      userId: ownerUserId,
+      kind: MEMORY_KIND,
+      content: input.content,
+    });
+    if (existing) return toMemorySummary(toMemorySummaryRow(existing));
+
     const note = await noteService.createNote(ownerUserId, {
       title: input.title ?? null,
       content: input.content,
