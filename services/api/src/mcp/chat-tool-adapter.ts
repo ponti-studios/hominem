@@ -39,9 +39,10 @@ export type ChatToolPlan = {
   usage: AIUsageMetrics | null;
 };
 
-const ROUTING_PROMPT = `Classify whether the latest user request needs current private Hominem data.\n\nUse requiresLookup=true for requests asking about the user's saved, current, or historical data. Select every relevant capability; when ambiguous, include each plausible capability. Use requiresLookup=false for general knowledge, writing, and conversation. Never select a capability merely because it could be useful.\n\nCapabilities: ${CHAT_CAPABILITIES.join(', ')}.`;
+const ROUTING_PROMPT = `Classify whether the latest user request needs current private Hominem data.\n\nUse requiresLookup=true for requests asking about the user's saved, current, or historical data. Select every relevant capability; when ambiguous, include each plausible capability. Use requiresLookup=false for general knowledge, writing, conversation, and public facts that may require web search. Never select a capability merely because it could be useful.\n\nCapabilities: ${CHAT_CAPABILITIES.join(', ')}.`;
 
 type ChatFunctionToolDefinition = Extract<ChatFunctionTool, { function: unknown }>;
+const WEB_SEARCH_TOOL: ChatFunctionTool = { type: 'openrouter:web_search' };
 
 function toChatTool(tool: CapabilityDefinition): ChatFunctionToolDefinition {
   return {
@@ -163,14 +164,15 @@ export async function planChatTools(input: {
     const selectedDefinitions = definitions.filter((definition) =>
       getToolCapabilities(definition).some((capability) => capabilities.has(capability)),
     );
-    const tools = selectedDefinitions.map(
+    const tools: ChatFunctionTool[] = selectedDefinitions.map(
       (definition) => projectedTools[definitions.indexOf(definition)]!,
     );
+    if (capabilities.size === 0) tools.push(WEB_SEARCH_TOOL);
     logger.info('chat_tool_plan', {
       model: input.model,
       capabilities: [...capabilities],
       requiresLookup: capabilities.size > 0,
-      candidateTools: tools.map((tool) => tool.function.name),
+      candidateTools: selectedDefinitions.map((definition) => definition.name),
       router: 'keyword-fallback-for-muse-structured-output-compatibility',
     });
     return {
@@ -214,7 +216,7 @@ export async function planChatTools(input: {
     return {
       capabilities,
       requiresLookup: false,
-      tools: [],
+      tools: [WEB_SEARCH_TOOL],
       steps: [],
       usage: capabilityUsage,
     };
