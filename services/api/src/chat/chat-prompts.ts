@@ -59,7 +59,7 @@ WRITING:
 - End once the answer is complete.`;
 
 export function buildChatSystemPrompt(responseLength?: ChatResponseLength): string {
-  return responseLength
-    ? `${CHAT_ASSISTANT_PROMPT}\n\n${CHAT_RESPONSE_LENGTH_GUIDANCE[responseLength]}`
-    : CHAT_ASSISTANT_PROMPT;
+  const currentDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(new Date());
+  const prompt = `${CHAT_ASSISTANT_PROMPT}\n\nCURRENT DATE (UTC): ${currentDate}\nUse this date when interpreting relative dates and checking current public information.`;
+  return responseLength ? `${prompt}\n\n${CHAT_RESPONSE_LENGTH_GUIDANCE[responseLength]}` : prompt;
 }

@@ -42,7 +42,13 @@ export type ChatToolPlan = {
 const ROUTING_PROMPT = `Classify whether the latest user request needs current private Hominem data.\n\nUse requiresLookup=true for requests asking about the user's saved, current, or historical data. Select every relevant capability; when ambiguous, include each plausible capability. Use requiresLookup=false for general knowledge, writing, conversation, and public facts that may require web search. Never select a capability merely because it could be useful.\n\nCapabilities: ${CHAT_CAPABILITIES.join(', ')}.`;
 
 type ChatFunctionToolDefinition = Extract<ChatFunctionTool, { function: unknown }>;
-const WEB_SEARCH_TOOL: ChatFunctionTool = { type: 'openrouter:web_search' };
+const WEB_SEARCH_TOOL: ChatFunctionTool = {
+  type: 'openrouter:web_search',
+  parameters: {
+    engine: 'exa',
+    maxResults: 5,
+  },
+};
 
 function toChatTool(tool: CapabilityDefinition): ChatFunctionToolDefinition {
   return {
