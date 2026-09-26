@@ -23,5 +23,30 @@
     "name": "direct answer does not need a lookup",
     "input": "What is the difference between a Roth IRA and a traditional IRA?",
     "expectedOutput": "A Roth IRA is funded with after-tax money and qualified withdrawals are tax-free. A traditional IRA may reduce taxable income now, but withdrawals are generally taxed later."
+  },
+  {
+    "name": "simple greeting",
+    "input": "Good morning — what can you help me with?",
+    "expectedOutput": "I can help you understand information, make decisions, organize your thoughts, and take useful actions."
+  },
+  {
+    "name": "small planning request",
+    "input": "Give me one practical way to make tomorrow morning less rushed.",
+    "expectedOutput": "Prepare what you need tonight—clothes, bag, and breakfast—so tomorrow starts with fewer decisions."
+  },
+  {
+    "name": "clear technical explanation",
+    "input": "Why is a cache useful in a web application?",
+    "expectedOutput": "A cache stores reusable results closer to the application or user, reducing repeated work and improving response time."
+  },
+  {
+    "name": "uncertainty handled honestly",
+    "input": "Will it definitely rain next Saturday?",
+    "expectedOutput": "No forecast can guarantee that far ahead. Check a current forecast closer to Saturday for a useful answer."
+  },
+  {
+    "name": "concise rewrite help",
+    "input": "Rewrite this to sound more direct: I just wanted to reach out and see if maybe you had time to review this.",
+    "expectedOutput": "Could you review this?"
   }
 ]

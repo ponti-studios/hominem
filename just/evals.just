@@ -19,6 +19,9 @@ run suite: (_run suite)
 # Persona/tone rubric — does the assistant hold its blunt, direct voice?
 chat-assistant: (_run "chat-assistant")
 
+# Normal-conversation baseline — response quality, token usage, cost, and latency.
+chat-baseline: (_run "chat-baseline")
+
 # Offer-comparison NL extraction — currency, equity, filing status, location inference.
 offer-extraction: (_run "offer-extraction")
 

@@ -6,6 +6,7 @@
     "format:check": "oxfmt evals data types --check '!data/**/*.html'",
     "typecheck": "tsc -p tsconfig.json",
     "eval:chat-assistant": "ori eval evals/chat-assistant.eval.ts",
+    "eval:chat-baseline": "ori eval evals/chat-baseline.eval.ts",
     "eval:career-job-import": "ori eval evals/career-job-import.eval.ts",
     "eval:mcp-tool-selection": "ori eval evals/mcp-tool-selection.eval.ts",
     "eval:mcp-agent-protocol": "bun test ./evals/mcp-agent-protocol.eval.ts",
