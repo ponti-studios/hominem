@@ -8,6 +8,8 @@
     "eval:chat-assistant": "ori eval evals/chat-assistant.eval.ts",
     "eval:career-job-import": "ori eval evals/career-job-import.eval.ts",
     "eval:mcp-tool-selection": "ori eval evals/mcp-tool-selection.eval.ts",
+    "eval:mcp-agent-protocol": "bun test ./evals/mcp-agent-protocol.eval.ts",
+    "eval:mcp-planning": "ori eval evals/mcp-planning.eval.ts",
     "eval:offer-extraction": "ori eval evals/offer-extraction.eval.ts",
     "eval:task-extraction": "ori eval evals/task-extraction.eval.ts",
     "eval:time-block-regression": "ori eval evals/time-block-regression.eval.ts",

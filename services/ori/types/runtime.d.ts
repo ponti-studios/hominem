@@ -29,6 +29,7 @@ declare module 'ori' {
     AssistantTextDelta = 'assistant.text.delta',
     ToolStarted = 'tool.started',
     ToolSucceeded = 'tool.succeeded',
+    ConfirmationRequired = 'tool.confirmation_required',
   }
 
   export type AgentRuntimeEvent = {
