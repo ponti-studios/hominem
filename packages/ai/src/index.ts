@@ -2,6 +2,7 @@ export {
   AUDIO_TTS_MODEL,
   AUDIO_TTS_VOICE,
   CHAT_MODEL,
+  getReasoningConfig,
   ENHANCE_MODEL,
   normalizeOpenRouterError,
   OpenRouterRequestError,
@@ -11,6 +12,9 @@ export {
 } from './shared';
 
 export type { AIUsageMetrics, OpenRouterClientOptions } from './shared';
+export type { ReasoningConfig } from './shared';
+export { getModelCapabilityProfile } from './model-capabilities';
+export type { ModelCapabilityProfile } from './model-capabilities';
 
 export { convertZodToJsonSchema as convertSchemaToJsonSchema } from '@openrouter/sdk/lib/tool-executor';
 

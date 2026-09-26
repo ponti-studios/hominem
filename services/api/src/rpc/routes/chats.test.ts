@@ -77,6 +77,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@hominem/ai', () => ({
   AUDIO_TTS_MODEL: 'test-tts-model',
   CHAT_MODEL: 'test-chat-model',
+  getReasoningConfig: vi.fn(() => ({ effort: 'none' })),
   getSpeechUsageEstimate: mocks.getSpeechUsageEstimate,
   synthesizeSpeech: mocks.synthesizeSpeech,
   getChatCompletionUsage: vi.fn((chunk: { usage?: unknown }) => chunk.usage ?? null),

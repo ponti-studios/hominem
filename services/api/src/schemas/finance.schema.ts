@@ -61,7 +61,10 @@ const financeAccountBalanceSchema = z.object({
 });
 
 export const financeNetWorthInputSchema = z.object({
-  includeClosed: z.boolean().default(false),
+  includeClosed: z
+    .boolean()
+    .default(false)
+    .describe('Whether to include closed accounts in the current balance totals.'),
 });
 
 export const financeNetWorthOutputSchema = z.object({
@@ -95,10 +98,16 @@ const financeTransactionSchema = z.object({
 
 export const financeRecentTransactionsInputSchema = z
   .object({
-    accountId: z.string().optional(),
-    from: isoDateSchema.optional(),
-    to: isoDateSchema.optional(),
-    limit: mcpLimitSchema.default(20),
+    accountId: z.string().optional().describe('Stable account ID returned by a finance tool.'),
+    from: isoDateSchema
+      .optional()
+      .describe('Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.'),
+    to: isoDateSchema
+      .optional()
+      .describe('Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.'),
+    limit: mcpLimitSchema
+      .default(20)
+      .describe('Maximum number of transactions to return, from 1 to 50.'),
   })
   .superRefine((value, context) => {
     if (value.from && value.to && value.from > value.to) {
@@ -119,9 +128,15 @@ export const financeRecentTransactionsOutputSchema = z.object({
 
 export const financeSpendingByCategoryInputSchema = z
   .object({
-    from: isoDateSchema.optional(),
-    to: isoDateSchema.optional(),
-    limit: mcpLimitSchema.default(20),
+    from: isoDateSchema
+      .optional()
+      .describe('Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.'),
+    to: isoDateSchema
+      .optional()
+      .describe('Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.'),
+    limit: mcpLimitSchema
+      .default(20)
+      .describe('Maximum number of categories to return, from 1 to 50.'),
   })
   .superRefine((value, context) => {
     if (value.from && value.to && value.from > value.to) {

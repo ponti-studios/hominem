@@ -66,6 +66,7 @@ vi.mock('@hominem/db/transaction', () => ({ runInTransaction: mocks.runInTransac
 
 vi.mock('@hominem/ai', () => ({
   CHAT_MODEL: 'test-model',
+  getReasoningConfig: vi.fn(() => ({ effort: 'none' })),
   getChatCompletionUsage: vi.fn(),
 }));
 vi.mock('@hominem/queues', () => ({ embeddingQueue: { add: vi.fn() } }));

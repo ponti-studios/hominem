@@ -112,6 +112,11 @@ registerTool(
     readOnly: true,
     scopes: ['career:read'],
     resultCap: 1,
+    guidance: {
+      whenToUse: 'The user asks about their current career profile, roles, or skills.',
+      whenNotToUse: 'Do not use for a single application when a focused application tool exists.',
+      produces: ['career profile', 'skills', 'role history'],
+    },
   },
   async (ownerUserId, _input) => {
     const profile = await getCareerProfile(ownerUserId);
@@ -173,6 +178,17 @@ registerTool(
     description: 'Deletes a job application.',
     inputSchema: careerApplicationDeleteSchema,
     outputSchema: z.object({ removed: z.boolean() }),
+    guidance: {
+      whenToUse: 'A matching application id has been returned by career_applications.',
+      whenNotToUse: 'Do not invent an application id or delete before lookup and confirmation.',
+      dependencies: [
+        {
+          tool: 'career_applications',
+          reason: 'resolve the stable application id',
+          provides: ['id'],
+        },
+      ],
+    },
     preview: async (ownerUserId, input) => {
       const parsed = careerApplicationDeleteSchema.safeParse(input);
       if (!parsed.success) return null;

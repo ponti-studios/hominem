@@ -3,7 +3,6 @@ import { NoteRepository } from '@hominem/db/notes';
 import { VectorDocumentRepository } from '@hominem/db/vector';
 import { embeddingQueue } from '@hominem/queues';
 
-import { NoteService } from '../../application/notes.service';
 import {
   forgetMemoryInputSchema,
   forgetMemoryOutputSchema,
@@ -18,8 +17,6 @@ import { registerTool } from '../tool-registry';
 
 // Memories are just notes with kind = 'memory', so they show up anywhere notes already do.
 const MEMORY_KIND = 'memory' as const;
-
-const noteService = new NoteService();
 
 async function enqueueMemoryEmbedding(userId: string, noteId: string) {
   await embeddingQueue.add(
@@ -45,21 +42,31 @@ registerTool(
     description:
       'Saves a durable fact, preference, or piece of personal context as a memory. Call this ' +
       'immediately when the user asks to be remembered something, or when a lasting fact about ' +
-      'them surfaces naturally in conversation — no confirmation needed before saving.',
+      'them surfaces naturally in conversation — no confirmation needed before saving. ' +
+      'Each call saves exactly one distinct fact: if the user mentions several facts, make one ' +
+      'call per fact. Never save the same fact more than once or under multiple titles — an ' +
+      'identical fact already in memory is returned as-is instead of being saved again.',
     inputSchema: rememberInputSchema,
     outputSchema: rememberOutputSchema,
     readOnly: false,
     scopes: ['memory:write'],
     resultCap: 1,
+    guidance: {
+      whenToUse: 'The user explicitly asks to remember something or states a durable preference.',
+      whenNotToUse:
+        'Do not save transient instructions, one-off plans, or facts about other people.',
+      produces: ['memory id', 'saved memory content'],
+    },
   },
   async (ownerUserId, input) => {
-    const note = await noteService.createNote(ownerUserId, {
+    const result = await NoteRepository.createMemoryIfAbsent(db, {
+      userId: ownerUserId,
       title: input.title ?? null,
       content: input.content,
-      kind: MEMORY_KIND,
+      excerpt: input.content.slice(0, 200),
     });
-    await enqueueMemoryEmbedding(ownerUserId, note.id);
-    return toMemorySummary(note);
+    if (result.created) await enqueueMemoryEmbedding(ownerUserId, result.record.id);
+    return toMemorySummary(result.record);
   },
 );
 
@@ -73,6 +80,11 @@ registerTool(
     readOnly: true,
     scopes: ['memory:read'],
     resultCap: 50,
+    guidance: {
+      whenToUse: 'A broad recent-memory review is requested or keyword search is not useful.',
+      whenNotToUse: 'Do not use as a substitute for current domain data such as trips or finances.',
+      produces: ['memory ids', 'memory content'],
+    },
   },
   async (ownerUserId, input) => {
     const notes = await NoteRepository.list(db, {
@@ -99,6 +111,12 @@ registerTool(
     readOnly: true,
     scopes: ['memory:read'],
     resultCap: 50,
+    guidance: {
+      whenToUse:
+        'A response depends on remembered personal context and a keyword search is appropriate.',
+      whenNotToUse: 'Do not use as a substitute for current domain data such as trips or finances.',
+      produces: ['memory ids', 'memory content'],
+    },
   },
   async (ownerUserId, input) => {
     const limit = input.limit ?? 20;

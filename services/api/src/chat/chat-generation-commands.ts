@@ -10,9 +10,9 @@ import { planChatTools } from '../mcp/chat-tool-adapter';
 import { ChatGenerationInputError } from './chat-generation-errors';
 import { execute, send, start } from './chat-generation-execute';
 import {
-  RESPONSE_LENGTH_MAX_TOKENS,
   buildMessages,
   formatUserContentWithContext,
+  getMaxTokens,
   getReasoningConfig,
   toStoredUserMessageContent,
 } from './chat-generation-input';
@@ -191,9 +191,10 @@ export async function startMessage(
     model: CHAT_MODEL,
     messages,
     tools: toolPlan.tools,
+    toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
-    maxTokens: input.responseLength ? RESPONSE_LENGTH_MAX_TOKENS[input.responseLength] : undefined,
-    reasoning: getReasoningConfig(),
+    maxTokens: getMaxTokens(CHAT_MODEL, input.responseLength),
+    reasoning: getReasoningConfig(CHAT_MODEL),
     userMessageId: created.userMessageId,
   });
 }
@@ -257,9 +258,10 @@ export async function sendMessage(
     model: CHAT_MODEL,
     messages,
     tools: toolPlan.tools,
+    toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
-    maxTokens: input.responseLength ? RESPONSE_LENGTH_MAX_TOKENS[input.responseLength] : undefined,
-    reasoning: getReasoningConfig(),
+    maxTokens: getMaxTokens(CHAT_MODEL, input.responseLength),
+    reasoning: getReasoningConfig(CHAT_MODEL),
     userMessageId,
     responseModality: input.responseModality,
   });
@@ -311,9 +313,10 @@ async function redoGeneration(
     model: CHAT_MODEL,
     messages,
     tools: toolPlan.tools,
+    toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
-    maxTokens: input.responseLength ? RESPONSE_LENGTH_MAX_TOKENS[input.responseLength] : undefined,
-    reasoning: getReasoningConfig(),
+    maxTokens: getMaxTokens(CHAT_MODEL, input.responseLength),
+    reasoning: getReasoningConfig(CHAT_MODEL),
     userMessageId: input.userMessageId,
     staleGenerationId: input.staleGenerationId,
     staleAssistantMessageId: input.staleAssistantMessageId,
@@ -395,9 +398,10 @@ export async function respondToConfirmation(
     model: CHAT_MODEL,
     messages,
     tools: toolPlan.tools,
+    toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
-    maxTokens: input.responseLength ? RESPONSE_LENGTH_MAX_TOKENS[input.responseLength] : undefined,
-    reasoning: getReasoningConfig(),
+    maxTokens: getMaxTokens(CHAT_MODEL, input.responseLength),
+    reasoning: getReasoningConfig(CHAT_MODEL),
     userMessageId: null,
     targetAssistantMessageId: input.messageId,
     kind: 'send',

@@ -3,6 +3,7 @@ import { HTTPClient, OpenRouter } from '@openrouter/sdk';
 import type { ChatUsage } from '@openrouter/sdk/models';
 
 import { env } from './env';
+import { getModelCapabilityProfile } from './model-capabilities';
 
 export const DEFAULT_HTTP_REFERER = 'https://hominem.app';
 export const DEFAULT_APP_TITLE = 'Hominem';
@@ -15,6 +16,12 @@ export const ENHANCE_MODEL = env.ENHANCE_MODEL;
 export const TASK_EXTRACTION_MODEL = env.TASK_EXTRACTION_MODEL;
 export const TIME_BLOCK_EXTRACTION_MODEL = env.TIME_BLOCK_EXTRACTION_MODEL;
 export const VOICE_CLEANUP_MODEL = env.VOICE_CLEANUP_MODEL;
+
+export type ReasoningConfig = { effort: 'none' } | undefined;
+
+export function getReasoningConfig(model: string): ReasoningConfig {
+  return getModelCapabilityProfile(model).reasoning;
+}
 
 export type OpenRouterClientOptions = {
   httpReferer?: string;

@@ -1,4 +1,4 @@
-import type { ChatMessages } from '@hominem/ai';
+import { getReasoningConfig as getModelReasoningConfig, type ChatMessages } from '@hominem/ai';
 import type { ChatMessageSnapshot } from '@hominem/chat';
 import type { ChatMessageFileRecord, NoteContext } from '@hominem/db/chats';
 import { isObject } from '@hominem/utils';
@@ -9,8 +9,14 @@ export const RESPONSE_LENGTH_MAX_TOKENS: Record<'short' | 'medium' | 'long', num
   long: 6000,
 };
 
-export function getReasoningConfig(): { effort: 'none' } {
-  return { effort: 'none' };
+export const getReasoningConfig = getModelReasoningConfig;
+
+export function getMaxTokens(
+  model: string,
+  responseLength?: keyof typeof RESPONSE_LENGTH_MAX_TOKENS,
+) {
+  if (model.startsWith('meta/muse-spark-1.3')) return 1_600;
+  return responseLength ? RESPONSE_LENGTH_MAX_TOKENS[responseLength] : undefined;
 }
 
 export function toStoredUserMessageContent(

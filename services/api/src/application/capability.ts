@@ -23,6 +23,20 @@ export type Capability = (typeof CAPABILITIES)[number];
 type ScopeAction = 'read' | 'write';
 type Scope = `${Capability}:${ScopeAction}`;
 
+export type CapabilityDependency = {
+  tool: string;
+  reason: string;
+  provides: readonly string[];
+};
+
+export type CapabilityGuidance = {
+  whenToUse?: string;
+  whenNotToUse?: string;
+  examples?: readonly string[];
+  dependencies?: readonly CapabilityDependency[];
+  produces?: readonly string[];
+};
+
 export interface CapabilityDefinition<
   Name extends string = string,
   InputSchema extends z.ZodType = z.ZodType,
@@ -42,6 +56,7 @@ export interface CapabilityDefinition<
   invoking?: string;
   invoked?: string;
   requiresConfirmation?: boolean;
+  guidance?: CapabilityGuidance;
   // `ChatMessageJsonObject` (not `Record<string, unknown>`) because a tool's preview
   // is persisted straight into `ChatMessageToolCallRecord.preview`, whose JSON-column
   // shape is the actual constraint here — narrowing to it here surfaces a

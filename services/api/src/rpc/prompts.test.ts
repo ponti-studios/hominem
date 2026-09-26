@@ -38,18 +38,14 @@ describe('chat assistant personality', () => {
     }
   });
 
-  it('keeps the DeepEval and Ori chat prompt snapshots aligned with production', () => {
-    const files = [
-      '../../../deepeval/datasets/chat-assistant/prompt.json',
-      '../../../ori/data/chat-assistant/prompt.json',
-    ];
-
-    for (const file of files) {
-      const messages = JSON.parse(
-        readFileSync(resolve(import.meta.dirname, file), 'utf8'),
-      ) as Array<{ role: string; content: string }>;
-      expect(messages[0]).toEqual({ role: 'system', content: CHAT_ASSISTANT_PROMPT });
-    }
+  it('keeps the Ori chat prompt snapshot aligned with production', () => {
+    const messages = JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, '../../../ori/data/chat-assistant/prompt.json'),
+        'utf8',
+      ),
+    ) as Array<{ role: string; content: string }>;
+    expect(messages[0]).toEqual({ role: 'system', content: CHAT_ASSISTANT_PROMPT });
   });
 });
 

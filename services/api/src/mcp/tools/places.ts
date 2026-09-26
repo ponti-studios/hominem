@@ -16,6 +16,11 @@ registerTool(
     readOnly: true,
     scopes: ['places:read'],
     resultCap: 50,
+    guidance: {
+      whenToUse: 'The user asks which restaurants, venues, or addresses they visited.',
+      whenNotToUse: 'Do not use to answer trip-history questions when no place visit is requested.',
+      produces: ['place ids', 'place names', 'visit dates'],
+    },
   },
   async (ownerUserId, input) => getPlaceVisitHistory(ownerUserId, input),
 );

@@ -21,8 +21,10 @@ const chatHarness: AgentHarness = defineHarness({
       const apiKey = options.env?.OPENROUTER_API_KEY ?? process.env.OPENROUTER_API_KEY;
       if (!apiKey) throw new Error('OPENROUTER_API_KEY is required for chat evaluation');
 
+      const startedAt = performance.now();
       yield event(AgentRuntimeEventTag.RunStarted, { prompt: options.prompt, model }, model);
       yield event(AgentRuntimeEventTag.SessionStarted, {}, model);
+      const turnStartedAt = performance.now();
       yield event(AgentRuntimeEventTag.TurnStarted, { prompt: options.prompt }, model);
 
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -40,19 +42,39 @@ const chatHarness: AgentHarness = defineHarness({
 
       if (!response.ok) {
         const detail = await response.text();
-        const failure = { failure: { message: `OpenRouter request failed (${response.status})` } };
+        const failure = {
+          failure: { message: `OpenRouter request failed (${response.status})` },
+          errorCategory: 'provider',
+          latencyMs: performance.now() - turnStartedAt,
+        };
         yield event(AgentRuntimeEventTag.TurnFailed, failure, model);
-        yield event(AgentRuntimeEventTag.SessionFailed, { failure: { message: detail } }, model);
+        yield event(
+          AgentRuntimeEventTag.SessionFailed,
+          {
+            failure: { message: detail },
+            errorCategory: 'provider',
+            latencyMs: performance.now() - startedAt,
+          },
+          model,
+        );
         return;
       }
 
       const body = (await response.json()) as {
         choices?: Array<{ message?: { content?: string | null } }>;
+        model?: string;
+        usage?: Record<string, unknown> | null;
       };
       const content = body.choices?.[0]?.message?.content ?? '';
       if (content) yield event(AgentRuntimeEventTag.AssistantTextDelta, { delta: content }, model);
-      yield event(AgentRuntimeEventTag.TurnSucceeded, {}, model);
-      yield event(AgentRuntimeEventTag.SessionSucceeded, {}, model);
+      const metrics = {
+        latencyMs: performance.now() - turnStartedAt,
+        totalLatencyMs: performance.now() - startedAt,
+        usage: body.usage ?? null,
+        servedModel: body.model ?? model,
+      };
+      yield event(AgentRuntimeEventTag.TurnSucceeded, metrics, model);
+      yield event(AgentRuntimeEventTag.SessionSucceeded, metrics, model);
     });
   },
 });

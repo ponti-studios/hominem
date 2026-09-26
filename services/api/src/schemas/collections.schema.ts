@@ -42,9 +42,12 @@ const collectionDetailSchema = z.object({
 // ── create_collection ────────────────────────────────────────────────
 
 export const createCollectionInputSchema = z.object({
-  name: z.string().trim().min(1).max(200),
-  description: z.string().trim().max(2000).optional(),
-  visibility: z.enum(['private', 'shared']).default('private'),
+  name: z.string().trim().min(1).max(200).describe('Human-readable collection name.'),
+  description: z.string().trim().max(2000).optional().describe('Optional collection description.'),
+  visibility: z
+    .enum(['private', 'shared'])
+    .default('private')
+    .describe('Whether collaborators can access the collection.'),
 });
 
 export const createCollectionOutputSchema = z.object({
@@ -131,9 +134,17 @@ export const collectionDetailOutputSchema = collectionDetailSchema;
 // ── invite_member ────────────────────────────────────────────────────
 
 export const inviteMemberInputSchema = z.object({
-  collectionId: z.string().uuid(),
-  email: z.string().trim().toLowerCase().email(),
-  role: z.enum(['editor', 'viewer']).default('viewer'),
+  collectionId: z
+    .string()
+    .uuid()
+    .describe('Stable collection id returned by a collection lookup or create operation.'),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email()
+    .describe('Email address of the collaborator to invite.'),
+  role: z.enum(['editor', 'viewer']).default('viewer').describe('Collaborator permission level.'),
 });
 
 export const inviteMemberOutputSchema = z.object({

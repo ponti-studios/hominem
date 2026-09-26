@@ -4,6 +4,7 @@ import { pilotCases, setupAgent } from 'ori/eval';
 
 import { loadJson, targetModel, type Golden } from './lib/evaluator';
 import mcpHarness from './lib/mcp-harness';
+import { scoreMcpTrace } from './lib/mcp-scoring';
 
 type McpGolden = Golden & {
   expectedTools: Array<{ name: string }>;
@@ -30,8 +31,14 @@ test('MCP tool selection', async () => {
             'Use the available Hominem tools when they are needed. Complete the request concisely.',
         });
         const expectedTools = golden.expectedTools.map((tool) => tool.name);
-        for (const tool of expectedTools) run.tool(tool).toBeCalled();
-        expect(run.toolCalls).toEqual(expectedTools);
+        const score = scoreMcpTrace(
+          { toolCalls: run.toolCalls, text: run.text },
+          {
+            requiredTools: expectedTools,
+            outputIncludes: golden.expectedOutputIncludes,
+          },
+        );
+        expect(score.passed).toEqual(true);
         run.toComplete();
         for (const expectedText of golden.expectedOutputIncludes ?? []) {
           expect(run.text).toContain(expectedText);

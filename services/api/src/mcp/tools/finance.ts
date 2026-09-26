@@ -25,6 +25,11 @@ registerTool(
     readOnly: true,
     scopes: ['finance:read'],
     resultCap: 50,
+    guidance: {
+      whenToUse: 'The user asks for current net worth or account balances.',
+      whenNotToUse: 'Do not use for transaction history or category spending.',
+      produces: ['account balances', 'net worth totals'],
+    },
   },
   async (ownerUserId, input) => getFinanceNetWorth(ownerUserId, input.includeClosed),
 );
@@ -40,6 +45,11 @@ registerTool(
     readOnly: true,
     scopes: ['finance:read'],
     resultCap: 50,
+    guidance: {
+      whenToUse: 'The user asks for recent transactions or spending evidence.',
+      whenNotToUse: 'Do not use for net worth or category aggregation.',
+      produces: ['transaction ids', 'transaction dates', 'merchant names', 'amounts'],
+    },
   },
   async (ownerUserId, input) => getFinanceRecentTransactions(ownerUserId, input),
 );
