@@ -90,6 +90,13 @@ registerTool(
     guidance: {
       whenToUse: 'The user explicitly asks to remove a known entity from a collection.',
       whenNotToUse: 'Do not remove items without confirmation or stable collection and entity ids.',
+      dependencies: [
+        {
+          tool: 'list_collections',
+          reason: 'resolve the stable collection id',
+          provides: ['collectionId'],
+        },
+      ],
       produces: ['removed state'],
     },
     preview: async (ownerUserId, input) => {
@@ -123,6 +130,13 @@ registerTool(
     guidance: {
       whenToUse: 'The user explicitly asks to invite a collaborator to a known collection.',
       whenNotToUse: 'Do not invite without confirmation or a stable collection id.',
+      dependencies: [
+        {
+          tool: 'list_collections',
+          reason: 'resolve the stable collection id',
+          provides: ['collectionId'],
+        },
+      ],
       produces: ['member id', 'invitation state'],
     },
   },

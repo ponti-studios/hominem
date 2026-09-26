@@ -52,5 +52,10 @@ test('agent protocol blocks a rejected confirmation from executing', () => {
     email: 'alex@example.com',
   });
   const rejected = resolveConfirmation(pending, 'reject');
-  expect(canExecute(rejected, 'invite_member')).toEqual(false);
+  expect(
+    canExecute(rejected, 'invite_member', {
+      collectionId: 'collection-japan',
+      email: 'alex@example.com',
+    }),
+  ).toEqual(false);
 });

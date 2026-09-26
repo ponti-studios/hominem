@@ -3,7 +3,7 @@ import { expect, test } from 'bun:test';
 import { setupAgent } from 'ori/eval';
 
 import { loadJson, targetModel } from './lib/evaluator';
-import mcpHarness from './lib/mcp-harness';
+import mcpHarness, { getLastMcpTrace } from './lib/mcp-harness';
 import { scoreMcpTrace, type McpExpectation } from './lib/mcp-scoring';
 
 type Scenario = {
@@ -17,6 +17,8 @@ type Scenario = {
     stopBefore?: string;
     confirmation?: boolean;
     outputIncludes?: string[];
+    argumentAssertions?: { tool: string; equals: Record<string, unknown> }[];
+    resultAssertions?: { tool: string; outputIncludes?: string[]; error?: string }[];
     outcome?: string;
   };
 };
@@ -35,13 +37,16 @@ test(`MCP capability planning ${benchmark.version}`, async () => {
         systemPrompt:
           'You are testing a capability-first personal agent. Use the narrowest tools, preserve IDs and dates from results, search before writes, and stop at confirmation-required actions.',
       });
-      const score = scoreMcpTrace({ toolCalls: run.toolCalls, text: run.text }, {
+      const trace = getLastMcpTrace();
+      const score = scoreMcpTrace({ ...trace, toolCalls: run.toolCalls, text: run.text }, {
         requiredTools: scenario.expected.tools,
         forbiddenTools: scenario.expected.forbiddenTools,
         dependencies: scenario.expected.dependencies,
         stopBefore: scenario.expected.stopBefore,
         confirmation: scenario.expected.confirmation,
         outputIncludes: scenario.expected.outputIncludes,
+        argumentAssertions: scenario.expected.argumentAssertions,
+        resultAssertions: scenario.expected.resultAssertions,
       } satisfies McpExpectation);
       if (!score.passed) {
         throw new Error(`score=${JSON.stringify(score)} calls=${JSON.stringify(run.toolCalls)}`);

@@ -106,6 +106,13 @@ export interface SearchNoteResult {
   excerpt: string | null;
 }
 
+export interface NoteContentRecord {
+  id: string;
+  title: string | null;
+  excerpt: string | null;
+  createdAt: string;
+}
+
 export interface SearchNotesPageRecord {
   notes: SearchNoteResult[];
   nextCursor: string | null;
@@ -136,6 +143,17 @@ function toNoteRecord(row: NoteRow, files: NoteFileRecord[]): NoteRecord {
     files,
     createdAt: new Date(row.createdat).toISOString(),
     updatedAt: new Date(row.updatedat).toISOString(),
+  };
+}
+
+function toNoteContentRecord(
+  row: Pick<NoteRow, 'id' | 'title' | 'excerpt' | 'createdat'>,
+): NoteContentRecord {
+  return {
+    id: row.id,
+    title: row.title,
+    excerpt: row.excerpt,
+    createdAt: new Date(row.createdat).toISOString(),
   };
 }
 
@@ -221,7 +239,7 @@ export const NoteRepository = {
   async findOwnedByContent(
     handle: DbHandle,
     input: { userId: string; kind?: NoteKind; content: string },
-  ): Promise<NoteRow | null> {
+  ): Promise<NoteContentRecord | null> {
     let query = handle
       .selectFrom('app.notes')
       .selectAll()
@@ -232,7 +250,44 @@ export const NoteRepository = {
       query = query.where('kind', '=', input.kind);
     }
 
-    return (await query.orderBy('createdat', 'asc').executeTakeFirst()) ?? null;
+    const row = await query
+      .select(['id', 'title', 'excerpt', 'createdat'])
+      .orderBy('createdat', 'asc')
+      .executeTakeFirst();
+    return row ? toNoteContentRecord(row) : null;
+  },
+
+  async createMemoryIfAbsent(
+    handle: DbHandle,
+    input: { userId: string; title: string | null; content: string; excerpt: string | null },
+  ): Promise<{ record: NoteRecord; created: boolean }> {
+    const created = await handle
+      .insertInto('app.notes')
+      .values({
+        ownerUserid: input.userId,
+        kind: 'memory',
+        title: input.title,
+        content: input.content,
+        excerpt: input.excerpt,
+      })
+      .onConflict((oc) =>
+        oc.columns(['ownerUserid', 'kind', 'content']).where('kind', '=', 'memory').doNothing(),
+      )
+      .returningAll()
+      .executeTakeFirst();
+
+    if (created) return { record: toNoteRecord(created, []), created: true };
+
+    const existing = await handle
+      .selectFrom('app.notes')
+      .selectAll()
+      .where('ownerUserid', '=', input.userId)
+      .where('kind', '=', 'memory')
+      .where('content', '=', input.content)
+      .executeTakeFirst();
+    if (!existing)
+      throw new ValidationError('Memory insert conflicted but the existing memory was not found');
+    return { record: toNoteRecord(existing, []), created: false };
   },
 
   async load(handle: DbHandle, noteId: string, userId: string): Promise<NoteRecord> {

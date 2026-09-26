@@ -178,6 +178,17 @@ registerTool(
     description: 'Deletes a job application.',
     inputSchema: careerApplicationDeleteSchema,
     outputSchema: z.object({ removed: z.boolean() }),
+    guidance: {
+      whenToUse: 'A matching application id has been returned by career_applications.',
+      whenNotToUse: 'Do not invent an application id or delete before lookup and confirmation.',
+      dependencies: [
+        {
+          tool: 'career_applications',
+          reason: 'resolve the stable application id',
+          provides: ['id'],
+        },
+      ],
+    },
     preview: async (ownerUserId, input) => {
       const parsed = careerApplicationDeleteSchema.safeParse(input);
       if (!parsed.success) return null;

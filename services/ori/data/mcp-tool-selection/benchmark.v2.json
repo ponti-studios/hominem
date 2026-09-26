@@ -27,7 +27,15 @@
       "expected": {
         "tools": ["trip_history", "finance_recent_transactions"],
         "dependencies": [["trip_history", "finance_recent_transactions"]],
-        "propagates": ["trip dates"]
+        "argumentAssertions": [
+          {
+            "tool": "finance_recent_transactions",
+            "equals": { "from": "2025-04-10", "to": "2025-04-18" }
+          }
+        ],
+        "resultAssertions": [
+          { "tool": "finance_recent_transactions", "outputIncludes": ["Sushi Dai"] }
+        ]
       }
     },
     {
@@ -64,7 +72,12 @@
       "expected": {
         "tools": ["trip_history", "finance_recent_transactions"],
         "dependencies": [["trip_history", "finance_recent_transactions"]],
-        "propagates": ["trip dates"]
+        "argumentAssertions": [
+          {
+            "tool": "finance_recent_transactions",
+            "equals": { "from": "2025-04-10", "to": "2025-04-18" }
+          }
+        ]
       }
     },
     {

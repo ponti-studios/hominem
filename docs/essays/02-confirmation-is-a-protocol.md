@@ -33,8 +33,16 @@ function requestConfirmation(
   return { status: 'pending', tool, input };
 }
 
-function canExecute(state: ConfirmationState, tool: string): boolean {
-  return state.status === 'approved' && state.tool === tool;
+function canExecute(
+  state: ConfirmationState,
+  tool: string,
+  input: Record<string, unknown>,
+): boolean {
+  return (
+    state.status === 'approved' &&
+    state.tool === tool &&
+    JSON.stringify(state.input) === JSON.stringify(input)
+  );
 }
 ```
 
@@ -65,7 +73,7 @@ const pending = requestConfirmation({ status: 'ready' }, 'remove_collection_item
   entityId: 'person-alex',
 });
 
-if (!canExecute(pending, 'remove_collection_item')) {
+if (!canExecute(pending, 'remove_collection_item', input)) {
   // Persist the pending action and stop execution.
 }
 ```
@@ -76,7 +84,7 @@ Rejected confirmation is not a failed tool call. It means user control was prese
 
 ```ts
 const rejected = resolveConfirmation(pending, 'reject');
-if (!canExecute(rejected, 'remove_collection_item')) {
+if (!canExecute(rejected, 'remove_collection_item', input)) {
   return { changed: false, reason: 'user_rejected_confirmation' };
 }
 ```

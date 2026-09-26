@@ -56,7 +56,7 @@ export function validateChatToolPlan(
   const available = new Map(definitions.map((definition) => [definition.name, definition]));
   const errors: string[] = [];
   const seen = new Set<string>();
-  let hasPriorRead = false;
+  const scheduled = new Set<string>();
 
   for (const step of parsed.data.steps) {
     const definition = available.get(step.tool);
@@ -67,10 +67,19 @@ export function validateChatToolPlan(
     if (seen.has(step.tool)) errors.push(`Duplicate tool step: ${step.tool}`);
     seen.add(step.tool);
 
-    if (!definition.readOnly && !hasPriorRead) {
+    const requiredDependencies =
+      definition.guidance?.dependencies?.map((dependency) => dependency.tool) ?? [];
+    const missingRequiredDependencies = requiredDependencies.filter(
+      (dependency) => !step.dependsOn.includes(dependency),
+    );
+    if (missingRequiredDependencies.length > 0) {
+      errors.push(
+        `${step.tool} is missing required dependencies: ${missingRequiredDependencies.join(', ')}`,
+      );
+    }
+    if (!definition.readOnly && scheduled.size === 0) {
       errors.push(`${step.tool} requires a preceding read-only lookup`);
     }
-    if (definition.readOnly) hasPriorRead = true;
 
     for (const dependency of step.dependsOn) {
       if (!available.has(dependency))
@@ -94,6 +103,7 @@ export function validateChatToolPlan(
           .join(', ')}`,
       );
     }
+    scheduled.add(step.tool);
   }
 
   if (hasCycle(parsed.data.steps)) errors.push('Tool plan contains a dependency cycle');

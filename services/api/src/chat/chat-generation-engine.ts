@@ -165,6 +165,14 @@ export async function executeGenerationTurn(
       return `Tool ${toolName} is waiting for prerequisite tool(s): ${missing.join(', ')}`;
     }
     const definition = runtime.getToolDefinition(toolName);
+    const requiredDependencies =
+      definition?.guidance?.dependencies?.map((dependency) => dependency.tool) ?? [];
+    const missingRequiredDependencies = requiredDependencies.filter(
+      (dependency) => !completedPlannedTools.has(dependency),
+    );
+    if (missingRequiredDependencies.length > 0) {
+      return `Tool ${toolName} is waiting for required provenance from: ${missingRequiredDependencies.join(', ')}`;
+    }
     if (definition && !definition.readOnly) {
       const hasCompletedRead = plannedSteps.some(
         (candidate) =>

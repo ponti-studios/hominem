@@ -6,6 +6,8 @@ import {
   type HarnessInvokeOptions,
 } from 'ori';
 
+import type { McpTrace } from './mcp-scoring';
+
 type ToolCall = { id?: string; function?: { name?: string; arguments?: string } };
 type ToolInput = Record<string, unknown>;
 type ToolOutcome = { output: unknown; confirmationRequired?: boolean };
@@ -93,7 +95,14 @@ const toolsByDomain: Record<string, readonly unknown[]> = {
   general: [],
 };
 
-type HarnessState = { calls: string[]; prompt: string };
+type HarnessState = { calls: string[]; prompt: string; trace: McpTrace };
+
+let latestTrace: McpTrace | null = null;
+
+export function getLastMcpTrace(): McpTrace {
+  if (!latestTrace) throw new Error('MCP harness did not produce a trace');
+  return latestTrace;
+}
 
 const parseDomain = (content: string): string => {
   const match = content.match(/\{[\s\S]*?"domain"\s*:\s*"([^"]+)"[\s\S]*?\}/i);
@@ -130,7 +139,7 @@ const event = (
   model: string,
 ): AgentRuntimeEvent => ({ type, payload, model, harness: 'hominem-mcp' }) as AgentRuntimeEvent;
 
-function executeTool(name: string, input: ToolInput, state: HarnessState): ToolOutcome {
+function executeToolInternal(name: string, input: ToolInput, state: HarnessState): ToolOutcome {
   if (state.calls.includes(name)) return { output: { error: 'duplicate_tool_call', name } };
   state.calls.push(name);
   switch (name) {
@@ -235,6 +244,27 @@ function executeTool(name: string, input: ToolInput, state: HarnessState): ToolO
   }
 }
 
+function executeTool(name: string, input: ToolInput, state: HarnessState): ToolOutcome {
+  const outcome = executeToolInternal(name, input, state);
+  const output = outcome.output as { error?: string };
+  state.trace.calls = [
+    ...(state.trace.calls ?? []),
+    {
+      tool: name,
+      input,
+      output: outcome.output,
+      ...(output?.error ? { error: output.error } : {}),
+      status: outcome.confirmationRequired
+        ? 'confirmation_required'
+        : output?.error
+          ? 'failed'
+          : 'succeeded',
+    },
+  ];
+  if (outcome.confirmationRequired) state.trace.confirmationRequested = name;
+  return outcome;
+}
+
 const mcpHarness: AgentHarness = defineHarness({
   name: 'hominem-mcp',
   init(registrar) {
@@ -253,7 +283,11 @@ const mcpHarness: AgentHarness = defineHarness({
         ...(options.systemPrompt ? [{ role: 'system', content: options.systemPrompt }] : []),
         { role: 'user', content: options.prompt },
       ];
-      const state: HarnessState = { calls: [], prompt: options.prompt };
+      const state: HarnessState = {
+        calls: [],
+        prompt: options.prompt,
+        trace: { toolCalls: [], calls: [] },
+      };
       yield event(
         AgentRuntimeEventTag.RunStarted,
         {
@@ -296,6 +330,7 @@ const mcpHarness: AgentHarness = defineHarness({
         const message = body.choices?.[0]?.message;
         const toolCalls = message?.tool_calls ?? [];
         const content = message?.content ?? '';
+        if (content) state.trace.text = `${state.trace.text ?? ''}${content}`;
         if (content)
           yield event(AgentRuntimeEventTag.AssistantTextDelta, { delta: content }, model);
         messages.push({
@@ -304,6 +339,8 @@ const mcpHarness: AgentHarness = defineHarness({
           ...(toolCalls.length ? { tool_calls: toolCalls } : {}),
         });
         if (toolCalls.length === 0) {
+          state.trace.toolCalls = state.calls;
+          latestTrace = state.trace;
           yield event(
             AgentRuntimeEventTag.TurnSucceeded,
             { latencyMs: performance.now() - turnStartedAt, usage: body.usage ?? null },
@@ -335,6 +372,8 @@ const mcpHarness: AgentHarness = defineHarness({
           );
           const outcome = executeTool(name, input, state);
           if (outcome.confirmationRequired) {
+            state.trace.toolCalls = state.calls;
+            latestTrace = state.trace;
             yield event(
               AgentRuntimeEventTag.ConfirmationRequired,
               { name, input, toolCallId: call.id, preview: outcome.output },
@@ -382,6 +421,9 @@ const mcpHarness: AgentHarness = defineHarness({
         },
         model,
       );
+      state.trace.toolCalls = state.calls;
+      state.trace.runtimeError = true;
+      latestTrace = state.trace;
       throw new Error('The agent exceeded the allowed MCP interaction budget.');
     });
   },

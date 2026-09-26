@@ -106,7 +106,29 @@ function inferMuseCapabilities(messages: ChatMessages[]): Set<ChatCapability> {
     ['travel', ['travel', 'trip', 'flight', 'hotel', 'visit']],
     ['career', ['career', 'job', 'application', 'work experience', 'resume']],
     ['collections', ['collection', 'invite']],
-    ['finance', ['finance', 'transaction', 'spending', 'net worth']],
+    [
+      'finance',
+      [
+        'finance',
+        'transaction',
+        'spending',
+        'spend',
+        'expense',
+        'merchant',
+        'net worth',
+        'money',
+        'checking',
+        'savings',
+        'account',
+        'balance',
+        'bank',
+        'cash',
+        'income',
+        'salary',
+        'budget',
+        'runway',
+      ],
+    ],
     ['health', ['health', 'workout', 'sleep']],
     ['media', ['media', 'music', 'watch', 'listen']],
     ['people', ['person', 'people', 'contact']],
@@ -116,6 +138,15 @@ function inferMuseCapabilities(messages: ChatMessages[]): Set<ChatCapability> {
   ];
   for (const [capability, needles] of terms) {
     if (needles.some((needle) => content.includes(needle))) matches.add(capability);
+  }
+  // Muse cannot reliably emit the structured router response. When phrasing
+  // is personal but does not match a domain term, expose the complete catalog
+  // so the generation model must ground its answer instead of guessing.
+  if (
+    matches.size === 0 &&
+    /\b(my|mine|i|me|do i|what do i|how much|where have i|have i)\b/.test(content)
+  ) {
+    for (const capability of CHAT_CAPABILITIES) matches.add(capability);
   }
   return matches;
 }
@@ -210,6 +241,9 @@ export async function planChatTools(input: {
     planUsage = planned.usage;
     const validation = validateChatToolPlan(planned.output, candidateDefinitions);
     if (!validation.ok) throw new Error(validation.errors.join('; '));
+    if (!capabilityOutput.requiresLookup || validation.plan.steps.length === 0) {
+      throw new Error('Exact plan must preserve the required private-data lookup');
+    }
     exactPlan = validation.plan;
   } catch (error) {
     logger.warn('chat_tool_plan_validation_failed', {

@@ -1,5 +1,12 @@
 export type McpTrace = {
   toolCalls: readonly string[];
+  calls?: readonly {
+    tool: string;
+    input: Record<string, unknown>;
+    output?: unknown;
+    error?: string;
+    status: 'requested' | 'succeeded' | 'failed' | 'confirmation_required';
+  }[];
   text?: string;
   confirmationRequested?: string;
   providerError?: boolean;
@@ -13,6 +20,12 @@ export type McpExpectation = {
   stopBefore?: string;
   confirmation?: boolean;
   outputIncludes?: readonly string[];
+  argumentAssertions?: readonly { tool: string; equals: Record<string, unknown> }[];
+  resultAssertions?: readonly {
+    tool: string;
+    outputIncludes?: readonly string[];
+    error?: string;
+  }[];
 };
 
 export type McpScenarioScore = {
@@ -22,6 +35,8 @@ export type McpScenarioScore = {
   dependencies: { passed: boolean; violated: string[] };
   confirmation: { passed: boolean; reason?: string };
   output: { passed: boolean; missing: string[] };
+  arguments: { passed: boolean; failed: string[] };
+  results: { passed: boolean; failed: string[] };
   failureCategory?: 'provider' | 'runtime' | 'planning' | 'grounding';
 };
 
@@ -47,7 +62,7 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
   let confirmationReason: string | undefined;
   if (confirmationExpected) {
     const pending = expected.stopBefore;
-    const requested = trace.confirmationRequested ?? pending;
+    const requested = trace.confirmationRequested;
     confirmationPassed = Boolean(requested);
     if (!requested) confirmationReason = 'no confirmation boundary was recorded';
     if (pending && requested !== pending) {
@@ -66,11 +81,33 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
   const missingOutput = (expected.outputIncludes ?? []).filter(
     (value) => !(trace.text ?? '').includes(value),
   );
+  const callsByTool = new Map((trace.calls ?? []).map((call) => [call.tool, call]));
+  const failedArguments = (expected.argumentAssertions ?? [])
+    .filter(
+      (assertion) =>
+        JSON.stringify(callsByTool.get(assertion.tool)?.input) !== JSON.stringify(assertion.equals),
+    )
+    .map((assertion) => assertion.tool);
+  const failedResults = (expected.resultAssertions ?? []).flatMap((assertion) => {
+    const call = callsByTool.get(assertion.tool);
+    if (!call) return [assertion.tool];
+    if (assertion.error && call.error !== assertion.error) return [assertion.tool];
+    if (
+      assertion.outputIncludes?.some((value) => !JSON.stringify(call.output ?? '').includes(value))
+    )
+      return [assertion.tool];
+    return [];
+  });
   const failureCategory = trace.providerError
     ? 'provider'
     : trace.runtimeError
       ? 'runtime'
-      : missing.length || forbidden.length || violated.length || !confirmationPassed
+      : missing.length ||
+          forbidden.length ||
+          violated.length ||
+          !confirmationPassed ||
+          failedArguments.length ||
+          failedResults.length
         ? 'planning'
         : missingOutput.length
           ? 'grounding'
@@ -93,6 +130,8 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
       ...(confirmationReason ? { reason: confirmationReason } : {}),
     },
     output: { passed: missingOutput.length === 0, missing: missingOutput },
+    arguments: { passed: failedArguments.length === 0, failed: failedArguments },
+    results: { passed: failedResults.length === 0, failed: failedResults },
     ...(failureCategory ? { failureCategory } : {}),
   };
 }
@@ -123,6 +162,14 @@ export function resolveConfirmation(
   return { ...state, status: decision === 'approve' ? 'approved' : 'rejected' };
 }
 
-export function canExecute(state: ConfirmationState, tool: string): boolean {
-  return state.status === 'approved' && state.tool === tool;
+export function canExecute(
+  state: ConfirmationState,
+  tool: string,
+  input: Record<string, unknown>,
+): boolean {
+  return (
+    state.status === 'approved' &&
+    state.tool === tool &&
+    JSON.stringify(state.input) === JSON.stringify(input)
+  );
 }

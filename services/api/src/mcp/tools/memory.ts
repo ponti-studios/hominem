@@ -3,7 +3,6 @@ import { NoteRepository } from '@hominem/db/notes';
 import { VectorDocumentRepository } from '@hominem/db/vector';
 import { embeddingQueue } from '@hominem/queues';
 
-import { NoteService } from '../../application/notes.service';
 import {
   forgetMemoryInputSchema,
   forgetMemoryOutputSchema,
@@ -18,8 +17,6 @@ import { registerTool } from '../tool-registry';
 
 // Memories are just notes with kind = 'memory', so they show up anywhere notes already do.
 const MEMORY_KIND = 'memory' as const;
-
-const noteService = new NoteService();
 
 async function enqueueMemoryEmbedding(userId: string, noteId: string) {
   await embeddingQueue.add(
@@ -36,20 +33,6 @@ function toMemorySummary(note: {
   createdAt: string;
 }) {
   return { id: note.id, title: note.title, excerpt: note.excerpt, createdAt: note.createdAt };
-}
-
-function toMemorySummaryRow(note: {
-  id: string;
-  title: string | null;
-  excerpt: string | null;
-  createdat: string;
-}) {
-  return {
-    id: note.id,
-    title: note.title,
-    excerpt: note.excerpt,
-    createdAt: new Date(note.createdat).toISOString(),
-  };
 }
 
 registerTool(
@@ -76,20 +59,14 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    const existing = await NoteRepository.findOwnedByContent(db, {
+    const result = await NoteRepository.createMemoryIfAbsent(db, {
       userId: ownerUserId,
-      kind: MEMORY_KIND,
-      content: input.content,
-    });
-    if (existing) return toMemorySummary(toMemorySummaryRow(existing));
-
-    const note = await noteService.createNote(ownerUserId, {
       title: input.title ?? null,
       content: input.content,
-      kind: MEMORY_KIND,
+      excerpt: input.content.slice(0, 200),
     });
-    await enqueueMemoryEmbedding(ownerUserId, note.id);
-    return toMemorySummary(note);
+    if (result.created) await enqueueMemoryEmbedding(ownerUserId, result.record.id);
+    return toMemorySummary(result.record);
   },
 );
 
