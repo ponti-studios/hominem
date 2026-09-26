@@ -77,7 +77,13 @@ const DEFAULT_TEST_USAGE: AIUsageMetrics = {
 
 export function scriptedProvider(
   turns: readonly ScriptedProviderTurn[],
-  plan: ChatToolPlan = { capabilities: [], requiresLookup: false, tools: [], usage: null },
+  plan: ChatToolPlan = {
+    capabilities: [],
+    requiresLookup: false,
+    tools: [],
+    steps: [],
+    usage: null,
+  },
   usage: readonly (AIUsageMetrics | null)[] = turns.map(() => DEFAULT_TEST_USAGE),
 ): ScriptedProvider {
   return {
@@ -350,7 +356,12 @@ export class HominemTests {
     add: (tool: TestTool) => {
       this.testTools.set(tool.definition.name, tool);
       this.provider.plan = {
-        ...(this.provider.plan ?? { capabilities: [], requiresLookup: false, usage: null }),
+        ...(this.provider.plan ?? {
+          capabilities: [],
+          requiresLookup: false,
+          steps: [],
+          usage: null,
+        }),
         capabilities: ['memory'],
         requiresLookup: true,
         tools: [
@@ -363,6 +374,15 @@ export class HominemTests {
               parameters: convertSchemaToJsonSchema(tool.definition.inputSchema),
             },
           } satisfies ChatFunctionTool,
+        ],
+        steps: [
+          ...(this.provider.plan?.steps ?? []),
+          {
+            tool: tool.definition.name,
+            purpose: tool.definition.description,
+            dependsOn: [],
+            arguments: {},
+          },
         ],
       };
     },
@@ -450,7 +470,13 @@ export class HominemTests {
     const service = createChatGenerationService({
       openRouterClient: createScriptedOpenRouterClient(provider),
       planChatTools: async () =>
-        provider.plan ?? { capabilities: [], requiresLookup: false, tools: [], usage: null },
+        provider.plan ?? {
+          capabilities: [],
+          requiresLookup: false,
+          tools: [],
+          steps: [],
+          usage: null,
+        },
       toolRuntime: createToolRuntime(this.userId, this.testTools),
       failureHooks,
       embeddingQueue: { add: async () => undefined },

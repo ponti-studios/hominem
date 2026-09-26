@@ -29,6 +29,126 @@ async function* chunks(values: readonly StreamChunk[]) {
 describe('chat generation service', () => {
   beforeEach(() => mockedStream.mockReset());
 
+  it('rejects a model-requested tool outside the validated plan', async () => {
+    mockedStream
+      .mockReturnValueOnce(
+        chunks([
+          {
+            created: 0,
+            id: 'chunk-plan-1',
+            model: 'model-1',
+            object: 'chat.completion.chunk',
+            choices: [
+              {
+                index: 0,
+                finishReason: null,
+                delta: {
+                  toolCalls: [
+                    { index: 0, id: 'call-1', function: { name: 'write', arguments: '{}' } },
+                  ],
+                },
+              },
+            ],
+          },
+        ]),
+      )
+      .mockReturnValueOnce(
+        chunks([
+          {
+            created: 0,
+            id: 'chunk-plan-2',
+            model: 'model-1',
+            object: 'chat.completion.chunk',
+            choices: [{ index: 0, finishReason: null, delta: { content: 'blocked' } }],
+          },
+        ]),
+      );
+
+    const callTool = vi.fn();
+    const save = vi.fn().mockImplementation(({ result }: { result: unknown }) => result);
+    const result = await executeGenerationTurn({
+      userId: 'user-1',
+      generationId: 'generation-1',
+      chatId: 'chat-1',
+      model: 'model-1',
+      messages: [{ role: 'user', content: 'question' }],
+      tools: [
+        { type: 'function', function: { name: 'write', description: 'write', parameters: {} } },
+      ],
+      toolPlan: [{ tool: 'lookup', purpose: 'Resolve context', dependsOn: [], arguments: {} }],
+      toolRuntime: { callTool, getToolDefinition: vi.fn(() => undefined) },
+      effectStore: { get: vi.fn().mockResolvedValue(null), save },
+    });
+
+    expect(callTool).not.toHaveBeenCalled();
+    expect(result.assistantText).toBe('blocked');
+    expect(save.mock.calls[0]?.[0].result.content).toContain('TOOL_PLAN_VIOLATION');
+  });
+
+  it('blocks a dependent tool until its prerequisite has completed', async () => {
+    mockedStream
+      .mockReturnValueOnce(
+        chunks([
+          {
+            created: 0,
+            id: 'chunk-dependency-1',
+            model: 'model-1',
+            object: 'chat.completion.chunk',
+            choices: [
+              {
+                index: 0,
+                finishReason: null,
+                delta: {
+                  toolCalls: [
+                    {
+                      index: 0,
+                      id: 'call-1',
+                      function: { name: 'detail', arguments: '{"id":"person-1"}' },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ]),
+      )
+      .mockReturnValueOnce(
+        chunks([
+          {
+            created: 0,
+            id: 'chunk-dependency-2',
+            model: 'model-1',
+            object: 'chat.completion.chunk',
+            choices: [{ index: 0, finishReason: null, delta: { content: 'needs lookup' } }],
+          },
+        ]),
+      );
+
+    const callTool = vi.fn();
+    const save = vi.fn().mockImplementation(({ result }: { result: unknown }) => result);
+    await executeGenerationTurn({
+      userId: 'user-1',
+      generationId: 'generation-1',
+      chatId: 'chat-1',
+      model: 'model-1',
+      messages: [{ role: 'user', content: 'question' }],
+      tools: [
+        { type: 'function', function: { name: 'detail', description: 'detail', parameters: {} } },
+      ],
+      toolPlan: [
+        { tool: 'lookup', purpose: 'Resolve context', dependsOn: [], arguments: {} },
+        { tool: 'detail', purpose: 'Load detail', dependsOn: ['lookup'], arguments: {} },
+      ],
+      toolRuntime: { callTool, getToolDefinition: vi.fn(() => undefined) },
+      effectStore: { get: vi.fn().mockResolvedValue(null), save },
+    });
+
+    expect(callTool).not.toHaveBeenCalled();
+    expect(save.mock.calls[0]?.[0].result.content).toContain(
+      'waiting for prerequisite tool(s): lookup',
+    );
+  });
+
   it('executes a tool, appends its result, and continues the next model turn', async () => {
     mockedStream
       .mockReturnValueOnce(

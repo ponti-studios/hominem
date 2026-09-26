@@ -11,6 +11,7 @@ import type { Context } from 'hono';
 import type { CapabilityDefinition } from '../application/capability';
 import type { AuthContext } from '../auth/types';
 import { UnauthorizedError } from '../errors';
+import { describeCapability } from './tool-planner';
 import { callTool, listToolsForScopes } from './tool-registry';
 
 export type McpHonoEnv = {
@@ -82,7 +83,7 @@ function createMcpServer(authInfo?: AuthInfo) {
       definition.name,
       {
         title: definition.title,
-        description: definition.description,
+        description: describeCapability(definition),
         inputSchema: definition.inputSchema,
         outputSchema: definition.outputSchema,
         annotations: {

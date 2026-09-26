@@ -161,6 +161,7 @@ export async function createStructuredChatCompletion<TSchema extends z.ZodTypeAn
     schemaDescription?: string;
     temperature?: number;
     maxCompletionTokens?: number;
+    reasoning?: ChatRequest['reasoning'] | null;
   },
   options: OpenRouterClientOptions = {},
 ): Promise<StructuredChatCompletionResult<z.infer<TSchema>>> {
@@ -176,7 +177,7 @@ export async function createStructuredChatCompletion<TSchema extends z.ZodTypeAn
           schema: convertZodToJsonSchema(input.schema),
         },
       },
-      reasoning: { effort: 'none' },
+      ...(input.reasoning === null ? {} : { reasoning: input.reasoning ?? { effort: 'none' } }),
       ...(input.temperature !== undefined ? { temperature: input.temperature } : {}),
       ...(input.maxCompletionTokens !== undefined
         ? { maxCompletionTokens: input.maxCompletionTokens }

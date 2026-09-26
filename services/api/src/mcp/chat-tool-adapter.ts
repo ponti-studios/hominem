@@ -4,6 +4,8 @@ import {
   type ChatMessages,
   convertSchemaToJsonSchema,
   createStructuredChatCompletion,
+  getModelCapabilityProfile,
+  getReasoningConfig,
 } from '@hominem/ai';
 import { logger } from '@hominem/telemetry';
 import { z } from 'zod';
@@ -11,13 +13,20 @@ import { z } from 'zod';
 import type { CapabilityDefinition } from '../application/capability';
 import { ensureMcpToolsRegistered } from './register-tools';
 import {
+  buildToolCatalog,
+  chatToolPlanSchema,
+  describeCapability,
+  type ChatToolPlan as ValidatedChatToolPlan,
+  validateChatToolPlan,
+} from './tool-planner';
+import {
   CHAT_CAPABILITIES,
   type ChatCapability,
   getToolCapabilities,
   listTools,
 } from './tool-registry';
 
-const chatToolPlanSchema = z.object({
+const capabilityPlanSchema = z.object({
   capabilities: z.array(z.enum(CHAT_CAPABILITIES)).max(CHAT_CAPABILITIES.length),
   requiresLookup: z.boolean(),
 });
@@ -26,6 +35,7 @@ export type ChatToolPlan = {
   capabilities: ChatCapability[];
   requiresLookup: boolean;
   tools: ChatFunctionTool[];
+  steps: ValidatedChatToolPlan['steps'];
   usage: AIUsageMetrics | null;
 };
 
@@ -38,7 +48,7 @@ function toChatTool(tool: CapabilityDefinition): ChatFunctionToolDefinition {
     type: 'function',
     function: {
       name: tool.name,
-      description: tool.description,
+      description: describeCapability(tool),
       parameters: convertSchemaToJsonSchema(tool.inputSchema),
     },
   };
@@ -59,6 +69,57 @@ function getChatToolProjection(
   return tools;
 }
 
+function addUsage(first: AIUsageMetrics | null, second: AIUsageMetrics | null) {
+  if (!first) return second;
+  if (!second) return first;
+  return {
+    ...second,
+    promptTokens: first.promptTokens + second.promptTokens,
+    outputTokens: first.outputTokens + second.outputTokens,
+    totalTokens: first.totalTokens + second.totalTokens,
+    costUsd:
+      first.costUsd !== null || second.costUsd !== null
+        ? (first.costUsd ?? 0) + (second.costUsd ?? 0)
+        : null,
+  };
+}
+
+function fallbackSteps(
+  definitions: readonly CapabilityDefinition[],
+): ValidatedChatToolPlan['steps'] {
+  return definitions.map((definition) => ({
+    tool: definition.name,
+    purpose: definition.guidance?.whenToUse ?? definition.description,
+    dependsOn: definition.guidance?.dependencies?.map((dependency) => dependency.tool) ?? [],
+    arguments: {},
+  }));
+}
+
+function inferMuseCapabilities(messages: ChatMessages[]): Set<ChatCapability> {
+  const latest = [...messages].reverse().find((message) => message.role === 'user');
+  const content = typeof latest?.content === 'string' ? latest.content.toLowerCase() : '';
+  if (!content) return new Set();
+
+  const matches = new Set<ChatCapability>();
+  const terms: Array<[ChatCapability, string[]]> = [
+    ['memory', ['memory', 'remember', 'forgotten', 'preference']],
+    ['travel', ['travel', 'trip', 'flight', 'hotel', 'visit']],
+    ['career', ['career', 'job', 'application', 'work experience', 'resume']],
+    ['collections', ['collection', 'invite']],
+    ['finance', ['finance', 'transaction', 'spending', 'net worth']],
+    ['health', ['health', 'workout', 'sleep']],
+    ['media', ['media', 'music', 'watch', 'listen']],
+    ['people', ['person', 'people', 'contact']],
+    ['places', ['place', 'restaurant', 'venue', 'address']],
+    ['social', ['social', 'conversation']],
+    ['tags', ['tag', 'untag']],
+  ];
+  for (const [capability, needles] of terms) {
+    if (needles.some((needle) => content.includes(needle))) matches.add(capability);
+  }
+  return matches;
+}
+
 export async function planChatTools(input: {
   model: string;
   messages: ChatMessages[];
@@ -66,35 +127,114 @@ export async function planChatTools(input: {
   await ensureMcpToolsRegistered();
   const definitions = listTools();
   const projectedTools = getChatToolProjection(definitions);
+  if (!getModelCapabilityProfile(input.model).structuredPlanning) {
+    const capabilities = inferMuseCapabilities(input.messages);
+    const selectedDefinitions = definitions.filter((definition) =>
+      getToolCapabilities(definition).some((capability) => capabilities.has(capability)),
+    );
+    const tools = selectedDefinitions.map(
+      (definition) => projectedTools[definitions.indexOf(definition)]!,
+    );
+    logger.info('chat_tool_plan', {
+      model: input.model,
+      capabilities: [...capabilities],
+      requiresLookup: capabilities.size > 0,
+      candidateTools: tools.map((tool) => tool.function.name),
+      router: 'keyword-fallback-for-muse-structured-output-compatibility',
+    });
+    return {
+      capabilities: [...capabilities],
+      requiresLookup: capabilities.size > 0,
+      tools,
+      steps: fallbackSteps(selectedDefinitions),
+      usage: null,
+    };
+  }
+
   const latestUserMessage = [...input.messages]
     .reverse()
     .find((message) => message.role === 'user');
-  const { output, usage } = await createStructuredChatCompletion({
-    model: input.model,
-    messages: [
-      { role: 'system', content: ROUTING_PROMPT },
-      ...(latestUserMessage ? [latestUserMessage] : []),
-    ],
-    schema: chatToolPlanSchema,
-    schemaName: 'chat_tool_plan',
-    temperature: 0,
-    maxCompletionTokens: 120,
-  });
-  const capabilities: ChatCapability[] = [...new Set(output.capabilities)];
-  const selectedCapabilities = new Set(capabilities);
-  const tools = definitions.flatMap((definition, index) =>
-    getToolCapabilities(definition).some((capability) => selectedCapabilities.has(capability))
-      ? [projectedTools[index]]
-      : [],
+  const { output: capabilityOutput, usage: capabilityUsage } = await createStructuredChatCompletion(
+    {
+      model: input.model,
+      messages: [
+        { role: 'system', content: ROUTING_PROMPT },
+        ...(latestUserMessage ? [latestUserMessage] : []),
+      ],
+      schema: capabilityPlanSchema,
+      schemaName: 'chat_capability_plan',
+      temperature: 0,
+      maxCompletionTokens: 120,
+      reasoning: getReasoningConfig(input.model) ?? null,
+    },
   );
-  if (output.requiresLookup && tools.length === 0) {
+  const capabilities: ChatCapability[] = [...new Set(capabilityOutput.capabilities)];
+  const selectedCapabilities = new Set(capabilities);
+  const candidateDefinitions = definitions.filter((definition) =>
+    getToolCapabilities(definition).some((capability) => selectedCapabilities.has(capability)),
+  );
+  const candidateTools = candidateDefinitions.map(
+    (definition) => projectedTools[definitions.indexOf(definition)]!,
+  );
+  if (capabilityOutput.requiresLookup && candidateTools.length === 0) {
     throw new Error('No eligible tool is available for this private-data request');
   }
+  if (!capabilityOutput.requiresLookup) {
+    return {
+      capabilities,
+      requiresLookup: false,
+      tools: [],
+      steps: [],
+      usage: capabilityUsage,
+    };
+  }
+
+  let exactPlan: ValidatedChatToolPlan;
+  let planUsage: AIUsageMetrics | null = null;
+  try {
+    const planned = await createStructuredChatCompletion({
+      model: input.model,
+      messages: [
+        {
+          role: 'system',
+          content: `Create the smallest valid ordered tool plan for the user's request. Only choose tools from the catalog. Schedule prerequisites before dependent tools. Use an empty arguments object when values must be obtained from an earlier tool result. Never include a write unless the user requested the change.\n\nTool catalog:\n${buildToolCatalog(candidateDefinitions)}`,
+        },
+        ...(latestUserMessage ? [latestUserMessage] : []),
+      ],
+      schema: chatToolPlanSchema,
+      schemaName: 'chat_exact_tool_plan',
+      temperature: 0,
+      maxCompletionTokens: 400,
+      reasoning: getReasoningConfig(input.model) ?? null,
+    });
+    planUsage = planned.usage;
+    const validation = validateChatToolPlan(planned.output, candidateDefinitions);
+    if (!validation.ok) throw new Error(validation.errors.join('; '));
+    exactPlan = validation.plan;
+  } catch (error) {
+    logger.warn('chat_tool_plan_validation_failed', {
+      model: input.model,
+      error: error instanceof Error ? error.message : 'Unknown planning error',
+    });
+    exactPlan = { requiresLookup: true, steps: fallbackSteps(candidateDefinitions) };
+  }
+
+  const selectedTools = exactPlan.steps.flatMap((step) => {
+    const index = definitions.findIndex((definition) => definition.name === step.tool);
+    return index === -1 ? [] : [projectedTools[index]!];
+  });
   logger.info('chat_tool_plan', {
     model: input.model,
     capabilities,
-    requiresLookup: output.requiresLookup,
-    candidateTools: tools.map((tool) => tool.function.name),
+    requiresLookup: exactPlan.requiresLookup,
+    candidateTools: selectedTools.map((tool) => tool.function.name),
+    steps: exactPlan.steps,
   });
-  return { capabilities, requiresLookup: output.requiresLookup, tools, usage };
+  return {
+    capabilities,
+    requiresLookup: exactPlan.requiresLookup,
+    tools: selectedTools,
+    steps: exactPlan.steps,
+    usage: addUsage(capabilityUsage, planUsage),
+  };
 }

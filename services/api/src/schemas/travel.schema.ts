@@ -10,9 +10,9 @@ const isoDate = z
 
 export const tripHistoryInputSchema = z
   .object({
-    from: isoDate.optional(),
-    to: isoDate.optional(),
-    limit: z.number().int().min(1).max(50).default(20),
+    from: isoDate.optional().describe('Inclusive start date in the user data timezone.'),
+    to: isoDate.optional().describe('Inclusive end date in the user data timezone.'),
+    limit: z.number().int().min(1).max(50).default(20).describe('Maximum trips to return.'),
   })
   .superRefine((value, context) => {
     if (value.from && value.to && value.from > value.to) {

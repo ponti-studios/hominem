@@ -150,6 +150,31 @@ export async function executeGenerationTurn(
 ): Promise<GenerationEngineResult> {
   let usage: AIUsageMetrics | null = null;
   const runtime = input.toolRuntime ?? { callTool, getToolDefinition };
+  const plannedSteps = input.toolPlan ?? null;
+  const completedPlannedTools = new Set(
+    input.initialState?.completedToolResults
+      .filter((result) => !result.error)
+      .map((result) => result.toolName),
+  );
+  const validatePlannedToolCall = (toolName: string): string | null => {
+    if (!plannedSteps) return null;
+    const step = plannedSteps.find((candidate) => candidate.tool === toolName);
+    if (!step) return `Tool ${toolName} is outside the validated tool plan`;
+    const missing = step.dependsOn.filter((dependency) => !completedPlannedTools.has(dependency));
+    if (missing.length > 0) {
+      return `Tool ${toolName} is waiting for prerequisite tool(s): ${missing.join(', ')}`;
+    }
+    const definition = runtime.getToolDefinition(toolName);
+    if (definition && !definition.readOnly) {
+      const hasCompletedRead = plannedSteps.some(
+        (candidate) =>
+          completedPlannedTools.has(candidate.tool) &&
+          (runtime.getToolDefinition(candidate.tool)?.readOnly ?? false),
+      );
+      if (!hasCompletedRead) return `Tool ${toolName} requires a preceding read-only lookup`;
+    }
+    return null;
+  };
   const modelOptions = {
     model: input.model,
     messages: input.messages,
@@ -212,6 +237,15 @@ export async function executeGenerationTurn(
           : undefined;
       },
       execute: async ({ call, context: toolContext }) => {
+        const planViolation = validatePlannedToolCall(call.name);
+        if (planViolation) {
+          return {
+            callId: call.id,
+            toolName: call.name,
+            content: JSON.stringify({ code: 'TOOL_PLAN_VIOLATION', error: planViolation }),
+            error: true,
+          };
+        }
         const idempotencyKey = toolContext.idempotencyKey;
         const stored = await input.effectStore?.get({
           generationId: input.generationId,
@@ -219,6 +253,7 @@ export async function executeGenerationTurn(
           toolName: call.name,
         });
         if (stored) {
+          if (!stored.error) completedPlannedTools.add(call.name);
           return stored;
         }
         try {
@@ -231,6 +266,7 @@ export async function executeGenerationTurn(
             content: value.content[0]?.text ?? 'null',
             error: false,
           };
+          if (!result.error) completedPlannedTools.add(call.name);
           return input.effectStore
             ? await input.effectStore.save({
                 generationId: input.generationId,

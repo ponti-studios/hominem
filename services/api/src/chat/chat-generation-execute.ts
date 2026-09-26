@@ -149,6 +149,7 @@ async function executeGeneration(
       targetAssistantMessageId: input.targetAssistantMessageId,
       messages: input.messages,
       tools: input.tools,
+      toolPlan: input.toolPlan,
       model: input.model,
       reasoning: input.reasoning,
       requiresToolCall: input.requiresToolCall,

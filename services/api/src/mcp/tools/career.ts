@@ -112,6 +112,11 @@ registerTool(
     readOnly: true,
     scopes: ['career:read'],
     resultCap: 1,
+    guidance: {
+      whenToUse: 'The user asks about their current career profile, roles, or skills.',
+      whenNotToUse: 'Do not use for a single application when a focused application tool exists.',
+      produces: ['career profile', 'skills', 'role history'],
+    },
   },
   async (ownerUserId, _input) => {
     const profile = await getCareerProfile(ownerUserId);

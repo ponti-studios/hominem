@@ -40,6 +40,11 @@ registerTool(
     scopes: ['collections:write'],
     resultCap: 1,
     requiresConfirmation: true,
+    guidance: {
+      whenToUse: 'The user explicitly requests a new collection and no matching collection exists.',
+      whenNotToUse: 'Do not create duplicate collections or execute before confirmation.',
+      produces: ['collection id', 'collection name'],
+    },
   },
   async (ownerUserId, input) => createCollection(ownerUserId, input),
 );
@@ -54,6 +59,19 @@ registerTool(
     readOnly: false,
     scopes: ['collections:write'],
     resultCap: 1,
+    guidance: {
+      whenToUse:
+        'A confirmed collection id and entity id are available and the user asked to add the item.',
+      whenNotToUse: 'Do not invent collection or entity ids.',
+      dependencies: [
+        {
+          tool: 'list_collections',
+          reason: 'resolve an existing collection when needed',
+          provides: ['collectionId'],
+        },
+      ],
+      produces: ['collection item id'],
+    },
   },
   async (ownerUserId, input) => addCollectionItem(ownerUserId, input),
 );
@@ -69,6 +87,11 @@ registerTool(
     scopes: ['collections:write'],
     resultCap: 1,
     requiresConfirmation: true,
+    guidance: {
+      whenToUse: 'The user explicitly asks to remove a known entity from a collection.',
+      whenNotToUse: 'Do not remove items without confirmation or stable collection and entity ids.',
+      produces: ['removed state'],
+    },
     preview: async (ownerUserId, input) => {
       const parsed = removeCollectionItemInputSchema.safeParse(input);
       if (!parsed.success) return null;
@@ -96,6 +119,12 @@ registerTool(
     readOnly: false,
     scopes: ['collections:write'],
     resultCap: 1,
+    requiresConfirmation: true,
+    guidance: {
+      whenToUse: 'The user explicitly asks to invite a collaborator to a known collection.',
+      whenNotToUse: 'Do not invite without confirmation or a stable collection id.',
+      produces: ['member id', 'invitation state'],
+    },
   },
   async (ownerUserId, input) => inviteMember(ownerUserId, input),
 );

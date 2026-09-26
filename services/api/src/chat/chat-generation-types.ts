@@ -14,7 +14,7 @@ import type {
 import type { ChatGenerationRunRecord, ChatMessageToolCallRecord } from '@hominem/db/chats';
 import type { embeddingQueue } from '@hominem/queues';
 
-import type { planChatTools } from '../mcp/chat-tool-adapter';
+import type { ChatToolPlan, planChatTools } from '../mcp/chat-tool-adapter';
 import type { callTool, getToolDefinition } from '../mcp/tool-registry';
 
 export type ChatToolRuntime = {
@@ -33,6 +33,7 @@ export interface GenerationEngineInput {
   model: string;
   messages: ChatMessages[];
   tools: ChatFunctionTool[];
+  toolPlan?: ChatToolPlan['steps'];
   maxTokens?: number;
   reasoning?: ChatRequest['reasoning'];
   maxIterations?: number;
@@ -81,6 +82,7 @@ type PreparedGeneration = {
   model: string;
   reasoning?: ChatRequest['reasoning'];
   requiresToolCall?: boolean;
+  toolPlan?: ChatToolPlan['steps'];
   maxTokens?: number;
   responseLength?: 'short' | 'medium' | 'long';
   responseModality?: 'text' | 'audio';

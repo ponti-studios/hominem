@@ -68,6 +68,12 @@ registerTool(
     readOnly: false,
     scopes: ['memory:write'],
     resultCap: 1,
+    guidance: {
+      whenToUse: 'The user explicitly asks to remember something or states a durable preference.',
+      whenNotToUse:
+        'Do not save transient instructions, one-off plans, or facts about other people.',
+      produces: ['memory id', 'saved memory content'],
+    },
   },
   async (ownerUserId, input) => {
     const existing = await NoteRepository.findOwnedByContent(db, {
@@ -97,6 +103,11 @@ registerTool(
     readOnly: true,
     scopes: ['memory:read'],
     resultCap: 50,
+    guidance: {
+      whenToUse: 'A broad recent-memory review is requested or keyword search is not useful.',
+      whenNotToUse: 'Do not use as a substitute for current domain data such as trips or finances.',
+      produces: ['memory ids', 'memory content'],
+    },
   },
   async (ownerUserId, input) => {
     const notes = await NoteRepository.list(db, {
@@ -123,6 +134,12 @@ registerTool(
     readOnly: true,
     scopes: ['memory:read'],
     resultCap: 50,
+    guidance: {
+      whenToUse:
+        'A response depends on remembered personal context and a keyword search is appropriate.',
+      whenNotToUse: 'Do not use as a substitute for current domain data such as trips or finances.',
+      produces: ['memory ids', 'memory content'],
+    },
   },
   async (ownerUserId, input) => {
     const limit = input.limit ?? 20;

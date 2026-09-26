@@ -35,8 +35,8 @@ export const personSummarySchema = z.object({
 });
 
 export const peopleLookupInputSchema = z.object({
-  query: z.string().trim().min(1).max(200),
-  limit: limitSchema.default(10),
+  query: z.string().trim().min(1).max(200).describe('Person name, alias, or identifying phrase.'),
+  limit: limitSchema.default(10).describe('Maximum people to return.'),
 });
 
 export const peopleLookupOutputSchema = z.object({
@@ -68,7 +68,7 @@ export const personCreateSchema = z.object({
 // ── person_timeline ──────────────────────────────────────────────────
 
 export const personTimelineInputSchema = z.object({
-  personId: z.string(),
+  personId: z.string().describe('Stable person id returned by people_lookup.'),
 });
 
 const personTimelineTripSchema = z.object({

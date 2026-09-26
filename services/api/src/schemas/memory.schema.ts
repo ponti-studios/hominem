@@ -3,8 +3,19 @@ import { z } from 'zod';
 // ── remember ─────────────────────────────────────────────────────────
 
 export const rememberInputSchema = z.object({
-  content: z.string().trim().min(1).max(4000),
-  title: z.string().trim().min(1).max(200).optional(),
+  content: z
+    .string()
+    .trim()
+    .min(1)
+    .max(4000)
+    .describe('One durable fact or preference about the user.'),
+  title: z
+    .string()
+    .trim()
+    .min(1)
+    .max(200)
+    .optional()
+    .describe('Optional short title for the memory.'),
 });
 
 export const rememberOutputSchema = z.object({
@@ -19,7 +30,13 @@ const memorySummarySchema = rememberOutputSchema;
 // ── list_memories ────────────────────────────────────────────────────
 
 export const listMemoriesInputSchema = z.object({
-  limit: z.number().int().min(1).max(50).optional(),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(50)
+    .optional()
+    .describe('Maximum memories to return, from 1 to 50.'),
 });
 
 export const listMemoriesOutputSchema = z.object({
@@ -29,8 +46,18 @@ export const listMemoriesOutputSchema = z.object({
 // ── search_memories ──────────────────────────────────────────────────
 
 export const searchMemoriesInputSchema = z.object({
-  query: z.string().trim().min(1),
-  limit: z.number().int().min(1).max(50).optional(),
+  query: z
+    .string()
+    .trim()
+    .min(1)
+    .describe('Keywords describing the remembered fact or preference.'),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(50)
+    .optional()
+    .describe('Maximum matching memories to return, from 1 to 50.'),
 });
 
 export const searchMemoriesOutputSchema = listMemoriesOutputSchema;

@@ -191,7 +191,7 @@ export class OpenRouterChatModel implements ChatModel {
               : undefined,
           parallelToolCalls: false,
           maxTokens: this.options.maxTokens,
-          reasoning: this.options.reasoning,
+          ...(this.options.reasoning ? { reasoning: this.options.reasoning } : {}),
         },
         {
           signal: controller.signal,
