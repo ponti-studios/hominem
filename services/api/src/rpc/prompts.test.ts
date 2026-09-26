@@ -29,12 +29,13 @@ describe('chat assistant personality', () => {
     expect(CHAT_ASSISTANT_PROMPT).toContain(
       'Do not add context, action plans, generic reassurance',
     );
-    expect(buildChatSystemPrompt()).toBe(CHAT_ASSISTANT_PROMPT);
+    expect(buildChatSystemPrompt()).toContain(CHAT_ASSISTANT_PROMPT);
+    expect(buildChatSystemPrompt()).toMatch(/CURRENT DATE \(UTC\): \d{4}-\d{2}-\d{2}/);
 
     for (const [length, guidance] of Object.entries(CHAT_RESPONSE_LENGTH_GUIDANCE)) {
-      expect(buildChatSystemPrompt(length as keyof typeof CHAT_RESPONSE_LENGTH_GUIDANCE)).toBe(
-        `${CHAT_ASSISTANT_PROMPT}\n\n${guidance}`,
-      );
+      const prompt = buildChatSystemPrompt(length as keyof typeof CHAT_RESPONSE_LENGTH_GUIDANCE);
+      expect(prompt).toContain(CHAT_ASSISTANT_PROMPT);
+      expect(prompt).toContain(guidance);
     }
   });
 
