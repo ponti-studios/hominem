@@ -2,6 +2,7 @@ export {
   buildChatSystemPrompt,
   CHAT_ASSISTANT_PROMPT,
   CHAT_RESPONSE_LENGTH_GUIDANCE,
+  getCurrentUtcDate,
 } from '../chat/chat-prompts';
 
 export const TEXT_ENHANCE_PROMPT = `You are a careful text editor.

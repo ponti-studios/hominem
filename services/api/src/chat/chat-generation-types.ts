@@ -38,6 +38,7 @@ export interface GenerationEngineInput {
   reasoning?: ChatRequest['reasoning'];
   maxIterations?: number;
   requiresToolCall?: boolean;
+  requiresWebSearch?: boolean;
   toolRuntime?: ChatToolRuntime;
   // Test-only scripted OpenRouter client (serves canned SSE chunks).
   // Production never sets this: OpenRouter is the only supported provider,
@@ -82,6 +83,7 @@ type PreparedGeneration = {
   model: string;
   reasoning?: ChatRequest['reasoning'];
   requiresToolCall?: boolean;
+  requiresWebSearch?: boolean;
   toolPlan?: ChatToolPlan['steps'];
   maxTokens?: number;
   responseLength?: 'short' | 'medium' | 'long';

@@ -348,6 +348,7 @@ export async function executeGenerationTurn(
         maxTokens: input.maxTokens,
         reasoning: input.reasoning,
         requiresToolCall: input.initialState ? false : input.requiresToolCall,
+        requiresWebSearch: input.initialState ? false : input.requiresWebSearch,
         onUsage: (next) => modelOptions.onUsage?.(next as AIUsageMetrics | null),
       },
       startContext: {

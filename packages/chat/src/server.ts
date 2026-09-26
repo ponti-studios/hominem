@@ -34,6 +34,7 @@ export type ChatServerModelInput = {
   maxTokens?: number;
   reasoning?: unknown;
   requiresToolCall?: boolean;
+  requiresWebSearch?: boolean;
   requiresConfirmation?: (toolName: string) => boolean;
   onUsage?: (usage: unknown) => void;
 };

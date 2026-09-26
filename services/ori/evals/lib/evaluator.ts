@@ -15,6 +15,8 @@ export type PromptMessage = { role: string; content: string };
 
 export const targetModel = process.env.ORI_TARGET_MODEL?.trim() || 'openai/gpt-4o-mini';
 export const judgeModel = process.env.ORI_JUDGE_MODEL?.trim() || 'openai/gpt-oss-20b';
+export const currentUtcDate = (): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(new Date());
 
 export const loadJson = async <T>(url: URL): Promise<T> => (await Bun.file(url).json()) as T;
 
@@ -31,7 +33,10 @@ export const renderMessages = (
     ...message,
     content: render(message.content, values),
   }));
-  const systemPrompt = rendered.find((message) => message.role === 'system')?.content ?? '';
+  const systemPrompt = rendered
+    .filter((message) => message.role === 'system')
+    .map((message) => message.content)
+    .join('\n\n');
   const prompt = rendered
     .filter((message) => message.role !== 'system')
     .map((message) => `${message.role}: ${message.content}`)

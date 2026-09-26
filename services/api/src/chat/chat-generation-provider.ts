@@ -103,6 +103,7 @@ export type OpenRouterChatModelOptions = {
   maxTokens?: number;
   reasoning?: ChatRequest['reasoning'];
   requiresToolCall?: boolean;
+  requiresWebSearch?: boolean;
   requiresConfirmation?: (toolName: string) => boolean;
   maxAttempts?: number;
   // Test-only scripted OpenRouter client (canned SSE chunks). Production
@@ -185,7 +186,7 @@ export class OpenRouterChatModel implements ChatModel {
           tools: this.options.tools.length > 0 ? this.options.tools : undefined,
           toolChoice:
             this.options.tools.length > 0
-              ? this.firstTurn && this.options.requiresToolCall
+              ? this.firstTurn && (this.options.requiresToolCall || this.options.requiresWebSearch)
                 ? 'required'
                 : 'auto'
               : undefined,

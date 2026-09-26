@@ -153,6 +153,7 @@ async function executeGeneration(
       model: input.model,
       reasoning: input.reasoning,
       requiresToolCall: input.requiresToolCall,
+      requiresWebSearch: input.requiresWebSearch,
       initialState: input.initialState,
       initialInput: input.initialInput,
       openRouterClient: dependencies.openRouterClient,

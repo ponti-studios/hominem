@@ -58,8 +58,14 @@ WRITING:
 - Preserve nuance when it matters; do not hedge to avoid a conclusion.
 - End once the answer is complete.`;
 
-export function buildChatSystemPrompt(responseLength?: ChatResponseLength): string {
-  const currentDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(new Date());
+export function getCurrentUtcDate(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(new Date());
+}
+
+export function buildChatSystemPrompt(
+  responseLength?: ChatResponseLength,
+  currentDate = getCurrentUtcDate(),
+): string {
   const prompt = `${CHAT_ASSISTANT_PROMPT}\n\nCURRENT DATE (UTC): ${currentDate}\nUse this date when interpreting relative dates and checking current public information.`;
   return responseLength ? `${prompt}\n\n${CHAT_RESPONSE_LENGTH_GUIDANCE[responseLength]}` : prompt;
 }

@@ -29,6 +29,7 @@ import {
 const capabilityPlanSchema = z.object({
   capabilities: z.array(z.enum(CHAT_CAPABILITIES)).max(CHAT_CAPABILITIES.length),
   requiresLookup: z.boolean(),
+  requiresWebSearch: z.boolean().default(false),
 });
 
 export type ChatToolPlan = {
@@ -37,9 +38,10 @@ export type ChatToolPlan = {
   tools: ChatFunctionTool[];
   steps: ValidatedChatToolPlan['steps'];
   usage: AIUsageMetrics | null;
+  requiresWebSearch?: boolean;
 };
 
-const ROUTING_PROMPT = `Classify whether the latest user request needs current private Hominem data.\n\nUse requiresLookup=true for requests asking about the user's saved, current, or historical data. Select every relevant capability; when ambiguous, include each plausible capability. Use requiresLookup=false for general knowledge, writing, conversation, and public facts that may require web search. Never select a capability merely because it could be useful.\n\nCapabilities: ${CHAT_CAPABILITIES.join(', ')}.`;
+const ROUTING_PROMPT = `Classify the latest user request for tool routing.\n\nUse requiresLookup=true for requests asking about the user's saved, current, or historical Hominem data. Select every relevant private capability; when ambiguous, include each plausible capability. Use requiresWebSearch=true for current or time-sensitive public facts, live schedules and scores, recent events, prices, rates, weather, or requests to verify information. Such requests must use web search even if the wording is ambiguous. Use requiresWebSearch=false for general knowledge, writing, conversation, and stable public facts. Never select a private capability merely because it could be useful.\n\nCapabilities: ${CHAT_CAPABILITIES.join(', ')}.`;
 
 type ChatFunctionToolDefinition = Extract<ChatFunctionTool, { function: unknown }>;
 const WEB_SEARCH_TOOL: ChatFunctionTool = {
@@ -47,6 +49,7 @@ const WEB_SEARCH_TOOL: ChatFunctionTool = {
   parameters: {
     engine: 'exa',
     maxResults: 5,
+    maxTotalResults: 5,
   },
 };
 
@@ -166,6 +169,9 @@ export async function planChatTools(input: {
   const definitions = listTools();
   const projectedTools = getChatToolProjection(definitions);
   if (!getModelCapabilityProfile(input.model).structuredPlanning) {
+    const latestContent = [...input.messages].reverse().find((message) => message.role === 'user');
+    const content =
+      typeof latestContent?.content === 'string' ? latestContent.content.toLowerCase() : '';
     const capabilities = inferMuseCapabilities(input.messages);
     const selectedDefinitions = definitions.filter((definition) =>
       getToolCapabilities(definition).some((capability) => capabilities.has(capability)),
@@ -187,6 +193,11 @@ export async function planChatTools(input: {
       tools,
       steps: fallbackSteps(selectedDefinitions),
       usage: null,
+      requiresWebSearch:
+        capabilities.size === 0 &&
+        /\b(current|today|tonight|tomorrow|next|latest|recent|schedule|score|scores|price|rate|weather|when do|what time|verify)\b/.test(
+          content,
+        ),
     };
   }
 
@@ -225,6 +236,7 @@ export async function planChatTools(input: {
       tools: [WEB_SEARCH_TOOL],
       steps: [],
       usage: capabilityUsage,
+      requiresWebSearch: capabilityOutput.requiresWebSearch,
     };
   }
 
@@ -278,5 +290,6 @@ export async function planChatTools(input: {
     tools: selectedTools,
     steps: exactPlan.steps,
     usage: addUsage(capabilityUsage, planUsage),
+    requiresWebSearch: false,
   };
 }

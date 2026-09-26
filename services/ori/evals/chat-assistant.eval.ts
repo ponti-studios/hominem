@@ -2,6 +2,7 @@ import {
   loadJson,
   registerJsonSuite,
   renderMessages,
+  currentUtcDate,
   type Golden,
   type PromptMessage,
 } from './lib/evaluator';
@@ -17,7 +18,8 @@ registerJsonSuite({
   name: 'chat assistant',
   cases,
   plainChat: true,
-  buildInput: (golden) => renderMessages(prompt, { user_message: golden.input }),
+  buildInput: (golden) =>
+    renderMessages(prompt, { user_message: golden.input, current_date: currentUtcDate() }),
   rubric: [
     'Use the expected output below as the authoritative reference for the answer’s conclusion and essential reasoning.',
     'The response should be calm, respectful, direct, and grounded; it must not mock, shame, patronize, or use sarcasm.',

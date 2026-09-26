@@ -8,6 +8,7 @@ import {
   CHAT_ASSISTANT_PROMPT,
   CHAT_RESPONSE_LENGTH_GUIDANCE,
   CHAT_TO_NOTE_PROMPT,
+  getCurrentUtcDate,
 } from './prompts';
 
 describe('chat assistant personality', () => {
@@ -46,7 +47,12 @@ describe('chat assistant personality', () => {
         'utf8',
       ),
     ) as Array<{ role: string; content: string }>;
-    expect(messages[0]).toEqual({ role: 'system', content: CHAT_ASSISTANT_PROMPT });
+    expect(
+      messages
+        .filter((message) => message.role === 'system')
+        .map((message) => message.content.replace('{{current_date}}', getCurrentUtcDate()))
+        .join('\n\n'),
+    ).toBe(buildChatSystemPrompt(undefined, getCurrentUtcDate()));
   });
 });
 
