@@ -79,8 +79,8 @@ function isAbortError(error: unknown): boolean {
   return isObject(error) && 'name' in error && error.name === 'AbortError';
 }
 
-function chatRequestError(status: number): ChatHttpError {
-  return Object.assign(new Error(`Chat request failed: HTTP ${status}`), { status });
+function chatRequestError(status: number, message?: string): ChatHttpError {
+  return Object.assign(new Error(message ?? `Chat request failed: HTTP ${status}`), { status });
 }
 
 function combineSignals(signals: readonly AbortSignal[]): AbortSignal {
@@ -290,7 +290,7 @@ export class ChatClient {
 
         const result = await Promise.race([streaming, idleTimeout]);
         clearTimeout(idleTimer);
-        if (result && !result.ok) throw chatRequestError(result.status);
+        if (result && !result.ok) throw chatRequestError(result.status, result.errorMessage);
 
         process(finishSse<GenerationEvent>(sseState, (data) => JSON.parse(data)).outputs);
 

@@ -227,7 +227,21 @@ export async function planChatTools(input: {
     (definition) => projectedTools[definitions.indexOf(definition)]!,
   );
   if (capabilityOutput.requiresLookup && candidateTools.length === 0) {
-    throw new Error('No eligible tool is available for this private-data request');
+    const latestContent =
+      typeof latestUserMessage?.content === 'string' ? latestUserMessage.content.toLowerCase() : '';
+    const calendarRequest = /\b(calendar|event|schedule)\b/.test(latestContent);
+    logger.warn('chat_tool_plan_unavailable', {
+      model: input.model,
+      capabilities,
+      requiresLookup: true,
+      candidateToolCount: 0,
+      reason: calendarRequest ? 'calendar_capability_unavailable' : 'no_eligible_private_tool',
+    });
+    throw new Error(
+      calendarRequest
+        ? 'I can search the web, but I cannot add calendar events from this chat yet. No changes were made.'
+        : 'I cannot complete that personal-data request from this chat yet. No changes were made.',
+    );
   }
   if (!capabilityOutput.requiresLookup) {
     return {

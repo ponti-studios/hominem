@@ -8,7 +8,7 @@ export type ChatClientStreamRequest = ChatClientTransportRequest & {
   onChunk: (chunk: string) => void;
 };
 
-export type ChatClientStreamResult = { ok: boolean; status: number };
+export type ChatClientStreamResult = { ok: boolean; status: number; errorMessage?: string };
 
 export type ChatClientTransport = {
   request: (input: ChatClientTransportRequest) => Promise<Response>;
@@ -23,11 +23,29 @@ export const fetchChatTransport = (fetchImpl: typeof fetch = fetch): ChatClientT
   request: ({ url, init, signal }) => fetchImpl(url, { ...init, signal }),
   stream: async ({ url, init, signal, onChunk }) => {
     const response = await fetchImpl(url, { ...init, signal });
+    const errorMessage = response.ok
+      ? undefined
+      : await response
+          .clone()
+          .text()
+          .then((body) => {
+            try {
+              const parsed: unknown = JSON.parse(body);
+              return typeof parsed === 'object' && parsed !== null && 'error' in parsed
+                ? typeof parsed.error === 'string'
+                  ? parsed.error
+                  : undefined
+                : undefined;
+            } catch {
+              return undefined;
+            }
+          })
+          .catch(() => undefined);
     const reader = response.body?.getReader();
     if (!reader) {
       const text = await response.text();
       if (text) onChunk(text);
-      return { ok: response.ok, status: response.status };
+      return { ok: response.ok, status: response.status, errorMessage };
     }
     const decoder = new TextDecoder();
     while (true) {
@@ -37,6 +55,6 @@ export const fetchChatTransport = (fetchImpl: typeof fetch = fetch): ChatClientT
     }
     const tail = decoder.decode();
     if (tail) onChunk(tail);
-    return { ok: response.ok, status: response.status };
+    return { ok: response.ok, status: response.status, errorMessage };
   },
 });

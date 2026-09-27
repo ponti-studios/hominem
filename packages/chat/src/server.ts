@@ -321,6 +321,7 @@ export type ChatHttpAuthenticatedUser = { userId: string };
 // resolves `target` to a stale run before calling `.generate()`); the real
 // implementation lives in services/api/src/rpc/routes/chats.$chatId.generation.ts.
 export type ChatHttpRuntime = {
+  onError?: (input: { error: unknown; request: Request }) => void;
   authenticate: (
     request: Request,
   ) => Promise<ChatHttpAuthenticatedUser | Response> | ChatHttpAuthenticatedUser | Response;
@@ -467,6 +468,7 @@ export function createChatHttpHandler(
       }
       return jsonError('Route not found', 404);
     } catch (error) {
+      runtime.onError?.({ error, request });
       if (error instanceof Response) return error;
       if (isObject(error) && 'statusCode' in error && typeof error.statusCode === 'number') {
         return jsonError(

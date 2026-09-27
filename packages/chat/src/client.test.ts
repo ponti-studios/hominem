@@ -8,19 +8,34 @@ function streamResponse(event: unknown): Response {
   return new Response(body, { headers: { 'content-type': 'text/event-stream' } });
 }
 
+function readErrorMessage(body: string): string | undefined {
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (typeof parsed !== 'object' || parsed === null || !('error' in parsed)) return undefined;
+    return typeof parsed.error === 'string' ? parsed.error : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // Test transports mock `request` with a Response (including a streamed
 // ReadableStream body); this adapts that into the `stream` shape ChatClient
 // actually calls for generation SSE, without duplicating each mock.
-function streamFromRequest(
-  request: (input: ChatClientTransportRequest) => Promise<Response>,
-): (input: ChatClientStreamRequest) => Promise<{ ok: boolean; status: number }> {
+function streamFromRequest(request: (input: ChatClientTransportRequest) => Promise<Response>): (
+  input: ChatClientStreamRequest,
+) => Promise<{
+  ok: boolean;
+  status: number;
+  errorMessage?: string;
+}> {
   return async ({ onChunk, ...input }) => {
     const response = await request(input);
+    const errorMessage = response.ok ? undefined : readErrorMessage(await response.clone().text());
     const reader = response.body?.getReader();
     if (!reader) {
       const text = await response.text();
       if (text) onChunk(text);
-      return { ok: response.ok, status: response.status };
+      return { ok: response.ok, status: response.status, errorMessage };
     }
     const decoder = new TextDecoder();
     while (true) {
@@ -30,11 +45,34 @@ function streamFromRequest(
     }
     const tail = decoder.decode();
     if (tail) onChunk(tail);
-    return { ok: response.ok, status: response.status };
+    return { ok: response.ok, status: response.status, errorMessage };
   };
 }
 
 describe('ChatClient', () => {
+  it('surfaces the API error body when a generation request is rejected', async () => {
+    const request = async () =>
+      new Response(JSON.stringify({ error: 'Calendar actions are not available in chat yet.' }), {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      });
+    const client = new ChatClient({
+      baseUrl: 'https://chat.test',
+      transport: { request, stream: streamFromRequest(request) },
+      createId: () => 'generation-error',
+    });
+
+    const generation = client.createGeneration();
+    await expect(
+      generation.start({
+        path: '/api/chats/chat-1/stream',
+        body: { chatId: 'chat-1', message: 'Add this to my calendar' },
+        generationId: 'generation-error',
+      }),
+    ).rejects.toThrow('Calendar actions are not available in chat yet.');
+    expect(generation.state.phase).toBe('failed');
+  });
+
   it('start() sends the caller-supplied generationId in the request body, not a fallback id', async () => {
     const sentBodies: unknown[] = [];
     const request = async ({ init }: ChatClientTransportRequest) => {
