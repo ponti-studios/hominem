@@ -10,6 +10,7 @@ function logCompletedRequest(data: {
   method: string;
   path: string;
   status: number;
+  requestId?: string;
 }) {
   if (data.status >= 500) {
     logger.error('http_request_completed', data);
@@ -34,7 +35,11 @@ export function requestLogger(): MiddlewareHandler {
       async (span) => {
         const startedAt = performance.now();
         if (process.env.NODE_ENV !== 'test') {
-          logger.info('http_request_started', { method: c.req.method, path: c.req.path });
+          logger.info('http_request_started', {
+            method: c.req.method,
+            path: c.req.path,
+            ...(c.get('requestId') ? { requestId: c.get('requestId') } : {}),
+          });
         }
 
         try {
@@ -50,6 +55,8 @@ export function requestLogger(): MiddlewareHandler {
           const durationMs = Math.max(0, Math.round(performance.now() - startedAt));
           const route = routePath(c);
           if (route) span.setAttribute('http.route', route);
+          const requestId = c.get('requestId');
+          if (requestId) span.setAttribute('http.request.id', requestId);
           span.setAttributes({
             'http.response.status_code': c.res.status,
             'http.server.duration_ms': durationMs,
@@ -62,6 +69,7 @@ export function requestLogger(): MiddlewareHandler {
               method: c.req.method,
               path: c.req.path,
               status: c.res.status,
+              ...(c.get('requestId') ? { requestId: c.get('requestId') } : {}),
             });
           }
         }

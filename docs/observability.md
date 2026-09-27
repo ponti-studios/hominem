@@ -70,6 +70,36 @@ queue snapshots, completion, stall, and failure; and telemetry initialization.
 This keeps Sentry useful for correlation without turning every application log
 into an indexed event or leaking sensitive context.
 
+## Operational error logging contract
+
+Every request-level failure must be diagnosable from one bounded record and one
+correlation key. API request middleware assigns an `x-request-id`, includes it
+in request start/completion logs, and attaches it to the HTTP span. Route or
+shared-handler code must log the original error before converting it into a
+client response; otherwise a generic 4xx response can bypass the global Hono
+error handler, which is what happened for chat planning failures.
+
+Error records should include:
+
+- a stable event name and bounded failure category;
+- HTTP method, route/path, status, and request ID;
+- service/component and operation stage (for example `chat_tool_planning`);
+- model/provider metadata when relevant, without provider request URLs or raw
+  response bodies;
+- retryability and whether any side effect was committed.
+
+Do not use the final HTTP status as the failure category. Distinguish client
+input, unsupported capability, planner validation, provider, runtime/tool,
+storage, and cancellation failures. Preserve the user-facing message in the
+API response, but keep diagnostic context in the server log and Sentry event.
+
+The current audit found three recurring sources of poor diagnosis: some shared
+HTTP handlers catch errors internally, request IDs were not present on the
+general HTTP log/span path, and several call sites log arbitrary provider or
+database errors directly. New instrumentation should use bounded error
+metadata and should not add prompts, model output, personal identifiers,
+message/generation IDs, or provider error bodies to exported telemetry.
+
 ## Dashboards and alerts
 
 Alert ownership points to the API/service owner. Do not change provider or

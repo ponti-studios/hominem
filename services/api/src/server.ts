@@ -23,10 +23,12 @@ import { legalRoutes } from './routes/legal';
 import { createLoginRoutes } from './routes/login';
 import { statusRoutes } from './routes/status';
 import { rpcApp } from './rpc/app';
+import { requestIdMiddleware } from './rpc/middleware/auth';
 
 export type AppEnv = {
   Variables: {
     auth?: AuthContext;
+    requestId?: string;
   };
 };
 
@@ -88,6 +90,7 @@ export type ServerDependencies = {
 };
 
 function registerBaseMiddleware(app: Hono<AppEnv>, dependencies: ServerDependencies) {
+  app.use('*', requestIdMiddleware);
   app.use('*', blockMaliciousProbes());
   app.use('*', requestLogger());
   app.use('*', prettyJSON());
@@ -142,7 +145,12 @@ function registerErrorHandlers(app: Hono<AppEnv>, inputEnv: ApiEnv) {
     if (inputEnv.SENTRY_DSN && inputEnv.NODE_ENV !== 'development') {
       Sentry.captureException(err);
     }
-    logger.error('[services/api] Error', { error: err });
+    logger.error('[services/api] Error', {
+      error: err,
+      method: c.req.method,
+      path: c.req.path,
+      requestId: c.get('requestId'),
+    });
 
     if (isServiceError(err)) {
       return c.json(

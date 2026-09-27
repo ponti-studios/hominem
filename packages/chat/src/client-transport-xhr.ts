@@ -1,3 +1,4 @@
+import { parseClientSafeChatError } from './client-errors';
 import type {
   ChatClientStreamRequest,
   ChatClientStreamResult,
@@ -73,7 +74,9 @@ export const xhrChatTransport = (
         readAvailable();
         if (xhr.readyState !== 4 || settled) return;
         settled = true;
-        resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status });
+        const ok = xhr.status >= 200 && xhr.status < 300;
+        const errorMessage = ok ? undefined : parseClientSafeChatError(xhr.responseText);
+        resolve({ ok, status: xhr.status, errorMessage });
       };
       xhr.onerror = () => {
         if (settled) return;

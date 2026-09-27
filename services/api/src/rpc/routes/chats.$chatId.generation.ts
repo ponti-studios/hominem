@@ -1,4 +1,5 @@
 import { createChatHttpHandler } from '@hominem/chat/server';
+import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono, type Context } from 'hono';
 
@@ -20,6 +21,21 @@ function parseBody<T>(schema: { parse: (input: unknown) => T }, body: unknown): 
   return schema.parse(body);
 }
 
+function chatErrorMetadata(error: unknown) {
+  const errorName = error instanceof Error ? error.name : 'UnknownError';
+  const errorCategory =
+    errorName === 'ChatHttpClientError'
+      ? 'client_safe'
+      : errorName === 'ChatGenerationInputError'
+        ? 'client_input'
+        : /provider|openrouter/i.test(errorName)
+          ? 'provider'
+          : /validation|zod/i.test(errorName)
+            ? 'validation'
+            : 'internal';
+  return { errorCategory, errorName };
+}
+
 function requestWithJsonBody(c: Context<AppContext>, body: unknown): Request {
   const headers = new Headers(c.req.raw.headers);
   headers.delete('content-length');
@@ -31,8 +47,16 @@ function requestWithJsonBody(c: Context<AppContext>, body: unknown): Request {
   });
 }
 
-function createHandler(service: ChatGenerationService, userId: string) {
+function createHandler(service: ChatGenerationService, userId: string, requestId?: string) {
   return createChatHttpHandler({
+    onError: ({ error, request }) => {
+      logger.error('chat_http_handler_error', {
+        method: request.method,
+        path: new URL(request.url).pathname,
+        requestId,
+        ...chatErrorMetadata(error),
+      });
+    },
     authenticate: () => ({ userId }),
     startChat: async ({ userId: ownerUserId, body }) => {
       const input = parseBody(ChatsStartStreamSchema, body);
@@ -112,12 +136,38 @@ function delegateToHandler(
   return createHandler(
     service,
     userId,
-  )(request).catch((error: unknown) => {
-    if (error instanceof ChatGenerationInputError) {
-      return Response.json({ error: error.message }, { status: 400 });
-    }
-    throw error;
-  });
+    c.get('requestId'),
+  )(request)
+    .then((response) => {
+      if (response.status === 400 || response.status >= 500) {
+        logger.warn('chat_http_request_failed', {
+          method: request.method,
+          path: new URL(request.url).pathname,
+          requestId: c.get('requestId'),
+          statusCode: response.status,
+        });
+      }
+      return response;
+    })
+    .catch((error: unknown) => {
+      if (error instanceof ChatGenerationInputError) {
+        logger.warn('chat_http_request_failed', {
+          method: request.method,
+          path: new URL(request.url).pathname,
+          requestId: c.get('requestId'),
+          statusCode: 400,
+          errorType: error.name,
+        });
+        return Response.json({ error: error.message }, { status: 400 });
+      }
+      logger.error('chat_http_request_unhandled_error', {
+        method: request.method,
+        path: new URL(request.url).pathname,
+        requestId: c.get('requestId'),
+        ...chatErrorMetadata(error),
+      });
+      throw error;
+    });
 }
 
 function createRouteHandler(service: ChatGenerationService) {

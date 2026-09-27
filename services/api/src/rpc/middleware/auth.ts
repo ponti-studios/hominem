@@ -41,5 +41,6 @@ export const authMiddleware = createMiddleware<AppContext>(async (c, next) => {
 export const requestIdMiddleware = createMiddleware<AppContext>(async (c, next) => {
   const requestId = crypto.randomUUID().slice(0, 8);
   c.set('requestId', requestId);
+  c.header('x-request-id', requestId);
   return await next();
 });

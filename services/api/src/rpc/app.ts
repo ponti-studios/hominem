@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 
-import { requestIdMiddleware } from './middleware/auth';
 import type { AppContext } from './middleware/auth';
 import { apiErrorHandler } from './middleware/error';
 import { validationErrorMiddleware } from './middleware/validation';
@@ -39,7 +38,6 @@ export const rpcRoutes = new Hono<AppContext>()
 
 export const rpcApp = new Hono<AppContext>()
   .onError(apiErrorHandler)
-  .use(requestIdMiddleware)
   .use(validationErrorMiddleware)
   .basePath('/api')
   .route('', rpcRoutes);
