@@ -39,14 +39,18 @@ registerTool(
   {
     name: 'task_list',
     title: 'List tasks',
-    description: 'Lists top-level tasks and task lists for the authenticated user.',
+    description:
+      'Lists top-level tasks and task lists for the authenticated user. Supports filtering by ' +
+      'status, priority, due date range (dueBefore/dueAfter), and a title text search (query) — ' +
+      'use these instead of listing everything and filtering client-side, e.g. for "what is due ' +
+      'today" or "what is overdue".',
     inputSchema: TaskListQuerySchema,
     outputSchema: taskListResultSchema,
     readOnly: true,
     scopes: ['task:read'],
     resultCap: 100,
   },
-  async (ownerUserId, input) => ({ tasks: await listTasks(ownerUserId, input.limit) }),
+  async (ownerUserId, input) => ({ tasks: await listTasks(ownerUserId, input) }),
 );
 
 registerTool(

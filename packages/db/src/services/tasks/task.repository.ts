@@ -242,9 +242,17 @@ export const TaskRepository = {
   // parents). A row counts as a task_list once it has at least one child.
   async list(
     handle: DbHandle,
-    input: { userId: string; limit?: number },
+    input: {
+      userId: string;
+      limit?: number;
+      status?: string;
+      priority?: string;
+      dueBefore?: string;
+      dueAfter?: string;
+      query?: string;
+    },
   ): Promise<TaskListRecord[]> {
-    const rows = await handle
+    let q = handle
       .selectFrom('app.tasks as t')
       .selectAll('t')
       .select((eb) =>
@@ -255,7 +263,15 @@ export const TaskRepository = {
           .as('childCount'),
       )
       .where('t.ownerUserid', '=', input.userId)
-      .where('t.parentTaskId', 'is', null)
+      .where('t.parentTaskId', 'is', null);
+
+    if (input.status) q = q.where('t.status', '=', input.status);
+    if (input.priority) q = q.where('t.priority', '=', input.priority);
+    if (input.dueBefore) q = q.where('t.dueAt', '<', new Date(input.dueBefore).toISOString());
+    if (input.dueAfter) q = q.where('t.dueAt', '>', new Date(input.dueAfter).toISOString());
+    if (input.query) q = q.where('t.title', 'ilike', `%${input.query}%`);
+
+    const rows = await q
       .orderBy('t.updatedat', 'desc')
       .limit(input.limit ?? 100)
       .execute();

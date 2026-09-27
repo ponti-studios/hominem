@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const TaskPriority = z.enum(['low', 'medium', 'high']);
+export const TaskPriority = z.enum(['low', 'medium', 'high']);
 
 const TaskParticipantSchema = z.uuid();
 
@@ -142,6 +142,11 @@ export const taskDetailResultSchema = z.object({
 
 export const TaskListQuerySchema = z.object({
   limit: z.number().int().min(1).max(100).optional().default(100),
+  status: z.enum(['pending', 'completed']).optional(),
+  priority: TaskPriority.optional(),
+  dueBefore: z.iso.datetime({ offset: true }).optional(),
+  dueAfter: z.iso.datetime({ offset: true }).optional(),
+  query: z.string().trim().min(1).max(120).optional(),
 });
 
 export const TaskParamSchema = z.object({ id: z.uuid() });

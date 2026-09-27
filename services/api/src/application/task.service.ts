@@ -12,8 +12,20 @@ import { runInTransaction } from '@hominem/db/transaction';
 
 export { persistExtractedTasks } from './tasks.service';
 
-export async function listTasks(ownerUserId: string, limit?: number): Promise<TaskListRecord[]> {
-  return TaskRepository.list(db, { userId: ownerUserId, limit });
+export interface ListTasksFilter {
+  limit?: number;
+  status?: 'pending' | 'completed';
+  priority?: 'low' | 'medium' | 'high';
+  dueBefore?: string;
+  dueAfter?: string;
+  query?: string;
+}
+
+export async function listTasks(
+  ownerUserId: string,
+  filter?: ListTasksFilter,
+): Promise<TaskListRecord[]> {
+  return TaskRepository.list(db, { userId: ownerUserId, ...filter });
 }
 
 export interface TaskDetail {

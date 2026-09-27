@@ -88,6 +88,93 @@ describe('task_list', () => {
       await db.deleteFrom('app.tasks').where('id', '=', task.id).execute();
     }
   });
+
+  it('filters by status', async () => {
+    const pending = resultContent(
+      await callTool(userId, 'task_create', { title: 'Still pending', artifactType: 'task' }),
+    ) as { task: { id: string } };
+    const done = resultContent(
+      await callTool(userId, 'task_create', { title: 'Already done', artifactType: 'task' }),
+    ) as { task: { id: string } };
+    await callTool(userId, 'task_complete', { id: done.task.id, completed: true });
+
+    const completed = resultContent(
+      await callTool(userId, 'task_list', { status: 'completed' }),
+    ) as {
+      tasks: Array<{ id: string }>;
+    };
+    expect(completed.tasks.some((t) => t.id === done.task.id)).toBe(true);
+    expect(completed.tasks.some((t) => t.id === pending.task.id)).toBe(false);
+
+    await db.deleteFrom('app.tasks').where('id', 'in', [pending.task.id, done.task.id]).execute();
+  });
+
+  it('filters by priority', async () => {
+    const high = resultContent(
+      await callTool(userId, 'task_create', {
+        title: 'Urgent task',
+        artifactType: 'task',
+        priority: 'high',
+      }),
+    ) as { task: { id: string } };
+    const low = resultContent(
+      await callTool(userId, 'task_create', {
+        title: 'Someday task',
+        artifactType: 'task',
+        priority: 'low',
+      }),
+    ) as { task: { id: string } };
+
+    const filtered = resultContent(await callTool(userId, 'task_list', { priority: 'high' })) as {
+      tasks: Array<{ id: string }>;
+    };
+    expect(filtered.tasks.some((t) => t.id === high.task.id)).toBe(true);
+    expect(filtered.tasks.some((t) => t.id === low.task.id)).toBe(false);
+
+    await db.deleteFrom('app.tasks').where('id', 'in', [high.task.id, low.task.id]).execute();
+  });
+
+  it('filters by due date range', async () => {
+    const soon = resultContent(
+      await callTool(userId, 'task_create', {
+        title: 'Due soon',
+        artifactType: 'task',
+        dueAt: '2026-01-01T00:00:00.000Z',
+      }),
+    ) as { task: { id: string } };
+    const later = resultContent(
+      await callTool(userId, 'task_create', {
+        title: 'Due later',
+        artifactType: 'task',
+        dueAt: '2026-06-01T00:00:00.000Z',
+      }),
+    ) as { task: { id: string } };
+
+    const filtered = resultContent(
+      await callTool(userId, 'task_list', { dueBefore: '2026-03-01T00:00:00.000Z' }),
+    ) as { tasks: Array<{ id: string }> };
+    expect(filtered.tasks.some((t) => t.id === soon.task.id)).toBe(true);
+    expect(filtered.tasks.some((t) => t.id === later.task.id)).toBe(false);
+
+    await db.deleteFrom('app.tasks').where('id', 'in', [soon.task.id, later.task.id]).execute();
+  });
+
+  it('filters by a partial, case-insensitive title match', async () => {
+    const match = resultContent(
+      await callTool(userId, 'task_create', { title: 'Renew passport', artifactType: 'task' }),
+    ) as { task: { id: string } };
+    const other = resultContent(
+      await callTool(userId, 'task_create', { title: 'Buy groceries', artifactType: 'task' }),
+    ) as { task: { id: string } };
+
+    const filtered = resultContent(await callTool(userId, 'task_list', { query: 'PASSPORT' })) as {
+      tasks: Array<{ id: string }>;
+    };
+    expect(filtered.tasks.some((t) => t.id === match.task.id)).toBe(true);
+    expect(filtered.tasks.some((t) => t.id === other.task.id)).toBe(false);
+
+    await db.deleteFrom('app.tasks').where('id', 'in', [match.task.id, other.task.id]).execute();
+  });
 });
 
 describe('task_update', () => {
