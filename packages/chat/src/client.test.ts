@@ -11,7 +11,15 @@ function streamResponse(event: unknown): Response {
 function readErrorMessage(body: string): string | undefined {
   try {
     const parsed: unknown = JSON.parse(body);
-    if (typeof parsed !== 'object' || parsed === null || !('error' in parsed)) return undefined;
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      !('code' in parsed) ||
+      parsed.code !== 'UNSUPPORTED_CAPABILITY' ||
+      !('error' in parsed)
+    ) {
+      return undefined;
+    }
     return typeof parsed.error === 'string' ? parsed.error : undefined;
   } catch {
     return undefined;
@@ -52,10 +60,16 @@ function streamFromRequest(request: (input: ChatClientTransportRequest) => Promi
 describe('ChatClient', () => {
   it('surfaces the API error body when a generation request is rejected', async () => {
     const request = async () =>
-      new Response(JSON.stringify({ error: 'Calendar actions are not available in chat yet.' }), {
-        status: 400,
-        headers: { 'content-type': 'application/json' },
-      });
+      new Response(
+        JSON.stringify({
+          code: 'UNSUPPORTED_CAPABILITY',
+          error: 'Calendar actions are not available in chat yet.',
+        }),
+        {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        },
+      );
     const client = new ChatClient({
       baseUrl: 'https://chat.test',
       transport: { request, stream: streamFromRequest(request) },

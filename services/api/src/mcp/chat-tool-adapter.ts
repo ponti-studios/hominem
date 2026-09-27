@@ -7,6 +7,7 @@ import {
   getModelCapabilityProfile,
   getReasoningConfig,
 } from '@hominem/ai';
+import { ChatHttpClientError } from '@hominem/chat/server';
 import { logger } from '@hominem/telemetry';
 import { z } from 'zod';
 
@@ -53,6 +54,9 @@ const WEB_SEARCH_TOOL: ChatFunctionTool = {
   },
 };
 
+const CURRENT_PUBLIC_FACT_PATTERN =
+  /\b(current|today|tonight|tomorrow|next|latest|recent|schedule|score|scores|price|rate|weather|when do|what time|verify)\b/;
+
 function toChatTool(tool: CapabilityDefinition): ChatFunctionToolDefinition {
   return {
     type: 'function',
@@ -62,6 +66,10 @@ function toChatTool(tool: CapabilityDefinition): ChatFunctionToolDefinition {
       parameters: convertSchemaToJsonSchema(tool.inputSchema),
     },
   };
+}
+
+function chatToolName(tool: ChatFunctionTool): string {
+  return 'function' in tool ? tool.function.name : tool.type;
 }
 
 let chatToolProjection: {
@@ -179,7 +187,8 @@ export async function planChatTools(input: {
     const tools: ChatFunctionTool[] = selectedDefinitions.map(
       (definition) => projectedTools[definitions.indexOf(definition)]!,
     );
-    if (capabilities.size === 0) tools.push(WEB_SEARCH_TOOL);
+    const requiresWebSearch = CURRENT_PUBLIC_FACT_PATTERN.test(content);
+    if (requiresWebSearch) tools.push(WEB_SEARCH_TOOL);
     logger.info('chat_tool_plan', {
       model: input.model,
       capabilities: [...capabilities],
@@ -193,11 +202,7 @@ export async function planChatTools(input: {
       tools,
       steps: fallbackSteps(selectedDefinitions),
       usage: null,
-      requiresWebSearch:
-        capabilities.size === 0 &&
-        /\b(current|today|tonight|tomorrow|next|latest|recent|schedule|score|scores|price|rate|weather|when do|what time|verify)\b/.test(
-          content,
-        ),
+      requiresWebSearch,
     };
   }
 
@@ -237,17 +242,18 @@ export async function planChatTools(input: {
       candidateToolCount: 0,
       reason: calendarRequest ? 'calendar_capability_unavailable' : 'no_eligible_private_tool',
     });
-    throw new Error(
-      calendarRequest
-        ? 'I can search the web, but I cannot add calendar events from this chat yet. No changes were made.'
-        : 'I cannot complete that personal-data request from this chat yet. No changes were made.',
-    );
+    throw new ChatHttpClientError({
+      code: 'UNSUPPORTED_CAPABILITY',
+      message: calendarRequest
+        ? 'I can search the web, but I cannot add calendar events from this chat yet.'
+        : 'I cannot complete that personal-data request from this chat yet.',
+    });
   }
   if (!capabilityOutput.requiresLookup) {
     return {
       capabilities,
       requiresLookup: false,
-      tools: [WEB_SEARCH_TOOL],
+      tools: capabilityOutput.requiresWebSearch ? [WEB_SEARCH_TOOL] : [],
       steps: [],
       usage: capabilityUsage,
       requiresWebSearch: capabilityOutput.requiresWebSearch,
@@ -287,15 +293,16 @@ export async function planChatTools(input: {
     exactPlan = { requiresLookup: true, steps: fallbackSteps(candidateDefinitions) };
   }
 
-  const selectedTools = exactPlan.steps.flatMap((step) => {
+  const selectedTools: ChatFunctionTool[] = exactPlan.steps.flatMap((step) => {
     const index = definitions.findIndex((definition) => definition.name === step.tool);
     return index === -1 ? [] : [projectedTools[index]!];
   });
+  if (capabilityOutput.requiresWebSearch) selectedTools.push(WEB_SEARCH_TOOL);
   logger.info('chat_tool_plan', {
     model: input.model,
     capabilities,
     requiresLookup: exactPlan.requiresLookup,
-    candidateTools: selectedTools.map((tool) => tool.function.name),
+    candidateTools: selectedTools.map(chatToolName),
     steps: exactPlan.steps,
   });
   return {
@@ -304,6 +311,6 @@ export async function planChatTools(input: {
     tools: selectedTools,
     steps: exactPlan.steps,
     usage: addUsage(capabilityUsage, planUsage),
-    requiresWebSearch: false,
+    requiresWebSearch: capabilityOutput.requiresWebSearch,
   };
 }

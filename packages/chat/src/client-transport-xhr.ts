@@ -1,3 +1,4 @@
+import { parseClientSafeChatError } from './client-errors';
 import type {
   ChatClientStreamRequest,
   ChatClientStreamResult,
@@ -74,17 +75,7 @@ export const xhrChatTransport = (
         if (xhr.readyState !== 4 || settled) return;
         settled = true;
         const ok = xhr.status >= 200 && xhr.status < 300;
-        let errorMessage: string | undefined;
-        if (!ok) {
-          try {
-            const parsed: unknown = JSON.parse(xhr.responseText);
-            if (typeof parsed === 'object' && parsed !== null && 'error' in parsed) {
-              errorMessage = typeof parsed.error === 'string' ? parsed.error : undefined;
-            }
-          } catch {
-            // Preserve the status-only error when the server did not return JSON.
-          }
-        }
+        const errorMessage = ok ? undefined : parseClientSafeChatError(xhr.responseText);
         resolve({ ok, status: xhr.status, errorMessage });
       };
       xhr.onerror = () => {

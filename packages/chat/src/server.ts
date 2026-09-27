@@ -39,6 +39,20 @@ export type ChatServerModelInput = {
   onUsage?: (usage: unknown) => void;
 };
 
+export class ChatHttpClientError extends Error {
+  readonly statusCode: number;
+  readonly code: string;
+  readonly clientMessage: string;
+
+  constructor(input: { code: string; message: string; statusCode?: number }) {
+    super(input.message);
+    this.name = 'ChatHttpClientError';
+    this.code = input.code;
+    this.clientMessage = input.message;
+    this.statusCode = input.statusCode ?? 400;
+  }
+}
+
 export type ChatServerToolContext = {
   userId: string;
   generationId: string;
@@ -358,8 +372,8 @@ export type ChatHttpRuntime = {
   }) => Promise<AsyncIterable<GenerationEvent>>;
 };
 
-function jsonError(message: string, status: number): Response {
-  return Response.json({ error: message }, { status });
+function jsonError(message: string, status: number, code = 'CHAT_REQUEST_FAILED'): Response {
+  return Response.json({ error: message, code }, { status });
 }
 
 async function readJson(request: Request): Promise<unknown> {
@@ -470,13 +484,13 @@ export function createChatHttpHandler(
     } catch (error) {
       runtime.onError?.({ error, request });
       if (error instanceof Response) return error;
-      if (isObject(error) && 'statusCode' in error && typeof error.statusCode === 'number') {
-        return jsonError(
-          error instanceof Error ? error.message : 'Chat request failed',
-          error.statusCode,
-        );
+      if (error instanceof ChatHttpClientError) {
+        return jsonError(error.clientMessage, error.statusCode, error.code);
       }
-      return jsonError(error instanceof Error ? error.message : 'Chat request failed', 400);
+      if (isObject(error) && 'statusCode' in error && typeof error.statusCode === 'number') {
+        return jsonError('Chat request failed', error.statusCode);
+      }
+      return jsonError('Chat request failed', 400);
     }
   };
 }

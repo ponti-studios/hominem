@@ -28,18 +28,7 @@ export const fetchChatTransport = (fetchImpl: typeof fetch = fetch): ChatClientT
       : await response
           .clone()
           .text()
-          .then((body) => {
-            try {
-              const parsed: unknown = JSON.parse(body);
-              return typeof parsed === 'object' && parsed !== null && 'error' in parsed
-                ? typeof parsed.error === 'string'
-                  ? parsed.error
-                  : undefined
-                : undefined;
-            } catch {
-              return undefined;
-            }
-          })
+          .then(parseClientSafeChatError)
           .catch(() => undefined);
     const reader = response.body?.getReader();
     if (!reader) {
@@ -58,3 +47,4 @@ export const fetchChatTransport = (fetchImpl: typeof fetch = fetch): ChatClientT
     return { ok: response.ok, status: response.status, errorMessage };
   },
 });
+import { parseClientSafeChatError } from './client-errors';

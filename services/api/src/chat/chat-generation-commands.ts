@@ -158,6 +158,12 @@ export async function startMessage(
   const files = await ChatRepository.resolveChatFiles(db, input.userId, input.fileIds);
   const storedContent = toStoredUserMessageContent(input.message, files);
   if (!storedContent) throw new ChatGenerationInputError('Message or fileIds is required');
+  const messages = buildMessages(
+    [],
+    formatUserContentWithContext(input.message, [], files),
+    buildChatSystemPrompt(input.responseLength),
+  );
+  const toolPlan = await planTools(dependencies, messages);
   const created = await runInTransaction(async (trx) => {
     const chat = await ChatRepository.create(trx, { userId: input.userId, title: input.title });
     const userMessage = await ChatRepository.insertMessage(trx, {
@@ -177,12 +183,6 @@ export async function startMessage(
     });
     return { chat, userMessageId: userMessage.id };
   });
-  const messages = buildMessages(
-    [],
-    formatUserContentWithContext(input.message, [], files),
-    buildChatSystemPrompt(input.responseLength),
-  );
-  const toolPlan = await planTools(dependencies, messages);
   return start(dependencies, {
     chat: created.chat,
     userId: input.userId,
@@ -226,6 +226,12 @@ export async function sendMessage(
       ownerUserId: input.userId,
       terminal: true,
     });
+  const messages = buildMessages(
+    history,
+    formatUserContentWithContext(input.message, notes, files),
+    buildChatSystemPrompt(input.responseLength),
+  );
+  const toolPlan = await planTools(dependencies, messages);
 
   const userMessageId = await runInTransaction(async (trx): Promise<string> => {
     const userMessage = await ChatRepository.insertMessage(trx, {
@@ -245,12 +251,6 @@ export async function sendMessage(
     });
     return userMessage.id;
   });
-  const messages = buildMessages(
-    history,
-    formatUserContentWithContext(input.message, notes, files),
-    buildChatSystemPrompt(input.responseLength),
-  );
-  const toolPlan = await planTools(dependencies, messages);
   return send(dependencies, {
     chat,
     userId: input.userId,
@@ -294,6 +294,12 @@ async function redoGeneration(
   if (!userMessage || userMessage.role !== 'user') {
     throw new ChatGenerationInputError('The message being answered was not found');
   }
+  const messages = buildMessages(
+    history.slice(0, userMessageIndex),
+    formatUserContentWithContext(userMessage.content, notes, userMessage.files ?? []),
+    buildChatSystemPrompt(input.responseLength),
+  );
+  const toolPlan = await planTools(dependencies, messages);
   await ChatRepository.createGenerationRun(db, {
     id: input.generationId,
     chatId: input.chatId,
@@ -301,12 +307,6 @@ async function redoGeneration(
     kind: 'send',
     userMessageId: input.userMessageId,
   });
-  const messages = buildMessages(
-    history.slice(0, userMessageIndex),
-    formatUserContentWithContext(userMessage.content, notes, userMessage.files ?? []),
-    buildChatSystemPrompt(input.responseLength),
-  );
-  const toolPlan = await planTools(dependencies, messages);
   return send(dependencies, {
     chat: input.chat,
     userId: input.userId,

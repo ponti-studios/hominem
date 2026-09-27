@@ -21,6 +21,21 @@ function parseBody<T>(schema: { parse: (input: unknown) => T }, body: unknown): 
   return schema.parse(body);
 }
 
+function chatErrorMetadata(error: unknown) {
+  const errorName = error instanceof Error ? error.name : 'UnknownError';
+  const errorCategory =
+    errorName === 'ChatHttpClientError'
+      ? 'client_safe'
+      : errorName === 'ChatGenerationInputError'
+        ? 'client_input'
+        : /provider|openrouter/i.test(errorName)
+          ? 'provider'
+          : /validation|zod/i.test(errorName)
+            ? 'validation'
+            : 'internal';
+  return { errorCategory, errorName };
+}
+
 function requestWithJsonBody(c: Context<AppContext>, body: unknown): Request {
   const headers = new Headers(c.req.raw.headers);
   headers.delete('content-length');
@@ -39,7 +54,7 @@ function createHandler(service: ChatGenerationService, userId: string, requestId
         method: request.method,
         path: new URL(request.url).pathname,
         requestId,
-        error,
+        ...chatErrorMetadata(error),
       });
     },
     authenticate: () => ({ userId }),
@@ -149,7 +164,7 @@ function delegateToHandler(
         method: request.method,
         path: new URL(request.url).pathname,
         requestId: c.get('requestId'),
-        error,
+        ...chatErrorMetadata(error),
       });
       throw error;
     });

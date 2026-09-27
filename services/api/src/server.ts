@@ -90,8 +90,8 @@ export type ServerDependencies = {
 };
 
 function registerBaseMiddleware(app: Hono<AppEnv>, dependencies: ServerDependencies) {
-  app.use('*', blockMaliciousProbes());
   app.use('*', requestIdMiddleware);
+  app.use('*', blockMaliciousProbes());
   app.use('*', requestLogger());
   app.use('*', prettyJSON());
   app.use('*', createCorsMiddleware(dependencies.env));
