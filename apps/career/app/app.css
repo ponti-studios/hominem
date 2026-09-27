@@ -4,6 +4,19 @@
 
 @source '../node_modules/@ponti-studios/ui/src';
 
+/* iOS/Android browsers auto-zoom on focus when a form field's font-size is below 16px.
+   Target coarse (touch) pointers rather than a width breakpoint: a landscape phone
+   is often wider than `md` and would otherwise fall back to a component's md:text-sm.
+   !important is required: a plain element selector loses to any utility class
+   (e.g. text-sm) a component puts on the field itself, regardless of source order. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* App theme overrides — light mode. */
 :root {
   --background: #fcfcfd;
