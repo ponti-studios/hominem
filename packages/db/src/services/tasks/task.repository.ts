@@ -139,6 +139,9 @@ export const TaskRepository = {
       .where('participant.taskId', '=', input.taskId)
       .where('task.ownerUserid', '=', input.userId)
       .orderBy('participant.createdat', 'asc')
+      // replaceParticipants is the only writer and caps a task at 20 (CreateTaskSchema /
+      // UpdateTaskSchema), so this is a defensive ceiling, not an active page boundary.
+      .limit(20)
       .execute();
 
     return rows.map((row) => ({
@@ -237,7 +240,10 @@ export const TaskRepository = {
 
   // Top-level tasks owned by the user (standalone tasks + task-list
   // parents). A row counts as a task_list once it has at least one child.
-  async list(handle: DbHandle, input: { userId: string }): Promise<TaskListRecord[]> {
+  async list(
+    handle: DbHandle,
+    input: { userId: string; limit?: number },
+  ): Promise<TaskListRecord[]> {
     const rows = await handle
       .selectFrom('app.tasks as t')
       .selectAll('t')
@@ -251,6 +257,7 @@ export const TaskRepository = {
       .where('t.ownerUserid', '=', input.userId)
       .where('t.parentTaskId', 'is', null)
       .orderBy('t.updatedat', 'desc')
+      .limit(input.limit ?? 100)
       .execute();
 
     return rows.map((row) => {
@@ -272,6 +279,7 @@ export const TaskRepository = {
       .where('parentTaskId', '=', input.parentId)
       .where('ownerUserid', '=', input.userId)
       .orderBy('createdat', 'asc')
+      .limit(200)
       .execute();
 
     return rows.map((row) => toTaskRecord(row, 'task'));
@@ -319,7 +327,8 @@ export const TaskRepository = {
       throw new NotFoundError('Task', { taskId: id });
     }
 
-    return toTaskRecord(row, 'task');
+    const children = await TaskRepository.listChildren(handle, { parentId: id, userId });
+    return toTaskRecord(row, children.length > 0 ? 'task_list' : 'task');
   },
 
   async update(

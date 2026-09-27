@@ -12,6 +12,7 @@ import {
 import {
   CreateTaskBatchSchema,
   CreateTaskSchema,
+  TaskListQuerySchema,
   TaskParamSchema,
   TaskRecordSchema,
   UpdateTaskSchema,
@@ -20,7 +21,13 @@ import {
 } from '../../schemas/tasks.schema';
 import { registerTool } from '../tool-registry';
 
-const noInputSchema = z.object({});
+// task_batch_create is the only supported way to create a task_list via MCP: a lone
+// task_create with artifactType 'task_list' would have zero children, so task_list/
+// task_detail would immediately (and correctly) report it back as a plain 'task'.
+const taskCreateInputSchema = CreateTaskSchema.refine((data) => data.artifactType !== 'task_list', {
+  message: 'Use task_batch_create to create a task list with subtasks',
+  path: ['artifactType'],
+});
 
 const writeTool: { readOnly: false; scopes: ['task:write']; resultCap: number } = {
   readOnly: false,
@@ -33,13 +40,13 @@ registerTool(
     name: 'task_list',
     title: 'List tasks',
     description: 'Lists top-level tasks and task lists for the authenticated user.',
-    inputSchema: noInputSchema,
+    inputSchema: TaskListQuerySchema,
     outputSchema: taskListResultSchema,
     readOnly: true,
     scopes: ['task:read'],
     resultCap: 100,
   },
-  async (ownerUserId, _input) => ({ tasks: await listTasks(ownerUserId) }),
+  async (ownerUserId, input) => ({ tasks: await listTasks(ownerUserId, input.limit) }),
 );
 
 registerTool(
@@ -52,7 +59,9 @@ registerTool(
     outputSchema: taskDetailResultSchema,
     readOnly: true,
     scopes: ['task:read'],
-    resultCap: 50,
+    // Children/participants are DB-capped at 200/20 respectively (TaskRepository), so
+    // this only needs to exceed those ceilings, not paginate a single task's detail view.
+    resultCap: 200,
   },
   async (ownerUserId, input) => getTaskDetail(ownerUserId, input.id),
 );
@@ -61,10 +70,10 @@ registerTool(
   {
     ...writeTool,
     name: 'task_create',
-    title: 'Create a task or task list',
+    title: 'Create a task',
     description:
-      'Creates a task or task list, optionally assigning participants or nesting it under a parent task list.',
-    inputSchema: CreateTaskSchema,
+      'Creates a standalone task, optionally assigning participants or nesting it under a parent task list. Use task_batch_create to create a task list with subtasks.',
+    inputSchema: taskCreateInputSchema,
     outputSchema: z.object({ task: TaskRecordSchema }),
   },
   async (ownerUserId, input) => ({ task: await createTask(ownerUserId, input) }),

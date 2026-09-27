@@ -31,7 +31,12 @@ export const careerProfileSchema = z.object({
 
 export const careerMcpProfileSchema = careerProfileSchema.omit({ email: true, phone: true });
 
-export const careerProfileUpdateSchema = careerMcpProfileSchema.omit({ id: true }).partial();
+export const careerProfileUpdateSchema = careerMcpProfileSchema
+  .omit({ id: true })
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field must be provided',
+  });
 
 const careerEngagementKindSchema = z.enum([
   'EMPLOYMENT',

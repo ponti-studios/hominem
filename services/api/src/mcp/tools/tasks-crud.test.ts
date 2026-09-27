@@ -62,6 +62,34 @@ describe('task_create / task_list / task_detail', () => {
   });
 });
 
+describe('task_create validation', () => {
+  it('rejects creating a standalone task_list', async () => {
+    await expect(
+      callTool(userId, 'task_create', { title: 'Empty list', artifactType: 'task_list' }),
+    ).rejects.toThrow();
+  });
+});
+
+describe('task_list', () => {
+  it('bounds the result to the requested limit', async () => {
+    const created = await Promise.all(
+      Array.from({ length: 3 }, (_, i) =>
+        callTool(userId, 'task_create', { title: `Limit test ${i}`, artifactType: 'task' }),
+      ),
+    );
+
+    const limited = resultContent(await callTool(userId, 'task_list', { limit: 1 })) as {
+      tasks: unknown[];
+    };
+    expect(limited.tasks).toHaveLength(1);
+
+    for (const result of created) {
+      const { task } = resultContent(result) as { task: { id: string } };
+      await db.deleteFrom('app.tasks').where('id', '=', task.id).execute();
+    }
+  });
+});
+
 describe('task_update', () => {
   it('updates a task', async () => {
     const created = resultContent(
@@ -93,6 +121,35 @@ describe('task_update', () => {
     expect(updated.task).toBeNull();
 
     await db.deleteFrom('app.tasks').where('id', '=', created.task.id).execute();
+  });
+
+  it('replaces participants without touching any other field', async () => {
+    const created = resultContent(
+      await callTool(userId, 'task_create', { title: 'Assign me', artifactType: 'task' }),
+    ) as { task: { id: string } };
+
+    const person = await db
+      .insertInto('app.people')
+      .values({ ownerUserid: userId, displayName: 'Assignee' })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+
+    const updated = resultContent(
+      await callTool(userId, 'task_update', {
+        id: created.task.id,
+        data: { participants: [person.id] },
+      }),
+    ) as { task: { title: string } | null };
+    expect(updated.task).toMatchObject({ title: 'Assign me' });
+
+    const detail = resultContent(
+      await callTool(userId, 'task_detail', { id: created.task.id }),
+    ) as { participants: Array<{ personId: string }> };
+    expect(detail.participants).toHaveLength(1);
+    expect(detail.participants[0]?.personId).toBe(person.id);
+
+    await db.deleteFrom('app.tasks').where('id', '=', created.task.id).execute();
+    await db.deleteFrom('app.people').where('id', '=', person.id).execute();
   });
 });
 
@@ -128,6 +185,23 @@ describe('task_complete', () => {
     expect(completed.task).toBeNull();
 
     await db.deleteFrom('app.tasks').where('id', '=', created.task.id).execute();
+  });
+
+  it('preserves task_list artifactType when completing a parent with children', async () => {
+    const batch = resultContent(
+      await callTool(userId, 'task_batch_create', {
+        groups: [{ title: 'Trip prep', tasks: [{ title: 'Pack' }, { title: 'Book flight' }] }],
+      }),
+    ) as { groups: Array<{ parent: { id: string } }> };
+    const parentId = batch.groups[0]?.parent.id as string;
+
+    const completed = resultContent(
+      await callTool(userId, 'task_complete', { id: parentId, completed: true }),
+    ) as { task: { artifactType: string } | null };
+    expect(completed.task?.artifactType).toBe('task_list');
+
+    await db.deleteFrom('app.tasks').where('parentTaskId', '=', parentId).execute();
+    await db.deleteFrom('app.tasks').where('id', '=', parentId).execute();
   });
 });
 

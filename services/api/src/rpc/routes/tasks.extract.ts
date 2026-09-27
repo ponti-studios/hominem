@@ -11,7 +11,7 @@ import {
   startAIUsageTimer,
 } from '../../application/ai-usage.service';
 import { extractTasks, extractVoiceTasks } from '../../application/task-extraction.service';
-import { persistExtractedTasks } from '../../application/tasks.service';
+import { persistExtractedTasks } from '../../application/task.service';
 import { ExtractTasksInputSchema, VoiceTasksInputSchema } from '../../schemas/tasks.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';

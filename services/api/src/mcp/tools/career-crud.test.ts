@@ -451,6 +451,10 @@ describe('career_profile_update', () => {
     };
     expect(otherProfile.profile?.headline).toBe('Other headline');
   });
+
+  it('rejects an empty update', async () => {
+    await expect(callTool(userId, 'career_profile_update', {})).rejects.toThrow();
+  });
 });
 
 describe('career_social_links_save', () => {

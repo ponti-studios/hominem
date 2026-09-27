@@ -153,6 +153,7 @@ function inferMuseCapabilities(messages: ChatMessages[]): Set<ChatCapability> {
     ['places', ['place', 'restaurant', 'venue', 'address']],
     ['social', ['social', 'conversation']],
     ['tags', ['tag', 'untag']],
+    ['task', ['task', 'to-do', 'todo', 'checklist', 'reminder']],
   ];
   for (const [capability, needles] of terms) {
     if (needles.some((needle) => content.includes(needle))) matches.add(capability);

@@ -12,8 +12,8 @@ import { runInTransaction } from '@hominem/db/transaction';
 
 export { persistExtractedTasks } from './tasks.service';
 
-export async function listTasks(ownerUserId: string): Promise<TaskListRecord[]> {
-  return TaskRepository.list(db, { userId: ownerUserId });
+export async function listTasks(ownerUserId: string, limit?: number): Promise<TaskListRecord[]> {
+  return TaskRepository.list(db, { userId: ownerUserId, limit });
 }
 
 export interface TaskDetail {
@@ -88,7 +88,12 @@ export async function updateTask(
 
   try {
     return await runInTransaction(async (trx) => {
-      const updated = await TaskRepository.update(trx, id, ownerUserId, rest);
+      // A participants-only patch has nothing for TaskRepository.update's SET clause,
+      // so load the task (still ownership/existence-checked) instead of updating it.
+      const updated =
+        Object.keys(rest).length > 0
+          ? await TaskRepository.update(trx, id, ownerUserId, rest)
+          : await TaskRepository.load(trx, id, ownerUserId);
       if (participants) {
         await TaskRepository.replaceParticipants(trx, {
           taskId: id,

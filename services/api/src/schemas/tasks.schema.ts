@@ -140,6 +140,10 @@ export const taskDetailResultSchema = z.object({
   children: z.array(TaskRecordSchema),
 });
 
+export const TaskListQuerySchema = z.object({
+  limit: z.number().int().min(1).max(100).optional().default(100),
+});
+
 export const TaskParamSchema = z.object({ id: z.uuid() });
 
 export const UpdateTaskStatusSchema = z.object({ completed: z.boolean() });
