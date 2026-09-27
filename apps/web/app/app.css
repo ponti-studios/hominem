@@ -6,12 +6,14 @@
 @source '../../node_modules/@ponti-studios/ui/src/**/*.{ts,tsx}';
 @source './';
 
-/* iOS/Android browsers auto-zoom on focus when a form field's font-size is below 16px. */
+/* iOS/Android browsers auto-zoom on focus when a form field's font-size is below 16px.
+   !important is required: a plain element selector loses to any utility class
+   (e.g. text-sm) a component puts on the field itself, regardless of source order. */
 @media (max-width: 767px) {
   input,
   select,
   textarea {
-    font-size: 16px;
+    font-size: 16px !important;
   }
 }
 
