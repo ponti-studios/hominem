@@ -6,6 +6,7 @@ import chatHarness from './lib/chat-harness';
 import {
   loadJson,
   renderMessages,
+  currentUtcDate,
   targetModel,
   type Golden,
   type PromptMessage,
@@ -25,7 +26,10 @@ test('chat baseline', async () => {
 
   for (const golden of pilotCases(cases)) {
     try {
-      const input = renderMessages(prompt, { user_message: golden.input });
+      const input = renderMessages(prompt, {
+        user_message: golden.input,
+        current_date: currentUtcDate(),
+      });
       const run = await agent.run(input);
       if (!run.text.trim()) throw new Error('Chat baseline returned an empty response');
       if (run.text.length > 1_000) {
