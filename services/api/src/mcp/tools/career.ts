@@ -35,6 +35,7 @@ import {
   removeCareerProject,
   removeCareerWishlistCompany,
   updateCareerEngagement,
+  updateCareerProfile,
   updateCareerProject,
   updateCareerWishlistCompany,
   updateCareerApplication,
@@ -67,6 +68,7 @@ import {
   careerEngagementsQuerySchema,
   careerEngagementsSchema,
   careerMcpProfileSchema,
+  careerProfileUpdateSchema,
   careerProjectDeleteSchema,
   careerProjectSchema,
   careerProjectUpdateSchema,
@@ -122,6 +124,21 @@ registerTool(
     const profile = await getCareerProfile(ownerUserId);
     return { profile: profile ? careerMcpProfileSchema.parse(profile) : null };
   },
+);
+
+registerTool(
+  {
+    name: 'career_profile_update',
+    title: 'Update your career profile',
+    description:
+      'Updates the authenticated user career profile (name, headline, summary, location, industry, LinkedIn URL, websites, X/Twitter handles). Does not accept email or phone.',
+    inputSchema: careerProfileUpdateSchema,
+    outputSchema: z.object({ profile: careerMcpProfileSchema }),
+    readOnly: false,
+    scopes: ['career:write'],
+    resultCap: 1,
+  },
+  async (ownerUserId, input) => ({ profile: await updateCareerProfile(ownerUserId, input) }),
 );
 
 const writeTool: { readOnly: false; scopes: ['career:write']; resultCap: number } = {

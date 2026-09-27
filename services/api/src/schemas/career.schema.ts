@@ -31,6 +31,8 @@ export const careerProfileSchema = z.object({
 
 export const careerMcpProfileSchema = careerProfileSchema.omit({ email: true, phone: true });
 
+export const careerProfileUpdateSchema = careerMcpProfileSchema.omit({ id: true }).partial();
+
 const careerEngagementKindSchema = z.enum([
   'EMPLOYMENT',
   'CONTRACT',

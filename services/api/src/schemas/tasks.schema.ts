@@ -98,6 +98,48 @@ export const CreateTaskBatchSchema = z
     message: 'At least one task or group is required',
   });
 
+export const TaskRecordSchema = z.object({
+  id: z.uuid(),
+  ownerUserId: z.uuid(),
+  title: z.string(),
+  description: z.string().nullable(),
+  parentTaskId: z.uuid().nullable(),
+  status: z.string(),
+  priority: z.string(),
+  dueAt: z.string().nullable(),
+  durationMinutes: z.number().int().nullable(),
+  schedulingWindowStartAt: z.string().nullable(),
+  schedulingWindowEndAt: z.string().nullable(),
+  scheduledStartAt: z.string().nullable(),
+  scheduledEndAt: z.string().nullable(),
+  timeZone: z.string().nullable(),
+  location: z.string().nullable(),
+  completedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  artifactType: z.enum(['task', 'task_list']),
+});
+
+export const TaskListRecordSchema = TaskRecordSchema.extend({
+  childCount: z.number().int(),
+});
+
+export const TaskParticipantOutputSchema = z.object({
+  personId: z.uuid(),
+  displayName: z.string(),
+  email: z.string().nullable(),
+});
+
+export const taskListResultSchema = z.object({
+  tasks: z.array(TaskListRecordSchema),
+});
+
+export const taskDetailResultSchema = z.object({
+  task: TaskRecordSchema.nullable(),
+  participants: z.array(TaskParticipantOutputSchema),
+  children: z.array(TaskRecordSchema),
+});
+
 export const TaskParamSchema = z.object({ id: z.uuid() });
 
 export const UpdateTaskStatusSchema = z.object({ completed: z.boolean() });

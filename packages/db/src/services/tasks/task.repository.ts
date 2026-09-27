@@ -246,7 +246,7 @@ export const TaskRepository = {
           .selectFrom('app.tasks as c')
           .select((ceb) => ceb.fn.countAll().as('count'))
           .whereRef('c.parentTaskId', '=', 't.id')
-          .as('child_count'),
+          .as('childCount'),
       )
       .where('t.ownerUserid', '=', input.userId)
       .where('t.parentTaskId', 'is', null)
@@ -254,7 +254,7 @@ export const TaskRepository = {
       .execute();
 
     return rows.map((row) => {
-      const childCount = Number(row.child_count ?? 0);
+      const childCount = Number(row.childCount ?? 0);
       return {
         ...toTaskRecord(row, childCount > 0 ? 'task_list' : 'task'),
         childCount,

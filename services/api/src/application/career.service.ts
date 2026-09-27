@@ -28,7 +28,9 @@ import {
   careerEngagementUpdateDataSchema,
   careerEducationSchema,
   careerEducationCreateSchema,
+  careerMcpProfileSchema,
   careerProfileSchema,
+  careerProfileUpdateSchema,
   careerProjectSchema,
   careerProjectStatusSchema,
   careerProjectsSchema,
@@ -47,6 +49,26 @@ export async function getCareerProfile(ownerUserId: string) {
     summary: profile.summary,
     email: profile.email,
     phone: profile.phone,
+    location: profile.location,
+    industry: profile.industry,
+    linkedinUrl: profile.linkedinUrl,
+    websites: profile.websites,
+    twitterHandles: profile.twitterHandles,
+  });
+}
+
+export async function updateCareerProfile(
+  ownerUserId: string,
+  data: z.infer<typeof careerProfileUpdateSchema>,
+) {
+  const profile = await CareerRepository.saveProfile(db, ownerUserId, data);
+
+  return careerMcpProfileSchema.parse({
+    id: profile.id,
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    headline: profile.headline,
+    summary: profile.summary,
     location: profile.location,
     industry: profile.industry,
     linkedinUrl: profile.linkedinUrl,

@@ -23,6 +23,7 @@ async function registerAll(): Promise<void> {
   if (isEnabled('people:read')) imports.push(import('./tools/people'));
   if (isEnabled('places:read')) imports.push(import('./tools/places'));
   if (isEnabled('tags:read', 'tags:write')) imports.push(import('./tools/tags'));
+  if (isEnabled('task:read', 'task:write')) imports.push(import('./tools/tasks'));
   if (isEnabled('social:read')) imports.push(import('./tools/social'));
 
   await Promise.all(imports);

@@ -412,6 +412,47 @@ describe('career certification MCP tools', () => {
   });
 });
 
+describe('career_profile_update', () => {
+  it('updates and reads back the profile', async () => {
+    const updated = resultContent(
+      await callTool(userId, 'career_profile_update', {
+        headline: 'Staff Engineer',
+        location: 'Remote',
+      }),
+    ) as { profile: { headline: string | null; location: string | null } };
+    expect(updated.profile).toMatchObject({ headline: 'Staff Engineer', location: 'Remote' });
+
+    const read = resultContent(await callTool(userId, 'career_profile', {})) as {
+      profile: { headline: string | null; location: string | null } | null;
+    };
+    expect(read.profile).toMatchObject({ headline: 'Staff Engineer', location: 'Remote' });
+  });
+
+  it('does not leak email or phone in the response', async () => {
+    const updated = resultContent(
+      await callTool(userId, 'career_profile_update', { industry: 'Software' }),
+    ) as { profile: Record<string, unknown> };
+    expect(updated.profile).not.toHaveProperty('email');
+    expect(updated.profile).not.toHaveProperty('phone');
+  });
+
+  it('only updates the calling user’s own profile', async () => {
+    await callTool(userId, 'career_profile_update', { headline: 'Owner headline' });
+
+    await callTool(otherUserId, 'career_profile_update', { headline: 'Other headline' });
+
+    const ownerProfile = resultContent(await callTool(userId, 'career_profile', {})) as {
+      profile: { headline: string | null } | null;
+    };
+    expect(ownerProfile.profile?.headline).toBe('Owner headline');
+
+    const otherProfile = resultContent(await callTool(otherUserId, 'career_profile', {})) as {
+      profile: { headline: string | null } | null;
+    };
+    expect(otherProfile.profile?.headline).toBe('Other headline');
+  });
+});
+
 describe('career_social_links_save', () => {
   it('saves and reads back social links', async () => {
     const saved = resultContent(
