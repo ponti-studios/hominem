@@ -6,6 +6,15 @@
 @source '../../node_modules/@ponti-studios/ui/src/**/*.{ts,tsx}';
 @source './';
 
+/* iOS/Android browsers auto-zoom on focus when a form field's font-size is below 16px. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 @keyframes omiro-float {
   0%,
   100% {
