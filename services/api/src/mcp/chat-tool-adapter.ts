@@ -288,7 +288,8 @@ export async function planChatTools(input: {
   } catch (error) {
     logger.warn('chat_tool_plan_validation_failed', {
       model: input.model,
-      error: error instanceof Error ? error.message : 'Unknown planning error',
+      failureCategory: 'tool_planning',
+      fallbackUsed: true,
     });
     exactPlan = { requiresLookup: true, steps: fallbackSteps(candidateDefinitions) };
   }
@@ -303,7 +304,7 @@ export async function planChatTools(input: {
     capabilities,
     requiresLookup: exactPlan.requiresLookup,
     candidateTools: selectedTools.map(chatToolName),
-    steps: exactPlan.steps,
+    stepCount: exactPlan.steps.length,
   });
   return {
     capabilities,
