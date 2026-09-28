@@ -169,10 +169,20 @@ In `mcp/tools/<domain>.ts`, call `registerTool` per operation:
 ```ts
 import { registerTool } from '../tool-registry';
 
-const writeTool: { readOnly: false; scopes: ['task:write']; resultCap: number } = {
+// Baseline for a "create" tool (destructive: false, idempotent: false — each
+// call produces a new row). Update/complete/delete tools override both below.
+const writeTool: {
+  readOnly: false;
+  scopes: ['task:write'];
+  resultCap: number;
+  destructive: false;
+  idempotent: false;
+} = {
   readOnly: false,
   scopes: ['task:write'],
   resultCap: 1,
+  destructive: false,
+  idempotent: false,
 };
 
 registerTool(
@@ -192,6 +202,8 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    destructive: true,
+    idempotent: true,
     requiresConfirmation: true,
     name: 'task_delete',
     title: 'Delete a task',
@@ -220,9 +232,21 @@ Conventions to follow:
   in the file repeats — mirrors `career.ts`.
 - Use `const noInputSchema = z.object({})` for parameterless read tools.
 - `readOnly: true` for reads; write tools must list a `:write` scope.
+- Every write tool must set `destructive`/`idempotent` explicitly — the server's fallback
+  treats an unannotated write as destructive and non-idempotent (the spec's "assume the worst"
+  default), which mislabels safe operations like `task_complete`. Deletes/removes →
+  `destructive: true`; everything else (creates, field updates, complete/reopen, save/replace)
+  → `destructive: false`. A repeatable no-op-on-repeat operation (delete, update-to-a-value,
+  complete/reopen) → `idempotent: true`; a pure append/create that produces a new row each
+  call → `idempotent: false`.
 - `requiresConfirmation: true` + a `preview` function for anything destructive (delete). The
   preview re-validates the input itself (`schema.safeParse`) and returns a small human-readable
-  summary or `null` — never throws.
+  summary or `null` — never throws. `preview` is optional on `CapabilityDefinition`, but a
+  `requiresConfirmation: true` tool with no `preview` still gets a confirmation prompt
+  (`server.ts`'s `createToolHandler` falls back to a generic "Confirm: `<title>`?" message) —
+  omitting `preview` is not a way to skip confirmation, only `preview` explicitly returning
+  `null` is. Always add a `preview` when there's meaningful context to show (the entity's
+  name, not just its id).
 - `guidance.dependencies` on tools that take an id should point at the list/detail tool that
   produces it, so a model resolves a real id instead of inventing one.
 - A cross-domain tool (reads/writes more than one capability) must list **every** relevant
