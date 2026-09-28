@@ -51,6 +51,10 @@ registerTool(
     readOnly: false,
     scopes: ['memory:write'],
     resultCap: 1,
+    destructive: false,
+    // An identical fact already saved is returned as-is rather than duplicated
+    // (see NoteRepository.createMemoryIfAbsent below), so repeat calls converge.
+    idempotent: true,
     guidance: {
       whenToUse: 'The user explicitly asks to remember something or states a durable preference.',
       whenNotToUse:
@@ -152,6 +156,8 @@ registerTool(
     readOnly: false,
     scopes: ['memory:write'],
     resultCap: 1,
+    destructive: true,
+    idempotent: true,
     requiresConfirmation: true,
     preview: async (ownerUserId, input) => {
       const parsed = forgetMemoryInputSchema.safeParse(input);
