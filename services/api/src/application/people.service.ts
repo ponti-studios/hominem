@@ -167,6 +167,82 @@ export async function createPerson({
   return result;
 }
 
+export async function updatePerson({
+  ownerUserId,
+  personId,
+  displayName,
+  email,
+}: {
+  ownerUserId: string;
+  personId: string;
+  displayName?: string;
+  email?: string | null;
+}): Promise<PersonPickerRecord | null> {
+  const found = await runInTransaction(async (trx) => {
+    const person = await trx
+      .selectFrom('app.people')
+      .select('id')
+      .where('id', '=', personId)
+      .where('ownerUserid', '=', ownerUserId)
+      .executeTakeFirst();
+    if (!person) return false;
+
+    if (displayName !== undefined) {
+      await trx
+        .updateTable('app.people')
+        .set({ displayName: displayName.trim() })
+        .where('id', '=', personId)
+        .where('ownerUserid', '=', ownerUserId)
+        .execute();
+    }
+
+    if (email !== undefined) {
+      const primary = await trx
+        .selectFrom('app.personContactMethods')
+        .select('id')
+        .where('personId', '=', personId)
+        .where('ownerUserid', '=', ownerUserId)
+        .where('kind', '=', 'email')
+        .orderBy('isPrimary', 'desc')
+        .orderBy('createdat', 'asc')
+        .executeTakeFirst();
+
+      if (email === null) {
+        if (primary) {
+          await trx
+            .deleteFrom('app.personContactMethods')
+            .where('id', '=', primary.id)
+            .where('ownerUserid', '=', ownerUserId)
+            .execute();
+        }
+      } else if (primary) {
+        await trx
+          .updateTable('app.personContactMethods')
+          .set({ value: email.trim() })
+          .where('id', '=', primary.id)
+          .where('ownerUserid', '=', ownerUserId)
+          .execute();
+      } else {
+        await trx
+          .insertInto('app.personContactMethods')
+          .values({
+            ownerUserid: ownerUserId,
+            personId,
+            kind: 'email',
+            value: email.trim(),
+            isPrimary: true,
+          })
+          .execute();
+      }
+    }
+
+    return true;
+  });
+
+  if (!found) return null;
+  return getPersonPickerRecord({ ownerUserId, personId });
+}
+
 async function getPersonPickerRecord({
   ownerUserId,
   personId,

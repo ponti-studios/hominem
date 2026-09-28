@@ -69,7 +69,7 @@ export const updateCollectionOutputSchema = z.object({
 
 // ── delete_collection ───────────────────────────────────────────────
 
-const deleteCollectionInputSchema = z.object({
+export const deleteCollectionInputSchema = z.object({
   collectionId: z.string().uuid(),
 });
 
@@ -79,7 +79,7 @@ export const deleteCollectionOutputSchema = z.object({
 
 // ── leave_collection ────────────────────────────────────────────────
 
-const leaveCollectionInputSchema = z.object({
+export const leaveCollectionInputSchema = z.object({
   collectionId: z.string().uuid(),
 });
 
@@ -165,7 +165,7 @@ export const updateMemberRoleOutputSchema = z.object({
 
 // ── remove_member ────────────────────────────────────────────────────
 
-const removeMemberInputSchema = z.object({
+export const removeMemberInputSchema = z.object({
   collectionId: z.string().uuid(),
   memberId: z.string().uuid(),
 });

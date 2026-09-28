@@ -65,6 +65,29 @@ export const personCreateSchema = z.object({
   email: z.email().trim().nullable().optional(),
 });
 
+export const personCreateToolInputSchema = personCreateSchema.describe(
+  'A person to add to the address book.',
+);
+
+export const personCreateToolOutputSchema = z.object({ person: personPickerSchema });
+
+export const personUpdateToolInputSchema = z
+  .object({
+    personId: z.uuid().describe('Stable person id returned by people_lookup or person_create.'),
+    displayName: z.string().trim().min(1).max(200).optional(),
+    email: z
+      .email()
+      .trim()
+      .nullable()
+      .optional()
+      .describe("Sets the person's primary email; null removes it."),
+  })
+  .refine((data) => data.displayName !== undefined || data.email !== undefined, {
+    message: 'Provide a displayName or email to update',
+  });
+
+export const personUpdateToolOutputSchema = z.object({ person: personPickerSchema.nullable() });
+
 // ── person_timeline ──────────────────────────────────────────────────
 
 export const personTimelineInputSchema = z.object({

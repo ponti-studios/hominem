@@ -1,5 +1,5 @@
 import { db, pool } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import './people';
 import { callTool, type McpToolResult } from '../tool-registry';
@@ -246,4 +246,104 @@ describe('person_timeline', () => {
     expect(data.relations).toEqual([]);
     expect(data.socialContacts).toEqual([]);
   });
+});
+
+describe('person_create / person_update', () => {
+  const otherUserId = 'b1000000-0000-4000-8000-000000000002';
+
+  beforeAll(async () => {
+    await pool.query(`DELETE FROM "user" WHERE id = $1`, [otherUserId]);
+    await pool.query(
+      `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4)`,
+      [otherUserId, 'Other User', `${otherUserId}@test.hominem.dev`, true],
+    );
+  });
+
+  it('creates a person with an email and finds them via people_lookup', async () => {
+    const created = resultContent(
+      await callTool(userId, 'person_create', {
+        displayName: 'Katherine Johnson',
+        email: 'katherine@example.com',
+      }),
+    );
+    expect(created.person).toMatchObject({
+      displayName: 'Katherine Johnson',
+      email: 'katherine@example.com',
+    });
+
+    const found = resultContent(await callTool(userId, 'people_lookup', { query: 'Katherine' }));
+    expect(found.people).toEqual([
+      expect.objectContaining({
+        displayName: 'Katherine Johnson',
+        emails: [expect.objectContaining({ email: 'katherine@example.com', isPrimary: true })],
+      }),
+    ]);
+  });
+
+  it('updates the name, replaces the email, and clears it with null', async () => {
+    const created = resultContent(
+      await callTool(userId, 'person_create', {
+        displayName: 'Mary Jackson',
+        email: 'mary@example.com',
+      }),
+    ).person as { id: string };
+
+    const renamed = resultContent(
+      await callTool(userId, 'person_update', {
+        personId: created.id,
+        displayName: 'Mary W. Jackson',
+        email: 'mary.w@example.com',
+      }),
+    );
+    expect(renamed.person).toMatchObject({
+      id: created.id,
+      displayName: 'Mary W. Jackson',
+      email: 'mary.w@example.com',
+    });
+
+    const cleared = resultContent(
+      await callTool(userId, 'person_update', { personId: created.id, email: null }),
+    );
+    expect(cleared.person).toMatchObject({ displayName: 'Mary W. Jackson', email: null });
+
+    const readded = resultContent(
+      await callTool(userId, 'person_update', {
+        personId: created.id,
+        email: 'mary.again@example.com',
+      }),
+    );
+    expect(readded.person).toMatchObject({ email: 'mary.again@example.com' });
+  });
+
+  it('rejects an update with nothing to change', async () => {
+    await expect(callTool(userId, 'person_update', { personId: adaId })).rejects.toThrow();
+  });
+
+  it("returns null and changes nothing for another user's person", async () => {
+    const result = resultContent(
+      await callTool(otherUserId, 'person_update', { personId: adaId, displayName: 'Hijacked' }),
+    );
+    expect(result.person).toBeNull();
+
+    const row = await db
+      .selectFrom('app.people')
+      .select('displayName')
+      .where('id', '=', adaId)
+      .executeTakeFirstOrThrow();
+    expect(row.displayName).toBe('Ada Lovelace');
+  });
+
+  it('returns null for a person that does not exist', async () => {
+    const result = resultContent(
+      await callTool(userId, 'person_update', {
+        personId: '99999999-9999-4999-8999-999999999999',
+        displayName: 'Ghost',
+      }),
+    );
+    expect(result.person).toBeNull();
+  });
+});
+
+afterAll(async () => {
+  await pool.query(`DELETE FROM "user" WHERE id = $1`, ['b1000000-0000-4000-8000-000000000002']);
 });

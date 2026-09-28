@@ -20,7 +20,8 @@ async function registerAll(): Promise<void> {
   if (isEnabled('health:read')) imports.push(import('./tools/health'));
   if (isEnabled('media:read')) imports.push(import('./tools/media'));
   if (isEnabled('memory:read', 'memory:write')) imports.push(import('./tools/memory'));
-  if (isEnabled('people:read')) imports.push(import('./tools/people'));
+  if (isEnabled('notes:read', 'notes:write')) imports.push(import('./tools/notes'));
+  if (isEnabled('people:read', 'people:write')) imports.push(import('./tools/people'));
   if (isEnabled('places:read')) imports.push(import('./tools/places'));
   if (isEnabled('tags:read', 'tags:write')) imports.push(import('./tools/tags'));
   if (isEnabled('task:read', 'task:write')) imports.push(import('./tools/tasks'));

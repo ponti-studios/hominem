@@ -12,6 +12,7 @@ export const CAPABILITIES = [
   'health',
   'media',
   'memory',
+  'notes',
   'people',
   'places',
   'social',
