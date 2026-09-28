@@ -29,10 +29,20 @@ const taskCreateInputSchema = CreateTaskSchema.refine((data) => data.artifactTyp
   path: ['artifactType'],
 });
 
-const writeTool: { readOnly: false; scopes: ['task:write']; resultCap: number } = {
+// Baseline for a "create" tool (destructive: false, idempotent: false — each
+// call produces a new row). Update/complete/delete tools override both below.
+const writeTool: {
+  readOnly: false;
+  scopes: ['task:write'];
+  resultCap: number;
+  destructive: false;
+  idempotent: false;
+} = {
   readOnly: false,
   scopes: ['task:write'],
   resultCap: 1,
+  destructive: false,
+  idempotent: false,
 };
 
 registerTool(
@@ -86,6 +96,7 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    idempotent: true,
     name: 'task_update',
     title: 'Update a task',
     description:
@@ -106,6 +117,7 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    idempotent: true,
     name: 'task_complete',
     title: 'Complete or reopen a task',
     description: 'Marks a task as completed or pending.',
@@ -120,6 +132,8 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    destructive: true,
+    idempotent: true,
     requiresConfirmation: true,
     name: 'task_delete',
     title: 'Delete a task',

@@ -26,6 +26,8 @@ registerTool(
     readOnly: false,
     scopes: ['tags:write'],
     resultCap: 1,
+    destructive: false,
+    idempotent: true,
   },
   async (ownerUserId, input) => tagEntity(ownerUserId, input),
 );
@@ -40,6 +42,8 @@ registerTool(
     readOnly: false,
     scopes: ['tags:write'],
     resultCap: 1,
+    destructive: true,
+    idempotent: true,
     requiresConfirmation: true,
     preview: async (ownerUserId, input) => {
       const parsed = untagEntityInputSchema.safeParse(input);

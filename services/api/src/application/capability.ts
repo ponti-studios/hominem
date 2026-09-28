@@ -58,6 +58,13 @@ export interface CapabilityDefinition<
   invoked?: string;
   requiresConfirmation?: boolean;
   guidance?: CapabilityGuidance;
+  // Extracts URI-addressable resources (e.g. an uploaded file's fileUrl) from
+  // a tool's already-validated output, so callTool can surface them as
+  // resource_link content blocks alongside the structured JSON — letting an
+  // MCP-aware client discover/fetch the resource directly instead of reading
+  // an opaque URL field. Only declare this for a tool whose output actually
+  // contains a real URI-addressable resource.
+  resourceLinks?: (output: unknown) => ReadonlyArray<{ uri: string; name: string }>;
   // `ChatMessageJsonObject` (not `Record<string, unknown>`) because a tool's preview
   // is persisted straight into `ChatMessageToolCallRecord.preview`, whose JSON-column
   // shape is the actual constraint here — narrowing to it here surfaces a

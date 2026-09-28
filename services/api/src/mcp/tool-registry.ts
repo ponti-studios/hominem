@@ -23,11 +23,15 @@ export function getToolCapabilities(definition: CapabilityDefinition): ChatCapab
   ];
 }
 
+type McpToolContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'resource_link'; uri: string; name: string };
+
 export type McpToolResult<T = Record<string, unknown>> = Omit<
   CallToolResult,
   'structuredContent'
 > & {
-  content: Array<{ type: 'text'; text: string }>;
+  content: McpToolContentBlock[];
   structuredContent: T | Record<string, unknown> | null;
 };
 
@@ -40,9 +44,17 @@ type RegisteredTool = {
   ) => Promise<unknown>;
 };
 
-function toolResult(structuredContent: Record<string, unknown> | null): McpToolResult {
+function toolResult(
+  structuredContent: Record<string, unknown> | null,
+  resourceLinks: ReadonlyArray<{ uri: string; name: string }> = [],
+): McpToolResult {
   return {
-    content: [{ type: 'text', text: JSON.stringify(structuredContent) }],
+    content: [
+      { type: 'text', text: JSON.stringify(structuredContent) },
+      ...resourceLinks.map(
+        (link) => ({ type: 'resource_link', uri: link.uri, name: link.name }) as const,
+      ),
+    ],
     structuredContent,
   };
 }
@@ -66,8 +78,16 @@ let toolDefinitionsSnapshot: readonly CapabilityDefinition[] | null = null;
 
 export function listTools(): readonly CapabilityDefinition[] {
   if (!toolDefinitionsSnapshot) {
+    // Sorted by name rather than left at Map insertion order: register-tools.ts
+    // loads per-domain tool files via concurrent dynamic import()s, whose
+    // resolution order (and therefore registerTool() call order) isn't
+    // guaranteed across cold starts. The 2026-07-28 MCP spec recommends a
+    // deterministic tools/list order for client-side caching and prompt-cache
+    // hit rates, which an unstable Map order would undermine.
     toolDefinitionsSnapshot = Object.freeze(
-      [...tools.values()].map(({ definition }) => definition),
+      [...tools.values()]
+        .map(({ definition }) => definition)
+        .sort((a, b) => a.name.localeCompare(b.name)),
     );
   }
 
@@ -127,5 +147,6 @@ export async function callTool(
 
   const result = parsedOutput;
   enforceResultCap(result, name, implementation.definition.resultCap);
-  return toolResult(result);
+  const resourceLinks = implementation.definition.resourceLinks?.(result) ?? [];
+  return toolResult(result, resourceLinks);
 }
