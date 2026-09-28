@@ -56,7 +56,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.63.0",
     "@react-router/dev": "catalog:",
     "@tailwindcss/vite": "^4.1.8",
     "@testing-library/jest-dom": "catalog:",
