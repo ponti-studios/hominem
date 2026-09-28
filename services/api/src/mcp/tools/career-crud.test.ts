@@ -159,14 +159,21 @@ describe('career application MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const added = resultContent(
-      await callTool(userId, 'career_application_file_add', {
-        applicationId: application.id,
-        fileName: 'resume.pdf',
-        fileUrl: 'https://storage.example.com/resume.pdf',
-      }),
-    ) as { file: { id: string; fileName: string } | null };
+    const addResult = await callTool(userId, 'career_application_file_add', {
+      applicationId: application.id,
+      fileName: 'resume.pdf',
+      fileUrl: 'https://storage.example.com/resume.pdf',
+    });
+    const added = resultContent(addResult) as { file: { id: string; fileName: string } | null };
     expect(added.file?.fileName).toBe('resume.pdf');
+    // A file-bearing tool result also carries a resource_link content block
+    // so an MCP-aware client can discover/fetch the file directly, not just
+    // read fileUrl as an opaque string in structuredContent.
+    expect(addResult.content).toContainEqual({
+      type: 'resource_link',
+      uri: 'https://storage.example.com/resume.pdf',
+      name: 'resume.pdf',
+    });
 
     const removed = resultContent(
       await callTool(userId, 'career_application_file_remove', {

@@ -60,7 +60,7 @@
     "@hominem/utils": "workspace:*",
     "@hono/node-server": "^2.1.1",
     "@hono/zod-validator": "^0.7.6",
-    "@modelcontextprotocol/server": "2.0.0",
+    "@modelcontextprotocol/server": "2.1.0",
     "@opentelemetry/api": "1.8.0",
     "@ponti-studios/auth": "workspace:*",
     "@scalar/hono-api-reference": "^0.12.0",
@@ -78,7 +78,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@modelcontextprotocol/client": "2.0.0",
+    "@modelcontextprotocol/client": "2.1.0",
     "@tailwindcss/vite": "^4.1.8",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

@@ -268,10 +268,13 @@ export async function executeGenerationTurn(
           const value = await runtime.callTool(input.userId, call.name, parseArguments(call), {
             idempotencyKey,
           });
+          // content[0] is always the JSON text block — resource_link blocks
+          // (if any) are always appended after it, never first.
+          const firstBlock = value.content[0];
           const result: ToolResult = {
             callId: call.id,
             toolName: call.name,
-            content: value.content[0]?.text ?? 'null',
+            content: firstBlock?.type === 'text' ? firstBlock.text : 'null',
             error: false,
           };
           if (!result.error) completedPlannedTools.add(call.name);

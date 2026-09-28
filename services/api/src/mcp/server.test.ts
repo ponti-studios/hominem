@@ -1,6 +1,7 @@
+import { pool } from '@hominem/db/core';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import type { AuthContext } from '../auth/types';
@@ -103,6 +104,44 @@ async function createClient(app: Hono<AppContext>, scopes = 'career:read finance
     },
   });
   const client = new Client({ name: 'test-client', version: '1.0.0' });
+  await client.connect(transport);
+  return client;
+}
+
+// A client that auto-fulfils an embedded elicitation (Multi Round-Trip
+// Requests, protocol revision 2026-07-28) with a fixed accept/decline action
+// — exercises the same client-side handler path a spec-compliant MCP client
+// (Claude Desktop, ChatGPT) uses, with zero Hominem-specific code.
+async function createElicitingClient(
+  app: Hono<AppContext>,
+  action: 'accept' | 'decline',
+  scopes: string,
+) {
+  const transport = new StreamableHTTPClientTransport(new URL('http://localhost/api/mcp'), {
+    fetch: async (input, init) => {
+      const headers = new Headers(init?.headers);
+      headers.set('authorization', 'Bearer test-token');
+      headers.set('x-mcp-scopes', scopes);
+      return app.fetch(new Request(input, { ...init, headers }));
+    },
+  });
+  const client = new Client(
+    { name: 'test-client', version: '1.0.0' },
+    {
+      capabilities: { elicitation: {} },
+      // Multi Round-Trip Requests (elicitation embedded in tools/call) only
+      // works against the modern era: this server's stateless deployment
+      // (createMcpHandler's legacy: 'stateless' option) answers each 2025-era
+      // request from a fresh per-request instance with no held connection,
+      // so the SDK's 2025-compat legacy shim — which needs a live connection
+      // to send a real server->client elicitation request — cannot run.
+      // Pinning here proves the intended modern-client behavior; a legacy
+      // client hitting this same tool gets no interactive confirmation at
+      // all (see server.ts's createToolHandler comment for the caveat).
+      versionNegotiation: { mode: { pin: '2026-07-28' } },
+    },
+  );
+  client.setRequestHandler('elicitation/create', async () => ({ action }));
   await client.connect(transport);
   return client;
 }
@@ -218,6 +257,23 @@ describe('mcp server transport', () => {
     }
   });
 
+  it('returns tools/list in a stable, deterministic order', async () => {
+    const clientA = await createClient(createApp(mcpAuthContext));
+    const clientB = await createClient(createApp(mcpAuthContext));
+    try {
+      const [namesA, namesB] = await Promise.all([
+        clientA.listTools().then((result) => result.tools.map((t) => t.name)),
+        clientB.listTools().then((result) => result.tools.map((t) => t.name)),
+      ]);
+
+      expect(namesA).toEqual(namesB);
+      expect(namesA).toEqual([...namesA].sort((a, b) => a.localeCompare(b)));
+    } finally {
+      await clientA.close();
+      await clientB.close();
+    }
+  });
+
   it('advertises ChatGPT safety annotations and invocation status', async () => {
     const client = await createClient(createApp(mcpAuthContext), 'career:read career:write');
     try {
@@ -240,6 +296,26 @@ describe('mcp server transport', () => {
         destructiveHint: false,
         idempotentHint: false,
         openWorldHint: false,
+      });
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('declares task_complete idempotent, not just non-destructive', async () => {
+    // Regression: the old name-regex fallback (delete|remove|update|save)
+    // never matched "complete", so this tool used to be mislabeled
+    // idempotentHint: false even though completing/reopening a task twice
+    // with the same value is a no-op. Now declared explicitly in tasks.ts.
+    const client = await createClient(createApp(mcpAuthContext), 'task:read task:write');
+    try {
+      const tools = await client.listTools();
+      const completeTool = tools.tools.find((tool) => tool.name === 'task_complete');
+
+      expect(completeTool?.annotations).toMatchObject({
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
       });
     } finally {
       await client.close();
@@ -372,5 +448,103 @@ describe('mcp server transport', () => {
 
     expect(response.status).toBe(400);
     expect(response.headers.get('content-type')).toMatch(/application\/json/);
+  });
+
+  describe('protocol-level confirmation (multi round-trip requests)', () => {
+    const writeScopes = 'career:read career:write';
+
+    beforeAll(async () => {
+      await pool.query(
+        'INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
+        [testUser.id, testUser.name, testUser.email, true],
+      );
+    });
+
+    async function addWishlistCompany(company: string): Promise<string> {
+      const writer = await createClient(createApp(mcpAuthContext), writeScopes);
+      try {
+        const added = await writer.callTool({
+          name: 'career_wishlist_add',
+          arguments: { company },
+        });
+        return (added.structuredContent as { company: { id: string } }).company.id;
+      } finally {
+        await writer.close();
+      }
+    }
+
+    it('deletes only after the client accepts the embedded elicitation', async () => {
+      const companyId = await addWishlistCompany('MRTR Accept Co');
+
+      const accepting = await createElicitingClient(
+        createApp(mcpAuthContext),
+        'accept',
+        writeScopes,
+      );
+      try {
+        const result = await accepting.callTool({
+          name: 'career_wishlist_remove',
+          arguments: { id: companyId },
+        });
+        expect(result.isError).not.toBe(true);
+        expect(result.structuredContent).toMatchObject({ removed: true });
+      } finally {
+        await accepting.close();
+      }
+    });
+
+    it('does not delete when the client declines the embedded elicitation', async () => {
+      const companyId = await addWishlistCompany('MRTR Decline Co');
+
+      const declining = await createElicitingClient(
+        createApp(mcpAuthContext),
+        'decline',
+        writeScopes,
+      );
+      try {
+        const result = await declining.callTool({
+          name: 'career_wishlist_remove',
+          arguments: { id: companyId },
+        });
+        // A generic cancellation has no schema-shaped payload to offer (the
+        // shape differs per tool), so it comes back as isError: true with a
+        // human-readable message — see buildCancelledResult in server.ts.
+        expect(result.isError).toBe(true);
+        expect(result.content).toEqual([
+          { type: 'text', text: expect.stringContaining('cancelled') },
+        ]);
+      } finally {
+        await declining.close();
+      }
+
+      // The row must still be there — prove it, then clean it up via an
+      // accepting client so the test DB doesn't accumulate rows.
+      const cleanup = await createElicitingClient(createApp(mcpAuthContext), 'accept', writeScopes);
+      try {
+        const removed = await cleanup.callTool({
+          name: 'career_wishlist_remove',
+          arguments: { id: companyId },
+        });
+        expect(removed.structuredContent).toMatchObject({ removed: true });
+      } finally {
+        await cleanup.close();
+      }
+    });
+
+    it('completes in one round trip with no elicitation when there is nothing to confirm', async () => {
+      // A plain client with no elicitation handler registered: if the server
+      // ever sent an embedded elicitation here, the call would hang/fail.
+      const client = await createClient(createApp(mcpAuthContext), writeScopes);
+      try {
+        const result = await client.callTool({
+          name: 'career_wishlist_remove',
+          arguments: { id: '00000000-0000-4000-8000-000000000000' },
+        });
+        expect(result.isError).not.toBe(true);
+        expect(result.structuredContent).toMatchObject({ removed: false });
+      } finally {
+        await client.close();
+      }
+    });
   });
 });

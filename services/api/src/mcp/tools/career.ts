@@ -137,14 +137,26 @@ registerTool(
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
+    destructive: false,
+    idempotent: true,
   },
   async (ownerUserId, input) => ({ profile: await updateCareerProfile(ownerUserId, input) }),
 );
 
-const writeTool: { readOnly: false; scopes: ['career:write']; resultCap: number } = {
+// Baseline for a "create" tool (destructive: false, idempotent: false — each
+// call produces a new row). Update/delete tools override both below.
+const writeTool: {
+  readOnly: false;
+  scopes: ['career:write'];
+  resultCap: number;
+  destructive: false;
+  idempotent: false;
+} = {
   readOnly: false,
   scopes: ['career:write'],
   resultCap: 1,
+  destructive: false,
+  idempotent: false,
 };
 
 registerTool(
@@ -174,6 +186,7 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    idempotent: true,
     name: 'career_application_update',
     title: 'Update a career application',
     description: 'Updates a job application.',
@@ -190,6 +203,8 @@ registerTool(
   {
     ...writeTool,
     requiresConfirmation: true,
+    destructive: true,
+    idempotent: true,
     name: 'career_application_delete',
     title: 'Delete a career application',
     description: 'Deletes a job application.',
@@ -237,6 +252,8 @@ registerTool(
   {
     ...writeTool,
     requiresConfirmation: true,
+    destructive: true,
+    idempotent: true,
     name: 'career_application_note_remove',
     title: 'Remove an application note',
     description: 'Removes an application note.',
@@ -272,6 +289,10 @@ registerTool(
         })
         .nullable(),
     }),
+    resourceLinks: (output) => {
+      const file = (output as { file: { fileUrl: string; fileName: string } | null }).file;
+      return file ? [{ uri: file.fileUrl, name: file.fileName }] : [];
+    },
   },
   async (ownerUserId, input) => ({
     file: await addCareerApplicationFile(ownerUserId, input.applicationId, input),
@@ -281,6 +302,8 @@ registerTool(
   {
     ...writeTool,
     requiresConfirmation: true,
+    destructive: true,
+    idempotent: true,
     name: 'career_application_file_remove',
     title: 'Remove an application file',
     description: 'Removes an application file.',
@@ -312,6 +335,7 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    idempotent: true,
     name: 'career_education_update',
     title: 'Update education',
     description: 'Updates an education entry.',
@@ -326,6 +350,8 @@ registerTool(
   {
     ...writeTool,
     requiresConfirmation: true,
+    destructive: true,
+    idempotent: true,
     name: 'career_education_delete',
     title: 'Delete education',
     description: 'Deletes an education entry.',
@@ -355,6 +381,7 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    idempotent: true,
     name: 'career_skill_update',
     title: 'Update a skill',
     description: 'Updates a career skill.',
@@ -369,6 +396,8 @@ registerTool(
   {
     ...writeTool,
     requiresConfirmation: true,
+    destructive: true,
+    idempotent: true,
     name: 'career_skill_delete',
     title: 'Delete a skill',
     description: 'Deletes a career skill.',
@@ -411,6 +440,7 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    idempotent: true,
     name: 'career_testimonial_update',
     title: 'Update a testimonial',
     description: 'Updates a career testimonial.',
@@ -425,6 +455,8 @@ registerTool(
   {
     ...writeTool,
     requiresConfirmation: true,
+    destructive: true,
+    idempotent: true,
     name: 'career_testimonial_delete',
     title: 'Delete a testimonial',
     description: 'Deletes a career testimonial.',
@@ -456,6 +488,7 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    idempotent: true,
     name: 'career_certification_update',
     title: 'Update a certification',
     description: 'Updates a career certification.',
@@ -470,6 +503,8 @@ registerTool(
   {
     ...writeTool,
     requiresConfirmation: true,
+    destructive: true,
+    idempotent: true,
     name: 'career_certification_delete',
     title: 'Delete a certification',
     description: 'Deletes a career certification.',
@@ -490,6 +525,7 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    idempotent: true,
     name: 'career_social_links_save',
     title: 'Save career social links',
     description: 'Saves public career profile links.',
@@ -540,6 +576,8 @@ registerTool(
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
+    destructive: false,
+    idempotent: false,
   },
   async (ownerUserId, input) => ({
     company: await addCareerWishlistCompany(ownerUserId, input.company),
@@ -556,6 +594,8 @@ registerTool(
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
+    destructive: false,
+    idempotent: true,
   },
   async (ownerUserId, input) => ({
     company: await updateCareerWishlistCompany(ownerUserId, input.id, input.company),
@@ -572,6 +612,8 @@ registerTool(
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
+    destructive: true,
+    idempotent: true,
     requiresConfirmation: true,
     preview: async (ownerUserId, input) => {
       const parsed = careerWishlistCompanyDeleteSchema.safeParse(input);
@@ -597,6 +639,8 @@ registerTool(
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
+    destructive: false,
+    idempotent: true,
   },
   async (ownerUserId, input) => ({
     engagement: await updateCareerEngagement(ownerUserId, input.id, input.data),
@@ -613,6 +657,8 @@ registerTool(
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
+    destructive: true,
+    idempotent: true,
     requiresConfirmation: true,
     preview: async (ownerUserId, input) => {
       const parsed = careerEngagementDeleteSchema.safeParse(input);
@@ -726,6 +772,8 @@ registerTool(
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
+    destructive: false,
+    idempotent: true,
   },
   async (ownerUserId, input) => ({
     project: await updateCareerProject(ownerUserId, input.id, input.data),
@@ -742,6 +790,8 @@ registerTool(
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
+    destructive: true,
+    idempotent: true,
     requiresConfirmation: true,
     preview: async (ownerUserId, input) => {
       const parsed = careerProjectDeleteSchema.safeParse(input);
