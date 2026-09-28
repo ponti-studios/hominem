@@ -5,6 +5,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { searchTransactions } from '../../application/finance.service';
 import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
@@ -61,32 +62,6 @@ const transactionUpdateSchema = z.object({
   }),
 });
 
-async function getTaggedTransactionIds(
-  userId: string,
-  tagIds: string[],
-  tagNames: string[],
-): Promise<string[]> {
-  let query = db
-    .selectFrom('app.tagAssignments')
-    .innerJoin('app.tags', 'app.tagAssignments.tagId', 'app.tags.id')
-    .select('app.tagAssignments.entityId')
-    .where('app.tagAssignments.entityTable', '=', 'app.financeTransactions')
-    .where('app.tags.ownerUserid', '=', userId);
-
-  if (tagIds.length > 0 && tagNames.length > 0) {
-    query = query.where((eb) =>
-      eb.or([eb('app.tagAssignments.tagId', 'in', tagIds), eb('app.tags.name', 'in', tagNames)]),
-    );
-  } else if (tagIds.length > 0) {
-    query = query.where('app.tagAssignments.tagId', 'in', tagIds);
-  } else {
-    query = query.where('app.tags.name', 'in', tagNames);
-  }
-
-  const rows = await query.execute();
-  return [...new Set(rows.map((r) => r.entityId))];
-}
-
 async function replaceTransactionTags(
   transactionId: string,
   userId: string,
@@ -137,88 +112,29 @@ export const transactionsRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const input = c.req.valid('query');
     const accountId = input.accountId ?? input.account;
-    const accountIds = input.accountIds ?? [];
-    const tagIds = input.tagIds ?? [];
-    const tagNames = input.tagNames ?? [];
-    const limit = input.limit ?? 50;
-    const offset = input.offset ?? 0;
-
-    const hasTagFilters = tagIds.length > 0 || tagNames.length > 0;
-    const dateFrom = input.dateFrom ?? null;
-    const dateTo = input.dateTo ?? null;
-
-    let query = db
-      .selectFrom('app.financeTransactions')
-      .selectAll()
-      .where('userId', '=', userId)
-      .orderBy('postedOn', 'desc')
-      .orderBy('id', 'desc')
-      .limit(limit)
-      .offset(offset);
-
-    let countQuery = db
-      .selectFrom('app.financeTransactions')
-      .select(db.fn.countAll<number>().as('count'))
-      .where('userId', '=', userId);
-
-    if (accountIds.length > 0) {
-      query = query.where('accountId', 'in', accountIds);
-      countQuery = countQuery.where('accountId', 'in', accountIds);
-    } else if (accountId) {
-      query = query.where('accountId', '=', accountId);
-      countQuery = countQuery.where('accountId', '=', accountId);
-    }
-    if (dateFrom) {
-      query = query.where('postedOn', '>=', dateFrom);
-      countQuery = countQuery.where('postedOn', '>=', dateFrom);
-    }
-    if (dateTo) {
-      query = query.where('postedOn', '<=', dateTo);
-      countQuery = countQuery.where('postedOn', '<=', dateTo);
-    }
-    if (input.description) {
-      const term = `%${input.description}%`;
-      query = query.where((eb) =>
-        eb.or([eb('description', 'ilike', term), eb('merchantName', 'ilike', term)]),
-      );
-      countQuery = countQuery.where((eb) =>
-        eb.or([eb('description', 'ilike', term), eb('merchantName', 'ilike', term)]),
-      );
-    }
-
-    if (hasTagFilters) {
-      const taggedIds = await getTaggedTransactionIds(userId, tagIds, tagNames);
-      if (taggedIds.length === 0) {
-        return c.json({ data: [], filteredCount: 0, totalUserCount: 0 }, 200);
-      }
-      query = query.where('id', 'in', taggedIds);
-      countQuery = countQuery.where('id', 'in', taggedIds);
-    }
-
-    const [data, filteredRow, totalRow] = await Promise.all([
-      query.execute(),
-      countQuery.executeTakeFirst(),
-      db
-        .selectFrom('app.financeTransactions')
-        .select(db.fn.countAll<number>().as('count'))
-        .where('userId', '=', userId)
-        .executeTakeFirst(),
-    ]);
-
-    const responseData = data.map((t) => ({
-      id: t.id,
-      userId: t.userId,
-      accountId: t.accountId,
-      amount: t.amount ? Number(t.amount) : 0,
-      description: t.description ?? null,
-      postedOn: t.postedOn ? String(t.postedOn) : '',
-      merchantName: t.merchantName ?? null,
-    }));
+    const result = await searchTransactions(userId, {
+      accountIds: input.accountIds?.length ? input.accountIds : accountId ? [accountId] : [],
+      dateFrom: input.dateFrom,
+      dateTo: input.dateTo,
+      text: input.description,
+      tagIds: input.tagIds,
+      tagNames: input.tagNames,
+      limit: input.limit,
+      offset: input.offset,
+    });
     return c.json(
       {
-        data: responseData,
-        filteredCount: Number(filteredRow?.count ?? 0),
-        totalUserCount: Number(totalRow?.count ?? 0),
+        data: result.data.map((row) => ({
+          id: row.id,
+          userId: row.userId,
+          accountId: row.accountId,
+          amount: row.amount,
+          description: row.description,
+          postedOn: row.postedOn,
+          merchantName: row.merchantName,
+        })),
+        filteredCount: result.filteredCount,
+        totalUserCount: result.totalUserCount,
       },
       200,
     );
