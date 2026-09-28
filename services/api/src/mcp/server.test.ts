@@ -546,5 +546,45 @@ describe('mcp server transport', () => {
         await client.close();
       }
     });
+
+    it('still confirms a requiresConfirmation tool that has no preview function', async () => {
+      // Regression test: create_collection declares requiresConfirmation but
+      // has no preview function. A plain client with no elicitation handler
+      // must NOT be able to execute it — if the server ever fell through to
+      // immediate execution here (the bug this guards against), the call
+      // would succeed instead of hanging/erroring.
+      const collectionsScopes = 'collections:read collections:write';
+      const client = await createClient(createApp(mcpAuthContext), collectionsScopes);
+      try {
+        const result = await client.callTool({
+          name: 'create_collection',
+          arguments: { name: 'No-Preview Confirmation Test' },
+        });
+        // A plain client can't answer the embedded elicitation at all, so the
+        // call must fail rather than execute immediately.
+        expect(result.isError).toBe(true);
+        expect(result.structuredContent).toBeUndefined();
+      } finally {
+        await client.close();
+      }
+
+      const accepting = await createElicitingClient(
+        createApp(mcpAuthContext),
+        'accept',
+        collectionsScopes,
+      );
+      try {
+        const result = await accepting.callTool({
+          name: 'create_collection',
+          arguments: { name: 'No-Preview Confirmation Test' },
+        });
+        expect(result.isError).not.toBe(true);
+        expect(result.structuredContent).toMatchObject({
+          collection: { name: 'No-Preview Confirmation Test' },
+        });
+      } finally {
+        await accepting.close();
+      }
+    });
   });
 });

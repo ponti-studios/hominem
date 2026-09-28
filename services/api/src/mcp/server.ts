@@ -116,18 +116,23 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
         return invokeTool(context.ownerUserId, definition.name, state.args);
       }
 
-      // First call: only ask for confirmation when there's an actual target
-      // to act on. A null preview (e.g. the target is already gone) matches
-      // today's single-round-trip no-op behavior instead of prompting for
-      // nothing.
+      // First call. A tool with a preview function only skips confirmation
+      // when that preview explicitly returns null (e.g. the target is
+      // already gone), matching today's single-round-trip no-op behavior. A
+      // tool with NO preview function has no such signal, so it must always
+      // confirm — falling through here would execute destructive tools like
+      // create_collection/invite_member with zero confirmation.
       const preview = definition.preview
         ? await definition.preview(context.ownerUserId, args as ChatMessageJsonObject)
-        : null;
-      if (preview) {
+        : undefined;
+      if (preview !== null) {
+        const message = definition.preview
+          ? `Confirm: ${definition.title} — ${JSON.stringify(preview)}`
+          : `Confirm: ${definition.title}?`;
         return inputRequired({
           inputRequests: {
             [CONFIRM_KEY]: inputRequired.elicit({
-              message: `Confirm: ${definition.title} — ${JSON.stringify(preview)}`,
+              message,
               requestedSchema: { type: 'object', properties: {} },
             }),
           },
