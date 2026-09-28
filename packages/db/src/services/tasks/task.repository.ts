@@ -139,6 +139,9 @@ export const TaskRepository = {
       .where('participant.taskId', '=', input.taskId)
       .where('task.ownerUserid', '=', input.userId)
       .orderBy('participant.createdat', 'asc')
+      // replaceParticipants is the only writer and caps a task at 20 (CreateTaskSchema /
+      // UpdateTaskSchema), so this is a defensive ceiling, not an active page boundary.
+      .limit(20)
       .execute();
 
     return rows.map((row) => ({
@@ -237,8 +240,19 @@ export const TaskRepository = {
 
   // Top-level tasks owned by the user (standalone tasks + task-list
   // parents). A row counts as a task_list once it has at least one child.
-  async list(handle: DbHandle, input: { userId: string }): Promise<TaskListRecord[]> {
-    const rows = await handle
+  async list(
+    handle: DbHandle,
+    input: {
+      userId: string;
+      limit?: number;
+      status?: string;
+      priority?: string;
+      dueBefore?: string;
+      dueAfter?: string;
+      query?: string;
+    },
+  ): Promise<TaskListRecord[]> {
+    let q = handle
       .selectFrom('app.tasks as t')
       .selectAll('t')
       .select((eb) =>
@@ -246,15 +260,24 @@ export const TaskRepository = {
           .selectFrom('app.tasks as c')
           .select((ceb) => ceb.fn.countAll().as('count'))
           .whereRef('c.parentTaskId', '=', 't.id')
-          .as('child_count'),
+          .as('childCount'),
       )
       .where('t.ownerUserid', '=', input.userId)
-      .where('t.parentTaskId', 'is', null)
+      .where('t.parentTaskId', 'is', null);
+
+    if (input.status) q = q.where('t.status', '=', input.status);
+    if (input.priority) q = q.where('t.priority', '=', input.priority);
+    if (input.dueBefore) q = q.where('t.dueAt', '<', new Date(input.dueBefore).toISOString());
+    if (input.dueAfter) q = q.where('t.dueAt', '>', new Date(input.dueAfter).toISOString());
+    if (input.query) q = q.where('t.title', 'ilike', `%${input.query}%`);
+
+    const rows = await q
       .orderBy('t.updatedat', 'desc')
+      .limit(input.limit ?? 100)
       .execute();
 
     return rows.map((row) => {
-      const childCount = Number(row.child_count ?? 0);
+      const childCount = Number(row.childCount ?? 0);
       return {
         ...toTaskRecord(row, childCount > 0 ? 'task_list' : 'task'),
         childCount,
@@ -272,6 +295,7 @@ export const TaskRepository = {
       .where('parentTaskId', '=', input.parentId)
       .where('ownerUserid', '=', input.userId)
       .orderBy('createdat', 'asc')
+      .limit(200)
       .execute();
 
     return rows.map((row) => toTaskRecord(row, 'task'));
@@ -319,7 +343,8 @@ export const TaskRepository = {
       throw new NotFoundError('Task', { taskId: id });
     }
 
-    return toTaskRecord(row, 'task');
+    const children = await TaskRepository.listChildren(handle, { parentId: id, userId });
+    return toTaskRecord(row, children.length > 0 ? 'task_list' : 'task');
   },
 
   async update(

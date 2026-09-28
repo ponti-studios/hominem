@@ -16,6 +16,7 @@ export const CAPABILITIES = [
   'places',
   'social',
   'tags',
+  'task',
   'travel',
 ] as const;
 

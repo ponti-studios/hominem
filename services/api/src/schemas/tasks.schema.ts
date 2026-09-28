@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const TaskPriority = z.enum(['low', 'medium', 'high']);
+export const TaskPriority = z.enum(['low', 'medium', 'high']);
 
 const TaskParticipantSchema = z.uuid();
 
@@ -97,6 +97,57 @@ export const CreateTaskBatchSchema = z
   .refine((data) => (data.groups?.length ?? 0) + (data.tasks?.length ?? 0) > 0, {
     message: 'At least one task or group is required',
   });
+
+export const TaskRecordSchema = z.object({
+  id: z.uuid(),
+  ownerUserId: z.uuid(),
+  title: z.string(),
+  description: z.string().nullable(),
+  parentTaskId: z.uuid().nullable(),
+  status: z.string(),
+  priority: z.string(),
+  dueAt: z.string().nullable(),
+  durationMinutes: z.number().int().nullable(),
+  schedulingWindowStartAt: z.string().nullable(),
+  schedulingWindowEndAt: z.string().nullable(),
+  scheduledStartAt: z.string().nullable(),
+  scheduledEndAt: z.string().nullable(),
+  timeZone: z.string().nullable(),
+  location: z.string().nullable(),
+  completedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  artifactType: z.enum(['task', 'task_list']),
+});
+
+export const TaskListRecordSchema = TaskRecordSchema.extend({
+  childCount: z.number().int(),
+});
+
+export const TaskParticipantOutputSchema = z.object({
+  personId: z.uuid(),
+  displayName: z.string(),
+  email: z.string().nullable(),
+});
+
+export const taskListResultSchema = z.object({
+  tasks: z.array(TaskListRecordSchema),
+});
+
+export const taskDetailResultSchema = z.object({
+  task: TaskRecordSchema.nullable(),
+  participants: z.array(TaskParticipantOutputSchema),
+  children: z.array(TaskRecordSchema),
+});
+
+export const TaskListQuerySchema = z.object({
+  limit: z.number().int().min(1).max(100).optional().default(100),
+  status: z.enum(['pending', 'completed']).optional(),
+  priority: TaskPriority.optional(),
+  dueBefore: z.iso.datetime({ offset: true }).optional(),
+  dueAfter: z.iso.datetime({ offset: true }).optional(),
+  query: z.string().trim().min(1).max(120).optional(),
+});
 
 export const TaskParamSchema = z.object({ id: z.uuid() });
 

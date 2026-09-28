@@ -16,6 +16,8 @@ export const MCP_SCOPES = [
   'social:read',
   'tags:read',
   'tags:write',
+  'task:read',
+  'task:write',
   'travel:read',
 ] as const;
 

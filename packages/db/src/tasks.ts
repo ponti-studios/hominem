@@ -4,5 +4,7 @@ export type {
   CreateTaskInput,
   TaskBatchRecord,
   TaskListRecord,
+  TaskParticipantRecord,
   TaskRecord,
+  UpdateTaskInput,
 } from './services/tasks/task.repository';
