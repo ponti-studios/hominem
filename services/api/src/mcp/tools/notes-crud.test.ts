@@ -265,4 +265,34 @@ describe('semantic_search', () => {
       payload<{ results: unknown[] }>(await callTool(userId, 'semantic_search', { query: 'x' })),
     ).toEqual({ results: [] });
   });
+
+  it('finds a note past 20 closer memories in a single vector search query', async () => {
+    const note = await createNote(userId, { title: 'Buried', content: 'the actual note' });
+    await index(userId, note.id, 20);
+
+    for (let i = 0; i < 20; i++) {
+      const memory = await db
+        .insertInto('app.notes')
+        .values({
+          ownerUserid: userId,
+          kind: 'memory',
+          title: `Memory ${i}`,
+          content: `fact ${i}`,
+          excerpt: `fact ${i}`,
+        })
+        .returning('id')
+        .executeTakeFirstOrThrow();
+      await index(userId, memory.id, i);
+    }
+
+    const searchSpy = vi.spyOn(VectorDocumentRepository, 'search');
+
+    const { results } = payload<{ results: Array<{ id: string }> }>(
+      await callTool(userId, 'semantic_search', { query: 'find the note' }),
+    );
+
+    expect(results.map((result) => result.id)).toEqual([note.id]);
+    expect(searchSpy).toHaveBeenCalledTimes(1);
+    searchSpy.mockRestore();
+  });
 });

@@ -38,9 +38,6 @@ export interface SemanticSearchNoteResult {
 // Notes with kind = 'memory' are embedded alongside notes but stay owned by the memory tools.
 const NOTE_KIND: NoteKind = 'note';
 const EMBEDDING_DIMENSIONS = 1536;
-// Upper bound on how many vector matches semanticSearch will fetch while paging past
-// memory-kind matches to fill a page of note-kind results.
-const MAX_SEMANTIC_SEARCH_FETCH = 200;
 
 export class NoteService {
   /** A note owned by the user, or null if it doesn't exist, isn't theirs, or isn't kind 'note'. */
@@ -128,37 +125,29 @@ export class NoteService {
     });
     if (embedded.embedding.length === 0) return [];
 
-    // Memories are embedded as notes too, so the nearest vectors may all be memories.
-    // Page with a growing fetch limit until enough note-kind matches are found, no more
-    // vectors are available, or the fetch cap is hit.
-    let results: SemanticSearchNoteResult[] = [];
-    let fetchLimit = Math.min(input.limit * 3, MAX_SEMANTIC_SEARCH_FETCH);
-    for (;;) {
-      const matches = await VectorDocumentRepository.search(db, {
-        userId,
-        embedding: embedded.embedding,
-        entityType: 'note',
-        limit: fetchLimit,
-      });
+    // Memories are embedded as notes too, so the nearest vectors may all be memories. Filtering
+    // by kind inside the vector query (rather than over-fetching and filtering in application
+    // code) keeps this to one bounded, cheap round trip regardless of how many memories exist.
+    const matches = await VectorDocumentRepository.search(db, {
+      userId,
+      embedding: embedded.embedding,
+      entityType: 'note',
+      noteKind: NOTE_KIND,
+      limit: input.limit,
+    });
 
-      const summaries = await NoteRepository.getOwnedSummariesByIds(db, {
-        userId,
-        kind: NOTE_KIND,
-        noteIds: matches.map((match) => match.entityId),
-      });
-      const summariesById = new Map(summaries.map((summary) => [summary.id, summary]));
-      results = matches
-        .flatMap((match) => {
-          const row = summariesById.get(match.entityId);
-          return row ? [{ ...row, similarity: match.similarity }] : [];
-        })
-        .slice(0, input.limit);
-
-      const exhausted = matches.length < fetchLimit || fetchLimit >= MAX_SEMANTIC_SEARCH_FETCH;
-      if (results.length >= input.limit || exhausted) break;
-      fetchLimit = Math.min(fetchLimit * 2, MAX_SEMANTIC_SEARCH_FETCH);
-    }
-    return results;
+    const summaries = await NoteRepository.getOwnedSummariesByIds(db, {
+      userId,
+      kind: NOTE_KIND,
+      noteIds: matches.map((match) => match.entityId),
+    });
+    const summariesById = new Map(summaries.map((summary) => [summary.id, summary]));
+    return matches
+      .flatMap((match) => {
+        const row = summariesById.get(match.entityId);
+        return row ? [{ ...row, similarity: match.similarity }] : [];
+      })
+      .slice(0, input.limit);
   }
 
   /** Creates a note and queues it for semantic-search indexing. */
