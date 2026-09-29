@@ -39,6 +39,13 @@ Use `just` for its domain modules (`otp`, `db`, `deploy`, `diagnostics`, `evals`
 
 - `pnpm run check`: Runs full pre-push validation (check:dts → tasks:check → lint → build → typecheck → test via turbo, with `DATABASE_URL` set)
 
+## Authenticated Testing
+
+- Use `test@lvh.me` as the stable identity for local browser, manual, and end-to-end tests that need an authenticated user. The `hominem-auth-e2e` skill provides the supported auth helpers.
+- Never use a personal account for testing or send this test identity or its OTP to production.
+- Multi-user tests may create additional synthetic test accounts when distinct identities are required; keep the stable test account as the primary actor where possible.
+- Unit tests with mocked auth can use isolated fixture identities.
+
 ```bash
 pnpm --filter @hominem/api dev
 pnpm test --filter=@hominem/api...

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Sourceable library for authenticating as a disposable test account against
-# the dev Better Auth email-OTP flow (localhost:4040). Every feature-specific
+# Sourceable library for authenticating as the stable test user or an isolated
+# synthetic account against the local Better Auth email-OTP flow. Every feature-specific
 # e2e driver (collection invites, and future ones) should `source` this
 # instead of reimplementing OTP/cookie/safety-rail logic — auth setup is the
 # same regardless of which resource the test is actually exercising.
@@ -24,9 +24,21 @@ HOMINEM_TEST_EMAIL_SUFFIX="@test.hominem.dev"
 # one for every single-user test. Only spin up @test.hominem.dev accounts
 # when a test genuinely needs more than one distinct identity (e.g. an
 # owner + an invitee).
-HOMINEM_STABLE_TEST_USER="test@hominem.local"
+HOMINEM_STABLE_TEST_USER="test@lvh.me"
 
 mkdir -p "$HOMINEM_E2E_STATE_DIR"
+
+# The test identity must never authenticate against a production or remote API.
+# Supported local endpoints are the fixed localhost API and its portless host.
+hominem_require_local_api() {
+  case "$HOMINEM_API_URL" in
+    http://localhost|http://localhost:*|http://127.0.0.1|http://127.0.0.1:*|https://api.lvh.me|https://api.lvh.me/*|https://api.lvh.me:*) ;;
+    *)
+      echo "refusing: auth test helpers only target local Hominem URLs (localhost, 127.0.0.1, or api.lvh.me), got '$HOMINEM_API_URL'." >&2
+      return 1
+      ;;
+  esac
+}
 
 # Hard safety rail, shared by every driver that sources this file: never let
 # a curl-driven script sign up, query, or delete a real account. A past
@@ -78,6 +90,7 @@ hominem_read_otp() {
 # or existing accounts.
 hominem_signup() {
   local email="$1"
+  hominem_require_local_api || return 1
   hominem_require_test_email "$email"
   local jar; jar="$(hominem_cookiejar_for "$email")"
   rm -f "$jar"
@@ -121,6 +134,7 @@ hominem_signin_default() {
 
 hominem_whoami() {
   local email="$1"
+  hominem_require_local_api || return 1
   hominem_require_test_email "$email"
   curl -sS -b "$(hominem_cookiejar_for "$email")" "$HOMINEM_API_URL/api/auth/get-session"
 }
@@ -131,6 +145,7 @@ hominem_whoami() {
 # failed to register clicks in the Claude_Browser pane for unknown reasons;
 # this workaround has worked every time it's been tried.
 hominem_print_browser_logout_snippet() {
+  hominem_require_local_api || return 1
   echo "fetch('$HOMINEM_API_URL/api/auth/logout', {method:'POST', credentials:'include'})"
 }
 
