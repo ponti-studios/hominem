@@ -17,7 +17,7 @@ export const TASK_EXTRACTION_MODEL = env.TASK_EXTRACTION_MODEL;
 export const TIME_BLOCK_EXTRACTION_MODEL = env.TIME_BLOCK_EXTRACTION_MODEL;
 export const VOICE_CLEANUP_MODEL = env.VOICE_CLEANUP_MODEL;
 
-export type ReasoningConfig = { effort: 'none' } | undefined;
+export type ReasoningConfig = { effort: 'none' | 'minimal' } | undefined;
 
 export function getReasoningConfig(model: string): ReasoningConfig {
   return getModelCapabilityProfile(model).reasoning;

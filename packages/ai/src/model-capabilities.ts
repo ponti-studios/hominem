@@ -6,6 +6,11 @@ export type ModelCapabilityProfile = {
 };
 
 export function getModelCapabilityProfile(model: string): ModelCapabilityProfile {
+  // GPT-5 mini does not support disabling reasoning; minimal keeps requests
+  // fast while satisfying its reasoning-effort contract.
+  if (model === 'openai/gpt-5-mini') {
+    return { structuredPlanning: true, reasoning: { effort: 'minimal' } };
+  }
   // Muse Spark currently rejects the provider's structured-output/reasoning
   // controls. Keep that compatibility decision in one profile instead of
   // spreading provider-name checks through chat routing.

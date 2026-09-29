@@ -13,7 +13,7 @@ export type Golden = {
 
 export type PromptMessage = { role: string; content: string };
 
-export const targetModel = process.env.ORI_TARGET_MODEL?.trim() || 'openai/gpt-4o-mini';
+export const targetModel = process.env.ORI_TARGET_MODEL?.trim() || 'openai/gpt-5-mini';
 export const judgeModel = process.env.ORI_JUDGE_MODEL?.trim() || 'openai/gpt-oss-20b';
 export const currentUtcDate = (): string =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(new Date());

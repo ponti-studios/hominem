@@ -17,7 +17,7 @@ const chatHarness: AgentHarness = defineHarness({
   name: 'hominem-chat',
   init(registrar) {
     registrar.registerPrompt(async function* (options: HarnessInvokeOptions) {
-      const model = options.model ?? process.env.ORI_TARGET_MODEL ?? 'openai/gpt-4o-mini';
+      const model = options.model ?? process.env.ORI_TARGET_MODEL ?? 'openai/gpt-5-mini';
       const apiKey = options.env?.OPENROUTER_API_KEY ?? process.env.OPENROUTER_API_KEY;
       if (!apiKey) throw new Error('OPENROUTER_API_KEY is required for chat evaluation');
 
