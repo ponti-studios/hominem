@@ -38,9 +38,6 @@ export interface SemanticSearchNoteResult {
 // Notes with kind = 'memory' are embedded alongside notes but stay owned by the memory tools.
 const NOTE_KIND: NoteKind = 'note';
 const EMBEDDING_DIMENSIONS = 1536;
-// Upper bound on how many vector matches semanticSearch fetches in one query, since memories
-// are embedded alongside notes and may crowd out note-kind matches in the nearest neighbors.
-const MAX_SEMANTIC_SEARCH_FETCH = 200;
 
 export class NoteService {
   /** A note owned by the user, or null if it doesn't exist, isn't theirs, or isn't kind 'note'. */
@@ -128,15 +125,15 @@ export class NoteService {
     });
     if (embedded.embedding.length === 0) return [];
 
-    // Memories are embedded as notes too, so the nearest vectors may all be memories. Fetch up
-    // to the cap in a single round trip rather than retrying with a growing limit — the vector
-    // index handles a larger limit cheaply, and re-querying on every retry cost far more than
-    // just fetching the cap up front.
+    // Memories are embedded as notes too, so the nearest vectors may all be memories. Filtering
+    // by kind inside the vector query (rather than over-fetching and filtering in application
+    // code) keeps this to one bounded, cheap round trip regardless of how many memories exist.
     const matches = await VectorDocumentRepository.search(db, {
       userId,
       embedding: embedded.embedding,
       entityType: 'note',
-      limit: MAX_SEMANTIC_SEARCH_FETCH,
+      noteKind: NOTE_KIND,
+      limit: input.limit,
     });
 
     const summaries = await NoteRepository.getOwnedSummariesByIds(db, {

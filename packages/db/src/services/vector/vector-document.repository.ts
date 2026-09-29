@@ -42,6 +42,8 @@ export interface SearchVectorDocumentsInput {
   userId: string;
   embedding: number[];
   entityType?: VectorDocumentEntityType;
+  /** Restricts entityType: 'note' matches to notes rows with this `app.notes.kind`. */
+  noteKind?: string;
   limit?: number;
   threshold?: number;
 }
@@ -118,12 +120,27 @@ export const VectorDocumentRepository = {
 
     let query = handle
       .selectFrom('app.vectorDocuments')
-      .selectAll()
+      .selectAll('app.vectorDocuments')
       .select(sql<number>`1 - (embedding <=> ${vectorLiteral}::vector)`.as('similarity'))
       .where('ownerUserid', '=', input.userId);
 
     if (input.entityType) {
       query = query.where('entityType', '=', input.entityType);
+    }
+
+    const { noteKind } = input;
+    if (noteKind !== undefined) {
+      // Push the note/memory distinction into the query so callers never over-fetch to page
+      // past the other kind in application code.
+      query = query.where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom('app.notes')
+            .select('id')
+            .whereRef('app.notes.id', '=', 'app.vectorDocuments.entityId')
+            .where('app.notes.kind', '=', noteKind),
+        ),
+      );
     }
 
     if (input.threshold !== undefined) {
