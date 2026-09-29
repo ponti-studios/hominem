@@ -53,10 +53,15 @@ afterAll(async () => {
 describe('collection management tool annotations', () => {
   it('marks only the irreversible tools as destructive and confirmed', () => {
     const byName = new Map(listTools().map((tool) => [tool.name, tool]));
-    for (const name of ['delete_collection', 'leave_collection', 'remove_member']) {
+    for (const name of [
+      'delete_collection',
+      'leave_collection',
+      'remove_member',
+      'decline_collection_invite',
+    ]) {
       expect(byName.get(name)).toMatchObject({ destructive: true, requiresConfirmation: true });
     }
-    for (const name of ['update_collection', 'update_member_role', 'decline_collection_invite']) {
+    for (const name of ['update_collection', 'update_member_role']) {
       expect(byName.get(name)).toMatchObject({ destructive: false, idempotent: true });
       expect(byName.get(name)?.requiresConfirmation).toBeUndefined();
     }
@@ -97,6 +102,14 @@ describe('update_collection', () => {
       await callTool(strangerId, 'update_collection', { collectionId: created.id, name: 'Nope' }),
     );
     expect(result.collection).toBeNull();
+  });
+
+  it('rejects a patch with no fields to change', async () => {
+    const created = await createCollection('Untouched');
+
+    await expect(
+      callTool(ownerId, 'update_collection', { collectionId: created.id }),
+    ).rejects.toThrow();
   });
 });
 
@@ -243,11 +256,19 @@ describe('decline_collection_invite', () => {
     const created = await createCollection('Unwanted');
     await inviteMember(created.id, memberId, 'viewer');
 
+    const tool = listTools().find((candidate) => candidate.name === 'decline_collection_invite');
+    expect(await tool?.preview?.(memberId, { collectionId: created.id })).toEqual({
+      collection: 'Unwanted',
+      role: 'viewer',
+    });
+
     expect(
       payload<{ removed: boolean }>(
         await callTool(memberId, 'decline_collection_invite', { collectionId: created.id }),
       ),
     ).toEqual({ removed: true });
+
+    expect(await tool?.preview?.(memberId, { collectionId: created.id })).toBeNull();
     expect(
       payload<{ removed: boolean }>(
         await callTool(memberId, 'decline_collection_invite', { collectionId: created.id }),

@@ -70,6 +70,15 @@ describe('note_create / note_get / note_list', () => {
     expect(listed.notes[0]).not.toHaveProperty('content');
   });
 
+  it("never returns another user's note", async () => {
+    const created = await createNote(userId, { title: 'Private', content: 'do not share' });
+
+    const asOther = payload<{ note: NoteResult | null }>(
+      await callTool(otherUserId, 'note_get', { id: created.id }),
+    );
+    expect(asOther.note).toBeNull();
+  });
+
   it('filters the list by keyword', async () => {
     await createNote(userId, { title: 'Trip', content: 'book flights to Lisbon' });
     await createNote(userId, { title: 'Recipe', content: 'sourdough starter' });

@@ -6,10 +6,6 @@ import {
   getChatCompletionText,
   getChatCompletionUsage,
 } from '@hominem/ai';
-import { db } from '@hominem/db/core';
-import { NoteRepository } from '@hominem/db/notes';
-import { VectorDocumentRepository } from '@hominem/db/vector';
-import { embeddingQueue } from '@hominem/queues';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -27,19 +23,12 @@ import {
   NoteSearchQuerySchema,
   UpdateNoteInputSchema,
 } from '../../schemas/notes.schema';
+import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
 import { CHAT_TO_NOTE_PROMPT } from '../prompts';
 import { toNoteDto } from './notes.mapper';
 const noteService = new NoteService();
-
-async function enqueueNoteEmbedding(userId: string, noteId: string) {
-  await embeddingQueue.add(
-    'generate-embedding',
-    { jobId: `note-${noteId}`, userId, entityType: 'note' as const, entityId: noteId },
-    { jobId: `note-${noteId}`, removeOnComplete: true, removeOnFail: false },
-  );
-}
 
 export const notesRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
@@ -48,8 +37,7 @@ export const notesRoutes = new Hono<AppContext>()
     const query = c.req.valid('query');
     const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 20) : 10;
 
-    const results = await NoteRepository.search(db, {
-      userId,
+    const results = await noteService.searchNotes(userId, {
       query: query.query,
       limit,
       ...(query.cursor ? { cursor: query.cursor } : {}),
@@ -65,7 +53,6 @@ export const notesRoutes = new Hono<AppContext>()
       content: input.content,
       ...(input.fileIds ? { fileIds: input.fileIds } : {}),
     });
-    await enqueueNoteEmbedding(userId, note.id);
 
     return c.json(toNoteDto(note), 201);
   })
@@ -135,7 +122,8 @@ export const notesRoutes = new Hono<AppContext>()
   .get('/:id', zValidator('param', NoteParamSchema), async (c) => {
     const userId = c.get('auth')!.userId;
     const { id } = c.req.valid('param');
-    const note = await NoteRepository.load(db, id, userId);
+    const note = await noteService.getOwnedNote(userId, id);
+    if (!note) throw new NotFoundError('Note', { id });
     return c.json(toNoteDto(note));
   })
   .patch(
@@ -147,12 +135,12 @@ export const notesRoutes = new Hono<AppContext>()
       const { id } = c.req.valid('param');
       const input = c.req.valid('json');
 
-      const note = await noteService.updateNote(id, userId, {
+      const note = await noteService.updateOwnedNote(userId, id, {
         ...(input.title !== undefined ? { title: input.title } : {}),
         ...(input.content !== undefined ? { content: input.content } : {}),
         ...(input.fileIds ? { fileIds: input.fileIds } : {}),
       });
-      await enqueueNoteEmbedding(userId, note.id);
+      if (!note) throw new NotFoundError('Note', { id });
 
       return c.json(toNoteDto(note));
     },
@@ -161,9 +149,8 @@ export const notesRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const { id } = c.req.valid('param');
 
-    const note = await NoteRepository.load(db, id, userId);
-    await NoteRepository.hardDelete(db, { noteId: id, userId });
-    await VectorDocumentRepository.deleteForEntity(db, 'note', id);
+    const note = await noteService.deleteNote(userId, id);
+    if (!note) throw new NotFoundError('Note', { id });
 
     return c.json(toNoteDto(note));
   });

@@ -56,12 +56,23 @@ export const createCollectionOutputSchema = z.object({
 
 // ── update_collection ───────────────────────────────────────────────
 
-export const updateCollectionInputSchema = z.object({
-  collectionId: z.string().uuid(),
-  name: z.string().trim().min(1).max(200).optional(),
-  description: z.string().trim().max(2000).nullable().optional(),
-  visibility: z.enum(['private', 'shared']).optional(),
-});
+export const updateCollectionFieldsSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    description: z.string().trim().max(2000).nullable().optional(),
+    visibility: z.enum(['private', 'shared']).optional(),
+  })
+  .refine(
+    (fields) =>
+      fields.name !== undefined ||
+      fields.description !== undefined ||
+      fields.visibility !== undefined,
+    { message: 'At least one of name, description or visibility must be provided' },
+  );
+
+export const updateCollectionInputSchema = z
+  .object({ collectionId: z.string().uuid() })
+  .and(updateCollectionFieldsSchema);
 
 export const updateCollectionOutputSchema = z.object({
   collection: collectionSummarySchema,
