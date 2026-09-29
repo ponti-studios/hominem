@@ -586,5 +586,65 @@ describe('mcp server transport', () => {
         await accepting.close();
       }
     });
+
+    it('confirms delete_collection with a preview and only deletes on accept', async () => {
+      const collectionsScopes = 'collections:read collections:write';
+
+      const accepting = await createElicitingClient(
+        createApp(mcpAuthContext),
+        'accept',
+        collectionsScopes,
+      );
+      let collectionId: string;
+      try {
+        const created = await accepting.callTool({
+          name: 'create_collection',
+          arguments: { name: 'Preview Delete Test' },
+        });
+        collectionId = (created.structuredContent as { collection: { id: string } }).collection.id;
+      } finally {
+        await accepting.close();
+      }
+
+      const declining = await createElicitingClient(
+        createApp(mcpAuthContext),
+        'decline',
+        collectionsScopes,
+      );
+      try {
+        const result = await declining.callTool({
+          name: 'delete_collection',
+          arguments: { collectionId },
+        });
+        expect(result.isError).toBe(true);
+        expect(result.content).toEqual([
+          { type: 'text', text: expect.stringContaining('cancelled') },
+        ]);
+        const detail = await declining.callTool({
+          name: 'collection_detail',
+          arguments: { collectionId },
+        });
+        expect(detail.structuredContent).toMatchObject({
+          collection: { name: 'Preview Delete Test' },
+        });
+      } finally {
+        await declining.close();
+      }
+
+      const confirming = await createElicitingClient(
+        createApp(mcpAuthContext),
+        'accept',
+        collectionsScopes,
+      );
+      try {
+        const result = await confirming.callTool({
+          name: 'delete_collection',
+          arguments: { collectionId },
+        });
+        expect(result.structuredContent).toEqual({ deleted: true });
+      } finally {
+        await confirming.close();
+      }
+    });
   });
 });

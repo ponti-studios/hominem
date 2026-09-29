@@ -149,6 +149,7 @@ function inferMuseCapabilities(messages: ChatMessages[]): Set<ChatCapability> {
     ],
     ['health', ['health', 'workout', 'sleep']],
     ['media', ['media', 'music', 'watch', 'listen']],
+    ['notes', ['note', 'journal', 'wrote down']],
     ['people', ['person', 'people', 'contact']],
     ['places', ['place', 'restaurant', 'venue', 'address']],
     ['social', ['social', 'conversation']],
