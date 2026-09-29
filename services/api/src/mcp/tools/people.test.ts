@@ -324,7 +324,9 @@ describe('person_create / person_update', () => {
       await callTool(userId, 'person_create', { displayName: 'Imported Contact' }),
     ).person as { id: string };
 
-    // Simulate an import that left two email contacts with none marked primary.
+    // Simulate an import that left two email contacts with none marked primary. Explicit,
+    // distinct createdat values make the "oldest contact" selection deterministic — both rows
+    // inserted in one statement would otherwise share the same transaction timestamp.
     await db
       .insertInto('app.personContactMethods')
       .values([
@@ -335,6 +337,7 @@ describe('person_create / person_update', () => {
           value: 'old@example.com',
           isPrimary: false,
           source: 'import',
+          createdat: new Date('2019-01-01T00:00:00Z'),
         },
         {
           ownerUserid: userId,
@@ -343,6 +346,7 @@ describe('person_create / person_update', () => {
           value: 'older@example.com',
           isPrimary: false,
           source: 'import',
+          createdat: new Date('2020-01-01T00:00:00Z'),
         },
       ])
       .execute();
