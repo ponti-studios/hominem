@@ -13,9 +13,11 @@ describe('getTrustedOrigins', () => {
       LABS_APEX_URL: undefined,
       WHAT_URL: 'https://what.example.test',
       NEWSBOY_URL: 'https://newsboy.example.test',
+      STILL_URL: 'https://still.example.test',
     });
 
     expect(origins).toContain('https://newsboy.example.test');
+    expect(origins).toContain('https://still.example.test');
   });
 
   it('deduplicates origins when multiple apps share an origin', () => {
@@ -28,6 +30,7 @@ describe('getTrustedOrigins', () => {
       LABS_APEX_URL: undefined,
       WHAT_URL: 'https://what.example.test',
       NEWSBOY_URL: 'https://career.example.test',
+      STILL_URL: 'https://still.example.test',
     });
 
     expect(origins.filter((origin) => origin === 'https://career.example.test')).toHaveLength(1);

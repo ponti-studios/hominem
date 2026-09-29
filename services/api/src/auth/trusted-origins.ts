@@ -11,6 +11,7 @@ type TrustedOriginEnv = Pick<
   | 'LABS_APEX_URL'
   | 'WHAT_URL'
   | 'NEWSBOY_URL'
+  | 'STILL_URL'
 >;
 
 export function getTrustedOrigins(inputEnv: TrustedOriginEnv = env) {
@@ -23,6 +24,7 @@ export function getTrustedOrigins(inputEnv: TrustedOriginEnv = env) {
     ...(inputEnv.LABS_APEX_URL ? [inputEnv.LABS_APEX_URL] : []),
     inputEnv.WHAT_URL,
     inputEnv.NEWSBOY_URL,
+    inputEnv.STILL_URL,
     'hakumi://',
     'hakumi-dev://',
     'hakumi-e2e://',
