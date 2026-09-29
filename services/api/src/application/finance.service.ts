@@ -2,9 +2,12 @@ import { db, sql } from '@hominem/db/core';
 import {
   FINANCE_TRANSACTION_ENTITY_TYPE,
   getMonthlyStatsByContract,
-  getTagBreakdownByContract,
   getTopMerchantsByContract,
+  queryAnalyticsTransactionsByContract,
 } from '@hominem/finance-services';
+
+// queryAnalyticsTransactionsByContract's own cap; also the ceiling documented in REPORT_CAVEAT.
+const MAX_ANALYTICS_TRANSACTIONS = 200;
 
 export interface FinanceReportFilter {
   from?: string | undefined;
@@ -39,21 +42,49 @@ export function toContractFilter(filter: FinanceReportFilter) {
 }
 
 export async function getTagBreakdownReport(userId: string, filter: FinanceReportFilter) {
-  const breakdown = await getTagBreakdownByContract({
+  const transactions = await queryAnalyticsTransactionsByContract({
     userId,
     ...toContractFilter(filter),
-    limit: filter.limit ?? 5,
+    limit: MAX_ANALYTICS_TRANSACTIONS,
   });
-  const totalSpending = breakdown.reduce((sum, item) => sum + item.amount, 0);
-  const fromDate = filter.from ? new Date(filter.from) : null;
-  const toDate = filter.to ? new Date(filter.to) : null;
+
+  const breakdownByLabel = new Map<string, { amount: number; transactionCount: number }>();
+  let minPostedOn: Date | null = null;
+  let maxPostedOn: Date | null = null;
+  for (const tx of transactions) {
+    if (tx.postedOn) {
+      const postedOn = new Date(tx.postedOn);
+      if (!minPostedOn || postedOn < minPostedOn) minPostedOn = postedOn;
+      if (!maxPostedOn || postedOn > maxPostedOn) maxPostedOn = postedOn;
+    }
+    if (tx.amount >= 0) continue;
+    const current = breakdownByLabel.get(tx.classification) ?? { amount: 0, transactionCount: 0 };
+    current.amount += Math.abs(tx.amount);
+    current.transactionCount += 1;
+    breakdownByLabel.set(tx.classification, current);
+  }
+
+  // Compute the total and day span over every matching tag before the display limit
+  // truncates the breakdown, so totals and percentages account for all of them.
+  const allBreakdown = [...breakdownByLabel.entries()]
+    .map(([tag, value]) => ({
+      tag,
+      amount: value.amount,
+      transactionCount: value.transactionCount,
+    }))
+    .sort((a, b) => b.amount - a.amount || a.tag.localeCompare(b.tag));
+  const totalSpending = allBreakdown.reduce((sum, item) => sum + item.amount, 0);
+
+  const fromDate = filter.from ? new Date(filter.from) : minPostedOn;
+  const toDate = filter.to ? new Date(filter.to) : maxPostedOn;
   const daySpan =
     fromDate && toDate
       ? Math.max(1, Math.floor((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1)
       : 1;
 
+  const limit = Math.max(1, Math.floor(filter.limit ?? 5));
   return {
-    breakdown: breakdown.map((item) => ({
+    breakdown: allBreakdown.slice(0, limit).map((item) => ({
       tag: item.tag,
       amount: item.amount,
       percentage: totalSpending === 0 ? 0 : (item.amount / totalSpending) * 100,

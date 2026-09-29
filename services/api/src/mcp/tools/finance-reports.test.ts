@@ -212,6 +212,12 @@ describe('finance_accounts', () => {
     const data = content(await callTool(otherUserId, 'finance_accounts', { includeClosed: true }));
     expect(data.accounts?.map((a) => a.name)).toEqual(['Other Checking']);
   });
+
+  it('reports totalCount alongside the returned accounts', async () => {
+    const data = content(await callTool(userId, 'finance_accounts', { includeClosed: false }));
+    expect(data.totalCount).toBe(2);
+    expect(data.count).toBe(2);
+  });
 });
 
 describe('finance_top_merchants', () => {
@@ -289,6 +295,21 @@ describe('finance_tag_breakdown', () => {
     const other = content(await callTool(otherUserId, 'finance_tag_breakdown', { tag: 'Food' }));
     expect(other.totalSpendingCents).toBe(99_900);
   });
+
+  it('totals spending across every tag even when the display limit truncates the breakdown', async () => {
+    const limited = content(await callTool(userId, 'finance_tag_breakdown', { ...JULY, limit: 1 }));
+    expect(limited.breakdown).toHaveLength(1);
+    // Must still be the full total (Uncategorized 1025 + Food 80), not just the shown tag.
+    expect(limited.totalSpendingCents).toBe(110_500);
+  });
+
+  it('derives the day span from the transaction range when only one bound is given', async () => {
+    const openEnded = content(
+      await callTool(userId, 'finance_tag_breakdown', { from: '2026-07-01', limit: 10 }),
+    );
+    // A real multi-day span must average out to less than treating the whole total as one day.
+    expect(Number(openEnded.averagePerDayCents)).toBeLessThan(Number(openEnded.totalSpendingCents));
+  });
 });
 
 describe('finance_monthly_stats', () => {
@@ -316,6 +337,10 @@ describe('finance_monthly_stats', () => {
 
   it('rejects a malformed month', async () => {
     await expect(callTool(userId, 'finance_monthly_stats', { month: 'July' })).rejects.toThrow();
+  });
+
+  it('rejects a month with no 13th calendar month', async () => {
+    await expect(callTool(userId, 'finance_monthly_stats', { month: '2026-13' })).rejects.toThrow();
   });
 });
 

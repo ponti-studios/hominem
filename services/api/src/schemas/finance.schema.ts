@@ -218,6 +218,11 @@ export const financeAccountsOutputSchema = z.object({
     }),
   ),
   count: z.number().int().min(0),
+  totalCount: z
+    .number()
+    .int()
+    .min(0)
+    .describe('Total visible accounts before the 50-account result cap.'),
 });
 
 // -- finance_top_merchants --
@@ -266,12 +271,45 @@ export const financeTagBreakdownOutputSchema = z.object({
   averagePerDayCents: z.number().int(),
 });
 
+// -- shared REST query variants --
+//
+// The REST tag-breakdown and top-merchants routes take these same filters as query-string
+// params: `account` (not `accountId`) and a stringly-typed `limit`. Normalize those into the
+// MCP tools' shape and validate with the same schema objects, so the two adapters can't drift
+// apart on what counts as a valid date, account id or limit.
+
+const REST_ACCOUNT_UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function normalizeReportQuery(raw: unknown): Record<string, unknown> {
+  const query = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const account = typeof query.account === 'string' ? query.account : undefined;
+  return {
+    ...(typeof query.from === 'string' ? { from: query.from } : {}),
+    ...(typeof query.to === 'string' ? { to: query.to } : {}),
+    // Web clients may send a non-UUID sentinel (e.g. "all") for the account filter.
+    ...(account && REST_ACCOUNT_UUID.test(account) ? { accountId: account } : {}),
+    ...(typeof query.tag === 'string' ? { tag: query.tag } : {}),
+    ...(typeof query.limit === 'string' ? { limit: Number(query.limit) } : {}),
+  };
+}
+
+export const financeTopMerchantsQuerySchema = z.preprocess(
+  normalizeReportQuery,
+  financeTopMerchantsInputSchema,
+);
+
+export const financeTagBreakdownQuerySchema = z.preprocess(
+  normalizeReportQuery,
+  financeTagBreakdownInputSchema,
+);
+
 // -- finance_monthly_stats --
 
 export const financeMonthlyStatsInputSchema = z.object({
   month: z
     .string()
-    .regex(/^\d{4}-\d{2}$/, 'Expected a month as YYYY-MM.')
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected a month as YYYY-MM.')
     .optional()
     .describe('Month as YYYY-MM. Defaults to the current month.'),
 });

@@ -43,6 +43,11 @@ function toCents(amount: number): number {
   return Math.round(amount * 100);
 }
 
+// enforceResultCap in tool-registry rejects any top-level array longer than the tool's
+// resultCap; these tools have no pagination input, so their arrays are truncated here to
+// stay under cap instead of throwing for a user with more accounts than that.
+const MAX_ACCOUNTS_RESULT = 50;
+
 const REPORT_CAVEAT =
   'Computed from the most recent 200 non-excluded transactions in the range; narrow the range for exact totals. ' +
   'Spending is every negative amount, so transfers between accounts are included.';
@@ -123,8 +128,9 @@ registerTool(
   async (ownerUserId, input) => {
     const accounts = await listAccounts(ownerUserId);
     const visible = accounts.filter((a) => input.includeClosed || a.lifecycleStatus !== 'closed');
+    const limited = visible.slice(0, MAX_ACCOUNTS_RESULT);
     return {
-      accounts: visible.map((a) => ({
+      accounts: limited.map((a) => ({
         id: a.id,
         name: a.name,
         accountType: a.accountType,
@@ -133,7 +139,8 @@ registerTool(
         includeInNetWorth: a.includeInNetWorth,
         balanceCents: toCents(a.currentBalance),
       })),
-      count: visible.length,
+      count: limited.length,
+      totalCount: visible.length,
     };
   },
 );
@@ -329,7 +336,7 @@ registerTool(
     });
     return {
       asOfDate: runway.asOfDate,
-      liquidAccounts: runway.liquidAccounts.map((a) => ({
+      liquidAccounts: runway.liquidAccounts.slice(0, MAX_ACCOUNTS_RESULT).map((a) => ({
         accountName: a.accountName,
         balanceCents: toCents(a.balance),
       })),
