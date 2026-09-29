@@ -3,7 +3,7 @@ import { sql } from 'kysely';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
 import { queryAnalyticsTransactionsByContract } from './transactions';
-import { toNumber } from './utils';
+import { summarizeCurrencies, toNumber } from './utils';
 
 async function getTagBreakdown(ownerId: string): Promise<Array<{ tag: string; total: number }>> {
   const result = await db
@@ -112,7 +112,11 @@ export async function getTopMerchantsByContract(input: {
   tagIds?: string[];
   tagNames?: string[];
   limit?: number;
-}): Promise<Array<{ name: string; totalSpent: number; transactionCount: number }>> {
+}): Promise<{
+  merchants: Array<{ name: string; totalSpent: number; transactionCount: number }>;
+  currencyCode: string | null;
+  warnings: string[];
+}> {
   const transactions = await queryAnalyticsTransactionsByContract({
     userId: input.userId,
     accountId: input.accountId,
@@ -125,10 +129,12 @@ export async function getTopMerchantsByContract(input: {
   });
 
   const merchantTotals = new Map<string, { totalSpent: number; transactionCount: number }>();
+  const spendingCurrencies: string[] = [];
   for (const tx of transactions) {
     if (tx.amount >= 0) {
       continue;
     }
+    spendingCurrencies.push(tx.currencyCode);
     const merchantName = tx.merchantName ?? 'Unknown';
     const current = merchantTotals.get(merchantName) ?? { totalSpent: 0, transactionCount: 0 };
     current.totalSpent += Math.abs(tx.amount);
@@ -137,14 +143,19 @@ export async function getTopMerchantsByContract(input: {
   }
 
   const normalizedLimit = Math.max(1, Math.floor(input.limit ?? 5));
-  return [...merchantTotals.entries()]
-    .map(([name, value]) => ({
-      name,
-      totalSpent: value.totalSpent,
-      transactionCount: value.transactionCount,
-    }))
-    .sort((a, b) => b.totalSpent - a.totalSpent || a.name.localeCompare(b.name))
-    .slice(0, normalizedLimit);
+  const { currencyCode, warnings } = summarizeCurrencies(spendingCurrencies);
+  return {
+    merchants: [...merchantTotals.entries()]
+      .map(([name, value]) => ({
+        name,
+        totalSpent: value.totalSpent,
+        transactionCount: value.transactionCount,
+      }))
+      .sort((a, b) => b.totalSpent - a.totalSpent || a.name.localeCompare(b.name))
+      .slice(0, normalizedLimit),
+    currencyCode,
+    warnings,
+  };
 }
 
 export async function getMonthlyStatsByContract(input: {
@@ -162,6 +173,8 @@ export async function getMonthlyStatsByContract(input: {
   tagSpending: Array<{ name: string; amount: number }>;
   startDate?: string;
   endDate?: string;
+  currencyCode: string | null;
+  warnings: string[];
 }> {
   const range = parseMonthRange(input.month);
   const transactions = await queryAnalyticsTransactionsByContract({
@@ -176,6 +189,7 @@ export async function getMonthlyStatsByContract(input: {
   let expenses = 0;
   const categoryTotals = new Map<string, number>();
   const merchantTotals = new Map<string, number>();
+  const currencies = transactions.map((tx) => tx.currencyCode);
   for (const tx of transactions) {
     if (tx.amount >= 0) {
       income += tx.amount;
@@ -197,6 +211,7 @@ export async function getMonthlyStatsByContract(input: {
 
   const transactionCount = transactions.length;
   const averageTransaction = transactionCount === 0 ? 0 : (income + expenses) / transactionCount;
+  const { currencyCode, warnings } = summarizeCurrencies(currencies);
   return {
     month: input.month ?? new Date().toISOString().slice(0, 7),
     income,
@@ -212,6 +227,8 @@ export async function getMonthlyStatsByContract(input: {
       .map(([name, amount]) => ({ name, amount })),
     ...(range.from ? { startDate: range.from } : {}),
     ...(range.to ? { endDate: range.to } : {}),
+    currencyCode,
+    warnings,
   };
 }
 

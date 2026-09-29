@@ -88,9 +88,34 @@ function accountsForUser(userId: string) {
     .orderBy('id', 'asc');
 }
 
-export async function listAccounts(userId: string): Promise<AccountWithBalance[]> {
-  const accounts = await accountsForUser(userId).selectAll().execute();
+export async function listAccounts(
+  userId: string,
+  options?: { includeClosed?: boolean; limit?: number },
+): Promise<AccountWithBalance[]> {
+  let query = accountsForUser(userId);
+  if (!options?.includeClosed) {
+    query = query.where('lifecycleStatus', '!=', 'closed');
+  }
+  if (options?.limit !== undefined) {
+    query = query.limit(options.limit);
+  }
+  const accounts = await query.selectAll().execute();
   return withBalances(accounts);
+}
+
+export async function countAccounts(
+  userId: string,
+  options?: { includeClosed?: boolean },
+): Promise<number> {
+  let query = db
+    .selectFrom('app.financeAccounts')
+    .select((eb) => eb.fn.countAll<number>().as('count'))
+    .where('userId', '=', userId);
+  if (!options?.includeClosed) {
+    query = query.where('lifecycleStatus', '!=', 'closed');
+  }
+  const row = await query.executeTakeFirst();
+  return Number(row?.count ?? 0);
 }
 
 export async function getAccountById(

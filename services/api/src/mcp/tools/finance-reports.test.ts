@@ -49,7 +49,13 @@ async function seedUser(id: string, name: string) {
   );
 }
 
-async function insertAccount(id: string, owner: string, name: string, accountType: string) {
+async function insertAccount(
+  id: string,
+  owner: string,
+  name: string,
+  accountType: string,
+  includeInNetWorth = true,
+) {
   await db
     .insertInto('app.financeAccounts')
     .values({
@@ -59,7 +65,7 @@ async function insertAccount(id: string, owner: string, name: string, accountTyp
       accountType,
       currencyCode: 'USD',
       lifecycleStatus: 'open',
-      includeInNetWorth: true,
+      includeInNetWorth,
       metadata: {},
     })
     .execute();
@@ -125,7 +131,7 @@ beforeAll(async () => {
   await seedUser(otherUserId, 'Other Report User');
 
   await insertAccount(checkingId, userId, 'Checking', 'checking');
-  await insertAccount(cardId, userId, 'Card', 'credit_card');
+  await insertAccount(cardId, userId, 'Card', 'credit_card', false);
   await insertAccount(otherCheckingId, otherUserId, 'Other Checking', 'checking');
 
   const groceries = await insertTransaction({
@@ -204,8 +210,12 @@ describe('finance_accounts', () => {
     const data = content(await callTool(userId, 'finance_accounts', { includeClosed: false }));
     expect(data.count).toBe(2);
     const byName = Object.fromEntries((data.accounts ?? []).map((a) => [a.name, a]));
-    expect(byName.Card).toMatchObject({ accountType: 'credit_card', balanceCents: -3000 });
-    expect(byName.Checking).toMatchObject({ accountType: 'checking' });
+    expect(byName.Card).toMatchObject({
+      accountType: 'credit_card',
+      balanceCents: -3000,
+      includeInNetWorth: false,
+    });
+    expect(byName.Checking).toMatchObject({ accountType: 'checking', includeInNetWorth: true });
   });
 
   it("never returns another user's accounts", async () => {
@@ -447,7 +457,7 @@ describe('finance_budget_breakdown', () => {
     });
   });
 
-  it('caps the savings target at 20% and leaves the rest unallocated', async () => {
+  it('leaves the rest unallocated when the savings target is below the 20% cap', async () => {
     const data = content(
       await callTool(userId, 'finance_budget_breakdown', {
         monthlyIncomeCents: 500_000,
@@ -455,5 +465,29 @@ describe('finance_budget_breakdown', () => {
       }),
     );
     expect(data).toMatchObject({ savingsCents: 10_000, unallocatedCents: 90_000 });
+  });
+
+  it('caps the savings target at 20% when the requested target exceeds it', async () => {
+    const data = content(
+      await callTool(userId, 'finance_budget_breakdown', {
+        monthlyIncomeCents: 500_000,
+        savingsTargetCents: 150_000,
+      }),
+    );
+    expect(data).toMatchObject({ savingsCents: 100_000, unallocatedCents: 0 });
+  });
+
+  it('always sums to the supplied income, even when percentages round unevenly', async () => {
+    for (const monthlyIncomeCents of [1, 2, 3, 7, 11, 99, 101, 333]) {
+      const data = content(
+        await callTool(userId, 'finance_budget_breakdown', { monthlyIncomeCents }),
+      );
+      const total =
+        Number(data.needsCents ?? 0) +
+        Number(data.wantsCents ?? 0) +
+        Number(data.savingsCents ?? 0) +
+        Number(data.unallocatedCents ?? 0);
+      expect(total).toBe(monthlyIncomeCents);
+    }
   });
 });

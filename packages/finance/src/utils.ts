@@ -61,6 +61,26 @@ export async function tableExists(tableName: string): Promise<boolean> {
   return Boolean(result);
 }
 
+// Aggregate reports sum raw amounts across transactions, which is only valid when they all
+// share one currency; converting or summing across currencies silently would produce a
+// meaningless total, so callers report which currency was used (or none, with a warning)
+// instead of guessing.
+export function summarizeCurrencies(currencyCodes: string[]): {
+  currencyCode: string | null;
+  warnings: string[];
+} {
+  const distinct = [...new Set(currencyCodes)];
+  if (distinct.length <= 1) {
+    return { currencyCode: distinct[0] ?? null, warnings: [] };
+  }
+  return {
+    currencyCode: null,
+    warnings: [
+      'Spending spans multiple currencies; amounts were not converted or summed across currencies.',
+    ],
+  };
+}
+
 export function sqlValueList(values: string[]) {
   return sql.join(
     values.map((value) => sql`${value}`),
