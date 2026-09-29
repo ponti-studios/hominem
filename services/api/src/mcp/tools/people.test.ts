@@ -319,6 +319,52 @@ describe('person_create / person_update', () => {
     await expect(callTool(userId, 'person_update', { personId: adaId })).rejects.toThrow();
   });
 
+  it('promotes the updated email to primary when no contact was marked primary', async () => {
+    const created = resultContent(
+      await callTool(userId, 'person_create', { displayName: 'Imported Contact' }),
+    ).person as { id: string };
+
+    // Simulate an import that left two email contacts with none marked primary.
+    await db
+      .insertInto('app.personContactMethods')
+      .values([
+        {
+          ownerUserid: userId,
+          personId: created.id,
+          kind: 'email',
+          value: 'old@example.com',
+          isPrimary: false,
+          source: 'import',
+        },
+        {
+          ownerUserid: userId,
+          personId: created.id,
+          kind: 'email',
+          value: 'older@example.com',
+          isPrimary: false,
+          source: 'import',
+        },
+      ])
+      .execute();
+
+    await callTool(userId, 'person_update', {
+      personId: created.id,
+      email: 'old@example.com',
+    });
+
+    const lookup = resultContent(
+      await callTool(userId, 'people_lookup', { query: 'Imported Contact' }),
+    ) as { people: Array<{ id: string; emails: Array<{ email: string; isPrimary: boolean }> }> };
+    const person = lookup.people.find((p) => p.id === created.id);
+    expect(person?.emails).toEqual(
+      expect.arrayContaining([
+        { email: 'old@example.com', isPrimary: true, source: 'import' },
+        { email: 'older@example.com', isPrimary: false, source: 'import' },
+      ]),
+    );
+    expect(person?.emails.filter((e) => e.isPrimary)).toHaveLength(1);
+  });
+
   it("returns null and changes nothing for another user's person", async () => {
     const result = resultContent(
       await callTool(otherUserId, 'person_update', { personId: adaId, displayName: 'Hijacked' }),

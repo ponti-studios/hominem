@@ -448,7 +448,9 @@ registerTool(
 registerTool(
   {
     ...collectionWriteTool,
+    destructive: true,
     idempotent: true,
+    requiresConfirmation: true,
     name: 'decline_collection_invite',
     title: 'Decline collection invitation',
     description: "Declines the caller's pending invitation to collaborate on a collection.",
@@ -465,6 +467,14 @@ registerTool(
           provides: ['collectionId'],
         },
       ],
+    },
+    preview: async (ownerUserId, input) => {
+      const parsed = acceptMemberInviteInputSchema.safeParse(input);
+      if (!parsed.success) return null;
+      const { invites } = await listPendingInvites(ownerUserId, { limit: 50 });
+      const invite = invites.find((i) => i.collection.id === parsed.data.collectionId);
+      if (!invite) return null;
+      return { collection: invite.collection.name, role: invite.role };
     },
   },
   async (ownerUserId, input) => ({

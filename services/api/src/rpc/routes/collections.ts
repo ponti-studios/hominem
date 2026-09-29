@@ -33,7 +33,7 @@ import {
   listPendingInvitesOutputSchema,
   removeCollectionItemOutputSchema,
   removeMemberOutputSchema,
-  updateCollectionInputSchema,
+  updateCollectionFieldsSchema,
   updateCollectionOutputSchema,
   updateMemberRoleInputSchema,
   updateMemberRoleOutputSchema,
@@ -84,7 +84,7 @@ export const collectionsRoutes = new Hono<AppContext>()
   .patch(
     '/:collectionId',
     zValidator('param', collectionParamSchema),
-    zValidator('json', updateCollectionInputSchema.omit({ collectionId: true })),
+    zValidator('json', updateCollectionFieldsSchema),
     async (c) => {
       const { collectionId } = c.req.valid('param');
       const body = c.req.valid('json');

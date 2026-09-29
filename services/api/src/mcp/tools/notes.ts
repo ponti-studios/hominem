@@ -1,17 +1,6 @@
-import { randomUUID } from 'node:crypto';
-
-import { generateEmbedding } from '@hominem/ai';
-import { db } from '@hominem/db/core';
 import { NotFoundError } from '@hominem/db/errors';
-import { NoteRepository, type NoteRecord } from '@hominem/db/notes';
-import { VectorDocumentRepository } from '@hominem/db/vector';
-import { embeddingQueue } from '@hominem/queues';
+import type { NoteRecord } from '@hominem/db/notes';
 
-import {
-  assertUnderMonthlyUsageLimit,
-  recordAIUsageEvent,
-  startAIUsageTimer,
-} from '../../application/ai-usage.service';
 import { NoteService } from '../../application/notes.service';
 import {
   NoteParamSchema,
@@ -30,18 +19,6 @@ import { registerTool } from '../tool-registry';
 
 const noteService = new NoteService();
 
-// Memories are notes with kind = 'memory' and stay owned by the memory tools.
-const NOTE_KIND = 'note' as const;
-const EMBEDDING_DIMENSIONS = 1536;
-
-async function enqueueNoteEmbedding(userId: string, noteId: string) {
-  await embeddingQueue.add(
-    'generate-embedding',
-    { jobId: `note-${noteId}`, userId, entityType: 'note' as const, entityId: noteId },
-    { jobId: `note-${noteId}`, removeOnComplete: true, removeOnFail: false },
-  );
-}
-
 function toNoteSummary(note: NoteRecord) {
   return {
     id: note.id,
@@ -54,12 +31,6 @@ function toNoteSummary(note: NoteRecord) {
 
 function toNoteDetail(note: NoteRecord) {
   return { ...toNoteSummary(note), content: note.content };
-}
-
-async function loadNote(ownerUserId: string, id: string): Promise<NoteRecord | null> {
-  const row = await NoteRepository.getOwned(db, id, ownerUserId);
-  if (!row || row.kind !== NOTE_KIND) return null;
-  return NoteRepository.load(db, id, ownerUserId);
 }
 
 const writeTool: {
@@ -95,9 +66,7 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    const notes = await NoteRepository.list(db, {
-      userId: ownerUserId,
-      kind: NOTE_KIND,
+    const notes = await noteService.listNotes(ownerUserId, {
       ...(input.query ? { query: input.query } : {}),
       limit: input.limit,
     });
@@ -122,7 +91,7 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    const note = await loadNote(ownerUserId, input.id);
+    const note = await noteService.getOwnedNote(ownerUserId, input.id);
     return { note: note ? toNoteDetail(note) : null };
   },
 );
@@ -146,7 +115,7 @@ registerTool(
       title: input.title ?? null,
       content: input.content,
     });
-    await enqueueNoteEmbedding(ownerUserId, note.id);
+    await noteService.enqueueEmbedding(ownerUserId, note.id);
     return { note: toNoteDetail(note) };
   },
 );
@@ -167,13 +136,13 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    if (!(await loadNote(ownerUserId, input.id))) return { note: null };
+    if (!(await noteService.getOwnedNote(ownerUserId, input.id))) return { note: null };
     try {
       const note = await noteService.updateNote(input.id, ownerUserId, {
         ...(input.title !== undefined ? { title: input.title } : {}),
         ...(input.content !== undefined ? { content: input.content } : {}),
       });
-      await enqueueNoteEmbedding(ownerUserId, note.id);
+      await noteService.enqueueEmbedding(ownerUserId, note.id);
       return { note: toNoteDetail(note) };
     } catch (error) {
       if (error instanceof NotFoundError) return { note: null };
@@ -202,20 +171,18 @@ registerTool(
     preview: async (ownerUserId, input) => {
       const parsed = NoteParamSchema.safeParse(input);
       if (!parsed.success) return null;
-      const note = await loadNote(ownerUserId, parsed.data.id);
+      const note = await noteService.getOwnedNote(ownerUserId, parsed.data.id);
       return note ? { title: note.title ?? '(untitled)', excerpt: note.excerpt } : null;
     },
   },
   async (ownerUserId, input) => {
-    if (!(await loadNote(ownerUserId, input.id))) return { removed: false };
     try {
-      await NoteRepository.hardDelete(db, { noteId: input.id, userId: ownerUserId });
+      const note = await noteService.deleteNote(ownerUserId, input.id);
+      return { removed: note !== null };
     } catch (error) {
       if (error instanceof NotFoundError) return { removed: false };
       throw error;
     }
-    await VectorDocumentRepository.deleteForEntity(db, 'note', input.id);
-    return { removed: true };
   },
 );
 
@@ -240,66 +207,7 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    await assertUnderMonthlyUsageLimit(ownerUserId);
-
-    const eventId = randomUUID();
-    const getDurationMs = startAIUsageTimer();
-    let embedded: Awaited<ReturnType<typeof generateEmbedding>>;
-    try {
-      embedded = await generateEmbedding(input.query, {
-        dimensions: EMBEDDING_DIMENSIONS,
-        inputType: 'search_query',
-      });
-    } catch (error) {
-      await recordAIUsageEvent({
-        eventId,
-        userId: ownerUserId,
-        feature: 'embedding',
-        operation: 'embedding',
-        status: 'failed',
-        error,
-        durationMs: getDurationMs(),
-        metadata: { purpose: 'semantic_search' },
-      });
-      throw error;
-    }
-    await recordAIUsageEvent({
-      eventId,
-      userId: ownerUserId,
-      feature: 'embedding',
-      operation: 'embedding',
-      usage: embedded.usage,
-      status: 'succeeded',
-      durationMs: getDurationMs(),
-      metadata: { purpose: 'semantic_search' },
-    });
-    if (embedded.embedding.length === 0) return { results: [] };
-
-    // Memories are embedded as notes too; over-fetch so filtering them out still fills the page.
-    const matches = await VectorDocumentRepository.search(db, {
-      userId: ownerUserId,
-      embedding: embedded.embedding,
-      entityType: 'note',
-      limit: Math.min(input.limit * 3, 50),
-    });
-
-    const results: Array<{
-      id: string;
-      title: string | null;
-      excerpt: string | null;
-      similarity: number;
-    }> = [];
-    for (const match of matches) {
-      if (results.length >= input.limit) break;
-      const row = await NoteRepository.getOwned(db, match.entityId, ownerUserId);
-      if (!row || row.kind !== NOTE_KIND) continue;
-      results.push({
-        id: row.id,
-        title: row.title,
-        excerpt: row.excerpt,
-        similarity: match.similarity,
-      });
-    }
+    const results = await noteService.semanticSearch(ownerUserId, input);
     return { results };
   },
 );

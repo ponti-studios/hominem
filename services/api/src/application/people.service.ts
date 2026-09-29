@@ -218,9 +218,17 @@ export async function updatePerson({
       } else if (primary) {
         await trx
           .updateTable('app.personContactMethods')
-          .set({ value: email.trim() })
+          .set({ value: email.trim(), isPrimary: true })
           .where('id', '=', primary.id)
           .where('ownerUserid', '=', ownerUserId)
+          .execute();
+        await trx
+          .updateTable('app.personContactMethods')
+          .set({ isPrimary: false })
+          .where('personId', '=', personId)
+          .where('ownerUserid', '=', ownerUserId)
+          .where('kind', '=', 'email')
+          .where('id', '!=', primary.id)
           .execute();
       } else {
         await trx
