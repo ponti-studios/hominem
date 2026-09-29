@@ -1,4 +1,3 @@
-import { NotFoundError } from '@hominem/db/errors';
 import type { NoteRecord } from '@hominem/db/notes';
 
 import { NoteService } from '../../application/notes.service';
@@ -115,7 +114,6 @@ registerTool(
       title: input.title ?? null,
       content: input.content,
     });
-    await noteService.enqueueEmbedding(ownerUserId, note.id);
     return { note: toNoteDetail(note) };
   },
 );
@@ -136,18 +134,11 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    if (!(await noteService.getOwnedNote(ownerUserId, input.id))) return { note: null };
-    try {
-      const note = await noteService.updateNote(input.id, ownerUserId, {
-        ...(input.title !== undefined ? { title: input.title } : {}),
-        ...(input.content !== undefined ? { content: input.content } : {}),
-      });
-      await noteService.enqueueEmbedding(ownerUserId, note.id);
-      return { note: toNoteDetail(note) };
-    } catch (error) {
-      if (error instanceof NotFoundError) return { note: null };
-      throw error;
-    }
+    const note = await noteService.updateOwnedNote(ownerUserId, input.id, {
+      ...(input.title !== undefined ? { title: input.title } : {}),
+      ...(input.content !== undefined ? { content: input.content } : {}),
+    });
+    return { note: note ? toNoteDetail(note) : null };
   },
 );
 
@@ -176,13 +167,8 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    try {
-      const note = await noteService.deleteNote(ownerUserId, input.id);
-      return { removed: note !== null };
-    } catch (error) {
-      if (error instanceof NotFoundError) return { removed: false };
-      throw error;
-    }
+    const note = await noteService.deleteNote(ownerUserId, input.id);
+    return { removed: note !== null };
   },
 );
 

@@ -1,16 +1,36 @@
 import { z } from 'zod';
 
-export const CreateNoteInputSchema = z.object({
-  title: z.string().optional(),
-  content: z.string(),
-  fileIds: z.array(z.uuid()).max(5).optional(),
+// ── shared note write fields ────────────────────────────────────────
+//
+// REST and MCP both create and update the same note through the same service method
+// (NoteService.createNote/updateNote), so they validate the title and content with the same
+// rules. The only real difference between the two surfaces is that REST also accepts file
+// attachments (fileIds) — a capability MCP tools don't expose — and MCP embeds the note id in
+// the body since there's no URL path to carry it.
+
+const noteFileIdsField = z.array(z.uuid()).max(5).optional();
+
+const noteCreateFieldsSchema = z.object({
+  title: z.string().trim().min(1).max(200).optional().describe('Optional short title.'),
+  content: z.string().trim().min(1).max(50000).describe('The note body.'),
 });
 
-export const UpdateNoteInputSchema = z.object({
-  title: z.string().nullish(),
-  content: z.string().optional(),
-  fileIds: z.array(z.uuid()).max(5).optional(),
+const noteUpdateFieldsSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200).nullable().optional(),
+    content: z.string().trim().min(1).max(50000).optional(),
+  })
+  .refine((data) => data.title !== undefined || data.content !== undefined, {
+    message: 'Provide a title or content to update',
+  });
+
+export const CreateNoteInputSchema = noteCreateFieldsSchema.extend({
+  fileIds: noteFileIdsField,
 });
+
+export const UpdateNoteInputSchema = noteUpdateFieldsSchema.and(
+  z.object({ fileIds: noteFileIdsField }),
+);
 
 export const NoteParamSchema = z.object({ id: z.uuid() });
 
@@ -53,22 +73,13 @@ export const noteListToolOutputSchema = z.object({ notes: z.array(noteToolSummar
 
 export const noteGetToolOutputSchema = z.object({ note: noteToolRecordSchema.nullable() });
 
-export const noteCreateToolInputSchema = z.object({
-  title: z.string().trim().min(1).max(200).optional().describe('Optional short title.'),
-  content: z.string().trim().min(1).max(50000).describe('The note body.'),
-});
+export const noteCreateToolInputSchema = noteCreateFieldsSchema;
 
 export const noteCreateToolOutputSchema = z.object({ note: noteToolRecordSchema });
 
 export const noteUpdateToolInputSchema = z
-  .object({
-    id: z.uuid().describe('Stable note id returned by note_list or note_create.'),
-    title: z.string().trim().min(1).max(200).nullable().optional(),
-    content: z.string().trim().min(1).max(50000).optional(),
-  })
-  .refine((data) => data.title !== undefined || data.content !== undefined, {
-    message: 'Provide a title or content to update',
-  });
+  .object({ id: z.uuid().describe('Stable note id returned by note_list or note_create.') })
+  .and(noteUpdateFieldsSchema);
 
 export const noteUpdateToolOutputSchema = z.object({ note: noteToolRecordSchema.nullable() });
 

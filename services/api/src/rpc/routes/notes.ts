@@ -6,8 +6,6 @@ import {
   getChatCompletionText,
   getChatCompletionUsage,
 } from '@hominem/ai';
-import { db } from '@hominem/db/core';
-import { NoteRepository } from '@hominem/db/notes';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -39,8 +37,7 @@ export const notesRoutes = new Hono<AppContext>()
     const query = c.req.valid('query');
     const limit = query.limit ? Math.min(Number.parseInt(query.limit, 10), 20) : 10;
 
-    const results = await NoteRepository.search(db, {
-      userId,
+    const results = await noteService.searchNotes(userId, {
       query: query.query,
       limit,
       ...(query.cursor ? { cursor: query.cursor } : {}),
@@ -56,7 +53,6 @@ export const notesRoutes = new Hono<AppContext>()
       content: input.content,
       ...(input.fileIds ? { fileIds: input.fileIds } : {}),
     });
-    await noteService.enqueueEmbedding(userId, note.id);
 
     return c.json(toNoteDto(note), 201);
   })
@@ -139,12 +135,12 @@ export const notesRoutes = new Hono<AppContext>()
       const { id } = c.req.valid('param');
       const input = c.req.valid('json');
 
-      const note = await noteService.updateNote(id, userId, {
+      const note = await noteService.updateOwnedNote(userId, id, {
         ...(input.title !== undefined ? { title: input.title } : {}),
         ...(input.content !== undefined ? { content: input.content } : {}),
         ...(input.fileIds ? { fileIds: input.fileIds } : {}),
       });
-      await noteService.enqueueEmbedding(userId, note.id);
+      if (!note) throw new NotFoundError('Note', { id });
 
       return c.json(toNoteDto(note));
     },

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { generateEmbedding } from '@hominem/ai';
 import { db } from '@hominem/db/core';
+import { NotFoundError } from '@hominem/db/errors';
 import type { NoteKind, NoteRecord } from '@hominem/db/notes';
 import { NoteRepository } from '@hominem/db/notes';
 import { runInTransaction } from '@hominem/db/transaction';
@@ -62,12 +63,18 @@ export class NoteService {
   async deleteNote(userId: string, noteId: string): Promise<NoteRecord | null> {
     const note = await this.getOwnedNote(userId, noteId);
     if (!note) return null;
-    await NoteRepository.hardDelete(db, { noteId, userId });
+    try {
+      await NoteRepository.hardDelete(db, { noteId, userId });
+    } catch (error) {
+      // Deleted between the check above and here — treat as already gone.
+      if (error instanceof NotFoundError) return null;
+      throw error;
+    }
     await VectorDocumentRepository.deleteForEntity(db, 'note', noteId);
     return note;
   }
 
-  async enqueueEmbedding(userId: string, noteId: string): Promise<void> {
+  private async enqueueEmbedding(userId: string, noteId: string): Promise<void> {
     // A fresh id per revision: reusing `note-${noteId}` let a still-active or
     // failed (removeOnFail: false) job block every later update to the same note.
     const jobId = randomUUID();
@@ -150,11 +157,12 @@ export class NoteService {
     return results;
   }
 
+  /** Creates a note and queues it for semantic-search indexing. */
   async createNote(userId: string, input: CreateNoteParams): Promise<NoteRecord> {
     // Need the explicit return type here — without it TS infers runInTransaction's T from
     // this whole callback before checking it, which is one of the slowest typecheck spans
     // in services/api (~765ms). Annotating it short-circuits that.
-    return runInTransaction(async (trx): Promise<NoteRecord> => {
+    const note = await runInTransaction(async (trx): Promise<NoteRecord> => {
       const content = input.content.trim();
       // never auto-derive the title from content — only use it if it was actually passed in
       const title = input.title?.trim() || null;
@@ -175,32 +183,77 @@ export class NoteService {
       });
       return NoteRepository.load(trx, created.id, userId);
     });
+    await this.enqueueEmbedding(userId, note.id);
+    return note;
   }
 
-  async updateNote(noteId: string, userId: string, input: UpdateNoteParams): Promise<NoteRecord> {
-    return runInTransaction(async (trx): Promise<NoteRecord> => {
-      const existing = await NoteRepository.getOwnedOrThrow(trx, noteId, userId);
-      const nextContent = input.content !== undefined ? input.content.trim() : existing.content;
-      // same deal — only touch the title if it was explicitly sent
-      const nextTitle = input.title !== undefined ? input.title?.trim() || null : existing.title;
-      // but the excerpt always gets recomputed, since it just follows the content
-      const nextExcerpt = deriveExcerpt(nextContent);
+  /**
+   * Updates any note or memory row owned by the user and re-queues it for indexing, or returns
+   * null if it doesn't exist or isn't theirs — never throws for a missing note. Not kind-scoped:
+   * the memory routes reuse this directly, so use updateOwnedNote to restrict to kind 'note'.
+   */
+  async updateNote(
+    noteId: string,
+    userId: string,
+    input: UpdateNoteParams,
+  ): Promise<NoteRecord | null> {
+    let note: NoteRecord;
+    try {
+      note = await runInTransaction(async (trx): Promise<NoteRecord> => {
+        const existing = await NoteRepository.getOwnedOrThrow(trx, noteId, userId);
+        const nextContent = input.content !== undefined ? input.content.trim() : existing.content;
+        // only touch the title if it was explicitly sent
+        const nextTitle = input.title !== undefined ? input.title?.trim() || null : existing.title;
+        // but the excerpt always gets recomputed, since it just follows the content
+        const nextExcerpt = deriveExcerpt(nextContent);
 
-      await NoteRepository.update(trx, {
-        noteId,
-        userId,
-        input: {
-          title: nextTitle,
-          content: nextContent,
-          excerpt: nextExcerpt,
-        },
+        await NoteRepository.update(trx, {
+          noteId,
+          userId,
+          input: {
+            title: nextTitle,
+            content: nextContent,
+            excerpt: nextExcerpt,
+          },
+        });
+
+        if (input.fileIds) {
+          await NoteRepository.syncFiles(trx, { noteId, userId, fileIds: input.fileIds });
+        }
+
+        return NoteRepository.load(trx, noteId, userId);
       });
+    } catch (error) {
+      if (error instanceof NotFoundError) return null;
+      throw error;
+    }
+    await this.enqueueEmbedding(userId, note.id);
+    return note;
+  }
 
-      if (input.fileIds) {
-        await NoteRepository.syncFiles(trx, { noteId, userId, fileIds: input.fileIds });
-      }
+  /** Updates a note owned by the user, or null if it doesn't exist, isn't theirs, or isn't kind 'note'. */
+  async updateOwnedNote(
+    userId: string,
+    noteId: string,
+    input: UpdateNoteParams,
+  ): Promise<NoteRecord | null> {
+    const row = await NoteRepository.getOwned(db, noteId, userId);
+    if (!row || row.kind !== NOTE_KIND) return null;
+    return this.updateNote(noteId, userId, input);
+  }
 
-      return NoteRepository.load(trx, noteId, userId);
+  async searchNotes(
+    userId: string,
+    input: { query: string; limit?: number; cursor?: string },
+  ): Promise<{
+    notes: Array<{ id: string; title: string | null; excerpt: string | null }>;
+    nextCursor: string | null;
+  }> {
+    return NoteRepository.search(db, {
+      userId,
+      query: input.query,
+      limit: input.limit ?? 10,
+      ...(input.cursor ? { cursor: input.cursor } : {}),
     });
   }
 }
