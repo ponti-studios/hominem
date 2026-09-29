@@ -10,7 +10,7 @@ import { requestIdMiddleware } from '../rpc/middleware/auth';
 import { apiErrorHandler } from '../rpc/middleware/error';
 import { validationErrorMiddleware } from '../rpc/middleware/validation';
 import { mcpRoutes, oauthDiscoveryRoutes } from './routes';
-import { listTools, registerTool } from './tool-registry';
+import { callTool, listTools, registerTool } from './tool-registry';
 
 vi.mock('@better-auth/mcp', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@better-auth/mcp')>()),
@@ -40,6 +40,8 @@ vi.mock('@better-auth/mcp', async (importOriginal) => ({
       );
     },
 }));
+
+vi.mock('@hominem/queues', () => ({ embeddingQueue: { add: async () => undefined } }));
 
 vi.mock('../middleware/auth', () => ({
   setMcpAuthContext: async (
@@ -645,6 +647,196 @@ describe('mcp server transport', () => {
       } finally {
         await confirming.close();
       }
+    });
+  });
+
+  describe('resources, completions and prompts', () => {
+    const otherUserId = '22222222-2222-4222-8222-222222222222';
+    const readScopes = 'career:read memory:read task:read notes:read collections:read';
+    let taskId: string;
+    let noteId: string;
+    let collectionId: string;
+    let otherTaskId: string;
+    let otherNoteId: string;
+    let otherCollectionId: string;
+
+    function idOf(result: { structuredContent: unknown }, key: string): string {
+      const parsed = z
+        .object({ [key]: z.object({ id: z.string() }) })
+        .parse(result.structuredContent);
+      return z.object({ id: z.string() }).parse(parsed[key]).id;
+    }
+
+    beforeAll(async () => {
+      for (const [id, email] of [
+        [testUser.id, testUser.email],
+        [otherUserId, 'other-mcp@example.com'],
+      ] as const) {
+        await pool.query(
+          'INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
+          [id, 'MCP User', email, true],
+        );
+      }
+      taskId = idOf(
+        await callTool(testUser.id, 'task_create', {
+          title: 'Mine: pay rent',
+          artifactType: 'task',
+        }),
+        'task',
+      );
+      noteId = idOf(
+        await callTool(testUser.id, 'note_create', { title: 'Mine', content: 'my note' }),
+        'note',
+      );
+      collectionId = idOf(
+        await callTool(testUser.id, 'create_collection', { name: 'Mine collection' }),
+        'collection',
+      );
+      otherTaskId = idOf(
+        await callTool(otherUserId, 'task_create', {
+          title: 'Theirs: secret task',
+          artifactType: 'task',
+        }),
+        'task',
+      );
+      otherNoteId = idOf(
+        await callTool(otherUserId, 'note_create', { title: 'Theirs', content: 'secret note' }),
+        'note',
+      );
+      otherCollectionId = idOf(
+        await callTool(otherUserId, 'create_collection', { name: 'Theirs collection' }),
+        'collection',
+      );
+    });
+
+    async function withClient<T>(scopes: string, run: (client: Client) => Promise<T>): Promise<T> {
+      const client = await createClient(createApp(mcpAuthContext), scopes);
+      try {
+        return await run(client);
+      } finally {
+        await client.close();
+      }
+    }
+
+    it('lists fixed resources and templates only for granted scopes', async () => {
+      await withClient(readScopes, async (client) => {
+        const { resources } = await client.listResources();
+        const uris = resources.map((resource) => resource.uri);
+        expect(uris).toEqual(
+          expect.arrayContaining([
+            'hominem://profile',
+            'hominem://memories',
+            `hominem://tasks/${taskId}`,
+            `hominem://notes/${noteId}`,
+            `hominem://collections/${collectionId}`,
+          ]),
+        );
+        const { resourceTemplates } = await client.listResourceTemplates();
+        expect(resourceTemplates.map((template) => template.uriTemplate).sort()).toEqual([
+          'hominem://collections/{id}',
+          'hominem://notes/{id}',
+          'hominem://tasks/{id}',
+        ]);
+      });
+
+      await withClient('task:read', async (client) => {
+        const { resources } = await client.listResources();
+        const uris = resources.map((resource) => resource.uri);
+        expect(uris).toContain(`hominem://tasks/${taskId}`);
+        expect(uris.some((uri) => uri.startsWith('hominem://notes/'))).toBe(false);
+        expect(uris).not.toContain('hominem://profile');
+      });
+    });
+
+    it("never lists or reads another user's data", async () => {
+      await withClient(readScopes, async (client) => {
+        const { resources } = await client.listResources();
+        const uris = resources.map((resource) => resource.uri);
+        expect(uris).not.toContain(`hominem://tasks/${otherTaskId}`);
+        expect(uris).not.toContain(`hominem://notes/${otherNoteId}`);
+        expect(uris).not.toContain(`hominem://collections/${otherCollectionId}`);
+
+        for (const uri of [
+          `hominem://tasks/${otherTaskId}`,
+          `hominem://notes/${otherNoteId}`,
+          `hominem://collections/${otherCollectionId}`,
+        ]) {
+          await expect(client.readResource({ uri })).rejects.toThrow();
+        }
+      });
+    });
+
+    it('reads own resources and rejects malformed or unknown ids', async () => {
+      await withClient(readScopes, async (client) => {
+        const task = await client.readResource({ uri: `hominem://tasks/${taskId}` });
+        expect(task.contents[0]).toMatchObject({ mimeType: 'application/json' });
+        expect(JSON.stringify(task.contents[0])).toContain('Mine: pay rent');
+
+        const note = await client.readResource({ uri: `hominem://notes/${noteId}` });
+        expect(JSON.stringify(note.contents[0])).toContain('my note');
+
+        const collection = await client.readResource({
+          uri: `hominem://collections/${collectionId}`,
+        });
+        expect(JSON.stringify(collection.contents[0])).toContain('Mine collection');
+
+        const memories = await client.readResource({ uri: 'hominem://memories' });
+        expect(memories.contents).toHaveLength(1);
+
+        await expect(client.readResource({ uri: 'hominem://tasks/not-a-uuid' })).rejects.toThrow();
+        await expect(
+          client.readResource({ uri: 'hominem://tasks/99999999-9999-4999-8999-999999999999' }),
+        ).rejects.toThrow();
+      });
+    });
+
+    it("completes template ids from the caller's own records only", async () => {
+      await withClient(readScopes, async (client) => {
+        const completion = await client.complete({
+          ref: { type: 'ref/resource', uri: 'hominem://tasks/{id}' },
+          argument: { name: 'id', value: '' },
+        });
+        expect(completion.completion.values).toContain(taskId);
+        expect(completion.completion.values).not.toContain(otherTaskId);
+
+        const filtered = await client.complete({
+          ref: { type: 'ref/resource', uri: 'hominem://tasks/{id}' },
+          argument: { name: 'id', value: 'ffffffff' },
+        });
+        expect(filtered.completion.values).toEqual([]);
+      });
+    });
+
+    it('lists prompts by granted scope and renders them with completions', async () => {
+      await withClient(readScopes, async (client) => {
+        const { prompts } = await client.listPrompts();
+        expect(prompts.map((prompt) => prompt.name).sort()).toEqual(
+          ['plan_my_day', 'weekly_review', 'career_update_draft'].sort(),
+        );
+      });
+
+      await withClient('task:read notes:read notes:write', async (client) => {
+        const { prompts } = await client.listPrompts();
+        expect(prompts.map((prompt) => prompt.name).sort()).toEqual([
+          'capture_note',
+          'plan_my_day',
+          'weekly_review',
+        ]);
+
+        const review = await client.getPrompt({
+          name: 'weekly_review',
+          arguments: { period: 'month' },
+        });
+        const first = review.messages[0]?.content;
+        expect(first).toMatchObject({ type: 'text', text: expect.stringContaining('task_list') });
+        expect(JSON.stringify(first)).toContain('month');
+
+        const completion = await client.complete({
+          ref: { type: 'ref/prompt', name: 'plan_my_day' },
+          argument: { name: 'energy', value: 'h' },
+        });
+        expect(completion.completion.values).toEqual(['high']);
+      });
     });
   });
 });

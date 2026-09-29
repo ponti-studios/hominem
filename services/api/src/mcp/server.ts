@@ -15,6 +15,8 @@ import type { CapabilityDefinition } from '../application/capability';
 import type { AuthContext } from '../auth/types';
 import { UnauthorizedError } from '../errors';
 import { confirmationCodec, type ConfirmationState } from './confirmation';
+import { registerPrompts } from './prompts';
+import { registerResources } from './resources';
 import { describeCapability } from './tool-planner';
 import { callTool, listToolsForScopes } from './tool-registry';
 
@@ -149,7 +151,8 @@ function createMcpServer(authInfo?: AuthInfo) {
   const mcpServer = new McpServer(
     { name: 'Hominem MCP', version: '1.0.0' },
     {
-      instructions: 'MCP tools for authenticated Hominem users.',
+      instructions:
+        'MCP tools, resources and prompts for authenticated Hominem users. Resources under hominem:// expose your own profile, memories, collections, tasks and notes.',
       requestState: { verify: confirmationCodec.verify },
     },
   );
@@ -183,6 +186,14 @@ function createMcpServer(authInfo?: AuthInfo) {
       },
       createToolHandler(definition, authInfo),
     );
+  }
+
+  // Resources and prompts read through the same registered tools as tools/call, so they
+  // inherit the same owner scoping, scope checks and result validation.
+  const scope = resolveRequestContext(authInfo);
+  if (scope) {
+    registerResources(mcpServer, scope);
+    registerPrompts(mcpServer, scope);
   }
 
   return mcpServer;
