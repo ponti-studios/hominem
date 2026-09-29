@@ -1208,6 +1208,9 @@ importers:
       bullmq:
         specifier: 'catalog:'
         version: 6.0.8(ioredis@6.0.0(supports-color@8.1.1))(pg@8.23.0)
+      csv-parse:
+        specifier: ^7.0.2
+        version: 7.0.2
       dotenv:
         specifier: 'catalog:'
         version: 17.4.2

@@ -36,6 +36,10 @@
       "types": "./build/notes.d.ts",
       "default": "./src/notes.ts"
     },
+    "./possessions": {
+      "types": "./build/possessions.d.ts",
+      "default": "./src/possessions.ts"
+    },
     "./tasks": {
       "types": "./build/tasks.d.ts",
       "default": "./src/tasks.ts"

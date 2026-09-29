@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import {
   acceptMemberInvite,
+  addCollectionItem,
   collectionDetail,
   createCollection,
   declineMemberInvite,
@@ -20,6 +21,8 @@ import {
 import {
   acceptMemberInviteInputSchema,
   acceptMemberInviteOutputSchema,
+  addCollectionItemInputSchema,
+  addCollectionItemOutputSchema,
   collectionDetailOutputSchema,
   createCollectionInputSchema,
   createCollectionOutputSchema,
@@ -102,6 +105,19 @@ export const collectionsRoutes = new Hono<AppContext>()
     const result = await leaveCollection(c.get('auth')!.userId, { collectionId });
     return c.json(leaveCollectionOutputSchema.parse(result));
   })
+  .post(
+    '/:collectionId/items',
+    zValidator('param', collectionParamSchema),
+    zValidator('json', addCollectionItemInputSchema.omit({ collectionId: true })),
+    async (c) => {
+      const { collectionId } = c.req.valid('param');
+      const result = await addCollectionItem(c.get('auth')!.userId, {
+        ...c.req.valid('json'),
+        collectionId,
+      });
+      return c.json(addCollectionItemOutputSchema.parse(result), 201);
+    },
+  )
   .delete(
     '/:collectionId/items/:entityType/:entityId',
     zValidator('param', itemParamSchema),
