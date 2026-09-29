@@ -2,7 +2,6 @@ import { db } from '@hominem/db/core';
 import { NotFoundError } from '@hominem/db/errors';
 import { NoteRepository } from '@hominem/db/notes';
 import { VectorDocumentRepository } from '@hominem/db/vector';
-import { embeddingQueue } from '@hominem/queues';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
@@ -19,14 +18,6 @@ import { authMiddleware, type AppContext } from '../middleware/auth';
 const MEMORY_KIND = 'memory' as const;
 
 const noteService = new NoteService();
-
-async function enqueueMemoryEmbedding(userId: string, noteId: string) {
-  await embeddingQueue.add(
-    'generate-embedding',
-    { jobId: `note-${noteId}`, userId, entityType: 'note' as const, entityId: noteId },
-    { jobId: `note-${noteId}`, removeOnComplete: true, removeOnFail: false },
-  );
-}
 
 function toMemoryDto(note: {
   id: string;
@@ -81,7 +72,8 @@ export const memoryRoutes = new Hono<AppContext>()
         ...(input.title !== undefined ? { title: input.title } : {}),
         ...(input.content !== undefined ? { content: input.content } : {}),
       });
-      await enqueueMemoryEmbedding(userId, note.id);
+      // assertOwnedMemory just confirmed the row exists; null here means a concurrent delete.
+      if (!note) throw new NotFoundError('Memory', { id });
 
       return c.json(toMemoryDto(note));
     },
