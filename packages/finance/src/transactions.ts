@@ -471,6 +471,7 @@ export async function queryAnalyticsTransactionsByContract(input: {
     postedOn: Date | string | null;
     externalId: string | null;
     merchantName: string | null;
+    currencyCode: string;
     classification: string;
   }>
 > {
@@ -498,6 +499,7 @@ export async function queryAnalyticsTransactionsByContract(input: {
       't.postedOn',
       't.externalId',
       't.merchantName',
+      't.currencyCode',
       sql<string>`coalesce((select min(tg_tag.name) from app.tag_assignments ti_tag join app.tags tg_tag on tg_tag.id = ti_tag.tag_id and tg_tag.owner_userid = ${parsed.userId} where ti_tag.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass and ti_tag.entity_id = t.id), ${sql.lit('Uncategorized')})`.as(
         'classification',
       ),
@@ -545,6 +547,7 @@ export async function queryAnalyticsTransactionsByContract(input: {
     postedOn: row.postedOn,
     externalId: row.externalId,
     merchantName: row.merchantName,
+    currencyCode: row.currencyCode,
     classification: row.classification,
   }));
 }

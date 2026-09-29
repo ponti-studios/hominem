@@ -227,14 +227,15 @@ export const financeAccountsOutputSchema = z.object({
 
 // -- finance_top_merchants --
 
-export const financeTopMerchantsInputSchema = z
-  .object({
-    ...dateRangeFields,
-    accountId: accountIdField,
-    tag: tagField,
-    limit: mcpLimitSchema.default(10).describe('Maximum merchants to return, from 1 to 50.'),
-  })
-  .superRefine(rejectInvertedRange);
+const financeTopMerchantsFieldsSchema = z.object({
+  ...dateRangeFields,
+  accountId: accountIdField,
+  tag: tagField,
+  limit: mcpLimitSchema.default(10).describe('Maximum merchants to return, from 1 to 50.'),
+});
+
+export const financeTopMerchantsInputSchema =
+  financeTopMerchantsFieldsSchema.superRefine(rejectInvertedRange);
 
 export const financeTopMerchantsOutputSchema = z.object({
   merchants: z.array(
@@ -245,18 +246,24 @@ export const financeTopMerchantsOutputSchema = z.object({
     }),
   ),
   count: z.number().int().min(0),
+  currencyCode: z
+    .string()
+    .nullable()
+    .describe('Null when spending spans multiple currencies; see warnings.'),
+  warnings: z.array(z.string()),
 });
 
 // -- finance_tag_breakdown --
 
-export const financeTagBreakdownInputSchema = z
-  .object({
-    ...dateRangeFields,
-    accountId: accountIdField,
-    tag: tagField,
-    limit: mcpLimitSchema.default(5).describe('Maximum tags to return, from 1 to 50.'),
-  })
-  .superRefine(rejectInvertedRange);
+const financeTagBreakdownFieldsSchema = z.object({
+  ...dateRangeFields,
+  accountId: accountIdField,
+  tag: tagField,
+  limit: mcpLimitSchema.default(5).describe('Maximum tags to return, from 1 to 50.'),
+});
+
+export const financeTagBreakdownInputSchema =
+  financeTagBreakdownFieldsSchema.superRefine(rejectInvertedRange);
 
 export const financeTagBreakdownOutputSchema = z.object({
   breakdown: z.array(
@@ -269,6 +276,11 @@ export const financeTagBreakdownOutputSchema = z.object({
   ),
   totalSpendingCents: z.number().int(),
   averagePerDayCents: z.number().int(),
+  currencyCode: z
+    .string()
+    .nullable()
+    .describe('Null when spending spans multiple currencies; see warnings.'),
+  warnings: z.array(z.string()),
 });
 
 // -- shared REST query variants --
@@ -276,10 +288,15 @@ export const financeTagBreakdownOutputSchema = z.object({
 // The REST tag-breakdown and top-merchants routes take these same filters as query-string
 // params: `account` (not `accountId`) and a stringly-typed `limit`. Normalize those into the
 // MCP tools' shape and validate with the same schema objects, so the two adapters can't drift
-// apart on what counts as a valid date, account id or limit.
+// apart on what counts as a valid date or account id. `limit` is the one field REST and MCP
+// genuinely need to differ on: MCP caps it at 50 to protect an LLM's context budget, but REST
+// pages (e.g. the finance app's tag-breakdown view) reasonably ask for up to 100 rows to render
+// a full table — so REST gets its own, higher-ceiling limit schema instead of `mcpLimitSchema`.
 
 const REST_ACCOUNT_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const REST_LIMIT_MAX = 100;
 
 function normalizeReportQuery(raw: unknown): Record<string, unknown> {
   const query = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
@@ -294,14 +311,20 @@ function normalizeReportQuery(raw: unknown): Record<string, unknown> {
   };
 }
 
+const restLimitSchema = z.number().int().min(1).max(REST_LIMIT_MAX);
+
 export const financeTopMerchantsQuerySchema = z.preprocess(
   normalizeReportQuery,
-  financeTopMerchantsInputSchema,
+  financeTopMerchantsFieldsSchema
+    .extend({ limit: restLimitSchema.default(10) })
+    .superRefine(rejectInvertedRange),
 );
 
 export const financeTagBreakdownQuerySchema = z.preprocess(
   normalizeReportQuery,
-  financeTagBreakdownInputSchema,
+  financeTagBreakdownFieldsSchema
+    .extend({ limit: restLimitSchema.default(5) })
+    .superRefine(rejectInvertedRange),
 );
 
 // -- finance_monthly_stats --
@@ -326,6 +349,11 @@ export const financeMonthlyStatsOutputSchema = z.object({
   tagSpending: z.array(z.object({ name: z.string(), amountCents: z.number().int() })),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  currencyCode: z
+    .string()
+    .nullable()
+    .describe('Null when spending spans multiple currencies; see warnings.'),
+  warnings: z.array(z.string()),
 });
 
 // -- finance_transaction_search --
@@ -354,6 +382,7 @@ export const financeTransactionSearchOutputSchema = z.object({
       description: z.string().nullable(),
       merchantName: z.string().nullable(),
       amountCents: z.number().int(),
+      currencyCode: z.string(),
       pending: z.boolean(),
       excluded: z.boolean(),
     }),
@@ -390,6 +419,14 @@ export const financeRunwayInputSchema = z.object({
 export const financeRunwayOutputSchema = z.object({
   asOfDate: z.string(),
   liquidAccounts: z.array(z.object({ accountName: z.string(), balanceCents: z.number().int() })),
+  currencyCode: z
+    .string()
+    .nullable()
+    .describe(
+      'Currency of startingCashCents and the weekly projection. When liquid accounts span ' +
+        'multiple currencies, only the dominant-currency accounts are included; see warnings.',
+    ),
+  warnings: z.array(z.string()),
   startingCashCents: z.number().int(),
   weeklyRecurringOutflowCents: z.number().int(),
   recurringLookbackMonths: z.number(),

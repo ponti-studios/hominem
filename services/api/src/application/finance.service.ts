@@ -4,6 +4,7 @@ import {
   getMonthlyStatsByContract,
   getTopMerchantsByContract,
   queryAnalyticsTransactionsByContract,
+  summarizeCurrencies,
 } from '@hominem/finance-services';
 
 // queryAnalyticsTransactionsByContract's own cap; also the ceiling documented in REPORT_CAVEAT.
@@ -49,6 +50,7 @@ export async function getTagBreakdownReport(userId: string, filter: FinanceRepor
   });
 
   const breakdownByLabel = new Map<string, { amount: number; transactionCount: number }>();
+  const spendingCurrencies: string[] = [];
   let minPostedOn: Date | null = null;
   let maxPostedOn: Date | null = null;
   for (const tx of transactions) {
@@ -58,6 +60,7 @@ export async function getTagBreakdownReport(userId: string, filter: FinanceRepor
       if (!maxPostedOn || postedOn > maxPostedOn) maxPostedOn = postedOn;
     }
     if (tx.amount >= 0) continue;
+    spendingCurrencies.push(tx.currencyCode);
     const current = breakdownByLabel.get(tx.classification) ?? { amount: 0, transactionCount: 0 };
     current.amount += Math.abs(tx.amount);
     current.transactionCount += 1;
@@ -83,6 +86,7 @@ export async function getTagBreakdownReport(userId: string, filter: FinanceRepor
       : 1;
 
   const limit = Math.max(1, Math.floor(filter.limit ?? 5));
+  const { currencyCode, warnings } = summarizeCurrencies(spendingCurrencies);
   return {
     breakdown: allBreakdown.slice(0, limit).map((item) => ({
       tag: item.tag,
@@ -92,16 +96,18 @@ export async function getTagBreakdownReport(userId: string, filter: FinanceRepor
     })),
     totalSpending,
     averagePerDay: totalSpending / daySpan,
+    currencyCode,
+    warnings,
   };
 }
 
 export async function getTopMerchantsReport(userId: string, filter: FinanceReportFilter) {
-  const merchants = await getTopMerchantsByContract({
+  const { merchants, currencyCode, warnings } = await getTopMerchantsByContract({
     userId,
     ...toContractFilter(filter),
     limit: filter.limit ? Math.max(1, Math.floor(filter.limit)) : 10,
   });
-  return { merchants };
+  return { merchants, currencyCode, warnings };
 }
 
 export async function getMonthlyStatsReport(userId: string, month?: string) {
@@ -129,6 +135,8 @@ export async function getMonthlyStatsReport(userId: string, month?: string) {
     tagSpending: monthly.tagSpending,
     ...(monthly.startDate ? { startDate: monthly.startDate } : {}),
     ...(monthly.endDate ? { endDate: monthly.endDate } : {}),
+    currencyCode: monthly.currencyCode,
+    warnings: monthly.warnings,
   };
 }
 
@@ -144,45 +152,10 @@ export interface TransactionSearchInput {
   offset: number;
 }
 
-async function getTaggedTransactionIds(
-  userId: string,
-  tagIds: string[],
-  tagNames: string[],
-): Promise<string[]> {
-  let query = db
-    .selectFrom('app.tagAssignments')
-    .innerJoin('app.tags', 'app.tagAssignments.tagId', 'app.tags.id')
-    .select('app.tagAssignments.entityId')
-    .where(
-      'app.tagAssignments.entityTable',
-      '=',
-      sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
-    )
-    .where('app.tags.ownerUserid', '=', userId);
-
-  if (tagIds.length > 0 && tagNames.length > 0) {
-    query = query.where((eb) =>
-      eb.or([eb('app.tagAssignments.tagId', 'in', tagIds), eb('app.tags.name', 'in', tagNames)]),
-    );
-  } else if (tagIds.length > 0) {
-    query = query.where('app.tagAssignments.tagId', 'in', tagIds);
-  } else {
-    query = query.where('app.tags.name', 'in', tagNames);
-  }
-
-  const rows = await query.execute();
-  return [...new Set(rows.map((r) => r.entityId))];
-}
-
 export async function searchTransactions(userId: string, input: TransactionSearchInput) {
   const accountIds = input.accountIds ?? [];
   const tagIds = input.tagIds ?? [];
   const tagNames = input.tagNames ?? [];
-
-  let taggedIds: string[] | null = null;
-  if (tagIds.length > 0 || tagNames.length > 0) {
-    taggedIds = await getTaggedTransactionIds(userId, tagIds, tagNames);
-  }
 
   const filterableBase = () =>
     db.selectFrom('app.financeTransactions').where('userId', '=', userId);
@@ -198,19 +171,34 @@ export async function searchTransactions(userId: string, input: TransactionSearc
         eb.or([eb('description', 'ilike', term), eb('merchantName', 'ilike', term)]),
       );
     }
-    if (taggedIds) filtered = filtered.where('id', 'in', taggedIds);
+    // A correlated EXISTS subquery (rather than materializing every matching transaction id
+    // in memory and passing it through a WHERE id IN (...) clause) so tag filtering stays a
+    // single indexed lookup per row regardless of how many transactions carry the tag.
+    if (tagIds.length > 0 || tagNames.length > 0) {
+      filtered = filtered.where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom('app.tagAssignments')
+            .innerJoin('app.tags', 'app.tags.id', 'app.tagAssignments.tagId')
+            .select('app.tagAssignments.entityId')
+            .where(
+              'app.tagAssignments.entityTable',
+              '=',
+              sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
+            )
+            .where('app.tagAssignments.entityId', '=', eb.ref('app.financeTransactions.id'))
+            .where('app.tags.ownerUserid', '=', userId)
+            .where((eb2) => {
+              const conditions = [];
+              if (tagIds.length > 0) conditions.push(eb2('app.tagAssignments.tagId', 'in', tagIds));
+              if (tagNames.length > 0) conditions.push(eb2('app.tags.name', 'in', tagNames));
+              return eb2.or(conditions);
+            }),
+        ),
+      );
+    }
     return filtered;
   };
-
-  const totalUserCountQuery = db
-    .selectFrom('app.financeTransactions')
-    .select(db.fn.countAll<number>().as('count'))
-    .where('userId', '=', userId)
-    .executeTakeFirst();
-
-  if (taggedIds && taggedIds.length === 0) {
-    return { data: [], filteredCount: 0, totalUserCount: 0 };
-  }
 
   const [rows, filteredRow, totalRow] = await Promise.all([
     applyFilters(filterableBase())
@@ -221,7 +209,11 @@ export async function searchTransactions(userId: string, input: TransactionSearc
       .offset(input.offset)
       .execute(),
     applyFilters(filterableBase()).select(db.fn.countAll<number>().as('count')).executeTakeFirst(),
-    totalUserCountQuery,
+    db
+      .selectFrom('app.financeTransactions')
+      .select(db.fn.countAll<number>().as('count'))
+      .where('userId', '=', userId)
+      .executeTakeFirst(),
   ]);
 
   return {
@@ -233,6 +225,7 @@ export async function searchTransactions(userId: string, input: TransactionSearc
       description: t.description ?? null,
       postedOn: t.postedOn ? String(t.postedOn) : '',
       merchantName: t.merchantName ?? null,
+      currencyCode: t.currencyCode,
       pending: t.pending,
       excluded: t.excluded,
     })),

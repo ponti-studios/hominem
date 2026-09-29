@@ -1,6 +1,6 @@
 import {
-  calculateBudgetBreakdown,
   computeLedgerRunway,
+  countAccounts,
   getFinanceNetWorth,
   getFinanceRecentTransactions,
   getFinanceSpendingByCategory,
@@ -126,9 +126,10 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    const accounts = await listAccounts(ownerUserId);
-    const visible = accounts.filter((a) => input.includeClosed || a.lifecycleStatus !== 'closed');
-    const limited = visible.slice(0, MAX_ACCOUNTS_RESULT);
+    const [limited, totalCount] = await Promise.all([
+      listAccounts(ownerUserId, { includeClosed: input.includeClosed, limit: MAX_ACCOUNTS_RESULT }),
+      countAccounts(ownerUserId, { includeClosed: input.includeClosed }),
+    ]);
     return {
       accounts: limited.map((a) => ({
         id: a.id,
@@ -140,7 +141,7 @@ registerTool(
         balanceCents: toCents(a.currentBalance),
       })),
       count: limited.length,
-      totalCount: visible.length,
+      totalCount,
     };
   },
 );
@@ -162,7 +163,7 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    const { merchants } = await getTopMerchantsReport(ownerUserId, {
+    const { merchants, currencyCode, warnings } = await getTopMerchantsReport(ownerUserId, {
       from: input.from,
       to: input.to,
       accountId: input.accountId,
@@ -176,6 +177,8 @@ registerTool(
         transactionCount: m.transactionCount,
       })),
       count: merchants.length,
+      currencyCode,
+      warnings,
     };
   },
 );
@@ -214,6 +217,8 @@ registerTool(
       })),
       totalSpendingCents: toCents(report.totalSpending),
       averagePerDayCents: toCents(report.averagePerDay),
+      currencyCode: report.currencyCode,
+      warnings: report.warnings,
     };
   },
 );
@@ -251,6 +256,8 @@ registerTool(
       })),
       ...(stats.startDate ? { startDate: stats.startDate } : {}),
       ...(stats.endDate ? { endDate: stats.endDate } : {}),
+      currencyCode: stats.currencyCode,
+      warnings: stats.warnings,
     };
   },
 );
@@ -295,6 +302,7 @@ registerTool(
         description: t.description,
         merchantName: t.merchantName,
         amountCents: toCents(t.amount),
+        currencyCode: t.currencyCode,
         pending: t.pending,
         excluded: t.excluded,
       })),
@@ -340,6 +348,8 @@ registerTool(
         accountName: a.accountName,
         balanceCents: toCents(a.balance),
       })),
+      currencyCode: runway.currencyCode,
+      warnings: runway.warnings,
       startingCashCents: toCents(runway.startingCash),
       weeklyRecurringOutflowCents: toCents(runway.weeklyRecurringOutflow),
       recurringLookbackMonths: runway.recurringLookbackMonths,
@@ -377,17 +387,19 @@ registerTool(
     },
   },
   async (_ownerUserId, input) => {
-    const breakdown = calculateBudgetBreakdown({
-      monthlyIncome: input.monthlyIncomeCents / 100,
-      ...(input.savingsTargetCents !== undefined
-        ? { savingsTarget: input.savingsTargetCents / 100 }
-        : {}),
-    });
-    return {
-      needsCents: toCents(breakdown.needs),
-      wantsCents: toCents(breakdown.wants),
-      savingsCents: toCents(breakdown.savings),
-      unallocatedCents: toCents(breakdown.unallocated),
-    };
+    // Computed directly in integer cents (rather than converting to dollars, splitting with
+    // calculateBudgetBreakdown, and rounding each of the four shares back to cents
+    // independently) so the four outputs always sum to exactly monthlyIncomeCents. Rounding
+    // each share separately can otherwise allocate more cents than the income actually has —
+    // e.g. 3 cents of income rounding to 2+1+1+0 = 4.
+    const incomeCents = input.monthlyIncomeCents;
+    const needsCents = Math.round(incomeCents * 0.5);
+    const wantsCents = Math.round(incomeCents * 0.3);
+    const capCents = Math.round(incomeCents * 0.2);
+    const remainderCents = incomeCents - needsCents - wantsCents;
+    const requestedSavingsCents = input.savingsTargetCents ?? capCents;
+    const savingsCents = Math.max(0, Math.min(requestedSavingsCents, capCents, remainderCents));
+    const unallocatedCents = remainderCents - savingsCents;
+    return { needsCents, wantsCents, savingsCents, unallocatedCents };
   },
 );

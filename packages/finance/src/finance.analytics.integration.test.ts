@@ -91,16 +91,18 @@ describeIntegration('finance analytics integration', () => {
       { tag: 'food', amount: 45, transactionCount: 1 },
     ]);
 
-    const merchants = await getTopMerchantsByContract({
+    const merchantsResult = await getTopMerchantsByContract({
       userId: ownerId,
       dateFrom: '2026-02-01',
       dateTo: '2026-02-28',
       limit: 2,
     });
-    expect(merchants).toEqual([
+    expect(merchantsResult.merchants).toEqual([
       { name: 'Rail Co', totalSpent: 70, transactionCount: 1 },
       { name: 'Cafe One', totalSpent: 45, transactionCount: 1 },
     ]);
+    expect(merchantsResult.currencyCode).toBe('USD');
+    expect(merchantsResult.warnings).toEqual([]);
   });
 
   it('returns monthly stats and time series from shared analytics dataset', async () => {
