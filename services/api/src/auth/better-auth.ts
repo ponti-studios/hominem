@@ -16,24 +16,7 @@ import { API_BRAND } from '../brand';
 import { env } from '../env';
 import type { ApiEnv } from '../env.schema';
 import { MCP_SCOPES } from '../scopes';
-
-export function getTrustedOrigins(inputEnv = env) {
-  const origins = new Set([
-    inputEnv.API_URL,
-    inputEnv.CAREER_URL,
-    inputEnv.FINANCE_URL,
-    inputEnv.WEB_URL,
-    inputEnv.LABS_URL,
-    ...(inputEnv.LABS_APEX_URL ? [inputEnv.LABS_APEX_URL] : []),
-    inputEnv.WHAT_URL,
-    'hakumi://',
-    'hakumi-dev://',
-    'hakumi-e2e://',
-    'hakumi-preview://',
-    'exp://',
-  ]);
-  return [...origins];
-}
+import { getTrustedOrigins } from './trusted-origins';
 
 function getAdvancedOptions(inputEnv: ApiEnv) {
   const cookieDomain = inputEnv.AUTH_COOKIE_DOMAIN.trim();
