@@ -12,6 +12,10 @@ describe('getReasoningConfig', () => {
     expect(getReasoningConfig('openai/gpt-4o-mini')).toEqual({ effort: 'none' });
   });
 
+  it('uses minimal reasoning for GPT-5 mini', () => {
+    expect(getReasoningConfig('openai/gpt-5-mini')).toEqual({ effort: 'minimal' });
+  });
+
   it('caps Muse generations to a provider-compatible completion budget', () => {
     expect(getMaxTokens('meta/muse-spark-1.3-contributor', 'long')).toBe(1600);
     expect(getMaxTokens('openai/gpt-4o-mini', 'long')).toBe(6000);

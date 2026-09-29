@@ -1,4 +1,4 @@
-import { pool } from '@hominem/db/core';
+import { db, pool } from '@hominem/db/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import './collections';
@@ -275,6 +275,43 @@ describe('decline_collection_invite', () => {
       ),
     ).toEqual({ removed: false });
     expect(await membersOf(created.id)).toHaveLength(1);
+  });
+
+  it('previews an older invite even when it falls outside the first 50', async () => {
+    const oldInvite = await createCollection('Older invite');
+    await inviteMember(oldInvite.id, memberId, 'viewer');
+
+    const newerCollections = await db
+      .insertInto('app.collections')
+      .values(
+        Array.from({ length: 51 }, (_, index) => ({
+          ownerUserid: ownerId,
+          name: `Newer invite ${index}`,
+          createdat: new Date(Date.now() + index * 1000),
+          updatedat: new Date(Date.now() + index * 1000),
+        })),
+      )
+      .returning('id')
+      .execute();
+    await db
+      .insertInto('app.collectionMembers')
+      .values(
+        newerCollections.map((collection, index) => ({
+          ownerUserid: ownerId,
+          collectionId: collection.id,
+          userId: memberId,
+          personId: null,
+          role: 'viewer',
+          invitedAt: new Date(Date.now() + index * 1000 + 10_000),
+        })),
+      )
+      .execute();
+
+    const tool = listTools().find((candidate) => candidate.name === 'decline_collection_invite');
+    expect(await tool?.preview?.(memberId, { collectionId: oldInvite.id })).toEqual({
+      collection: 'Older invite',
+      role: 'viewer',
+    });
   });
 
   it('cannot decline an invite that has already been accepted', async () => {

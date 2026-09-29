@@ -13,6 +13,7 @@ vi.mock('@hominem/ai', async (importOriginal) => ({
 }));
 
 import './notes';
+import { NoteService } from '../../application/notes.service';
 import { callTool, type McpToolResult } from '../tool-registry';
 
 const userId = 'a5000001-0000-4000-8000-000000000001';
@@ -87,6 +88,25 @@ describe('note_create / note_get / note_list', () => {
       await callTool(userId, 'note_list', { query: 'lisbon' }),
     );
     expect(listed.notes.map((note) => note.title)).toEqual(['Trip']);
+  });
+
+  it('searches only note-kind rows and returns null for a missing owned note', async () => {
+    const note = await createNote(userId, { title: 'Shared topic', content: 'shared phrase' });
+    await db
+      .insertInto('app.notes')
+      .values({
+        ownerUserid: userId,
+        kind: 'memory',
+        title: 'Memory topic',
+        content: 'shared phrase from memory',
+        excerpt: 'shared phrase from memory',
+      })
+      .execute();
+
+    const service = new NoteService();
+    const result = await service.searchNotes(userId, { query: 'shared phrase' });
+    expect(result.notes.map((resultNote) => resultNote.id)).toEqual([note.id]);
+    expect(await service.getOwnedNote(userId, '99999999-9999-4999-8999-999999999999')).toBeNull();
   });
 });
 

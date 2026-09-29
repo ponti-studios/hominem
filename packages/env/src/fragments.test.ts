@@ -17,6 +17,7 @@ describe('core environment fragments', () => {
     expect(Object.keys(storageSchema.shape)).toContain('R2_ENDPOINT');
     expect(runtimeSchema.parse({}).NODE_ENV).toBe('development');
     expect(redisSchema.parse({}).REDIS_URL).toBe('redis://localhost:6379');
+    expect(aiSchema.parse({}).CHAT_MODEL).toBe('openai/gpt-5-mini');
     expect(runtimeSchema.parse({ ENV: 'scripted' }).ENV).toBe('scripted');
   });
 });

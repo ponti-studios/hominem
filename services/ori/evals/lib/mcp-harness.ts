@@ -269,7 +269,7 @@ const mcpHarness: AgentHarness = defineHarness({
   name: 'hominem-mcp',
   init(registrar) {
     registrar.registerPrompt(async function* (options: HarnessInvokeOptions) {
-      const model = options.model ?? process.env.ORI_TARGET_MODEL ?? 'openai/gpt-4o-mini';
+      const model = options.model ?? process.env.ORI_TARGET_MODEL ?? 'openai/gpt-5-mini';
       const routerModel = process.env.ORI_MCP_ROUTER_MODEL?.trim() || model;
       const apiKey = options.env?.OPENROUTER_API_KEY ?? process.env.OPENROUTER_API_KEY;
       if (!apiKey) throw new Error('OPENROUTER_API_KEY is required for MCP evaluation');

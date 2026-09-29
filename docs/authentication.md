@@ -113,7 +113,9 @@ verification; the incoming request's own origin is additionally trusted as a
 resume target. First-party web apps do not host duplicate OTP screens or
 maintain app-owned auth state — apps must not add custom tokens, localStorage
 auth, or duplicate OTP state. The hosted login and the forwarded cookie are
-the only credential surface.
+the only credential surface. The API's `NEWSBOY_URL` setting supplies the
+Newsboy return origin (`https://newsboy.ponti.io` in production and
+`https://newsboy.lvh.me` locally).
 
 Redirect targets the browser follows (login URL, resume URLs, sign-out next)
 are built from the host the request actually reached, with the scheme taken

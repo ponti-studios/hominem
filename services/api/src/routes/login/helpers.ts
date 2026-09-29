@@ -4,7 +4,7 @@ import {
 } from '@ponti-studios/auth/shared/redirect-policy';
 import { z } from 'zod';
 
-import { getTrustedOrigins } from '../../auth/better-auth';
+import { getTrustedOrigins } from '../../auth/trusted-origins';
 import { env } from '../../env';
 import { MCP_SCOPES } from '../../scopes';
 

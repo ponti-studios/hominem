@@ -1,6 +1,6 @@
 ---
 name: hominem-auth-e2e
-description: Authenticate as a disposable test account against the dev Better Auth email-OTP flow (curl or browser), for any feature's end-to-end verification. Use whenever an e2e test needs a logged-in session — signing up a test user, checking whoami, or logging the browser in/out — regardless of which feature is actually under test.
+description: Authenticate as the stable test@lvh.me account or an isolated synthetic user against the local Better Auth email-OTP flow (curl or browser). Use whenever an end-to-end test needs a logged-in session.
 ---
 
 Shared auth plumbing for e2e verification in this repo. Every
@@ -35,12 +35,14 @@ instead (`lvh.me`, not `.localhost` — see the `hominem-development` skill
 for why; the proxy itself runs on the default HTTPS port 443, so no port
 suffix is needed), and `lib.sh`'s curl helpers need
 `HOMINEM_API_URL=https://api.lvh.me` set to reach it. Check which is
-actually running before picking a URL.
+actually running before picking a URL. The auth helper refuses API URLs other
+than local loopback or `https://api.lvh.me`, so it cannot send the stable test
+identity to a remote or production service.
 
 ## Default to the stable test user
 
 For any test that only needs **one** identity, use the stable default
-account — `test@hominem.local` — instead of minting a fresh disposable
+account — `test@lvh.me` — instead of minting a fresh disposable
 one. It signs in the same way every time (`hominem_signin_default` /
 `driver.sh signin-default`), persists across sessions, and is exempt
 from `hominem_delete_user` (it can never be deleted through this
@@ -51,13 +53,13 @@ pair, just sign in and go.
 Only create a disposable `@test.hominem.dev` account when a test
 genuinely needs a **second, distinct** identity — e.g. an owner and an
 invitee who must not be the same person, like a collection-invite test's
-fast path. In that shape, `test@hominem.local` is naturally the owner
+fast path. In that shape, `test@lvh.me` is naturally the owner
 and a fresh `*-e2e@test.hominem.dev` account is the invitee.
 
 ## Safety rail (read this before calling anything)
 
 Every function/command here refuses any email that isn't either exactly
-`test@hominem.local` or ending in `@test.hominem.dev`. This is not a
+`test@lvh.me` or ending in `@test.hominem.dev`. This is not a
 suggestion to relax if it's inconvenient — a past session deleted a real
 user's data by trusting a row it hadn't verified it created itself. The
 rail exists so that mistake can't happen through these scripts, full
@@ -67,7 +69,7 @@ stop:
   email to "act as them" from a script — the real logged-in user always
   acts through the browser, because that's the only place their actual
   session lives.
-- `hominem_delete_user` refuses `test@hominem.local` outright — that
+- `hominem_delete_user` refuses `test@lvh.me` outright — that
   account is meant to persist across sessions. "Cleanup" for it means
   deleting the *data it created this run* (a feature driver's job), never the
   account.
@@ -80,7 +82,7 @@ stop:
 ```bash
 source "$(dirname "${BASH_SOURCE[0]}")/../hominem-auth-e2e/lib.sh"
 
-hominem_signin_default                                  # -> prints userId for test@hominem.local
+hominem_signin_default                                  # -> prints userId for test@lvh.me
 jar="$(hominem_cookiejar_for "$HOMINEM_STABLE_TEST_USER")"
 curl -sS -b "$jar" "$HOMINEM_API_URL/api/collections/invites"    # now authenticated
 
@@ -114,10 +116,10 @@ that returns them, so there is nothing to misconfigure into a leak.
 ```bash
 D=.agents/skills/hominem-auth-e2e/driver.sh
 $D signin-default
-$D whoami test@hominem.local
+$D whoami test@lvh.me
 
 # read the latest captured OTP for an email (empty when none captured yet):
-$D otp test@hominem.local
+$D otp test@lvh.me
 
 # second identity, only when needed:
 $D signup owner-e2e@test.hominem.dev

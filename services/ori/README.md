@@ -28,7 +28,7 @@ pnpm --filter @hominem/ori eval:all
 ```
 
 Set `ORI_TARGET_MODEL` to compare another target and `ORI_JUDGE_MODEL` to
-override the pinned judge. They default to `openai/gpt-4o-mini` and the low-cost
+override the pinned judge. They default to `openai/gpt-5-mini` and the low-cost
 GPT-OSS judge `openai/gpt-oss-20b`, respectively.
 
 Run the comparison through OpenRouter:

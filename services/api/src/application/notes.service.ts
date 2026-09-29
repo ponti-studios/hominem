@@ -45,9 +45,13 @@ const MAX_SEMANTIC_SEARCH_FETCH = 200;
 export class NoteService {
   /** A note owned by the user, or null if it doesn't exist, isn't theirs, or isn't kind 'note'. */
   async getOwnedNote(userId: string, noteId: string): Promise<NoteRecord | null> {
-    const row = await NoteRepository.getOwned(db, noteId, userId);
-    if (!row || row.kind !== NOTE_KIND) return null;
-    return NoteRepository.load(db, noteId, userId);
+    try {
+      const note = await NoteRepository.load(db, noteId, userId);
+      return note.kind === NOTE_KIND ? note : null;
+    } catch (error) {
+      if (error instanceof NotFoundError) return null;
+      throw error;
+    }
   }
 
   async listNotes(userId: string, input: { query?: string; limit: number }): Promise<NoteRecord[]> {
@@ -137,18 +141,18 @@ export class NoteService {
         limit: fetchLimit,
       });
 
-      results = [];
-      for (const match of matches) {
-        if (results.length >= input.limit) break;
-        const row = await NoteRepository.getOwned(db, match.entityId, userId);
-        if (!row || row.kind !== NOTE_KIND) continue;
-        results.push({
-          id: row.id,
-          title: row.title,
-          excerpt: row.excerpt,
-          similarity: match.similarity,
-        });
-      }
+      const summaries = await NoteRepository.getOwnedSummariesByIds(db, {
+        userId,
+        kind: NOTE_KIND,
+        noteIds: matches.map((match) => match.entityId),
+      });
+      const summariesById = new Map(summaries.map((summary) => [summary.id, summary]));
+      results = matches
+        .flatMap((match) => {
+          const row = summariesById.get(match.entityId);
+          return row ? [{ ...row, similarity: match.similarity }] : [];
+        })
+        .slice(0, input.limit);
 
       const exhausted = matches.length < fetchLimit || fetchLimit >= MAX_SEMANTIC_SEARCH_FETCH;
       if (results.length >= input.limit || exhausted) break;
@@ -252,6 +256,7 @@ export class NoteService {
     return NoteRepository.search(db, {
       userId,
       query: input.query,
+      kind: NOTE_KIND,
       limit: input.limit ?? 10,
       ...(input.cursor ? { cursor: input.cursor } : {}),
     });

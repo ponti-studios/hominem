@@ -6,17 +6,21 @@ const mocks = vi.hoisted(() => ({
   handler: vi.fn(),
 }));
 
-vi.mock('../auth/better-auth', () => ({
-  betterAuthServer: {
-    api: { getSession: mocks.getSession },
-    handler: mocks.handler,
-  },
+vi.mock('../auth/trusted-origins', () => ({
   getTrustedOrigins: () => [
     'http://localhost:4040',
     'https://career.ponti.io',
     'https://finance.ponti.io',
     'https://labs.ponti.io',
+    'https://newsboy.lvh.me',
   ],
+}));
+
+vi.mock('../auth/better-auth', () => ({
+  betterAuthServer: {
+    api: { getSession: mocks.getSession },
+    handler: mocks.handler,
+  },
 }));
 
 vi.mock('../env', () => ({
@@ -72,6 +76,15 @@ describe('API login route', () => {
     expect(response.status).toBe(200);
     const html = await response.text();
     expect(html).toContain('<div id="root">');
+    expect(html).toContain('/src/routes/login/app/entries/login.tsx');
+  });
+
+  it('renders the OTP form for a Newsboy return URL', async () => {
+    const next = encodeURIComponent('https://newsboy.lvh.me/health');
+    const response = await createApp().request(`http://localhost/login?next=${next}`);
+
+    expect(response.status).toBe(200);
+    const html = await response.text();
     expect(html).toContain('/src/routes/login/app/entries/login.tsx');
   });
 
