@@ -216,19 +216,31 @@ export async function updatePerson({
             .execute();
         }
       } else if (primary) {
-        await trx
-          .updateTable('app.personContactMethods')
-          .set({ value: email.trim(), isPrimary: true })
-          .where('id', '=', primary.id)
+        const matching = await trx
+          .selectFrom('app.personContactMethods')
+          .select('id')
+          .where('personId', '=', personId)
           .where('ownerUserid', '=', ownerUserId)
-          .execute();
+          .where('kind', '=', 'email')
+          .where('value', '=', email.trim())
+          .executeTakeFirst();
+
+        // Demote before promoting to preserve the one-primary-email constraint.
         await trx
           .updateTable('app.personContactMethods')
           .set({ isPrimary: false })
           .where('personId', '=', personId)
           .where('ownerUserid', '=', ownerUserId)
           .where('kind', '=', 'email')
-          .where('id', '!=', primary.id)
+          .execute();
+        await trx
+          .updateTable('app.personContactMethods')
+          .set({
+            ...(matching ? {} : { value: email.trim() }),
+            isPrimary: true,
+          })
+          .where('id', '=', matching?.id ?? primary.id)
+          .where('ownerUserid', '=', ownerUserId)
           .execute();
       } else {
         await trx

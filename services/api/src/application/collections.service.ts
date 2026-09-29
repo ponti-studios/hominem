@@ -526,6 +526,21 @@ export async function listPendingInvites(ownerUserId: string, input: ListPending
   return { invites: limited, count: limited.length };
 }
 
+export async function getPendingInvite(ownerUserId: string, collectionId: string) {
+  const row = await db
+    .selectFrom('app.collectionMembers')
+    .select(['collectionId', 'role', 'invitedAt'])
+    .where('collectionId', '=', collectionId)
+    .where('userId', '=', ownerUserId)
+    .where('acceptedAt', 'is', null)
+    .executeTakeFirst();
+  if (!row) return null;
+  const collection = await loadCollectionSummary(row.collectionId);
+  return collection
+    ? { collection, role: toMemberRole(row.role), invitedAt: toIso(row.invitedAt)! }
+    : null;
+}
+
 export async function collectionDetail(
   ownerUserId: string,
   collectionId: string,

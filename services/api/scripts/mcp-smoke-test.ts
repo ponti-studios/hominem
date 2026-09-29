@@ -19,6 +19,7 @@ import { execFile } from 'node:child_process';
  *   2. Protected-resource and authorization-server metadata resolve
  *   3. Auth (personal token, or dynamic client registration + PKCE authorization code flow)
  *   4. MCP initialize -> notifications/initialized -> tools/list
+ *   5. tools/call on a read-only tool, then resources/list and prompts/list
  */
 import { createHash, randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
@@ -42,7 +43,15 @@ const { values: args } = parseArgs({
 const mcpUrl = new URL(args.url ?? process.env.MCP_URL ?? 'https://api.ponti.io/api/mcp');
 const token = args.token ?? process.env.MCP_TOKEN;
 const authTimeoutMs = Number(args.timeout) * 1000;
-const PROTOCOL_VERSION = '2025-06-18';
+const PROTOCOL_VERSION = '2026-07-28';
+
+// Read tools that need no arguments, in order of preference.
+const PREFERRED_READ_TOOLS = [
+  'finance_accounts',
+  'finance_net_worth',
+  'career_profile',
+  'list_memories',
+];
 
 type Json = Record<string, unknown>;
 
@@ -345,6 +354,55 @@ async function main() {
     fail('tools/list', `no tools returned: ${JSON.stringify(listBody).slice(0, 300)}`);
   pass('tools/list', `${tools.length} tools`);
   for (const tool of tools) console.log(`          - ${tool.name}`);
+
+  let nextId = 3;
+  async function call(step: string, method: string, params?: Json): Promise<Json> {
+    const response = await rpc(accessToken, sessionId, {
+      jsonrpc: '2.0',
+      id: nextId++,
+      method,
+      ...(params ? { params } : {}),
+    });
+    if (!response.ok)
+      fail(step, `HTTP ${response.status} ${(await response.text()).slice(0, 300)}`);
+    const body = await readMcpBody(response);
+    if (body.error) fail(step, `JSON-RPC error ${JSON.stringify(body.error).slice(0, 300)}`);
+    return (body.result as Json | undefined) ?? {};
+  }
+
+  const toolNames = new Set(tools.map((tool) => tool.name));
+  const readTool = PREFERRED_READ_TOOLS.find((name) => toolNames.has(name));
+  if (readTool) {
+    const result = await call(`tools/call ${readTool}`, 'tools/call', {
+      name: readTool,
+      arguments: {},
+    });
+    if (result.isError) {
+      fail(
+        `tools/call ${readTool}`,
+        `tool returned isError: ${JSON.stringify(result.content).slice(0, 300)}`,
+      );
+    }
+    if (!result.structuredContent) {
+      fail(`tools/call ${readTool}`, 'result has no structuredContent');
+    }
+    pass(
+      `tools/call ${readTool}`,
+      `keys: ${Object.keys(result.structuredContent as Json).join(', ')}`,
+    );
+  } else {
+    console.log('  skip  tools/call - none of the preferred read tools are granted to this token');
+  }
+
+  const resources = await call('resources/list', 'resources/list');
+  const resourceList = (resources.resources as Array<{ uri: string }> | undefined) ?? [];
+  pass('resources/list', `${resourceList.length} resources`);
+  for (const resource of resourceList.slice(0, 5)) console.log(`          - ${resource.uri}`);
+
+  const prompts = await call('prompts/list', 'prompts/list');
+  const promptList = (prompts.prompts as Array<{ name: string }> | undefined) ?? [];
+  pass('prompts/list', `${promptList.length} prompts`);
+  for (const prompt of promptList) console.log(`          - ${prompt.name}`);
 
   console.log(`\nmcp smoke test passed against ${mcpUrl.href}`);
 }

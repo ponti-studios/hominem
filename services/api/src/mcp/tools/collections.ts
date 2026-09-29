@@ -8,6 +8,7 @@ import {
   createCollection,
   declineMemberInvite,
   deleteCollection,
+  getPendingInvite,
   inviteMember,
   leaveCollection,
   listCollections,
@@ -471,8 +472,7 @@ registerTool(
     preview: async (ownerUserId, input) => {
       const parsed = acceptMemberInviteInputSchema.safeParse(input);
       if (!parsed.success) return null;
-      const { invites } = await listPendingInvites(ownerUserId, { limit: 50 });
-      const invite = invites.find((i) => i.collection.id === parsed.data.collectionId);
+      const invite = await getPendingInvite(ownerUserId, parsed.data.collectionId);
       if (!invite) return null;
       return { collection: invite.collection.name, role: invite.role };
     },

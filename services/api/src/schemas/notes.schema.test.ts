@@ -37,6 +37,16 @@ describe('note update schemas', () => {
     ).toThrow();
   });
 
+  it('allows REST attachment-only updates while MCP requires note content fields', () => {
+    expect(UpdateNoteInputSchema.parse({ fileIds: [] }).fileIds).toEqual([]);
+    expect(
+      noteUpdateToolInputSchema.safeParse({
+        id: '11111111-1111-4111-8111-111111111111',
+        fileIds: [],
+      }).success,
+    ).toBe(false);
+  });
+
   it('REST and MCP both reject an empty title or oversized content', () => {
     expect(() => UpdateNoteInputSchema.parse({ title: '' })).toThrow();
     expect(() =>

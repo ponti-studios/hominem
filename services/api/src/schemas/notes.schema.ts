@@ -15,22 +15,32 @@ const noteCreateFieldsSchema = z.object({
   content: z.string().trim().min(1).max(50000).describe('The note body.'),
 });
 
-const noteUpdateFieldsSchema = z
-  .object({
-    title: z.string().trim().min(1).max(200).nullable().optional(),
-    content: z.string().trim().min(1).max(50000).optional(),
-  })
-  .refine((data) => data.title !== undefined || data.content !== undefined, {
+const noteUpdateFieldsSchema = z.object({
+  title: z.string().trim().min(1).max(200).nullable().optional(),
+  content: z.string().trim().min(1).max(50000).optional(),
+});
+
+const noteUpdateContentSchema = noteUpdateFieldsSchema.refine(
+  (data) => data.title !== undefined || data.content !== undefined,
+  {
     message: 'Provide a title or content to update',
-  });
+  },
+);
 
 export const CreateNoteInputSchema = noteCreateFieldsSchema.extend({
   fileIds: noteFileIdsField,
 });
 
-export const UpdateNoteInputSchema = noteUpdateFieldsSchema.and(
-  z.object({ fileIds: noteFileIdsField }),
-);
+export const UpdateNoteInputSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200).nullable().optional(),
+    content: z.string().trim().min(1).max(50000).optional(),
+    fileIds: noteFileIdsField,
+  })
+  .refine(
+    (data) => data.title !== undefined || data.content !== undefined || data.fileIds !== undefined,
+    { message: 'Provide a title, content, or fileIds to update' },
+  );
 
 export const NoteParamSchema = z.object({ id: z.uuid() });
 
@@ -79,7 +89,7 @@ export const noteCreateToolOutputSchema = z.object({ note: noteToolRecordSchema 
 
 export const noteUpdateToolInputSchema = z
   .object({ id: z.uuid().describe('Stable note id returned by note_list or note_create.') })
-  .and(noteUpdateFieldsSchema);
+  .and(noteUpdateContentSchema);
 
 export const noteUpdateToolOutputSchema = z.object({ note: noteToolRecordSchema.nullable() });
 

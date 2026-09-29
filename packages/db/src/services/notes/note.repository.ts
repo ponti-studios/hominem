@@ -96,8 +96,15 @@ export interface ListNotesInput {
 export interface SearchNotesInput {
   userId: string;
   query: string;
+  kind?: NoteKind;
   limit?: number;
   cursor?: string;
+}
+
+export interface GetOwnedNoteSummariesInput {
+  userId: string;
+  noteIds: string[];
+  kind?: NoteKind;
 }
 
 export interface SearchNoteResult {
@@ -349,6 +356,8 @@ export const NoteRepository = {
       .where('ownerUserid', '=', input.userId)
       .where((eb) => eb.or([eb('title', 'ilike', pattern), eb('content', 'ilike', pattern)]));
 
+    if (input.kind) query = query.where('kind', '=', input.kind);
+
     if (decoded) {
       query = query.where((eb) =>
         eb.or([
@@ -383,6 +392,20 @@ export const NoteRepository = {
           ? encodeNoteSearchCursor(new Date(lastRow.updatedat).toISOString(), lastRow.id)
           : null,
     };
+  },
+
+  async getOwnedSummariesByIds(
+    handle: DbHandle,
+    input: GetOwnedNoteSummariesInput,
+  ): Promise<SearchNoteResult[]> {
+    if (input.noteIds.length === 0) return [];
+    let query = handle
+      .selectFrom('app.notes')
+      .select(['id', 'title', 'excerpt'])
+      .where('ownerUserid', '=', input.userId)
+      .where('id', 'in', input.noteIds);
+    if (input.kind) query = query.where('kind', '=', input.kind);
+    return query.execute();
   },
 
   async create(handle: DbHandle, input: CreateNoteInput): Promise<NoteRecord> {

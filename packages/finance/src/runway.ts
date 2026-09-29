@@ -50,6 +50,8 @@ export interface LedgerRunway {
   weeklyVariableAllowance: number;
   monthlyBudgets: RunwayBudget[];
   weeks: RunwayWeek[];
+  currencyCode: string | null;
+  warnings: string[];
 }
 
 function roundMoney(value: number): number {
@@ -112,18 +114,46 @@ export async function computeLedgerRunway(input: ComputeLedgerRunwayInput): Prom
     )
     .select((eb) => [
       'account.name as accountName',
+      'account.currencyCode as currencyCode',
       eb.fn.sum<number>('transaction.amount').as('balance'),
     ])
     .where('account.userId', '=', input.userId)
     .where('account.accountType', 'in', liquidTypes)
-    .groupBy(['account.id', 'account.name'])
+    .groupBy(['account.id', 'account.name', 'account.currencyCode'])
     .orderBy('account.name', 'asc')
     .execute();
 
-  const liquidAccounts = liquidRows.map((entry) => ({
+  const allLiquidAccounts = liquidRows.map((entry) => ({
     accountName: entry.accountName,
+    currencyCode: entry.currencyCode,
     balance: roundMoney(toNumber(entry.balance)),
   }));
+
+  // Summing balances across currencies would produce a meaningless total, so when liquid
+  // accounts span more than one currency, restrict the projection to whichever currency
+  // holds the most cash (the user's de facto primary currency) and say so, rather than
+  // silently combining incompatible balances.
+  const distinctCurrencies = [...new Set(allLiquidAccounts.map((a) => a.currencyCode))];
+  const warnings: string[] = [];
+  let currencyCode: string | null = null;
+  let liquidAccounts = allLiquidAccounts;
+  if (distinctCurrencies.length > 1) {
+    const totalsByCurrency = new Map<string, number>();
+    for (const account of allLiquidAccounts) {
+      totalsByCurrency.set(
+        account.currencyCode,
+        (totalsByCurrency.get(account.currencyCode) ?? 0) + Math.abs(account.balance),
+      );
+    }
+    currencyCode = [...totalsByCurrency.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    liquidAccounts = allLiquidAccounts.filter((a) => a.currencyCode === currencyCode);
+    warnings.push(
+      `Liquid accounts span multiple currencies (${distinctCurrencies.join(', ')}); only ${currencyCode} accounts are included in this projection.`,
+    );
+  } else if (distinctCurrencies.length === 1) {
+    currencyCode = distinctCurrencies[0] ?? null;
+  }
+
   const startingCash = roundMoney(liquidAccounts.reduce((sum, entry) => sum + entry.balance, 0));
 
   const lookbackStart = addDays(asOfDate, -Math.round(lookbackMonths * DAYS_PER_MONTH));
@@ -170,7 +200,7 @@ export async function computeLedgerRunway(input: ComputeLedgerRunwayInput): Prom
 
   return {
     asOfDate,
-    liquidAccounts,
+    liquidAccounts: liquidAccounts.map((a) => ({ accountName: a.accountName, balance: a.balance })),
     startingCash,
     weeklyRecurringOutflow,
     recurringLookbackMonths: lookbackMonths,
@@ -178,5 +208,7 @@ export async function computeLedgerRunway(input: ComputeLedgerRunwayInput): Prom
     weeklyVariableAllowance,
     monthlyBudgets: input.monthlyBudgets,
     weeks,
+    currencyCode,
+    warnings,
   };
 }

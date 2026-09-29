@@ -31,13 +31,19 @@ mkdir -p "$HOMINEM_E2E_STATE_DIR"
 # The test identity must never authenticate against a production or remote API.
 # Supported local endpoints are the fixed localhost API and its portless host.
 hominem_require_local_api() {
-  case "$HOMINEM_API_URL" in
-    http://localhost|http://localhost:*|http://127.0.0.1|http://127.0.0.1:*|https://api.lvh.me|https://api.lvh.me/*|https://api.lvh.me:*) ;;
-    *)
-      echo "refusing: auth test helpers only target local Hominem URLs (localhost, 127.0.0.1, or api.lvh.me), got '$HOMINEM_API_URL'." >&2
-      return 1
-      ;;
-  esac
+  if ! node -e '
+    try {
+      const url = new URL(process.argv[1]);
+      const localHttp = url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+      const localDomain = url.protocol === "https:" && url.hostname === "api.lvh.me";
+      if ((!localHttp && !localDomain) || url.username || url.password) process.exit(1);
+    } catch {
+      process.exit(1);
+    }
+  ' "$HOMINEM_API_URL"; then
+    echo "refusing: auth test helpers only target local Hominem URLs (localhost, 127.0.0.1, or api.lvh.me)." >&2
+    return 1
+  fi
 }
 
 # Hard safety rail, shared by every driver that sources this file: never let
