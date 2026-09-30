@@ -241,7 +241,7 @@ export function mapShoppingRow(
       acquiredDate: orderedOn,
       priceCents: unitCents === null ? null : Math.round(unitCents * quantity),
       currencyCode: inferCurrency(row['price'], isUkStore(source, merchant) ? 'GBP' : undefined),
-      url: source && hostnameOf(source) ? source : null,
+      url: source && /^https?:\/\//i.test(source) && hostnameOf(source) ? source : null,
       notes: clean(row['Notes']),
       metadata: compact({
         quantity,

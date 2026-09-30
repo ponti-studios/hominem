@@ -155,6 +155,23 @@ describe('containers', () => {
     for (const container of [c, b, a]) await removeContainer(alice, container.id);
   });
 
+  it('cannot be tricked into a cycle by two simultaneous moves', async () => {
+    // Without serialising hierarchy changes both checks pass on the pre-update graph and both commit.
+    for (let round = 0; round < 10; round += 1) {
+      const a = await createContainer(alice, { name: `RaceA-${round}` });
+      const b = await createContainer(alice, { name: `RaceB-${round}` });
+      const results = await Promise.allSettled([
+        updateContainer(alice, a.id, { parentContainerId: b.id }),
+        updateContainer(alice, b.id, { parentContainerId: a.id }),
+      ]);
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(results.filter((r) => r.status === 'rejected')).toHaveLength(1);
+      const [rejected] = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      expect(rejected!.reason).toBeInstanceOf(ValidationError);
+      for (const container of [a, b]) await removeContainer(alice, container.id);
+    }
+  });
+
   it('will not use another user’s container as a parent or as an item’s container', async () => {
     const theirs = await createContainer(bob, { name: 'Bob’s bag' });
     await expect(

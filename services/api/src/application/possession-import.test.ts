@@ -181,6 +181,19 @@ describe('mapShoppingRow', () => {
     expect(mapped.input.url).toBeNull();
     expect(mapped.input.metadata).not.toHaveProperty('merchant');
   });
+  it('only stores http(s) links, never other schemes', () => {
+    for (const source of [
+      'ftp://example.com/item',
+      'javascript://evil/%0Aalert(1)',
+      'file://host/etc/passwd',
+    ]) {
+      const mapped = mapShoppingRow({ ...base, Source: source }, 1, today)!;
+      expect(mapped.input.url).toBeNull();
+    }
+    expect(
+      mapShoppingRow({ ...base, Source: 'https://www.argos.co.uk/p/1' }, 1, today)!.input.url,
+    ).toBe('https://www.argos.co.uk/p/1');
+  });
   it('treats an order date alone as evidence the item was ordered', () => {
     const row = { ...base, 'Order #': '', 'Delivery day': '' };
     expect(mapShoppingRow(row, 1, today)!.input.status).toBe('ordered');

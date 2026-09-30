@@ -229,6 +229,13 @@ async function assertValidParent(
   containerId: string | null,
   parentId: string,
 ) {
+  // Two requests that each pass the cycle check could otherwise both commit (A under B, B under A):
+  // under READ COMMITTED neither sees the other's uncommitted move. Taking this per-owner lock first
+  // makes hierarchy changes queue up, so the later check reads the earlier commit. It is released
+  // when the surrounding transaction ends, so callers must run this inside one (the service does).
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`possession-containers:${userId}`}, 0))`.execute(
+    handle,
+  );
   await assertOwnedContainer(handle, userId, parentId).catch((error) => {
     if (error instanceof NotFoundError) throw new NotFoundError('Parent container');
     throw error;
