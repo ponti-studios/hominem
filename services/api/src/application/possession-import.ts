@@ -175,6 +175,19 @@ export function merchantFrom(source: string | undefined): string | null {
   return host === 'amazon.co.uk' ? 'Amazon UK' : host;
 }
 
+// The shopping sheet has no currency column; its stores are UK retailers, recognised by hostname
+// (never by substring, so a query string can't spoof it) or by a known UK name.
+function isUkStore(source: string | null, merchant: string | null): boolean {
+  if (source && /^https?:\/\//i.test(source)) {
+    try {
+      if (new URL(source).hostname.endsWith('.co.uk')) return true;
+    } catch {
+      // not a parseable URL: fall through to the name check
+    }
+  }
+  return merchant !== null && /^(Amazon UK|Argos)$/i.test(merchant);
+}
+
 /**
  * One row of the shopping sheet becomes one possession. The sheet has no stable id, so the id is a
  * hash of the row's identifying columns (plus an occurrence counter for exact repeats) - re-importing
@@ -222,10 +235,7 @@ export function mapShoppingRow(
       isArchived: false,
       acquiredDate: orderedOn,
       priceCents: unitCents === null ? null : Math.round(unitCents * quantity),
-      currencyCode: inferCurrency(
-        row['price'],
-        merchant?.includes('UK') || source?.includes('.co.uk') ? 'GBP' : undefined,
-      ),
+      currencyCode: inferCurrency(row['price'], isUkStore(source, merchant) ? 'GBP' : undefined),
       url: source && /^https?:\/\//i.test(source) ? source : null,
       notes: clean(row['Notes']),
       metadata: compact({

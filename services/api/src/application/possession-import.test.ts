@@ -163,6 +163,15 @@ describe('mapShoppingRow', () => {
       quantity: 3,
     });
   });
+  it('only treats a real .co.uk hostname as a UK store', () => {
+    const spoof = mapShoppingRow(
+      { ...base, Source: 'https://evil.com/?x=.co.uk', price: '10' },
+      1,
+      today,
+    )!;
+    expect(spoof.input.currencyCode).toBeNull();
+    expect(mapShoppingRow({ ...base, Source: 'Argos' }, 1, today)!.input.currencyCode).toBe('GBP');
+  });
   it('is ordered while delivery is in the future, wishlist without an order', () => {
     expect(mapShoppingRow({ ...base, 'Delivery day': '2026-10-05' }, 1, today)!.input.status).toBe(
       'ordered',
