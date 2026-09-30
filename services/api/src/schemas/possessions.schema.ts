@@ -67,3 +67,11 @@ export const containerUpdateSchema = z.object({
   name: z.string().trim().min(1).max(200).optional(),
   ...containerFields,
 });
+
+export const possessionIdParamSchema = z.object({ id: z.uuid() });
+
+export type PossessionCreateInput = z.infer<typeof possessionCreateSchema>;
+export type PossessionUpdateInput = z.infer<typeof possessionUpdateSchema>;
+export type PossessionListQuery = z.infer<typeof possessionListQuerySchema>;
+export type ContainerCreateInput = z.infer<typeof containerCreateSchema>;
+export type ContainerUpdateInput = z.infer<typeof containerUpdateSchema>;
