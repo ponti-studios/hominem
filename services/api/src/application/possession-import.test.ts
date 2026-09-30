@@ -22,6 +22,9 @@ describe('parsers', () => {
     expect(parseIsoDate('2022-10-06')).toBe('2022-10-06');
     expect(parseIsoDate('2022-13-40')).toBeNull();
     expect(parseIsoDate('10/06/2022')).toBeNull();
+    expect(parseIsoDate('2022-02-30')).toBeNull();
+    expect(parseIsoDate('2024-02-29')).toBe('2024-02-29');
+    expect(parseIsoDate('2023-02-29')).toBeNull();
   });
   it('normalises statuses', () => {
     expect(parseStatus('Owned')).toBe('owned');
@@ -171,6 +174,29 @@ describe('mapShoppingRow', () => {
     )!;
     expect(spoof.input.currencyCode).toBeNull();
     expect(mapShoppingRow({ ...base, Source: 'Argos' }, 1, today)!.input.currencyCode).toBe('GBP');
+  });
+  it('survives malformed URLs instead of aborting the import', () => {
+    const row = { ...base, Source: 'http://' };
+    const mapped = mapShoppingRow(row, 1, today)!;
+    expect(mapped.input.url).toBeNull();
+    expect(mapped.input.metadata).not.toHaveProperty('merchant');
+  });
+  it('only stores http(s) links, never other schemes', () => {
+    for (const source of [
+      'ftp://example.com/item',
+      'javascript://evil/%0Aalert(1)',
+      'file://host/etc/passwd',
+    ]) {
+      const mapped = mapShoppingRow({ ...base, Source: source }, 1, today)!;
+      expect(mapped.input.url).toBeNull();
+    }
+    expect(
+      mapShoppingRow({ ...base, Source: 'https://www.argos.co.uk/p/1' }, 1, today)!.input.url,
+    ).toBe('https://www.argos.co.uk/p/1');
+  });
+  it('treats an order date alone as evidence the item was ordered', () => {
+    const row = { ...base, 'Order #': '', 'Delivery day': '' };
+    expect(mapShoppingRow(row, 1, today)!.input.status).toBe('ordered');
   });
   it('is ordered while delivery is in the future, wishlist without an order', () => {
     expect(mapShoppingRow({ ...base, 'Delivery day': '2026-10-05' }, 1, today)!.input.status).toBe(

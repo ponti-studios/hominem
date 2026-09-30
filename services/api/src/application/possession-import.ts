@@ -28,7 +28,9 @@ export function parseMoneyCents(value: string | undefined): number | null {
 export function parseIsoDate(value: string | undefined): string | null {
   const text = clean(value);
   if (!text || !/^\d{4}-\d{2}-\d{2}$/.test(text)) return null;
-  return Number.isNaN(Date.parse(`${text}T00:00:00Z`)) ? null : text;
+  const parsed = new Date(`${text}T00:00:00Z`);
+  // Date normalises impossible dates (2022-02-30 becomes 2022-03-02), so require a round trip.
+  return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== text ? null : text;
 }
 
 const parseNumber = (value: string | undefined): number | null => {
@@ -167,24 +169,27 @@ export interface MappedShopping {
 const isoOrNull = (value: string | undefined) =>
   parseIsoDate(clean(value)?.slice(0, 10) ?? undefined);
 
+function hostnameOf(source: string): string | null {
+  try {
+    return new URL(source).hostname.replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+}
+
 export function merchantFrom(source: string | undefined): string | null {
   const text = clean(source);
   if (!text) return null;
   if (!/^https?:\/\//i.test(text)) return text;
-  const host = new URL(text).hostname.replace(/^www\./, '');
+  const host = hostnameOf(text);
+  if (!host) return null;
   return host === 'amazon.co.uk' ? 'Amazon UK' : host;
 }
 
 // The shopping sheet has no currency column; its stores are UK retailers, recognised by hostname
 // (never by substring, so a query string can't spoof it) or by a known UK name.
 function isUkStore(source: string | null, merchant: string | null): boolean {
-  if (source && /^https?:\/\//i.test(source)) {
-    try {
-      if (new URL(source).hostname.endsWith('.co.uk')) return true;
-    } catch {
-      // not a parseable URL: fall through to the name check
-    }
-  }
+  if (source && /^https?:\/\//i.test(source) && hostnameOf(source)?.endsWith('.co.uk')) return true;
   return merchant !== null && /^(Amazon UK|Argos)$/i.test(merchant);
 }
 
@@ -219,7 +224,7 @@ export function mapShoppingRow(
   ].join('|');
   const externalId = `SHOP-${createHash('sha1').update(key).digest('hex').slice(0, 10)}${occurrence > 1 ? `-${occurrence}` : ''}`;
 
-  const hasOrder = Boolean(orderNumber || deliveryDate);
+  const hasOrder = Boolean(orderNumber || deliveryDate || orderedOn);
   const arrived = deliveryDate !== null && deliveryDate <= today.toISOString().slice(0, 10);
   const status: PossessionStatus = !hasOrder ? 'wishlist' : arrived ? 'delivered' : 'ordered';
   const merchant = merchantFrom(source ?? undefined);
@@ -236,7 +241,7 @@ export function mapShoppingRow(
       acquiredDate: orderedOn,
       priceCents: unitCents === null ? null : Math.round(unitCents * quantity),
       currencyCode: inferCurrency(row['price'], isUkStore(source, merchant) ? 'GBP' : undefined),
-      url: source && /^https?:\/\//i.test(source) ? source : null,
+      url: source && /^https?:\/\//i.test(source) && hostnameOf(source) ? source : null,
       notes: clean(row['Notes']),
       metadata: compact({
         quantity,

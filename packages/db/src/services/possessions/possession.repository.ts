@@ -210,6 +210,53 @@ function containerValues(input: Partial<ContainerInput>): Updateable<AppPossessi
 
 const hasValues = (values: object) => Object.values(values).some((value) => value !== undefined);
 
+// Both checks run inside the caller's transaction so a rejected reference leaves nothing behind.
+async function assertOwnedContainer(handle: DbHandle, userId: string, containerId: string) {
+  const found = await handle
+    .selectFrom('app.possessionContainers')
+    .select('id')
+    .where('id', '=', containerId)
+    .where('ownerUserid', '=', userId)
+    .executeTakeFirst();
+  if (!found) throw new NotFoundError('Container');
+}
+
+// A container may not sit inside itself or any of its own descendants. Walk up from the proposed
+// parent; if we reach the container being edited, the move would close a loop.
+async function assertValidParent(
+  handle: DbHandle,
+  userId: string,
+  containerId: string | null,
+  parentId: string,
+) {
+  // Two requests that each pass the cycle check could otherwise both commit (A under B, B under A):
+  // under READ COMMITTED neither sees the other's uncommitted move. Taking this per-owner lock first
+  // makes hierarchy changes queue up, so the later check reads the earlier commit. It is released
+  // when the surrounding transaction ends, so callers must run this inside one (the service does).
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`possession-containers:${userId}`}, 0))`.execute(
+    handle,
+  );
+  await assertOwnedContainer(handle, userId, parentId).catch((error) => {
+    if (error instanceof NotFoundError) throw new NotFoundError('Parent container');
+    throw error;
+  });
+  if (containerId === null) return;
+  const { rows } = await sql<{ hits: number }>`
+    WITH RECURSIVE ancestors AS (
+      SELECT id, parent_container_id FROM app.possession_containers
+      WHERE id = ${parentId} AND owner_userId = ${userId}
+      UNION
+      SELECT c.id, c.parent_container_id FROM app.possession_containers c
+      JOIN ancestors a ON c.id = a.parent_container_id
+      WHERE c.owner_userId = ${userId}
+    )
+    SELECT count(*)::int AS hits FROM ancestors WHERE id = ${containerId}
+  `.execute(handle);
+  if ((rows[0]?.hits ?? 0) > 0) {
+    throw new ValidationError('A container cannot be nested inside itself or its own contents');
+  }
+}
+
 export interface ListPossessionsInput {
   userId: string;
   statuses?: PossessionStatus[];
@@ -240,6 +287,7 @@ export const PossessionRepository = {
     userId: string,
     input: PossessionInput,
   ): Promise<PossessionRecord> {
+    if (input.containerId) await assertOwnedContainer(handle, userId, input.containerId);
     const row = await handle
       .insertInto('app.possessions')
       .values({ ...possessionValues(input), name: input.name, ownerUserid: userId })
@@ -254,6 +302,7 @@ export const PossessionRepository = {
     id: string,
     input: Partial<PossessionInput>,
   ): Promise<PossessionRecord> {
+    if (input.containerId) await assertOwnedContainer(handle, userId, input.containerId);
     // Metadata is merged, never replaced, so a client that only knows one key can't erase the rest.
     const plain = possessionValues({ ...input, metadata: undefined });
     const merged =
@@ -333,6 +382,8 @@ export const ContainerRepository = {
   },
 
   async create(handle: DbHandle, userId: string, input: ContainerInput): Promise<ContainerRecord> {
+    if (input.parentContainerId)
+      await assertValidParent(handle, userId, null, input.parentContainerId);
     const row = await handle
       .insertInto('app.possessionContainers')
       .values({ ...containerValues(input), name: input.name, ownerUserid: userId })
@@ -347,13 +398,21 @@ export const ContainerRepository = {
     id: string,
     input: Partial<ContainerInput>,
   ): Promise<ContainerRecord> {
-    if (input.parentContainerId === id) {
-      throw new ValidationError('A container cannot be its own parent');
-    }
-    const values = containerValues(input);
+    if (input.parentContainerId)
+      await assertValidParent(handle, userId, id, input.parentContainerId);
+    // Metadata is merged, never replaced, like possessions.
+    const plain = containerValues({ ...input, metadata: undefined });
+    const merged =
+      input.metadata === undefined
+        ? {}
+        : { metadata: sql<Json>`metadata || ${JSON.stringify(input.metadata)}::jsonb` };
     const row = await handle
       .updateTable('app.possessionContainers')
-      .set(hasValues(values) ? values : { name: sql<string>`name` })
+      .set(
+        hasValues(plain) || input.metadata !== undefined
+          ? { ...plain, ...merged }
+          : { name: sql<string>`name` },
+      )
       .where('id', '=', id)
       .where('ownerUserid', '=', userId)
       .returningAll()
