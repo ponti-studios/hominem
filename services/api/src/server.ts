@@ -41,6 +41,7 @@ function createAllowedOrigins(inputEnv = env) {
     inputEnv.FINANCE_URL,
     inputEnv.CAREER_URL,
     inputEnv.WHAT_URL,
+    inputEnv.STILL_URL,
     ...CHATGPT_ORIGINS,
   ]);
 }

@@ -68,6 +68,7 @@
     "@tanstack/react-query": "catalog:",
     "better-auth": "catalog:",
     "bullmq": "catalog:",
+    "csv-parse": "^7.0.2",
     "dotenv": "catalog:",
     "hono": "catalog:",
     "pg": "catalog:",

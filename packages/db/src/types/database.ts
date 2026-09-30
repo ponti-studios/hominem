@@ -856,6 +856,24 @@ export interface AppPlaidItems {
   userId: string;
 }
 
+export interface AppPossessionContainers {
+  containerKind: string | null;
+  containerType: string | null;
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  currentLocation: string | null;
+  description: string | null;
+  externalId: string | null;
+  id: Generated<string>;
+  metadata: Generated<Json>;
+  name: string;
+  ownerUserid: string;
+  parentContainerId: string | null;
+  status: Generated<string>;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  volumeCbm: Numeric | null;
+  weightKg: Numeric | null;
+}
+
 export interface AppPossessionImages {
   altText: string | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -876,7 +894,10 @@ export interface AppPossessions {
   artPeriod: string | null;
   brand: string | null;
   color: string | null;
+  containerId: string | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  currencyCode: string | null;
+  externalId: string | null;
   id: Generated<string>;
   isArchived: Generated<boolean>;
   metadata: Generated<Json>;
@@ -1379,6 +1400,7 @@ export interface DB {
   'app.places': AppPlaces;
   'app.placeVisits': AppPlaceVisits;
   'app.plaidItems': AppPlaidItems;
+  'app.possessionContainers': AppPossessionContainers;
   'app.possessionImages': AppPossessionImages;
   'app.possessions': AppPossessions;
   'app.socialContacts': AppSocialContacts;

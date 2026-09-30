@@ -22,6 +22,7 @@ export const apiSchema = runtimeSchema.extend({
   LABS_APEX_URL: z.url().optional(),
   WHAT_URL: z.url().default('https://what.lvh.me'),
   NEWSBOY_URL: z.url().default('https://newsboy.lvh.me'),
+  STILL_URL: z.url().default('https://still.lvh.me'),
   DATABASE_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().min(32),
   AUTH_COOKIE_DOMAIN: z.string().default(''),

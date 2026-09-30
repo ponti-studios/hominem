@@ -14,6 +14,7 @@ import { memoryRoutes } from './routes/memory';
 import { notesRoutes } from './routes/notes';
 import { peopleRoutes } from './routes/people';
 import { personalRoutes } from './routes/personal';
+import { possessionsRoutes } from './routes/possessions';
 import { tasksRoutes } from './routes/tasks';
 import { telemetryRoutes } from './routes/telemetry';
 import { usageRoutes } from './routes/usage';
@@ -31,6 +32,7 @@ export const rpcRoutes = new Hono<AppContext>()
   .route('/notes', notesRoutes)
   .route('/people', peopleRoutes)
   .route('/personal', personalRoutes)
+  .route('/possessions', possessionsRoutes)
   .route('/tasks', tasksRoutes)
   .route('/telemetry', telemetryRoutes)
   .route('/usage', usageRoutes)
