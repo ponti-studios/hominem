@@ -95,6 +95,7 @@ export const searchPossessions = (
     ...(input.category ? { category: input.category } : {}),
     ...(input.query ? { query: input.query } : {}),
     limit: input.limit,
+    offset: input.offset,
   });
 
 export const getPossession = (userId: string, id: string): Promise<PossessionRecord | null> =>
@@ -142,11 +143,18 @@ export const getContainer = (userId: string, id: string): Promise<ContainerRecor
 export async function getContainerContents(userId: string, id: string, limit: number) {
   const container = await ContainerRepository.get(db, userId, id);
   if (!container) return null;
-  const [children, possessions] = await Promise.all([
+  const [children, possessions, impact] = await Promise.all([
     ContainerRepository.list(db, userId, { parentContainerId: id, limit }),
     PossessionRepository.list(db, { userId, containerId: id, limit }),
+    ContainerRepository.impact(db, userId, id),
   ]);
-  return { container, children, possessions };
+  return {
+    container,
+    children,
+    possessions,
+    totalChildren: impact?.childContainers ?? children.length,
+    totalPossessions: impact?.possessions ?? possessions.length,
+  };
 }
 
 export const updateContainerOrNull = (userId: string, id: string, input: ContainerUpdateInput) =>

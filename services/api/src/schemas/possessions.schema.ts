@@ -88,6 +88,7 @@ export const possessionSearchInputSchema = z.object({
   category: z.string().trim().min(1).max(100).optional(),
   query: z.string().trim().min(1).max(200).optional(),
   limit: z.number().int().min(1).max(100).optional().default(100),
+  offset: z.number().int().min(0).optional().default(0),
 });
 
 export const containerSearchInputSchema = z.object({
@@ -160,6 +161,7 @@ export const containerRecordSchema = z.object({
 export const possessionSummarySchema = z.object({
   total: z.number(),
   unplaced: z.number(),
+  currenciesOmitted: z.number(),
   byStatus: z.array(
     z.object({ status: z.enum(POSSESSION_STATUSES).nullable(), count: z.number() }),
   ),

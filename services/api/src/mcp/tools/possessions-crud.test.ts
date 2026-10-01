@@ -99,6 +99,24 @@ describe('possessions', () => {
     expect(wildcard.possessions).toEqual([]);
   });
 
+  it('pages possession_list with offset', async () => {
+    const box = await newContainer(alice, { name: 'Offset box' });
+    const made = [];
+    for (const n of [1, 2, 3])
+      made.push(await newPossession(alice, { name: `Off ${n}`, containerId: box.id }));
+    const ids = async (offset: number) =>
+      (
+        await call<{ possessions: Possession[] }>(alice, 'possession_list', {
+          containerId: box.id,
+          limit: 2,
+          offset,
+        })
+      ).possessions.map((p) => p.id);
+    const all = [...(await ids(0)), ...(await ids(2))];
+    expect(all.sort()).toEqual(made.map((p) => p.id).sort());
+    expect(await ids(3)).toEqual([]);
+  });
+
   it('bounds the list limit', async () => {
     await expect(callTool(alice, 'possession_list', { limit: 101 })).rejects.toThrow();
     const one = await call<{ possessions: Possession[] }>(alice, 'possession_list', { limit: 1 });
@@ -263,12 +281,11 @@ describe('container discovery and delete preview', () => {
     for (const code of codes) {
       await newPossession(bob, { name: `Cur ${code}`, priceCents: 1, currencyCode: code });
     }
-    const { summary } = await call<{ summary: { valueByCurrency: unknown[] } }>(
-      bob,
-      'possession_summary',
-      {},
-    );
-    expect(summary.valueByCurrency.length).toBeLessThanOrEqual(20);
+    const { summary } = await call<{
+      summary: { valueByCurrency: unknown[]; currenciesOmitted: number };
+    }>(bob, 'possession_summary', {});
+    expect(summary.valueByCurrency.length).toBe(20);
+    expect(summary.currenciesOmitted).toBeGreaterThanOrEqual(5);
   });
 });
 
@@ -285,6 +302,7 @@ describe('containers', () => {
     }>(alice, 'container_get', { id: room.id });
     expect(roomView.children.map((c) => c.id)).toEqual([shelf.id]);
     expect(roomView.possessions).toEqual([]);
+    expect(roomView).toMatchObject({ totalChildren: 1, totalPossessions: 0 });
 
     const listed = await call<{ containers: Container[] }>(alice, 'container_list', {});
     expect(listed.containers.find((c) => c.id === shelf.id)).toMatchObject({

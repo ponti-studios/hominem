@@ -260,6 +260,7 @@ export interface ListPossessionsInput {
   category?: string;
   query?: string;
   limit?: number;
+  offset?: number;
 }
 
 export interface PossessionSummary {
@@ -267,6 +268,8 @@ export interface PossessionSummary {
   unplaced: number;
   byStatus: Array<{ status: PossessionStatus | null; count: number }>;
   byCategory: Array<{ category: string | null; count: number }>;
+  // Currencies beyond VALUE_CURRENCY_LIMIT that valueByCurrency leaves out (0 = totals are complete).
+  currenciesOmitted: number;
   valueByCurrency: Array<{
     currencyCode: string | null;
     priceCents: number;
@@ -315,6 +318,7 @@ export const PossessionRepository = {
       .orderBy('createdat', 'desc')
       .orderBy('id', 'desc')
       .limit(input.limit ?? 1000)
+      .offset(input.offset ?? 0)
       .execute();
     return rows.map(toPossession);
   },
@@ -359,6 +363,7 @@ export const PossessionRepository = {
         .select([
           count.as('total'),
           sql<string>`count(*) filter (where container_id is null)`.as('unplaced'),
+          sql<string>`count(distinct coalesce(currency_code, ''))`.as('currencies'),
         ])
         .executeTakeFirstOrThrow(),
       live()
@@ -392,6 +397,7 @@ export const PossessionRepository = {
         category: row.possessionType,
         count: Number(row.n),
       })),
+      currenciesOmitted: Math.max(0, Number(totals.currencies) - value.length),
       valueByCurrency: value.map((row) => ({
         currencyCode: row.currencyCode,
         priceCents: Number(row.price),

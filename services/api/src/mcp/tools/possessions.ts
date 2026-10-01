@@ -74,7 +74,8 @@ registerTool(
       "Lists the user's possessions, newest first. Filter by status (wishlist, planned, ordered, " +
       'delivered, owned, in_use, retired, disposed), archived flag, containerId, category, and a ' +
       'text query matching name, brand or model — use these instead of listing everything and ' +
-      'filtering client-side. Archived items are included unless archived=false.',
+      'filtering client-side. Returns up to 100 per call; pass offset to page further. Archived ' +
+      'items are included unless archived=false.',
     inputSchema: possessionSearchInputSchema,
     outputSchema: z.object({ possessions: z.array(possessionRecordSchema) }),
     resultCap: LIST_CAP,
@@ -115,7 +116,8 @@ registerTool(
     title: 'Summarize possessions',
     description:
       'Inventory overview of non-archived possessions: total count, how many are not in any ' +
-      'container, counts by status and top categories, and total purchase/sell value for up to 20 currencies (most-used first).',
+      'container, counts by status and top categories, and total purchase/sell value for up to ' +
+      '20 currencies (most-used first); currenciesOmitted says how many more were left out.',
     inputSchema: z.object({}),
     outputSchema: z.object({ summary: possessionSummarySchema }),
     resultCap: 1,
@@ -246,12 +248,17 @@ registerTool(
     title: 'Get a container and its contents',
     description:
       'Returns a container with its direct child containers and the possessions inside it ' +
-      '(each capped at 100). container is null if it does not exist.',
+      '(each capped at 100; totalChildren / totalPossessions give the full counts, archived ' +
+      'possessions included). When a total exceeds what was returned, page with container_list ' +
+      '(parentContainerId) or possession_list (containerId) using offset. container is null if ' +
+      'it does not exist.',
     inputSchema: possessionIdParamSchema,
     outputSchema: z.object({
       container: containerRecordSchema.nullable(),
       children: z.array(containerRecordSchema),
       possessions: z.array(possessionRecordSchema),
+      totalChildren: z.number(),
+      totalPossessions: z.number(),
     }),
     resultCap: LIST_CAP,
     guidance: {
@@ -265,6 +272,8 @@ registerTool(
       container: null,
       children: [],
       possessions: [],
+      totalChildren: 0,
+      totalPossessions: 0,
     },
 );
 
