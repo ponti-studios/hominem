@@ -1,5 +1,6 @@
-import { pool } from '@hominem/db/core';
+import { db, pool } from '@hominem/db/core';
 import { NotFoundError, ValidationError } from '@hominem/db/errors';
+import { ContainerRepository } from '@hominem/db/possessions';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
@@ -194,6 +195,60 @@ describe('containers', () => {
 
     await removePossession(alice, mine.id);
     await removeContainer(bob, theirs.id);
+  });
+
+  it('refuses cycles at the database, whatever code path writes them', async () => {
+    const a = await createContainer(alice, { name: 'DbA' });
+    const b = await createContainer(alice, { name: 'DbB', parentContainerId: a.id });
+    const c = await createContainer(alice, { name: 'DbC', parentContainerId: b.id });
+
+    // Raw SQL skips the repository entirely.
+    await expect(
+      pool.query(`UPDATE app.possession_containers SET parent_container_id = $1 WHERE id = $1`, [
+        a.id,
+      ]),
+    ).rejects.toThrow(/own parent|nested inside itself/i);
+    await expect(
+      pool.query(`UPDATE app.possession_containers SET parent_container_id = $2 WHERE id = $1`, [
+        a.id,
+        c.id,
+      ]),
+    ).rejects.toThrow(/nested inside itself/i);
+    // A client-supplied id lets an INSERT point at itself too.
+    await expect(
+      pool.query(
+        `INSERT INTO app.possession_containers (id, owner_userId, name, parent_container_id)
+         VALUES ($1, $2, 'self', $1)`,
+        ['d4000001-0000-4000-8000-0000000000aa', alice],
+      ),
+    ).rejects.toThrow();
+
+    // Deleting a middle container re-roots its child, after which the old order is legal.
+    await removeContainer(alice, b.id);
+    await expect(updateContainer(alice, a.id, { parentContainerId: c.id })).resolves.toMatchObject({
+      parentContainerId: c.id,
+    });
+    for (const container of [a, c]) await removeContainer(alice, container.id);
+  });
+
+  it('refuses a cycle introduced through the import upsert', async () => {
+    const a = await ContainerRepository.upsertByExternalId(db, alice, {
+      name: 'ImpA',
+      externalId: 'CON-CYCLE-A',
+    });
+    const b = await ContainerRepository.upsertByExternalId(db, alice, {
+      name: 'ImpB',
+      externalId: 'CON-CYCLE-B',
+      parentContainerId: a.id,
+    });
+    await expect(
+      ContainerRepository.upsertByExternalId(db, alice, {
+        name: 'ImpA',
+        externalId: 'CON-CYCLE-A',
+        parentContainerId: b.id,
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    for (const container of [b, a]) await removeContainer(alice, container.id);
   });
 
   it('is enforced by the database too, not only by the service', async () => {
