@@ -90,6 +90,13 @@ export const possessionSearchInputSchema = z.object({
   limit: z.number().int().min(1).max(100).optional().default(100),
 });
 
+export const containerSearchInputSchema = z.object({
+  query: z.string().trim().min(1).max(200).optional(),
+  parentContainerId: z.uuid().optional(),
+  limit: z.number().int().min(1).max(100).optional().default(100),
+  offset: z.number().int().min(0).optional().default(0),
+});
+
 export const possessionMcpUpdateSchema = possessionIdParamSchema.extend({
   data: possessionUpdateSchema.refine(nonEmpty, EMPTY_UPDATE),
 });
@@ -166,4 +173,5 @@ export const possessionSummarySchema = z.object({
   ),
 });
 
+export type ContainerSearchInput = z.infer<typeof containerSearchInputSchema>;
 export type PossessionSearchInput = z.infer<typeof possessionSearchInputSchema>;

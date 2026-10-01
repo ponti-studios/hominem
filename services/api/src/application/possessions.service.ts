@@ -11,6 +11,7 @@ import { runInTransaction } from '@hominem/db/transaction';
 
 import type {
   ContainerCreateInput,
+  ContainerSearchInput,
   ContainerUpdateInput,
   PossessionCreateInput,
   PossessionListQuery,
@@ -120,8 +121,19 @@ export const removePossessionIfExists = async (userId: string, id: string): Prom
   (await orNull('Possession not found', () => removePossession(userId, id).then(() => true))) ??
   false;
 
-export const listContainersLimited = (userId: string, limit: number): Promise<ContainerRecord[]> =>
-  ContainerRepository.list(db, userId, { limit });
+export const searchContainers = (
+  userId: string,
+  input: ContainerSearchInput,
+): Promise<ContainerRecord[]> =>
+  ContainerRepository.list(db, userId, {
+    limit: input.limit,
+    offset: input.offset,
+    ...(input.query ? { query: input.query } : {}),
+    ...(input.parentContainerId ? { parentContainerId: input.parentContainerId } : {}),
+  });
+
+export const getContainerImpact = (userId: string, id: string) =>
+  ContainerRepository.impact(db, userId, id);
 
 export const getContainer = (userId: string, id: string): Promise<ContainerRecord | null> =>
   ContainerRepository.get(db, userId, id);

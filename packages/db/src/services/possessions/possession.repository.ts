@@ -276,8 +276,18 @@ export interface PossessionSummary {
 
 export interface ListContainersInput {
   parentContainerId?: string;
+  query?: string;
   limit?: number;
+  offset?: number;
 }
+
+export interface ContainerImpact {
+  possessions: number;
+  childContainers: number;
+}
+
+// valueByCurrency lists at most this many currencies, most-used first, so the summary stays bounded.
+export const VALUE_CURRENCY_LIMIT = 20;
 
 const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`);
 
@@ -369,6 +379,9 @@ export const PossessionRepository = {
           sql<string>`coalesce(sum(sell_price_cents), 0)`.as('sell'),
         ])
         .groupBy('currencyCode')
+        .orderBy(sql`count(*)`, 'desc')
+        .orderBy('currencyCode')
+        .limit(VALUE_CURRENCY_LIMIT)
         .execute(),
     ]);
     return {
@@ -491,12 +504,42 @@ export const ContainerRepository = {
     if (input.parentContainerId) {
       query = query.where('c.parentContainerId', '=', input.parentContainerId);
     }
+    if (input.query) query = query.where('c.name', 'ilike', `%${escapeLike(input.query)}%`);
     const rows = await query
       .orderBy('c.name')
       .orderBy('c.id')
       .$if(input.limit !== undefined, (qb) => qb.limit(input.limit ?? 0))
+      .$if(input.offset !== undefined, (qb) => qb.offset(input.offset ?? 0))
       .execute();
     return rows.map(toContainer);
+  },
+
+  // Everything deleting this container would detach: all possessions (archived included) and
+  // direct child containers. Null when the container is not the caller's.
+  async impact(handle: DbHandle, userId: string, id: string): Promise<ContainerImpact | null> {
+    const row = await handle
+      .selectFrom('app.possessionContainers as c')
+      .select((eb) => [
+        eb
+          .selectFrom('app.possessions as p')
+          .select(sql<string>`count(*)`.as('n'))
+          .whereRef('p.containerId', '=', 'c.id')
+          .as('possessions'),
+        eb
+          .selectFrom('app.possessionContainers as child')
+          .select(sql<string>`count(*)`.as('n'))
+          .whereRef('child.parentContainerId', '=', 'c.id')
+          .as('childContainers'),
+      ])
+      .where('c.id', '=', id)
+      .where('c.ownerUserid', '=', userId)
+      .executeTakeFirst();
+    return row
+      ? {
+          possessions: Number(row.possessions ?? 0),
+          childContainers: Number(row.childContainers ?? 0),
+        }
+      : null;
   },
 
   async get(handle: DbHandle, userId: string, id: string): Promise<ContainerRecord | null> {

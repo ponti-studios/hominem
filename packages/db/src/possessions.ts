@@ -4,6 +4,7 @@ export {
   PossessionRepository,
 } from './services/possessions/possession.repository';
 export type {
+  ContainerImpact,
   ContainerInput,
   ContainerRecord,
   ListContainersInput,

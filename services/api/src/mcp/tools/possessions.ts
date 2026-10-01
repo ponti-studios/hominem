@@ -4,12 +4,13 @@ import {
   createContainer,
   createPossession,
   getContainer,
+  getContainerImpact,
   getContainerContents,
   getPossession,
-  listContainersLimited,
   movePossessions,
   removeContainerIfExists,
   removePossessionIfExists,
+  searchContainers,
   searchPossessions,
   summarizePossessions,
   updateContainerOrNull,
@@ -17,6 +18,7 @@ import {
 } from '../../application/possessions.service';
 import {
   containerCreateSchema,
+  containerSearchInputSchema,
   containerMcpUpdateSchema,
   containerMoveSchema,
   containerRecordSchema,
@@ -113,7 +115,7 @@ registerTool(
     title: 'Summarize possessions',
     description:
       'Inventory overview of non-archived possessions: total count, how many are not in any ' +
-      'container, counts by status and top categories, and total purchase/sell value per currency.',
+      'container, counts by status and top categories, and total purchase/sell value for up to 20 currencies (most-used first).',
     inputSchema: z.object({}),
     outputSchema: z.object({ summary: possessionSummarySchema }),
     resultCap: 1,
@@ -222,10 +224,9 @@ registerTool(
     description:
       'Lists containers (boxes, rooms, shelves, bags) ordered by name, each with its parent ' +
       'container id and a count of non-archived possessions inside. The nesting tree can be ' +
-      'rebuilt from parentContainerId.',
-    inputSchema: z.object({
-      limit: z.number().int().min(1).max(LIST_CAP).optional().default(LIST_CAP),
-    }),
+      'rebuilt from parentContainerId. Pages of up to 100: use offset to continue, query to match ' +
+      "a name, or parentContainerId to list one container's direct children.",
+    inputSchema: containerSearchInputSchema,
     outputSchema: z.object({ containers: z.array(containerRecordSchema) }),
     resultCap: LIST_CAP,
     guidance: {
@@ -234,7 +235,7 @@ registerTool(
     },
   },
   async (ownerUserId, input) => ({
-    containers: await listContainersLimited(ownerUserId, input.limit),
+    containers: await searchContainers(ownerUserId, input),
   }),
 );
 
@@ -348,9 +349,16 @@ registerTool(
     preview: async (ownerUserId, input) => {
       const parsed = possessionIdParamSchema.safeParse(input);
       if (!parsed.success) return null;
-      const container = await getContainer(ownerUserId, parsed.data.id);
-      return container
-        ? { name: container.name, itemsBecomingUnplaced: container.itemCount }
+      const [container, impact] = await Promise.all([
+        getContainer(ownerUserId, parsed.data.id),
+        getContainerImpact(ownerUserId, parsed.data.id),
+      ]);
+      return container && impact
+        ? {
+            name: container.name,
+            possessionsBecomingUnplaced: impact.possessions,
+            childContainersBecomingTopLevel: impact.childContainers,
+          }
         : null;
     },
   },

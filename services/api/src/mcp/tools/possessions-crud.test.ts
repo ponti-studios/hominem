@@ -218,6 +218,60 @@ describe('possessions', () => {
   });
 });
 
+describe('container discovery and delete preview', () => {
+  it('pages, searches and filters container_list beyond the first page', async () => {
+    const parent = await newContainer(alice, { name: 'Zz paging parent' });
+    const kids = [];
+    for (const n of [1, 2, 3]) {
+      kids.push(
+        await newContainer(alice, { name: `Zz paging kid ${n}`, parentContainerId: parent.id }),
+      );
+    }
+    const page1 = await call<{ containers: Container[] }>(alice, 'container_list', {
+      parentContainerId: parent.id,
+      limit: 2,
+    });
+    const page2 = await call<{ containers: Container[] }>(alice, 'container_list', {
+      parentContainerId: parent.id,
+      limit: 2,
+      offset: 2,
+    });
+    expect([...page1.containers, ...page2.containers].map((c) => c.id)).toEqual(
+      kids.map((c) => c.id),
+    );
+    const byName = await call<{ containers: Container[] }>(alice, 'container_list', {
+      query: 'paging kid 3',
+    });
+    expect(byName.containers.map((c) => c.id)).toEqual([kids[2]!.id]);
+  });
+
+  it('counts archived items and child containers in the delete impact', async () => {
+    const box = await newContainer(alice, { name: 'Impact box' });
+    await newContainer(alice, { name: 'Impact child', parentContainerId: box.id });
+    await newPossession(alice, { name: 'Archived thing', containerId: box.id, isArchived: true });
+    const { getContainerImpact } = await import('../../application/possessions.service');
+    expect(await getContainerImpact(alice, box.id)).toEqual({ possessions: 1, childContainers: 1 });
+    expect(await getContainerImpact(bob, box.id)).toBeNull();
+  });
+
+  it('bounds the summary currency list', async () => {
+    const codes = Array.from(
+      { length: 25 },
+      (_, i) =>
+        `X${String.fromCharCode(65 + (i % 26))}${String.fromCharCode(65 + Math.floor(i / 26))}`,
+    );
+    for (const code of codes) {
+      await newPossession(bob, { name: `Cur ${code}`, priceCents: 1, currencyCode: code });
+    }
+    const { summary } = await call<{ summary: { valueByCurrency: unknown[] } }>(
+      bob,
+      'possession_summary',
+      {},
+    );
+    expect(summary.valueByCurrency.length).toBeLessThanOrEqual(20);
+  });
+});
+
 describe('containers', () => {
   it('nests containers and reports contents and item counts', async () => {
     const room = await newContainer(alice, { name: 'Office' });
