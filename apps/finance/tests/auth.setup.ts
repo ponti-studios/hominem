@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { expect, test } from '@playwright/test';
+import { test } from '@playwright/test';
 import { createOtpTestEmail, signInWithOtp } from '@ponti-studios/auth/testkit';
 
 const authDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '.auth');
