@@ -328,6 +328,79 @@ describe('OpenRouter generation provider', () => {
     ]);
   });
 
+  describe('an empty provider turn', () => {
+    const run = async (
+      values: readonly StreamChunk[],
+      options: { requiresToolCall?: boolean } = {},
+    ) => {
+      mockedStream.mockReturnValueOnce(chunks(values));
+      const provider = new OpenRouterChatModel({
+        model: 'test-model',
+        messages: [],
+        tools: [
+          { type: 'function', function: { name: 'task_list', description: 'x', parameters: {} } },
+        ],
+        generationId: 'generation-7',
+        maxTokens: 250,
+        ...options,
+      });
+      await collect(
+        provider.open({
+          turnId: 'turn-1',
+          iteration: 0,
+          state: createGenerationState('generation-7'),
+        }),
+      );
+    };
+
+    // Surfaces to the user as "No reply was generated"; the log has to say why.
+    it('logs what came back when there is neither text nor a tool call', async () => {
+      await run(
+        [
+          chunk([{ index: 0, delta: { reasoning: 'thinking it over' } }]),
+          chunk([{ index: 0, finishReason: 'length', delta: {} }]),
+        ],
+        { requiresToolCall: true },
+      );
+
+      expect(mockedLogger.warn).toHaveBeenCalledWith('provider_turn_empty', {
+        generationId: 'generation-7',
+        model: 'test-model',
+        iteration: 0,
+        toolChoice: 'required',
+        maxTokens: 250,
+        finishReasons: ['length'],
+        chunkCount: 2,
+        reasoningChars: 'thinking it over'.length,
+        rawToolCallCount: 0,
+      });
+    });
+
+    it('does not log for a turn that produced text', async () => {
+      await run([chunk([{ index: 0, finishReason: 'stop', delta: { content: 'hello' } }])]);
+
+      expect(mockedLogger.warn).not.toHaveBeenCalledWith('provider_turn_empty', expect.anything());
+    });
+
+    it('does not log for a turn that made a tool call', async () => {
+      await run([
+        chunk([
+          {
+            index: 0,
+            finishReason: 'tool_calls',
+            delta: {
+              toolCalls: [
+                { index: 0, id: 'call-1', function: { name: 'task_list', arguments: '{}' } },
+              ],
+            },
+          },
+        ]),
+      ]);
+
+      expect(mockedLogger.warn).not.toHaveBeenCalledWith('provider_turn_empty', expect.anything());
+    });
+  });
+
   it('captures a usage-only trailer chunk sent after the finish-reason chunk', async () => {
     const usage = { promptTokens: 1, completionTokens: 2, totalTokens: 3, cost: 0.01 };
     mockedStream.mockReturnValueOnce(

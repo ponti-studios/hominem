@@ -105,6 +105,8 @@ export type OpenRouterChatModelOptions = {
   requiresToolCall?: boolean;
   requiresWebSearch?: boolean;
   requiresConfirmation?: (toolName: string) => boolean;
+  // Only used to tie provider log lines to the generation they belong to.
+  generationId?: string;
   maxAttempts?: number;
   // Test-only scripted OpenRouter client (canned SSE chunks). Production
   // never sets this — OpenRouter is the only supported provider.
@@ -178,18 +180,24 @@ export class OpenRouterChatModel implements ChatModel {
     // cancellation through the fetch/undici abort path instead, which is
     // the mechanism the HTTP client actually guarantees acts on.
     const controller = new AbortController();
+    const toolChoice =
+      this.options.tools.length > 0
+        ? this.firstTurn && (this.options.requiresToolCall || this.options.requiresWebSearch)
+          ? 'required'
+          : 'auto'
+        : undefined;
+    // What this turn actually returned, kept so an empty one can be explained afterwards.
+    let chunkCount = 0;
+    let contentChars = 0;
+    let reasoningChars = 0;
+    const finishReasons: string[] = [];
     try {
       const completion = streamChatCompletion(
         {
           model: this.options.model,
           messages: this.messages,
           tools: this.options.tools.length > 0 ? this.options.tools : undefined,
-          toolChoice:
-            this.options.tools.length > 0
-              ? this.firstTurn && (this.options.requiresToolCall || this.options.requiresWebSearch)
-                ? 'required'
-                : 'auto'
-              : undefined,
+          toolChoice,
           parallelToolCalls: false,
           maxTokens: this.options.maxTokens,
           ...(this.options.reasoning ? { reasoning: this.options.reasoning } : {}),
@@ -224,6 +232,12 @@ export class OpenRouterChatModel implements ChatModel {
         }
         this.options.onUsage?.(getChatCompletionUsage(chunk));
         const providerChunk = toProviderChunk(chunk);
+        chunkCount += 1;
+        contentChars += providerChunk.content?.length ?? 0;
+        reasoningChars += providerChunk.reasoning?.length ?? 0;
+        for (const choice of chunk.choices ?? []) {
+          if (choice.finishReason != null) finishReasons.push(String(choice.finishReason));
+        }
         for (const call of providerChunk.toolCalls ?? []) {
           const previous = calls.get(call.index);
           calls.set(call.index, {
@@ -256,6 +270,24 @@ export class OpenRouterChatModel implements ChatModel {
       }
 
       const toolCalls = reconstructProviderToolCalls(calls);
+      if (contentChars === 0 && toolCalls.length === 0) {
+        // The model answered with neither text nor a usable tool call, which surfaces to the
+        // user as "No reply was generated". Record what came back so the cause is visible:
+        // a finish reason of "length" means it ran out of tokens, reasoning-only output shows
+        // in reasoningChars, and a rawToolCallCount above zero means a tool call arrived but
+        // was dropped as incomplete.
+        logger.warn('provider_turn_empty', {
+          generationId: this.options.generationId,
+          model: this.options.model,
+          iteration: generationIteration,
+          toolChoice: toolChoice ?? 'none',
+          maxTokens: this.options.maxTokens ?? null,
+          finishReasons,
+          chunkCount,
+          reasoningChars,
+          rawToolCallCount: calls.size,
+        });
+      }
       if (toolCalls.length > 0) {
         this.messages.push({ role: 'assistant', content: null, toolCalls });
       }

@@ -192,6 +192,7 @@ export async function executeGenerationTurn(
     maxTokens: input.maxTokens,
     reasoning: input.reasoning,
     requiresToolCall: input.initialState ? false : input.requiresToolCall,
+    generationId: input.generationId,
     requiresConfirmation: (name: string) =>
       runtime?.getToolDefinition(name)?.requiresConfirmation ?? false,
     onUsage: (next: AIUsageMetrics | null) => {
