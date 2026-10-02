@@ -188,7 +188,7 @@ for (const smokeCase of toRun) {
   console.log(`▶ ${smokeCase.name}: ${smokeCase.message}`);
   const reason = await runCase(smokeCase);
   console.log(reason === null ? '  ✓ passed' : `  ✗ failed: ${reason}`);
-  rows.push(`| ${smokeCase.name} | ${reason === null ? 'pass' : `FAIL: ${reason}`} |`);
+  rows.push(`| ${smokeCase.name} | ${reason === null ? 'pass' : 'FAIL (see job log)'} |`);
   if (reason !== null) failures++;
 }
 
