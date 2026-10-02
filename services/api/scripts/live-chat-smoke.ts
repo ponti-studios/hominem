@@ -46,6 +46,7 @@ type Turn = {
 
 async function api(path: string, init: RequestInit = {}): Promise<Response> {
   return fetch(`${API_URL}${path}`, {
+    signal: AbortSignal.timeout(30_000),
     ...init,
     headers: {
       'content-type': 'application/json',

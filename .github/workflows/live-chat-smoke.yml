@@ -124,14 +124,23 @@ jobs:
           exit 1
 
       - name: live-chat-smoke
+        timeout-minutes: 8
         working-directory: services/api
         env:
           SMOKE_CASES: ${{ inputs.cases }}
         run: |
           set -euo pipefail
-          eval "$(pnpm --silent e2e:setup 2>/dev/null | grep 'export ')"
+          # e2e:setup prints the session cookie as `export` lines: keep those out
+          # of the log, show everything else, and bound it so a hang fails fast.
+          setup_output="$(timeout 90 pnpm --silent e2e:setup 2>&1)" || {
+            echo "$setup_output" | grep -v 'export ' || true
+            echo "::error::e2e:setup failed or timed out"
+            exit 1
+          }
+          echo "$setup_output" | grep -v 'export ' || true
+          eval "$(echo "$setup_output" | grep 'export ')"
           pnpm live-chat-smoke
 
       - name: api-log
-        if: failure()
+        if: ${{ failure() || cancelled() }}
         run: tail -n 300 "$RUNNER_TEMP/api.log" || true
