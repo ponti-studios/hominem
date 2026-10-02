@@ -36,6 +36,7 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "rm -rf .cache && tsc --noEmit && tsc -p tsconfig.auth-ui.json --noEmit",
     "e2e:setup": "tsx scripts/e2e-setup.ts",
+    "live-chat-smoke": "tsx scripts/live-chat-smoke.ts",
     "export-user": "tsx scripts/export-user.ts",
     "invite-user": "tsx scripts/invite-user.ts",
     "merge-user-data": "tsx scripts/merge-user-data.ts",

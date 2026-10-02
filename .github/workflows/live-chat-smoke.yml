@@ -1,0 +1,137 @@
+name: live-chat-smoke
+
+# Sends real chat turns to a running API with the real OpenRouter model, then
+# asserts the model used its tools. Unit and scripted-provider tests cannot see
+# this failure class (a model that says "let me check your tasks" and calls
+# nothing). Costs a few cents per run, so it only fires on chat/tool-routing
+# changes, nightly (to catch model or provider drift), and on demand.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'services/api/src/chat/**'
+      - 'services/api/src/mcp/**'
+      - 'services/api/scripts/live-chat-smoke.ts'
+      - 'packages/ai/**'
+      - 'packages/chat/**'
+      - '.github/workflows/live-chat-smoke.yml'
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+    inputs:
+      chat-model:
+        description: OpenRouter model id to test (defaults to the app's CHAT_MODEL).
+        type: string
+        required: false
+      cases:
+        description: Comma-separated case names (add-task, list-tasks, plain-chat). Empty runs all.
+        type: string
+        required: false
+
+concurrency:
+  group: live-chat-smoke-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  live-chat-smoke:
+    # Repository secrets are not exposed to pull requests from forks.
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TURBO_TELEMETRY_DISABLED: '1'
+      # Not production, so outbound OTP email is captured to the local mailbox;
+      # ENV is deliberately left unset so the AI provider is the real OpenRouter.
+      NODE_ENV: development
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      CHAT_MODEL: ${{ inputs.chat-model || 'openai/gpt-5-mini' }}
+      REDIS_URL: redis://localhost:6379
+      RESEND_API_KEY: 'ci-test-resend-key'
+      RESEND_FROM_EMAIL: 'test@example.com'
+      RESEND_FROM_NAME: 'Test Sender'
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
+      BETTER_AUTH_SECRET: 'ci-test-better-auth-secret-32-characters'
+      API_URL: http://localhost:4040
+      WEB_URL: http://localhost:4445
+      E2E_ORIGIN: http://localhost:4040
+      PORT: '4040'
+
+    services:
+      postgres:
+        image: ghcr.io/ponti-studios/foundation/postgres@sha256:578d34f82b21752b9e749776e955fadc85e1cba8d962e78bce1bd60878a9c316
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hominem-test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hominem-test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 4433:5432
+      redis:
+        image: redis@sha256:52334768d4a6594d8969f51a1a6fee3ffa7545f6359a4877229cdc754d2def82
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: require-openrouter-key
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "::error::The OPENROUTER_API_KEY repository secret is not set; the live chat smoke cannot run."
+            exit 1
+          fi
+
+      - name: checkout-repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: setup-pnpm-workspace
+        uses: ./.github/actions/setup-pnpm-workspace
+        with:
+          node-version: '24.18.0'
+
+      - name: setup-go-for-migrations
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: '1.25'
+          cache: false
+
+      - name: run-database-migrations
+        run: just db migrate test
+
+      - name: start-api
+        run: |
+          set -euo pipefail
+          cd services/api
+          nohup pnpm exec tsx --tsconfig tsconfig.dev.json src/index.ts > "$RUNNER_TEMP/api.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            curl -fsS -o /dev/null http://localhost:4040/ && exit 0
+            sleep 1
+          done
+          echo "::error::API did not become ready within 60s"
+          tail -n 100 "$RUNNER_TEMP/api.log"
+          exit 1
+
+      - name: live-chat-smoke
+        working-directory: services/api
+        env:
+          SMOKE_CASES: ${{ inputs.cases }}
+        run: |
+          set -euo pipefail
+          eval "$(pnpm --silent e2e:setup 2>/dev/null | grep 'export ')"
+          pnpm live-chat-smoke
+
+      - name: api-log
+        if: failure()
+        run: tail -n 300 "$RUNNER_TEMP/api.log" || true
