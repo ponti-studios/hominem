@@ -28,11 +28,11 @@ behavior. Extraction only — not a deletion target.
 
 ## Work sequence
 
-| ID | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
-| --- | --- | --- | --- | --- | --- |
-| W-001 | Extract named steps, same file, same transaction boundary | execute | — | read-through | Each step has one job |
-| W-002 | Add ordering test: stale delete happens only after replacement commit; embedding/speech fan-out still fires post-commit | `services/api` chat tests | W-001 | new test + execute suite output | Ordering test-enforced |
-| W-003 | Run gates: execute + `chats.$chatId.generation.test.ts` + `chats.test.ts` | repo | W-002 | `pnpm format`, package lint + typecheck | Green, no behavior change |
+| ID    | Work item                                                                                                               | Owner boundary            | Depends on | Validation / artifact                   | Done when                 |
+| ----- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------- | ---------- | --------------------------------------- | ------------------------- |
+| W-001 | Extract named steps, same file, same transaction boundary                                                               | execute                   | —          | read-through                            | Each step has one job     |
+| W-002 | Add ordering test: stale delete happens only after replacement commit; embedding/speech fan-out still fires post-commit | `services/api` chat tests | W-001      | new test + execute suite output         | Ordering test-enforced    |
+| W-003 | Run gates: execute + `chats.$chatId.generation.test.ts` + `chats.test.ts`                                               | repo                      | W-002      | `pnpm format`, package lint + typecheck | Green, no behavior change |
 
 ## Acceptance criteria
 

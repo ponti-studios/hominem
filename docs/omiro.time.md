@@ -42,13 +42,13 @@ unavailable.
 
 The implemented interaction states are:
 
-| State | Meaning |
-| --- | --- |
-| `idle` | Ready for a new request. |
-| `parsing` | A submitted prompt is being interpreted; duplicate submission is blocked. |
-| `draft` | A reviewed database-backed task is ready for explicit confirmation. |
-| `answer` | A direct answer was found without a write action. |
-| `availability` | Openings were found and can be selected. |
+| State          | Meaning                                                                   |
+| -------------- | ------------------------------------------------------------------------- |
+| `idle`         | Ready for a new request.                                                  |
+| `parsing`      | A submitted prompt is being interpreted; duplicate submission is blocked. |
+| `draft`        | A reviewed database-backed task is ready for explicit confirmation.       |
+| `answer`       | A direct answer was found without a write action.                         |
+| `availability` | Openings were found and can be selected.                                  |
 
 The composer clears its visible prompt only after a non-error interpretation
 result. Cancelling an answer, availability result, or event choice restores the

@@ -5,7 +5,7 @@ license: MIT
 compatibility: PostgreSQL (Railway) + Goose migrations + Kysely/kysely-codegen.
 metadata:
   author: project
-  version: "1.0"
+  version: '1.0'
   category: Database
   tags:
     - database

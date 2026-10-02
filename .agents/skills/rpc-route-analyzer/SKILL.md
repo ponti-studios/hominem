@@ -121,7 +121,7 @@ SSE, or translating a typed service error into the API error envelope.
 For each extracted unit, report:
 
 | Current operation | Crossed seam | Current owner | Correct owner | Why | Observable evidence |
-| --- | --- | --- | --- | --- | --- |
+| ----------------- | ------------ | ------------- | ------------- | --- | ------------------- |
 
 Use these destination rules:
 

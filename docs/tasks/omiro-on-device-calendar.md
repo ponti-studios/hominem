@@ -32,16 +32,16 @@ Foundation Model and use native EventKit and EventKitUI tools.
 ## Acceptance criteria
 
 - [ ] Calendar events are never sent to the Hominem API by current Omiro
-  builds; EventKit is authoritative.
+      builds; EventKit is authoritative.
 - [ ] `swift test --package-path apps/omiro/modules/on-device-ai` runs without
-  React Native, CocoaPods, or a simulator.
+      React Native, CocoaPods, or a simulator.
 - [ ] Apple editor handles calendar create, edit, delete, calendar selection,
-  recurrence, attendees, alarms, save, and cancellation.
+      recurrence, attendees, alarms, save, and cancellation.
 - [ ] `/api/tasks/parse` remains supported for web task management and older
-  Omiro builds, and receives no calendar payload from current Omiro builds.
+      Omiro builds, and receives no calendar payload from current Omiro builds.
 - [ ] Calendar MCP tools, calendar scope, People calendar activity, exports,
-  evaluations, metadata, and database tables are removed; travel trip history
-  remains available.
+      evaluations, metadata, and database tables are removed; travel trip history
+      remains available.
 
 ## Rollout boundary
 

@@ -32,19 +32,19 @@ Never trust a review comment at face value. For each distinct issue:
 - Diff against the parent commit (`git show <base>:<path>`) to tell
   introduced-by-this-PR from pre-existing.
 - Reproduce failures locally before fixing (e.g. `TZ=UTC pnpm
-  --filter @hominem/web test` for timezone-dependent tests).
+--filter @hominem/web test` for timezone-dependent tests).
 - Acknowledge valid partial mitigations, but don't let them excuse a
   real regression (e.g. an account-menu link doesn't replace a removed
   back control the repo's navigation rules protect).
 
 ## 3. Triage
 
-| Verdict | Action |
-| --- | --- |
-| Valid, fix is clear-cut | Plan and implement (section 4) |
-| Valid, but fix shape is a product call | Ask the user before coding |
-| Already fixed by a later push | Reply in-thread citing the commit |
-| Invalid or out of scope | Reply in-thread with the counter-evidence |
+| Verdict                                | Action                                    |
+| -------------------------------------- | ----------------------------------------- |
+| Valid, fix is clear-cut                | Plan and implement (section 4)            |
+| Valid, but fix shape is a product call | Ask the user before coding                |
+| Already fixed by a later push          | Reply in-thread citing the commit         |
+| Invalid or out of scope                | Reply in-thread with the counter-evidence |
 
 Surface the per-issue analysis with verdicts before starting work when
 more than one issue needs a product call; otherwise proceed and report

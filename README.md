@@ -17,7 +17,7 @@ Product opinions and design philosophy live below in [Philosophy](#philosophy).
 
 ## Documentation
 
-The repository's operating law lives in `docs/`. 
+The repository's operating law lives in `docs/`.
 
 Read the relevant doc before changing a system boundary. Package READMEs are setup entrypoints only — the
 `docs/` are where durable decisions live.
@@ -28,8 +28,8 @@ Read the relevant doc before changing a system boundary. Package READMEs are set
   right now (architecture, auth, testing, evidence, chat, and so on). This is
   where you go to understand a boundary before you touch it.
 - **`docs/decisions/`** — accepted decisions (ADRs). Small, topic-named,
-  flat — no queue, no numbering. Read one when you need to know *why*
-  something is shaped the way it is, not just *what* it is.
+  flat — no queue, no numbering. Read one when you need to know _why_
+  something is shaped the way it is, not just _what_ it is.
 - **`docs/tasks/`** — work that's currently open, ordered entirely by each
   file's `status` and `depends_on` frontmatter, never by filename.
 - **`docs/incidents/`** — postmortems. They record what broke and why; any

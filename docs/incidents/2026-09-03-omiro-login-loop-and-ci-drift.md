@@ -24,7 +24,7 @@ in this order:
    got a full CI run.
 
 None of these had a single root cause. They are documented separately below
-because the *mechanism* of each is the reusable lesson — grouping them under
+because the _mechanism_ of each is the reusable lesson — grouping them under
 one story would blur what to actually change going forward.
 
 ---
@@ -44,22 +44,26 @@ Better Auth's OAuth provider (`@better-auth/oauth-provider`, wrapped by
 logic (`authorizeEndpoint`, roughly):
 
 ```js
-if (!session || (session && maxAgeSeconds !== undefined && !hasSatisfiedMaxAge)
-    || promptSet?.has('login') || promptSet?.has('create')) {
+if (
+  !session ||
+  (session && maxAgeSeconds !== undefined && !hasSatisfiedMaxAge) ||
+  promptSet?.has('login') ||
+  promptSet?.has('create')
+) {
   return redirectWithPromptCode(ctx, opts, 'login'); // → loginPage
 }
 ```
 
 This check runs on **every** hit to `/api/auth/oauth2/authorize`, with no
 exemption for "the user just logged in a second ago." The exemption that
-*does* exist — `isSessionFreshForSignedQuery(session.createdAt,
+_does_ exist — `isSessionFreshForSignedQuery(session.createdAt,
 signedQueryIssuedAt)` — only lives inside the plugin's internal
 `/oauth2/consent` and `/oauth2/continue` endpoints.
 
 Our own [`/login/verify`](../../services/api/src/routes/login/route.tsx)
 handler doesn't call either of those. After a successful OTP verification it
 redirects straight back to `/api/auth/oauth2/authorize?<original query>` —
-the *same, unmodified* query the client originally sent, `prompt=login` (or
+the _same, unmodified_ query the client originally sent, `prompt=login` (or
 `max_age=0`) included. So:
 
 1. Client requests authorize with `prompt=login` → no session → redirect to
@@ -85,7 +89,7 @@ strips `prompt=login`/`prompt=create` and `max_age` from the query **after**
 a successful sign-in, before resuming into `/oauth2/authorize` — mirroring
 what the plugin's own `selected`/`created` continuation handlers do
 internally via `removePromptFromQuery`. We're allowed to do this because we
-*are* the party attesting the login just happened.
+_are_ the party attesting the login just happened.
 
 ### Why this wasn't the omiro.ponti.io bug
 
@@ -97,8 +101,8 @@ diagnosing it first was a case of pattern-matching a similar-looking log
 signature (repeated `GET /login → 302`) onto the wrong caller before asking
 "which client is actually doing this?"
 
-**Lesson:** when a log pattern repeats, identify the *client* (user agent,
-IP, referer) before theorizing about the *server-side* mechanism. Two
+**Lesson:** when a log pattern repeats, identify the _client_ (user agent,
+IP, referer) before theorizing about the _server-side_ mechanism. Two
 completely different callers produced the same-looking log line here.
 
 ---
@@ -125,7 +129,7 @@ code for "omiro" anywhere in the app). Its auth flow:
   `serverEnv.HOMINEM_INTERNAL_API_URL` — a **server-to-server** fetch to
   Better Auth's `/api/auth/get-session`.
 
-`getServerAuth` fails closed on *any* problem:
+`getServerAuth` fails closed on _any_ problem:
 
 ```js
 try {
@@ -160,7 +164,7 @@ The loop:
    JSON → `getServerAuth` returns `{ user: null }`.
 3. `requireAuthMiddleware` treats the (validly authenticated!) request as
    unauthenticated → redirects to `hostedLoginUrl` (built correctly from the
-   *public* `VITE_PUBLIC_API_URL`, since that's the browser-facing hop).
+   _public_ `VITE_PUBLIC_API_URL`, since that's the browser-facing hop).
 4. The API's `/login` route checks the session cookie directly (no
    Cloudflare in the way for its own internal `auth.api.getSession` call) →
    sees a valid session → redirects straight back to the app.
@@ -171,7 +175,7 @@ This is a **documented, known failure mode** — [`docs/authentication.md`]
 (../authentication.md) already names it explicitly ("the visible symptom is
 a successful OTP sign-in immediately followed by a redirect back to the
 sign-in page") — but the doc didn't stop it from happening, because nothing
-*enforces* the correct value. `HOMINEM_INTERNAL_API_URL` is a Zod-validated,
+_enforces_ the correct value. `HOMINEM_INTERNAL_API_URL` is a Zod-validated,
 required, `.default()`-free `z.url()` field, so a **missing** value would
 crash the app at boot. A **syntactically valid but semantically wrong** value
 (a real URL, just the wrong one) passes validation fine and fails silently at
@@ -247,8 +251,8 @@ RUN pnpm --filter @hominem/web run build
 
 Setting the **runtime** Railway variable does nothing to a JS bundle that
 was already built and pushed in an earlier image — that value only takes
-effect on the *next full rebuild*, where Railway passes it as a Docker build
-arg. Simply updating a variable and letting Railway redeploy the *existing*
+effect on the _next full rebuild_, where Railway passes it as a Docker build
+arg. Simply updating a variable and letting Railway redeploy the _existing_
 image (or hitting a cached build layer) ships stale — or, in this case,
 apparently blank — bytes regardless of what the dashboard says.
 
@@ -259,7 +263,7 @@ The client-side validation itself
 required `z.url()` with no fallback, so a bad build-time value should fail
 loudly. The actual bug was in **how** it failed:
 [`use-telemetry.ts`](../../apps/web/app/lib/telemetry/use-telemetry.ts)
-called `getClientEnv()` *outside* the `try/catch` that wrapped
+called `getClientEnv()` _outside_ the `try/catch` that wrapped
 `initTelemetry()`:
 
 ```js
@@ -273,7 +277,7 @@ try {
 
 `useTelemetry()` runs in a `useEffect` on every page, via `root.tsx`. React
 treats an error thrown inside an effect the same as a render error for Error
-Boundary purposes — so a telemetry-config problem took the *entire app* down
+Boundary purposes — so a telemetry-config problem took the _entire app_ down
 to the error boundary, not just telemetry.
 
 ### Fix
@@ -327,17 +331,17 @@ picked up an old file).
 **A second-order mistake made while fixing this:** the first regeneration
 attempt ran against a long-lived local `foundation-db-test` Docker container
 (11+ hours of uptime) rather than a schema built from a clean migration
-history. That container had *independently drifted* on two unrelated fields
+history. That container had _independently drifted_ on two unrelated fields
 (`AppCareerApplicationsOffers.applicationId` nullability, and the unused
 `AppSocialThreadParticipants.ownerUserid` column) — not from bad migrations,
 just from ad hoc local testing over time. That regeneration passed locally,
-got committed and pushed, and CI immediately failed again with the *opposite*
+got committed and pushed, and CI immediately failed again with the _opposite_
 diff.
 
 **Fix, done twice:** spin up a genuinely fresh Postgres container, run every
 migration from scratch via `just db migrate`, then regenerate. This matches
 what CI always does (a brand-new service container per run) and is the only
-way to be sure the generated file reflects *only* what's in the committed
+way to be sure the generated file reflects _only_ what's in the committed
 `.sql` migrations — not whatever state a long-running local dev database
 happens to be in today.
 
@@ -355,7 +359,7 @@ picks the "latest" OTP record by comparing `capturedAt` (an ISO timestamp,
 millisecond resolution) with strict `>`. Three `appendScriptedMailboxRecord`
 calls in a row in a fast test run can land within the same millisecond,
 producing identical `capturedAt` values. On a tie, strict `>` keeps whichever
-record was encountered *first* while scanning the file — not the one
+record was encountered _first_ while scanning the file — not the one
 actually written last — so the test intermittently got the first OTP
 (`111111`) instead of the third (`333333`).
 
@@ -383,7 +387,7 @@ declare global {
 
 so a literal `import.meta.env` access would typecheck inside this package
 without a hard dependency on `vite/client`'s ambient types. TypeScript merges
-*all* declarations of a given global interface member across a program, and
+_all_ declarations of a given global interface member across a program, and
 requires them to have **identical modifiers and types**. Vite's own
 `vite/client.d.ts` declares `readonly env: ImportMetaEnv` (required, a
 specific named type) — incompatible with this package's `readonly env?:
@@ -403,7 +407,7 @@ build, so consumers resolved the package's exported, pre-built types
 (`"types": "./build/index.d.ts"` in `package.json#exports`) rather than
 re-triggering the source-level ambient conflict. Only running `@hominem/env`'s
 own isolated typecheck task exposed it — and even that didn't reproduce the
-*exact* CI conditions (a plain local run of it passed too), because the
+_exact_ CI conditions (a plain local run of it passed too), because the
 precise hoisting quirk that exposes `vite/client` there depends on the exact
 fresh-install node_modules layout.
 
@@ -412,7 +416,7 @@ with a local type assertion at the one call site that needs it
 (`(import.meta as ImportMeta & { env?: EnvSource }).env`). This structurally
 cannot participate in a global declaration merge conflict anymore, regardless
 of what other ambient types happen to be visible in a given program — which
-matters because we couldn't fully pin down *why* CI's install exposed the
+matters because we couldn't fully pin down _why_ CI's install exposed the
 conflict and a local reproduction didn't.
 
 **Lesson:** global (`declare global`) type augmentations in a shared package
@@ -432,7 +436,7 @@ project-wide ambient type.
 **Environment variables**
 
 - A required env var with no default (`z.url()`, no `.default()`) protects
-  against *missing* values, not *wrong-but-valid* ones. `HOMINEM_INTERNAL_API_URL`
+  against _missing_ values, not _wrong-but-valid_ ones. `HOMINEM_INTERNAL_API_URL`
   pointed at the wrong (but syntactically valid) host and passed validation
   fine. There is no code-level way to catch "right shape, wrong semantics" —
   this has to be caught by monitoring/alerting on the failure mode itself

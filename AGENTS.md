@@ -88,10 +88,10 @@ just db migrate
 **Never add a `workspace:*` dependency for a type-only import.** If you only `import type { X } from '@hominem/y'`, do not list `@hominem/y` in `package.json`. pnpm/turbo build their task graph from `package.json` edges with no idea an import is type-only — a single `import type` turned into a real dependency once dragged another package's entire build/test/lint/typecheck into every consumer's CI scope. Instead, add a `paths` alias directly in your own `tsconfig.json` pointing at the emitted declaration, never at source (see `docs/type-system.md`'s Rules section — resolving another package's source instead of its `.d.ts` is exactly the failure class that document exists to eliminate):
 
 ```json
-"paths": { 
+"paths": {
     "@hominem/api/types": [
         "../../services/api/build/rpc/app.d.ts"
-    ] 
+    ]
 }
 ```
 
@@ -104,7 +104,8 @@ Keep it in sync with whatever `services/api/package.json`'s `exports` map says t
 3. Add a `"build": "tsc -p tsconfig.json"` script if you don't have one — required for your `references` (and anything referencing _you_) to resolve real declaration output instead of erroring with "Output file has not been built from source file" during `tsc --noEmit`.
 4. Register yourself in the root `tsconfig.json`'s `references` array — but only if `outDir` is actually set. A referenced project with no `outDir` and `tsc -b` run from root will ignore `noEmit` and write generated `.js`/`.d.ts` straight into your `src/` tree (this happened while wiring this up — `packages/rpc` and `services/api` are deliberately excluded from the root graph for exactly this reason, since they're type-inference boundary packages, see below).
 
-**Package that infers types across other packages (Hono `typeof app` RPC pattern, like `services/api`):** 
+**Package that infers types across other packages (Hono `typeof app` RPC pattern, like `services/api`):**
+
 - DO NOT wire it into the composite `references` graph even if its dependencies are composite
 - DO NOT add a `references` entry to the package at all — not even a single one to an otherwise-safe package. TS's "portable type" check (`TS2883`) refuses to infer an exported type like `AppType` across a real composite project boundary without an explicit annotation, which defeats Hono's RPC type-inference pattern. A bare `references` entry (package itself still `composite: false`) does _not_ trigger TS2883 today — verified empirically for `services/api` → `packages/chat` (full `tsc --noEmit` clean) — but the zero-references rule exists to hold as the `AppType` contract evolves, not just for today's shape, so keep resolving every dependency via plain source/paths (`composite: false`, no `references`) regardless. `services/api/tsconfig.json` follows this, and so does `packages/rpc/tsconfig.json` — it carried a `references: [{ path: "../chat" }]` entry from 2026-08-25 until this was reconciled: dropped in favor of a `paths` override straight to `packages/chat/build/*.d.ts`, the same pattern `services/api` uses. See `docs/type-system.md` for the full investigation and why declaration-contract resolution exists at all.
 
@@ -124,11 +125,12 @@ Keep it in sync with whatever `services/api/package.json`'s `exports` map says t
 - `turbo.json`'s `typecheck` task `dependsOn: ["^build"]` — a package's composite dependencies get built (and turbo-cached) before it typechecks, so referenced projects have real declaration output to resolve against.
 
 ### TypeScript type-checking
+
 Documentation on type-checking in this monorepo can be found in `docs/type-system.md`.
 
 ## Monorepo
 
-- The root `AGENTS.md` file is the primary authority for the repository. Nested `AGENTS.md` files add directory-scoped detail for agents working in those trees. These nested files must not duplicate or contradict these root rules. 
+- The root `AGENTS.md` file is the primary authority for the repository. Nested `AGENTS.md` files add directory-scoped detail for agents working in those trees. These nested files must not duplicate or contradict these root rules.
 - To work with the hominem database use the `.agents/skills/hominem-database` skill instead, since that skill is already the required entry point for any schema/migration/repository work there (see the `packages/db` rule above).
 - The task files under `docs/tasks/` are the work tracker: they own temporary execution.
 - **Execute task plans by dependency order, not by filename.** Use the Markdown files in `docs/tasks/` as the task source of truth; do not require a separate task index. A task's own `status` and `depends_on` frontmatter is the only ordering signal — pick any task that isn't `Implemented` and whose `depends_on` are all `Implemented`. Validate the edges with `pnpm run tasks:check`, which runs as part of `pnpm check`.

@@ -55,7 +55,7 @@ reimplementation of the flow.
      `artifactType: 'task'`, no parent.
    - **Nothing accepted** -> nothing is sent; all writes happen in one
      transaction per batch call (except the single-standalone fast path).
-   Response shape is `{ groups: [{ parent, tasks }], tasks }`.
+     Response shape is `{ groups: [{ parent, tasks }], tasks }`.
 
 The hook then resolves a canonical `SessionSource` (`kind: 'artifact'`, the
 created row's real `artifactType`) so the surrounding chat state updates

@@ -3,7 +3,16 @@ title: 'Design chat context-window tracking (deferred feature)'
 status: 'Proposed'
 priority: 'low'
 labels: [chat, telemetry, context]
-depends_on: [chat-generation-usage-accumulator.md, chat-generation-event-ownership.md, chat-generation-tool-args.md, chat-generation-effect-store.md, chat-generation-commit-extraction.md, web-chat-lifecycle-consolidation.md, omiro-chat-lifecycle-consolidation.md]
+depends_on:
+  [
+    chat-generation-usage-accumulator.md,
+    chat-generation-event-ownership.md,
+    chat-generation-tool-args.md,
+    chat-generation-effect-store.md,
+    chat-generation-commit-extraction.md,
+    web-chat-lifecycle-consolidation.md,
+    omiro-chat-lifecycle-consolidation.md,
+  ]
 blocks: []
 estimated_size: 'M'
 ---
@@ -43,11 +52,11 @@ Questions the design must answer:
 
 ## Work sequence
 
-| ID | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
-| --- | --- | --- | --- | --- | --- |
-| W-001 | Name the reader and the decision it drives | product | cleanup chain `Implemented` | written decision | No write path designed without a reader |
-| W-002 | Design store, keys, TTL, bounds | `packages/chat` + `services/api` | W-001 | design note | Reviewable contract |
-| W-003 | Implement with reader-first tests | same | W-002 | focused tests + evidence per `hominem-evidence` | Reader observed consuming fresh writes |
+| ID    | Work item                                  | Owner boundary                   | Depends on                  | Validation / artifact                           | Done when                               |
+| ----- | ------------------------------------------ | -------------------------------- | --------------------------- | ----------------------------------------------- | --------------------------------------- |
+| W-001 | Name the reader and the decision it drives | product                          | cleanup chain `Implemented` | written decision                                | No write path designed without a reader |
+| W-002 | Design store, keys, TTL, bounds            | `packages/chat` + `services/api` | W-001                       | design note                                     | Reviewable contract                     |
+| W-003 | Implement with reader-first tests          | same                             | W-002                       | focused tests + evidence per `hominem-evidence` | Reader observed consuming fresh writes  |
 
 ## Acceptance criteria
 

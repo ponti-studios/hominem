@@ -35,11 +35,11 @@ not a second default.
 
 ## Work sequence
 
-| ID | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
-| --- | --- | --- | --- | --- | --- |
-| W-001 | Record the strict/lenient decision (here or `docs/decisions/`) | user | — | written decision | No implementation starts undecided |
-| W-002 | Unify to the chosen contract; named wrappers only where proven necessary | `packages/chat` + engine | W-001 | engine test output for malformed + schema-mismatch inputs | One contract per path |
-| W-003 | Run gates for touched packages | repo | W-002 | `pnpm format`, package lint + typecheck | Green |
+| ID    | Work item                                                                | Owner boundary           | Depends on | Validation / artifact                                     | Done when                          |
+| ----- | ------------------------------------------------------------------------ | ------------------------ | ---------- | --------------------------------------------------------- | ---------------------------------- |
+| W-001 | Record the strict/lenient decision (here or `docs/decisions/`)           | user                     | —          | written decision                                          | No implementation starts undecided |
+| W-002 | Unify to the chosen contract; named wrappers only where proven necessary | `packages/chat` + engine | W-001      | engine test output for malformed + schema-mismatch inputs | One contract per path              |
+| W-003 | Run gates for touched packages                                           | repo                     | W-002      | `pnpm format`, package lint + typecheck                   | Green                              |
 
 ## Acceptance criteria
 
