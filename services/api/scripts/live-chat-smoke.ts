@@ -176,8 +176,13 @@ async function runCase(smokeCase: SmokeCase): Promise<string | null> {
   return reason;
 }
 
-const selected = process.env.SMOKE_CASES?.split(',').map((name) => name.trim());
-const toRun = selected ? cases.filter((smokeCase) => selected.includes(smokeCase.name)) : cases;
+// An unset or empty SMOKE_CASES (the workflow passes "" when the input is blank) means all.
+const selected = (process.env.SMOKE_CASES ?? '')
+  .split(',')
+  .map((name) => name.trim())
+  .filter(Boolean);
+const toRun =
+  selected.length > 0 ? cases.filter((smokeCase) => selected.includes(smokeCase.name)) : cases;
 if (toRun.length === 0) {
   console.error(`No cases match SMOKE_CASES=${process.env.SMOKE_CASES}`);
   process.exit(1);
