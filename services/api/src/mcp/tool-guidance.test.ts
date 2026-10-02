@@ -45,4 +45,19 @@ describe('task and memory tool guidance', () => {
     }
     expect(schema.properties.dueBefore?.description).toContain('no due date never match');
   });
+
+  // The model kept sending invented priority and due-date filters even with descriptions
+  // telling it not to, so it is only shown the filters it can use correctly.
+  it('shows the chat model only the task_list filters it can use, but still accepts them all', () => {
+    const definition = getToolDefinition('task_list');
+    const shown = convertSchemaToJsonSchema(
+      definition?.chatInputSchema ?? definition?.inputSchema ?? TaskListQuerySchema,
+    ) as { properties: Record<string, unknown> };
+
+    expect(Object.keys(shown.properties).sort()).toEqual(['query', 'status']);
+    expect(
+      definition?.inputSchema.safeParse({ priority: 'high', dueBefore: '2026-12-31T00:00:00Z' })
+        .success,
+    ).toBe(true);
+  });
 });

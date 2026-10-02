@@ -161,8 +161,18 @@ function isTransient(error: unknown): boolean {
   return code === 'timeout' || code === 'connection_error';
 }
 
+// A tool the model has called this many times in one generation is withdrawn for the rest of
+// it. Nothing else bounds a tool loop: a model that keeps tweaking a search's arguments would
+// otherwise call it until the request times out, and never answer.
+export const MAX_CALLS_PER_TOOL = 6;
+
+function toolName(tool: ChatFunctionTool): string {
+  return 'function' in tool ? tool.function.name : tool.type;
+}
+
 export class OpenRouterChatModel implements ChatModel {
   private readonly messages: ChatMessages[];
+  private readonly callCounts = new Map<string, number>();
   private attempt = 0;
   private firstTurn = true;
 
@@ -180,8 +190,11 @@ export class OpenRouterChatModel implements ChatModel {
     // cancellation through the fetch/undici abort path instead, which is
     // the mechanism the HTTP client actually guarantees acts on.
     const controller = new AbortController();
+    const tools = this.options.tools.filter(
+      (tool) => (this.callCounts.get(toolName(tool)) ?? 0) < MAX_CALLS_PER_TOOL,
+    );
     const toolChoice =
-      this.options.tools.length > 0
+      tools.length > 0
         ? this.firstTurn && (this.options.requiresToolCall || this.options.requiresWebSearch)
           ? 'required'
           : 'auto'
@@ -198,7 +211,7 @@ export class OpenRouterChatModel implements ChatModel {
         {
           model: this.options.model,
           messages: this.messages,
-          tools: this.options.tools.length > 0 ? this.options.tools : undefined,
+          tools: tools.length > 0 ? tools : undefined,
           toolChoice,
           parallelToolCalls: false,
           maxTokens: this.options.maxTokens,
@@ -291,7 +304,7 @@ export class OpenRouterChatModel implements ChatModel {
           toolChoice: toolChoice ?? 'none',
           // Not "maxTokens": the logger redacts any key containing "token".
           completionCap: this.options.maxTokens ?? null,
-          toolCount: this.options.tools.length,
+          toolCount: tools.length,
           usage: usageSeen,
           finishReasons,
           chunkCount,
@@ -301,6 +314,17 @@ export class OpenRouterChatModel implements ChatModel {
       }
       if (toolCalls.length > 0) {
         this.messages.push({ role: 'assistant', content: null, toolCalls });
+      }
+      for (const call of toolCalls) {
+        const name = call.function.name;
+        this.callCounts.set(name, (this.callCounts.get(name) ?? 0) + 1);
+        if (this.callCounts.get(name) === MAX_CALLS_PER_TOOL) {
+          logger.warn('provider_tool_withdrawn', {
+            generationId: this.options.generationId,
+            toolName: name,
+            calls: MAX_CALLS_PER_TOOL,
+          });
+        }
       }
       const confirmationCallIds = toolCalls.reduce<string[]>((ids, call) => {
         if (this.options.requiresConfirmation?.(call.function.name) ?? false) ids.push(call.id);

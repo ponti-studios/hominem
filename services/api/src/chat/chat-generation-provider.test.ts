@@ -3,7 +3,7 @@ import type { ChatStreamChunk } from '@hominem/ai';
 import { createGenerationState } from '@hominem/chat/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { OpenRouterChatModel } from './chat-generation-provider';
+import { MAX_CALLS_PER_TOOL, OpenRouterChatModel } from './chat-generation-provider';
 
 const mockedLogger = vi.hoisted(() => ({ warn: vi.fn() }));
 const mockedOpenRouterRequestError = vi.hoisted(
@@ -401,6 +401,58 @@ describe('OpenRouter generation provider', () => {
       ]);
 
       expect(mockedLogger.warn).not.toHaveBeenCalledWith('provider_turn_empty', expect.anything());
+    });
+  });
+
+  describe('a tool the model keeps calling', () => {
+    const offered = () =>
+      (mockedStream.mock.calls.at(-1)?.[0].tools ?? []).map((tool) =>
+        'function' in tool ? tool.function.name : tool.type,
+      );
+
+    it('is withdrawn after MAX_CALLS_PER_TOOL calls so the model has to answer', async () => {
+      const provider = new OpenRouterChatModel({
+        model: 'test-model',
+        messages: [],
+        tools: [
+          { type: 'function', function: { name: 'task_list', description: 'x', parameters: {} } },
+          { type: 'function', function: { name: 'task_update', description: 'x', parameters: {} } },
+        ],
+        generationId: 'generation-9',
+      });
+      const state = createGenerationState('generation-9');
+
+      for (let call = 1; call <= MAX_CALLS_PER_TOOL; call++) {
+        mockedStream.mockReturnValueOnce(
+          chunks([
+            chunk([
+              {
+                index: 0,
+                finishReason: 'tool_calls',
+                delta: {
+                  toolCalls: [
+                    { index: 0, id: `c${call}`, function: { name: 'task_list', arguments: '{}' } },
+                  ],
+                },
+              },
+            ]),
+          ]),
+        );
+        await collect(provider.open({ turnId: `t${call}`, iteration: call - 1, state }));
+        expect(offered()).toEqual(['task_list', 'task_update']);
+      }
+
+      mockedStream.mockReturnValueOnce(
+        chunks([chunk([{ index: 0, finishReason: 'stop', delta: { content: 'done' } }])]),
+      );
+      await collect(provider.open({ turnId: 'last', iteration: MAX_CALLS_PER_TOOL, state }));
+
+      expect(offered()).toEqual(['task_update']);
+      expect(mockedLogger.warn).toHaveBeenCalledWith('provider_tool_withdrawn', {
+        generationId: 'generation-9',
+        toolName: 'task_list',
+        calls: MAX_CALLS_PER_TOOL,
+      });
     });
   });
 

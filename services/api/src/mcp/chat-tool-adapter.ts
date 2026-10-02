@@ -98,7 +98,7 @@ function toChatTool(tool: CapabilityDefinition): ChatFunctionToolDefinition {
     function: {
       name: tool.name,
       description: describeCapability(tool),
-      parameters: convertSchemaToJsonSchema(tool.inputSchema),
+      parameters: convertSchemaToJsonSchema(tool.chatInputSchema ?? tool.inputSchema),
     },
   };
 }

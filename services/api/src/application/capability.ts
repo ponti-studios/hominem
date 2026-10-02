@@ -48,6 +48,9 @@ export interface CapabilityDefinition<
   title: string;
   description: string;
   inputSchema: InputSchema;
+  // The arguments a chat model is shown, when fewer than the tool accepts. Every call is still
+  // validated against `inputSchema`; a key left out here is simply never offered to the model.
+  chatInputSchema?: z.ZodType;
   outputSchema: OutputSchema;
   readOnly: boolean;
   scopes: readonly Scope[];

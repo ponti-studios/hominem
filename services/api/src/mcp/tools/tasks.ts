@@ -56,6 +56,10 @@ registerTool(
       'today" or "what is overdue". Omit every filter the user did not ask for: with none it ' +
       'returns up to 100 tasks, and an unneeded filter silently hides the rest.',
     inputSchema: TaskListQuerySchema,
+    // In live chat runs the model sent priority and due-date filters nobody asked for, which
+    // silently hid tasks without a due date, then searched again with new values dozens of
+    // times. Offer it only the filters it can use correctly.
+    chatInputSchema: TaskListQuerySchema.pick({ status: true, query: true }),
     outputSchema: taskListResultSchema.extend({ hint: z.string().optional() }),
     readOnly: true,
     scopes: ['task:read'],
