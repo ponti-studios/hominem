@@ -41,6 +41,7 @@ type ScriptedContext = {
   toolNames: Set<string>;
   userText: string;
   hasToolResult: boolean;
+  toolResultCount: number;
   hasRejectedToolResult: boolean;
   hasFailedToolResult: boolean;
 };
@@ -83,6 +84,7 @@ function createContext(request: OpenRouterRequest): ScriptedContext {
         .filter((name): name is string => Boolean(name)),
     ),
     hasToolResult: messages.some((message) => message.role === 'tool'),
+    toolResultCount: messages.filter((message) => message.role === 'tool').length,
     hasRejectedToolResult: messages.some(
       (message) => message.role === 'tool' && /rejected/i.test(String(message.content ?? '')),
     ),
@@ -93,7 +95,20 @@ function createContext(request: OpenRouterRequest): ScriptedContext {
   };
 }
 
+const ADD_TASK_PATTERN = /\badd a task\b/i;
+
 const toolNameRules: readonly ScriptedRule<string | null>[] = [
+  // Mirrors a real model on "add a task ...": check existing tasks, then create.
+  {
+    matches: ({ toolNames, userText, toolResultCount }) =>
+      toolNames.has('task_list') && ADD_TASK_PATTERN.test(userText) && toolResultCount === 0,
+    resolve: () => 'task_list',
+  },
+  {
+    matches: ({ toolNames, userText, toolResultCount }) =>
+      toolNames.has('task_create') && ADD_TASK_PATTERN.test(userText) && toolResultCount === 1,
+    resolve: () => 'task_create',
+  },
   {
     matches: ({ hasToolResult }) => hasToolResult,
     resolve: () => null,
@@ -119,6 +134,11 @@ const toolNameRules: readonly ScriptedRule<string | null>[] = [
 ];
 
 const contentRules: readonly ScriptedRule<string>[] = [
+  {
+    matches: ({ hasToolResult, toolNames, userText }) =>
+      hasToolResult && toolNames.has('task_create') && ADD_TASK_PATTERN.test(userText),
+    resolve: () => 'Added your task.',
+  },
   {
     matches: ({ hasRejectedToolResult }) => hasRejectedToolResult,
     resolve: () => 'The tool request was rejected.',
@@ -158,13 +178,18 @@ function openRouterResponseBody(request: OpenRouterRequest) {
       name: toolName ?? 'create_collection',
       arguments: shouldFailTool
         ? '{invalid'
-        : toolName === 'list_collections'
+        : toolName === 'list_collections' || toolName === 'task_list'
           ? '{}'
-          : JSON.stringify({
-              description: 'Created by the local scripted provider',
-              name: 'Browser scripted provider collection',
-              visibility: 'private',
-            }),
+          : toolName === 'task_create'
+            ? JSON.stringify({
+                title: 'Set up Google Home for living room lights',
+                artifactType: 'task',
+              })
+            : JSON.stringify({
+                description: 'Created by the local scripted provider',
+                name: 'Browser scripted provider collection',
+                visibility: 'private',
+              }),
     },
   };
   const content = firstMatchingRule(contentRules, context);
