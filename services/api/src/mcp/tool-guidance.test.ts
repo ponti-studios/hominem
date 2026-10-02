@@ -60,4 +60,11 @@ describe('task and memory tool guidance', () => {
         .success,
     ).toBe(true);
   });
+
+  // Regression: the model found the task for "get rid of the gym thing", then asked "do you
+  // want me to delete it?" in text and never called task_delete, so no approval prompt appeared.
+  it('tells the model to call task_delete instead of asking for confirmation in text', () => {
+    expect(described('task_delete')).toContain('do not ask "do you want me to delete it?" in text');
+    expect(described('task_delete')).not.toMatch(/before lookup and confirmation/);
+  });
 });
