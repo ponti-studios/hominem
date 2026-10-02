@@ -342,7 +342,6 @@ describe('OpenRouter generation provider', () => {
         tools: [
           { type: 'function', function: { name: 'task_list', description: 'x', parameters: {} } },
         ],
-        generationId: 'generation-7',
         maxTokens: 250,
         ...options,
       });
@@ -366,7 +365,6 @@ describe('OpenRouter generation provider', () => {
       );
 
       expect(mockedLogger.warn).toHaveBeenCalledWith('provider_turn_empty', {
-        generationId: 'generation-7',
         model: 'test-model',
         iteration: 0,
         servedModel: 'test-model',
@@ -463,7 +461,6 @@ describe('OpenRouter generation provider', () => {
       ]);
 
       expect(mockedLogger.info).toHaveBeenCalledWith('provider_turn_summary', {
-        generationId: 'generation-7',
         iteration: 0,
         toolChoice: 'auto',
         offered: ['task_list'],
@@ -542,7 +539,6 @@ describe('OpenRouter generation provider', () => {
           { type: 'function', function: { name: 'task_list', description: 'x', parameters: {} } },
           { type: 'function', function: { name: 'task_update', description: 'x', parameters: {} } },
         ],
-        generationId: 'generation-9',
       });
       const state = createGenerationState('generation-9');
 
@@ -573,7 +569,6 @@ describe('OpenRouter generation provider', () => {
 
       expect(offered()).toEqual(['task_update']);
       expect(mockedLogger.warn).toHaveBeenCalledWith('provider_tool_withdrawn', {
-        generationId: 'generation-9',
         toolName: 'task_list',
         calls: MAX_CALLS_PER_TOOL,
       });

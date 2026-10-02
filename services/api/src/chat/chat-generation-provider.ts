@@ -108,8 +108,6 @@ export type OpenRouterChatModelOptions = {
   // Withholds a tool from a turn while this says no (checked at the start of every turn), so the
   // model cannot call a write before the lookup it depends on. Without it every tool is offered.
   isToolAvailable?: (toolName: string) => boolean;
-  // Only used to tie provider log lines to the generation they belong to.
-  generationId?: string;
   maxAttempts?: number;
   // Test-only scripted OpenRouter client (canned SSE chunks). Production
   // never sets this — OpenRouter is the only supported provider.
@@ -306,7 +304,6 @@ export class OpenRouterChatModel implements ChatModel {
       // One line per provider turn: with the turn's tools it shows whether a model that said
       // "I'll delete it now." offered, attempted or dropped the call it announced.
       logger.info('provider_turn_summary', {
-        generationId: this.options.generationId,
         iteration: generationIteration,
         toolChoice: toolChoice ?? 'none',
         offered: tools.map(toolName),
@@ -324,7 +321,6 @@ export class OpenRouterChatModel implements ChatModel {
         // rawToolCallCount above zero means a tool call arrived but was dropped as incomplete,
         // and servedModel shows whether the request was routed to a different model.
         logger.warn('provider_turn_empty', {
-          generationId: this.options.generationId,
           model: this.options.model,
           iteration: generationIteration,
           servedModel,
@@ -360,7 +356,6 @@ export class OpenRouterChatModel implements ChatModel {
         this.callCounts.set(name, (this.callCounts.get(name) ?? 0) + 1);
         if (this.callCounts.get(name) === MAX_CALLS_PER_TOOL) {
           logger.warn('provider_tool_withdrawn', {
-            generationId: this.options.generationId,
             toolName: name,
             calls: MAX_CALLS_PER_TOOL,
           });

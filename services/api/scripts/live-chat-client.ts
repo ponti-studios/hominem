@@ -239,8 +239,17 @@ export async function createTask(title: string): Promise<void> {
   if (!response.ok) throw new Error(`POST /api/tasks failed: HTTP ${response.status}`);
 }
 
+// Cleanup that silently failed would leave stale records and corrupt later assertions, so a
+// failed delete throws. A 404 means the record is already gone.
+async function deleteRecord(path: string): Promise<void> {
+  const response = await api(path, { method: 'DELETE' });
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`DELETE ${path} failed: HTTP ${response.status}`);
+  }
+}
+
 export async function deleteTask(id: string): Promise<void> {
-  await api(`/api/tasks/${id}`, { method: 'DELETE' });
+  await deleteRecord(`/api/tasks/${id}`);
 }
 
 export async function listMemories(): Promise<{ id: string; content: string }[]> {
@@ -252,7 +261,7 @@ export async function listMemories(): Promise<{ id: string; content: string }[]>
 }
 
 export async function deleteMemory(id: string): Promise<void> {
-  await api(`/api/memory/${id}`, { method: 'DELETE' });
+  await deleteRecord(`/api/memory/${id}`);
 }
 
 export async function getNote(
@@ -266,7 +275,7 @@ export async function getNote(
 }
 
 export async function deleteNote(id: string): Promise<void> {
-  await api(`/api/notes/${id}`, { method: 'DELETE' });
+  await deleteRecord(`/api/notes/${id}`);
 }
 
 /** Ids of records a tool created, read from its `{ <key>: { id } }` result. */

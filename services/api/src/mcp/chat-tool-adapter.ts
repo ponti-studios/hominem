@@ -33,6 +33,15 @@ const capabilityPlanSchema = z.object({
   requiresWebSearch: z.boolean().default(false),
 });
 
+// A plan the model produced that our own validation rejected; its message is locally
+// generated, unlike an error from the provider.
+class PlanRejectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PlanRejectedError';
+  }
+}
+
 export type ChatToolPlan = {
   capabilities: ChatCapability[];
   requiresLookup: boolean;
@@ -332,9 +341,9 @@ export async function planChatTools(input: {
       { ...planned.output, requiresLookup: planned.output.steps.length > 0 },
       candidateDefinitions,
     );
-    if (!validation.ok) throw new Error(validation.errors.join('; '));
+    if (!validation.ok) throw new PlanRejectedError(validation.errors.join('; '));
     if (!capabilityOutput.requiresLookup || validation.plan.steps.length === 0) {
-      throw new Error('Exact plan must preserve the required private-data lookup');
+      throw new PlanRejectedError('Exact plan must preserve the required private-data lookup');
     }
     exactPlan = validation.plan;
   } catch (error) {
@@ -342,9 +351,20 @@ export async function planChatTools(input: {
       model: input.model,
       failureCategory: 'tool_planning',
       fallbackUsed: true,
-      // Which of "the request failed", "the JSON was cut off or invalid" and "the plan broke
-      // a rule" it was; the fallback hides all three.
-      reason: error instanceof Error ? `${error.name}: ${error.message}`.slice(0, 400) : 'unknown',
+      // Which of "the request failed", "the JSON was invalid" and "the plan broke a rule" it was;
+      // the fallback hides all three. Only our own validation text is logged: a provider error
+      // carries the provider's response body, so for those only the class and status go out
+      // (docs/observability.md).
+      reason:
+        error instanceof PlanRejectedError
+          ? error.message.slice(0, 300)
+          : error instanceof Error
+            ? error.name
+            : 'unknown',
+      status:
+        error instanceof Error && 'status' in error && typeof error.status === 'number'
+          ? error.status
+          : null,
     });
     exactPlan = {
       requiresLookup: true,

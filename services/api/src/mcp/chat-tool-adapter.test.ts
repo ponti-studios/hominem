@@ -16,6 +16,8 @@ vi.mock('@hominem/ai', async (importOriginal) => ({
 // (and through them the database layer).
 vi.mock('./register-tools', () => ({ ensureMcpToolsRegistered: async () => undefined }));
 
+import { logger } from '@hominem/telemetry';
+
 import { planChatTools } from './chat-tool-adapter';
 import { registerTool } from './tool-registry';
 
@@ -225,5 +227,32 @@ describe('planChatTools core tools', () => {
     expect(plan.steps.find((step) => step.tool === 'finance_transactions')?.purpose).toBe(
       'Find spending',
     );
+  });
+
+  // docs/observability.md: no provider response bodies in exported telemetry. A provider error
+  // carries one in its message, so only its class and status may be logged.
+  it('logs only the class and status of a provider error when the plan request fails', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    class ProviderError extends Error {
+      status = 400;
+    }
+    mocks.createStructuredChatCompletion
+      .mockResolvedValueOnce({
+        output: { capabilities: ['finance'], requiresLookup: true, requiresWebSearch: false },
+        usage: null,
+      })
+      .mockRejectedValueOnce(new ProviderError('body: secret schema detail from provider'));
+
+    await planChatTools({
+      model: 'test-model',
+      messages: [{ role: 'user', content: 'how much did I spend last month?' }],
+    });
+
+    const fallback = warn.mock.calls.find(
+      ([event]) => event === 'chat_tool_plan_validation_failed',
+    );
+    expect(fallback?.[1]).toMatchObject({ reason: 'Error', status: 400, fallbackUsed: true });
+    expect(JSON.stringify(fallback?.[1])).not.toContain('secret schema detail');
+    warn.mockRestore();
   });
 });

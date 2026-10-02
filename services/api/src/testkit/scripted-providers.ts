@@ -50,7 +50,6 @@ type ScriptedContext = {
   toolNames: Set<string>;
   userText: string;
   hasToolResult: boolean;
-  toolResultCount: number;
   turnResults: { name: string; content: string }[];
   hasRejectedToolResult: boolean;
   hasFailedToolResult: boolean;
@@ -112,7 +111,6 @@ function createContext(request: OpenRouterRequest): ScriptedContext {
         .filter((name): name is string => Boolean(name)),
     ),
     hasToolResult: messages.some((message) => message.role === 'tool'),
-    toolResultCount: messages.filter((message) => message.role === 'tool').length,
     turnResults: turnToolResults(messages),
     hasRejectedToolResult: messages.some(
       (message) => message.role === 'tool' && /rejected/i.test(String(message.content ?? '')),
@@ -129,13 +127,13 @@ const ADD_TASK_PATTERN = /\badd a task\b/i;
 const toolNameRules: readonly ScriptedRule<string | null>[] = [
   // Mirrors a real model on "add a task ...": check existing tasks, then create.
   {
-    matches: ({ toolNames, userText, toolResultCount }) =>
-      toolNames.has('task_list') && ADD_TASK_PATTERN.test(userText) && toolResultCount === 0,
+    matches: ({ toolNames, userText, turnResults }) =>
+      toolNames.has('task_list') && ADD_TASK_PATTERN.test(userText) && turnResults.length === 0,
     resolve: () => 'task_list',
   },
   {
-    matches: ({ toolNames, userText, toolResultCount }) =>
-      toolNames.has('task_create') && ADD_TASK_PATTERN.test(userText) && toolResultCount === 1,
+    matches: ({ toolNames, userText, turnResults }) =>
+      toolNames.has('task_create') && ADD_TASK_PATTERN.test(userText) && turnResults.length === 1,
     resolve: () => 'task_create',
   },
   {

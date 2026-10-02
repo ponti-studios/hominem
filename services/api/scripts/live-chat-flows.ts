@@ -234,12 +234,15 @@ const flows: Flow[] = [
       // 3. Two tasks match "the passport one": we never approve, so nothing can go.
       turn = await conversation.say('and the passport one');
       if ((await titles()).length !== 2) return 'step 3: a task was deleted without approval';
+      // The task guidance says to ask which one when several fit, so opening a delete
+      // confirmation for one of them is a guess, even though nothing is deleted unapproved.
+      if (turn.pending) {
+        return `step 3: picked one of two passport tasks to delete instead of asking which (${summarize(turn)})`;
+      }
       conversation.observations.push(
-        turn.pending
-          ? 'guessed a passport task to delete (unapproved)'
-          : turn.text.trim().endsWith('?')
-            ? 'asked which passport task'
-            : 'neither asked nor tried to delete',
+        turn.text.trim().endsWith('?')
+          ? 'asked which passport task'
+          : 'neither asked nor tried to delete',
       );
       return null;
     },

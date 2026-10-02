@@ -192,7 +192,6 @@ export async function executeGenerationTurn(
     maxTokens: input.maxTokens,
     reasoning: input.reasoning,
     requiresToolCall: input.initialState ? false : input.requiresToolCall,
-    generationId: input.generationId,
     requiresConfirmation: (name: string) =>
       runtime?.getToolDefinition(name)?.requiresConfirmation ?? false,
     // A tool that is not yet allowed to run (its lookup has not happened) is not offered at
@@ -301,12 +300,13 @@ export async function executeGenerationTurn(
               })
             : result;
         } catch (error) {
-          // The model only ever sees the generic message below; keep the cause in the logs.
+          // The model only ever sees the generic message below. Log a bounded category and the
+          // tool name, never the error text (docs/observability.md: no raw provider or database
+          // errors, no generation ids in exported telemetry).
           logger.warn('chat_generation_tool_call_failed', {
-            generationId: input.generationId,
             toolName: call.name,
-            error:
-              error instanceof Error ? `${error.name}: ${error.message}`.slice(0, 300) : 'unknown',
+            category: error instanceof ZodError ? 'invalid_arguments' : 'tool_error',
+            errorClass: error instanceof Error ? error.name : 'unknown',
           });
           const result: ToolResult = {
             callId: call.id,

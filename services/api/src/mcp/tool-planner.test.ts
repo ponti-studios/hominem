@@ -243,4 +243,36 @@ describe('validated chat tool plans', () => {
       if (result.ok) expect(result.plan.steps[0]?.arguments).toEqual({});
     });
   });
+
+  // Review finding: a standalone write earlier in the plan is not a read, so it must not make a
+  // following write valid; the runtime guard looks for a completed read-only call.
+  it('does not accept a write after only a standalone write', () => {
+    const standalone = defineCapability({
+      name: 'remember_it',
+      title: 'Remember',
+      description: 'Saves a fact.',
+      inputSchema: z.object({ text: z.string() }),
+      outputSchema: z.object({ id: z.string() }),
+      readOnly: false,
+      standaloneWrite: true,
+      scopes: ['people:write'],
+      resultCap: 1,
+      destructive: false,
+      idempotent: false,
+    });
+
+    const result = validateChatToolPlan(
+      {
+        requiresLookup: true,
+        steps: [
+          { tool: 'remember_it', purpose: 'Save', dependsOn: [], arguments: {} },
+          { tool: 'update', purpose: 'Change', dependsOn: ['remember_it'], arguments: {} },
+        ],
+      },
+      [standalone, write],
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors).toContain('update requires a preceding read-only lookup');
+  });
 });

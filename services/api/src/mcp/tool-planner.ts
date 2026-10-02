@@ -73,7 +73,7 @@ export function validateChatToolPlan(
   const available = new Map(definitions.map((definition) => [definition.name, definition]));
   const errors: string[] = [];
   const seen = new Set<string>();
-  const scheduled = new Set<string>();
+  const scheduledReads = new Set<string>();
 
   for (const step of parsed.data.steps) {
     const definition = available.get(step.tool);
@@ -94,7 +94,9 @@ export function validateChatToolPlan(
         `${step.tool} is missing required dependencies: ${missingRequiredDependencies.join(', ')}`,
       );
     }
-    if (!definition.readOnly && !definition.standaloneWrite && scheduled.size === 0) {
+    // The runtime guard needs a completed read-only call before such a write, so a standalone
+    // write scheduled earlier (remember -> update) does not make the plan valid.
+    if (!definition.readOnly && !definition.standaloneWrite && scheduledReads.size === 0) {
       errors.push(`${step.tool} requires a preceding read-only lookup`);
     }
 
@@ -123,7 +125,7 @@ export function validateChatToolPlan(
           .join(', ')}`,
       );
     }
-    scheduled.add(step.tool);
+    if (definition.readOnly) scheduledReads.add(step.tool);
   }
 
   if (hasCycle(parsed.data.steps)) errors.push('Tool plan contains a dependency cycle');
