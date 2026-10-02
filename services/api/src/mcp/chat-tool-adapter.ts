@@ -42,7 +42,15 @@ export type ChatToolPlan = {
   requiresWebSearch?: boolean;
 };
 
-const ROUTING_PROMPT = `Classify the latest user request for tool routing.\n\nUse requiresLookup=true for requests asking about the user's saved, current, or historical Hominem data. Select every relevant private capability; when ambiguous, include each plausible capability. Use requiresWebSearch=true for current or time-sensitive public facts, live schedules and scores, recent events, prices, rates, weather, or requests to verify information. Such requests must use web search even if the wording is ambiguous. Use requiresWebSearch=false for general knowledge, writing, conversation, and stable public facts. Never select a private capability merely because it could be useful.\n\nCapabilities: ${CHAT_CAPABILITIES.join(', ')}.`;
+const ROUTING_PROMPT = `Classify the latest user request for tool routing.
+
+Use requiresLookup=true for any request that reads or changes the user's own saved Hominem data: looking something up, listing or searching it, or creating, updating, completing, or deleting a record. "Add a task", "remind me to", "note that", and "what is on my list" all qualify. Select every relevant private capability; when ambiguous, include each plausible capability.
+
+Use requiresWebSearch=true for current or time-sensitive public facts, live schedules and scores, recent events, prices, rates, weather, or requests to verify information. Such requests must use web search even if the wording is ambiguous.
+
+Use requiresLookup=false and requiresWebSearch=false for general knowledge, writing, conversation, and stable public facts. Never select a private capability merely because it could be useful.
+
+Capabilities: ${CHAT_CAPABILITIES.join(', ')}.`;
 
 type ChatFunctionToolDefinition = Extract<ChatFunctionTool, { function: unknown }>;
 const WEB_SEARCH_TOOL: ChatFunctionTool = {

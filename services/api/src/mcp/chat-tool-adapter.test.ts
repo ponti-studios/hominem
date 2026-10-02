@@ -185,4 +185,18 @@ describe('planChatTools core tools', () => {
       for (const dependency of step.dependsOn) expect(scheduled).toContain(dependency);
     }
   });
+
+  it('tells the router that creating or changing saved data needs a lookup', async () => {
+    mocks.createStructuredChatCompletion.mockResolvedValueOnce({
+      output: { capabilities: [], requiresLookup: false, requiresWebSearch: false },
+      usage: null,
+    });
+
+    await planChatTools({ model: 'test-model', messages: ADD_TASK_MESSAGES });
+
+    const [{ messages }] = mocks.createStructuredChatCompletion.mock.calls[0] ?? [{ messages: [] }];
+    const routingPrompt = messages.find((message: { role: string }) => message.role === 'system');
+    expect(routingPrompt?.content).toMatch(/creating, updating, completing, or deleting a record/);
+    expect(routingPrompt?.content).toMatch(/"Add a task"/);
+  });
 });
