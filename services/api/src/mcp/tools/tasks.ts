@@ -84,6 +84,7 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    standaloneWrite: true,
     name: 'task_create',
     title: 'Create a task',
     description:

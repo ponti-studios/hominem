@@ -2,7 +2,7 @@ import { db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import './tasks';
-import { callTool, type McpToolResult } from '../tool-registry';
+import { callTool, getToolDefinition, type McpToolResult } from '../tool-registry';
 
 const userId = 'a4000001-0000-4000-8000-000000000001';
 const otherUserId = 'a4000001-0000-4000-8000-000000000002';
@@ -18,6 +18,17 @@ beforeAll(async () => {
       [id, `Task CRUD Test User ${id}`, `${id}@test.hominem.dev`, true],
     );
   }
+});
+
+describe('read-before-write exemption', () => {
+  it('applies to task_create only', () => {
+    expect(getToolDefinition('task_create')?.standaloneWrite).toBe(true);
+    for (const name of ['task_update', 'task_complete', 'task_delete', 'task_batch_create']) {
+      const definition = getToolDefinition(name);
+      expect(definition, name).toBeDefined();
+      expect(definition?.standaloneWrite, name).toBeFalsy();
+    }
+  });
 });
 
 describe('task_create / task_list / task_detail', () => {

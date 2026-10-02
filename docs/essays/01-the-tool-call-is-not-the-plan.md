@@ -89,7 +89,7 @@ Independent reads should remain independent. If a user asks for travel history a
 A valid plan does not authorize deletion. The runtime still checks ownership, idempotency, cancellation, confirmation policy, and successful prerequisites.
 
 ```ts
-if (definition && !definition.readOnly) {
+if (definition && !definition.readOnly && !definition.standaloneWrite) {
   const hasCompletedRead = plannedSteps.some(
     (candidate) =>
       completedPlannedTools.has(candidate.tool) &&
@@ -98,6 +98,8 @@ if (definition && !definition.readOnly) {
   if (!hasCompletedRead) return 'Tool requires a preceding read-only lookup';
 }
 ```
+
+A write that depends on no existing record, such as creating a standalone task, is declared `standaloneWrite` and may run without a preceding read. The exemption is per tool and opt-in; every other write still needs one.
 
 Planning makes intent inspectable; runtime guards make execution safe. Record both the proposed plan and the actual trace so a failure can be classified as wrong capability, wrong tool, lost identifier, broken ordering, or a safety violation.
 

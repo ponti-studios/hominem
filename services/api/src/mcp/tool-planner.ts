@@ -77,7 +77,7 @@ export function validateChatToolPlan(
         `${step.tool} is missing required dependencies: ${missingRequiredDependencies.join(', ')}`,
       );
     }
-    if (!definition.readOnly && scheduled.size === 0) {
+    if (!definition.readOnly && !definition.standaloneWrite && scheduled.size === 0) {
       errors.push(`${step.tool} requires a preceding read-only lookup`);
     }
 

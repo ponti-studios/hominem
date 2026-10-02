@@ -85,6 +85,98 @@ describe('chat generation service', () => {
     expect(save.mock.calls[0]?.[0].result.content).toContain('TOOL_PLAN_VIOLATION');
   });
 
+  describe('a write with no preceding read', () => {
+    const writeDefinition = (
+      overrides: Partial<CapabilityDefinition> = {},
+    ): CapabilityDefinition => ({
+      name: 'create_thing',
+      title: 'Create a thing',
+      description: 'Creates a thing.',
+      inputSchema: z.object({}),
+      outputSchema: z.object({}),
+      readOnly: false,
+      scopes: ['task:write'],
+      resultCap: 1,
+      ...overrides,
+    });
+
+    const runWrite = async (definition: CapabilityDefinition) => {
+      mockedStream
+        .mockReturnValueOnce(
+          chunks([
+            {
+              created: 0,
+              id: 'chunk-write-1',
+              model: 'model-1',
+              object: 'chat.completion.chunk',
+              choices: [
+                {
+                  index: 0,
+                  finishReason: null,
+                  delta: {
+                    toolCalls: [
+                      {
+                        index: 0,
+                        id: 'call-1',
+                        function: { name: 'create_thing', arguments: '{}' },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ]),
+        )
+        .mockReturnValueOnce(
+          chunks([
+            {
+              created: 0,
+              id: 'chunk-write-2',
+              model: 'model-1',
+              object: 'chat.completion.chunk',
+              choices: [{ index: 0, finishReason: null, delta: { content: 'done' } }],
+            },
+          ]),
+        );
+      const toolResult: McpToolResult = {
+        content: [{ type: 'text', text: '{}' }],
+        structuredContent: {},
+      };
+      const callTool = vi.fn().mockResolvedValue(toolResult);
+      const save = vi.fn().mockImplementation(({ result }: { result: unknown }) => result);
+      await executeGenerationTurn({
+        userId: 'user-1',
+        generationId: 'generation-1',
+        chatId: 'chat-1',
+        model: 'model-1',
+        messages: [{ role: 'user', content: 'make a thing' }],
+        tools: [
+          {
+            type: 'function',
+            function: { name: 'create_thing', description: 'create', parameters: {} },
+          },
+        ],
+        toolPlan: [{ tool: 'create_thing', purpose: 'Create it', dependsOn: [], arguments: {} }],
+        toolRuntime: { callTool, getToolDefinition: vi.fn(() => definition) },
+        effectStore: { get: vi.fn().mockResolvedValue(null), save },
+      });
+      return { callTool, save };
+    };
+
+    it('is rejected by default', async () => {
+      const { callTool, save } = await runWrite(writeDefinition());
+
+      expect(callTool).not.toHaveBeenCalled();
+      expect(save.mock.calls[0]?.[0].result.content).toContain('requires a preceding read-only');
+    });
+
+    it('runs when the tool is a standalone write', async () => {
+      const { callTool } = await runWrite(writeDefinition({ standaloneWrite: true }));
+
+      expect(callTool).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('blocks a dependent tool until its prerequisite has completed', async () => {
     mockedStream
       .mockReturnValueOnce(

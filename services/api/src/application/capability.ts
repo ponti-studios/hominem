@@ -58,6 +58,10 @@ export interface CapabilityDefinition<
   invoking?: string;
   invoked?: string;
   requiresConfirmation?: boolean;
+  // A write that depends on no existing record (e.g. creating a standalone task), so a chat
+  // turn may call it without first running a read-only lookup. By default every write must
+  // follow a read, so a model resolves real ids before it changes anything.
+  standaloneWrite?: boolean;
   guidance?: CapabilityGuidance;
   // Extracts URI-addressable resources (e.g. an uploaded file's fileUrl) from
   // a tool's already-validated output, so callTool can surface them as

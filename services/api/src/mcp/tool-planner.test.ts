@@ -133,6 +133,30 @@ describe('validated chat tool plans', () => {
     });
   });
 
+  it('lets a standalone write be the first planned step', () => {
+    const standalone = defineCapability({
+      name: 'create',
+      title: 'Create',
+      description: 'Creates a record that depends on no existing one.',
+      inputSchema: z.object({ title: z.string() }),
+      outputSchema: z.object({ created: z.boolean() }),
+      readOnly: false,
+      scopes: ['people:write'],
+      resultCap: 1,
+      standaloneWrite: true,
+    });
+
+    expect(
+      validateChatToolPlan(
+        {
+          requiresLookup: true,
+          steps: [{ tool: 'create', purpose: 'Create it', dependsOn: [], arguments: {} }],
+        },
+        [standalone],
+      ),
+    ).toEqual(expect.objectContaining({ ok: true }));
+  });
+
   it('rejects a dependent write scheduled before its lookup', () => {
     const result = validateChatToolPlan(
       {

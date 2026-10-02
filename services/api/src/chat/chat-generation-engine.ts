@@ -175,7 +175,7 @@ export async function executeGenerationTurn(
     if (missingRequiredDependencies.length > 0) {
       return `Tool ${toolName} is waiting for required provenance from: ${missingRequiredDependencies.join(', ')}`;
     }
-    if (definition && !definition.readOnly) {
+    if (definition && !definition.readOnly && !definition.standaloneWrite) {
       const hasCompletedRead = plannedSteps.some(
         (candidate) =>
           completedPlannedTools.has(candidate.tool) &&
