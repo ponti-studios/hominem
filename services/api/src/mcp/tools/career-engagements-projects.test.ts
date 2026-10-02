@@ -3,14 +3,16 @@ import { db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import './career';
-import { callTool, type McpToolResult } from '../tool-registry';
+import {
+  careerEngagementUpdateOutputSchema,
+  careerProjectUpdateOutputSchema,
+} from '../../schemas/career.schema';
+import { removedResultSchema } from '../../schemas/common.schema';
+import { toolOutput } from '../../testkit/tool-result';
+import { callTool } from '../tool-registry';
 
 const userId = 'a2000001-0000-4000-8000-000000000003';
 const otherUserId = 'a2000001-0000-4000-8000-000000000004';
-
-function resultContent(result: McpToolResult) {
-  return result.structuredContent as Record<string, unknown>;
-}
 
 beforeAll(async () => {
   for (const id of [userId, otherUserId]) {
@@ -29,7 +31,7 @@ describe('career engagement MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(userId, 'career_engagement_update', {
         id: engagement.id,
         data: {
@@ -43,15 +45,17 @@ describe('career engagement MCP tools', () => {
           reasonForLeaving: null,
         },
       }),
-    ) as { engagement: { title: string; location: string; salaryLow: number; isCurrent: boolean } };
-    expect(updated.engagement.title).toBe('Senior Engineer');
-    expect(updated.engagement.location).toBe('Lisbon');
-    expect(updated.engagement.salaryLow).toBe(10000000);
-    expect(updated.engagement.isCurrent).toBe(true);
+      careerEngagementUpdateOutputSchema,
+    );
+    expect(updated.engagement?.title).toBe('Senior Engineer');
+    expect(updated.engagement?.location).toBe('Lisbon');
+    expect(updated.engagement?.salaryLow).toBe(10000000);
+    expect(updated.engagement?.isCurrent).toBe(true);
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(userId, 'career_engagement_delete', { id: engagement.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(true);
 
     const gone = await db
@@ -69,17 +73,19 @@ describe('career engagement MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(otherUserId, 'career_engagement_update', {
         id: engagement.id,
         data: { title: 'Leaked' },
       }),
-    ) as { engagement: unknown };
+      careerEngagementUpdateOutputSchema,
+    );
     expect(updated.engagement).toBeNull();
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(otherUserId, 'career_engagement_delete', { id: engagement.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(false);
 
     await db.deleteFrom('app.careerEngagements').where('id', '=', engagement.id).execute();
@@ -104,7 +110,7 @@ describe('career project MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(userId, 'career_project_update', {
         id: project.id,
         data: {
@@ -114,23 +120,17 @@ describe('career project MCP tools', () => {
           shortDescription: 'One-line summary',
         },
       }),
-    ) as {
-      project: {
-        title: string;
-        status: string;
-        technologies: string[];
-        shortDescription: string;
-        engagements: unknown[];
-      };
-    };
-    expect(updated.project.title).toBe('Renamed Project');
-    expect(updated.project.status).toBe('IN_PROGRESS');
-    expect(updated.project.technologies).toEqual(['TypeScript', 'React']);
-    expect(updated.project.engagements).toEqual([]);
+      careerProjectUpdateOutputSchema,
+    );
+    expect(updated.project?.title).toBe('Renamed Project');
+    expect(updated.project?.status).toBe('IN_PROGRESS');
+    expect(updated.project?.technologies).toEqual(['TypeScript', 'React']);
+    expect(updated.project?.engagements).toEqual([]);
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(userId, 'career_project_delete', { id: project.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(true);
 
     const gone = await db
@@ -148,17 +148,19 @@ describe('career project MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(otherUserId, 'career_project_update', {
         id: project.id,
         data: { title: 'Leaked project' },
       }),
-    ) as { project: unknown };
+      careerProjectUpdateOutputSchema,
+    );
     expect(updated.project).toBeNull();
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(otherUserId, 'career_project_delete', { id: project.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(false);
 
     await db.deleteFrom('app.careerProjects').where('id', '=', project.id).execute();

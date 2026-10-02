@@ -30,7 +30,7 @@ function LevelBar({ db, tintColor }: LevelBarProps) {
   const level = useSharedValue(0);
 
   useEffect(() => {
-    level.value = withTiming(normalizeDb(db), { duration: 120 });
+    level.set(withTiming(normalizeDb(db), { duration: 120 }));
   }, [db, level]);
 
   const animatedStyle = useAnimatedStyle(() => ({

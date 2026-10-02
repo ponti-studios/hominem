@@ -46,7 +46,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 }
 
-export default function ApplicationsRoute({ loaderData }: Route.ComponentProps) {
+export default function ApplicationsRoute({
+  loaderData,
+}: Pick<Route.ComponentProps, 'loaderData'>) {
   const { applications, total, hasApplications, statusOptions } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
 

@@ -28,7 +28,7 @@ export function LocationSearchField({
   value: string;
 }) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [settledQuery, setSettledQuery] = useState<string | null>(null);
   const requestId = useRef(0);
   const styles = useStyles((theme) => ({
     field: { gap: 8 },
@@ -47,15 +47,14 @@ export function LocationSearchField({
     suggestionText: { ...theme.textVariants.body, flex: 1 },
   }));
 
+  const isQueryLongEnough = value.trim().length >= MIN_QUERY_LENGTH;
+  const isSearching = isQueryLongEnough && settledQuery !== value.trim();
   useEffect(() => {
     const trimmed = value.trim();
+    const thisRequest = ++requestId.current;
     if (trimmed.length < MIN_QUERY_LENGTH) {
-      setSuggestions([]);
-      setIsSearching(false);
       return;
     }
-    const thisRequest = ++requestId.current;
-    setIsSearching(true);
     const timeout = setTimeout(() => {
       void (async () => {
         try {
@@ -84,7 +83,7 @@ export function LocationSearchField({
           }
         } finally {
           if (requestId.current === thisRequest) {
-            setIsSearching(false);
+            setSettledQuery(trimmed);
           }
         }
       })();
@@ -109,7 +108,7 @@ export function LocationSearchField({
           <Text style={styles.searchingText}>Searching…</Text>
         </View>
       ) : null}
-      {suggestions.length > 0 ? (
+      {isQueryLongEnough && suggestions.length > 0 ? (
         <View style={styles.suggestions}>
           {suggestions.map((suggestion) => (
             <Pressable

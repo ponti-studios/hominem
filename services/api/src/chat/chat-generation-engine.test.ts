@@ -11,6 +11,7 @@ import { z } from 'zod';
 import type { CapabilityDefinition } from '../application/capability';
 import type { McpToolResult } from '../mcp/tool-registry';
 import { executeGenerationTurn, ToolInputError } from './chat-generation-engine';
+import { chatToolName } from './chat-tool-name';
 
 vi.mock('@hominem/ai', () => ({
   streamChatCompletion: vi.fn(),
@@ -75,7 +76,7 @@ describe('chat generation service', () => {
       tools: [
         { type: 'function', function: { name: 'write', description: 'write', parameters: {} } },
       ],
-      toolPlan: [{ tool: 'lookup', purpose: 'Resolve context', dependsOn: [], arguments: {} }],
+      toolPlan: [{ tool: 'lookup', purpose: 'Resolve context', dependsOn: [] }],
       toolRuntime: { callTool, getToolDefinition: vi.fn(() => undefined) },
       effectStore: { get: vi.fn().mockResolvedValue(null), save },
     });
@@ -83,6 +84,98 @@ describe('chat generation service', () => {
     expect(callTool).not.toHaveBeenCalled();
     expect(result.assistantText).toBe('blocked');
     expect(save.mock.calls[0]?.[0].result.content).toContain('TOOL_PLAN_VIOLATION');
+  });
+
+  describe('a write with no preceding read', () => {
+    const writeDefinition = (
+      overrides: Partial<CapabilityDefinition> = {},
+    ): CapabilityDefinition => ({
+      name: 'create_thing',
+      title: 'Create a thing',
+      description: 'Creates a thing.',
+      inputSchema: z.object({}),
+      outputSchema: z.object({}),
+      readOnly: false,
+      scopes: ['task:write'],
+      resultCap: 1,
+      ...overrides,
+    });
+
+    const runWrite = async (definition: CapabilityDefinition) => {
+      mockedStream
+        .mockReturnValueOnce(
+          chunks([
+            {
+              created: 0,
+              id: 'chunk-write-1',
+              model: 'model-1',
+              object: 'chat.completion.chunk',
+              choices: [
+                {
+                  index: 0,
+                  finishReason: null,
+                  delta: {
+                    toolCalls: [
+                      {
+                        index: 0,
+                        id: 'call-1',
+                        function: { name: 'create_thing', arguments: '{}' },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ]),
+        )
+        .mockReturnValueOnce(
+          chunks([
+            {
+              created: 0,
+              id: 'chunk-write-2',
+              model: 'model-1',
+              object: 'chat.completion.chunk',
+              choices: [{ index: 0, finishReason: null, delta: { content: 'done' } }],
+            },
+          ]),
+        );
+      const toolResult: McpToolResult = {
+        content: [{ type: 'text', text: '{}' }],
+        structuredContent: {},
+      };
+      const callTool = vi.fn().mockResolvedValue(toolResult);
+      const save = vi.fn().mockImplementation(({ result }: { result: unknown }) => result);
+      await executeGenerationTurn({
+        userId: 'user-1',
+        generationId: 'generation-1',
+        chatId: 'chat-1',
+        model: 'model-1',
+        messages: [{ role: 'user', content: 'make a thing' }],
+        tools: [
+          {
+            type: 'function',
+            function: { name: 'create_thing', description: 'create', parameters: {} },
+          },
+        ],
+        toolPlan: [{ tool: 'create_thing', purpose: 'Create it', dependsOn: [] }],
+        toolRuntime: { callTool, getToolDefinition: vi.fn(() => definition) },
+        effectStore: { get: vi.fn().mockResolvedValue(null), save },
+      });
+      return { callTool, save };
+    };
+
+    it('is rejected by default', async () => {
+      const { callTool, save } = await runWrite(writeDefinition());
+
+      expect(callTool).not.toHaveBeenCalled();
+      expect(save.mock.calls[0]?.[0].result.content).toContain('requires a preceding read-only');
+    });
+
+    it('runs when the tool is a standalone write', async () => {
+      const { callTool } = await runWrite(writeDefinition({ standaloneWrite: true }));
+
+      expect(callTool).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('blocks a dependent tool until its prerequisite has completed', async () => {
@@ -136,8 +229,8 @@ describe('chat generation service', () => {
         { type: 'function', function: { name: 'detail', description: 'detail', parameters: {} } },
       ],
       toolPlan: [
-        { tool: 'lookup', purpose: 'Resolve context', dependsOn: [], arguments: {} },
-        { tool: 'detail', purpose: 'Load detail', dependsOn: ['lookup'], arguments: {} },
+        { tool: 'lookup', purpose: 'Resolve context', dependsOn: [] },
+        { tool: 'detail', purpose: 'Load detail', dependsOn: ['lookup'] },
       ],
       toolRuntime: { callTool, getToolDefinition: vi.fn(() => undefined) },
       effectStore: { get: vi.fn().mockResolvedValue(null), save },
@@ -222,6 +315,82 @@ describe('chat generation service', () => {
       }),
       expect.anything(),
     );
+  });
+
+  // Regression: offered at once, the live model called task_delete with a made-up id before
+  // listing, was refused, and gave up. A tool whose lookup has not run is no longer offered.
+  it('offers a dependent tool only after the lookup it depends on has completed', async () => {
+    const toolCall = (id: string, name: string): StreamChunk => ({
+      created: 0,
+      id: `chunk-${id}`,
+      model: 'model-1',
+      object: 'chat.completion.chunk',
+      choices: [
+        {
+          index: 0,
+          finishReason: null,
+          delta: { toolCalls: [{ index: 0, id, function: { name, arguments: '{}' } }] },
+        },
+      ],
+    });
+    mockedStream.mockReturnValueOnce(chunks([toolCall('call-1', 'lookup')])).mockReturnValueOnce(
+      chunks([
+        {
+          created: 0,
+          id: 'chunk-text',
+          model: 'model-1',
+          object: 'chat.completion.chunk',
+          choices: [{ index: 0, finishReason: null, delta: { content: 'done' } }],
+        },
+      ]),
+    );
+    const readDefinition = (
+      name: string,
+      guidance?: CapabilityDefinition['guidance'],
+    ): CapabilityDefinition => ({
+      name,
+      title: name,
+      description: name,
+      inputSchema: z.object({}),
+      outputSchema: z.object({}),
+      readOnly: true,
+      scopes: ['task:read'],
+      resultCap: 1,
+      guidance,
+    });
+    const definitions: Record<string, CapabilityDefinition> = {
+      lookup: readDefinition('lookup'),
+      detail: readDefinition('detail', {
+        whenToUse: 'x',
+        whenNotToUse: 'y',
+        dependencies: [{ tool: 'lookup', reason: 'resolve id', provides: ['id'] }],
+      }),
+    };
+    const offered = (call: number) =>
+      (mockedStream.mock.calls[call]?.[0].tools ?? []).map(chatToolName);
+
+    await executeGenerationTurn({
+      userId: 'user-1',
+      generationId: 'generation-1',
+      chatId: 'chat-1',
+      model: 'model-1',
+      messages: [{ role: 'user', content: 'question' }],
+      tools: [
+        { type: 'function', function: { name: 'lookup', description: 'l', parameters: {} } },
+        { type: 'function', function: { name: 'detail', description: 'd', parameters: {} } },
+      ],
+      toolPlan: [
+        { tool: 'lookup', purpose: 'Resolve', dependsOn: [] },
+        { tool: 'detail', purpose: 'Load', dependsOn: ['lookup'] },
+      ],
+      toolRuntime: {
+        callTool: vi.fn().mockResolvedValue({ content: [{ type: 'text', text: '{}' }] }),
+        getToolDefinition: vi.fn((name: string) => definitions[name]),
+      },
+    });
+
+    expect(offered(0)).toEqual(['lookup']);
+    expect(offered(1)).toEqual(['lookup', 'detail']);
   });
 
   it('terminates at the tool-call cap when the model keeps re-invoking the same tool', async () => {
@@ -792,24 +961,18 @@ describe('generation event ownership', () => {
 
   it('drops exactly the execute-owned boundary events', async () => {
     const { isExecuteOwnedEvent } = await import('./chat-generation-engine');
-    const eventOf = (type: keyof typeof EVENT_WRITERS) =>
-      ({ type }) as unknown as Parameters<typeof isExecuteOwnedEvent>[0];
-
     for (const [type, writer] of Object.entries(EVENT_WRITERS)) {
       if (type === 'generation.phase_changed') continue;
       // 'generation.accepted' is execute-only: the machine never emits it,
       // so there is no machine copy for the filter to drop.
       const expected = writer === 'execute' && type !== 'generation.accepted';
-      expect(isExecuteOwnedEvent(eventOf(type as keyof typeof EVENT_WRITERS))).toBe(expected);
+      expect(isExecuteOwnedEvent({ type })).toBe(expected);
     }
   });
 
   it('splits phase_changed by phase', async () => {
     const { isExecuteOwnedEvent } = await import('./chat-generation-engine');
-    const phaseEvent = (phase: string) =>
-      ({ type: 'generation.phase_changed', phase }) as unknown as Parameters<
-        typeof isExecuteOwnedEvent
-      >[0];
+    const phaseEvent = (phase: string) => ({ type: 'generation.phase_changed', phase });
 
     expect(isExecuteOwnedEvent(phaseEvent('running'))).toBe(true);
     expect(isExecuteOwnedEvent(phaseEvent('saving'))).toBe(true);

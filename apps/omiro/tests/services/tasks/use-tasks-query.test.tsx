@@ -2,8 +2,7 @@
 import { waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { TaskListItem } from '~/services/tasks/task-types';
-
+import { makeTaskListItem } from '../../fixtures';
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
 const mockListReminders = vi.fn();
@@ -18,22 +17,18 @@ vi.mock('~/services/tasks/reminders-gateway', () => ({
 
 const { useTasksQuery } = await import('~/services/tasks/use-tasks-query');
 
-function taskListItem(id: string): TaskListItem {
-  return { id, title: `Task ${id}` } as unknown as TaskListItem;
-}
-
 describe('useTasksQuery', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   it('fetches and returns the tasks list', async () => {
-    mockListReminders.mockResolvedValueOnce([taskListItem('1'), taskListItem('2')]);
+    mockListReminders.mockResolvedValueOnce([makeTaskListItem('1'), makeTaskListItem('2')]);
     const { result } = renderHookWithQueryClient(() => useTasksQuery());
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(result.current.data).toEqual([taskListItem('1'), taskListItem('2')]);
+    expect(result.current.data).toEqual([makeTaskListItem('1'), makeTaskListItem('2')]);
   });
 
   it('surfaces a query error', async () => {

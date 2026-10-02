@@ -18,7 +18,7 @@ function resolveAuthScreenViewEvent(segments: string[]) {
 }
 
 function AuthLayout() {
-  const segments = useSegments() as string[];
+  const segments: string[] = useSegments();
   const lastTrackedEventRef = useRef<string | null>(null);
 
   useEffect(() => {

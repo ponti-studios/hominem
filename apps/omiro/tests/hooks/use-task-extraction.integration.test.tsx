@@ -3,6 +3,7 @@ import type { ChatMessageItem } from '@hominem/chat';
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { makeChatMessage } from '../fixtures';
 import { renderHookWithQueryClient } from '../utils/render-hook';
 
 const mockTasksPost = vi.fn();
@@ -43,16 +44,12 @@ const { useTaskExtraction } = await import('~/hooks/use-task-extraction');
 const CHAT_ID = 'chat-1';
 
 function message(role: ChatMessageItem['role'], text: string): ChatMessageItem {
-  return {
+  return makeChatMessage({
     id: `${role}-${text}`,
     role,
     message: text,
-    createdAt: new Date().toISOString(),
     chatId: CHAT_ID,
-    reasoning: null,
-    toolCalls: null,
-    isStreaming: false,
-  } as ChatMessageItem;
+  });
 }
 
 const MESSAGES = [message('user', "Let's plan the launch"), message('assistant', 'Sure, on it')];

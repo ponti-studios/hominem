@@ -63,7 +63,7 @@ describeIntegration('finance runway integration', () => {
       accountType: 'checking',
     });
     checkingId = checking.id;
-    const imported = await createAccount({
+    await createAccount({
       userId: ownerId,
       name: 'Imported Savings',
       accountType: 'depository',

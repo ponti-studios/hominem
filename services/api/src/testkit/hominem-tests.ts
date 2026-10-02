@@ -8,7 +8,7 @@ import {
   type AIUsageMetrics,
   type ChatFunctionTool,
   type ChatStreamChunk,
-  type OpenRouterClientOptions,
+  streamChatCompletion,
 } from '@hominem/ai';
 import { parseGenerationWireEvent, type GenerationEvent } from '@hominem/chat';
 import {
@@ -193,14 +193,8 @@ function toStreamChunk(
   };
 }
 
-function createScriptedOpenRouterClient(
-  script: ScriptedProvider,
-): OpenRouterClientOptions['client'] {
-  return {
-    chat: {
-      send: async () => scriptedStream(script),
-    },
-  } as unknown as OpenRouterClientOptions['client'];
+function createScriptedStreamChat(script: ScriptedProvider): typeof streamChatCompletion {
+  return () => scriptedStream(script);
 }
 
 async function* scriptedStream(script: ScriptedProvider): AsyncGenerator<ChatStreamChunk> {
@@ -381,7 +375,6 @@ export class HominemTests {
             tool: tool.definition.name,
             purpose: tool.definition.description,
             dependsOn: [],
-            arguments: {},
           },
         ],
       };
@@ -468,7 +461,7 @@ export class HominemTests {
       beforeCancellationCommit: () => this.failureController.consume('cancellation-commit'),
     };
     const service = createChatGenerationService({
-      openRouterClient: createScriptedOpenRouterClient(provider),
+      streamChat: createScriptedStreamChat(provider),
       planChatTools: async () =>
         provider.plan ?? {
           capabilities: [],

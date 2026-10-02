@@ -2,20 +2,18 @@ import { z } from 'zod';
 
 import type { CapabilityDefinition } from '../application/capability';
 
-export const chatToolPlanStepSchema = z.object({
-  tool: z.string().trim().min(1),
-  purpose: z.string().trim().min(1).max(240),
-  dependsOn: z.array(z.string().trim().min(1)).max(10),
-  arguments: z.record(z.string(), z.unknown()).default({}),
-});
-
+// The plan the model is asked for, and what is validated afterwards. Deliberately plain: a
+// richer schema (a free-form `arguments` object, defaults) made the provider reject every plan
+// request with "Provider returned error", so each plan silently fell back. The router has
+// already decided whether a lookup is needed, and planned arguments were never executed.
 export const chatToolPlanSchema = z.object({
-  requiresLookup: z.boolean(),
-  steps: z.array(chatToolPlanStepSchema).max(20),
+  steps: z.array(
+    z.object({ tool: z.string(), purpose: z.string(), dependsOn: z.array(z.string()) }),
+  ),
 });
 
-export type ChatToolPlanStep = z.infer<typeof chatToolPlanStepSchema>;
 export type ChatToolPlan = z.infer<typeof chatToolPlanSchema>;
+export type ChatToolPlanStep = ChatToolPlan['steps'][number];
 
 export type ToolPlanValidation = { ok: true; plan: ChatToolPlan } | { ok: false; errors: string[] };
 
@@ -56,7 +54,7 @@ export function validateChatToolPlan(
   const available = new Map(definitions.map((definition) => [definition.name, definition]));
   const errors: string[] = [];
   const seen = new Set<string>();
-  const scheduled = new Set<string>();
+  const scheduledReads = new Set<string>();
 
   for (const step of parsed.data.steps) {
     const definition = available.get(step.tool);
@@ -77,7 +75,9 @@ export function validateChatToolPlan(
         `${step.tool} is missing required dependencies: ${missingRequiredDependencies.join(', ')}`,
       );
     }
-    if (!definition.readOnly && scheduled.size === 0) {
+    // The runtime guard needs a completed read-only call before such a write, so a standalone
+    // write scheduled earlier (remember -> update) does not make the plan valid.
+    if (!definition.readOnly && !definition.standaloneWrite && scheduledReads.size === 0) {
       errors.push(`${step.tool} requires a preceding read-only lookup`);
     }
 
@@ -89,30 +89,11 @@ export function validateChatToolPlan(
       }
     }
 
-    // Planned arguments may intentionally omit values produced by an earlier
-    // tool. Runtime callTool remains authoritative for the complete argument
-    // object; the planner validates every value it does know about here.
-    const result =
-      definition.inputSchema instanceof z.ZodObject
-        ? definition.inputSchema.partial().safeParse(step.arguments)
-        : definition.inputSchema.safeParse(step.arguments);
-    if (!result.success) {
-      errors.push(
-        `${step.tool} has invalid planned arguments: ${result.error.issues
-          .map((issue) => issue.path.join('.') || '<root>')
-          .join(', ')}`,
-      );
-    }
-    scheduled.add(step.tool);
+    if (definition.readOnly) scheduledReads.add(step.tool);
   }
 
   if (hasCycle(parsed.data.steps)) errors.push('Tool plan contains a dependency cycle');
-  if (parsed.data.requiresLookup && parsed.data.steps.length === 0) {
-    errors.push('A lookup plan must contain at least one tool');
-  }
-  if (!parsed.data.requiresLookup && parsed.data.steps.length > 0) {
-    errors.push('A no-lookup plan cannot contain tool steps');
-  }
+  if (parsed.data.steps.length === 0) errors.push('A lookup plan must contain at least one tool');
 
   return errors.length > 0 ? { ok: false, errors } : { ok: true, plan: parsed.data };
 }

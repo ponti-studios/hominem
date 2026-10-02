@@ -19,7 +19,7 @@ function TaskRow({ item }: { item: TaskListItem }) {
   return (
     <ListRow
       accessibilityLabel={item.title}
-      leading={<AppIcon name="circle" size={20} tintColor={successColor} />}
+      leading=<AppIcon name="circle" size={20} tintColor={successColor} />
       onPress={() => {
         void openReminderInSystemApp(item.id).catch(() => {
           Alert.alert('Unable to open Reminders', 'Open the Reminders app to view this task.');
@@ -60,14 +60,12 @@ export function TasksScreen() {
         ListEmptyComponent={
           !isFetching ? <Text style={styles.emptyStateText}>You have no open tasks.</Text> : null
         }
-        refreshControl={
-          <RefreshControl
-            refreshing={isFetching}
-            onRefresh={() => {
-              void refetch();
-            }}
-          />
-        }
+        refreshControl=<RefreshControl
+          refreshing={isFetching}
+          onRefresh={() => {
+            void refetch();
+          }}
+        />
         /**
          * @NOTE Use a function instead of calling the component directly
          * (`renderItem={TaskRow}`).

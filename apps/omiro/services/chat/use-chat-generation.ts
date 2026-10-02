@@ -6,6 +6,7 @@ import {
 import type { ChatGenerationController, GenerationClientState } from '@hominem/chat/client';
 import { xhrChatTransport } from '@hominem/chat/transport/xhr';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
 
 import { API_BASE_URL } from '~/constants';
 import { storage } from '~/services/storage/mmkv';
@@ -28,8 +29,12 @@ function readStoredCheckpoint(chatId: string): {
   userMessageId?: string;
 } | null {
   const raw = storage.getString(generationStorageKey(chatId));
-  if (!raw) return null;
-  const { userMessageId, ...rest } = JSON.parse(raw) as { userMessageId?: unknown };
+  if (!raw) {
+    return null;
+  }
+  const { userMessageId, ...rest } = z
+    .looseObject({ userMessageId: z.unknown().optional() })
+    .parse(JSON.parse(raw));
   const checkpoint = parseGenerationClientCheckpoint(rest);
   return {
     checkpoint,
@@ -40,7 +45,9 @@ function readStoredCheckpoint(chatId: string): {
 function restoreGeneration(chatId: string): ChatGenerationState | null {
   try {
     const stored = readStoredCheckpoint(chatId);
-    if (!stored) return null;
+    if (!stored) {
+      return null;
+    }
     const { checkpoint, userMessageId } = stored;
     return {
       id: checkpoint.generationId,
@@ -92,8 +99,10 @@ function checkpointStore(chatId: string) {
     get: (_id: string) => {
       try {
         const stored = readStoredCheckpoint(chatId);
-        if (!stored) return null;
-        return { ...stored.checkpoint } as GenerationClientState;
+        if (!stored) {
+          return null;
+        }
+        return stored.checkpoint;
       } catch {
         return null;
       }
@@ -150,7 +159,9 @@ export function useChatGeneration({
     handoff: PendingGenerationHandoff | null;
   }>(() => {
     const taken = takeGenerationHandoff(chatId) ?? null;
-    if (!taken) return { initialGeneration: restoreGeneration(chatId), handoff: null };
+    if (!taken) {
+      return { initialGeneration: restoreGeneration(chatId), handoff: null };
+    }
     const state = taken.controller.state;
     // Already finished by the time this screen mounted -- the message is
     // already in the query cache from the handoff site; nothing to stream.
@@ -169,7 +180,7 @@ export function useChatGeneration({
     };
   });
   const generationRef = useRef<ChatGenerationState | null>(initialGeneration);
-  const [generation, setGenerationState] = useState(generationRef.current);
+  const [generation, setGenerationState] = useState(initialGeneration);
 
   const setGeneration = useCallback(
     (next: ChatGenerationState | null) => {
@@ -190,10 +201,14 @@ export function useChatGeneration({
       setGeneration(initial);
       return controller.subscribe((state) => {
         const current = generationRef.current;
-        if (!current || current.id !== state.generationId) return;
+        if (!current || current.id !== state.generationId) {
+          return;
+        }
         if (state.phase === 'committed' || state.phase === 'cancelled') {
           queueMicrotask(() => {
-            if (generationRef.current?.id !== state.generationId) return;
+            if (generationRef.current?.id !== state.generationId) {
+              return;
+            }
             setGeneration(null);
             void onGenerationTerminal?.();
           });
@@ -233,8 +248,9 @@ export function useChatGeneration({
       !current ||
       ['committed', 'cancelled', 'failed'].includes(current.stage) ||
       resumingGenerationIds.has(current.id)
-    )
+    ) {
       return;
+    }
     resumingGenerationIds.add(current.id);
     const controller = client.resumeGeneration({
       chatId,
@@ -246,7 +262,9 @@ export function useChatGeneration({
     } finally {
       unsubscribe();
       resumingGenerationIds.delete(current.id);
-      if (controllerRef.current === controller) controllerRef.current = null;
+      if (controllerRef.current === controller) {
+        controllerRef.current = null;
+      }
     }
   }, [bindController, chatId, client]);
 
@@ -262,7 +280,9 @@ export function useChatGeneration({
         await handoff.controller.done;
       } finally {
         unsubscribe();
-        if (controllerRef.current === handoff.controller) controllerRef.current = null;
+        if (controllerRef.current === handoff.controller) {
+          controllerRef.current = null;
+        }
       }
     },
     [bindController],
@@ -273,13 +293,17 @@ export function useChatGeneration({
       void adoptHandoff(handoff, generationRef.current).catch(() => undefined);
       return;
     }
-    if (generationRef.current) void resumeGeneration().catch(() => undefined);
+    if (generationRef.current) {
+      void resumeGeneration().catch(() => undefined);
+    }
   }, [adoptHandoff, handoff, resumeGeneration]);
 
   const cancelGeneration = useCallback(async () => {
     const current = generationRef.current;
     const controller = controllerRef.current;
-    if (!current || !controller || current.stage === 'stopping') return;
+    if (!current || !controller || current.stage === 'stopping') {
+      return;
+    }
     setGeneration({ ...current, stage: 'stopping' });
     const response = await client.cancel({ chatId, generationId: current.id });
     if (!response.ok) {

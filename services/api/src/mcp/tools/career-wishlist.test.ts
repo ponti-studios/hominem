@@ -2,13 +2,16 @@ import { db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import './career';
-import { callTool, type McpToolResult } from '../tool-registry';
+import {
+  careerWishlistAddOutputSchema,
+  careerWishlistCompaniesSchema,
+  careerWishlistUpdateOutputSchema,
+} from '../../schemas/career.schema';
+import { removedResultSchema } from '../../schemas/common.schema';
+import { toolOutput } from '../../testkit/tool-result';
+import { callTool } from '../tool-registry';
 
 const userId = 'a2000001-0000-4000-8000-000000000001';
-
-function resultContent(result: McpToolResult) {
-  return result.structuredContent as Record<string, unknown>;
-}
 
 beforeAll(async () => {
   await pool.query('DELETE FROM "user" WHERE id = $1', [userId]);
@@ -20,32 +23,37 @@ beforeAll(async () => {
 
 describe('career wishlist MCP tools', () => {
   it('creates, lists, updates, and removes a wishlist company', async () => {
-    const created = resultContent(
+    const created = toolOutput(
       await callTool(userId, 'career_wishlist_add', { company: 'OpenAI' }),
-    ) as { company: { id: string; company: string } };
+      careerWishlistAddOutputSchema,
+    );
     expect(created.company.company).toBe('OpenAI');
 
-    const duplicate = resultContent(
+    const duplicate = toolOutput(
       await callTool(userId, 'career_wishlist_add', { company: 'openai' }),
-    ) as { company: { id: string } };
+      careerWishlistAddOutputSchema,
+    );
     expect(duplicate.company.id).toBe(created.company.id);
 
-    const listed = resultContent(await callTool(userId, 'career_wishlist_companies', {})) as {
-      companies: Array<{ id: string }>;
-    };
+    const listed = toolOutput(
+      await callTool(userId, 'career_wishlist_companies', {}),
+      careerWishlistCompaniesSchema,
+    );
     expect(listed.companies.map((company) => company.id)).toContain(created.company.id);
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(userId, 'career_wishlist_update', {
         id: created.company.id,
         company: 'OpenAI Research',
       }),
-    ) as { company: { company: string } };
-    expect(updated.company.company).toBe('OpenAI Research');
+      careerWishlistUpdateOutputSchema,
+    );
+    expect(updated.company?.company).toBe('OpenAI Research');
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(userId, 'career_wishlist_remove', { id: created.company.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(true);
   });
 
@@ -61,9 +69,10 @@ describe('career wishlist MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const result = resultContent(
+    const result = toolOutput(
       await callTool(otherUserId, 'career_wishlist_remove', { id: entry.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(result.removed).toBe(false);
 
     await db.deleteFrom('app.careerApplications').where('id', '=', entry.id).execute();

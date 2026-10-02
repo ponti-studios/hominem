@@ -18,6 +18,7 @@ on:
       - 'justfile'
       - 'scripts/**'
       - '.github/actions/setup-pnpm-workspace/**'
+      - '.github/actions/setup-goose/**'
       - '.github/workflows/validate-api.yml'
       - '.github/workflows/_validate-app.yml'
   pull_request:

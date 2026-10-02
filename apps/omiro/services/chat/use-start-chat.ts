@@ -5,7 +5,7 @@ import { xhrChatTransport } from '@hominem/chat/transport/xhr';
 import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import type { ChatMessageItem } from '~/components/chat';
 import { API_BASE_URL } from '~/constants';
@@ -32,16 +32,16 @@ type StartChatInput = {
 export function useStartChat() {
   const { getAuthHeaders } = useAuth();
   const queryClient = useQueryClient();
-  const chatClientRef = useRef<ChatClient | null>(null);
+  const [chatClient] = useState(
+    () =>
+      new ChatClient({
+        baseUrl: API_BASE_URL,
+        headers: getAuthHeaders,
+        transport: xhrChatTransport(),
+      }),
+  );
   const generationRef = useRef<ChatGenerationController | null>(null);
   const startedChatIdRef = useRef<string | null>(null);
-  if (!chatClientRef.current) {
-    chatClientRef.current = new ChatClient({
-      baseUrl: API_BASE_URL,
-      headers: getAuthHeaders,
-      transport: xhrChatTransport(),
-    });
-  }
 
   const reconcileStartedChat = useCallback(
     (chatId: string) =>
@@ -55,17 +55,21 @@ export function useStartChat() {
   const mutation = useMutation<string, Error, StartChatInput & StartChatOptions>({
     mutationFn: async ({ onAccepted, ...input }) => {
       const net = await NetInfo.fetch();
-      if (net.isConnected === false) throw new Error(OFFLINE_UNAVAILABLE_ERROR);
+      if (net.isConnected === false) {
+        throw new Error(OFFLINE_UNAVAILABLE_ERROR);
+      }
 
       startedChatIdRef.current = null;
-      const generation = chatClientRef.current!.start({
+      const generation = chatClient.start({
         ...input,
         generationId: randomUUID(),
         responseLength: getChatResponseLength(),
       });
       generationRef.current = generation;
       generation.subscribe((_state, event) => {
-        if (!('payload' in event)) return;
+        if (!('payload' in event)) {
+          return;
+        }
         if (event.type === 'generation.accepted') {
           startedChatIdRef.current = event.payload.chatId;
           const userMessage = event.payload.userMessage
@@ -107,12 +111,16 @@ export function useStartChat() {
           throw new Error(completed.error ?? 'Generation failed.');
         }
       } catch (error) {
-        if (startedChatIdRef.current) void reconcileStartedChat(startedChatIdRef.current);
+        if (startedChatIdRef.current) {
+          void reconcileStartedChat(startedChatIdRef.current);
+        }
         throw error;
       } finally {
         generationRef.current = null;
       }
-      if (!startedChatIdRef.current) throw new Error('Chat was not created');
+      if (!startedChatIdRef.current) {
+        throw new Error('Chat was not created');
+      }
       await reconcileStartedChat(startedChatIdRef.current);
       return startedChatIdRef.current;
     },

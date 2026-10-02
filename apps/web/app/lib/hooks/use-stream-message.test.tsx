@@ -126,13 +126,17 @@ function interruptedStreamResponse(events: string[]) {
 
 describe('useStreamMessage', () => {
   beforeEach(() => {
+    vi.stubEnv('VITE_PUBLIC_API_URL', 'https://api.test');
     vi.clearAllMocks();
     mockChatTransport.request.mockImplementation(routeChatTransportRequest);
     window.localStorage.clear();
     vi.stubGlobal('crypto', { randomUUID: () => 'g1' });
   });
 
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
 
   it('passes the abort signal and records a committed response', async () => {
     const onAccepted = vi.fn();

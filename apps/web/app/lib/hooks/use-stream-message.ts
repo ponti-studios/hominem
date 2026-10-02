@@ -155,10 +155,10 @@ export function useStreamMessage({ chatId }: { chatId: string }) {
       try {
         await generation.done;
         if (!['committed', 'cancelled', 'failed'].includes(generation.state.phase)) {
-          const run = (await chatClient.getGeneration({
+          const run = await chatClient.getGeneration({
             chatId,
             generationId: restoredCheckpoint.generationId,
-          })) as { status?: string };
+          });
           if (run.status === 'committed' || run.status === 'cancelled') {
             clearCheckpoint();
             setStatus(run.status);
@@ -196,9 +196,7 @@ export function useStreamMessage({ chatId }: { chatId: string }) {
         ? chatClient.regenerate({
             chatId,
             target: { generationId: input.retryOfGenerationId },
-            body: {
-              ...(input.responseLength ? { responseLength: input.responseLength } : {}),
-            },
+            body: input.responseLength ? { responseLength: input.responseLength } : {},
           })
         : chatClient.send({
             chatId,

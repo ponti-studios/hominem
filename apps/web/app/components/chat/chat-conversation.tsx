@@ -143,12 +143,12 @@ export const ChatConversation = memo(function ChatConversation({
 }: ChatConversationProps) {
   const approveTool = useCallback(
     ({ messageId, toolCallId }: { messageId: string; toolCallId: string }) =>
-      void toolCallRespond.respond({ messageId, toolCallId, approved: true }),
+      toolCallRespond.respond({ messageId, toolCallId, approved: true }),
     [toolCallRespond.respond],
   );
   const rejectTool = useCallback(
     ({ messageId, toolCallId }: { messageId: string; toolCallId: string }) =>
-      void toolCallRespond.respond({ messageId, toolCallId, approved: false }),
+      toolCallRespond.respond({ messageId, toolCallId, approved: false }),
     [toolCallRespond.respond],
   );
   const newMessageIds = useNewMessageIds(display.displayMessages.map((message) => message.id));

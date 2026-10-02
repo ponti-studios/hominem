@@ -34,7 +34,7 @@ function withRequestTimeout(signal?: AbortSignal): { signal: AbortSignal } {
   return { signal: signal ? AbortSignal.any([signal, deadline]) : deadline };
 }
 
-function isAIUsageMetrics(value: unknown): value is AIUsageMetrics {
+export function isAIUsageMetrics(value: unknown): value is AIUsageMetrics {
   if (!isObject(value)) return false;
   return (
     Reflect.get(value, 'provider') === 'openrouter' &&

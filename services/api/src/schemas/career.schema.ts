@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const careerApplicationStatusSchema = z.enum([
+export const careerApplicationStatusSchema = z.enum([
   'WISHLIST',
   'APPLIED',
   'SCREENING',
@@ -490,4 +490,114 @@ export const careerApplicationFileAddSchema = careerApplicationFileCreateSchema.
 export const careerApplicationFileRemoveSchema = z.object({
   applicationId: z.string().uuid(),
   id: z.string().uuid(),
+});
+
+export const careerProfileUpdateOutputSchema = z.object({ profile: careerMcpProfileSchema });
+
+export const careerEngagementCreateOutputSchema = z.object({ engagement: careerEngagementSchema });
+
+export const careerApplicationCreateOutputSchema = z.object({
+  application: careerApplicationsSchema.shape.applications.element,
+});
+
+export const careerApplicationUpdateOutputSchema = z.object({
+  application: careerApplicationsSchema.shape.applications.element.nullable(),
+});
+
+export const careerApplicationNoteAddOutputSchema = z.object({
+  note: z.object({ id: z.string().uuid(), content: z.string(), createdAt: z.string() }).nullable(),
+});
+
+export const careerApplicationFileAddOutputSchema = z.object({
+  file: z
+    .object({
+      id: z.string().uuid(),
+      fileName: z.string(),
+      fileUrl: z.string(),
+      fileType: z.string().nullable(),
+      createdAt: z.string(),
+    })
+    .nullable(),
+});
+
+export const careerEducationCreateOutputSchema = z.object({
+  education: careerEducationSchema.shape.education.element,
+});
+
+export const careerEducationUpdateOutputSchema = z.object({
+  education: careerEducationSchema.shape.education.element.nullable(),
+});
+
+export const careerSkillCreateOutputSchema = z.object({ skill: careerSkillSchema });
+
+export const careerSkillUpdateOutputSchema = z.object({ skill: careerSkillSchema.nullable() });
+
+export const careerProjectCreateOutputSchema = z.object({ project: careerProjectSchema });
+
+export const careerTestimonialCreateOutputSchema = z.object({
+  testimonial: careerTestimonialSchema,
+});
+
+export const careerTestimonialUpdateOutputSchema = z.object({
+  testimonial: careerTestimonialSchema.nullable(),
+});
+
+export const careerCertificationCreateOutputSchema = z.object({
+  certification: careerCertificationSchema,
+});
+
+export const careerCertificationUpdateOutputSchema = z.object({
+  certification: careerCertificationSchema.nullable(),
+});
+
+export const careerSocialLinksSaveOutputSchema = z.object({
+  socialLinks: careerSocialLinksSchema.shape.socialLinks.unwrap(),
+});
+
+export const careerWishlistAddOutputSchema = z.object({ company: careerWishlistCompanySchema });
+
+export const careerWishlistUpdateOutputSchema = z.object({
+  company: careerWishlistCompanySchema.nullable(),
+});
+
+export const careerEngagementUpdateOutputSchema = z.object({
+  engagement: careerEngagementSchema.nullable(),
+});
+
+export const careerProjectUpdateOutputSchema = z.object({
+  project: careerProjectSchema.nullable(),
+});
+
+export const careerProfileOutputSchema = z.object({
+  profile: careerMcpProfileSchema.nullable(),
+});
+
+export const careerImportDraftSchema = z.object({
+  jobTitle: z.string(),
+  companyName: z.string(),
+  companyDescription: z.string(),
+  jobDescription: z.string(),
+  location: z.string(),
+  salaryRange: z.string(),
+  salaryDetails: z.string(),
+  employmentType: z.string(),
+  experienceLevel: z.string(),
+  education: z.string(),
+  requirements: z.array(z.string()),
+  skills: z.array(z.string()),
+  benefits: z.array(z.string()),
+  responsibilities: z.array(z.string()),
+  industry: z.string(),
+  postedDate: z.string(),
+  applicationDeadline: z.string(),
+  department: z.string(),
+  hiringManager: z.string(),
+  companySize: z.string(),
+  fundingStage: z.string(),
+  technologyStack: z.array(z.string()),
+  cultureAspects: z.array(z.string()),
+  fullText: z.string(),
+  url: z.string(),
+  scrapedAt: z.string(),
+  wordCount: z.number(),
 });

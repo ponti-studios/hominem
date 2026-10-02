@@ -13,7 +13,7 @@ async function throwIfFailed(response: Response, fallback: string): Promise<void
   if (response.ok) return;
   let message: string;
   try {
-    const body = (await response.json()) as { message?: unknown };
+    const body: { message?: unknown } = await response.json();
     message = typeof body.message === 'string' && body.message.length > 0 ? body.message : fallback;
   } catch {
     message = `${fallback} (status ${response.status})`;

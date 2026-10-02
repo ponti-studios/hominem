@@ -299,7 +299,7 @@ const REST_ACCOUNT_UUID =
 const REST_LIMIT_MAX = 100;
 
 function normalizeReportQuery(raw: unknown): Record<string, unknown> {
-  const query = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const query = z.record(z.string(), z.unknown()).catch({}).parse(raw);
   const account = typeof query.account === 'string' ? query.account : undefined;
   return {
     ...(typeof query.from === 'string' ? { from: query.from } : {}),

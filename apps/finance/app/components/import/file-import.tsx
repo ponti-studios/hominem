@@ -17,7 +17,9 @@ const STATUS_CONFIG: Record<FileUploadStatusValue, { bg: string; text: string; l
 };
 
 function FileUploadStatus({ uploadStatus }: { uploadStatus: FileStatus }) {
-  const config = STATUS_CONFIG[uploadStatus.status as FileUploadStatusValue] ?? {
+  const config = Object.entries(STATUS_CONFIG).find(
+    ([status]) => status === uploadStatus.status,
+  )?.[1] ?? {
     bg: 'bg-muted',
     text: 'text-muted-foreground',
     label: uploadStatus.status,

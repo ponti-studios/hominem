@@ -76,13 +76,13 @@ production update channel. Local IPA recovery procedures live only in the
 
 ## Useful commands
 
-| Need | Run |
-| --- | --- |
-| First run or native/config change | `just mobile rebuild` |
-| Everyday JS/TS development | `just mobile run` |
-| Format, lint, build API types, typecheck, test, and export | `just mobile check` |
-| Run Maestro evidence | `just mobile maestro [flow-or-directory]` |
-| Publish an approved JS-only OTA | `just mobile update "<message>"` |
+| Need                                                       | Run                                       |
+| ---------------------------------------------------------- | ----------------------------------------- |
+| First run or native/config change                          | `just mobile rebuild`                     |
+| Everyday JS/TS development                                 | `just mobile run`                         |
+| Format, lint, build API types, typecheck, test, and export | `just mobile check`                       |
+| Run Maestro evidence                                       | `just mobile maestro [flow-or-directory]` |
+| Publish an approved JS-only OTA                            | `just mobile update "<message>"`          |
 
 ## Testing
 

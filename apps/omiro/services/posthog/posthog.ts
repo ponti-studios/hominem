@@ -6,7 +6,6 @@ import { env } from '~/env';
 const apiKey = env.EXPO_PUBLIC_POSTHOG_API_KEY;
 const host = env.EXPO_PUBLIC_POSTHOG_HOST;
 const disabled = __DEV__ || E2E_TESTING || !apiKey;
-export const POSTHOG_ENABLED = !disabled;
 
 function createNoopPostHog() {
   return {
@@ -20,8 +19,10 @@ function createNoopPostHog() {
   };
 }
 
-export const posthog = disabled
-  ? createNoopPostHog()
+// The real client, or null when analytics are off. The provider needs the real
+// type; everything else goes through `posthog`, which falls back to a no-op.
+export const posthogClient = disabled
+  ? null
   : new PostHog(apiKey, {
       host,
       disabled,
@@ -34,3 +35,5 @@ export const posthog = disabled
         },
       },
     });
+
+export const posthog = posthogClient ?? createNoopPostHog();

@@ -34,6 +34,7 @@ export {
   createStructuredChatCompletion,
   getChatCompletionText,
   getChatCompletionUsage,
+  isAIUsageMetrics,
   getStructuredOutputUsage,
   streamChatCompletion,
   StructuredOutputError,

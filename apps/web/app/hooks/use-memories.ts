@@ -1,6 +1,5 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type {
-  MemoriesListOutput,
   MemoryDeleteOutput,
   MemoryUpdateInput,
   MemoryUpdateOutput,
@@ -16,7 +15,7 @@ export function useMemories() {
     queryKey: memoriesQueryKey,
     queryFn: async () => {
       const res = await client.api.memory.$get({ query: {} });
-      const data = (await res.json()) as MemoriesListOutput;
+      const data = await res.json();
       return data.memories;
     },
   });
@@ -33,7 +32,7 @@ export function useUpdateMemory() {
         param: { id },
         json: fields,
       });
-      return res.json() as Promise<MemoryUpdateOutput>;
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memoriesQueryKey });
@@ -48,7 +47,7 @@ export function useDeleteMemory() {
   return useMutation<MemoryDeleteOutput, Error, { id: string }>({
     mutationFn: async (variables) => {
       const res = await client.api.memory[':id'].$delete({ param: { id: variables.id } });
-      return res.json() as Promise<MemoryDeleteOutput>;
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: memoriesQueryKey });

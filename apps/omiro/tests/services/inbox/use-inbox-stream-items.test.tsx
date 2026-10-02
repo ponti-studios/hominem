@@ -43,7 +43,7 @@ function page(overrides: Partial<InboxOutput> = {}): InboxOutput {
     ],
     nextCursor: null,
     ...overrides,
-  } as InboxOutput;
+  };
 }
 
 describe('useInboxStreamItems', () => {

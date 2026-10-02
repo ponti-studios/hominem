@@ -49,6 +49,9 @@ export interface CapabilityDefinition<
   title: string;
   description: string;
   inputSchema: InputSchema;
+  // The arguments a chat model is shown, when fewer than the tool accepts. Every call is still
+  // validated against `inputSchema`; a key left out here is simply never offered to the model.
+  chatInputSchema?: z.ZodType;
   outputSchema: OutputSchema;
   readOnly: boolean;
   scopes: readonly Scope[];
@@ -59,6 +62,10 @@ export interface CapabilityDefinition<
   invoking?: string;
   invoked?: string;
   requiresConfirmation?: boolean;
+  // A write that depends on no existing record (e.g. creating a standalone task), so a chat
+  // turn may call it without first running a read-only lookup. By default every write must
+  // follow a read, so a model resolves real ids before it changes anything.
+  standaloneWrite?: boolean;
   guidance?: CapabilityGuidance;
   // Extracts URI-addressable resources (e.g. an uploaded file's fileUrl) from
   // a tool's already-validated output, so callTool can surface them as
@@ -84,16 +91,16 @@ export function defineCapability<const T extends CapabilityDefinition>(definitio
   return definition;
 }
 
-export function parseCapabilityInput<T extends CapabilityDefinition>(
-  definition: T,
+export function parseCapabilityInput<TInput extends z.ZodType>(
+  definition: { inputSchema: TInput },
   input: unknown,
-): CapabilityInput<T> {
-  return definition.inputSchema.parse(input) as CapabilityInput<T>;
+): z.output<TInput> {
+  return definition.inputSchema.parse(input);
 }
 
-export function parseCapabilityOutput<T extends CapabilityDefinition>(
-  definition: T,
+export function parseCapabilityOutput<TOutput extends z.ZodType>(
+  definition: { outputSchema: TOutput },
   output: unknown,
-): CapabilityOutput<T> {
-  return definition.outputSchema.parse(output) as CapabilityOutput<T>;
+): z.output<TOutput> {
+  return definition.outputSchema.parse(output);
 }

@@ -1,5 +1,5 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 
 import { Composer } from '~/components/composer/Composer';
@@ -55,22 +55,24 @@ export function StreamScreen({ filter, topInset = 0 }: StreamScreenProps) {
   // Seeded with whatever the first settled render holds (including empty),
   // then grows with every commit -- the same gating ChatMessageList uses so
   // historical rows never count as new.
-  const seenIdsRef = useRef<Set<string> | null>(null);
-  useEffect(() => {
-    if (inbox.isInitialLoading) {
-      return;
-    }
-    const seen = seenIdsRef.current ?? new Set<string>();
+  const [entry, setEntry] = useState<{
+    source: InboxStreamItemData[];
+    filtered: InboxStreamItemData[];
+    seen: ReadonlySet<string>;
+    entering: ReadonlySet<string>;
+  } | null>(null);
+  if (
+    !inbox.isInitialLoading &&
+    (entry === null || entry.source !== inbox.items || entry.filtered !== items)
+  ) {
+    const seen = new Set(entry?.seen);
+    const entering = getEnteringItemIds(items, entry?.seen ?? new Set<string>());
     for (const item of inbox.items) {
       seen.add(item.id);
     }
-    seenIdsRef.current = seen;
-  }, [inbox.isInitialLoading, inbox.items]);
-
-  const enteringIds = useMemo(
-    () => getEnteringItemIds(items, seenIdsRef.current ?? new Set<string>()),
-    [items],
-  );
+    setEntry({ source: inbox.items, filtered: items, seen, entering });
+  }
+  const enteringIds: ReadonlySet<string> = entry?.entering ?? new Set<string>();
 
   const renderItem = useCallback<ListRenderItem<InboxStreamItemData>>(
     ({ item }) => <InboxStreamItem isNew={enteringIds.has(item.id)} item={item} />,

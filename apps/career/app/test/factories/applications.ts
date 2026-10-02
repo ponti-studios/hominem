@@ -1,13 +1,12 @@
 import type { CareerApplicationRecord } from '@hominem/db/career';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type ApplicationOverrides = Partial<CareerApplicationRecord> & Record<string, any>;
-
-export function makeApplication(overrides: ApplicationOverrides = {}): CareerApplicationRecord & {
+type MadeApplication = CareerApplicationRecord & {
   currentStage: string | null;
   stageCount: number;
   hasOffer: boolean;
-} {
+};
+
+export function makeApplication(overrides: Partial<MadeApplication> = {}): MadeApplication {
   return {
     id: 'app-1',
     ownerUserid: 'user-1',
@@ -18,7 +17,8 @@ export function makeApplication(overrides: ApplicationOverrides = {}): CareerApp
     referredBy: null,
     appliedAt: '2024-01-01',
     currentStage: 'interview',
-    status: 'applied',
+    currentStageId: null,
+    status: 'APPLIED',
     resumeUrl: null,
     coverLetterUrl: null,
     jobPostingUrl: 'https://example.com/job',
@@ -30,9 +30,5 @@ export function makeApplication(overrides: ApplicationOverrides = {}): CareerApp
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
     ...overrides,
-  } as CareerApplicationRecord & {
-    currentStage: string | null;
-    stageCount: number;
-    hasOffer: boolean;
   };
 }

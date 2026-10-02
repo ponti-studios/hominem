@@ -70,7 +70,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const hasRunLegacyMigrationRef = useRef(false);
 
-  const currentUser = useMemo(() => (data?.user ? toUser(data.user) : null), [data?.user]);
+  const sessionUser = data?.user;
+  const currentUser = useMemo(() => (sessionUser ? toUser(sessionUser) : null), [sessionUser]);
   const isSignedIn = Boolean(currentUser) && !isSigningOut;
 
   const { requestEmailOtp, verifyEmailOtp } = useEmailOtp();

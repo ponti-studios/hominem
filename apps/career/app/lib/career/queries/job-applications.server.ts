@@ -1,6 +1,8 @@
 import { CareerRepository } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
 
+import { JOB_APPLICATION_STATUSES } from '~/types/career';
+
 import {
   buildStatusOptions,
   NO_STATUS_FILTER,
@@ -39,6 +41,10 @@ export type ApplicationPageData = {
   statusOptions: FilterOption[];
 };
 
+function statusFilter(value: string | undefined) {
+  return JOB_APPLICATION_STATUSES.find((status) => status === value);
+}
+
 export async function getApplicationPage(
   ownerUserId: string,
   opts: {
@@ -52,7 +58,7 @@ export async function getApplicationPage(
   const { items, total } = await CareerRepository.listApplicationsPage(db, ownerUserId, {
     page: opts.page,
     pageSize: opts.pageSize,
-    status: opts.status === NO_STATUS_FILTER ? null : opts.status || undefined,
+    status: opts.status === NO_STATUS_FILTER ? null : statusFilter(opts.status),
     query: opts.query,
     sort: opts.sort ?? 'desc',
   });

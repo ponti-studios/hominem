@@ -228,3 +228,10 @@ export type UpdateMemberRoleInput = z.output<typeof updateMemberRoleInputSchema>
 export type RemoveMemberInput = z.output<typeof removeMemberInputSchema>;
 export type AcceptMemberInviteInput = z.output<typeof acceptMemberInviteInputSchema>;
 export type ListPendingInvitesInput = z.output<typeof listPendingInvitesInputSchema>;
+
+export const updateCollectionToolOutputSchema = z.object({
+  collection: updateCollectionOutputSchema.shape.collection.nullable(),
+});
+export const updateMemberRoleToolOutputSchema = z.object({
+  member: updateMemberRoleOutputSchema.shape.member.nullable(),
+});

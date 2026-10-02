@@ -21,6 +21,7 @@ import { Form, Link, redirect } from 'react-router';
 import { useApiBaseUrl } from '~/hooks/useAuth';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
+import { formText } from '~/lib/route-utils';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 import { isJobApplicationStatus, JobApplicationStatus } from '~/types/career';
 
@@ -123,15 +124,15 @@ export async function action({ request, context }: ActionFunctionArgs) {
     throw new Response('User not found', { status: 401 });
   }
   const formData = await request.formData();
-  const position = formData.get('position') as string;
-  const companyName = formData.get('company') as string;
+  const position = formText(formData, 'position') ?? '';
+  const companyName = formText(formData, 'company') ?? '';
   const statusValue = formData.get('status');
   if (typeof statusValue !== 'string' || !isJobApplicationStatus(statusValue)) {
     throw new Response('Invalid application status', { status: 400 });
   }
-  const status = statusValue as JobApplicationStatus;
-  const location = formData.get('location') as string;
-  const salaryQuoted = formData.get('salaryQuoted') as string;
+  const status = statusValue;
+  const location = formText(formData, 'location') ?? '';
+  const salaryQuoted = formText(formData, 'salaryQuoted') ?? '';
   const importId = formData.get('importId');
   const jobPostingDataValue = formData.get('jobPostingData');
 
@@ -142,13 +143,13 @@ export async function action({ request, context }: ActionFunctionArgs) {
   let jobPostingData: { url?: string; jobDescription?: string } = {};
   if (typeof jobPostingDataValue === 'string' && jobPostingDataValue) {
     try {
-      const parsed = JSON.parse(jobPostingDataValue) as unknown;
+      const parsed: unknown = JSON.parse(jobPostingDataValue);
       if (isObject(parsed)) {
-        const value = parsed as { url?: unknown; jobDescription?: unknown };
+        const url = Reflect.get(parsed, 'url');
+        const jobDescription = Reflect.get(parsed, 'jobDescription');
         jobPostingData = {
-          url: typeof value.url === 'string' ? value.url : undefined,
-          jobDescription:
-            typeof value.jobDescription === 'string' ? value.jobDescription : undefined,
+          url: typeof url === 'string' ? url : undefined,
+          jobDescription: typeof jobDescription === 'string' ? jobDescription : undefined,
         };
       }
     } catch {
@@ -219,13 +220,13 @@ export default function CreateJobApplication() {
   const refreshImport = async (id: string) => {
     const response = await fetch(`/api/job/import?importId=${encodeURIComponent(id)}`);
     if (!response.ok) return;
-    const result = (await response.json()) as { import?: CareerImportDto | null };
+    const result: { import?: CareerImportDto | null } = await response.json();
     if (result.import) applyImport(result.import);
   };
 
   useEffect(() => {
     void fetch('/api/job/import')
-      .then((response) => response.json() as Promise<{ imports?: CareerImportDto[] }>)
+      .then((response) => response.json())
       .then((result) => {
         const latest = result.imports?.[0];
         if (latest) applyImport(latest);
@@ -241,7 +242,7 @@ export default function CreateJobApplication() {
     ) {
       return;
     }
-    const interval = window.setInterval(() => void refreshImport(importId), 2500);
+    const interval = window.setInterval(() => refreshImport(importId), 2500);
     return () => window.clearInterval(interval);
   }, [importId, importJob]);
 
@@ -260,7 +261,7 @@ export default function CreateJobApplication() {
     socket.onopen = () => socket.send(JSON.stringify({ type: 'subscribe' }));
     socket.onmessage = (event) => {
       try {
-        const parsed = JSON.parse(event.data) as {
+        const parsed: {
           data?: Array<{
             jobId: string;
             status: CareerImportDto['status'];
@@ -270,7 +271,7 @@ export default function CreateJobApplication() {
             error?: string;
             draft?: CareerImportDraft;
           }>;
-        };
+        } = JSON.parse(event.data);
         const job = parsed.data?.find((entry) => entry.jobId === importJob.queueJobId);
         if (!job) return;
         setImportJob((current) =>
@@ -310,7 +311,7 @@ export default function CreateJobApplication() {
         body: JSON.stringify({ action: 'start', url }),
       });
 
-      const result = (await response.json()) as { import?: CareerImportDto; message?: string };
+      const result: { import?: CareerImportDto; message?: string } = await response.json();
 
       if (result.import) {
         applyImport(result.import);
@@ -430,7 +431,7 @@ export default function CreateJobApplication() {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ action: 'retry', importId: importJob.id }),
                           });
-                          const result = (await response.json()) as { import?: CareerImportDto };
+                          const result: { import?: CareerImportDto } = await response.json();
                           if (result.import) {
                             setIsScraping(true);
                             applyImport(result.import);

@@ -33,7 +33,7 @@ type ChatMessageLoaderData = ChatsGetMessagesOutput;
 
 type NoteLoaderData = Pick<NotesGetOutput, 'id' | 'title' | 'excerpt'>;
 
-export async function loader({ request, params }: Route.LoaderArgs) {
+export async function loader({ request, params }: Pick<Route.LoaderArgs, 'request' | 'params'>) {
   const apiClient = createApiClient({
     baseUrl: serverEnv.HOMINEM_INTERNAL_API_URL,
     request,
@@ -144,7 +144,7 @@ export default function ChatPage({
   const visibleMessages =
     isSearchOpen && search.debouncedQuery ? search.results : display.displayMessages;
   const regenerateMessage = useCallback(
-    (messageId: string) => void regeneration.regenerate(messageId, responseLength),
+    (messageId: string) => regeneration.regenerate(messageId, responseLength),
     [regeneration.regenerate, responseLength],
   );
   const handleUpdateMessage = useCallback(
@@ -154,8 +154,8 @@ export default function ChatPage({
     },
     [updateMessage, regenerateMessage],
   );
-  const cancelRegenerate = useCallback(() => void regeneration.cancel(), [regeneration.cancel]);
-  const retryRegenerate = useCallback(() => void regeneration.retry(), [regeneration.retry]);
+  const cancelRegenerate = useCallback(() => regeneration.cancel(), [regeneration.cancel]);
+  const retryRegenerate = useCallback(() => regeneration.retry(), [regeneration.retry]);
 
   const loadState = computeChatLoadState({
     messagesStatus,
@@ -265,7 +265,7 @@ export default function ChatPage({
                 : 'You are offline. Reconnect and retry loading this conversation.'
             }
             loadState={loadState}
-            onRetryLoad={() => void retry()}
+            onRetryLoad={() => retry()}
             onStartNewChat={() => navigate('/', { viewTransition: true })}
           />
 

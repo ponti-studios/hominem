@@ -13,6 +13,8 @@ import { redis } from '@hominem/services/redis';
 import { logger } from '@hominem/telemetry';
 import { Worker, type Job } from 'bullmq';
 
+import { careerImportDraftSchema } from '../schemas/career.schema';
+
 let worker: Worker | null = null;
 const IMPORT_TIMEOUT_MS = 60_000;
 
@@ -49,7 +51,7 @@ function toJob(record: CareerImportRecord): CareerImportJob {
     stage: record.stage,
     progress: record.progress,
     sourceUrl: record.sourceUrl,
-    draft: record.draft as CareerImportJob['draft'],
+    draft: careerImportDraftSchema.optional().parse(record.draft ?? undefined),
     errorCode: record.errorCode ?? undefined,
     error: record.errorMessage ?? undefined,
     attempt: record.attempts,

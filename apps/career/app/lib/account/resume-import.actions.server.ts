@@ -1,11 +1,5 @@
-import type { ConvertedResumeData } from '@hominem/career-services/types';
-import {
-  ProjectRepository,
-  SkillRepository,
-  SocialLinksRepository,
-  type CareerProfileRecord,
-  type CareerSocialLinksRecord,
-} from '@hominem/db/career';
+import { resumeSchema, type ConvertedResumeData } from '@hominem/career-services/types';
+import { ProjectRepository, SkillRepository, SocialLinksRepository } from '@hominem/db/career';
 import { CareerRepository } from '@hominem/db/career';
 import { runInTransaction, type TransactionHandle } from '@hominem/db/transaction';
 import {
@@ -14,10 +8,40 @@ import {
   type ResumeAnalysisJob,
   type ResumeListItemChange,
 } from '@hominem/queues';
+import { z } from 'zod';
 
 import { logger } from '~/lib/logger';
 
 import type { AccountActionResult, AccountPageUser } from './types';
+
+// The diff payloads travel through the job store untyped, so re-validate them against the
+// same resume schema that produced them before turning them into rows.
+const workExperiencePayloadSchema = resumeSchema.shape.workExperience.unwrap().element;
+const skillPayloadSchema = resumeSchema.shape.skills.unwrap().element;
+const projectPayloadSchema = resumeSchema.shape.projects.unwrap().element;
+
+const basicsPatchSchema = z
+  .object({
+    headline: z.string().nullable(),
+    summary: z.string().nullable(),
+    tagline: z.string().nullable(),
+    location: z.string().nullable(),
+    email: z.string().nullable(),
+    phone: z.string().nullable(),
+    initials: z.string().nullable(),
+    availabilityStatus: z.boolean(),
+    openToRemote: z.boolean(),
+  })
+  .partial();
+
+const socialPatchSchema = z
+  .object({
+    github: z.string().nullable(),
+    linkedin: z.string().nullable(),
+    twitter: z.string().nullable(),
+    website: z.string().nullable(),
+  })
+  .partial();
 
 function mapWorkExperiencePayload(payload: ConvertedResumeData['workExperience'][number]) {
   return {
@@ -70,19 +94,19 @@ async function applySelectedListItems(
       await CareerRepository.createEngagement(
         tx,
         ownerUserId,
-        mapWorkExperiencePayload(item.payload as ConvertedResumeData['workExperience'][number]),
+        mapWorkExperiencePayload(workExperiencePayloadSchema.parse(item.payload)),
       );
     } else if (item.group === 'skills') {
       await SkillRepository.create(
         tx,
         ownerUserId,
-        mapSkillPayload(item.payload as ConvertedResumeData['skills'][number]),
+        mapSkillPayload(skillPayloadSchema.parse(item.payload)),
       );
     } else {
       await ProjectRepository.create(
         tx,
         ownerUserId,
-        mapProjectPayload(item.payload as ConvertedResumeData['projects'][number]),
+        mapProjectPayload(projectPayloadSchema.parse(item.payload)),
       );
     }
   }
@@ -125,20 +149,24 @@ export async function handleApplyResumeImportAction({
 
   try {
     const profileId = await runInTransaction(async (tx) => {
-      const basicsPatch = Object.fromEntries(
-        scalarToApply
-          .filter((change) => change.group === 'basics')
-          .map((change) => [change.field, change.proposed]),
-      ) as Partial<CareerProfileRecord>;
+      const basicsPatch = basicsPatchSchema.parse(
+        Object.fromEntries(
+          scalarToApply
+            .filter((change) => change.group === 'basics')
+            .map((change) => [change.field, change.proposed]),
+        ),
+      );
       if (Object.keys(basicsPatch).length > 0) {
         await CareerRepository.saveProfile(tx, user.id, basicsPatch);
       }
 
-      const socialPatch = Object.fromEntries(
-        scalarToApply
-          .filter((change) => change.group === 'social')
-          .map((change) => [change.field, change.proposed]),
-      ) as Partial<CareerSocialLinksRecord>;
+      const socialPatch = socialPatchSchema.parse(
+        Object.fromEntries(
+          scalarToApply
+            .filter((change) => change.group === 'social')
+            .map((change) => [change.field, change.proposed]),
+        ),
+      );
       if (Object.keys(socialPatch).length > 0) {
         const existingSocial = await SocialLinksRepository.get(tx, user.id);
         await SocialLinksRepository.save(tx, user.id, {

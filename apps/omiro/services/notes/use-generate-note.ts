@@ -24,7 +24,7 @@ export function useGenerateNote() {
           );
         }
 
-        const data = (await response.json()) as GenerateNoteOutput;
+        const data: GenerateNoteOutput = await response.json();
         return data.text;
       } finally {
         setIsGenerating(false);

@@ -33,10 +33,18 @@ export function createRpcTestApp(
   return app.route(options.path, route);
 }
 
-export function postJson(app: Hono<AppContext>, path: string, body: unknown) {
+function sendJson(app: Hono<AppContext>, method: string, path: string, body: unknown) {
   return app.request(path, {
-    method: 'POST',
+    method,
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+}
+
+export function postJson(app: Hono<AppContext>, path: string, body: unknown) {
+  return sendJson(app, 'POST', path, body);
+}
+
+export function patchJson(app: Hono<AppContext>, path: string, body: unknown) {
+  return sendJson(app, 'PATCH', path, body);
 }

@@ -5,9 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { useNoteFormatting } from '~/hooks/use-note-formatting';
 
 function selectionEvent(start: number, end: number) {
-  return { nativeEvent: { selection: { start, end } } } as unknown as Parameters<
-    ReturnType<typeof useNoteFormatting>['onSelectionChange']
-  >[0];
+  return { nativeEvent: { selection: { start, end } } };
 }
 
 describe('useNoteFormatting', () => {

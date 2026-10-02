@@ -140,7 +140,7 @@ describe('ChatGenerationStore Postgres NOTIFY listener', () => {
       });
       // `sequence` is a DB identity column shared across all generations
       // (see the 20260903030000 migration), not app-computed per generation.
-      expect(Number.isSafeInteger((step.value as { sequence: number }).sequence)).toBe(true);
+      expect(Number.isSafeInteger(step.value.sequence)).toBe(true);
     } finally {
       subscription.close();
     }
@@ -182,9 +182,7 @@ describe('ChatGenerationStore Postgres NOTIFY listener', () => {
       expect(second.value).toMatchObject({ type: 'generation.phase_changed' });
       // `sequence` is a DB identity column shared across all generations,
       // so only strictly-ascending order (not literal values) is asserted.
-      expect((second.value as { sequence: number }).sequence).toBeGreaterThan(
-        (first.value as { sequence: number }).sequence,
-      );
+      expect(second.value.sequence).toBeGreaterThan(first.value.sequence);
     } finally {
       subscription.close();
     }

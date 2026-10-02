@@ -5,19 +5,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
+interface RecorderOptions {
+  onRecordingStopped: (fileUri: string) => Promise<void>;
+  createPermissionDeniedError: () => unknown;
+  createRecordingFailedError: () => unknown;
+  onError?: (error: unknown) => void;
+}
+
 const { fakeRecorder } = vi.hoisted(() => {
-  return {
-    fakeRecorder: {
-      lastOptions: null as {
-        onRecordingStopped: (fileUri: string) => Promise<void>;
-        createPermissionDeniedError: () => unknown;
-        createRecordingFailedError: () => unknown;
-        onError?: (error: unknown) => void;
-      } | null,
-      isRecording: false,
-      isRecordingElsewhere: false,
-    },
+  const fakeRecorder: {
+    lastOptions: RecorderOptions | null;
+    isRecording: boolean;
+    isRecordingElsewhere: boolean;
+  } = {
+    lastOptions: null,
+    isRecording: false,
+    isRecordingElsewhere: false,
   };
+  return { fakeRecorder };
 });
 
 const mockHandleMicPress = vi.fn().mockResolvedValue(undefined);
@@ -31,7 +36,7 @@ let mockIsCleaningVoice = false;
 
 vi.mock('~/hooks/useVoiceRecorder', () => ({
   getNativeErrorCode: (error: unknown) =>
-    isObject(error) && 'code' in error ? (error as { code?: string }).code : undefined,
+    isObject(error) && 'code' in error ? Reflect.get(error, 'code') : undefined,
   useVoiceRecorder: (options: typeof fakeRecorder.lastOptions) => {
     fakeRecorder.lastOptions = options;
     return {

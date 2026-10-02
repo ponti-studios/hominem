@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { ResumePortfolio } from '../portfolio.server';
 import { formatPortfolioForLLM } from './portfolio-formatter';
 
-const mockSocialLinks = {
+const mockSocialLinks: CareerSocialLinksRecord = {
   id: 'sl-1',
   ownerUserid: 'test-user-id',
   github: 'https://github.com/johndoe',
@@ -13,7 +13,7 @@ const mockSocialLinks = {
   website: 'https://johndoe.dev',
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
-} as CareerSocialLinksRecord;
+};
 
 const createMockPortfolio = (overrides: Partial<ResumePortfolio> = {}): ResumePortfolio => ({
   name: 'John Doe',

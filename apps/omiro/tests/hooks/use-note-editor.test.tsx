@@ -2,11 +2,13 @@
 import type { Note } from '@hominem/rpc/types';
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 import { inboxEntityKeys } from '~/services/inbox/inbox-entities';
 import { inboxKeys, noteKeys } from '~/services/notes/query-keys';
 import t from '~/translations';
 
+import { makeNote } from '../fixtures';
 import { renderHookWithQueryClient } from '../utils/render-hook';
 
 const mockNotePatch = vi.fn();
@@ -62,16 +64,13 @@ const { useNoteEditor } = await import('~/hooks/use-note-editor');
 
 const NOTE_ID = 'note-1';
 
-function noteFixture(overrides: Partial<Note> = {}): Note {
-  return {
-    id: NOTE_ID,
-    title: 'Original title',
-    content: 'Original content',
-    excerpt: 'Original content',
-    updatedAt: new Date().toISOString(),
-    files: [],
-    ...overrides,
-  } as Note;
+function inboxEntityTitle(
+  queryClient: ReturnType<typeof renderHookWithQueryClient>['queryClient'],
+) {
+  const entities = z
+    .record(z.string(), z.object({ title: z.string() }))
+    .parse(queryClient.getQueryData(inboxEntityKeys.all));
+  return entities[`note:${NOTE_ID}`]?.title;
 }
 
 function seedInboxEntity(queryClient: ReturnType<typeof renderHookWithQueryClient>['queryClient']) {
@@ -144,7 +143,7 @@ describe('useNoteEditor', () => {
   });
 
   it('persists via the api client and commits the server response into caches on success', async () => {
-    const updatedNote = noteFixture({ title: 'Server title', excerpt: 'Server excerpt' });
+    const updatedNote = makeNote({ title: 'Server title', excerpt: 'Server excerpt' });
     mockNotePatch.mockResolvedValueOnce({ json: async () => updatedNote });
     const { queryClient } = renderHookWithQueryClient(() => useNoteEditor(NOTE_ID));
     seedInboxEntity(queryClient);
@@ -159,15 +158,11 @@ describe('useNoteEditor', () => {
       json: { title: 'Server title', content: 'x', fileIds: [] },
     });
     expect(queryClient.getQueryData(noteKeys.detail(NOTE_ID))).toEqual(updatedNote);
-    expect(
-      (queryClient.getQueryData(inboxEntityKeys.all) as Record<string, { title: string }>)[
-        `note:${NOTE_ID}`
-      ].title,
-    ).toBe('Server title');
+    expect(inboxEntityTitle(queryClient)).toBe('Server title');
   });
 
   it('invalidates the inbox pages query after a successful commit', async () => {
-    const updatedNote = noteFixture();
+    const updatedNote = makeNote();
     const { queryClient } = renderHookWithQueryClient(() => useNoteEditor(NOTE_ID));
     seedInboxEntity(queryClient);
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
@@ -204,7 +199,7 @@ describe('useNoteEditor', () => {
     expect(mockAlert).toHaveBeenCalledTimes(1);
 
     act(() => {
-      capturedSaverOptions?.commit(noteFixture());
+      capturedSaverOptions?.commit(makeNote());
     });
     act(() => {
       capturedSaverOptions?.onError(new Error('third'));
@@ -216,18 +211,14 @@ describe('useNoteEditor', () => {
   it('updates the note cache and syncs the inbox title via updateCache', () => {
     const { result, queryClient } = renderHookWithQueryClient(() => useNoteEditor(NOTE_ID));
     seedInboxEntity(queryClient);
-    queryClient.setQueryData(noteKeys.detail(NOTE_ID), noteFixture());
+    queryClient.setQueryData(noteKeys.detail(NOTE_ID), makeNote());
 
     act(() => {
       result.current.updateCache({ title: 'Patched title' });
     });
 
     expect(queryClient.getQueryData<Note>(noteKeys.detail(NOTE_ID))?.title).toBe('Patched title');
-    expect(
-      (queryClient.getQueryData(inboxEntityKeys.all) as Record<string, { title: string }>)[
-        `note:${NOTE_ID}`
-      ].title,
-    ).toBe('Patched title');
+    expect(inboxEntityTitle(queryClient)).toBe('Patched title');
   });
 
   it('does nothing via updateCache when no note is cached yet', () => {
@@ -261,7 +252,7 @@ describe('useNoteEditor', () => {
         uploadedAt: new Date().toISOString(),
       },
     ];
-    queryClient.setQueryData(noteKeys.detail(NOTE_ID), noteFixture({ files }));
+    queryClient.setQueryData(noteKeys.detail(NOTE_ID), makeNote({ files }));
 
     await act(async () => {
       await result.current.detachFile('file-1', files, 'Title', 'Content');

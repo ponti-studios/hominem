@@ -28,12 +28,14 @@ function Caret({ color }: { color: string }) {
   const opacity = useSharedValue(1);
 
   useEffect(() => {
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(0, { duration: 450, easing: Easing.linear }),
-        withTiming(1, { duration: 450, easing: Easing.linear }),
+    opacity.set(
+      withRepeat(
+        withSequence(
+          withTiming(0, { duration: 450, easing: Easing.linear }),
+          withTiming(1, { duration: 450, easing: Easing.linear }),
+        ),
+        -1,
       ),
-      -1,
     );
   }, [opacity]);
 
@@ -66,9 +68,11 @@ function OtpCell({
 
   useEffect(() => {
     if (isFilled && !prevFilled.current) {
-      scale.value = withSequence(
-        withTiming(1.12, { duration: 90, easing: Easing.out(Easing.quad) }),
-        withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) }),
+      scale.set(
+        withSequence(
+          withTiming(1.12, { duration: 90, easing: Easing.out(Easing.quad) }),
+          withTiming(1, { duration: 140, easing: Easing.out(Easing.quad) }),
+        ),
       );
     }
     prevFilled.current = isFilled;

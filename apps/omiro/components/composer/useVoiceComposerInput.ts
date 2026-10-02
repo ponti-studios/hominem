@@ -12,6 +12,7 @@ import {
 import { getNativeErrorCode, useVoiceRecorder } from '~/hooks/useVoiceRecorder';
 import VoiceTranscriberModule, { VoiceTranscriberErrorCode } from '~/modules/voice-transcriber';
 import { useVoiceCleanup } from '~/services/ai';
+import { toError } from '~/services/to-error';
 
 interface UseVoiceComposerInputOptions {
   getMessage: () => string;
@@ -103,14 +104,14 @@ export function useVoiceComposerInput({
       } catch (error) {
         logger.error(
           '[voice-transcriber] processStoppedRecording: transcription failed',
-          error as Error,
+          toError(error),
         );
         try {
           new File(fileUri).delete();
         } catch (deleteError) {
           logger.error(
             '[voice-transcriber] processStoppedRecording: orphaned file delete failed',
-            deleteError as Error,
+            toError(deleteError),
           );
         }
         // Permission can get revoked mid-session (user backgrounds the app,

@@ -3,9 +3,10 @@ import Constants from 'expo-constants';
 
 import { env, parseAppEnvironment } from '~/env';
 
-const extra = (Constants.expoConfig?.extra ?? {}) as {
-  appEnvironment?: string;
-  appScheme?: string;
+const rawExtra: Record<string, unknown> = Constants.expoConfig?.extra ?? {};
+const extra = {
+  appEnvironment: typeof rawExtra.appEnvironment === 'string' ? rawExtra.appEnvironment : undefined,
+  appScheme: typeof rawExtra.appScheme === 'string' ? rawExtra.appScheme : undefined,
 };
 
 const appEnvironment = parseAppEnvironment(extra.appEnvironment ?? process.env.APP_ENV);

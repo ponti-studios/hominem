@@ -140,13 +140,47 @@ export const taskDetailResultSchema = z.object({
   children: z.array(TaskRecordSchema),
 });
 
+// Models fill in every optional field they are shown with invented values, and a filter the
+// user never asked for silently hides tasks. Each description says when a filter may be set.
 export const TaskListQuerySchema = z.object({
-  limit: z.number().int().min(1).max(100).optional().default(100),
-  status: z.enum(['pending', 'completed']).optional(),
-  priority: TaskPriority.optional(),
-  dueBefore: z.iso.datetime({ offset: true }).optional(),
-  dueAfter: z.iso.datetime({ offset: true }).optional(),
-  query: z.string().trim().min(1).max(120).optional(),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .default(100)
+    .describe('Maximum tasks to return. Leave out unless the user asked for a specific number.'),
+  status: z
+    .enum(['pending', 'completed'])
+    .optional()
+    .describe(
+      'Only set when the user asked specifically for pending or for completed tasks. Leave out otherwise.',
+    ),
+  priority: TaskPriority.optional().describe(
+    'Only set when the user asked for tasks of one priority. Leave out otherwise.',
+  ),
+  dueBefore: z.iso
+    .datetime({ offset: true })
+    .optional()
+    .describe(
+      'ISO timestamp. Only set when the user asked about tasks due before a date ("overdue", "due this week"). Tasks with no due date never match a date filter, so leave it out when the user did not mention dates.',
+    ),
+  dueAfter: z.iso
+    .datetime({ offset: true })
+    .optional()
+    .describe(
+      'ISO timestamp. Only set when the user asked about tasks due after a date. Tasks with no due date never match a date filter, so leave it out when the user did not mention dates.',
+    ),
+  query: z
+    .string()
+    .trim()
+    .min(1)
+    .max(120)
+    .optional()
+    .describe(
+      'A keyword from the title of the task the user means ("gym", "passport"). Leave out to list everything.',
+    ),
 });
 
 export const TaskParamSchema = z.object({ id: z.uuid() });
@@ -166,3 +200,18 @@ export const UpdateTaskSchema = z
     message: 'At least one field must be provided',
   })
   .superRefine(validateScheduledInterval);
+
+export const taskCreateOutputSchema = z.object({ task: TaskRecordSchema });
+
+export const taskUpdateOutputSchema = z.object({ task: TaskRecordSchema.nullable() });
+
+export const taskCompleteOutputSchema = z.object({ task: TaskRecordSchema.nullable() });
+
+export const taskBatchCreateOutputSchema = z.object({
+  groups: z.array(z.object({ parent: TaskRecordSchema, tasks: z.array(TaskRecordSchema) })),
+  tasks: z.array(TaskRecordSchema),
+});
+
+export const taskListToolOutputSchema = taskListResultSchema.extend({
+  hint: z.string().optional(),
+});

@@ -1,5 +1,4 @@
 import { maskEmail } from '@ponti-studios/auth/shared/mask-email';
-import type { RelativePathString } from 'expo-router';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
@@ -139,7 +138,7 @@ function VerifyScreen() {
       return;
     }
     const id = setTimeout(() => {
-      router.replace(CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString);
+      router.replace(CHAT_AUTH_CONFIG.defaultPostAuthDestination);
     }, 900);
     return () => clearTimeout(id);
   }, [verifySucceeded, router]);
@@ -219,7 +218,7 @@ function VerifyScreen() {
 
   const handleChangeEmail = React.useCallback(() => {
     posthog.capture('auth_change_email_pressed');
-    router.replace('/(auth)' as RelativePathString);
+    router.replace('/(auth)');
   }, [router]);
   const handleVerifyPress = React.useCallback(() => {
     posthog.capture('auth_verify_pressed');
@@ -232,11 +231,11 @@ function VerifyScreen() {
   }, [handleResendOtp, resolvedEmail]);
 
   if (isSignedIn && !verifySucceeded) {
-    return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
+    return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination} />;
   }
 
   if (!resolvedEmail) {
-    return <Redirect href={'/(auth)' as RelativePathString} />;
+    return <Redirect href="/(auth)" />;
   }
 
   const isBusy = isSubmitting || isResending;

@@ -5,7 +5,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { useChatComposerSubmission } from './use-chat-composer-submission';
 
-function makeOptions(overrides: Record<string, unknown> = {}) {
+type SubmissionOptions = Parameters<typeof useChatComposerSubmission>[0];
+
+function makeOptions(overrides: Partial<SubmissionOptions> = {}) {
+  const mediumLength: SubmissionOptions['responseLength'] = 'medium';
   const display = {
     setOptimisticUserMessage: vi.fn(),
     setPendingAssistantMessage: vi.fn(),
@@ -19,10 +22,11 @@ function makeOptions(overrides: Record<string, unknown> = {}) {
     restore: vi.fn(),
     uploadState: { isUploading: false },
   };
+  const idleStatus: SubmissionOptions['streamMessage']['status'] = 'idle';
   const streamMessage = {
     isStreaming: false,
     retry: vi.fn(),
-    status: 'idle',
+    status: idleStatus,
     stream: vi.fn(),
   };
   return {
@@ -31,13 +35,13 @@ function makeOptions(overrides: Record<string, unknown> = {}) {
     display,
     isOnline: true,
     onRequestAutoSpeak: vi.fn(),
-    responseLength: 'medium' as const,
+    responseLength: mediumLength,
     speech: { isListening: false, stop: vi.fn() },
     streamMessage,
     updateChatTitle: { mutate: vi.fn() },
     walkieTalkieMode: false,
     ...overrides,
-  } as unknown as Parameters<typeof useChatComposerSubmission>[0];
+  };
 }
 
 describe('useChatComposerSubmission', () => {

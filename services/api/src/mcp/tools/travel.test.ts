@@ -2,28 +2,15 @@ import { db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import './travel';
-import { callTool, type McpToolResult } from '../tool-registry';
+import { tripHistoryOutputSchema } from '../../schemas/travel.schema';
+import { toolOutput } from '../../testkit/tool-result';
+import { callTool } from '../tool-registry';
 
 const ownerId = 'e1000000-0000-4000-8000-000000000001';
 const otherUserId = 'e1000000-0000-4000-8000-000000000002';
 const tripId = 'e1000010-0000-4000-8000-000000000001';
 const ownerPersonId = 'e1000001-0000-4000-8000-000000000001';
 const otherPersonId = 'e1000001-0000-4000-8000-000000000002';
-
-function content(result: McpToolResult) {
-  return result.structuredContent as {
-    trips?: Array<{
-      attendeeNames: string[];
-      city: string | null;
-      country: string | null;
-      endDate: string | null;
-      id: string;
-      startDate: string | null;
-      state: string | null;
-    }>;
-    count?: number;
-  };
-}
 
 beforeAll(async () => {
   await pool.query(`DELETE FROM "user" WHERE id IN ($1, $2)`, [ownerId, otherUserId]);
@@ -85,7 +72,7 @@ describe('trip_history', () => {
       limit: 1,
       to: '2026-10-31',
     });
-    expect(content(result)).toEqual({
+    expect(toolOutput(result, tripHistoryOutputSchema)).toEqual({
       count: 1,
       trips: [
         {

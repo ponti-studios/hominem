@@ -81,7 +81,9 @@ export function useSendMessage({ chatId }: { chatId: string }) {
     async (controller: ReturnType<typeof sendGeneration>, targetGenerationId: string) => {
       const unsubscribe = controller.subscribe((state, event) => {
         const current = generationRef.current;
-        if (!current || current.id !== targetGenerationId) return;
+        if (!current || current.id !== targetGenerationId) {
+          return;
+        }
         if ('event' in event) {
           setGeneration({ ...current, stage: 'failed', error: event.event.message });
           return;

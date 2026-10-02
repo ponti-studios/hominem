@@ -1,5 +1,5 @@
 import { useIsFocused } from 'expo-router';
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, Text, View } from 'react-native';
 
 import { StreamList } from '~/components/stream/StreamList';
@@ -60,29 +60,27 @@ export const TimeStream = memo(function TimeStream({
     loadingState: { gap: 8, padding: 16 },
     skeletonBlock: { backgroundColor: theme.colors.muted, borderRadius: 8, height: 56 },
   }));
-  const scrollOffsetRef = useRef(0);
   const errorRef = useRef<string | null>(null);
+  const [scenarioLoadedUntil] = useState(() => new Date(Date.now() + 60 * 24 * 60 * 60 * 1000));
   const previewEvents = scenario ? scenario.events : calendar.events;
   const previewTasks = scenario ? scenario.tasks : tasks;
   const rows = useMemo(
     () =>
       buildTimeStreamRows({
         events: previewEvents,
-        loadedUntil: scenario
-          ? new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
-          : calendar.loadedUntil,
+        loadedUntil: scenario ? scenarioLoadedUntil : calendar.loadedUntil,
         tasks: previewTasks,
       }),
-    [calendar.loadedUntil, previewEvents, previewTasks, scenario],
+    [calendar.loadedUntil, previewEvents, previewTasks, scenario, scenarioLoadedUntil],
   );
-  const renderRows = useMemo<TimeStreamRenderRow[]>(() => {
-    let previous: TimeItem | null = null;
-    return rows.map((item) => {
-      const showDayLabel = !previous || dayKey(item) !== dayKey(previous);
-      previous = item;
-      return { item, showDayLabel };
-    });
-  }, [rows]);
+  const renderRows = useMemo<TimeStreamRenderRow[]>(
+    () =>
+      rows.map((item, index) => {
+        const previous = rows[index - 1];
+        return { item, showDayLabel: !previous || dayKey(item) !== dayKey(previous) };
+      }),
+    [rows],
+  );
   const unscheduledTaskCount = getUnscheduledTasks(previewTasks).length;
   const error = calendar.error ?? connectCalendar.error;
 
@@ -177,9 +175,6 @@ export const TimeStream = memo(function TimeStream({
             void calendar.loadNextPage();
           }
         }}
-        onScrollOffsetChange={(offset) => {
-          scrollOffsetRef.current = offset;
-        }}
         refreshControl=<RefreshControl
           refreshing={isLoadingEvents && renderRows.length > 0}
           onRefresh={() => {
@@ -189,7 +184,6 @@ export const TimeStream = memo(function TimeStream({
           }}
         />
         renderItem={renderItem}
-        restoredScrollOffset={scrollOffsetRef.current}
         testID="time-stream"
       />
     </View>

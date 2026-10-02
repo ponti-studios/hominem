@@ -21,8 +21,8 @@ export function AccountSettingsPage({ loaderData }: { loaderData: AccountSetting
     });
 
     const contentType = response.headers.get('content-type');
-    const result = contentType?.includes('application/json')
-      ? ((await response.json()) as AccountActionResult<TData>)
+    const result: AccountActionResult<TData> = contentType?.includes('application/json')
+      ? await response.json()
       : {
           success: response.ok,
           error: response.ok ? undefined : await response.text(),

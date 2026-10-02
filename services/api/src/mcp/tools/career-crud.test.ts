@@ -2,14 +2,39 @@ import { db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import './career';
-import { callTool, type McpToolResult } from '../tool-registry';
+import {
+  careerApplicationCreateOutputSchema,
+  careerApplicationNoteAddOutputSchema,
+  careerApplicationUpdateOutputSchema,
+  careerApplicationFileAddOutputSchema,
+  careerApplicationsSchema,
+  careerProfileOutputSchema,
+  careerCertificationCreateOutputSchema,
+  careerCertificationUpdateOutputSchema,
+  careerCertificationsSchema,
+  careerEducationCreateOutputSchema,
+  careerEducationSchema,
+  careerEducationUpdateOutputSchema,
+  careerEngagementCreateOutputSchema,
+  careerEngagementsSchema,
+  careerProfileUpdateOutputSchema,
+  careerProjectCreateOutputSchema,
+  careerProjectsSchema,
+  careerSkillCreateOutputSchema,
+  careerSkillUpdateOutputSchema,
+  careerSkillsSchema,
+  careerSocialLinksSaveOutputSchema,
+  careerSocialLinksSchema,
+  careerTestimonialCreateOutputSchema,
+  careerTestimonialUpdateOutputSchema,
+  careerTestimonialsSchema,
+} from '../../schemas/career.schema';
+import { removedResultSchema } from '../../schemas/common.schema';
+import { toolOutput } from '../../testkit/tool-result';
+import { callTool } from '../tool-registry';
 
 const userId = 'a3000001-0000-4000-8000-000000000001';
 const otherUserId = 'a3000001-0000-4000-8000-000000000002';
-
-function resultContent(result: McpToolResult) {
-  return result.structuredContent as Record<string, unknown>;
-}
 
 beforeAll(async () => {
   for (const id of [userId, otherUserId]) {
@@ -22,17 +47,19 @@ beforeAll(async () => {
 
 describe('career_engagement_create', () => {
   it('creates an engagement visible in career_engagements', async () => {
-    const created = resultContent(
+    const created = toolOutput(
       await callTool(userId, 'career_engagement_create', {
         company: 'Create Co',
         title: 'Founding Engineer',
       }),
-    ) as { engagement: { id: string; company: string; title: string } };
+      careerEngagementCreateOutputSchema,
+    );
     expect(created.engagement).toMatchObject({ company: 'Create Co', title: 'Founding Engineer' });
 
-    const listed = resultContent(await callTool(userId, 'career_engagements', {})) as {
-      engagements: Array<{ id: string }>;
-    };
+    const listed = toolOutput(
+      await callTool(userId, 'career_engagements', {}),
+      careerEngagementsSchema,
+    );
     expect(listed.engagements.some((e) => e.id === created.engagement.id)).toBe(true);
 
     await db.deleteFrom('app.careerEngagements').where('id', '=', created.engagement.id).execute();
@@ -41,30 +68,34 @@ describe('career_engagement_create', () => {
 
 describe('career application MCP tools', () => {
   it('round-trips create -> list -> update -> delete', async () => {
-    const created = resultContent(
+    const created = toolOutput(
       await callTool(userId, 'career_application_create', {
         company: 'App Co',
         title: 'Platform Engineer',
       }),
-    ) as { application: { id: string; company: string; title: string } };
+      careerApplicationCreateOutputSchema,
+    );
     expect(created.application).toMatchObject({ company: 'App Co', title: 'Platform Engineer' });
 
-    const listed = resultContent(await callTool(userId, 'career_applications', {})) as {
-      applications: Array<{ id: string }>;
-    };
+    const listed = toolOutput(
+      await callTool(userId, 'career_applications', {}),
+      careerApplicationsSchema,
+    );
     expect(listed.applications.some((a) => a.id === created.application.id)).toBe(true);
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(userId, 'career_application_update', {
         id: created.application.id,
         data: { status: 'REJECTED' },
       }),
-    ) as { application: { status: string } | null };
+      careerApplicationUpdateOutputSchema,
+    );
     expect(updated.application?.status).toBe('REJECTED');
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(userId, 'career_application_delete', { id: created.application.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(true);
 
     const gone = await db
@@ -87,17 +118,19 @@ describe('career application MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(otherUserId, 'career_application_update', {
         id: application.id,
         data: { status: 'SCREENING' },
       }),
-    ) as { application: unknown };
+      careerApplicationUpdateOutputSchema,
+    );
     expect(updated.application).toBeNull();
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(otherUserId, 'career_application_delete', { id: application.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(false);
 
     await db.deleteFrom('app.careerApplications').where('id', '=', application.id).execute();
@@ -110,20 +143,23 @@ describe('career application MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const added = resultContent(
+    const added = toolOutput(
       await callTool(userId, 'career_application_note_add', {
         applicationId: application.id,
         content: 'Phone screen scheduled.',
       }),
-    ) as { note: { id: string; content: string } | null };
-    expect(added.note?.content).toBe('Phone screen scheduled.');
+      careerApplicationNoteAddOutputSchema,
+    );
+    if (!added.note) throw new Error('career_application_note_add returned no note');
+    expect(added.note.content).toBe('Phone screen scheduled.');
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(userId, 'career_application_note_remove', {
         applicationId: application.id,
-        id: (added.note as { id: string }).id,
+        id: added.note.id,
       }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(true);
 
     await db.deleteFrom('app.careerApplications').where('id', '=', application.id).execute();
@@ -141,12 +177,13 @@ describe('career application MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const added = resultContent(
+    const added = toolOutput(
       await callTool(otherUserId, 'career_application_note_add', {
         applicationId: application.id,
         content: 'Should not be allowed.',
       }),
-    ) as { note: unknown };
+      careerApplicationNoteAddOutputSchema,
+    );
     expect(added.note).toBeNull();
 
     await db.deleteFrom('app.careerApplications').where('id', '=', application.id).execute();
@@ -164,8 +201,9 @@ describe('career application MCP tools', () => {
       fileName: 'resume.pdf',
       fileUrl: 'https://storage.example.com/resume.pdf',
     });
-    const added = resultContent(addResult) as { file: { id: string; fileName: string } | null };
-    expect(added.file?.fileName).toBe('resume.pdf');
+    const added = toolOutput(addResult, careerApplicationFileAddOutputSchema);
+    if (!added.file) throw new Error('career_application_file_add returned no file');
+    expect(added.file.fileName).toBe('resume.pdf');
     // A file-bearing tool result also carries a resource_link content block
     // so an MCP-aware client can discover/fetch the file directly, not just
     // read fileUrl as an opaque string in structuredContent.
@@ -175,12 +213,13 @@ describe('career application MCP tools', () => {
       name: 'resume.pdf',
     });
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(userId, 'career_application_file_remove', {
         applicationId: application.id,
-        id: (added.file as { id: string }).id,
+        id: added.file.id,
       }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(true);
 
     await db.deleteFrom('app.careerApplications').where('id', '=', application.id).execute();
@@ -189,30 +228,34 @@ describe('career application MCP tools', () => {
 
 describe('career education MCP tools', () => {
   it('round-trips create -> list -> update -> delete', async () => {
-    const created = resultContent(
+    const created = toolOutput(
       await callTool(userId, 'career_education_create', {
         school: 'MCP University',
         degree: 'B.S. Software Engineering',
       }),
-    ) as { education: { id: string; school: string } };
+      careerEducationCreateOutputSchema,
+    );
     expect(created.education.school).toBe('MCP University');
 
-    const listed = resultContent(await callTool(userId, 'career_education', {})) as {
-      education: Array<{ id: string }>;
-    };
+    const listed = toolOutput(
+      await callTool(userId, 'career_education', {}),
+      careerEducationSchema,
+    );
     expect(listed.education.some((e) => e.id === created.education.id)).toBe(true);
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(userId, 'career_education_update', {
         id: created.education.id,
         data: { degree: 'M.S. Software Engineering' },
       }),
-    ) as { education: { degree: string } | null };
+      careerEducationUpdateOutputSchema,
+    );
     expect(updated.education?.degree).toBe('M.S. Software Engineering');
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(userId, 'career_education_delete', { id: created.education.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(true);
 
     const gone = await db
@@ -230,17 +273,19 @@ describe('career education MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(otherUserId, 'career_education_update', {
         id: education.id,
         data: { degree: 'Leaked degree' },
       }),
-    ) as { education: unknown };
+      careerEducationUpdateOutputSchema,
+    );
     expect(updated.education).toBeNull();
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(otherUserId, 'career_education_delete', { id: education.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(false);
 
     await db.deleteFrom('app.careerEducation').where('id', '=', education.id).execute();
@@ -249,27 +294,28 @@ describe('career education MCP tools', () => {
 
 describe('career skill MCP tools', () => {
   it('round-trips create -> list -> update -> delete', async () => {
-    const created = resultContent(
+    const created = toolOutput(
       await callTool(userId, 'career_skill_create', { name: 'Rust', category: 'technical' }),
-    ) as { skill: { id: string; name: string } };
+      careerSkillCreateOutputSchema,
+    );
     expect(created.skill.name).toBe('Rust');
 
-    const listed = resultContent(await callTool(userId, 'career_skills', {})) as {
-      skills: Array<{ id: string }>;
-    };
+    const listed = toolOutput(await callTool(userId, 'career_skills', {}), careerSkillsSchema);
     expect(listed.skills.some((s) => s.id === created.skill.id)).toBe(true);
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(userId, 'career_skill_update', {
         id: created.skill.id,
         data: { level: 80 },
       }),
-    ) as { skill: { level: number } | null };
+      careerSkillUpdateOutputSchema,
+    );
     expect(updated.skill?.level).toBe(80);
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(userId, 'career_skill_delete', { id: created.skill.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(true);
   });
 
@@ -280,17 +326,19 @@ describe('career skill MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(otherUserId, 'career_skill_update', {
         id: skill.id,
         data: { level: 1 },
       }),
-    ) as { skill: unknown };
+      careerSkillUpdateOutputSchema,
+    );
     expect(updated.skill).toBeNull();
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(otherUserId, 'career_skill_delete', { id: skill.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(false);
 
     await db.deleteFrom('app.careerSkills').where('id', '=', skill.id).execute();
@@ -299,14 +347,13 @@ describe('career skill MCP tools', () => {
 
 describe('career_project_create', () => {
   it('creates a project visible in career_projects', async () => {
-    const created = resultContent(
+    const created = toolOutput(
       await callTool(userId, 'career_project_create', { title: 'MCP Test Project' }),
-    ) as { project: { id: string; title: string } };
+      careerProjectCreateOutputSchema,
+    );
     expect(created.project.title).toBe('MCP Test Project');
 
-    const listed = resultContent(await callTool(userId, 'career_projects', {})) as {
-      projects: Array<{ id: string }>;
-    };
+    const listed = toolOutput(await callTool(userId, 'career_projects', {}), careerProjectsSchema);
     expect(listed.projects.some((p) => p.id === created.project.id)).toBe(true);
 
     await db.deleteFrom('app.careerProjects').where('id', '=', created.project.id).execute();
@@ -315,30 +362,34 @@ describe('career_project_create', () => {
 
 describe('career testimonial MCP tools', () => {
   it('round-trips create -> list -> update -> delete', async () => {
-    const created = resultContent(
+    const created = toolOutput(
       await callTool(userId, 'career_testimonial_create', {
         name: 'Jane Manager',
         content: 'Great to work with.',
       }),
-    ) as { testimonial: { id: string; name: string } };
+      careerTestimonialCreateOutputSchema,
+    );
     expect(created.testimonial.name).toBe('Jane Manager');
 
-    const listed = resultContent(await callTool(userId, 'career_testimonials', {})) as {
-      testimonials: Array<{ id: string }>;
-    };
+    const listed = toolOutput(
+      await callTool(userId, 'career_testimonials', {}),
+      careerTestimonialsSchema,
+    );
     expect(listed.testimonials.some((t) => t.id === created.testimonial.id)).toBe(true);
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(userId, 'career_testimonial_update', {
         id: created.testimonial.id,
         data: { content: 'Updated praise.' },
       }),
-    ) as { testimonial: { content: string } | null };
+      careerTestimonialUpdateOutputSchema,
+    );
     expect(updated.testimonial?.content).toBe('Updated praise.');
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(userId, 'career_testimonial_delete', { id: created.testimonial.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(true);
   });
 
@@ -349,17 +400,19 @@ describe('career testimonial MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(otherUserId, 'career_testimonial_update', {
         id: testimonial.id,
         data: { content: 'Leaked' },
       }),
-    ) as { testimonial: unknown };
+      careerTestimonialUpdateOutputSchema,
+    );
     expect(updated.testimonial).toBeNull();
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(otherUserId, 'career_testimonial_delete', { id: testimonial.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(false);
 
     await db.deleteFrom('app.careerTestimonials').where('id', '=', testimonial.id).execute();
@@ -368,30 +421,34 @@ describe('career testimonial MCP tools', () => {
 
 describe('career certification MCP tools', () => {
   it('round-trips create -> list -> update -> delete', async () => {
-    const created = resultContent(
+    const created = toolOutput(
       await callTool(userId, 'career_certification_create', {
         name: 'AWS Certified',
         issuingOrganization: 'AWS',
       }),
-    ) as { certification: { id: string; name: string } };
+      careerCertificationCreateOutputSchema,
+    );
     expect(created.certification.name).toBe('AWS Certified');
 
-    const listed = resultContent(await callTool(userId, 'career_certifications', {})) as {
-      certifications: Array<{ id: string }>;
-    };
+    const listed = toolOutput(
+      await callTool(userId, 'career_certifications', {}),
+      careerCertificationsSchema,
+    );
     expect(listed.certifications.some((c) => c.id === created.certification.id)).toBe(true);
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(userId, 'career_certification_update', {
         id: created.certification.id,
         data: { status: 'ACTIVE' },
       }),
-    ) as { certification: { status: string | null } | null };
+      careerCertificationUpdateOutputSchema,
+    );
     expect(updated.certification?.status).toBe('ACTIVE');
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(userId, 'career_certification_delete', { id: created.certification.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(true);
   });
 
@@ -402,17 +459,19 @@ describe('career certification MCP tools', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(otherUserId, 'career_certification_update', {
         id: certification.id,
         data: { name: 'Leaked' },
       }),
-    ) as { certification: unknown };
+      careerCertificationUpdateOutputSchema,
+    );
     expect(updated.certification).toBeNull();
 
-    const removed = resultContent(
+    const removed = toolOutput(
       await callTool(otherUserId, 'career_certification_delete', { id: certification.id }),
-    ) as { removed: boolean };
+      removedResultSchema,
+    );
     expect(removed.removed).toBe(false);
 
     await db.deleteFrom('app.careerCertifications').where('id', '=', certification.id).execute();
@@ -421,24 +480,27 @@ describe('career certification MCP tools', () => {
 
 describe('career_profile_update', () => {
   it('updates and reads back the profile', async () => {
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(userId, 'career_profile_update', {
         headline: 'Staff Engineer',
         location: 'Remote',
       }),
-    ) as { profile: { headline: string | null; location: string | null } };
+      careerProfileUpdateOutputSchema,
+    );
     expect(updated.profile).toMatchObject({ headline: 'Staff Engineer', location: 'Remote' });
 
-    const read = resultContent(await callTool(userId, 'career_profile', {})) as {
-      profile: { headline: string | null; location: string | null } | null;
-    };
+    const read = toolOutput(
+      await callTool(userId, 'career_profile', {}),
+      careerProfileOutputSchema,
+    );
     expect(read.profile).toMatchObject({ headline: 'Staff Engineer', location: 'Remote' });
   });
 
   it('does not leak email or phone in the response', async () => {
-    const updated = resultContent(
+    const updated = toolOutput(
       await callTool(userId, 'career_profile_update', { industry: 'Software' }),
-    ) as { profile: Record<string, unknown> };
+      careerProfileUpdateOutputSchema,
+    );
     expect(updated.profile).not.toHaveProperty('email');
     expect(updated.profile).not.toHaveProperty('phone');
   });
@@ -448,14 +510,16 @@ describe('career_profile_update', () => {
 
     await callTool(otherUserId, 'career_profile_update', { headline: 'Other headline' });
 
-    const ownerProfile = resultContent(await callTool(userId, 'career_profile', {})) as {
-      profile: { headline: string | null } | null;
-    };
+    const ownerProfile = toolOutput(
+      await callTool(userId, 'career_profile', {}),
+      careerProfileOutputSchema,
+    );
     expect(ownerProfile.profile?.headline).toBe('Owner headline');
 
-    const otherProfile = resultContent(await callTool(otherUserId, 'career_profile', {})) as {
-      profile: { headline: string | null } | null;
-    };
+    const otherProfile = toolOutput(
+      await callTool(otherUserId, 'career_profile', {}),
+      careerProfileOutputSchema,
+    );
     expect(otherProfile.profile?.headline).toBe('Other headline');
   });
 
@@ -466,16 +530,18 @@ describe('career_profile_update', () => {
 
 describe('career_social_links_save', () => {
   it('saves and reads back social links', async () => {
-    const saved = resultContent(
+    const saved = toolOutput(
       await callTool(userId, 'career_social_links_save', {
         github: 'https://github.com/mcp-test',
       }),
-    ) as { socialLinks: { github: string | null } };
+      careerSocialLinksSaveOutputSchema,
+    );
     expect(saved.socialLinks.github).toBe('https://github.com/mcp-test');
 
-    const read = resultContent(await callTool(userId, 'career_social_links', {})) as {
-      socialLinks: { github: string | null } | null;
-    };
+    const read = toolOutput(
+      await callTool(userId, 'career_social_links', {}),
+      careerSocialLinksSchema,
+    );
     expect(read.socialLinks?.github).toBe('https://github.com/mcp-test');
   });
 });

@@ -48,7 +48,7 @@ describe('useFileUpload', () => {
         json: async () => ({ file: uploadedFileDto() }),
       });
 
-    const { result } = renderHook(() => useFileUpload(fetchImpl as unknown as typeof fetch));
+    const { result } = renderHook(() => useFileUpload(fetchImpl));
 
     let uploaded: unknown;
     await act(async () => {
@@ -81,7 +81,7 @@ describe('useFileUpload', () => {
       .mockResolvedValueOnce({ blob: async () => blob })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ file: uploadedFileDto() }) });
 
-    const { result } = renderHook(() => useFileUpload(fetchImpl as unknown as typeof fetch));
+    const { result } = renderHook(() => useFileUpload(fetchImpl));
 
     await act(async () => {
       await result.current.uploadAssets([makeAsset()]);
@@ -104,7 +104,7 @@ describe('useFileUpload', () => {
         json: async () => ({ message: 'Upload failed on server' }),
       });
 
-    const { result } = renderHook(() => useFileUpload(fetchImpl as unknown as typeof fetch));
+    const { result } = renderHook(() => useFileUpload(fetchImpl));
 
     let uploaded: unknown;
     await act(async () => {
@@ -121,7 +121,7 @@ describe('useFileUpload', () => {
 
   it('rejects unsupported mime types without calling the network', async () => {
     const fetchImpl = vi.fn();
-    const { result } = renderHook(() => useFileUpload(fetchImpl as unknown as typeof fetch));
+    const { result } = renderHook(() => useFileUpload(fetchImpl));
 
     let uploaded: unknown;
     await act(async () => {
@@ -136,9 +136,9 @@ describe('useFileUpload', () => {
   });
 
   it('rejects files exceeding the max size limit', async () => {
-    const bigBlob = { size: 20 * 1024 * 1024 } as Blob;
+    const bigBlob = new Blob([new Uint8Array(20 * 1024 * 1024)]);
     const fetchImpl = vi.fn().mockResolvedValueOnce({ blob: async () => bigBlob });
-    const { result } = renderHook(() => useFileUpload(fetchImpl as unknown as typeof fetch));
+    const { result } = renderHook(() => useFileUpload(fetchImpl));
 
     let uploaded: unknown;
     await act(async () => {
@@ -151,7 +151,7 @@ describe('useFileUpload', () => {
 
   it('rejects a batch exceeding the max file count without uploading anything', async () => {
     const fetchImpl = vi.fn();
-    const { result } = renderHook(() => useFileUpload(fetchImpl as unknown as typeof fetch));
+    const { result } = renderHook(() => useFileUpload(fetchImpl));
 
     const assets = Array.from({ length: 6 }, (_, index) =>
       makeAsset({ assetId: `asset-${index}` }),
@@ -169,7 +169,7 @@ describe('useFileUpload', () => {
 
   it('returns an empty array immediately for an empty asset list', async () => {
     const fetchImpl = vi.fn();
-    const { result } = renderHook(() => useFileUpload(fetchImpl as unknown as typeof fetch));
+    const { result } = renderHook(() => useFileUpload(fetchImpl));
 
     let uploaded: unknown;
     await act(async () => {
@@ -182,7 +182,7 @@ describe('useFileUpload', () => {
 
   it('clearErrors resets the errors array while preserving other state', async () => {
     const fetchImpl = vi.fn();
-    const { result } = renderHook(() => useFileUpload(fetchImpl as unknown as typeof fetch));
+    const { result } = renderHook(() => useFileUpload(fetchImpl));
 
     await act(async () => {
       await result.current.uploadAssets(Array.from({ length: 6 }, () => makeAsset()));
@@ -198,7 +198,7 @@ describe('useFileUpload', () => {
 
   it('surfaces a network-thrown error message per asset', async () => {
     const fetchImpl = vi.fn().mockRejectedValueOnce(new Error('offline'));
-    const { result } = renderHook(() => useFileUpload(fetchImpl as unknown as typeof fetch));
+    const { result } = renderHook(() => useFileUpload(fetchImpl));
 
     let uploaded: unknown;
     await act(async () => {

@@ -48,7 +48,7 @@ export function AnimatedCanvasButton({
 
   const drawProgress = useSharedValue(clampedProgress);
   React.useEffect(() => {
-    drawProgress.value = withTiming(clampedProgress, { duration: 300 });
+    drawProgress.set(withTiming(clampedProgress, { duration: 300 }));
   }, [clampedProgress, drawProgress]);
 
   const strokeColor = useDerivedValue(() =>

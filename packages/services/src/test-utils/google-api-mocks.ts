@@ -1,27 +1,31 @@
 import { type Mock, vi } from 'vitest';
 
+function mockFn(implementation?: (...args: never[]) => unknown): Mock {
+  return vi.fn(implementation);
+}
+
 export const mockOAuth2Client = {
-  setCredentials: vi.fn() as Mock,
-  refreshAccessToken: vi.fn() as Mock,
-  generateAuthUrl: vi.fn() as Mock,
-  getToken: vi.fn() as Mock,
+  setCredentials: mockFn(),
+  refreshAccessToken: mockFn(),
+  generateAuthUrl: mockFn(),
+  getToken: mockFn(),
 };
 
 export const mockCalendar = {
   events: {
-    list: vi.fn() as Mock,
-    insert: vi.fn() as Mock,
-    update: vi.fn() as Mock,
-    delete: vi.fn() as Mock,
+    list: mockFn(),
+    insert: mockFn(),
+    update: mockFn(),
+    delete: mockFn(),
   },
   calendarList: {
-    list: vi.fn() as Mock,
+    list: mockFn(),
   },
 };
 
 export const mockPlaces = {
-  searchText: vi.fn() as Mock,
-  get: vi.fn() as Mock,
+  searchText: mockFn(),
+  get: mockFn(),
 };
 
 const OAuth2Mock = class {
@@ -39,9 +43,9 @@ export const googleapi = {
     auth: {
       OAuth2: OAuth2Mock,
     },
-    calendar: vi.fn(() => mockCalendar) as Mock,
-    places: vi.fn(() => ({
+    calendar: mockFn(() => mockCalendar),
+    places: mockFn(() => ({
       places: mockPlaces,
-    })) as Mock,
+    })),
   },
 };

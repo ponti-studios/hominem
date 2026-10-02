@@ -13,7 +13,7 @@ export interface ProcessedFile {
   textContent?: string;
   content?: string;
   thumbnail?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, string | number | boolean>;
 }
 
 // handles the boring stuff only: detecting file type, pulling raw text out of
@@ -67,7 +67,7 @@ export class FileProcessorService {
         textContent = await new Promise<string>((resolve, reject) => {
           const parser = new PDFParser(undefined, true);
           parser.on('pdfParser_dataError', (data) => {
-            reject((data as { parserError: Error }).parserError);
+            reject(data instanceof Error ? data : data.parserError);
           });
           parser.on('pdfParser_dataReady', () => {
             try {

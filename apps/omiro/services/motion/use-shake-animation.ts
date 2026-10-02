@@ -17,12 +17,14 @@ export function useShakeAnimation(trigger: boolean) {
     if (!trigger) {
       return;
     }
-    shakeX.value = withSequence(
-      withTiming(10, { duration: 50, easing: Easing.linear }),
-      withTiming(-10, { duration: 50, easing: Easing.linear }),
-      withTiming(7, { duration: 50, easing: Easing.linear }),
-      withTiming(-7, { duration: 50, easing: Easing.linear }),
-      withTiming(0, { duration: 50, easing: Easing.linear }),
+    shakeX.set(
+      withSequence(
+        withTiming(10, { duration: 50, easing: Easing.linear }),
+        withTiming(-10, { duration: 50, easing: Easing.linear }),
+        withTiming(7, { duration: 50, easing: Easing.linear }),
+        withTiming(-7, { duration: 50, easing: Easing.linear }),
+        withTiming(0, { duration: 50, easing: Easing.linear }),
+      ),
     );
   }, [trigger, shakeX]);
 

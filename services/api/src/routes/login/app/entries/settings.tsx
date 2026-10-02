@@ -1,6 +1,6 @@
 // @jsxImportSource react
-import { readAuthInit, type SettingsInit } from '../init';
+import { readAuthInit, settingsInitSchema } from '../init';
 import { mountApp } from '../mount';
 import { SettingsPage } from '../settings-page';
 
-mountApp(<SettingsPage {...readAuthInit<SettingsInit>()} />);
+mountApp(<SettingsPage {...readAuthInit(settingsInitSchema)} />);

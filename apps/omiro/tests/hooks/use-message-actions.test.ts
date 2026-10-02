@@ -1,5 +1,14 @@
 import type { ChatMessageItem } from '@hominem/chat';
+import * as Clipboard from 'expo-clipboard';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
+import { Share } from 'react-native';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { copyMessage, shareMessage } from '~/hooks/use-message-actions';
+
+import { makeChatMessage } from '../fixtures';
 
 vi.mock('expo-clipboard', () => ({ setStringAsync: vi.fn() }));
 vi.mock('expo-haptics', () => ({
@@ -14,16 +23,8 @@ vi.mock('expo-file-system/legacy', () => ({
 vi.mock('expo-sharing', () => ({ shareAsync: vi.fn() }));
 vi.mock('react-native', () => ({ Share: { share: vi.fn() } }));
 
-import * as Clipboard from 'expo-clipboard';
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Haptics from 'expo-haptics';
-import * as Sharing from 'expo-sharing';
-import { Share } from 'react-native';
-
-import { copyMessage, shareMessage } from '~/hooks/use-message-actions';
-
 function message(id: string, text: string): ChatMessageItem {
-  return { id, message: text } as ChatMessageItem;
+  return makeChatMessage({ id, message: text });
 }
 
 afterEach(() => {

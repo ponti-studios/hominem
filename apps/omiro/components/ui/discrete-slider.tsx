@@ -42,13 +42,13 @@ export function DiscreteSlider({
   const position = useSharedValue(steps > 1 ? value / (steps - 1) : 0);
 
   useEffect(() => {
-    position.value = steps > 1 ? value / (steps - 1) : 0;
+    position.set(steps > 1 ? value / (steps - 1) : 0);
   }, [position, steps, value]);
 
   const handleLayout = useCallback(
     (event: LayoutChangeEvent) => {
       const width = Math.max(0, event.nativeEvent.layout.width - THUMB_SIZE);
-      trackWidth.value = width;
+      trackWidth.set(width);
       setMeasuredTrackWidth(width);
     },
     [trackWidth],
@@ -57,7 +57,7 @@ export function DiscreteSlider({
   const setStepFromFraction = useCallback(
     (fraction: number) => {
       const index = nearestStep(fraction, steps);
-      position.value = withTiming(steps > 1 ? index / (steps - 1) : 0, { duration: 150 });
+      position.set(withTiming(steps > 1 ? index / (steps - 1) : 0, { duration: 150 }));
       onValueChange(index);
     },
     [onValueChange, position, steps],
@@ -69,7 +69,7 @@ export function DiscreteSlider({
         return;
       }
       const next = position.value + event.changeX / trackWidth.value;
-      position.value = Math.min(1, Math.max(0, next));
+      position.set(Math.min(1, Math.max(0, next)));
     })
     .onEnd(() => {
       scheduleOnRN(setStepFromFraction, position.value);

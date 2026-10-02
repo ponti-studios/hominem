@@ -47,14 +47,14 @@ async function readMcpJson(response: Response): Promise<Record<string, unknown>>
     !response.headers.get('content-type')?.includes('text/event-stream') &&
     !text.startsWith('event:')
   ) {
-    return JSON.parse(text) as Record<string, unknown>;
+    return JSON.parse(text);
   }
   const data = text
     .split('\n')
     .filter((line) => line.startsWith('data: '))
     .at(-1)
     ?.slice(6);
-  return JSON.parse(data ?? '{}') as Record<string, unknown>;
+  return JSON.parse(data ?? '{}');
 }
 
 describe('MCP OAuth integration', () => {
@@ -326,10 +326,10 @@ describe('MCP OAuth integration', () => {
       params: { name: 'career_engagements', arguments: { limit: 1 } },
     });
     expect(refreshedToolResponse.status).toBe(200);
-    const refreshedTool = (await readMcpJson(refreshedToolResponse)) as {
-      result?: { isError?: boolean; structuredContent?: { engagements?: unknown[] } };
-    };
-    expect(refreshedTool.result?.isError).not.toBe(true);
-    expect(refreshedTool.result?.structuredContent).toHaveProperty('engagements');
+    const refreshedTool = await readMcpJson(refreshedToolResponse);
+    expect(refreshedTool.result).not.toMatchObject({ isError: true });
+    expect(refreshedTool).toMatchObject({
+      result: { structuredContent: { engagements: expect.any(Array) } },
+    });
   }, 30000);
 });

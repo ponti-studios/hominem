@@ -28,7 +28,7 @@ describe('Application Utils', () => {
 
     it('should return "Unknown Company" if company object has no name or empty name', () => {
       expect(getCompanyName({ name: '' })).toBe('Unknown Company');
-      expect(getCompanyName({} as { name: string })).toBe('Unknown Company');
+      expect(getCompanyName({})).toBe('Unknown Company');
     });
   });
 

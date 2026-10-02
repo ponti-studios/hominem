@@ -2,7 +2,10 @@ import type { FileStatus, ImportRequestResponse, ImportTransactionsJob } from '@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { ImportPreflightPreview } from '~/lib/finance/import-types';
+import {
+  importTransactionsJobsSchema,
+  type ImportPreflightPreview,
+} from '~/lib/finance/import-types';
 import { useWebSocketStore, type WebSocketMessage } from '~/store/websocket-store';
 
 export type { ImportPreflightPreview } from '~/lib/finance/import-types';
@@ -65,7 +68,8 @@ export function useImportTransactionsStore() {
     void fetch(`/api/finance/import/preflight/${preflightId}`)
       .then(async (response) => {
         if (!response.ok) throw new Error('Preflight expired');
-        return (await response.json()) as ImportPreflightPreview;
+        const preview: ImportPreflightPreview = await response.json();
+        return preview;
       })
       .then(setPreflight)
       .catch(() => window.localStorage.removeItem(PREFLIGHT_STORAGE_KEY));
@@ -193,7 +197,7 @@ export function useImportTransactionsStore() {
               body: formData,
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const result = (await res.json()) as ImportPreflightPreview;
+            const result: ImportPreflightPreview = await res.json();
             setPreflight(result);
             window.localStorage.setItem(PREFLIGHT_STORAGE_KEY, result.preflight.preflightId);
             return result;
@@ -230,7 +234,7 @@ export function useImportTransactionsStore() {
         },
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const result = (await response.json()) as ImportRequestResponse;
+      const result: ImportRequestResponse = await response.json();
       setPreflight(null);
       window.localStorage.removeItem(PREFLIGHT_STORAGE_KEY);
       setActiveJobIds((current) => [...new Set([...current, result.jobId])]);
@@ -253,23 +257,14 @@ export function useImportTransactionsStore() {
     });
 
     // the server acks on a separate channel, so we subscribe to both
-    const unsubscribeProgress = subscribe<ImportTransactionsJob[]>(
-      IMPORT_PROGRESS_CHANNEL,
-      (message: WebSocketMessage<ImportTransactionsJob[]>) => {
-        if (message.data) {
-          updateImportProgress(message.data);
-        }
-      },
-    );
-
-    const unsubscribeSubscribed = subscribe<ImportTransactionsJob[]>(
-      IMPORT_PROGRESS_CHANNEL_SUBSCRIBED,
-      (message: WebSocketMessage<ImportTransactionsJob[]>) => {
-        if (message.data) {
-          updateImportProgress(message.data);
-        }
-      },
-    );
+    const handleProgress = (message: WebSocketMessage) => {
+      const jobs = importTransactionsJobsSchema.safeParse(message.data);
+      if (jobs.success) {
+        updateImportProgress(jobs.data);
+      }
+    };
+    const unsubscribeProgress = subscribe(IMPORT_PROGRESS_CHANNEL, handleProgress);
+    const unsubscribeSubscribed = subscribe(IMPORT_PROGRESS_CHANNEL_SUBSCRIBED, handleProgress);
 
     return () => {
       unsubscribeProgress();

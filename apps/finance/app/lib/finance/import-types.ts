@@ -1,4 +1,5 @@
-import type { ImportPreflight } from '@hominem/queues';
+import type { ImportPreflight, ImportTransactionsJob } from '@hominem/queues';
+import { z } from 'zod';
 
 /**
  * Shared client/server shapes for the Copilot import flow. The server route
@@ -63,3 +64,31 @@ export type ImportPreflightPreview = {
   plan: ImportPlanPreview;
   accounts: ImportAccountPreview[];
 };
+
+const importJobStatsSchema = z.object({
+  progress: z.number().optional(),
+  processingTime: z.number().optional(),
+  total: z.number().optional(),
+  created: z.number().optional(),
+  updated: z.number().optional(),
+  skipped: z.number().optional(),
+  merged: z.number().optional(),
+  invalid: z.number().optional(),
+  errors: z.array(z.string()).optional(),
+});
+
+const importTransactionsJobSchema = z.object({
+  jobId: z.string(),
+  userId: z.string(),
+  type: z.literal('import-transactions'),
+  status: z.enum(['queued', 'uploading', 'processing', 'done', 'error', 'cancelled']),
+  fileName: z.string(),
+  planId: z.string(),
+  error: z.string().optional(),
+  stats: importJobStatsSchema,
+  startTime: z.number(),
+  endTime: z.number().optional(),
+}) satisfies z.ZodType<ImportTransactionsJob>;
+
+/** Progress frames the import worker pushes over the websocket. */
+export const importTransactionsJobsSchema = z.array(importTransactionsJobSchema);

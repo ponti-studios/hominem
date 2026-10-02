@@ -10,11 +10,16 @@ const mockLaunchImageLibraryAsync = vi.fn();
 const mockUploadAssets = vi.fn();
 const mockClearErrors = vi.fn();
 
-let mockUploadState = {
+let mockUploadState: {
+  isUploading: boolean;
+  progress: number;
+  progressByAssetId: Record<string, number>;
+  errors: string[];
+} = {
   isUploading: false,
   progress: 0,
   progressByAssetId: {},
-  errors: [] as string[],
+  errors: [],
 };
 
 vi.mock('react-native', async (importOriginal) => {
@@ -72,8 +77,11 @@ describe('useComposerContext', () => {
         return error;
       }
     });
-    expect(result.current).toBeInstanceOf(Error);
-    expect((result.current as Error).message).toContain('must be used within a ComposerProvider');
+    expect(result.current).toEqual(
+      expect.objectContaining({
+        message: expect.stringContaining('must be used within a ComposerProvider'),
+      }),
+    );
   });
 });
 

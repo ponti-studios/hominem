@@ -9,6 +9,9 @@ import type { AppContext, RpcUser } from '../rpc/middleware/auth';
 import { requestIdMiddleware } from '../rpc/middleware/auth';
 import { apiErrorHandler } from '../rpc/middleware/error';
 import { validationErrorMiddleware } from '../rpc/middleware/validation';
+import { careerWishlistAddOutputSchema } from '../schemas/career.schema';
+import { createCollectionOutputSchema } from '../schemas/collections.schema';
+import { toolOutput } from '../testkit/tool-result';
 import { mcpRoutes, oauthDiscoveryRoutes } from './routes';
 import { callTool, listTools, registerTool } from './tool-registry';
 
@@ -469,7 +472,7 @@ describe('mcp server transport', () => {
           name: 'career_wishlist_add',
           arguments: { company },
         });
-        return (added.structuredContent as { company: { id: string } }).company.id;
+        return toolOutput(added, careerWishlistAddOutputSchema).company.id;
       } finally {
         await writer.close();
       }
@@ -603,7 +606,7 @@ describe('mcp server transport', () => {
           name: 'create_collection',
           arguments: { name: 'Preview Delete Test' },
         });
-        collectionId = (created.structuredContent as { collection: { id: string } }).collection.id;
+        collectionId = toolOutput(created, createCollectionOutputSchema).collection.id;
       } finally {
         await accepting.close();
       }

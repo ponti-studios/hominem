@@ -37,7 +37,7 @@ const CHAT_ID = 'chat-1';
 function seedMessages(
   queryClient: ReturnType<typeof renderHookWithQueryClient>['queryClient'],
 ): ChatMessageItem[] {
-  const messages = [
+  const messages: ChatMessageItem[] = [
     {
       id: 'msg-1',
       role: 'user',
@@ -48,7 +48,7 @@ function seedMessages(
       toolCalls: null,
       isStreaming: false,
     },
-  ] as ChatMessageItem[];
+  ];
   queryClient.setQueryData(chatKeys.messages(CHAT_ID), messages);
   return messages;
 }

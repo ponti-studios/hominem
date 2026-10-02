@@ -9,6 +9,7 @@ vi.mock('./speech-player', () => ({
   SpeechPlayer: () => <button type="button">Listen to response</button>,
 }));
 
+import { makeChatMessageDto } from '../../lib/testing/chat-message-fixture';
 import { ChatMessage } from './chat-message';
 
 afterEach(() => {
@@ -18,12 +19,9 @@ afterEach(() => {
 
 function message(overrides: Partial<ChatMessageView> = {}): ChatMessageView {
   return {
-    id: 'message-1',
-    chatId: 'chat-1',
-    content: 'Hello from the assistant',
-    role: 'assistant',
+    ...makeChatMessageDto({ content: 'Hello from the assistant' }),
     ...overrides,
-  } as ChatMessageView;
+  };
 }
 
 describe('ChatMessage', () => {

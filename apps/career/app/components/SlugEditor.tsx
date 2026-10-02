@@ -73,11 +73,11 @@ export function SlugEditor({ profileId, initialSlug, liveUrl, onSave }: SlugEdit
         const response = await fetch(
           `/api/validate-slug?slug=${encodeURIComponent(slug)}&currentId=${encodeURIComponent(profileId)}`,
         );
-        const data = (await response.json()) as {
+        const data: {
           success: boolean;
           data?: { isAvailable: boolean; message: string };
           error?: string;
-        };
+        } = await response.json();
 
         if (data.success && data.data) {
           setValidation({

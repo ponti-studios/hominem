@@ -4,7 +4,6 @@ import {
   type ChatMessages,
   type ChatRequest,
   type ChatStreamChunk,
-  type OpenRouterClientOptions,
   getChatCompletionUsage,
   OpenRouterRequestError,
   streamChatCompletion,
@@ -20,6 +19,8 @@ import {
 import { reconstructProviderToolCalls } from '@hominem/chat/server';
 import type { ChatModel } from '@hominem/chat/server';
 import { logger } from '@hominem/telemetry';
+
+import { chatToolName } from './chat-tool-name';
 
 class ProviderInputError extends Error {
   constructor(
@@ -105,10 +106,13 @@ export type OpenRouterChatModelOptions = {
   requiresToolCall?: boolean;
   requiresWebSearch?: boolean;
   requiresConfirmation?: (toolName: string) => boolean;
+  // Withholds a tool from a turn while this says no (checked at the start of every turn), so the
+  // model cannot call a write before the lookup it depends on. Without it every tool is offered.
+  isToolAvailable?: (toolName: string) => boolean;
   maxAttempts?: number;
-  // Test-only scripted OpenRouter client (canned SSE chunks). Production
-  // never sets this — OpenRouter is the only supported provider.
-  client?: OpenRouterClientOptions['client'];
+  // Test-only scripted stream (canned chunks). Production never sets this —
+  // OpenRouter is the only supported provider.
+  streamChat?: typeof streamChatCompletion;
   // Usage is provider metadata and may be absent even when the response is valid.
   onUsage?: (usage: AIUsageMetrics | null) => void;
 };
@@ -159,8 +163,16 @@ function isTransient(error: unknown): boolean {
   return code === 'timeout' || code === 'connection_error';
 }
 
+// A tool the model has called this many times in one generation is withdrawn for the rest of
+// it, so a model that keeps tweaking a search's arguments has to answer. (The generation
+// machine's own cap, MAX_TOOL_CALLS_PER_GENERATION, ends the whole generation instead.)
+export const MAX_CALLS_PER_TOOL = 6;
+
 export class OpenRouterChatModel implements ChatModel {
   private readonly messages: ChatMessages[];
+  private readonly callCounts = new Map<string, number>();
+  // Set once a turn comes back empty: the same request is not sent again as "required".
+  private requiredToolChoiceFailed = false;
   private attempt = 0;
   private firstTurn = true;
 
@@ -178,26 +190,37 @@ export class OpenRouterChatModel implements ChatModel {
     // cancellation through the fetch/undici abort path instead, which is
     // the mechanism the HTTP client actually guarantees acts on.
     const controller = new AbortController();
+    const tools = this.options.tools.filter((tool) => {
+      const name = chatToolName(tool);
+      return (
+        (this.callCounts.get(name) ?? 0) < MAX_CALLS_PER_TOOL &&
+        (this.options.isToolAvailable?.(name) ?? true)
+      );
+    });
+    const forceTool =
+      this.firstTurn &&
+      !this.requiredToolChoiceFailed &&
+      (this.options.requiresToolCall || this.options.requiresWebSearch);
+    const toolChoice = tools.length === 0 ? undefined : forceTool ? 'required' : 'auto';
+    // What this turn actually returned, kept so an empty one can be explained afterwards.
+    let chunkCount = 0;
+    let contentChars = 0;
+    let reasoningChars = 0;
+    let servedModel: string | undefined;
+    let usageSeen: string | null = null;
+    const finishReasons: string[] = [];
     try {
-      const completion = streamChatCompletion(
+      const completion = (this.options.streamChat ?? streamChatCompletion)(
         {
           model: this.options.model,
           messages: this.messages,
-          tools: this.options.tools.length > 0 ? this.options.tools : undefined,
-          toolChoice:
-            this.options.tools.length > 0
-              ? this.firstTurn && (this.options.requiresToolCall || this.options.requiresWebSearch)
-                ? 'required'
-                : 'auto'
-              : undefined,
+          tools: tools.length > 0 ? tools : undefined,
+          toolChoice,
           parallelToolCalls: false,
           maxTokens: this.options.maxTokens,
           ...(this.options.reasoning ? { reasoning: this.options.reasoning } : {}),
         },
-        {
-          signal: controller.signal,
-          ...(this.options.client ? { client: this.options.client } : {}),
-        },
+        { signal: controller.signal },
       );
 
       const iterator = completion[Symbol.asyncIterator]();
@@ -222,8 +245,18 @@ export class OpenRouterChatModel implements ChatModel {
           // report it instead of seeing a bare, code-less Error.
           throw new OpenRouterRequestError(chunk.error.message, { status: chunk.error.code });
         }
-        this.options.onUsage?.(getChatCompletionUsage(chunk));
+        const chunkUsage = getChatCompletionUsage(chunk);
+        this.options.onUsage?.(chunkUsage);
+        if (chunkUsage)
+          usageSeen = `${chunkUsage.promptTokens} in / ${chunkUsage.outputTokens} out`;
+        servedModel = chunk.model ?? servedModel;
         const providerChunk = toProviderChunk(chunk);
+        chunkCount += 1;
+        contentChars += providerChunk.content?.length ?? 0;
+        reasoningChars += providerChunk.reasoning?.length ?? 0;
+        for (const choice of chunk.choices ?? []) {
+          if (choice.finishReason != null) finishReasons.push(String(choice.finishReason));
+        }
         for (const call of providerChunk.toolCalls ?? []) {
           const previous = calls.get(call.index);
           calls.set(call.index, {
@@ -255,9 +288,60 @@ export class OpenRouterChatModel implements ChatModel {
         }
       }
 
-      const toolCalls = reconstructProviderToolCalls(calls);
+      // A call without an id or name cannot run and the machine drops it, so it must not make an
+      // otherwise empty turn look productive.
+      const toolCalls = reconstructProviderToolCalls(calls).filter(
+        (call) => call.id !== '' && call.function.name !== '',
+      );
+      // rawToolCallCount above the calls kept means an incomplete call was dropped.
+      logger.info('provider_turn_summary', {
+        iteration: generationIteration,
+        toolChoice: toolChoice ?? 'none',
+        offered: tools.map(chatToolName),
+        called: toolCalls.map((call) => call.function.name),
+        rawToolCallCount: calls.size,
+        textChars: contentChars,
+        finishReasons,
+      });
+      if (contentChars === 0 && toolCalls.length === 0) {
+        // Neither text nor a usable tool call: this is the user's "No reply was generated".
+        logger.warn('provider_turn_empty', {
+          model: this.options.model,
+          iteration: generationIteration,
+          servedModel,
+          toolChoice: toolChoice ?? 'none',
+          // Not "maxTokens": the logger redacts any key containing "token".
+          completionCap: this.options.maxTokens ?? null,
+          toolCount: tools.length,
+          usage: usageSeen,
+          finishReasons,
+          chunkCount,
+          reasoningChars,
+          rawToolCallCount: calls.size,
+        });
+        // Nothing ran, so asking again is safe. A "required" request that came back empty did
+        // so on every retry, and "auto" never did, so retries let the model choose.
+        this.requiredToolChoiceFailed = true;
+        yield {
+          type: 'provider-turn-failed',
+          message: 'No reply was generated',
+          transient: true,
+          attempt: this.attempt,
+          maxAttempts: this.options.maxAttempts ?? 2,
+        };
+        return;
+      }
       if (toolCalls.length > 0) {
         this.messages.push({ role: 'assistant', content: null, toolCalls });
+      }
+      for (const {
+        function: { name },
+      } of toolCalls) {
+        const count = (this.callCounts.get(name) ?? 0) + 1;
+        this.callCounts.set(name, count);
+        if (count === MAX_CALLS_PER_TOOL) {
+          logger.warn('provider_tool_withdrawn', { toolName: name, calls: count });
+        }
       }
       const confirmationCallIds = toolCalls.reduce<string[]>((ids, call) => {
         if (this.options.requiresConfirmation?.(call.function.name) ?? false) ids.push(call.id);
@@ -281,12 +365,7 @@ export class OpenRouterChatModel implements ChatModel {
       }
       yield {
         type: 'provider-turn-failed',
-        message:
-          error instanceof ProviderInputError
-            ? error.message
-            : error instanceof Error
-              ? error.message
-              : 'Provider request failed',
+        message: error instanceof Error ? error.message : 'Provider request failed',
         transient: isTransient(error),
         attempt: Math.max(this.attempt, generationIteration),
         maxAttempts: this.options.maxAttempts ?? 2,

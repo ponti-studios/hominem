@@ -183,7 +183,7 @@ export async function replaceTransactionTags(
       .where('ownerUserid', '=', userId)
       .where(sql<SqlBool>`id in (${sqlValueList(uniqueTagIds)})`)
       .execute();
-    const validIds = new Set((validTagResult as Array<{ id: string }>).map((row) => row.id));
+    const validIds = new Set(validTagResult.map((row) => row.id));
     if (validIds.size !== uniqueTagIds.length) {
       throw new Error('One or more tags are invalid for this user');
     }
@@ -224,7 +224,7 @@ export async function getTransactionTagIds(
     .where('ti.entityId', '=', transactionId)
     .orderBy('ti.tagId', 'asc')
     .execute();
-  return (result as Array<{ tagId: string }>).map((row) => row.tagId);
+  return result.map((row) => row.tagId);
 }
 
 export async function createTransaction(input: CreateTransactionInput): Promise<TransactionRow> {

@@ -6,6 +6,7 @@ import { Form } from 'react-router';
 
 import { AddButton } from '~/components/AddButton';
 import { userContext } from '~/lib/middleware';
+import { formText } from '~/lib/route-utils';
 import { formatApplicationDate } from '~/lib/utils/applicationUtils';
 
 import { Route } from './+types/applications.$id.notes';
@@ -35,7 +36,7 @@ export async function action({ context, params, request }: Route.ActionArgs) {
     return { ok: true };
   }
 
-  const content = (formData.get('content') as string)?.trim();
+  const content = formText(formData, 'content')?.trim();
   if (content) {
     await ApplicationNotesRepository.create(db, params.id, content);
   }

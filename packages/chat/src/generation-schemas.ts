@@ -169,7 +169,7 @@ const toolCallSchema = z.object({
   preview: requestContextSchema.nullable().optional(),
 }) satisfies z.ZodType<GenerationToolCall>;
 
-const toolResultSchema = z.object({
+export const toolResultSchema = z.object({
   callId: z.string().min(1),
   toolName: z.string().min(1),
   content: z.string(),
@@ -404,3 +404,6 @@ export function getGenerationFailureMessage(event: GenerationEvent): string | nu
   if (event.type === 'generation.failed') return event.payload.message;
   return null;
 }
+
+// The only part of a generation run the client reads when it restores an interrupted stream.
+export const generationRunStatusSchema = z.object({ status: z.string().optional() });

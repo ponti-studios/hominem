@@ -166,7 +166,7 @@ export function ChatMessageActions({
                     ? 'Copy assistant message failed'
                     : 'Copy assistant message'
             }
-            onClick={() => void copyMessage()}
+            onClick={() => copyMessage()}
             tooltip={
               copyState === 'copied'
                 ? 'Copied'
@@ -186,7 +186,7 @@ export function ChatMessageActions({
                     ? 'Share assistant message failed'
                     : 'Share assistant message'
               }
-              onClick={() => void shareMessage()}
+              onClick={() => shareMessage()}
               tooltip={
                 shareState === 'shared'
                   ? 'Shared'
@@ -212,11 +212,7 @@ export function ChatMessageActions({
                 key="edit-confirm-actions"
                 transition={{ duration: reduceMotion ? 0.08 : 0.15, ease: [0.23, 1, 0.32, 1] }}
               >
-                <MessageAction
-                  label="Save edit"
-                  onClick={() => void edit.save()}
-                  tooltip="Save edit"
-                >
+                <MessageAction label="Save edit" onClick={() => edit.save()} tooltip="Save edit">
                   <Check aria-hidden="true" size={14} />
                 </MessageAction>
                 <MessageAction

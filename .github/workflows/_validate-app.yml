@@ -78,11 +78,10 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
-      - name: setup-go-for-migrations
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+      - name: setup-goose
+        uses: ./.github/actions/setup-goose
         with:
           go-version: ${{ inputs.go-version }}
-          cache: false
 
       - name: run-database-migrations
         run: just db migrate test

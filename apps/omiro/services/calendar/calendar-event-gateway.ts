@@ -52,12 +52,12 @@ const productionCalendarEventGateway: CalendarEventGateway = {
     OnDeviceAIModule.interpretTimeRequest(prompt, taskBusyIntervals, requestToken),
   cancelInterpretation: (requestToken) => OnDeviceAIModule.cancelTimeAssistant(requestToken),
   subscribeToProcessingStage: (listener) =>
-    OnDeviceAIModule.addListener(
-      'onTimeAssistantStage',
-      listener as (
-        event: TimeProcessingStageEvent | { type: string; message: string; timestamp: number },
-      ) => void,
-    ),
+    OnDeviceAIModule.addListener('onTimeAssistantStage', (event) => {
+      // The native event name is shared with log events in the module's typing.
+      if ('stage' in event) {
+        listener(event);
+      }
+    }),
   createEvent: (title, startDate, endDate, location, recurrenceRule) =>
     OnDeviceAIModule.createCalendarEvent(title, startDate, endDate, location, recurrenceRule),
   deleteEvent: (id, recurrenceScope) => OnDeviceAIModule.deleteCalendarEvent(id, recurrenceScope),

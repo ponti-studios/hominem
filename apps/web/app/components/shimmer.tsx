@@ -2,7 +2,7 @@
 
 import type { MotionProps } from 'motion/react';
 import { motion, useReducedMotion } from 'motion/react';
-import type { CSSProperties, ElementType, JSX } from 'react';
+import type { CSSProperties, JSX } from 'react';
 import { memo, useMemo } from 'react';
 
 import { cn } from '~/lib/utils';
@@ -27,7 +27,7 @@ const getMotionComponent = (element: keyof JSX.IntrinsicElements) => {
 
 export interface TextShimmerProps {
   children: string;
-  as?: ElementType;
+  as?: keyof JSX.IntrinsicElements;
   className?: string;
   duration?: number;
   spread?: number;
@@ -40,10 +40,13 @@ const ShimmerComponent = ({
   duration = 2,
   spread = 2,
 }: TextShimmerProps) => {
-  const MotionComponent = getMotionComponent(Component as keyof JSX.IntrinsicElements);
+  const MotionComponent = getMotionComponent(Component);
   const reduceMotion = useReducedMotion() === true;
 
   const dynamicSpread = useMemo(() => (children?.length ?? 0) * spread, [children, spread]);
+  const spreadStyle: CSSProperties & Record<'--spread', string> = {
+    '--spread': `${dynamicSpread}px`,
+  };
 
   if (reduceMotion) {
     return (
@@ -62,7 +65,7 @@ const ShimmerComponent = ({
         className,
       )}
       initial={{ backgroundPosition: '100% center' }}
-      style={{ '--spread': `${dynamicSpread}px` } as CSSProperties}
+      style={spreadStyle}
       transition={{
         duration,
         ease: 'linear',

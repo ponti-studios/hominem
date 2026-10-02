@@ -223,8 +223,8 @@ export function buildResumeImportDiff(
   const scalarChanges: ResumeScalarFieldChange[] = [];
 
   for (const { field, resumeKey, label } of BASICS_FIELD_MAP) {
-    const current = (currentProfile?.[field] ?? null) as string | boolean | null;
-    const proposed = (parsed.portfolio[resumeKey] ?? null) as string | boolean | null;
+    const current = currentProfile?.[field] ?? null;
+    const proposed = parsed.portfolio[resumeKey] ?? null;
     if (current !== proposed) {
       scalarChanges.push({ field, group: 'basics', label, current, proposed });
     }

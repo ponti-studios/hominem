@@ -3,7 +3,7 @@ import type {
   ChatFunctionTool,
   ChatMessages,
   ChatRequest,
-  OpenRouterClientOptions,
+  streamChatCompletion,
 } from '@hominem/ai';
 import type {
   ChatSnapshot,
@@ -40,11 +40,11 @@ export interface GenerationEngineInput {
   requiresToolCall?: boolean;
   requiresWebSearch?: boolean;
   toolRuntime?: ChatToolRuntime;
-  // Test-only scripted OpenRouter client (serves canned SSE chunks).
+  // Test-only scripted chat stream (serves canned chunks).
   // Production never sets this: OpenRouter is the only supported provider,
   // so there is no model-factory seam — a second provider is an explicit
   // future task, not an option field.
-  openRouterClient?: OpenRouterClientOptions['client'];
+  streamChat?: typeof streamChatCompletion;
   initialState?: GenerationState;
   initialInput?: GenerationInput;
 }
@@ -63,8 +63,8 @@ export interface GenerationEngineResult {
 }
 
 export type ChatGenerationDependencies = {
-  // Test-only; see GenerationEngineInput.openRouterClient.
-  openRouterClient?: OpenRouterClientOptions['client'];
+  // Test-only; see GenerationEngineInput.streamChat.
+  streamChat?: typeof streamChatCompletion;
   toolRuntime?: ChatToolRuntime;
   planChatTools?: typeof planChatTools;
   failureHooks?: ChatGenerationFailureHooks;

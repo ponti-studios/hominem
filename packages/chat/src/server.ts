@@ -146,7 +146,7 @@ function parseArguments(call: GenerationToolCall): Record<string, unknown> {
   try {
     const value: unknown = JSON.parse(call.arguments);
     if (!isObject(value)) return {};
-    return value as Record<string, unknown>;
+    return Object.fromEntries(Object.entries(value));
   } catch {
     return {};
   }
