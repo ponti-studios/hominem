@@ -482,6 +482,43 @@ describe('HominemTests', () => {
     expect(inspected.events.some((event) => event.payload.type === 'tool.failed')).toBe(true);
   });
 
+  // A model that sends invalid arguments must be told which argument is wrong, or it
+  // retries the identical call: it only ever saw a generic "Tool call failed".
+  it('tells the model which tool argument was invalid', async () => {
+    const inputSchema = z.object({ query: z.string().trim().min(1).optional() }).strict();
+    const tool: TestTool = {
+      definition: {
+        name: 'sdk_picky_tool',
+        title: 'SDK picky tool',
+        description: 'Rejects a blank query.',
+        inputSchema,
+        outputSchema: z.object({ ok: z.boolean() }).strict(),
+        readOnly: true,
+        scopes: ['memory:read'],
+        resultCap: 1,
+      },
+      execute: async () => ({ ok: true }),
+    };
+    const provider = scriptedProvider([
+      fragmentedToolCallTurn('sdk_picky_tool', 'call-blank', ['{"query":" "}']),
+      textTurn('Done'),
+    ]);
+    expectWarning('chat_generation_tool_call_failed');
+    test = await HominemTests.create({ provider });
+    test.tools.add(tool);
+
+    const result = await test.chat.start({ title: 'SDK invalid args', message: 'Use it' });
+    const inspected = await test.inspect(result.generationId);
+
+    const failed = inspected.events.find((event) => event.payload.type === 'tool.failed');
+    const content =
+      failed?.payload.type === 'tool.failed' ? JSON.parse(failed.payload.result.content) : null;
+    expect(content).toEqual({
+      error: 'Invalid arguments',
+      issues: [{ path: 'query', message: expect.stringContaining('>=1') }],
+    });
+  });
+
   it('records confirmation rejection and does not execute the tool', async () => {
     const inputSchema = z.object({ value: z.string() }).strict();
     let executions = 0;

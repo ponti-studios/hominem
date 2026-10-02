@@ -13,6 +13,7 @@ import type { GenerationRunnerOptions } from '@hominem/chat/server';
 import { createGenerationRunner } from '@hominem/chat/server';
 import type { ChatGenerationEventRecord, ChatMessageToolCallRecord } from '@hominem/db/chats';
 import { logger } from '@hominem/telemetry';
+import { ZodError } from 'zod';
 
 import { callTool, getToolDefinition } from '../mcp/tool-registry';
 import { OpenRouterChatModel } from './chat-generation-provider';
@@ -298,7 +299,19 @@ export async function executeGenerationTurn(
           const result: ToolResult = {
             callId: call.id,
             toolName: call.name,
-            content: JSON.stringify({ error: 'Tool call failed' }),
+            content: JSON.stringify(
+              error instanceof ZodError
+                ? // The model's own bad arguments: say which ones (paths and messages only,
+                  // never values) so it can correct the call instead of repeating it.
+                  {
+                    error: 'Invalid arguments',
+                    issues: error.issues.map((issue) => ({
+                      path: issue.path.join('.'),
+                      message: issue.message,
+                    })),
+                  }
+                : { error: 'Tool call failed' },
+            ),
             error: true,
           };
           return input.effectStore

@@ -53,7 +53,8 @@ registerTool(
       'Lists top-level tasks and task lists for the authenticated user. Supports filtering by ' +
       'status, priority, due date range (dueBefore/dueAfter), and a title text search (query) — ' +
       'use these instead of listing everything and filtering client-side, e.g. for "what is due ' +
-      'today" or "what is overdue".',
+      'today" or "what is overdue". Omit every filter the user did not ask for: with none it ' +
+      'returns up to 100 tasks, and an unneeded filter silently hides the rest.',
     inputSchema: TaskListQuerySchema,
     outputSchema: taskListResultSchema,
     readOnly: true,
