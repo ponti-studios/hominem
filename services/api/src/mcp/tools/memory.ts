@@ -59,7 +59,7 @@ registerTool(
     guidance: {
       whenToUse: 'The user explicitly asks to remember something or states a durable preference.',
       whenNotToUse:
-        'Do not save transient instructions, one-off plans, or facts about other people.',
+        'Do not save transient instructions, one-off plans, or facts about other people. Things the user needs to do, deadlines, appointments and reminders are tasks: use task_create.',
       produces: ['memory id', 'saved memory content'],
     },
   },

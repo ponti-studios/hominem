@@ -91,6 +91,12 @@ registerTool(
       'Creates a standalone task, optionally assigning participants or nesting it under a parent task list. Use task_batch_create to create a task list with subtasks.',
     inputSchema: taskCreateInputSchema,
     outputSchema: z.object({ task: TaskRecordSchema }),
+    guidance: {
+      whenToUse:
+        'The user says they need or want to do something, mentions a deadline or appointment, or asks to be reminded, even if they never say "add a task".',
+      whenNotToUse:
+        'Do not use for a durable fact or preference about the user; use remember for those.',
+    },
   },
   async (ownerUserId, input) => ({ task: await createTask(ownerUserId, input) }),
 );
@@ -106,7 +112,8 @@ registerTool(
     inputSchema: TaskParamSchema.extend({ data: UpdateTaskSchema }),
     outputSchema: z.object({ task: TaskRecordSchema.nullable() }),
     guidance: {
-      whenToUse: 'A matching task id has been returned by task_list or task_detail.',
+      whenToUse:
+        'A matching task id has been returned by task_list or task_detail. Resolve a loose reference such as "it" or "the gym thing" by listing tasks and matching titles.',
       whenNotToUse: 'Do not invent a task id.',
       dependencies: [{ tool: 'task_list', reason: 'resolve the stable task id', provides: ['id'] }],
     },
@@ -125,6 +132,10 @@ registerTool(
     description: 'Marks a task as completed or pending.',
     inputSchema: TaskParamSchema.extend({ completed: z.boolean() }),
     outputSchema: z.object({ task: TaskRecordSchema.nullable() }),
+    guidance: {
+      whenToUse:
+        'The user says a task is done or asks to reopen it. Resolve a loose reference such as "it" or "the gym thing" by listing tasks and matching titles.',
+    },
   },
   async (ownerUserId, input) => ({
     task: await completeTask(ownerUserId, input.id, input.completed),
@@ -143,7 +154,8 @@ registerTool(
     inputSchema: TaskParamSchema,
     outputSchema: z.object({ removed: z.boolean() }),
     guidance: {
-      whenToUse: 'A matching task id has been returned by task_list or task_detail.',
+      whenToUse:
+        'A matching task id has been returned by task_list or task_detail. Resolve a loose reference such as "it" or "the gym thing" by listing tasks and matching titles.',
       whenNotToUse: 'Do not invent a task id or delete before lookup and confirmation.',
       dependencies: [{ tool: 'task_list', reason: 'resolve the stable task id', provides: ['id'] }],
     },
