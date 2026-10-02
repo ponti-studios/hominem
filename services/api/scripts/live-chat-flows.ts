@@ -127,11 +127,14 @@ const wrote = (turn: Turn) =>
       ['task_create', 'task_update', 'task_delete', 'task_complete'].includes(call.name),
   );
 
-// What the assistant did and, when it said something, how it replied (job log only).
+// What the assistant did (each call with the arguments it sent) and, when it said something,
+// how it replied. Job log only.
 const summarize = (turn: Turn) => {
+  const clip = (text: string, max: number) => (text.length > max ? `${text.slice(0, max)}…` : text);
+  const calls = turn.calls.map((call) => `${call.name}(${clip(call.arguments, 200)})`).join(', ');
   const reply = turn.text.trim().replace(/\s+/g, ' ');
-  return `requested: ${turn.requested.join(', ') || 'none'}${describeFailedCalls(turn)}${
-    reply ? ` | reply: "${reply.length > 240 ? `${reply.slice(0, 240)}…` : reply}"` : ''
+  return `requested: ${calls || 'none'}${describeFailedCalls(turn)}${
+    reply ? ` | reply: "${clip(reply, 240)}"` : ''
   }`;
 };
 
