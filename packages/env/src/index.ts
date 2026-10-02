@@ -65,11 +65,7 @@ export function createClientEnv<T extends z.ZodObject<z.ZodRawShape>>(
   // Vite's dev-mode transform only inlines real values for a literal
   // `import.meta.env` access; a Reflect.get indirection is invisible to that
   // static analysis and always resolves to an empty object in the browser.
-  // Typed via a local cast instead of a global `ImportMeta.env` augmentation
-  // — that global merge conflicted with Vite's own `ImportMetaEnv`-typed
-  // declaration whenever both were visible in the same TS program (seen in
-  // this package's own isolated typecheck task in CI).
-  const source = (import.meta as ImportMeta & { env?: EnvSource }).env;
+  const source: unknown = import.meta.env;
   return parseEnv(schema, isEnvSource(source) ? source : {}, context);
 }
 

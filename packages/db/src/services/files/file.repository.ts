@@ -3,7 +3,7 @@ import type { Selectable } from 'kysely';
 
 import { NotFoundError } from '../../errors';
 import type { DbHandle } from '../../transaction';
-import type { AppFiles, JsonValue } from '../../types/database';
+import type { AppFiles, JsonObject } from '../../types/database';
 
 type FileRow = Selectable<AppFiles>;
 
@@ -17,7 +17,7 @@ export interface FileRecord {
   url: string;
   content?: string;
   textContent?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: JsonObject;
   uploadedAt: string;
 }
 
@@ -31,7 +31,7 @@ export interface UpsertFileInput {
   url: string;
   content?: string | null;
   textContent?: string | null;
-  metadata?: Record<string, unknown> | null;
+  metadata?: JsonObject | null;
 }
 
 export interface DeleteFileCommand {
@@ -143,7 +143,7 @@ export const FileRepository = {
         url: input.url,
         content: input.content ?? null,
         textContent: input.textContent ?? null,
-        metadata: (input.metadata ?? null) as JsonValue | null,
+        metadata: input.metadata ?? null,
         createdat: now,
         updatedat: now,
       })
@@ -156,7 +156,7 @@ export const FileRepository = {
           url: input.url,
           content: input.content ?? null,
           textContent: input.textContent ?? null,
-          metadata: (input.metadata ?? null) as JsonValue | null,
+          metadata: input.metadata ?? null,
           updatedat: now,
         }),
       )

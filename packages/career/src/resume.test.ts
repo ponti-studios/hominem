@@ -30,10 +30,57 @@ function makeParsed(overrides: Partial<ConvertedResumeData> = {}): ConvertedResu
   };
 }
 
+function makeProfile(overrides: Partial<CareerProfileRecord>): CareerProfileRecord {
+  return {
+    availabilityStatus: false,
+    birthDate: null,
+    copyright: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    email: null,
+    firstName: null,
+    headline: null,
+    id: 'profile-1',
+    industry: null,
+    initials: null,
+    isActive: true,
+    isPublic: false,
+    lastName: null,
+    linkedinUrl: null,
+    location: null,
+    openToRemote: false,
+    ownerUserid: 'user-1',
+    phone: null,
+    profileImageUrl: null,
+    registeredAt: null,
+    slug: null,
+    summary: null,
+    tagline: null,
+    title: null,
+    twitterHandles: null,
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    websites: null,
+    ...overrides,
+  };
+}
+
+function makeSocial(overrides: Partial<CareerSocialLinksRecord>): CareerSocialLinksRecord {
+  return {
+    createdAt: '2026-01-01T00:00:00.000Z',
+    github: null,
+    id: 'social-1',
+    linkedin: null,
+    ownerUserid: 'user-1',
+    twitter: null,
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    website: null,
+    ...overrides,
+  };
+}
+
 describe('buildResumeImportDiff', () => {
   it('emits a scalar change only for fields that actually differ', () => {
     const parsed = makeParsed();
-    const currentProfile = {
+    const currentProfile = makeProfile({
       headline: 'Staff Engineer', // unchanged
       summary: 'Old bio.', // changed
       tagline: 'Ship it', // unchanged
@@ -43,13 +90,13 @@ describe('buildResumeImportDiff', () => {
       initials: 'JD',
       availabilityStatus: true,
       openToRemote: true,
-    } as unknown as CareerProfileRecord;
-    const currentSocial = {
+    });
+    const currentSocial = makeSocial({
       github: 'janedoe', // unchanged
       linkedin: null,
       twitter: null,
       website: null,
-    } as unknown as CareerSocialLinksRecord;
+    });
 
     const diff = buildResumeImportDiff(parsed, currentProfile, currentSocial);
 
@@ -102,12 +149,12 @@ describe('buildResumeImportDiff', () => {
     const parsed = makeParsed({
       social_links: { github: 'janedoe', linkedin: 'jane-doe', twitter: null, website: null },
     });
-    const currentSocial = {
+    const currentSocial = makeSocial({
       github: 'janedoe', // unchanged
       linkedin: null, // changed
       twitter: null,
       website: null,
-    } as unknown as CareerSocialLinksRecord;
+    });
 
     const diff = buildResumeImportDiff(parsed, null, currentSocial);
     const socialChanges = diff.scalarChanges.filter((c) => c.group === 'social');

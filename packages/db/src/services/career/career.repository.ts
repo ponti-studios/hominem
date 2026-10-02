@@ -274,7 +274,7 @@ export const CareerRepository = {
   async listApplications(
     handle: DbHandle,
     ownerUserId: string,
-    opts?: { status?: string; limit?: number },
+    opts?: { status?: AppCareerApplications['status']; limit?: number },
   ): Promise<CareerApplicationWithCurrentStage[]> {
     let query = handle
       .selectFrom('app.careerApplications as application')
@@ -284,11 +284,7 @@ export const CareerRepository = {
       .where('application.ownerUserid', '=', ownerUserId);
 
     if (opts?.status) {
-      query = query.where(
-        'application.status',
-        '=',
-        opts.status as AppCareerApplications['status'],
-      );
+      query = query.where('application.status', '=', opts.status);
     }
 
     let limitedQuery = query.orderBy(sql`"applied_at" desc nulls last`);
@@ -305,7 +301,7 @@ export const CareerRepository = {
     opts: {
       page: number;
       pageSize: number;
-      status?: string | null;
+      status?: AppCareerApplications['status'] | null;
       source?: string | null;
       query?: string;
       sort?: 'asc' | 'desc';
@@ -319,7 +315,7 @@ export const CareerRepository = {
       query =
         opts.status === null
           ? query.where('application.status', 'is', null)
-          : query.where('application.status', '=', opts.status as AppCareerApplications['status']);
+          : query.where('application.status', '=', opts.status);
     }
 
     if (opts.source !== undefined) {

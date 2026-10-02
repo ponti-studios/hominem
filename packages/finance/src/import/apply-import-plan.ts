@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 
 import { runInTransaction } from '@hominem/db/transaction';
 import type { TransactionHandle } from '@hominem/db/transaction';
-import type { JsonObject } from '@hominem/db/types';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from '../contracts';
 import { ledgerCompositeKey } from './copilot-sign';
@@ -222,7 +221,7 @@ export async function applyCopilotImportBatch(
       notes: transaction.notes,
       excluded: transaction.excluded,
       recurring: transaction.recurring,
-      providerPayload: transaction.providerPayload as JsonObject,
+      providerPayload: transaction.providerPayload,
     }));
 
     const inserted = await trx

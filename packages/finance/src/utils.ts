@@ -35,11 +35,11 @@ export function getAffectedRows(result: unknown): number {
     return 0;
   }
   if ('numDeletedRows' in result) {
-    const value = (result as { numDeletedRows: bigint | number }).numDeletedRows;
+    const value = result.numDeletedRows;
     return Number(value);
   }
   if ('numUpdatedRows' in result) {
-    const value = (result as { numUpdatedRows: bigint | number }).numUpdatedRows;
+    const value = result.numUpdatedRows;
     return Number(value);
   }
   return 0;

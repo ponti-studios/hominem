@@ -1,8 +1,12 @@
 import type { ChatClientTransport } from './client-transport-fetch';
-import type { GenerationClientInputEvent, GenerationClientState } from './generation-client';
+import type {
+  GenerationClientCheckpoint,
+  GenerationClientInputEvent,
+  GenerationClientState,
+} from './generation-client';
 import { createGenerationClientState, reduceGenerationClientEvent } from './generation-client';
 import type { GenerationEvent } from './generation-machine';
-import { createGenerationEventDeduplicator } from './generation-schemas';
+import { createGenerationEventDeduplicator, generationRunStatusSchema } from './generation-schemas';
 import { GENERATION_TIMING } from './generation-timing';
 import { createSseDecoder, finishSse, pushSseChunk } from './sse';
 
@@ -15,6 +19,7 @@ export {
 export type {
   GenerationClientErrorEvent,
   GenerationClientInputEvent,
+  GenerationClientCheckpoint,
   GenerationClientState,
   GenerationClientToolStep,
 } from './generation-client';
@@ -22,7 +27,7 @@ export type {
 export type ChatCheckpointStore = {
   get: (
     generationId: string,
-  ) => Promise<GenerationClientState | null> | GenerationClientState | null;
+  ) => Promise<GenerationClientCheckpoint | null> | GenerationClientCheckpoint | null;
   set: (state: GenerationClientState) => Promise<void> | void;
   remove?: (generationId: string) => Promise<void> | void;
 };
@@ -186,14 +191,17 @@ export class ChatClient {
     });
   }
 
-  async getGeneration(input: { chatId: string; generationId: string }): Promise<unknown> {
+  async getGeneration(input: {
+    chatId: string;
+    generationId: string;
+  }): Promise<{ status?: string }> {
     const headers = new Headers(await this.options.headers?.());
     const response = await this.options.transport.request({
       url: `${this.options.baseUrl}/api/chats/${input.chatId}/generations/${input.generationId}`,
       init: { method: 'GET', headers },
     });
     if (!response.ok) throw chatRequestError(response.status);
-    return response.json();
+    return generationRunStatusSchema.parse(await response.json());
   }
 
   private createGenerationWith(input: {
@@ -363,7 +371,7 @@ export class ChatClient {
         const id = generationId ?? current.generationId;
         current = createGenerationClientState(id);
         const requestBody = includeGenerationIdInBody
-          ? { ...(body as object), generationId: id }
+          ? { ...(typeof body === 'object' ? body : {}), generationId: id }
           : body;
         return consume(path, requestBody, replayPath);
       })();
