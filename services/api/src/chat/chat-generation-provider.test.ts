@@ -357,7 +357,7 @@ describe('OpenRouter generation provider', () => {
     it('logs what came back when there is neither text nor a tool call', async () => {
       await run(
         [
-          chunk([{ index: 0, delta: { reasoning: 'thinking it over' } }]),
+          chunk([{ index: 0, finishReason: null, delta: { reasoning: 'thinking it over' } }]),
           chunk([{ index: 0, finishReason: 'length', delta: {} }]),
         ],
         { requiresToolCall: true },
