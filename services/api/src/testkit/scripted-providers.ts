@@ -379,7 +379,7 @@ const STATUS_TEXT: Record<number, string> = {
 };
 
 function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
-  return typeof value === 'object' && value !== null && Symbol.asyncIterator in value;
+  return value != null && typeof value === 'object' && Symbol.asyncIterator in value;
 }
 
 async function readDispatchBody(body: unknown): Promise<string> {
