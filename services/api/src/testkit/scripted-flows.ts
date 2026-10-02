@@ -80,7 +80,15 @@ export function scriptedFlowStep(context: ScriptedFlowContext): ScriptedFlowStep
           artifactType: 'task',
           dueAt: nextOccurrence(renew[1] ?? '', Number(renew[2])),
         })
-      : { text: 'got it, i added a task to renew your passport.' };
+      : { text: 'got it, i added a task to renew your passport. anything else?' };
+  }
+
+  // Answering that trailing "anything else?" with the same request adds the task again, as a
+  // live model does, so a harness that wrongly answers it ends up with two tasks.
+  if (/yeah just add it to my list/i.test(text)) {
+    return step === 0
+      ? call('task_create', { title: 'Renew passport', artifactType: 'task' })
+      : { text: 'done, added.' };
   }
 
   if (/push it back a week/i.test(text)) {

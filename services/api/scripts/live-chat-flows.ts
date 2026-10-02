@@ -99,7 +99,9 @@ class Conversation {
     if (options.newChat) this.chatId = null;
     let turn = await runTurn(message, this.chatId);
     this.chatId = turn.chatId ?? this.chatId;
-    if (options.ifAsked && !turn.pending && turn.text.trim().endsWith('?')) {
+    // A question after the assistant already did the thing ("anything else?") is not a request
+    // for more detail, so it gets no answer; answering it would just do the thing twice.
+    if (options.ifAsked && !turn.pending && !changedData(turn) && turn.text.trim().endsWith('?')) {
       this.asked++;
       turn = mergeTurns(turn, await runTurn(options.ifAsked, this.chatId));
     }
@@ -107,6 +109,13 @@ class Conversation {
     return turn;
   }
 }
+
+const isRead = (tool: string) =>
+  /^(list_|search_)|^semantic_search$|_(list|detail|get)$/.test(tool);
+
+// Whether any tool that changes data completed in this turn.
+const changedData = (turn: Turn) =>
+  turn.completed.some((call) => !call.error && !isRead(call.name));
 
 const hasCompleted = (turn: Turn, tool: string) =>
   turn.completed.some((call) => call.name === tool && !call.error);
@@ -118,8 +127,13 @@ const wrote = (turn: Turn) =>
       ['task_create', 'task_update', 'task_delete', 'task_complete'].includes(call.name),
   );
 
-const summarize = (turn: Turn) =>
-  `requested: ${turn.requested.join(', ') || 'none'}${describeFailedCalls(turn)}`;
+// What the assistant did and, when it said something, how it replied (job log only).
+const summarize = (turn: Turn) => {
+  const reply = turn.text.trim().replace(/\s+/g, ' ');
+  return `requested: ${turn.requested.join(', ') || 'none'}${describeFailedCalls(turn)}${
+    reply ? ` | reply: "${reply.length > 240 ? `${reply.slice(0, 240)}…` : reply}"` : ''
+  }`;
+};
 
 // ── flows ──────────────────────────────────────────────────────────────────
 
