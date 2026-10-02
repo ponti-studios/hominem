@@ -92,9 +92,12 @@ export function validateChatToolPlan(
     // Planned arguments may intentionally omit values produced by an earlier
     // tool. Runtime callTool remains authoritative for the complete argument
     // object; the planner validates every value it does know about here.
+    // `.partial()` throws on an object schema that carries a refinement (task_create among
+    // them), which turned every plan using such a tool into a thrown error and a silent
+    // fallback. Rebuilding from the shape keeps the field types and drops only the refinement.
     const result =
       definition.inputSchema instanceof z.ZodObject
-        ? definition.inputSchema.partial().safeParse(step.arguments)
+        ? z.object(definition.inputSchema.shape).partial().safeParse(step.arguments)
         : definition.inputSchema.safeParse(step.arguments);
     if (!result.success) {
       errors.push(

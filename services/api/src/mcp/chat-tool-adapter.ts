@@ -336,6 +336,9 @@ export async function planChatTools(input: {
       model: input.model,
       failureCategory: 'tool_planning',
       fallbackUsed: true,
+      // Which of "the request failed", "the JSON was cut off or invalid" and "the plan broke
+      // a rule" it was; the fallback hides all three.
+      reason: error instanceof Error ? `${error.name}: ${error.message}`.slice(0, 400) : 'unknown',
     });
     exactPlan = {
       requiresLookup: true,

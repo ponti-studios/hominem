@@ -184,4 +184,37 @@ describe('validated chat tool plans', () => {
       expect(result.errors).toContain('update depends on lookup, which is not scheduled earlier');
     }
   });
+
+  // Regression: `.partial()` throws on an object schema with a refinement (task_create), so any
+  // plan using such a tool threw instead of validating and the router silently fell back.
+  it('validates the arguments of a tool whose schema carries a refinement', () => {
+    const refined = defineCapability({
+      name: 'create',
+      title: 'Create',
+      description: 'Creates a record.',
+      inputSchema: z
+        .object({ title: z.string().min(1), kind: z.enum(['a', 'b']) })
+        .refine((value) => value.kind !== 'b', { message: 'no b', path: ['kind'] }),
+      outputSchema: z.object({ id: z.string() }),
+      readOnly: false,
+      standaloneWrite: true,
+      scopes: ['people:write'],
+      resultCap: 1,
+      destructive: false,
+      idempotent: false,
+    });
+    const plan = (args: Record<string, unknown>) =>
+      validateChatToolPlan(
+        {
+          requiresLookup: true,
+          steps: [{ tool: 'create', purpose: 'Add it', dependsOn: [], arguments: args }],
+        },
+        [refined],
+      );
+
+    expect(plan({ title: 'Renew passport' }).ok).toBe(true);
+    const wrongType = plan({ title: 5 });
+    expect(wrongType.ok).toBe(false);
+    if (!wrongType.ok) expect(wrongType.errors.join()).toContain('invalid planned arguments');
+  });
 });
