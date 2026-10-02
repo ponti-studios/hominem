@@ -37,6 +37,7 @@ function toMemorySummary(note: {
 
 registerTool(
   {
+    standaloneWrite: true,
     name: 'remember',
     title: 'Remember something about the user',
     description:

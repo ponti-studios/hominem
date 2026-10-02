@@ -124,9 +124,8 @@ export function scriptedFlowStep(context: ScriptedFlowContext): ScriptedFlowStep
   }
 
   if (/lactose intollerant/i.test(text)) {
+    // Writes first, as a live model does: remember and note_create are standalone writes.
     const sequence: ScriptedFlowStep[] = [
-      // Any completed read unlocks the writes that follow.
-      call('list_memories', {}),
       call('remember', { content: 'The user is lactose intolerant.' }),
       call('note_create', {
         title: 'google home setup',

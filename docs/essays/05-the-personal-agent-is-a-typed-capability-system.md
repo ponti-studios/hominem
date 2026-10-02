@@ -76,11 +76,11 @@ Stable identifiers, normalized dates, bounded results, and explicit truncation l
 
 A write should usually follow a read because the system needs a target and a duplicate check.
 
-The exception is a write that needs no target, such as creating a standalone task: its definition sets `standaloneWrite`, and it may run first. Making a model read before every create made it stall on the simplest requests.
+The exception is a write that needs no target: creating a standalone task, saving a note, or remembering a fact. Each definition sets `standaloneWrite`, and it may run first (`remember` already returns an identical existing memory instead of saving a duplicate, so it needs no prior search). Making a model read before every create made it stall on the simplest requests.
 
 ```ts
 const writePolicy = {
-  remember: { requiresPrior: ['search_memories'], duplicateSafe: true },
+  task_update: { requiresPrior: ['task_list'] },
   invite_member: { requiresPrior: ['list_collections', 'people_lookup'] },
   career_application_delete: { requiresPrior: ['career_applications'] },
 };

@@ -99,7 +99,7 @@ if (definition && !definition.readOnly && !definition.standaloneWrite) {
 }
 ```
 
-A write that depends on no existing record, such as creating a standalone task, is declared `standaloneWrite` and may run without a preceding read. The exemption is per tool and opt-in; every other write still needs one.
+A write that depends on no existing record, such as creating a standalone task, saving a note or remembering a fact, is declared `standaloneWrite` and may run without a preceding read. The exemption is per tool and opt-in; every other write still needs one.
 
 Planning makes intent inspectable; runtime guards make execution safe. Record both the proposed plan and the actual trace so a failure can be classified as wrong capability, wrong tool, lost identifier, broken ordering, or a safety violation.
 
