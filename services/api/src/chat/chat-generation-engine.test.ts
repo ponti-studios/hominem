@@ -320,6 +320,74 @@ describe('chat generation service', () => {
     );
   });
 
+  // Regression: offered at once, the live model called task_delete with a made-up id before
+  // listing, was refused, and gave up. A tool whose lookup has not run is no longer offered.
+  it('offers a dependent tool only after the lookup it depends on has completed', async () => {
+    const toolCall = (id: string, name: string): StreamChunk => ({
+      created: 0,
+      id: `chunk-${id}`,
+      model: 'model-1',
+      object: 'chat.completion.chunk',
+      choices: [
+        {
+          index: 0,
+          finishReason: null,
+          delta: { toolCalls: [{ index: 0, id, function: { name, arguments: '{}' } }] },
+        },
+      ],
+    });
+    mockedStream.mockReturnValueOnce(chunks([toolCall('call-1', 'lookup')])).mockReturnValueOnce(
+      chunks([
+        {
+          created: 0,
+          id: 'chunk-text',
+          model: 'model-1',
+          object: 'chat.completion.chunk',
+          choices: [{ index: 0, finishReason: null, delta: { content: 'done' } }],
+        },
+      ]),
+    );
+    const definitions: Record<string, unknown> = {
+      lookup: { name: 'lookup', readOnly: true },
+      detail: {
+        name: 'detail',
+        readOnly: true,
+        guidance: {
+          whenToUse: 'x',
+          whenNotToUse: 'y',
+          dependencies: [{ tool: 'lookup', reason: 'resolve id', provides: ['id'] }],
+        },
+      },
+    };
+    const offered = (call: number) =>
+      (mockedStream.mock.calls[call]?.[0].tools ?? []).map((tool) =>
+        'function' in tool ? tool.function.name : tool.type,
+      );
+
+    await executeGenerationTurn({
+      userId: 'user-1',
+      generationId: 'generation-1',
+      chatId: 'chat-1',
+      model: 'model-1',
+      messages: [{ role: 'user', content: 'question' }],
+      tools: [
+        { type: 'function', function: { name: 'lookup', description: 'l', parameters: {} } },
+        { type: 'function', function: { name: 'detail', description: 'd', parameters: {} } },
+      ],
+      toolPlan: [
+        { tool: 'lookup', purpose: 'Resolve', dependsOn: [], arguments: {} },
+        { tool: 'detail', purpose: 'Load', dependsOn: ['lookup'], arguments: {} },
+      ],
+      toolRuntime: {
+        callTool: vi.fn().mockResolvedValue({ content: [{ type: 'text', text: '{}' }] }),
+        getToolDefinition: vi.fn((name: string) => definitions[name]) as never,
+      },
+    });
+
+    expect(offered(0)).toEqual(['lookup']);
+    expect(offered(1)).toEqual(['lookup', 'detail']);
+  });
+
   it('terminates at the tool-call cap when the model keeps re-invoking the same tool', async () => {
     const toolCallChunk: StreamChunk = {
       created: 0,

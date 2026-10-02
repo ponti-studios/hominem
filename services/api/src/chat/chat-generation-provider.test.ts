@@ -396,6 +396,29 @@ describe('OpenRouter generation provider', () => {
       expect(inputs.some((input) => input.type === 'provider-turn-completed')).toBe(false);
     });
 
+    it('asks again with "auto" after an empty "required" turn', async () => {
+      mockedStream
+        .mockReturnValueOnce(chunks([chunk([{ index: 0, finishReason: 'length', delta: {} }])]))
+        .mockReturnValueOnce(
+          chunks([chunk([{ index: 0, finishReason: 'stop', delta: { content: 'ok' } }])]),
+        );
+      const provider = new OpenRouterChatModel({
+        model: 'test-model',
+        messages: [],
+        tools: [
+          { type: 'function', function: { name: 'task_list', description: 'x', parameters: {} } },
+        ],
+        requiresToolCall: true,
+      });
+      const state = createGenerationState('generation-7');
+
+      await collect(provider.open({ turnId: 'turn-1', iteration: 0, state }));
+      await collect(provider.retry({ attempt: 1, state }));
+
+      expect(mockedStream.mock.calls[0]?.[0].toolChoice).toBe('required');
+      expect(mockedStream.mock.calls[1]?.[0].toolChoice).toBe('auto');
+    });
+
     it('summarizes every turn: what was offered, what was called, and how much text came with it', async () => {
       await run([
         chunk([
@@ -447,6 +470,35 @@ describe('OpenRouter generation provider', () => {
 
       expect(mockedLogger.warn).not.toHaveBeenCalledWith('provider_turn_empty', expect.anything());
     });
+  });
+
+  it('does not offer a tool that isToolAvailable withholds, and re-checks every turn', async () => {
+    let ready = false;
+    const provider = new OpenRouterChatModel({
+      model: 'test-model',
+      messages: [],
+      tools: [
+        { type: 'function', function: { name: 'task_list', description: 'x', parameters: {} } },
+        { type: 'function', function: { name: 'task_delete', description: 'x', parameters: {} } },
+      ],
+      isToolAvailable: (name) => name !== 'task_delete' || ready,
+    });
+    const offered = () =>
+      (mockedStream.mock.calls.at(-1)?.[0].tools ?? []).map((tool) =>
+        'function' in tool ? tool.function.name : tool.type,
+      );
+    const state = createGenerationState('generation-8');
+    const text = () =>
+      chunks([chunk([{ index: 0, finishReason: 'stop', delta: { content: 'ok' } }])]);
+
+    mockedStream.mockReturnValueOnce(text());
+    await collect(provider.open({ turnId: 't1', iteration: 0, state }));
+    expect(offered()).toEqual(['task_list']);
+
+    ready = true;
+    mockedStream.mockReturnValueOnce(text());
+    await collect(provider.open({ turnId: 't2', iteration: 1, state }));
+    expect(offered()).toEqual(['task_list', 'task_delete']);
   });
 
   describe('a tool the model keeps calling', () => {

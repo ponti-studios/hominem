@@ -105,6 +105,9 @@ export type OpenRouterChatModelOptions = {
   requiresToolCall?: boolean;
   requiresWebSearch?: boolean;
   requiresConfirmation?: (toolName: string) => boolean;
+  // Withholds a tool from a turn while this says no (checked at the start of every turn), so the
+  // model cannot call a write before the lookup it depends on. Without it every tool is offered.
+  isToolAvailable?: (toolName: string) => boolean;
   // Only used to tie provider log lines to the generation they belong to.
   generationId?: string;
   maxAttempts?: number;
@@ -173,6 +176,8 @@ function toolName(tool: ChatFunctionTool): string {
 export class OpenRouterChatModel implements ChatModel {
   private readonly messages: ChatMessages[];
   private readonly callCounts = new Map<string, number>();
+  // Set once a turn comes back empty: the same request is not sent again as "required".
+  private requiredToolChoiceFailed = false;
   private attempt = 0;
   private firstTurn = true;
 
@@ -191,11 +196,15 @@ export class OpenRouterChatModel implements ChatModel {
     // the mechanism the HTTP client actually guarantees acts on.
     const controller = new AbortController();
     const tools = this.options.tools.filter(
-      (tool) => (this.callCounts.get(toolName(tool)) ?? 0) < MAX_CALLS_PER_TOOL,
+      (tool) =>
+        (this.callCounts.get(toolName(tool)) ?? 0) < MAX_CALLS_PER_TOOL &&
+        (this.options.isToolAvailable?.(toolName(tool)) ?? true),
     );
     const toolChoice =
       tools.length > 0
-        ? this.firstTurn && (this.options.requiresToolCall || this.options.requiresWebSearch)
+        ? this.firstTurn &&
+          !this.requiredToolChoiceFailed &&
+          (this.options.requiresToolCall || this.options.requiresWebSearch)
           ? 'required'
           : 'auto'
         : undefined;
@@ -324,9 +333,11 @@ export class OpenRouterChatModel implements ChatModel {
           reasoningChars,
           rawToolCallCount: calls.size,
         });
-        // Nothing was produced or run, so asking again is safe. Live, this is intermittent
-        // (finish reason "length" on the first chunk with many tools offered) and a second
-        // request normally answers; the run only fails once the attempts are used up.
+        // Nothing was produced or run, so asking again is safe. Repeating the same request
+        // does not help: live, a request with "required" tool choice and 21-22 tools came back
+        // empty on all three attempts, and no empty turn was ever seen with "auto". So the
+        // retries let the model choose.
+        this.requiredToolChoiceFailed = true;
         yield {
           type: 'provider-turn-failed',
           message: 'No reply was generated',

@@ -195,6 +195,11 @@ export async function executeGenerationTurn(
     generationId: input.generationId,
     requiresConfirmation: (name: string) =>
       runtime?.getToolDefinition(name)?.requiresConfirmation ?? false,
+    // A tool that is not yet allowed to run (its lookup has not happened) is not offered at
+    // all. Offered, the live model called task_delete with a made-up id first, was refused,
+    // and gave up. A tool with no definition (web search) is always offered.
+    isToolAvailable: (name: string) =>
+      !runtime.getToolDefinition(name) || validatePlannedToolCall(name) === null,
     onUsage: (next: AIUsageMetrics | null) => {
       usage = addUsage(usage, next);
     },
