@@ -156,7 +156,7 @@ async function executeGeneration(
       requiresWebSearch: input.requiresWebSearch,
       initialState: input.initialState,
       initialInput: input.initialInput,
-      openRouterClient: dependencies.openRouterClient,
+      streamChat: dependencies.streamChat,
       toolRuntime: dependencies.toolRuntime,
       maxTokens: input.maxTokens,
       effectStore: createEffectStore(input.userId),

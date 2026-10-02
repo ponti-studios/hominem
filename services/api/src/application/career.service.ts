@@ -27,6 +27,7 @@ import {
   careerApplicationsSchema,
   careerEngagementUpdateDataSchema,
   careerEducationSchema,
+  careerApplicationStatusSchema,
   careerEducationCreateSchema,
   careerMcpProfileSchema,
   careerProfileSchema,
@@ -114,7 +115,7 @@ export async function createCareerEngagement(
 
 export async function listCareerApplications(
   ownerUserId: string,
-  opts?: { status?: string; limit?: number },
+  opts?: { status?: z.output<typeof careerApplicationStatusSchema>; limit?: number },
 ) {
   const applications = await CareerRepository.listApplications(db, ownerUserId, opts);
 

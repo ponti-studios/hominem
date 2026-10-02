@@ -20,13 +20,28 @@ declare module 'hono' {
   }
 }
 
-function toAuthUser(
-  session: Awaited<ReturnType<typeof betterAuthServer.api.getSession>>,
-): AuthUser {
-  if (!session || !session.user) {
-    throw new Error('Invalid session');
-  }
+// The slice of Better Auth's session lookup this middleware reads, so a test can supply a
+// plain double instead of the full server.
+type SessionLookup = {
+  api: {
+    getSession: (input: { headers: Headers }) => Promise<{
+      user: {
+        id: string;
+        email: string;
+        emailVerified: boolean;
+        name: string;
+        image?: string | null;
+        createdAt: Date | string;
+        updatedAt: Date | string;
+      };
+      session: { id: string };
+    } | null>;
+  };
+};
 
+function toAuthUser(
+  session: NonNullable<Awaited<ReturnType<SessionLookup['api']['getSession']>>>,
+): AuthUser {
   const user = session.user;
   return {
     id: user.id,
@@ -52,9 +67,7 @@ function setAuthContext(c: Parameters<MiddlewareHandler>[0], input: AuthContext)
 
 // Figures out who's calling, once, at the API boundary. Route middleware can
 // authorize based on this, but shouldn't set up a second identity of its own.
-export function createAuthMiddleware(
-  auth: { api: Pick<typeof betterAuthServer.api, 'getSession'> } = betterAuthServer,
-): MiddlewareHandler {
+export function createAuthMiddleware(auth: SessionLookup = betterAuthServer): MiddlewareHandler {
   return async (c, next) => {
     if (c.req.path.startsWith('/api/auth')) {
       return await next();

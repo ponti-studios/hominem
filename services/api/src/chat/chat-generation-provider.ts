@@ -4,7 +4,6 @@ import {
   type ChatMessages,
   type ChatRequest,
   type ChatStreamChunk,
-  type OpenRouterClientOptions,
   getChatCompletionUsage,
   OpenRouterRequestError,
   streamChatCompletion,
@@ -111,9 +110,9 @@ export type OpenRouterChatModelOptions = {
   // model cannot call a write before the lookup it depends on. Without it every tool is offered.
   isToolAvailable?: (toolName: string) => boolean;
   maxAttempts?: number;
-  // Test-only scripted OpenRouter client (canned SSE chunks). Production
-  // never sets this — OpenRouter is the only supported provider.
-  client?: OpenRouterClientOptions['client'];
+  // Test-only scripted stream (canned chunks). Production never sets this —
+  // OpenRouter is the only supported provider.
+  streamChat?: typeof streamChatCompletion;
   // Usage is provider metadata and may be absent even when the response is valid.
   onUsage?: (usage: AIUsageMetrics | null) => void;
 };
@@ -211,7 +210,7 @@ export class OpenRouterChatModel implements ChatModel {
     let usageSeen: string | null = null;
     const finishReasons: string[] = [];
     try {
-      const completion = streamChatCompletion(
+      const completion = (this.options.streamChat ?? streamChatCompletion)(
         {
           model: this.options.model,
           messages: this.messages,
@@ -221,10 +220,7 @@ export class OpenRouterChatModel implements ChatModel {
           maxTokens: this.options.maxTokens,
           ...(this.options.reasoning ? { reasoning: this.options.reasoning } : {}),
         },
-        {
-          signal: controller.signal,
-          ...(this.options.client ? { client: this.options.client } : {}),
-        },
+        { signal: controller.signal },
       );
 
       const iterator = completion[Symbol.asyncIterator]();

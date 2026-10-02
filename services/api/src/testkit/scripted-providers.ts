@@ -1,5 +1,6 @@
 import { resendMock } from '@hominem/services/email';
 import { Dispatcher, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
+import { z } from 'zod';
 
 import { scriptedFlowStep } from './scripted-flows';
 
@@ -26,24 +27,32 @@ import { scriptedFlowStep } from './scripted-flows';
 // OpenRouter: deterministic chat-completion responses
 // ============================================================================
 
-type OpenRouterToolCall = { id?: string; function?: { name?: string } };
+const openRouterToolCallSchema = z.object({
+  id: z.string().optional(),
+  function: z.object({ name: z.string().optional() }).optional(),
+});
 
-type OpenRouterMessage = {
-  role?: string;
-  content?: unknown;
+const openRouterMessageSchema = z.object({
+  role: z.string().optional(),
+  content: z.unknown().optional(),
   // The wire format is snake_case; camelCase is accepted in case a client sends it.
-  tool_calls?: OpenRouterToolCall[];
-  toolCalls?: OpenRouterToolCall[];
-  tool_call_id?: string;
-  toolCallId?: string;
-};
+  tool_calls: z.array(openRouterToolCallSchema).optional(),
+  toolCalls: z.array(openRouterToolCallSchema).optional(),
+  tool_call_id: z.string().optional(),
+  toolCallId: z.string().optional(),
+});
 
-type OpenRouterRequest = {
-  messages?: OpenRouterMessage[];
-  response_format?: unknown;
-  stream?: boolean;
-  tools?: Array<{ function?: { name?: string } }>;
-};
+const openRouterRequestSchema = z.object({
+  messages: z.array(openRouterMessageSchema).optional(),
+  response_format: z.unknown().optional(),
+  stream: z.boolean().optional(),
+  tools: z
+    .array(z.object({ function: z.object({ name: z.string().optional() }).optional() }))
+    .optional(),
+});
+
+type OpenRouterMessage = z.infer<typeof openRouterMessageSchema>;
+type OpenRouterRequest = z.infer<typeof openRouterRequestSchema>;
 
 type ScriptedContext = {
   request: OpenRouterRequest;
@@ -286,7 +295,7 @@ function openRouterResponseBody(request: OpenRouterRequest) {
 }
 
 async function openRouterResponder(rawBody: string): Promise<ScriptedResponse> {
-  const body = (rawBody ? JSON.parse(rawBody) : {}) as OpenRouterRequest;
+  const body = openRouterRequestSchema.parse(rawBody ? JSON.parse(rawBody) : {});
   const userText = (body.messages ?? [])
     .filter((message) => message.role === 'user')
     .map((message) => (typeof message.content === 'string' ? message.content : ''))
@@ -369,15 +378,19 @@ const STATUS_TEXT: Record<number, string> = {
   400: 'Bad Request',
 };
 
+function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
+  return typeof value === 'object' && value !== null && Symbol.asyncIterator in value;
+}
+
 async function readDispatchBody(body: unknown): Promise<string> {
   if (body == null) return '';
   if (typeof body === 'string') return body;
   if (Buffer.isBuffer(body)) return body.toString('utf8');
   if (body instanceof Uint8Array) return Buffer.from(body).toString('utf8');
-  if (typeof (body as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+  if (isAsyncIterable(body)) {
     const chunks: Buffer[] = [];
-    for await (const chunk of body as AsyncIterable<Buffer | Uint8Array | string>) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array | string));
+    for await (const chunk of body) {
+      if (typeof chunk === 'string' || chunk instanceof Uint8Array) chunks.push(Buffer.from(chunk));
     }
     return Buffer.concat(chunks).toString('utf8');
   }

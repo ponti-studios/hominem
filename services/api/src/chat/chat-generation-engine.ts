@@ -1,4 +1,4 @@
-import { type AIUsageMetrics } from '@hominem/ai';
+import { isAIUsageMetrics, type AIUsageMetrics } from '@hominem/ai';
 import {
   chatMessageJsonObjectSchema,
   chatMessageSnapshotSchema,
@@ -60,11 +60,8 @@ export const EXECUTE_OWNED_EVENT_TYPES = [
  * The machine may emit a copy during normal lifecycle transitions, but execute is
  * responsible for persisting the canonical boundary event.
  */
-export function isExecuteOwnedEvent(event: GenerationHistoryEventPayload): boolean {
-  // oxlint-disable-next-line typescript/consistent-type-assertions
-  const type = event.type as (typeof EXECUTE_OWNED_EVENT_TYPES)[number];
-
-  if (EXECUTE_OWNED_EVENT_TYPES.includes(type)) return true;
+export function isExecuteOwnedEvent(event: { type: string; phase?: string }): boolean {
+  if (EXECUTE_OWNED_EVENT_TYPES.some((type) => type === event.type)) return true;
 
   return (
     event.type === 'generation.phase_changed' &&
@@ -204,7 +201,7 @@ export async function executeGenerationTurn(
   };
   // OpenRouter is the only supported provider: the model is always built
   // here, never via a factory. Test-only scripting arrives one layer down
-  // as input.openRouterClient (canned SSE chunks through the real model
+  // as input.streamChat (canned chunks through the real model
   // class), so the provider closure below only ever returns this instance —
   // the runner forwards onUsage untouched and usage is accumulated exactly
   // once, here. (The runner used to wrap onUsage with its own generic usage
@@ -213,7 +210,7 @@ export async function executeGenerationTurn(
   // the context-window placeholder task.)
   const model = new OpenRouterChatModel({
     ...modelOptions,
-    ...(input.openRouterClient ? { client: input.openRouterClient } : {}),
+    ...(input.streamChat ? { streamChat: input.streamChat } : {}),
   });
 
   // The model is prebuilt with the engine's own onUsage accumulator above,
@@ -382,7 +379,9 @@ export async function executeGenerationTurn(
         reasoning: input.reasoning,
         requiresToolCall: input.initialState ? false : input.requiresToolCall,
         requiresWebSearch: input.initialState ? false : input.requiresWebSearch,
-        onUsage: (next) => modelOptions.onUsage?.(next as AIUsageMetrics | null),
+        onUsage: (next) => {
+          if (next === null || isAIUsageMetrics(next)) modelOptions.onUsage?.(next);
+        },
       },
       startContext: {
         chatId: input.chatId,

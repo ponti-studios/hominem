@@ -29,10 +29,7 @@ async function processFileUploadJob(data: FileProcessingJobData) {
     return;
   }
 
-  const arrayBuffer = storedBuffer.buffer.slice(
-    storedBuffer.byteOffset,
-    storedBuffer.byteOffset + storedBuffer.byteLength,
-  ) as ArrayBuffer;
+  const arrayBuffer = Uint8Array.from(storedBuffer).buffer;
 
   const processed = await FileProcessorService.processFile(
     arrayBuffer,

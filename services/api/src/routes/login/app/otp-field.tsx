@@ -1,6 +1,8 @@
 // @jsxImportSource react
 import { useCallback, useRef, type ClipboardEvent, type KeyboardEvent } from 'react';
 
+import type { CssVariables } from './css-variables';
+
 import styles from './otp-field.module.css';
 
 type OtpFieldProps = {
@@ -72,28 +74,31 @@ export function OtpField({ onDigitsChange }: OtpFieldProps) {
 
   return (
     <div aria-label="One-time verification code" className={styles['otp-field']} role="group">
-      {Array.from({ length: LENGTH }, (_, index) => (
-        <span className={styles['otp-tile']} key={index} style={{ ['--i' as string]: index }}>
-          <input
-            aria-label={`Character ${index + 1} of 6`}
-            autoComplete={index === 0 ? 'one-time-code' : 'off'}
-            autoFocus={index === 0}
-            className={styles['otp-input']}
-            data-otp-digit
-            inputMode="numeric"
-            maxLength={1}
-            onKeyDown={(event) => handleKeyDown(index, event)}
-            onInput={(event) => handleInput(index, event.currentTarget.value)}
-            onPaste={(event) => handlePaste(index, event)}
-            pattern="[0-9]"
-            ref={(node) => {
-              refs.current[index] = node;
-            }}
-            required
-            type="text"
-          />
-        </span>
-      ))}
+      {Array.from({ length: LENGTH }, (_, index) => {
+        const tileStyle: CssVariables = { '--i': index };
+        return (
+          <span className={styles['otp-tile']} key={index} style={tileStyle}>
+            <input
+              aria-label={`Character ${index + 1} of 6`}
+              autoComplete={index === 0 ? 'one-time-code' : 'off'}
+              autoFocus={index === 0}
+              className={styles['otp-input']}
+              data-otp-digit
+              inputMode="numeric"
+              maxLength={1}
+              onKeyDown={(event) => handleKeyDown(index, event)}
+              onInput={(event) => handleInput(index, event.currentTarget.value)}
+              onPaste={(event) => handlePaste(index, event)}
+              pattern="[0-9]"
+              ref={(node) => {
+                refs.current[index] = node;
+              }}
+              required
+              type="text"
+            />
+          </span>
+        );
+      })}
     </div>
   );
 }

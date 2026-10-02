@@ -9,15 +9,19 @@ import {
   persistExtractedTasks,
   updateTask,
 } from '../../application/task.service';
+import { removedResultSchema } from '../../schemas/common.schema';
 import {
   CreateTaskBatchSchema,
   CreateTaskSchema,
-  TaskListQuerySchema,
-  TaskParamSchema,
-  TaskRecordSchema,
-  UpdateTaskSchema,
+  taskBatchCreateOutputSchema,
+  taskCompleteOutputSchema,
+  taskCreateOutputSchema,
   taskDetailResultSchema,
-  taskListResultSchema,
+  TaskListQuerySchema,
+  taskListToolOutputSchema,
+  TaskParamSchema,
+  taskUpdateOutputSchema,
+  UpdateTaskSchema,
 } from '../../schemas/tasks.schema';
 import { registerTool } from '../tool-registry';
 
@@ -59,7 +63,7 @@ registerTool(
     // The model sends filters nobody asked for, which hide tasks without a due date; offer it
     // only the ones it can use correctly.
     chatInputSchema: TaskListQuerySchema.pick({ status: true, query: true }),
-    outputSchema: taskListResultSchema.extend({ hint: z.string().optional() }),
+    outputSchema: taskListToolOutputSchema,
     readOnly: true,
     scopes: ['task:read'],
     resultCap: 100,
@@ -110,7 +114,7 @@ registerTool(
     description:
       'Creates a standalone task, optionally assigning participants or nesting it under a parent task list. Use task_batch_create to create a task list with subtasks.',
     inputSchema: taskCreateInputSchema,
-    outputSchema: z.object({ task: TaskRecordSchema }),
+    outputSchema: taskCreateOutputSchema,
     guidance: {
       whenToUse:
         'The user says they need or want to do something, mentions a deadline or appointment, or asks to be reminded, even if they never say "add a task".',
@@ -130,7 +134,7 @@ registerTool(
     description:
       'Updates fields on a task (title, description, priority, due date, scheduling, location), optionally replacing its participants.',
     inputSchema: TaskParamSchema.extend({ data: UpdateTaskSchema }),
-    outputSchema: z.object({ task: TaskRecordSchema.nullable() }),
+    outputSchema: taskUpdateOutputSchema,
     guidance: {
       whenToUse:
         'A matching task id has been returned by task_list. Resolve a loose reference such as "it" or "the gym thing" by listing tasks and matching titles.',
@@ -151,7 +155,7 @@ registerTool(
     title: 'Complete or reopen a task',
     description: 'Marks a task as completed or pending.',
     inputSchema: TaskParamSchema.extend({ completed: z.boolean() }),
-    outputSchema: z.object({ task: TaskRecordSchema.nullable() }),
+    outputSchema: taskCompleteOutputSchema,
     guidance: {
       whenToUse:
         'The user says a task is done or asks to reopen it. Resolve a loose reference such as "it" or "the gym thing" by listing tasks and matching titles.',
@@ -175,7 +179,7 @@ registerTool(
     title: 'Delete a task',
     description: 'Deletes a task. If it is a task list, its child tasks are deleted too.',
     inputSchema: TaskParamSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     guidance: {
       whenToUse:
         'The user asked to delete or get rid of a task and a matching task id has been returned by task_list. Resolve a loose reference such as "it" or "the gym thing" by listing tasks and matching titles. Never call it before task_list has returned the task, and never with a guessed id. Once exactly one task matches, call this tool with that task\'s id: the app shows the user an approval prompt for it, so do not ask "do you want me to delete it?" in text first.',
@@ -201,10 +205,7 @@ registerTool(
     description:
       'Creates one or more task-list groups (each with subtasks) and/or standalone tasks in a single call.',
     inputSchema: CreateTaskBatchSchema,
-    outputSchema: z.object({
-      groups: z.array(z.object({ parent: TaskRecordSchema, tasks: z.array(TaskRecordSchema) })),
-      tasks: z.array(TaskRecordSchema),
-    }),
+    outputSchema: taskBatchCreateOutputSchema,
     resultCap: 20,
   },
   async (ownerUserId, input) => persistExtractedTasks(ownerUserId, input),

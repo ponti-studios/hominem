@@ -90,16 +90,16 @@ export function defineCapability<const T extends CapabilityDefinition>(definitio
   return definition;
 }
 
-export function parseCapabilityInput<T extends CapabilityDefinition>(
-  definition: T,
+export function parseCapabilityInput<TInput extends z.ZodType>(
+  definition: { inputSchema: TInput },
   input: unknown,
-): CapabilityInput<T> {
-  return definition.inputSchema.parse(input) as CapabilityInput<T>;
+): z.output<TInput> {
+  return definition.inputSchema.parse(input);
 }
 
-export function parseCapabilityOutput<T extends CapabilityDefinition>(
-  definition: T,
+export function parseCapabilityOutput<TOutput extends z.ZodType>(
+  definition: { outputSchema: TOutput },
   output: unknown,
-): CapabilityOutput<T> {
-  return definition.outputSchema.parse(output) as CapabilityOutput<T>;
+): z.output<TOutput> {
+  return definition.outputSchema.parse(output);
 }

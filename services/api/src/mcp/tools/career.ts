@@ -46,63 +46,76 @@ import {
   saveCareerSocialLinks,
 } from '../../application/career.service';
 import {
-  careerApplicationDetailSchema,
+  careerApplicationCreateOutputSchema,
   careerApplicationCreateSchema,
   careerApplicationDeleteSchema,
+  careerApplicationDetailSchema,
+  careerApplicationFileAddOutputSchema,
   careerApplicationFileAddSchema,
   careerApplicationFileRemoveSchema,
+  careerApplicationNoteAddOutputSchema,
   careerApplicationNoteAddSchema,
   careerApplicationNoteRemoveSchema,
-  careerApplicationUpdateSchema,
   careerApplicationsQuerySchema,
   careerApplicationsSchema,
-  careerCertificationsSchema,
-  careerEducationSchema,
-  careerEducationCreateSchema,
-  careerEducationDeleteSchema,
-  careerEducationUpdateSchema,
-  careerEngagementCreateSchema,
-  careerEngagementDeleteSchema,
-  careerEngagementSchema,
-  careerEngagementUpdateSchema,
-  careerEngagementsQuerySchema,
-  careerEngagementsSchema,
-  careerMcpProfileSchema,
-  careerProfileUpdateSchema,
-  careerProjectDeleteSchema,
-  careerProjectSchema,
-  careerProjectUpdateSchema,
-  careerProjectCreateSchema,
-  careerProjectsSchema,
-  careerSkillsSchema,
-  careerSkillCreateSchema,
-  careerSkillDeleteSchema,
-  careerSkillSchema,
-  careerSkillUpdateSchema,
-  careerSocialLinksSchema,
-  careerSocialLinksSaveSchema,
-  careerTestimonialsSchema,
-  careerTestimonialCreateSchema,
-  careerTestimonialDeleteSchema,
-  careerTestimonialSchema,
-  careerTestimonialUpdateSchema,
+  careerApplicationUpdateOutputSchema,
+  careerApplicationUpdateSchema,
+  careerCertificationCreateOutputSchema,
   careerCertificationCreateSchema,
   careerCertificationDeleteSchema,
-  careerCertificationSchema,
+  careerCertificationsSchema,
+  careerCertificationUpdateOutputSchema,
   careerCertificationUpdateSchema,
+  careerEducationCreateOutputSchema,
+  careerEducationCreateSchema,
+  careerEducationDeleteSchema,
+  careerEducationSchema,
+  careerEducationUpdateOutputSchema,
+  careerEducationUpdateSchema,
+  careerEngagementCreateOutputSchema,
+  careerEngagementCreateSchema,
+  careerEngagementDeleteSchema,
+  careerEngagementsQuerySchema,
+  careerEngagementsSchema,
+  careerProfileOutputSchema,
+  careerEngagementUpdateOutputSchema,
+  careerEngagementUpdateSchema,
+  careerMcpProfileSchema,
+  careerProfileUpdateOutputSchema,
+  careerProfileUpdateSchema,
+  careerProjectCreateOutputSchema,
+  careerProjectCreateSchema,
+  careerProjectDeleteSchema,
+  careerProjectsSchema,
+  careerProjectUpdateOutputSchema,
+  careerProjectUpdateSchema,
+  careerSkillCreateOutputSchema,
+  careerSkillCreateSchema,
+  careerSkillDeleteSchema,
+  careerSkillsSchema,
+  careerSkillUpdateOutputSchema,
+  careerSkillUpdateSchema,
+  careerSocialLinksSaveOutputSchema,
+  careerSocialLinksSaveSchema,
+  careerSocialLinksSchema,
+  careerTestimonialCreateOutputSchema,
+  careerTestimonialCreateSchema,
+  careerTestimonialDeleteSchema,
+  careerTestimonialsSchema,
+  careerTestimonialUpdateOutputSchema,
+  careerTestimonialUpdateSchema,
+  careerWishlistAddOutputSchema,
   careerWishlistCompaniesQuerySchema,
   careerWishlistCompaniesSchema,
   careerWishlistCompanyCreateSchema,
   careerWishlistCompanyDeleteSchema,
-  careerWishlistCompanySchema,
   careerWishlistCompanyUpdateSchema,
+  careerWishlistUpdateOutputSchema,
 } from '../../schemas/career.schema';
+import { removedResultSchema } from '../../schemas/common.schema';
 import { registerTool } from '../tool-registry';
 
 const noInputSchema = z.object({});
-const profileResultSchema = z.object({
-  profile: careerMcpProfileSchema.nullable(),
-});
 
 registerTool(
   {
@@ -110,7 +123,7 @@ registerTool(
     title: 'Get your career profile',
     description: 'Returns the authenticated user career profile without contact information.',
     inputSchema: noInputSchema,
-    outputSchema: profileResultSchema,
+    outputSchema: careerProfileOutputSchema,
     readOnly: true,
     scopes: ['career:read'],
     resultCap: 1,
@@ -133,7 +146,7 @@ registerTool(
     description:
       'Updates the authenticated user career profile (name, headline, summary, location, industry, LinkedIn URL, websites, X/Twitter handles). Does not accept email or phone.',
     inputSchema: careerProfileUpdateSchema,
-    outputSchema: z.object({ profile: careerMcpProfileSchema }),
+    outputSchema: careerProfileUpdateOutputSchema,
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
@@ -166,7 +179,7 @@ registerTool(
     title: 'Create a career engagement',
     description: 'Creates a work history engagement.',
     inputSchema: careerEngagementCreateSchema,
-    outputSchema: z.object({ engagement: careerEngagementSchema }),
+    outputSchema: careerEngagementCreateOutputSchema,
   },
   async (ownerUserId, input) => ({ engagement: await createCareerEngagement(ownerUserId, input) }),
 );
@@ -177,7 +190,7 @@ registerTool(
     title: 'Create a career application',
     description: 'Creates a job application.',
     inputSchema: careerApplicationCreateSchema,
-    outputSchema: z.object({ application: careerApplicationsSchema.shape.applications.element }),
+    outputSchema: careerApplicationCreateOutputSchema,
   },
   async (ownerUserId, input) => ({
     application: await createCareerApplication(ownerUserId, input),
@@ -191,9 +204,7 @@ registerTool(
     title: 'Update a career application',
     description: 'Updates a job application.',
     inputSchema: careerApplicationUpdateSchema,
-    outputSchema: z.object({
-      application: careerApplicationsSchema.shape.applications.element.nullable(),
-    }),
+    outputSchema: careerApplicationUpdateOutputSchema,
   },
   async (ownerUserId, input) => ({
     application: await updateCareerApplication(ownerUserId, input.id, input.data),
@@ -209,7 +220,7 @@ registerTool(
     title: 'Delete a career application',
     description: 'Deletes a job application.',
     inputSchema: careerApplicationDeleteSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     guidance: {
       whenToUse: 'A matching application id has been returned by career_applications.',
       whenNotToUse: 'Do not invent an application id or delete before lookup and confirmation.',
@@ -238,11 +249,7 @@ registerTool(
     title: 'Add an application note',
     description: 'Adds a note to a job application.',
     inputSchema: careerApplicationNoteAddSchema,
-    outputSchema: z.object({
-      note: z
-        .object({ id: z.string().uuid(), content: z.string(), createdAt: z.string() })
-        .nullable(),
-    }),
+    outputSchema: careerApplicationNoteAddOutputSchema,
   },
   async (ownerUserId, input) => ({
     note: await addCareerApplicationNote(ownerUserId, input.applicationId, input.content),
@@ -258,7 +265,7 @@ registerTool(
     title: 'Remove an application note',
     description: 'Removes an application note.',
     inputSchema: careerApplicationNoteRemoveSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     preview: async (ownerUserId, input) => {
       const parsed = careerApplicationNoteRemoveSchema.safeParse(input);
       if (!parsed.success) return null;
@@ -278,19 +285,9 @@ registerTool(
     title: 'Add an application file',
     description: 'Adds a file reference to a job application.',
     inputSchema: careerApplicationFileAddSchema,
-    outputSchema: z.object({
-      file: z
-        .object({
-          id: z.string().uuid(),
-          fileName: z.string(),
-          fileUrl: z.string(),
-          fileType: z.string().nullable(),
-          createdAt: z.string(),
-        })
-        .nullable(),
-    }),
+    outputSchema: careerApplicationFileAddOutputSchema,
     resourceLinks: (output) => {
-      const file = (output as { file: { fileUrl: string; fileName: string } | null }).file;
+      const { file } = careerApplicationFileAddOutputSchema.parse(output);
       return file ? [{ uri: file.fileUrl, name: file.fileName }] : [];
     },
   },
@@ -308,7 +305,7 @@ registerTool(
     title: 'Remove an application file',
     description: 'Removes an application file.',
     inputSchema: careerApplicationFileRemoveSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     preview: async (ownerUserId, input) => {
       const parsed = careerApplicationFileRemoveSchema.safeParse(input);
       if (!parsed.success) return null;
@@ -328,7 +325,7 @@ registerTool(
     title: 'Create education',
     description: 'Creates an education entry.',
     inputSchema: careerEducationCreateSchema,
-    outputSchema: z.object({ education: careerEducationSchema.shape.education.element }),
+    outputSchema: careerEducationCreateOutputSchema,
   },
   async (ownerUserId, input) => ({ education: await createCareerEducation(ownerUserId, input) }),
 );
@@ -340,7 +337,7 @@ registerTool(
     title: 'Update education',
     description: 'Updates an education entry.',
     inputSchema: careerEducationUpdateSchema,
-    outputSchema: z.object({ education: careerEducationSchema.shape.education.element.nullable() }),
+    outputSchema: careerEducationUpdateOutputSchema,
   },
   async (ownerUserId, input) => ({
     education: await updateCareerEducation(ownerUserId, input.id, input.data),
@@ -356,7 +353,7 @@ registerTool(
     title: 'Delete education',
     description: 'Deletes an education entry.',
     inputSchema: careerEducationDeleteSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     preview: async (ownerUserId, input) => {
       const parsed = careerEducationDeleteSchema.safeParse(input);
       if (!parsed.success) return null;
@@ -374,7 +371,7 @@ registerTool(
     title: 'Create a skill',
     description: 'Creates a career skill.',
     inputSchema: careerSkillCreateSchema,
-    outputSchema: z.object({ skill: careerSkillSchema }),
+    outputSchema: careerSkillCreateOutputSchema,
   },
   async (ownerUserId, input) => ({ skill: await createCareerSkill(ownerUserId, input) }),
 );
@@ -386,7 +383,7 @@ registerTool(
     title: 'Update a skill',
     description: 'Updates a career skill.',
     inputSchema: careerSkillUpdateSchema,
-    outputSchema: z.object({ skill: careerSkillSchema.nullable() }),
+    outputSchema: careerSkillUpdateOutputSchema,
   },
   async (ownerUserId, input) => ({
     skill: await updateCareerSkill(ownerUserId, input.id, input.data),
@@ -402,7 +399,7 @@ registerTool(
     title: 'Delete a skill',
     description: 'Deletes a career skill.',
     inputSchema: careerSkillDeleteSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     preview: async (ownerUserId, input) => {
       const parsed = careerSkillDeleteSchema.safeParse(input);
       if (!parsed.success) return null;
@@ -420,7 +417,7 @@ registerTool(
     title: 'Create a project',
     description: 'Creates a career project.',
     inputSchema: careerProjectCreateSchema,
-    outputSchema: z.object({ project: careerProjectSchema }),
+    outputSchema: careerProjectCreateOutputSchema,
   },
   async (ownerUserId, input) => ({ project: await createCareerProject(ownerUserId, input) }),
 );
@@ -431,7 +428,7 @@ registerTool(
     title: 'Create a testimonial',
     description: 'Creates a career testimonial.',
     inputSchema: careerTestimonialCreateSchema,
-    outputSchema: z.object({ testimonial: careerTestimonialSchema }),
+    outputSchema: careerTestimonialCreateOutputSchema,
   },
   async (ownerUserId, input) => ({
     testimonial: await createCareerTestimonial(ownerUserId, input),
@@ -445,7 +442,7 @@ registerTool(
     title: 'Update a testimonial',
     description: 'Updates a career testimonial.',
     inputSchema: careerTestimonialUpdateSchema,
-    outputSchema: z.object({ testimonial: careerTestimonialSchema.nullable() }),
+    outputSchema: careerTestimonialUpdateOutputSchema,
   },
   async (ownerUserId, input) => ({
     testimonial: await updateCareerTestimonial(ownerUserId, input.id, input.data),
@@ -461,7 +458,7 @@ registerTool(
     title: 'Delete a testimonial',
     description: 'Deletes a career testimonial.',
     inputSchema: careerTestimonialDeleteSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     preview: async (ownerUserId, input) => {
       const parsed = careerTestimonialDeleteSchema.safeParse(input);
       if (!parsed.success) return null;
@@ -479,7 +476,7 @@ registerTool(
     title: 'Create a certification',
     description: 'Creates a career certification.',
     inputSchema: careerCertificationCreateSchema,
-    outputSchema: z.object({ certification: careerCertificationSchema }),
+    outputSchema: careerCertificationCreateOutputSchema,
   },
   async (ownerUserId, input) => ({
     certification: await createCareerCertification(ownerUserId, input),
@@ -493,7 +490,7 @@ registerTool(
     title: 'Update a certification',
     description: 'Updates a career certification.',
     inputSchema: careerCertificationUpdateSchema,
-    outputSchema: z.object({ certification: careerCertificationSchema.nullable() }),
+    outputSchema: careerCertificationUpdateOutputSchema,
   },
   async (ownerUserId, input) => ({
     certification: await updateCareerCertification(ownerUserId, input.id, input.data),
@@ -509,7 +506,7 @@ registerTool(
     title: 'Delete a certification',
     description: 'Deletes a career certification.',
     inputSchema: careerCertificationDeleteSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     preview: async (ownerUserId, input) => {
       const parsed = careerCertificationDeleteSchema.safeParse(input);
       if (!parsed.success) return null;
@@ -530,7 +527,7 @@ registerTool(
     title: 'Save career social links',
     description: 'Saves public career profile links.',
     inputSchema: careerSocialLinksSaveSchema,
-    outputSchema: z.object({ socialLinks: careerSocialLinksSchema.shape.socialLinks.unwrap() }),
+    outputSchema: careerSocialLinksSaveOutputSchema,
   },
   async (ownerUserId, input) => ({ socialLinks: await saveCareerSocialLinks(ownerUserId, input) }),
 );
@@ -572,7 +569,7 @@ registerTool(
     title: 'Add a career wishlist company',
     description: 'Adds a company you want to work for to your career wishlist.',
     inputSchema: careerWishlistCompanyCreateSchema,
-    outputSchema: z.object({ company: careerWishlistCompanySchema }),
+    outputSchema: careerWishlistAddOutputSchema,
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
@@ -590,7 +587,7 @@ registerTool(
     title: 'Update a career wishlist company',
     description: 'Renames a company on your career wishlist.',
     inputSchema: careerWishlistCompanyUpdateSchema,
-    outputSchema: z.object({ company: careerWishlistCompanySchema.nullable() }),
+    outputSchema: careerWishlistUpdateOutputSchema,
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
@@ -608,7 +605,7 @@ registerTool(
     title: 'Remove a career wishlist company',
     description: 'Removes a company from your career wishlist.',
     inputSchema: careerWishlistCompanyDeleteSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
@@ -635,7 +632,7 @@ registerTool(
     description:
       'Updates a work history engagement (company, title, location, dates, salary in cents, contact, source, kind, description, reason for leaving). Returns the updated engagement.',
     inputSchema: careerEngagementUpdateSchema,
-    outputSchema: z.object({ engagement: careerEngagementSchema.nullable() }),
+    outputSchema: careerEngagementUpdateOutputSchema,
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
@@ -653,7 +650,7 @@ registerTool(
     title: 'Delete a career engagement',
     description: 'Deletes a work history engagement.',
     inputSchema: careerEngagementDeleteSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
@@ -768,7 +765,7 @@ registerTool(
     description:
       'Updates a project (title, organization, descriptions, URLs, dates, status, technologies, linked engagement ids). Returns the updated project.',
     inputSchema: careerProjectUpdateSchema,
-    outputSchema: z.object({ project: careerProjectSchema.nullable() }),
+    outputSchema: careerProjectUpdateOutputSchema,
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,
@@ -786,7 +783,7 @@ registerTool(
     title: 'Delete a career project',
     description: 'Deletes a project.',
     inputSchema: careerProjectDeleteSchema,
-    outputSchema: z.object({ removed: z.boolean() }),
+    outputSchema: removedResultSchema,
     readOnly: false,
     scopes: ['career:write'],
     resultCap: 1,

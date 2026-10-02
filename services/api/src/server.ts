@@ -4,7 +4,6 @@ import * as Sentry from '@sentry/node';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { cors } from 'hono/cors';
 import { prettyJSON } from 'hono/pretty-json';
-import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
 import { betterAuthServer, createBetterAuthServer } from './auth/better-auth';
 import type { AuthContext } from './auth/types';
@@ -154,17 +153,15 @@ function registerErrorHandlers(app: Hono<AppEnv>, inputEnv: ApiEnv) {
     });
 
     if (isServiceError(err)) {
-      return c.json(
+      return Response.json(
         {
           error: err.code.toLowerCase(),
           code: err.code,
           message: err.message,
           ...(err.details && { details: err.details }),
         },
-        // `isServiceError` already checked statusCode is an integer in [400, 599],
-        // so it's a valid HTTP status by construction.
-        // oxlint-disable-next-line typescript/consistent-type-assertions
-        err.statusCode as ContentfulStatusCode,
+        // `isServiceError` already checked statusCode is an integer in [400, 599].
+        { status: err.statusCode },
       );
     }
 

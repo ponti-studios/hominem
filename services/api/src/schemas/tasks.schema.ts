@@ -200,3 +200,18 @@ export const UpdateTaskSchema = z
     message: 'At least one field must be provided',
   })
   .superRefine(validateScheduledInterval);
+
+export const taskCreateOutputSchema = z.object({ task: TaskRecordSchema });
+
+export const taskUpdateOutputSchema = z.object({ task: TaskRecordSchema.nullable() });
+
+export const taskCompleteOutputSchema = z.object({ task: TaskRecordSchema.nullable() });
+
+export const taskBatchCreateOutputSchema = z.object({
+  groups: z.array(z.object({ parent: TaskRecordSchema, tasks: z.array(TaskRecordSchema) })),
+  tasks: z.array(TaskRecordSchema),
+});
+
+export const taskListToolOutputSchema = taskListResultSchema.extend({
+  hint: z.string().optional(),
+});

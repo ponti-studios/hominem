@@ -1,5 +1,4 @@
 import { NotFoundError, ValidationError } from '@hominem/db/errors';
-import { z } from 'zod';
 
 import {
   acceptMemberInvite,
@@ -43,9 +42,9 @@ import {
   removeMemberInputSchema,
   removeMemberOutputSchema,
   updateCollectionInputSchema,
-  updateCollectionOutputSchema,
   updateMemberRoleInputSchema,
-  updateMemberRoleOutputSchema,
+  updateCollectionToolOutputSchema,
+  updateMemberRoleToolOutputSchema,
 } from '../../schemas/collections.schema';
 import { registerTool } from '../tool-registry';
 
@@ -255,13 +254,6 @@ async function nullOnNotFound<T>(run: () => Promise<T>): Promise<T | null> {
     throw error;
   }
 }
-
-const updateCollectionToolOutputSchema = z.object({
-  collection: updateCollectionOutputSchema.shape.collection.nullable(),
-});
-const updateMemberRoleToolOutputSchema = z.object({
-  member: updateMemberRoleOutputSchema.shape.member.nullable(),
-});
 
 const collectionWriteTool: {
   readOnly: false;
