@@ -45,6 +45,40 @@ describe('task_create / task_list / task_detail', () => {
     await db.deleteFrom('app.tasks').where('id', '=', created.task.id).execute();
   });
 
+  // Regression: a live model sends `participants: []` when there is nobody to assign. The
+  // empty list used to reach `WHERE id IN ()`, a Postgres syntax error, so the call failed.
+  it('creates a task when participants is an empty array', async () => {
+    const created = resultContent(
+      await callTool(userId, 'task_create', {
+        title: 'Set up Google Home for living room lights',
+        artifactType: 'task',
+        participants: [],
+      }),
+    ) as { task: { id: string; title: string } };
+    expect(created.task).toMatchObject({ title: 'Set up Google Home for living room lights' });
+
+    await db.deleteFrom('app.tasks').where('id', '=', created.task.id).execute();
+  });
+
+  it('accepts an empty participants array when updating a task', async () => {
+    const created = resultContent(
+      await callTool(userId, 'task_create', {
+        title: 'Needs no participants',
+        artifactType: 'task',
+      }),
+    ) as { task: { id: string } };
+
+    const updated = resultContent(
+      await callTool(userId, 'task_update', {
+        id: created.task.id,
+        data: { title: 'Still needs no participants', participants: [] },
+      }),
+    ) as { task: { title: string } | null };
+    expect(updated.task?.title).toBe('Still needs no participants');
+
+    await db.deleteFrom('app.tasks').where('id', '=', created.task.id).execute();
+  });
+
   it('returns a null task detail for another user', async () => {
     const created = resultContent(
       await callTool(userId, 'task_create', {

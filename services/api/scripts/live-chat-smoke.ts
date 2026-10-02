@@ -96,7 +96,7 @@ async function runTurn(message: string): Promise<Turn> {
             arguments: parsed.data.call.arguments ?? '',
           });
         }
-      } else if (type === 'tool.completed') {
+      } else if (type === 'tool.completed' || type === 'tool.failed') {
         const parsed = toolCompletedSchema.safeParse(payload);
         if (parsed.success) {
           turn.completed.push({
