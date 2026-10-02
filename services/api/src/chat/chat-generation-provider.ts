@@ -190,6 +190,8 @@ export class OpenRouterChatModel implements ChatModel {
     let chunkCount = 0;
     let contentChars = 0;
     let reasoningChars = 0;
+    let servedModel: string | undefined;
+    let usageSeen: string | null = null;
     const finishReasons: string[] = [];
     try {
       const completion = streamChatCompletion(
@@ -230,7 +232,11 @@ export class OpenRouterChatModel implements ChatModel {
           // report it instead of seeing a bare, code-less Error.
           throw new OpenRouterRequestError(chunk.error.message, { status: chunk.error.code });
         }
-        this.options.onUsage?.(getChatCompletionUsage(chunk));
+        const chunkUsage = getChatCompletionUsage(chunk);
+        this.options.onUsage?.(chunkUsage);
+        if (chunkUsage)
+          usageSeen = `${chunkUsage.promptTokens} in / ${chunkUsage.outputTokens} out`;
+        servedModel = chunk.model ?? servedModel;
         const providerChunk = toProviderChunk(chunk);
         chunkCount += 1;
         contentChars += providerChunk.content?.length ?? 0;
@@ -273,15 +279,20 @@ export class OpenRouterChatModel implements ChatModel {
       if (contentChars === 0 && toolCalls.length === 0) {
         // The model answered with neither text nor a usable tool call, which surfaces to the
         // user as "No reply was generated". Record what came back so the cause is visible:
-        // a finish reason of "length" means it ran out of tokens, reasoning-only output shows
-        // in reasoningChars, and a rawToolCallCount above zero means a tool call arrived but
-        // was dropped as incomplete.
+        // a finish reason of "length" means the provider reports a token limit (completionCap
+        // says whether we set one), reasoning-only output shows in reasoningChars, a
+        // rawToolCallCount above zero means a tool call arrived but was dropped as incomplete,
+        // and servedModel shows whether the request was routed to a different model.
         logger.warn('provider_turn_empty', {
           generationId: this.options.generationId,
           model: this.options.model,
           iteration: generationIteration,
+          servedModel,
           toolChoice: toolChoice ?? 'none',
-          maxTokens: this.options.maxTokens ?? null,
+          // Not "maxTokens": the logger redacts any key containing "token".
+          completionCap: this.options.maxTokens ?? null,
+          toolCount: this.options.tools.length,
+          usage: usageSeen,
           finishReasons,
           chunkCount,
           reasoningChars,
