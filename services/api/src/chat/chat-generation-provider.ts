@@ -21,6 +21,8 @@ import { reconstructProviderToolCalls } from '@hominem/chat/server';
 import type { ChatModel } from '@hominem/chat/server';
 import { logger } from '@hominem/telemetry';
 
+import { chatToolName } from './chat-tool-name';
+
 class ProviderInputError extends Error {
   constructor(
     readonly diagnostics: {
@@ -163,13 +165,9 @@ function isTransient(error: unknown): boolean {
 }
 
 // A tool the model has called this many times in one generation is withdrawn for the rest of
-// it. Nothing else bounds a tool loop: a model that keeps tweaking a search's arguments would
-// otherwise call it until the request times out, and never answer.
+// it, so a model that keeps tweaking a search's arguments has to answer. (The generation
+// machine's own cap, MAX_TOOL_CALLS_PER_GENERATION, ends the whole generation instead.)
 export const MAX_CALLS_PER_TOOL = 6;
-
-function toolName(tool: ChatFunctionTool): string {
-  return 'function' in tool ? tool.function.name : tool.type;
-}
 
 export class OpenRouterChatModel implements ChatModel {
   private readonly messages: ChatMessages[];
@@ -193,19 +191,18 @@ export class OpenRouterChatModel implements ChatModel {
     // cancellation through the fetch/undici abort path instead, which is
     // the mechanism the HTTP client actually guarantees acts on.
     const controller = new AbortController();
-    const tools = this.options.tools.filter(
-      (tool) =>
-        (this.callCounts.get(toolName(tool)) ?? 0) < MAX_CALLS_PER_TOOL &&
-        (this.options.isToolAvailable?.(toolName(tool)) ?? true),
-    );
-    const toolChoice =
-      tools.length > 0
-        ? this.firstTurn &&
-          !this.requiredToolChoiceFailed &&
-          (this.options.requiresToolCall || this.options.requiresWebSearch)
-          ? 'required'
-          : 'auto'
-        : undefined;
+    const tools = this.options.tools.filter((tool) => {
+      const name = chatToolName(tool);
+      return (
+        (this.callCounts.get(name) ?? 0) < MAX_CALLS_PER_TOOL &&
+        (this.options.isToolAvailable?.(name) ?? true)
+      );
+    });
+    const forceTool =
+      this.firstTurn &&
+      !this.requiredToolChoiceFailed &&
+      (this.options.requiresToolCall || this.options.requiresWebSearch);
+    const toolChoice = tools.length === 0 ? undefined : forceTool ? 'required' : 'auto';
     // What this turn actually returned, kept so an empty one can be explained afterwards.
     let chunkCount = 0;
     let contentChars = 0;
@@ -295,31 +292,23 @@ export class OpenRouterChatModel implements ChatModel {
         }
       }
 
-      // A call that arrived without an id or a name cannot be run, and the generation machine
-      // drops it; counting it would make a turn that produced nothing look like it produced a
-      // call, so it would be saved as an empty reply instead of being asked again.
+      // A call without an id or name cannot run and the machine drops it, so it must not make an
+      // otherwise empty turn look productive.
       const toolCalls = reconstructProviderToolCalls(calls).filter(
         (call) => call.id !== '' && call.function.name !== '',
       );
-      // One line per provider turn: with the turn's tools it shows whether a model that said
-      // "I'll delete it now." offered, attempted or dropped the call it announced.
+      // rawToolCallCount above the calls kept means an incomplete call was dropped.
       logger.info('provider_turn_summary', {
         iteration: generationIteration,
         toolChoice: toolChoice ?? 'none',
-        offered: tools.map(toolName),
+        offered: tools.map(chatToolName),
         called: toolCalls.map((call) => call.function.name),
-        // Above the number of calls kept means an incomplete tool call was dropped.
         rawToolCallCount: calls.size,
         textChars: contentChars,
         finishReasons,
       });
       if (contentChars === 0 && toolCalls.length === 0) {
-        // The model answered with neither text nor a usable tool call, which surfaces to the
-        // user as "No reply was generated". Record what came back so the cause is visible:
-        // a finish reason of "length" means the provider reports a token limit (completionCap
-        // says whether we set one), reasoning-only output shows in reasoningChars, a
-        // rawToolCallCount above zero means a tool call arrived but was dropped as incomplete,
-        // and servedModel shows whether the request was routed to a different model.
+        // Neither text nor a usable tool call: this is the user's "No reply was generated".
         logger.warn('provider_turn_empty', {
           model: this.options.model,
           iteration: generationIteration,
@@ -334,10 +323,8 @@ export class OpenRouterChatModel implements ChatModel {
           reasoningChars,
           rawToolCallCount: calls.size,
         });
-        // Nothing was produced or run, so asking again is safe. Repeating the same request
-        // does not help: live, a request with "required" tool choice and 21-22 tools came back
-        // empty on all three attempts, and no empty turn was ever seen with "auto". So the
-        // retries let the model choose.
+        // Nothing ran, so asking again is safe. A "required" request that came back empty did
+        // so on every retry, and "auto" never did, so retries let the model choose.
         this.requiredToolChoiceFailed = true;
         yield {
           type: 'provider-turn-failed',
@@ -351,14 +338,13 @@ export class OpenRouterChatModel implements ChatModel {
       if (toolCalls.length > 0) {
         this.messages.push({ role: 'assistant', content: null, toolCalls });
       }
-      for (const call of toolCalls) {
-        const name = call.function.name;
-        this.callCounts.set(name, (this.callCounts.get(name) ?? 0) + 1);
-        if (this.callCounts.get(name) === MAX_CALLS_PER_TOOL) {
-          logger.warn('provider_tool_withdrawn', {
-            toolName: name,
-            calls: MAX_CALLS_PER_TOOL,
-          });
+      for (const {
+        function: { name },
+      } of toolCalls) {
+        const count = (this.callCounts.get(name) ?? 0) + 1;
+        this.callCounts.set(name, count);
+        if (count === MAX_CALLS_PER_TOOL) {
+          logger.warn('provider_tool_withdrawn', { toolName: name, calls: count });
         }
       }
       const confirmationCallIds = toolCalls.reduce<string[]>((ids, call) => {
@@ -383,12 +369,7 @@ export class OpenRouterChatModel implements ChatModel {
       }
       yield {
         type: 'provider-turn-failed',
-        message:
-          error instanceof ProviderInputError
-            ? error.message
-            : error instanceof Error
-              ? error.message
-              : 'Provider request failed',
+        message: error instanceof Error ? error.message : 'Provider request failed',
         transient: isTransient(error),
         attempt: Math.max(this.attempt, generationIteration),
         maxAttempts: this.options.maxAttempts ?? 2,

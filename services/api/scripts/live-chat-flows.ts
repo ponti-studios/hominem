@@ -19,9 +19,10 @@
  * memories before every sample.
  */
 
-import { appendFileSync } from 'node:fs';
-
+import { DAY_MS, MONTHS } from '../src/testkit/scripted-flows';
 import {
+  appendJobSummary,
+  clip,
   createdIds,
   createTask,
   deleteMemory,
@@ -34,30 +35,15 @@ import {
   mergeTurns,
   respondToConfirmation,
   runTurn,
+  selectCases,
   type Turn,
 } from './live-chat-client';
 
 const SAMPLES = Number(process.env.FLOW_SAMPLES ?? 2);
 const MIN_PASS_RATE = Number(process.env.FLOW_MIN_PASS_RATE ?? 0.5);
 const EARLY_STOP = process.env.FLOW_EARLY_STOP === '1';
-const DAY_MS = 86_400_000;
 
 // ── dates, phrased the way people say them ─────────────────────────────────
-
-const MONTHS = [
-  'january',
-  'february',
-  'march',
-  'april',
-  'may',
-  'june',
-  'july',
-  'august',
-  'september',
-  'october',
-  'november',
-  'december',
-];
 
 function ordinal(day: number): string {
   const lastTwo = day % 100;
@@ -130,7 +116,6 @@ const wrote = (turn: Turn) =>
 // What the assistant did (each call with the arguments it sent) and, when it said something,
 // how it replied. Job log only.
 const summarize = (turn: Turn) => {
-  const clip = (text: string, max: number) => (text.length > max ? `${text.slice(0, max)}…` : text);
   const calls = turn.calls.map((call) => `${call.name}(${clip(call.arguments, 200)})`).join(', ');
   const reply = turn.text.trim().replace(/\s+/g, ' ');
   return `requested: ${calls || 'none'}${describeFailedCalls(turn)}${
@@ -256,8 +241,8 @@ const flows: Flow[] = [
         { ifAsked: 'yeah go ahead and do all of it' },
       );
       if (turn.failed) return `step 1: generation failed (${summarize(turn)})`;
-      if (turn.requested.length > 12) {
-        return `step 1: ${turn.requested.length} tool calls for three simple things`;
+      if (turn.calls.length > 12) {
+        return `step 1: ${turn.calls.length} tool calls for three simple things`;
       }
 
       const memories = await listMemories();
@@ -291,9 +276,11 @@ const flows: Flow[] = [
 
 // The account is the dedicated test account, so every sample starts from nothing.
 async function resetAccount(conversation: Conversation) {
-  for (const task of await listTasks()) await deleteTask(task.id);
-  for (const memory of await listMemories()) await deleteMemory(memory.id);
-  for (const id of conversation.noteIds) await deleteNote(id);
+  await Promise.all([
+    listTasks().then((tasks) => Promise.all(tasks.map((task) => deleteTask(task.id)))),
+    listMemories().then((memories) => Promise.all(memories.map((m) => deleteMemory(m.id)))),
+    Promise.all(conversation.noteIds.map(deleteNote)),
+  ]);
 }
 
 async function runSample(
@@ -311,15 +298,7 @@ async function runSample(
   return { reason, asked: conversation.asked, notes: conversation.observations };
 }
 
-const selected = (process.env.FLOW_CASES ?? '')
-  .split(',')
-  .map((name) => name.trim())
-  .filter(Boolean);
-const toRun = selected.length > 0 ? flows.filter((flow) => selected.includes(flow.name)) : flows;
-if (toRun.length === 0) {
-  console.error(`No flows match FLOW_CASES=${process.env.FLOW_CASES}`);
-  process.exit(1);
-}
+const toRun = selectCases('FLOW_CASES', flows);
 
 const rows: string[] = [];
 let failedFlows = 0;
@@ -351,12 +330,9 @@ for (const flow of toRun) {
   if (!ok) failedFlows++;
 }
 
-if (process.env.GITHUB_STEP_SUMMARY) {
-  appendFileSync(
-    process.env.GITHUB_STEP_SUMMARY,
-    `## Live chat flows\n\n| flow | result | samples passed | questions asked |\n| --- | --- | --- | --- |\n${rows.join('\n')}\n`,
-  );
-}
+appendJobSummary(
+  `## Live chat flows\n\n| flow | result | samples passed | questions asked |\n| --- | --- | --- | --- |\n${rows.join('\n')}\n`,
+);
 if (failedFlows > 0)
   console.log(`::warning::${failedFlows} live chat flow(s) below the pass-rate threshold`);
 process.exit(failedFlows === 0 ? 0 : 1);

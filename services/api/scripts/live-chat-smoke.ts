@@ -12,9 +12,15 @@
  * ordinary sampling variance; a case that fails every attempt fails the run.
  */
 
-import { appendFileSync } from 'node:fs';
-
-import { deleteTask, describeFailedCalls, listTasks, runTurn, type Turn } from './live-chat-client';
+import {
+  appendJobSummary,
+  deleteTask,
+  describeMissingCall,
+  listTasks,
+  runTurn,
+  selectCases,
+  type Turn,
+} from './live-chat-client';
 
 const ATTEMPTS = Number(process.env.SMOKE_ATTEMPTS ?? 2);
 
@@ -45,7 +51,7 @@ const cases: SmokeCase[] = [
     check: async (turn) => {
       if (turn.failed) return 'generation failed';
       if (!turn.completed.some((call) => call.name === 'task_create' && !call.error)) {
-        return `task_create never completed (requested: ${turn.requested.join(', ') || 'none'})${describeFailedCalls(turn)}`;
+        return describeMissingCall(turn, 'task_create');
       }
       const created = (await listTasks()).some((task) => GOOGLE_HOME.test(task.title));
       return created ? null : 'task_create completed but no matching task exists';
@@ -57,7 +63,7 @@ const cases: SmokeCase[] = [
     check: (turn) =>
       turn.completed.some((call) => call.name === 'task_list' && !call.error)
         ? null
-        : `task_list never completed (requested: ${turn.requested.join(', ') || 'none'})${describeFailedCalls(turn)}`,
+        : describeMissingCall(turn, 'task_list'),
   },
   {
     // Control: tools are exposed on every turn, so make sure they are not used needlessly.
@@ -65,7 +71,9 @@ const cases: SmokeCase[] = [
     message: 'Reply with exactly one word: hello',
     check: (turn) => {
       if (turn.failed) return 'generation failed';
-      if (turn.requested.length > 0) return `unexpected tool calls: ${turn.requested.join(', ')}`;
+      if (turn.calls.length > 0) {
+        return `unexpected tool calls: ${turn.calls.map((call) => call.name).join(', ')}`;
+      }
       return turn.text.trim() ? null : 'empty reply';
     },
   },
@@ -87,17 +95,7 @@ async function runCase(smokeCase: SmokeCase): Promise<string | null> {
   return reason;
 }
 
-// An unset or empty SMOKE_CASES (the workflow passes "" when the input is blank) means all.
-const selected = (process.env.SMOKE_CASES ?? '')
-  .split(',')
-  .map((name) => name.trim())
-  .filter(Boolean);
-const toRun =
-  selected.length > 0 ? cases.filter((smokeCase) => selected.includes(smokeCase.name)) : cases;
-if (toRun.length === 0) {
-  console.error(`No cases match SMOKE_CASES=${process.env.SMOKE_CASES}`);
-  process.exit(1);
-}
+const toRun = selectCases('SMOKE_CASES', cases);
 
 const rows: string[] = [];
 let failures = 0;
@@ -109,10 +107,5 @@ for (const smokeCase of toRun) {
   if (reason !== null) failures++;
 }
 
-if (process.env.GITHUB_STEP_SUMMARY) {
-  appendFileSync(
-    process.env.GITHUB_STEP_SUMMARY,
-    `## Live chat smoke\n\n| case | result |\n| --- | --- |\n${rows.join('\n')}\n`,
-  );
-}
+appendJobSummary(`## Live chat smoke\n\n| case | result |\n| --- | --- |\n${rows.join('\n')}\n`);
 process.exit(failures === 0 ? 0 : 1);

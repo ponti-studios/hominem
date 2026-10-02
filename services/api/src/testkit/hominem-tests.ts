@@ -381,7 +381,6 @@ export class HominemTests {
             tool: tool.definition.name,
             purpose: tool.definition.description,
             dependsOn: [],
-            arguments: {},
           },
         ],
       };

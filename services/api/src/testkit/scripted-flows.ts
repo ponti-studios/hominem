@@ -12,8 +12,8 @@ export type ScriptedFlowContext = {
 
 export type ScriptedFlowStep = { tool: string; args: Record<string, unknown> } | { text: string };
 
-const DAY_MS = 86_400_000;
-const MONTHS = [
+export const DAY_MS = 86_400_000;
+export const MONTHS = [
   'january',
   'february',
   'march',

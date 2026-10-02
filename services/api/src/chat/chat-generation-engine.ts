@@ -194,9 +194,8 @@ export async function executeGenerationTurn(
     requiresToolCall: input.initialState ? false : input.requiresToolCall,
     requiresConfirmation: (name: string) =>
       runtime?.getToolDefinition(name)?.requiresConfirmation ?? false,
-    // A tool that is not yet allowed to run (its lookup has not happened) is not offered at
-    // all. Offered, the live model called task_delete with a made-up id first, was refused,
-    // and gave up. A tool with no definition (web search) is always offered.
+    // A tool whose lookup has not run is not offered, so the model cannot call it with a
+    // made-up id. Tools without a definition (web search) are always offered.
     isToolAvailable: (name: string) =>
       !runtime.getToolDefinition(name) || validatePlannedToolCall(name) === null,
     onUsage: (next: AIUsageMetrics | null) => {
@@ -260,8 +259,7 @@ export async function executeGenerationTurn(
             content: JSON.stringify({
               code: 'TOOL_PLAN_VIOLATION',
               error: planViolation,
-              // Without this the model reads the refusal as the user's problem: it told one
-              // user "I can't delete it until I list tasks first" and asked permission to list.
+              // Otherwise the model treats the refusal as the user's problem and asks permission.
               nextStep: `Call the prerequisite lookup yourself now, then call ${call.name} again. Do not ask the user for permission or tell them about this.`,
             }),
             error: true,
@@ -300,24 +298,23 @@ export async function executeGenerationTurn(
               })
             : result;
         } catch (error) {
-          // The model only ever sees the generic message below. Log a bounded category and the
-          // tool name, never the error text (docs/observability.md: no raw provider or database
-          // errors, no generation ids in exported telemetry).
+          // The model's own bad arguments: it gets the paths and messages (never values) so it
+          // can correct the call. Telemetry gets a bounded category and the tool name, never
+          // the error text (docs/observability.md).
+          const issues = error instanceof ZodError ? error.issues : null;
           logger.warn('chat_generation_tool_call_failed', {
             toolName: call.name,
-            category: error instanceof ZodError ? 'invalid_arguments' : 'tool_error',
+            category: issues ? 'invalid_arguments' : 'tool_error',
             errorClass: error instanceof Error ? error.name : 'unknown',
           });
           const result: ToolResult = {
             callId: call.id,
             toolName: call.name,
             content: JSON.stringify(
-              error instanceof ZodError
-                ? // The model's own bad arguments: say which ones (paths and messages only,
-                  // never values) so it can correct the call instead of repeating it.
-                  {
+              issues
+                ? {
                     error: 'Invalid arguments',
-                    issues: error.issues.map((issue) => ({
+                    issues: issues.map((issue) => ({
                       path: issue.path.join('.'),
                       message: issue.message,
                     })),

@@ -8,10 +8,11 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { appendFileSync } from 'node:fs';
 
 import z from 'zod';
 
-export const API_URL = (process.env.API_URL ?? 'http://localhost:4040').replace(/\/$/, '');
+const API_URL = (process.env.API_URL ?? 'http://localhost:4040').replace(/\/$/, '');
 const COOKIE = process.env.E2E_SESSION_COOKIE;
 const TURN_TIMEOUT_MS = 90_000;
 
@@ -53,7 +54,6 @@ export type Turn = {
   chatId: string | null;
   // The assistant message a pending confirmation belongs to.
   assistantMessageId: string | null;
-  requested: string[];
   // Arguments the model sent, and what each tool answered, in call order.
   calls: { name: string; arguments: string }[];
   completed: { name: string; error: boolean; content: string }[];
@@ -63,7 +63,7 @@ export type Turn = {
   pending: { toolCallId: string; toolName: string } | null;
 };
 
-export async function api(path: string, init: RequestInit = {}): Promise<Response> {
+async function api(path: string, init: RequestInit = {}): Promise<Response> {
   return fetch(`${API_URL}${path}`, {
     signal: AbortSignal.timeout(30_000),
     ...init,
@@ -83,7 +83,6 @@ async function readTurn(response: Response, previous?: Turn): Promise<Turn> {
   const turn: Turn = {
     chatId: previous?.chatId ?? null,
     assistantMessageId: previous?.assistantMessageId ?? null,
-    requested: [],
     calls: [],
     completed: [],
     text: '',
@@ -114,7 +113,6 @@ async function readTurn(response: Response, previous?: Turn): Promise<Turn> {
       } else if (type === 'tool.requested') {
         const parsed = toolRequestedSchema.safeParse(payload);
         if (parsed.success) {
-          turn.requested.push(parsed.data.call.name);
           turn.calls.push({
             name: parsed.data.call.name,
             arguments: parsed.data.call.arguments ?? '',
@@ -189,7 +187,6 @@ export function mergeTurns(first: Turn, second: Turn): Turn {
   return {
     chatId: second.chatId ?? first.chatId,
     assistantMessageId: second.assistantMessageId ?? first.assistantMessageId,
-    requested: [...first.requested, ...second.requested],
     calls: [...first.calls, ...second.calls],
     completed: [...first.completed, ...second.completed],
     text: second.text || first.text,
@@ -198,9 +195,36 @@ export function mergeTurns(first: Turn, second: Turn): Turn {
   };
 }
 
+export const clip = (text: string, max: number) =>
+  text.length > max ? `${text.slice(0, max)}…` : text;
+
+/** "<tool> never completed (requested: …)" with whatever the failed calls said. */
+export function describeMissingCall(turn: Turn, tool: string): string {
+  const requested = turn.calls.map((call) => call.name).join(', ') || 'none';
+  return `${tool} never completed (requested: ${requested})${describeFailedCalls(turn)}`;
+}
+
+/** Cases named in the comma-separated env var, or all of them when it is unset or blank. */
+export function selectCases<T extends { name: string }>(envName: string, all: readonly T[]): T[] {
+  const names = (process.env[envName] ?? '')
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+  const selected = names.length > 0 ? all.filter((item) => names.includes(item.name)) : [...all];
+  if (selected.length === 0) {
+    console.error(`No cases match ${envName}=${process.env[envName]}`);
+    process.exit(1);
+  }
+  return selected;
+}
+
+/** Appends a section to the GitHub job summary; only static pass/fail text belongs here. */
+export function appendJobSummary(markdown: string): void {
+  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown);
+}
+
 // What the model sent and what each failed tool answered, for the job log.
 export function describeFailedCalls(turn: Turn): string {
-  const clip = (text: string) => (text.length > 300 ? `${text.slice(0, 300)}…` : text);
   const failed = turn.completed
     .map((result, index) => ({ result, call: turn.calls[index] }))
     .filter(({ result }) => result.error);
@@ -209,7 +233,7 @@ export function describeFailedCalls(turn: Turn): string {
     : ` | failed calls: ${failed
         .map(
           ({ result, call }) =>
-            `${result.name}(${clip(call?.arguments ?? '?')}) -> ${clip(result.content)}`,
+            `${result.name}(${clip(call?.arguments ?? '?', 300)}) -> ${clip(result.content, 300)}`,
         )
         .join(' ; ')}`;
 }
@@ -223,7 +247,7 @@ const taskSchema = z.object({
   priority: z.string().optional(),
   dueAt: z.string().nullable().optional(),
 });
-export type TaskRow = z.infer<typeof taskSchema>;
+type TaskRow = z.infer<typeof taskSchema>;
 
 export async function listTasks(): Promise<TaskRow[]> {
   const response = await api('/api/tasks');
@@ -286,7 +310,7 @@ export function createdIds(turn: Turn, toolName: string, key: string): string[] 
     .flatMap((result) => {
       try {
         const parsed = shape.safeParse(JSON.parse(result.content));
-        return parsed.success ? [z.object({ id: z.string() }).parse(parsed.data[key]).id] : [];
+        return parsed.success ? [parsed.data[key].id] : [];
       } catch {
         return [];
       }

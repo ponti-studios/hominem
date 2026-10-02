@@ -2,37 +2,18 @@ import { z } from 'zod';
 
 import type { CapabilityDefinition } from '../application/capability';
 
-export const chatToolPlanStepSchema = z.object({
-  tool: z.string().trim().min(1),
-  purpose: z.string().trim().min(1).max(240),
-  dependsOn: z.array(z.string().trim().min(1)).max(10),
-  arguments: z.record(z.string(), z.unknown()).default({}),
-});
-
+// The plan the model is asked for, and what is validated afterwards. Deliberately plain: a
+// richer schema (a free-form `arguments` object, defaults) made the provider reject every plan
+// request with "Provider returned error", so each plan silently fell back. The router has
+// already decided whether a lookup is needed, and planned arguments were never executed.
 export const chatToolPlanSchema = z.object({
-  requiresLookup: z.boolean(),
-  steps: z.array(chatToolPlanStepSchema).max(20),
-});
-
-// What the provider is asked to produce. The full schema above is rejected by the provider
-// ("Provider returned error" on every live plan request): its free-form `arguments` object
-// (`additionalProperties: {}`, `propertyNames`, a default) is outside the JSON-schema subset it
-// accepts, so every plan silently fell back. Planned arguments are only ever validated, never
-// executed, so the request leaves them out and the response is re-parsed with the full schema
-// (which fills them with `{}`) before validation.
-export const chatToolPlanRequestSchema = z.object({
-  requiresLookup: z.boolean(),
   steps: z.array(
-    z.object({
-      tool: z.string(),
-      purpose: z.string(),
-      dependsOn: z.array(z.string()),
-    }),
+    z.object({ tool: z.string(), purpose: z.string(), dependsOn: z.array(z.string()) }),
   ),
 });
 
-export type ChatToolPlanStep = z.infer<typeof chatToolPlanStepSchema>;
 export type ChatToolPlan = z.infer<typeof chatToolPlanSchema>;
+export type ChatToolPlanStep = ChatToolPlan['steps'][number];
 
 export type ToolPlanValidation = { ok: true; plan: ChatToolPlan } | { ok: false; errors: string[] };
 
@@ -108,33 +89,11 @@ export function validateChatToolPlan(
       }
     }
 
-    // Planned arguments may intentionally omit values produced by an earlier
-    // tool. Runtime callTool remains authoritative for the complete argument
-    // object; the planner validates every value it does know about here.
-    // `.partial()` throws on an object schema that carries a refinement (task_create among
-    // them), which turned every plan using such a tool into a thrown error and a silent
-    // fallback. Rebuilding from the shape keeps the field types and drops only the refinement.
-    const result =
-      definition.inputSchema instanceof z.ZodObject
-        ? z.object(definition.inputSchema.shape).partial().safeParse(step.arguments)
-        : definition.inputSchema.safeParse(step.arguments);
-    if (!result.success) {
-      errors.push(
-        `${step.tool} has invalid planned arguments: ${result.error.issues
-          .map((issue) => issue.path.join('.') || '<root>')
-          .join(', ')}`,
-      );
-    }
     if (definition.readOnly) scheduledReads.add(step.tool);
   }
 
   if (hasCycle(parsed.data.steps)) errors.push('Tool plan contains a dependency cycle');
-  if (parsed.data.requiresLookup && parsed.data.steps.length === 0) {
-    errors.push('A lookup plan must contain at least one tool');
-  }
-  if (!parsed.data.requiresLookup && parsed.data.steps.length > 0) {
-    errors.push('A no-lookup plan cannot contain tool steps');
-  }
+  if (parsed.data.steps.length === 0) errors.push('A lookup plan must contain at least one tool');
 
   return errors.length > 0 ? { ok: false, errors } : { ok: true, plan: parsed.data };
 }

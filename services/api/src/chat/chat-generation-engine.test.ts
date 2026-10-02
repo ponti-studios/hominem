@@ -11,6 +11,7 @@ import { z } from 'zod';
 import type { CapabilityDefinition } from '../application/capability';
 import type { McpToolResult } from '../mcp/tool-registry';
 import { executeGenerationTurn, ToolInputError } from './chat-generation-engine';
+import { chatToolName } from './chat-tool-name';
 
 vi.mock('@hominem/ai', () => ({
   streamChatCompletion: vi.fn(),
@@ -75,7 +76,7 @@ describe('chat generation service', () => {
       tools: [
         { type: 'function', function: { name: 'write', description: 'write', parameters: {} } },
       ],
-      toolPlan: [{ tool: 'lookup', purpose: 'Resolve context', dependsOn: [], arguments: {} }],
+      toolPlan: [{ tool: 'lookup', purpose: 'Resolve context', dependsOn: [] }],
       toolRuntime: { callTool, getToolDefinition: vi.fn(() => undefined) },
       effectStore: { get: vi.fn().mockResolvedValue(null), save },
     });
@@ -156,7 +157,7 @@ describe('chat generation service', () => {
             function: { name: 'create_thing', description: 'create', parameters: {} },
           },
         ],
-        toolPlan: [{ tool: 'create_thing', purpose: 'Create it', dependsOn: [], arguments: {} }],
+        toolPlan: [{ tool: 'create_thing', purpose: 'Create it', dependsOn: [] }],
         toolRuntime: { callTool, getToolDefinition: vi.fn(() => definition) },
         effectStore: { get: vi.fn().mockResolvedValue(null), save },
       });
@@ -228,8 +229,8 @@ describe('chat generation service', () => {
         { type: 'function', function: { name: 'detail', description: 'detail', parameters: {} } },
       ],
       toolPlan: [
-        { tool: 'lookup', purpose: 'Resolve context', dependsOn: [], arguments: {} },
-        { tool: 'detail', purpose: 'Load detail', dependsOn: ['lookup'], arguments: {} },
+        { tool: 'lookup', purpose: 'Resolve context', dependsOn: [] },
+        { tool: 'detail', purpose: 'Load detail', dependsOn: ['lookup'] },
       ],
       toolRuntime: { callTool, getToolDefinition: vi.fn(() => undefined) },
       effectStore: { get: vi.fn().mockResolvedValue(null), save },
@@ -360,9 +361,7 @@ describe('chat generation service', () => {
       },
     };
     const offered = (call: number) =>
-      (mockedStream.mock.calls[call]?.[0].tools ?? []).map((tool) =>
-        'function' in tool ? tool.function.name : tool.type,
-      );
+      (mockedStream.mock.calls[call]?.[0].tools ?? []).map(chatToolName);
 
     await executeGenerationTurn({
       userId: 'user-1',
@@ -375,8 +374,8 @@ describe('chat generation service', () => {
         { type: 'function', function: { name: 'detail', description: 'd', parameters: {} } },
       ],
       toolPlan: [
-        { tool: 'lookup', purpose: 'Resolve', dependsOn: [], arguments: {} },
-        { tool: 'detail', purpose: 'Load', dependsOn: ['lookup'], arguments: {} },
+        { tool: 'lookup', purpose: 'Resolve', dependsOn: [] },
+        { tool: 'detail', purpose: 'Load', dependsOn: ['lookup'] },
       ],
       toolRuntime: {
         callTool: vi.fn().mockResolvedValue({ content: [{ type: 'text', text: '{}' }] }),

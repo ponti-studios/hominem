@@ -4,6 +4,7 @@ import { createGenerationState } from '@hominem/chat/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MAX_CALLS_PER_TOOL, OpenRouterChatModel } from './chat-generation-provider';
+import { chatToolName } from './chat-tool-name';
 
 const mockedLogger = vi.hoisted(() => ({ warn: vi.fn(), info: vi.fn() }));
 const mockedOpenRouterRequestError = vi.hoisted(
@@ -56,6 +57,23 @@ async function collect<T>(values: AsyncIterable<T>): Promise<T[]> {
   for await (const value of values) collected.push(value);
   return collected;
 }
+
+const fnTool = (name: string) => ({
+  type: 'function' as const,
+  function: { name, description: name, parameters: {} },
+});
+const callChunk = (id: string, name: string) =>
+  chunk([
+    {
+      index: 0,
+      finishReason: 'tool_calls',
+      delta: { toolCalls: [{ index: 0, id, function: { name, arguments: '{}' } }] },
+    },
+  ]);
+const textChunk = (content = 'ok') =>
+  chunk([{ index: 0, finishReason: 'stop', delta: { content } }]);
+// The tools sent in the most recent request.
+const offered = () => (mockedStream.mock.calls.at(-1)?.[0].tools ?? []).map(chatToolName);
 
 // Delivers `values` immediately, then hangs forever on the next `.next()`
 // call — simulating OpenRouter delivering a complete response and then
@@ -126,9 +144,7 @@ describe('OpenRouter generation provider', () => {
     const provider = new OpenRouterChatModel({
       model: 'test-model',
       messages: [],
-      tools: [
-        { type: 'function', function: { name: 'first', description: 'first', parameters: {} } },
-      ],
+      tools: [fnTool('first')],
       requiresToolCall: true,
       requiresConfirmation: (name) => name === 'second',
     });
@@ -207,9 +223,7 @@ describe('OpenRouter generation provider', () => {
     const provider = new OpenRouterChatModel({
       model: 'test-model',
       messages: [],
-      tools: [
-        { type: 'function', function: { name: 'lookup', description: 'lookup', parameters: {} } },
-      ],
+      tools: [fnTool('lookup')],
       requiresToolCall: true,
     });
     const state = createGenerationState('generation-1');
@@ -267,9 +281,7 @@ describe('OpenRouter generation provider', () => {
       },
     ]);
 
-    mockedStream.mockReturnValueOnce(
-      chunks([chunk([{ index: 0, finishReason: 'stop', delta: { content: 'ok' } }])]),
-    );
+    mockedStream.mockReturnValueOnce(chunks([textChunk()]));
     await expect(
       collect(
         provider.retry({
@@ -339,9 +351,7 @@ describe('OpenRouter generation provider', () => {
       const provider = new OpenRouterChatModel({
         model: 'test-model',
         messages: [],
-        tools: [
-          { type: 'function', function: { name: 'task_list', description: 'x', parameters: {} } },
-        ],
+        tools: [fnTool('task_list')],
         maxTokens: 250,
         ...options,
       });
@@ -424,15 +434,11 @@ describe('OpenRouter generation provider', () => {
     it('asks again with "auto" after an empty "required" turn', async () => {
       mockedStream
         .mockReturnValueOnce(chunks([chunk([{ index: 0, finishReason: 'length', delta: {} }])]))
-        .mockReturnValueOnce(
-          chunks([chunk([{ index: 0, finishReason: 'stop', delta: { content: 'ok' } }])]),
-        );
+        .mockReturnValueOnce(chunks([textChunk()]));
       const provider = new OpenRouterChatModel({
         model: 'test-model',
         messages: [],
-        tools: [
-          { type: 'function', function: { name: 'task_list', description: 'x', parameters: {} } },
-        ],
+        tools: [fnTool('task_list')],
         requiresToolCall: true,
       });
       const state = createGenerationState('generation-7');
@@ -471,26 +477,11 @@ describe('OpenRouter generation provider', () => {
       });
     });
 
-    it('does not log for a turn that produced text', async () => {
-      await run([chunk([{ index: 0, finishReason: 'stop', delta: { content: 'hello' } }])]);
-
-      expect(mockedLogger.warn).not.toHaveBeenCalledWith('provider_turn_empty', expect.anything());
-    });
-
-    it('does not log for a turn that made a tool call', async () => {
-      await run([
-        chunk([
-          {
-            index: 0,
-            finishReason: 'tool_calls',
-            delta: {
-              toolCalls: [
-                { index: 0, id: 'call-1', function: { name: 'task_list', arguments: '{}' } },
-              ],
-            },
-          },
-        ]),
-      ]);
+    it.each([
+      ['produced text', textChunk('hello')],
+      ['made a tool call', callChunk('call-1', 'task_list')],
+    ])('does not log for a turn that %s', async (_label, turn) => {
+      await run([turn]);
 
       expect(mockedLogger.warn).not.toHaveBeenCalledWith('provider_turn_empty', expect.anything());
     });
@@ -501,19 +492,11 @@ describe('OpenRouter generation provider', () => {
     const provider = new OpenRouterChatModel({
       model: 'test-model',
       messages: [],
-      tools: [
-        { type: 'function', function: { name: 'task_list', description: 'x', parameters: {} } },
-        { type: 'function', function: { name: 'task_delete', description: 'x', parameters: {} } },
-      ],
+      tools: [fnTool('task_list'), fnTool('task_delete')],
       isToolAvailable: (name) => name !== 'task_delete' || ready,
     });
-    const offered = () =>
-      (mockedStream.mock.calls.at(-1)?.[0].tools ?? []).map((tool) =>
-        'function' in tool ? tool.function.name : tool.type,
-      );
     const state = createGenerationState('generation-8');
-    const text = () =>
-      chunks([chunk([{ index: 0, finishReason: 'stop', delta: { content: 'ok' } }])]);
+    const text = () => chunks([textChunk()]);
 
     mockedStream.mockReturnValueOnce(text());
     await collect(provider.open({ turnId: 't1', iteration: 0, state }));
@@ -526,38 +509,16 @@ describe('OpenRouter generation provider', () => {
   });
 
   describe('a tool the model keeps calling', () => {
-    const offered = () =>
-      (mockedStream.mock.calls.at(-1)?.[0].tools ?? []).map((tool) =>
-        'function' in tool ? tool.function.name : tool.type,
-      );
-
     it('is withdrawn after MAX_CALLS_PER_TOOL calls so the model has to answer', async () => {
       const provider = new OpenRouterChatModel({
         model: 'test-model',
         messages: [],
-        tools: [
-          { type: 'function', function: { name: 'task_list', description: 'x', parameters: {} } },
-          { type: 'function', function: { name: 'task_update', description: 'x', parameters: {} } },
-        ],
+        tools: [fnTool('task_list'), fnTool('task_update')],
       });
       const state = createGenerationState('generation-9');
 
       for (let call = 1; call <= MAX_CALLS_PER_TOOL; call++) {
-        mockedStream.mockReturnValueOnce(
-          chunks([
-            chunk([
-              {
-                index: 0,
-                finishReason: 'tool_calls',
-                delta: {
-                  toolCalls: [
-                    { index: 0, id: `c${call}`, function: { name: 'task_list', arguments: '{}' } },
-                  ],
-                },
-              },
-            ]),
-          ]),
-        );
+        mockedStream.mockReturnValueOnce(chunks([callChunk(`c${call}`, 'task_list')]));
         await collect(provider.open({ turnId: `t${call}`, iteration: call - 1, state }));
         expect(offered()).toEqual(['task_list', 'task_update']);
       }

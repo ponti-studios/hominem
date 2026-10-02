@@ -140,10 +140,8 @@ export const taskDetailResultSchema = z.object({
   children: z.array(TaskRecordSchema),
 });
 
-// Models fill in every optional field they are shown, with invented values, and a filter the
-// user never asked for silently hides tasks (a live model sent priority "medium" and a
-// zero-width due-date window and concluded the user had no gym task). Each description says
-// when a filter may be set.
+// Models fill in every optional field they are shown with invented values, and a filter the
+// user never asked for silently hides tasks. Each description says when a filter may be set.
 export const TaskListQuerySchema = z.object({
   limit: z
     .number()

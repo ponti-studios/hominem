@@ -18,6 +18,7 @@ vi.mock('./register-tools', () => ({ ensureMcpToolsRegistered: async () => undef
 
 import { logger } from '@hominem/telemetry';
 
+import { chatToolName } from '../chat/chat-tool-name';
 import { planChatTools } from './chat-tool-adapter';
 import { registerTool } from './tool-registry';
 
@@ -63,16 +64,30 @@ beforeAll(() => {
   register('finance_transactions', 'finance', 'read');
 });
 
-function toolNames(tools: Awaited<ReturnType<typeof planChatTools>>['tools']) {
-  return tools.map((tool) => ('function' in tool ? tool.function.name : tool.type));
-}
+const toolNames = (tools: Awaited<ReturnType<typeof planChatTools>>['tools']) =>
+  tools.map(chatToolName);
 
-const ADD_TASK_MESSAGES = [
-  {
-    role: 'user' as const,
-    content: 'add a task to setup google home for my new living room lights',
-  },
-];
+const userSays = (content: string) => [{ role: 'user' as const, content }];
+const ADD_TASK = userSays('add a task to setup google home for my new living room lights');
+const SPENDING = userSays('how much did I spend last month?');
+
+type Route = { capabilities?: string[]; requiresLookup?: boolean; requiresWebSearch?: boolean };
+const routerSays = ({
+  capabilities = [],
+  requiresLookup = false,
+  requiresWebSearch = false,
+}: Route) =>
+  mocks.createStructuredChatCompletion.mockResolvedValueOnce({
+    output: { capabilities, requiresLookup, requiresWebSearch },
+    usage: null,
+  });
+const plannerSays = (tools: string[]) =>
+  mocks.createStructuredChatCompletion.mockResolvedValueOnce({
+    output: { steps: tools.map((tool) => ({ tool, purpose: 'Find spending', dependsOn: [] })) },
+    usage: null,
+  });
+const plan = (messages: Parameters<typeof planChatTools>[0]['messages']) =>
+  planChatTools({ model: 'test-model', messages });
 
 // Regression: the router classified "add a task..." as not needing a lookup, so the
 // model was given no tools at all and replied "let me check your tasks..." without
@@ -83,150 +98,72 @@ describe('planChatTools core tools', () => {
     mocks.getModelCapabilityProfile.mockReturnValue({ structuredPlanning: true });
   });
 
-  it('still exposes task tools when the router says no lookup is required', async () => {
-    mocks.createStructuredChatCompletion.mockResolvedValueOnce({
-      output: { capabilities: [], requiresLookup: false, requiresWebSearch: false },
-      usage: null,
-    });
+  it('exposes and schedules the core tools when the router says no lookup is required', async () => {
+    routerSays({});
 
-    const plan = await planChatTools({ model: 'test-model', messages: ADD_TASK_MESSAGES });
+    const planned = await plan(ADD_TASK);
 
-    expect(plan.requiresLookup).toBe(false);
-    expect(toolNames(plan.tools)).toEqual(
+    expect(planned.requiresLookup).toBe(false);
+    expect(toolNames(planned.tools)).toEqual(
       expect.arrayContaining(['task_list', 'task_create', 'task_update']),
     );
-    // The engine rejects any tool call that is not a planned step, so the tools
-    // must be scheduled as well as exposed.
-    expect(plan.steps.map((step) => step.tool)).toEqual(
+    expect(toolNames(planned.tools)).not.toContain('finance_transactions');
+    // The engine rejects any tool call that is not a planned step, so the tools must be
+    // scheduled as well as exposed, with every prerequisite of a scheduled tool.
+    const scheduled = new Set(planned.steps.map((step) => step.tool));
+    expect([...scheduled]).toEqual(
       expect.arrayContaining(['task_list', 'task_create', 'task_update']),
     );
-  });
-
-  it('does not expose non-core private tools the router did not select', async () => {
-    mocks.createStructuredChatCompletion.mockResolvedValueOnce({
-      output: { capabilities: [], requiresLookup: false, requiresWebSearch: false },
-      usage: null,
-    });
-
-    const plan = await planChatTools({ model: 'test-model', messages: ADD_TASK_MESSAGES });
-
-    expect(toolNames(plan.tools)).not.toContain('finance_transactions');
+    for (const step of planned.steps) {
+      for (const dependency of step.dependsOn) expect(scheduled).toContain(dependency);
+    }
   });
 
   it('keeps web search alongside the core tools', async () => {
-    mocks.createStructuredChatCompletion.mockResolvedValueOnce({
-      output: { capabilities: [], requiresLookup: false, requiresWebSearch: true },
-      usage: null,
-    });
+    routerSays({ requiresWebSearch: true });
 
-    const plan = await planChatTools({ model: 'test-model', messages: ADD_TASK_MESSAGES });
-
-    expect(toolNames(plan.tools)).toEqual(
+    expect(toolNames((await plan(ADD_TASK)).tools)).toEqual(
       expect.arrayContaining(['task_create', 'openrouter:web_search']),
     );
   });
 
   it('adds the core tools to a routed lookup plan instead of replacing them', async () => {
-    mocks.createStructuredChatCompletion
-      .mockResolvedValueOnce({
-        output: { capabilities: ['finance'], requiresLookup: true, requiresWebSearch: false },
-        usage: null,
-      })
-      .mockResolvedValueOnce({
-        output: {
-          requiresLookup: true,
-          steps: [
-            {
-              tool: 'finance_transactions',
-              purpose: 'Find spending',
-              dependsOn: [],
-              arguments: {},
-            },
-          ],
-        },
-        usage: null,
-      });
+    routerSays({ capabilities: ['finance'], requiresLookup: true });
+    plannerSays(['finance_transactions']);
 
-    const plan = await planChatTools({
-      model: 'test-model',
-      messages: [{ role: 'user', content: 'how much did I spend last month?' }],
-    });
+    const planned = await plan(SPENDING);
 
-    expect(plan.requiresLookup).toBe(true);
-    expect(toolNames(plan.tools)).toEqual(
+    expect(planned.requiresLookup).toBe(true);
+    expect(toolNames(planned.tools)).toEqual(
       expect.arrayContaining(['finance_transactions', 'task_list', 'task_create']),
     );
-    expect(plan.steps[0]?.tool).toBe('finance_transactions');
+    expect(planned.steps[0]?.tool).toBe('finance_transactions');
   });
 
   it('exposes the core tools on the keyword fallback path too', async () => {
     mocks.getModelCapabilityProfile.mockReturnValue({ structuredPlanning: false });
 
-    const plan = await planChatTools({
+    const planned = await planChatTools({
       model: 'muse',
-      messages: [{ role: 'user', content: 'pick up milk on the way home' }],
+      messages: userSays('pick up milk on the way home'),
     });
 
-    expect(plan.requiresLookup).toBe(false);
-    expect(toolNames(plan.tools)).toEqual(
+    expect(planned.requiresLookup).toBe(false);
+    expect(toolNames(planned.tools)).toEqual(
       expect.arrayContaining(['task_list', 'task_create', 'notes_search', 'memory_search']),
     );
     expect(mocks.createStructuredChatCompletion).not.toHaveBeenCalled();
   });
 
-  it('schedules every prerequisite of a core tool', async () => {
-    mocks.createStructuredChatCompletion.mockResolvedValueOnce({
-      output: { capabilities: [], requiresLookup: false, requiresWebSearch: false },
-      usage: null,
-    });
-
-    const plan = await planChatTools({ model: 'test-model', messages: ADD_TASK_MESSAGES });
-
-    const scheduled = new Set(plan.steps.map((step) => step.tool));
-    for (const step of plan.steps) {
-      for (const dependency of step.dependsOn) expect(scheduled).toContain(dependency);
-    }
-  });
-
   it('tells the router that creating or changing saved data needs a lookup', async () => {
-    mocks.createStructuredChatCompletion.mockResolvedValueOnce({
-      output: { capabilities: [], requiresLookup: false, requiresWebSearch: false },
-      usage: null,
-    });
+    routerSays({});
 
-    await planChatTools({ model: 'test-model', messages: ADD_TASK_MESSAGES });
+    await plan(ADD_TASK);
 
     const [{ messages }] = mocks.createStructuredChatCompletion.mock.calls[0] ?? [{ messages: [] }];
     const routingPrompt = messages.find((message: { role: string }) => message.role === 'system');
     expect(routingPrompt?.content).toMatch(/creating, updating, completing, or deleting a record/);
     expect(routingPrompt?.content).toMatch(/"Add a task"/);
-  });
-
-  // Regression: the plan model answered requiresLookup:false next to a list of steps, which
-  // failed validation ("A no-lookup plan cannot contain tool steps") and discarded the plan.
-  it('keeps a plan whose own requiresLookup flag disagrees with its steps', async () => {
-    mocks.createStructuredChatCompletion
-      .mockResolvedValueOnce({
-        output: { capabilities: ['finance'], requiresLookup: true, requiresWebSearch: false },
-        usage: null,
-      })
-      .mockResolvedValueOnce({
-        output: {
-          requiresLookup: false,
-          steps: [{ tool: 'finance_transactions', purpose: 'Find spending', dependsOn: [] }],
-        },
-        usage: null,
-      });
-
-    const plan = await planChatTools({
-      model: 'test-model',
-      messages: [{ role: 'user', content: 'how much did I spend last month?' }],
-    });
-
-    expect(plan.requiresLookup).toBe(true);
-    expect(plan.steps.find((step) => step.tool === 'finance_transactions')?.purpose).toBe(
-      'Find spending',
-    );
   });
 
   // docs/observability.md: no provider response bodies in exported telemetry. A provider error
@@ -236,17 +173,12 @@ describe('planChatTools core tools', () => {
     class ProviderError extends Error {
       status = 400;
     }
-    mocks.createStructuredChatCompletion
-      .mockResolvedValueOnce({
-        output: { capabilities: ['finance'], requiresLookup: true, requiresWebSearch: false },
-        usage: null,
-      })
-      .mockRejectedValueOnce(new ProviderError('body: secret schema detail from provider'));
+    routerSays({ capabilities: ['finance'], requiresLookup: true });
+    mocks.createStructuredChatCompletion.mockRejectedValueOnce(
+      new ProviderError('body: secret schema detail from provider'),
+    );
 
-    await planChatTools({
-      model: 'test-model',
-      messages: [{ role: 'user', content: 'how much did I spend last month?' }],
-    });
+    await plan(SPENDING);
 
     const fallback = warn.mock.calls.find(
       ([event]) => event === 'chat_tool_plan_validation_failed',
