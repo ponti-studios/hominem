@@ -12,136 +12,16 @@
  * ordinary sampling variance; a case that fails every attempt fails the run.
  */
 
-import { randomUUID } from 'node:crypto';
 import { appendFileSync } from 'node:fs';
 
-import z from 'zod';
+import { deleteTask, describeFailedCalls, listTasks, runTurn, type Turn } from './live-chat-client';
 
-const API_URL = (process.env.API_URL ?? 'http://localhost:4040').replace(/\/$/, '');
-const COOKIE = process.env.E2E_SESSION_COOKIE;
 const ATTEMPTS = Number(process.env.SMOKE_ATTEMPTS ?? 2);
-const TURN_TIMEOUT_MS = 90_000;
-
-if (!COOKIE) {
-  console.error('E2E_SESSION_COOKIE is required (run `pnpm e2e:setup` and export its output).');
-  process.exit(1);
-}
-
-const eventSchema = z.object({ type: z.string(), payload: z.unknown() });
-const toolRequestedSchema = z.object({
-  call: z.object({ name: z.string(), arguments: z.string().optional() }),
-});
-const toolCompletedSchema = z.object({
-  result: z.object({
-    toolName: z.string(),
-    error: z.boolean().optional(),
-    content: z.string().optional(),
-  }),
-});
-const textDeltaSchema = z.object({ text: z.string() });
-const taskListSchema = z.object({
-  tasks: z.array(z.object({ id: z.string(), title: z.string() })),
-});
-
-type Turn = {
-  requested: string[];
-  // Arguments the model sent, and what the tool answered, in call order.
-  calls: { name: string; arguments: string }[];
-  completed: { name: string; error: boolean; content: string }[];
-  text: string;
-  failed: boolean;
-};
-
-async function api(path: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(`${API_URL}${path}`, {
-    signal: AbortSignal.timeout(30_000),
-    ...init,
-    headers: {
-      'content-type': 'application/json',
-      cookie: COOKIE ?? '',
-      origin: API_URL,
-      ...init.headers,
-    },
-  });
-}
-
-async function runTurn(message: string): Promise<Turn> {
-  const response = await api('/api/chats/start-stream', {
-    method: 'POST',
-    body: JSON.stringify({ generationId: randomUUID(), title: 'live-chat-smoke', message }),
-    signal: AbortSignal.timeout(TURN_TIMEOUT_MS),
-  });
-  if (!response.ok || !response.body) {
-    throw new Error(`start-stream failed: HTTP ${response.status} ${await response.text()}`);
-  }
-
-  const turn: Turn = { requested: [], calls: [], completed: [], text: '', failed: false };
-  const decoder = new TextDecoder();
-  let buffer = '';
-  for await (const chunk of response.body) {
-    buffer += decoder.decode(chunk, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() ?? '';
-    for (const line of lines) {
-      if (!line.startsWith('data: ') || line === 'data: [DONE]') continue;
-      const event = eventSchema.safeParse(JSON.parse(line.slice('data: '.length)));
-      if (!event.success) continue;
-      const { type, payload } = event.data;
-      if (type === 'tool.requested') {
-        const parsed = toolRequestedSchema.safeParse(payload);
-        if (parsed.success) {
-          turn.requested.push(parsed.data.call.name);
-          turn.calls.push({
-            name: parsed.data.call.name,
-            arguments: parsed.data.call.arguments ?? '',
-          });
-        }
-      } else if (type === 'tool.completed' || type === 'tool.failed') {
-        const parsed = toolCompletedSchema.safeParse(payload);
-        if (parsed.success) {
-          turn.completed.push({
-            name: parsed.data.result.toolName,
-            error: parsed.data.result.error ?? false,
-            content: parsed.data.result.content ?? '',
-          });
-        }
-      } else if (type === 'text-delta') {
-        const parsed = textDeltaSchema.safeParse(payload);
-        if (parsed.success) turn.text += parsed.data.text;
-      } else if (type === 'generation.failed') {
-        turn.failed = true;
-      }
-    }
-  }
-  return turn;
-}
-
-async function listTasks() {
-  const response = await api('/api/tasks');
-  if (!response.ok) throw new Error(`GET /api/tasks failed: HTTP ${response.status}`);
-  return taskListSchema.parse(await response.json()).tasks;
-}
 
 async function deleteTasksMatching(pattern: RegExp) {
   for (const task of await listTasks()) {
-    if (pattern.test(task.title)) await api(`/api/tasks/${task.id}`, { method: 'DELETE' });
+    if (pattern.test(task.title)) await deleteTask(task.id);
   }
-}
-
-// What the model sent and what each failed tool answered, for the job log.
-function describeFailedCalls(turn: Turn): string {
-  const clip = (text: string) => (text.length > 300 ? `${text.slice(0, 300)}…` : text);
-  const failed = turn.completed
-    .map((result, index) => ({ result, call: turn.calls[index] }))
-    .filter(({ result }) => result.error);
-  return failed.length === 0
-    ? ''
-    : ` | failed calls: ${failed
-        .map(
-          ({ result, call }) =>
-            `${result.name}(${clip(call?.arguments ?? '?')}) -> ${clip(result.content)}`,
-        )
-        .join(' ; ')}`;
 }
 
 const GOOGLE_HOME = /google home/i;

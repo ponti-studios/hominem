@@ -1,6 +1,8 @@
 import { resendMock } from '@hominem/services/email';
 import { Dispatcher, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
 
+import { scriptedFlowStep } from './scripted-flows';
+
 // Single owner of every scripted external-provider response (OpenRouter,
 // Resend) for ENV=scripted, at the undici dispatcher level.
 //
@@ -24,9 +26,16 @@ import { Dispatcher, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
 // OpenRouter: deterministic chat-completion responses
 // ============================================================================
 
+type OpenRouterToolCall = { id?: string; function?: { name?: string } };
+
 type OpenRouterMessage = {
   role?: string;
   content?: unknown;
+  // The wire format is snake_case; camelCase is accepted in case a client sends it.
+  tool_calls?: OpenRouterToolCall[];
+  toolCalls?: OpenRouterToolCall[];
+  tool_call_id?: string;
+  toolCallId?: string;
 };
 
 type OpenRouterRequest = {
@@ -42,6 +51,7 @@ type ScriptedContext = {
   userText: string;
   hasToolResult: boolean;
   toolResultCount: number;
+  turnResults: { name: string; content: string }[];
   hasRejectedToolResult: boolean;
   hasFailedToolResult: boolean;
 };
@@ -73,6 +83,24 @@ function firstMatchingRule<T>(rules: readonly ScriptedRule<T>[], context: Script
   return rule.resolve(context);
 }
 
+// Tool results since the latest user message, each with the name of the tool that made it.
+function turnToolResults(messages: OpenRouterMessage[]) {
+  const names = new Map<string, string>();
+  for (const message of messages) {
+    for (const call of message.tool_calls ?? message.toolCalls ?? []) {
+      if (call.id && call.function?.name) names.set(call.id, call.function.name);
+    }
+  }
+  const lastUser = messages.map((message) => message.role).lastIndexOf('user');
+  return messages
+    .slice(lastUser + 1)
+    .filter((message) => message.role === 'tool')
+    .map((message) => ({
+      name: names.get(message.tool_call_id ?? message.toolCallId ?? '') ?? '',
+      content: String(message.content ?? ''),
+    }));
+}
+
 function createContext(request: OpenRouterRequest): ScriptedContext {
   const messages = request.messages ?? [];
   const latestUserMessage = [...messages].reverse().find((message) => message.role === 'user');
@@ -85,6 +113,7 @@ function createContext(request: OpenRouterRequest): ScriptedContext {
     ),
     hasToolResult: messages.some((message) => message.role === 'tool'),
     toolResultCount: messages.filter((message) => message.role === 'tool').length,
+    turnResults: turnToolResults(messages),
     hasRejectedToolResult: messages.some(
       (message) => message.role === 'tool' && /rejected/i.test(String(message.content ?? '')),
     ),
@@ -167,7 +196,17 @@ const contentRules: readonly ScriptedRule<string>[] = [
 
 function openRouterResponseBody(request: OpenRouterRequest) {
   const context = createContext(request);
-  const toolName = firstMatchingRule(toolNameRules, context);
+  // Natural-language flow scripts (see scripted-flows.ts) take precedence for chat turns.
+  const flowStep =
+    request.response_format === undefined
+      ? scriptedFlowStep({
+          userText: context.userText,
+          toolNames: context.toolNames,
+          turnResults: context.turnResults,
+        })
+      : null;
+  const flowTool = flowStep && 'tool' in flowStep ? flowStep : null;
+  const toolName = flowStep ? (flowTool?.tool ?? null) : firstMatchingRule(toolNameRules, context);
   const shouldFailTool = /SCRIPT:TOOL_FAIL/i.test(context.userText);
   const id = `scripted-${++requestNumber}`;
   const toolCall = {
@@ -176,23 +215,26 @@ function openRouterResponseBody(request: OpenRouterRequest) {
     type: 'function',
     function: {
       name: toolName ?? 'create_collection',
-      arguments: shouldFailTool
-        ? '{invalid'
-        : toolName === 'list_collections' || toolName === 'task_list'
-          ? '{}'
-          : toolName === 'task_create'
-            ? JSON.stringify({
-                title: 'Set up Google Home for living room lights',
-                artifactType: 'task',
-              })
-            : JSON.stringify({
-                description: 'Created by the local scripted provider',
-                name: 'Browser scripted provider collection',
-                visibility: 'private',
-              }),
+      arguments: flowTool
+        ? JSON.stringify(flowTool.args)
+        : shouldFailTool
+          ? '{invalid'
+          : toolName === 'list_collections' || toolName === 'task_list'
+            ? '{}'
+            : toolName === 'task_create'
+              ? JSON.stringify({
+                  title: 'Set up Google Home for living room lights',
+                  artifactType: 'task',
+                })
+              : JSON.stringify({
+                  description: 'Created by the local scripted provider',
+                  name: 'Browser scripted provider collection',
+                  visibility: 'private',
+                }),
     },
   };
-  const content = firstMatchingRule(contentRules, context);
+  const content =
+    flowStep && 'text' in flowStep ? flowStep.text : firstMatchingRule(contentRules, context);
   const isStructured = request.response_format !== undefined;
   const responseContent = isStructured
     ? JSON.stringify({
