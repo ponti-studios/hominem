@@ -408,3 +408,32 @@ describe('task_batch_create', () => {
     await db.deleteFrom('app.tasks').where('id', '=', group.parent.id).execute();
   });
 });
+
+describe('task_list empty-result hint', () => {
+  it('tells the model to retry without filters when a filtered search finds nothing', async () => {
+    const result = resultContent(
+      await callTool(userId, 'task_list', { status: 'completed', query: 'no-such-task-xyz' }),
+    ) as { tasks: unknown[]; hint?: string };
+
+    expect(result.tasks).toEqual([]);
+    expect(result.hint).toMatch(/filtered by status, query/);
+    expect(result.hint).toMatch(/again with no filters/);
+  });
+
+  it('adds no hint when nothing was filtered, or when the filtered search found tasks', async () => {
+    const empty = resultContent(await callTool(otherUserId, 'task_list', {})) as {
+      tasks: unknown[];
+      hint?: string;
+    };
+    expect(empty.tasks).toEqual([]);
+    expect(empty.hint).toBeUndefined();
+
+    await callTool(userId, 'task_create', { title: 'Hint probe task', artifactType: 'task' });
+    const found = resultContent(await callTool(userId, 'task_list', { query: 'hint probe' })) as {
+      tasks: unknown[];
+      hint?: string;
+    };
+    expect(found.tasks.length).toBeGreaterThan(0);
+    expect(found.hint).toBeUndefined();
+  });
+});

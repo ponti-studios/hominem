@@ -56,12 +56,29 @@ registerTool(
       'today" or "what is overdue". Omit every filter the user did not ask for: with none it ' +
       'returns up to 100 tasks, and an unneeded filter silently hides the rest.',
     inputSchema: TaskListQuerySchema,
-    outputSchema: taskListResultSchema,
+    outputSchema: taskListResultSchema.extend({ hint: z.string().optional() }),
     readOnly: true,
     scopes: ['task:read'],
     resultCap: 100,
   },
-  async (ownerUserId, input) => ({ tasks: await listTasks(ownerUserId, input) }),
+  async (ownerUserId, input) => {
+    const tasks = await listTasks(ownerUserId, input);
+    const { limit: _limit, ...filters } = input;
+    const applied = Object.entries(filters)
+      .filter(([, value]) => value !== undefined)
+      .map(([name]) => name);
+    // A model that sets filters nobody asked for concludes the task does not exist;
+    // tell it the empty result may be its own doing.
+    if (tasks.length === 0 && applied.length > 0) {
+      return {
+        tasks,
+        hint:
+          `No tasks matched, but this search was filtered by ${applied.join(', ')}. ` +
+          'Call task_list again with no filters before telling the user a task does not exist.',
+      };
+    }
+    return { tasks };
+  },
 );
 
 registerTool(
