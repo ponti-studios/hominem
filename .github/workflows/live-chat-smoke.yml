@@ -1,10 +1,16 @@
 name: live-chat-smoke
 
-# Sends real chat turns to a running API with the real OpenRouter model, then
-# asserts the model used its tools. Unit and scripted-provider tests cannot see
-# this failure class (a model that says "let me check your tasks" and calls
-# nothing). Costs a few cents per run, so it only fires on chat/tool-routing
-# changes, nightly (to catch model or provider drift), and on demand.
+# Sends real chat turns to a running API with the real OpenRouter model and asserts the
+# model used its tools. Unit and scripted-provider tests cannot see this failure class (a
+# model that says "let me check your tasks" and calls nothing). Two suites run in parallel:
+#   live-chat-smoke  three single-turn cases; blocks the pull request.
+#   live-chat-flows  three multi-turn conversations written the way people talk (no verbs
+#                    like "add a task", missing details, pronouns). The model is
+#                    nondeterministic, so each flow is sampled several times; on pull
+#                    requests a failure only warns until the flake rate is known, and the
+#                    nightly run (five samples per flow, 80% to pass) is the one that blocks.
+# Costs a few cents per run, so it only fires on chat/tool-routing changes, nightly (to
+# catch model or provider drift), and on demand.
 
 on:
   pull_request:
@@ -12,7 +18,7 @@ on:
     paths:
       - 'services/api/src/chat/**'
       - 'services/api/src/mcp/**'
-      - 'services/api/scripts/live-chat-smoke.ts'
+      - 'services/api/scripts/live-chat-*.ts'
       - 'packages/ai/**'
       - 'packages/chat/**'
       - '.github/workflows/live-chat-smoke.yml'
@@ -25,7 +31,11 @@ on:
         type: string
         required: false
       cases:
-        description: Comma-separated case names (add-task, list-tasks, plain-chat). Empty runs all.
+        description: Smoke case names (add-task, list-tasks, plain-chat), comma-separated. Empty runs all.
+        type: string
+        required: false
+      flow-cases:
+        description: Flow names (task-follow-ups, delete-with-confirmation, many-things-then-recall), comma-separated. Empty runs all.
         type: string
         required: false
 
@@ -38,11 +48,24 @@ permissions:
   packages: read
 
 jobs:
-  live-chat-smoke:
+  live-chat:
+    # The job's display name is the check name, so branch protection keeps matching
+    # `live-chat-smoke` even though one job now defines both suites.
+    name: ${{ matrix.check }}
     # Repository secrets are not exposed to pull requests from forks.
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check: live-chat-smoke
+            suite: smoke
+          - check: live-chat-flows
+            suite: flows
+    # The flows warn on pull requests and only block the nightly run (see the header).
+    continue-on-error: ${{ matrix.suite == 'flows' && github.event_name != 'schedule' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       TURBO_TELEMETRY_DISABLED: '1'
       # Not production, so outbound OTP email is captured to the local mailbox;
@@ -123,13 +146,21 @@ jobs:
           tail -n 100 "$RUNNER_TEMP/api.log"
           exit 1
 
-      - name: live-chat-smoke
-        timeout-minutes: 8
+      - name: run-suite
+        timeout-minutes: ${{ matrix.suite == 'flows' && 15 || 8 }}
         working-directory: services/api
         env:
+          SUITE: ${{ matrix.suite }}
           SMOKE_CASES: ${{ inputs.cases }}
+          FLOW_CASES: ${{ inputs.flow-cases }}
+          FLOW_SAMPLES: ${{ github.event_name == 'schedule' && '5' || '2' }}
+          FLOW_MIN_PASS_RATE: ${{ github.event_name == 'schedule' && '0.8' || '0.5' }}
+          FLOW_EARLY_STOP: ${{ github.event_name == 'schedule' && '0' || '1' }}
         run: |
           set -euo pipefail
+          # The flows delete the account's tasks and memories before every sample, so they
+          # get an account of their own instead of the smoke suite's.
+          if [ "$SUITE" = flows ]; then export E2E_TEST_EMAIL=live-chat-flows@test.hakumi.io; fi
           # e2e:setup prints the session cookie as `export E2E_*` lines: keep those
           # out of the log, show everything else, and bound it so a hang fails fast.
           # Match only those lines — its closing hint also contains a quoted
@@ -141,7 +172,10 @@ jobs:
           }
           echo "$setup_output" | grep -vE '^[[:space:]]*export E2E_' || true
           eval "$(echo "$setup_output" | grep -E '^[[:space:]]*export E2E_')"
-          pnpm live-chat-smoke
+          case "$SUITE" in
+            smoke) pnpm live-chat-smoke ;;
+            flows) pnpm live-chat-flows ;;
+          esac
 
       - name: api-log
         if: ${{ failure() || cancelled() }}
