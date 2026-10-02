@@ -1,7 +1,25 @@
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ checkRateLimit: vi.fn() }));
+import type { AuthContext } from '../auth/types';
+
+const mocks = vi.hoisted(() => {
+  const auth: AuthContext = {
+    user: {
+      id: 'user-1',
+      email: 'user-1@example.com',
+      name: 'User One',
+      emailVerified: true,
+      image: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    },
+    userId: 'user-1',
+    credential: 'mcp-oauth',
+    scopes: ['career:read'],
+  };
+  return { checkRateLimit: vi.fn(), auth };
+});
 
 vi.mock('./rate-limiter', () => ({ checkRateLimit: mocks.checkRateLimit }));
 vi.mock('../env', async () => {
@@ -20,26 +38,15 @@ vi.mock('@better-auth/mcp', async (importOriginal) => ({
 }));
 vi.mock('../middleware/auth', () => ({
   setMcpAuthContext: async (c: { set: (key: 'auth', value: AuthContext) => void }) => {
-    c.set('auth', {
-      user: { id: 'user-1' },
-      userId: 'user-1',
-      credential: 'mcp-oauth',
-      scopes: ['career:read'],
-    } as AuthContext);
+    c.set('auth', mocks.auth);
     return true;
   },
 }));
 
-import type { AuthContext } from '../auth/types';
 import { mcpAuthorizationMiddleware } from './routes';
 import type { McpHonoEnv } from './server';
 
-const auth = {
-  user: { id: 'user-1' },
-  userId: 'user-1',
-  credential: 'mcp-oauth',
-  scopes: ['career:read'],
-} as AuthContext;
+const { auth } = mocks;
 
 function createApp() {
   const app = new Hono<McpHonoEnv>();

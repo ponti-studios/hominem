@@ -52,13 +52,12 @@ describe('HominemTests', () => {
 
     const result = await test.chat.start({ title: 'SDK ownership', message: 'Count me' });
     const inspected = await test.inspect(result.generationId);
-    const types = inspected.events.map((event) => event.payload.type);
     const count = (type: string, phase?: string) =>
-      types.filter(
-        (candidate, index) =>
-          candidate === type &&
+      inspected.events.filter(
+        ({ payload }) =>
+          payload.type === type &&
           (phase === undefined ||
-            (inspected.events[index]?.payload as { phase?: string }).phase === phase),
+            (payload.type === 'generation.phase_changed' && payload.phase === phase)),
       ).length;
 
     expect(result.clientState.phase).toBe('committed');

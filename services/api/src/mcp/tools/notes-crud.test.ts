@@ -14,24 +14,27 @@ vi.mock('@hominem/ai', async (importOriginal) => ({
 
 import './notes';
 import { NoteService } from '../../application/notes.service';
-import { callTool, type McpToolResult } from '../tool-registry';
+import {
+  noteCreateToolOutputSchema,
+  noteDeleteToolOutputSchema,
+  noteGetToolOutputSchema,
+  noteListToolOutputSchema,
+  noteUpdateToolOutputSchema,
+  semanticSearchOutputSchema,
+} from '../../schemas/notes.schema';
+import { toolOutput } from '../../testkit/tool-result';
+import { callTool } from '../tool-registry';
 
 const userId = 'a5000001-0000-4000-8000-000000000001';
 const otherUserId = 'a5000001-0000-4000-8000-000000000002';
 const DIMENSIONS = 1536;
 
-type NoteResult = { id: string; title: string | null; content: string };
-
 function unitVector(index: number): number[] {
   return Array.from({ length: DIMENSIONS }, (_, i) => (i === index ? 1 : 0));
 }
 
-function payload<T>(result: McpToolResult): T {
-  return result.structuredContent as T;
-}
-
 async function createNote(owner: string, input: { title?: string; content: string }) {
-  return payload<{ note: NoteResult }>(await callTool(owner, 'note_create', input)).note;
+  return toolOutput(await callTool(owner, 'note_create', input), noteCreateToolOutputSchema).note;
 }
 
 beforeAll(async () => {
@@ -59,14 +62,13 @@ describe('note_create / note_get / note_list', () => {
     const created = await createNote(userId, { title: 'Groceries', content: 'oat milk, coffee' });
     expect(created).toMatchObject({ title: 'Groceries', content: 'oat milk, coffee' });
 
-    const fetched = payload<{ note: NoteResult | null }>(
+    const fetched = toolOutput(
       await callTool(userId, 'note_get', { id: created.id }),
+      noteGetToolOutputSchema,
     );
     expect(fetched.note).toMatchObject({ id: created.id, content: 'oat milk, coffee' });
 
-    const listed = payload<{ notes: Array<Record<string, unknown>> }>(
-      await callTool(userId, 'note_list', {}),
-    );
+    const listed = toolOutput(await callTool(userId, 'note_list', {}), noteListToolOutputSchema);
     expect(listed.notes.map((note) => note.id)).toEqual([created.id]);
     expect(listed.notes[0]).not.toHaveProperty('content');
   });
@@ -74,8 +76,9 @@ describe('note_create / note_get / note_list', () => {
   it("never returns another user's note", async () => {
     const created = await createNote(userId, { title: 'Private', content: 'do not share' });
 
-    const asOther = payload<{ note: NoteResult | null }>(
+    const asOther = toolOutput(
       await callTool(otherUserId, 'note_get', { id: created.id }),
+      noteGetToolOutputSchema,
     );
     expect(asOther.note).toBeNull();
   });
@@ -84,8 +87,9 @@ describe('note_create / note_get / note_list', () => {
     await createNote(userId, { title: 'Trip', content: 'book flights to Lisbon' });
     await createNote(userId, { title: 'Recipe', content: 'sourdough starter' });
 
-    const listed = payload<{ notes: Array<{ title: string | null }> }>(
+    const listed = toolOutput(
       await callTool(userId, 'note_list', { query: 'lisbon' }),
+      noteListToolOutputSchema,
     );
     expect(listed.notes.map((note) => note.title)).toEqual(['Trip']);
   });
@@ -124,21 +128,24 @@ describe('note tools and memories', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
 
-    const listed = payload<{ notes: unknown[] }>(await callTool(userId, 'note_list', {}));
+    const listed = toolOutput(await callTool(userId, 'note_list', {}), noteListToolOutputSchema);
     expect(listed.notes).toEqual([]);
 
-    const fetched = payload<{ note: unknown }>(
+    const fetched = toolOutput(
       await callTool(userId, 'note_get', { id: memory.id }),
+      noteGetToolOutputSchema,
     );
     expect(fetched.note).toBeNull();
 
-    const updated = payload<{ note: unknown }>(
+    const updated = toolOutput(
       await callTool(userId, 'note_update', { id: memory.id, content: 'changed' }),
+      noteUpdateToolOutputSchema,
     );
     expect(updated.note).toBeNull();
 
-    const deleted = payload<{ removed: boolean }>(
+    const deleted = toolOutput(
       await callTool(userId, 'note_delete', { id: memory.id }),
+      noteDeleteToolOutputSchema,
     );
     expect(deleted.removed).toBe(false);
     const stillThere = await db
@@ -154,13 +161,15 @@ describe('note_update', () => {
   it('updates title and content and clears a title with null', async () => {
     const created = await createNote(userId, { title: 'Draft', content: 'first pass' });
 
-    const updated = payload<{ note: NoteResult | null }>(
+    const updated = toolOutput(
       await callTool(userId, 'note_update', { id: created.id, content: 'second pass' }),
+      noteUpdateToolOutputSchema,
     );
     expect(updated.note).toMatchObject({ title: 'Draft', content: 'second pass' });
 
-    const cleared = payload<{ note: NoteResult | null }>(
+    const cleared = toolOutput(
       await callTool(userId, 'note_update', { id: created.id, title: null }),
+      noteUpdateToolOutputSchema,
     );
     expect(cleared.note?.title).toBeNull();
   });
@@ -173,15 +182,17 @@ describe('note_update', () => {
   it("returns null for another user's note without touching it", async () => {
     const created = await createNote(userId, { content: 'private' });
 
-    const result = payload<{ note: unknown }>(
+    const result = toolOutput(
       await callTool(otherUserId, 'note_update', { id: created.id, content: 'hijacked' }),
+      noteUpdateToolOutputSchema,
     );
     expect(result.note).toBeNull();
 
-    const fetched = payload<{ note: NoteResult }>(
+    const fetched = toolOutput(
       await callTool(userId, 'note_get', { id: created.id }),
+      noteGetToolOutputSchema,
     );
-    expect(fetched.note.content).toBe('private');
+    expect(fetched.note?.content).toBe('private');
   });
 });
 
@@ -190,10 +201,16 @@ describe('note_delete', () => {
     const created = await createNote(userId, { content: 'temporary' });
 
     expect(
-      payload<{ removed: boolean }>(await callTool(userId, 'note_delete', { id: created.id })),
+      toolOutput(
+        await callTool(userId, 'note_delete', { id: created.id }),
+        noteDeleteToolOutputSchema,
+      ),
     ).toEqual({ removed: true });
     expect(
-      payload<{ removed: boolean }>(await callTool(userId, 'note_delete', { id: created.id })),
+      toolOutput(
+        await callTool(userId, 'note_delete', { id: created.id }),
+        noteDeleteToolOutputSchema,
+      ),
     ).toEqual({ removed: false });
   });
 
@@ -201,10 +218,14 @@ describe('note_delete', () => {
     const created = await createNote(userId, { content: 'mine' });
 
     expect(
-      payload<{ removed: boolean }>(await callTool(otherUserId, 'note_delete', { id: created.id })),
+      toolOutput(
+        await callTool(otherUserId, 'note_delete', { id: created.id }),
+        noteDeleteToolOutputSchema,
+      ),
     ).toEqual({ removed: false });
     expect(
-      payload<{ note: unknown }>(await callTool(userId, 'note_get', { id: created.id })).note,
+      toolOutput(await callTool(userId, 'note_get', { id: created.id }), noteGetToolOutputSchema)
+        .note,
     ).not.toBeNull();
   });
 });
@@ -246,9 +267,10 @@ describe('semantic_search', () => {
     await index(otherUserId, foreign.id, 0);
     await index(userId, memory.id, 0);
 
-    const { results } = payload<{
-      results: Array<{ id: string; title: string | null; similarity: number }>;
-    }>(await callTool(userId, 'semantic_search', { query: 'something close' }));
+    const { results } = toolOutput(
+      await callTool(userId, 'semantic_search', { query: 'something close' }),
+      semanticSearchOutputSchema,
+    );
 
     expect(results.map((result) => result.id)).toEqual([close.id, far.id]);
     expect(results[0]?.similarity).toBeGreaterThan(results[1]?.similarity ?? 1);
@@ -262,7 +284,10 @@ describe('semantic_search', () => {
     mocks.generateEmbedding.mockResolvedValue({ embedding: [], usage: null });
 
     expect(
-      payload<{ results: unknown[] }>(await callTool(userId, 'semantic_search', { query: 'x' })),
+      toolOutput(
+        await callTool(userId, 'semantic_search', { query: 'x' }),
+        semanticSearchOutputSchema,
+      ),
     ).toEqual({ results: [] });
   });
 
@@ -287,8 +312,9 @@ describe('semantic_search', () => {
 
     const searchSpy = vi.spyOn(VectorDocumentRepository, 'search');
 
-    const { results } = payload<{ results: Array<{ id: string }> }>(
+    const { results } = toolOutput(
       await callTool(userId, 'semantic_search', { query: 'find the note' }),
+      semanticSearchOutputSchema,
     );
 
     expect(results.map((result) => result.id)).toEqual([note.id]);

@@ -18,6 +18,7 @@ vi.mock('./register-tools', () => ({ ensureMcpToolsRegistered: async () => undef
 
 import { logger } from '@hominem/telemetry';
 
+import type { CapabilityDefinition } from '../application/capability';
 import { chatToolName } from '../chat/chat-tool-name';
 import { planChatTools } from './chat-tool-adapter';
 import { registerTool } from './tool-registry';
@@ -30,29 +31,27 @@ function register(
   access: 'read' | 'write',
   guidance?: { dependsOn: string },
 ) {
-  registerTool(
-    {
-      name,
-      title: name,
-      description: name,
-      inputSchema: empty,
-      outputSchema: empty,
-      readOnly: access === 'read',
-      scopes: [`${scope}:${access}`],
-      resultCap: 10,
-      ...(access === 'write' ? { destructive: false, idempotent: false } : {}),
-      ...(guidance
-        ? {
-            guidance: {
-              whenToUse: name,
-              whenNotToUse: name,
-              dependencies: [{ tool: guidance.dependsOn, reason: 'resolve id', provides: ['id'] }],
-            },
-          }
-        : {}),
-    } as Parameters<typeof registerTool>[0],
-    async () => ({}),
-  );
+  const definition: CapabilityDefinition = {
+    name,
+    title: name,
+    description: name,
+    inputSchema: empty,
+    outputSchema: empty,
+    readOnly: access === 'read',
+    scopes: [`${scope}:${access}`],
+    resultCap: 10,
+    ...(access === 'write' ? { destructive: false, idempotent: false } : {}),
+    ...(guidance
+      ? {
+          guidance: {
+            whenToUse: name,
+            whenNotToUse: name,
+            dependencies: [{ tool: guidance.dependsOn, reason: 'resolve id', provides: ['id'] }],
+          },
+        }
+      : {}),
+  };
+  registerTool(definition, async () => ({}));
 }
 
 beforeAll(() => {

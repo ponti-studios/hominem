@@ -20,7 +20,6 @@ vi.mock('../auth/better-auth', () => ({
   betterAuthServer: { api: { getSession: mocks.getSession } },
 }));
 
-import type { AuthContext } from '../auth/types';
 import { createAuthMiddleware, setMcpAuthContext } from './auth';
 
 const user = {
@@ -38,10 +37,7 @@ function createApp() {
     .use(
       '*',
       createAuthMiddleware({
-        api: {
-          getSession:
-            mocks.getSession as unknown as typeof import('../auth/better-auth').betterAuthServer.api.getSession,
-        },
+        api: { getSession: mocks.getSession },
       }),
     )
     .get('*', (c) => c.json(c.get('auth') ?? null));
@@ -64,7 +60,7 @@ describe('auth middleware', () => {
     const response = await app.request('/api/mcp', {
       headers: { 'x-mcp-scopes': 'admin:write' },
     });
-    const auth = (await response.json()) as AuthContext;
+    const auth = await response.json();
 
     expect(auth).toMatchObject({
       userId: user.id,
@@ -84,7 +80,7 @@ describe('auth middleware', () => {
       return c.json({ resolved, auth: c.get('auth') });
     });
     const response = await contextApp.request('/api/mcp');
-    const body = (await response.json()) as { auth: AuthContext; resolved: boolean };
+    const body = await response.json();
 
     expect(body.resolved).toBe(true);
     expect(body.auth).toMatchObject({

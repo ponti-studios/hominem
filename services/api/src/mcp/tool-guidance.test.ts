@@ -1,5 +1,6 @@
 import { convertSchemaToJsonSchema } from '@hominem/ai';
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import './tools/tasks';
 import { TaskListQuerySchema } from '../schemas/tasks.schema';
@@ -10,9 +11,13 @@ describe('task tool contracts', () => {
   // invented ones that hid tasks. Every caller can still use all of them.
   it('shows the chat model only status and query, but still accepts every filter', () => {
     const definition = getToolDefinition('task_list');
-    const shown = convertSchemaToJsonSchema(
-      definition?.chatInputSchema ?? definition?.inputSchema ?? TaskListQuerySchema,
-    ) as { properties: Record<string, unknown> };
+    const shown = z
+      .object({ properties: z.record(z.string(), z.unknown()) })
+      .parse(
+        convertSchemaToJsonSchema(
+          definition?.chatInputSchema ?? definition?.inputSchema ?? TaskListQuerySchema,
+        ),
+      );
 
     expect(Object.keys(shown.properties).sort()).toEqual(['query', 'status']);
     expect(

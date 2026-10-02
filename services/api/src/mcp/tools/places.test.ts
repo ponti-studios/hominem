@@ -2,22 +2,14 @@ import { db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import './places';
-import { callTool, type McpToolResult } from '../tool-registry';
+import { placeVisitHistoryOutputSchema } from '../../schemas/places.schema';
+import { toolOutput } from '../../testkit/tool-result';
+import { callTool } from '../tool-registry';
 
 const userId = 'a1000000-0000-4000-8000-000000000001';
 
 const cafeId = 'a1000001-0000-4000-8000-000000000001';
 const parkId = 'a1000001-0000-4000-8000-000000000002';
-
-type TestVisit = Record<string, unknown>;
-type TestResultContent = {
-  visits?: TestVisit[];
-  count?: number;
-};
-
-function resultContent(res: McpToolResult): TestResultContent {
-  return res.structuredContent as TestResultContent;
-}
 
 beforeAll(async () => {
   // Deleting the user cascades to every app.* row it owns, so each run starts clean.
@@ -81,7 +73,7 @@ beforeAll(async () => {
 describe('place_visit_history', () => {
   it('returns visits newest first, joined against the place name and address', async () => {
     const result = await callTool(userId, 'place_visit_history', { limit: 20 });
-    const data = resultContent(result);
+    const data = toolOutput(result, placeVisitHistoryOutputSchema);
 
     expect(data.count).toBe(3);
     expect(data.visits?.map((v) => v.purpose)).toEqual(['lunch', 'walk', 'coffee']);
@@ -103,7 +95,7 @@ describe('place_visit_history', () => {
       to: '2026-07-12',
       limit: 20,
     });
-    const data = resultContent(result);
+    const data = toolOutput(result, placeVisitHistoryOutputSchema);
 
     expect(data.visits?.map((v) => v.purpose)).toEqual(['walk']);
   });
@@ -119,6 +111,6 @@ describe('place_visit_history', () => {
 
   it('respects the limit', async () => {
     const result = await callTool(userId, 'place_visit_history', { limit: 1 });
-    expect(resultContent(result).visits).toHaveLength(1);
+    expect(toolOutput(result, placeVisitHistoryOutputSchema).visits).toHaveLength(1);
   });
 });

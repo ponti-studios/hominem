@@ -5,6 +5,7 @@ import { db } from '@hominem/db/core';
 import { Hono } from 'hono';
 import { beforeAll, describe, expect, it } from 'vitest';
 
+import { patchJson, postJson } from '../../testkit/rpc-test-app';
 import type { AppContext, RpcUser } from '../middleware/auth';
 import { apiErrorHandler } from '../middleware/error';
 import { careerRoutes } from './career';
@@ -35,22 +36,6 @@ function createApp(asUserId: string) {
       await next();
     })
     .route('/career', careerRoutes);
-}
-
-async function postJson(app: ReturnType<typeof createApp>, path: string, body: unknown) {
-  return app.request(path, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
-
-async function patchJson(app: ReturnType<typeof createApp>, path: string, body: unknown) {
-  return app.request(path, {
-    method: 'PATCH',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
 }
 
 beforeAll(async () => {
@@ -84,28 +69,28 @@ describe('career skills routes', () => {
       level: 70,
     });
     expect(created.status).toBe(201);
-    const createdBody = (await created.json()) as { id: string; name: string };
+    const createdBody = await created.json();
     expect(createdBody.name).toBe('TypeScript');
 
     const listed = await app.request('/career/skills');
     expect(listed.status).toBe(200);
-    const listedBody = (await listed.json()) as { skills: { id: string }[] };
-    expect(listedBody.skills.some((s) => s.id === createdBody.id)).toBe(true);
+    const listedBody = await listed.json();
+    expect(listedBody.skills.some((s: { id: string }) => s.id === createdBody.id)).toBe(true);
 
     const updated = await postJson(app, '/career/skills/update', {
       id: createdBody.id,
       data: { level: 90 },
     });
     expect(updated.status).toBe(200);
-    const updatedBody = (await updated.json()) as { level: number };
+    const updatedBody = await updated.json();
     expect(updatedBody.level).toBe(90);
 
     const deleted = await postJson(app, '/career/skills/delete', { id: createdBody.id });
     expect(deleted.status).toBe(200);
 
     const listedAfter = await app.request('/career/skills');
-    const listedAfterBody = (await listedAfter.json()) as { skills: { id: string }[] };
-    expect(listedAfterBody.skills.some((s) => s.id === createdBody.id)).toBe(false);
+    const listedAfterBody = await listedAfter.json();
+    expect(listedAfterBody.skills.some((s: { id: string }) => s.id === createdBody.id)).toBe(false);
   });
 
   it('rejects updating another owner skill with 404', async () => {
@@ -113,7 +98,7 @@ describe('career skills routes', () => {
     const intruder = createApp(otherUserId);
 
     const created = await postJson(owner, '/career/skills/create', { name: 'Rust' });
-    const { id } = (await created.json()) as { id: string };
+    const { id } = await created.json();
 
     const attempt = await postJson(intruder, '/career/skills/update', {
       id,
@@ -144,14 +129,14 @@ describe('career wishlist routes', () => {
     const app = createApp(userId);
     const created = await postJson(app, '/career/wishlist', { company: 'OpenAI' });
     expect(created.status).toBe(201);
-    const createdBody = (await created.json()) as { company: { id: string; company: string } };
+    const createdBody = await created.json();
     expect(createdBody.company.company).toBe('OpenAI');
 
     const listed = await app.request('/career/wishlist');
-    const listedBody = (await listed.json()) as { companies: Array<{ id: string }> };
-    expect(listedBody.companies.some((company) => company.id === createdBody.company.id)).toBe(
-      true,
-    );
+    const listedBody = await listed.json();
+    expect(
+      listedBody.companies.some((company: { id: string }) => company.id === createdBody.company.id),
+    ).toBe(true);
 
     const updated = await patchJson(app, `/career/wishlist/${createdBody.company.id}`, {
       company: 'OpenAI Research',
@@ -237,7 +222,7 @@ describe('career engagement routes', () => {
       title: 'Staff Engineer',
     });
     expect(created.status).toBe(201);
-    const body = (await created.json()) as { id: string; company: string; title: string };
+    const body = await created.json();
     expect(body).toMatchObject({ company: 'New Co', title: 'Staff Engineer' });
 
     await postJson(app, '/career/engagements/delete', { id: body.id });
@@ -253,12 +238,12 @@ describe('career application create/update/delete routes', () => {
       title: 'Backend Engineer',
     });
     expect(created.status).toBe(201);
-    const createdBody = (await created.json()) as { id: string; company: string; title: string };
+    const createdBody = await created.json();
     expect(createdBody).toMatchObject({ company: 'Round Trip Co', title: 'Backend Engineer' });
 
     const listed = await app.request('/career/applications');
-    const listedBody = (await listed.json()) as { applications: { id: string }[] };
-    expect(listedBody.applications.some((a) => a.id === createdBody.id)).toBe(true);
+    const listedBody = await listed.json();
+    expect(listedBody.applications.some((a: { id: string }) => a.id === createdBody.id)).toBe(true);
 
     const updated = await postJson(app, '/career/applications/update', {
       id: createdBody.id,
@@ -279,7 +264,7 @@ describe('career application create/update/delete routes', () => {
       company: 'Private App Co',
       title: 'Private role',
     });
-    const { id } = (await created.json()) as { id: string };
+    const { id } = await created.json();
 
     const update = await postJson(intruder, '/career/applications/update', {
       id,
@@ -303,12 +288,12 @@ describe('career education create/update/delete routes', () => {
       degree: 'B.S. Computer Science',
     });
     expect(created.status).toBe(201);
-    const createdBody = (await created.json()) as { id: string; school: string };
+    const createdBody = await created.json();
     expect(createdBody.school).toBe('State University');
 
     const listed = await app.request('/career/education');
-    const listedBody = (await listed.json()) as { education: { id: string }[] };
-    expect(listedBody.education.some((e) => e.id === createdBody.id)).toBe(true);
+    const listedBody = await listed.json();
+    expect(listedBody.education.some((e: { id: string }) => e.id === createdBody.id)).toBe(true);
 
     const updated = await postJson(app, '/career/education/update', {
       id: createdBody.id,
@@ -328,7 +313,7 @@ describe('career education create/update/delete routes', () => {
     const created = await postJson(owner, '/career/education/create', {
       school: 'Private University',
     });
-    const { id } = (await created.json()) as { id: string };
+    const { id } = await created.json();
 
     const update = await postJson(intruder, '/career/education/update', {
       id,
@@ -350,7 +335,7 @@ describe('career projects, testimonials, certifications, social-links', () => {
       title: `Standalone project ${randomUUID()}`,
     });
     expect(standalone.status).toBe(201);
-    const standaloneBody = (await standalone.json()) as { id: string; engagements: unknown[] };
+    const standaloneBody = await standalone.json();
     expect(standaloneBody.engagements).toEqual([]);
     await postJson(app, '/career/projects/delete', { id: standaloneBody.id });
 
@@ -366,20 +351,14 @@ describe('career projects, testimonials, certifications, social-links', () => {
       engagementIds: [engagement.id],
     });
     expect(created.status).toBe(201);
-    const createdBody = (await created.json()) as {
-      title: string;
-      status: string;
-      engagements: Array<{ id: string }>;
-    };
+    const createdBody = await created.json();
     expect(createdBody).toMatchObject({ title: 'Side Project', status: 'IN_PROGRESS' });
     expect(createdBody.engagements).toEqual([
       { id: engagement.id, company: 'Acme', title: 'Engineer', kind: 'EMPLOYMENT' },
     ]);
 
     const listed = await app.request('/career/projects');
-    const body = (await listed.json()) as {
-      projects: Array<{ id: string; title: string; engagements: Array<{ id: string }> }>;
-    };
+    const body = await listed.json();
     expect(body.projects).toContainEqual(
       expect.objectContaining({
         title: 'Side Project',
@@ -389,17 +368,17 @@ describe('career projects, testimonials, certifications, social-links', () => {
       }),
     );
 
-    const project = body.projects.find((item) => item.title === 'Side Project');
+    const project = body.projects.find((item: { title: string }) => item.title === 'Side Project');
     expect(project).toBeDefined();
 
     const updated = await postJson(app, '/career/projects/update', {
-      id: (project as { id: string }).id,
+      id: project.id,
       data: { engagementIds: [] },
     });
     expect(updated.status).toBe(200);
     await expect(updated.json()).resolves.toMatchObject({ engagements: [] });
 
-    await postJson(app, '/career/projects/delete', { id: (project as { id: string }).id });
+    await postJson(app, '/career/projects/delete', { id: project.id });
     await db.deleteFrom('app.careerEngagements').where('id', '=', engagement.id).execute();
   });
 
@@ -415,11 +394,11 @@ describe('career projects, testimonials, certifications, social-links', () => {
       title: `Private project ${randomUUID()}`,
       engagementIds: [engagement.id],
     });
-    const project = (await created.json()) as { id: string };
+    const project = await created.json();
 
     const listed = await intruder.request('/career/projects');
-    const body = (await listed.json()) as { projects: Array<{ id: string }> };
-    expect(body.projects.some((item) => item.id === project.id)).toBe(false);
+    const body = await listed.json();
+    expect(body.projects.some((item: { id: string }) => item.id === project.id)).toBe(false);
     const update = await postJson(intruder, '/career/projects/update', {
       id: project.id,
       data: { title: 'Leaked project' },
@@ -439,8 +418,8 @@ describe('career projects, testimonials, certifications, social-links', () => {
     expect(created.status).toBe(201);
 
     const listed = await app.request('/career/testimonials');
-    const body = (await listed.json()) as { testimonials: { name: string }[] };
-    expect(body.testimonials.some((t) => t.name === 'Jane Manager')).toBe(true);
+    const body = await listed.json();
+    expect(body.testimonials.some((t: { name: string }) => t.name === 'Jane Manager')).toBe(true);
   });
 
   it('creates and lists a certification', async () => {
@@ -452,8 +431,10 @@ describe('career projects, testimonials, certifications, social-links', () => {
     expect(created.status).toBe(201);
 
     const listed = await app.request('/career/certifications');
-    const body = (await listed.json()) as { certifications: { name: string }[] };
-    expect(body.certifications.some((c) => c.name === 'AWS Certified')).toBe(true);
+    const body = await listed.json();
+    expect(body.certifications.some((c: { name: string }) => c.name === 'AWS Certified')).toBe(
+      true,
+    );
   });
 
   it('saves and reads social links', async () => {
@@ -464,7 +445,7 @@ describe('career projects, testimonials, certifications, social-links', () => {
     expect(saved.status).toBe(200);
 
     const read = await app.request('/career/social-links');
-    const body = (await read.json()) as { socialLinks: { github: string | null } | null };
+    const body = await read.json();
     expect(body.socialLinks?.github).toBe('https://github.com/example');
   });
 });
@@ -477,11 +458,11 @@ describe('career application notes and files', () => {
       content: 'Phone screen went well.',
     });
     expect(created.status).toBe(201);
-    const { id } = (await created.json()) as { id: string };
+    const { id } = await created.json();
 
     const listed = await app.request(`/career/applications/${applicationId}/notes`);
-    const body = (await listed.json()) as { notes: { id: string }[] };
-    expect(body.notes.some((n) => n.id === id)).toBe(true);
+    const body = await listed.json();
+    expect(body.notes.some((n: { id: string }) => n.id === id)).toBe(true);
 
     const deleted = await postJson(app, `/career/applications/${applicationId}/notes/delete`, {
       id,
@@ -506,11 +487,11 @@ describe('career application notes and files', () => {
       fileUrl: 'https://storage.example.com/resume.pdf',
     });
     expect(created.status).toBe(201);
-    const { id } = (await created.json()) as { id: string };
+    const { id } = await created.json();
 
     const listed = await app.request(`/career/applications/${applicationId}/files`);
-    const body = (await listed.json()) as { files: { id: string }[] };
-    expect(body.files.some((f) => f.id === id)).toBe(true);
+    const body = await listed.json();
+    expect(body.files.some((f: { id: string }) => f.id === id)).toBe(true);
 
     const deleted = await postJson(app, `/career/applications/${applicationId}/files/delete`, {
       id,

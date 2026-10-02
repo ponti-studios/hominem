@@ -2,7 +2,14 @@ import { db, pool } from '@hominem/db/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import './people';
-import { callTool, type McpToolResult } from '../tool-registry';
+import {
+  peopleLookupOutputSchema,
+  personCreateToolOutputSchema,
+  personTimelineOutputSchema,
+  personUpdateToolOutputSchema,
+} from '../../schemas/people.schema';
+import { toolOutput } from '../../testkit/tool-result';
+import { callTool } from '../tool-registry';
 
 const userId = 'b1000000-0000-4000-8000-000000000001';
 
@@ -11,20 +18,6 @@ const graceId = 'b1000001-0000-4000-8000-000000000002';
 const orgId = 'b1000003-0000-4000-8000-000000000001';
 const tagId = 'b1000004-0000-4000-8000-000000000001';
 const tripId = 'b1000010-0000-4000-8000-000000000001';
-
-type TestPerson = Record<string, unknown>;
-type TestResultContent = {
-  people?: TestPerson[];
-  count?: number;
-  person?: TestPerson | null;
-  trips?: Array<Record<string, unknown>>;
-  relations?: Array<Record<string, unknown>>;
-  socialContacts?: Array<Record<string, unknown>>;
-};
-
-function resultContent(res: McpToolResult): TestResultContent {
-  return res.structuredContent as TestResultContent;
-}
 
 beforeAll(async () => {
   // Deleting the user cascades to every app.* row it owns, so each run starts clean.
@@ -174,7 +167,7 @@ beforeAll(async () => {
 describe('people_lookup', () => {
   it('matches on display name and returns contact/organization details', async () => {
     const result = await callTool(userId, 'people_lookup', { query: 'ada', limit: 10 });
-    const data = resultContent(result);
+    const data = toolOutput(result, peopleLookupOutputSchema);
 
     expect(data.count).toBe(1);
     expect(data.people?.[0]).toMatchObject({
@@ -187,7 +180,7 @@ describe('people_lookup', () => {
 
   it('matches on alias', async () => {
     const result = await callTool(userId, 'people_lookup', { query: 'Amazing Grace', limit: 10 });
-    const data = resultContent(result);
+    const data = toolOutput(result, peopleLookupOutputSchema);
 
     expect(data.count).toBe(1);
     expect(data.people?.[0]?.displayName).toBe('Grace Hopper');
@@ -195,21 +188,21 @@ describe('people_lookup', () => {
 
   it('includes tag names via the generic tag-assignment join', async () => {
     const result = await callTool(userId, 'people_lookup', { query: 'Grace', limit: 10 });
-    const data = resultContent(result);
+    const data = toolOutput(result, peopleLookupOutputSchema);
 
     expect(data.people?.[0]?.tags).toEqual(['colleague']);
   });
 
   it('returns no matches for an unrelated query', async () => {
     const result = await callTool(userId, 'people_lookup', { query: 'nonexistent-xyz', limit: 10 });
-    expect(resultContent(result).count).toBe(0);
+    expect(toolOutput(result, peopleLookupOutputSchema).count).toBe(0);
   });
 });
 
 describe('person_timeline', () => {
   it('returns the person summary with trips and relations', async () => {
     const result = await callTool(userId, 'person_timeline', { personId: adaId });
-    const data = resultContent(result);
+    const data = toolOutput(result, personTimelineOutputSchema);
 
     expect(data.person).toMatchObject({ displayName: 'Ada Lovelace', personType: 'friend' });
     expect(data.trips).toEqual([
@@ -239,7 +232,7 @@ describe('person_timeline', () => {
     const result = await callTool(userId, 'person_timeline', {
       personId: '99999999-9999-4999-8999-999999999999',
     });
-    const data = resultContent(result);
+    const data = toolOutput(result, personTimelineOutputSchema);
 
     expect(data.person).toBeNull();
     expect(data.trips).toEqual([]);
@@ -260,18 +253,22 @@ describe('person_create / person_update', () => {
   });
 
   it('creates a person with an email and finds them via people_lookup', async () => {
-    const created = resultContent(
+    const created = toolOutput(
       await callTool(userId, 'person_create', {
         displayName: 'Katherine Johnson',
         email: 'katherine@example.com',
       }),
+      personCreateToolOutputSchema,
     );
     expect(created.person).toMatchObject({
       displayName: 'Katherine Johnson',
       email: 'katherine@example.com',
     });
 
-    const found = resultContent(await callTool(userId, 'people_lookup', { query: 'Katherine' }));
+    const found = toolOutput(
+      await callTool(userId, 'people_lookup', { query: 'Katherine' }),
+      peopleLookupOutputSchema,
+    );
     expect(found.people).toEqual([
       expect.objectContaining({
         displayName: 'Katherine Johnson',
@@ -281,19 +278,21 @@ describe('person_create / person_update', () => {
   });
 
   it('updates the name, replaces the email, and clears it with null', async () => {
-    const created = resultContent(
+    const { person: created } = toolOutput(
       await callTool(userId, 'person_create', {
         displayName: 'Mary Jackson',
         email: 'mary@example.com',
       }),
-    ).person as { id: string };
+      personCreateToolOutputSchema,
+    );
 
-    const renamed = resultContent(
+    const renamed = toolOutput(
       await callTool(userId, 'person_update', {
         personId: created.id,
         displayName: 'Mary W. Jackson',
         email: 'mary.w@example.com',
       }),
+      personUpdateToolOutputSchema,
     );
     expect(renamed.person).toMatchObject({
       id: created.id,
@@ -301,16 +300,18 @@ describe('person_create / person_update', () => {
       email: 'mary.w@example.com',
     });
 
-    const cleared = resultContent(
+    const cleared = toolOutput(
       await callTool(userId, 'person_update', { personId: created.id, email: null }),
+      personUpdateToolOutputSchema,
     );
     expect(cleared.person).toMatchObject({ displayName: 'Mary W. Jackson', email: null });
 
-    const readded = resultContent(
+    const readded = toolOutput(
       await callTool(userId, 'person_update', {
         personId: created.id,
         email: 'mary.again@example.com',
       }),
+      personUpdateToolOutputSchema,
     );
     expect(readded.person).toMatchObject({ email: 'mary.again@example.com' });
   });
@@ -320,9 +321,11 @@ describe('person_create / person_update', () => {
   });
 
   it('promotes the updated email to primary when no contact was marked primary', async () => {
-    const created = resultContent(
+    const { person: created } = toolOutput(
       await callTool(userId, 'person_create', { displayName: 'Imported Contact' }),
-    ).person as { id: string };
+      personCreateToolOutputSchema,
+    );
+    if (!created) throw new Error('person_create returned no person');
 
     // Simulate an import that left two email contacts with none marked primary. Explicit,
     // distinct createdat values make the "oldest contact" selection deterministic — both rows
@@ -356,9 +359,10 @@ describe('person_create / person_update', () => {
       email: 'old@example.com',
     });
 
-    const lookup = resultContent(
+    const lookup = toolOutput(
       await callTool(userId, 'people_lookup', { query: 'Imported Contact' }),
-    ) as { people: Array<{ id: string; emails: Array<{ email: string; isPrimary: boolean }> }> };
+      peopleLookupOutputSchema,
+    );
     const person = lookup.people.find((p) => p.id === created.id);
     expect(person?.emails).toEqual(
       expect.arrayContaining([
@@ -370,12 +374,14 @@ describe('person_create / person_update', () => {
   });
 
   it('promotes an existing secondary email without creating a duplicate', async () => {
-    const created = resultContent(
+    const { person: created } = toolOutput(
       await callTool(userId, 'person_create', {
         displayName: 'Secondary Promotion',
         email: 'primary@example.com',
       }),
-    ).person as { id: string };
+      personCreateToolOutputSchema,
+    );
+    if (!created) throw new Error('person_create returned no person');
     await db
       .insertInto('app.personContactMethods')
       .values({
@@ -393,9 +399,10 @@ describe('person_create / person_update', () => {
       email: 'secondary@example.com',
     });
 
-    const lookup = resultContent(
+    const lookup = toolOutput(
       await callTool(userId, 'people_lookup', { query: 'Secondary Promotion' }),
-    ) as { people: Array<{ id: string; emails: Array<{ email: string; isPrimary: boolean }> }> };
+      peopleLookupOutputSchema,
+    );
     const person = lookup.people.find((item) => item.id === created.id);
     expect(person?.emails).toEqual(
       expect.arrayContaining([
@@ -409,8 +416,9 @@ describe('person_create / person_update', () => {
   });
 
   it("returns null and changes nothing for another user's person", async () => {
-    const result = resultContent(
+    const result = toolOutput(
       await callTool(otherUserId, 'person_update', { personId: adaId, displayName: 'Hijacked' }),
+      personUpdateToolOutputSchema,
     );
     expect(result.person).toBeNull();
 
@@ -423,11 +431,12 @@ describe('person_create / person_update', () => {
   });
 
   it('returns null for a person that does not exist', async () => {
-    const result = resultContent(
+    const result = toolOutput(
       await callTool(userId, 'person_update', {
         personId: '99999999-9999-4999-8999-999999999999',
         displayName: 'Ghost',
       }),
+      personUpdateToolOutputSchema,
     );
     expect(result.person).toBeNull();
   });

@@ -344,17 +344,27 @@ describe('chat generation service', () => {
         },
       ]),
     );
-    const definitions: Record<string, unknown> = {
-      lookup: { name: 'lookup', readOnly: true },
-      detail: {
-        name: 'detail',
-        readOnly: true,
-        guidance: {
-          whenToUse: 'x',
-          whenNotToUse: 'y',
-          dependencies: [{ tool: 'lookup', reason: 'resolve id', provides: ['id'] }],
-        },
-      },
+    const readDefinition = (
+      name: string,
+      guidance?: CapabilityDefinition['guidance'],
+    ): CapabilityDefinition => ({
+      name,
+      title: name,
+      description: name,
+      inputSchema: z.object({}),
+      outputSchema: z.object({}),
+      readOnly: true,
+      scopes: ['task:read'],
+      resultCap: 1,
+      guidance,
+    });
+    const definitions: Record<string, CapabilityDefinition> = {
+      lookup: readDefinition('lookup'),
+      detail: readDefinition('detail', {
+        whenToUse: 'x',
+        whenNotToUse: 'y',
+        dependencies: [{ tool: 'lookup', reason: 'resolve id', provides: ['id'] }],
+      }),
     };
     const offered = (call: number) =>
       (mockedStream.mock.calls[call]?.[0].tools ?? []).map(chatToolName);
@@ -375,7 +385,7 @@ describe('chat generation service', () => {
       ],
       toolRuntime: {
         callTool: vi.fn().mockResolvedValue({ content: [{ type: 'text', text: '{}' }] }),
-        getToolDefinition: vi.fn((name: string) => definitions[name]) as never,
+        getToolDefinition: vi.fn((name: string) => definitions[name]),
       },
     });
 
@@ -951,24 +961,18 @@ describe('generation event ownership', () => {
 
   it('drops exactly the execute-owned boundary events', async () => {
     const { isExecuteOwnedEvent } = await import('./chat-generation-engine');
-    const eventOf = (type: keyof typeof EVENT_WRITERS) =>
-      ({ type }) as unknown as Parameters<typeof isExecuteOwnedEvent>[0];
-
     for (const [type, writer] of Object.entries(EVENT_WRITERS)) {
       if (type === 'generation.phase_changed') continue;
       // 'generation.accepted' is execute-only: the machine never emits it,
       // so there is no machine copy for the filter to drop.
       const expected = writer === 'execute' && type !== 'generation.accepted';
-      expect(isExecuteOwnedEvent(eventOf(type as keyof typeof EVENT_WRITERS))).toBe(expected);
+      expect(isExecuteOwnedEvent({ type })).toBe(expected);
     }
   });
 
   it('splits phase_changed by phase', async () => {
     const { isExecuteOwnedEvent } = await import('./chat-generation-engine');
-    const phaseEvent = (phase: string) =>
-      ({ type: 'generation.phase_changed', phase }) as unknown as Parameters<
-        typeof isExecuteOwnedEvent
-      >[0];
+    const phaseEvent = (phase: string) => ({ type: 'generation.phase_changed', phase });
 
     expect(isExecuteOwnedEvent(phaseEvent('running'))).toBe(true);
     expect(isExecuteOwnedEvent(phaseEvent('saving'))).toBe(true);
