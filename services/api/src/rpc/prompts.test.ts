@@ -54,6 +54,10 @@ describe('chat assistant personality', () => {
     expect(CHAT_ASSISTANT_PROMPT).toContain('do not search memories for them');
     expect(CHAT_ASSISTANT_PROMPT).toContain('only when the user asked to filter by them');
     expect(CHAT_ASSISTANT_PROMPT).toContain('call task_list again without filters');
+    // The old wording ("Stop at the first confirmation-required action. Explain what will
+    // change...") made the live model explain and ask in text instead of calling task_delete.
+    expect(CHAT_ASSISTANT_PROMPT).not.toContain('Stop at the first confirmation-required action');
+    expect(CHAT_ASSISTANT_PROMPT).toContain('never ask for confirmation in your own message');
     // The original bug: "let me check your tasks" and no call.
     expect(CHAT_ASSISTANT_PROMPT).toContain('Never end a reply by announcing an action');
     // Deleting goes straight to task_delete; the app, not the model, asks for approval.
