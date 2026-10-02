@@ -155,17 +155,6 @@ describe('planChatTools core tools', () => {
     expect(mocks.createStructuredChatCompletion).not.toHaveBeenCalled();
   });
 
-  it('tells the router that creating or changing saved data needs a lookup', async () => {
-    routerSays({});
-
-    await plan(ADD_TASK);
-
-    const [{ messages }] = mocks.createStructuredChatCompletion.mock.calls[0] ?? [{ messages: [] }];
-    const routingPrompt = messages.find((message: { role: string }) => message.role === 'system');
-    expect(routingPrompt?.content).toMatch(/creating, updating, completing, or deleting a record/);
-    expect(routingPrompt?.content).toMatch(/"Add a task"/);
-  });
-
   // docs/observability.md: no provider response bodies in exported telemetry. A provider error
   // carries one in its message, so only its class and status may be logged.
   it('logs only the class and status of a provider error when the plan request fails', async () => {

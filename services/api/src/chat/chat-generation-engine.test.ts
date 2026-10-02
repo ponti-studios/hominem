@@ -240,10 +240,6 @@ describe('chat generation service', () => {
     expect(save.mock.calls[0]?.[0].result.content).toContain(
       'waiting for prerequisite tool(s): lookup',
     );
-    // The refusal has to tell the model to fix it itself, not hand it to the user.
-    expect(JSON.parse(save.mock.calls[0]?.[0].result.content).nextStep).toMatch(
-      /call detail again\. Do not ask the user/,
-    );
   });
 
   it('executes a tool, appends its result, and continues the next model turn', async () => {

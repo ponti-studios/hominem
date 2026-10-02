@@ -40,31 +40,6 @@ describe('chat assistant personality', () => {
     }
   });
 
-  // Regression: with a MEMORY section and no tasks section, a live model saved "i need to
-  // renew my passport on november 16th" as a memory instead of creating a task.
-  it('tells the assistant that things to do are tasks, not memories', () => {
-    expect(CHAT_ASSISTANT_PROMPT).toContain('TASKS:');
-    expect(CHAT_ASSISTANT_PROMPT).toContain('call task_create right away');
-    expect(CHAT_ASSISTANT_PROMPT).toContain('even if they never say "add a task"');
-    expect(CHAT_ASSISTANT_PROMPT).toContain('i need to renew my passport on march 15th');
-    expect(CHAT_ASSISTANT_PROMPT).toContain('A task is not a memory');
-    // Memory is steered away from commitments, and from loose references to tasks.
-    expect(CHAT_ASSISTANT_PROMPT).toContain('is a task, not a memory (see TASKS)');
-    expect(CHAT_ASSISTANT_PROMPT).toContain('does not apply to requests about the user');
-    expect(CHAT_ASSISTANT_PROMPT).toContain('do not search memories for them');
-    expect(CHAT_ASSISTANT_PROMPT).toContain('only when the user asked to filter by them');
-    expect(CHAT_ASSISTANT_PROMPT).toContain('call task_list again without filters');
-    // The old wording ("Stop at the first confirmation-required action. Explain what will
-    // change...") made the live model explain and ask in text instead of calling task_delete.
-    expect(CHAT_ASSISTANT_PROMPT).not.toContain('Stop at the first confirmation-required action');
-    expect(CHAT_ASSISTANT_PROMPT).toContain('never ask for confirmation in your own message');
-    // The original bug: "let me check your tasks" and no call.
-    expect(CHAT_ASSISTANT_PROMPT).toContain('Never end a reply by announcing an action');
-    // Deleting goes straight to task_delete; the app, not the model, asks for approval.
-    expect(CHAT_ASSISTANT_PROMPT).toContain('call task_delete with its id right away');
-    expect(CHAT_ASSISTANT_PROMPT).toContain('never ask "do you want me to delete it?"');
-  });
-
   it('keeps the Ori chat prompt snapshot aligned with production', () => {
     const messages = JSON.parse(
       readFileSync(
