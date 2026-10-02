@@ -325,7 +325,13 @@ export async function planChatTools(input: {
       reasoning: getReasoningConfig(input.model) ?? null,
     });
     planUsage = planned.usage;
-    const validation = validateChatToolPlan(planned.output, candidateDefinitions);
+    // The router already decided this request needs a lookup, so the plan's own flag adds
+    // nothing; live models often answered `false` next to a list of steps, which failed
+    // validation and threw the whole plan away.
+    const validation = validateChatToolPlan(
+      { ...planned.output, requiresLookup: planned.output.steps.length > 0 },
+      candidateDefinitions,
+    );
     if (!validation.ok) throw new Error(validation.errors.join('; '));
     if (!capabilityOutput.requiresLookup || validation.plan.steps.length === 0) {
       throw new Error('Exact plan must preserve the required private-data lookup');

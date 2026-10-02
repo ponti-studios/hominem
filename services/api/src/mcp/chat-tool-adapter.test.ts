@@ -199,4 +199,31 @@ describe('planChatTools core tools', () => {
     expect(routingPrompt?.content).toMatch(/creating, updating, completing, or deleting a record/);
     expect(routingPrompt?.content).toMatch(/"Add a task"/);
   });
+
+  // Regression: the plan model answered requiresLookup:false next to a list of steps, which
+  // failed validation ("A no-lookup plan cannot contain tool steps") and discarded the plan.
+  it('keeps a plan whose own requiresLookup flag disagrees with its steps', async () => {
+    mocks.createStructuredChatCompletion
+      .mockResolvedValueOnce({
+        output: { capabilities: ['finance'], requiresLookup: true, requiresWebSearch: false },
+        usage: null,
+      })
+      .mockResolvedValueOnce({
+        output: {
+          requiresLookup: false,
+          steps: [{ tool: 'finance_transactions', purpose: 'Find spending', dependsOn: [] }],
+        },
+        usage: null,
+      });
+
+    const plan = await planChatTools({
+      model: 'test-model',
+      messages: [{ role: 'user', content: 'how much did I spend last month?' }],
+    });
+
+    expect(plan.requiresLookup).toBe(true);
+    expect(plan.steps.find((step) => step.tool === 'finance_transactions')?.purpose).toBe(
+      'Find spending',
+    );
+  });
 });
