@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from 'react';
-import type { NativeSyntheticEvent, TextInputSelectionChangeEventData } from 'react-native';
 
 import { applyFormatCommand } from '~/components/notes/note-formatting';
 import type { FormatCommand, TextSelection } from '~/components/notes/note-formatting';
@@ -12,7 +11,7 @@ export function useNoteFormatting() {
   );
 
   const onSelectionChange = useCallback(
-    (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
+    (e: { nativeEvent: { selection: { start: number; end: number } } }) => {
       selectionRef.current = e.nativeEvent.selection;
       hasKnownSelectionRef.current = true;
       setControlledSelection(undefined);

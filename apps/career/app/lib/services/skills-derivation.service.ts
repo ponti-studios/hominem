@@ -13,6 +13,8 @@ import { CareerRepository } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
 import { z } from 'zod';
 
+import { jsonStringArray } from '~/lib/db-json';
+
 const derivedSkillSchema = z.object({
   name: z.string(),
   level: z.number().min(1).max(100),
@@ -66,9 +68,7 @@ export async function deriveSkillsFromCareerHistory(
     projects.length > 0
       ? projects
           .map((p) => {
-            const tags = Array.isArray(p.technologies)
-              ? (p.technologies as string[]).join(', ')
-              : '';
+            const tags = jsonStringArray(p.technologies).join(', ');
             return `Project: ${p.title}\nDescription: ${p.description ?? 'N/A'}${tags ? `\nTechnologies: ${tags}` : ''}`;
           })
           .join('\n\n')
@@ -129,8 +129,8 @@ export async function deriveSkillsFromCareerHistory(
   if (Array.isArray(parsed)) {
     arr = parsed;
   } else {
-    const firstArray = Object.values(parsed as Record<string, unknown>).find(Array.isArray);
-    arr = (firstArray as unknown[]) ?? [];
+    const firstArray = Object.values(parsed).find(Array.isArray);
+    arr = firstArray ?? [];
   }
   return derivedSkillsSchema.parse(arr);
 }

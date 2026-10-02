@@ -61,9 +61,11 @@ export function SegmentedControl<T extends string>({
   const progress = useSharedValue(selectedIndex);
 
   useEffect(() => {
-    progress.value = reducedMotion
-      ? selectedIndex
-      : withTiming(selectedIndex, { duration: 200, easing: MOVE_EASING });
+    progress.set(
+      reducedMotion
+        ? selectedIndex
+        : withTiming(selectedIndex, { duration: 200, easing: MOVE_EASING }),
+    );
   }, [selectedIndex, reducedMotion, progress]);
 
   const thumbStyle = useAnimatedStyle(() => ({

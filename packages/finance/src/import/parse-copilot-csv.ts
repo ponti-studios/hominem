@@ -136,7 +136,7 @@ export function parseCopilotCsv(input: ArrayBuffer | Buffer | string): ParsedFil
       skip_empty_lines: true,
       relax_column_count: false,
       trim: false,
-    }) as CopilotRawRow[];
+    });
     headers = records.length > 0 ? Object.keys(records[0] ?? {}) : [];
   } catch (error) {
     return {

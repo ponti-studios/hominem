@@ -122,9 +122,9 @@ export function parseScrapedJobPostingContent(content: string, jobUrl: string): 
   const jsonString = jsonMatch ? jsonMatch[1].trim() : trimmed;
   let parsed: Record<string, unknown>;
   try {
-    const value = JSON.parse(jsonString) as unknown;
+    const value: unknown = JSON.parse(jsonString);
     if (!isObject(value)) throw new Error('not an object');
-    parsed = value as Record<string, unknown>;
+    parsed = Object.fromEntries(Object.entries(value));
   } catch {
     throw new Error(
       'We couldn’t read the job details from this posting. You can retry or paste the description.',

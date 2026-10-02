@@ -1,5 +1,4 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import type { RelativePathString } from 'expo-router';
 import { Stack, useIsFocused, useRouter } from 'expo-router';
 import { memo, useCallback, useMemo } from 'react';
 import { Pressable, RefreshControl, Text, View } from 'react-native';
@@ -18,7 +17,7 @@ export default function ArchivedChatsScreen() {
   const { data: chats = [], error, isFetching, refetch } = useArchivedChats({ enabled: isFocused });
   const onPressChat = useCallback(
     (chatId: string) => {
-      router.push(getContentRoute('chat', chatId) as RelativePathString);
+      router.push(getContentRoute('chat', chatId));
     },
     [router],
   );

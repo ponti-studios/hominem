@@ -39,9 +39,7 @@ export function useCreateChat() {
 
   return useMutation({
     mutationFn: (variables: { title: string }) =>
-      client.api.chats
-        .$post({ json: { title: variables.title } })
-        .then((r) => r.json() as Promise<Chat>),
+      client.api.chats.$post({ json: { title: variables.title } }).then((r) => r.json()),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: chatQueryKeys.list });
     },
@@ -119,7 +117,7 @@ export function useArchiveChat({
     mutationFn: (variables: { chatId: string }) =>
       client.api.chats[':id'].archive
         .$post({ param: { id: variables.chatId } })
-        .then((r) => r.json() as Promise<Chat>),
+        .then((r) => r.json()),
     onError: (_error, _variables, context) => {
       if (context?.previousChats) {
         queryClient.setQueryData(chatQueryKeys.list, context.previousChats);

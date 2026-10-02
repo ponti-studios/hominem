@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { updateProfile } from '~/services/auth/hooks/use-update-profile';
+
 const mocks = vi.hoisted(() => ({
   updateUser: vi.fn(),
 }));
@@ -7,8 +9,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('~/services/auth/auth-client', () => ({
   authClient: { updateUser: mocks.updateUser },
 }));
-
-import { updateProfile } from '~/services/auth/hooks/use-update-profile';
 
 describe('updateProfile', () => {
   it('calls Better Auth update-user with only the provided fields', async () => {

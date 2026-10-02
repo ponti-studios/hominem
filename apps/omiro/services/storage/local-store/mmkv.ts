@@ -1,6 +1,8 @@
 import type { AuthUser as User } from '@ponti-studios/auth/types';
 import { createMMKV } from 'react-native-mmkv';
+import { z } from 'zod';
 
+import { MediaSchema, SettingsSchema, UserProfileSchema } from '../../validation/schemas';
 import type { Media, Settings } from '../../validation/schemas';
 
 type UserProfile = User;
@@ -16,14 +18,14 @@ const KEYS = {
 const toISO = (value: string | Date | null | undefined) =>
   value instanceof Date ? value.toISOString() : (value ?? new Date().toISOString());
 
-function parseJSON<T>(key: string): T | null {
+function parseJSON<T>(key: string, schema: z.ZodType<T>): T | null {
   const raw = storage.getString(key);
   if (!raw) {
     return null;
   }
 
   try {
-    return JSON.parse(raw) as T;
+    return schema.parse(JSON.parse(raw));
   } catch {
     storage.remove(key);
     return null;
@@ -61,7 +63,7 @@ export const createMMKVStore = async () => {
   return {
     initialize: async () => true,
     getUserProfile: async () => {
-      const profile = parseJSON<UserProfile>(KEYS.userProfile);
+      const profile = parseJSON(KEYS.userProfile, UserProfileSchema);
       return profile ? normalizeProfile(profile) : null;
     },
     upsertUserProfile: async (profile: UserProfile) => {
@@ -79,12 +81,12 @@ export const createMMKVStore = async () => {
       return settings;
     },
     getSettings: async () => {
-      const settings = parseJSON<Settings>(KEYS.settings);
+      const settings = parseJSON(KEYS.settings, SettingsSchema);
       return settings ? normalizeSettings(settings) : null;
     },
     upsertMedia: async (media: Media) => {
       const nextMedia = normalizeMedia(media);
-      const mediaItems = parseJSON<Media[]>(KEYS.media) ?? [];
+      const mediaItems = parseJSON(KEYS.media, z.array(MediaSchema)) ?? [];
       const nextItems = mediaItems.reduce<Media[]>(
         (items, item) => {
           if (item.id !== nextMedia.id) {
@@ -98,7 +100,7 @@ export const createMMKVStore = async () => {
       return nextMedia;
     },
     listMedia: async () => {
-      const mediaItems = parseJSON<Media[]>(KEYS.media) ?? [];
+      const mediaItems = parseJSON(KEYS.media, z.array(MediaSchema)) ?? [];
       return mediaItems.map(normalizeMedia).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     },
     clearAllData: async () => {

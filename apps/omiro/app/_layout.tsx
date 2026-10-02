@@ -12,9 +12,8 @@ import {
   usePathname,
   useRouter,
   useSegments,
-  type RelativePathString,
 } from 'expo-router';
-import { PostHogProvider, type PostHog } from 'posthog-react-native';
+import { PostHogProvider } from 'posthog-react-native';
 import React, { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -35,7 +34,7 @@ import { resolveAuthRedirect } from '~/services/navigation/auth-route-guard';
 import { consumeRestoreAttempt, consumeResumeTarget } from '~/services/navigation/launch-state';
 import { getContentRoute } from '~/services/navigation/routes';
 import { initObservability, isSentryEnabled } from '~/services/observability';
-import { POSTHOG_ENABLED, posthog } from '~/services/posthog';
+import { posthog, posthogClient } from '~/services/posthog';
 import queryClient from '~/services/query-client';
 import { mobilePersistOptions } from '~/services/query-persistence';
 import { recordActiveDay } from '~/services/review-prompt/review-prompt';
@@ -50,7 +49,7 @@ function InnerRootLayout() {
   );
   const router = useRouter();
   const pathname = usePathname();
-  const segments = useSegments() as string[];
+  const segments: string[] = useSegments();
   const segmentKey = segments.join('/');
   const { isPending, isSignedIn, isSigningOut, currentUser, resetAuthForE2E, signOut } = useAuth();
   const isRestoring = useIsRestoring();
@@ -105,7 +104,7 @@ function InnerRootLayout() {
     }
 
     lastRedirectSignatureRef.current = redirectSignature;
-    router.replace(target as RelativePathString);
+    router.replace(target);
   }, [isPending, isRestoring, isSignedIn, isSigningOut, router, segmentKey, segments]);
 
   useEffect(() => {
@@ -218,8 +217,8 @@ function RootLayout() {
     </RestyleThemeProvider>
   );
 
-  return POSTHOG_ENABLED ? (
-    <PostHogProvider client={posthog as PostHog}>{content}</PostHogProvider>
+  return posthogClient ? (
+    <PostHogProvider client={posthogClient}>{content}</PostHogProvider>
   ) : (
     content
   );

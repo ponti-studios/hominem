@@ -91,11 +91,11 @@ export function ChatComposerPanel({
   );
 
   const attachFiles = useCallback(
-    (files: FileList | null) => void composer.attachFiles(files),
+    (files: FileList | null) => composer.attachFiles(files),
     [composer.attachFiles],
   );
-  const stop = useCallback(() => void streamMessage.cancel(), [streamMessage.cancel]);
-  const submit = useCallback(() => void submission.submit(), [submission.submit]);
+  const stop = useCallback(() => streamMessage.cancel(), [streamMessage.cancel]);
+  const submit = useCallback(() => submission.submit(), [submission.submit]);
   const toggleVoice = useCallback(
     () => speech.toggle(composer.draft),
     [composer.draft, speech.toggle],
@@ -103,7 +103,7 @@ export function ChatComposerPanel({
   const retry = useMemo(
     () =>
       composer.uploadState.errors.length > 0 && isOnline
-        ? () => void composer.retryFailedUpload()
+        ? () => composer.retryFailedUpload()
         : submission.isRetryable && isOnline
           ? submission.retryGeneration
           : undefined,

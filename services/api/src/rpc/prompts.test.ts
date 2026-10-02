@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import type { ChatResponseLength } from '../chat/chat-prompts';
 import {
   buildChatSystemPrompt,
   CHAT_ASSISTANT_PROMPT,
@@ -33,20 +34,22 @@ describe('chat assistant personality', () => {
     expect(buildChatSystemPrompt()).toContain(CHAT_ASSISTANT_PROMPT);
     expect(buildChatSystemPrompt()).toMatch(/CURRENT DATE \(UTC\): \d{4}-\d{2}-\d{2}/);
 
-    for (const [length, guidance] of Object.entries(CHAT_RESPONSE_LENGTH_GUIDANCE)) {
-      const prompt = buildChatSystemPrompt(length as keyof typeof CHAT_RESPONSE_LENGTH_GUIDANCE);
+    const lengths: ChatResponseLength[] = ['short', 'medium', 'long'];
+    expect([...lengths].sort()).toEqual(Object.keys(CHAT_RESPONSE_LENGTH_GUIDANCE).sort());
+    for (const length of lengths) {
+      const prompt = buildChatSystemPrompt(length);
       expect(prompt).toContain(CHAT_ASSISTANT_PROMPT);
-      expect(prompt).toContain(guidance);
+      expect(prompt).toContain(CHAT_RESPONSE_LENGTH_GUIDANCE[length]);
     }
   });
 
   it('keeps the Ori chat prompt snapshot aligned with production', () => {
-    const messages = JSON.parse(
+    const messages: Array<{ role: string; content: string }> = JSON.parse(
       readFileSync(
         resolve(import.meta.dirname, '../../../ori/data/chat-assistant/prompt.json'),
         'utf8',
       ),
-    ) as Array<{ role: string; content: string }>;
+    );
     expect(
       messages
         .filter((message) => message.role === 'system')

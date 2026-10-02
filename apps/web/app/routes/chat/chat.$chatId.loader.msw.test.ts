@@ -30,10 +30,7 @@ describe('chat loader SSR MSW boundary', () => {
     const result = await loader({
       request,
       params: { chatId: 'chat-1' },
-      context: undefined,
-      url: new URL(request.url),
-      pattern: '/chat/:chatId',
-    } as unknown as Parameters<typeof loader>[0]);
+    });
 
     expect(result.data).toMatchObject({ messages: undefined, messagesStatus: 503 });
   });
@@ -49,10 +46,7 @@ describe('chat loader SSR MSW boundary', () => {
     const result = await loader({
       request,
       params: { chatId: 'chat-1' },
-      context: undefined,
-      url: new URL(request.url),
-      pattern: '/chat/:chatId',
-    } as unknown as Parameters<typeof loader>[0]);
+    });
 
     expect(result.data).toMatchObject({ messages: undefined, messagesStatus: 500 });
   });

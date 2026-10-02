@@ -96,7 +96,7 @@ function findOptimisticNoteQueries(
     .getQueryCache()
     .getAll()
     .filter((query) => {
-      const key = query.queryKey as unknown[];
-      return typeof key[2] === 'string' && (key[2] as string).startsWith('optimistic-note-');
+      const id = query.queryKey[2];
+      return typeof id === 'string' && id.startsWith('optimistic-note-');
     });
 }

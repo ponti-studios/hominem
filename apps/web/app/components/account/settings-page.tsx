@@ -79,7 +79,7 @@ export function AccountSettingsPage({ user }: { user: User }) {
           {nameChanged ? (
             <Button
               disabled={updateProfile.isPending}
-              onClick={() => void saveName()}
+              onClick={() => saveName()}
               variant="secondary"
             >
               {updateProfile.isPending ? 'Saving…' : 'Save'}
@@ -190,7 +190,7 @@ export function ArchivedChatsPage() {
         {error ? (
           <div className="space-y-3">
             <p className="text-sm text-destructive">Archived chats unavailable.</p>
-            <Button onClick={() => void refetch()} variant="secondary">
+            <Button onClick={() => refetch()} variant="secondary">
               Try again
             </Button>
           </div>
@@ -261,7 +261,7 @@ function MemoryRow({ memory }: { memory: { id: string; title: string | null; con
         <div className="flex gap-2">
           <Button
             disabled={updateMemory.isPending || !content.trim()}
-            onClick={() => void save()}
+            onClick={() => save()}
             size="sm"
             variant="secondary"
           >
@@ -319,7 +319,7 @@ export function MemoriesPage() {
         {error ? (
           <div className="space-y-3">
             <p className="text-sm text-destructive">Memories unavailable.</p>
-            <Button onClick={() => void refetch()} variant="secondary">
+            <Button onClick={() => refetch()} variant="secondary">
               Try again
             </Button>
           </div>

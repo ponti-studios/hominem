@@ -1,7 +1,12 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { withInfoPlist, withDangerousMod, withXcodeProject, withAppDelegate } = require('expo/config-plugins');
+const {
+  withInfoPlist,
+  withDangerousMod,
+  withXcodeProject,
+  withAppDelegate,
+} = require('expo/config-plugins');
 
 // Xcode 26's UIKit SDK now traps at launch (EXC_BREAKPOINT in
 // _UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption) when an app
@@ -70,7 +75,10 @@ function withSceneDelegateSourceFile(config) {
   config = withDangerousMod(config, [
     'ios',
     async (config) => {
-      const targetDir = path.join(config.modRequest.platformProjectRoot, config.modRequest.projectName);
+      const targetDir = path.join(
+        config.modRequest.platformProjectRoot,
+        config.modRequest.projectName,
+      );
       fs.writeFileSync(path.join(targetDir, 'SceneDelegate.swift'), SCENE_DELEGATE_SOURCE);
       return config;
     },

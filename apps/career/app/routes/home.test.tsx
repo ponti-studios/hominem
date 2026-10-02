@@ -3,19 +3,15 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
 
+import { makeEngagement, makeProject } from '~/test/factories/work';
+
 import type { Route } from './+types/home';
 import Home from './home';
 
-function renderHome(loaderData: unknown) {
+function renderHome(loaderData: Route.ComponentProps['loaderData']) {
   render(
     <MemoryRouter>
-      <Home
-        {...({
-          params: {},
-          matches: [],
-          loaderData,
-        } as unknown as Route.ComponentProps)}
-      />
+      <Home loaderData={loaderData} />
     </MemoryRouter>,
   );
 }
@@ -34,24 +30,24 @@ describe('Home', () => {
     renderHome({
       authenticated: true,
       engagements: [
-        {
+        makeEngagement({
           id: 'eng-1',
           title: 'Staff Engineer',
           company: 'Acme Corp',
           startDate: '2023-01-01',
           endDate: null,
           isCurrent: true,
-        },
+        }),
       ],
       projects: [
-        {
+        makeProject({
           id: 'proj-1',
           title: 'Career Tracker',
           organization: null,
           shortDescription: 'A private workspace for job seekers.',
           startDate: '2024-01-01',
           endDate: null,
-        },
+        }),
       ],
     });
 

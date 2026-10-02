@@ -19,7 +19,11 @@ export function getToolCapabilities(definition: CapabilityDefinition): ChatCapab
   // `scope` is typed as `${Capability}:${ScopeAction}`, so the prefix is guaranteed to
   // be a valid Capability by construction — no runtime membership check needed.
   return [
-    ...new Set(definition.scopes.map((scope) => scope.slice(0, scope.indexOf(':')) as Capability)),
+    ...new Set(
+      definition.scopes.flatMap((scope) =>
+        CAPABILITIES.filter((capability) => scope.startsWith(`${capability}:`)),
+      ),
+    ),
   ];
 }
 

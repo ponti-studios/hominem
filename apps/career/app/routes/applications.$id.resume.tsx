@@ -4,6 +4,7 @@ import { useOutletContext } from 'react-router';
 
 import { ApplicationResumeTab } from '~/components/career';
 import { userContext } from '~/lib/middleware';
+import { formText } from '~/lib/route-utils';
 import { JobApplicationsService } from '~/lib/services/job-applications.service';
 
 export async function action({ context, request, params }: ActionFunctionArgs) {
@@ -20,7 +21,7 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
   }
 
   const formData = await request.formData();
-  const resume = formData.get('resume') as string;
+  const resume = formText(formData, 'resume') ?? '';
   if (!resume) {
     throw new Response('Resume content is required', { status: 400 });
   }

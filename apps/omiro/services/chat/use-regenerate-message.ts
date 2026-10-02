@@ -46,7 +46,9 @@ export function useRegenerateMessage(chatId: string) {
       );
       const unsubscribe = controller.subscribe((state, event) => {
         const current = generationRef.current;
-        if (!current || event.generationId !== current.id) return;
+        if (!current || event.generationId !== current.id) {
+          return;
+        }
         setGeneration({
           ...current,
           stage: state.phase === 'cancel_requested' ? 'stopping' : state.phase,

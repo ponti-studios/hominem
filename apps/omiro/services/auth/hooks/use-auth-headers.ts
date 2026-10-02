@@ -5,6 +5,7 @@ import { authClient } from '~/services/auth/auth-client';
 export function useAuthHeaders() {
   return useCallback(async () => {
     const cookie = await Promise.resolve(authClient.getCookie());
-    return cookie ? ({ cookie } satisfies Record<string, string>) : ({} as Record<string, string>);
+    const headers: Record<string, string> = cookie ? { cookie } : {};
+    return headers;
   }, []);
 }

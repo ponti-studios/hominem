@@ -110,14 +110,14 @@ function extractStructuredPosting(html: string): string {
   );
   if (!raw) return '';
   try {
-    const posting = JSON.parse(raw) as {
+    const posting: {
       title?: string;
       description?: string;
       hiringOrganization?: { name?: string };
       jobLocation?: unknown;
       employmentType?: string;
       datePosted?: string;
-    };
+    } = JSON.parse(raw);
     return [
       posting.title,
       posting.hiringOrganization?.name,
@@ -242,13 +242,13 @@ function parseModelJson(content: string): unknown {
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```$/, '');
   try {
-    return JSON.parse(trimmed) as unknown;
+    return JSON.parse(trimmed);
   } catch {
     const start = trimmed.indexOf('{');
     const end = trimmed.lastIndexOf('}');
     if (start >= 0 && end > start) {
       try {
-        return JSON.parse(trimmed.slice(start, end + 1)) as unknown;
+        return JSON.parse(trimmed.slice(start, end + 1));
       } catch {
         // fall through to the generic user-facing error below
       }

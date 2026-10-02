@@ -161,14 +161,18 @@ export const TaskRepository = {
     }
 
     const personIds = [...new Set(input.participants)];
-    const ownedPeople = await handle
-      .selectFrom('app.people')
-      .select('id')
-      .where('ownerUserid', '=', input.userId)
-      .where('id', 'in', personIds)
-      .execute();
-    if (ownedPeople.length !== personIds.length) {
-      throw new NotFoundError('Person');
+    // An empty list means "no participants": `id IN ()` is invalid SQL, and there is
+    // nothing to verify, so only look people up when there are some.
+    if (personIds.length > 0) {
+      const ownedPeople = await handle
+        .selectFrom('app.people')
+        .select('id')
+        .where('ownerUserid', '=', input.userId)
+        .where('id', 'in', personIds)
+        .execute();
+      if (ownedPeople.length !== personIds.length) {
+        throw new NotFoundError('Person');
+      }
     }
 
     await handle.deleteFrom('app.taskParticipants').where('taskId', '=', input.taskId).execute();

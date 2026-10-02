@@ -90,7 +90,8 @@ describe('ChatClient', () => {
   it('start() sends the caller-supplied generationId in the request body, not a fallback id', async () => {
     const sentBodies: unknown[] = [];
     const request = async ({ init }: ChatClientTransportRequest) => {
-      sentBodies.push(JSON.parse(init.body as string));
+      if (typeof init.body !== 'string') throw new Error('expected a string request body');
+      sentBodies.push(JSON.parse(init.body));
       return streamResponse({
         version: 1,
         generationId: 'caller-supplied-id',
@@ -137,7 +138,8 @@ describe('ChatClient', () => {
   it('respondToToolCall() never sends a generationId in the body — the server derives the generation from messageId/toolCallId and rejects a client-supplied one', async () => {
     const sentBodies: unknown[] = [];
     const request = async ({ init }: ChatClientTransportRequest) => {
-      sentBodies.push(JSON.parse(init.body as string));
+      if (typeof init.body !== 'string') throw new Error('expected a string request body');
+      sentBodies.push(JSON.parse(init.body));
       return streamResponse({
         version: 1,
         generationId: 'server-generation-id',

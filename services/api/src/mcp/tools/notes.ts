@@ -98,6 +98,7 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    standaloneWrite: true,
     name: 'note_create',
     title: 'Create a note',
     description: 'Saves a new note with an optional title.',

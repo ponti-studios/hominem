@@ -16,3 +16,20 @@ export const MediaSchema = z.object({
 });
 
 export type Media = z.infer<typeof MediaSchema>;
+
+export const UserProfileSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  emailVerified: z.boolean(),
+  name: z.string(),
+  image: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const ResumeTargetSchema = z.object({
+  kind: z.enum(['chat', 'note']),
+  id: z.string(),
+  title: z.string().nullable(),
+  updatedAt: z.string().nullable(),
+});

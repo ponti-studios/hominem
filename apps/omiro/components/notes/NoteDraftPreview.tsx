@@ -43,22 +43,24 @@ export function NoteDraftPreview({ text, isLoading, testID }: NoteDraftPreviewPr
     cancelAnimation(opacity);
 
     if (reducedMotion) {
-      opacity.value = 1;
+      opacity.set(1);
       return;
     }
 
     if (isLoading) {
-      opacity.value = withRepeat(
-        withSequence(
-          withTiming(PULSE_LOW_OPACITY, nativeMotionTiming.enter),
-          withTiming(1, nativeMotionTiming.enter),
+      opacity.set(
+        withRepeat(
+          withSequence(
+            withTiming(PULSE_LOW_OPACITY, nativeMotionTiming.enter),
+            withTiming(1, nativeMotionTiming.enter),
+          ),
+          -1,
+          true,
         ),
-        -1,
-        true,
       );
     } else {
-      opacity.value = 0;
-      opacity.value = withTiming(1, nativeMotionTiming.enter);
+      opacity.set(0);
+      opacity.set(withTiming(1, nativeMotionTiming.enter));
     }
 
     return () => cancelAnimation(opacity);

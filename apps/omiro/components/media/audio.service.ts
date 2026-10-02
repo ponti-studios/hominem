@@ -5,6 +5,8 @@ import AudioModule from 'expo-audio/build/AudioModule';
 import { File } from 'expo-file-system';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
+import { toError } from '~/services/to-error';
+
 import { createStore, type Listener } from './create-store';
 
 export type RecorderState =
@@ -56,15 +58,13 @@ function createRecordingController() {
   let recorder: AudioRecorder | null = null;
   let pollHandle: ReturnType<typeof setInterval> | null = null;
 
-  const ensureRecorder = () => {
-    if (!recorder) {
-      recorder = new AudioModule.AudioRecorder({
-        ...Audio.RecordingPresets.HIGH_QUALITY,
-        isMeteringEnabled: true,
-      });
-    }
+  const ensureRecorder = (): AudioRecorder => {
+    recorder ??= new AudioModule.AudioRecorder({
+      ...Audio.RecordingPresets.HIGH_QUALITY,
+      isMeteringEnabled: true,
+    });
 
-    return recorder as AudioRecorder;
+    return recorder;
   };
 
   const sync = () => {
@@ -112,7 +112,7 @@ function createRecordingController() {
     try {
       await recorder?.stop();
     } catch (error) {
-      logger.error(stopFailureLogLabel, error as Error);
+      logger.error(stopFailureLogLabel, toError(error));
     }
 
     stopPolling();
@@ -189,7 +189,7 @@ function createRecordingController() {
         startPolling();
         return { ok: true as const };
       } catch (error) {
-        logger.error('[recorder] start failed', error as Error);
+        logger.error('[recorder] start failed', toError(error));
         setState('IDLE');
         await deactivateKeepAwake().catch((nextError: Error) =>
           logger.error('[recorder] keep-awake deactivation failed', nextError),
@@ -256,7 +256,7 @@ function createRecordingController() {
         try {
           new File(fileUri).delete();
         } catch (error) {
-          logger.error('[recorder] discard file delete failed', error as Error);
+          logger.error('[recorder] discard file delete failed', toError(error));
         }
       }
 

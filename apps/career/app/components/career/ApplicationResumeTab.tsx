@@ -21,6 +21,20 @@ import type {
 import type { JobPosting } from '~/lib/services/job-scraping.service';
 import { getCompanyName } from '~/lib/utils/applicationUtils';
 
+const RESUME_FORMATS = ['professional', 'modern', 'technical', 'executive'] as const;
+const TARGET_LENGTHS = ['concise', 'standard', 'detailed'] as const;
+type ResumeFormat = (typeof RESUME_FORMATS)[number];
+type TargetLength = (typeof TARGET_LENGTHS)[number];
+
+// Select hands back a plain string; keep the current choice if it is ever not one we offer.
+function parseResumeFormat(value: string | null): ResumeFormat {
+  return RESUME_FORMATS.find((format) => format === value) ?? 'professional';
+}
+
+function parseTargetLength(value: string | null): TargetLength {
+  return TARGET_LENGTHS.find((length) => length === value) ?? 'standard';
+}
+
 interface ApplicationResumeTabProps {
   application: CareerApplicationRecord;
   applicationId: string;
@@ -54,10 +68,8 @@ export function ApplicationResumeTab({
 }: ApplicationResumeTabProps) {
   const fetcher = useFetcher();
 
-  const [resumeFormat, setResumeFormat] = useState<
-    'professional' | 'modern' | 'technical' | 'executive'
-  >('professional');
-  const [targetLength, setTargetLength] = useState<'concise' | 'standard' | 'detailed'>('standard');
+  const [resumeFormat, setResumeFormat] = useState<ResumeFormat>('professional');
+  const [targetLength, setTargetLength] = useState<TargetLength>('standard');
   const [focusAreas, setFocusAreas] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedResume, setGeneratedResume] = useState<string | null>(null);
@@ -76,7 +88,10 @@ export function ApplicationResumeTab({
 
   const isSaving = fetcher.state !== 'idle';
   const saveSuccess =
-    fetcher.data && (fetcher.data as { message?: string }).message === 'Resume saved successfully';
+    typeof fetcher.data === 'object' &&
+    fetcher.data !== null &&
+    'message' in fetcher.data &&
+    fetcher.data.message === 'Resume saved successfully';
 
   async function handleGenerate() {
     if (!application.jobPostingUrl) {
@@ -94,7 +109,7 @@ export function ApplicationResumeTab({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: application.jobPostingUrl }),
         });
-        const scrapeData = (await scrapeResponse.json()) as JobScrapeApiResponse;
+        const scrapeData: JobScrapeApiResponse = await scrapeResponse.json();
         if (!scrapeResponse.ok || scrapeData.error || !scrapeData.job_posting) {
           throw new Error(scrapeData.error || 'Could not read the job posting');
         }
@@ -116,7 +131,7 @@ export function ApplicationResumeTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
       });
-      const data = (await response.json()) as CustomizeResumeApiResponse;
+      const data: CustomizeResumeApiResponse = await response.json();
       if (!response.ok || data.error) {
         throw new Error(data.error || 'Generation failed');
       }
@@ -248,7 +263,7 @@ export function ApplicationResumeTab({
                 <label htmlFor="resume-format">Format</label>
                 <Select
                   value={resumeFormat}
-                  onValueChange={(v) => setResumeFormat(v as typeof resumeFormat)}
+                  onValueChange={(v) => setResumeFormat(parseResumeFormat(v))}
                 >
                   <SelectTrigger id="resume-format">
                     <SelectValue />
@@ -266,7 +281,7 @@ export function ApplicationResumeTab({
                 <label htmlFor="resume-length">Length</label>
                 <Select
                   value={targetLength}
-                  onValueChange={(v) => setTargetLength(v as typeof targetLength)}
+                  onValueChange={(v) => setTargetLength(parseTargetLength(v))}
                 >
                   <SelectTrigger id="resume-length">
                     <SelectValue />

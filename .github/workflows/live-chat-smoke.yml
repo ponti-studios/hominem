@@ -1,0 +1,173 @@
+name: live-chat-smoke
+
+# Sends real chat turns to a running API with the real OpenRouter model and asserts the
+# model used its tools. Unit and scripted-provider tests cannot see this failure class (a
+# model that says "let me check your tasks" and calls nothing). Two suites run in parallel:
+#   live-chat-smoke  three single-turn cases.
+#   live-chat-flows  three multi-turn conversations written the way people talk (no verbs
+#                    like "add a task", missing details, pronouns). The model is
+#                    nondeterministic, so each flow is sampled five times and needs 80% to pass.
+# Costs a few cents per run, so it never runs automatically: start it from the Actions tab
+# (or `gh workflow run live-chat-smoke.yml`) when you want it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      chat-model:
+        description: OpenRouter model id to test (defaults to the app's CHAT_MODEL).
+        type: string
+        required: false
+      cases:
+        description: Smoke case names (add-task, list-tasks, plain-chat), comma-separated. Empty runs all.
+        type: string
+        required: false
+      flow-cases:
+        description: Flow names (task-follow-ups, delete-with-confirmation, many-things-then-recall), comma-separated. Empty runs all.
+        type: string
+        required: false
+
+concurrency:
+  group: live-chat-smoke-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  live-chat:
+    # The job's display name is the check name, so branch protection keeps matching
+    # `live-chat-smoke` even though one job now defines both suites.
+    name: ${{ matrix.check }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check: live-chat-smoke
+            suite: smoke
+          - check: live-chat-flows
+            suite: flows
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      TURBO_TELEMETRY_DISABLED: '1'
+      # Not production, so outbound OTP email is captured to the local mailbox;
+      # ENV is deliberately left unset so the AI provider is the real OpenRouter.
+      NODE_ENV: development
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      CHAT_MODEL: ${{ inputs.chat-model || 'openai/gpt-5-mini' }}
+      REDIS_URL: redis://localhost:6379
+      RESEND_API_KEY: 'ci-test-resend-key'
+      RESEND_FROM_EMAIL: 'test@example.com'
+      RESEND_FROM_NAME: 'Test Sender'
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:4433/hominem-test
+      BETTER_AUTH_SECRET: 'ci-test-better-auth-secret-32-characters'
+      API_URL: http://localhost:4040
+      WEB_URL: http://localhost:4445
+      E2E_ORIGIN: http://localhost:4040
+      PORT: '4040'
+
+    services:
+      postgres:
+        image: ghcr.io/ponti-studios/foundation/postgres@sha256:578d34f82b21752b9e749776e955fadc85e1cba8d962e78bce1bd60878a9c316
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hominem-test
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hominem-test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 4433:5432
+      redis:
+        image: redis@sha256:52334768d4a6594d8969f51a1a6fee3ffa7545f6359a4877229cdc754d2def82
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: require-openrouter-key
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "::error::The OPENROUTER_API_KEY repository secret is not set; the live chat smoke cannot run."
+            exit 1
+          fi
+
+      - name: checkout-repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: setup-pnpm-workspace
+        uses: ./.github/actions/setup-pnpm-workspace
+        with:
+          node-version: '24.18.0'
+
+      - name: setup-goose
+        uses: ./.github/actions/setup-goose
+        with:
+          go-version: '1.25'
+
+      - name: run-database-migrations
+        run: just db migrate test
+
+      - name: start-api
+        run: |
+          set -euo pipefail
+          cd services/api
+          nohup pnpm exec tsx --tsconfig tsconfig.dev.json src/index.ts > "$RUNNER_TEMP/api.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            curl -fsS -o /dev/null http://localhost:4040/ && exit 0
+            sleep 1
+          done
+          echo "::error::API did not become ready within 60s"
+          tail -n 100 "$RUNNER_TEMP/api.log"
+          exit 1
+
+      - name: run-suite
+        timeout-minutes: ${{ matrix.suite == 'flows' && 15 || 8 }}
+        working-directory: services/api
+        env:
+          SUITE: ${{ matrix.suite }}
+          SMOKE_CASES: ${{ inputs.cases }}
+          FLOW_CASES: ${{ inputs.flow-cases }}
+          FLOW_SAMPLES: '5'
+          FLOW_MIN_PASS_RATE: '0.8'
+          FLOW_EARLY_STOP: '0'
+        run: |
+          set -euo pipefail
+          # AGENTS.md: the stable test identity for authenticated end-to-end runs. Both suites
+          # use it: each matrix job has its own throwaway Postgres, so the flows' deleting the
+          # account's tasks and memories before every sample touches nothing the smoke suite
+          # (or anything else) uses.
+          export E2E_TEST_EMAIL=test@lvh.me
+          # e2e:setup prints the session cookie as `export E2E_*` lines: keep those
+          # out of the log, show everything else, and bound it so a hang fails fast.
+          # Match only those lines — its closing hint also contains a quoted
+          # `grep 'export '` command, and eval-ing that re-runs e2e:setup forever.
+          setup_output="$(timeout 90 pnpm --silent e2e:setup 2>&1)" || {
+            echo "$setup_output" | grep -vE '^[[:space:]]*export E2E_' || true
+            echo "::error::e2e:setup failed or timed out"
+            exit 1
+          }
+          echo "$setup_output" | grep -vE '^[[:space:]]*export E2E_' || true
+          eval "$(echo "$setup_output" | grep -E '^[[:space:]]*export E2E_')"
+          case "$SUITE" in
+            smoke) pnpm live-chat-smoke ;;
+            flows) pnpm live-chat-flows ;;
+          esac
+
+      # Routing and provider trouble the run survives (the router plan falling back, an empty
+      # model turn, a tool withdrawn after repeated calls) never fails a check, so print those
+      # events on every run. They carry model names, ids and error text, not credentials.
+      - name: api-diagnostics
+        if: ${{ always() }}
+        run: grep -E 'chat_tool_plan_validation_failed|provider_turn_empty|provider_tool_withdrawn|chat_generation_failed|provider_turn_summary' "$RUNNER_TEMP/api.log" || echo "no routing or provider diagnostics logged"
+
+      - name: api-log
+        if: ${{ failure() || cancelled() }}
+        run: tail -n 300 "$RUNNER_TEMP/api.log" || true

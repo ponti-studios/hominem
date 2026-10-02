@@ -1,5 +1,8 @@
 import { resendMock } from '@hominem/services/email';
 import { Dispatcher, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
+import { z } from 'zod';
+
+import { scriptedFlowStep } from './scripted-flows';
 
 // Single owner of every scripted external-provider response (OpenRouter,
 // Resend) for ENV=scripted, at the undici dispatcher level.
@@ -24,23 +27,39 @@ import { Dispatcher, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
 // OpenRouter: deterministic chat-completion responses
 // ============================================================================
 
-type OpenRouterMessage = {
-  role?: string;
-  content?: unknown;
-};
+const openRouterToolCallSchema = z.object({
+  id: z.string().optional(),
+  function: z.object({ name: z.string().optional() }).optional(),
+});
 
-type OpenRouterRequest = {
-  messages?: OpenRouterMessage[];
-  response_format?: unknown;
-  stream?: boolean;
-  tools?: Array<{ function?: { name?: string } }>;
-};
+const openRouterMessageSchema = z.object({
+  role: z.string().optional(),
+  content: z.unknown().optional(),
+  // The wire format is snake_case; camelCase is accepted in case a client sends it.
+  tool_calls: z.array(openRouterToolCallSchema).optional(),
+  toolCalls: z.array(openRouterToolCallSchema).optional(),
+  tool_call_id: z.string().optional(),
+  toolCallId: z.string().optional(),
+});
+
+const openRouterRequestSchema = z.object({
+  messages: z.array(openRouterMessageSchema).optional(),
+  response_format: z.unknown().optional(),
+  stream: z.boolean().optional(),
+  tools: z
+    .array(z.object({ function: z.object({ name: z.string().optional() }).optional() }))
+    .optional(),
+});
+
+type OpenRouterMessage = z.infer<typeof openRouterMessageSchema>;
+type OpenRouterRequest = z.infer<typeof openRouterRequestSchema>;
 
 type ScriptedContext = {
   request: OpenRouterRequest;
   toolNames: Set<string>;
   userText: string;
   hasToolResult: boolean;
+  turnResults: { name: string; content: string }[];
   hasRejectedToolResult: boolean;
   hasFailedToolResult: boolean;
 };
@@ -72,6 +91,24 @@ function firstMatchingRule<T>(rules: readonly ScriptedRule<T>[], context: Script
   return rule.resolve(context);
 }
 
+// Tool results since the latest user message, each with the name of the tool that made it.
+function turnToolResults(messages: OpenRouterMessage[]) {
+  const names = new Map<string, string>();
+  for (const message of messages) {
+    for (const call of message.tool_calls ?? message.toolCalls ?? []) {
+      if (call.id && call.function?.name) names.set(call.id, call.function.name);
+    }
+  }
+  const lastUser = messages.map((message) => message.role).lastIndexOf('user');
+  return messages
+    .slice(lastUser + 1)
+    .filter((message) => message.role === 'tool')
+    .map((message) => ({
+      name: names.get(message.tool_call_id ?? message.toolCallId ?? '') ?? '',
+      content: String(message.content ?? ''),
+    }));
+}
+
 function createContext(request: OpenRouterRequest): ScriptedContext {
   const messages = request.messages ?? [];
   const latestUserMessage = [...messages].reverse().find((message) => message.role === 'user');
@@ -83,6 +120,7 @@ function createContext(request: OpenRouterRequest): ScriptedContext {
         .filter((name): name is string => Boolean(name)),
     ),
     hasToolResult: messages.some((message) => message.role === 'tool'),
+    turnResults: turnToolResults(messages),
     hasRejectedToolResult: messages.some(
       (message) => message.role === 'tool' && /rejected/i.test(String(message.content ?? '')),
     ),
@@ -93,7 +131,20 @@ function createContext(request: OpenRouterRequest): ScriptedContext {
   };
 }
 
+const ADD_TASK_PATTERN = /\badd a task\b/i;
+
 const toolNameRules: readonly ScriptedRule<string | null>[] = [
+  // Mirrors a real model on "add a task ...": check existing tasks, then create.
+  {
+    matches: ({ toolNames, userText, turnResults }) =>
+      toolNames.has('task_list') && ADD_TASK_PATTERN.test(userText) && turnResults.length === 0,
+    resolve: () => 'task_list',
+  },
+  {
+    matches: ({ toolNames, userText, turnResults }) =>
+      toolNames.has('task_create') && ADD_TASK_PATTERN.test(userText) && turnResults.length === 1,
+    resolve: () => 'task_create',
+  },
   {
     matches: ({ hasToolResult }) => hasToolResult,
     resolve: () => null,
@@ -119,6 +170,11 @@ const toolNameRules: readonly ScriptedRule<string | null>[] = [
 ];
 
 const contentRules: readonly ScriptedRule<string>[] = [
+  {
+    matches: ({ hasToolResult, toolNames, userText }) =>
+      hasToolResult && toolNames.has('task_create') && ADD_TASK_PATTERN.test(userText),
+    resolve: () => 'Added your task.',
+  },
   {
     matches: ({ hasRejectedToolResult }) => hasRejectedToolResult,
     resolve: () => 'The tool request was rejected.',
@@ -147,7 +203,17 @@ const contentRules: readonly ScriptedRule<string>[] = [
 
 function openRouterResponseBody(request: OpenRouterRequest) {
   const context = createContext(request);
-  const toolName = firstMatchingRule(toolNameRules, context);
+  // Natural-language flow scripts (see scripted-flows.ts) take precedence for chat turns.
+  const flowStep =
+    request.response_format === undefined
+      ? scriptedFlowStep({
+          userText: context.userText,
+          toolNames: context.toolNames,
+          turnResults: context.turnResults,
+        })
+      : null;
+  const flowTool = flowStep && 'tool' in flowStep ? flowStep : null;
+  const toolName = flowStep ? (flowTool?.tool ?? null) : firstMatchingRule(toolNameRules, context);
   const shouldFailTool = /SCRIPT:TOOL_FAIL/i.test(context.userText);
   const id = `scripted-${++requestNumber}`;
   const toolCall = {
@@ -156,18 +222,26 @@ function openRouterResponseBody(request: OpenRouterRequest) {
     type: 'function',
     function: {
       name: toolName ?? 'create_collection',
-      arguments: shouldFailTool
-        ? '{invalid'
-        : toolName === 'list_collections'
-          ? '{}'
-          : JSON.stringify({
-              description: 'Created by the local scripted provider',
-              name: 'Browser scripted provider collection',
-              visibility: 'private',
-            }),
+      arguments: flowTool
+        ? JSON.stringify(flowTool.args)
+        : shouldFailTool
+          ? '{invalid'
+          : toolName === 'list_collections' || toolName === 'task_list'
+            ? '{}'
+            : toolName === 'task_create'
+              ? JSON.stringify({
+                  title: 'Set up Google Home for living room lights',
+                  artifactType: 'task',
+                })
+              : JSON.stringify({
+                  description: 'Created by the local scripted provider',
+                  name: 'Browser scripted provider collection',
+                  visibility: 'private',
+                }),
     },
   };
-  const content = firstMatchingRule(contentRules, context);
+  const content =
+    flowStep && 'text' in flowStep ? flowStep.text : firstMatchingRule(contentRules, context);
   const isStructured = request.response_format !== undefined;
   const responseContent = isStructured
     ? JSON.stringify({
@@ -221,7 +295,7 @@ function openRouterResponseBody(request: OpenRouterRequest) {
 }
 
 async function openRouterResponder(rawBody: string): Promise<ScriptedResponse> {
-  const body = (rawBody ? JSON.parse(rawBody) : {}) as OpenRouterRequest;
+  const body = openRouterRequestSchema.parse(rawBody ? JSON.parse(rawBody) : {});
   const userText = (body.messages ?? [])
     .filter((message) => message.role === 'user')
     .map((message) => (typeof message.content === 'string' ? message.content : ''))
@@ -304,15 +378,19 @@ const STATUS_TEXT: Record<number, string> = {
   400: 'Bad Request',
 };
 
+function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
+  return value != null && typeof value === 'object' && Symbol.asyncIterator in value;
+}
+
 async function readDispatchBody(body: unknown): Promise<string> {
   if (body == null) return '';
   if (typeof body === 'string') return body;
   if (Buffer.isBuffer(body)) return body.toString('utf8');
   if (body instanceof Uint8Array) return Buffer.from(body).toString('utf8');
-  if (typeof (body as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
+  if (isAsyncIterable(body)) {
     const chunks: Buffer[] = [];
-    for await (const chunk of body as AsyncIterable<Buffer | Uint8Array | string>) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array | string));
+    for await (const chunk of body) {
+      if (typeof chunk === 'string' || chunk instanceof Uint8Array) chunks.push(Buffer.from(chunk));
     }
     return Buffer.concat(chunks).toString('utf8');
   }

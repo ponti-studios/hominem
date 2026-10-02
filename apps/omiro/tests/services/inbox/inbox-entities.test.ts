@@ -24,7 +24,7 @@ function makePage(): InboxOutput {
       },
     ],
     nextCursor: null,
-  } as InboxOutput;
+  };
 }
 
 describe('Inbox entity index', () => {

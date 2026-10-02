@@ -1,4 +1,3 @@
-import type { RelativePathString } from 'expo-router';
 import { Redirect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
@@ -89,7 +88,7 @@ function AuthScreen() {
       setIsSubmitting(true);
       await requestEmailOtp(normalizedEmail);
       router.replace(
-        `/(auth)/verify?email=${encodeURIComponent(normalizedEmail)}&sentAt=${Date.now()}` as RelativePathString,
+        `/(auth)/verify?email=${encodeURIComponent(normalizedEmail)}&sentAt=${Date.now()}`,
       );
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : t.auth.emailEntry.sendFailedError);
@@ -102,7 +101,7 @@ function AuthScreen() {
   const displayError = authError;
 
   if (isSignedIn) {
-    return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination as RelativePathString} />;
+    return <Redirect href={CHAT_AUTH_CONFIG.defaultPostAuthDestination} />;
   }
 
   return (

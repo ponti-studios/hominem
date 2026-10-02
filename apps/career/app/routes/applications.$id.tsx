@@ -1,4 +1,4 @@
-import { CareerRepository, type CareerApplicationWithRelations } from '@hominem/db/career';
+import { CareerRepository } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
 import { humanizeIdentifier } from '@hominem/utils/text';
 import {
@@ -16,17 +16,15 @@ import { QuickActions } from '~/components/career/applications/QuickActions';
 import { StatusBadge } from '~/components/status-badge';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
+import { formText } from '~/lib/route-utils';
 import { cn } from '~/lib/utils';
 import { getApplicationStatusTone } from '~/lib/utils/applicationUtils';
 import { isJobApplicationStatus } from '~/types/career';
 
 import { Route } from './+types/applications.$id';
 
-export const meta: Route.MetaFunction = ({ matches }) => {
-  const data = matches[matches.length - 1]?.loaderData as
-    | { application: CareerApplicationWithRelations }
-    | undefined;
-  const app = data?.application;
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  const app = loaderData?.application;
   return [{ title: app ? `${app.title} at ${app.company} | career` : 'Application | career' }];
 };
 
@@ -50,20 +48,20 @@ export async function action({ context, params, request }: Route.ActionArgs) {
     ) {
       throw new Response('Invalid application status', { status: 400 });
     }
-    const salaryRaw = formData.get('salaryExpectation') as string;
+    const salaryRaw = formText(formData, 'salaryExpectation') ?? '';
     const salaryExpectation =
       salaryRaw && Number.isFinite(Number(salaryRaw)) ? Math.round(Number(salaryRaw) * 100) : null;
 
     await CareerRepository.updateApplication(db, user.id, id, {
-      title: formData.get('title') as string,
-      company: formData.get('company') as string,
-      location: (formData.get('location') as string) || null,
-      source: (formData.get('source') as string) || null,
-      appliedAt: (formData.get('appliedAt') as string) || null,
+      title: formText(formData, 'title') ?? '',
+      company: formText(formData, 'company') ?? '',
+      location: formText(formData, 'location') || null,
+      source: formText(formData, 'source') || null,
+      appliedAt: formText(formData, 'appliedAt') || null,
       status: statusValue || application.status,
-      jobPostingUrl: (formData.get('jobPostingUrl') as string) || null,
+      jobPostingUrl: formText(formData, 'jobPostingUrl') || null,
       salaryExpectation,
-      notes: (formData.get('notes') as string) || null,
+      notes: formText(formData, 'notes') || null,
     });
     return data({ ok: true });
   }

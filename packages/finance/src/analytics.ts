@@ -279,7 +279,9 @@ export async function getSpendingTimeSeriesByContract(input: {
 
   const bucketData = new Map<string, { income: number; expenses: number; count: number }>();
   for (const tx of transactions) {
-    const bucketKey = getTimeSeriesBucket(tx.postedOn as string, input.groupBy);
+    if (tx.postedOn === null) continue;
+    const postedOn = typeof tx.postedOn === 'string' ? tx.postedOn : tx.postedOn.toISOString();
+    const bucketKey = getTimeSeriesBucket(postedOn, input.groupBy);
     const current = bucketData.get(bucketKey) ?? { income: 0, expenses: 0, count: 0 };
     if (tx.amount >= 0) {
       current.income += tx.amount;

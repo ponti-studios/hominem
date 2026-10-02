@@ -1,6 +1,8 @@
 // @jsxImportSource react
 import type { ReactNode } from 'react';
 
+import type { CssVariables } from './css-variables';
+
 import styles from './progress-button.module.css';
 
 type AnimatedProgressButtonProps = {
@@ -17,12 +19,13 @@ export function AnimatedProgressButton({
   progress,
 }: AnimatedProgressButtonProps) {
   const clamped = Math.max(0, Math.min(1, progress));
+  const style: CssVariables = { '--progress': `${clamped * 100}` };
   return (
     <div
       className={styles['progress-button']}
       data-complete={String(complete)}
       data-progress-zero={clamped <= 0 ? true : undefined}
-      style={{ ['--progress' as string]: `${clamped * 100}` }}
+      style={style}
     >
       <svg aria-hidden="true" className={styles['progress-button__border']}>
         <defs>

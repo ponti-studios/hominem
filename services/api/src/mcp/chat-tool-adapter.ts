@@ -12,6 +12,7 @@ import { logger } from '@hominem/telemetry';
 import { z } from 'zod';
 
 import type { CapabilityDefinition } from '../application/capability';
+import { chatToolName } from '../chat/chat-tool-name';
 import { ensureMcpToolsRegistered } from './register-tools';
 import {
   buildToolCatalog,
@@ -33,6 +34,15 @@ const capabilityPlanSchema = z.object({
   requiresWebSearch: z.boolean().default(false),
 });
 
+// A plan the model produced that our own validation rejected; its message is locally
+// generated, unlike an error from the provider.
+class PlanRejectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PlanRejectedError';
+  }
+}
+
 export type ChatToolPlan = {
   capabilities: ChatCapability[];
   requiresLookup: boolean;
@@ -42,7 +52,15 @@ export type ChatToolPlan = {
   requiresWebSearch?: boolean;
 };
 
-const ROUTING_PROMPT = `Classify the latest user request for tool routing.\n\nUse requiresLookup=true for requests asking about the user's saved, current, or historical Hominem data. Select every relevant private capability; when ambiguous, include each plausible capability. Use requiresWebSearch=true for current or time-sensitive public facts, live schedules and scores, recent events, prices, rates, weather, or requests to verify information. Such requests must use web search even if the wording is ambiguous. Use requiresWebSearch=false for general knowledge, writing, conversation, and stable public facts. Never select a private capability merely because it could be useful.\n\nCapabilities: ${CHAT_CAPABILITIES.join(', ')}.`;
+const ROUTING_PROMPT = `Classify the latest user request for tool routing.
+
+Use requiresLookup=true for any request that reads or changes the user's own saved Hominem data: looking something up, listing or searching it, or creating, updating, completing, or deleting a record. "Add a task", "remind me to", "note that", and "what is on my list" all qualify. Select every relevant private capability; when ambiguous, include each plausible capability.
+
+Use requiresWebSearch=true for current or time-sensitive public facts, live schedules and scores, recent events, prices, rates, weather, or requests to verify information. Such requests must use web search even if the wording is ambiguous.
+
+Use requiresLookup=false and requiresWebSearch=false for general knowledge, writing, conversation, and stable public facts. Never select a private capability merely because it could be useful.
+
+Capabilities: ${CHAT_CAPABILITIES.join(', ')}.`;
 
 type ChatFunctionToolDefinition = Extract<ChatFunctionTool, { function: unknown }>;
 const WEB_SEARCH_TOOL: ChatFunctionTool = {
@@ -57,34 +75,60 @@ const WEB_SEARCH_TOOL: ChatFunctionTool = {
 const CURRENT_PUBLIC_FACT_PATTERN =
   /\b(current|today|tonight|tomorrow|next|latest|recent|schedule|score|scores|price|rate|weather|when do|what time|verify)\b/;
 
+// The router above only decides which *extra* capabilities a turn needs. It is a
+// classifier, so it will sometimes misjudge a request (e.g. "add a task" is a write,
+// not a lookup). If it were the only source of tools, a misjudgment would leave the
+// model with nothing to call and it would narrate an action it cannot take. These
+// everyday capabilities are therefore always exposed, with toolChoice left on 'auto'.
+const CORE_CAPABILITIES: readonly ChatCapability[] = ['task', 'notes', 'memory'];
+
+function selectCoreDefinitions(
+  definitions: readonly CapabilityDefinition[],
+): CapabilityDefinition[] {
+  return definitions.filter((definition) =>
+    getToolCapabilities(definition).some((capability) => CORE_CAPABILITIES.includes(capability)),
+  );
+}
+
+// Appends steps for `extra` tools that the plan does not already schedule.
+function withSteps(
+  steps: ValidatedChatToolPlan['steps'],
+  extra: readonly CapabilityDefinition[],
+): ValidatedChatToolPlan['steps'] {
+  const scheduled = new Set(steps.map((step) => step.tool));
+  return [
+    ...steps,
+    ...fallbackSteps(extra.filter((definition) => !scheduled.has(definition.name))),
+  ];
+}
+
 function toChatTool(tool: CapabilityDefinition): ChatFunctionToolDefinition {
   return {
     type: 'function',
     function: {
       name: tool.name,
       description: describeCapability(tool),
-      parameters: convertSchemaToJsonSchema(tool.inputSchema),
+      parameters: convertSchemaToJsonSchema(tool.chatInputSchema ?? tool.inputSchema),
     },
   };
 }
 
-function chatToolName(tool: ChatFunctionTool): string {
-  return 'function' in tool ? tool.function.name : tool.type;
-}
-
+// The model-facing form of every tool, by name; rebuilt only when the registry changes.
 let chatToolProjection: {
   definitions: readonly CapabilityDefinition[];
-  tools: readonly ChatFunctionToolDefinition[];
+  byName: ReadonlyMap<string, ChatFunctionToolDefinition>;
 } | null = null;
 
 function getChatToolProjection(
   definitions: readonly CapabilityDefinition[],
-): readonly ChatFunctionToolDefinition[] {
-  if (chatToolProjection?.definitions === definitions) return chatToolProjection.tools;
-
-  const tools = definitions.map(toChatTool);
-  chatToolProjection = { definitions, tools };
-  return tools;
+): ReadonlyMap<string, ChatFunctionToolDefinition> {
+  if (chatToolProjection?.definitions !== definitions) {
+    const byName = new Map(
+      definitions.map((definition) => [definition.name, toChatTool(definition)]),
+    );
+    chatToolProjection = { definitions, byName };
+  }
+  return chatToolProjection.byName;
 }
 
 function addUsage(first: AIUsageMetrics | null, second: AIUsageMetrics | null) {
@@ -109,7 +153,6 @@ function fallbackSteps(
     tool: definition.name,
     purpose: definition.guidance?.whenToUse ?? definition.description,
     dependsOn: definition.guidance?.dependencies?.map((dependency) => dependency.tool) ?? [],
-    arguments: {},
   }));
 }
 
@@ -177,18 +220,21 @@ export async function planChatTools(input: {
 }): Promise<ChatToolPlan> {
   await ensureMcpToolsRegistered();
   const definitions = listTools();
-  const projectedTools = getChatToolProjection(definitions);
+  const projected = getChatToolProjection(definitions);
+  const coreDefinitions = selectCoreDefinitions(definitions);
+  const toolsFor = (selected: readonly CapabilityDefinition[]) =>
+    selected.map((definition) => projected.get(definition.name)!);
   if (!getModelCapabilityProfile(input.model).structuredPlanning) {
     const latestContent = [...input.messages].reverse().find((message) => message.role === 'user');
     const content =
       typeof latestContent?.content === 'string' ? latestContent.content.toLowerCase() : '';
     const capabilities = inferMuseCapabilities(input.messages);
-    const selectedDefinitions = definitions.filter((definition) =>
-      getToolCapabilities(definition).some((capability) => capabilities.has(capability)),
+    const selectedDefinitions = definitions.filter(
+      (definition) =>
+        coreDefinitions.includes(definition) ||
+        getToolCapabilities(definition).some((capability) => capabilities.has(capability)),
     );
-    const tools: ChatFunctionTool[] = selectedDefinitions.map(
-      (definition) => projectedTools[definitions.indexOf(definition)]!,
-    );
+    const tools: ChatFunctionTool[] = toolsFor(selectedDefinitions);
     const requiresWebSearch = CURRENT_PUBLIC_FACT_PATTERN.test(content);
     if (requiresWebSearch) tools.push(WEB_SEARCH_TOOL);
     logger.info('chat_tool_plan', {
@@ -230,10 +276,7 @@ export async function planChatTools(input: {
   const candidateDefinitions = definitions.filter((definition) =>
     getToolCapabilities(definition).some((capability) => selectedCapabilities.has(capability)),
   );
-  const candidateTools = candidateDefinitions.map(
-    (definition) => projectedTools[definitions.indexOf(definition)]!,
-  );
-  if (capabilityOutput.requiresLookup && candidateTools.length === 0) {
+  if (capabilityOutput.requiresLookup && candidateDefinitions.length === 0) {
     const latestContent =
       typeof latestUserMessage?.content === 'string' ? latestUserMessage.content.toLowerCase() : '';
     const calendarRequest = /\b(calendar|event|schedule)\b/.test(latestContent);
@@ -252,11 +295,12 @@ export async function planChatTools(input: {
     });
   }
   if (!capabilityOutput.requiresLookup) {
+    const coreTools = toolsFor(coreDefinitions);
     return {
       capabilities,
       requiresLookup: false,
-      tools: capabilityOutput.requiresWebSearch ? [WEB_SEARCH_TOOL] : [],
-      steps: [],
+      tools: capabilityOutput.requiresWebSearch ? [...coreTools, WEB_SEARCH_TOOL] : coreTools,
+      steps: fallbackSteps(coreDefinitions),
       usage: capabilityUsage,
       requiresWebSearch: capabilityOutput.requiresWebSearch,
     };
@@ -270,7 +314,7 @@ export async function planChatTools(input: {
       messages: [
         {
           role: 'system',
-          content: `Create the smallest valid ordered tool plan for the user's request. Only choose tools from the catalog. Schedule prerequisites before dependent tools. Use an empty arguments object when values must be obtained from an earlier tool result. Never include a write unless the user requested the change.\n\nTool catalog:\n${buildToolCatalog(candidateDefinitions)}`,
+          content: `Create the smallest valid ordered tool plan for the user's request. Only choose tools from the catalog. Schedule prerequisites before dependent tools. Never include a write unless the user requested the change.\n\nTool catalog:\n${buildToolCatalog(candidateDefinitions)}`,
         },
         ...(latestUserMessage ? [latestUserMessage] : []),
       ],
@@ -282,37 +326,49 @@ export async function planChatTools(input: {
     });
     planUsage = planned.usage;
     const validation = validateChatToolPlan(planned.output, candidateDefinitions);
-    if (!validation.ok) throw new Error(validation.errors.join('; '));
-    if (!capabilityOutput.requiresLookup || validation.plan.steps.length === 0) {
-      throw new Error('Exact plan must preserve the required private-data lookup');
-    }
+    if (!validation.ok) throw new PlanRejectedError(validation.errors.join('; '));
     exactPlan = validation.plan;
   } catch (error) {
     logger.warn('chat_tool_plan_validation_failed', {
       model: input.model,
       failureCategory: 'tool_planning',
       fallbackUsed: true,
+      // Which of "the request failed", "the JSON was invalid" and "the plan broke a rule" it was;
+      // the fallback hides all three. Only our own validation text is logged: a provider error
+      // carries the provider's response body, so for those only the class and status go out
+      // (docs/observability.md).
+      reason:
+        error instanceof PlanRejectedError
+          ? error.message.slice(0, 300)
+          : error instanceof Error
+            ? error.name
+            : 'unknown',
+      status:
+        error instanceof Error && 'status' in error && typeof error.status === 'number'
+          ? error.status
+          : null,
     });
-    exactPlan = { requiresLookup: true, steps: fallbackSteps(candidateDefinitions) };
+    exactPlan = { steps: fallbackSteps(candidateDefinitions) };
   }
 
-  const selectedTools: ChatFunctionTool[] = exactPlan.steps.flatMap((step) => {
-    const index = definitions.findIndex((definition) => definition.name === step.tool);
-    return index === -1 ? [] : [projectedTools[index]!];
+  const plannedSteps = withSteps(exactPlan.steps, coreDefinitions);
+  const selectedTools: ChatFunctionTool[] = plannedSteps.flatMap((step) => {
+    const tool = projected.get(step.tool);
+    return tool ? [tool] : [];
   });
   if (capabilityOutput.requiresWebSearch) selectedTools.push(WEB_SEARCH_TOOL);
   logger.info('chat_tool_plan', {
     model: input.model,
     capabilities,
-    requiresLookup: exactPlan.requiresLookup,
+    requiresLookup: true,
     candidateTools: selectedTools.map(chatToolName),
     stepCount: exactPlan.steps.length,
   });
   return {
     capabilities,
-    requiresLookup: exactPlan.requiresLookup,
+    requiresLookup: true,
     tools: selectedTools,
-    steps: exactPlan.steps,
+    steps: plannedSteps,
     usage: addUsage(capabilityUsage, planUsage),
     requiresWebSearch: capabilityOutput.requiresWebSearch,
   };

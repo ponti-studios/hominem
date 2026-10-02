@@ -17,17 +17,23 @@ export function streamFromRequest(
     const reader = response.body?.getReader();
     if (!reader) {
       const text = await response.text();
-      if (text) onChunk(text);
+      if (text) {
+        onChunk(text);
+      }
       return { ok: response.ok, status: response.status };
     }
     const decoder = new TextDecoder();
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        break;
+      }
       onChunk(decoder.decode(value, { stream: true }));
     }
     const tail = decoder.decode();
-    if (tail) onChunk(tail);
+    if (tail) {
+      onChunk(tail);
+    }
     return { ok: response.ok, status: response.status };
   };
 }

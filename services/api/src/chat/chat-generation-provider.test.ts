@@ -3,9 +3,10 @@ import type { ChatStreamChunk } from '@hominem/ai';
 import { createGenerationState } from '@hominem/chat/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { OpenRouterChatModel } from './chat-generation-provider';
+import { MAX_CALLS_PER_TOOL, OpenRouterChatModel } from './chat-generation-provider';
+import { chatToolName } from './chat-tool-name';
 
-const mockedLogger = vi.hoisted(() => ({ warn: vi.fn() }));
+const mockedLogger = vi.hoisted(() => ({ warn: vi.fn(), info: vi.fn() }));
 const mockedOpenRouterRequestError = vi.hoisted(
   () => class OpenRouterRequestError extends Error {},
 );
@@ -56,6 +57,23 @@ async function collect<T>(values: AsyncIterable<T>): Promise<T[]> {
   for await (const value of values) collected.push(value);
   return collected;
 }
+
+const fnTool = (name: string) => ({
+  type: 'function' as const,
+  function: { name, description: name, parameters: {} },
+});
+const callChunk = (id: string, name: string) =>
+  chunk([
+    {
+      index: 0,
+      finishReason: 'tool_calls',
+      delta: { toolCalls: [{ index: 0, id, function: { name, arguments: '{}' } }] },
+    },
+  ]);
+const textChunk = (content = 'ok') =>
+  chunk([{ index: 0, finishReason: 'stop', delta: { content } }]);
+// The tools sent in the most recent request.
+const offered = () => (mockedStream.mock.calls.at(-1)?.[0].tools ?? []).map(chatToolName);
 
 // Delivers `values` immediately, then hangs forever on the next `.next()`
 // call — simulating OpenRouter delivering a complete response and then
@@ -126,9 +144,7 @@ describe('OpenRouter generation provider', () => {
     const provider = new OpenRouterChatModel({
       model: 'test-model',
       messages: [],
-      tools: [
-        { type: 'function', function: { name: 'first', description: 'first', parameters: {} } },
-      ],
+      tools: [fnTool('first')],
       requiresToolCall: true,
       requiresConfirmation: (name) => name === 'second',
     });
@@ -207,9 +223,7 @@ describe('OpenRouter generation provider', () => {
     const provider = new OpenRouterChatModel({
       model: 'test-model',
       messages: [],
-      tools: [
-        { type: 'function', function: { name: 'lookup', description: 'lookup', parameters: {} } },
-      ],
+      tools: [fnTool('lookup')],
       requiresToolCall: true,
     });
     const state = createGenerationState('generation-1');
@@ -267,7 +281,7 @@ describe('OpenRouter generation provider', () => {
       },
     ]);
 
-    mockedStream.mockReturnValueOnce(chunks([]));
+    mockedStream.mockReturnValueOnce(chunks([textChunk()]));
     await expect(
       collect(
         provider.retry({
@@ -326,6 +340,200 @@ describe('OpenRouter generation provider', () => {
         confirmationCallIds: [],
       },
     ]);
+  });
+
+  describe('an empty provider turn', () => {
+    const run = async (
+      values: readonly StreamChunk[],
+      options: { requiresToolCall?: boolean } = {},
+    ) => {
+      mockedStream.mockReturnValueOnce(chunks(values));
+      const provider = new OpenRouterChatModel({
+        model: 'test-model',
+        messages: [],
+        tools: [fnTool('task_list')],
+        maxTokens: 250,
+        ...options,
+      });
+      return collect(
+        provider.open({
+          turnId: 'turn-1',
+          iteration: 0,
+          state: createGenerationState('generation-7'),
+        }),
+      );
+    };
+
+    // Surfaces to the user as "No reply was generated"; the log has to say why.
+    it('logs what came back when there is neither text nor a tool call', async () => {
+      await run(
+        [
+          chunk([{ index: 0, finishReason: null, delta: { reasoning: 'thinking it over' } }]),
+          chunk([{ index: 0, finishReason: 'length', delta: {} }]),
+        ],
+        { requiresToolCall: true },
+      );
+
+      expect(mockedLogger.warn).toHaveBeenCalledWith('provider_turn_empty', {
+        model: 'test-model',
+        iteration: 0,
+        servedModel: 'test-model',
+        toolChoice: 'required',
+        completionCap: 250,
+        toolCount: 1,
+        usage: null,
+        finishReasons: ['length'],
+        chunkCount: 2,
+        reasoningChars: 'thinking it over'.length,
+        rawToolCallCount: 0,
+      });
+    });
+
+    it('is reported as a transient failure so the turn is asked again', async () => {
+      const inputs = await run([chunk([{ index: 0, finishReason: 'length', delta: {} }])], {
+        requiresToolCall: true,
+      });
+
+      expect(inputs.at(-1)).toEqual({
+        type: 'provider-turn-failed',
+        message: 'No reply was generated',
+        transient: true,
+        attempt: 0,
+        maxAttempts: 2,
+      });
+      expect(inputs.some((input) => input.type === 'provider-turn-completed')).toBe(false);
+    });
+
+    // Review finding: a call that arrives without an id or name is dropped by the machine, so
+    // it must not make the turn count as having produced output.
+    it('treats a turn whose only tool call has no usable id or name as empty', async () => {
+      const inputs = await run(
+        [
+          chunk([
+            {
+              index: 0,
+              finishReason: 'tool_calls',
+              delta: { toolCalls: [{ index: 0, function: { arguments: '{"id":"x"}' } }] },
+            },
+          ]),
+        ],
+        { requiresToolCall: true },
+      );
+
+      expect(inputs.at(-1)).toMatchObject({
+        type: 'provider-turn-failed',
+        transient: true,
+        message: 'No reply was generated',
+      });
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
+        'provider_turn_empty',
+        expect.objectContaining({ rawToolCallCount: 1 }),
+      );
+    });
+
+    it('asks again with "auto" after an empty "required" turn', async () => {
+      mockedStream
+        .mockReturnValueOnce(chunks([chunk([{ index: 0, finishReason: 'length', delta: {} }])]))
+        .mockReturnValueOnce(chunks([textChunk()]));
+      const provider = new OpenRouterChatModel({
+        model: 'test-model',
+        messages: [],
+        tools: [fnTool('task_list')],
+        requiresToolCall: true,
+      });
+      const state = createGenerationState('generation-7');
+
+      await collect(provider.open({ turnId: 'turn-1', iteration: 0, state }));
+      await collect(provider.retry({ attempt: 1, state }));
+
+      expect(mockedStream.mock.calls[0]?.[0].toolChoice).toBe('required');
+      expect(mockedStream.mock.calls[1]?.[0].toolChoice).toBe('auto');
+    });
+
+    it('summarizes every turn: what was offered, what was called, and how much text came with it', async () => {
+      await run([
+        chunk([
+          {
+            index: 0,
+            finishReason: 'tool_calls',
+            delta: {
+              content: "I'll delete it now.",
+              toolCalls: [
+                { index: 0, id: 'call-1', function: { name: 'task_list', arguments: '{}' } },
+              ],
+            },
+          },
+        ]),
+      ]);
+
+      expect(mockedLogger.info).toHaveBeenCalledWith('provider_turn_summary', {
+        iteration: 0,
+        toolChoice: 'auto',
+        offered: ['task_list'],
+        called: ['task_list'],
+        rawToolCallCount: 1,
+        textChars: "I'll delete it now.".length,
+        finishReasons: ['tool_calls'],
+      });
+    });
+
+    it.each([
+      ['produced text', textChunk('hello')],
+      ['made a tool call', callChunk('call-1', 'task_list')],
+    ])('does not log for a turn that %s', async (_label, turn) => {
+      await run([turn]);
+
+      expect(mockedLogger.warn).not.toHaveBeenCalledWith('provider_turn_empty', expect.anything());
+    });
+  });
+
+  it('does not offer a tool that isToolAvailable withholds, and re-checks every turn', async () => {
+    let ready = false;
+    const provider = new OpenRouterChatModel({
+      model: 'test-model',
+      messages: [],
+      tools: [fnTool('task_list'), fnTool('task_delete')],
+      isToolAvailable: (name) => name !== 'task_delete' || ready,
+    });
+    const state = createGenerationState('generation-8');
+    const text = () => chunks([textChunk()]);
+
+    mockedStream.mockReturnValueOnce(text());
+    await collect(provider.open({ turnId: 't1', iteration: 0, state }));
+    expect(offered()).toEqual(['task_list']);
+
+    ready = true;
+    mockedStream.mockReturnValueOnce(text());
+    await collect(provider.open({ turnId: 't2', iteration: 1, state }));
+    expect(offered()).toEqual(['task_list', 'task_delete']);
+  });
+
+  describe('a tool the model keeps calling', () => {
+    it('is withdrawn after MAX_CALLS_PER_TOOL calls so the model has to answer', async () => {
+      const provider = new OpenRouterChatModel({
+        model: 'test-model',
+        messages: [],
+        tools: [fnTool('task_list'), fnTool('task_update')],
+      });
+      const state = createGenerationState('generation-9');
+
+      for (let call = 1; call <= MAX_CALLS_PER_TOOL; call++) {
+        mockedStream.mockReturnValueOnce(chunks([callChunk(`c${call}`, 'task_list')]));
+        await collect(provider.open({ turnId: `t${call}`, iteration: call - 1, state }));
+        expect(offered()).toEqual(['task_list', 'task_update']);
+      }
+
+      mockedStream.mockReturnValueOnce(
+        chunks([chunk([{ index: 0, finishReason: 'stop', delta: { content: 'done' } }])]),
+      );
+      await collect(provider.open({ turnId: 'last', iteration: MAX_CALLS_PER_TOOL, state }));
+
+      expect(offered()).toEqual(['task_update']);
+      expect(mockedLogger.warn).toHaveBeenCalledWith('provider_tool_withdrawn', {
+        toolName: 'task_list',
+        calls: MAX_CALLS_PER_TOOL,
+      });
+    });
   });
 
   it('captures a usage-only trailer chunk sent after the finish-reason chunk', async () => {
@@ -577,9 +785,12 @@ describe('OpenRouter generation provider', () => {
         }),
       ),
     ).resolves.toContainEqual({
-      type: 'provider-turn-completed',
-      requiredToolCall: false,
-      confirmationCallIds: [],
+      // A tool call with no id or name is not output: the turn is asked again, not completed.
+      type: 'provider-turn-failed',
+      message: 'No reply was generated',
+      transient: true,
+      attempt: 0,
+      maxAttempts: 4,
     });
 
     mockedStream.mockImplementationOnce(() => {

@@ -38,126 +38,92 @@ const write = defineCapability({
   requiresConfirmation: true,
 });
 
-describe('validated chat tool plans', () => {
-  it('accepts an ordered plan with schema-valid arguments', () => {
-    expect(
-      validateChatToolPlan(
-        {
-          requiresLookup: true,
-          steps: [
-            {
-              tool: 'lookup',
-              purpose: 'Resolve the person',
-              dependsOn: [],
-              arguments: { query: 'Ada' },
-            },
-            {
-              tool: 'detail',
-              purpose: 'Load the resolved person',
-              dependsOn: ['lookup'],
-              arguments: { id: 'person-1' },
-            },
-          ],
-        },
-        [lookup, detail],
-      ),
-    ).toEqual(expect.objectContaining({ ok: true }));
+const standalone = (name: string) =>
+  defineCapability({
+    name,
+    title: name,
+    description: 'A write that depends on no existing record.',
+    inputSchema: z.object({ title: z.string() }),
+    outputSchema: z.object({ created: z.boolean() }),
+    readOnly: false,
+    scopes: ['people:write'],
+    resultCap: 1,
+    standaloneWrite: true,
   });
 
-  it('rejects unknown tools, invalid arguments, and forward dependencies', () => {
-    const result = validateChatToolPlan(
-      {
-        requiresLookup: true,
-        steps: [
-          { tool: 'detail', purpose: 'Load detail', dependsOn: ['lookup'], arguments: { id: 42 } },
-          { tool: 'missing', purpose: 'Unavailable', dependsOn: [], arguments: {} },
-        ],
-      },
-      [lookup, detail],
+const step = (tool: string, dependsOn: string[] = []) => ({ tool, purpose: tool, dependsOn });
+const validate = (
+  steps: ReturnType<typeof step>[],
+  definitions: Parameters<typeof validateChatToolPlan>[1],
+) => validateChatToolPlan({ steps }, definitions);
+
+describe('validated chat tool plans', () => {
+  it('accepts an ordered plan', () => {
+    expect(validate([step('lookup'), step('detail', ['lookup'])], [lookup, detail])).toEqual(
+      expect.objectContaining({ ok: true }),
     );
+  });
+
+  it('rejects unknown tools and forward dependencies', () => {
+    const result = validate([step('detail', ['lookup']), step('missing')], [lookup, detail]);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toEqual(
         expect.arrayContaining([
           'detail depends on lookup, which is not scheduled earlier',
-          'detail has invalid planned arguments: id',
           'Unknown tool: missing',
         ]),
       );
     }
   });
 
-  it('rejects cycles and inconsistent lookup flags', () => {
-    const cycle = validateChatToolPlan(
-      {
-        requiresLookup: true,
-        steps: [
-          { tool: 'lookup', purpose: 'First', dependsOn: ['detail'], arguments: { query: 'Ada' } },
-          {
-            tool: 'detail',
-            purpose: 'Second',
-            dependsOn: ['lookup'],
-            arguments: { id: 'person-1' },
-          },
-        ],
-      },
+  it('rejects cycles and an empty plan', () => {
+    const cycle = validate(
+      [step('lookup', ['detail']), step('detail', ['lookup'])],
       [lookup, detail],
     );
-    const noLookup = validateChatToolPlan({ requiresLookup: false, steps: [] }, [lookup, detail]);
+    const empty = validate([], [lookup, detail]);
 
     expect(cycle.ok).toBe(false);
     if (!cycle.ok) expect(cycle.errors).toContain('Tool plan contains a dependency cycle');
-    expect(noLookup).toEqual({ ok: true, plan: { requiresLookup: false, steps: [] } });
+    expect(empty).toEqual({ ok: false, errors: ['A lookup plan must contain at least one tool'] });
   });
 
   it('requires a read before a confirmation-required write', () => {
-    const result = validateChatToolPlan(
-      {
-        requiresLookup: true,
-        steps: [
-          {
-            tool: 'update',
-            purpose: 'Update the record',
-            dependsOn: [],
-            arguments: { id: 'person-1', value: 'new value' },
-          },
-        ],
-      },
-      [write],
-    );
-
-    expect(result).toEqual({
+    expect(validate([step('update')], [write])).toEqual({
       ok: false,
       errors: ['update requires a preceding read-only lookup'],
     });
   });
 
-  it('rejects a dependent write scheduled before its lookup', () => {
-    const result = validateChatToolPlan(
-      {
-        requiresLookup: true,
-        steps: [
-          {
-            tool: 'update',
-            purpose: 'Update the record',
-            dependsOn: ['lookup'],
-            arguments: { id: 'person-1', value: 'new value' },
-          },
-          {
-            tool: 'lookup',
-            purpose: 'Find the record',
-            dependsOn: [],
-            arguments: { query: 'Ada' },
-          },
-        ],
-      },
-      [lookup, write],
+  it('lets a standalone write be the first planned step', () => {
+    expect(validate([step('create')], [standalone('create')])).toEqual(
+      expect.objectContaining({ ok: true }),
     );
+  });
+
+  it('rejects a dependent write scheduled before its lookup', () => {
+    const result = validate([step('update', ['lookup']), step('lookup')], [lookup, write]);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toContain('update depends on lookup, which is not scheduled earlier');
     }
+  });
+
+  // A standalone write is not a read, and the runtime guard looks for a completed read.
+  it('does not accept a write after only a standalone write', () => {
+    const result = validate(
+      [step('remember_it'), step('update', ['remember_it'])],
+      [standalone('remember_it'), write],
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors).toContain('update requires a preceding read-only lookup');
+  });
+
+  it('rejects a plan that is not in the plain shape the provider is asked for', () => {
+    expect(validateChatToolPlan({ steps: [{ tool: 'lookup' }] }, [lookup]).ok).toBe(false);
   });
 });

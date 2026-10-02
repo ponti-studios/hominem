@@ -1,5 +1,9 @@
 // @vitest-environment jsdom
-import type { ChatGenerationController, GenerationClientState } from '@hominem/chat/client';
+import type {
+  ChatGenerationController,
+  GenerationClientInputEvent,
+  GenerationClientState,
+} from '@hominem/chat/client';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -20,7 +24,7 @@ const { registerGenerationHandoff } = await import('~/services/chat/generation-h
 function createFakeController(
   initialState: Partial<GenerationClientState> & { generationId: string },
 ) {
-  let state = {
+  let state: GenerationClientState = {
     text: '',
     reasoning: '',
     toolSteps: [],
@@ -28,31 +32,41 @@ function createFakeController(
     lastDurableSequence: 0,
     phase: 'preparing',
     ...initialState,
-  } as GenerationClientState;
-  const listeners = new Set<(state: GenerationClientState) => void>();
+  };
+  const listeners = new Set<Parameters<ChatGenerationController['subscribe']>[0]>();
   let resolveDone!: (value: GenerationClientState) => void;
   const done = new Promise<GenerationClientState>((resolve) => {
     resolveDone = resolve;
   });
-  const controller = {
+  const controller: ChatGenerationController = {
     get state() {
       return state;
     },
     signal: new AbortController().signal,
     done,
-    subscribe: (listener: (state: GenerationClientState) => void) => {
+    subscribe: (listener) => {
       listeners.add(listener);
-      return () => listeners.delete(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
-    start: () => controller,
-    resume: () => controller,
+    start: () => done,
+    resume: () => done,
     cancel: () => undefined,
-  } as unknown as ChatGenerationController;
+  };
   return {
     controller,
     emit: (next: Partial<GenerationClientState>) => {
       state = { ...state, ...next };
-      for (const listener of listeners) listener(state);
+      // The hook under test only reads the state; the event is just a required argument.
+      const event: GenerationClientInputEvent = {
+        version: 1,
+        generationId: state.generationId,
+        event: { type: 'error', message: 'test emit' },
+      };
+      for (const listener of listeners) {
+        listener(state, event);
+      }
     },
     finish: (final: Partial<GenerationClientState>) => {
       state = { ...state, ...final };

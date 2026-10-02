@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getSession: vi.fn(),
-  handler: vi.fn(),
+  handler: vi.fn<(request: Request) => Promise<Response>>(),
 }));
 
 vi.mock('../auth/trusted-origins', () => ({
@@ -139,7 +139,7 @@ describe('API login route', () => {
 
     expect(response.status).toBe(303);
     expect(response.headers.get('location')).toContain('step=otp');
-    const request = mocks.handler.mock.calls[0]?.[0] as Request;
+    const request = mocks.handler.mock.calls[0]?.[0];
     expect(request.url).toContain('/api/auth/email-otp/send-verification-otp');
     await expect(request.json()).resolves.toEqual({ email: 'mcp@example.com', type: 'sign-in' });
   });
@@ -167,7 +167,7 @@ describe('API login route', () => {
     expect(response.status).toBe(303);
     expect(response.headers.get('location')).toContain('/api/auth/oauth2/authorize?');
     expect(response.headers.get('set-cookie')).toContain('better-auth.session_token=session-token');
-    const request = mocks.handler.mock.calls[0]?.[0] as Request;
+    const request = mocks.handler.mock.calls[0]?.[0];
     expect(request.url).toContain('/api/auth/sign-in/email-otp');
   });
 
@@ -196,7 +196,7 @@ describe('API login route', () => {
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
     const html = await response.text();
     expect(html).toContain('"signedOut":true');
-    const request = mocks.handler.mock.calls[0]?.[0] as Request;
+    const request = mocks.handler.mock.calls[0]?.[0];
     expect(request.url).toContain('/api/auth/sign-out');
   });
 
@@ -221,7 +221,7 @@ describe('API login route', () => {
     expect(response.headers.get('location')).toBe(next);
     // the cleared session cookie still travels with the redirect
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
-    const request = mocks.handler.mock.calls[0]?.[0] as Request;
+    const request = mocks.handler.mock.calls[0]?.[0];
     expect(request.url).toContain('/api/auth/sign-out');
   });
 
@@ -304,7 +304,7 @@ describe('API login route', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ status: true });
     expect(response.headers.get('set-cookie')).toContain('refreshed');
-    const request = mocks.handler.mock.calls[0]?.[0] as Request;
+    const request = mocks.handler.mock.calls[0]?.[0];
     expect(request.url).toContain('/api/auth/update-user');
     await expect(request.json()).resolves.toEqual({ name: 'Ada Lovelace' });
   });

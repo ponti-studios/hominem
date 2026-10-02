@@ -18,7 +18,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       return data({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { url: jobUrl } = (await request.json()) as JobScrapeApiRequest;
+    const { url: jobUrl }: JobScrapeApiRequest = await request.json();
 
     if (!jobUrl) {
       return data({ error: 'Job posting URL is required' }, { status: 400 });

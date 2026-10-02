@@ -1,12 +1,12 @@
-import type { ChatMessageJsonObject } from '@hominem/chat';
+import { chatMessageJsonObjectSchema } from '@hominem/chat';
 import { logger } from '@hominem/telemetry';
 import {
   createMcpHandler,
   inputRequired,
+  inputResponse,
   McpServer,
   type AuthInfo,
   type CallToolResult,
-  type ElicitResult,
   type ServerContext,
 } from '@modelcontextprotocol/server';
 import type { Context } from 'hono';
@@ -108,8 +108,8 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
         if (state.tool !== definition.name) {
           return createErrorResult('Confirmation state does not match this tool');
         }
-        const response = ctx.mcpReq.inputResponses?.[CONFIRM_KEY] as ElicitResult | undefined;
-        if (response?.action !== 'accept') {
+        const response = inputResponse(ctx.mcpReq.inputResponses, CONFIRM_KEY);
+        if (response.kind !== 'elicit' || response.action !== 'accept') {
           return buildCancelledResult(`${definition.title} was cancelled.`);
         }
         // Execute with the args captured at mint time, not whatever arrived
@@ -125,7 +125,7 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
       // confirm — falling through here would execute destructive tools like
       // create_collection/invite_member with zero confirmation.
       const preview = definition.preview
-        ? await definition.preview(context.ownerUserId, args as ChatMessageJsonObject)
+        ? await definition.preview(context.ownerUserId, chatMessageJsonObjectSchema.parse(args))
         : undefined;
       if (preview !== null) {
         const message = definition.preview

@@ -2,7 +2,18 @@ import { db, pool } from '@hominem/db/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import './collections';
-import { callTool, listTools, type McpToolResult } from '../tool-registry';
+import {
+  collectionDetailOutputSchema,
+  createCollectionOutputSchema,
+  deleteCollectionOutputSchema,
+  inviteMemberOutputSchema,
+  leaveCollectionOutputSchema,
+  removeMemberOutputSchema,
+  updateCollectionToolOutputSchema,
+  updateMemberRoleToolOutputSchema,
+} from '../../schemas/collections.schema';
+import { toolOutput } from '../../testkit/tool-result';
+import { callTool, listTools } from '../tool-registry';
 
 const ownerId = 'd3000000-0000-4000-8000-000000000001';
 const memberId = 'd3000000-0000-4000-8000-000000000002';
@@ -10,27 +21,24 @@ const strangerId = 'd3000000-0000-4000-8000-000000000003';
 const userIds = [ownerId, memberId, strangerId];
 const emailOf = (id: string) => `${id}@test.hominem.dev`;
 
-type Collection = { id: string; name: string; description: string | null; visibility: string };
-type Member = { id: string; userId: string | null; role: string; acceptedAt: string | null };
-
-function payload<T>(result: McpToolResult): T {
-  return result.structuredContent as T;
-}
-
 async function createCollection(name: string) {
-  return payload<{ collection: Collection }>(await callTool(ownerId, 'create_collection', { name }))
-    .collection;
+  return toolOutput(
+    await callTool(ownerId, 'create_collection', { name }),
+    createCollectionOutputSchema,
+  ).collection;
 }
 
 async function inviteMember(collectionId: string, userId: string, role: 'editor' | 'viewer') {
-  return payload<{ member: Member }>(
+  return toolOutput(
     await callTool(ownerId, 'invite_member', { collectionId, email: emailOf(userId), role }),
+    inviteMemberOutputSchema,
   ).member;
 }
 
 async function membersOf(collectionId: string) {
-  return payload<{ members: Member[] }>(
+  return toolOutput(
     await callTool(ownerId, 'collection_detail', { collectionId }),
+    collectionDetailOutputSchema,
   ).members;
 }
 
@@ -72,13 +80,14 @@ describe('update_collection', () => {
   it('updates fields and clears the description with null', async () => {
     const created = await createCollection('Before');
 
-    const renamed = payload<{ collection: Collection | null }>(
+    const renamed = toolOutput(
       await callTool(ownerId, 'update_collection', {
         collectionId: created.id,
         name: 'After',
         description: 'Now described',
         visibility: 'shared',
       }),
+      updateCollectionToolOutputSchema,
     );
     expect(renamed.collection).toMatchObject({
       name: 'After',
@@ -86,11 +95,12 @@ describe('update_collection', () => {
       visibility: 'shared',
     });
 
-    const cleared = payload<{ collection: Collection | null }>(
+    const cleared = toolOutput(
       await callTool(ownerId, 'update_collection', {
         collectionId: created.id,
         description: null,
       }),
+      updateCollectionToolOutputSchema,
     );
     expect(cleared.collection).toMatchObject({ name: 'After', description: null });
   });
@@ -98,8 +108,9 @@ describe('update_collection', () => {
   it('returns null for a collection the caller does not own', async () => {
     const created = await createCollection('Owner only');
 
-    const result = payload<{ collection: unknown }>(
+    const result = toolOutput(
       await callTool(strangerId, 'update_collection', { collectionId: created.id, name: 'Nope' }),
+      updateCollectionToolOutputSchema,
     );
     expect(result.collection).toBeNull();
   });
@@ -126,13 +137,15 @@ describe('delete_collection', () => {
     });
 
     expect(
-      payload<{ deleted: boolean }>(
+      toolOutput(
         await callTool(ownerId, 'delete_collection', { collectionId: created.id }),
+        deleteCollectionOutputSchema,
       ),
     ).toEqual({ deleted: true });
     expect(
-      payload<{ deleted: boolean }>(
+      toolOutput(
         await callTool(ownerId, 'delete_collection', { collectionId: created.id }),
+        deleteCollectionOutputSchema,
       ),
     ).toEqual({ deleted: false });
   });
@@ -143,8 +156,9 @@ describe('delete_collection', () => {
     const tool = listTools().find((candidate) => candidate.name === 'delete_collection');
     expect(await tool?.preview?.(strangerId, { collectionId: created.id })).toBeNull();
     expect(
-      payload<{ deleted: boolean }>(
+      toolOutput(
         await callTool(strangerId, 'delete_collection', { collectionId: created.id }),
+        deleteCollectionOutputSchema,
       ),
     ).toEqual({ deleted: false });
     expect(await membersOf(created.id)).toHaveLength(1);
@@ -156,12 +170,13 @@ describe('member management', () => {
     const created = await createCollection('Team');
     const invited = await inviteMember(created.id, memberId, 'viewer');
 
-    const promoted = payload<{ member: Member | null }>(
+    const promoted = toolOutput(
       await callTool(ownerId, 'update_member_role', {
         collectionId: created.id,
         memberId: invited.id,
         role: 'editor',
       }),
+      updateMemberRoleToolOutputSchema,
     );
     expect(promoted.member).toMatchObject({ id: invited.id, role: 'editor' });
 
@@ -175,11 +190,12 @@ describe('member management', () => {
     });
 
     expect(
-      payload<{ removed: boolean }>(
+      toolOutput(
         await callTool(ownerId, 'remove_member', {
           collectionId: created.id,
           memberId: invited.id,
         }),
+        removeMemberOutputSchema,
       ),
     ).toEqual({ removed: true });
     expect(await membersOf(created.id)).toHaveLength(1);
@@ -191,29 +207,32 @@ describe('member management', () => {
     const ownerRow = (await membersOf(created.id)).find((member) => member.role === 'owner');
     expect(ownerRow).toBeDefined();
 
-    const asMember = payload<{ member: unknown }>(
+    const asMember = toolOutput(
       await callTool(memberId, 'update_member_role', {
         collectionId: created.id,
         memberId: invited.id,
         role: 'editor',
       }),
+      updateMemberRoleToolOutputSchema,
     );
     expect(asMember.member).toBeNull();
 
     expect(
-      payload<{ removed: boolean }>(
+      toolOutput(
         await callTool(memberId, 'remove_member', {
           collectionId: created.id,
           memberId: invited.id,
         }),
+        removeMemberOutputSchema,
       ),
     ).toEqual({ removed: false });
     expect(
-      payload<{ removed: boolean }>(
+      toolOutput(
         await callTool(ownerId, 'remove_member', {
           collectionId: created.id,
           memberId: ownerRow?.id,
         }),
+        removeMemberOutputSchema,
       ),
     ).toEqual({ removed: false });
     expect(await membersOf(created.id)).toHaveLength(2);
@@ -234,18 +253,21 @@ describe('leave_collection', () => {
     expect(await tool?.preview?.(ownerId, { collectionId: created.id })).toBeNull();
 
     expect(
-      payload<{ left: boolean }>(
+      toolOutput(
         await callTool(ownerId, 'leave_collection', { collectionId: created.id }),
+        leaveCollectionOutputSchema,
       ),
     ).toEqual({ left: false });
     expect(
-      payload<{ left: boolean }>(
+      toolOutput(
         await callTool(memberId, 'leave_collection', { collectionId: created.id }),
+        leaveCollectionOutputSchema,
       ),
     ).toEqual({ left: true });
     expect(
-      payload<{ left: boolean }>(
+      toolOutput(
         await callTool(memberId, 'leave_collection', { collectionId: created.id }),
+        leaveCollectionOutputSchema,
       ),
     ).toEqual({ left: false });
   });
@@ -263,15 +285,17 @@ describe('decline_collection_invite', () => {
     });
 
     expect(
-      payload<{ removed: boolean }>(
+      toolOutput(
         await callTool(memberId, 'decline_collection_invite', { collectionId: created.id }),
+        removeMemberOutputSchema,
       ),
     ).toEqual({ removed: true });
 
     expect(await tool?.preview?.(memberId, { collectionId: created.id })).toBeNull();
     expect(
-      payload<{ removed: boolean }>(
+      toolOutput(
         await callTool(memberId, 'decline_collection_invite', { collectionId: created.id }),
+        removeMemberOutputSchema,
       ),
     ).toEqual({ removed: false });
     expect(await membersOf(created.id)).toHaveLength(1);
@@ -320,8 +344,9 @@ describe('decline_collection_invite', () => {
     await callTool(memberId, 'accept_collection_invite', { collectionId: created.id });
 
     expect(
-      payload<{ removed: boolean }>(
+      toolOutput(
         await callTool(memberId, 'decline_collection_invite', { collectionId: created.id }),
+        removeMemberOutputSchema,
       ),
     ).toEqual({ removed: false });
     expect(await membersOf(created.id)).toHaveLength(2);

@@ -1,12 +1,14 @@
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import type { Query, QueryKey } from '@tanstack/react-query';
+import type { Query } from '@tanstack/react-query';
 import type { PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
 
 import { storage } from '~/services/storage/mmkv';
 
 const QUERY_CACHE_KEY = 'omiro-react-query-v3';
 
-export function shouldPersistQuery(query: Query<unknown, Error, unknown, QueryKey>) {
+export function shouldPersistQuery(
+  query: Pick<Query, 'queryKey'> & { state: Pick<Query['state'], 'status'> },
+) {
   if (query.state.status !== 'success') {
     return false;
   }

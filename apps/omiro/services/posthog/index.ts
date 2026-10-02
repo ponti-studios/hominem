@@ -1,1 +1,1 @@
-export { POSTHOG_ENABLED, posthog } from './posthog';
+export { posthog, posthogClient } from './posthog';

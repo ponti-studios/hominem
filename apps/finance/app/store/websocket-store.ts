@@ -25,7 +25,7 @@ type WebSocketStore = {
   connect: (tokenFn?: () => Promise<string | null>) => Promise<void>;
   disconnect: () => void;
   sendMessage: <T>(message: WebSocketMessage<T>) => boolean;
-  subscribe: <T = unknown>(type: string, listener: WebSocketListener<T>) => () => void;
+  subscribe: (type: string, listener: WebSocketListener) => () => void;
   reconnect: () => void;
   reset: () => void;
 };
@@ -43,7 +43,7 @@ const useWebSocketStore = create<WebSocketStore>((set, get) => {
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   const messageQueue: WebSocketMessage<unknown>[] = [];
   // `never` here (not `unknown`) so any WebSocketListener<T> can go in this map without a cast
-  const listeners = new Map<string, Set<WebSocketListener<never>>>();
+  const listeners = new Map<string, Set<WebSocketListener>>();
   let tokenProvider: (() => Promise<string | null>) | undefined;
   let wsBaseUrl = '';
   const options: WebSocketOptions = { ...DEFAULT_OPTIONS };
@@ -152,21 +152,17 @@ const useWebSocketStore = create<WebSocketStore>((set, get) => {
 
             set({ lastMessage: message });
 
-            // listeners are stored type-erased, so this is where we cross back to
-            // whatever shape the original subscriber actually asked for
-            const erasedMessage = message as WebSocketMessage<never>;
-
             const typeListeners = listeners.get(message.type);
             if (typeListeners) {
               for (const listener of typeListeners) {
-                listener(erasedMessage);
+                listener(message);
               }
             }
 
             const globalListeners = listeners.get('*');
             if (globalListeners) {
               for (const listener of globalListeners) {
-                listener(erasedMessage);
+                listener(message);
               }
             }
           } catch (error) {

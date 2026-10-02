@@ -1,4 +1,4 @@
-import { type AIUsageMetrics } from '@hominem/ai';
+import { isAIUsageMetrics, type AIUsageMetrics } from '@hominem/ai';
 import {
   chatMessageJsonObjectSchema,
   chatMessageSnapshotSchema,
@@ -12,6 +12,8 @@ import {
 import type { GenerationRunnerOptions } from '@hominem/chat/server';
 import { createGenerationRunner } from '@hominem/chat/server';
 import type { ChatGenerationEventRecord, ChatMessageToolCallRecord } from '@hominem/db/chats';
+import { logger } from '@hominem/telemetry';
+import { ZodError } from 'zod';
 
 import { callTool, getToolDefinition } from '../mcp/tool-registry';
 import { OpenRouterChatModel } from './chat-generation-provider';
@@ -58,11 +60,8 @@ export const EXECUTE_OWNED_EVENT_TYPES = [
  * The machine may emit a copy during normal lifecycle transitions, but execute is
  * responsible for persisting the canonical boundary event.
  */
-export function isExecuteOwnedEvent(event: GenerationHistoryEventPayload): boolean {
-  // oxlint-disable-next-line typescript/consistent-type-assertions
-  const type = event.type as (typeof EXECUTE_OWNED_EVENT_TYPES)[number];
-
-  if (EXECUTE_OWNED_EVENT_TYPES.includes(type)) return true;
+export function isExecuteOwnedEvent(event: { type: string; phase?: string }): boolean {
+  if (EXECUTE_OWNED_EVENT_TYPES.some((type) => type === event.type)) return true;
 
   return (
     event.type === 'generation.phase_changed' &&
@@ -173,7 +172,7 @@ export async function executeGenerationTurn(
     if (missingRequiredDependencies.length > 0) {
       return `Tool ${toolName} is waiting for required provenance from: ${missingRequiredDependencies.join(', ')}`;
     }
-    if (definition && !definition.readOnly) {
+    if (definition && !definition.readOnly && !definition.standaloneWrite) {
       const hasCompletedRead = plannedSteps.some(
         (candidate) =>
           completedPlannedTools.has(candidate.tool) &&
@@ -192,13 +191,17 @@ export async function executeGenerationTurn(
     requiresToolCall: input.initialState ? false : input.requiresToolCall,
     requiresConfirmation: (name: string) =>
       runtime?.getToolDefinition(name)?.requiresConfirmation ?? false,
+    // A tool whose lookup has not run is not offered, so the model cannot call it with a
+    // made-up id. Tools without a definition (web search) are always offered.
+    isToolAvailable: (name: string) =>
+      !runtime.getToolDefinition(name) || validatePlannedToolCall(name) === null,
     onUsage: (next: AIUsageMetrics | null) => {
       usage = addUsage(usage, next);
     },
   };
   // OpenRouter is the only supported provider: the model is always built
   // here, never via a factory. Test-only scripting arrives one layer down
-  // as input.openRouterClient (canned SSE chunks through the real model
+  // as input.streamChat (canned chunks through the real model
   // class), so the provider closure below only ever returns this instance —
   // the runner forwards onUsage untouched and usage is accumulated exactly
   // once, here. (The runner used to wrap onUsage with its own generic usage
@@ -207,7 +210,7 @@ export async function executeGenerationTurn(
   // the context-window placeholder task.)
   const model = new OpenRouterChatModel({
     ...modelOptions,
-    ...(input.openRouterClient ? { client: input.openRouterClient } : {}),
+    ...(input.streamChat ? { streamChat: input.streamChat } : {}),
   });
 
   // The model is prebuilt with the engine's own onUsage accumulator above,
@@ -250,7 +253,12 @@ export async function executeGenerationTurn(
           return {
             callId: call.id,
             toolName: call.name,
-            content: JSON.stringify({ code: 'TOOL_PLAN_VIOLATION', error: planViolation }),
+            content: JSON.stringify({
+              code: 'TOOL_PLAN_VIOLATION',
+              error: planViolation,
+              // Otherwise the model treats the refusal as the user's problem and asks permission.
+              nextStep: `Call the prerequisite lookup yourself now, then call ${call.name} again. Do not ask the user for permission or tell them about this.`,
+            }),
             error: true,
           };
         }
@@ -286,11 +294,30 @@ export async function executeGenerationTurn(
                 result,
               })
             : result;
-        } catch {
+        } catch (error) {
+          // The model's own bad arguments: it gets the paths and messages (never values) so it
+          // can correct the call. Telemetry gets a bounded category and the tool name, never
+          // the error text (docs/observability.md).
+          const issues = error instanceof ZodError ? error.issues : null;
+          logger.warn('chat_generation_tool_call_failed', {
+            toolName: call.name,
+            category: issues ? 'invalid_arguments' : 'tool_error',
+            errorClass: error instanceof Error ? error.name : 'unknown',
+          });
           const result: ToolResult = {
             callId: call.id,
             toolName: call.name,
-            content: JSON.stringify({ error: 'Tool call failed' }),
+            content: JSON.stringify(
+              issues
+                ? {
+                    error: 'Invalid arguments',
+                    issues: issues.map((issue) => ({
+                      path: issue.path.join('.'),
+                      message: issue.message,
+                    })),
+                  }
+                : { error: 'Tool call failed' },
+            ),
             error: true,
           };
           return input.effectStore
@@ -352,7 +379,9 @@ export async function executeGenerationTurn(
         reasoning: input.reasoning,
         requiresToolCall: input.initialState ? false : input.requiresToolCall,
         requiresWebSearch: input.initialState ? false : input.requiresWebSearch,
-        onUsage: (next) => modelOptions.onUsage?.(next as AIUsageMetrics | null),
+        onUsage: (next) => {
+          if (next === null || isAIUsageMetrics(next)) modelOptions.onUsage?.(next);
+        },
       },
       startContext: {
         chatId: input.chatId,

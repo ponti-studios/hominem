@@ -37,7 +37,9 @@ export function useTelemetry() {
         telemetry.shutdown().catch((error) => logger.error('telemetry_shutdown_failed', { error }));
       };
     } catch (error) {
-      logger.error('telemetry_init_failed', { error: error as Error });
+      logger.error('telemetry_init_failed', {
+        error: error instanceof Error ? error : new Error(String(error)),
+      });
       return undefined;
     }
   }, []);

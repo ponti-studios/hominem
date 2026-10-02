@@ -16,6 +16,26 @@ export function setAppLockEnabled(value: boolean) {
   storage.set(LOCK_ENABLED_KEY, value);
 }
 
+// Resolves true when the device can't authenticate at all (nothing to gate
+// on) or the user passed the prompt.
+async function requestUnlock(): Promise<boolean> {
+  const [hasHardware, isEnrolled] = await Promise.all([
+    LocalAuthentication.hasHardwareAsync(),
+    LocalAuthentication.isEnrolledAsync(),
+  ]);
+
+  if (!hasHardware || !isEnrolled) {
+    return true;
+  }
+
+  const result = await LocalAuthentication.authenticateAsync({
+    promptMessage: t.auth.unlockPrompt(APP_NAME),
+    fallbackLabel: t.auth.unlockFallbackLabel,
+    cancelLabel: t.auth.unlockCancelLabel,
+  });
+  return result.success;
+}
+
 export function useAppLock() {
   const enabled = useSyncExternalStore(
     (onStoreChange) => subscribeToStorageKey(LOCK_ENABLED_KEY, onStoreChange),
@@ -23,42 +43,30 @@ export function useAppLock() {
     getAppLockEnabled,
   );
   const [isUnlocked, setIsUnlocked] = useState(!enabled);
+  const [prevEnabled, setPrevEnabled] = useState(enabled);
+  if (prevEnabled !== enabled) {
+    setPrevEnabled(enabled);
+    setIsUnlocked(!enabled);
+  }
   const appState = useRef(AppState.currentState);
 
-  const authenticate = useCallback(async () => {
-    if (!enabled) {
-      setIsUnlocked(true);
-      return;
-    }
-
-    const [hasHardware, isEnrolled] = await Promise.all([
-      LocalAuthentication.hasHardwareAsync(),
-      LocalAuthentication.isEnrolledAsync(),
-    ]);
-
-    if (!hasHardware || !isEnrolled) {
-      setIsUnlocked(true);
-      return;
-    }
-
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: t.auth.unlockPrompt(APP_NAME),
-      fallbackLabel: t.auth.unlockFallbackLabel,
-      cancelLabel: t.auth.unlockCancelLabel,
-    });
-
-    if (result.success) {
-      setIsUnlocked(true);
-    }
-  }, [enabled]);
+  const authenticate = useCallback(
+    () =>
+      enabled
+        ? requestUnlock().then((unlocked) => {
+            if (unlocked) {
+              setIsUnlocked(true);
+            }
+          })
+        : Promise.resolve(),
+    [enabled],
+  );
 
   useEffect(() => {
     if (!enabled) {
-      setIsUnlocked(true);
       return;
     }
 
-    setIsUnlocked(false);
     void authenticate();
   }, [enabled, authenticate]);
 
@@ -80,5 +88,5 @@ export function useAppLock() {
     };
   }, [enabled, authenticate]);
 
-  return { isUnlocked, authenticate };
+  return { isUnlocked: !enabled || isUnlocked, authenticate };
 }

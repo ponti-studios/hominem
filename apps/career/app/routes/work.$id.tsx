@@ -1,6 +1,5 @@
 import { CareerRepository } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
-import type { AppCareerEngagementKind } from '@hominem/db/types';
 import { humanizeIdentifier } from '@hominem/utils/text';
 import { Button } from '@ponti-studios/ui/primitives';
 import { ArrowLeftIcon, PencilIcon, Trash2Icon } from 'lucide-react';
@@ -9,9 +8,11 @@ import { data, Form, Link, redirect } from 'react-router';
 
 import { PositionEditor } from '~/components/career/work/PositionEditor';
 import { StatusBadge } from '~/components/status-badge';
+import { ENGAGEMENT_KINDS } from '~/lib/career-options';
 import { getUserEngagementById } from '~/lib/career/queries/career-queries';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
+import { formChoice, formText } from '~/lib/route-utils';
 
 import { Route } from './+types/work.$id';
 
@@ -52,23 +53,23 @@ export async function action({ context, params, request }: Route.ActionArgs) {
     const updated = await CareerRepository.updateEngagement(db, {
       id: params.id,
       ownerUserid: user.id,
-      company: (formData.get('company') as string) ?? undefined,
-      title: (formData.get('title') as string) ?? undefined,
-      location: (formData.get('location') as string) || null,
-      address: (formData.get('address') as string) || null,
-      url: (formData.get('url') as string) || null,
-      startDate: (formData.get('startDate') as string) || null,
-      endDate: (formData.get('endDate') as string) || null,
+      company: formText(formData, 'company') ?? undefined,
+      title: formText(formData, 'title') ?? undefined,
+      location: formText(formData, 'location') || null,
+      address: formText(formData, 'address') || null,
+      url: formText(formData, 'url') || null,
+      startDate: formText(formData, 'startDate') || null,
+      endDate: formText(formData, 'endDate') || null,
       isCurrent: formData.get('isCurrent') === 'on',
       salaryLow: toInt(formData.get('salaryLow')),
       salaryHigh: toInt(formData.get('salaryHigh')),
-      currency: (formData.get('currency') as string) || 'USD',
-      description: (formData.get('description') as string) || null,
-      contactName: (formData.get('contactName') as string) || null,
-      contactPhone: (formData.get('contactPhone') as string) || null,
-      source: (formData.get('source') as string) || null,
-      kind: (formData.get('kind') as AppCareerEngagementKind) || 'EMPLOYMENT',
-      reasonForLeaving: (formData.get('reasonForLeaving') as string) || null,
+      currency: formText(formData, 'currency') || 'USD',
+      description: formText(formData, 'description') || null,
+      contactName: formText(formData, 'contactName') || null,
+      contactPhone: formText(formData, 'contactPhone') || null,
+      source: formText(formData, 'source') || null,
+      kind: formChoice(formData, 'kind', ENGAGEMENT_KINDS, 'EMPLOYMENT'),
+      reasonForLeaving: formText(formData, 'reasonForLeaving') || null,
     });
     if (!updated) throw new Response('Engagement not found', { status: 404 });
     return data({ ok: true });
@@ -79,11 +80,8 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   }
 }
 
-export const meta: Route.MetaFunction = ({ matches }) => {
-  const data = matches[matches.length - 1]?.loaderData as
-    | { position: { company?: string; title?: string } }
-    | undefined;
-  const position = data?.position;
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  const position = loaderData?.position;
   return [
     {
       title: position

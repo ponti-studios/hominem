@@ -1,8 +1,5 @@
 import { useApiClient } from '@hominem/rpc/react';
-import type {
-  AcceptCollectionInviteOutput,
-  ListPendingCollectionInvitesOutput,
-} from '@hominem/rpc/types';
+import type { AcceptCollectionInviteOutput } from '@hominem/rpc/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const collaborationInvitesKey = ['collaboration-invites'] as const;
@@ -16,7 +13,7 @@ export function useCollaborationInvites(options: { enabled?: boolean } = {}) {
     staleTime: 1000 * 15,
     queryFn: async () => {
       const response = await client.api.collections.invites.$get({ query: {} });
-      return response.json() as Promise<ListPendingCollectionInvitesOutput>;
+      return response.json();
     },
   });
 
@@ -38,7 +35,7 @@ export function useAcceptCollaborationInvite() {
       const response = await client.api.collections.invites[':collectionId'].accept.$post({
         param: { collectionId: id },
       });
-      return response.json() as Promise<AcceptCollectionInviteOutput>;
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: collaborationInvitesKey });

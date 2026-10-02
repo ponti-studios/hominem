@@ -4,20 +4,11 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@hominem/queues', () => ({ embeddingQueue: { add: async () => undefined } }));
 
 import './memory';
+import { rememberOutputSchema } from '../../schemas/memory.schema';
+import { toolOutput } from '../../testkit/tool-result';
 import { callTool } from '../tool-registry';
 
 const userId = 'd4000000-0000-4000-8000-000000000001';
-
-type RememberResult = {
-  id: string;
-  title: string | null;
-  excerpt: string | null;
-  createdAt: string;
-};
-
-function rememberResult(res: Awaited<ReturnType<typeof callTool>>): RememberResult {
-  return res.structuredContent as RememberResult;
-}
 
 async function memoryCount(userId: string): Promise<number> {
   const { count } = await db
@@ -44,11 +35,12 @@ afterAll(async () => {
 
 describe('remember', () => {
   it('saves a fact as a memory note', async () => {
-    const result = rememberResult(
+    const result = toolOutput(
       await callTool(userId, 'remember', {
         title: 'Cyndi',
         content: 'Cyndi is my dog',
       }),
+      rememberOutputSchema,
     );
 
     expect(result.id).toMatch(/^[0-9a-f-]{36}$/);
@@ -57,18 +49,20 @@ describe('remember', () => {
   });
 
   it('returns the existing memory instead of duplicating identical content', async () => {
-    const first = rememberResult(
+    const first = toolOutput(
       await callTool(userId, 'remember', {
         title: 'Kelsey',
         content: 'Kelsey is my girlfriend',
       }),
+      rememberOutputSchema,
     );
 
-    const duplicate = rememberResult(
+    const duplicate = toolOutput(
       await callTool(userId, 'remember', {
         title: 'girlfriend',
         content: 'Kelsey is my girlfriend',
       }),
+      rememberOutputSchema,
     );
 
     expect(duplicate.id).toBe(first.id);
@@ -78,17 +72,19 @@ describe('remember', () => {
   it('saves distinct facts as separate memories', async () => {
     const before = await memoryCount(userId);
 
-    const cyndi = rememberResult(
+    const cyndi = toolOutput(
       await callTool(userId, 'remember', {
         title: 'Cyndi',
         content: 'Cyndi is my dog',
       }),
+      rememberOutputSchema,
     );
-    const kelsey = rememberResult(
+    const kelsey = toolOutput(
       await callTool(userId, 'remember', {
         title: 'Kelsey',
         content: 'Kelsey is my girlfriend',
       }),
+      rememberOutputSchema,
     );
 
     expect(cyndi.id).not.toBe(kelsey.id);

@@ -109,8 +109,7 @@ test('member without owner permissions cannot edit or delete the collection', as
   const deleteResponse = await collaboratorPage.request.delete(
     apiPath(`/collections/${collectionId}`),
   );
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- matches every RPC hook in this codebase
-  const deleteBody = (await deleteResponse.json()) as { deleted?: boolean };
+  const deleteBody = await deleteResponse.json();
   expect(deleteBody.deleted).toBe(false);
 
   await collaboratorPage.reload();

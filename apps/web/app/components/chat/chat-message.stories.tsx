@@ -1,17 +1,14 @@
-import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { fn, userEvent, within } from 'storybook/test';
 
+import { makeChatMessageDto } from '../../lib/testing/chat-message-fixture';
 import { ChatMessage } from './chat-message';
 
-const assistantMessage = {
+const assistantMessage = makeChatMessageDto({
   id: 'assistant-1',
-  chatId: 'chat-1',
   content: 'Here is the answer to your question.',
-  role: 'assistant',
-  createdAt: '2026-08-24T17:30:00.000Z',
-} as ChatMessageDto;
+});
 
 const meta = {
   title: 'Chat/Components/Chat Message',

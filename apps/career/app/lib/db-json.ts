@@ -1,5 +1,5 @@
 import type { JsonValue } from '@hominem/db/types';
 
-export function jsonArray<T>(value: JsonValue | null | undefined): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
+export function jsonStringArray(value: JsonValue | null | undefined): string[] {
+  return Array.isArray(value) ? value.filter((item) => typeof item === 'string') : [];
 }

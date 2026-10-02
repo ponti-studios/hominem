@@ -1,4 +1,5 @@
-import type { GenerationEffectStore, ToolResult } from './generation-machine';
+import type { GenerationEffectStore } from './generation-machine';
+import { toolResultSchema } from './generation-schemas';
 
 export type ChatRedis = {
   get: (key: string) => Promise<string | null>;
@@ -19,7 +20,8 @@ export function createRedisChatEffectStore(
       const value = await redis.get(key(input));
       if (!value) return null;
       try {
-        return JSON.parse(value) as ToolResult;
+        const parsed = toolResultSchema.safeParse(JSON.parse(value));
+        return parsed.success ? parsed.data : null;
       } catch {
         return null;
       }

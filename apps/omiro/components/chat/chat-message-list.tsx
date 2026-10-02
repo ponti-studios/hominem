@@ -87,12 +87,13 @@ export function ChatMessageList({
     bottomSentinel: { flexGrow: 1, minHeight: 32 },
     itemSeparator: { height: 20 },
   }));
+  const targetMessageId = generation?.targetMessageId;
   const renderedMessages = useMemo(
     () =>
-      generation?.targetMessageId
-        ? displayMessages.filter((message) => message.id !== generation.targetMessageId)
+      targetMessageId
+        ? displayMessages.filter((message) => message.id !== targetMessageId)
         : displayMessages,
-    [displayMessages, generation?.targetMessageId],
+    [displayMessages, targetMessageId],
   );
   const hasSearchQuery = showSearch && searchQuery.length > 0;
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);

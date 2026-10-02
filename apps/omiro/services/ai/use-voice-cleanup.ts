@@ -32,7 +32,7 @@ export function useVoiceCleanup() {
           );
         }
 
-        const data = (await response.json()) as VoiceCleanupOutput;
+        const data: VoiceCleanupOutput = await response.json();
         emitVoiceEvent('voice_transcribe_succeeded', {
           platform: 'mobile-ios',
           provider: 'openrouter',

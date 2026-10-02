@@ -1,0 +1,45 @@
+name: setup-goose
+description: Set up Go and make the pinned goose migration CLI available without compiling it on every run. Run after checkout, because the cache key hashes just/goose-install.sh (where the goose version is pinned).
+
+inputs:
+  go-version:
+    description: Go version to install.
+    default: '1.25'
+
+runs:
+  using: composite
+  steps:
+    - name: setup-go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+      with:
+        go-version: ${{ inputs.go-version }}
+        cache: false
+
+    - name: locate-goose
+      id: goose
+      shell: bash
+      run: echo "path=$(go env GOPATH)/bin/goose" >> "$GITHUB_OUTPUT"
+
+    # goose-install.sh skips `go install` when this binary already exists, so restoring it is
+    # all it takes. The binary is statically linked and keyed on the script that pins its
+    # version, so a version bump rebuilds it. The restore and save are separate steps so the
+    # binary is saved as soon as it is built, even if a later step in the job fails (a plain
+    # actions/cache only saves when the whole job succeeds).
+    - name: restore-goose
+      id: restore
+      uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+      with:
+        path: ${{ steps.goose.outputs.path }}
+        key: goose-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('just/goose-install.sh') }}
+
+    - name: build-goose
+      if: steps.restore.outputs.cache-hit != 'true'
+      shell: bash
+      run: just/goose-install.sh
+
+    - name: save-goose
+      if: steps.restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+      with:
+        path: ${{ steps.goose.outputs.path }}
+        key: goose-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('just/goose-install.sh') }}

@@ -2,25 +2,19 @@ import { db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import './tags';
-import { callTool, type McpToolResult } from '../tool-registry';
+import {
+  entityTagsOutputSchema,
+  tagEntityOutputSchema,
+  untagEntityOutputSchema,
+} from '../../schemas/tags.schema';
+import { toolOutput } from '../../testkit/tool-result';
+import { callTool } from '../tool-registry';
 
 const userId = 'd1000000-0000-4000-8000-000000000001';
 
 const personId = 'd1000001-0000-4000-8000-000000000001';
 const placeId = 'd1000002-0000-4000-8000-000000000001';
 const noteId = 'd1000003-0000-4000-8000-000000000001';
-
-type TestTag = { id: string; name: string };
-type TestResultContent = {
-  tag?: TestTag;
-  tags?: TestTag[];
-  count?: number;
-  removed?: boolean;
-};
-
-function resultContent(res: McpToolResult): TestResultContent {
-  return res.structuredContent as TestResultContent;
-}
 
 beforeAll(async () => {
   // Deleting the user cascades to every app.* row it owns, so each run starts clean.
@@ -58,7 +52,7 @@ describe('tag_entity / untag_entity / entity_tags', () => {
       entityId: personId,
       tagName: 'Close Friend',
     });
-    const data = resultContent(result);
+    const data = toolOutput(result, tagEntityOutputSchema);
 
     expect(data.tag?.name).toBe('Close Friend');
 
@@ -66,7 +60,9 @@ describe('tag_entity / untag_entity / entity_tags', () => {
       entityType: 'people',
       entityId: personId,
     });
-    expect(resultContent(listed).tags).toEqual([{ id: data.tag?.id, name: 'Close Friend' }]);
+    expect(toolOutput(listed, entityTagsOutputSchema).tags).toEqual([
+      { id: data.tag?.id, name: 'Close Friend' },
+    ]);
   });
 
   it('creates a new tag and assigns it to a note (notes are graph nodes)', async () => {
@@ -75,14 +71,14 @@ describe('tag_entity / untag_entity / entity_tags', () => {
       entityId: noteId,
       tagName: 'Deep Work',
     });
-    expect(resultContent(result).tag?.name).toBe('Deep Work');
+    expect(toolOutput(result, tagEntityOutputSchema).tag?.name).toBe('Deep Work');
 
     const listed = await callTool(userId, 'entity_tags', {
       entityType: 'notes',
       entityId: noteId,
     });
-    expect(resultContent(listed).tags).toEqual([
-      { id: resultContent(result).tag?.id, name: 'Deep Work' },
+    expect(toolOutput(listed, entityTagsOutputSchema).tags).toEqual([
+      { id: toolOutput(result, tagEntityOutputSchema).tag?.id, name: 'Deep Work' },
     ]);
   });
 
@@ -98,7 +94,9 @@ describe('tag_entity / untag_entity / entity_tags', () => {
       tagName: 'FAVORITE',
     });
 
-    expect(resultContent(second).tag?.id).toBe(resultContent(first).tag?.id);
+    expect(toolOutput(second, tagEntityOutputSchema).tag?.id).toBe(
+      toolOutput(first, tagEntityOutputSchema).tag?.id,
+    );
   });
 
   it('is idempotent — tagging the same entity with the same tag twice does not duplicate', async () => {
@@ -117,7 +115,9 @@ describe('tag_entity / untag_entity / entity_tags', () => {
       entityType: 'places',
       entityId: placeId,
     });
-    const matches = resultContent(listed).tags?.filter((t) => t.name === 'Repeat Tag');
+    const matches = toolOutput(listed, entityTagsOutputSchema).tags?.filter(
+      (t) => t.name === 'Repeat Tag',
+    );
     expect(matches).toHaveLength(1);
   });
 
@@ -134,7 +134,7 @@ describe('tag_entity / untag_entity / entity_tags', () => {
       entityId: untaggedPersonId,
     });
 
-    expect(resultContent(result)).toEqual({ tags: [], count: 0 });
+    expect(toolOutput(result, entityTagsOutputSchema)).toEqual({ tags: [], count: 0 });
   });
 
   it('removes a tag assignment and reports removed: true', async () => {
@@ -143,20 +143,24 @@ describe('tag_entity / untag_entity / entity_tags', () => {
       entityId: personId,
       tagName: 'Removable',
     });
-    const tagId = resultContent(tagged).tag?.id as string;
+    const taggedTag = toolOutput(tagged, tagEntityOutputSchema).tag;
+    if (!taggedTag) throw new Error('tag_entity returned no tag');
+    const tagId = taggedTag.id;
 
     const removed = await callTool(userId, 'untag_entity', {
       entityType: 'people',
       entityId: personId,
       tagId,
     });
-    expect(resultContent(removed)).toEqual({ removed: true });
+    expect(toolOutput(removed, untagEntityOutputSchema)).toEqual({ removed: true });
 
     const listed = await callTool(userId, 'entity_tags', {
       entityType: 'people',
       entityId: personId,
     });
-    expect(resultContent(listed).tags?.some((t) => t.id === tagId)).toBe(false);
+    expect(toolOutput(listed, entityTagsOutputSchema).tags?.some((t) => t.id === tagId)).toBe(
+      false,
+    );
   });
 
   it('reports removed: false when there was nothing to remove', async () => {
@@ -165,13 +169,15 @@ describe('tag_entity / untag_entity / entity_tags', () => {
       entityId: personId,
       tagName: 'Untouched',
     });
-    const tagId = resultContent(tagged).tag?.id as string;
+    const taggedTag = toolOutput(tagged, tagEntityOutputSchema).tag;
+    if (!taggedTag) throw new Error('tag_entity returned no tag');
+    const tagId = taggedTag.id;
 
     const result = await callTool(userId, 'untag_entity', {
       entityType: 'places', // wrong entity type — this tag was assigned to a person
       entityId: placeId,
       tagId,
     });
-    expect(resultContent(result)).toEqual({ removed: false });
+    expect(toolOutput(result, untagEntityOutputSchema)).toEqual({ removed: false });
   });
 });

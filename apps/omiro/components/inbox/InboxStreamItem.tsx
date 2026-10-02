@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, {
@@ -18,6 +18,7 @@ import { fontFamilies, useAppTheme, useStyles } from '~/components/theme';
 import { ListRow } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
+import { useTimerSlot } from '~/hooks/use-timer-slot';
 import { useChatArchive } from '~/services/chat/use-chat-archive';
 import { nativeMotionTiming } from '~/services/motion/native-motion';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
@@ -151,8 +152,8 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
   const dragX = useSharedValue(0);
   const startOffset = useSharedValue(0);
   const [isLeaving, setIsLeaving] = useState(false);
-  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const alertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exitTimer = useTimerSlot();
+  const alertTimer = useTimerSlot();
 
   const { mutate: deleteNote, isPending: isDeletingNote } = useNoteDelete({
     noteId: item.entityId,
@@ -162,26 +163,14 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
   });
   const isPending = isDeletingNote || isArchivingChat;
 
-  useEffect(
-    () => () => {
-      if (exitTimerRef.current) {
-        clearTimeout(exitTimerRef.current);
-      }
-      if (alertTimerRef.current) {
-        clearTimeout(alertTimerRef.current);
-      }
-    },
-    [],
-  );
-
   // A different item can land in this recycled row (FlashList reuses cells),
   // so any leftover reveal offset from the previous occupant must not show.
   useEffect(() => {
-    dragX.value = 0;
+    dragX.set(0);
   }, [dragX, item.id]);
 
   const closeSwipe = useCallback(() => {
-    dragX.value = withTiming(0, instantOr(nativeMotionTiming.enter, reducedMotion));
+    dragX.set(withTiming(0, instantOr(nativeMotionTiming.enter, reducedMotion)));
   }, [dragX, reducedMotion]);
 
   // Plays the exit while the row is still mounted, then commits the mutation
@@ -189,26 +178,20 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
   const beginExit = useCallback(
     (commit: () => void) => {
       setIsLeaving(true);
-      leaving.value = withTiming(0, nativeMotionTiming.exit);
-      if (exitTimerRef.current) {
-        clearTimeout(exitTimerRef.current);
-      }
-      exitTimerRef.current = setTimeout(commit, EXIT_COMMIT_DELAY_MS);
+      leaving.set(withTiming(0, nativeMotionTiming.exit));
+      exitTimer.schedule(commit, EXIT_COMMIT_DELAY_MS);
     },
-    [leaving],
+    [exitTimer, leaving],
   );
 
   // Mutation failed and the cache rolled back, so the row is still in the
   // list -- fade and slide it back in instead of leaving it stuck invisible.
   const cancelExit = useCallback(() => {
-    if (exitTimerRef.current) {
-      clearTimeout(exitTimerRef.current);
-      exitTimerRef.current = null;
-    }
-    leaving.value = withTiming(1, nativeMotionTiming.enter);
+    exitTimer.clear();
+    leaving.set(withTiming(1, nativeMotionTiming.enter));
     closeSwipe();
     setIsLeaving(false);
-  }, [closeSwipe, leaving]);
+  }, [closeSwipe, exitTimer, leaving]);
 
   const leavingStyle = useAnimatedStyle(() => ({ opacity: leaving.value }));
   const dragStyle = useAnimatedStyle(() => {
@@ -251,10 +234,7 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
     : undefined;
 
   const handleDelete = useCallback(() => {
-    if (alertTimerRef.current) {
-      clearTimeout(alertTimerRef.current);
-    }
-    alertTimerRef.current = setTimeout(() => {
+    alertTimer.schedule(() => {
       Alert.alert(t.inbox.item.deleteNote.title, t.inbox.item.deleteNote.message, [
         { text: t.inbox.item.deleteNote.cancel, style: 'cancel', onPress: closeSwipe },
         {
@@ -264,22 +244,21 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
             if (isLeaving) {
               return;
             }
-            dragX.value = withTiming(
-              -EXIT_FLY_DISTANCE,
-              instantOr(nativeMotionTiming.exit, reducedMotion),
+            dragX.set(
+              withTiming(-EXIT_FLY_DISTANCE, instantOr(nativeMotionTiming.exit, reducedMotion)),
             );
             beginExit(() => deleteNote(undefined, { onError: cancelExit }));
           },
         },
       ]);
     }, ALERT_CONFIRM_DEFER_MS);
-  }, [beginExit, cancelExit, closeSwipe, deleteNote, dragX, isLeaving, reducedMotion]);
+  }, [alertTimer, beginExit, cancelExit, closeSwipe, deleteNote, dragX, isLeaving, reducedMotion]);
 
   const handleArchive = useCallback(() => {
     if (isLeaving || isPending) {
       return;
     }
-    dragX.value = withTiming(-EXIT_FLY_DISTANCE, instantOr(nativeMotionTiming.exit, reducedMotion));
+    dragX.set(withTiming(-EXIT_FLY_DISTANCE, instantOr(nativeMotionTiming.exit, reducedMotion)));
     beginExit(() => archiveChat(undefined, { onError: cancelExit }));
   }, [archiveChat, beginExit, cancelExit, dragX, isLeaving, isPending, reducedMotion]);
 
@@ -294,7 +273,7 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
       handleArchive();
       return;
     }
-    dragX.value = withTiming(-ACTION_WIDTH, instantOr(nativeMotionTiming.enter, reducedMotion));
+    dragX.set(withTiming(-ACTION_WIDTH, instantOr(nativeMotionTiming.enter, reducedMotion)));
     handleDelete();
   }, [dragX, handleArchive, handleDelete, isChat, isLeaving, isPending, reducedMotion]);
 
@@ -312,12 +291,12 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
     .failOffsetY([-10, 10])
     .onStart(() => {
       'worklet';
-      startOffset.value = dragX.value;
+      startOffset.set(dragX.value);
     })
     .onUpdate((event) => {
       'worklet';
       const next = startOffset.value + event.translationX;
-      dragX.value = Math.min(0, Math.max(next, -ACTION_WIDTH * 1.3));
+      dragX.set(Math.min(0, Math.max(next, -ACTION_WIDTH * 1.3)));
     })
     .onEnd((event) => {
       'worklet';
@@ -327,9 +306,11 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
         return;
       }
       const shouldReveal = dragX.value <= -ACTION_WIDTH / 2 || event.velocityX <= -REVEAL_VELOCITY;
-      dragX.value = withTiming(
-        shouldReveal ? -ACTION_WIDTH : 0,
-        instantOr(nativeMotionTiming.enter, reducedMotion),
+      dragX.set(
+        withTiming(
+          shouldReveal ? -ACTION_WIDTH : 0,
+          instantOr(nativeMotionTiming.enter, reducedMotion),
+        ),
       );
     });
 
@@ -376,13 +357,11 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
               accessibilityLabel={primaryText}
               actionTestID={`inbox-item-${isChat ? 'chat' : 'note'}-open`}
               divider={false}
-              leading={
-                <AppIcon
-                  name={isChat ? 'bubble.left' : 'note.text'}
-                  size={18}
-                  tintColor={mutedForeground}
-                />
-              }
+              leading=<AppIcon
+                name={isChat ? 'bubble.left' : 'note.text'}
+                size={18}
+                tintColor={mutedForeground}
+              />
               leadingAlign="top"
               leadingStyle={styles.leading}
               onAccessibilityAction={handleAccessibilityAction}

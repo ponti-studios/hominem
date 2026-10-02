@@ -7,7 +7,7 @@ import { db } from '@hominem/db/core';
 import { imageStorageService, isStorageServiceError, validateFile } from '@hominem/storage';
 
 import { logger } from '~/lib/logger';
-import { parseFormData } from '~/lib/route-utils';
+import { formText, isApiResponse, parseFormData } from '~/lib/route-utils';
 
 import { deleteUserDocument } from './documents.server';
 import { handleApplyResumeImportAction } from './resume-import.actions.server';
@@ -107,9 +107,9 @@ async function handleUploadProfileImageAction({
   user: AccountPageUser;
 }): Promise<AccountActionResult<{ imageUrl: string }>> {
   try {
-    const imageFile = formData.get('image') as File | null;
+    const imageFile = formData.get('image');
 
-    if (!imageFile) {
+    if (!(imageFile instanceof File)) {
       throw new Response('No image file provided', { status: 400 });
     }
 
@@ -236,11 +236,11 @@ async function handleUpdateSocialLinksAction({
 }): Promise<AccountActionResult> {
   const socialLinksDataResult = parseFormData<SocialLinksFormValues>(formData, 'socialLinksData');
 
-  if ('success' in socialLinksDataResult && !socialLinksDataResult.success) {
+  if (isApiResponse(socialLinksDataResult)) {
     return { success: false, error: "Your social links couldn't be read. Refresh and try again." };
   }
 
-  const socialLinksData = socialLinksDataResult as SocialLinksFormValues;
+  const socialLinksData = socialLinksDataResult;
 
   try {
     await SocialLinksRepository.save(db, user.id, {
@@ -266,11 +266,11 @@ async function handleUpdateBasicsAction({
 }): Promise<AccountActionResult> {
   const profileDataResult = parseFormData<BasicInfoFormValues>(formData, 'profileData');
 
-  if ('success' in profileDataResult && !profileDataResult.success) {
+  if (isApiResponse(profileDataResult)) {
     return { success: false, error: 'Your changes couldn’t be read. Refresh and try again.' };
   }
 
-  const profileData = profileDataResult as BasicInfoFormValues;
+  const profileData = profileDataResult;
 
   try {
     const name = profileData.name || '';
@@ -333,8 +333,8 @@ async function handleAddCertificationAction({
   formData: FormData;
   user: AccountPageUser;
 }): Promise<AccountActionResult> {
-  const name = (formData.get('name') as string)?.trim();
-  const issuingOrganization = (formData.get('issuingOrganization') as string)?.trim();
+  const name = formText(formData, 'name')?.trim();
+  const issuingOrganization = formText(formData, 'issuingOrganization')?.trim();
 
   if (!name || !issuingOrganization) {
     return { success: false, error: 'Name and issuing organization are required.' };
@@ -344,7 +344,7 @@ async function handleAddCertificationAction({
     await CertificationRepository.create(db, user.id, {
       name,
       issuingOrganization,
-      issueDate: (formData.get('issueDate') as string) || null,
+      issueDate: formText(formData, 'issueDate') || null,
     });
     return { success: true, message: 'Certification added' };
   } catch (error) {

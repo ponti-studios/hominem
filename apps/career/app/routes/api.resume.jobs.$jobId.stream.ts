@@ -74,7 +74,7 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
       await subscriber.subscribe(REDIS_CHANNELS.IMPORT_PROGRESS);
       subscriber.on('message', (_channel: string, message: string) => {
         try {
-          const parsed = JSON.parse(message) as { type: string; data?: ResumeAnalysisJob[] };
+          const parsed: { type: string; data?: ResumeAnalysisJob[] } = JSON.parse(message);
           const job = (parsed.data ?? []).find((entry) => entry.jobId === jobId);
           if (!job) return;
           send(toSseEvent(job));

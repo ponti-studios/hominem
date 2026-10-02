@@ -16,13 +16,16 @@ type StreamState = ReturnType<typeof useStreamMessage>;
 interface UseChatComposerSubmissionOptions {
   chatId: string;
   currentChatTitle?: string;
-  composer: ComposerState;
-  display: DisplayState;
+  composer: Pick<
+    ComposerState,
+    'attachedFiles' | 'clear' | 'draftWithSeed' | 'restore' | 'selectedNotesForSend' | 'setDraft'
+  > & { uploadState: Pick<ComposerState['uploadState'], 'isUploading'> };
+  display: Pick<DisplayState, 'setOptimisticUserMessage' | 'setPendingAssistantMessage'>;
   isOnline: boolean;
   onRequestAutoSpeak: (messageId: string) => void;
   responseLength: ResponseLength;
-  speech: SpeechState;
-  streamMessage: StreamState;
+  speech: Pick<SpeechState, 'isListening' | 'stop'>;
+  streamMessage: Pick<StreamState, 'isStreaming' | 'retry' | 'status' | 'stream'>;
   updateChatTitle: { mutate: (input: { chatId: string; title: string }) => void };
   walkieTalkieMode: boolean;
 }

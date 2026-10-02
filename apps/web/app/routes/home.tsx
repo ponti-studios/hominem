@@ -66,7 +66,7 @@ export default function HomePage() {
       isOffline={!isOnline}
       isSubmitting={startChat.isStarting}
       onChangeDraft={setDraft}
-      onSubmit={() => void handleSubmit()}
+      onSubmit={() => handleSubmit()}
     />
   );
 }

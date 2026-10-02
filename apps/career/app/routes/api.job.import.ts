@@ -12,11 +12,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const body = (await request.json()) as {
+  const body: {
     action?: 'start' | 'retry' | 'dismiss' | 'resolve';
     url?: string;
     importId?: string;
-  };
+  } = await request.json();
   const { career } = createServerHonoClient(request);
 
   if (body.action === 'start' && body.url) {

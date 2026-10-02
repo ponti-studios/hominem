@@ -43,7 +43,9 @@ export function applyGenerationCommitted({
         committed,
       ],
     );
-    if (committed.audio?.url) playAudioReply(committed.id, committed.audio.url);
+    if (committed.audio?.url) {
+      playAudioReply(committed.id, committed.audio.url);
+    }
   }
   triggerAssistantCompletionHaptic();
   void queryClient.invalidateQueries({ queryKey: inboxKeys.pages() });
