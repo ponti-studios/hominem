@@ -289,6 +289,19 @@ export class OpenRouterChatModel implements ChatModel {
       }
 
       const toolCalls = reconstructProviderToolCalls(calls);
+      // One line per provider turn: with the turn's tools it shows whether a model that said
+      // "I'll delete it now." offered, attempted or dropped the call it announced.
+      logger.info('provider_turn_summary', {
+        generationId: this.options.generationId,
+        iteration: generationIteration,
+        toolChoice: toolChoice ?? 'none',
+        offered: tools.map(toolName),
+        called: toolCalls.map((call) => call.function.name),
+        // Above the number of calls kept means an incomplete tool call was dropped.
+        rawToolCallCount: calls.size,
+        textChars: contentChars,
+        finishReasons,
+      });
       if (contentChars === 0 && toolCalls.length === 0) {
         // The model answered with neither text nor a usable tool call, which surfaces to the
         // user as "No reply was generated". Record what came back so the cause is visible:

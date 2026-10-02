@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MAX_CALLS_PER_TOOL, OpenRouterChatModel } from './chat-generation-provider';
 
-const mockedLogger = vi.hoisted(() => ({ warn: vi.fn() }));
+const mockedLogger = vi.hoisted(() => ({ warn: vi.fn(), info: vi.fn() }));
 const mockedOpenRouterRequestError = vi.hoisted(
   () => class OpenRouterRequestError extends Error {},
 );
@@ -394,6 +394,34 @@ describe('OpenRouter generation provider', () => {
         maxAttempts: 2,
       });
       expect(inputs.some((input) => input.type === 'provider-turn-completed')).toBe(false);
+    });
+
+    it('summarizes every turn: what was offered, what was called, and how much text came with it', async () => {
+      await run([
+        chunk([
+          {
+            index: 0,
+            finishReason: 'tool_calls',
+            delta: {
+              content: "I'll delete it now.",
+              toolCalls: [
+                { index: 0, id: 'call-1', function: { name: 'task_list', arguments: '{}' } },
+              ],
+            },
+          },
+        ]),
+      ]);
+
+      expect(mockedLogger.info).toHaveBeenCalledWith('provider_turn_summary', {
+        generationId: 'generation-7',
+        iteration: 0,
+        toolChoice: 'auto',
+        offered: ['task_list'],
+        called: ['task_list'],
+        rawToolCallCount: 1,
+        textChars: "I'll delete it now.".length,
+        finishReasons: ['tool_calls'],
+      });
     });
 
     it('does not log for a turn that produced text', async () => {

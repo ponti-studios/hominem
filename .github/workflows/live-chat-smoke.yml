@@ -181,7 +181,7 @@ jobs:
       # events on every run. They carry model names, ids and error text, not credentials.
       - name: api-diagnostics
         if: ${{ always() }}
-        run: grep -E 'chat_tool_plan_validation_failed|provider_turn_empty|provider_tool_withdrawn|chat_generation_failed' "$RUNNER_TEMP/api.log" || echo "no routing or provider diagnostics logged"
+        run: grep -E 'chat_tool_plan_validation_failed|provider_turn_empty|provider_tool_withdrawn|chat_generation_failed|provider_turn_summary' "$RUNNER_TEMP/api.log" || echo "no routing or provider diagnostics logged"
 
       - name: api-log
         if: ${{ failure() || cancelled() }}
