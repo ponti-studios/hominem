@@ -311,6 +311,17 @@ export class OpenRouterChatModel implements ChatModel {
           reasoningChars,
           rawToolCallCount: calls.size,
         });
+        // Nothing was produced or run, so asking again is safe. Live, this is intermittent
+        // (finish reason "length" on the first chunk with many tools offered) and a second
+        // request normally answers; the run only fails once the attempts are used up.
+        yield {
+          type: 'provider-turn-failed',
+          message: 'No reply was generated',
+          transient: true,
+          attempt: this.attempt,
+          maxAttempts: this.options.maxAttempts ?? 2,
+        };
+        return;
       }
       if (toolCalls.length > 0) {
         this.messages.push({ role: 'assistant', content: null, toolCalls });

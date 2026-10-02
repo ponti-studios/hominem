@@ -267,7 +267,9 @@ describe('OpenRouter generation provider', () => {
       },
     ]);
 
-    mockedStream.mockReturnValueOnce(chunks([]));
+    mockedStream.mockReturnValueOnce(
+      chunks([chunk([{ index: 0, finishReason: 'stop', delta: { content: 'ok' } }])]),
+    );
     await expect(
       collect(
         provider.retry({
@@ -344,7 +346,7 @@ describe('OpenRouter generation provider', () => {
         maxTokens: 250,
         ...options,
       });
-      await collect(
+      return collect(
         provider.open({
           turnId: 'turn-1',
           iteration: 0,
@@ -377,6 +379,21 @@ describe('OpenRouter generation provider', () => {
         reasoningChars: 'thinking it over'.length,
         rawToolCallCount: 0,
       });
+    });
+
+    it('is reported as a transient failure so the turn is asked again', async () => {
+      const inputs = await run([chunk([{ index: 0, finishReason: 'length', delta: {} }])], {
+        requiresToolCall: true,
+      });
+
+      expect(inputs.at(-1)).toEqual({
+        type: 'provider-turn-failed',
+        message: 'No reply was generated',
+        transient: true,
+        attempt: 0,
+        maxAttempts: 2,
+      });
+      expect(inputs.some((input) => input.type === 'provider-turn-completed')).toBe(false);
     });
 
     it('does not log for a turn that produced text', async () => {
