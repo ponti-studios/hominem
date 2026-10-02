@@ -130,15 +130,17 @@ jobs:
           SMOKE_CASES: ${{ inputs.cases }}
         run: |
           set -euo pipefail
-          # e2e:setup prints the session cookie as `export` lines: keep those out
-          # of the log, show everything else, and bound it so a hang fails fast.
+          # e2e:setup prints the session cookie as `export E2E_*` lines: keep those
+          # out of the log, show everything else, and bound it so a hang fails fast.
+          # Match only those lines — its closing hint also contains a quoted
+          # `grep 'export '` command, and eval-ing that re-runs e2e:setup forever.
           setup_output="$(timeout 90 pnpm --silent e2e:setup 2>&1)" || {
-            echo "$setup_output" | grep -v 'export ' || true
+            echo "$setup_output" | grep -vE '^[[:space:]]*export E2E_' || true
             echo "::error::e2e:setup failed or timed out"
             exit 1
           }
-          echo "$setup_output" | grep -v 'export ' || true
-          eval "$(echo "$setup_output" | grep 'export ')"
+          echo "$setup_output" | grep -vE '^[[:space:]]*export E2E_' || true
+          eval "$(echo "$setup_output" | grep -E '^[[:space:]]*export E2E_')"
           pnpm live-chat-smoke
 
       - name: api-log
