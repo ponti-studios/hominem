@@ -12,6 +12,7 @@ import {
 import type { GenerationRunnerOptions } from '@hominem/chat/server';
 import { createGenerationRunner } from '@hominem/chat/server';
 import type { ChatGenerationEventRecord, ChatMessageToolCallRecord } from '@hominem/db/chats';
+import { logger } from '@hominem/telemetry';
 
 import { callTool, getToolDefinition } from '../mcp/tool-registry';
 import { OpenRouterChatModel } from './chat-generation-provider';
@@ -286,7 +287,14 @@ export async function executeGenerationTurn(
                 result,
               })
             : result;
-        } catch {
+        } catch (error) {
+          // The model only ever sees the generic message below; keep the cause in the logs.
+          logger.warn('chat_generation_tool_call_failed', {
+            generationId: input.generationId,
+            toolName: call.name,
+            error:
+              error instanceof Error ? `${error.name}: ${error.message}`.slice(0, 300) : 'unknown',
+          });
           const result: ToolResult = {
             callId: call.id,
             toolName: call.name,

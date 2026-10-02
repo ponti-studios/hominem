@@ -470,6 +470,7 @@ describe('HominemTests', () => {
       fragmentedToolCallTurn('sdk_failing_tool', 'call-fail', ['{"value":"x"}']),
       textTurn('Recovered after tool failure'),
     ]);
+    expectWarning('chat_generation_tool_call_failed');
     test = await HominemTests.create({ provider });
     test.tools.add(tool);
 

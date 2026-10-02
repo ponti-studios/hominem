@@ -28,9 +28,15 @@ if (!COOKIE) {
 }
 
 const eventSchema = z.object({ type: z.string(), payload: z.unknown() });
-const toolRequestedSchema = z.object({ call: z.object({ name: z.string() }) });
+const toolRequestedSchema = z.object({
+  call: z.object({ name: z.string(), arguments: z.string().optional() }),
+});
 const toolCompletedSchema = z.object({
-  result: z.object({ toolName: z.string(), error: z.boolean().optional() }),
+  result: z.object({
+    toolName: z.string(),
+    error: z.boolean().optional(),
+    content: z.string().optional(),
+  }),
 });
 const textDeltaSchema = z.object({ text: z.string() });
 const taskListSchema = z.object({
@@ -39,7 +45,9 @@ const taskListSchema = z.object({
 
 type Turn = {
   requested: string[];
-  completed: { name: string; error: boolean }[];
+  // Arguments the model sent, and what the tool answered, in call order.
+  calls: { name: string; arguments: string }[];
+  completed: { name: string; error: boolean; content: string }[];
   text: string;
   failed: boolean;
 };
@@ -67,7 +75,7 @@ async function runTurn(message: string): Promise<Turn> {
     throw new Error(`start-stream failed: HTTP ${response.status} ${await response.text()}`);
   }
 
-  const turn: Turn = { requested: [], completed: [], text: '', failed: false };
+  const turn: Turn = { requested: [], calls: [], completed: [], text: '', failed: false };
   const decoder = new TextDecoder();
   let buffer = '';
   for await (const chunk of response.body) {
@@ -81,13 +89,20 @@ async function runTurn(message: string): Promise<Turn> {
       const { type, payload } = event.data;
       if (type === 'tool.requested') {
         const parsed = toolRequestedSchema.safeParse(payload);
-        if (parsed.success) turn.requested.push(parsed.data.call.name);
+        if (parsed.success) {
+          turn.requested.push(parsed.data.call.name);
+          turn.calls.push({
+            name: parsed.data.call.name,
+            arguments: parsed.data.call.arguments ?? '',
+          });
+        }
       } else if (type === 'tool.completed') {
         const parsed = toolCompletedSchema.safeParse(payload);
         if (parsed.success) {
           turn.completed.push({
             name: parsed.data.result.toolName,
             error: parsed.data.result.error ?? false,
+            content: parsed.data.result.content ?? '',
           });
         }
       } else if (type === 'text-delta') {
@@ -113,6 +128,22 @@ async function deleteTasksMatching(pattern: RegExp) {
   }
 }
 
+// What the model sent and what each failed tool answered, for the job log.
+function describeFailedCalls(turn: Turn): string {
+  const clip = (text: string) => (text.length > 300 ? `${text.slice(0, 300)}…` : text);
+  const failed = turn.completed
+    .map((result, index) => ({ result, call: turn.calls[index] }))
+    .filter(({ result }) => result.error);
+  return failed.length === 0
+    ? ''
+    : ` | failed calls: ${failed
+        .map(
+          ({ result, call }) =>
+            `${result.name}(${clip(call?.arguments ?? '?')}) -> ${clip(result.content)}`,
+        )
+        .join(' ; ')}`;
+}
+
 const GOOGLE_HOME = /google home/i;
 
 type SmokeCase = {
@@ -134,7 +165,7 @@ const cases: SmokeCase[] = [
     check: async (turn) => {
       if (turn.failed) return 'generation failed';
       if (!turn.completed.some((call) => call.name === 'task_create' && !call.error)) {
-        return `task_create never completed (requested: ${turn.requested.join(', ') || 'none'})`;
+        return `task_create never completed (requested: ${turn.requested.join(', ') || 'none'})${describeFailedCalls(turn)}`;
       }
       const created = (await listTasks()).some((task) => GOOGLE_HOME.test(task.title));
       return created ? null : 'task_create completed but no matching task exists';
@@ -146,7 +177,7 @@ const cases: SmokeCase[] = [
     check: (turn) =>
       turn.completed.some((call) => call.name === 'task_list' && !call.error)
         ? null
-        : `task_list never completed (requested: ${turn.requested.join(', ') || 'none'})`,
+        : `task_list never completed (requested: ${turn.requested.join(', ') || 'none'})${describeFailedCalls(turn)}`,
   },
   {
     // Control: tools are exposed on every turn, so make sure they are not used needlessly.
