@@ -57,6 +57,33 @@ const WEB_SEARCH_TOOL: ChatFunctionTool = {
 const CURRENT_PUBLIC_FACT_PATTERN =
   /\b(current|today|tonight|tomorrow|next|latest|recent|schedule|score|scores|price|rate|weather|when do|what time|verify)\b/;
 
+// The router above only decides which *extra* capabilities a turn needs. It is a
+// classifier, so it will sometimes misjudge a request (e.g. "add a task" is a write,
+// not a lookup). If it were the only source of tools, a misjudgment would leave the
+// model with nothing to call and it would narrate an action it cannot take. These
+// everyday capabilities are therefore always exposed, with toolChoice left on 'auto'.
+const CORE_CAPABILITIES: readonly ChatCapability[] = ['task', 'notes', 'memory'];
+
+function selectCoreDefinitions(
+  definitions: readonly CapabilityDefinition[],
+): CapabilityDefinition[] {
+  return definitions.filter((definition) =>
+    getToolCapabilities(definition).some((capability) => CORE_CAPABILITIES.includes(capability)),
+  );
+}
+
+// Appends steps for `extra` tools that the plan does not already schedule.
+function withSteps(
+  steps: ValidatedChatToolPlan['steps'],
+  extra: readonly CapabilityDefinition[],
+): ValidatedChatToolPlan['steps'] {
+  const scheduled = new Set(steps.map((step) => step.tool));
+  return [
+    ...steps,
+    ...fallbackSteps(extra.filter((definition) => !scheduled.has(definition.name))),
+  ];
+}
+
 function toChatTool(tool: CapabilityDefinition): ChatFunctionToolDefinition {
   return {
     type: 'function',
@@ -183,8 +210,13 @@ export async function planChatTools(input: {
     const content =
       typeof latestContent?.content === 'string' ? latestContent.content.toLowerCase() : '';
     const capabilities = inferMuseCapabilities(input.messages);
-    const selectedDefinitions = definitions.filter((definition) =>
+    const routedDefinitions = definitions.filter((definition) =>
       getToolCapabilities(definition).some((capability) => capabilities.has(capability)),
+    );
+    const selectedDefinitions = definitions.filter(
+      (definition) =>
+        routedDefinitions.includes(definition) ||
+        selectCoreDefinitions(definitions).includes(definition),
     );
     const tools: ChatFunctionTool[] = selectedDefinitions.map(
       (definition) => projectedTools[definitions.indexOf(definition)]!,
@@ -251,12 +283,16 @@ export async function planChatTools(input: {
         : 'I cannot complete that personal-data request from this chat yet.',
     });
   }
+  const coreDefinitions = selectCoreDefinitions(definitions);
   if (!capabilityOutput.requiresLookup) {
+    const coreTools = coreDefinitions.map(
+      (definition) => projectedTools[definitions.indexOf(definition)]!,
+    );
     return {
       capabilities,
       requiresLookup: false,
-      tools: capabilityOutput.requiresWebSearch ? [WEB_SEARCH_TOOL] : [],
-      steps: [],
+      tools: capabilityOutput.requiresWebSearch ? [...coreTools, WEB_SEARCH_TOOL] : coreTools,
+      steps: fallbackSteps(coreDefinitions),
       usage: capabilityUsage,
       requiresWebSearch: capabilityOutput.requiresWebSearch,
     };
@@ -293,10 +329,14 @@ export async function planChatTools(input: {
       failureCategory: 'tool_planning',
       fallbackUsed: true,
     });
-    exactPlan = { requiresLookup: true, steps: fallbackSteps(candidateDefinitions) };
+    exactPlan = {
+      requiresLookup: true,
+      steps: fallbackSteps(candidateDefinitions),
+    };
   }
 
-  const selectedTools: ChatFunctionTool[] = exactPlan.steps.flatMap((step) => {
+  const plannedSteps = withSteps(exactPlan.steps, coreDefinitions);
+  const selectedTools: ChatFunctionTool[] = plannedSteps.flatMap((step) => {
     const index = definitions.findIndex((definition) => definition.name === step.tool);
     return index === -1 ? [] : [projectedTools[index]!];
   });
@@ -312,7 +352,7 @@ export async function planChatTools(input: {
     capabilities,
     requiresLookup: exactPlan.requiresLookup,
     tools: selectedTools,
-    steps: exactPlan.steps,
+    steps: plannedSteps,
     usage: addUsage(capabilityUsage, planUsage),
     requiresWebSearch: capabilityOutput.requiresWebSearch,
   };
