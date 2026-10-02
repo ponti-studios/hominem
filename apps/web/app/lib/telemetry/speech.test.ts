@@ -15,7 +15,7 @@ afterEach(() => {
 
 describe('speech playback telemetry', () => {
   it('sends one bounded completion event through the API proxy', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }));
     vi.stubGlobal('fetch', fetchMock);
 
     const telemetry = startSpeechPlaybackTelemetry();
@@ -26,7 +26,8 @@ describe('speech playback telemetry', () => {
     await Promise.resolve();
 
     expect(fetchMock).toHaveBeenCalledOnce();
-    const [url, request] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, request] = fetchMock.mock.calls[0] ?? [];
+    if (!request) throw new Error('expected fetch to receive a request init');
     expect(url).toBe('https://api.example.test/api/telemetry/events');
     expect(request.method).toBe('POST');
     expect(request.credentials).toBe('include');

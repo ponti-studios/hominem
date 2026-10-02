@@ -2,6 +2,7 @@ import type { ChatMessageDto } from '@hominem/rpc/types/chat.types';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 
+import { makeChatMessageDto } from '../../lib/testing/chat-message-fixture';
 import { ChatMessage } from './chat-message';
 
 const meta = {
@@ -22,10 +23,7 @@ const messages = [
 ] as const;
 
 function toMessage(message: (typeof messages)[number]): ChatMessageDto {
-  return {
-    ...message,
-    chatId: 'chat-1',
-  } as ChatMessageDto;
+  return makeChatMessageDto({ ...message });
 }
 
 function ConversationHarness({ initialActiveId }: { initialActiveId?: string }) {

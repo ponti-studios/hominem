@@ -236,7 +236,7 @@ export function SpeechPlayer({
               ? 'pointer-events-none scale-90 opacity-0'
               : 'pointer-events-auto scale-100 opacity-100',
           )}
-          onClick={() => void handleListen()}
+          onClick={() => handleListen()}
           tabIndex={showBrowserControls ? -1 : 0}
           tooltip={
             state === 'autoplay-blocked'

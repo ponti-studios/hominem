@@ -25,7 +25,8 @@ function createCheckpointStore() {
       const raw = window.localStorage.getItem(`chat-generation:${generationId}`);
       if (!raw) return null;
       try {
-        return JSON.parse(raw) as GenerationClientState;
+        const state: GenerationClientState = JSON.parse(raw);
+        return state;
       } catch {
         window.localStorage.removeItem(`chat-generation:${generationId}`);
         return null;

@@ -142,10 +142,10 @@ describe('ToolApprovalActions', () => {
     render(<ToolApprovalActions disabled onApprove={vi.fn()} onReject={vi.fn()} />);
 
     expect(
-      (screen.getByRole('button', { name: 'Approve tool action' }) as HTMLButtonElement).disabled,
+      screen.getByRole<HTMLButtonElement>('button', { name: 'Approve tool action' }).disabled,
     ).toBe(true);
     expect(
-      (screen.getByRole('button', { name: 'Reject tool action' }) as HTMLButtonElement).disabled,
+      screen.getByRole<HTMLButtonElement>('button', { name: 'Reject tool action' }).disabled,
     ).toBe(true);
   });
 });

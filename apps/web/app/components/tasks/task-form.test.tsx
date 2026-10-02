@@ -18,16 +18,26 @@ afterEach(cleanup);
 function MinimalTask(overrides: Partial<Task> = {}): Task {
   return {
     id: 'task-1',
+    ownerUserId: 'user-1',
     title: 'Existing task',
     description: '',
+    parentTaskId: null,
+    status: 'pending',
     priority: 'medium',
     dueAt: null,
+    durationMinutes: null,
+    schedulingWindowStartAt: null,
+    schedulingWindowEndAt: null,
     scheduledStartAt: null,
     scheduledEndAt: null,
-    durationMinutes: null,
+    timeZone: null,
     location: null,
+    completedAt: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    artifactType: 'task',
     ...overrides,
-  } as Task;
+  };
 }
 
 describe('TaskForm accordion', () => {

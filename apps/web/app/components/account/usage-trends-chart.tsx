@@ -183,7 +183,7 @@ export function UsageTrendsChart() {
       {error ? (
         <div className="space-y-3">
           <p className="text-sm text-destructive">Usage trends unavailable.</p>
-          <Button onClick={() => void refetch()} variant="secondary">
+          <Button onClick={() => refetch()} variant="secondary">
             Try again
           </Button>
         </div>

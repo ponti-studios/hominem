@@ -22,7 +22,7 @@ export function useNoteSearch(query: string, enabled = true) {
       const q: { query: string; limit?: string; cursor?: string } = { query, limit: '8' };
       if (pageParam) q.cursor = pageParam;
       const res = await client.api.notes.search.$get({ query: q });
-      return res.json() as Promise<NotesSearchOutput>;
+      return res.json();
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     select: (data) => {
@@ -32,7 +32,7 @@ export function useNoteSearch(query: string, enabled = true) {
         pageParams: data.pageParams,
         notes,
         nextCursor: data.pages.at(-1)?.nextCursor ?? null,
-      } as NotesSearchOutput & { pages: typeof data.pages; pageParams: typeof data.pageParams };
+      };
     },
   });
 }
