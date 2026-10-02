@@ -15,7 +15,7 @@ import type { CapabilityDefinition } from '../application/capability';
 import { ensureMcpToolsRegistered } from './register-tools';
 import {
   buildToolCatalog,
-  chatToolPlanSchema,
+  chatToolPlanRequestSchema,
   describeCapability,
   type ChatToolPlan as ValidatedChatToolPlan,
   validateChatToolPlan,
@@ -314,11 +314,11 @@ export async function planChatTools(input: {
       messages: [
         {
           role: 'system',
-          content: `Create the smallest valid ordered tool plan for the user's request. Only choose tools from the catalog. Schedule prerequisites before dependent tools. Use an empty arguments object when values must be obtained from an earlier tool result. Never include a write unless the user requested the change.\n\nTool catalog:\n${buildToolCatalog(candidateDefinitions)}`,
+          content: `Create the smallest valid ordered tool plan for the user's request. Only choose tools from the catalog. Schedule prerequisites before dependent tools. Never include a write unless the user requested the change.\n\nTool catalog:\n${buildToolCatalog(candidateDefinitions)}`,
         },
         ...(latestUserMessage ? [latestUserMessage] : []),
       ],
-      schema: chatToolPlanSchema,
+      schema: chatToolPlanRequestSchema,
       schemaName: 'chat_exact_tool_plan',
       temperature: 0,
       maxCompletionTokens: 400,

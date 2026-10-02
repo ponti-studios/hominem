@@ -1,8 +1,9 @@
+import { convertSchemaToJsonSchema } from '@hominem/ai';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { defineCapability } from '../application/capability';
-import { validateChatToolPlan } from './tool-planner';
+import { chatToolPlanRequestSchema, validateChatToolPlan } from './tool-planner';
 
 const lookup = defineCapability({
   name: 'lookup',
@@ -216,5 +217,30 @@ describe('validated chat tool plans', () => {
     const wrongType = plan({ title: 5 });
     expect(wrongType.ok).toBe(false);
     if (!wrongType.ok) expect(wrongType.errors.join()).toContain('invalid planned arguments');
+  });
+
+  // Regression: every live plan request failed with "Provider returned error" and fell back,
+  // because the schema sent to the provider contained a free-form `arguments` object.
+  describe('the schema sent to the provider', () => {
+    it('has no free-form object, which the provider rejects', () => {
+      const wire = JSON.stringify(convertSchemaToJsonSchema(chatToolPlanRequestSchema));
+
+      expect(wire).not.toContain('propertyNames');
+      expect(wire).not.toContain('"additionalProperties":{}');
+      expect(wire).not.toContain('"default"');
+      expect(wire).not.toContain('arguments');
+    });
+
+    it('produces a plan the full validator accepts, filling in empty arguments', () => {
+      const answer = chatToolPlanRequestSchema.parse({
+        requiresLookup: true,
+        steps: [{ tool: 'lookup', purpose: 'Find Ada', dependsOn: [] }],
+      });
+
+      const result = validateChatToolPlan(answer, [lookup]);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.plan.steps[0]?.arguments).toEqual({});
+    });
   });
 });

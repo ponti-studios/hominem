@@ -54,6 +54,9 @@ describe('chat assistant personality', () => {
     expect(CHAT_ASSISTANT_PROMPT).toContain('do not search memories for them');
     expect(CHAT_ASSISTANT_PROMPT).toContain('only when the user asked to filter by them');
     expect(CHAT_ASSISTANT_PROMPT).toContain('call task_list again without filters');
+    // Deleting goes straight to task_delete; the app, not the model, asks for approval.
+    expect(CHAT_ASSISTANT_PROMPT).toContain('call task_delete with its id right away');
+    expect(CHAT_ASSISTANT_PROMPT).toContain('never ask "do you want me to delete it?"');
   });
 
   it('keeps the Ori chat prompt snapshot aligned with production', () => {

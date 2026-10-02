@@ -14,6 +14,23 @@ export const chatToolPlanSchema = z.object({
   steps: z.array(chatToolPlanStepSchema).max(20),
 });
 
+// What the provider is asked to produce. The full schema above is rejected by the provider
+// ("Provider returned error" on every live plan request): its free-form `arguments` object
+// (`additionalProperties: {}`, `propertyNames`, a default) is outside the JSON-schema subset it
+// accepts, so every plan silently fell back. Planned arguments are only ever validated, never
+// executed, so the request leaves them out and the response is re-parsed with the full schema
+// (which fills them with `{}`) before validation.
+export const chatToolPlanRequestSchema = z.object({
+  requiresLookup: z.boolean(),
+  steps: z.array(
+    z.object({
+      tool: z.string(),
+      purpose: z.string(),
+      dependsOn: z.array(z.string()),
+    }),
+  ),
+});
+
 export type ChatToolPlanStep = z.infer<typeof chatToolPlanStepSchema>;
 export type ChatToolPlan = z.infer<typeof chatToolPlanSchema>;
 
