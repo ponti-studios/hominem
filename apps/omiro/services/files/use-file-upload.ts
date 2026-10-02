@@ -11,7 +11,7 @@ import { API_BASE_URL } from '~/constants';
 import { parseApiError } from '~/services/api/parse-api-error';
 import { useAuth } from '~/services/auth/auth-provider';
 interface UploadClient {
-  upload(formData: FormData): Promise<unknown>;
+  upload(formData: FormData): Promise<UploadResponse>;
 }
 
 function toUploadedFile(file: UploadedFileDto): UploadedFile {
@@ -128,7 +128,7 @@ async function performMobileUploads(
       formData.append('originalName', originalName);
       formData.append('mimetype', mimetype);
 
-      const completion = (await api.upload(formData)) as UploadResponse;
+      const completion = await api.upload(formData);
 
       completedCount++;
       const overallProgress = Math.round((completedCount / assets.length) * 100);
@@ -227,7 +227,8 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
               );
             }
 
-            return response.json();
+            const body: UploadResponse = await response.json();
+            return body;
           },
         },
         assets,

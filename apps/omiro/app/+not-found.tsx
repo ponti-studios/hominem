@@ -1,4 +1,3 @@
-import type { RelativePathString } from 'expo-router';
 import { Stack, useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 
@@ -32,7 +31,7 @@ export default function NotFoundScreen() {
           <Button
             label={t.errors.notFound.returnToRoot}
             onPress={() => {
-              router.replace('/' as RelativePathString);
+              router.replace('/');
             }}
             variant="primary"
           />

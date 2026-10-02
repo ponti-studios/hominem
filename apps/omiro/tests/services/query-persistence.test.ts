@@ -1,5 +1,10 @@
-import type { Query } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
+
+import {
+  clearPersistedQueryCache,
+  mobilePersistOptions,
+  shouldPersistQuery,
+} from '~/services/query-persistence';
 
 const storage = vi.hoisted(() => ({
   getString: () => undefined,
@@ -11,17 +16,11 @@ vi.mock('~/services/storage/mmkv', () => ({
   storage,
 }));
 
-import {
-  clearPersistedQueryCache,
-  mobilePersistOptions,
-  shouldPersistQuery,
-} from '~/services/query-persistence';
-
 function query(input: { data: unknown; key: readonly unknown[]; status?: 'pending' | 'success' }) {
   return {
     queryKey: input.key,
     state: { data: input.data, status: input.status ?? 'success' },
-  } as Query<unknown, Error, unknown, readonly unknown[]>;
+  };
 }
 
 describe('mobile query persistence', () => {

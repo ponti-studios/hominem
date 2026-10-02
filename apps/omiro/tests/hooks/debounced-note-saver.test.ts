@@ -3,8 +3,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createDebouncedNoteSaver, type NoteSavePayload } from '~/hooks/debounced-note-saver';
 
+import { makeNote } from '../fixtures';
+
 function createNote(content: string): Note {
-  return { id: `note-${content}`, content } as Note;
+  return makeNote({ id: `note-${content}`, content });
 }
 
 function createDeferred<T>() {

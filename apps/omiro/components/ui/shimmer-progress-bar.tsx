@@ -46,9 +46,9 @@ export function ShimmerProgressBar({
 
   const fillProgress = useSharedValue(clampedProgress);
   useEffect(() => {
-    fillProgress.value = reducedMotion
-      ? clampedProgress
-      : withTiming(clampedProgress, { duration: 500 });
+    fillProgress.set(
+      reducedMotion ? clampedProgress : withTiming(clampedProgress, { duration: 500 }),
+    );
   }, [clampedProgress, fillProgress, reducedMotion]);
 
   const shimmerProgress = useShimmerProgress(reducedMotion);

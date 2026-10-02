@@ -1,3 +1,5 @@
+import { isObject } from '@hominem/utils';
+
 interface ApiErrorBody {
   error?: unknown;
   message?: unknown;
@@ -12,6 +14,5 @@ export async function parseApiError(response: ApiResponseLike): Promise<ApiError
   if (!isObject(body)) {
     return {};
   }
-  return body as ApiErrorBody;
+  return { error: Reflect.get(body, 'error'), message: Reflect.get(body, 'message') };
 }
-import { isObject } from '@hominem/utils';

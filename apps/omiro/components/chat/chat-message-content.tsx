@@ -1,13 +1,14 @@
-import type { MarkdownComponent } from '@hominem/chat';
 import { logger } from '@hominem/telemetry';
 import { createElement, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useAppTheme } from '~/components/theme';
 
+type MarkdownComponent = typeof import('react-native-markdown-display').default;
+
 async function loadMarkdown() {
   const mod = await import('react-native-markdown-display');
-  return mod.default as MarkdownComponent;
+  return mod.default;
 }
 
 let markdownPromise: Promise<MarkdownComponent | null> | null = null;

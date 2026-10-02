@@ -91,7 +91,9 @@ export default function ChatToNoteSheetScreen() {
   const runGeneration = useCallback(
     async (preset: NotePreset, customText: string) => {
       // Prevent multiple simultaneous generations
-      if (isGenerating) return;
+      if (isGenerating) {
+        return;
+      }
 
       setSaveError(null);
       setPhase({ kind: 'loading' });
@@ -119,7 +121,12 @@ export default function ChatToNoteSheetScreen() {
     if (isLoading) {
       return;
     }
-    setSelectedPreset(event.nativeEvent.event as NotePreset);
+    const preset = t.chat.noteDraft.presets.find(
+      (candidate) => candidate === event.nativeEvent.event,
+    );
+    if (preset) {
+      setSelectedPreset(preset);
+    }
   };
 
   const handleSubmit = () => {

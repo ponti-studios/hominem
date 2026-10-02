@@ -99,7 +99,7 @@ export const LocalStore = {
     const results = await s.listMedia();
     return results
       .map((media) => validateOrNull(MediaSchema, media))
-      .filter((media): media is NonNullable<typeof media> => media !== null) as Media[];
+      .filter((media): media is Media => media !== null);
   },
 
   clearAllData: async (): Promise<boolean> => {

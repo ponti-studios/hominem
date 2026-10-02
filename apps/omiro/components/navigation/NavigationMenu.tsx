@@ -10,7 +10,8 @@ import {
   UNSCHEDULED_ROUTE,
 } from '~/services/navigation/routes';
 
-type Destination = 'stream' | 'time' | 'tasks' | 'settings';
+const DESTINATION_KEYS = ['stream', 'time', 'tasks', 'settings'] as const;
+type Destination = (typeof DESTINATION_KEYS)[number];
 
 const destinations: {
   key: Destination;
@@ -78,7 +79,7 @@ export function NavigationMenu() {
   ];
 
   const onPressAction = (event: NativeActionEvent) => {
-    const destination = event.nativeEvent.event as Destination;
+    const destination = DESTINATION_KEYS.find((key) => key === event.nativeEvent.event);
     if (destination === 'settings') {
       router.push(SETTINGS_ROUTE);
       return;

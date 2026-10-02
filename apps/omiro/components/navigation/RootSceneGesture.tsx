@@ -32,10 +32,15 @@ export function RootSceneGesture({ children }: { children: React.ReactNode }) {
   const { width } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
   const scene = sceneFromPathname(pathname);
+  const [prevPathname, setPrevPathname] = useState(pathname);
   const progress = useSharedValue(0);
   const direction = useSharedValue(0);
   const startX = useSharedValue(-1);
   const [isSettling, setIsSettling] = useState(false);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    setIsSettling(false);
+  }
   const styles = useStyles((theme) => ({
     container: { flex: 1, overflow: 'hidden' },
     preview: {
@@ -52,10 +57,9 @@ export function RootSceneGesture({ children }: { children: React.ReactNode }) {
   }));
 
   useEffect(() => {
-    progress.value = 0;
-    direction.value = 0;
-    startX.value = -1;
-    setIsSettling(false);
+    progress.set(0);
+    direction.set(0);
+    startX.set(-1);
   }, [direction, pathname, progress, startX]);
 
   const commitRoute = useCallback(
@@ -84,12 +88,12 @@ export function RootSceneGesture({ children }: { children: React.ReactNode }) {
         const fromEdge = fromStream
           ? touch.absoluteX >= width - EDGE_SIZE
           : touch.absoluteX <= EDGE_SIZE;
-        startX.value = fromEdge ? touch.absoluteX : -1;
+        startX.set(fromEdge ? touch.absoluteX : -1);
       })
       .onStart(() => {
         'worklet';
-        direction.value = startX.value >= 0 ? (scene === 'stream' ? -1 : 1) : 0;
-        progress.value = 0;
+        direction.set(startX.value >= 0 ? (scene === 'stream' ? -1 : 1) : 0);
+        progress.set(0);
       })
       .onUpdate((event) => {
         'worklet';
@@ -97,12 +101,12 @@ export function RootSceneGesture({ children }: { children: React.ReactNode }) {
           return;
         }
         const intendedDistance = event.translationX * direction.value;
-        progress.value = Math.max(0, Math.min(1, intendedDistance / width));
+        progress.set(Math.max(0, Math.min(1, intendedDistance / width)));
       })
       .onFinalize((event) => {
         'worklet';
         if (startX.value < 0 || direction.value === 0) {
-          progress.value = withTiming(0, nativeMotionTiming.exit);
+          progress.set(withTiming(0, nativeMotionTiming.exit));
           return;
         }
         const intendedDistance = event.translationX * direction.value;
@@ -110,8 +114,8 @@ export function RootSceneGesture({ children }: { children: React.ReactNode }) {
         const shouldCommit =
           intendedDistance >= COMMIT_DISTANCE || intendedVelocity >= COMMIT_VELOCITY;
         if (!shouldCommit) {
-          progress.value = withTiming(0, nativeMotionTiming.exit);
-          direction.value = 0;
+          progress.set(withTiming(0, nativeMotionTiming.exit));
+          direction.set(0);
           return;
         }
         const target = scene === 'stream' ? 'time' : 'stream';
@@ -119,11 +123,13 @@ export function RootSceneGesture({ children }: { children: React.ReactNode }) {
           scheduleOnRN(commitRoute, target);
           return;
         }
-        progress.value = withTiming(1, nativeMotionTiming.enter, (finished) => {
-          if (finished) {
-            scheduleOnRN(commitRoute, target);
-          }
-        });
+        progress.set(
+          withTiming(1, nativeMotionTiming.enter, (finished) => {
+            if (finished) {
+              scheduleOnRN(commitRoute, target);
+            }
+          }),
+        );
         scheduleOnRN(setIsSettling, true);
       });
 

@@ -2,6 +2,8 @@ import { logger } from '@hominem/telemetry';
 import * as Audio from 'expo-audio';
 import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
 
+import { toError } from '~/services/to-error';
+
 import { createStore, type Listener } from './create-store';
 
 type PlaybackSnapshot = {
@@ -40,7 +42,7 @@ function createPlaybackController() {
     try {
       player.remove();
     } catch (error) {
-      logger.error('[audio-playback] player teardown failed', error as Error);
+      logger.error('[audio-playback] player teardown failed', toError(error));
     }
     player = null;
   };
@@ -73,7 +75,7 @@ function createPlaybackController() {
     try {
       nextPlayer.play();
     } catch (error) {
-      logger.error('[audio-playback] play failed', error as Error);
+      logger.error('[audio-playback] play failed', toError(error));
       stop();
     }
   };

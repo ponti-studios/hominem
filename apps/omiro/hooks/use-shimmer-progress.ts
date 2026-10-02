@@ -23,14 +23,16 @@ export function useShimmerProgress(reducedMotion?: boolean) {
     cancelAnimation(progress);
 
     if (isReducedMotion) {
-      progress.value = 0;
+      progress.set(0);
       return;
     }
 
-    progress.value = withRepeat(
-      withTiming(1, { duration: SHIMMER_DURATION_MS, easing: Easing.linear }),
-      -1,
-      false,
+    progress.set(
+      withRepeat(
+        withTiming(1, { duration: SHIMMER_DURATION_MS, easing: Easing.linear }),
+        -1,
+        false,
+      ),
     );
 
     return () => {

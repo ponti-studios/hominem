@@ -1,4 +1,7 @@
+import type { z } from 'zod';
+
 import { storage } from '~/services/storage/mmkv';
+import { ResumeTargetSchema } from '~/services/validation/schemas';
 
 import type { ResumeTarget } from './routes';
 
@@ -11,14 +14,14 @@ function getChatDraftKey(chatId: string) {
   return `${CHAT_DRAFT_PREFIX}${chatId}`;
 }
 
-function readJSONValue<T>(key: string): T | null {
+function readJSONValue<T>(key: string, schema: z.ZodType<T>): T | null {
   const raw = storage.getString(key);
   if (!raw) {
     return null;
   }
 
   try {
-    return JSON.parse(raw) as T;
+    return schema.parse(JSON.parse(raw));
   } catch {
     storage.remove(key);
     return null;
@@ -88,7 +91,7 @@ export function writeResumeTarget(target: ResumeTarget) {
 }
 
 export function readResumeTarget(): ResumeTarget | null {
-  return readJSONValue<ResumeTarget>(RESUME_TARGET_KEY);
+  return readJSONValue(RESUME_TARGET_KEY, ResumeTargetSchema);
 }
 
 export function clearResumeTarget() {

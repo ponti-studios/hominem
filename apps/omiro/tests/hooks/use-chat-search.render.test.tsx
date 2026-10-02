@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-import type { ChatMessageItem } from '@hominem/chat';
 import { waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { makeChatMessage } from '../fixtures';
 import { renderHookWithQueryClient } from '../utils/render-hook';
 
 const mockMessagesSearchGet = vi.fn();
@@ -30,23 +30,9 @@ const { useChatSearch } = await import('~/hooks/use-chat-search');
 
 const CHAT_ID = 'chat-1';
 
-function message(overrides: Partial<ChatMessageItem>): ChatMessageItem {
-  return {
-    id: 'm1',
-    role: 'user',
-    message: 'hello',
-    createdAt: new Date().toISOString(),
-    chatId: CHAT_ID,
-    reasoning: null,
-    toolCalls: null,
-    isStreaming: false,
-    ...overrides,
-  } as ChatMessageItem;
-}
-
 describe('useChatSearch', () => {
   it('shows the full message list while search is closed', () => {
-    const messages = [message({ id: 'm1' }), message({ id: 'm2' })];
+    const messages = [makeChatMessage({ id: 'm1' }), makeChatMessage({ id: 'm2' })];
     const { result } = renderHookWithQueryClient(() => useChatSearch(messages, CHAT_ID));
 
     expect(result.current.showSearch).toBe(false);
@@ -55,7 +41,7 @@ describe('useChatSearch', () => {
   });
 
   it('does not query until a non-empty search query is set', async () => {
-    const messages = [message({ id: 'm1' })];
+    const messages = [makeChatMessage({ id: 'm1' })];
     const { result } = renderHookWithQueryClient(() => useChatSearch(messages, CHAT_ID));
 
     act(() => {
@@ -83,7 +69,7 @@ describe('useChatSearch', () => {
         },
       ],
     });
-    const messages = [message({ id: 'm1' })];
+    const messages = [makeChatMessage({ id: 'm1' })];
     const { result } = renderHookWithQueryClient(() => useChatSearch(messages, CHAT_ID));
 
     act(() => {
@@ -103,7 +89,7 @@ describe('useChatSearch', () => {
   });
 
   it('clears the query and closes search on close', () => {
-    const messages = [message({ id: 'm1' })];
+    const messages = [makeChatMessage({ id: 'm1' })];
     const { result } = renderHookWithQueryClient(() => useChatSearch(messages, CHAT_ID));
 
     act(() => {

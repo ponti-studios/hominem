@@ -1,5 +1,3 @@
-import type { RelativePathString } from 'expo-router';
-
 export type ContentKind = 'chat' | 'note';
 
 export interface ResumeTarget {
@@ -9,13 +7,13 @@ export interface ResumeTarget {
   updatedAt: string | null;
 }
 
-export const HOME_ROUTE = '/(protected)' as RelativePathString;
-export const NEW_CHAT_ROUTE = '/(protected)/new-chat' as RelativePathString;
-export const STREAM_ROUTE = '/(protected)/stream' as RelativePathString;
-export const TIME_ROUTE = '/(protected)/time' as RelativePathString;
-export const UNSCHEDULED_ROUTE = '/(protected)/time/unscheduled' as RelativePathString;
-export const SETTINGS_ROUTE = '/(protected)/settings' as RelativePathString;
-export const ARCHIVED_CHATS_ROUTE = '/(protected)/chats/archived' as RelativePathString;
+export const HOME_ROUTE = '/(protected)';
+export const NEW_CHAT_ROUTE = '/(protected)/new-chat';
+export const STREAM_ROUTE = '/(protected)/stream';
+export const TIME_ROUTE = '/(protected)/time';
+export const UNSCHEDULED_ROUTE = '/(protected)/time/unscheduled';
+export const SETTINGS_ROUTE = '/(protected)/settings';
+export const ARCHIVED_CHATS_ROUTE = '/(protected)/chats/archived';
 
 export type TimeBlockSource = 'task' | 'event';
 

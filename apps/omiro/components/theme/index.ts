@@ -34,8 +34,7 @@ type NamedStyles = Record<string, ViewStyle | TextStyle | ImageStyle>;
 // when the color scheme changes, not on every render.
 export function useStyles<T extends NamedStyles>(factory: (theme: Theme) => T): T {
   const theme = useAppTheme();
-  // biome-ignore lint: StyleSheet.create's return type is intentionally opaque
-  return useMemo(() => StyleSheet.create(factory(theme)), [theme]) as T;
+  return useMemo(() => StyleSheet.create(factory(theme)), [theme]);
 }
 
 export function withAlpha(color: ColorValue, alpha: number): string {

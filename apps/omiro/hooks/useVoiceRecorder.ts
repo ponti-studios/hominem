@@ -18,7 +18,7 @@ import VoiceTranscriberModule from '~/modules/voice-transcriber';
 // Exception (see VoiceTranscriberModule.swift's VoiceTranscriberException).
 export function getNativeErrorCode(error: unknown): string | undefined {
   if (isObject(error) && 'code' in error) {
-    const code = (error as { code?: unknown }).code;
+    const code: unknown = Reflect.get(error, 'code');
     return typeof code === 'string' ? code : undefined;
   }
   return undefined;

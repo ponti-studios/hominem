@@ -46,7 +46,7 @@ export function useInboxStreamItems({ enabled = true }: UseInboxStreamItemsOptio
         query.cursor = pageParam;
       }
       const res = await client.api.inbox.$get({ query });
-      const page = (await res.json()) as InboxOutput;
+      const page: InboxOutput = await res.json();
       return indexInboxPage(queryClient, page);
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,

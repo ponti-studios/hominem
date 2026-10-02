@@ -24,7 +24,7 @@ export function useTextEnhance() {
           );
         }
 
-        const data = (await response.json()) as EnhanceTextOutput;
+        const data: EnhanceTextOutput = await response.json();
         return data.text;
       } finally {
         setIsEnhancing(false);

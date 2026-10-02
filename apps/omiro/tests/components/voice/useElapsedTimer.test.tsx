@@ -53,9 +53,9 @@ describe('useElapsedTimer', () => {
 
   it('returns to 0:00 when startedAt becomes null and stops ticking', () => {
     const startedAt = Date.now();
-    const { result, rerender } = renderHook(
-      ({ startedAt: value }: { startedAt: number | null }) => useElapsedTimer(value),
-      { initialProps: { startedAt: startedAt as number | null } },
+    const { result, rerender } = renderHook<string, { startedAt: number | null }>(
+      ({ startedAt: value }) => useElapsedTimer(value),
+      { initialProps: { startedAt } },
     );
 
     act(() => {

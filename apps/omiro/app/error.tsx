@@ -1,4 +1,3 @@
-import type { RelativePathString } from 'expo-router';
 import { useRouter } from 'expo-router';
 
 import { FullScreenErrorFallback } from '~/components/error-boundary/FullScreenErrorFallback';
@@ -11,7 +10,7 @@ export default function ErrorScreen({ error }: { error: Error }) {
     <FullScreenErrorFallback
       actionLabel={t.errors.goHome}
       message={error?.message || t.errors.somethingWentWrong}
-      onPress={() => router.replace('/' as RelativePathString)}
+      onPress={() => router.replace('/')}
     />
   );
 }
