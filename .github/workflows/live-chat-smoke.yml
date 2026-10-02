@@ -157,9 +157,11 @@ jobs:
           FLOW_EARLY_STOP: ${{ github.event_name == 'schedule' && '0' || '1' }}
         run: |
           set -euo pipefail
-          # The flows delete the account's tasks and memories before every sample, so they
-          # get an account of their own instead of the smoke suite's.
-          if [ "$SUITE" = flows ]; then export E2E_TEST_EMAIL=live-chat-flows@test.hakumi.io; fi
+          # AGENTS.md: the stable test identity for authenticated end-to-end runs. Both suites
+          # use it: each matrix job has its own throwaway Postgres, so the flows' deleting the
+          # account's tasks and memories before every sample touches nothing the smoke suite
+          # (or anything else) uses.
+          export E2E_TEST_EMAIL=test@lvh.me
           # e2e:setup prints the session cookie as `export E2E_*` lines: keep those
           # out of the log, show everything else, and bound it so a hang fails fast.
           # Match only those lines — its closing hint also contains a quoted

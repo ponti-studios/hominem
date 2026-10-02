@@ -297,7 +297,12 @@ export class OpenRouterChatModel implements ChatModel {
         }
       }
 
-      const toolCalls = reconstructProviderToolCalls(calls);
+      // A call that arrived without an id or a name cannot be run, and the generation machine
+      // drops it; counting it would make a turn that produced nothing look like it produced a
+      // call, so it would be saved as an empty reply instead of being asked again.
+      const toolCalls = reconstructProviderToolCalls(calls).filter(
+        (call) => call.id !== '' && call.function.name !== '',
+      );
       // One line per provider turn: with the turn's tools it shows whether a model that said
       // "I'll delete it now." offered, attempted or dropped the call it announced.
       logger.info('provider_turn_summary', {

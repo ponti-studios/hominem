@@ -396,6 +396,33 @@ describe('OpenRouter generation provider', () => {
       expect(inputs.some((input) => input.type === 'provider-turn-completed')).toBe(false);
     });
 
+    // Review finding: a call that arrives without an id or name is dropped by the machine, so
+    // it must not make the turn count as having produced output.
+    it('treats a turn whose only tool call has no usable id or name as empty', async () => {
+      const inputs = await run(
+        [
+          chunk([
+            {
+              index: 0,
+              finishReason: 'tool_calls',
+              delta: { toolCalls: [{ index: 0, function: { arguments: '{"id":"x"}' } }] },
+            },
+          ]),
+        ],
+        { requiresToolCall: true },
+      );
+
+      expect(inputs.at(-1)).toMatchObject({
+        type: 'provider-turn-failed',
+        transient: true,
+        message: 'No reply was generated',
+      });
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
+        'provider_turn_empty',
+        expect.objectContaining({ rawToolCallCount: 1 }),
+      );
+    });
+
     it('asks again with "auto" after an empty "required" turn', async () => {
       mockedStream
         .mockReturnValueOnce(chunks([chunk([{ index: 0, finishReason: 'length', delta: {} }])]))
@@ -802,9 +829,12 @@ describe('OpenRouter generation provider', () => {
         }),
       ),
     ).resolves.toContainEqual({
-      type: 'provider-turn-completed',
-      requiredToolCall: false,
-      confirmationCallIds: [],
+      // A tool call with no id or name is not output: the turn is asked again, not completed.
+      type: 'provider-turn-failed',
+      message: 'No reply was generated',
+      transient: true,
+      attempt: 0,
+      maxAttempts: 4,
     });
 
     mockedStream.mockImplementationOnce(() => {
