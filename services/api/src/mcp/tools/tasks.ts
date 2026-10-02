@@ -156,6 +156,12 @@ registerTool(
     guidance: {
       whenToUse:
         'The user says a task is done or asks to reopen it. Resolve a loose reference such as "it" or "the gym thing" by listing tasks and matching titles.',
+      // Without this, task_detail on an id remembered from earlier in the chat counted as the
+      // lookup, and with task_delete withheld until task_list ran, the live model marked a
+      // task complete when asked to get rid of it.
+      whenNotToUse:
+        'The user wants a task gone, which is task_delete. Completing it is not a way to remove it.',
+      dependencies: [{ tool: 'task_list', reason: 'resolve the stable task id', provides: ['id'] }],
     },
   },
   async (ownerUserId, input) => ({

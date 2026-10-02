@@ -67,4 +67,15 @@ describe('task and memory tool guidance', () => {
     expect(described('task_delete')).toContain('do not ask "do you want me to delete it?" in text');
     expect(described('task_delete')).not.toMatch(/before lookup and confirmation/);
   });
+
+  // Regression: task_complete had no task_list prerequisite, so a task_detail call on a
+  // remembered id satisfied the read-before-write rule and the model completed a task it was
+  // asked to delete.
+  it('requires task_list before every task write that takes an id', () => {
+    for (const name of ['task_update', 'task_complete', 'task_delete']) {
+      const dependencies = getToolDefinition(name)?.guidance?.dependencies?.map((d) => d.tool);
+      expect(dependencies, name).toEqual(['task_list']);
+    }
+    expect(described('task_complete')).toMatch(/Do not use when: .*task_delete/);
+  });
 });
