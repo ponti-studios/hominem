@@ -6,6 +6,7 @@ import { Form, redirect } from 'react-router';
 
 import { AddButton } from '~/components/AddButton';
 import { userContext } from '~/lib/middleware';
+import { formText } from '~/lib/route-utils';
 
 import { Route } from './+types/testimonials.new';
 
@@ -14,16 +15,16 @@ export const meta: Route.MetaFunction = () => [{ title: 'Add testimonial | caree
 export async function action({ context, request }: Route.ActionArgs) {
   const user = context.get(userContext)!;
   const formData = await request.formData();
-  const name = (formData.get('name') as string)?.trim();
-  const content = (formData.get('content') as string)?.trim();
+  const name = formText(formData, 'name')?.trim();
+  const content = formText(formData, 'content')?.trim();
   if (!name || !content) return { error: 'Name and testimonial content are required' };
 
   await TestimonialRepository.create(db, user.id, {
     name,
     content,
-    title: (formData.get('title') as string) || null,
-    company: (formData.get('company') as string) || null,
-    linkedinUrl: (formData.get('linkedinUrl') as string) || null,
+    title: formText(formData, 'title') || null,
+    company: formText(formData, 'company') || null,
+    linkedinUrl: formText(formData, 'linkedinUrl') || null,
   });
 
   return redirect('/testimonials');

@@ -22,7 +22,8 @@ function isPdfFile(file: File): boolean {
 
 async function readUploadResponse(response: Response): Promise<UploadResumeApiResponse> {
   try {
-    return (await response.json()) as UploadResumeApiResponse;
+    const parsed: UploadResumeApiResponse = await response.json();
+    return parsed;
   } catch {
     return {
       error: response.ok
@@ -185,8 +186,8 @@ export function UploadResumeForm({
         retryLabel="Try again"
         cancelLabel="Cancel"
         onFiles={handleFiles}
-        onSubmit={() => void uploadResume()}
-        onRetry={() => void uploadResume()}
+        onSubmit={() => uploadResume()}
+        onRetry={() => uploadResume()}
         onCancel={cancelUpload}
         failedActions={
           <>

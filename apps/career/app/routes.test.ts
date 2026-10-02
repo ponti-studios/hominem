@@ -1,13 +1,9 @@
+import type { RouteConfigEntry } from '@react-router/dev/routes';
 import { describe, expect, it } from 'vitest';
 
 import routes from './routes';
 
-interface RouteConfigNode {
-  path?: string;
-  children?: RouteConfigNode[];
-}
-
-function flattenPaths(nodes: RouteConfigNode[]): string[] {
+function flattenPaths(nodes: readonly RouteConfigEntry[]): string[] {
   return nodes.flatMap((node) => [
     ...(node.path ? [node.path] : []),
     ...flattenPaths(node.children ?? []),
@@ -16,7 +12,7 @@ function flattenPaths(nodes: RouteConfigNode[]): string[] {
 
 describe('route config', () => {
   it('registers the unified project routes and removes the nested work projects route', () => {
-    const paths = flattenPaths(routes as RouteConfigNode[]);
+    const paths = flattenPaths(routes);
 
     expect(paths).toContain('projects');
     expect(paths).toContain('projects/new');

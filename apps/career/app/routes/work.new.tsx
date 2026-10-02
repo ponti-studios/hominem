@@ -1,12 +1,13 @@
 import { CareerRepository } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
-import type { AppCareerEngagementKind } from '@hominem/db/types';
 import { SectionIntro } from '@ponti-studios/ui/layout';
 import { redirect } from 'react-router';
 
 import { PositionEditor } from '~/components/career/work/PositionEditor';
+import { ENGAGEMENT_KINDS } from '~/lib/career-options';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
+import { formChoice, formText } from '~/lib/route-utils';
 
 import type { Route } from './+types/work.new';
 
@@ -20,8 +21,8 @@ export async function action({ context, request }: Route.ActionArgs) {
   if (!user) throw new Response('Unauthorized', { status: 401 });
 
   const formData = await request.formData();
-  const company = (formData.get('company') as string)?.trim();
-  const title = (formData.get('title') as string)?.trim();
+  const company = formText(formData, 'company')?.trim();
+  const title = formText(formData, 'title')?.trim();
   if (!company || !title) throw new Response('Company and title are required', { status: 400 });
 
   try {
@@ -34,19 +35,19 @@ export async function action({ context, request }: Route.ActionArgs) {
     const engagement = await CareerRepository.createEngagement(db, user.id, {
       company,
       title,
-      location: (formData.get('location') as string) || null,
-      url: (formData.get('url') as string) || null,
-      startDate: (formData.get('startDate') as string) || null,
-      endDate: (formData.get('endDate') as string) || null,
+      location: formText(formData, 'location') || null,
+      url: formText(formData, 'url') || null,
+      startDate: formText(formData, 'startDate') || null,
+      endDate: formText(formData, 'endDate') || null,
       isCurrent: formData.get('isCurrent') === 'on',
       salaryLow: toInt(formData.get('salaryLow')),
       salaryHigh: toInt(formData.get('salaryHigh')),
-      currency: (formData.get('currency') as string) || 'USD',
-      description: (formData.get('description') as string) || null,
-      contactName: (formData.get('contactName') as string) || null,
-      contactPhone: (formData.get('contactPhone') as string) || null,
-      source: (formData.get('source') as string) || null,
-      kind: (formData.get('kind') as AppCareerEngagementKind) || 'EMPLOYMENT',
+      currency: formText(formData, 'currency') || 'USD',
+      description: formText(formData, 'description') || null,
+      contactName: formText(formData, 'contactName') || null,
+      contactPhone: formText(formData, 'contactPhone') || null,
+      source: formText(formData, 'source') || null,
+      kind: formChoice(formData, 'kind', ENGAGEMENT_KINDS, 'EMPLOYMENT'),
     });
 
     return redirect(`/work/${engagement.id}`);

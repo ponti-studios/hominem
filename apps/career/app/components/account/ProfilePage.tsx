@@ -70,8 +70,8 @@ export function ProfilePage({ loaderData }: { loaderData: ProfileLoaderData }) {
     });
 
     const contentType = response.headers.get('content-type');
-    const result = contentType?.includes('application/json')
-      ? ((await response.json()) as AccountActionResult<TData>)
+    const result: AccountActionResult<TData> = contentType?.includes('application/json')
+      ? await response.json()
       : {
           success: response.ok,
           error: response.ok ? undefined : await response.text(),
@@ -140,11 +140,11 @@ export function ProfilePage({ loaderData }: { loaderData: ProfileLoaderData }) {
         }),
       });
 
-      const result = (await response.json()) as {
+      const result: {
         success?: boolean;
         pdfUrl?: string;
         message?: string;
-      };
+      } = await response.json();
 
       if (result.success && result.pdfUrl) {
         window.open(result.pdfUrl, '_blank');

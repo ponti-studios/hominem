@@ -1,12 +1,12 @@
 // @vitest-environment node
 
 import { OpenRouterRequestError, type ChatResult } from '@hominem/ai';
-import { isObject } from '@hominem/utils';
 import { openRouterCompletionUsage } from '@hominem/utils/testing';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createCareerTestDb } from '~/test/db/career';
 import { makeConvertedResumeData } from '~/test/factories/resume';
+import { toRouteResponse } from '~/test/route-response';
 
 import { userContext } from '../lib/middleware';
 
@@ -129,25 +129,6 @@ function formRequest(file?: File, options?: { replaceExisting?: boolean }): Requ
   });
 }
 
-function toRouteResponse(result: unknown): Response {
-  if (result instanceof Response) {
-    return result;
-  }
-
-  if (
-    isObject(result) &&
-    'type' in result &&
-    result.type === 'DataWithResponseInit' &&
-    'data' in result
-  ) {
-    const init = 'init' in result && isObject(result.init) ? result.init : undefined;
-
-    return Response.json(result.data, init as ResponseInit | undefined);
-  }
-
-  return Response.json(result);
-}
-
 const DEFAULT_TEST_USER = { id: 'user-id', email: 'user@example.com', name: 'Test User' };
 
 function makeContext(user: typeof DEFAULT_TEST_USER | null = DEFAULT_TEST_USER) {
@@ -172,7 +153,7 @@ async function callAction(
 }
 
 async function responseBody(response: Response) {
-  return response.json() as Promise<Record<string, unknown>>;
+  return response.json();
 }
 
 async function createExistingPortfolio() {
@@ -510,11 +491,8 @@ describe('resume convert action', () => {
     const body = await responseBody(response);
 
     expect(response.status).toBe(200);
-    expect(
-      (body.data as ReturnType<typeof makeConvertedResumeData>).workExperience[0],
-    ).toMatchObject({
-      start_date: '2020-01-01',
-      end_date: null,
+    expect(body.data).toMatchObject({
+      workExperience: [expect.objectContaining({ start_date: '2020-01-01', end_date: null })],
     });
   });
 

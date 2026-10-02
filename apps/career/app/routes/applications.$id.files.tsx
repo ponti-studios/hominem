@@ -40,8 +40,8 @@ export async function action({ context, params, request }: Route.ActionArgs) {
   }
 
   if (intent === 'upload') {
-    const file = formData.get('file') as File | null;
-    if (!file || !(file instanceof File)) {
+    const file = formData.get('file');
+    if (!(file instanceof File)) {
       return { ok: false, error: 'No file provided' };
     }
 
@@ -116,8 +116,8 @@ export default function ApplicationFilesRoute({ loaderData }: Route.ComponentPro
           emptyHint="PDF, Word, or text files — up to 25 MB"
           notice={error || undefined}
           onFiles={(files) => {
-            const fileInput = document.getElementById('hidden-file-input') as HTMLInputElement;
-            if (fileInput) {
+            const fileInput = document.getElementById('hidden-file-input');
+            if (fileInput instanceof HTMLInputElement) {
               const dt = new DataTransfer();
               dt.items.add(files[0]);
               fileInput.files = dt.files;
@@ -161,8 +161,8 @@ export default function ApplicationFilesRoute({ loaderData }: Route.ComponentPro
           emptyHint="PDF, Word, or text files — up to 25 MB"
           notice={error || undefined}
           onFiles={(files) => {
-            const fileInput = document.getElementById('hidden-file-input') as HTMLInputElement;
-            if (fileInput) {
+            const fileInput = document.getElementById('hidden-file-input');
+            if (fileInput instanceof HTMLInputElement) {
               const dt = new DataTransfer();
               dt.items.add(files[0]);
               fileInput.files = dt.files;

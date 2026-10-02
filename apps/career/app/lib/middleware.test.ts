@@ -28,14 +28,9 @@ vi.mock('./env.server', () => ({
   },
 }));
 
-import type { RouterContext } from 'react-router';
+import { RouterContextProvider } from 'react-router';
 
-import {
-  requireAuthMiddleware,
-  sessionMiddleware,
-  type SharedMiddlewareArgs,
-  userContext,
-} from './middleware';
+import { requireAuthMiddleware, sessionMiddleware, userContext } from './middleware';
 
 const testUser = {
   id: 'auth-user-id',
@@ -54,19 +49,8 @@ const testProfile = {
   slug: 'profile',
 } satisfies Partial<CareerProfileRecord>;
 
-function createRequestContext(): {
-  context: SharedMiddlewareArgs['context'];
-  values: Map<unknown, unknown>;
-} {
-  const values = new Map<unknown, unknown>();
-  return {
-    context: {
-      // oxlint-disable-next-line typescript/consistent-type-assertions
-      get: <T>(key: RouterContext<T>): T => values.get(key) as T,
-      set: <T>(key: RouterContext<T>, value: T) => values.set(key, value),
-    },
-    values,
-  };
+function createRequestContext() {
+  return { context: new RouterContextProvider() };
 }
 
 const next = () => Promise.resolve(new Response());
@@ -90,7 +74,7 @@ describe('career middleware', () => {
     );
 
     expect(result).toBeInstanceOf(Response);
-    expect(requestContext.values.get(userContext)).toBe(testUser);
+    expect(requestContext.context.get(userContext)).toBe(testUser);
   });
 
   it('forwards every refreshed Better Auth cookie to the browser', async () => {

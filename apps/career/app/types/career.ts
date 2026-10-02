@@ -11,5 +11,5 @@ export enum JobApplicationStatus {
 export const JOB_APPLICATION_STATUSES = Object.values(JobApplicationStatus);
 
 export function isJobApplicationStatus(value: string): value is JobApplicationStatus {
-  return JOB_APPLICATION_STATUSES.includes(value as JobApplicationStatus);
+  return JOB_APPLICATION_STATUSES.some((status) => status === value);
 }

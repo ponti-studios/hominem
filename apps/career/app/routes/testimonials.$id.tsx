@@ -5,6 +5,7 @@ import { Button } from '@ponti-studios/ui/primitives';
 import { Form, redirect } from 'react-router';
 
 import { userContext } from '~/lib/middleware';
+import { formText } from '~/lib/route-utils';
 
 import { Route } from './+types/testimonials.$id';
 
@@ -30,16 +31,16 @@ export async function action({ context, params, request }: Route.ActionArgs) {
     return redirect('/testimonials');
   }
 
-  const name = (formData.get('name') as string)?.trim();
-  const content = (formData.get('content') as string)?.trim();
+  const name = formText(formData, 'name')?.trim();
+  const content = formText(formData, 'content')?.trim();
   if (!name || !content) return { error: 'Name and testimonial content are required' };
 
   await TestimonialRepository.update(db, user.id, params.id, {
     name,
     content,
-    title: (formData.get('title') as string) || null,
-    company: (formData.get('company') as string) || null,
-    linkedinUrl: (formData.get('linkedinUrl') as string) || null,
+    title: formText(formData, 'title') || null,
+    company: formText(formData, 'company') || null,
+    linkedinUrl: formText(formData, 'linkedinUrl') || null,
   });
 
   return { ok: true };

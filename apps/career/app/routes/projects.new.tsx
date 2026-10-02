@@ -4,7 +4,9 @@ import { SectionIntro } from '@ponti-studios/ui/layout';
 import { redirect } from 'react-router';
 
 import { ProjectEditor } from '~/components/career/projects/ProjectEditor';
+import { PROJECT_STATUSES } from '~/lib/career-options';
 import { userContext } from '~/lib/middleware';
+import { formChoice, formText } from '~/lib/route-utils';
 
 import { Route } from './+types/projects.new';
 
@@ -18,10 +20,10 @@ export async function loader({ context }: Route.LoaderArgs) {
 export async function action({ context, request }: Route.ActionArgs) {
   const user = context.get(userContext)!;
   const formData = await request.formData();
-  const title = (formData.get('title') as string)?.trim();
+  const title = formText(formData, 'title')?.trim();
   if (!title) return { error: 'Title is required' };
 
-  const technologiesRaw = (formData.get('technologies') as string) ?? '';
+  const technologiesRaw = formText(formData, 'technologies') ?? '';
   const technologies = technologiesRaw
     .split(',')
     .map((t) => t.trim())
@@ -32,18 +34,14 @@ export async function action({ context, request }: Route.ActionArgs) {
 
   await ProjectRepository.create(db, user.id, {
     title,
-    organization: (formData.get('organization') as string) || null,
-    description: (formData.get('description') as string) || null,
-    shortDescription: (formData.get('shortDescription') as string) || null,
-    liveUrl: (formData.get('liveUrl') as string) || null,
-    githubUrl: (formData.get('githubUrl') as string) || null,
-    startDate: (formData.get('startDate') as string) || null,
-    endDate: (formData.get('endDate') as string) || null,
-    status: ((formData.get('status') as string) || 'BACKLOG') as
-      | 'BACKLOG'
-      | 'IN_PROGRESS'
-      | 'DONE'
-      | 'CANCELED',
+    organization: formText(formData, 'organization') || null,
+    description: formText(formData, 'description') || null,
+    shortDescription: formText(formData, 'shortDescription') || null,
+    liveUrl: formText(formData, 'liveUrl') || null,
+    githubUrl: formText(formData, 'githubUrl') || null,
+    startDate: formText(formData, 'startDate') || null,
+    endDate: formText(formData, 'endDate') || null,
+    status: formChoice(formData, 'status', PROJECT_STATUSES, 'BACKLOG'),
     technologies,
     engagementIds,
   });

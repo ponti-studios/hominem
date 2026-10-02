@@ -59,7 +59,7 @@ const searchProblems = [
   },
 ];
 
-export default function Home({ loaderData }: Route.ComponentProps) {
+export default function Home({ loaderData }: Pick<Route.ComponentProps, 'loaderData'>) {
   if (loaderData.authenticated) {
     return (
       <div className="flex flex-col gap-10">

@@ -27,7 +27,8 @@ export async function loader({ context }: Route.LoaderArgs) {
     return { projects };
   } catch (error) {
     logger.error('Error loading projects', error, { owner_userid: user.id });
-    return { projects: [] as CareerProjectRecord[] };
+    const empty: CareerProjectRecord[] = [];
+    return { projects: empty };
   }
 }
 

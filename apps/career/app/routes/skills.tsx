@@ -18,6 +18,7 @@ import { Form, useNavigation } from 'react-router';
 import { AddButton } from '~/components/AddButton';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
+import { formText } from '~/lib/route-utils';
 
 import { Route } from './+types/skills';
 
@@ -34,7 +35,8 @@ export async function loader({ context }: Route.LoaderArgs) {
     return { skills };
   } catch (error) {
     logger.error('Error loading skills', error, { owner_userid: user.id });
-    return { skills: [] as CareerSkillRecord[] };
+    const empty: CareerSkillRecord[] = [];
+    return { skills: empty };
   }
 }
 
@@ -58,7 +60,7 @@ export async function action({ context, request }: Route.ActionArgs) {
       const years = formData.get('yearsOfExperience');
       await SkillRepository.create(db, user.id, {
         name: name.trim(),
-        category: (formData.get('category') as string) || null,
+        category: formText(formData, 'category') || null,
         level: level ? Number(level) : null,
         yearsOfExperience: years ? Number(years) : null,
       });

@@ -1,8 +1,9 @@
 // @vitest-environment node
 
-import { isObject } from '@hominem/utils';
 import { aiUsageMetrics } from '@hominem/utils/testing';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { toRouteResponse } from '~/test/route-response';
 
 import { userContext } from '../lib/middleware';
 
@@ -58,25 +59,6 @@ function makeContext() {
   return new RouterContextProvider([
     [userContext, { id: 'user-id', email: 'test@example.com', name: 'Test User' }],
   ]);
-}
-
-function toRouteResponse(result: unknown): Response {
-  if (result instanceof Response) {
-    return result;
-  }
-
-  if (
-    isObject(result) &&
-    'type' in result &&
-    result.type === 'DataWithResponseInit' &&
-    'data' in result
-  ) {
-    const init = 'init' in result && isObject(result.init) ? result.init : undefined;
-
-    return Response.json(result.data, init as ResponseInit | undefined);
-  }
-
-  return Response.json(result);
 }
 
 describe('job scrape action', () => {

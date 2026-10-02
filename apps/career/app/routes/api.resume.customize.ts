@@ -74,7 +74,7 @@ export const action: ActionFunction = async ({ request, context }) => {
       return data({ error: 'Method not allowed' }, { status: 405 });
     }
 
-    const body = (await request.json()) as CustomizeResumeApiRequest;
+    const body: CustomizeResumeApiRequest = await request.json();
     const validation = customizeResumeSchema.safeParse(body);
 
     if (!validation.success) {

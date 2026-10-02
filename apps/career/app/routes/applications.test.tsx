@@ -25,10 +25,6 @@ describe('Applications route', () => {
     render(
       <MemoryRouter initialEntries={['/applications']}>
         <Applications
-          {...({
-            params: {},
-            matches: [],
-          } as unknown as Route.ComponentProps)}
           loaderData={loaderData({
             applications: [
               makeApplication({
@@ -36,9 +32,6 @@ describe('Applications route', () => {
                 title: 'Staff Engineer',
                 status: JobApplicationStatus.SCREENING,
                 source: 'linkedin',
-                applicationDate: new Date('2024-01-15T00:00:00.000Z').toISOString(),
-                responseDate: new Date('2024-01-20T00:00:00.000Z').toISOString(),
-                firstInterviewDate: new Date('2024-01-25T00:00:00.000Z').toISOString(),
                 company: 'Example Co',
                 stageCount: 0,
                 hasOffer: false,
@@ -59,13 +52,7 @@ describe('Applications route', () => {
   it('shows the "No applications yet" state when there are no applications', () => {
     render(
       <MemoryRouter initialEntries={['/applications']}>
-        <Applications
-          {...({
-            params: {},
-            matches: [],
-          } as unknown as Route.ComponentProps)}
-          loaderData={loaderData()}
-        />
+        <Applications loaderData={loaderData()} />
       </MemoryRouter>,
     );
 
@@ -76,10 +63,6 @@ describe('Applications route', () => {
     render(
       <MemoryRouter initialEntries={['/applications?status=OFFER']}>
         <Applications
-          {...({
-            params: {},
-            matches: [],
-          } as unknown as Route.ComponentProps)}
           loaderData={loaderData({
             hasApplications: true,
             statusOptions: [

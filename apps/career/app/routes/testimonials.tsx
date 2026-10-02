@@ -24,7 +24,8 @@ export async function loader({ context }: Route.LoaderArgs) {
     return { testimonials };
   } catch (error) {
     logger.error('Error loading testimonials', error, { owner_userid: user.id });
-    return { testimonials: [] as CareerTestimonialRecord[] };
+    const empty: CareerTestimonialRecord[] = [];
+    return { testimonials: empty };
   }
 }
 

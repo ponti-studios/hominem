@@ -2,7 +2,9 @@ import { centsToDollars, formatCurrency } from '@hominem/utils/numbers';
 
 import { StatusTone } from '~/components/patterns';
 
-export function getCompanyName(company: string | { name: string } | null | undefined): string {
+export function getCompanyName(
+  company: string | { name?: string | null } | null | undefined,
+): string {
   if (!company) return 'Unknown Company';
   if (typeof company === 'string') return company;
   return company.name || 'Unknown Company';

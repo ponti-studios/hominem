@@ -8,7 +8,9 @@ import { Form, Link, redirect } from 'react-router';
 import { CareerList, CareerListRow } from '~/components/career/career-list';
 import { ProjectEditor } from '~/components/career/projects/ProjectEditor';
 import { StatusBadge } from '~/components/status-badge';
+import { PROJECT_STATUSES } from '~/lib/career-options';
 import { userContext } from '~/lib/middleware';
+import { formChoice, formText } from '~/lib/route-utils';
 import { formatDateRange } from '~/lib/utils/dateRange';
 import { formatProjectStatus, getProjectStatusTone } from '~/lib/utils/projectUtils';
 
@@ -39,10 +41,10 @@ export async function action({ context, params, request }: Route.ActionArgs) {
     return redirect('/projects');
   }
 
-  const title = (formData.get('title') as string)?.trim();
+  const title = formText(formData, 'title')?.trim();
   if (!title) return { error: 'Title is required' };
 
-  const technologiesRaw = (formData.get('technologies') as string) ?? '';
+  const technologiesRaw = formText(formData, 'technologies') ?? '';
   const technologies = technologiesRaw
     .split(',')
     .map((t) => t.trim())
@@ -53,18 +55,14 @@ export async function action({ context, params, request }: Route.ActionArgs) {
 
   await ProjectRepository.update(db, user.id, params.id, {
     title,
-    organization: (formData.get('organization') as string) || null,
-    description: (formData.get('description') as string) || null,
-    shortDescription: (formData.get('shortDescription') as string) || null,
-    liveUrl: (formData.get('liveUrl') as string) || null,
-    githubUrl: (formData.get('githubUrl') as string) || null,
-    startDate: (formData.get('startDate') as string) || null,
-    endDate: (formData.get('endDate') as string) || null,
-    status: ((formData.get('status') as string) || 'BACKLOG') as
-      | 'BACKLOG'
-      | 'IN_PROGRESS'
-      | 'DONE'
-      | 'CANCELED',
+    organization: formText(formData, 'organization') || null,
+    description: formText(formData, 'description') || null,
+    shortDescription: formText(formData, 'shortDescription') || null,
+    liveUrl: formText(formData, 'liveUrl') || null,
+    githubUrl: formText(formData, 'githubUrl') || null,
+    startDate: formText(formData, 'startDate') || null,
+    endDate: formText(formData, 'endDate') || null,
+    status: formChoice(formData, 'status', PROJECT_STATUSES, 'BACKLOG'),
     technologies,
     engagementIds,
   });

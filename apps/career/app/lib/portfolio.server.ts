@@ -1,7 +1,7 @@
 import { CareerRepository, ProjectRepository, SkillRepository } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
 
-import { jsonArray } from './db-json';
+import { jsonStringArray } from './db-json';
 
 export interface ResumePortfolio {
   name: string;
@@ -87,7 +87,7 @@ export async function getResumePortfolioContext(
       title: p.title,
       status: p.status,
       description: p.description,
-      technologies: jsonArray<string>(p.technologies),
+      technologies: jsonStringArray(p.technologies),
       liveUrl: p.liveUrl,
       githubUrl: p.githubUrl,
     })),
