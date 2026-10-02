@@ -71,7 +71,7 @@ stop:
   session lives.
 - `hominem_delete_user` refuses `test@lvh.me` outright — that
   account is meant to persist across sessions. "Cleanup" for it means
-  deleting the *data it created this run* (a feature driver's job), never the
+  deleting the _data it created this run_ (a feature driver's job), never the
   account.
 - `hominem_delete_user` otherwise only takes one exact disposable email
   per call — no glob, no pattern match. Callers must track what they
@@ -150,7 +150,7 @@ unconfirmed). Skip it — run this via `javascript_tool` instead, which has
 worked every time:
 
 ```js
-fetch('http://localhost:4040/api/auth/logout', {method:'POST', credentials:'include'})
+fetch('http://localhost:4040/api/auth/logout', { method: 'POST', credentials: 'include' });
 ```
 
 (`driver.sh logout-snippet` / `hominem_print_browser_logout_snippet`
@@ -169,9 +169,9 @@ account.
 All under `http://localhost:4040/api`, from Better Auth's `emailOTP`
 plugin (wired in `services/api/src/auth/better-auth.ts`):
 
-| Method | Path | Notes |
-| --- | --- | --- |
-| POST | `/auth/email-otp/send-verification-otp` | `{email, type:"sign-in"}` |
-| POST | `/auth/sign-in/email-otp` | `{email, otp}` — the real code from the scripted-provider mailbox (see above) |
-| GET | `/auth/get-session` | current session for the cookie jar |
-| POST | `/auth/logout` | browser-side, via `credentials:'include'` fetch |
+| Method | Path                                    | Notes                                                                         |
+| ------ | --------------------------------------- | ----------------------------------------------------------------------------- |
+| POST   | `/auth/email-otp/send-verification-otp` | `{email, type:"sign-in"}`                                                     |
+| POST   | `/auth/sign-in/email-otp`               | `{email, otp}` — the real code from the scripted-provider mailbox (see above) |
+| GET    | `/auth/get-session`                     | current session for the cookie jar                                            |
+| POST   | `/auth/logout`                          | browser-side, via `credentials:'include'` fetch                               |

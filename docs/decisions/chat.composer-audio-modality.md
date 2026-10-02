@@ -54,7 +54,7 @@ failure, cleanup) surfaced through the composer's existing error UI.
 - `composer-parity.md` W-001 is satisfied by this document; work may proceed
   to W-002–W-004 without re-litigating whether audio/walkie-talkie behavior
   is allowed to exist.
-- Any *new* audio/walkie-talkie behavior beyond what's implemented today
+- Any _new_ audio/walkie-talkie behavior beyond what's implemented today
   (e.g., new modalities, new auto-play triggers) still requires its own
   decision — this document only ratifies the existing, shipped contract.
 - If Web and Omiro's composer logic is ever consolidated into a real shared

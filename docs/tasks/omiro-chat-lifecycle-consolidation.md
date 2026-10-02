@@ -28,11 +28,11 @@ separately if found). Copy the web task's pattern — do not re-derive it.
 
 ## Work sequence
 
-| ID | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
-| --- | --- | --- | --- | --- | --- |
-| W-001 | Reduce to terminal handling + cache invalidation over the shared reducer; MMKV kept only as checkpoint-store impl | `apps/omiro` chat services | — | hook unit tests | No `toStage`-style mapping remains in mobile hooks |
-| W-002 | Focused coverage: retry of failed generations, cancel/stop delivery, regenerate | `apps/omiro` tests | W-001 | `use-chat-generation.test.tsx`, `use-send-message.test.tsx`, regenerate/respond suites | Recovery paths covered |
-| W-003 | Simulator verification: send, streaming, stop, failure, retry, regenerate, tool-confirm | Maestro/simulator | W-002 | artifacts per `apps/omiro/AGENTS.md` evidence rules | Every named state observed on simulator |
+| ID    | Work item                                                                                                         | Owner boundary             | Depends on | Validation / artifact                                                                  | Done when                                          |
+| ----- | ----------------------------------------------------------------------------------------------------------------- | -------------------------- | ---------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| W-001 | Reduce to terminal handling + cache invalidation over the shared reducer; MMKV kept only as checkpoint-store impl | `apps/omiro` chat services | —          | hook unit tests                                                                        | No `toStage`-style mapping remains in mobile hooks |
+| W-002 | Focused coverage: retry of failed generations, cancel/stop delivery, regenerate                                   | `apps/omiro` tests         | W-001      | `use-chat-generation.test.tsx`, `use-send-message.test.tsx`, regenerate/respond suites | Recovery paths covered                             |
+| W-003 | Simulator verification: send, streaming, stop, failure, retry, regenerate, tool-confirm                           | Maestro/simulator          | W-002      | artifacts per `apps/omiro/AGENTS.md` evidence rules                                    | Every named state observed on simulator            |
 
 ## Acceptance criteria
 

@@ -34,19 +34,19 @@ query restoration have settled.
 
 The implemented protected routes are:
 
-| Route | Responsibility |
-| --- | --- |
-| `/(protected)` | Compatibility/home route; redirects to `/(protected)/stream`. |
-| `/(protected)/stream` | Mixed content stream with `All`, `Chats`, and `Notes` filters. |
-| `/(protected)/new-chat` | Empty chat-start surface with an optional `seed` parameter. |
-| `/(protected)/chats/[id]` | Chat detail and message generation. |
-| `/(protected)/chats/archived` | Archived chat list. |
-| `/(protected)/notes/[id]` | Note detail and editing. |
-| `/(protected)/time` | Time stream and natural-language Time composer. |
-| `/(protected)/time/unscheduled` | Unscheduled task list. |
-| `/(protected)/time/task/[id]` | Task time-block detail. |
-| `/(protected)/time/event/[id]` | Calendar-event time-block detail. |
-| `/(protected)/settings` | Protected form-sheet settings surface. |
+| Route                           | Responsibility                                                 |
+| ------------------------------- | -------------------------------------------------------------- |
+| `/(protected)`                  | Compatibility/home route; redirects to `/(protected)/stream`.  |
+| `/(protected)/stream`           | Mixed content stream with `All`, `Chats`, and `Notes` filters. |
+| `/(protected)/new-chat`         | Empty chat-start surface with an optional `seed` parameter.    |
+| `/(protected)/chats/[id]`       | Chat detail and message generation.                            |
+| `/(protected)/chats/archived`   | Archived chat list.                                            |
+| `/(protected)/notes/[id]`       | Note detail and editing.                                       |
+| `/(protected)/time`             | Time stream and natural-language Time composer.                |
+| `/(protected)/time/unscheduled` | Unscheduled task list.                                         |
+| `/(protected)/time/task/[id]`   | Task time-block detail.                                        |
+| `/(protected)/time/event/[id]`  | Calendar-event time-block detail.                              |
+| `/(protected)/settings`         | Protected form-sheet settings surface.                         |
 
 Settings, enhance, and chat-to-note surfaces use native form-sheet
 presentations. Navigation helpers in `services/navigation/routes.ts` are the

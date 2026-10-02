@@ -15,6 +15,7 @@ export const CAPABILITIES = [
   'notes',
   'people',
   'places',
+  'possessions',
   'social',
   'tags',
   'task',

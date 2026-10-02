@@ -251,4 +251,74 @@ export function registerResources(mcpServer: McpServer, scope: McpRequestScope):
         ),
     );
   }
+
+  if (canUseTool(scope, 'possession_get') && canUseTool(scope, 'possession_list')) {
+    mcpServer.registerResource(
+      'possession',
+      new ResourceTemplate('hominem://possessions/{id}', {
+        list: () =>
+          listEntities(
+            scope,
+            'possession_list',
+            { limit: LIST_LIMIT },
+            'possessions',
+            'hominem://possessions/',
+            'name',
+          ),
+        complete: {
+          id: (value) =>
+            completeIds(scope, 'possession_list', { limit: LIST_LIMIT }, 'possessions', value),
+        },
+      }),
+      {
+        title: 'Possession',
+        description: 'A possession with its status, pricing, placement and notes.',
+        mimeType: JSON_MIME,
+      },
+      (uri, variables) =>
+        readEntity(
+          scope,
+          uri,
+          variables.id,
+          'possession_get',
+          (id) => ({ id }),
+          (data) => !data || data.possession === null,
+        ),
+    );
+  }
+
+  if (canUseTool(scope, 'container_get') && canUseTool(scope, 'container_list')) {
+    mcpServer.registerResource(
+      'container',
+      new ResourceTemplate('hominem://containers/{id}', {
+        list: () =>
+          listEntities(
+            scope,
+            'container_list',
+            { limit: LIST_LIMIT },
+            'containers',
+            'hominem://containers/',
+            'name',
+          ),
+        complete: {
+          id: (value) =>
+            completeIds(scope, 'container_list', { limit: LIST_LIMIT }, 'containers', value),
+        },
+      }),
+      {
+        title: 'Container',
+        description: 'A container with its child containers and the possessions inside it.',
+        mimeType: JSON_MIME,
+      },
+      (uri, variables) =>
+        readEntity(
+          scope,
+          uri,
+          variables.id,
+          'container_get',
+          (id) => ({ id }),
+          (data) => !data || data.container === null,
+        ),
+    );
+  }
 }

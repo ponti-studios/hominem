@@ -221,40 +221,35 @@ async function assertOwnedContainer(handle: DbHandle, userId: string, containerI
   if (!found) throw new NotFoundError('Container');
 }
 
-// A container may not sit inside itself or any of its own descendants. Walk up from the proposed
-// parent; if we reach the container being edited, the move would close a loop.
-async function assertValidParent(
-  handle: DbHandle,
-  userId: string,
-  containerId: string | null,
-  parentId: string,
-) {
-  // Two requests that each pass the cycle check could otherwise both commit (A under B, B under A):
-  // under READ COMMITTED neither sees the other's uncommitted move. Taking this per-owner lock first
-  // makes hierarchy changes queue up, so the later check reads the earlier commit. It is released
-  // when the surrounding transaction ends, so callers must run this inside one (the service does).
-  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`possession-containers:${userId}`}, 0))`.execute(
-    handle,
-  );
+// Cycles are impossible at the database level: a CHECK rejects a container as its own parent and a
+// trigger (see the prevent_possession_container_cycles migration) walks the ancestors under a
+// per-owner advisory lock. Here we only translate that rejection, so every write path -- including
+// imports -- reports it the same way.
+const CYCLE_CONSTRAINTS = [
+  'possession_containers_no_cycle',
+  'possession_containers_not_own_parent',
+];
+
+async function rejectingCycles<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    const constraint =
+      typeof error === 'object' && error !== null && 'constraint' in error
+        ? error.constraint
+        : null;
+    if (typeof constraint === 'string' && CYCLE_CONSTRAINTS.includes(constraint)) {
+      throw new ValidationError('A container cannot be nested inside itself or its own contents');
+    }
+    throw error;
+  }
+}
+
+async function assertOwnedParent(handle: DbHandle, userId: string, parentId: string) {
   await assertOwnedContainer(handle, userId, parentId).catch((error) => {
     if (error instanceof NotFoundError) throw new NotFoundError('Parent container');
     throw error;
   });
-  if (containerId === null) return;
-  const { rows } = await sql<{ hits: number }>`
-    WITH RECURSIVE ancestors AS (
-      SELECT id, parent_container_id FROM app.possession_containers
-      WHERE id = ${parentId} AND owner_userId = ${userId}
-      UNION
-      SELECT c.id, c.parent_container_id FROM app.possession_containers c
-      JOIN ancestors a ON c.id = a.parent_container_id
-      WHERE c.owner_userId = ${userId}
-    )
-    SELECT count(*)::int AS hits FROM ancestors WHERE id = ${containerId}
-  `.execute(handle);
-  if ((rows[0]?.hits ?? 0) > 0) {
-    throw new ValidationError('A container cannot be nested inside itself or its own contents');
-  }
 }
 
 export interface ListPossessionsInput {
@@ -262,8 +257,42 @@ export interface ListPossessionsInput {
   statuses?: PossessionStatus[];
   archived?: boolean;
   containerId?: string;
+  category?: string;
+  query?: string;
   limit?: number;
+  offset?: number;
 }
+
+export interface PossessionSummary {
+  total: number;
+  unplaced: number;
+  byStatus: Array<{ status: PossessionStatus | null; count: number }>;
+  byCategory: Array<{ category: string | null; count: number }>;
+  // Currencies beyond VALUE_CURRENCY_LIMIT that valueByCurrency leaves out (0 = totals are complete).
+  currenciesOmitted: number;
+  valueByCurrency: Array<{
+    currencyCode: string | null;
+    priceCents: number;
+    sellPriceCents: number;
+  }>;
+}
+
+export interface ListContainersInput {
+  parentContainerId?: string;
+  query?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ContainerImpact {
+  possessions: number;
+  childContainers: number;
+}
+
+// valueByCurrency lists at most this many currencies, most-used first, so the summary stays bounded.
+export const VALUE_CURRENCY_LIMIT = 20;
+
+const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`);
 
 export const PossessionRepository = {
   async list(handle: DbHandle, input: ListPossessionsInput): Promise<PossessionRecord[]> {
@@ -274,12 +303,107 @@ export const PossessionRepository = {
     if (input.statuses?.length) query = query.where('status', 'in', input.statuses);
     if (input.archived !== undefined) query = query.where('isArchived', '=', input.archived);
     if (input.containerId) query = query.where('containerId', '=', input.containerId);
+    if (input.category) query = query.where('possessionType', '=', input.category);
+    if (input.query) {
+      const pattern = `%${escapeLike(input.query)}%`;
+      query = query.where((eb) =>
+        eb.or([
+          eb('name', 'ilike', pattern),
+          eb('brand', 'ilike', pattern),
+          eb('model', 'ilike', pattern),
+        ]),
+      );
+    }
     const rows = await query
       .orderBy('createdat', 'desc')
       .orderBy('id', 'desc')
       .limit(input.limit ?? 1000)
+      .offset(input.offset ?? 0)
       .execute();
     return rows.map(toPossession);
+  },
+
+  async get(handle: DbHandle, userId: string, id: string): Promise<PossessionRecord | null> {
+    const row = await handle
+      .selectFrom('app.possessions')
+      .selectAll()
+      .where('id', '=', id)
+      .where('ownerUserid', '=', userId)
+      .executeTakeFirst();
+    return row ? toPossession(row) : null;
+  },
+
+  // Moves many possessions at once. Returns the ids that belonged to the owner and were moved.
+  async move(
+    handle: DbHandle,
+    userId: string,
+    ids: string[],
+    containerId: string | null,
+  ): Promise<string[]> {
+    if (containerId) await assertOwnedContainer(handle, userId, containerId);
+    const rows = await handle
+      .updateTable('app.possessions')
+      .set({ containerId })
+      .where('id', 'in', ids)
+      .where('ownerUserid', '=', userId)
+      .returning('id')
+      .execute();
+    return rows.map((row) => row.id);
+  },
+
+  async summarize(handle: DbHandle, userId: string): Promise<PossessionSummary> {
+    const live = () =>
+      handle
+        .selectFrom('app.possessions')
+        .where('ownerUserid', '=', userId)
+        .where('isArchived', '=', false);
+    const count = sql<string>`count(*)`;
+    const [totals, byStatus, byCategory, value] = await Promise.all([
+      live()
+        .select([
+          count.as('total'),
+          sql<string>`count(*) filter (where container_id is null)`.as('unplaced'),
+          sql<string>`count(distinct coalesce(currency_code, ''))`.as('currencies'),
+        ])
+        .executeTakeFirstOrThrow(),
+      live()
+        .select(['status', count.as('n')])
+        .groupBy('status')
+        .orderBy('n', 'desc')
+        .execute(),
+      live()
+        .select(['possessionType', count.as('n')])
+        .groupBy('possessionType')
+        .orderBy('n', 'desc')
+        .limit(50)
+        .execute(),
+      live()
+        .select([
+          'currencyCode',
+          sql<string>`coalesce(sum(price_cents), 0)`.as('price'),
+          sql<string>`coalesce(sum(sell_price_cents), 0)`.as('sell'),
+        ])
+        .groupBy('currencyCode')
+        .orderBy(sql`count(*)`, 'desc')
+        .orderBy('currencyCode')
+        .limit(VALUE_CURRENCY_LIMIT)
+        .execute(),
+    ]);
+    return {
+      total: Number(totals.total),
+      unplaced: Number(totals.unplaced),
+      byStatus: byStatus.map((row) => ({ status: parseStatus(row.status), count: Number(row.n) })),
+      byCategory: byCategory.map((row) => ({
+        category: row.possessionType,
+        count: Number(row.n),
+      })),
+      currenciesOmitted: Math.max(0, Number(totals.currencies) - value.length),
+      valueByCurrency: value.map((row) => ({
+        currencyCode: row.currencyCode,
+        priceCents: Number(row.price),
+        sellPriceCents: Number(row.sell),
+      })),
+    };
   },
 
   async create(
@@ -362,33 +486,82 @@ export const PossessionRepository = {
   },
 };
 
+const containerQuery = (handle: DbHandle, userId: string) =>
+  handle
+    .selectFrom('app.possessionContainers as c')
+    .selectAll('c')
+    .select((eb) =>
+      eb
+        .selectFrom('app.possessions as p')
+        .select(sql<string>`count(*)`.as('n'))
+        .whereRef('p.containerId', '=', 'c.id')
+        .where('p.isArchived', '=', false)
+        .as('itemCount'),
+    )
+    .where('c.ownerUserid', '=', userId);
+
 export const ContainerRepository = {
-  async list(handle: DbHandle, userId: string): Promise<ContainerRecord[]> {
-    const rows = await handle
-      .selectFrom('app.possessionContainers as c')
-      .selectAll('c')
-      .select((eb) =>
-        eb
-          .selectFrom('app.possessions as p')
-          .select(sql<string>`count(*)`.as('n'))
-          .whereRef('p.containerId', '=', 'c.id')
-          .where('p.isArchived', '=', false)
-          .as('itemCount'),
-      )
-      .where('c.ownerUserid', '=', userId)
+  async list(
+    handle: DbHandle,
+    userId: string,
+    input: ListContainersInput = {},
+  ): Promise<ContainerRecord[]> {
+    let query = containerQuery(handle, userId);
+    if (input.parentContainerId) {
+      query = query.where('c.parentContainerId', '=', input.parentContainerId);
+    }
+    if (input.query) query = query.where('c.name', 'ilike', `%${escapeLike(input.query)}%`);
+    const rows = await query
       .orderBy('c.name')
+      .orderBy('c.id')
+      .$if(input.limit !== undefined, (qb) => qb.limit(input.limit ?? 0))
+      .$if(input.offset !== undefined, (qb) => qb.offset(input.offset ?? 0))
       .execute();
     return rows.map(toContainer);
   },
 
-  async create(handle: DbHandle, userId: string, input: ContainerInput): Promise<ContainerRecord> {
-    if (input.parentContainerId)
-      await assertValidParent(handle, userId, null, input.parentContainerId);
+  // Everything deleting this container would detach: all possessions (archived included) and
+  // direct child containers. Null when the container is not the caller's.
+  async impact(handle: DbHandle, userId: string, id: string): Promise<ContainerImpact | null> {
     const row = await handle
-      .insertInto('app.possessionContainers')
-      .values({ ...containerValues(input), name: input.name, ownerUserid: userId })
-      .returningAll()
-      .executeTakeFirstOrThrow();
+      .selectFrom('app.possessionContainers as c')
+      .select((eb) => [
+        eb
+          .selectFrom('app.possessions as p')
+          .select(sql<string>`count(*)`.as('n'))
+          .whereRef('p.containerId', '=', 'c.id')
+          .as('possessions'),
+        eb
+          .selectFrom('app.possessionContainers as child')
+          .select(sql<string>`count(*)`.as('n'))
+          .whereRef('child.parentContainerId', '=', 'c.id')
+          .as('childContainers'),
+      ])
+      .where('c.id', '=', id)
+      .where('c.ownerUserid', '=', userId)
+      .executeTakeFirst();
+    return row
+      ? {
+          possessions: Number(row.possessions ?? 0),
+          childContainers: Number(row.childContainers ?? 0),
+        }
+      : null;
+  },
+
+  async get(handle: DbHandle, userId: string, id: string): Promise<ContainerRecord | null> {
+    const row = await containerQuery(handle, userId).where('c.id', '=', id).executeTakeFirst();
+    return row ? toContainer(row) : null;
+  },
+
+  async create(handle: DbHandle, userId: string, input: ContainerInput): Promise<ContainerRecord> {
+    if (input.parentContainerId) await assertOwnedParent(handle, userId, input.parentContainerId);
+    const row = await rejectingCycles(() =>
+      handle
+        .insertInto('app.possessionContainers')
+        .values({ ...containerValues(input), name: input.name, ownerUserid: userId })
+        .returningAll()
+        .executeTakeFirstOrThrow(),
+    );
     return toContainer(row);
   },
 
@@ -398,25 +571,26 @@ export const ContainerRepository = {
     id: string,
     input: Partial<ContainerInput>,
   ): Promise<ContainerRecord> {
-    if (input.parentContainerId)
-      await assertValidParent(handle, userId, id, input.parentContainerId);
+    if (input.parentContainerId) await assertOwnedParent(handle, userId, input.parentContainerId);
     // Metadata is merged, never replaced, like possessions.
     const plain = containerValues({ ...input, metadata: undefined });
     const merged =
       input.metadata === undefined
         ? {}
         : { metadata: sql<Json>`metadata || ${JSON.stringify(input.metadata)}::jsonb` };
-    const row = await handle
-      .updateTable('app.possessionContainers')
-      .set(
-        hasValues(plain) || input.metadata !== undefined
-          ? { ...plain, ...merged }
-          : { name: sql<string>`name` },
-      )
-      .where('id', '=', id)
-      .where('ownerUserid', '=', userId)
-      .returningAll()
-      .executeTakeFirst();
+    const row = await rejectingCycles(() =>
+      handle
+        .updateTable('app.possessionContainers')
+        .set(
+          hasValues(plain) || input.metadata !== undefined
+            ? { ...plain, ...merged }
+            : { name: sql<string>`name` },
+        )
+        .where('id', '=', id)
+        .where('ownerUserid', '=', userId)
+        .returningAll()
+        .executeTakeFirst(),
+    );
     if (!row) throw new NotFoundError('Container');
     return toContainer(row);
   },
@@ -437,17 +611,19 @@ export const ContainerRepository = {
   ): Promise<ContainerRecord> {
     const { externalId: _external, ...updates } = containerValues(input);
     const values = { ...containerValues(input), name: input.name, ownerUserid: userId };
-    const row = await handle
-      .insertInto('app.possessionContainers')
-      .values(values)
-      .onConflict((oc) =>
-        oc
-          .columns(['ownerUserid', 'externalId'])
-          .where('externalId', 'is not', null)
-          .doUpdateSet(updates),
-      )
-      .returningAll()
-      .executeTakeFirstOrThrow();
+    const row = await rejectingCycles(() =>
+      handle
+        .insertInto('app.possessionContainers')
+        .values(values)
+        .onConflict((oc) =>
+          oc
+            .columns(['ownerUserid', 'externalId'])
+            .where('externalId', 'is not', null)
+            .doUpdateSet(updates),
+        )
+        .returningAll()
+        .executeTakeFirstOrThrow(),
+    );
     return toContainer(row);
   },
 };

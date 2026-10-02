@@ -25,11 +25,11 @@ what-if calculator on the same page.
 
 ## Work sequence
 
-| ID | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
-| --- | --- | --- | --- | --- | --- |
-| W-001 | Choose the settings home | Finance product | — | recorded decision | The home is explicit and consistent with the splits decision |
-| W-002 | Thread caps into the runway loader | `apps/finance` runway route | W-001 | route tests | A configured cap changes the displayed allowance |
-| W-003 | Minimal edit UI | `apps/finance` | W-002 | component tests | Caps can be added, changed, and removed |
+| ID    | Work item                          | Owner boundary              | Depends on | Validation / artifact | Done when                                                    |
+| ----- | ---------------------------------- | --------------------------- | ---------- | --------------------- | ------------------------------------------------------------ |
+| W-001 | Choose the settings home           | Finance product             | —          | recorded decision     | The home is explicit and consistent with the splits decision |
+| W-002 | Thread caps into the runway loader | `apps/finance` runway route | W-001      | route tests           | A configured cap changes the displayed allowance             |
+| W-003 | Minimal edit UI                    | `apps/finance`              | W-002      | component tests       | Caps can be added, changed, and removed                      |
 
 ## Acceptance criteria
 

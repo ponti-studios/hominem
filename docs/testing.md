@@ -44,13 +44,13 @@ error, loading, latency, and edge-case responses.
 Use focused tests for deterministic states and use end-to-end tests for real
 cross-boundary behavior.
 
-| Test level | Use it for | Do not use it to claim |
-| --- | --- | --- |
-| Unit | Pure transformations, reducers, parsers, and contracts | UI, transport, or browser behavior |
-| Component/hook with MSW | Client reactions to loading, latency, empty data, HTTP errors, retries, and recovery | The real API, deployment, or browser wiring |
-| SSR loader/route test with Node MSW | Server-rendered loaders and route mapping of dependency responses | Browser navigation or hydration |
-| API integration test | API routes, application services, persistence, authorization, and external-provider adapters | Client rendering or browser behavior |
-| Playwright/Maestro | Navigation, authentication wiring, hydration, browser/device APIs, layout, accessibility, real streaming, and critical cross-process journeys | Every deterministic API failure permutation |
+| Test level                          | Use it for                                                                                                                                    | Do not use it to claim                      |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Unit                                | Pure transformations, reducers, parsers, and contracts                                                                                        | UI, transport, or browser behavior          |
+| Component/hook with MSW             | Client reactions to loading, latency, empty data, HTTP errors, retries, and recovery                                                          | The real API, deployment, or browser wiring |
+| SSR loader/route test with Node MSW | Server-rendered loaders and route mapping of dependency responses                                                                             | Browser navigation or hydration             |
+| API integration test                | API routes, application services, persistence, authorization, and external-provider adapters                                                  | Client rendering or browser behavior        |
+| Playwright/Maestro                  | Navigation, authentication wiring, hydration, browser/device APIs, layout, accessibility, real streaming, and critical cross-process journeys | Every deterministic API failure permutation |
 
 For the Apple-only Omiro client, use React Native Testing Library and the
 available MSW-compatible client boundary for isolated interaction tests, and

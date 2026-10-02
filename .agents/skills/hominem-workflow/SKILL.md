@@ -10,7 +10,7 @@ license: MIT
 compatibility: Hominem monorepo.
 metadata:
   author: project
-  version: "1.0"
+  version: '1.0'
   category: Engineering
   tags:
     - hominem
@@ -36,10 +36,10 @@ end-to-end.
 
 ## References
 
-| Task | Reference |
-| --- | --- |
+| Task                                                                                            | Reference                  |
+| ----------------------------------------------------------------------------------------------- | -------------------------- |
 | Pre-push validation across all workspaces (`pnpm run check`, per-package filters, triage order) | `references/validation.md` |
-| Conventional Commits message format + hominem scope list | `references/commit.md` |
+| Conventional Commits message format + hominem scope list                                        | `references/commit.md`     |
 
 ## Cross-cutting rules
 

@@ -51,11 +51,11 @@ derives every cookie attribute from env config:
 Every deployed web app needs two different API URLs, because they're used by
 two different callers with two different trust boundaries:
 
-| Caller | Env var | Purpose |
-| --- | --- | --- |
-| Browser | `VITE_PUBLIC_API_URL` | Hosted login redirects, public API calls, Better Auth's browser client |
-| App server | `HOMINEM_INTERNAL_API_URL` | Session resolution and server-side Hono/RPC data calls |
-| App server | `PUBLIC_APP_URL` | The app's own public origin, used to build hosted-login return URLs |
+| Caller     | Env var                    | Purpose                                                                |
+| ---------- | -------------------------- | ---------------------------------------------------------------------- |
+| Browser    | `VITE_PUBLIC_API_URL`      | Hosted login redirects, public API calls, Better Auth's browser client |
+| App server | `HOMINEM_INTERNAL_API_URL` | Session resolution and server-side Hono/RPC data calls                 |
+| App server | `PUBLIC_APP_URL`           | The app's own public origin, used to build hosted-login return URLs    |
 
 `HOMINEM_INTERNAL_API_URL` is server-only in both environments — never expose
 it as a `VITE_*` variable or use it in a browser redirect, client request, or

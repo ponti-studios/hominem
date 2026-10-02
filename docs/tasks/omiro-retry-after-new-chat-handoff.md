@@ -37,6 +37,6 @@ by Codex review on PR #344 (misfiled — the code is main's, not the PR's).
 ## Acceptance criteria
 
 - [ ] AC-001: New chat → generation fails → Retry regenerates in place
-  without duplicating the user message.
+      without duplicating the user message.
 - [ ] AC-002: Omiro chat generation tests green; no behavior change
-  otherwise.
+      otherwise.

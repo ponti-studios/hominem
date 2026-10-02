@@ -75,3 +75,105 @@ export type PossessionUpdateInput = z.infer<typeof possessionUpdateSchema>;
 export type PossessionListQuery = z.infer<typeof possessionListQuerySchema>;
 export type ContainerCreateInput = z.infer<typeof containerCreateSchema>;
 export type ContainerUpdateInput = z.infer<typeof containerUpdateSchema>;
+
+// MCP-facing schemas. The REST list query above is URL-shaped (comma-separated status, coerced
+// limit up to 5000); tools take real arrays and a small cap instead.
+const nonEmpty = (data: object) => Object.keys(data).length > 0;
+const EMPTY_UPDATE = { message: 'Provide at least one field to update' };
+
+export const possessionSearchInputSchema = z.object({
+  status: z.array(z.enum(POSSESSION_STATUSES)).optional(),
+  archived: z.boolean().optional(),
+  containerId: z.uuid().optional(),
+  category: z.string().trim().min(1).max(100).optional(),
+  query: z.string().trim().min(1).max(200).optional(),
+  limit: z.number().int().min(1).max(100).optional().default(100),
+  offset: z.number().int().min(0).optional().default(0),
+});
+
+export const containerSearchInputSchema = z.object({
+  query: z.string().trim().min(1).max(200).optional(),
+  parentContainerId: z.uuid().optional(),
+  limit: z.number().int().min(1).max(100).optional().default(100),
+  offset: z.number().int().min(0).optional().default(0),
+});
+
+export const possessionMcpUpdateSchema = possessionIdParamSchema.extend({
+  data: possessionUpdateSchema.refine(nonEmpty, EMPTY_UPDATE),
+});
+export const containerMcpUpdateSchema = possessionIdParamSchema.extend({
+  data: containerUpdateSchema.refine(nonEmpty, EMPTY_UPDATE),
+});
+
+export const possessionMoveSchema = z.object({
+  ids: z.array(z.uuid()).min(1).max(50),
+  containerId: z.uuid().nullable(),
+});
+export const containerMoveSchema = possessionIdParamSchema.extend({
+  parentContainerId: z.uuid().nullable(),
+});
+
+export const possessionRecordSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  category: z.string().nullable(),
+  subCategory: z.string().nullable(),
+  brand: z.string().nullable(),
+  model: z.string().nullable(),
+  status: z.enum(POSSESSION_STATUSES).nullable(),
+  isArchived: z.boolean(),
+  acquiredDate: z.string().nullable(),
+  retiredDate: z.string().nullable(),
+  priceCents: z.number().nullable(),
+  sellPriceCents: z.number().nullable(),
+  currencyCode: z.string().nullable(),
+  color: z.string().nullable(),
+  size: z.string().nullable(),
+  serialNumber: z.string().nullable(),
+  placement: z.string().nullable(),
+  url: z.string().nullable(),
+  notes: z.string().nullable(),
+  containerId: z.uuid().nullable(),
+  externalId: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const containerRecordSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  containerType: z.string().nullable(),
+  containerKind: z.string().nullable(),
+  status: z.string(),
+  parentContainerId: z.uuid().nullable(),
+  description: z.string().nullable(),
+  currentLocation: z.string().nullable(),
+  weightKg: z.number().nullable(),
+  volumeCbm: z.number().nullable(),
+  externalId: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()),
+  itemCount: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const possessionSummarySchema = z.object({
+  total: z.number(),
+  unplaced: z.number(),
+  currenciesOmitted: z.number(),
+  byStatus: z.array(
+    z.object({ status: z.enum(POSSESSION_STATUSES).nullable(), count: z.number() }),
+  ),
+  byCategory: z.array(z.object({ category: z.string().nullable(), count: z.number() })),
+  valueByCurrency: z.array(
+    z.object({
+      currencyCode: z.string().nullable(),
+      priceCents: z.number(),
+      sellPriceCents: z.number(),
+    }),
+  ),
+});
+
+export type ContainerSearchInput = z.infer<typeof containerSearchInputSchema>;
+export type PossessionSearchInput = z.infer<typeof possessionSearchInputSchema>;

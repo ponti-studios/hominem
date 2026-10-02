@@ -48,12 +48,12 @@ effect-store duplication (F3 task); event-ownership split (F4 task).
 
 ## Work performed
 
-| ID | Work item | Validation / artifact | Done when |
-| --- | --- | --- | --- |
-| W-001 | Delete runner accumulation + `recordCompletion`; forward `onUsage` untouched | `server.test.ts` passthrough assertion; chat suite 95 passed | Exactly one accumulator |
-| W-002 | Delete Redis context cache + full chain | `rg recordCompletion\|ContextCache\|context-window\|addUsageTotals` clean in src (comment refs only) | No dead scaffolding |
-| W-003 | Annotate `provider: () => model` bypass as benign-with-reason | read-through | Future readers don't re-litigate |
-| W-004 | Gates: format, lint (warnings pre-existing only), `tsc --noEmit` both packages, focused suites | see Validation below | Green |
+| ID    | Work item                                                                                      | Validation / artifact                                                                                | Done when                        |
+| ----- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------- |
+| W-001 | Delete runner accumulation + `recordCompletion`; forward `onUsage` untouched                   | `server.test.ts` passthrough assertion; chat suite 95 passed                                         | Exactly one accumulator          |
+| W-002 | Delete Redis context cache + full chain                                                        | `rg recordCompletion\|ContextCache\|context-window\|addUsageTotals` clean in src (comment refs only) | No dead scaffolding              |
+| W-003 | Annotate `provider: () => model` bypass as benign-with-reason                                  | read-through                                                                                         | Future readers don't re-litigate |
+| W-004 | Gates: format, lint (warnings pre-existing only), `tsc --noEmit` both packages, focused suites | see Validation below                                                                                 | Green                            |
 
 ## Acceptance criteria
 

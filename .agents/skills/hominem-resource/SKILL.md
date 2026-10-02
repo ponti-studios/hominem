@@ -14,7 +14,7 @@ license: MIT
 compatibility: Hominem API service work, optionally extending into apps/web.
 metadata:
   author: project
-  version: "1.1"
+  version: '1.1'
   category: API
   tags:
     - api
@@ -61,15 +61,15 @@ DB (packages/db)  →  schemas/  ←  application/*.service.ts  →  mcp/tools  
 
 ## Where files live
 
-| Layer      | Path                                                                                                                                                       | Owns                                           |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Schema     | `services/api/src/schemas/<domain>.schema.ts`                                                                                                              | Zod input/output shapes (the single contract)  |
-| Service    | `services/api/src/application/<domain>.service.ts`                                                                                                         | All query/business logic, `ownerUserId`-scoped |
-| MCP tool   | `services/api/src/mcp/tools/<domain>.ts`                                                                                                                   | `registerTool` wiring only                     |
-| RPC routes | `services/api/src/rpc/routes/<domain>.ts`                                                                                                                  | Hono route wiring only                         |
-| RPC types  | `packages/rpc/src/types/<domain>.types.ts` (optional)                                                                                                      | `InferResponseType`/`InferRequestType` only, never hand-written |
-| Client hook | `apps/web/app/hooks/use-<domain>.ts` and/or `apps/omiro/hooks/use-<domain>.ts` (optional, whichever app(s) actually consume it) | `useQuery`/`useMutation` wiring only |
-| Tests      | `services/api/src/application/<domain>.service.test.ts`, `services/api/src/mcp/tools/<domain>.test.ts`, `services/api/src/rpc/routes/<domain>.test.ts`, optional `services/api/src/schemas/<domain>.schema.test.ts`, optional `apps/web/tests/e2e/<domain>.spec.ts` | Behavior verification                          |
+| Layer       | Path                                                                                                                                                                                                                                                                | Owns                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Schema      | `services/api/src/schemas/<domain>.schema.ts`                                                                                                                                                                                                                       | Zod input/output shapes (the single contract)                   |
+| Service     | `services/api/src/application/<domain>.service.ts`                                                                                                                                                                                                                  | All query/business logic, `ownerUserId`-scoped                  |
+| MCP tool    | `services/api/src/mcp/tools/<domain>.ts`                                                                                                                                                                                                                            | `registerTool` wiring only                                      |
+| RPC routes  | `services/api/src/rpc/routes/<domain>.ts`                                                                                                                                                                                                                           | Hono route wiring only                                          |
+| RPC types   | `packages/rpc/src/types/<domain>.types.ts` (optional)                                                                                                                                                                                                               | `InferResponseType`/`InferRequestType` only, never hand-written |
+| Client hook | `apps/web/app/hooks/use-<domain>.ts` and/or `apps/omiro/hooks/use-<domain>.ts` (optional, whichever app(s) actually consume it)                                                                                                                                     | `useQuery`/`useMutation` wiring only                            |
+| Tests       | `services/api/src/application/<domain>.service.test.ts`, `services/api/src/mcp/tools/<domain>.test.ts`, `services/api/src/rpc/routes/<domain>.test.ts`, optional `services/api/src/schemas/<domain>.schema.test.ts`, optional `apps/web/tests/e2e/<domain>.spec.ts` | Behavior verification                                           |
 
 ## Workflow
 
@@ -175,63 +175,63 @@ DB (packages/db)  →  schemas/  ←  application/*.service.ts  →  mcp/tools  
 
    a. **Rebuild the API first, always:**
 
-      ```bash
-      pnpm --filter @hominem/api build
-      ```
+   ```bash
+   pnpm --filter @hominem/api build
+   ```
 
-      `packages/rpc`'s `HonoClient`/`AppType` resolve against the committed
-      `services/api/build/rpc/app.d.ts`, not live source. Skip this step and you get a
-      "property doesn't exist on client" error in frontend code that hasn't changed — the fix is
-      never in the file the error points at.
+   `packages/rpc`'s `HonoClient`/`AppType` resolve against the committed
+   `services/api/build/rpc/app.d.ts`, not live source. Skip this step and you get a
+   "property doesn't exist on client" error in frontend code that hasn't changed — the fix is
+   never in the file the error points at.
 
    b. **Derive types, never hand-write them.** In `packages/rpc/src/types/<domain>.types.ts`:
 
-      ```ts
-      import type { InferRequestType, InferResponseType } from 'hono/client';
-      import type { HonoClient } from '../core/api-client';
+   ```ts
+   import type { InferRequestType, InferResponseType } from 'hono/client';
+   import type { HonoClient } from '../core/api-client';
 
-      type _FooEndpoint = HonoClient['api']['foo']['$get'];
-      export type FooOutput = InferResponseType<_FooEndpoint, 200>;
-      export type FooInput = InferRequestType<_FooEndpoint>['query']; // or ['json'] for a body
-      ```
+   type _FooEndpoint = HonoClient['api']['foo']['$get'];
+   export type FooOutput = InferResponseType<_FooEndpoint, 200>;
+   export type FooInput = InferRequestType<_FooEndpoint>['query']; // or ['json'] for a body
+   ```
 
-      Copy this pattern from `chat.types.ts` or `tasks.types.ts`. **Never** write
-      `export type FooOutput = { ... }` by hand and cast a hook's `response.json()` to it with
-      `as Promise<FooOutput>` — see the Code style rule in the repo's `AGENTS.md`. A hand-written
-      duplicate silently drifts from the real route shape instead of failing typecheck when the
-      route changes, and it's the reason every call site ends up needing a cast.
+   Copy this pattern from `chat.types.ts` or `tasks.types.ts`. **Never** write
+   `export type FooOutput = { ... }` by hand and cast a hook's `response.json()` to it with
+   `as Promise<FooOutput>` — see the Code style rule in the repo's `AGENTS.md`. A hand-written
+   duplicate silently drifts from the real route shape instead of failing typecheck when the
+   route changes, and it's the reason every call site ends up needing a cast.
 
    c. **Write the hook**, in whichever app(s) actually consume the resource — this is not always
-      `apps/web`:
+   `apps/web`:
 
-      - `apps/web` → `apps/web/app/hooks/use-<domain>.ts`. Mirror `use-chats.ts` or
-        `use-collections.ts`.
-      - `apps/omiro` → `apps/omiro/hooks/use-<domain>.ts` (or `apps/omiro/services/<domain>/`
-        for a larger feature area). Same `@hominem/rpc/react` client, same pattern — mirror
-        `useArchivedChats.ts`. Do not also add an `apps/web` hook nobody calls just because this
-        step's example lives there.
+   - `apps/web` → `apps/web/app/hooks/use-<domain>.ts`. Mirror `use-chats.ts` or
+     `use-collections.ts`.
+   - `apps/omiro` → `apps/omiro/hooks/use-<domain>.ts` (or `apps/omiro/services/<domain>/`
+     for a larger feature area). Same `@hominem/rpc/react` client, same pattern — mirror
+     `useArchivedChats.ts`. Do not also add an `apps/web` hook nobody calls just because this
+     step's example lives there.
 
-      ```ts
-      export function useFoo() {
-        const client = useApiClient();
-        return useQuery({
-          queryKey: ['foo'],
-          queryFn: async () => (await client.api.foo.$get()).json(), // already correctly typed
-        });
-      }
-      ```
+   ```ts
+   export function useFoo() {
+     const client = useApiClient();
+     return useQuery({
+       queryKey: ['foo'],
+       queryFn: async () => (await client.api.foo.$get()).json(), // already correctly typed
+     });
+   }
+   ```
 
-      One base query key per resource, plus a derived key per parameterized query (e.g. a detail
-      lookup) — `use-collections.ts`'s `collectionsKey`/`collectionDetailKey(id)` is the pattern to
-      copy, not a single flat key for everything. Mutations call
-      `queryClient.invalidateQueries({ queryKey })` in `onSuccess`, invalidating both the specific
-      detail key and the base list key when a single-resource mutation should also refresh the
-      list.
+   One base query key per resource, plus a derived key per parameterized query (e.g. a detail
+   lookup) — `use-collections.ts`'s `collectionsKey`/`collectionDetailKey(id)` is the pattern to
+   copy, not a single flat key for everything. Mutations call
+   `queryClient.invalidateQueries({ queryKey })` in `onSuccess`, invalidating both the specific
+   detail key and the base list key when a single-resource mutation should also refresh the
+   list.
 
 7. **Tests.** Write integration tests against the real `app-test` Postgres database:
    - **Service** (`application/<domain>.service.test.ts`) — call the service functions directly
      against the real test DB; `beforeAll`/`afterAll` do `pool.query('DELETE FROM "user" WHERE id
-     = $1', [id])` for one or more fixed test user ids (cascades to all owned `app.*` rows), insert
+= $1', [id])` for one or more fixed test user ids (cascades to all owned `app.*` rows), insert
      the user(s), then exercise the functions and assert both the returned shape and, for
      destructive operations, that dependent rows are actually gone (query the table directly,
      don't just trust a `{ removed: true }` return value).

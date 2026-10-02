@@ -33,7 +33,7 @@ This doc has two parts. **Rules** is the whole set of current instructions — r
 **Don't bother — already tried, didn't work**
 
 - Splitting a large Hono route chain into `.route()`-composed sub-routers for speed. Split for file-size/organization reasons only.
-- An explicit return-type annotation at a call site into a *third-party* factory (`ReturnType<...>`, heavy overloads, deep generics). It doesn't reach that cost — the expensive part lives in a declaration you don't own.
+- An explicit return-type annotation at a call site into a _third-party_ factory (`ReturnType<...>`, heavy overloads, deep generics). It doesn't reach that cost — the expensive part lives in a declaration you don't own.
 - Restructuring a file to dodge a one-time structural-comparison cost (e.g. a large union type). The cost just relocates to whichever file triggers it first.
 - Hand-writing return-type annotations for Kysely query-builder chains. The generated types are impractical to write safely by hand.
 - Relying on `assumeChangesOnlyAffectDirectDependencies` for a measurable incremental-recheck speedup. Kept as a deliberate editor tradeoff, not because it was proven.
@@ -44,7 +44,7 @@ Everything below explains and evidences the rules above. Nothing here overrides 
 
 ### Why this exists
 
-Two incidents in August 2026: a stale `.tsbuildinfo` cache let `services/api` keep failing on a `packages/db` export that had already been fixed, and a scratch declaration-emit run scattered 167 `.d.ts` files into `services/api/src/` (briefly clobbering a real, hand-written one). Root cause for both: the repo resolved dependency *source*, never dependency *declarations*.
+Two incidents in August 2026: a stale `.tsbuildinfo` cache let `services/api` keep failing on a `packages/db` export that had already been fixed, and a scratch declaration-emit run scattered 167 `.d.ts` files into `services/api/src/` (briefly clobbering a real, hand-written one). Root cause for both: the repo resolved dependency _source_, never dependency _declarations_.
 
 ### How the model works
 
@@ -58,7 +58,7 @@ Composite packages flip `exports.types` to `build/index.d.ts` while `default` st
 
 TS2883 ("portable type") blocks inferring an exported type like Hono's `AppType` across a **composite** project boundary without an explicit annotation — and that annotation would defeat the whole RPC-inference pattern. Tested finding: TS2883 fires because the package itself is `composite`, not because it merely has a `references` entry — a bare `references` entry with `composite: false` passed cleanly in isolation.
 
-That's exactly why the rule isn't "avoid `references` unless you've checked it's fine today": `packages/rpc` had exactly such a bare reference (added straight to `main`, undetected for over a week) and it worked, right up until it was the kind of drift that could silently break the moment `AppType`'s shape changed. It's since been replaced with a plain `paths` override. The rule holds for the type's *future* shape, not just what happens to pass now.
+That's exactly why the rule isn't "avoid `references` unless you've checked it's fine today": `packages/rpc` had exactly such a bare reference (added straight to `main`, undetected for over a week) and it worked, right up until it was the kind of drift that could silently break the moment `AppType`'s shape changed. It's since been replaced with a plain `paths` override. The rule holds for the type's _future_ shape, not just what happens to pass now.
 
 ### Why the `injectWorkspacePackages` override goes in `tsconfig.emit.json`, specifically
 
@@ -72,7 +72,7 @@ pnpm hard-copies any `react`-peer-dependent package into an isolated `.pnpm` var
 
 ### Why callback annotations sometimes do nothing
 
-An unannotated callback into a generic higher-order function forces bottom-up return-shape inference before it's checked against the HOF's signature — expensive, and fixed by an explicit return-type annotation. Confirmed: `upgradeWebSocket` callback cost dropped from ~780ms to ~6ms; a `runInTransaction` callback dropped ~765ms. But this only fixes inference of *your own* code. `better-auth`'s `mcp()` factory is typed as `ReturnType<typeof oauthProvider>` — wrapping the call site in `satisfies BetterAuthPlugin` measured marginally *worse* and was reverted, because the expensive part is baked into a declaration you don't control and can't annotate around.
+An unannotated callback into a generic higher-order function forces bottom-up return-shape inference before it's checked against the HOF's signature — expensive, and fixed by an explicit return-type annotation. Confirmed: `upgradeWebSocket` callback cost dropped from ~780ms to ~6ms; a `runInTransaction` callback dropped ~765ms. But this only fixes inference of _your own_ code. `better-auth`'s `mcp()` factory is typed as `ReturnType<typeof oauthProvider>` — wrapping the call site in `satisfies BetterAuthPlugin` measured marginally _worse_ and was reverted, because the expensive part is baked into a declaration you don't control and can't annotate around.
 
 ### Why splitting the Hono route chain didn't help
 
@@ -80,7 +80,7 @@ The hypothesis (following `finance.ts`'s own sub-router precedent) was that Hono
 
 ### Why the `DbHandle` union cost can't be engineered away
 
-The single most expensive expression found anywhere in `services/api`'s typecheck (~994ms, one call in `notes.service.ts`) wasn't from a complicated signature — every other call with the identical `DbHandle`-typed parameter in the same file cost 0.3ms. `DbHandle = Kysely<Database> | Transaction<Database>` is a union of two classes each wrapping a 77-table schema; the *first* structural comparison of that shape in a compilation is expensive, and every later one reuses the cached result for free. Whichever file happens to trigger it first pays the cost — moving code around just relocates which file that is. Actually removing it means reshaping `DbHandle` across all of `packages/db`'s repositories, a bigger and riskier change than anything else here; not attempted.
+The single most expensive expression found anywhere in `services/api`'s typecheck (~994ms, one call in `notes.service.ts`) wasn't from a complicated signature — every other call with the identical `DbHandle`-typed parameter in the same file cost 0.3ms. `DbHandle = Kysely<Database> | Transaction<Database>` is a union of two classes each wrapping a 77-table schema; the _first_ structural comparison of that shape in a compilation is expensive, and every later one reuses the cached result for free. Whichever file happens to trigger it first pays the cost — moving code around just relocates which file that is. Actually removing it means reshaping `DbHandle` across all of `packages/db`'s repositories, a bigger and riskier change than anything else here; not attempted.
 
 ### Why Kysely chains were left alone
 
@@ -96,13 +96,13 @@ Every composite-profile package persists a `.tsbuildinfo` incremental cache. Tha
 
 **Cost, measured** (cold vs. warm-unchanged `tsc --noEmit` — exactly the reuse given up):
 
-| package | cold | warm (unchanged) | reuse lost |
-| --- | --- | --- | --- |
-| `services/api` | 5.30s | 5.08s | ~0% (noise) |
-| `apps/omiro` | 5.10s | 4.63s | ~9% |
-| `packages/rpc` | 1.79s | 0.95s | ~47% |
-| `packages/db` | 1.46s | 0.57s | ~61% |
-| `packages/utils` | 0.57s | 0.50s | ~12% |
+| package          | cold  | warm (unchanged) | reuse lost  |
+| ---------------- | ----- | ---------------- | ----------- |
+| `services/api`   | 5.30s | 5.08s            | ~0% (noise) |
+| `apps/omiro`     | 5.10s | 4.63s            | ~9%         |
+| `packages/rpc`   | 1.79s | 0.95s            | ~47%        |
+| `packages/db`    | 1.46s | 0.57s            | ~61%        |
+| `packages/utils` | 0.57s | 0.50s            | ~12%        |
 
 Bounded cost: only paid on invocations Turbo already decided were necessary, never applies to CI (always cold anyway), and has zero effect on `pnpm dev:types`/tsserver — that path never touches these per-package cache files at all. `services/api` shows ~0 cost from this specific fix; its time is dominated by the `DbHandle` and Kysely costs above, not incremental reuse.
 

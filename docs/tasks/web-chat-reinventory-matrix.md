@@ -32,24 +32,24 @@ tasks from the reconciliation sibling).
 Capabilities the gap map lists as missing that were implemented in
 `apps/web`:
 
-| Capability | Evidence |
-| --- | --- |
-| Edit user message | `app/components/chat/use-chat-message-edit.ts`, wired in `chat-message.tsx`; e2e `UI-03` |
-| Delete user message | `deleteMessage` in `app/lib/hooks/use-chat-messages.ts`, `onDelete` in `routes/chat/chat.$chatId.tsx`; e2e `UI-03`; hook tests |
-| Retry failed generation | `retry` / `retryOfGenerationId` in `app/lib/hooks/use-stream-message.ts`, `retryGeneration`; e2e `RECOVER-01` |
-| Regenerate assistant response | `app/lib/hooks/use-regenerate-message.ts`, wired in `chat.$chatId.tsx`; e2e `SEND-05`, `UI-04`; hook tests, stories |
-| Cancel generation | e2e `RECOVER-02`, `RECOVER-03`, `RECOVER-04` / `RECOVER-05` |
-| Tool calls + approval | e2e `TOOL-01..04` |
-| Message search | `app/lib/hooks/use-chat-message-search.ts`, `chat-message-search.tsx`; hook tests |
-| Response settings | `app/lib/hooks/use-response-length.ts`, `chat-response-settings.tsx`; tests |
-| Archive + archived list | `useArchiveChat` in `app/hooks/use-chats.ts`, `routes/chats.tsx`, `chat-conversation-actions.tsx`, `routes/settings.archived-chats.tsx`; tests |
-| Chat title behavior | `useUpdateChatTitle` in `app/hooks/use-chats.ts`; tests |
-| Task extraction dialog | `ChatTaskDialog` wired in `chat.$chatId.tsx`; `chat-task-review.test.tsx` |
-| Keyboard + named controls | e2e `UI-06` |
-| Smallest supported viewport | e2e `UI-05` |
-| Reduced motion | e2e `UI-08` |
-| Draft persistence | e2e `UI-07` |
-| Copy / share / listen | e2e `UI-04` |
+| Capability                    | Evidence                                                                                                                                       |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Edit user message             | `app/components/chat/use-chat-message-edit.ts`, wired in `chat-message.tsx`; e2e `UI-03`                                                       |
+| Delete user message           | `deleteMessage` in `app/lib/hooks/use-chat-messages.ts`, `onDelete` in `routes/chat/chat.$chatId.tsx`; e2e `UI-03`; hook tests                 |
+| Retry failed generation       | `retry` / `retryOfGenerationId` in `app/lib/hooks/use-stream-message.ts`, `retryGeneration`; e2e `RECOVER-01`                                  |
+| Regenerate assistant response | `app/lib/hooks/use-regenerate-message.ts`, wired in `chat.$chatId.tsx`; e2e `SEND-05`, `UI-04`; hook tests, stories                            |
+| Cancel generation             | e2e `RECOVER-02`, `RECOVER-03`, `RECOVER-04` / `RECOVER-05`                                                                                    |
+| Tool calls + approval         | e2e `TOOL-01..04`                                                                                                                              |
+| Message search                | `app/lib/hooks/use-chat-message-search.ts`, `chat-message-search.tsx`; hook tests                                                              |
+| Response settings             | `app/lib/hooks/use-response-length.ts`, `chat-response-settings.tsx`; tests                                                                    |
+| Archive + archived list       | `useArchiveChat` in `app/hooks/use-chats.ts`, `routes/chats.tsx`, `chat-conversation-actions.tsx`, `routes/settings.archived-chats.tsx`; tests |
+| Chat title behavior           | `useUpdateChatTitle` in `app/hooks/use-chats.ts`; tests                                                                                        |
+| Task extraction dialog        | `ChatTaskDialog` wired in `chat.$chatId.tsx`; `chat-task-review.test.tsx`                                                                      |
+| Keyboard + named controls     | e2e `UI-06`                                                                                                                                    |
+| Smallest supported viewport   | e2e `UI-05`                                                                                                                                    |
+| Reduced motion                | e2e `UI-08`                                                                                                                                    |
+| Draft persistence             | e2e `UI-07`                                                                                                                                    |
+| Copy / share / listen         | e2e `UI-04`                                                                                                                                    |
 
 ## Open inventory questions
 

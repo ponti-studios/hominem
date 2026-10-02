@@ -19,12 +19,12 @@ into a release.
 
 ## Choose the path
 
-| Goal | Path | Result |
-| --- | --- | --- |
-| Determine release readiness | Preflight below | Evidence and blockers; no release |
-| Normal CI release from `main` | GitHub Actions | `validate-mobile` → `deploy-mobile` → EAS approval → TestFlight |
-| Create and upload an explicitly requested local IPA | `pnpm build:prod:local`, then `pnpm submit:local` | Locally signed IPA → App Store Connect/TestFlight |
-| Ship a JS-only fix | `just mobile update "<message>"` | EAS approval → production OTA channel |
+| Goal                                                    | Path                                                                    | Result                                                                               |
+| ------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Determine release readiness                             | Preflight below                                                         | Evidence and blockers; no release                                                    |
+| Normal CI release from `main`                           | GitHub Actions                                                          | `validate-mobile` → `deploy-mobile` → EAS approval → TestFlight                      |
+| Create and upload an explicitly requested local IPA     | `pnpm build:prod:local`, then `pnpm submit:local`                       | Locally signed IPA → App Store Connect/TestFlight                                    |
+| Ship a JS-only fix                                      | `just mobile update "<message>"`                                        | EAS approval → production OTA channel                                                |
 | Agent asks to commit, push, build, and submit in one go | [Commit → push → local build → submit](#commit-push-local-build-submit) | Working tree committed and pushed; locally signed IPA → App Store Connect/TestFlight |
 
 The cloud release workflow is
@@ -60,6 +60,7 @@ Before recommending or starting a production release:
    Run relevant Web/API checks when shared behavior or API contracts changed.
    Treat failures as blockers unless they are demonstrably pre-existing and
    reported with the exact command and failure.
+
 4. Before a local Expo/EAS production command, resolve the production identity:
 
    ```bash
@@ -71,6 +72,7 @@ Before recommending or starting a production release:
    The guard and embed must resolve to `Omiro` with
    `com.pontistudios.hakumi`. Fix environment resolution if they do not;
    never bypass `scripts/verify-release-identity.mjs`.
+
 5. For native modules, permissions, app config, assets, entitlements, or a
    store binary, run `pnpm --filter @hominem/omiro prebuild:prod` and collect
    appropriate simulator/device evidence. `apps/omiro/ios` is CNG-generated:

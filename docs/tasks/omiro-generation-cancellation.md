@@ -69,13 +69,13 @@ responder fallback, and setting the message list to `pointerEvents="box-none"`.
 
 ## Work sequence
 
-| ID | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
-| --- | --- | --- | --- | --- | --- |
-| W-001 | Reproduce the boundary | `apps/omiro` + Maestro + local API | `docs/chat.testing.md`; booted iPhone simulator; scripted provider | Focused RECOVER-02 run with callback/state/API timestamps | It is known whether the tap invokes the Omiro callback, whether the hook sends `POST /api/chats/:chatId/generations/:generationId/cancel`, and where the event chain stops. |
-| W-002 | Isolate ownership | Omiro generation hook, ChatScreen, activity timeline | W-001 | Focused component/hook regression test and simulator diagnostic output | The responsible component, handler, or transport seam is identified; temporary diagnostics are removed. |
-| W-003 | Implement the narrow fix | Confirmed owning Omiro boundary | W-002 | Focused regression test plus Omiro typecheck/lint | Tapping `Stop reply` transitions to `Stopping reply`, sends exactly one cancellation request, and presents the neutral stopped state. |
-| W-004 | Verify durable cancellation | Omiro/API test environment | W-003 | RECOVER-02 Maestro screenshots/DOM-equivalent artifact and durable inspector output | The run records cancellation-requested and cancelled terminal state, does not commit an assistant response, and has no duplicate events/messages/tool effects. |
-| W-005 | Hand off evidence | Browser playbook and this task | W-004 | Linked artifact and task-record update | RECOVER-02 is removed from the Browser playbook's active gate and linked here as complete, or remains explicitly blocked with the next owner action. |
+| ID    | Work item                   | Owner boundary                                       | Depends on                                                         | Validation / artifact                                                               | Done when                                                                                                                                                                   |
+| ----- | --------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W-001 | Reproduce the boundary      | `apps/omiro` + Maestro + local API                   | `docs/chat.testing.md`; booted iPhone simulator; scripted provider | Focused RECOVER-02 run with callback/state/API timestamps                           | It is known whether the tap invokes the Omiro callback, whether the hook sends `POST /api/chats/:chatId/generations/:generationId/cancel`, and where the event chain stops. |
+| W-002 | Isolate ownership           | Omiro generation hook, ChatScreen, activity timeline | W-001                                                              | Focused component/hook regression test and simulator diagnostic output              | The responsible component, handler, or transport seam is identified; temporary diagnostics are removed.                                                                     |
+| W-003 | Implement the narrow fix    | Confirmed owning Omiro boundary                      | W-002                                                              | Focused regression test plus Omiro typecheck/lint                                   | Tapping `Stop reply` transitions to `Stopping reply`, sends exactly one cancellation request, and presents the neutral stopped state.                                       |
+| W-004 | Verify durable cancellation | Omiro/API test environment                           | W-003                                                              | RECOVER-02 Maestro screenshots/DOM-equivalent artifact and durable inspector output | The run records cancellation-requested and cancelled terminal state, does not commit an assistant response, and has no duplicate events/messages/tool effects.              |
+| W-005 | Hand off evidence           | Browser playbook and this task                       | W-004                                                              | Linked artifact and task-record update                                              | RECOVER-02 is removed from the Browser playbook's active gate and linked here as complete, or remains explicitly blocked with the next owner action.                        |
 
 W-001 and W-002 are serial. W-003 and W-004 are serial because the fix must
 be tested at the same client/API boundary. W-005 is required before this task
@@ -85,18 +85,18 @@ an unrelated cancellation or replay concern.
 ## Acceptance criteria
 
 - [ ] AC-001: On the supported iPhone simulator, RECOVER-02's visible stop action
-  invokes the active-generation cancellation path.
+      invokes the active-generation cancellation path.
 - [ ] AC-002: The client sends one ownership-checked cancellation request for
-  the active generation and displays `Stopping reply`, then neutral `Stopped`.
+      the active generation and displays `Stopping reply`, then neutral `Stopped`.
 - [ ] AC-003: Durable state records the cancellation request and cancelled
-  terminal outcome, with no committed assistant response, duplicate user
-  message, duplicate terminal event, tool effect, or retry run.
+      terminal outcome, with no committed assistant response, duplicate user
+      message, duplicate terminal event, tool effect, or retry run.
 - [ ] AC-004: A focused Omiro regression test and the named Maestro RECOVER-02 flow
-  pass with preserved screenshots and durable correlation evidence.
+      pass with preserved screenshots and durable correlation evidence.
 - [ ] AC-005: The Browser playbook no longer treats RECOVER-02 as an active
-  blocker and links to this task; this task remains Proposed/Open if the
-  native harness cannot deliver the callback after the investigation is
-  exhausted.
+      blocker and links to this task; this task remains Proposed/Open if the
+      native harness cannot deliver the callback after the investigation is
+      exhausted.
 
 ## Evidence record
 

@@ -26,11 +26,11 @@ task assumes both are settled); `commitGeneration` extraction (next task).
 
 ## Work sequence
 
-| ID | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
-| --- | --- | --- | --- | --- | --- |
-| W-001 | Strip get/save from engine `tools.execute`; keep `callTool` + `ToolResult` mapping | engine | — | read-through + engine tests | Engine holds no persistence logic |
-| W-002 | Prove replay: stored-effect short-circuit + fresh-execution save-through cases via runner adapters only | `services/api` chat tests | W-001 | `chat-generation-replay.test.ts` + engine suite output | Idempotent replay green without engine-level store |
-| W-003 | Run gates for touched packages | repo | W-002 | `pnpm format`, package lint + typecheck | Green |
+| ID    | Work item                                                                                               | Owner boundary            | Depends on | Validation / artifact                                  | Done when                                          |
+| ----- | ------------------------------------------------------------------------------------------------------- | ------------------------- | ---------- | ------------------------------------------------------ | -------------------------------------------------- |
+| W-001 | Strip get/save from engine `tools.execute`; keep `callTool` + `ToolResult` mapping                      | engine                    | —          | read-through + engine tests                            | Engine holds no persistence logic                  |
+| W-002 | Prove replay: stored-effect short-circuit + fresh-execution save-through cases via runner adapters only | `services/api` chat tests | W-001      | `chat-generation-replay.test.ts` + engine suite output | Idempotent replay green without engine-level store |
+| W-003 | Run gates for touched packages                                                                          | repo                      | W-002      | `pnpm format`, package lint + typecheck                | Green                                              |
 
 ## Acceptance criteria
 

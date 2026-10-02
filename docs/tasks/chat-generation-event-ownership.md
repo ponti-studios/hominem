@@ -53,12 +53,12 @@ semantics (next task); effect persistence (later task).
 
 ## Work sequence
 
-| ID | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
-| --- | --- | --- | --- | --- | --- |
-| W-001 | Hoist drop list to module scope, fix typo, export `isExecuteOwnedEvent` predicate covering both arms; ownership comment states the transactional why | engine `store.appendEvent` | — | read-through | Comment names both writers + why; predicate exported |
-| W-002 | Predicate unit test + union-exhaustiveness test: every `GenerationHistoryEventPayloadSchema` option classified execute/engine; fails on new variant or unilateral filter change | `services/api` engine tests | W-001 | new test output | Split is test-enforced at type level |
-| W-003 | Behavioral exactly-once test: full generation asserts started/accepted/running/saving/committed appear exactly once in the durable log | testkit route tests | W-001 | new test output | Double-write/loss caught in reality |
-| W-004 | Run gates for touched packages | repo | W-002, W-003 | `pnpm format`, package lint + typecheck, engine + testkit suites | Green |
+| ID    | Work item                                                                                                                                                                       | Owner boundary              | Depends on   | Validation / artifact                                            | Done when                                            |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ------------ | ---------------------------------------------------------------- | ---------------------------------------------------- |
+| W-001 | Hoist drop list to module scope, fix typo, export `isExecuteOwnedEvent` predicate covering both arms; ownership comment states the transactional why                            | engine `store.appendEvent`  | —            | read-through                                                     | Comment names both writers + why; predicate exported |
+| W-002 | Predicate unit test + union-exhaustiveness test: every `GenerationHistoryEventPayloadSchema` option classified execute/engine; fails on new variant or unilateral filter change | `services/api` engine tests | W-001        | new test output                                                  | Split is test-enforced at type level                 |
+| W-003 | Behavioral exactly-once test: full generation asserts started/accepted/running/saving/committed appear exactly once in the durable log                                          | testkit route tests         | W-001        | new test output                                                  | Double-write/loss caught in reality                  |
+| W-004 | Run gates for touched packages                                                                                                                                                  | repo                        | W-002, W-003 | `pnpm format`, package lint + typecheck, engine + testkit suites | Green                                                |
 
 ## Acceptance criteria
 

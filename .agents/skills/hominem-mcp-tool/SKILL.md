@@ -15,7 +15,7 @@ license: MIT
 compatibility: Hominem API service work (services/api/src/mcp).
 metadata:
   author: project
-  version: "1.0"
+  version: '1.0'
   category: API
   tags:
     - api
@@ -50,17 +50,17 @@ service" rule still applies here even when MCP is the only surface.
 
 ## Where files live
 
-| Layer               | Path                                                    | Owns                                             |
-| ------------------- | -------------------------------------------------------- | ------------------------------------------------- |
-| Capability + scopes  | `services/api/src/application/capability.ts`             | `CAPABILITIES` array, `CapabilityDefinition` type  |
-| Scope registry       | `services/api/src/scopes.ts`                              | `MCP_SCOPES`, `MCP_ENABLED_SCOPES`                 |
-| Tool registration    | `services/api/src/mcp/register-tools.ts`                  | Conditional `import('./tools/<domain>')` per scope |
-| Tool registry/runtime| `services/api/src/mcp/tool-registry.ts`                   | `registerTool`, `callTool`, `resultCap` enforcement|
-| Schemas              | `services/api/src/schemas/<domain>.schema.ts`             | Zod input/output shapes                            |
-| Service              | `services/api/src/application/<domain>.service.ts`        | Query/business logic, `ownerUserId`-scoped         |
-| Tool wiring          | `services/api/src/mcp/tools/<domain>.ts`                  | `registerTool` calls only, no business logic       |
-| Chat routing fallback| `services/api/src/mcp/chat-tool-adapter.ts`               | `inferMuseCapabilities` keyword table (optional)   |
-| Tests                | `services/api/src/mcp/tools/<domain>-crud.test.ts`        | Registration + CRUD + cross-user isolation         |
+| Layer                 | Path                                               | Owns                                                |
+| --------------------- | -------------------------------------------------- | --------------------------------------------------- |
+| Capability + scopes   | `services/api/src/application/capability.ts`       | `CAPABILITIES` array, `CapabilityDefinition` type   |
+| Scope registry        | `services/api/src/scopes.ts`                       | `MCP_SCOPES`, `MCP_ENABLED_SCOPES`                  |
+| Tool registration     | `services/api/src/mcp/register-tools.ts`           | Conditional `import('./tools/<domain>')` per scope  |
+| Tool registry/runtime | `services/api/src/mcp/tool-registry.ts`            | `registerTool`, `callTool`, `resultCap` enforcement |
+| Schemas               | `services/api/src/schemas/<domain>.schema.ts`      | Zod input/output shapes                             |
+| Service               | `services/api/src/application/<domain>.service.ts` | Query/business logic, `ownerUserId`-scoped          |
+| Tool wiring           | `services/api/src/mcp/tools/<domain>.ts`           | `registerTool` calls only, no business logic        |
+| Chat routing fallback | `services/api/src/mcp/chat-tool-adapter.ts`        | `inferMuseCapabilities` keyword table (optional)    |
+| Tests                 | `services/api/src/mcp/tools/<domain>-crud.test.ts` | Registration + CRUD + cross-user isolation          |
 
 ## Steps
 
@@ -73,7 +73,7 @@ export const CAPABILITIES = [
   'career',
   // ...
   'tags',
-  'task',       // <- new entry, alphabetical
+  'task', // <- new entry, alphabetical
   'travel',
 ] as const;
 ```
@@ -108,7 +108,7 @@ list doesn't matter — it isn't strictly alphabetized there, just append near t
 if (isEnabled('task:read', 'task:write')) imports.push(import('./tools/tasks'));
 ```
 
-`isEnabled` is `some`, not `every` — listing both scopes means the file registers if *either*
+`isEnabled` is `some`, not `every` — listing both scopes means the file registers if _either_
 is enabled, and each individual tool's own `scopes` array is what's actually enforced per-call.
 
 ### 4. Define schemas
@@ -146,7 +146,7 @@ This lets a `preview` function and a write tool's handler treat "not found" as o
 (`{ task: null }` / `{ removed: false }`) instead of an MCP error. `NotFoundError` has correct
 `Object.setPrototypeOf`, so `instanceof NotFoundError` is safe to rely on.
 
-Exception: a *create*-time reference check (e.g. an invalid `parentTaskId`) is a genuine client
+Exception: a _create_-time reference check (e.g. an invalid `parentTaskId`) is a genuine client
 error, not a "used to exist" case — leave that one throwing.
 
 Every query must be scoped by `ownerUserId`/`ownerUserid` — `app.*` tables are RLS-forced but

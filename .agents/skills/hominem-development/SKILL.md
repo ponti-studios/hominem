@@ -31,7 +31,7 @@ separately documented `.test`/`.localhost` loading freely in this same pane
 while `lvh.me`/`localtest.me` don't — consistent with an allowlist in the
 pane's own safety layer keyed on TLD.
 
-(A *different*, previously-observed restriction applies to a Claude Code
+(A _different_, previously-observed restriction applies to a Claude Code
 cloud/remote session's own egress proxy, which does not support non-443
 HTTPS ports — see `/root/.ccr/README.md` inside such a session. That one is
 genuinely port-based, but it's a separate sandbox from the desktop Browser

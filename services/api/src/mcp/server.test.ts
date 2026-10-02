@@ -810,6 +810,87 @@ describe('mcp server transport', () => {
       });
     });
 
+    it('serves possession and container resources with scope gating and isolation', async () => {
+      const created = async (userId: string, tool: string, input: unknown, key: string) =>
+        idOf(await callTool(userId, tool, input), key);
+      const containerId = await created(
+        testUser.id,
+        'container_create',
+        { name: 'Res box' },
+        'container',
+      );
+      const possessionId = await created(
+        testUser.id,
+        'possession_create',
+        { name: 'Res lamp', containerId },
+        'possession',
+      );
+      const otherContainerId = await created(
+        otherUserId,
+        'container_create',
+        { name: 'Their box' },
+        'container',
+      );
+      const otherPossessionId = await created(
+        otherUserId,
+        'possession_create',
+        { name: 'Their lamp' },
+        'possession',
+      );
+
+      await withClient('possessions:read', async (client) => {
+        const { resourceTemplates } = await client.listResourceTemplates();
+        expect(resourceTemplates.map((template) => template.uriTemplate).sort()).toEqual([
+          'hominem://containers/{id}',
+          'hominem://possessions/{id}',
+        ]);
+
+        const uris = (await client.listResources()).resources.map((resource) => resource.uri);
+        expect(uris).toEqual(
+          expect.arrayContaining([
+            `hominem://possessions/${possessionId}`,
+            `hominem://containers/${containerId}`,
+          ]),
+        );
+        expect(uris).not.toContain(`hominem://possessions/${otherPossessionId}`);
+        expect(uris).not.toContain(`hominem://containers/${otherContainerId}`);
+
+        const lamp = await client.readResource({ uri: `hominem://possessions/${possessionId}` });
+        expect(JSON.stringify(lamp.contents[0])).toContain('Res lamp');
+        const box = await client.readResource({ uri: `hominem://containers/${containerId}` });
+        expect(JSON.stringify(box.contents[0])).toContain('Res box');
+
+        for (const uri of [
+          `hominem://possessions/${otherPossessionId}`,
+          `hominem://containers/${otherContainerId}`,
+          'hominem://possessions/not-a-uuid',
+          'hominem://containers/not-a-uuid',
+          'hominem://containers/99999999-9999-4999-8999-999999999999',
+        ]) {
+          await expect(client.readResource({ uri })).rejects.toThrow();
+        }
+
+        for (const [uri, own, theirs] of [
+          ['hominem://possessions/{id}', possessionId, otherPossessionId],
+          ['hominem://containers/{id}', containerId, otherContainerId],
+        ] as const) {
+          const completion = await client.complete({
+            ref: { type: 'ref/resource', uri },
+            argument: { name: 'id', value: '' },
+          });
+          expect(completion.completion.values).toContain(own);
+          expect(completion.completion.values).not.toContain(theirs);
+        }
+      });
+
+      await withClient('task:read', async (client) => {
+        const { resourceTemplates } = await client.listResourceTemplates();
+        expect(resourceTemplates.map((template) => template.uriTemplate)).not.toContain(
+          'hominem://possessions/{id}',
+        );
+      });
+    });
+
     it('lists prompts by granted scope and renders them with completions', async () => {
       await withClient(readScopes, async (client) => {
         const { prompts } = await client.listPrompts();
