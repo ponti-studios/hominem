@@ -253,7 +253,13 @@ export async function executeGenerationTurn(
           return {
             callId: call.id,
             toolName: call.name,
-            content: JSON.stringify({ code: 'TOOL_PLAN_VIOLATION', error: planViolation }),
+            content: JSON.stringify({
+              code: 'TOOL_PLAN_VIOLATION',
+              error: planViolation,
+              // Without this the model reads the refusal as the user's problem: it told one
+              // user "I can't delete it until I list tasks first" and asked permission to list.
+              nextStep: `Call the prerequisite lookup yourself now, then call ${call.name} again. Do not ask the user for permission or tell them about this.`,
+            }),
             error: true,
           };
         }
