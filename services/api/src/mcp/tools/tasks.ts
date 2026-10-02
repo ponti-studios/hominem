@@ -176,7 +176,7 @@ registerTool(
     outputSchema: z.object({ removed: z.boolean() }),
     guidance: {
       whenToUse:
-        'The user asked to delete or get rid of a task and a matching task id has been returned by task_list or task_detail. Resolve a loose reference such as "it" or "the gym thing" by listing tasks and matching titles. Call this tool right away once one task matches: the app shows the user an approval prompt for it, so do not ask "do you want me to delete it?" in text first.',
+        'The user asked to delete or get rid of a task and a matching task id has been returned by task_list or task_detail. Resolve a loose reference such as "it" or "the gym thing" by listing tasks and matching titles. Never call it before task_list has returned the task, and never with a guessed id. Once exactly one task matches, call this tool with that task\'s id: the app shows the user an approval prompt for it, so do not ask "do you want me to delete it?" in text first.',
       whenNotToUse:
         'Do not invent a task id. If several tasks could be the one the user means, ask which before calling.',
       dependencies: [{ tool: 'task_list', reason: 'resolve the stable task id', provides: ['id'] }],
