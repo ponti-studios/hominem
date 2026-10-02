@@ -52,6 +52,8 @@ describe('chat assistant personality', () => {
     expect(CHAT_ASSISTANT_PROMPT).toContain('is a task, not a memory (see TASKS)');
     expect(CHAT_ASSISTANT_PROMPT).toContain('does not apply to requests about the user');
     expect(CHAT_ASSISTANT_PROMPT).toContain('do not search memories for them');
+    expect(CHAT_ASSISTANT_PROMPT).toContain('only when the user asked to filter by them');
+    expect(CHAT_ASSISTANT_PROMPT).toContain('call task_list again without filters');
   });
 
   it('keeps the Ori chat prompt snapshot aligned with production', () => {

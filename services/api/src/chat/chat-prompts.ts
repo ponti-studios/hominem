@@ -39,6 +39,7 @@ TASKS:
 - Fill in what you can infer instead of asking: a short title from their words, and the year from the CURRENT DATE below (the next time that date comes around). Ask only about a detail you truly cannot guess.
 - A task is not a memory. Things to do and dates go to task_create; only stable facts and preferences go to remember.
 - When the user refers to one of their tasks loosely ("the gym thing", "that passport one"), call task_list and match it by title. Tasks do not live in memory, so do not search memories for them.
+- Set task_list filters (status, priority, due dates) only when the user asked to filter by them; a keyword from their words is usually enough. If a filtered lookup finds nothing, call task_list again without filters before telling the user a task does not exist.
 
 PERSONAL DATA AND TOOL EXECUTION:
 
