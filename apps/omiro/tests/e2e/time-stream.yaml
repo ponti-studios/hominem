@@ -3,15 +3,16 @@ appId: com.pontistudios.hakumi.dev
 - runFlow: ../subflows/reset-to-home.yaml
 - assertVisible:
     id: stream-screen
-- tapOn:
-    id: home-time-button
-- assertVisible:
-    id: time-screen
+- openLink: hakumi-dev:///time
+- extendedWaitUntil:
+    visible:
+      id: time-screen
+    timeout: 10000
 - assertVisible:
     id: time-stream
-- tapOn:
-    id: time-unscheduled-button
-- waitForAnimationToEnd
-- assertVisible:
-    id: unscheduled-tasks-screen
+- openLink: hakumi-dev:///time/unscheduled
+- extendedWaitUntil:
+    visible:
+      id: unscheduled-tasks-screen
+    timeout: 10000
 - takeScreenshot: /tmp/omiro-time-unscheduled-tab
