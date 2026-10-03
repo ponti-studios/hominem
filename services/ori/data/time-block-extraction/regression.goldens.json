@@ -35,7 +35,7 @@
   {
     "name": "gap-fill",
     "input": "When can I meet with Alex this week for 30m?",
-    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"When can I meet with Alex this week for 30m?\",\"target_title\":null,\"participants\":[\"Alex\"],\"location\":null,\"duration\":30,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T11:17:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"Meet with Alex\",\"target_title\":null,\"participants\":[\"Alex\"],\"location\":null,\"duration\":30,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T11:17:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -156,7 +156,7 @@
   {
     "name": "find-slot-sarah",
     "input": "Find me a 45-minute slot with Sarah this week",
-    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":null,\"target_title\":null,\"participants\":[\"Sarah\"],\"location\":null,\"duration\":45,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T11:17:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"Meet with Sarah\",\"target_title\":null,\"participants\":[\"Sarah\"],\"location\":null,\"duration\":45,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T11:17:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -167,7 +167,7 @@
   {
     "name": "workout-tomorrow",
     "input": "When can I work out tomorrow?",
-    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"When can I work out tomorrow?\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T00:00:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"Work out\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T00:00:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -244,7 +244,7 @@
   {
     "name": "jordan-office-planning",
     "input": "Schedule 90 minutes with Jordan at the office",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":null,\"target_title\":null,\"participants\":[\"Jordan\"],\"location\":\"the office\",\"duration\":90,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Meeting with Jordan\",\"target_title\":null,\"participants\":[\"Jordan\"],\"location\":\"the office\",\"duration\":90,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
