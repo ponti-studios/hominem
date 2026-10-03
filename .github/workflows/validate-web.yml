@@ -37,3 +37,9 @@ jobs:
     with:
       package-filter: '@hominem/web'
       public-app-url: 'http://localhost:4445'
+
+  docker-build:
+    uses: ./.github/workflows/_validate-docker.yml
+    with:
+      dockerfile: apps/web/Dockerfile
+      build-args: 'VITE_PUBLIC_API_URL=http://localhost:3000'

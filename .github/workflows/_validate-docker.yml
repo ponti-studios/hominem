@@ -1,0 +1,38 @@
+name: _validate-docker
+
+# Builds a service's production Dockerfile exactly as Railway does (context = repo root). The
+# regular validate job builds with turbo, which compiles workspace packages first; the Dockerfiles
+# do not, so a change can pass validation and still fail the image build (and block the deploy).
+
+on:
+  workflow_call:
+    inputs:
+      dockerfile:
+        description: Dockerfile path from the repository root.
+        type: string
+        required: true
+      build-args:
+        description: Space-separated KEY=value build arguments (Railway injects these from service variables).
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: checkout-repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: build-image
+        env:
+          DOCKERFILE: ${{ inputs.dockerfile }}
+          BUILD_ARGS: ${{ inputs.build-args }}
+        run: |
+          set -euo pipefail
+          args=()
+          for arg in $BUILD_ARGS; do args+=(--build-arg "$arg"); done
+          docker build --file "$DOCKERFILE" "${args[@]}" --tag "validate:${GITHUB_SHA}" .

@@ -38,3 +38,12 @@ jobs:
     uses: ./.github/workflows/_validate-app.yml
     with:
       package-filter: '@hominem/api'
+
+  docker-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        dockerfile: [services/api/Dockerfile, services/api/worker/Dockerfile]
+    uses: ./.github/workflows/_validate-docker.yml
+    with:
+      dockerfile: ${{ matrix.dockerfile }}
