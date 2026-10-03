@@ -24,7 +24,7 @@
   {
     "name": "availability-with-window",
     "input": "Find a 90 minute gap Monday afternoon for a design review",
-    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"Find a 90 minute gap Monday afternoon for a design review\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":90,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"Find a 90 minute gap Monday afternoon for a design review\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":90,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-27T12:00:00-07:00\",\"scheduling_window_end\":\"2026-07-27T17:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -46,7 +46,7 @@
   {
     "name": "search-never-creates",
     "input": "What deadlines do I have this week?",
-    "expectedOutput": "{\"primary_intent\":\"search\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"search\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-20T00:00:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
