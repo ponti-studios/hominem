@@ -18,7 +18,15 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite-env.d.ts"],
+  // import-meta-env.d.ts is @hominem/env's ambient `ImportMeta.env` declaration. When env's
+  // build/*.d.ts are absent (the Docker build never builds it) its source is compiled inside this
+  // program, and without the declaration `import.meta.env` fails to typecheck.
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "vite-env.d.ts",
+    "../../packages/env/src/import-meta-env.d.ts"
+  ],
   "exclude": [
     "node_modules",
     "dist",
