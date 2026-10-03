@@ -10,6 +10,7 @@ import {
   CHAT_RESPONSE_LENGTH_GUIDANCE,
   CHAT_TO_NOTE_PROMPT,
   getCurrentUtcDate,
+  TIME_BLOCK_EXTRACTION_PROMPT,
 } from './prompts';
 
 describe('chat assistant personality', () => {
@@ -56,6 +57,19 @@ describe('chat assistant personality', () => {
         .map((message) => message.content.replace('{{current_date}}', getCurrentUtcDate()))
         .join('\n\n'),
     ).toBe(buildChatSystemPrompt(undefined, getCurrentUtcDate()));
+  });
+});
+
+describe('time-block extraction prompt', () => {
+  it('keeps the Ori time-block snapshot aligned with production', () => {
+    const messages: Array<{ role: string; content: string }> = JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, '../../../ori/data/time-block-extraction/prompt.json'),
+        'utf8',
+      ),
+    );
+    const system = messages.find((message) => message.role === 'system')?.content;
+    expect(system?.endsWith(TIME_BLOCK_EXTRACTION_PROMPT)).toBe(true);
   });
 });
 

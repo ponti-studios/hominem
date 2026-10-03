@@ -131,6 +131,61 @@ function createContext(request: OpenRouterRequest): ScriptedContext {
   };
 }
 
+// Deterministic time-block extraction for the Omiro Time composer (see
+// apps/omiro/tests/e2e/time-composer.yaml). The request text picks the intent; dates are
+// relative to the reference time in the prompt, so the e2e flows stay stable on any day.
+function scriptedTimeBlock(userText: string) {
+  const reference = new Date(userText.match(/Current date and time: (\S+)/)?.[1] ?? Date.now());
+  const input = userText.match(/User input: ([^\n]*)/)?.[1]?.trim() ?? '';
+  const at = (days: number, hour: number) => {
+    const date = new Date(reference);
+    date.setUTCDate(date.getUTCDate() + days);
+    date.setUTCHours(hour, 0, 0, 0);
+    return date.toISOString();
+  };
+  const block = {
+    primary_intent: 'add_task',
+    title: input || null,
+    target_title: null,
+    participants: null,
+    location: null,
+    duration: null,
+    start_time: null,
+    end_time: null,
+    scheduling_window_start: null,
+    scheduling_window_end: null,
+    deadline_fixed: null,
+    recurrence_rule: null,
+  };
+  if (/\bwhat do i have\b/i.test(input)) {
+    return {
+      ...block,
+      primary_intent: 'search',
+      title: null,
+      scheduling_window_start: at(0, 0),
+      scheduling_window_end: at(7, 0),
+    };
+  }
+  if (/\bwhen can i\b|\bfree time\b/i.test(input)) {
+    return {
+      ...block,
+      primary_intent: 'schedule_gap_fill',
+      duration: 30,
+      scheduling_window_start: reference.toISOString(),
+      scheduling_window_end: at(1, 0),
+    };
+  }
+  if (/\bcoffee with\b/i.test(input)) {
+    return { ...block, primary_intent: 'add_event', start_time: at(1, 16), end_time: at(1, 17) };
+  }
+  return block;
+}
+
+function structuredResponseName(format: unknown) {
+  const value = format as { json_schema?: { name?: string }; jsonSchema?: { name?: string } };
+  return value?.json_schema?.name ?? value?.jsonSchema?.name;
+}
+
 const ADD_TASK_PATTERN = /\badd a task\b/i;
 
 const toolNameRules: readonly ScriptedRule<string | null>[] = [
@@ -244,10 +299,12 @@ function openRouterResponseBody(request: OpenRouterRequest) {
     flowStep && 'text' in flowStep ? flowStep.text : firstMatchingRule(contentRules, context);
   const isStructured = request.response_format !== undefined;
   const responseContent = isStructured
-    ? JSON.stringify({
-        capabilities: ['collections'],
-        requiresLookup: /collection/i.test(context.userText),
-      })
+    ? structuredResponseName(request.response_format) === 'time_block_extraction'
+      ? JSON.stringify(scriptedTimeBlock(context.userText))
+      : JSON.stringify({
+          capabilities: ['collections'],
+          requiresLookup: /collection/i.test(context.userText),
+        })
     : content;
   const isInitialConfirmationRejection =
     /SCRIPT:CONFIRM_REJECT/i.test(context.userText) && !context.hasToolResult;

@@ -14,4 +14,11 @@ describe('model capability profiles', () => {
       reasoning: { effort: 'minimal' },
     });
   });
+
+  it('uses low reasoning effort for GLM 5.3 Flash, which cannot disable reasoning', () => {
+    expect(getModelCapabilityProfile('z-ai/glm-5.3-flash')).toEqual({
+      structuredPlanning: true,
+      reasoning: { effort: 'low' },
+    });
+  });
 });

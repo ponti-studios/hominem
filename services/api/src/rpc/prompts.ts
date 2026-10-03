@@ -174,61 +174,72 @@ Transcript: the printer is out of toner and someone needs to order more urgent, 
 Output: {"tasks":[{"title":"Order printer toner","priority":"high"},{"title":"Try the new lunch place","priority":"low"},{"title":"Submit timesheet","dueAt":"2026-03-03T12:00:00-08:00"}]}
 (three items said, three tasks returned — the low-priority lunch item is kept, not dropped)`;
 
-export const TIME_BLOCK_EXTRACTION_PROMPT = `You extract one time block from a user's natural-language input.
+export const TIME_BLOCK_EXTRACTION_PROMPT = `You extract exactly one structured time block from a user's natural-language input. Use the supplied current date/time, timezone, calendar context, and conversation context to resolve relative language. Return every field in this exact shape, using null whenever the input does not establish a value:
 
-Return only JSON matching the schema. Use null when a field is not present. Ground relative dates and
-times against the supplied current date/time and timezone. Preserve the user's intent:
+{
+  "primary_intent": "add_task" | "add_event" | "add_recurring_event" | "edit_event" | "cancel_event" | "search" | "schedule_gap_fill",
+  "title": string | null,
+  "target_title": string | null,
+  "participants": string[] | null,
+  "location": string | null,
+  "duration": integer minutes | null,
+  "start_time": ISO 8601 datetime | null,
+  "end_time": ISO 8601 datetime | null,
+  "scheduling_window_start": ISO 8601 datetime | null,
+  "scheduling_window_end": ISO 8601 datetime | null,
+  "deadline_fixed": ISO 8601 date | null,
+  "recurrence_rule": iCalendar RRULE string | null
+}
 
-- add_event: a meeting, appointment, or explicitly fixed scheduled block
-- add_recurring_event: a new event with an explicit recurrence pattern
-- edit_event: the user wants to move or change an existing calendar event
-- cancel_event: the user wants to cancel or delete an existing calendar event
-- add_task: an actionable item that occupies time but has no fixed start time
-- search: the user is asking what is already scheduled
-- schedule_gap_fill: the user asks when something can fit or asks for an available opening
+Work through the fields in this order. Never invent a value the input does not establish.
 
-"With", meetings, appointments, and explicit clock times usually indicate add_event. A phrase such
-as "put [activity] before bed" or "[activity] tonight" is an add_event when it explicitly places
-the activity in a time period. A request to
-move, change, or reschedule an existing event is edit_event; a request to cancel or delete one is
-cancel_event. "Every Monday", "weekly", or another explicit repeating pattern is
-add_recurring_event. "Need to",
-"should", or "have to" without a fixed clock time usually indicate add_task. A request to find a
-mutual opening or available time is schedule_gap_fill. A question asking whether the user has free
-time in a specified period is also schedule_gap_fill; it asks for availability, not a list of
-events. For edit_event or cancel_event, copy the existing event's identifying title into
-target_title using the supplied calendar context. For add_recurring_event, emit recurrence_rule
-as an iCalendar RRULE string without the RRULE: prefix, and resolve the first occurrence into
-start_time and end_time. The first occurrence is the next matching calendar date after the
-reference date, not the reference date itself. A named weekday means the next occurrence of that
-weekday after the reference date; for example, with a Saturday reference date, "Friday" means the
-following Friday, not the next calendar day. Do not invent participants, location,
-duration, dates, or times. duration is always an integer number of minutes and must be preserved
-whenever the user states a duration, including for flexible tasks with no exact start time. start_time and end_time
-are the exact interval when the user supplies a fixed time or an appointment duration. A duration
-and end_time are populated only when the user states a duration or an explicit interval; never
-infer a default duration. For flexible
-blocks, leave start_time and end_time null and resolve the requested date or broad period into
-scheduling_window_start and scheduling_window_end. An explicit clock time always takes precedence
-over a scheduling window. Broad periods such as "tonight", "this afternoon", or "after lunch" are
-not specific clock times. An activity explicitly placed in one of those periods (for example,
-"Gym tonight") is an add_event with a resolved scheduling window and no exact start_time or
-end_time. Requests framed as
-"need to", "should", or "have to" remain add_task when no fixed start time is given. A location
-must be explicitly introduced as a place (for example, "at the studio", "in the office", or
-"location: studio"); do not extract nouns that are part of the title (for example, "organize the
-studio") as location.
-When an edit only changes an event's time, preserve the existing event date and duration from the
-calendar context unless the user supplies replacements. If an edit supplies a replacement clock
-time, always populate start_time and end_time using the preserved date and duration; never leave
-them null. If no existing event is identified in the
-calendar context, "schedule it" is a new add_event, not an edit. When the user corrects a date or
-time (for example, "tomorrow at 10, actually Friday at 2"), use
-only the final correction and discard every superseded temporal value. deadline_fixed is date-only
-and is used only for an explicit deadline. Use the user's timezone when resolving all scheduling
-windows. A date-only window starts at local midnight and ends at the next local midnight (the end
-is exclusive); a broad period spans the corresponding local period. A deadline is not a scheduling
-window: for deadline-only requests, leave start_time, end_time, scheduling_window_start, and
-scheduling_window_end null. When a correction says "actually", "instead", or otherwise replaces a
-date or time, discard the earlier date/time entirely and resolve only the final value. Do not emit
-symbolic date labels such as today, tomorrow, or next_week.`;
+1. primary_intent
+- add_event: a meeting, appointment, call, or activity with an explicit clock time, or one placed in a named day or part of the day ("gym tonight", "call Mom Sunday afternoon", "put reading before bed", "haircut Saturday morning"). "Schedule", "book", or "set up" something, with or without a person ("schedule 2 hours with Sam at the office"), is add_event: the user is asking to put it on the calendar, not asking when it fits.
+- add_recurring_event: a new event with an explicit repeating pattern ("every Monday", "weekly").
+- add_task: something to do with no fixed start. "Need to", "should", "have to", "remind me to", and "plan [chore]" are add_task unless a clock time is given, even when a day or part of the day is named.
+- edit_event: move, change, or reschedule an existing event. This includes "I can't make the 10 AM meeting, find another time".
+- cancel_event: cancel or delete an existing event.
+- search: asks what is already scheduled ("what do I have today", "what deadlines do I have this week"). It never creates anything.
+- schedule_gap_fill: asks when something can fit, or whether there is free time ("when can I meet Alex", "find me a slot", "do I have free time tomorrow morning"). It asks for availability, not a list of events, and never creates an event.
+
+2. Descriptive fields
+- title: a short label for the request. For schedule_gap_fill, a label only when the request names an activity or person ("Meet with Alex"); null for a generic availability question. For search, null unless it names one specific event to look up.
+- target_title: for edit_event and cancel_event, the existing event's title copied from the calendar context; otherwise null.
+- participants: only people named as attendees ("meeting with Sarah", "lunch with Alex"). A person who is only the object of an action ("call Mom", "email Dana") is not a participant. Otherwise null.
+- location: only when introduced as a place ("at the studio", "in the office", "location: studio"). A noun inside the task is not a location ("organize the studio").
+- duration: integer minutes, only when the user states a length ("an hour", "90 minutes", "2h", "three hours"). Keep it even when there is no exact start time. Never default it and never copy it from the calendar context.
+
+3. Exact times (start_time, end_time)
+- Set start_time when the user gives an explicit clock time ("at 3 PM", "at noon", "9 AM"). Set end_time to start_time plus the stated duration. If no duration is stated, still set end_time to one hour after start_time and leave duration null.
+- Set both when the user names an explicit interval ("from 2 to 4", "between 2 and 5 PM"), and set duration to the interval's length in minutes.
+- A broad period ("tonight", "this afternoon", "morning", "after lunch", "after work", "before bed") is not a clock time: leave start_time and end_time null.
+- add_task, search, schedule_gap_fill, and cancel_event never get start_time or end_time.
+
+4. Scheduling window (scheduling_window_start, scheduling_window_end)
+- Always null for edit_event, cancel_event, and deadline-only requests.
+- search and schedule_gap_fill: the window is the period the user asks about, so the app knows where to look. Set it whenever the request names a day, part of a day, or span of days, using the period bounds below. Leave it null only when no period is named.
+- add_task and add_event: set a window only when the input names a whole day or a span of days with no clock time, no part of the day, and no "sometime/whenever/eventually": "tomorrow", "Monday", "next week". The window starts at local midnight of the first day and ends at local midnight after the last day (exclusive), so a one-day window is exactly 24 hours long: for "tomorrow" it runs from tomorrow 00:00 to the day after tomorrow 00:00, and never starts today. "Next week" runs from the coming Monday to the Monday after it.
+- For add_task and add_event, leave the window null for vague timing: "sometime", "this afternoon", "tonight", "Saturday morning", "after lunch", "after work". An explicit clock time always takes precedence over a window.
+- Period bounds for search and schedule_gap_fill, in the user's timezone: a day is 00:00 to the next 00:00; morning 06:00-12:00; afternoon 12:00-17:00; evening 17:00-21:00; tonight 18:00 to the next 00:00; "after lunch" 13:00-17:00; "this week" is the Monday 00:00 on or before the reference date to the following Monday 00:00; "next week" is the coming Monday to the Monday after it.
+- For schedule_gap_fill, if the period has already begun (for example "this week" or "today"), move its start up to the reference date and time; a period that starts later, such as tomorrow or Monday, keeps its own start. For search keep the full period, including the part already past.
+
+5. Dates
+- "Tomorrow" is the calendar day after the reference date, never the reference date itself. A one-day window for tomorrow runs from tomorrow 00:00 to the day after tomorrow 00:00.
+- A named weekday means its next occurrence strictly after the reference date, never the reference date itself. With a Saturday reference, "Friday" is the following Friday and "Monday" is two days later.
+- Use the UTC offset that is in effect on the resolved date, which can differ from the reference date's offset across a daylight-saving change.
+- deadline_fixed: a date-only value, only for an explicit deadline ("by Friday", "due the 3rd"). A deadline is not a window or a time: for a deadline-only request leave start_time, end_time, and both window fields null.
+- Corrections ("tomorrow at 10, actually Friday at 2"): use only the final value and discard every superseded date or time.
+- Never emit symbolic dates such as today, tomorrow, or next_week.
+
+6. Recurrence and edits
+- add_recurring_event: recurrence_rule is an RRULE string without the "RRULE:" prefix (for example FREQ=WEEKLY;BYDAY=MO). start_time and end_time are the first occurrence: the next matching date after the reference date, with the end rule from section 3.
+- edit_event: when only the time changes, keep the existing event's date and length from the calendar context. If the user gives a replacement clock time, always set start_time and end_time from that time, the preserved date, and the preserved length. If the user gives no replacement time (for example "find another time"), leave start_time and end_time null; never copy the existing event's time. duration stays null unless the user states one.
+- If no existing event appears in the calendar context, "schedule it" is a new add_event, not an edit.
+
+Examples (inputs are illustrative; reference date is Saturday 2026-03-14 10:00 America/Los_Angeles):
+- "Coffee with Priya Wednesday at 8 AM" -> add_event, participants ["Priya"], start_time 2026-03-18T08:00:00-07:00, end_time 2026-03-18T09:00:00-07:00, duration null, windows null.
+- "Need to renew my passport next Tuesday, 30 minutes" -> add_task, duration 30, scheduling_window_start 2026-03-17T00:00:00-07:00, scheduling_window_end 2026-03-18T00:00:00-07:00, start_time and end_time null.
+- "Plan the budget review tomorrow afternoon" -> add_task, start_time, end_time, and windows all null (part of a day is not a window).
+- "Call Dana Thursday morning for 15 minutes" -> add_event, participants null, duration 15, start_time, end_time, and windows all null.
+- "What is on my calendar Friday?" -> search, scheduling_window_start 2026-03-20T00:00:00-07:00, scheduling_window_end 2026-03-21T00:00:00-07:00, every other field null.
+- "When can I fit 45 minutes with Sam this week?" -> schedule_gap_fill, participants ["Sam"], duration 45, scheduling_window_start 2026-03-14T10:00:00-07:00 (the reference time), scheduling_window_end 2026-03-16T00:00:00-07:00.`;
