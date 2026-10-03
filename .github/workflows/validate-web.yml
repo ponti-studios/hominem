@@ -9,6 +9,8 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - '.npmrc'
+      - '.dockerignore'
       - 'turbo.json'
       - 'tsconfig*.json'
       - 'tsconfig.profiles/**'
@@ -19,6 +21,7 @@ on:
       - '.github/actions/setup-goose/**'
       - '.github/workflows/validate-web.yml'
       - '.github/workflows/_validate-app.yml'
+      - '.github/workflows/_validate-docker.yml'
   pull_request:
     branches: [main, preview]
     paths: *validation-paths

@@ -9,6 +9,8 @@ on:
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
+      - '.npmrc'
+      - '.dockerignore'
       - 'turbo.json'
       - 'tsconfig*.json'
       - 'tsconfig.profiles/**'
@@ -20,6 +22,7 @@ on:
       - '.github/workflows/validate-finance.yml'
       - '.github/workflows/deploy-finance.yml'
       - '.github/workflows/_validate-app.yml'
+      - '.github/workflows/_validate-docker.yml'
   pull_request:
     branches: [main, preview]
     paths: *validation-paths
