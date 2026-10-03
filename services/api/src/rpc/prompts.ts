@@ -196,7 +196,7 @@ Work through the fields in this order. Never invent a value the input does not e
 1. primary_intent
 - add_event: a meeting, appointment, call, or activity with an explicit clock time, or one placed in a named day or part of the day ("gym tonight", "call Mom Sunday afternoon", "put reading before bed", "haircut Saturday morning"). "Schedule", "book", or "set up" something, with or without a person ("schedule 2 hours with Sam at the office"), is add_event: the user is asking to put it on the calendar, not asking when it fits.
 - add_recurring_event: a new event with an explicit repeating pattern ("every Monday", "weekly").
-- add_task: something to do with no fixed start. "Need to", "should", "have to", "remind me to", and "plan [chore]" are add_task unless a clock time is given, even when a day or part of the day is named.
+- add_task: something to do with no fixed start. "Need to", "should", "have to", "remind me to", and "plan [chore]" are add_task unless a clock time is given, even when a day or part of the day is named. A chore or errand (groceries, laundry, the invoice) is a task to get done, not a block to place: "Plan groceries after work today" is add_task, while a named activity placed in a period ("gym tonight", "reading before bed") is add_event.
 - edit_event: move, change, or reschedule an existing event. This includes "I can't make the 10 AM meeting, find another time".
 - cancel_event: cancel or delete an existing event.
 - search: asks what is already scheduled ("what do I have today", "what deadlines do I have this week"). It never creates anything.
@@ -219,7 +219,7 @@ Work through the fields in this order. Never invent a value the input does not e
 - Always null for edit_event, cancel_event, and deadline-only requests.
 - search and schedule_gap_fill: the window is the period the user asks about, so the app knows where to look. Set it whenever the request names a day, part of a day, or span of days, using the period bounds below. Leave it null only when no period is named.
 - add_task and add_event: set a window only when the input names a whole day or a span of days with no clock time, no part of the day, and no "sometime/whenever/eventually": "tomorrow", "Monday", "next week". The window starts at local midnight of the first day and ends at local midnight after the last day (exclusive), so a one-day window is exactly 24 hours long: for "tomorrow" it runs from tomorrow 00:00 to the day after tomorrow 00:00, and never starts today. "Next week" runs from the coming Monday to the Monday after it.
-- For add_task and add_event, leave the window null for vague timing: "sometime", "this afternoon", "tonight", "Saturday morning", "after lunch", "after work". An explicit clock time always takes precedence over a window.
+- For add_task and add_event, leave the window null for vague timing: "sometime", "this afternoon", "tonight", "Saturday morning", "after lunch", "after work". "Sometime" always wins: "sometime next week" names a week but gets no window. An explicit clock time always takes precedence over a window.
 - Period bounds for search and schedule_gap_fill, in the user's timezone: a day is 00:00 to the next 00:00; morning 06:00-12:00; afternoon 12:00-17:00; evening 17:00-21:00; tonight 18:00 to the next 00:00; "after lunch" 13:00-17:00; "this week" is the Monday 00:00 on or before the reference date to the following Monday 00:00; "next week" is the coming Monday to the Monday after it.
 - For schedule_gap_fill, if the period has already begun (for example "this week" or "today"), move its start up to the reference date and time; a period that starts later, such as tomorrow or Monday, keeps its own start. For search keep the full period, including the part already past.
 
@@ -239,6 +239,7 @@ Work through the fields in this order. Never invent a value the input does not e
 Examples (inputs are illustrative; reference date is Saturday 2026-03-14 10:00 America/Los_Angeles):
 - "Coffee with Priya Wednesday at 8 AM" -> add_event, participants ["Priya"], start_time 2026-03-18T08:00:00-07:00, end_time 2026-03-18T09:00:00-07:00, duration null, windows null.
 - "Need to renew my passport next Tuesday, 30 minutes" -> add_task, duration 30, scheduling_window_start 2026-03-17T00:00:00-07:00, scheduling_window_end 2026-03-18T00:00:00-07:00, start_time and end_time null.
+- "I should call the vendor sometime next week" -> add_task, start_time, end_time, and windows all null ("sometime" means no window, even though a week is named).
 - "Plan the budget review tomorrow afternoon" -> add_task, start_time, end_time, and windows all null (part of a day is not a window).
 - "Call Dana Thursday morning for 15 minutes" -> add_event, participants null, duration 15, start_time, end_time, and windows all null.
 - "What is on my calendar Friday?" -> search, scheduling_window_start 2026-03-20T00:00:00-07:00, scheduling_window_end 2026-03-21T00:00:00-07:00, every other field null.
