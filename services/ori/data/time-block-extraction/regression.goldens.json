@@ -13,7 +13,7 @@
   {
     "name": "flexible-task",
     "input": "Need to write pitch deck tomorrow 2h",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Need to write pitch deck tomorrow 2h\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":120,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T00:00:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Write pitch deck\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":120,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T00:00:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -57,7 +57,7 @@
   {
     "name": "explicit-deadline",
     "input": "Need to finish the expense report by Friday",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Need to finish the expense report by Friday\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":\"2026-07-31\",\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Finish expense report\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":\"2026-07-31\",\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -79,7 +79,7 @@
   {
     "name": "no-invention",
     "input": "I should organize the studio sometime",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"I should organize the studio sometime\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Organize the studio\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -134,7 +134,7 @@
   {
     "name": "submit-invoice-friday",
     "input": "Remind me to submit the invoice by Friday",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Remind me to submit the invoice by Friday\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":\"2026-07-31\",\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Submit invoice\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":\"2026-07-31\",\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -145,7 +145,7 @@
   {
     "name": "board-meeting-next-week",
     "input": "I need to prepare for the board meeting sometime next week",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"I need to prepare for the board meeting sometime next week\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Prepare for board meeting\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -200,7 +200,7 @@
   {
     "name": "recurring-team-sync",
     "input": "Add a team sync every Monday at 9 AM",
-    "expectedOutput": "{\"primary_intent\":\"add_recurring_event\",\"title\":\"Add a team sync every Monday at 9 AM\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-27T09:00:00-07:00\",\"end_time\":\"2026-07-27T10:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":\"FREQ=WEEKLY;BYDAY=MO\"}",
+    "expectedOutput": "{\"primary_intent\":\"add_recurring_event\",\"title\":\"Team sync\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-27T09:00:00-07:00\",\"end_time\":\"2026-07-27T10:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":\"FREQ=WEEKLY;BYDAY=MO\"}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -222,7 +222,7 @@
   {
     "name": "groceries-after-work",
     "input": "Plan groceries after work today",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Plan groceries after work today\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Plan groceries\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T17:30:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -299,7 +299,7 @@
   {
     "name": "reading-before-bed",
     "input": "Put reading before bed tonight",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Reading before bed\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Reading\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T21:00:00-07:00",
       "timezone": "America/Los_Angeles",
