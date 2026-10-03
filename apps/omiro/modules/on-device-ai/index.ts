@@ -6,12 +6,8 @@ export type {
   CalendarEvent,
   CalendarEventSummary,
   CalendarEventPatch,
+  CalendarOpening,
   CalendarRecurrenceScope,
-  OnDeviceAILogEvent,
   OnDeviceAIModuleType,
-  OnDeviceAIResult,
   TaskBusyInterval,
-  TimeAssistantResult,
-  TimeProcessingStage,
-  TimeProcessingStageEvent,
 } from './src/OnDeviceAIModule';

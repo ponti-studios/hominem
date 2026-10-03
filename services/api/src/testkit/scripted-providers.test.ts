@@ -1,6 +1,8 @@
 import { streamChatCompletion } from '@hominem/ai';
 import { describe, expect, it } from 'vitest';
 
+import { extractTimeBlock } from '../application/time-block-extraction.service';
+
 // Install/teardown for the whole suite lives in testkit/setup.ts
 // (vitest.config.ts setupFiles) — every test file shares one dispatcher
 // install rather than managing its own.
@@ -255,5 +257,38 @@ describe('scripted Resend provider', () => {
     });
 
     expect(response.status).toBe(400);
+  });
+});
+
+describe('scripted time-block extraction', () => {
+  const extract = (transcript: string) =>
+    extractTimeBlock(
+      { transcript, referenceDate: '2026-07-25T11:17:00-07:00', timezone: 'America/Los_Angeles' },
+      'prompt',
+    );
+
+  it('turns plain text into a task by default', async () => {
+    const { block } = await extract('Buy milk');
+    expect(block).toMatchObject({ primary_intent: 'add_task', title: 'Buy milk' });
+  });
+
+  it('returns a fixed event for coffee requests, in the user time zone', async () => {
+    const { block } = await extract('Coffee with Priya tomorrow');
+    expect(block).toMatchObject({
+      primary_intent: 'add_event',
+      start_time: '2026-07-26T09:00:00-07:00',
+      end_time: '2026-07-26T10:00:00-07:00',
+    });
+  });
+
+  it('returns windows for search and free-time requests', async () => {
+    expect((await extract('What do I have this week')).block).toMatchObject({
+      primary_intent: 'search',
+      scheduling_window_start: '2026-07-24T17:00:00-07:00',
+    });
+    expect((await extract('When can I fit a call')).block).toMatchObject({
+      primary_intent: 'schedule_gap_fill',
+      duration: 30,
+    });
   });
 });

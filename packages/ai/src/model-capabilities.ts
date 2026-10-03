@@ -11,6 +11,11 @@ export function getModelCapabilityProfile(model: string): ModelCapabilityProfile
   if (model === 'openai/gpt-5-mini') {
     return { structuredPlanning: true, reasoning: { effort: 'minimal' } };
   }
+  // GLM 5.3 Flash rejects `effort: none` and `enabled: false` with a 400
+  // ("Reasoning is mandatory"); low is the cheapest effort it accepts.
+  if (model === 'z-ai/glm-5.3-flash') {
+    return { structuredPlanning: true, reasoning: { effort: 'low' } };
+  }
   // Muse Spark currently rejects the provider's structured-output/reasoning
   // controls. Keep that compatibility decision in one profile instead of
   // spreading provider-name checks through chat routing.

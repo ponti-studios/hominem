@@ -10,7 +10,11 @@ declare const Bun: {
 };
 
 declare module 'bun:test' {
-  export function test(name: string, callback: () => unknown | Promise<unknown>): void;
+  export function test(
+    name: string,
+    callback: () => unknown | Promise<unknown>,
+    timeoutMs?: number,
+  ): void;
   export function expect(value: unknown): {
     toEqual(expected: unknown): void;
     toContain(expected: unknown): void;

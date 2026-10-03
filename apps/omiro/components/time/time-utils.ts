@@ -2,7 +2,7 @@ import type { CalendarEvent } from '~/modules/on-device-ai';
 import { formatClockTime } from '~/services/date/format-date';
 import type { TaskListItem } from '~/services/tasks/task-types';
 
-import type { TimeBlock, TimeItem, TimeOpening, TimeStreamRow } from './time-types';
+import type { TimeBlock, TimeItem, TimeStreamRow } from './time-types';
 
 const DEFAULT_AVAILABILITY_DAYS = 7;
 
@@ -141,79 +141,6 @@ export function getAvailabilityRange(block: TimeBlock, now = new Date()) {
     ? new Date(block.scheduling_window_end)
     : new Date(start.getTime() + DEFAULT_AVAILABILITY_DAYS * 24 * 60 * 60 * 1000);
   return { start, end };
-}
-
-export function findOpenings({
-  events,
-  range,
-  tasks,
-  durationMinutes,
-}: {
-  durationMinutes: number;
-  events: CalendarEvent[];
-  range: { end: Date; start: Date };
-  tasks: TaskListItem[];
-}): TimeOpening[] {
-  const busy: { end: Date; start: Date }[] = [];
-  const addBusyInterval = (start: Date, end: Date) => {
-    const clippedStart = new Date(Math.max(start.getTime(), range.start.getTime()));
-    const clippedEnd = new Date(Math.min(end.getTime(), range.end.getTime()));
-    if (clippedEnd > clippedStart) {
-      busy.push({ end: clippedEnd, start: clippedStart });
-    }
-  };
-  for (const event of events) {
-    addBusyInterval(new Date(event.startDate), new Date(event.endDate));
-  }
-  for (const task of tasks) {
-    if (task.startAt && task.dueAt) {
-      addBusyInterval(new Date(task.startAt), new Date(task.dueAt));
-    }
-  }
-  busy.sort((left, right) => left.start.getTime() - right.start.getTime());
-  const openings: TimeOpening[] = [];
-  let cursor = range.start;
-  const durationMs = durationMinutes * 60 * 1000;
-
-  for (const interval of busy) {
-    if (interval.start.getTime() - cursor.getTime() >= durationMs) {
-      openings.push({
-        start: cursor.toISOString(),
-        end: new Date(cursor.getTime() + durationMs).toISOString(),
-      });
-    }
-    if (interval.end > cursor) {
-      cursor = interval.end;
-    }
-    if (openings.length === 3) {
-      return openings;
-    }
-  }
-
-  if (range.end.getTime() - cursor.getTime() >= durationMs) {
-    openings.push({
-      start: cursor.toISOString(),
-      end: new Date(cursor.getTime() + durationMs).toISOString(),
-    });
-  }
-  return openings.slice(0, 3);
-}
-
-export function findEventCandidates(
-  events: CalendarEvent[],
-  targetTitle: string | null,
-  now: Date = new Date(),
-) {
-  const normalizedTitle = targetTitle?.trim().toLocaleLowerCase();
-  if (!normalizedTitle) {
-    return [];
-  }
-  const nowMs = now.getTime();
-  return events.filter(
-    (event) =>
-      event.title.trim().toLocaleLowerCase() === normalizedTitle &&
-      new Date(event.endDate).getTime() >= nowMs,
-  );
 }
 
 export function formatDraftWhen(timeBlock: TimeBlock | null): string | null {

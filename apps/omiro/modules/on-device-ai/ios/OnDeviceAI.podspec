@@ -1,8 +1,8 @@
 Pod::Spec.new do |s|
   s.name           = 'OnDeviceAI'
   s.version        = '1.0.0'
-  s.summary        = 'On-device Apple Intelligence tool-calling spike for Omiro'
-  s.description    = 'Local Expo module that runs a FoundationModels session with a calendar lookup tool entirely on-device.'
+  s.summary        = 'On-device EventKit access for Omiro Time'
+  s.description    = 'Local Expo module that reads and edits EventKit calendars, finds open time, and matches event titles entirely on-device.'
   s.author         = 'chase bridges'
   s.homepage       = 'https://github.com/hackefeller/hominem'
   s.license        = { :type => 'ISC' }

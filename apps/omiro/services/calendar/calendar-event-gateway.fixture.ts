@@ -1,20 +1,28 @@
 import type {
   CalendarEvent,
   CalendarEventPatch,
+  CalendarOpening,
   CalendarPermissionStatus,
   CalendarRecurrenceScope,
-  OnDeviceAIResult,
-  TimeProcessingStageEvent,
 } from '~/modules/on-device-ai';
 
 import type { CalendarEventGateway } from './calendar-event-gateway';
 
 type TimeFixtureScenario = 'authorized' | 'denied' | 'error' | 'loading' | 'notDetermined';
 
+// Relative to now so the fixture events stay upcoming: the Time stream hides
+// past events, and fixed dates would silently drop out of every e2e flow.
+function fixtureTime(daysFromNow: number, hourUtc: number) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + daysFromNow);
+  date.setUTCHours(hourUtc, 0, 0, 0);
+  return date.toISOString();
+}
+
 const fixtureEvents: CalendarEvent[] = [
   {
     calendarTitle: 'Omiro test calendar',
-    endDate: '2026-07-26T11:00:00.000Z',
+    endDate: fixtureTime(-2, 11),
     id: 'time-fixture-past',
     isAllDay: false,
     isEditable: true,
@@ -22,12 +30,12 @@ const fixtureEvents: CalendarEvent[] = [
     notes: null,
     participants: ['Avery'],
     recurrenceDescription: null,
-    startDate: '2026-07-26T10:00:00.000Z',
+    startDate: fixtureTime(-2, 10),
     title: 'Fixture completed planning',
   },
   {
     calendarTitle: 'Omiro test calendar',
-    endDate: '2026-07-28T10:00:00.000Z',
+    endDate: fixtureTime(2, 10),
     id: 'time-fixture-editable',
     isAllDay: false,
     isEditable: true,
@@ -35,12 +43,12 @@ const fixtureEvents: CalendarEvent[] = [
     notes: null,
     participants: ['Avery'],
     recurrenceDescription: null,
-    startDate: '2026-07-28T09:00:00.000Z',
+    startDate: fixtureTime(2, 9),
     title: 'Fixture planning',
   },
   {
     calendarTitle: 'Read-only calendar',
-    endDate: '2026-07-29T14:00:00.000Z',
+    endDate: fixtureTime(3, 14),
     id: 'time-fixture-read-only',
     isAllDay: false,
     isEditable: false,
@@ -48,12 +56,11 @@ const fixtureEvents: CalendarEvent[] = [
     notes: 'Managed by another account',
     participants: [],
     recurrenceDescription: 'Every week',
-    startDate: '2026-07-29T13:00:00.000Z',
+    startDate: fixtureTime(3, 13),
     title: 'Fixture recurring read-only',
   },
 ];
 let scenario: TimeFixtureScenario = 'authorized';
-const processingStageListeners = new Set<(event: TimeProcessingStageEvent) => void>();
 
 function permission(): CalendarPermissionStatus {
   if (scenario === 'denied') {
@@ -75,23 +82,25 @@ async function maybeFail() {
 }
 
 export const timeFixtureGateway: CalendarEventGateway = {
-  askSchedule: async (prompt): Promise<OnDeviceAIResult> => {
+  findOpenings: async (startDate, endDate, durationMinutes): Promise<CalendarOpening[]> => {
     await maybeFail();
-    return { isOnDevice: true, text: `Fixture answer for ${prompt}` };
+    const start = new Date(startDate);
+    return [
+      {
+        endDate: new Date(start.getTime() + durationMinutes * 60_000).toISOString(),
+        startDate: start.toISOString(),
+      },
+    ];
   },
-  interpret: async (prompt, _taskBusyIntervals, requestToken) => {
-    const emit = (stage: TimeProcessingStageEvent['stage']) => {
-      processingStageListeners.forEach((listener) => listener({ requestToken, stage }));
-    };
-    emit('understanding');
+  matchEvents: async (query, startDate, endDate): Promise<CalendarEvent[]> => {
     await maybeFail();
-    emit('preparingSuggestion');
-    return { kind: 'answer', answer: `Fixture answer for ${prompt}` };
-  },
-  cancelInterpretation: async () => {},
-  subscribeToProcessingStage: (listener: (event: TimeProcessingStageEvent) => void) => {
-    processingStageListeners.add(listener);
-    return { remove: () => processingStageListeners.delete(listener) };
+    const needle = query.trim().toLocaleLowerCase();
+    return fixtureEvents.filter(
+      (event) =>
+        event.title.toLocaleLowerCase().includes(needle) &&
+        event.endDate >= startDate &&
+        event.startDate <= endDate,
+    );
   },
   createEvent: async (title, startDate, endDate, location): Promise<CalendarEvent> => {
     await maybeFail();

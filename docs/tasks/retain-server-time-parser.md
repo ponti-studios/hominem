@@ -11,7 +11,7 @@ estimated_size: 'M'
 ## Product boundary
 
 `POST /api/tasks/parse` is a supported server capability for web task
-management and older Omiro builds. The device-only Calendar rollout changes
+management and Omiro's natural-language Time input. The device-only Calendar rollout changes
 only the source of calendar data for current Omiro builds; it does not change
 the parser's supported status or authorize removing the endpoint.
 
