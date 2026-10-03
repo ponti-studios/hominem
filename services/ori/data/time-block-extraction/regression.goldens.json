@@ -244,7 +244,7 @@
   {
     "name": "jordan-office-planning",
     "input": "Schedule 90 minutes with Jordan at the office",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":null,\"target_title\":null,\"participants\":[\"Jordan\"],\"location\":null,\"duration\":90,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":null,\"target_title\":null,\"participants\":[\"Jordan\"],\"location\":\"the office\",\"duration\":90,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
