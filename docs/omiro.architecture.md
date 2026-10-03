@@ -73,7 +73,9 @@ Feature services own query keys and mutations:
 - `services/notes/` owns note queries and mutations.
 - `services/tasks/` owns task queries and mutations. The server time parser
   remains a supported API surface for web task management and older released
-  clients during the device-only Calendar rollout.
+  clients during the device-only Calendar rollout. Current Omiro builds also call
+  it for natural-language Time input, sending only the request text, the current
+  time, and the time zone.
 - `services/calendar/` owns the compact EventKit summary gateway and calendar queries.
 
 Draft text and resume targets are local state. `launch-state.ts` stores Stream,
@@ -87,8 +89,8 @@ Local native modules are under `apps/omiro/modules/`:
 
 - `voice-transcriber` exposes iOS SpeechAnalyzer transcription to JavaScript.
 - `on-device-ai` owns typed EventKit summaries, native calendar-editor
-  presentation, and calendar-related Foundation Model tools. It is the only
-  calendar write boundary.
+  presentation, on-device free-slot search, and event-title matching. It is the
+  only calendar write boundary and contains no language model.
 - `omiro-intents` exposes the supported Apple intent entry points.
 
 Shared UI packages may provide serializable design and motion contracts, but

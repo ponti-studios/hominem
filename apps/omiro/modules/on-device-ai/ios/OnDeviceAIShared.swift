@@ -1,7 +1,6 @@
 import EventKit
 import ExpoModulesCore
 import Foundation
-import FoundationModels
 import os.log
 
 let onDeviceAILog = OSLog(subsystem: "com.hominem.omiro", category: "OnDeviceAI")
@@ -21,24 +20,10 @@ final class OnDeviceAIException: Exception, @unchecked Sendable {
   override var reason: String { messageText }
   override var code: String { codeText }
 
-  static var modelUnavailable: OnDeviceAIException {
-    OnDeviceAIException(
-      code: "MODEL_UNAVAILABLE",
-      message: "Apple Intelligence is not available on this device."
-    )
-  }
-
   static var missingPermission: OnDeviceAIException {
     OnDeviceAIException(
       code: "MISSING_PERMISSION",
-      message: "Calendar access is required to answer this question."
-    )
-  }
-
-  static var generationFailed: OnDeviceAIException {
-    OnDeviceAIException(
-      code: "GENERATION_FAILED",
-      message: "The on-device model failed to respond."
+      message: "Calendar access is required for this request."
     )
   }
 
@@ -54,9 +39,8 @@ final class OnDeviceAIException: Exception, @unchecked Sendable {
   }
 }
 
-// Shared "yyyy-MM-dd" formatter for the tool's date-range arguments. Fixed
-// POSIX locale and device time zone so parsing never depends on the user's
-// region settings, only on the format the model was told to produce.
+// Shared "yyyy-MM-dd" formatter for date-range arguments. Fixed POSIX locale
+// and device time zone so parsing never depends on the user's region settings.
 func dayFormatter() -> DateFormatter {
   let formatter = DateFormatter()
   formatter.dateFormat = "yyyy-MM-dd"
@@ -189,25 +173,6 @@ func recurrenceRule(_ value: String?) throws -> EKRecurrenceRule? {
   )
 }
 
-// Human-readable "today" anchor, e.g. "Monday, 2026-07-20". Given to the
-// model so it can resolve relative phrases ("this time last year", "end of
-// next month") into concrete dates itself, instead of the tool guessing at
-// day-count arithmetic on the model's behalf.
-func todayAnchorString() -> String {
-  let formatter = DateFormatter()
-  formatter.dateFormat = "EEEE, yyyy-MM-dd"
-  formatter.timeZone = .current
-  return formatter.string(from: Date())
-}
-
-struct OnDeviceAIResult: Record {
-  @Field
-  var text: String = ""
-
-  @Field
-  var isOnDevice: Bool = true
-}
-
 struct CalendarEventSummaryRecord: Record {
   @Field var id: String = ""
   @Field var title: String = ""
@@ -226,26 +191,12 @@ struct CalendarDraftRecord: Record {
   @Field var isAllDay: Bool = false
   @Field var location: String?
   @Field var notes: String?
+  @Field var recurrenceRule: String?
 }
 
 struct TaskBusyIntervalRecord: Record {
   @Field var startDate: String = ""
   @Field var endDate: String = ""
-}
-
-struct TimeAssistantResultRecord: Record {
-  @Field var kind: String = "error"
-  @Field var answer: String?
-  @Field var taskTitle: String?
-  @Field var taskDueAt: String?
-  @Field var taskDurationMinutes: Int?
-  @Field var taskScheduledStartAt: String?
-  @Field var taskScheduledEndAt: String?
-  @Field var taskSchedulingWindowStartAt: String?
-  @Field var taskSchedulingWindowEndAt: String?
-  @Field var taskLocation: String?
-  @Field var availability: [AvailabilityChoiceRecord] = []
-  @Field var error: String?
 }
 
 struct AvailabilityChoiceRecord: Record {
@@ -279,25 +230,4 @@ func requestCalendarAuthorization() async -> EKAuthorizationStatus {
     )
   }
   return EKEventStore.authorizationStatus(for: .event)
-}
-
-@Generable
-enum DayPart: String, CaseIterable, Sendable {
-  case allDay
-  case morning
-  case afternoon
-  case evening
-
-  var hourRange: Range<Int>? {
-    switch self {
-    case .allDay:
-      return nil
-    case .morning:
-      return 5..<12
-    case .afternoon:
-      return 12..<17
-    case .evening:
-      return 17..<22
-    }
-  }
 }

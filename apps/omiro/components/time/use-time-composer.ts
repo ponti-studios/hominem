@@ -1,11 +1,13 @@
 import { randomUUID } from 'expo-crypto';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
-import type { CalendarEvent, TimeAssistantResult } from '~/modules/on-device-ai';
+import type { CalendarEvent } from '~/modules/on-device-ai';
 import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
 import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
+import { useTimeBlockParse } from '~/services/tasks/use-time-block-parse';
 
+import { resolveTimeRequest } from './time-request';
 import type {
   EditableTimeBlockField,
   TimeInteractionState,
@@ -25,16 +27,8 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
   const requestTokenRef = useRef<string | null>(null);
   const { data: tasks = [] } = useTasksQuery();
   const createTask = useTaskCreate();
+  const parseTimeBlock = useTimeBlockParse();
   const isSaving = createTask.isPending;
-
-  useEffect(() => {
-    const subscription = calendarEventGateway.subscribeToProcessingStage((event) => {
-      if (event.requestToken === requestTokenRef.current) {
-        setProcessingStage(event.stage);
-      }
-    });
-    return () => subscription.remove();
-  }, []);
 
   const fail = useCallback(
     (message: string, submittedPrompt: string) => {
@@ -56,43 +50,48 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
       setProcessingStage('understanding');
       setInteraction({ kind: 'parsing', submittedPrompt });
       try {
-        const result = await calendarEventGateway.interpret(
-          submittedPrompt,
-          tasks.flatMap((task) =>
+        const result = await resolveTimeRequest({
+          gateway: calendarEventGateway,
+          onStage: (stage) => {
+            if (requestTokenRef.current === requestToken) {
+              setProcessingStage(stage);
+            }
+          },
+          parse: parseTimeBlock.mutateAsync,
+          prompt: submittedPrompt,
+          taskBusyIntervals: tasks.flatMap((task) =>
             task.startAt && task.dueAt ? [{ startDate: task.startAt, endDate: task.dueAt }] : [],
           ),
-          requestToken,
-        );
+        });
         if (requestTokenRef.current !== requestToken) {
           return;
         }
-        if (result.kind === 'answer') {
-          setPrompt('');
-          setInteraction({ answer: result.answer, kind: 'answer' });
-          return;
+        switch (result.kind) {
+          case 'answer':
+            setPrompt('');
+            setInteraction({ answer: result.answer, kind: 'answer' });
+            return;
+          case 'availability':
+          case 'draft':
+          case 'event-choice':
+            setPrompt('');
+            setInteraction(result);
+            return;
+          case 'open-event':
+            setPrompt('');
+            setInteraction({ kind: 'idle' });
+            onOpenEvent(result.event);
+            return;
+          case 'present-draft': {
+            setInteraction({ kind: 'idle' });
+            const editorResult = await calendarEventGateway.presentDraft(result.draft);
+            setPrompt(editorResult === 'saved' ? '' : submittedPrompt);
+            return;
+          }
+          case 'error':
+            fail(result.message, submittedPrompt);
+            return;
         }
-        if (result.kind === 'availability') {
-          setPrompt('');
-          setInteraction({
-            kind: 'availability',
-            openings: result.availability.map(({ startDate, endDate }) => ({
-              start: startDate,
-              end: endDate,
-            })),
-            block: nativeTimeBlock(result),
-            submittedPrompt,
-          });
-          return;
-        }
-        if (result.kind === 'taskDraft') {
-          setPrompt('');
-          setInteraction({ block: nativeTimeBlock(result), kind: 'draft', submittedPrompt });
-          return;
-        }
-        fail(
-          result.kind === 'error' ? result.error : 'Time request was cancelled.',
-          submittedPrompt,
-        );
       } catch (error) {
         if (requestTokenRef.current !== requestToken) {
           return;
@@ -107,7 +106,7 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
         }
       }
     },
-    [fail, interaction.kind, isSaving, tasks],
+    [fail, interaction.kind, isSaving, onOpenEvent, parseTimeBlock.mutateAsync, tasks],
   );
 
   const ask = useCallback(() => {
@@ -126,17 +125,12 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
       return;
     }
     requestTokenRef.current = null;
-    void calendarEventGateway.cancelInterpretation(requestToken);
     setPrompt(interaction.submittedPrompt);
     setInteraction({ kind: 'idle' });
   }, [interaction]);
 
   const reset = useCallback(() => {
-    if (requestTokenRef.current) {
-      const requestToken = requestTokenRef.current;
-      requestTokenRef.current = null;
-      void calendarEventGateway.cancelInterpretation(requestToken);
-    }
+    requestTokenRef.current = null;
     setPrompt('');
     setProcessingStage('understanding');
     setInteraction({ kind: 'idle' });
@@ -248,25 +242,5 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
     setPrompt,
     submitDraft,
     updateDraft,
-  };
-}
-
-function nativeTimeBlock(
-  result: Extract<TimeAssistantResult, { kind: 'taskDraft' | 'availability' }>,
-) {
-  const draft = result.kind === 'taskDraft' ? result : null;
-  return {
-    primary_intent: 'add_task' as const,
-    title: draft?.taskTitle ?? null,
-    target_title: null,
-    participants: null,
-    location: draft?.taskLocation ?? null,
-    duration: draft?.taskDurationMinutes ?? null,
-    start_time: draft?.taskScheduledStartAt ?? null,
-    end_time: draft?.taskScheduledEndAt ?? null,
-    scheduling_window_start: draft?.taskSchedulingWindowStartAt ?? null,
-    scheduling_window_end: draft?.taskSchedulingWindowEndAt ?? null,
-    deadline_fixed: draft?.taskDueAt?.slice(0, 10) ?? null,
-    recurrence_rule: null,
   };
 }

@@ -18,17 +18,6 @@ final class OnDeviceAICalendarCoordinator: NSObject, @preconcurrency EKEventEdit
   private var presentedToken: UUID?
   private static let editorPresentationGraceNanoseconds: UInt64 = 5_000_000_000
 
-  // Raw EKEvent access for callers (e.g. the askCalendar chat tool) that need
-  // more than the CalendarEventSummary/CalendarEventSummaryRecord shape.
-  // Routes through the shared store rather than letting each caller stand up
-  // its own EKEventStore -- see summaries()/events(from:to:) for why that
-  // matters (a fresh store can read before a background CalDAV sync lands).
-  // Callers are responsible for their own permission check first.
-  func rawEvents(from startDate: Date, to endDate: Date) -> [EKEvent] {
-    let predicate = store.predicateForEvents(withStart: startDate, end: endDate, calendars: nil)
-    return store.events(matching: predicate).sorted { $0.startDate < $1.startDate }
-  }
-
   func summaries(startDate: String, endDate: String) throws -> [CalendarEventSummaryRecord] {
     guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
       throw OnDeviceAIException.missingPermission
@@ -96,7 +85,8 @@ final class OnDeviceAICalendarCoordinator: NSObject, @preconcurrency EKEventEdit
         endDate: end,
         isAllDay: draft.isAllDay,
         location: draft.location,
-        notes: draft.notes
+        notes: draft.notes,
+        recurrenceRule: draft.recurrenceRule
       )
     )
   }
@@ -115,6 +105,7 @@ final class OnDeviceAICalendarCoordinator: NSObject, @preconcurrency EKEventEdit
     event.isAllDay = draft.isAllDay
     event.location = draft.location
     event.notes = draft.notes
+    event.recurrenceRules = try recurrenceRule(draft.recurrenceRule).map { [$0] }
     event.calendar = store.defaultCalendarForNewEvents
     return await present(event: event)
   }

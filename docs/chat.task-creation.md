@@ -96,8 +96,8 @@ not a deterministic task extraction).
   (`extractVoiceTasks`, same service and route module as `/extract`), its
   own rate-limit bucket (`ai-task-voice`).
 - `POST /api/tasks/parse` - server time-block parsing retained as a supported
-  surface for web task management and older Omiro builds during device-only
-  Calendar adoption
+  surface for web task management, older Omiro builds, and Omiro's
+  natural-language Time input
   (`extractTimeBlock` in
   `services/api/src/application/time-block-extraction.service.ts`, routed by
   `services/api/src/rpc/routes/tasks.parse.ts`); unrelated to task creation.

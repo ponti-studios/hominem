@@ -1,11 +1,9 @@
 import { useApiClient } from '@hominem/rpc/react';
 import type { TasksParseInput, TasksParseOutput } from '@hominem/rpc/types';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 
 import { parseApiError } from '~/services/api/parse-api-error';
 import { localTimeZone } from '~/services/date/format-date';
-
-import { taskKeys } from './query-keys';
 
 function localISOString(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -22,24 +20,18 @@ function localISOString(date: Date): string {
   return `${y}-${mo}-${d}T${h}:${mi}:${s}${sign}${oh}:${om}`;
 }
 
+// Only the user's text, the current time and the time zone leave the device:
+// the calendar is read and matched on-device (see docs/omiro.time.md).
 export function useTimeBlockParse() {
   const client = useApiClient();
-  const queryClient = useQueryClient();
 
-  return useMutation<
-    TasksParseOutput,
-    Error,
-    Pick<TasksParseInput, 'transcript' | 'conversationContext' | 'calendarContext'>
-  >({
-    mutationFn: async ({ transcript, conversationContext, calendarContext }) => {
-      const timeZone = localTimeZone();
+  return useMutation<TasksParseOutput, Error, Pick<TasksParseInput, 'transcript'>>({
+    mutationFn: async ({ transcript }) => {
       const res = await client.api.tasks.parse.$post({
         json: {
           transcript,
-          conversationContext,
-          calendarContext,
           referenceDate: localISOString(new Date()),
-          timezone: timeZone,
+          timezone: localTimeZone(),
         },
       });
       if (!res.ok) {
@@ -50,6 +42,5 @@ export function useTimeBlockParse() {
       }
       return res.json();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: taskKeys.all }),
   });
 }

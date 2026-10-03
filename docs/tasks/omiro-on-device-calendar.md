@@ -8,6 +8,12 @@ blocks: []
 estimated_size: 'L'
 ---
 
+> **Superseded in part.** Calendar data is still device-only, but natural-language
+> Time requests are no longer interpreted by the on-device Foundation Model (it was
+> too slow and inaccurate). They are parsed by the server's cloud model from the
+> request text alone; free slots and event matching run in Swift. See
+> [omiro.time.md](../omiro.time.md).
+
 ## Outcome
 
 EventKit is the sole source of truth for calendar data. Omiro keeps tasks in

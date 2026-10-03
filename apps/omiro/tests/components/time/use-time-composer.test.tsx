@@ -4,41 +4,54 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
-const interpret = vi.fn();
+const parse = vi.fn();
 const presentDraft = vi.fn().mockResolvedValue('saved');
+const findOpenings = vi.fn();
 
 vi.mock('expo-crypto', () => ({ randomUUID: () => 'test-request-token' }));
 vi.mock('expo-router', () => ({ useIsFocused: () => true }));
 vi.mock('~/services/calendar/calendar-event-gateway', () => ({
   calendarEventGateway: {
-    cancelInterpretation: vi.fn(),
-    interpret,
+    findOpenings,
+    getPermission: vi.fn(async () => 'authorized'),
+    listEvents: vi.fn(async () => []),
+    matchEvents: vi.fn(async () => []),
     presentDraft,
-    subscribeToProcessingStage: vi.fn(() => ({ remove: vi.fn() })),
   },
 }));
 vi.mock('~/services/tasks/use-task-create', () => ({
   useTaskCreate: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 vi.mock('~/services/tasks/use-tasks-query', () => ({ useTasksQuery: () => ({ data: [] }) }));
+vi.mock('~/services/tasks/use-time-block-parse', () => ({
+  useTimeBlockParse: () => ({ mutateAsync: parse }),
+}));
 
 const { useTimeComposer } = await import('~/components/time/use-time-composer');
+
+const block = (overrides: Record<string, unknown> = {}) => ({
+  block: {
+    deadline_fixed: null,
+    duration: null,
+    end_time: null,
+    location: null,
+    participants: null,
+    primary_intent: 'add_task',
+    recurrence_rule: null,
+    scheduling_window_end: null,
+    scheduling_window_start: null,
+    start_time: null,
+    target_title: null,
+    title: null,
+    ...overrides,
+  },
+});
 
 describe('useTimeComposer', () => {
   afterEach(() => vi.clearAllMocks());
 
-  it('sends only the prompt and task busy intervals to the native assistant', async () => {
-    interpret.mockResolvedValueOnce({
-      kind: 'taskDraft',
-      taskDueAt: null,
-      taskDurationMinutes: 30,
-      taskLocation: null,
-      taskScheduledEndAt: null,
-      taskScheduledStartAt: null,
-      taskSchedulingWindowEndAt: null,
-      taskSchedulingWindowStartAt: null,
-      taskTitle: 'Buy milk',
-    });
+  it('parses in the cloud with only the prompt and shows a task draft', async () => {
+    parse.mockResolvedValueOnce(block({ duration: 30, title: 'Buy milk' }));
     const { result } = renderHookWithQueryClient(() =>
       useTimeComposer({ onError: vi.fn(), onOpenEvent: vi.fn() }),
     );
@@ -46,7 +59,7 @@ describe('useTimeComposer', () => {
     act(() => result.current.setPrompt('Buy milk'));
     await act(async () => result.current.ask());
 
-    expect(interpret).toHaveBeenCalledWith('Buy milk', [], expect.any(String));
+    expect(parse).toHaveBeenCalledWith({ transcript: 'Buy milk' });
     expect(result.current.interaction).toMatchObject({
       block: expect.objectContaining({
         duration: 30,
@@ -55,10 +68,11 @@ describe('useTimeComposer', () => {
       }),
       kind: 'draft',
     });
+    expect(result.current.prompt).toBe('');
   });
 
-  it('keeps an unavailable native-assistant message visible until cancelled', async () => {
-    interpret.mockResolvedValueOnce({ error: 'Apple Intelligence is unavailable.', kind: 'error' });
+  it('keeps a parse failure visible and restores the prompt until cancelled', async () => {
+    parse.mockRejectedValueOnce(new Error('Time block extraction failed'));
     const onError = vi.fn();
     const { result } = renderHookWithQueryClient(() =>
       useTimeComposer({ onError, onOpenEvent: vi.fn() }),
@@ -67,10 +81,10 @@ describe('useTimeComposer', () => {
     act(() => result.current.setPrompt('Schedule lunch'));
     await act(async () => result.current.ask());
 
-    expect(onError).toHaveBeenCalledWith('Apple Intelligence is unavailable.');
+    expect(onError).toHaveBeenCalledWith('Time block extraction failed');
     expect(result.current.interaction).toEqual({
       kind: 'error',
-      message: 'Apple Intelligence is unavailable.',
+      message: 'Time block extraction failed',
       submittedPrompt: 'Schedule lunch',
     });
     act(() => result.current.cancelResult());
@@ -81,18 +95,20 @@ describe('useTimeComposer', () => {
   });
 
   it('opens the selected availability as a native calendar draft', async () => {
-    interpret.mockResolvedValueOnce({
-      availability: [
-        { endDate: '2026-09-15T11:00:00.000Z', startDate: '2026-09-15T10:00:00.000Z' },
-      ],
-      kind: 'availability',
-    });
+    parse.mockResolvedValueOnce(block({ duration: 60, primary_intent: 'schedule_gap_fill' }));
+    findOpenings.mockResolvedValueOnce([
+      { endDate: '2026-09-15T11:00:00.000Z', startDate: '2026-09-15T10:00:00.000Z' },
+    ]);
     const { result } = renderHookWithQueryClient(() =>
       useTimeComposer({ onError: vi.fn(), onOpenEvent: vi.fn() }),
     );
 
     act(() => result.current.setPrompt('Find an hour tomorrow'));
     await act(async () => result.current.ask());
+    expect(result.current.interaction).toMatchObject({
+      kind: 'availability',
+      openings: [{ end: '2026-09-15T11:00:00.000Z', start: '2026-09-15T10:00:00.000Z' }],
+    });
     await act(async () =>
       result.current.chooseOpening({
         end: '2026-09-15T11:00:00.000Z',
@@ -109,5 +125,32 @@ describe('useTimeComposer', () => {
       title: 'Find an hour tomorrow',
     });
     expect(result.current.interaction).toEqual({ kind: 'idle' });
+  });
+
+  it('presents a fixed event in the native editor and keeps the prompt if it is cancelled', async () => {
+    parse.mockResolvedValueOnce(
+      block({
+        end_time: '2026-09-16T09:00:00.000Z',
+        primary_intent: 'add_event',
+        start_time: '2026-09-16T08:00:00.000Z',
+        title: 'Coffee with Priya',
+      }),
+    );
+    presentDraft.mockResolvedValueOnce('cancelled');
+    const { result } = renderHookWithQueryClient(() =>
+      useTimeComposer({ onError: vi.fn(), onOpenEvent: vi.fn() }),
+    );
+
+    act(() => result.current.setPrompt('Coffee with Priya Wednesday at 8'));
+    await act(async () => result.current.ask());
+
+    expect(presentDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startDate: '2026-09-16T08:00:00.000Z',
+        title: 'Coffee with Priya',
+      }),
+    );
+    expect(result.current.interaction).toEqual({ kind: 'idle' });
+    expect(result.current.prompt).toBe('Coffee with Priya Wednesday at 8');
   });
 });
