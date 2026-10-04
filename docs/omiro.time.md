@@ -46,7 +46,7 @@ entirely on-device:
 | `schedule_gap_fill`                 | Free slots from `findCalendarOpenings`, computed in Swift from EventKit events and task busy intervals. |
 | `search`                            | The EventKit events inside the block's scheduling window, listed as text.   |
 
-For `search` and `schedule_gap_fill` the extraction prompt sets the scheduling window to the period the user asked about; without a named period the app looks at the next seven days. UTC offsets are recomputed server-side from the user's time zone, so a date across a daylight-saving change is correct.
+For `search`, `schedule_gap_fill` and an `add_event` without a clock time, the extraction prompt sets the scheduling window to the period the user named ("tonight" is 18:00 to midnight, "Saturday morning" is 06:00 to 12:00); without a named period the app looks at the next seven days. UTC offsets are recomputed server-side from the user's time zone, so a date across a daylight-saving change is correct.
 
 Natural-language Time input needs a network connection. Browsing the stream and
 native event editing work offline. If parsing fails, the composer keeps the

@@ -24,7 +24,7 @@
   {
     "name": "tonight",
     "input": "Gym tonight for 1h",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Gym\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":60,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Gym\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":60,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T18:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -90,7 +90,7 @@
   {
     "name": "call-mom-sunday-afternoon",
     "input": "Call Mom Sunday afternoon for 30 minutes",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Call Mom\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":30,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Call Mom\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":30,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T12:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T17:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -101,7 +101,7 @@
   {
     "name": "deep-work-tomorrow-morning",
     "input": "Block two hours for deep work tomorrow morning",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Deep work\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":120,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Deep work\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":120,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T06:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T12:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -211,7 +211,7 @@
   {
     "name": "haircut-saturday-morning",
     "input": "Book a haircut sometime Saturday morning",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Haircut\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Haircut\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-08-01T06:00:00-07:00\",\"scheduling_window_end\":\"2026-08-01T12:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -299,7 +299,7 @@
   {
     "name": "reading-before-bed",
     "input": "Put reading before bed tonight",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Reading\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Reading\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T18:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T21:00:00-07:00",
       "timezone": "America/Los_Angeles",
