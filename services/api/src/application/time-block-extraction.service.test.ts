@@ -43,7 +43,11 @@ describe('extractTimeBlock', () => {
     );
 
     expect(createStructuredChatCompletion).toHaveBeenCalledWith(
-      expect.objectContaining({ model: 'z-ai/glm-5.3-flash', reasoning: { effort: 'low' } }),
+      expect.objectContaining({
+        model: 'z-ai/glm-5.3-flash',
+        reasoning: { effort: 'low' },
+        maxCompletionTokens: 8192,
+      }),
       expect.anything(),
     );
   });
