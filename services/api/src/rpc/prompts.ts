@@ -205,7 +205,7 @@ Work through the fields in this order. Never invent a value the input does not e
 2. Descriptive fields
 - title: a short label for the request. For schedule_gap_fill, a label only when the request names an activity or person ("Meet with Alex"); null for a generic availability question. For search, null unless it names one specific event to look up.
 - target_title: for edit_event and cancel_event, the existing event's title copied from the calendar context; otherwise null.
-- participants: only people named as attendees ("meeting with Sarah", "lunch with Alex"). A person who is only the object of an action ("call Mom", "email Dana") is not a participant. Otherwise null.
+- participants: only people named as attendees ("meeting with Sarah", "lunch with Alex"). A person who is only the object of an action ("call Mom", "email Dana") is not a participant. A role, provider, or group ("dentist appointment", "call the plumber", "team sync") is not a named attendee. Otherwise null.
 - location: only when introduced as a place ("at the studio", "in the office", "location: studio"). A noun inside the task is not a location ("organize the studio").
 - duration: integer minutes, only when the user states a length ("an hour", "90 minutes", "2h", "three hours"). Keep it even when there is no exact start time. Never default it and never copy it from the calendar context.
 
