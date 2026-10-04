@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { describeUpcomingDays } from './upcoming-days';
@@ -32,5 +35,11 @@ describe('describeUpcomingDays', () => {
     expect(describeUpcomingDays('2026-07-25T11:17:00-07:00', undefined)).toBeNull();
     expect(describeUpcomingDays('2026-07-25T11:17:00-07:00', 'Not/AZone')).toBeNull();
     expect(describeUpcomingDays('not a date', 'America/Los_Angeles')).toBeNull();
+  });
+
+  it('stays identical to the helper the Ori evals send to the model', () => {
+    const code = (path: string) =>
+      readFileSync(resolve(import.meta.dirname, path), 'utf8').replace(/\/\*\*[\s\S]*?\*\//, '');
+    expect(code('../../../ori/evals/lib/upcoming-days.ts')).toBe(code('./upcoming-days.ts'));
   });
 });
