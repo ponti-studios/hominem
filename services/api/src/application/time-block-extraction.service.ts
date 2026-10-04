@@ -180,6 +180,11 @@ export function normalizeOffsets(block: TimeBlock, timezone: string | undefined)
   };
 }
 
+// The answer is a small JSON object. Without a cap OpenRouter reserves the
+// model's full output limit (131072 tokens for GLM 5.3 Flash) against the key's
+// credit, and rejects the call when a limited key cannot cover that.
+const TIME_BLOCK_MAX_COMPLETION_TOKENS = 8192;
+
 export async function extractTimeBlock(
   input: TimeBlockExtractionInput,
   systemPrompt: string,
@@ -205,6 +210,7 @@ export async function extractTimeBlock(
         schemaName: 'time_block_extraction',
         schemaDescription: 'A single structured time block extracted from natural language.',
         reasoning: getReasoningConfig(model),
+        maxCompletionTokens: TIME_BLOCK_MAX_COMPLETION_TOKENS,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: context },
