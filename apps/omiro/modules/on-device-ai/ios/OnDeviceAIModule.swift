@@ -1,7 +1,6 @@
 import EventKit
 import ExpoModulesCore
 import Foundation
-import os.log
 
 public class OnDeviceAIModule: Module {
   private var calendarChangeObserver: NSObjectProtocol?
@@ -9,7 +8,7 @@ public class OnDeviceAIModule: Module {
   public func definition() -> ModuleDefinition {
     Name("OnDeviceAI")
 
-    Events("onDeviceAILog", "onTimeAssistantStage", "onCalendarStoreChanged")
+    Events("onCalendarStoreChanged")
 
     // EventKit syncs externally-hosted calendars (Google/Exchange via CalDAV)
     // into the local store asynchronously, sometimes after our first read has
@@ -55,33 +54,75 @@ public class OnDeviceAIModule: Module {
       try await OnDeviceAICalendarCoordinator.shared.presentDraft(draft)
     }
 
-    AsyncFunction("interpretTimeRequest") { (prompt: String, _ taskBusyIntervals: [TaskBusyIntervalRecord], requestToken: String) async throws -> TimeAssistantResultRecord in
-      guard #available(iOS 26.0, *) else {
-        var unavailable = TimeAssistantResultRecord()
-        unavailable.error = "Natural-language Time requests require Apple Intelligence on this device. You can still browse and edit Calendar manually."
-        return unavailable
-      }
+    // Free slots across EventKit events and the task busy intervals the caller
+    // passes in. Calendar data never leaves the device.
+    AsyncFunction("findCalendarOpenings") { (
+      startDate: String,
+      endDate: String,
+      durationMinutes: Int,
+      taskBusyIntervals: [TaskBusyIntervalRecord]
+    ) async throws -> [AvailabilityChoiceRecord] in
+      // Same ten-year bound as the event listing: the range comes from a model.
+      let (start, end) = try calendarRange(startDate: startDate, endDate: endDate)
       let intervals = taskBusyIntervals.compactMap { interval -> TaskBusyInterval? in
         guard let start = iso8601Date(interval.startDate), let end = iso8601Date(interval.endDate), start < end else {
           return nil
         }
         return TaskBusyInterval(startDate: start, endDate: end)
       }
-      sendTimeAssistantStage("understanding", requestToken: requestToken)
-      let response = try await runTimeAssistant(
-        prompt: prompt,
-        taskBusyIntervals: intervals,
-        requestToken: requestToken,
-        onStage: { stage in
-          self.sendTimeAssistantStage(stage, requestToken: requestToken)
+      let events = try await MainActor.run {
+        try OnDeviceAICalendarCoordinator.shared.events(from: start, to: end, limit: nil)
+      }
+      let formatter = ISO8601DateFormatter()
+      do {
+        return try CalendarAvailability.openings(
+          events: events,
+          taskBusyIntervals: intervals,
+          from: start,
+          to: end,
+          durationMinutes: durationMinutes
+        ).map { choice in
+          var record = AvailabilityChoiceRecord()
+          record.startDate = formatter.string(from: choice.startDate)
+          record.endDate = formatter.string(from: choice.endDate)
+          return record
         }
-      )
-      return timeAssistantRecord(from: response)
+      } catch {
+        throw OnDeviceAIException(
+          code: "INVALID_DATE_RANGE",
+          message: "Availability needs a positive duration and an end after the start."
+        )
+      }
     }
 
-    AsyncFunction("cancelTimeAssistant") { (requestToken: String) in
-      Task {
-        await cancelTimeAssistant(requestToken: requestToken)
+    // Events in the range whose title matches what the user typed, best match
+    // first. Matching runs on-device so titles are never sent to a model.
+    AsyncFunction("matchCalendarEvents") { (
+      query: String,
+      startDate: String,
+      endDate: String
+    ) async throws -> [CalendarEventSummaryRecord] in
+      guard let start = iso8601Date(startDate), let end = iso8601Date(endDate), start < end else {
+        throw OnDeviceAIException(
+          code: "INVALID_DATE_RANGE",
+          message: "Match dates must be ISO 8601 timestamps with an end after the start."
+        )
+      }
+      let events = try await MainActor.run {
+        try OnDeviceAICalendarCoordinator.shared.events(from: start, to: end, limit: nil)
+      }
+      let formatter = ISO8601DateFormatter()
+      return CalendarEventMatcher.matches(events: events, query: query).map { event in
+        var summary = CalendarEventSummaryRecord()
+        summary.id = event.id
+        summary.title = event.title
+        summary.startDate = formatter.string(from: event.startDate)
+        summary.endDate = formatter.string(from: event.endDate)
+        summary.isAllDay = event.isAllDay
+        summary.location = event.location
+        summary.calendarTitle = event.calendarTitle
+        summary.isEditable = event.isEditable
+        return summary
       }
     }
 
@@ -116,76 +157,5 @@ public class OnDeviceAIModule: Module {
     AsyncFunction("deleteCalendarEvent") { (id: String, recurrenceScope: String) throws -> Void in
       try deleteCalendarEvent(id: id, recurrenceScope: recurrenceScope)
     }
-
-    AsyncFunction("askCalendar") { (prompt: String) async throws -> OnDeviceAIResult in
-      os_log("askCalendar AsyncFunction invoked", log: onDeviceAILog, type: .info)
-      guard #available(iOS 26.0, *) else {
-        throw OnDeviceAIException.modelUnavailable
-      }
-
-      let startedAt = Date()
-      let response = try await runCalendarQuery(
-        prompt: prompt,
-        onLog: { event, message, durationMs in
-          var payload: [String: Any] = [
-            "type": event,
-            "message": message,
-            "timestamp": Date().timeIntervalSince1970 * 1000,
-          ]
-          if let durationMs {
-            payload["durationMs"] = durationMs
-          }
-          self.sendEvent("onDeviceAILog", payload)
-        }
-      )
-      os_log(
-        "askCalendar AsyncFunction resolved after %{public}.0fms",
-        log: onDeviceAILog,
-        type: .info,
-        Date().timeIntervalSince(startedAt) * 1000
-      )
-      return OnDeviceAIResult(text: response, isOnDevice: true)
-    }
   }
-
-  private func sendTimeAssistantStage(_ stage: String, requestToken: String) {
-    sendEvent("onTimeAssistantStage", [
-      "stage": stage,
-      "requestToken": requestToken,
-    ])
-  }
-}
-
-@available(iOS 26.0, *)
-private func timeAssistantRecord(from result: TimeAssistantResult) -> TimeAssistantResultRecord {
-  let formatter = ISO8601DateFormatter()
-  var record = TimeAssistantResultRecord()
-  switch result {
-  case .answer(let answer):
-    record.kind = "answer"
-    record.answer = answer
-  case .taskDraft(let draft):
-    record.kind = "taskDraft"
-    record.taskTitle = draft.title
-    record.taskDueAt = draft.dueAt.map(formatter.string)
-    record.taskDurationMinutes = draft.durationMinutes
-    record.taskScheduledStartAt = draft.scheduledStartAt.map(formatter.string)
-    record.taskScheduledEndAt = draft.scheduledEndAt.map(formatter.string)
-    record.taskSchedulingWindowStartAt = draft.schedulingWindowStartAt.map(formatter.string)
-    record.taskSchedulingWindowEndAt = draft.schedulingWindowEndAt.map(formatter.string)
-    record.taskLocation = draft.location
-  case .availability(let choices):
-    record.kind = "availability"
-    record.availability = choices.map { choice in
-      var value = AvailabilityChoiceRecord()
-      value.startDate = formatter.string(from: choice.startDate)
-      value.endDate = formatter.string(from: choice.endDate)
-      return value
-    }
-  case .cancelled:
-    record.kind = "cancelled"
-  case .error(let message):
-    record.error = message
-  }
-  return record
 }

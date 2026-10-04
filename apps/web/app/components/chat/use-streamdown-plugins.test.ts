@@ -11,6 +11,8 @@ describe('useStreamdownPlugins', () => {
 
     expect(result.current).toEqual({});
 
+    // The plugins load through dynamic imports (mermaid, code highlighting), which
+    // are slow when the whole repo's tests run in parallel.
     await waitFor(
       () => {
         expect(result.current.cjk).toBeDefined();
@@ -18,7 +20,7 @@ describe('useStreamdownPlugins', () => {
         expect(result.current.math).toBeDefined();
         expect(result.current.mermaid).toBeDefined();
       },
-      { timeout: 5000 },
+      { timeout: 25_000 },
     );
-  });
+  }, 30_000);
 });

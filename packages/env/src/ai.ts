@@ -14,7 +14,7 @@ export const aiSchema = z.object({
   RESUME_PARSE_MODEL: z.string().default('openai/gpt-5-mini'),
   SKILLS_DERIVATION_MODEL: z.string().default('openai/gpt-5-mini'),
   TASK_EXTRACTION_MODEL: z.string().default('openai/gpt-5-mini'),
-  TIME_BLOCK_EXTRACTION_MODEL: z.string().default('openai/gpt-5-mini'),
+  TIME_BLOCK_EXTRACTION_MODEL: z.string().default('z-ai/glm-5.3-flash'),
   VOICE_CLEANUP_MODEL: z.string().default('openai/gpt-5-mini'),
 });
 

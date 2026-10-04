@@ -38,6 +38,7 @@ public struct CalendarDraft: Codable, Equatable, Sendable {
   public let isAllDay: Bool
   public let location: String?
   public let notes: String?
+  public let recurrenceRule: String?
 
   public init(
     title: String,
@@ -45,7 +46,8 @@ public struct CalendarDraft: Codable, Equatable, Sendable {
     endDate: Date,
     isAllDay: Bool = false,
     location: String? = nil,
-    notes: String? = nil
+    notes: String? = nil,
+    recurrenceRule: String? = nil
   ) {
     self.title = title
     self.startDate = startDate
@@ -53,6 +55,7 @@ public struct CalendarDraft: Codable, Equatable, Sendable {
     self.isAllDay = isAllDay
     self.location = location
     self.notes = notes
+    self.recurrenceRule = recurrenceRule
   }
 }
 
@@ -66,37 +69,6 @@ public struct TaskBusyInterval: Codable, Equatable, Sendable {
   }
 }
 
-public struct TaskDraft: Codable, Equatable, Sendable {
-  public let title: String
-  public let dueAt: Date?
-  public let durationMinutes: Int?
-  public let scheduledStartAt: Date?
-  public let scheduledEndAt: Date?
-  public let schedulingWindowStartAt: Date?
-  public let schedulingWindowEndAt: Date?
-  public let location: String?
-
-  public init(
-    title: String,
-    dueAt: Date? = nil,
-    durationMinutes: Int? = nil,
-    scheduledStartAt: Date? = nil,
-    scheduledEndAt: Date? = nil,
-    schedulingWindowStartAt: Date? = nil,
-    schedulingWindowEndAt: Date? = nil,
-    location: String? = nil
-  ) {
-    self.title = title
-    self.dueAt = dueAt
-    self.durationMinutes = durationMinutes
-    self.scheduledStartAt = scheduledStartAt
-    self.scheduledEndAt = scheduledEndAt
-    self.schedulingWindowStartAt = schedulingWindowStartAt
-    self.schedulingWindowEndAt = schedulingWindowEndAt
-    self.location = location
-  }
-}
-
 public struct AvailabilityChoice: Codable, Equatable, Sendable, Identifiable {
   public let startDate: Date
   public let endDate: Date
@@ -106,14 +78,6 @@ public struct AvailabilityChoice: Codable, Equatable, Sendable, Identifiable {
     self.startDate = startDate
     self.endDate = endDate
   }
-}
-
-public enum TimeAssistantResult: Codable, Equatable, Sendable {
-  case answer(String)
-  case taskDraft(TaskDraft)
-  case availability([AvailabilityChoice])
-  case cancelled
-  case error(String)
 }
 
 public enum CalendarAssistantError: Error, Equatable, Sendable {
@@ -151,5 +115,47 @@ public enum CalendarAvailability {
       choices.append(AvailabilityChoice(startDate: cursor, endDate: cursor.addingTimeInterval(interval)))
     }
     return choices
+  }
+}
+
+// Ranks calendar events against the title the user typed ("cancel my dentist
+// appointment") without any model: lowercase, fold diacritics, drop command
+// words, then score by the share of query words that start a title word.
+public enum CalendarEventMatcher {
+  private static let ignoredWords: Set<String> = [
+    "a", "an", "the", "my", "to", "for", "of", "at", "on", "in", "with",
+    "cancel", "delete", "remove", "move", "reschedule", "change", "edit", "update",
+  ]
+  private static let minimumScore = 0.5
+
+  public static func matches(
+    events: [CalendarEventSummary],
+    query: String,
+    limit: Int = 5
+  ) -> [CalendarEventSummary] {
+    let queryWords = words(in: query).filter { !ignoredWords.contains($0) }
+    guard !queryWords.isEmpty, limit > 0 else { return [] }
+    let phrase = queryWords.joined(separator: " ")
+
+    let scored = events.compactMap { event -> (event: CalendarEventSummary, score: Double)? in
+      let titleWords = words(in: event.title)
+      let title = titleWords.joined(separator: " ")
+      if title == phrase { return (event, 2) }
+      if title.contains(phrase) { return (event, 1.5) }
+      let hits = queryWords.filter { word in titleWords.contains { $0.hasPrefix(word) } }.count
+      let score = Double(hits) / Double(queryWords.count)
+      return score >= minimumScore ? (event, score) : nil
+    }
+    return scored
+      .sorted { $0.score != $1.score ? $0.score > $1.score : $0.event.startDate < $1.event.startDate }
+      .prefix(limit)
+      .map(\.event)
+  }
+
+  private static func words(in text: String) -> [String] {
+    text
+      .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
+      .components(separatedBy: CharacterSet.alphanumerics.inverted)
+      .filter { $0.count > 1 || $0.allSatisfy(\.isNumber) }
   }
 }

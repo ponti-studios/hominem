@@ -44,6 +44,10 @@ export const renderMessages = (
   return { prompt, systemPrompt };
 };
 
+// Cases run three at a time, each with a candidate call and a judge call, so a
+// suite of ~30 goldens outlasts bun's 120s default test timeout.
+const SUITE_TIMEOUT_MS = 900_000;
+
 type SuiteOptions = {
   name: string;
   cases: Golden[];
@@ -72,40 +76,44 @@ export const registerJsonSuite = ({
   });
   const sampledCases = pilotCases(cases);
 
-  test(name, async () => {
-    const failures: Error[] = [];
-    const batches = Array.from({ length: Math.ceil(sampledCases.length / 3) }, (_, index) =>
-      sampledCases.slice(index * 3, index * 3 + 3),
-    );
-
-    for (const batch of batches) {
-      const settled = await Promise.allSettled(
-        batch.map(async (golden) => {
-          const input = buildInput(golden);
-          const run = await agent.run({
-            ...input,
-            ...(outputSchema ? { outputSchema: { name, schema: outputSchema } } : {}),
-          });
-          assertOutput?.(run.text, golden);
-          run.toComplete();
-          run.toFinishWithin(120_000);
-          await judge.autoEvals({
-            criteria: `${rubric}\n\nReference output:\n${golden.expectedOutput}`,
-            prompt: input.prompt,
-            run,
-          });
-        }),
+  test(
+    name,
+    async () => {
+      const failures: Error[] = [];
+      const batches = Array.from({ length: Math.ceil(sampledCases.length / 3) }, (_, index) =>
+        sampledCases.slice(index * 3, index * 3 + 3),
       );
 
-      for (const result of settled) {
-        if (result.status === 'rejected') {
-          failures.push(
-            result.reason instanceof Error ? result.reason : new Error(String(result.reason)),
-          );
+      for (const batch of batches) {
+        const settled = await Promise.allSettled(
+          batch.map(async (golden) => {
+            const input = buildInput(golden);
+            const run = await agent.run({
+              ...input,
+              ...(outputSchema ? { outputSchema: { name, schema: outputSchema } } : {}),
+            });
+            assertOutput?.(run.text, golden);
+            run.toComplete();
+            run.toFinishWithin(120_000);
+            await judge.autoEvals({
+              criteria: `${rubric}\n\nReference output:\n${golden.expectedOutput}`,
+              prompt: input.prompt,
+              run,
+            });
+          }),
+        );
+
+        for (const result of settled) {
+          if (result.status === 'rejected') {
+            failures.push(
+              result.reason instanceof Error ? result.reason : new Error(String(result.reason)),
+            );
+          }
         }
       }
-    }
 
-    expect(failures).toEqual([]);
-  });
+      expect(failures).toEqual([]);
+    },
+    SUITE_TIMEOUT_MS,
+  );
 };

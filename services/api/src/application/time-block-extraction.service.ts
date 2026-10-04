@@ -1,5 +1,6 @@
 import {
   createStructuredChatCompletion,
+  getReasoningConfig,
   normalizeOpenRouterError,
   StructuredOutputError,
   TIME_BLOCK_EXTRACTION_MODEL,
@@ -7,6 +8,8 @@ import {
   type OpenRouterClientOptions,
 } from '@hominem/ai';
 import { z } from 'zod';
+
+import { describeUpcomingDays } from './upcoming-days';
 
 const TimeBlockIntent = z.enum([
   'add_task',
@@ -113,14 +116,80 @@ export function normalizeExplicitWeekday(
   };
 }
 
+function offsetMinutesAt(instantMs: number, timezone: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(new Date(instantMs));
+  const value = (type: string) => Number(parts.find((part) => part.type === type)?.value);
+  const asUtc = Date.UTC(
+    value('year'),
+    value('month') - 1,
+    value('day'),
+    value('hour'),
+    value('minute'),
+    value('second'),
+  );
+  return Math.round((asUtc - Math.floor(instantMs / 1000) * 1000) / 60000);
+}
+
+// Models often keep the reference date's UTC offset on a date across a daylight
+// saving change. A value with a numeric offset keeps the local wall-clock time
+// the model chose and gets the offset that applies on that date in the user's
+// time zone; a UTC ("Z") value is converted to the same instant in that zone.
+export function normalizeOffset(value: string | null, timezone: string | undefined) {
+  const match = value?.match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/,
+  );
+  if (!value || !timezone || !match) return value;
+  try {
+    const [, year, month, day, hour, minute, second, designator] = match;
+    const parsed = Date.UTC(+year!, +month! - 1, +day!, +hour!, +minute!, +second!);
+    let wallMs = parsed;
+    let offset: number;
+    if (designator === 'Z') {
+      offset = offsetMinutesAt(parsed, timezone);
+      wallMs = parsed + offset * 60000;
+    } else {
+      offset = offsetMinutesAt(parsed, timezone);
+      offset = offsetMinutesAt(parsed - offset * 60000, timezone);
+    }
+    const local = new Date(wallMs).toISOString().slice(0, 19);
+    const sign = offset < 0 ? '-' : '+';
+    const abs = Math.abs(offset);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${local}${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
+  } catch {
+    return value;
+  }
+}
+
+export function normalizeOffsets(block: TimeBlock, timezone: string | undefined): TimeBlock {
+  return {
+    ...block,
+    start_time: normalizeOffset(block.start_time, timezone),
+    end_time: normalizeOffset(block.end_time, timezone),
+    scheduling_window_start: normalizeOffset(block.scheduling_window_start, timezone),
+    scheduling_window_end: normalizeOffset(block.scheduling_window_end, timezone),
+  };
+}
+
 export async function extractTimeBlock(
   input: TimeBlockExtractionInput,
   systemPrompt: string,
 ): Promise<TimeBlockExtractionResult> {
   const model = input.model ?? TIME_BLOCK_EXTRACTION_MODEL;
+  const upcomingDays = describeUpcomingDays(input.referenceDate, input.timezone);
   const context = [
     `Current date and time: ${input.referenceDate}`,
     input.timezone ? `Timezone: ${input.timezone}` : null,
+    upcomingDays ? `Upcoming days: ${upcomingDays}` : null,
     input.conversationContext ? `Conversation context:\n${input.conversationContext}` : null,
     input.calendarContext ? `Calendar context:\n${input.calendarContext}` : null,
     `User input: ${input.transcript}`,
@@ -135,6 +204,7 @@ export async function extractTimeBlock(
         schema: RawTimeBlockSchema,
         schemaName: 'time_block_extraction',
         schemaDescription: 'A single structured time block extracted from natural language.',
+        reasoning: getReasoningConfig(model),
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: context },
@@ -143,7 +213,10 @@ export async function extractTimeBlock(
       input,
     );
 
-    const block = normalizeExplicitWeekday(parseTimeBlockExtractionOutput(output), input);
+    const block = normalizeOffsets(
+      normalizeExplicitWeekday(parseTimeBlockExtractionOutput(output), input),
+      input.timezone,
+    );
     return { block, usage };
   } catch (error) {
     if (error instanceof StructuredOutputError) throw error;

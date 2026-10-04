@@ -1,8 +1,4 @@
-import type {
-  CalendarEvent,
-  CalendarEventSummary,
-  TimeProcessingStage,
-} from '~/modules/on-device-ai';
+import type { CalendarEvent, CalendarEventSummary } from '~/modules/on-device-ai';
 import type { TaskListItem } from '~/services/tasks/task-types';
 
 export type TimeItem =
@@ -11,8 +7,8 @@ export type TimeItem =
 
 export type TimeStreamRow = TimeItem;
 
-// Populated entirely by the on-device Apple Intelligence time assistant
-// (see nativeTimeBlock() in use-time-composer.ts) -- never by a backend call.
+// The cloud time-block extraction result (`POST /api/tasks/parse`). The request
+// carries only the user's text, the current date and the time zone.
 export interface TimeBlock {
   primary_intent:
     | 'add_task'
@@ -61,4 +57,4 @@ export interface TimeOpening {
   start: string;
 }
 
-export type { TimeProcessingStage };
+export type TimeProcessingStage = 'understanding' | 'checkingSchedule' | 'preparingSuggestion';

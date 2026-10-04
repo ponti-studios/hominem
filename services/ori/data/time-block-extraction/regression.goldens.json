@@ -2,7 +2,7 @@
   {
     "name": "fixed-event",
     "input": "Meeting with Sarah at 10 AM tomorrow for an hour",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Meeting with Sarah at 10 AM tomorrow for an hour\",\"target_title\":null,\"participants\":[\"Sarah\"],\"location\":null,\"duration\":60,\"start_time\":\"2026-07-26T10:00:00-07:00\",\"end_time\":\"2026-07-26T11:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Meeting with Sarah\",\"target_title\":null,\"participants\":[\"Sarah\"],\"location\":null,\"duration\":60,\"start_time\":\"2026-07-26T10:00:00-07:00\",\"end_time\":\"2026-07-26T11:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -13,7 +13,7 @@
   {
     "name": "flexible-task",
     "input": "Need to write pitch deck tomorrow 2h",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Need to write pitch deck tomorrow 2h\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":120,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T00:00:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Write pitch deck\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":120,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T00:00:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -24,7 +24,7 @@
   {
     "name": "tonight",
     "input": "Gym tonight for 1h",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Gym tonight for 1h\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":60,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Gym\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":60,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T18:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -35,7 +35,7 @@
   {
     "name": "gap-fill",
     "input": "When can I meet with Alex this week for 30m?",
-    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"When can I meet with Alex this week for 30m?\",\"target_title\":null,\"participants\":[\"Alex\"],\"location\":null,\"duration\":30,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"Meet with Alex\",\"target_title\":null,\"participants\":[\"Alex\"],\"location\":null,\"duration\":30,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T11:17:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -46,7 +46,7 @@
   {
     "name": "schedule-search",
     "input": "What do I have going on today?",
-    "expectedOutput": "{\"primary_intent\":\"search\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"search\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T00:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -57,7 +57,7 @@
   {
     "name": "explicit-deadline",
     "input": "Need to finish the expense report by Friday",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Need to finish the expense report by Friday\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":\"2026-07-31\",\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Finish expense report\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":\"2026-07-31\",\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -68,7 +68,7 @@
   {
     "name": "correction-wins",
     "input": "Lunch with Morgan tomorrow at 10—actually Friday at 2 PM for 45 minutes",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Lunch with Morgan tomorrow at 10—actually Friday at 2 PM for 45 minutes\",\"target_title\":null,\"participants\":[\"Morgan\"],\"location\":null,\"duration\":45,\"start_time\":\"2026-07-31T14:00:00-07:00\",\"end_time\":\"2026-07-31T14:45:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Lunch with Morgan\",\"target_title\":null,\"participants\":[\"Morgan\"],\"location\":null,\"duration\":45,\"start_time\":\"2026-07-31T14:00:00-07:00\",\"end_time\":\"2026-07-31T14:45:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -79,7 +79,7 @@
   {
     "name": "no-invention",
     "input": "I should organize the studio sometime",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"I should organize the studio sometime\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Organize the studio\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -90,7 +90,7 @@
   {
     "name": "call-mom-sunday-afternoon",
     "input": "Call Mom Sunday afternoon for 30 minutes",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Call Mom Sunday afternoon for 30 minutes\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":30,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Call Mom\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":30,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T12:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T17:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -101,7 +101,7 @@
   {
     "name": "deep-work-tomorrow-morning",
     "input": "Block two hours for deep work tomorrow morning",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Block two hours for deep work tomorrow morning\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":120,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Deep work\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":120,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T06:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T12:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -112,7 +112,7 @@
   {
     "name": "dentist-monday-afternoon",
     "input": "Dentist appointment Monday at 3 PM",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Dentist appointment Monday at 3 PM\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-27T15:00:00-07:00\",\"end_time\":\"2026-07-27T16:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Dentist appointment\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-27T15:00:00-07:00\",\"end_time\":\"2026-07-27T16:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -123,7 +123,7 @@
   {
     "name": "lunch-alex-next-thursday",
     "input": "Lunch with Alex next Thursday at noon",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Lunch with Alex next Thursday at noon\",\"target_title\":null,\"participants\":[\"Alex\"],\"location\":null,\"duration\":null,\"start_time\":\"2026-07-30T12:00:00-07:00\",\"end_time\":\"2026-07-30T13:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Lunch with Alex\",\"target_title\":null,\"participants\":[\"Alex\"],\"location\":null,\"duration\":null,\"start_time\":\"2026-07-30T12:00:00-07:00\",\"end_time\":\"2026-07-30T13:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -134,7 +134,7 @@
   {
     "name": "submit-invoice-friday",
     "input": "Remind me to submit the invoice by Friday",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Remind me to submit the invoice by Friday\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":\"2026-07-31\",\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Submit invoice\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":\"2026-07-31\",\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -145,7 +145,7 @@
   {
     "name": "board-meeting-next-week",
     "input": "I need to prepare for the board meeting sometime next week",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"I need to prepare for the board meeting sometime next week\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Prepare for board meeting\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -156,7 +156,7 @@
   {
     "name": "find-slot-sarah",
     "input": "Find me a 45-minute slot with Sarah this week",
-    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":null,\"target_title\":null,\"participants\":[\"Sarah\"],\"location\":null,\"duration\":45,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"Meet with Sarah\",\"target_title\":null,\"participants\":[\"Sarah\"],\"location\":null,\"duration\":45,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T11:17:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -167,7 +167,7 @@
   {
     "name": "workout-tomorrow",
     "input": "When can I work out tomorrow?",
-    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"When can I work out tomorrow?\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"Work out\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T00:00:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -178,7 +178,7 @@
   {
     "name": "move-meeting-time",
     "input": "Move my 2 PM meeting to 4 PM",
-    "expectedOutput": "{\"primary_intent\":\"edit_event\",\"title\":null,\"target_title\":\"Move my 2 PM meeting to 4 PM\",\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-26T16:00:00-07:00\",\"end_time\":\"2026-07-26T17:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"edit_event\",\"title\":null,\"target_title\":\"planning meeting\",\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-26T16:00:00-07:00\",\"end_time\":\"2026-07-26T17:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -200,7 +200,7 @@
   {
     "name": "recurring-team-sync",
     "input": "Add a team sync every Monday at 9 AM",
-    "expectedOutput": "{\"primary_intent\":\"add_recurring_event\",\"title\":\"Add a team sync every Monday at 9 AM\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-27T09:00:00-07:00\",\"end_time\":\"2026-07-27T10:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":\"FREQ=WEEKLY;BYDAY=MO\"}",
+    "expectedOutput": "{\"primary_intent\":\"add_recurring_event\",\"title\":\"Team sync\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-27T09:00:00-07:00\",\"end_time\":\"2026-07-27T10:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":\"FREQ=WEEKLY;BYDAY=MO\"}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -211,7 +211,7 @@
   {
     "name": "haircut-saturday-morning",
     "input": "Book a haircut sometime Saturday morning",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Book a haircut sometime Saturday morning\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Haircut\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-08-01T06:00:00-07:00\",\"scheduling_window_end\":\"2026-08-01T12:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -222,7 +222,7 @@
   {
     "name": "groceries-after-work",
     "input": "Plan groceries after work today",
-    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Plan groceries after work today\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Plan groceries\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T17:30:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -233,7 +233,7 @@
   {
     "name": "presentation-afternoon-window",
     "input": "Work on the presentation between 2 and 5 PM",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Work on the presentation between 2 and 5 PM\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Work on the presentation\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":180,\"start_time\":\"2026-07-25T14:00:00-07:00\",\"end_time\":\"2026-07-25T17:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -244,7 +244,7 @@
   {
     "name": "jordan-office-planning",
     "input": "Schedule 90 minutes with Jordan at the office",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":null,\"target_title\":null,\"participants\":[\"Jordan\"],\"location\":null,\"duration\":90,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Meeting with Jordan\",\"target_title\":null,\"participants\":[\"Jordan\"],\"location\":\"the office\",\"duration\":90,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -255,7 +255,7 @@
   {
     "name": "search-after-lunch",
     "input": "What do I have scheduled after lunch?",
-    "expectedOutput": "{\"primary_intent\":\"search\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"search\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T13:00:00-07:00\",\"scheduling_window_end\":\"2026-07-25T17:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -266,7 +266,7 @@
   {
     "name": "free-time-tomorrow-morning",
     "input": "Do I have any free time tomorrow morning?",
-    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T06:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T12:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -277,7 +277,7 @@
   {
     "name": "cancel-dentist",
     "input": "Cancel my dentist appointment",
-    "expectedOutput": "{\"primary_intent\":\"cancel_event\",\"title\":null,\"target_title\":\"Cancel my dentist appointment\",\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"cancel_event\",\"title\":null,\"target_title\":\"dentist appointment\",\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -288,7 +288,7 @@
   {
     "name": "reschedule-meeting",
     "input": "I can't make the 10 AM meeting—find another time",
-    "expectedOutput": "{\"primary_intent\":\"edit_event\",\"title\":null,\"target_title\":\"I can't make the 10 AM meeting—find another time\",\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"edit_event\",\"title\":null,\"target_title\":\"meeting\",\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T11:17:00-07:00",
       "timezone": "America/Los_Angeles",
@@ -299,7 +299,7 @@
   {
     "name": "reading-before-bed",
     "input": "Put reading before bed tonight",
-    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Put reading before bed tonight\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
+    "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Reading\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T18:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
       "referenceDateTime": "2026-07-25T21:00:00-07:00",
       "timezone": "America/Los_Angeles",

@@ -22,8 +22,8 @@ real data remains the default.
 `TimeStream` renders a `TimeItem` union containing either a task or a compact
 EventKit calendar summary. Tasks use `services/tasks/`; calendar access goes
 through the iOS `on-device-ai` Expo module. The module owns one EventKit store
-and exposes only permission checks, summaries, native-editor presentation, and
-the typed on-device assistant result.
+and exposes permission checks, summaries, native-editor presentation, free-slot
+search, and title matching. It contains no language model.
 
 Calendar queries are enabled when the Time screen is focused and calendar
 permission is authorized. Tasks remain available when Calendar permission is
@@ -32,13 +32,25 @@ or `notDetermined` at the JavaScript query boundary.
 
 ## Natural-language composer
 
-`useTimeComposer` sends the prompt and compact task busy intervals to one
-short-lived on-device Foundation Model session. Its native tools search EventKit,
-open the Apple event editor for calendar changes, find availability, and propose
-database-backed task drafts. No calendar context is sent over the network. If
-Apple Intelligence is unavailable, manual browsing and native event editing
-remain available while natural-language Time input explains that it is
-unavailable.
+`useTimeComposer` sends only the user's request text, the current time, and the
+time zone to the server (`POST /api/tasks/parse`), which extracts one time
+block with a cloud model. No calendar data, event titles, busy intervals, or
+task data are sent. `resolveTimeRequest` then acts on the returned block
+entirely on-device:
+
+| Block intent                        | On-device result                                                            |
+| ----------------------------------- | --------------------------------------------------------------------------- |
+| `add_task`                          | A reviewed task draft that needs explicit confirmation.                     |
+| `add_event`, `add_recurring_event`  | Apple's event editor with the draft, including any recurrence rule. Without a start time, open slots are offered instead. |
+| `edit_event`, `cancel_event`        | The event is matched by title in EventKit (`matchCalendarEvents`, next 90 days). One match opens Apple's editor; several offer a choice. |
+| `schedule_gap_fill`                 | Free slots from `findCalendarOpenings`, computed in Swift from EventKit events and task busy intervals. |
+| `search`                            | The EventKit events inside the block's scheduling window, listed as text.   |
+
+For `search`, `schedule_gap_fill` and an `add_event` without a clock time, the extraction prompt sets the scheduling window to the period the user named ("tonight" is 18:00 to midnight, "Saturday morning" is 06:00 to 12:00); without a named period the app looks at the next seven days. UTC offsets are recomputed server-side from the user's time zone, so a date across a daylight-saving change is correct.
+
+Natural-language Time input needs a network connection. Browsing the stream and
+native event editing work offline. If parsing fails, the composer keeps the
+submitted prompt and shows an inline error; nothing is created.
 
 The implemented interaction states are:
 
@@ -51,13 +63,17 @@ The implemented interaction states are:
 | `availability` | Openings were found and can be selected.                                  |
 
 The composer clears its visible prompt only after a non-error interpretation
-result. Cancelling an answer, availability result, or event choice restores the
-submitted prompt. Parse errors restore the prompt and surface an inline error;
-they do not create data.
+result. Cancelling an answer, availability result, event choice, or the native
+editor restores the submitted prompt. Parse errors restore the prompt and
+surface an inline error; they do not create data.
 
 Selecting an availability opening opens a native EventKit draft. Task drafts may
 include a deadline, duration, exact schedule, scheduling window, and location.
 The user must confirm task drafts before a database mutation runs.
+
+The extraction prompt and its evals live in `services/api/src/rpc/prompts.ts`
+(`TIME_BLOCK_EXTRACTION_PROMPT`) and `services/ori/data/time-block-extraction/`;
+a test keeps the two aligned.
 
 ## Time-block detail
 

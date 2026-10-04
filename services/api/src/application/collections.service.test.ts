@@ -12,10 +12,10 @@ import {
   updateCollection,
 } from './collections.service';
 
-const ownerId = 'd3000000-0000-4000-8000-000000000001';
-const memberId = 'd3000000-0000-4000-8000-000000000002';
-const strangerId = 'd3000000-0000-4000-8000-000000000003';
-const placeId = 'd3000002-0000-4000-8000-000000000001';
+const ownerId = 'd3000010-0000-4000-8000-000000000001';
+const memberId = 'd3000010-0000-4000-8000-000000000002';
+const strangerId = 'd3000010-0000-4000-8000-000000000003';
+const placeId = 'd3000012-0000-4000-8000-000000000001';
 
 beforeAll(async () => {
   for (const id of [ownerId, memberId, strangerId]) {

@@ -1,7 +1,6 @@
 import EventKit
 import ExpoModulesCore
 import Foundation
-import FoundationModels
 import os.log
 
 let onDeviceAILog = OSLog(subsystem: "com.hominem.omiro", category: "OnDeviceAI")
@@ -21,24 +20,10 @@ final class OnDeviceAIException: Exception, @unchecked Sendable {
   override var reason: String { messageText }
   override var code: String { codeText }
 
-  static var modelUnavailable: OnDeviceAIException {
-    OnDeviceAIException(
-      code: "MODEL_UNAVAILABLE",
-      message: "Apple Intelligence is not available on this device."
-    )
-  }
-
   static var missingPermission: OnDeviceAIException {
     OnDeviceAIException(
       code: "MISSING_PERMISSION",
-      message: "Calendar access is required to answer this question."
-    )
-  }
-
-  static var generationFailed: OnDeviceAIException {
-    OnDeviceAIException(
-      code: "GENERATION_FAILED",
-      message: "The on-device model failed to respond."
+      message: "Calendar access is required for this request."
     )
   }
 
@@ -54,9 +39,8 @@ final class OnDeviceAIException: Exception, @unchecked Sendable {
   }
 }
 
-// Shared "yyyy-MM-dd" formatter for the tool's date-range arguments. Fixed
-// POSIX locale and device time zone so parsing never depends on the user's
-// region settings, only on the format the model was told to produce.
+// Shared "yyyy-MM-dd" formatter for date-range arguments. Fixed POSIX locale
+// and device time zone so parsing never depends on the user's region settings.
 func dayFormatter() -> DateFormatter {
   let formatter = DateFormatter()
   formatter.dateFormat = "yyyy-MM-dd"
@@ -148,6 +132,15 @@ func recurrenceRule(_ value: String?) throws -> EKRecurrenceRule? {
     }
     fields[parts[0]] = parts[1]
   }
+  // Clauses EventKit would otherwise drop silently ("until December" becoming
+  // an endless event) are rejected instead of half-applied.
+  let supportedFields: Set<String> = ["FREQ", "INTERVAL", "BYDAY", "COUNT"]
+  guard fields.keys.allSatisfy(supportedFields.contains) else {
+    throw OnDeviceAIException(
+      code: "INVALID_RECURRENCE_RULE",
+      message: "This recurrence pattern is not supported."
+    )
+  }
   let frequency: EKRecurrenceFrequency
   switch fields["FREQ"] {
   case "DAILY": frequency = .daily
@@ -161,25 +154,39 @@ func recurrenceRule(_ value: String?) throws -> EKRecurrenceRule? {
     )
   }
   let interval = max(Int(fields["INTERVAL"] ?? "1") ?? 1, 1)
-  let weekdays: [EKRecurrenceDayOfWeek]? = fields["BYDAY"]?
-    .split(separator: ",")
-    .compactMap { day in
-      switch day.suffix(2) {
-      case "MO": return EKRecurrenceDayOfWeek(.monday)
-      case "TU": return EKRecurrenceDayOfWeek(.tuesday)
-      case "WE": return EKRecurrenceDayOfWeek(.wednesday)
-      case "TH": return EKRecurrenceDayOfWeek(.thursday)
-      case "FR": return EKRecurrenceDayOfWeek(.friday)
-      case "SA": return EKRecurrenceDayOfWeek(.saturday)
-      case "SU": return EKRecurrenceDayOfWeek(.sunday)
-      default: return nil
-      }
+  // Plain weekday codes only: an ordinal such as "1MO" (first Monday) would
+  // otherwise collapse to every Monday.
+  var weekdays: [EKRecurrenceDayOfWeek] = []
+  for day in fields["BYDAY"]?.split(separator: ",") ?? [] {
+    switch day {
+    case "MO": weekdays.append(EKRecurrenceDayOfWeek(.monday))
+    case "TU": weekdays.append(EKRecurrenceDayOfWeek(.tuesday))
+    case "WE": weekdays.append(EKRecurrenceDayOfWeek(.wednesday))
+    case "TH": weekdays.append(EKRecurrenceDayOfWeek(.thursday))
+    case "FR": weekdays.append(EKRecurrenceDayOfWeek(.friday))
+    case "SA": weekdays.append(EKRecurrenceDayOfWeek(.saturday))
+    case "SU": weekdays.append(EKRecurrenceDayOfWeek(.sunday))
+    default:
+      throw OnDeviceAIException(
+        code: "INVALID_RECURRENCE_RULE",
+        message: "This recurrence pattern is not supported."
+      )
     }
-  let end = Int(fields["COUNT"] ?? "").map { EKRecurrenceEnd(occurrenceCount: $0) }
+  }
+  var end: EKRecurrenceEnd?
+  if let count = fields["COUNT"] {
+    guard let occurrences = Int(count), occurrences > 0 else {
+      throw OnDeviceAIException(
+        code: "INVALID_RECURRENCE_RULE",
+        message: "This recurrence pattern is not supported."
+      )
+    }
+    end = EKRecurrenceEnd(occurrenceCount: occurrences)
+  }
   return EKRecurrenceRule(
     recurrenceWith: frequency,
     interval: interval,
-    daysOfTheWeek: weekdays?.isEmpty == false ? weekdays : nil,
+    daysOfTheWeek: weekdays.isEmpty ? nil : weekdays,
     daysOfTheMonth: nil,
     monthsOfTheYear: nil,
     weeksOfTheYear: nil,
@@ -187,25 +194,6 @@ func recurrenceRule(_ value: String?) throws -> EKRecurrenceRule? {
     setPositions: nil,
     end: end
   )
-}
-
-// Human-readable "today" anchor, e.g. "Monday, 2026-07-20". Given to the
-// model so it can resolve relative phrases ("this time last year", "end of
-// next month") into concrete dates itself, instead of the tool guessing at
-// day-count arithmetic on the model's behalf.
-func todayAnchorString() -> String {
-  let formatter = DateFormatter()
-  formatter.dateFormat = "EEEE, yyyy-MM-dd"
-  formatter.timeZone = .current
-  return formatter.string(from: Date())
-}
-
-struct OnDeviceAIResult: Record {
-  @Field
-  var text: String = ""
-
-  @Field
-  var isOnDevice: Bool = true
 }
 
 struct CalendarEventSummaryRecord: Record {
@@ -226,26 +214,12 @@ struct CalendarDraftRecord: Record {
   @Field var isAllDay: Bool = false
   @Field var location: String?
   @Field var notes: String?
+  @Field var recurrenceRule: String?
 }
 
 struct TaskBusyIntervalRecord: Record {
   @Field var startDate: String = ""
   @Field var endDate: String = ""
-}
-
-struct TimeAssistantResultRecord: Record {
-  @Field var kind: String = "error"
-  @Field var answer: String?
-  @Field var taskTitle: String?
-  @Field var taskDueAt: String?
-  @Field var taskDurationMinutes: Int?
-  @Field var taskScheduledStartAt: String?
-  @Field var taskScheduledEndAt: String?
-  @Field var taskSchedulingWindowStartAt: String?
-  @Field var taskSchedulingWindowEndAt: String?
-  @Field var taskLocation: String?
-  @Field var availability: [AvailabilityChoiceRecord] = []
-  @Field var error: String?
 }
 
 struct AvailabilityChoiceRecord: Record {
@@ -279,25 +253,4 @@ func requestCalendarAuthorization() async -> EKAuthorizationStatus {
     )
   }
   return EKEventStore.authorizationStatus(for: .event)
-}
-
-@Generable
-enum DayPart: String, CaseIterable, Sendable {
-  case allDay
-  case morning
-  case afternoon
-  case evening
-
-  var hourRange: Range<Int>? {
-    switch self {
-    case .allDay:
-      return nil
-    case .morning:
-      return 5..<12
-    case .afternoon:
-      return 12..<17
-    case .evening:
-      return 17..<22
-    }
-  }
 }
