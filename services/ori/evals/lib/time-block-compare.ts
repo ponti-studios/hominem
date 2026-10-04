@@ -60,7 +60,10 @@ const rule = (value: unknown): string | null =>
  */
 export const assertTimeBlockFields = (output: string, golden: Golden): void => {
   const label = golden.name ?? golden.input;
-  const actual = parseBlock(output, `${label}: output is not a JSON object`);
+  const actual = parseBlock(
+    output,
+    `${label}: output is not a JSON object (got ${JSON.stringify(output.slice(0, 80))})`,
+  );
   const expected = parseBlock(golden.expectedOutput, `${label}: golden is not a JSON object`);
   const mismatches: string[] = [];
   const check = (field: string, ok: boolean) => {

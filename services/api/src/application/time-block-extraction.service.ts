@@ -9,6 +9,8 @@ import {
 } from '@hominem/ai';
 import { z } from 'zod';
 
+import { describeUpcomingDays } from './upcoming-days';
+
 const TimeBlockIntent = z.enum([
   'add_task',
   'add_event',
@@ -183,9 +185,11 @@ export async function extractTimeBlock(
   systemPrompt: string,
 ): Promise<TimeBlockExtractionResult> {
   const model = input.model ?? TIME_BLOCK_EXTRACTION_MODEL;
+  const upcomingDays = describeUpcomingDays(input.referenceDate, input.timezone);
   const context = [
     `Current date and time: ${input.referenceDate}`,
     input.timezone ? `Timezone: ${input.timezone}` : null,
+    upcomingDays ? `Upcoming days: ${upcomingDays}` : null,
     input.conversationContext ? `Conversation context:\n${input.conversationContext}` : null,
     input.calendarContext ? `Calendar context:\n${input.calendarContext}` : null,
     `User input: ${input.transcript}`,

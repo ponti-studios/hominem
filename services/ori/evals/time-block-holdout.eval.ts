@@ -7,6 +7,7 @@ import {
 } from './lib/evaluator';
 import { timeBlockSchema } from './lib/schemas';
 import { assertTimeBlockFields, timeBlockTitleRubric } from './lib/time-block-compare';
+import { describeUpcomingDays } from './lib/upcoming-days';
 
 const suiteDir = new URL('../data/time-block-extraction/', import.meta.url);
 const prompt = await loadJson<PromptMessage[]>(new URL('prompt.json', suiteDir));
@@ -20,6 +21,8 @@ registerJsonSuite({
     return renderMessages(prompt, {
       referenceDateTime: String(metadata.referenceDateTime),
       timezone: String(metadata.timezone),
+      upcomingDays:
+        describeUpcomingDays(String(metadata.referenceDateTime), String(metadata.timezone)) ?? '',
       calendarContext: String(metadata.calendarContext),
       conversationContext: String(metadata.conversationContext),
       input: golden.input,

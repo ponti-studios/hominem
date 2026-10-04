@@ -47,6 +47,23 @@ describe('extractTimeBlock', () => {
       expect.anything(),
     );
   });
+
+  it('gives the model a weekday list so named days resolve to the right dates', async () => {
+    await extractTimeBlock(
+      {
+        transcript: 'Dentist Monday at 3 PM',
+        referenceDate: '2026-07-25T11:17:00-07:00',
+        timezone: 'America/Los_Angeles',
+      },
+      'prompt',
+    );
+
+    const [request] = vi.mocked(createStructuredChatCompletion).mock.calls.at(-1) ?? [];
+    const user = request?.messages.find((message) => message.role === 'user');
+    expect(user?.content).toContain(
+      'Upcoming days: Saturday 2026-07-25 (today), Sunday 2026-07-26 (tomorrow), Monday 2026-07-27,',
+    );
+  });
 });
 
 describe('parseTimeBlockExtractionOutput', () => {

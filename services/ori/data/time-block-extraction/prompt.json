@@ -5,6 +5,6 @@
   },
   {
     "role": "user",
-    "content": "Current date and time: {{referenceDateTime}}\nTimezone: {{timezone}}\nCalendar context: {{calendarContext}}\nConversation context: {{conversationContext}}\n\nUser input: {{input}}"
+    "content": "Current date and time: {{referenceDateTime}}\nTimezone: {{timezone}}\nUpcoming days: {{upcomingDays}}\nCalendar context: {{calendarContext}}\nConversation context: {{conversationContext}}\n\nUser input: {{input}}"
   }
 ]
