@@ -121,10 +121,47 @@ describe('useTimeComposer', () => {
       isAllDay: false,
       location: null,
       notes: null,
+      recurrenceRule: null,
       startDate: '2026-09-15T10:00:00.000Z',
       title: 'Find an hour tomorrow',
     });
     expect(result.current.interaction).toEqual({ kind: 'idle' });
+  });
+
+  it('carries the extracted location and recurrence into the selected opening and restores the prompt on cancel', async () => {
+    parse.mockResolvedValueOnce(
+      block({
+        duration: 90,
+        location: 'the office',
+        primary_intent: 'add_event',
+        recurrence_rule: 'FREQ=WEEKLY;BYDAY=MO',
+        title: 'Meeting with Jordan',
+      }),
+    );
+    findOpenings.mockResolvedValueOnce([
+      { endDate: '2026-09-15T11:30:00.000Z', startDate: '2026-09-15T10:00:00.000Z' },
+    ]);
+    presentDraft.mockResolvedValueOnce('cancelled');
+    const { result } = renderHookWithQueryClient(() =>
+      useTimeComposer({ onError: vi.fn(), onOpenEvent: vi.fn() }),
+    );
+
+    act(() => result.current.setPrompt('Schedule 90 minutes with Jordan at the office'));
+    await act(async () => result.current.ask());
+    await act(async () =>
+      result.current.chooseOpening({
+        end: '2026-09-15T11:30:00.000Z',
+        start: '2026-09-15T10:00:00.000Z',
+      }),
+    );
+
+    expect(presentDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        location: 'the office',
+        recurrenceRule: 'FREQ=WEEKLY;BYDAY=MO',
+      }),
+    );
+    expect(result.current.prompt).toBe('Schedule 90 minutes with Jordan at the office');
   });
 
   it('presents a fixed event in the native editor and keeps the prompt if it is cancelled', async () => {

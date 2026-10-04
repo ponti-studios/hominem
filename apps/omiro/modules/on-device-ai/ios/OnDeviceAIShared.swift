@@ -132,6 +132,15 @@ func recurrenceRule(_ value: String?) throws -> EKRecurrenceRule? {
     }
     fields[parts[0]] = parts[1]
   }
+  // Clauses EventKit would otherwise drop silently ("until December" becoming
+  // an endless event) are rejected instead of half-applied.
+  let supportedFields: Set<String> = ["FREQ", "INTERVAL", "BYDAY", "COUNT"]
+  guard fields.keys.allSatisfy(supportedFields.contains) else {
+    throw OnDeviceAIException(
+      code: "INVALID_RECURRENCE_RULE",
+      message: "This recurrence pattern is not supported."
+    )
+  }
   let frequency: EKRecurrenceFrequency
   switch fields["FREQ"] {
   case "DAILY": frequency = .daily
@@ -145,25 +154,39 @@ func recurrenceRule(_ value: String?) throws -> EKRecurrenceRule? {
     )
   }
   let interval = max(Int(fields["INTERVAL"] ?? "1") ?? 1, 1)
-  let weekdays: [EKRecurrenceDayOfWeek]? = fields["BYDAY"]?
-    .split(separator: ",")
-    .compactMap { day in
-      switch day.suffix(2) {
-      case "MO": return EKRecurrenceDayOfWeek(.monday)
-      case "TU": return EKRecurrenceDayOfWeek(.tuesday)
-      case "WE": return EKRecurrenceDayOfWeek(.wednesday)
-      case "TH": return EKRecurrenceDayOfWeek(.thursday)
-      case "FR": return EKRecurrenceDayOfWeek(.friday)
-      case "SA": return EKRecurrenceDayOfWeek(.saturday)
-      case "SU": return EKRecurrenceDayOfWeek(.sunday)
-      default: return nil
-      }
+  // Plain weekday codes only: an ordinal such as "1MO" (first Monday) would
+  // otherwise collapse to every Monday.
+  var weekdays: [EKRecurrenceDayOfWeek] = []
+  for day in fields["BYDAY"]?.split(separator: ",") ?? [] {
+    switch day {
+    case "MO": weekdays.append(EKRecurrenceDayOfWeek(.monday))
+    case "TU": weekdays.append(EKRecurrenceDayOfWeek(.tuesday))
+    case "WE": weekdays.append(EKRecurrenceDayOfWeek(.wednesday))
+    case "TH": weekdays.append(EKRecurrenceDayOfWeek(.thursday))
+    case "FR": weekdays.append(EKRecurrenceDayOfWeek(.friday))
+    case "SA": weekdays.append(EKRecurrenceDayOfWeek(.saturday))
+    case "SU": weekdays.append(EKRecurrenceDayOfWeek(.sunday))
+    default:
+      throw OnDeviceAIException(
+        code: "INVALID_RECURRENCE_RULE",
+        message: "This recurrence pattern is not supported."
+      )
     }
-  let end = Int(fields["COUNT"] ?? "").map { EKRecurrenceEnd(occurrenceCount: $0) }
+  }
+  var end: EKRecurrenceEnd?
+  if let count = fields["COUNT"] {
+    guard let occurrences = Int(count), occurrences > 0 else {
+      throw OnDeviceAIException(
+        code: "INVALID_RECURRENCE_RULE",
+        message: "This recurrence pattern is not supported."
+      )
+    }
+    end = EKRecurrenceEnd(occurrenceCount: occurrences)
+  }
   return EKRecurrenceRule(
     recurrenceWith: frequency,
     interval: interval,
-    daysOfTheWeek: weekdays?.isEmpty == false ? weekdays : nil,
+    daysOfTheWeek: weekdays.isEmpty ? nil : weekdays,
     daysOfTheMonth: nil,
     monthsOfTheYear: nil,
     weeksOfTheYear: nil,

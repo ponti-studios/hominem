@@ -62,12 +62,8 @@ public class OnDeviceAIModule: Module {
       durationMinutes: Int,
       taskBusyIntervals: [TaskBusyIntervalRecord]
     ) async throws -> [AvailabilityChoiceRecord] in
-      guard let start = iso8601Date(startDate), let end = iso8601Date(endDate), start < end else {
-        throw OnDeviceAIException(
-          code: "INVALID_DATE_RANGE",
-          message: "Availability dates must be ISO 8601 timestamps with an end after the start."
-        )
-      }
+      // Same ten-year bound as the event listing: the range comes from a model.
+      let (start, end) = try calendarRange(startDate: startDate, endDate: endDate)
       let intervals = taskBusyIntervals.compactMap { interval -> TaskBusyInterval? in
         guard let start = iso8601Date(interval.startDate), let end = iso8601Date(interval.endDate), start < end else {
           return nil

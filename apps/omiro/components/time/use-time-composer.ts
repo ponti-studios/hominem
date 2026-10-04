@@ -90,7 +90,6 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
           }
           case 'error':
             fail(result.message, submittedPrompt);
-            return;
         }
       } catch (error) {
         if (requestTokenRef.current !== requestToken) {
@@ -141,17 +140,19 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
       if (interaction.kind !== 'availability') {
         return;
       }
-      const { submittedPrompt } = interaction;
+      const { block, submittedPrompt } = interaction;
       setInteraction({ kind: 'idle' });
       try {
-        await calendarEventGateway.presentDraft({
+        const editorResult = await calendarEventGateway.presentDraft({
           endDate: opening.end,
           isAllDay: false,
-          location: null,
+          location: block.location,
           notes: null,
+          recurrenceRule: block.recurrence_rule,
           startDate: opening.start,
-          title: interaction.block.title ?? submittedPrompt,
+          title: block.title ?? submittedPrompt,
         });
+        setPrompt(editorResult === 'saved' ? '' : submittedPrompt);
       } catch (error) {
         fail(
           error instanceof Error ? error.message : 'Unable to open a calendar draft.',
