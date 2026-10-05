@@ -84,6 +84,18 @@ const t = {
     offlineIndicator: "You're offline. You can keep composing and send when you reconnect.",
     conversationActionsLabel: 'Conversation actions',
     thinkingIndicator: 'Thinking...',
+    toolCall: {
+      waiting: 'WAITING FOR YOUR OK',
+      rejected: 'You rejected this',
+      running: (name: string) => `${name}…`,
+      done: (name: string) => `${name}: done`,
+      failed: (name: string) => `${name} failed`,
+      failedDetail: 'This did not go through.',
+      question: (name: string) => `${name}?`,
+      approve: 'Approve',
+      approveA11y: (name: string) => `Approve ${name}`,
+      rejectA11y: (name: string) => `Reject ${name}`,
+    },
     generation: {
       thinking: 'Thinking',
       thinkingBar: 'Thinking…',

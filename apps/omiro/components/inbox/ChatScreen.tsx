@@ -10,6 +10,8 @@ import {
   ChatMessageList,
   ChatReviewOverlay,
   ChatSearchModal,
+  ChatToolApprovalBar,
+  getToolCallPhase,
 } from '~/components/chat';
 import { useChatActionsMenu } from '~/components/chat/chat-actions-menu';
 import { ChatSettingsSheet } from '~/components/chat/chat-settings-sheet';
@@ -138,6 +140,13 @@ export function ChatScreen({ id }: { id: string }) {
   const cancelActiveGeneration = generation ? cancelGeneration : cancelRegeneration;
   const retryActiveGeneration = generation ? retryLastGeneration : retryGeneration;
   const dismissActiveGeneration = generation ? dismissGeneration : dismissRegeneration;
+  // The assistant is waiting on a yes/no for a tool call: that decision takes
+  // over the composer until it is answered.
+  const pendingToolCall = messages
+    .flatMap((message) =>
+      (message.toolCalls ?? []).map((toolCall) => ({ messageId: message.id, toolCall })),
+    )
+    .find(({ toolCall }) => getToolCallPhase(toolCall) === 'asking');
   const failedMessageText =
     activeGeneration?.stage === 'failed' && activeGeneration.userMessageId
       ? messages.find((message) => message.id === activeGeneration.userMessageId)?.message
@@ -267,8 +276,6 @@ export function ChatScreen({ id }: { id: string }) {
           onEdit={handleEditMessage}
           onRegenerate={regenerateMessage}
           onRetry={retryFailedMessage}
-          onToolCallRespond={toolCallRespond.respond}
-          isRespondingToToolCall={toolCallRespond.isResponding}
           generation={activeGeneration}
           formatTimestamp={formatRelativeAge}
           emptyState={
@@ -286,7 +293,26 @@ export function ChatScreen({ id }: { id: string }) {
             <ComposerDock restingInset={restingInset} testID="chat-composer-dock">
               {/* While a reply generates the composer flattens to one line
                   (the bar), then springs back when it ends. */}
-              {activeGeneration ? (
+              {pendingToolCall ? (
+                <ChatToolApprovalBar
+                  disabled={toolCallRespond.isResponding}
+                  onApprove={() => {
+                    void toolCallRespond.respond({
+                      messageId: pendingToolCall.messageId,
+                      toolCallId: pendingToolCall.toolCall.toolCallId,
+                      approved: true,
+                    });
+                  }}
+                  onReject={() => {
+                    void toolCallRespond.respond({
+                      messageId: pendingToolCall.messageId,
+                      toolCallId: pendingToolCall.toolCall.toolCallId,
+                      approved: false,
+                    });
+                  }}
+                  toolName={pendingToolCall.toolCall.toolName}
+                />
+              ) : activeGeneration ? (
                 <ChatGenerationBar
                   generation={activeGeneration}
                   onCancel={() => {

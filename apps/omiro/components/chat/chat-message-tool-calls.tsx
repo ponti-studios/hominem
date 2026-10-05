@@ -1,51 +1,89 @@
 import type { ChatMessageItem } from '@hominem/chat';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import { useStyles } from '~/components/theme';
+import { useAppTheme, useStyles } from '~/components/theme';
+import AppIcon from '~/components/ui/icon';
+import t from '~/translations';
 
+import { ShimmerText } from './chat-thinking-indicator';
 import { describeToolArgs, formatToolName } from './chat-tool-call.helpers';
 
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
 
-export function MessageToolCalls({
-  messageId,
-  onRespond,
-  responding,
-  toolCalls,
-}: {
-  messageId: string;
-  onRespond?: (input: { messageId: string; toolCallId: string; approved: boolean }) => void;
-  responding?: boolean;
-  toolCalls: ToolCall[];
-}) {
+type ToolCallPhase = 'asking' | 'rejected' | 'running' | 'done' | 'failed';
+
+export function getToolCallPhase(toolCall: ToolCall): ToolCallPhase {
+  if (toolCall.confirmationStatus === 'pending') {
+    return 'asking';
+  }
+  if (toolCall.confirmationStatus === 'rejected') {
+    return 'rejected';
+  }
+  if (toolCall.executionStatus === 'failed') {
+    return 'failed';
+  }
+  if (toolCall.executionStatus === 'completed') {
+    return 'done';
+  }
+  return 'running';
+}
+
+// What the person is being asked to approve, shown as the thing it will make:
+// the approval itself lives in the composer bar (ChatToolApprovalBar), so the
+// card stays quiet.
+export function MessageToolCalls({ toolCalls }: { toolCalls: ToolCall[] }) {
+  const { coral, eventForeground, eventSun, lime, mutedForeground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     toolCalls: { gap: 10, marginBottom: 10, maxWidth: '94%' },
-    toolCall: {
-      backgroundColor: theme.colors.card,
-      borderRadius: theme.borderRadii.xl,
-      gap: 12,
-      padding: 16,
-    },
-    toolName: {
-      color: theme.colors.foreground,
-      fontSize: 16,
-      fontWeight: '800',
-    },
-    args: { gap: 8 },
-    argLabel: { color: theme.colors.mutedForeground, fontSize: 12, fontWeight: '700' },
-    argValue: { color: theme.colors.foreground, fontSize: 15, lineHeight: 21 },
-    actions: { flexDirection: 'row', gap: 8 },
-    action: {
+    card: {
       alignItems: 'center',
-      borderRadius: theme.borderRadii.pill,
-      flex: 1,
-      paddingVertical: 12,
+      backgroundColor: theme.colors.card,
+      borderCurve: 'continuous',
+      borderRadius: 22,
+      flexDirection: 'row',
+      gap: 12,
+      padding: 14,
     },
-    approve: { backgroundColor: theme.colors.primary },
-    reject: { backgroundColor: theme.colors.secondary },
-    approveText: { color: theme.colors.primaryForeground, fontSize: 15, fontWeight: '700' },
-    rejectText: { color: theme.colors.foreground, fontSize: 15, fontWeight: '700' },
-    pressed: { opacity: 0.8 },
+    asking: { borderColor: theme.colors.primary, borderStyle: 'dashed', borderWidth: 2 },
+    rejected: {
+      backgroundColor: 'transparent',
+      borderColor: theme.colors.mutedForeground,
+      borderStyle: 'dashed',
+      borderWidth: 2,
+      opacity: 0.8,
+    },
+    failed: { borderColor: theme.colors.coral, borderWidth: 2 },
+    tile: {
+      alignItems: 'center',
+      borderCurve: 'continuous',
+      borderRadius: 14,
+      height: 42,
+      justifyContent: 'center',
+      width: 42,
+    },
+    body: { flex: 1, gap: 2, minWidth: 0 },
+    draftChip: {
+      alignSelf: 'flex-start',
+      backgroundColor: theme.colors.secondary,
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    draftChipText: {
+      color: theme.colors.primary,
+      fontSize: 11,
+      fontWeight: '800',
+      letterSpacing: 0.8,
+    },
+    title: { color: theme.colors.foreground, fontSize: 16, fontWeight: '800' },
+    mutedTitle: { color: theme.colors.mutedForeground, fontSize: 16, fontWeight: '800' },
+    detail: {
+      color: theme.colors.mutedForeground,
+      fontSize: 14,
+      fontWeight: '500',
+      lineHeight: 19,
+    },
+    struck: { textDecorationLine: 'line-through' },
   }));
 
   if (toolCalls.length === 0) {
@@ -54,52 +92,82 @@ export function MessageToolCalls({
 
   return (
     <View style={styles.toolCalls}>
-      {toolCalls.map((toolCall: ToolCall) => (
-        <View
-          key={toolCall.toolCallId || `${toolCall.toolName}:${JSON.stringify(toolCall.args)}`}
-          style={styles.toolCall}
-        >
-          <Text style={styles.toolName}>{formatToolName(toolCall.toolName)}</Text>
-          <View style={styles.args}>
-            {describeToolArgs(toolCall.args).map((arg) => (
-              <View key={arg.label}>
-                <Text style={styles.argLabel}>{arg.label}</Text>
-                <Text style={styles.argValue}>{arg.value}</Text>
-              </View>
-            ))}
-          </View>
-          {toolCall.confirmationStatus === 'pending' && onRespond ? (
-            <View style={styles.actions}>
-              <Pressable
-                accessible
-                accessibilityLabel={`Approve ${toolCall.toolName}`}
-                accessibilityRole="button"
-                disabled={responding}
-                onPress={() => {
-                  void onRespond({ messageId, toolCallId: toolCall.toolCallId, approved: true });
-                }}
-                style={({ pressed }) => [styles.action, styles.approve, pressed && styles.pressed]}
-                testID="tool-confirm-approve"
-              >
-                <Text style={styles.approveText}>Approve</Text>
-              </Pressable>
-              <Pressable
-                accessible
-                accessibilityLabel={`Reject ${toolCall.toolName}`}
-                accessibilityRole="button"
-                disabled={responding}
-                onPress={() => {
-                  void onRespond({ messageId, toolCallId: toolCall.toolCallId, approved: false });
-                }}
-                style={({ pressed }) => [styles.action, styles.reject, pressed && styles.pressed]}
-                testID="tool-confirm-reject"
-              >
-                <Text style={styles.rejectText}>Reject</Text>
-              </Pressable>
+      {toolCalls.map((toolCall: ToolCall) => {
+        const phase = getToolCallPhase(toolCall);
+        const name = formatToolName(toolCall.toolName);
+        const details = describeToolArgs(toolCall.args)
+          .slice(0, 2)
+          .map((arg) => arg.value);
+        const tileColor =
+          phase === 'done'
+            ? lime
+            : phase === 'failed'
+              ? coral
+              : phase === 'rejected'
+                ? 'rgba(127, 127, 160, 0.2)'
+                : eventSun;
+        return (
+          <View
+            key={toolCall.toolCallId || `${toolCall.toolName}:${JSON.stringify(toolCall.args)}`}
+            style={[
+              styles.card,
+              phase === 'asking' && styles.asking,
+              phase === 'rejected' && styles.rejected,
+              phase === 'failed' && styles.failed,
+            ]}
+            testID={`tool-call-${phase}`}
+          >
+            <View style={[styles.tile, { backgroundColor: tileColor }]}>
+              <AppIcon
+                name={
+                  phase === 'done'
+                    ? 'checkmark'
+                    : phase === 'failed'
+                      ? 'exclamationmark'
+                      : phase === 'rejected'
+                        ? 'xmark'
+                        : 'sparkles'
+                }
+                size={20}
+                tintColor={phase === 'rejected' ? mutedForeground : eventForeground}
+              />
             </View>
-          ) : null}
-        </View>
-      ))}
+            <View style={styles.body}>
+              {phase === 'asking' ? (
+                <View style={styles.draftChip}>
+                  <Text style={styles.draftChipText}>{t.chat.toolCall.waiting}</Text>
+                </View>
+              ) : null}
+              {phase === 'running' ? (
+                <ShimmerText label={t.chat.toolCall.running(name)} style={styles.title} />
+              ) : (
+                <Text style={phase === 'rejected' ? styles.mutedTitle : styles.title}>
+                  {phase === 'rejected'
+                    ? t.chat.toolCall.rejected
+                    : phase === 'done'
+                      ? t.chat.toolCall.done(name)
+                      : phase === 'failed'
+                        ? t.chat.toolCall.failed(name)
+                        : name}
+                </Text>
+              )}
+              {phase === 'failed' ? (
+                <Text style={styles.detail}>{t.chat.toolCall.failedDetail}</Text>
+              ) : (
+                details.map((value) => (
+                  <Text
+                    key={value}
+                    numberOfLines={2}
+                    style={[styles.detail, phase === 'rejected' && styles.struck]}
+                  >
+                    {value}
+                  </Text>
+                ))
+              )}
+            </View>
+          </View>
+        );
+      })}
     </View>
   );
 }

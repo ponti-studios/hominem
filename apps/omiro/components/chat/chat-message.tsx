@@ -26,8 +26,6 @@ type ChatMessageProps = {
   onRegenerate?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
   onRetry?: (messageId: string) => void;
-  onToolCallRespond?: (input: { messageId: string; toolCallId: string; approved: boolean }) => void;
-  isRespondingToToolCall?: boolean;
   isActive?: boolean;
   onActivate?: (messageId: string) => void;
   formatTimestamp: (value: string) => string;
@@ -53,8 +51,6 @@ export const ChatMessage = memo(function ChatMessage({
   onRegenerate,
   onDelete,
   onRetry,
-  onToolCallRespond,
-  isRespondingToToolCall,
   isActive = false,
   onActivate,
   formatTimestamp,
@@ -159,12 +155,7 @@ export const ChatMessage = memo(function ChatMessage({
       entering={rowEntering}
       style={[styles.message, isUser ? styles.messageUser : styles.messageAssistant]}
     >
-      <MessageToolCalls
-        messageId={message.id}
-        onRespond={onToolCallRespond}
-        responding={isRespondingToToolCall}
-        toolCalls={renderedToolCalls}
-      />
+      <MessageToolCalls toolCalls={renderedToolCalls} />
 
       <Pressable
         onPress={isStreaming ? undefined : handleActivate}

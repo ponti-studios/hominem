@@ -83,8 +83,6 @@ interface ChatMessageListProps {
   onRegenerate?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
   onRetry?: (messageId: string) => void;
-  onToolCallRespond?: (input: { messageId: string; toolCallId: string; approved: boolean }) => void;
-  isRespondingToToolCall?: boolean;
   formatTimestamp: (value: string) => string;
   emptyState?: React.ReactElement | null;
   refreshControl?: React.ReactElement<RefreshControlProps>;
@@ -105,8 +103,6 @@ export function ChatMessageList({
   onRegenerate,
   onDelete,
   onRetry,
-  onToolCallRespond,
-  isRespondingToToolCall,
   formatTimestamp,
   emptyState,
   refreshControl,
@@ -269,8 +265,6 @@ export function ChatMessageList({
             onRegenerate: item.isStreaming ? undefined : onRegenerate,
             onDelete: item.isStreaming ? undefined : onDelete,
             onRetry,
-            onToolCallRespond,
-            isRespondingToToolCall,
             showDebug,
           }}
         />
@@ -285,8 +279,6 @@ export function ChatMessageList({
       onRequestEdit,
       onRegenerate,
       onRetry,
-      onToolCallRespond,
-      isRespondingToToolCall,
       showDebug,
     ],
   );
