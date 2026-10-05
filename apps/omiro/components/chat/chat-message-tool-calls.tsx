@@ -3,6 +3,8 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useStyles } from '~/components/theme';
 
+import { describeToolArgs, formatToolName } from './chat-tool-call.helpers';
+
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
 
 export function MessageToolCalls({
@@ -17,36 +19,33 @@ export function MessageToolCalls({
   toolCalls: ToolCall[];
 }) {
   const styles = useStyles((theme) => ({
-    toolCalls: { width: '100%', gap: 8, marginBottom: 12 },
+    toolCalls: { gap: 10, marginBottom: 10, maxWidth: '94%' },
     toolCall: {
-      backgroundColor: theme.colors.background,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: theme.borderRadii.sm,
-      gap: 8,
-      padding: 8,
+      backgroundColor: theme.colors.card,
+      borderRadius: theme.borderRadii.xl,
+      gap: 12,
+      padding: 16,
     },
     toolName: {
-      ...theme.textVariants.footnote,
       color: theme.colors.foreground,
-      fontWeight: '600',
+      fontSize: 16,
+      fontWeight: '800',
     },
-    toolCallArgs: {
-      backgroundColor: theme.colors.foreground,
-      ...theme.textVariants.mono,
-      color: theme.colors.secondary,
-      borderRadius: theme.borderRadii.sm,
-      padding: 8,
-    },
+    args: { gap: 8 },
+    argLabel: { color: theme.colors.mutedForeground, fontSize: 12, fontWeight: '700' },
+    argValue: { color: theme.colors.foreground, fontSize: 15, lineHeight: 21 },
     actions: { flexDirection: 'row', gap: 8 },
     action: {
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: theme.borderRadii.sm,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
+      alignItems: 'center',
+      borderRadius: theme.borderRadii.pill,
+      flex: 1,
+      paddingVertical: 12,
     },
-    actionText: { ...theme.textVariants.footnote, color: theme.colors.foreground },
+    approve: { backgroundColor: theme.colors.primary },
+    reject: { backgroundColor: theme.colors.secondary },
+    approveText: { color: theme.colors.primaryForeground, fontSize: 15, fontWeight: '700' },
+    rejectText: { color: theme.colors.foreground, fontSize: 15, fontWeight: '700' },
+    pressed: { opacity: 0.8 },
   }));
 
   if (toolCalls.length === 0) {
@@ -60,10 +59,15 @@ export function MessageToolCalls({
           key={toolCall.toolCallId || `${toolCall.toolName}:${JSON.stringify(toolCall.args)}`}
           style={styles.toolCall}
         >
-          <Text style={styles.toolName}>{toolCall.toolName}</Text>
-          <Text style={styles.toolCallArgs}>
-            {toolCall.args ? JSON.stringify(toolCall.args, null, 2) : ''}
-          </Text>
+          <Text style={styles.toolName}>{formatToolName(toolCall.toolName)}</Text>
+          <View style={styles.args}>
+            {describeToolArgs(toolCall.args).map((arg) => (
+              <View key={arg.label}>
+                <Text style={styles.argLabel}>{arg.label}</Text>
+                <Text style={styles.argValue}>{arg.value}</Text>
+              </View>
+            ))}
+          </View>
           {toolCall.confirmationStatus === 'pending' && onRespond ? (
             <View style={styles.actions}>
               <Pressable
@@ -74,10 +78,10 @@ export function MessageToolCalls({
                 onPress={() => {
                   void onRespond({ messageId, toolCallId: toolCall.toolCallId, approved: true });
                 }}
-                style={styles.action}
+                style={({ pressed }) => [styles.action, styles.approve, pressed && styles.pressed]}
                 testID="tool-confirm-approve"
               >
-                <Text style={styles.actionText}>Approve</Text>
+                <Text style={styles.approveText}>Approve</Text>
               </Pressable>
               <Pressable
                 accessible
@@ -87,10 +91,10 @@ export function MessageToolCalls({
                 onPress={() => {
                   void onRespond({ messageId, toolCallId: toolCall.toolCallId, approved: false });
                 }}
-                style={styles.action}
+                style={({ pressed }) => [styles.action, styles.reject, pressed && styles.pressed]}
                 testID="tool-confirm-reject"
               >
-                <Text style={styles.actionText}>Reject</Text>
+                <Text style={styles.rejectText}>Reject</Text>
               </Pressable>
             </View>
           ) : null}

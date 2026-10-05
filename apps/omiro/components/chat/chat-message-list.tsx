@@ -302,7 +302,7 @@ export function ChatMessageList({
             />
           ) : null
         }
-        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 8 }}
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
         ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
         // Composer sits in normal flow at rest (bottomInset 0, nothing extra
         // reserved). When the keyboard's open it lifts by translating instead

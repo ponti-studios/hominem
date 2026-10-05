@@ -2,7 +2,7 @@ appId: com.pontistudios.hakumi.dev
 ---
 - stopApp
 - launchApp
-- openLink: hakumi-dev:///stream
+- openLink: hakumi-dev:///chat
 - waitForAnimationToEnd:
     timeout: 10000
 # BackButton is a resource-id (testID), not text: tap by id. Tapping by text

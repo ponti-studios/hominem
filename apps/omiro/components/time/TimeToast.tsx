@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
-import Animated, { FadeInDown, FadeOutDown, useReducedMotion } from 'react-native-reanimated';
+import Animated, { FadeInUp, FadeOutUp, useReducedMotion } from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
@@ -14,7 +14,8 @@ export interface TimeToastModel {
 }
 
 interface TimeToastProps {
-  bottom: number;
+  // Distance from the top edge of the screen's content area.
+  top: number;
   onDismiss: () => void;
   toast: TimeToastModel;
 }
@@ -22,7 +23,7 @@ interface TimeToastProps {
 // Transient feedback floating above the capture bar. Success is the inverted
 // ink pill with a lime badge; errors are a bordered card with a coral icon
 // and a retry.
-export function TimeToast({ bottom, onDismiss, toast }: TimeToastProps) {
+export function TimeToast({ onDismiss, toast, top }: TimeToastProps) {
   const reducedMotion = useReducedMotion();
   const { primaryForeground } = useAppTheme().colors;
   const isError = toast.tone === 'error';
@@ -34,7 +35,7 @@ export function TimeToast({ bottom, onDismiss, toast }: TimeToastProps) {
       borderCurve: 'continuous',
       borderRadius: 26,
       borderWidth: isError ? 2 : 0,
-      bottom,
+      top,
       boxShadow: theme.shadows.float,
       flexDirection: 'row',
       gap: 14,
@@ -77,8 +78,8 @@ export function TimeToast({ bottom, onDismiss, toast }: TimeToastProps) {
   return (
     <Animated.View
       accessibilityLiveRegion="polite"
-      entering={reducedMotion ? undefined : FadeInDown.springify().damping(18)}
-      exiting={reducedMotion ? undefined : FadeOutDown.duration(160)}
+      entering={reducedMotion ? undefined : FadeInUp.springify().damping(18)}
+      exiting={reducedMotion ? undefined : FadeOutUp.duration(160)}
       style={styles.toast}
       testID={isError ? 'time-error-toast' : 'time-success-toast'}
     >

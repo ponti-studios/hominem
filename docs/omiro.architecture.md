@@ -1,8 +1,8 @@
 # Omiro architecture
 
 This document describes the implemented iOS app structure. Product behavior
-specific to chat, Time, or voice lives in the companion documents
-[`omiro.chat.md`](omiro.chat.md), [`omiro.time.md`](omiro.time.md), and
+specific to chat, planning, or voice lives in the companion documents
+[`omiro.chat.md`](omiro.chat.md), [`omiro.planning.md`](omiro.planning.md), and
 [`omiro.voice.md`](omiro.voice.md).
 
 ## Platform and runtime
@@ -42,18 +42,17 @@ The implemented protected routes are:
 | `/(protected)/chats/[id]`       | Chat detail and message generation.                            |
 | `/(protected)/chats/archived`   | Archived chat list.                                            |
 | `/(protected)/notes/[id]`       | Note detail and editing.                                       |
-| `/(protected)/(tabs)/time`      | Time tab: day-at-a-time screen and natural-language capture.   |
 | `/(protected)/(tabs)/tasks`     | Tasks tab (open tasks, in-app detail sheet).                   |
 | `/(protected)/time/event/[id]`  | Calendar-event deep link (opens Apple's native editor).        |
 | `/(protected)/settings`         | Protected form-sheet settings surface.                         |
 
-Navigation is three native bottom tabs (Stream, Time, Tasks) with native
+Navigation is two native bottom tabs (Stream, Tasks) with native
 headers; pushed detail screens (chat, note) hide the tab bar, and Settings
 opens from the header profile button.
 
 Settings, enhance, and chat-to-note surfaces use native form-sheet
 presentations. Navigation helpers in `services/navigation/routes.ts` are the
-source of truth for content and Time-block URLs; IDs are encoded in routes.
+source of truth for content and calendar-event URLs; IDs are encoded in routes.
 
 There is no persistent tab bar. The Stream header uses a navigation drawer
 button and a segmented filter. The app’s navigation hierarchy is product-owned;
@@ -77,7 +76,7 @@ Feature services own query keys and mutations:
 - `services/tasks/` owns task queries and mutations. The server time parser
   remains a supported API surface for web task management and older released
   clients during the device-only Calendar rollout. Current Omiro builds also call
-  it for natural-language Time input, sending only the request text, the current
+  it for natural-language planning, sending only the request text, the current
   time, and the time zone.
 - `services/calendar/` owns the compact EventKit summary gateway and calendar queries.
 

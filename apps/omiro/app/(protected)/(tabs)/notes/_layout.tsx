@@ -5,7 +5,7 @@ import {
   useNativeHeaderOptions,
 } from '~/components/navigation/native-header';
 
-export default function StreamStackLayout() {
+export default function NotesStackLayout() {
   const headerOptions = useNativeHeaderOptions();
   return (
     <Stack screenOptions={headerOptions}>
@@ -14,7 +14,7 @@ export default function StreamStackLayout() {
         options={{
           headerLargeTitle: true,
           headerRight: () => <SettingsHeaderButton />,
-          title: 'Stream',
+          title: 'Notes',
         }}
       />
     </Stack>

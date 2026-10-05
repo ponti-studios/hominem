@@ -1,9 +1,0 @@
-appId: com.pontistudios.hakumi.dev
----
-# Sends the request the `?prompt=` link prefilled into the Time capture bar.
-- extendedWaitUntil:
-    visible:
-      id: time-composer-submit
-    timeout: 10000
-- tapOn:
-    id: time-composer-submit

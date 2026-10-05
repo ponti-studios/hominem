@@ -1,7 +1,7 @@
 import {
   NEW_CHAT_ROUTE,
   SETTINGS_ROUTE,
-  STREAM_ROUTE,
+  NOTES_ROUTE,
   TASKS_ROUTE,
   getContentRoute,
   getTimeBlockRoute,
@@ -17,9 +17,9 @@ export function redirectSystemPath({
 }): string {
   const normalized = path.startsWith('/') ? path.slice(1) : path;
 
-  // Siri / App Intent shortcut for adding a note -> All tab
+  // Siri / App Intent shortcut for adding a note -> Notes tab
   if (normalized === 'note/add') {
-    return STREAM_ROUTE;
+    return NOTES_ROUTE;
   }
 
   // OTP link: verify?token=xxx -> the auth verify screen
@@ -61,9 +61,9 @@ export function redirectSystemPath({
     return getContentRoute('note', notesIdMatch[1]);
   }
 
-  // notes list -> All tab
+  // notes list -> Notes tab
   if (normalized === 'notes') {
-    return STREAM_ROUTE;
+    return NOTES_ROUTE;
   }
 
   // focus/<id> -> note detail (focus and notes share a detail view)
@@ -72,9 +72,9 @@ export function redirectSystemPath({
     return getContentRoute('note', focusIdMatch[1]);
   }
 
-  // focus list -> All tab
+  // focus list -> Notes tab
   if (normalized === 'focus') {
-    return STREAM_ROUTE;
+    return NOTES_ROUTE;
   }
 
   // account -> settings screen

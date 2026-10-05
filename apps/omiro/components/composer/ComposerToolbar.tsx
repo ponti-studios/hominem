@@ -45,6 +45,7 @@ interface ComposerToolbarProps {
   onChangeMessage: (message: string) => void;
   onToggleWalkieTalkie: (() => void) | undefined;
   onSubmit: (kind: ComposerSubmitKind, message: string, canSubmit: boolean) => void;
+  onPlan: ((message: string) => void) | undefined;
 }
 
 // The action row (attach, entry-kind toggle, enhance/walkie-talkie/mic/send)
@@ -64,6 +65,7 @@ function ComposerToolbarComponent({
   onChangeMessage,
   onToggleWalkieTalkie,
   onSubmit,
+  onPlan,
 }: ComposerToolbarProps) {
   const router = useRouter();
   // Mixed mode defaults to note and only changes via the explicit
@@ -130,6 +132,18 @@ function ComposerToolbarComponent({
             onPress={openEnhance}
           >
             <AppIcon name="wand.and.sparkles" size={20} tintColor={lime} />
+          </IconButton>
+        ) : null}
+        {hasContent && onPlan ? (
+          <IconButton
+            accessibilityLabel={t.inboxComposer.composer.planA11y}
+            disabled={!canSubmit || (composerProps.mode === 'inbox' && composerProps.isPlanning)}
+            style={styles.compactIcon}
+            testID="composer-plan"
+            variant="plain"
+            onPress={() => onPlan(messageStore.getMessage())}
+          >
+            <AppIcon name="calendar.badge.plus" size={20} tintColor={inkForeground} />
           </IconButton>
         ) : null}
         {onToggleWalkieTalkie ? (

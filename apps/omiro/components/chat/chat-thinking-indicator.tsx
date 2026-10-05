@@ -23,8 +23,18 @@ const SWEEP_SPAN = 1.5;
 // Generic version of the erase-sweep: any muted label can shimmer, so the
 // same visual language covers streaming, regeneration, and save/stop states
 // instead of each one inventing its own spinner or card.
-export function ShimmerText({ label, style }: { label: string; style?: object }) {
-  const { background } = useAppTheme().colors;
+export function ShimmerText({
+  fade,
+  label,
+  style,
+}: {
+  // The surface the label sits on; the sweep erases glyphs to this colour.
+  fade?: string;
+  label: string;
+  style?: object;
+}) {
+  const { background: pageBackground } = useAppTheme().colors;
+  const background = fade ?? pageBackground;
   const styles = useStyles(() => ({
     sweep: { position: 'absolute', top: 0, left: 0 },
   }));
@@ -76,6 +86,7 @@ export function ChatThinkingIndicator() {
     label: { color: theme.colors.mutedForeground, fontSize: 14, lineHeight: 20 },
   }));
   const reducedMotion = useReducedMotion();
+  const { card } = useAppTheme().colors;
 
   return (
     <Animated.View
@@ -88,7 +99,7 @@ export function ChatThinkingIndicator() {
       testID="chat-assistant-activity"
     >
       <View style={styles.row}>
-        <ShimmerText label={t.chat.thinkingIndicator} style={styles.label} />
+        <ShimmerText fade={card} label={t.chat.thinkingIndicator} style={styles.label} />
       </View>
     </Animated.View>
   );

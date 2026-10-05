@@ -68,7 +68,7 @@ export const ChatMessage = memo(function ChatMessage({
     tertiary,
   } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
-    content: { gap: 8, width: '100%' },
+    content: { gap: 8 },
     reasoningPanel: {
       backgroundColor: theme.colors.background,
       borderWidth: 1,
@@ -77,7 +77,6 @@ export const ChatMessage = memo(function ChatMessage({
       gap: 4,
       paddingHorizontal: 12,
       paddingVertical: 12,
-      width: '100%',
     },
     reasoningText: { ...theme.textVariants.mono, color: theme.colors.foreground, opacity: 0.8 },
     retryRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end' },
@@ -87,14 +86,19 @@ export const ChatMessage = memo(function ChatMessage({
     messageAssistant: { alignItems: 'flex-start' },
     userBubble: {
       backgroundColor: theme.colors.primary,
-      borderRadius: theme.borderRadii.sm,
-      borderBottomRightRadius: 2,
-      paddingHorizontal: 12,
+      borderRadius: theme.borderRadii.xl,
+      borderBottomRightRadius: 6,
+      maxWidth: '82%',
+      paddingHorizontal: 16,
+      paddingVertical: 11,
     },
     assistantBubble: {
-      borderRadius: theme.borderRadii.sm,
-      borderBottomLeftRadius: 2,
-      paddingHorizontal: 12,
+      backgroundColor: theme.colors.card,
+      borderRadius: theme.borderRadii.xl,
+      borderBottomLeftRadius: 6,
+      maxWidth: '94%',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
     },
     continuous: { borderCurve: 'continuous' },
   }));
@@ -174,7 +178,13 @@ export const ChatMessage = memo(function ChatMessage({
         ) : null}
 
         <Animated.View layout={contentLayout} style={styles.content}>
-          <MessageContent content={content} enableMarkdown={!isStreaming} textStyle={textStyle}>
+          {/* The user's own text is shown verbatim: underscores or asterisks they
+              typed must not turn into emphasis. */}
+          <MessageContent
+            content={content}
+            enableMarkdown={!isUser && !isStreaming}
+            textStyle={textStyle}
+          >
             {!isUser && isStreaming ? <ChatThinkingIndicator /> : null}
           </MessageContent>
 

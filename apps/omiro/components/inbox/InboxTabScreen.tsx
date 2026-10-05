@@ -1,49 +1,48 @@
 import { FlashList, type ListRenderItem } from '@shopify/flash-list';
-import { useCallback, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
 import { useStyles } from '~/components/theme';
-import { Chip } from '~/components/ui';
+import { PlannerSheets } from '~/components/time/PlannerSheets';
+import { usePlanner } from '~/components/time/use-planner';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 import { clearAllDraft, readAllDraft, writeAllDraft } from '~/services/navigation/launch-state';
-import { useTasksQuery } from '~/services/tasks/use-tasks-query';
+import { NOTES_ROUTE } from '~/services/navigation/routes';
 
 import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData } from './InboxStreamItem.types';
+import { SavedPopup } from './SavedPopup';
 import { getEnteringItemIds } from './stream-rows';
 import { StreamEmptyState } from './StreamEmptyState';
 import { StreamLoadError } from './StreamLoadError';
 import { StreamSkeleton } from './StreamSkeleton';
 
-export type StreamFilter = 'all' | 'chats' | 'notes';
+export type InboxTabKind = 'chat' | 'note';
 
-export const streamFilterOptions: { key: StreamFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'chats', label: 'Chats' },
-  { key: 'notes', label: 'Notes' },
-];
+// A page of the inbox that is mostly the other kind can leave this tab's list
+// short of a screenful; keep paging until there is enough to scroll.
+const MIN_ROWS_BEFORE_IDLE_PAGING = 12;
 
-function filterItems(items: InboxStreamItemData[], filter: StreamFilter): InboxStreamItemData[] {
-  if (filter === 'all') {
-    return items;
-  }
-  const kind = filter === 'chats' ? 'chat' : 'note';
-  return items.filter((item) => item.kind === kind);
+interface InboxTabScreenProps {
+  kind: InboxTabKind;
 }
 
-interface StreamScreenProps {
-  filter: StreamFilter;
-  onFilterChange: (filter: StreamFilter) => void;
-}
-
-export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
+// The Chat and Notes tabs: the same composer and the same list, filtered to
+// one kind. The tab only picks the composer's starting kind; what the person
+// types still decides where it lands, and a note saved from the Chat tab says
+// so in a popup that jumps to Notes.
+export function InboxTabScreen({ kind }: InboxTabScreenProps) {
+  const router = useRouter();
   const { inset: composerInset, restingInset } = useComposerDockMetrics({
     clearance: 16,
   });
   const inbox = useInboxStreamItems();
-  const { isFetching: isFetchingTasks, refetch: refetchTasks } = useTasksQuery();
+  const planner = usePlanner();
+  const [composerHeight, setComposerHeight] = useState(0);
+  const [savedPopupId, setSavedPopupId] = useState<number | null>(null);
   const styles = useStyles((theme) => ({
     container: { flex: 1, backgroundColor: theme.colors.background },
     // Without this, an unstyled FlashList nested in a `flex: 1` parent
@@ -53,7 +52,22 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
     content: { paddingBottom: 16 },
   }));
 
-  const items = useMemo(() => filterItems(inbox.items, filter), [inbox.items, filter]);
+  const items = useMemo(
+    () => inbox.items.filter((item) => item.kind === kind),
+    [inbox.items, kind],
+  );
+
+  const { fetchNextPage, hasNextPage, isFetchingNextPage, isInitialLoading } = inbox;
+  useEffect(() => {
+    if (
+      !isInitialLoading &&
+      hasNextPage &&
+      !isFetchingNextPage &&
+      items.length < MIN_ROWS_BEFORE_IDLE_PAGING
+    ) {
+      void fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isInitialLoading, items.length]);
 
   // Seeded with whatever the first settled render holds (including empty),
   // then grows with every commit -- the same gating ChatMessageList uses so
@@ -82,8 +96,15 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
     [enteringIds],
   );
 
+  // Only a note saved from Chat lands somewhere the person isn't looking.
+  const handleNoteSaved = useCallback(() => {
+    if (kind === 'chat') {
+      setSavedPopupId(Date.now());
+    }
+  }, [kind]);
+
   return (
-    <View style={styles.container} testID="stream-screen">
+    <View style={styles.container} testID={`${kind}-tab-screen`}>
       <FlashList
         style={styles.list}
         // The dock sits in flow below the list, so at rest nothing overlaps
@@ -94,7 +115,10 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
         contentInsetAdjustmentBehavior="automatic"
         data={items}
         keyExtractor={(item) => item.id}
-        ListHeaderComponent=<StreamFilterChips onChange={onFilterChange} value={filter} />
+        // New rows land at the top of this list (an optimistic note, a fresh
+        // chat). Keeping the visible row pinned would scroll the list away from
+        // them, so let the content grow from the top instead.
+        maintainVisibleContentPosition={{ disabled: true }}
         ListEmptyComponent={
           inbox.isInitialLoading ? (
             <StreamSkeleton />
@@ -105,7 +129,7 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
               }}
             />
           ) : (
-            <StreamEmptyState filter={filter} />
+            <StreamEmptyState kind={kind} />
           )
         }
         onEndReached={() => {
@@ -115,50 +139,43 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
         }}
         onEndReachedThreshold={0.4}
         refreshControl=<RefreshControl
-          refreshing={inbox.isRefreshing || isFetchingTasks}
+          refreshing={inbox.isRefreshing}
           onRefresh={() => {
             void inbox.refetch();
-            void refetchTasks();
           }}
         />
         renderItem={renderItem}
         scrollIndicatorInsets={{ bottom: composerInset }}
         showsVerticalScrollIndicator={false}
       />
-      <ComposerDock restingInset={restingInset} testID="stream-composer-dock">
-        <Composer
-          entryMode="mixed"
-          initialMessage={readAllDraft()}
-          mode="inbox"
-          onClearDraft={clearAllDraft}
-          onDraftChange={writeAllDraft}
+      {savedPopupId === null ? null : (
+        <SavedPopup
+          bottom={composerInset + composerHeight + 8}
+          key={savedPopupId}
+          label="Saved to Notes"
+          onDismiss={() => setSavedPopupId(null)}
+          onOpen={() => {
+            setSavedPopupId(null);
+            router.navigate(NOTES_ROUTE);
+          }}
         />
+      )}
+      <ComposerDock restingInset={restingInset} testID={`${kind}-composer-dock`}>
+        <View onLayout={(event) => setComposerHeight(event.nativeEvent.layout.height)}>
+          <Composer
+            defaultEntryKind={kind}
+            entryMode="mixed"
+            initialMessage={readAllDraft()}
+            isPlanning={planner.isPlanning}
+            mode="inbox"
+            onNoteSaved={handleNoteSaved}
+            onPlan={planner.plan}
+            onClearDraft={clearAllDraft}
+            onDraftChange={writeAllDraft}
+          />
+        </View>
       </ComposerDock>
-    </View>
-  );
-}
-
-function StreamFilterChips({
-  onChange,
-  value,
-}: {
-  onChange: (filter: StreamFilter) => void;
-  value: StreamFilter;
-}) {
-  const styles = useStyles(() => ({
-    row: { flexDirection: 'row', gap: 8, paddingBottom: 8, paddingHorizontal: 16, paddingTop: 4 },
-  }));
-  return (
-    <View style={styles.row} testID="stream-filter">
-      {streamFilterOptions.map((option) => (
-        <Chip
-          key={option.key}
-          label={option.label}
-          onPress={() => onChange(option.key)}
-          testID={`stream-filter-${option.key}`}
-          tone={option.key === value ? 'ink' : 'card'}
-        />
-      ))}
+      <PlannerSheets planner={planner} />
     </View>
   );
 }

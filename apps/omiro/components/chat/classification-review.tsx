@@ -30,11 +30,12 @@ export function ClassificationReview({
   const insets = useSafeAreaInsets();
   const styles = useStyles((theme) => ({
     container: {
-      backgroundColor: theme.colors.background,
-      borderTopWidth: 1,
-      borderColor: theme.colors.border,
-      gap: 24,
-      padding: 32,
+      backgroundColor: theme.colors.card,
+      borderTopLeftRadius: theme.borderRadii['2xl'],
+      borderTopRightRadius: theme.borderRadii['2xl'],
+      gap: 20,
+      paddingHorizontal: 24,
+      paddingTop: 16,
     },
     handleBar: {
       alignSelf: 'center',
@@ -48,20 +49,18 @@ export function ClassificationReview({
     typeLabel: {
       ...theme.textVariants.caption1,
       color: theme.colors.mutedForeground,
-      fontWeight: '500',
-      letterSpacing: 4,
+      fontWeight: '800',
+      letterSpacing: 1,
       textTransform: 'uppercase',
     },
-    title: { fontWeight: '500' },
+    title: { color: theme.colors.foreground, fontSize: 24, fontWeight: '800' },
     changesList: { gap: 8 },
     changeItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-    changeBullet: { color: theme.colors.mutedForeground, marginTop: 1, opacity: 0.4 },
+    changeBullet: { color: theme.colors.primary, fontWeight: '800', marginTop: 1 },
     changeText: { color: theme.colors.mutedForeground, flex: 1 },
     previewScrollArea: {
-      backgroundColor: theme.colors.muted,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: theme.borderRadii.md,
+      backgroundColor: theme.colors.background,
+      borderRadius: theme.borderRadii.xl,
       maxHeight: 120,
       padding: 16,
     },
@@ -102,7 +101,7 @@ export function ClassificationReview({
           <View style={styles.changesList}>
             {proposedChanges.map((change) => (
               <View key={change} style={styles.changeItem}>
-                <Text style={styles.changeBullet}>-</Text>
+                <Text style={styles.changeBullet}>•</Text>
                 <Text style={styles.changeText}>{change}</Text>
               </View>
             ))}
