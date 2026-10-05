@@ -470,8 +470,6 @@ const t = {
       stopVoiceInputA11y: 'Stop recording voice note',
       recordingElsewhereA11y: 'Recording in progress elsewhere',
       cancelRecordingA11y: 'Cancel recording',
-      enableWalkieTalkieA11y: 'Turn on walkie-talkie mode',
-      disableWalkieTalkieA11y: 'Turn off walkie-talkie mode',
       sendingA11y: 'Sending…',
       enhanceTextA11y: 'Enhance text with AI',
       openChatA11y: 'Open chat',

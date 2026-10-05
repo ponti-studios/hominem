@@ -19,10 +19,6 @@ interface VoiceRecordingPanelProps {
   onCancel: () => void;
   onDone?: () => void;
   doneAccessibilityLabel?: string;
-  // 'sending' covers the gap between a walkie-talkie auto-send and the
-  // spoken reply arriving -- recording's already stopped, nothing left to
-  // cancel or stop, so those controls just hide.
-  phase?: 'recording' | 'sending';
   // 'ink' for panels that sit on the inverted floating composer surface.
   tone?: 'default' | 'ink';
 }
@@ -32,7 +28,6 @@ export function VoiceRecordingPanel({
   onCancel,
   onDone,
   doneAccessibilityLabel,
-  phase = 'recording',
   tone = 'default',
 }: VoiceRecordingPanelProps) {
   const {
@@ -46,8 +41,6 @@ export function VoiceRecordingPanel({
   const textSecondaryColor = onInk ? inkForeground : mutedForeground;
   const iconTint = onInk ? inkForeground : undefined;
   const styles = useStyles(() => ({
-    sendingContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%' },
-    sendingContent: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
     recordingDot: { width: 8, height: 8, borderRadius: 999 },
     recordingContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%' },
     recordingContent: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -61,38 +54,6 @@ export function VoiceRecordingPanel({
       true,
     ),
   }));
-
-  if (phase === 'sending') {
-    return (
-      <View style={styles.sendingContainer}>
-        <View
-          style={[
-            styles.sendingContent,
-            {
-              height: 44,
-              paddingHorizontal: 16,
-              borderRadius: 22,
-              backgroundColor: pillColor,
-            },
-          ]}
-        >
-          <Animated.View
-            style={[styles.recordingDot, [{ backgroundColor: destructiveColor }, dotOpacity]]}
-          />
-          <Text
-            style={{
-              color: textSecondaryColor,
-              fontSize: 13,
-              fontVariant: ['tabular-nums'],
-              minWidth: 34,
-            }}
-          >
-            {t.inboxComposer.composer.sendingA11y}
-          </Text>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.recordingContainer}>
