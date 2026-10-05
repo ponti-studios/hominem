@@ -67,12 +67,13 @@ merge to main -> just mobile check -> build:prod:local -> submit:local -> TestFl
 Run it from `apps/omiro` on an up-to-date `main`:
 
 ```bash
-pnpm eas:pull:prod      # once: writes the gitignored .eas-prod.local with SENTRY_AUTH_TOKEN
+pnpm eas:pull:prod      # refreshes the gitignored .eas-prod.local
 pnpm build:prod:local   # verifies the production identity, writes build/prod-local.ipa
 pnpm submit:local       # re-checks the identity, uploads that IPA to App Store Connect
 ```
 
-- The build needs Xcode, a signed-in `eas-cli`, and `.eas-prod.local`. It runs
+- The build needs Xcode, a signed-in `eas-cli`, and `.eas-prod.local` with
+  `SENTRY_AUTH_TOKEN` (an EAS Secret cannot be pulled, so keep it in that file). It runs
   `verify:release` first and stops unless the app resolves to `Omiro` with
   `com.pontistudios.hakumi` in production.
 - `eas build --local` compiles on this machine. EAS only assigns the build
@@ -85,8 +86,9 @@ pnpm submit:local       # re-checks the identity, uploads that IPA to App Store 
 - `expo doctor` runs during the build and may warn about patch-level package
   mismatches. That does not stop the build.
 
-Do not use `.eas/workflows/production-release.yml` (`deploy-mobile`) for a
-normal release; it runs the build on EAS. A JavaScript-only hotfix that does
+Do not use `.eas/workflows/production-release.yml` for a normal release; it
+runs the build on EAS. The `deploy-mobile` GitHub workflow that starts it is
+disabled (manual dispatch only). A JavaScript-only hotfix that does
 not change native dependencies or config can use an OTA update, which does go
 through an EAS workflow, so check the cost first:
 

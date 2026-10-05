@@ -21,28 +21,24 @@ The root `ios/` entries in both `.gitignore` and `.easignore` must stay anchored
 
 ## Production verification
 
-The release path is:
+The release path is local:
 
 ```text
-merge to main -> validate-mobile -> deploy-mobile -> EAS approval -> build -> TestFlight
+merge to main -> just mobile check -> build:prod:local -> submit:local -> TestFlight
 ```
 
 TestFlight candidates and App Store releases use the same production bundle,
-backend, and native binary. There is no separate staging binary. A successful
-`validate-mobile` run on `main` triggers `deploy-mobile`, which starts
-[`.eas/workflows/production-release.yml`](../../../apps/omiro/.eas/workflows/production-release.yml).
-The workflow waits for approval, builds, verifies that the result is
-`com.pontistudios.hakumi` with store distribution, and submits it to
-TestFlight. The marketing version is committed in app config and EAS remotely
-increments only the iOS build number.
+backend, and native binary. There is no separate staging binary. The marketing version is committed in app config and EAS remotely increments
+only the iOS build number. The EAS cloud workflow
+([`.eas/workflows/production-release.yml`](../../../apps/omiro/.eas/workflows/production-release.yml),
+started by `deploy-mobile`) still exists but is not used: it builds on EAS,
+which the maintainer does not pay for. `deploy-mobile.yml` is disabled and only
+runs on manual dispatch.
 
 Deliver every production change as a new TestFlight candidate, then approve
-and release it through App Store Connect. If the GitHub-to-EAS trigger fails,
-rerun the validated SHA from GitHub or the EAS dashboard rather than starting
-an ad hoc release from a developer checkout.
+and release it through App Store Connect.
 
-For an explicitly requested local signed artifact, run
-`pnpm build:prod:local`. It loads the gitignored `.eas-prod.local`, forces
+To release, run `pnpm build:prod:local`. It loads the gitignored `.eas-prod.local`, forces
 `APP_ENV=production`, and writes `build/prod-local.ipa`. Upload that exact
 artifact with `pnpm submit:local`; it re-checks the production identity and
 passes the file explicitly to `eas submit`.
