@@ -7115,8 +7115,8 @@ packages:
   dom-accessibility-api@0.6.3:
     resolution: {integrity: sha512-7ZgogeTnjuHbo+ct10G9Ffp0mif17idi0IyWNVA/wcwcm7NPOD/WEHVP3n7n3MhXqxoIYm8d6MuZohYWIZ4T3w==}
 
-  dompurify@3.4.15:
-    resolution: {integrity: sha512-EUBjM+B+lkDE41iE82DDSCfkoPGfXx8IxFxPMjNzm/Uk4xDet77rTN9wqlxlVg71kK7XGuUMv6wUxJUwwv+Xyw==}
+  dompurify@3.4.16:
+    resolution: {integrity: sha512-sqo+pNp3qRhCIpbgRi1y8Tgk27Bo2Ry7w0dC1NBeNTdZChWjz9Xb/KOoZbRP/R6pQZ80Qw8YhXw13hWWBbMRnQ==}
 
   dot-prop@10.2.0:
     resolution: {integrity: sha512-BTJ9aZYL3vCfZlZOBLy9v8TUqWGQ0pzFnygKwFZt5udj6viBoFIBviKPUoZLDCPn1FoXffv6McQFDenrm5Krfw==}
@@ -13669,6 +13669,54 @@ snapshots:
       - vitest
       - vue
 
+  '@hominem/rpc@file:packages/rpc(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.62.1)(better-call@1.4.0(zod@4.4.3))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
+    dependencies:
+      '@hominem/api': file:services/api(@better-auth/core@1.7.1(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@opentelemetry/api@1.8.0)(better-call@1.4.0(zod@4.4.3))(jose@6.2.12)(kysely@0.29.5)(nanostores@1.5.3))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.1)(@playwright/test@1.62.1)(better-call@1.4.0(zod@4.4.3))(expo-constants@57.0.18)(expo-linking@57.0.10)(expo-network@57.0.2(expo@57.0.23)(react@19.2.8))(expo-secure-store@57.0.4(expo@57.0.23))(ioredis@6.0.0(supports-color@8.1.1))(kysely@0.29.5)(supports-color@8.1.1)(vitest@4.1.11)
+      '@hominem/chat': file:packages/chat(react@19.2.8)
+      '@tanstack/react-query': 5.101.4(react@19.2.8)
+      hono: 4.13.5
+      react: 19.2.8
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@better-auth/core'
+      - '@better-auth/utils'
+      - '@better-fetch/fetch'
+      - '@cloudflare/workers-types'
+      - '@lynx-js/react'
+      - '@opentelemetry/core'
+      - '@opentelemetry/exporter-trace-otlp-http'
+      - '@playwright/test'
+      - '@prisma/client'
+      - '@react-email/render'
+      - '@sveltejs/kit'
+      - '@tanstack/react-start'
+      - '@tanstack/solid-start'
+      - better-call
+      - better-sqlite3
+      - bufferutil
+      - bullmq-otel
+      - drizzle-kit
+      - drizzle-orm
+      - expo-constants
+      - expo-linking
+      - expo-network
+      - expo-secure-store
+      - expo-web-browser
+      - ioredis
+      - kysely
+      - mongodb
+      - mysql2
+      - next
+      - pg-native
+      - prisma
+      - redis
+      - solid-js
+      - supports-color
+      - svelte
+      - utf-8-validate
+      - vitest
+      - vue
+
   '@hominem/rpc@file:packages/rpc(@playwright/test@1.62.1)(react@19.2.8)(supports-color@8.1.1)(vitest@4.1.11)':
     dependencies:
       '@hominem/api': file:services/api(@playwright/test@1.62.1)(supports-color@8.1.1)(vitest@4.1.11)
@@ -17842,7 +17890,7 @@ snapshots:
 
   dom-accessibility-api@0.6.3: {}
 
-  dompurify@3.4.15:
+  dompurify@3.4.16:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -19901,7 +19949,7 @@ snapshots:
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.14
       dayjs: 1.11.23
-      dompurify: 3.4.15
+      dompurify: 3.4.16
       es-toolkit: 1.52.0
       fastdom: 1.0.12
       katex: 0.16.47
@@ -21157,7 +21205,7 @@ snapshots:
       '@posthog/core': 1.52.0
       '@posthog/types': 1.410.0
       core-js: 3.50.0
-      dompurify: 3.4.15
+      dompurify: 3.4.16
       fflate: 0.4.9
       preact: 10.29.8
       query-selector-shadow-dom: 1.0.1
