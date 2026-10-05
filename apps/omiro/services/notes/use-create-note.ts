@@ -3,6 +3,13 @@ import type { Note } from '@hominem/rpc/types';
 import { buildContentPreview } from '@hominem/utils/text';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 
+import {
+  addOptimisticInboxNote,
+  removeInboxEntity,
+  restoreInbox,
+  snapshotInbox,
+  type InboxSnapshot,
+} from '~/services/inbox/inbox-entities';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 
 import { noteKeys } from './query-keys';
@@ -15,6 +22,7 @@ interface CreateNoteInput {
 
 interface CreateNoteContext {
   optimisticId: string;
+  previousInbox: InboxSnapshot;
 }
 
 function buildOptimisticNote(text: string, title: string | undefined, optimisticId: string): Note {
@@ -61,13 +69,20 @@ export const useCreateNote = (): UseMutationResult<
 
       queryClient.setQueryData(noteKeys.detail(optimisticId), optimisticNote);
 
-      return {
-        optimisticId,
-      };
+      const previousInbox = await snapshotInbox(queryClient);
+      addOptimisticInboxNote(queryClient, {
+        entityId: optimisticId,
+        preview: optimisticNote.excerpt,
+        title: optimisticNote.title,
+        updatedAt: optimisticNote.updatedAt,
+      });
+
+      return { optimisticId, previousInbox };
     },
     onError: (_error, _input, context) => {
       if (context) {
         queryClient.removeQueries({ queryKey: noteKeys.detail(context.optimisticId), exact: true });
+        restoreInbox(queryClient, context.previousInbox);
       }
     },
     onSuccess: async (createdNote, _input, context) => {
@@ -75,6 +90,9 @@ export const useCreateNote = (): UseMutationResult<
         queryClient.removeQueries({ queryKey: noteKeys.detail(context.optimisticId), exact: true });
       }
       queryClient.setQueryData(noteKeys.detail(createdNote.id), createdNote);
+      if (context) {
+        removeInboxEntity(queryClient, { kind: 'note', entityId: context.optimisticId });
+      }
 
       await invalidateInboxQueries(queryClient);
     },

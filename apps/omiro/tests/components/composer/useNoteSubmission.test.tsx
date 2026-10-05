@@ -6,20 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
 const mockMutateAsync = vi.fn();
-const mockInvalidateInboxQueries = vi.fn().mockResolvedValue(undefined);
 const mockDonateAddNoteIntent = vi.fn();
-
-let mockIsPending = false;
 
 vi.mock('~/services/notes/use-create-note', () => ({
   useCreateNote: () => ({
     mutateAsync: mockMutateAsync,
-    isPending: mockIsPending,
   }),
-}));
-
-vi.mock('~/services/inbox/inbox-refresh', () => ({
-  invalidateInboxQueries: mockInvalidateInboxQueries,
 }));
 
 vi.mock('~/services/intent-donation', () => ({
@@ -30,7 +22,6 @@ const { useNoteSubmission } = await import('~/components/composer/useNoteSubmiss
 
 describe('useNoteSubmission', () => {
   beforeEach(() => {
-    mockIsPending = false;
     mockMutateAsync.mockResolvedValue({ id: 'note-1' });
   });
 
@@ -38,66 +29,62 @@ describe('useNoteSubmission', () => {
     vi.clearAllMocks();
   });
 
-  it('creates the note, donates the intent, refreshes the inbox, and clears the composer in order', async () => {
+  it('clears the composer right away, without waiting for the request', async () => {
     const { result } = renderHookWithQueryClient(() => useNoteSubmission());
     const clearComposer = vi.fn();
-    const callOrder: string[] = [];
+    const restoreMessage = vi.fn();
+    let finishRequest: (note: { id: string }) => void = () => {};
+    mockMutateAsync.mockReturnValue(
+      new Promise((resolve) => {
+        finishRequest = resolve;
+      }),
+    );
 
-    mockMutateAsync.mockImplementation(async () => {
-      callOrder.push('createNote');
-      return { id: 'note-1' };
-    });
-    mockDonateAddNoteIntent.mockImplementation(() => callOrder.push('donate'));
-    mockInvalidateInboxQueries.mockImplementation(async () => {
-      callOrder.push('invalidate');
-    });
-    clearComposer.mockImplementation(() => callOrder.push('clear'));
-
-    await act(async () => {
-      await result.current.submitNote({
+    let submission: Promise<void> = Promise.resolve();
+    act(() => {
+      submission = result.current.submitNote({
         clearComposer,
         fileIds: ['file-1'],
         message: '  hello world  ',
+        restoreMessage,
       });
     });
 
     expect(mockMutateAsync).toHaveBeenCalledWith({ text: 'hello world', fileIds: ['file-1'] });
-    expect(callOrder).toEqual(['createNote', 'donate', 'invalidate', 'clear']);
-  });
-
-  it('does not submit while a save is already in flight', async () => {
-    mockIsPending = true;
-    const { result } = renderHookWithQueryClient(() => useNoteSubmission());
-    const clearComposer = vi.fn();
+    expect(clearComposer).toHaveBeenCalledTimes(1);
+    expect(mockDonateAddNoteIntent).not.toHaveBeenCalled();
 
     await act(async () => {
-      await result.current.submitNote({ clearComposer, fileIds: [], message: 'hi' });
+      finishRequest({ id: 'note-1' });
+      await submission;
     });
 
-    expect(mockMutateAsync).not.toHaveBeenCalled();
-    expect(mockDonateAddNoteIntent).not.toHaveBeenCalled();
-    expect(mockInvalidateInboxQueries).not.toHaveBeenCalled();
-    expect(clearComposer).not.toHaveBeenCalled();
+    expect(mockDonateAddNoteIntent).toHaveBeenCalledTimes(1);
+    expect(restoreMessage).not.toHaveBeenCalled();
   });
 
-  it('propagates the error and skips donation/refresh/clear when note creation fails', async () => {
+  it('puts the text back and skips the donation when note creation fails', async () => {
     const { result } = renderHookWithQueryClient(() => useNoteSubmission());
     const clearComposer = vi.fn();
+    const restoreMessage = vi.fn();
     mockMutateAsync.mockRejectedValue(new Error('network down'));
 
-    await expect(
-      result.current.submitNote({ clearComposer, fileIds: [], message: 'hi' }),
-    ).rejects.toThrow('network down');
+    await act(async () => {
+      await result.current.submitNote({
+        clearComposer,
+        fileIds: [],
+        message: 'hi there',
+        restoreMessage,
+      });
+    });
 
-    await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(restoreMessage).toHaveBeenCalledWith('hi there'));
+    expect(clearComposer).toHaveBeenCalledTimes(1);
     expect(mockDonateAddNoteIntent).not.toHaveBeenCalled();
-    expect(mockInvalidateInboxQueries).not.toHaveBeenCalled();
-    expect(clearComposer).not.toHaveBeenCalled();
   });
 
-  it('exposes isSaving from the underlying mutation', () => {
-    mockIsPending = true;
+  it('does not report a saving state, so the send button never spins for notes', () => {
     const { result } = renderHookWithQueryClient(() => useNoteSubmission());
-    expect(result.current.isSaving).toBe(true);
+    expect(result.current).not.toHaveProperty('isSaving');
   });
 });

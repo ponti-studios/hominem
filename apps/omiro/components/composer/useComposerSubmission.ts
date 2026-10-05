@@ -16,13 +16,14 @@ interface ComposerSubmitInput {
   clearComposer: () => void;
   fileIds: string[];
   message: string;
+  restoreMessage: (message: string) => void;
   responseModality?: 'text' | 'audio';
 }
 
 // Coordinates the composer's mode-specific submission workflows and draft
 // state. Chat transport and stream lifecycle remain owned by useSendMessage.
 export function useComposerSubmission(props: ComposerProps) {
-  const { isSaving, submitNote } = useNoteSubmission();
+  const { submitNote } = useNoteSubmission();
   const { isStartingChat, submitStartChat } = useStartChatSubmission();
   const chatId = props.mode === 'chat' ? props.chatId : '';
   const sendChatMessage = props.mode === 'chat' ? props.chatSend.sendChatMessage : undefined;
@@ -43,7 +44,14 @@ export function useComposerSubmission(props: ComposerProps) {
 
   const submit = useCallback(
     async (
-      { canSubmit, clearComposer, fileIds, message, responseModality }: ComposerSubmitInput,
+      {
+        canSubmit,
+        clearComposer,
+        fileIds,
+        message,
+        responseModality,
+        restoreMessage,
+      }: ComposerSubmitInput,
       kind: ComposerSubmitKind,
     ) => {
       if (!canSubmit) {
@@ -51,7 +59,7 @@ export function useComposerSubmission(props: ComposerProps) {
       }
 
       if (kind === 'note') {
-        await submitNote({ clearComposer, fileIds, message });
+        await submitNote({ clearComposer, fileIds, message, restoreMessage });
         return;
       }
 
@@ -103,7 +111,7 @@ export function useComposerSubmission(props: ComposerProps) {
     ],
   );
 
-  const isSubmitting = isInbox ? isSaving || isStartingChat : isChatSending;
+  const isSubmitting = isInbox ? isStartingChat : isChatSending;
 
   return {
     initialMessage,

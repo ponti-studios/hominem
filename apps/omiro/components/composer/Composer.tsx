@@ -52,6 +52,8 @@ function ComposerContent(props: ComposerProps) {
           clearComposer: () => clearComposerRef.current(),
           fileIds: [],
           message: rawText,
+          // Voice always starts a chat message, which never restores text.
+          restoreMessage: () => {},
           responseModality: 'audio',
         },
         'message',
@@ -88,6 +90,7 @@ function ComposerContent(props: ComposerProps) {
           clearComposer: controller.clearComposer,
           fileIds: controller.uploadedAttachmentIds,
           message,
+          restoreMessage: controller.setMessage,
         },
         kind,
       );
@@ -95,6 +98,7 @@ function ComposerContent(props: ComposerProps) {
     [
       controller.clearComposer,
       controller.markAttachmentsSubmitted,
+      controller.setMessage,
       controller.uploadedAttachmentIds,
       submission,
     ],

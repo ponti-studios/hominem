@@ -2,8 +2,8 @@ import type { InboxStreamItem } from '@hominem/rpc/types';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { clearResumeTarget, readResumeTarget } from '~/services/navigation/launch-state';
-import { inboxKeys } from '~/services/notes/query-keys';
 
+import { restoreInbox, snapshotInbox, type InboxSnapshot } from './inbox-entities';
 import { removeInboxStreamItem } from './inbox-refresh';
 
 interface UseInboxItemRemovalOptions {
@@ -12,7 +12,7 @@ interface UseInboxItemRemovalOptions {
 }
 
 interface InboxRemovalContext {
-  previousInboxPages: [readonly unknown[], unknown][];
+  previousInbox: InboxSnapshot;
 }
 
 // Shared optimistic-removal skeleton for every mutation that drops an item
@@ -26,21 +26,20 @@ export function useInboxItemRemoval<TVariables = void>({
 
   return {
     onMutate: async (_variables: TVariables): Promise<InboxRemovalContext> => {
-      await queryClient.cancelQueries({ queryKey: inboxKeys.pages() });
-      const previousInboxPages = queryClient.getQueriesData({ queryKey: inboxKeys.pages() });
+      const previousInbox = await snapshotInbox(queryClient);
 
       removeInboxStreamItem(queryClient, { kind, entityId });
 
-      return { previousInboxPages };
+      return { previousInbox };
     },
     onError: (
       _error: unknown,
       _variables: TVariables,
       context: InboxRemovalContext | undefined,
     ) => {
-      context?.previousInboxPages.forEach(([queryKey, data]) => {
-        queryClient.setQueryData(queryKey, data);
-      });
+      if (context) {
+        restoreInbox(queryClient, context.previousInbox);
+      }
     },
     clearResumeTargetIfMatch: () => {
       if (readResumeTarget()?.id === entityId) {

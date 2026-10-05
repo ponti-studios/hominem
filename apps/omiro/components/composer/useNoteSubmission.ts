@@ -1,7 +1,6 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { logger } from '@hominem/telemetry';
 import { useCallback } from 'react';
 
-import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { donateAddNoteIntent } from '~/services/intent-donation';
 import { useCreateNote } from '~/services/notes/use-create-note';
 
@@ -9,25 +8,31 @@ interface NoteSubmissionInput {
   clearComposer: () => void;
   fileIds: string[];
   message: string;
+  restoreMessage: (message: string) => void;
 }
 
 export function useNoteSubmission() {
-  const queryClient = useQueryClient();
-  const { mutateAsync: createNote, isPending: isSaving } = useCreateNote();
+  const { mutateAsync: createNote } = useCreateNote();
 
+  // Optimistic: the note is already in the list (see useCreateNote) and the
+  // composer is emptied straight away, so nothing waits on the request. If it
+  // fails, the list rolls back and the text is put back for another try.
   const submitNote = useCallback(
-    async ({ clearComposer, fileIds, message }: NoteSubmissionInput) => {
-      if (isSaving) {
-        return;
-      }
-
-      await createNote({ text: message.trim(), fileIds });
-      donateAddNoteIntent();
-      await invalidateInboxQueries(queryClient);
+    async ({ clearComposer, fileIds, message, restoreMessage }: NoteSubmissionInput) => {
+      const text = message.trim();
+      const pending = createNote({ text, fileIds });
       clearComposer();
+
+      try {
+        await pending;
+        donateAddNoteIntent();
+      } catch (error) {
+        restoreMessage(message);
+        logger.warn('[useNoteSubmission] createNote failed', { error });
+      }
     },
-    [createNote, isSaving, queryClient],
+    [createNote],
   );
 
-  return { isSaving, submitNote };
+  return { submitNote };
 }

@@ -94,6 +94,10 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
         contentInsetAdjustmentBehavior="automatic"
         data={items}
         keyExtractor={(item) => item.id}
+        // New rows land at the top of this list (an optimistic note, a fresh
+        // chat). Keeping the visible row pinned would scroll the list away from
+        // them, so let the content grow from the top instead.
+        maintainVisibleContentPosition={{ disabled: true }}
         ListHeaderComponent=<StreamFilterChips onChange={onFilterChange} value={filter} />
         ListEmptyComponent={
           inbox.isInitialLoading ? (
