@@ -3,15 +3,15 @@ import { TimeToast } from './TimeToast';
 import type { Planner } from './use-planner';
 
 // The planner's result sheet and toast, rendered over the Stream. `toastBottom`
-// is how far above the screen's bottom edge the toast floats (above the
-// composer).
-export function PlannerSheets({ planner, toastBottom }: { planner: Planner; toastBottom: number }) {
+// is how far below the top of the screen the toast floats; it sits at the top
+// because the keyboard covers anything at the bottom while the user types.
+export function PlannerSheets({ planner, toastTop = 8 }: { planner: Planner; toastTop?: number }) {
   const { composer, dismissToast, submitDraft, toast } = planner;
   return (
     <>
       {toast ? (
         <TimeToast
-          bottom={toastBottom}
+          top={toastTop}
           key={toast.id}
           onDismiss={() => {
             if (toast.tone === 'error') {

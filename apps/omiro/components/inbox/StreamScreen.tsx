@@ -143,7 +143,7 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
           onDraftChange={writeAllDraft}
         />
       </ComposerDock>
-      <PlannerSheets planner={planner} toastBottom={restingInset + 170} />
+      <PlannerSheets planner={planner} />
     </View>
   );
 }
