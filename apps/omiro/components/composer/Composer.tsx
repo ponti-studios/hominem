@@ -63,6 +63,7 @@ function ComposerContent(props: ComposerProps) {
   );
   const controller = useComposerController({
     entryMode: props.mode === 'inbox' ? props.entryMode : undefined,
+    defaultEntryKind: props.mode === 'inbox' ? props.defaultEntryKind : undefined,
     initialMessage: submission.initialMessage,
     isSubmitting: submission.isSubmitting,
     onDraftChange: submission.onDraftChange,

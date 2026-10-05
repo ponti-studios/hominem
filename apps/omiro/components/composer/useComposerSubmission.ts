@@ -32,6 +32,7 @@ export function useComposerSubmission(props: ComposerProps) {
 
   const isInbox = props.mode === 'inbox';
   const onComplete = isInbox ? props.onComplete : undefined;
+  const onNoteSaved = isInbox ? props.onNoteSaved : undefined;
   const onStartChatAccepted = isInbox ? props.onStartChatAccepted : undefined;
   const initialMessage = isInbox ? props.initialMessage : readChatDraft(props.chatId);
   const writeChatDraftForId = useCallback(
@@ -59,7 +60,7 @@ export function useComposerSubmission(props: ComposerProps) {
       }
 
       if (kind === 'note') {
-        await submitNote({ clearComposer, fileIds, message, restoreMessage });
+        await submitNote({ clearComposer, fileIds, message, onSaved: onNoteSaved, restoreMessage });
         return;
       }
 
@@ -104,6 +105,7 @@ export function useComposerSubmission(props: ComposerProps) {
       autoUpdateChatTitle,
       isChatSending,
       onComplete,
+      onNoteSaved,
       onStartChatAccepted,
       sendChatMessage,
       submitNote,

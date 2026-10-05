@@ -4,18 +4,20 @@ import {
   ARCHIVED_CHATS_ROUTE,
   HOME_ROUTE,
   NEW_CHAT_ROUTE,
+  CHAT_ROUTE,
+  NOTES_ROUTE,
   SETTINGS_ROUTE,
-  STREAM_ROUTE,
   TASKS_ROUTE,
   getContentRoute,
   getTimeBlockRoute,
 } from '~/services/navigation/routes';
 
 describe('protected routes', () => {
-  it('builds the canonical Chat, Stream, and Tasks routes', () => {
+  it('builds the canonical Chat, Notes, and Tasks routes', () => {
     expect(HOME_ROUTE).toBe('/(protected)');
     expect(NEW_CHAT_ROUTE).toBe('/(protected)/new-chat');
-    expect(STREAM_ROUTE).toBe('/(protected)/(tabs)/stream');
+    expect(CHAT_ROUTE).toBe('/(protected)/(tabs)/chat');
+    expect(NOTES_ROUTE).toBe('/(protected)/(tabs)/notes');
     expect(TASKS_ROUTE).toBe('/(protected)/(tabs)/tasks');
     expect(SETTINGS_ROUTE).toBe('/(protected)/settings');
     expect(ARCHIVED_CHATS_ROUTE).toBe('/(protected)/chats/archived');

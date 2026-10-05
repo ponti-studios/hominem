@@ -18,7 +18,7 @@ tags:
 - openLink: 'hakumi-dev:///enable-test-mode'
 - waitForAnimationToEnd:
     timeout: 3000
-- openLink: 'hakumi-dev:///stream'
+- openLink: 'hakumi-dev:///chat'
 - waitForAnimationToEnd:
     timeout: 3000
 - runFlow: ../subflows/ensure-authenticated.yaml
@@ -76,7 +76,7 @@ tags:
 - openLink: 'hakumi-dev:///enable-test-mode'
 - waitForAnimationToEnd:
     timeout: 4000
-- openLink: 'hakumi-dev:///stream'
+- openLink: 'hakumi-dev:///chat'
 - waitForAnimationToEnd:
     timeout: 3000
 - assertVisible:

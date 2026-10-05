@@ -1,7 +1,7 @@
 import { Redirect, Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import { ChatScreen } from '~/components/inbox/ChatScreen';
-import { STREAM_ROUTE } from '~/services/navigation/routes';
+import { CHAT_ROUTE } from '~/services/navigation/routes';
 
 export default function ChatDetailRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -10,7 +10,7 @@ export default function ChatDetailRoute() {
   const canGoBack = navigation.canGoBack();
 
   if (!id) {
-    return <Redirect href={STREAM_ROUTE} />;
+    return <Redirect href={CHAT_ROUTE} />;
   }
 
   return (
@@ -29,7 +29,7 @@ export default function ChatDetailRoute() {
           <Stack.Toolbar.Button
             accessibilityLabel="BackButton"
             icon="xmark"
-            onPress={() => router.dismissTo(STREAM_ROUTE)}
+            onPress={() => router.dismissTo(CHAT_ROUTE)}
           />
         </Stack.Toolbar>
       )}

@@ -7,6 +7,11 @@ interface ComposerInboxProps {
   onDraftChange?: (msg: string) => void;
   onClearDraft?: () => void;
   entryMode?: 'mixed' | 'note' | 'chat';
+  // In mixed mode, the kind the composer starts (and resets) on: the tab it sits
+  // on decides the default, the kind toggle can still change it.
+  defaultEntryKind?: 'note' | 'chat';
+  // Called once a note has been handed off (it is already in the Notes list).
+  onNoteSaved?: () => void;
   onComplete?: () => void;
   onStartChatAccepted?: (chatId: string) => void;
   presentation?: 'inbox' | 'new-chat';

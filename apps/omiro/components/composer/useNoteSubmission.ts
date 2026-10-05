@@ -9,6 +9,7 @@ interface NoteSubmissionInput {
   fileIds: string[];
   message: string;
   restoreMessage: (message: string) => void;
+  onSaved?: () => void;
 }
 
 export function useNoteSubmission() {
@@ -18,10 +19,11 @@ export function useNoteSubmission() {
   // composer is emptied straight away, so nothing waits on the request. If it
   // fails, the list rolls back and the text is put back for another try.
   const submitNote = useCallback(
-    async ({ clearComposer, fileIds, message, restoreMessage }: NoteSubmissionInput) => {
+    async ({ clearComposer, fileIds, message, onSaved, restoreMessage }: NoteSubmissionInput) => {
       const text = message.trim();
       const pending = createNote({ text, fileIds });
       clearComposer();
+      onSaved?.();
 
       try {
         await pending;

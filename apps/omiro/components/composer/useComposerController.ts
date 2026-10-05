@@ -14,6 +14,7 @@ interface UseComposerControllerOptions {
   onClearDraft?: () => void;
   onWalkieTalkieTranscript?: (rawText: string) => void;
   entryMode?: 'mixed' | ComposerEntryKind;
+  defaultEntryKind?: ComposerEntryKind;
 }
 
 // Composes the composer's independent concerns -- draft text, attachments,
@@ -35,6 +36,7 @@ export function useComposerController({
   onClearDraft,
   onWalkieTalkieTranscript,
   entryMode = 'mixed',
+  defaultEntryKind,
 }: UseComposerControllerOptions) {
   const draft = useComposerDraft({ initialMessage, onDraftChange });
   const { attachments, errors, isUploading, clearAttachments, markAttachmentsSubmitted } =
@@ -47,7 +49,7 @@ export function useComposerController({
     [attachments],
   );
   const [manualEntryKind, setManualEntryKind] = useState<ComposerEntryKind | null>(
-    entryMode === 'mixed' ? null : entryMode,
+    entryMode === 'mixed' ? (defaultEntryKind ?? null) : entryMode,
   );
 
   const voice = useVoiceComposerInput({
@@ -77,8 +79,8 @@ export function useComposerController({
     draft.clearDraft();
     clearAttachments();
     onClearDraft?.();
-    setManualEntryKind(entryMode === 'mixed' ? null : entryMode);
-  }, [clearAttachments, draft.clearDraft, entryMode, onClearDraft]);
+    setManualEntryKind(entryMode === 'mixed' ? (defaultEntryKind ?? null) : entryMode);
+  }, [clearAttachments, defaultEntryKind, draft.clearDraft, entryMode, onClearDraft]);
 
   return useMemo(
     () => ({

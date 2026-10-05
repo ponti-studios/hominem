@@ -28,7 +28,7 @@ import { useInlineEnhance } from '~/services/ai';
 import { normalizeChatTitle, useAddChatSource, useStartChat } from '~/services/chat';
 import { isOfflineUnavailable } from '~/services/chat/chat-errors';
 import { clearResumeTarget, writeResumeTarget } from '~/services/navigation/launch-state';
-import { STREAM_ROUTE } from '~/services/navigation/routes';
+import { NOTES_ROUTE } from '~/services/navigation/routes';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import { useNoteQuery } from '~/services/notes/use-note-query';
 import t from '~/translations';
@@ -198,7 +198,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
         style: 'destructive',
         onPress: () => {
           deleteNote(undefined, {
-            onSuccess: () => router.dismissTo(STREAM_ROUTE),
+            onSuccess: () => router.dismissTo(NOTES_ROUTE),
           });
         },
       },

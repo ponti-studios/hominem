@@ -11,15 +11,11 @@ const t = {
   },
   stream: {
     loadError: {
-      title: 'Stream unavailable',
+      title: 'Inbox unavailable',
       description: "We couldn't load your inbox. Check your connection and try again.",
       retry: 'Try again',
     },
     emptyState: {
-      all: {
-        title: 'Your stream is empty',
-        description: 'Capture a thought to start your inbox.',
-      },
       chats: {
         title: 'No chats yet',
         description: 'Ask Omiro anything — your conversations show up here.',
