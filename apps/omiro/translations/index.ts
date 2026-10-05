@@ -16,7 +16,14 @@ const t = {
       retry: 'Try again',
     },
     emptyState: {
-      all: 'Capture a thought to start your inbox.',
+      all: {
+        title: 'Your stream is empty',
+        description: 'Capture a thought to start your inbox.',
+      },
+      chats: {
+        title: 'No chats yet',
+        description: 'Ask Omiro anything — your conversations show up here.',
+      },
       notes: {
         title: 'Your notes will show up here',
         description: "Jot down an idea, a list, or something you don't want to forget.",
