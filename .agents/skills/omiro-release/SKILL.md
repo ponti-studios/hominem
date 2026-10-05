@@ -108,7 +108,10 @@ version mismatch.
 
 ## Local release (the default)
 
-Run from `apps/omiro` on an up-to-date `main` after the preflight passes:
+Run from `apps/omiro` on an up-to-date `main` with a clean working tree after the
+preflight passes. `pnpm build:prod:local` refuses to run with uncommitted changes to
+tracked files (override only with `OMIRO_ALLOW_DIRTY=1` when the user asks for it), so
+the IPA always corresponds to a commit:
 
 ```bash
 pnpm eas:pull:prod      # refresh the gitignored .eas-prod.local

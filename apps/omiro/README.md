@@ -64,7 +64,9 @@ EAS cloud workflow. The production binary goes out like this:
 merge to main -> just mobile check -> build:prod:local -> submit:local -> TestFlight
 ```
 
-Run it from `apps/omiro` on an up-to-date `main`:
+Run it from `apps/omiro` on an up-to-date `main` with a clean working tree (the build
+script refuses to run with uncommitted changes to tracked files, so the IPA always
+corresponds to a commit):
 
 ```bash
 pnpm eas:pull:prod      # refreshes the gitignored .eas-prod.local
