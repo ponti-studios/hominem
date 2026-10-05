@@ -15,11 +15,11 @@ import Reanimated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { fontFamilies, useAppTheme, useStyles } from '~/components/theme';
-import { ListRow } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useTimerSlot } from '~/hooks/use-timer-slot';
 import { useChatArchive } from '~/services/chat/use-chat-archive';
+import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { nativeMotionTiming } from '~/services/motion/native-motion';
 import { useNoteDelete } from '~/services/notes/use-note-delete';
 import t from '~/translations';
@@ -69,7 +69,6 @@ const ACTION_PILL_RADIUS = 4;
 // animation, short enough to feel immediate.
 const ALERT_CONFIRM_DEFER_MS = 350;
 
-// Ensure that title + icon share same height for vertical alignment
 const TITLE_LINE_HEIGHT = 22;
 
 function instantOr(config: WithTimingConfig, reducedMotion: boolean): WithTimingConfig {
@@ -84,20 +83,58 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
   const previewText = cleanText(item.preview ? stripPreviewMarkdown(item.preview) : item.preview);
   const primaryText = titleText ?? previewText ?? t.inbox.item.untitled;
   const isChat = item.kind === 'chat';
-  const { destructive, destructiveForeground, mutedForeground, primary, primaryForeground } =
-    useAppTheme().colors;
+  const {
+    destructive,
+    destructiveForeground,
+    eventForeground,
+    eventSun,
+    eventViolet,
+    primary,
+    primaryForeground,
+  } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
-    // Opaque -- without a real background here the row is transparent
+    // Opaque card -- without a real background here the row is transparent
     // everywhere except glyph pixels, so the revealed archive/delete panel
     // (which fades in by opacity alone, not by how far the row has slid)
-    // bleeds straight through the icon+title area the instant a swipe
-    // starts, not just in the strip actually uncovered by the drag.
+    // bleeds straight through the card the instant a swipe starts.
     row: {
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.card,
+      borderCurve: 'continuous',
+      borderRadius: theme.borderRadii.xl,
+      flexDirection: 'row',
+      gap: 14,
       paddingHorizontal: theme.spacing.xl,
       paddingVertical: theme.spacing.lg,
     },
-    wrapper: { position: 'relative', overflow: 'hidden' },
+    tile: {
+      alignItems: 'center',
+      borderCurve: 'continuous',
+      borderRadius: 15,
+      height: 44,
+      justifyContent: 'center',
+      width: 44,
+    },
+    body: { flex: 1, gap: 2, justifyContent: 'center', minHeight: 44, minWidth: 0 },
+    preview: {
+      color: theme.colors.mutedForeground,
+      fontFamily: fontFamilies.sans,
+      fontSize: 14,
+      lineHeight: 19,
+    },
+    meta: {
+      color: theme.colors.mutedForeground,
+      fontFamily: fontFamilies.sans,
+      fontSize: 12,
+      fontWeight: '600',
+    },
+    wrapper: {
+      borderCurve: 'continuous',
+      borderRadius: theme.borderRadii.xl,
+      marginHorizontal: 16,
+      marginVertical: 5,
+      overflow: 'hidden',
+      position: 'relative',
+    },
     // Clips the row's square-cornered background to `dragStyle`'s animated
     // trailing radius, so the peel-back effect actually shows rounded
     // corners instead of a rounded box with a square panel still visible
@@ -130,21 +167,14 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
       alignItems: 'center',
       justifyContent: 'center',
     },
+    pressed: { opacity: 0.85 },
     actionLabel: { ...theme.textVariants.caption1, color: theme.colors.mutedForeground },
     title: {
+      color: theme.colors.foreground,
       fontFamily: fontFamilies.sans,
       fontSize: 17,
+      fontWeight: '700',
       lineHeight: TITLE_LINE_HEIGHT,
-    },
-    // Aligns the icon to the title's own line instead of the vertical center
-    // of the whole title+subtitle block -- a box exactly as tall as the
-    // title's line height, with the icon centered inside it, rather than a
-    // hand-tuned paddingTop that only happened to line up for one icon size.
-    // Pair with `leadingAlign="top"` below so the title+subtitle block is
-    // anchored to this same top edge instead of centering as a whole unit.
-    leading: {
-      height: TITLE_LINE_HEIGHT,
-      justifyContent: 'center' as const,
     },
   }));
 
@@ -347,30 +377,47 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
         </Reanimated.View>
         <GestureDetector gesture={swipe}>
           <Reanimated.View style={[styles.dragSurface, dragStyle]}>
-            <ListRow
+            <Pressable
               accessibilityActions={[
                 {
                   name: isChat ? 'archive' : 'delete',
                   label: isChat ? t.inbox.item.archiveChat : t.inbox.item.deleteNote.menu,
                 },
               ]}
-              accessibilityLabel={primaryText}
-              actionTestID={`inbox-item-${isChat ? 'chat' : 'note'}-open`}
-              divider={false}
-              leading=<AppIcon
-                name={isChat ? 'bubble.left' : 'note.text'}
-                size={18}
-                tintColor={mutedForeground}
-              />
-              leadingAlign="top"
-              leadingStyle={styles.leading}
+              accessibilityLabel={[
+                primaryText,
+                titleText ? previewText : null,
+                formatRelativeAge(item.updatedAt),
+              ]
+                .filter(Boolean)
+                .join(', ')}
+              accessibilityRole="button"
               onAccessibilityAction={handleAccessibilityAction}
               onPress={onOpen}
-              style={styles.row}
-              title={primaryText}
-              titleNumberOfLines={1}
-              titleStyle={styles.title}
-            />
+              style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+              testID={`inbox-item-${isChat ? 'chat' : 'note'}-open`}
+            >
+              <View style={[styles.tile, { backgroundColor: isChat ? eventViolet : eventSun }]}>
+                <AppIcon
+                  name={isChat ? 'bubble.left' : 'note.text'}
+                  size={22}
+                  tintColor={eventForeground}
+                />
+              </View>
+              <View style={styles.body}>
+                <Text ellipsizeMode="tail" numberOfLines={1} style={styles.title}>
+                  {primaryText}
+                </Text>
+                {titleText && previewText ? (
+                  <Text ellipsizeMode="tail" numberOfLines={2} style={styles.preview}>
+                    {previewText}
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={styles.meta}>
+                {formatRelativeAge(item.updatedAt).replace(' ago', '')}
+              </Text>
+            </Pressable>
             <Reanimated.View
               pointerEvents="none"
               style={[StyleSheet.absoluteFill, styles.swipeScrim, swipeScrimStyle]}

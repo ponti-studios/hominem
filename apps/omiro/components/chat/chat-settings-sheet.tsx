@@ -29,13 +29,13 @@ export function ChatSettingsSheet({ visible, onClose }: ChatSettingsSheetProps) 
   } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     sheetContent: { gap: 24, paddingHorizontal: 24 },
-    sheetTitle: { ...theme.textVariants.title2, fontWeight: '700' },
+    sheetTitle: { fontSize: 24, fontWeight: '800' },
     settingGroup: { gap: 8 },
-    settingLabel: { fontWeight: '600' },
+    settingLabel: { fontSize: 16, fontWeight: '700' },
     settingDescription: { ...theme.textVariants.footnote },
     metric: { alignItems: 'center', gap: 2, paddingVertical: 8 },
     metricValue: { fontSize: 40 },
-    metricLabel: { fontWeight: '700' },
+    metricLabel: { fontSize: 18, fontWeight: '800' },
     metricDetail: { ...theme.textVariants.footnote },
     control: { paddingHorizontal: 8 },
     controlRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 8 },

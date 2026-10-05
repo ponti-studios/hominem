@@ -25,13 +25,11 @@ export function ChatSearchModal({
   onChangeSearchQuery,
 }: ChatSearchModalProps) {
   const theme = useAppTheme();
-  const { card, foreground: textPrimary, mutedForeground: textSecondary } = theme.colors;
+  const { background, foreground: textPrimary, mutedForeground: textSecondary } = theme.colors;
   const styles = useStyles((theme) => ({
     modalContent: { paddingHorizontal: 16, paddingTop: 28 },
     searchCard: {
       backgroundColor: theme.colors.card,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
       borderRadius: theme.borderRadii['2xl'],
       paddingHorizontal: 4,
       paddingVertical: 16,
@@ -43,7 +41,7 @@ export function ChatSearchModal({
       gap: 8,
       justifyContent: 'space-between',
     },
-    titleText: { ...theme.textVariants.headline, color: theme.colors.foreground, flex: 1 },
+    titleText: { color: theme.colors.foreground, flex: 1, fontSize: 20, fontWeight: '800' },
     closeButton: { alignItems: 'center', justifyContent: 'center', height: 32, width: 32 },
     captionText: { ...theme.textVariants.caption1, color: theme.colors.mutedForeground },
   }));
@@ -52,7 +50,7 @@ export function ChatSearchModal({
     <ModalOverlay visible={visible} onClose={onClose} position="top">
       <View style={styles.modalContent}>
         <View
-          style={[styles.searchCard, { borderCurve: 'continuous', boxShadow: theme.shadows.md }]}
+          style={[styles.searchCard, { borderCurve: 'continuous', boxShadow: theme.shadows.float }]}
         >
           <View style={styles.searchBody}>
             <View style={styles.header}>
@@ -72,11 +70,11 @@ export function ChatSearchModal({
               selectionColor={textPrimary}
               cursorColor={textPrimary}
               style={{
-                backgroundColor: card,
+                backgroundColor: background,
                 borderRadius: theme.borderRadii.xl,
                 borderWidth: 0,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
               }}
               onChangeText={onChangeSearchQuery}
             />

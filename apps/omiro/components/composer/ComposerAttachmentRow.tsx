@@ -20,18 +20,22 @@ const BADGE_SIZE = 16;
 function useComposerAttachmentStyles() {
   return useStyles((theme) => ({
     attachmentContainer: {
-      width: 48,
-      height: 48,
+      width: 56,
+      height: 56,
+      borderCurve: 'continuous',
+      borderRadius: 14,
+      marginRight: 10,
       overflow: 'hidden',
       backgroundColor: theme.colors.card,
     },
-    attachmentImage: { width: 48, height: 48 },
+    attachmentImage: { width: 56, height: 56 },
     removeBadge: {
       position: 'absolute',
       top: 4,
       right: 4,
       width: 16,
       height: 16,
+      borderRadius: 8,
       backgroundColor: theme.colors.overlayScrim,
       alignItems: 'center',
       justifyContent: 'center',
@@ -46,7 +50,7 @@ function useComposerAttachmentStyles() {
     },
     progressBarContainer: { position: 'absolute', bottom: 0, left: 0, right: 0 },
     errorText: { ...theme.textVariants.caption1, color: theme.colors.destructive },
-    row: { paddingHorizontal: 8 },
+    row: { paddingBottom: 2 },
   }));
 }
 

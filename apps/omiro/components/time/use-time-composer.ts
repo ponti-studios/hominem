@@ -7,6 +7,7 @@ import { useTaskCreate } from '~/services/tasks/use-task-create';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 import { useTimeBlockParse } from '~/services/tasks/use-time-block-parse';
 
+import { addScheduledTaskToCalendar } from './add-task-to-calendar';
 import { resolveTimeRequest } from './time-request';
 import type {
   EditableTimeBlockField,
@@ -188,13 +189,13 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
 
   const submitDraft = useCallback(async () => {
     if (interaction.kind !== 'draft' || isSaving) {
-      return false;
+      return null;
     }
     const { block, submittedPrompt } = interaction;
     const title = block.title?.trim();
     if (!title) {
       fail('Add a title before saving this task.', submittedPrompt);
-      return false;
+      return null;
     }
 
     try {
@@ -208,11 +209,12 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
         location: block.location,
         startAt: block.start_time,
       });
+      const onCalendar = await addScheduledTaskToCalendar(calendarEventGateway, block, title);
       setInteraction({ kind: 'idle' });
-      return true;
+      return { onCalendar };
     } catch (error) {
       fail(error instanceof Error ? error.message : 'Unable to save this task.', submittedPrompt);
-      return false;
+      return null;
     }
   }, [createTask, fail, interaction, isSaving]);
 
@@ -240,6 +242,7 @@ export function useTimeComposer({ onError, onOpenEvent }: UseTimeComposerOptions
     prompt,
     reset,
     retry,
+    run: runPrompt,
     setPrompt,
     submitDraft,
     updateDraft,

@@ -45,6 +45,7 @@ interface ComposerToolbarProps {
   onChangeMessage: (message: string) => void;
   onToggleWalkieTalkie: (() => void) | undefined;
   onSubmit: (kind: ComposerSubmitKind, message: string, canSubmit: boolean) => void;
+  onPlan: ((message: string) => void) | undefined;
 }
 
 // The action row (attach, entry-kind toggle, enhance/walkie-talkie/mic/send)
@@ -64,6 +65,7 @@ function ComposerToolbarComponent({
   onChangeMessage,
   onToggleWalkieTalkie,
   onSubmit,
+  onPlan,
 }: ComposerToolbarProps) {
   const router = useRouter();
   // Mixed mode defaults to note and only changes via the explicit
@@ -72,7 +74,7 @@ function ComposerToolbarComponent({
   const hasContent =
     useComposerMessageStore(messageStore, (value) => value.trim().length > 0) ||
     uploadedAttachmentCount > 0;
-  const { primary } = useAppTheme().colors;
+  const { inkForeground, lime } = useAppTheme().colors;
   const styles = useStyles(() => ({
     trailingActions: {
       flexDirection: 'row',
@@ -86,7 +88,7 @@ function ComposerToolbarComponent({
       paddingVertical: 2,
     },
     leadingActions: { flexDirection: 'row', alignItems: 'center' },
-    compactIcon: { width: 26, height: 26 },
+    compactIcon: { width: 40, height: 40 },
   }));
 
   const voiceCapabilitiesInput: ComposerCapabilitiesVoiceInput = {
@@ -129,7 +131,19 @@ function ComposerToolbarComponent({
             variant="plain"
             onPress={openEnhance}
           >
-            <AppIcon name="wand.and.sparkles" size={16} />
+            <AppIcon name="wand.and.sparkles" size={20} tintColor={lime} />
+          </IconButton>
+        ) : null}
+        {hasContent && onPlan ? (
+          <IconButton
+            accessibilityLabel={t.inboxComposer.composer.planA11y}
+            disabled={!canSubmit || (composerProps.mode === 'inbox' && composerProps.isPlanning)}
+            style={styles.compactIcon}
+            testID="composer-plan"
+            variant="plain"
+            onPress={() => onPlan(messageStore.getMessage())}
+          >
+            <AppIcon name="calendar.badge.plus" size={20} tintColor={inkForeground} />
           </IconButton>
         ) : null}
         {onToggleWalkieTalkie ? (
@@ -146,8 +160,8 @@ function ComposerToolbarComponent({
           >
             <AppIcon
               name="antenna.radiowaves.left.and.right"
-              size={16}
-              tintColor={voice.isWalkieTalkie ? primary : undefined}
+              size={20}
+              tintColor={voice.isWalkieTalkie ? lime : inkForeground}
             />
           </IconButton>
         ) : null}
@@ -165,7 +179,7 @@ function ComposerToolbarComponent({
             void voice.handleVoicePress();
           }}
         >
-          <AppIcon name="mic.fill" size={16} />
+          <AppIcon name="mic.fill" size={20} tintColor={inkForeground} />
         </IconButton>
         <ComposerSendButton
           accessibilityLabel={
@@ -175,7 +189,7 @@ function ComposerToolbarComponent({
           disabled={!canSubmit}
           icon="arrow.up"
           isLoading={state.isSubmitting}
-          size={26}
+          size={44}
           testID={presentation.submitTestID}
           onPress={() =>
             onSubmit(presentation.primarySubmitKind, messageStore.getMessage(), canSubmit)

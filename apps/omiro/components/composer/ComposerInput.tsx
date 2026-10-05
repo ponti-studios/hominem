@@ -1,7 +1,7 @@
 import { memo, useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { useAppTheme } from '~/components/theme';
+import { fontFamilies, useAppTheme, withAlpha } from '~/components/theme';
 import { TextField } from '~/components/ui';
 import t from '~/translations';
 
@@ -46,7 +46,7 @@ function ComposerInputComponent({
   // Mixed mode defaults to note and only changes via the explicit
   // ComposerKindToggle -- typing plain text should never flip it to chat.
   const selectedEntryKind = manualEntryKind ?? (entryMode === 'mixed' ? 'note' : entryMode);
-  const { destructive, tertiary } = useAppTheme().colors;
+  const { destructive, inkForeground } = useAppTheme().colors;
   const handleChangeMessage = useCallback(
     (text: string) =>
       onChangeMessage(text.length > MAX_MESSAGE_LENGTH ? text.slice(0, MAX_MESSAGE_LENGTH) : text),
@@ -67,10 +67,17 @@ function ComposerInputComponent({
         multiline
         focusBorder={false}
         numberOfLines={5}
+        cursorColor={inkForeground}
+        placeholderTextColor={withAlpha(inkForeground, 0.55)}
+        selectionColor={withAlpha(inkForeground, 0.35)}
         style={{
           borderRadius: 0,
           borderWidth: 5,
-          fontSize: 15,
+          color: inkForeground,
+          fontFamily: fontFamilies.sans,
+          fontSize: 17,
+          fontWeight: '500',
+          lineHeight: 24,
           minHeight: 0,
           paddingHorizontal: 0,
           paddingVertical: 2,
@@ -81,7 +88,8 @@ function ComposerInputComponent({
           accessibilityLabel={t.chat.input.messageTooLongA11y}
           style={{
             alignSelf: 'flex-end',
-            color: message.length >= MAX_MESSAGE_LENGTH ? destructive : tertiary,
+            color:
+              message.length >= MAX_MESSAGE_LENGTH ? destructive : withAlpha(inkForeground, 0.6),
             fontSize: 11,
           }}
         >

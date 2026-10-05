@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { ModalProps } from 'react-native';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
-import { useAppTheme } from '~/components/theme';
+import { useAppTheme, withAlpha } from '~/components/theme';
 
 type ModalOverlayPosition = 'top' | 'center' | 'bottom';
 
@@ -26,7 +26,7 @@ export function ModalOverlay({
   animationType = 'fade',
   statusBarTranslucent = false,
 }: ModalOverlayProps) {
-  const { overlayScrim: scrimColor } = useAppTheme().colors;
+  const scrimColor = withAlpha(useAppTheme().colors.overlayScrim, 0.55);
 
   return (
     <Modal

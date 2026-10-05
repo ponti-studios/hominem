@@ -32,12 +32,12 @@ export function ChatSourcesSheet({ chatId, visible, onClose }: ChatSourcesSheetP
   } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     sheetContent: { gap: 16, paddingHorizontal: 24 },
-    sheetTitle: { ...theme.textVariants.title2, fontWeight: '700' },
+    sheetTitle: { fontSize: 24, fontWeight: '800' },
     sheetDescription: { ...theme.textVariants.footnote },
     section: { gap: 4 },
     sectionLabel: {
       ...theme.textVariants.caption1,
-      fontWeight: '600',
+      fontWeight: '700',
       textTransform: 'uppercase',
     },
     empty: { ...theme.textVariants.footnote, paddingVertical: 8 },

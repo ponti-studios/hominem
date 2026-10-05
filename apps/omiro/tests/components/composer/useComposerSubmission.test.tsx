@@ -14,7 +14,6 @@ const mockReadChatDraft = vi.fn().mockReturnValue('');
 const mockWriteChatDraft = vi.fn();
 const mockClearChatDraft = vi.fn();
 
-let mockIsSaving = false;
 let mockIsStartingChat = false;
 
 vi.mock('expo-haptics', () => ({
@@ -23,7 +22,7 @@ vi.mock('expo-haptics', () => ({
 }));
 
 vi.mock('~/components/composer/useNoteSubmission', () => ({
-  useNoteSubmission: () => ({ isSaving: mockIsSaving, submitNote: mockSubmitNote }),
+  useNoteSubmission: () => ({ submitNote: mockSubmitNote }),
 }));
 
 vi.mock('~/components/composer/useStartChatSubmission', () => ({
@@ -70,7 +69,6 @@ function chatProps(overrides: Partial<Extract<ComposerProps, { mode: 'chat' }>> 
 
 describe('useComposerSubmission', () => {
   beforeEach(() => {
-    mockIsSaving = false;
     mockIsStartingChat = false;
     mockReadChatDraft.mockReturnValue('');
   });
@@ -84,10 +82,11 @@ describe('useComposerSubmission', () => {
       const props = inboxProps();
       const { result } = renderHookWithQueryClient(() => useComposerSubmission(props));
       const clearComposer = vi.fn();
+      const restoreMessage = vi.fn();
 
       await act(async () => {
         await result.current.submit(
-          { canSubmit: true, clearComposer, fileIds: ['f1'], message: 'hello' },
+          { canSubmit: true, clearComposer, fileIds: ['f1'], message: 'hello', restoreMessage },
           'note',
         );
       });
@@ -96,6 +95,7 @@ describe('useComposerSubmission', () => {
         clearComposer,
         fileIds: ['f1'],
         message: 'hello',
+        restoreMessage,
       });
       expect(mockSubmitStartChat).not.toHaveBeenCalled();
       expect(mockImpactAsync).not.toHaveBeenCalled();
@@ -105,10 +105,11 @@ describe('useComposerSubmission', () => {
       const props = inboxProps();
       const { result } = renderHookWithQueryClient(() => useComposerSubmission(props));
       const clearComposer = vi.fn();
+      const restoreMessage = vi.fn();
 
       await act(async () => {
         await result.current.submit(
-          { canSubmit: false, clearComposer, fileIds: [], message: 'hello' },
+          { canSubmit: false, clearComposer, fileIds: [], message: 'hello', restoreMessage },
           'note',
         );
       });
@@ -122,10 +123,11 @@ describe('useComposerSubmission', () => {
       const props = inboxProps();
       const { result } = renderHookWithQueryClient(() => useComposerSubmission(props));
       const clearComposer = vi.fn();
+      const restoreMessage = vi.fn();
 
       await act(async () => {
         await result.current.submit(
-          { canSubmit: true, clearComposer, fileIds: [], message: 'hello' },
+          { canSubmit: true, clearComposer, fileIds: [], message: 'hello', restoreMessage },
           'start-chat',
         );
       });
@@ -145,6 +147,7 @@ describe('useComposerSubmission', () => {
       const props = chatProps({ chatSend: { sendChatMessage, isChatSending: false } });
       const { result } = renderHookWithQueryClient(() => useComposerSubmission(props));
       const clearComposer = vi.fn();
+      const restoreMessage = vi.fn();
 
       let resolveSend: () => void = () => {};
       sendChatMessage.mockImplementation(
@@ -162,6 +165,7 @@ describe('useComposerSubmission', () => {
             clearComposer,
             fileIds: ['f1'],
             message: '  hello there  ',
+            restoreMessage,
             responseModality: 'text',
           },
           'message',
@@ -192,10 +196,11 @@ describe('useComposerSubmission', () => {
       const props = chatProps({ chatSend: { sendChatMessage, isChatSending: true } });
       const { result } = renderHookWithQueryClient(() => useComposerSubmission(props));
       const clearComposer = vi.fn();
+      const restoreMessage = vi.fn();
 
       await act(async () => {
         await result.current.submit(
-          { canSubmit: true, clearComposer, fileIds: [], message: 'hello' },
+          { canSubmit: true, clearComposer, fileIds: [], message: 'hello', restoreMessage },
           'message',
         );
       });
@@ -209,10 +214,11 @@ describe('useComposerSubmission', () => {
       const props = chatProps({ chatSend: { sendChatMessage, isChatSending: false } });
       const { result } = renderHookWithQueryClient(() => useComposerSubmission(props));
       const clearComposer = vi.fn();
+      const restoreMessage = vi.fn();
 
       await act(async () => {
         await result.current.submit(
-          { canSubmit: true, clearComposer, fileIds: [], message: 'hello' },
+          { canSubmit: true, clearComposer, fileIds: [], message: 'hello', restoreMessage },
           'message',
         );
       });
@@ -223,13 +229,12 @@ describe('useComposerSubmission', () => {
   });
 
   describe('derived state', () => {
-    it('uses the inbox initialMessage and combines isSaving/isStartingChat into isSubmitting for inbox mode', () => {
-      mockIsSaving = true;
+    it('uses the inbox initialMessage and derives isSubmitting from starting a chat only (notes are optimistic) for inbox mode', () => {
       const props = inboxProps({ initialMessage: 'from props' });
       const { result } = renderHookWithQueryClient(() => useComposerSubmission(props));
 
       expect(result.current.initialMessage).toBe('from props');
-      expect(result.current.isSubmitting).toBe(true);
+      expect(result.current.isSubmitting).toBe(false);
       expect(result.current.onDraftChange).toBe(props.onDraftChange);
       expect(result.current.onClearDraft).toBe(props.onClearDraft);
     });

@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { useAppTheme, useStyles } from '~/components/theme';
+import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
 import { IconButton } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
 import { RecordingLevelMeter } from '~/components/voice/RecordingLevelMeter';
@@ -23,6 +23,8 @@ interface VoiceRecordingPanelProps {
   // spoken reply arriving -- recording's already stopped, nothing left to
   // cancel or stop, so those controls just hide.
   phase?: 'recording' | 'sending';
+  // 'ink' for panels that sit on the inverted floating composer surface.
+  tone?: 'default' | 'ink';
 }
 
 export function VoiceRecordingPanel({
@@ -31,12 +33,18 @@ export function VoiceRecordingPanel({
   onDone,
   doneAccessibilityLabel,
   phase = 'recording',
+  tone = 'default',
 }: VoiceRecordingPanelProps) {
   const {
     card: cardColor,
     destructive: destructiveColor,
-    mutedForeground: textSecondaryColor,
+    inkForeground,
+    mutedForeground,
   } = useAppTheme().colors;
+  const onInk = tone === 'ink';
+  const pillColor = onInk ? withAlpha(inkForeground, 0.16) : cardColor;
+  const textSecondaryColor = onInk ? inkForeground : mutedForeground;
+  const iconTint = onInk ? inkForeground : undefined;
   const styles = useStyles(() => ({
     sendingContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%' },
     sendingContent: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -64,7 +72,7 @@ export function VoiceRecordingPanel({
               height: 44,
               paddingHorizontal: 16,
               borderRadius: 22,
-              backgroundColor: cardColor,
+              backgroundColor: pillColor,
             },
           ]}
         >
@@ -93,7 +101,7 @@ export function VoiceRecordingPanel({
         testID="composer-cancel-recording-button"
         onPress={onCancel}
       >
-        <AppIcon name="xmark" size={20} />
+        <AppIcon name="xmark" size={20} tintColor={iconTint} />
       </IconButton>
       {/* Fills the row between cancel and stop, mirroring the idle row's
           [attach] [text, flex-1] [mic] layout. */}
@@ -104,7 +112,7 @@ export function VoiceRecordingPanel({
             height: 44,
             paddingHorizontal: 16,
             borderRadius: 22,
-            backgroundColor: cardColor,
+            backgroundColor: pillColor,
           },
         ]}
       >
@@ -131,7 +139,7 @@ export function VoiceRecordingPanel({
           testID="composer-stop-recording-button"
           onPress={onDone}
         >
-          <AppIcon name="stop.fill" size={20} />
+          <AppIcon name="stop.fill" size={20} tintColor={onInk ? destructiveColor : undefined} />
         </IconButton>
       ) : null}
     </View>

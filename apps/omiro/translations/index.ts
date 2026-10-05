@@ -10,8 +10,16 @@ const t = {
     confirm: 'Enhance',
   },
   stream: {
+    loadError: {
+      title: 'Inbox unavailable',
+      description: "We couldn't load your inbox. Check your connection and try again.",
+      retry: 'Try again',
+    },
     emptyState: {
-      all: 'Capture a thought to start your inbox.',
+      chats: {
+        title: 'No chats yet',
+        description: 'Ask Omiro anything — your conversations show up here.',
+      },
       notes: {
         title: 'Your notes will show up here',
         description: "Jot down an idea, a list, or something you don't want to forget.",
@@ -468,6 +476,7 @@ const t = {
       enhanceTextA11y: 'Enhance text with AI',
       openChatA11y: 'Open chat',
       saveNoteA11y: 'Save note',
+      planA11y: 'Plan with your calendar',
       dismissErrorHint: 'Tap to dismiss',
       retry: 'Retry',
       voiceErrors: {

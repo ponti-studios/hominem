@@ -6,12 +6,11 @@ import type { TaskListItem } from '~/services/tasks/task-types';
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 
-import { getOpenTasks } from './time-utils';
-import { TimeTaskDetailSheet } from './TimeTaskDetailSheet';
-import { TimeTaskList } from './TimeTaskList';
+import { getOpenTasks } from './task-time';
+import { TaskDetailSheet } from './TaskDetailSheet';
+import { TaskList } from './TaskList';
 
-// The Tasks page: every open task in the same card style the Time screen's
-// Inbox uses, with the same in-app detail sheet.
+// The Tasks page: every open task as a card, with an in-app detail sheet.
 export function TasksScreen() {
   const { data: tasks = [] } = useTasksQuery();
   const { mutate: toggleTask } = useTaskComplete();
@@ -35,7 +34,7 @@ export function TasksScreen() {
 
   return (
     <View style={styles.container} testID="unscheduled-tasks-screen">
-      <TimeTaskList
+      <TaskList
         contentPaddingBottom={48}
         emptyText="You have no open tasks."
         onGround
@@ -45,7 +44,7 @@ export function TasksScreen() {
         }
         tasks={openTasks}
       />
-      <TimeTaskDetailSheet
+      <TaskDetailSheet
         onClose={() => setDetailTaskId(null)}
         onError={() => undefined}
         task={detailTask}

@@ -17,13 +17,13 @@ export default function TabsLayout() {
       }}
       tintColor={primary}
     >
-      <NativeTabs.Trigger name="stream">
-        <NativeTabs.Trigger.Icon sf={{ default: 'tray', selected: 'tray.fill' }} />
-        <NativeTabs.Trigger.Label>Stream</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="chat">
+        <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left', selected: 'bubble.left.fill' }} />
+        <NativeTabs.Trigger.Label>Chat</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="time">
-        <NativeTabs.Trigger.Icon sf={{ default: 'clock', selected: 'clock.fill' }} />
-        <NativeTabs.Trigger.Label>Time</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="notes">
+        <NativeTabs.Trigger.Icon sf={{ default: 'note.text', selected: 'note.text' }} />
+        <NativeTabs.Trigger.Label>Notes</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="tasks">
         <NativeTabs.Trigger.Icon

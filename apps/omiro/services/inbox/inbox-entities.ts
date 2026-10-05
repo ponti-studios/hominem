@@ -79,3 +79,60 @@ export function removeInboxEntity(
       },
   );
 }
+
+// Puts a just-created note at the top of the first cached inbox page before
+// the server has answered. Returns the entity id so it can be dropped again.
+export function addOptimisticInboxNote(
+  queryClient: QueryClient,
+  note: { entityId: string; preview: string | null; title: string | null; updatedAt: string },
+) {
+  const id = `note:${note.entityId}`;
+  const entity: InboxStreamItemData = {
+    entityId: note.entityId,
+    id,
+    kind: 'note',
+    preview: note.preview,
+    route: getContentRoute('note', note.entityId),
+    title: note.title,
+    updatedAt: note.updatedAt,
+    variant: 'document',
+  };
+  queryClient.setQueryData<InboxEntityMap>(inboxEntityKeys.all, (current) => ({
+    ...current,
+    [id]: entity,
+  }));
+  queryClient.setQueriesData<InfiniteData<InboxPageIndex, string | null>>(
+    { queryKey: inboxKeys.pages() },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page, index) =>
+          index === 0 ? { ...page, itemIds: [id, ...page.itemIds] } : page,
+        ),
+      },
+  );
+  return id;
+}
+
+export interface InboxSnapshot {
+  entities: InboxEntityMap | undefined;
+  pages: [readonly unknown[], unknown][];
+}
+
+// The inbox is two caches -- page lists of ids and the entity map they point
+// into -- so an optimistic change must capture and restore both, or a
+// rollback leaves the entity map out of step with the lists.
+export async function snapshotInbox(queryClient: QueryClient): Promise<InboxSnapshot> {
+  await queryClient.cancelQueries({ queryKey: inboxKeys.pages() });
+  return {
+    entities: queryClient.getQueryData<InboxEntityMap>(inboxEntityKeys.all),
+    pages: queryClient.getQueriesData({ queryKey: inboxKeys.pages() }),
+  };
+}
+
+export function restoreInbox(queryClient: QueryClient, snapshot: InboxSnapshot) {
+  queryClient.setQueryData(inboxEntityKeys.all, snapshot.entities);
+  snapshot.pages.forEach(([queryKey, data]) => {
+    queryClient.setQueryData(queryKey, data);
+  });
+}

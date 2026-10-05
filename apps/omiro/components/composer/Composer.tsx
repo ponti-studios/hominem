@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
+import { useStyles } from '~/components/theme';
 import { InlineErrorBanner } from '~/components/ui/InlineErrorBanner';
 import { VoiceRecordingPanel } from '~/components/voice/VoiceRecordingPanel';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
@@ -20,6 +19,8 @@ import { useComposerSubmission } from './useComposerSubmission';
 import { getVoiceComposerErrorPresentation } from './voiceComposerInput.helpers';
 
 export type { ComposerProps } from './composer.types';
+
+const SURFACE_RADIUS = 30;
 
 export function Composer(props: ComposerProps) {
   return (
@@ -51,6 +52,8 @@ function ComposerContent(props: ComposerProps) {
           clearComposer: () => clearComposerRef.current(),
           fileIds: [],
           message: rawText,
+          // Voice always starts a chat message, which never restores text.
+          restoreMessage: () => {},
           responseModality: 'audio',
         },
         'message',
@@ -60,6 +63,7 @@ function ComposerContent(props: ComposerProps) {
   );
   const controller = useComposerController({
     entryMode: props.mode === 'inbox' ? props.entryMode : undefined,
+    defaultEntryKind: props.mode === 'inbox' ? props.defaultEntryKind : undefined,
     initialMessage: submission.initialMessage,
     isSubmitting: submission.isSubmitting,
     onDraftChange: submission.onDraftChange,
@@ -76,6 +80,20 @@ function ComposerContent(props: ComposerProps) {
   // the message store here.
   const presentation = getComposerSubmissionConfig(props);
 
+  const onPlan = props.mode === 'inbox' ? props.onPlan : undefined;
+  // Planning hands the words over and empties the composer; if the request
+  // fails or is cancelled the planner puts them back.
+  const handlePlan = useCallback(
+    (message: string) => {
+      if (!message.trim()) {
+        return;
+      }
+      onPlan?.(message, controller.setMessage);
+      controller.clearComposer();
+    },
+    [controller.clearComposer, controller.setMessage, onPlan],
+  );
+
   const handleActiveAreaSubmit = useCallback(
     (kind: ComposerSubmitKind, message: string, canSubmit: boolean) => {
       if (canSubmit) {
@@ -87,6 +105,7 @@ function ComposerContent(props: ComposerProps) {
           clearComposer: controller.clearComposer,
           fileIds: controller.uploadedAttachmentIds,
           message,
+          restoreMessage: controller.setMessage,
         },
         kind,
       );
@@ -94,6 +113,7 @@ function ComposerContent(props: ComposerProps) {
     [
       controller.clearComposer,
       controller.markAttachmentsSubmitted,
+      controller.setMessage,
       controller.uploadedAttachmentIds,
       submission,
     ],
@@ -104,26 +124,19 @@ function ComposerContent(props: ComposerProps) {
     [controller.voice],
   );
 
-  const theme = useAppTheme();
-  const { primary, destructive, border: borderDefault } = theme.colors;
-  const insets = useSafeAreaInsets();
   const styles = useStyles((currentTheme) => ({
     composer: { width: '100%', gap: 8 },
     fields: { gap: 8 },
+    // The inverted floating bar: `ink` flips with the color scheme, so the
+    // composer is the one dark-on-light (or light-on-dark) surface on screen,
+    // like the Time capture bar. Its own margin comes from ComposerDock.
     surface: {
+      backgroundColor: currentTheme.colors.ink,
       borderCurve: 'continuous',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      overflow: 'hidden',
-      backgroundColor: currentTheme.colors.muted,
+      borderRadius: SURFACE_RADIUS,
+      boxShadow: currentTheme.shadows.float,
     },
-    // A one-sided border (borderTopWidth) doesn't get clipped to
-    // borderRadius on iOS -- it renders as a flat rectangle detached from
-    // the rounded corners instead of following them. Drawing it as a plain
-    // View clipped by the parent's overflow: hidden instead gets the curve
-    // right.
-    surfaceHairline: { height: StyleSheet.hairlineWidth },
-    surfaceContent: { padding: 10, paddingBottom: 6, gap: 10 },
+    surfaceContent: { gap: 8, paddingBottom: 8, paddingHorizontal: 16, paddingTop: 14 },
   }));
   const prefersReducedMotion = useReducedMotion();
 
@@ -131,8 +144,6 @@ function ComposerContent(props: ComposerProps) {
   const isWalkieTalkieSending =
     controller.voice.isWalkieTalkie && !isRecording && submission.isSubmitting;
   const showVoicePanel = isRecording || isWalkieTalkieSending;
-  const focused = controller.isFocused;
-  const borderColor = focused ? primary : isRecording ? destructive : withAlpha(borderDefault, 0.5);
 
   const errorBanner =
     controller.voice.voiceState === 'failed' && controller.voice.error ? (
@@ -152,24 +163,13 @@ function ComposerContent(props: ComposerProps) {
 
   return (
     <Animated.View style={styles.composer} layout={bannerLayout} testID={presentation.shellTestID}>
-      {controller.showAttachments ? <ComposerAttachmentRow /> : undefined}
-
       <View
         collapsable={false}
-        style={[
-          styles.surface,
-          {
-            // Extends the surface's own fill (not a same-colored sibling
-            // behind it) through the bottom safe area, so the rounded top
-            // corners stay visible instead of being masked by a square
-            // backdrop of the same color.
-            paddingBottom: insets.bottom,
-          },
-        ]}
+        style={styles.surface}
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
       >
-        <View style={[styles.surfaceHairline, { backgroundColor: borderColor }]} />
         <View style={styles.surfaceContent}>
+          {controller.showAttachments ? <ComposerAttachmentRow /> : undefined}
           {errorBanner ? (
             // Split: entering/exiting on the outer view, layout on the inner
             // one -- same reasoning as chat-message.tsx and the two Animated.Views
@@ -194,6 +194,7 @@ function ComposerContent(props: ComposerProps) {
                   void controller.voice.handleVoicePress();
                 }}
                 phase={isRecording ? 'recording' : 'sending'}
+                tone="ink"
               />
             </Animated.View>
           ) : (
@@ -233,6 +234,7 @@ function ComposerContent(props: ComposerProps) {
                   onChangeMessage={controller.setMessage}
                   onToggleWalkieTalkie={props.mode === 'chat' ? onToggleWalkieTalkie : undefined}
                   onSubmit={handleActiveAreaSubmit}
+                  onPlan={props.mode === 'inbox' && props.onPlan ? handlePlan : undefined}
                 />
               </Animated.View>
             </Animated.View>

@@ -38,7 +38,20 @@ export function ChatActivityTimeline({
     label: { ...theme.textVariants.footnote, color: theme.colors.mutedForeground },
     failedLabel: { ...theme.textVariants.footnote, color: theme.colors.destructive },
     detail: { ...theme.textVariants.caption1, color: theme.colors.mutedForeground },
-    actionText: { ...theme.textVariants.footnote, color: theme.colors.primary },
+    pill: {
+      backgroundColor: theme.colors.ink,
+      borderRadius: theme.borderRadii.pill,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    retryPill: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.borderRadii.pill,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    actionText: { color: theme.colors.inkForeground, fontSize: 14, fontWeight: '700' },
+    retryText: { color: theme.colors.primaryForeground, fontSize: 14, fontWeight: '700' },
   }));
   const isActive =
     generation.stage === 'preparing' ||
@@ -72,6 +85,7 @@ export function ChatActivityTimeline({
           accessibilityLabel={t.chat.generation.stopA11y}
           accessibilityRole="button"
           onPress={onCancel}
+          style={styles.pill}
           testID="chat-generation-stop"
         >
           <Text style={styles.actionText}>{t.chat.generation.stop}</Text>
@@ -82,8 +96,9 @@ export function ChatActivityTimeline({
           accessibilityLabel={t.chat.generation.retryA11y}
           accessibilityRole="button"
           onPress={onRetry}
+          style={styles.retryPill}
         >
-          <Text style={styles.actionText}>{t.chat.generation.retry}</Text>
+          <Text style={styles.retryText}>{t.chat.generation.retry}</Text>
         </Pressable>
       ) : null}
     </View>
