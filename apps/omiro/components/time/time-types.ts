@@ -1,10 +1,4 @@
-import type { CalendarEvent, CalendarEventSummary } from '~/modules/on-device-ai';
-import type { TaskListItem } from '~/services/tasks/task-types';
-
-export type TimeItem =
-  | { kind: 'event'; value: CalendarEventSummary }
-  | { kind: 'task'; value: TaskListItem };
-
+import type { CalendarEvent } from '~/modules/on-device-ai';
 // The cloud time-block extraction result (`POST /api/tasks/parse`). The request
 // carries only the user's text, the current date and the time zone.
 export interface TimeBlock {

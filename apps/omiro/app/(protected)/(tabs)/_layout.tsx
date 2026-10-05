@@ -21,10 +21,6 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf={{ default: 'tray', selected: 'tray.fill' }} />
         <NativeTabs.Trigger.Label>Stream</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="time">
-        <NativeTabs.Trigger.Icon sf={{ default: 'clock', selected: 'clock.fill' }} />
-        <NativeTabs.Trigger.Label>Time</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="tasks">
         <NativeTabs.Trigger.Icon
           sf={{ default: 'checkmark.circle', selected: 'checkmark.circle.fill' }}

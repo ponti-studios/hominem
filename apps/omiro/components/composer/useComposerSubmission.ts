@@ -111,7 +111,8 @@ export function useComposerSubmission(props: ComposerProps) {
     ],
   );
 
-  const isSubmitting = isInbox ? isStartingChat : isChatSending;
+  const isPlanning = isInbox ? Boolean(props.isPlanning) : false;
+  const isSubmitting = isInbox ? isStartingChat || isPlanning : isChatSending;
 
   return {
     initialMessage,

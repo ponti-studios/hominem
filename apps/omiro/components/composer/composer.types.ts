@@ -10,6 +10,11 @@ interface ComposerInboxProps {
   onComplete?: () => void;
   onStartChatAccepted?: (chatId: string) => void;
   presentation?: 'inbox' | 'new-chat';
+  // Shows a "plan" action that hands the text to a natural-language planner
+  // (tasks, events, schedule questions). `restore` puts the text back if the
+  // request fails or is cancelled.
+  onPlan?: (message: string, restore: (message: string) => void) => void;
+  isPlanning?: boolean;
   testID?: string;
 }
 

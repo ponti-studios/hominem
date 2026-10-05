@@ -21,7 +21,7 @@ function localISOString(date: Date): string {
 }
 
 // Only the user's text, the current time and the time zone leave the device:
-// the calendar is read and matched on-device (see docs/omiro.time.md).
+// the calendar is read and matched on-device (see docs/omiro.planning.md).
 export function useTimeBlockParse() {
   const client = useApiClient();
 

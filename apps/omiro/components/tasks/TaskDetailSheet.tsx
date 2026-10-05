@@ -9,23 +9,16 @@ import { taskDurationMinutes, type TaskListItem } from '~/services/tasks/task-ty
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTaskDelete } from '~/services/tasks/use-task-delete';
 
-import { itemTimeLabel } from './time-utils';
+import { taskTimeLabel } from './task-time';
 
-interface TimeTaskDetailSheetProps {
+interface TaskDetailSheetProps {
   onClose: () => void;
-  onFindTime?: (task: TaskListItem) => void;
   onError: (message: string) => void;
   task: TaskListItem | null;
 }
 
-// In-app task detail: complete, give it a time, open it in Reminders, or
-// delete it. Reads the live task from the list so a toggle reflects at once.
-export function TimeTaskDetailSheet({
-  onClose,
-  onError,
-  onFindTime,
-  task,
-}: TimeTaskDetailSheetProps) {
+// In-app task detail: complete, open it in Reminders, or delete it. Reads the live task from the list so a toggle reflects at once.
+export function TaskDetailSheet({ onClose, onError, task }: TaskDetailSheetProps) {
   const [lastTask, setLastTask] = useState<TaskListItem | null>(null);
   const complete = useTaskComplete();
   const remove = useTaskDelete();
@@ -83,12 +76,12 @@ export function TimeTaskDetailSheet({
     );
   };
 
-  const scheduled = shown ? !!(shown.startAt ?? shown.dueAt) : false;
+  const timeLabel = shown ? taskTimeLabel(shown) : null;
   const minutes = shown ? taskDurationMinutes(shown) : null;
   const completed = shown?.status === 'completed';
 
   return (
-    <BottomSheet onClose={onClose} testID="time-task-detail" visible={task !== null}>
+    <BottomSheet onClose={onClose} testID="task-detail" visible={task !== null}>
       {shown ? (
         <View style={styles.stack}>
           <View style={styles.titleRow}>
@@ -100,10 +93,7 @@ export function TimeTaskDetailSheet({
             <Text style={styles.title}>{shown.title}</Text>
           </View>
           <View style={styles.chips}>
-            <Chip
-              icon="calendar"
-              label={scheduled ? itemTimeLabel({ kind: 'task', value: shown }) : 'No time yet'}
-            />
+            <Chip icon="calendar" label={timeLabel ?? 'No time yet'} />
             {minutes ? <Chip icon="clock" label={`${minutes} min`} /> : null}
             {shown.location ? <Chip icon="mappin.and.ellipse" label={shown.location} /> : null}
             {shown.listTitle ? <Chip icon="list.bullet" label={shown.listTitle} /> : null}
@@ -115,19 +105,9 @@ export function TimeTaskDetailSheet({
               onPress={toggle}
               size="lg"
               style={styles.action}
-              testID="time-task-toggle"
+              testID="task-toggle"
               variant={completed ? 'secondary' : 'primary'}
             />
-            {onFindTime && !scheduled && !completed ? (
-              <Button
-                label="Find time"
-                onPress={() => onFindTime(shown)}
-                size="lg"
-                style={styles.action}
-                testID="time-task-find-time"
-                variant="secondary"
-              />
-            ) : null}
           </View>
           <Button label="Open in Reminders" onPress={openInReminders} size="md" variant="ghost" />
           <Button
@@ -135,7 +115,7 @@ export function TimeTaskDetailSheet({
             onPress={confirmDelete}
             size="md"
             variant="ghost"
-            testID="time-task-delete"
+            testID="task-delete"
           />
         </View>
       ) : null}

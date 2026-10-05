@@ -79,6 +79,20 @@ function ComposerContent(props: ComposerProps) {
   // the message store here.
   const presentation = getComposerSubmissionConfig(props);
 
+  const onPlan = props.mode === 'inbox' ? props.onPlan : undefined;
+  // Planning hands the words over and empties the composer; if the request
+  // fails or is cancelled the planner puts them back.
+  const handlePlan = useCallback(
+    (message: string) => {
+      if (!message.trim()) {
+        return;
+      }
+      onPlan?.(message, controller.setMessage);
+      controller.clearComposer();
+    },
+    [controller.clearComposer, controller.setMessage, onPlan],
+  );
+
   const handleActiveAreaSubmit = useCallback(
     (kind: ComposerSubmitKind, message: string, canSubmit: boolean) => {
       if (canSubmit) {
@@ -219,6 +233,7 @@ function ComposerContent(props: ComposerProps) {
                   onChangeMessage={controller.setMessage}
                   onToggleWalkieTalkie={props.mode === 'chat' ? onToggleWalkieTalkie : undefined}
                   onSubmit={handleActiveAreaSubmit}
+                  onPlan={props.mode === 'inbox' && props.onPlan ? handlePlan : undefined}
                 />
               </Animated.View>
             </Animated.View>

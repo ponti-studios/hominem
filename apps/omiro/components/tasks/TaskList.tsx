@@ -57,11 +57,11 @@ const TaskRow = memo(function TaskRow({ item, onGround, onOpen, onToggle }: Task
   );
 });
 
-interface TimeTaskListProps {
+interface TaskListProps {
   contentPaddingBottom?: number;
   emptyText: string;
   // True on the app ground (Tasks page), where rows need the card fill to
-  // stand out; false inside a white sheet, where rows sit on the ground tone.
+  // stand out; false inside a sheet, where rows sit on the ground tone.
   onGround?: boolean;
   onOpen: (task: TaskListItem) => void;
   onToggle: (task: TaskListItem) => void;
@@ -72,16 +72,14 @@ function Gap() {
   return <View style={{ height: 10 }} />;
 }
 
-// Used by both the Inbox sheet and the Tasks page, so tasks look and behave
-// the same wherever they appear.
-export function TimeTaskList({
+export function TaskList({
   contentPaddingBottom = 0,
   emptyText,
   onGround = false,
   onOpen,
   onToggle,
   tasks,
-}: TimeTaskListProps) {
+}: TaskListProps) {
   const styles = useStyles((theme) => ({
     empty: {
       ...theme.textVariants.callout,

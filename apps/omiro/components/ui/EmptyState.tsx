@@ -19,7 +19,7 @@ interface EmptyStateProps {
 }
 
 // The one empty / error / "gone" surface: a tilted pastel tile, a big title, a
-// short line of help, and at most one primary action. Mirrors the Time tab's
+// short line of help, and at most one primary action. Mirrors the old Time tab's
 // "A clear day" so every dead end in the app looks like it belongs to it.
 function EmptyState({ action, description, sfSymbol, title, tone = 'violet' }: EmptyStateProps) {
   const colors = useAppTheme().colors;

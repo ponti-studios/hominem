@@ -5,6 +5,8 @@ import { RefreshControl, View } from 'react-native';
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
 import { useStyles } from '~/components/theme';
+import { PlannerSheets } from '~/components/time/PlannerSheets';
+import { usePlanner } from '~/components/time/use-planner';
 import { Chip } from '~/components/ui';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 import { clearAllDraft, readAllDraft, writeAllDraft } from '~/services/navigation/launch-state';
@@ -43,6 +45,7 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
     clearance: 16,
   });
   const inbox = useInboxStreamItems();
+  const planner = usePlanner();
   const { isFetching: isFetchingTasks, refetch: refetchTasks } = useTasksQuery();
   const styles = useStyles((theme) => ({
     container: { flex: 1, backgroundColor: theme.colors.background },
@@ -133,11 +136,14 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
         <Composer
           entryMode="mixed"
           initialMessage={readAllDraft()}
+          isPlanning={planner.isPlanning}
           mode="inbox"
+          onPlan={planner.plan}
           onClearDraft={clearAllDraft}
           onDraftChange={writeAllDraft}
         />
       </ComposerDock>
+      <PlannerSheets planner={planner} toastBottom={restingInset + 170} />
     </View>
   );
 }

@@ -12,7 +12,7 @@ estimated_size: 'L'
 > Time requests are no longer interpreted by the on-device Foundation Model (it was
 > too slow and inaccurate). They are parsed by the server's cloud model from the
 > request text alone; free slots and event matching run in Swift. See
-> [omiro.time.md](../omiro.time.md).
+> [omiro.planning.md](../omiro.planning.md).
 
 ## Outcome
 
