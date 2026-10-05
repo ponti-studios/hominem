@@ -98,7 +98,7 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
         ListEmptyComponent={
           inbox.isInitialLoading ? (
             <StreamSkeleton />
-          ) : inbox.error ? (
+          ) : inbox.error && inbox.items.length === 0 ? (
             <StreamLoadError
               onRetry={() => {
                 void inbox.refetch();

@@ -384,7 +384,13 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
                   label: isChat ? t.inbox.item.archiveChat : t.inbox.item.deleteNote.menu,
                 },
               ]}
-              accessibilityLabel={primaryText}
+              accessibilityLabel={[
+                primaryText,
+                titleText ? previewText : null,
+                formatRelativeAge(item.updatedAt),
+              ]
+                .filter(Boolean)
+                .join(', ')}
               accessibilityRole="button"
               onAccessibilityAction={handleAccessibilityAction}
               onPress={onOpen}
