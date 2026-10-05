@@ -23,7 +23,9 @@ export function describeToolArgs(
   if (!args || typeof args !== 'object' || Array.isArray(args)) {
     return [];
   }
-  return Object.entries(args)
-    .filter(([, value]) => value !== undefined && value !== null && value !== '')
-    .map(([key, value]) => ({ label: formatToolName(key), value: formatValue(value) }));
+  return Object.entries(args).flatMap(([key, value]) =>
+    value === undefined || value === null || value === ''
+      ? []
+      : [{ label: formatToolName(key), value: formatValue(value) }],
+  );
 }
