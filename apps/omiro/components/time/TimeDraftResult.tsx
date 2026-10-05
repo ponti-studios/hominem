@@ -71,7 +71,6 @@ export function TimeDraftResult({
       <Text style={styles.overline}>{getIntentLabel(block.primary_intent)}</Text>
       <TextField
         accessibilityLabel="Edit title"
-        autoFocus
         focusBorder={false}
         onChangeText={(value) => onEditField?.('title', value)}
         placeholder={t.timeResult.fieldLabels.title}

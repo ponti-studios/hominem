@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
 import { Text } from 'react-native';
 
@@ -8,6 +9,7 @@ import { useAppTheme, useStyles } from '~/components/theme';
 import { TimeHeaderActions, TimeScreen } from '~/components/time/TimeScreen';
 
 export default function TimeRoute() {
+  const { prompt } = useLocalSearchParams<{ prompt?: string }>();
   const { foreground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     title: { ...theme.textVariants.subhead, color: foreground },
@@ -27,7 +29,7 @@ export default function TimeRoute() {
 
   return (
     <RootSceneGesture>
-      <TimeScreen />
+      <TimeScreen initialPrompt={prompt} />
     </RootSceneGesture>
   );
 }

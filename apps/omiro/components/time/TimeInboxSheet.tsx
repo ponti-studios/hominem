@@ -46,7 +46,7 @@ export function TimeInboxSheet({
     },
   }));
   return (
-    <BottomSheet maxHeight="80%" onClose={onClose} testID="time-inbox-sheet" visible={visible}>
+    <BottomSheet onClose={onClose} testID="time-inbox-sheet" visible={visible}>
       <View style={styles.header}>
         <Text style={styles.title}>Inbox</Text>
         <Text style={styles.count}>

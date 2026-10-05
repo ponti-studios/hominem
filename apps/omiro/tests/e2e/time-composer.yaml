@@ -1,0 +1,78 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Natural-language Time input: the scripted API returns a deterministic time
+# block (services/api/src/testkit/scripted-providers.ts) and the fixture
+# calendar gateway stands in for EventKit, so this exercises the app flow
+# end to end without a model or a real calendar.
+#
+# Requests arrive through the `?prompt=` link (the same path a Siri shortcut
+# or widget uses) instead of typing, so no step depends on the keyboard: the
+# link prefills the capture bar, the flow taps send, results land in a sheet
+# above everything, and each case dismisses its own sheet.
+- runFlow: ../subflows/reset-to-home.yaml
+- openLink: hakumi-dev:///time
+- extendedWaitUntil:
+    visible:
+      id: time-screen
+    timeout: 10000
+
+# Plain text becomes a reviewable task draft. It is discarded rather than saved:
+# saving goes through Apple Reminders, which is outside what this flow covers.
+- openLink: hakumi-dev:///time?prompt=Buy%20oat%20milk
+- runFlow: ../subflows/time-send-prompt.yaml
+- extendedWaitUntil:
+    visible:
+      id: time-draft-submit
+    timeout: 15000
+- takeScreenshot: /tmp/omiro-time-composer-task-draft
+- assertVisible: Buy oat milk
+- tapOn:
+    id: time-draft-cancel
+- extendedWaitUntil:
+    notVisible:
+      id: time-draft-submit
+    timeout: 10000
+
+# A search is answered from the calendar window the parser returned. The fixture
+# has upcoming events inside it, so the answer is not the empty message.
+- openLink: hakumi-dev:///time?prompt=What%20do%20I%20have%20this%20week
+- runFlow: ../subflows/time-send-prompt.yaml
+- extendedWaitUntil:
+    visible:
+      id: time-answer-cancel
+    timeout: 15000
+- assertNotVisible: Nothing is scheduled then.
+- takeScreenshot: /tmp/omiro-time-composer-search-answer
+- tapOn:
+    id: time-answer-cancel
+- extendedWaitUntil:
+    notVisible:
+      id: time-answer-cancel
+    timeout: 10000
+
+# A free-time request offers open slots, and choosing one opens the native
+# draft (fixture: saved).
+- openLink: hakumi-dev:///time?prompt=When%20can%20I%20fit%20a%20call
+- runFlow: ../subflows/time-send-prompt.yaml
+- extendedWaitUntil:
+    visible:
+      id: time-availability-opening
+    timeout: 15000
+- takeScreenshot: /tmp/omiro-time-composer-availability
+- tapOn:
+    id: time-availability-opening
+- extendedWaitUntil:
+    notVisible:
+      id: time-availability-opening
+    timeout: 10000
+
+# A fixed event goes straight to the native editor (fixture: saved).
+- openLink: hakumi-dev:///time?prompt=Coffee%20with%20Priya%20tomorrow
+- runFlow: ../subflows/time-send-prompt.yaml
+- extendedWaitUntil:
+    notVisible:
+      id: time-processing-cancel
+    timeout: 15000
+- assertNotVisible:
+    id: time-draft-submit
+- takeScreenshot: /tmp/omiro-time-composer-event-saved

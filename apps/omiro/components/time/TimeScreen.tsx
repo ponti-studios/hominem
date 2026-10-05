@@ -1,6 +1,7 @@
 import { MenuView, type MenuAction, type NativeActionEvent } from '@expo/ui/community/menu';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,6 +26,7 @@ import { TimeTaskDetailSheet } from './TimeTaskDetailSheet';
 import { TimeToast, type TimeToastModel } from './TimeToast';
 import { useTimeComposer } from './use-time-composer';
 import { useTimeData } from './use-time-data';
+import { useTimePromptParam } from './use-time-prompt-param';
 
 const STRIP_DAYS = 14;
 const NOW_TICK_MS = 60_000;
@@ -40,10 +42,13 @@ function useNow(intervalMs: number) {
 }
 
 interface TimeScreenProps {
+  // Set by a `?prompt=` link; prefills the capture bar (see use-time-prompt-param).
+  initialPrompt?: string;
   topInset?: number;
 }
 
-export function TimeScreen({ topInset = 0 }: TimeScreenProps = {}) {
+export function TimeScreen({ initialPrompt, topInset = 0 }: TimeScreenProps = {}) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { bottom: safeAreaBottom } = useSafeAreaInsets();
   const now = useNow(NOW_TICK_MS);
@@ -119,6 +124,13 @@ export function TimeScreen({ topInset = 0 }: TimeScreenProps = {}) {
   const composer = useTimeComposer({
     onError: (message) => showError(message, { label: 'Retry', onPress: () => composer.retry() }),
     onOpenEvent: openEvent,
+  });
+
+  const clearPromptParam = useCallback(() => router.setParams({ prompt: undefined }), [router]);
+  useTimePromptParam({
+    clear: clearPromptParam,
+    prompt: initialPrompt,
+    setPrompt: composer.setPrompt,
   });
 
   const completeTask = useCallback(

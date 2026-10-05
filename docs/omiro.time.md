@@ -31,6 +31,10 @@ calendar data.
   progress count) or an error toast with Retry. A failed request keeps the
   prompt in the capture bar.
 
+A link such as `hakumi-dev:///time?prompt=Buy%20oat%20milk` prefills the capture bar
+(never sends it), the same path a Siri shortcut or widget can use; the e2e flow
+uses it so no step depends on the keyboard.
+
 In development builds, a preview menu can switch the screen to fixture
 scenarios; real data remains the default.
 

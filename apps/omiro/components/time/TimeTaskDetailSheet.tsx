@@ -88,12 +88,7 @@ export function TimeTaskDetailSheet({
   const completed = shown?.status === 'completed';
 
   return (
-    <BottomSheet
-      maxHeight="85%"
-      onClose={onClose}
-      testID="time-task-detail"
-      visible={task !== null}
-    >
+    <BottomSheet onClose={onClose} testID="time-task-detail" visible={task !== null}>
       {shown ? (
         <View style={styles.stack}>
           <View style={styles.titleRow}>

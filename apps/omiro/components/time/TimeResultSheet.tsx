@@ -41,7 +41,7 @@ export function TimeResultSheet({ state, ...actions }: TimeResultSheetProps) {
   const [lastResult, setLastResult] = useState<ResultState | null>(null);
   const styles = useStyles((theme) => ({
     content: { gap: 14, paddingBottom: 8 },
-    scroll: { flexGrow: 0 },
+    scroll: { flexGrow: 0, flexShrink: 1 },
     message: { ...theme.textVariants.body, color: theme.colors.foreground },
   }));
   // Hold the last result so the sheet keeps its content while animating out.
