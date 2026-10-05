@@ -32,7 +32,12 @@ export function StreamSkeleton() {
   }));
 
   return (
-    <View accessibilityLabel="Loading" testID="stream-skeleton">
+    <View
+      accessibilityLabel="Loading"
+      accessibilityState={{ busy: true }}
+      accessible
+      testID="stream-skeleton"
+    >
       {ROW_TITLE_WIDTHS.map((width) => (
         <View key={width} style={styles.row}>
           <View style={styles.tile} />
