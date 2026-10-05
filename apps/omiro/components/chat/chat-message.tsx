@@ -73,7 +73,7 @@ export const ChatMessage = memo(function ChatMessage({
       backgroundColor: theme.colors.background,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      borderRadius: 6,
+      borderRadius: theme.borderRadii.lg,
       gap: 4,
       paddingHorizontal: 12,
       paddingVertical: 12,

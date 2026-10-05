@@ -2,127 +2,126 @@ import type { CalendarEvent } from '~/modules/on-device-ai';
 import { formatClockTime } from '~/services/date/format-date';
 import type { TaskListItem } from '~/services/tasks/task-types';
 
-import type { TimeBlock, TimeItem, TimeStreamRow } from './time-types';
+import type { TimeBlock, TimeItem } from './time-types';
 
 const DEFAULT_AVAILABILITY_DAYS = 7;
 
-function startOfToday() {
+export function startOfToday() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return today;
 }
 
-export function itemDate(item: TimeItem | TimeStreamRow) {
-  if (item.kind !== 'task' && item.kind !== 'event') {
-    return null;
-  }
+export function itemDate(item: TimeItem) {
   return item.kind === 'task' ? (item.value.startAt ?? item.value.dueAt) : item.value.startDate;
 }
 
-export function dayKey(item: TimeItem) {
-  const date = new Date(itemDate(item) ?? 0);
-  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+// Local calendar day, `YYYY-MM-DD`. The key every day lookup uses, so a day
+// never depends on the time of day an item or the strip was built at.
+export function localDayKey(value: Date | string): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
-export function dayLabel(item: TimeItem) {
-  const date = new Date(itemDate(item) ?? 0);
-  const today = startOfToday();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  if (date.toDateString() === today.toDateString()) {
-    return 'Today';
-  }
-  if (date.toDateString() === tomorrow.toDateString()) {
-    return 'Tomorrow';
-  }
-  return date.toLocaleDateString(undefined, { weekday: 'long' });
+export function stripDays(start: Date, count: number): Date[] {
+  return Array.from({ length: count }, (_, offset) => {
+    const day = new Date(start);
+    day.setDate(day.getDate() + offset);
+    return day;
+  });
 }
 
-export interface TimeColumnParts {
-  primary: string;
-  secondary?: string;
-}
+// Pastel fills for calendar blocks, chosen by a stable hash of the calendar
+// (or title) so a given calendar keeps its color.
+export const EVENT_TONES = ['eventViolet', 'eventCoral', 'eventSky', 'eventSun'] as const;
+export type EventTone = (typeof EVENT_TONES)[number];
 
-export function eventTimeParts(event: CalendarEvent): TimeColumnParts {
-  if (event.isAllDay) {
-    return { primary: 'All day' };
-  }
-  return {
-    primary: formatClockTime(event.startDate),
-    secondary: formatClockTime(event.endDate),
-  };
-}
-
-export function taskTimeParts(task: TaskListItem): TimeColumnParts {
-  const date = task.startAt ?? task.dueAt;
-  if (!date) {
-    return { primary: '—' };
-  }
-  return {
-    primary: formatClockTime(date),
-  };
-}
-
-const ACCENT_TOKEN_COUNT = 5;
-
-export function accentTokenIndex(seed: string): number {
+export function eventTone(seed: string): EventTone {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
     hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   }
-  return hash % ACCENT_TOKEN_COUNT;
+  return EVENT_TONES[hash % EVENT_TONES.length];
 }
 
-function getScheduledTimeItems({
+function itemSortKey(item: TimeItem) {
+  // All-day events lead their day.
+  if (item.kind === 'event' && item.value.isAllDay) {
+    return Number.NEGATIVE_INFINITY;
+  }
+  return new Date(itemDate(item) ?? 0).getTime();
+}
+
+// Every scheduled item (calendar events plus tasks with a start or due time),
+// grouped by local day and sorted within it. Built once per data change; day
+// selection is then an O(1) map lookup.
+export function buildDayIndex({
   events,
-  loadedUntil,
   tasks,
 }: {
   events: CalendarEvent[];
-  loadedUntil: Date;
   tasks: TaskListItem[];
-}): TimeItem[] {
+}): Map<string, TimeItem[]> {
   const items: TimeItem[] = events.map((value) => ({ kind: 'event' as const, value }));
   for (const value of tasks) {
     if (value.startAt ?? value.dueAt) {
       items.push({ kind: 'task', value });
     }
   }
-  return items
-    .filter((item) => {
-      const date = itemDate(item);
-      return date ? new Date(date).getTime() < loadedUntil.getTime() : false;
-    })
-    .sort(
-      (left, right) =>
-        new Date(itemDate(left) ?? 0).getTime() - new Date(itemDate(right) ?? 0).getTime(),
-    );
+  const index = new Map<string, TimeItem[]>();
+  for (const item of items.sort((left, right) => itemSortKey(left) - itemSortKey(right))) {
+    const key = localDayKey(new Date(itemDate(item) ?? 0));
+    const bucket = index.get(key);
+    if (bucket) {
+      bucket.push(item);
+    } else {
+      index.set(key, [item]);
+    }
+  }
+  return index;
 }
 
-export function buildTimeStreamRows({
-  events,
-  loadedUntil,
-  now = new Date(),
-  tasks,
-}: {
-  events: CalendarEvent[];
-  loadedUntil: Date;
-  now?: Date;
-  tasks: TaskListItem[];
-}): TimeStreamRow[] {
-  const scheduledItems = getScheduledTimeItems({ events, loadedUntil, tasks });
-  const isPast = (item: TimeItem) => {
-    const date = itemDate(item);
-    if (!date) {
+export function itemTimeLabel(item: TimeItem): string {
+  if (item.kind === 'event') {
+    return item.value.isAllDay
+      ? 'All day'
+      : `${formatClockTime(item.value.startDate)} – ${formatClockTime(item.value.endDate)}`;
+  }
+  const { dueAt, startAt } = item.value;
+  if (startAt && dueAt) {
+    return `${formatClockTime(startAt)} – ${formatClockTime(dueAt)}`;
+  }
+  const when = startAt ?? dueAt;
+  return when ? formatClockTime(when) : 'Anytime';
+}
+
+export type DayRow = { kind: 'item'; item: TimeItem } | { kind: 'now' };
+
+// A day's rows with the "now" marker slotted before the first item that
+// starts after it. Pure: easy to test and cheap to recompute on day change.
+export function buildDayRows(items: TimeItem[], now: Date | null): DayRow[] {
+  const rows: DayRow[] = items.map((item) => ({ item, kind: 'item' }));
+  if (!now) {
+    return rows;
+  }
+  const nowMs = now.getTime();
+  const at = items.findIndex((item) => {
+    if (item.kind === 'event' && item.value.isAllDay) {
       return false;
     }
-    if (item.kind === 'event') {
-      return new Date(item.value.endDate) <= now;
-    }
-    return item.value.status === 'completed' || new Date(date) < now;
-  };
-  return scheduledItems.filter((item) => !isPast(item));
+    return new Date(itemDate(item) ?? 0).getTime() > nowMs;
+  });
+  rows.splice(at === -1 ? rows.length : at, 0, { kind: 'now' });
+  return rows;
+}
+
+export function itemHasEnded(item: TimeItem, now: Date): boolean {
+  if (item.kind === 'event') {
+    return !item.value.isAllDay && new Date(item.value.endDate) <= now;
+  }
+  return false;
 }
 
 export function getUnscheduledTasks(tasks: TaskListItem[]) {

@@ -56,13 +56,13 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
       justifyContent: 'center',
       width: 48,
       height: 48,
-      borderRadius: 6,
+      borderRadius: theme.borderRadii.md,
       backgroundColor: theme.colors.overlayScrim,
     },
     captureIndicator: {
       width: 56,
       height: 56,
-      borderRadius: 6,
+      borderRadius: theme.borderRadii.md,
       backgroundColor: theme.colors.primaryForeground,
     },
     flipButton: {
@@ -70,7 +70,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
       justifyContent: 'center',
       width: 48,
       height: 48,
-      borderRadius: 6,
+      borderRadius: theme.borderRadii.md,
       backgroundColor: theme.colors.overlayScrim,
     },
     permissionContainer: {
@@ -84,7 +84,7 @@ export function CameraModal({ visible, onCapture, onClose }: CameraModalProps) {
     grantButton: {
       borderWidth: 1,
       borderColor: theme.colors.border,
-      borderRadius: 6,
+      borderRadius: theme.borderRadii.md,
       paddingHorizontal: 16,
       paddingVertical: 8,
     },

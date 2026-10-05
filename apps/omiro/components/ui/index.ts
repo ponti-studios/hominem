@@ -1,4 +1,7 @@
 export { EmptyState } from './EmptyState';
+export { BottomSheet } from './bottom-sheet';
+export { Checkbox } from './checkbox';
+export { Chip } from './chip';
 export { IconButton } from './icon-button';
 export {
   Card,

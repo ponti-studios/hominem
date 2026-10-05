@@ -5,6 +5,9 @@ appId: com.pontistudios.hakumi.dev
 # screen of its own, so the stream is still there afterwards.
 - runFlow: ../subflows/reset-to-home.yaml
 - openLink: hakumi-dev:///time
+# The fixture event is two days out; the stream shows one day at a time.
+- tapOn:
+    id: time-day-2
 - extendedWaitUntil:
     visible:
       id: time-item-event-time-fixture-editable

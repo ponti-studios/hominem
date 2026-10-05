@@ -33,7 +33,7 @@ function useNoteToolbarStyles() {
       backgroundColor: theme.colors.card,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      borderRadius: 8,
+      borderRadius: theme.borderRadii.lg,
       alignSelf: 'stretch',
       flexDirection: 'row',
       height: 48,

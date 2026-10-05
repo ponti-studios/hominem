@@ -8,18 +8,41 @@ calendar data.
 ## Routes and screen composition
 
 - `/(protected)/time` renders `TimeScreen`.
-- `/(protected)/time/unscheduled` renders the dedicated unscheduled task list.
-- `/(protected)/time/task/[id]` opens the task detail surface. Event taps open
-  Apple's native EventKit editor rather than an app-owned event detail screen.
+- `/(protected)/time/unscheduled` renders `TasksScreen`: every open task in the
+  same card style, with the in-app task detail sheet.
+- `/(protected)/time/[source]/[id]` is a deep-link route for calendar events
+  only; it presents Apple's native editor and returns to Time. Tasks have no
+  route: tapping one opens `TimeTaskDetailSheet` in place.
 
-`TimeScreen` contains `TimeStream`, an inline error surface, and the
-bottom-docked `TimeComposer`. The header exposes unscheduled tasks. In
-development builds, a preview menu can switch the stream to fixture scenarios;
-real data remains the default.
+`TimeScreen` shows one day at a time:
+
+- A header with the selected day and an Inbox button (badge = unscheduled
+  tasks).
+- `TimeDayStrip`, a horizontal run of 14 day pills starting today; a dot marks
+  days that have items.
+- `TimeDayList`, a `FlashList` of that day's rows: pastel event cards
+  (`TimeEventCard`), white task cards with a checkbox (`TimeTaskCard`), and a
+  coral "Now" marker on today (`buildDayRows`).
+- `TimeCaptureBar`, the floating ink pill that takes every natural-language
+  request, with quick-start chips above it while idle.
+- Sheets (`BottomSheet`): `TimeResultSheet` (draft, availability, event
+  choice, answer), `TimeInboxSheet`, `TimeTaskDetailSheet`.
+- `TimeToast`: a success toast (with Undo for completed tasks and a daily
+  progress count) or an error toast with Retry. A failed request keeps the
+  prompt in the capture bar.
+
+In development builds, a preview menu can switch the screen to fixture
+scenarios; real data remains the default.
+
+Performance rules for this screen: items are grouped by local day once per
+data change (`buildDayIndex`), so selecting a day is a map lookup; rows are
+memoized and receive primitives and stable callbacks; list rows carry no blur
+shadows; all motion (sheets, toasts, checkbox pop) is Reanimated on the UI
+thread.
 
 ## Data and native boundary
 
-`TimeStream` renders a `TimeItem` union containing either a task or a compact
+`TimeDayList` renders a `TimeItem` union containing either a task or a compact
 EventKit calendar summary. Tasks use `services/tasks/`; calendar access goes
 through the iOS `on-device-ai` Expo module. The module owns one EventKit store
 and exposes permission checks, summaries, native-editor presentation, free-slot
@@ -57,7 +80,7 @@ The implemented interaction states are:
 | State          | Meaning                                                                   |
 | -------------- | ------------------------------------------------------------------------- |
 | `idle`         | Ready for a new request.                                                  |
-| `parsing`      | A submitted prompt is being interpreted; duplicate submission is blocked. |
+| `parsing`      | A submitted prompt is being interpreted; the capture bar shows progress and duplicate submission is blocked. |
 | `draft`        | A reviewed database-backed task is ready for explicit confirmation.       |
 | `answer`       | A direct answer was found without a write action.                         |
 | `availability` | Openings were found and can be selected.                                  |

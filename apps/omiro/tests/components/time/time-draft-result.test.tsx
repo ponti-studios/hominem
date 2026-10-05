@@ -24,23 +24,13 @@ vi.mock('react-native', () => ({
   Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   View: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
-vi.mock('~/components/theme', () => ({
-  useAppTheme: () => ({ colors: { border: '', muted: '', mutedForeground: '' } }),
-  useStyles: (
-    factory: (theme: {
-      borderRadii: Record<string, number>;
-      colors: Record<string, string>;
-      textVariants: Record<string, object>;
-    }) => unknown,
-  ) =>
-    factory({
-      borderRadii: { sm: 4 },
-      colors: { border: '', muted: '', mutedForeground: '' },
-      textVariants: { body: {}, caption1: {} },
-    }),
-  withAlpha: (color: string) => color,
-}));
+vi.mock('~/components/theme', async () => (await import('../../mocks/theme')).themeModuleMock);
 vi.mock('~/components/ui', () => ({
+  Chip: ({ label, onPress, testID }: { label: string; onPress?: () => void; testID?: string }) => (
+    <button data-testid={testID} onClick={onPress}>
+      {label}
+    </button>
+  ),
   IconButton: ({
     children,
     disabled,

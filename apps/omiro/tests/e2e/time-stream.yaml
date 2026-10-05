@@ -10,6 +10,20 @@ appId: com.pontistudios.hakumi.dev
     timeout: 10000
 - assertVisible:
     id: time-stream
+- takeScreenshot: /tmp/omiro-time-today
+- tapOn:
+    id: time-day-2
+- takeScreenshot: /tmp/omiro-time-day-2
+- tapOn:
+    id: time-inbox-button
+- extendedWaitUntil:
+    visible:
+      id: time-inbox-sheet
+    timeout: 10000
+- takeScreenshot: /tmp/omiro-time-inbox
+- tapOn:
+    text: Close
+    optional: true
 - openLink: hakumi-dev:///time/unscheduled
 - extendedWaitUntil:
     visible:

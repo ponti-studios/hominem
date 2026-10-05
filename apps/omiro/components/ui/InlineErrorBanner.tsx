@@ -19,7 +19,7 @@ export function InlineErrorBanner({ message, onDismiss, onRetry }: InlineErrorBa
       backgroundColor: theme.colors.card,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      borderRadius: 8,
+      borderRadius: theme.borderRadii.xl,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',

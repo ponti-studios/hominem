@@ -18,10 +18,18 @@ export function TimeEventChoiceResult({
   onChooseEvent,
 }: TimeEventChoiceResultProps) {
   const styles = useStyles((theme) => ({
-    heading: { ...theme.textVariants.headline },
-    choice: { gap: 4, paddingVertical: 8, minHeight: 44 },
-    title: { ...theme.textVariants.body },
-    time: { color: theme.colors.mutedForeground },
+    heading: { ...theme.textVariants.title1, color: theme.colors.foreground },
+    choice: {
+      backgroundColor: theme.colors.background,
+      borderCurve: 'continuous',
+      borderRadius: theme.borderRadii.xl,
+      gap: 2,
+      minHeight: 64,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    title: { ...theme.textVariants.headline, color: theme.colors.foreground },
+    time: { ...theme.textVariants.subhead, color: theme.colors.mutedForeground },
   }));
 
   return (
@@ -29,17 +37,18 @@ export function TimeEventChoiceResult({
       <Text style={styles.heading}>Which event did you mean?</Text>
       {candidates.map((event) => (
         <Pressable
-          key={`${event.id}:${event.startDate}`}
           accessibilityLabel={`${event.title}, ${new Date(event.startDate).toLocaleString()}`}
+          accessibilityRole="button"
+          key={`${event.id}:${event.startDate}`}
           onPress={() => onChooseEvent?.(event.id)}
-          style={styles.choice}
+          style={({ pressed }) => [styles.choice, pressed && { opacity: 0.8 }]}
           testID="time-event-choice"
         >
           <Text style={styles.title}>{event.title}</Text>
           <Text style={styles.time}>{formatDateTime(event.startDate)}</Text>
         </Pressable>
       ))}
-      <CancelRow testID="time-event-choice-cancel" onCancel={onCancel} />
+      <CancelRow onCancel={onCancel} testID="time-event-choice-cancel" />
     </>
   );
 }

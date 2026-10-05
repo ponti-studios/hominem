@@ -16,14 +16,19 @@ function useCardStyles() {
     card: {
       backgroundColor: currentTheme.colors.card,
       gap: 16,
-      borderRadius: 4,
-      borderWidth: 1,
-      borderColor: currentTheme.colors.border,
+      borderCurve: 'continuous',
+      borderRadius: currentTheme.borderRadii.xl,
       padding: 16,
     } satisfies ViewStyle,
     header: { gap: 4 } satisfies ViewStyle,
-    title: { color: currentTheme.colors.cardForeground, fontSize: 20 } satisfies TextStyle,
-    description: { color: currentTheme.colors.mutedForeground, fontSize: 12 } satisfies TextStyle,
+    title: {
+      color: currentTheme.colors.cardForeground,
+      ...currentTheme.textVariants.cardTitle,
+    } satisfies TextStyle,
+    description: {
+      color: currentTheme.colors.mutedForeground,
+      ...currentTheme.textVariants.footnote,
+    } satisfies TextStyle,
     action: { alignSelf: 'flex-start' } satisfies ViewStyle,
     footer: { flexDirection: 'row', alignItems: 'center' } satisfies ViewStyle,
   }));

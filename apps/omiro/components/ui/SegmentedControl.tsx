@@ -35,14 +35,14 @@ export function SegmentedControl<T extends string>({
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.colors.popover,
-      borderRadius: 10,
+      borderRadius: theme.borderRadii.pill,
       padding: 2,
     },
     thumb: {
       position: 'absolute',
       top: 2,
       bottom: 2,
-      borderRadius: 8,
+      borderRadius: theme.borderRadii.pill,
       backgroundColor: '#000000',
     },
     segment: {

@@ -98,7 +98,7 @@ function useNoteScreenStyles() {
     attachmentThumb: {
       width: 72,
       height: 72,
-      borderRadius: 12,
+      borderRadius: theme.borderRadii.xl,
       backgroundColor: theme.colors.muted,
       borderWidth: 1,
       borderColor: theme.colors.border,
@@ -312,6 +312,7 @@ function NoteEditorBody({
     success: successColor,
     destructive: destructiveColor,
   } = useAppTheme().colors;
+  const { borderRadii } = useAppTheme();
 
   const wordCount = draft.content.trim().length > 0 ? draft.content.trim().split(/\s+/).length : 0;
   const readMinutes = Math.round(wordCount / 200);
@@ -508,7 +509,7 @@ function NoteEditorBody({
 
         {isPreviewing ? (
           draft.content.trim().length > 0 ? (
-            <Markdown style={markdownStyles(mdColors)}>{draft.content}</Markdown>
+            <Markdown style={markdownStyles(mdColors, borderRadii.lg)}>{draft.content}</Markdown>
           ) : (
             <Text style={styles.previewEmptyText}>{t.notes.editor.previewEmpty}</Text>
           )
@@ -615,7 +616,7 @@ function NoteEditorBody({
   );
 }
 
-function markdownStyles(mdColors: Record<string, string>) {
+function markdownStyles(mdColors: Record<string, string>, codeRadius: number) {
   return {
     body: { color: mdColors['foreground'], fontSize: 17, lineHeight: 28 },
     heading1: {
@@ -651,14 +652,14 @@ function markdownStyles(mdColors: Record<string, string>) {
     code_block: {
       color: mdColors['foreground'],
       backgroundColor: mdColors['popover'],
-      borderRadius: 8,
+      borderRadius: codeRadius,
       fontFamily: 'Menlo',
       padding: 12,
     },
     fence: {
       color: mdColors['foreground'],
       backgroundColor: mdColors['popover'],
-      borderRadius: 8,
+      borderRadius: codeRadius,
       fontFamily: 'Menlo',
       padding: 12,
     },

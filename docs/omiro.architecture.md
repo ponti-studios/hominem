@@ -42,10 +42,9 @@ The implemented protected routes are:
 | `/(protected)/chats/[id]`       | Chat detail and message generation.                            |
 | `/(protected)/chats/archived`   | Archived chat list.                                            |
 | `/(protected)/notes/[id]`       | Note detail and editing.                                       |
-| `/(protected)/time`             | Time stream and natural-language Time composer.                |
-| `/(protected)/time/unscheduled` | Unscheduled task list.                                         |
-| `/(protected)/time/task/[id]`   | Task time-block detail.                                        |
-| `/(protected)/time/event/[id]`  | Calendar-event time-block detail.                              |
+| `/(protected)/time`             | Day-at-a-time Time screen and natural-language capture bar.    |
+| `/(protected)/time/unscheduled` | Tasks page (open tasks, in-app detail sheet).                  |
+| `/(protected)/time/event/[id]`  | Calendar-event deep link (opens Apple's native editor).        |
 | `/(protected)/settings`         | Protected form-sheet settings surface.                         |
 
 Settings, enhance, and chat-to-note surfaces use native form-sheet
