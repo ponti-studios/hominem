@@ -16,6 +16,7 @@ import { ChatSettingsSheet } from '~/components/chat/chat-settings-sheet';
 import { ChatSourcesSheet } from '~/components/chat/chat-sources-sheet';
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
+import { getDockKeyboardOffset } from '~/components/composer/composerDock.helpers';
 import { useStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
 import { useChatData } from '~/hooks/use-chat-data';
@@ -257,6 +258,7 @@ export function ChatScreen({ id }: { id: string }) {
         ) : null}
         <ChatMessageList
           bottomInset={composerInset}
+          keyboardOffset={getDockKeyboardOffset(restingInset)}
           isMessagesLoading={isMessagesLoading}
           displayMessages={search.displayMessages}
           showSearch={search.showSearch}
