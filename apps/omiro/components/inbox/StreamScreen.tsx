@@ -14,6 +14,8 @@ import { InboxStreamItem } from './InboxStreamItem';
 import type { InboxStreamItemData } from './InboxStreamItem.types';
 import { getEnteringItemIds } from './stream-rows';
 import { StreamEmptyState } from './StreamEmptyState';
+import { StreamLoadError } from './StreamLoadError';
+import { StreamSkeleton } from './StreamSkeleton';
 
 export type StreamFilter = 'all' | 'chats' | 'notes';
 
@@ -93,7 +95,19 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
         data={items}
         keyExtractor={(item) => item.id}
         ListHeaderComponent=<StreamFilterChips onChange={onFilterChange} value={filter} />
-        ListEmptyComponent={!inbox.isInitialLoading ? <StreamEmptyState filter={filter} /> : null}
+        ListEmptyComponent={
+          inbox.isInitialLoading ? (
+            <StreamSkeleton />
+          ) : inbox.error ? (
+            <StreamLoadError
+              onRetry={() => {
+                void inbox.refetch();
+              }}
+            />
+          ) : (
+            <StreamEmptyState filter={filter} />
+          )
+        }
         onEndReached={() => {
           if (inbox.hasNextPage && !inbox.isFetchingNextPage) {
             void inbox.fetchNextPage();

@@ -10,6 +10,11 @@ const t = {
     confirm: 'Enhance',
   },
   stream: {
+    loadError: {
+      title: 'Stream unavailable',
+      description: "We couldn't load your inbox. Check your connection and try again.",
+      retry: 'Try again',
+    },
     emptyState: {
       all: 'Capture a thought to start your inbox.',
       notes: {
