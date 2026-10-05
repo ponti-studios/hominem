@@ -56,13 +56,14 @@ export function MessageContent({
   const Markdown = useMarkdownComponent();
   const isStreaming = !enableMarkdown;
   const { foreground: textPrimary, popover } = useAppTheme().colors;
+  const { borderRadii } = useAppTheme();
 
   const markdownStyle = useMemo(
     () => ({
       body: textStyle,
       code_block: {
         backgroundColor: popover,
-        borderRadius: 8,
+        borderRadius: borderRadii.lg,
         color: textPrimary,
         fontFamily: 'Menlo',
         padding: 12,
@@ -76,13 +77,13 @@ export function MessageContent({
       },
       fence: {
         backgroundColor: popover,
-        borderRadius: 8,
+        borderRadius: borderRadii.lg,
         color: textPrimary,
         fontFamily: 'Menlo',
         padding: 12,
       },
     }),
-    [textPrimary, popover, textStyle],
+    [textPrimary, popover, textStyle, borderRadii.lg],
   );
   const markdownChildren = { children: content };
 

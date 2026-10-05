@@ -29,7 +29,7 @@ interface NoteDraftPreviewProps {
 export function NoteDraftPreview({ text, isLoading, testID }: NoteDraftPreviewProps) {
   const { foreground, muted, popover } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
-    container: { borderRadius: 12, flex: 1, padding: 12 },
+    container: { borderRadius: theme.borderRadii.xl, flex: 1, padding: 12 },
     scroll: { flex: 1 },
     scrollContent: { flexGrow: 1 },
     skeleton: { gap: 10 },

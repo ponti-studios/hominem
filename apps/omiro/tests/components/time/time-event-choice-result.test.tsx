@@ -22,15 +22,7 @@ vi.mock('react-native', () => ({
   Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   View: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
-vi.mock('~/components/theme', () => ({
-  useAppTheme: () => ({ colors: { mutedForeground: '', primaryForeground: '' } }),
-  useStyles: (
-    factory: (theme: {
-      colors: Record<string, string>;
-      textVariants: Record<string, object>;
-    }) => unknown,
-  ) => factory({ colors: { mutedForeground: '' }, textVariants: { body: {}, headline: {} } }),
-}));
+vi.mock('~/components/theme', async () => (await import('../../mocks/theme')).themeModuleMock);
 vi.mock('~/components/ui/button', () => ({
   Button: ({
     label,

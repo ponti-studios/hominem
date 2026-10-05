@@ -11,7 +11,8 @@ interface IconButtonProps {
   onPressIn?: () => void;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-  variant?: 'bordered' | 'plain' | 'solid';
+  size?: 'sm' | 'md' | 'lg';
+  variant?: 'bordered' | 'plain' | 'solid' | 'tonal' | 'ink';
 }
 
 export function IconButton({
@@ -20,19 +21,23 @@ export function IconButton({
   disabled = false,
   onPress,
   onPressIn,
+  size = 'sm',
   style,
   testID,
   variant = 'bordered',
 }: IconButtonProps) {
   const styles = useStyles((currentTheme) => ({
     button: {
-      width: 32,
-      height: 32,
-      borderRadius: 999,
+      borderRadius: currentTheme.borderRadii.pill,
       alignItems: 'center',
       justifyContent: 'center',
     } satisfies ViewStyle,
     bordered: { borderWidth: 1, borderColor: currentTheme.colors.border } satisfies ViewStyle,
+    sm: { width: 32, height: 32 } satisfies ViewStyle,
+    md: { width: 44, height: 44 } satisfies ViewStyle,
+    lg: { width: 48, height: 48 } satisfies ViewStyle,
+    tonal: { borderWidth: 0, backgroundColor: currentTheme.colors.card } satisfies ViewStyle,
+    ink: { borderWidth: 0, backgroundColor: currentTheme.colors.ink } satisfies ViewStyle,
     plain: { borderWidth: 0, borderColor: 'transparent' } satisfies ViewStyle,
     solid: {
       borderWidth: 0,
@@ -50,7 +55,8 @@ export function IconButton({
       onPressIn={onPressIn}
       style={({ pressed }) => [
         styles.button,
-        variant === 'plain' ? styles.plain : variant === 'solid' ? styles.solid : styles.bordered,
+        styles[size],
+        styles[variant],
         style,
         pressed && styles.pressed,
         disabled && styles.disabled,

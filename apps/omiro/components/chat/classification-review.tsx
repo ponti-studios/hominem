@@ -61,7 +61,7 @@ export function ClassificationReview({
       backgroundColor: theme.colors.muted,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      borderRadius: 6,
+      borderRadius: theme.borderRadii.md,
       maxHeight: 120,
       padding: 16,
     },

@@ -2,16 +2,14 @@ import DateTimePicker from '@expo/ui/community/datetime-picker';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 
-import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
-import { TextField } from '~/components/ui';
+import { useStyles } from '~/components/theme';
+import { Chip, TextField } from '~/components/ui';
 import { Button } from '~/components/ui/button';
-import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
 import { LocationSearchField } from './LocationSearchField';
 import type { EditableTimeBlockField, TimeInteractionState } from './time-types';
 import { formatDraftWhen } from './time-utils';
-import { FieldRow } from './TimeFieldRow';
 
 type DraftBlock = Extract<TimeInteractionState, { kind: 'draft' }>['block'];
 type ActiveDraftField = 'when' | 'where' | null;
@@ -32,42 +30,23 @@ export function TimeDraftResult({
   onSubmitDraft,
 }: TimeDraftResultProps) {
   const [activeField, setActiveField] = useState<ActiveDraftField>(null);
-  const { mutedForeground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
-    intentBadge: {
-      alignSelf: 'flex-start',
-      backgroundColor: withAlpha(theme.colors.muted, 0.7),
-      borderRadius: theme.borderRadii.sm,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-    },
-    intentLabel: { ...theme.textVariants.caption1, color: theme.colors.mutedForeground },
-    titleField: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      backgroundColor: theme.colors.muted,
-      borderRadius: theme.borderRadii.lg,
-      paddingLeft: 12,
-      paddingRight: 10,
+    overline: {
+      ...theme.textVariants.label,
+      color: theme.colors.mutedForeground,
+      textTransform: 'uppercase',
     },
     titleInput: {
-      flex: 1,
+      ...theme.textVariants.largeTitle,
       borderRadius: 0,
-      borderWidth: 0,
+      color: theme.colors.foreground,
       minHeight: 0,
       paddingHorizontal: 0,
-      paddingVertical: 10,
-      ...theme.textVariants.body,
-      fontWeight: '500',
+      paddingVertical: 4,
     },
-    fields: { gap: 1 },
-    editorBox: { gap: 8, paddingVertical: 10 },
-    actions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    editorBox: { gap: 8 },
+    actions: { flexDirection: 'row', gap: 10, marginTop: 4 },
     actionButton: { flex: 1 },
   }));
   const canSubmit =
@@ -89,101 +68,90 @@ export function TimeDraftResult({
 
   return (
     <>
-      <View style={styles.intentBadge}>
-        <Text style={styles.intentLabel}>{getIntentLabel(block.primary_intent)}</Text>
-      </View>
-      <View style={styles.titleField}>
-        <TextField
-          accessibilityLabel="Edit title"
-          autoFocus
-          focusBorder={false}
-          onChangeText={(value) => onEditField?.('title', value)}
-          placeholder={t.timeResult.fieldLabels.title}
-          testID="time-draft-edit-title"
-          value={block.title ?? ''}
-          style={styles.titleInput}
-        />
-        <AppIcon name="pencil" size={13} tintColor={mutedForeground} />
-      </View>
-      <View style={styles.fields}>
+      <Text style={styles.overline}>{getIntentLabel(block.primary_intent)}</Text>
+      <TextField
+        accessibilityLabel="Edit title"
+        focusBorder={false}
+        onChangeText={(value) => onEditField?.('title', value)}
+        placeholder={t.timeResult.fieldLabels.title}
+        style={styles.titleInput}
+        testID="time-draft-edit-title"
+        value={block.title ?? ''}
+      />
+      <View style={styles.chips}>
         {when ? (
-          <FieldRow
-            active={activeField === 'when'}
-            editable={canEditWhen}
-            icon="clock.fill"
-            label="When"
+          <Chip
+            icon="calendar"
+            label={when}
             onPress={canEditWhen ? () => toggleField('when') : undefined}
             testID="time-draft-edit-when"
-            value={when}
+            tone={activeField === 'when' ? 'ink' : 'tonal'}
           />
         ) : null}
-        {activeField === 'when' && eventTimes ? (
-          <View style={styles.editorBox}>
-            <DateTimePicker
-              display="compact"
-              mode="datetime"
-              onValueChange={(_, date) => onEditField?.('start_time', date.toISOString())}
-              testID="time-draft-start-picker"
-              value={new Date(eventTimes.start)}
-            />
-            <DateTimePicker
-              display="compact"
-              minimumDate={new Date(eventTimes.start)}
-              mode="datetime"
-              onValueChange={(_, date) => onEditField?.('end_time', date.toISOString())}
-              testID="time-draft-end-picker"
-              value={new Date(eventTimes.end)}
-            />
-          </View>
-        ) : activeField === 'when' && deadline ? (
-          <View style={styles.editorBox}>
-            <DateTimePicker
-              display="compact"
-              mode="date"
-              onValueChange={(_, date) =>
-                onEditField?.('deadline_fixed', date.toISOString().slice(0, 10))
-              }
-              testID="time-draft-deadline-picker"
-              value={new Date(`${deadline}T12:00:00`)}
-            />
-          </View>
-        ) : null}
-
-        <FieldRow
-          active={activeField === 'where'}
-          editable
+        <Chip
           icon="mappin.and.ellipse"
-          label="Where"
-          muted={!block.location}
+          label={block.location ?? 'Add place'}
           onPress={() => toggleField('where')}
           testID="time-draft-edit-where"
-          value={block.location ?? 'Add location'}
+          tone={activeField === 'where' ? 'ink' : 'tonal'}
         />
-        {activeField === 'where' ? (
-          <View style={styles.editorBox}>
-            <LocationSearchField
-              onChange={(value) => onEditField?.('location', value)}
-              testID="time-draft-location"
-              value={block.location ?? ''}
-            />
-          </View>
-        ) : null}
-
-        <FieldRow icon="person.2.fill" label="Who" value={participants} />
+        {participants ? <Chip icon="person.2" label={participants} /> : null}
       </View>
+      {activeField === 'when' && eventTimes ? (
+        <View style={styles.editorBox}>
+          <DateTimePicker
+            display="compact"
+            mode="datetime"
+            onValueChange={(_, date) => onEditField?.('start_time', date.toISOString())}
+            testID="time-draft-start-picker"
+            value={new Date(eventTimes.start)}
+          />
+          <DateTimePicker
+            display="compact"
+            minimumDate={new Date(eventTimes.start)}
+            mode="datetime"
+            onValueChange={(_, date) => onEditField?.('end_time', date.toISOString())}
+            testID="time-draft-end-picker"
+            value={new Date(eventTimes.end)}
+          />
+        </View>
+      ) : activeField === 'when' && deadline ? (
+        <View style={styles.editorBox}>
+          <DateTimePicker
+            display="compact"
+            mode="date"
+            onValueChange={(_, date) =>
+              onEditField?.('deadline_fixed', date.toISOString().slice(0, 10))
+            }
+            testID="time-draft-deadline-picker"
+            value={new Date(`${deadline}T12:00:00`)}
+          />
+        </View>
+      ) : null}
+      {activeField === 'where' ? (
+        <View style={styles.editorBox}>
+          <LocationSearchField
+            onChange={(value) => onEditField?.('location', value)}
+            testID="time-draft-location"
+            value={block.location ?? ''}
+          />
+        </View>
+      ) : null}
       <View style={styles.actions}>
         <Button
-          label="Discard"
+          label="Not now"
           onPress={() => onCancel?.()}
+          size="lg"
           style={styles.actionButton}
           testID="time-draft-cancel"
-          variant="outline"
+          variant="secondary"
         />
         <Button
           disabled={isSaving || !canSubmit}
           label={confirmLabel}
           loading={isSaving}
           onPress={() => onSubmitDraft?.()}
+          size="lg"
           style={styles.actionButton}
           testID="time-draft-submit"
           variant="primary"

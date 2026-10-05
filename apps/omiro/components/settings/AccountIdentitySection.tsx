@@ -42,7 +42,7 @@ export function AccountIdentitySection({
     avatar: {
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 12,
+      borderRadius: theme.borderRadii.xl,
       height: 52,
       width: 52,
     },

@@ -32,7 +32,7 @@ export function ChatSearchModal({
       backgroundColor: theme.colors.card,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      borderRadius: 24,
+      borderRadius: theme.borderRadii['2xl'],
       paddingHorizontal: 4,
       paddingVertical: 16,
     },
@@ -73,7 +73,7 @@ export function ChatSearchModal({
               cursorColor={textPrimary}
               style={{
                 backgroundColor: card,
-                borderRadius: 12,
+                borderRadius: theme.borderRadii.xl,
                 borderWidth: 0,
                 paddingHorizontal: 12,
                 paddingVertical: 8,

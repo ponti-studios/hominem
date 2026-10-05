@@ -22,7 +22,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
       minHeight: 50,
       paddingHorizontal: 16,
       borderCurve: 'continuous',
-      borderRadius: 6,
+      borderRadius: theme.borderRadii.lg,
       fontFamily: fontFamilies.sans,
       fontSize: 18,
       color: theme.colors.foreground,

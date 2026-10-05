@@ -22,13 +22,14 @@ export function MessageEditModal({
   onSave: () => void;
 }) {
   const { foreground: textPrimary, card, border: borderDefault } = useAppTheme().colors;
+  const { borderRadii } = useAppTheme();
   const styles = useStyles((theme) => ({
     modalContainer: { paddingHorizontal: 20, width: '100%' },
     modalCard: {
       backgroundColor: theme.colors.background,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      borderRadius: 6,
+      borderRadius: theme.borderRadii.md,
       gap: 12,
       paddingHorizontal: 16,
       paddingVertical: 16,
@@ -57,7 +58,7 @@ export function MessageEditModal({
             selectionColor={textPrimary}
             cursorColor={textPrimary}
             style={{
-              borderRadius: 6,
+              borderRadius: borderRadii.md,
               borderWidth: 1,
               fontSize: 16,
               minHeight: 90,

@@ -43,6 +43,7 @@ export function InlineEnhanceTray({
   error = null,
 }: InlineEnhanceTrayProps) {
   const { primary, mutedForeground, popover, foreground: textPrimary } = useAppTheme().colors;
+  const { borderRadii } = useAppTheme();
   const styles = useStyles((theme) => ({
     container: { gap: 8, marginVertical: 16 },
     actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
@@ -115,7 +116,7 @@ export function InlineEnhanceTray({
           placeholder={t.enhance.instructionPlaceholder}
           style={{
             backgroundColor: popover,
-            borderRadius: 12,
+            borderRadius: borderRadii.xl,
             color: textPrimary,
             fontSize: 15,
             lineHeight: 20,

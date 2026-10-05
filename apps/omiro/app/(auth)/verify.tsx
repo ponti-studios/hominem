@@ -168,7 +168,7 @@ function VerifyScreen() {
       gap: 4,
       paddingHorizontal: 8,
       paddingVertical: 3,
-      borderRadius: 8,
+      borderRadius: theme.borderRadii.lg,
       backgroundColor: theme.colors.card,
     },
     emailText: { ...theme.textVariants.body, fontWeight: '500', color: theme.colors.foreground },

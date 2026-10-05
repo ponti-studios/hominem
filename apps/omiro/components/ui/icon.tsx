@@ -9,12 +9,12 @@ type IconProps = Omit<SymbolViewProps, 'size'> & {
 };
 
 const AppIcon = ({ name, size = 24, style, tintColor, ...rest }: IconProps) => {
-  const { primary } = useAppTheme().colors;
+  const { foreground } = useAppTheme().colors;
   return (
     <SymbolView
       name={name}
       size={size}
-      tintColor={tintColor ?? primary}
+      tintColor={tintColor ?? foreground}
       style={[styles.container, [style]]}
       {...rest}
     />

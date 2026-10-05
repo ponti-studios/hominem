@@ -15,14 +15,14 @@ import { useAppTheme, useStyles } from '~/components/theme';
 // mapped to the design constitution's tokens. `outline` is the one variant
 // with a border -- the documented exception for a control that needs to
 // read as tappable without a solid fill.
-type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost';
+type ButtonVariant = 'primary' | 'ink' | 'secondary' | 'destructive' | 'outline' | 'ghost';
 
 interface ButtonProps {
   label: string;
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
   style?: StyleProp<ViewStyle>;
   variant?: ButtonVariant;
   testID?: string;
@@ -49,6 +49,8 @@ export function Button({
     destructive,
     border: borderDefault,
     foreground: textPrimary,
+    ink,
+    inkForeground,
   } = useAppTheme().colors;
 
   const colorTokens = useMemo(
@@ -59,8 +61,19 @@ export function Button({
       destructive,
       border: borderDefault,
       foreground: textPrimary,
+      ink,
+      'ink-foreground': inkForeground,
     }),
-    [primary, primaryForeground, muted, destructive, borderDefault, textPrimary],
+    [
+      primary,
+      primaryForeground,
+      muted,
+      destructive,
+      borderDefault,
+      textPrimary,
+      ink,
+      inkForeground,
+    ],
   );
 
   const variantStyles = useMemo<
@@ -68,6 +81,7 @@ export function Button({
   >(
     () => ({
       primary: { backgroundColor: colorTokens.primary },
+      ink: { backgroundColor: colorTokens.ink },
       secondary: { backgroundColor: colorTokens.muted },
       destructive: { backgroundColor: colorTokens.destructive },
       outline: {
@@ -83,6 +97,7 @@ export function Button({
   const textColor = useMemo<Record<ButtonVariant, string>>(
     () => ({
       primary: colorTokens['primary-foreground'],
+      ink: colorTokens['ink-foreground'],
       secondary: colorTokens.foreground,
       destructive: colorTokens['primary-foreground'],
       outline: colorTokens.foreground,
@@ -112,12 +127,15 @@ export function Button({
       alignItems: 'center',
       justifyContent: 'center',
       alignSelf: 'stretch',
-      borderRadius: theme.borderRadii.md,
+      borderCurve: 'continuous',
+      borderRadius: theme.borderRadii.pill,
     },
-    smallButton: { paddingVertical: 8, paddingHorizontal: 16, height: 36 },
-    mediumButton: { paddingVertical: 12, paddingHorizontal: 16, height: 44 },
-    smallText: { ...theme.textVariants.footnote, fontWeight: '600' },
-    mediumText: { ...theme.textVariants.body, fontWeight: '600', lineHeight: 20 },
+    smallButton: { paddingHorizontal: 16, height: 36 },
+    mediumButton: { paddingHorizontal: 20, height: 48 },
+    largeButton: { paddingHorizontal: 24, height: 56 },
+    smallText: { ...theme.textVariants.footnote, fontWeight: '700' },
+    mediumText: { ...theme.textVariants.body, fontWeight: '700', lineHeight: 20 },
+    largeText: { ...theme.textVariants.headline, fontWeight: '700', lineHeight: 22 },
   }));
 
   const isInteractionDisabled = disabled || loading;
@@ -139,14 +157,23 @@ export function Button({
       disabled={isInteractionDisabled}
       style={({ pressed }) => [
         styles.button,
-        size === 'sm' ? styles.smallButton : styles.mediumButton,
+        size === 'sm'
+          ? styles.smallButton
+          : size === 'lg'
+            ? styles.largeButton
+            : styles.mediumButton,
         ...pressableStyle({ pressed }),
       ]}
     >
       {loading ? (
         <ActivityIndicator color={textColor[variant]} size="small" />
       ) : (
-        <Text style={[size === 'sm' ? styles.smallText : styles.mediumText, resolvedTextStyle]}>
+        <Text
+          style={[
+            size === 'sm' ? styles.smallText : size === 'lg' ? styles.largeText : styles.mediumText,
+            resolvedTextStyle,
+          ]}
+        >
           {label}
         </Text>
       )}
