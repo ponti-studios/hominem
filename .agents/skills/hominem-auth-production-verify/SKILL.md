@@ -13,7 +13,7 @@ after a change.
 ## When to run this
 
 After any change to auth configuration or deployment topology for Career,
-Finance, or Web (served at `omiro.ponti.io`): env var edits (`HOMINEM_INTERNAL_API_URL`,
+Finance (currently stopped), or Web (served at `omiro.ponti.io`): env var edits (`HOMINEM_INTERNAL_API_URL`,
 `VITE_PUBLIC_API_URL`, `PUBLIC_APP_URL`), Better Auth cookie settings, or
 Railway service/network changes affecting these apps.
 

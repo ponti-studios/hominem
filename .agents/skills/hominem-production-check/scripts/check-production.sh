@@ -35,9 +35,15 @@ printf '%-14s %-38s %-10s %-10s\n' service deployment status instance
 
 service_rows=$(RAILWAY_CALLER="$caller" RAILWAY_AGENT_SESSION="$session" railway status --project "$project" --environment "$environment" --json \
   | jq -r '.environments.edges[]?.node.serviceInstances.edges[]?.node | [.serviceName,.latestDeployment.id,.latestDeployment.status,(.latestDeployment.instances[0].status // "NONE")] | @tsv')
+# Services that are stopped on purpose; remove a name here when it is restarted.
+stopped_services=' finance '
 failed=0
 while IFS=$'\t' read -r service deployment deployment_status instance_status; do
   [[ -z "$service" ]] && continue
+  if [[ "$stopped_services" == *" $service "* ]]; then
+    printf '%-14s %-38s %-10s %-10s\n' "$service" "$deployment" "STOPPED" "(intentional)"
+    continue
+  fi
   printf '%-14s %-38s %-10s %-10s\n' "$service" "$deployment" "$deployment_status" "$instance_status"
   # A REMOVED instance on a successful deployment is a stopped or sleeping service,
   # not an outage; the public-domain probes below carry the health signal for it.
@@ -65,7 +71,7 @@ check_domain() {
 
 check_domain api.ponti.io 200 ''
 check_domain career.ponti.io 200 ''
-check_domain finance.ponti.io 200 ''
+# finance.ponti.io is intentionally not probed: the finance service is stopped.
 check_domain labs.ponti.io 200 ''
 check_domain still.ponti.io 200 ''
 check_domain ponti.io 200 ''

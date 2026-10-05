@@ -276,5 +276,5 @@ repository and deployment rules remain here.
 
 ## Environment variables
 
-- **Dev Database**: `DATABASE_URL` on port `5434`; the database name in `services/api/.env.example` is `app`, while the `just db` recipes default to `hominem`. Set `DATABASE_URL` explicitly for every command rather than relying on either default.
+- **Dev Database**: `DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5434/hominem"`. Set `DATABASE_URL` explicitly for every command rather than relying on a default.
 - **Test Database**: `DATABASE_URL_TEST="postgresql://postgres:postgres@localhost:4433/hominem-test"`
