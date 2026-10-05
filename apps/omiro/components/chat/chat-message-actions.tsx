@@ -53,7 +53,11 @@ export function ActiveMessageActions({
     <Reanimated.View entering={entering} exiting={exiting} style={styles.actionContainer}>
       <Reanimated.View layout={layout}>
         <View style={[styles.actions, isUser && styles.actionsEnd]}>
-          {timestamp ? <Text style={{ color: tertiary, fontSize: 12 }}>{timestamp}</Text> : null}
+          {timestamp ? (
+            <Text style={{ color: tertiary, fontSize: 12, fontWeight: '600', marginRight: 6 }}>
+              {timestamp}
+            </Text>
+          ) : null}
           <ChatCopyButton message={message} />
           <ChatSpeakButton message={message} />
           <ChatShareButton message={message} />
@@ -71,7 +75,7 @@ export function ActiveMessageActions({
 }
 
 const styles = StyleSheet.create({
-  actionContainer: { marginTop: 4 },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  actionContainer: { marginTop: 2 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingLeft: 6 },
   actionsEnd: { justifyContent: 'flex-end' },
 });

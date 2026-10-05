@@ -21,18 +21,16 @@ export function MessageEditModal({
   onCancel: () => void;
   onSave: () => void;
 }) {
-  const { foreground: textPrimary, card, border: borderDefault } = useAppTheme().colors;
+  const { foreground: textPrimary, background } = useAppTheme().colors;
   const { borderRadii } = useAppTheme();
   const styles = useStyles((theme) => ({
     modalContainer: { paddingHorizontal: 20, width: '100%' },
     modalCard: {
-      backgroundColor: theme.colors.background,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: theme.borderRadii.md,
-      gap: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 16,
+      backgroundColor: theme.colors.card,
+      borderRadius: theme.borderRadii['2xl'],
+      boxShadow: theme.shadows.float,
+      gap: 14,
+      padding: 20,
       width: '100%',
     },
     modalActions: { flexDirection: 'row', gap: 8 },
@@ -49,7 +47,9 @@ export function MessageEditModal({
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalCard}>
-          <Text style={{ color: textPrimary, fontSize: 16 }}>{t.chat.messageEdit.title}</Text>
+          <Text style={{ color: textPrimary, fontSize: 20, fontWeight: '800' }}>
+            {t.chat.messageEdit.title}
+          </Text>
           <TextField
             multiline
             value={draftMessage}
@@ -58,15 +58,14 @@ export function MessageEditModal({
             selectionColor={textPrimary}
             cursorColor={textPrimary}
             style={{
-              borderRadius: borderRadii.md,
-              borderWidth: 1,
+              borderRadius: borderRadii.xl,
+              borderWidth: 0,
               fontSize: 16,
               minHeight: 90,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
+              paddingHorizontal: 16,
+              paddingVertical: 12,
               textAlignVertical: 'top',
-              backgroundColor: card,
-              borderColor: borderDefault,
+              backgroundColor: background,
               color: textPrimary,
             }}
           />

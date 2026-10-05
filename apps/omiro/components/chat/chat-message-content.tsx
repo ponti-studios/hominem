@@ -61,6 +61,9 @@ export function MessageContent({
   const markdownStyle = useMemo(
     () => ({
       body: textStyle,
+      // Paragraph spacing comes from the bottom margin only; the trailing one
+      // is cancelled by the wrapper below so the bubble hugs the text.
+      paragraph: { marginBottom: 10, marginTop: 0 },
       code_block: {
         backgroundColor: popover,
         borderRadius: borderRadii.lg,
@@ -92,7 +95,9 @@ export function MessageContent({
       {isStreaming || !Markdown ? (
         <Text style={textStyle}>{content}</Text>
       ) : (
-        createElement(Markdown, { style: markdownStyle, ...markdownChildren })
+        <View style={styles.markdown}>
+          {createElement(Markdown, { style: markdownStyle, ...markdownChildren })}
+        </View>
       )}
       {children}
     </View>
@@ -100,5 +105,6 @@ export function MessageContent({
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 8, width: '100%' },
+  content: { gap: 8 },
+  markdown: { marginBottom: -10 },
 });

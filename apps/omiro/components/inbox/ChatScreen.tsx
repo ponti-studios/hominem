@@ -43,6 +43,10 @@ function isNotFoundError(error: unknown): boolean {
 
 const NEW_SESSION_SOURCE: SessionSource = { kind: 'new' };
 
+// Approximate height of the generation row that sits on top of the dock; the
+// list reserves it while the keyboard lifts the dock over its content.
+const ACTIVITY_ROW_HEIGHT = 52;
+
 export function ChatScreen({ id }: { id: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -167,7 +171,13 @@ export function ChatScreen({ id }: { id: string }) {
     showDebug,
   });
 
-  const emptyState = <EmptyState sfSymbol="bubble.left" title={t.chat.emptyState.title} />;
+  const emptyState = (
+    <EmptyState
+      description={t.chat.emptyState.description}
+      sfSymbol="bubble.left"
+      title={t.chat.emptyState.title}
+    />
+  );
   const errorState = (
     <EmptyState
       action={{
@@ -231,7 +241,11 @@ export function ChatScreen({ id }: { id: string }) {
           </View>
         ) : null}
         <ChatMessageList
-          bottomInset={composerInset}
+          bottomInset={
+            composerInset > 0 && activeGeneration
+              ? composerInset + ACTIVITY_ROW_HEIGHT
+              : composerInset
+          }
           isMessagesLoading={isMessagesLoading}
           displayMessages={search.displayMessages}
           showSearch={search.showSearch}
@@ -254,18 +268,19 @@ export function ChatScreen({ id }: { id: string }) {
             }}
           />
         />
-        {activeGeneration ? (
-          <ChatActivityTimeline
-            generation={activeGeneration}
-            onCancel={() => {
-              void cancelActiveGeneration();
-            }}
-            onRetry={retryActiveGeneration}
-          />
-        ) : null}
         {!isConversationGone ? (
           <>
             <ComposerDock restingInset={restingInset} testID="chat-composer-dock">
+              {/* Inside the dock so it rides above the keyboard with the composer. */}
+              {activeGeneration ? (
+                <ChatActivityTimeline
+                  generation={activeGeneration}
+                  onCancel={() => {
+                    void cancelActiveGeneration();
+                  }}
+                  onRetry={retryActiveGeneration}
+                />
+              ) : null}
               <Composer mode="chat" chatId={chatId} chatSend={chatSend} />
             </ComposerDock>
             <View style={styles.overlayContainer} pointerEvents="box-none">
