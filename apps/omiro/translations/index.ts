@@ -86,6 +86,11 @@ const t = {
     thinkingIndicator: 'Thinking...',
     generation: {
       thinking: 'Thinking',
+      thinkingBar: 'Thinking…',
+      savingBar: 'Saving…',
+      stoppingBar: 'Stopping…',
+      failedBarDetail: 'Retry, or edit your message',
+      editA11y: 'Edit message',
       preparingDetail: 'Your message is saved. The reply will appear when it is ready.',
       saving: 'Saving reply',
       savingDetail: 'Making this reply durable.',

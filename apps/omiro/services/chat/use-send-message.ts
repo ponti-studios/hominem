@@ -61,6 +61,7 @@ export function useSendMessage({ chatId }: { chatId: string }) {
   }, [chatId, queryClient]);
   const {
     cancelGeneration,
+    dismissGeneration,
     generation,
     generationRef,
     regenerateGeneration,
@@ -249,6 +250,7 @@ export function useSendMessage({ chatId }: { chatId: string }) {
 
   return {
     cancelGeneration,
+    dismissGeneration,
     generation,
     isChatSending: mutation.isPending,
     retryFailedMessage: retryLastGeneration,

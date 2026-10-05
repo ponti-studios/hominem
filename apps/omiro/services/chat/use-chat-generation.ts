@@ -314,8 +314,11 @@ export function useChatGeneration({
     setGeneration({ ...current, stage: 'cancelled' });
   }, [chatId, client, setGeneration]);
 
+  const dismissGeneration = useCallback(() => setGeneration(null), [setGeneration]);
+
   return {
     cancelGeneration,
+    dismissGeneration,
     regenerateGeneration,
     sendGeneration,
     generation,

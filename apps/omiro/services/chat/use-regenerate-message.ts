@@ -20,12 +20,18 @@ export function useRegenerateMessage(chatId: string) {
   const handleGenerationTerminal = useCallback(async () => {
     await invalidateChatQueries(queryClient, chatId);
   }, [chatId, queryClient]);
-  const { cancelGeneration, generation, generationRef, regenerateGeneration, setGeneration } =
-    useChatGeneration({
-      chatId,
-      getAuthHeaders,
-      onGenerationTerminal: handleGenerationTerminal,
-    });
+  const {
+    cancelGeneration,
+    dismissGeneration,
+    generation,
+    generationRef,
+    regenerateGeneration,
+    setGeneration,
+  } = useChatGeneration({
+    chatId,
+    getAuthHeaders,
+    onGenerationTerminal: handleGenerationTerminal,
+  });
 
   const mutation = useMutation<void, Error, RegenerateInput>({
     retry: false,
@@ -119,5 +125,5 @@ export function useRegenerateMessage(chatId: string) {
     }
   }, [regenerateMessage]);
 
-  return { cancelGeneration, generation, regenerateMessage, retryGeneration };
+  return { cancelGeneration, dismissGeneration, generation, regenerateMessage, retryGeneration };
 }

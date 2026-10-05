@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, Text, View } from 'react-native';
 
 import {
-  ChatActivityTimeline,
+  ChatGenerationBar,
   ChatMessageList,
   ChatReviewOverlay,
   ChatSearchModal,
@@ -33,7 +33,11 @@ import {
 } from '~/services/chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
-import { clearResumeTarget, writeResumeTarget } from '~/services/navigation/launch-state';
+import {
+  clearResumeTarget,
+  writeChatDraft,
+  writeResumeTarget,
+} from '~/services/navigation/launch-state';
 import { NEW_CHAT_ROUTE, CHAT_ROUTE } from '~/services/navigation/routes';
 import t from '~/translations';
 
@@ -42,10 +46,6 @@ function isNotFoundError(error: unknown): boolean {
 }
 
 const NEW_SESSION_SOURCE: SessionSource = { kind: 'new' };
-
-// Approximate height of the generation row that sits on top of the dock; the
-// list reserves it while the keyboard lifts the dock over its content.
-const ACTIVITY_ROW_HEIGHT = 52;
 
 export function ChatScreen({ id }: { id: string }) {
   const router = useRouter();
@@ -106,6 +106,7 @@ export function ChatScreen({ id }: { id: string }) {
   // separate streams.
   const {
     cancelGeneration,
+    dismissGeneration,
     generation,
     sendChatMessage,
     isChatSending,
@@ -127,6 +128,7 @@ export function ChatScreen({ id }: { id: string }) {
 
   const {
     cancelGeneration: cancelRegeneration,
+    dismissGeneration: dismissRegeneration,
     generation: regeneration,
     regenerateMessage,
     retryGeneration,
@@ -134,6 +136,19 @@ export function ChatScreen({ id }: { id: string }) {
   const activeGeneration = generation ?? regeneration;
   const cancelActiveGeneration = generation ? cancelGeneration : cancelRegeneration;
   const retryActiveGeneration = generation ? retryLastGeneration : retryGeneration;
+  const dismissActiveGeneration = generation ? dismissGeneration : dismissRegeneration;
+  const failedMessageText =
+    activeGeneration?.stage === 'failed' && activeGeneration.userMessageId
+      ? messages.find((message) => message.id === activeGeneration.userMessageId)?.message
+      : undefined;
+  // Hands the failed message back to the composer: it reopens with the text
+  // restored, ready to edit and send again.
+  const editFailedMessage = useCallback(() => {
+    if (failedMessageText) {
+      writeChatDraft(chatId, failedMessageText);
+    }
+    dismissActiveGeneration();
+  }, [chatId, dismissActiveGeneration, failedMessageText]);
 
   const displayTitle = getChatTitle(activeChat?.title, extraction.resolvedSource);
 
@@ -241,11 +256,7 @@ export function ChatScreen({ id }: { id: string }) {
           </View>
         ) : null}
         <ChatMessageList
-          bottomInset={
-            composerInset > 0 && activeGeneration
-              ? composerInset + ACTIVITY_ROW_HEIGHT
-              : composerInset
-          }
+          bottomInset={composerInset}
           isMessagesLoading={isMessagesLoading}
           displayMessages={search.displayMessages}
           showSearch={search.showSearch}
@@ -271,17 +282,20 @@ export function ChatScreen({ id }: { id: string }) {
         {!isConversationGone ? (
           <>
             <ComposerDock restingInset={restingInset} testID="chat-composer-dock">
-              {/* Inside the dock so it rides above the keyboard with the composer. */}
+              {/* While a reply generates the composer flattens to one line
+                  (the bar), then springs back when it ends. */}
               {activeGeneration ? (
-                <ChatActivityTimeline
+                <ChatGenerationBar
                   generation={activeGeneration}
                   onCancel={() => {
                     void cancelActiveGeneration();
                   }}
+                  onEdit={failedMessageText ? editFailedMessage : undefined}
                   onRetry={retryActiveGeneration}
                 />
-              ) : null}
-              <Composer mode="chat" chatId={chatId} chatSend={chatSend} />
+              ) : (
+                <Composer mode="chat" chatId={chatId} chatSend={chatSend} />
+              )}
             </ComposerDock>
             <View style={styles.overlayContainer} pointerEvents="box-none">
               <ChatReviewOverlay
