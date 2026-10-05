@@ -14,38 +14,18 @@ pane's `preview_start` for anything you'll drive or screenshot in a browser.
 Stop services you started once you're done with them, unless the user is
 actively using them.
 
-`.claude/launch.json`'s `career`/`finance`/`web` entries open the Browser
-pane at `http://localhost:<port>`, not the portless `https://<name>.lvh.me`
-URL, even though `pnpm dev` itself still runs those apps through portless.
-The Claude Code (desktop app) Browser pane blocks JS/CSS/HMR asset requests
-to `*.lvh.me` outright, regardless of port. Confirmed empirically
-(2026-09-10) via `fetch()` run from inside the pane: requests to `lvh.me`,
-`web.lvh.me`, and `api.lvh.me` all fail the same way at both port 443 (the
-proxy's current port, see below) and port 4200 (its old port), while
-ordinary public domains (`example.com`, `google.com`) load fine in the same
-pane. That rules out port as the cause — this is a domain/TLD-based block,
-not a port-based one, and switching the proxy's port does not fix it. It
-matches the Consequences section of
-[the local dev domain ADR](../../../docs/decisions/auth.local-tld.md), which
-separately documented `.test`/`.localhost` loading freely in this same pane
-while `lvh.me`/`localtest.me` don't — consistent with an allowlist in the
-pane's own safety layer keyed on TLD.
-
-(A _different_, previously-observed restriction applies to a Claude Code
-cloud/remote session's own egress proxy, which does not support non-443
-HTTPS ports — see `/root/.ccr/README.md` inside such a session. That one is
-genuinely port-based, but it's a separate sandbox from the desktop Browser
-pane tested above; don't conflate the two.)
-
-Either way, loading the app's own fixed local port in the Browser pane
-avoids the block entirely. The tradeoff: `localhost` doesn't share the
-cross-subdomain `AUTH_COOKIE_DOMAIN=lvh.me` session cookie (see
-[docs/authentication.md](../../../docs/authentication.md)), so a login
-performed through the Browser pane on `localhost` won't persist across apps
-the way it does when testing directly against the portless `lvh.me` origins
-(e.g. via `curl`/Playwright, which aren't subject to the pane's block). For
-an authenticated preview, drive the portless origins directly instead of
-the Browser pane.
+`.claude/launch.json`'s `career`/`finance`/`web` entries open the Browser pane
+at `http://localhost:<port>`, not the portless `https://<name>.lvh.me` URL: the
+desktop Browser pane blocks asset requests to `lvh.me` (a domain block, not a
+port block; the evidence is in the Consequences section of
+[the local dev domain ADR](../../../docs/decisions/auth.local-tld.md)). Loading
+the app's fixed local port avoids the block, but `localhost` does not share the
+`AUTH_COOKIE_DOMAIN=lvh.me` session cookie (see
+[docs/authentication.md](../../../docs/authentication.md)), so a login there
+does not persist across apps. For an authenticated preview, drive the portless
+origins directly with `curl` or Playwright instead. A Claude Code cloud
+session's egress proxy has a separate, port-based restriction on non-443 HTTPS
+ports; don't conflate the two.
 
 ## First-time setup: env files in a new worktree
 
@@ -184,7 +164,10 @@ emit content-hashed assets plus a manifest under `dist/public`; no generated
 CSS or browser bundle is committed. `pnpm build --filter=@hominem/api...`
 builds those assets before bundling the API.
 
-## Smallest loop by default
+## Iteration loops
+
+These scoped commands are for iterating. They do not replace the completion
+gate below.
 
 1. `pnpm install`
 2. `pnpm --filter @hominem/api dev`
@@ -207,7 +190,7 @@ For Omiro work, use the app bootstrap loop in
 ## Canonical commands
 
 - `pnpm install` — install dependencies and prepare the repo toolchain
-- `pnpm run check` — full pre-push validation (lint → typecheck → build → test via turbo)
+- `pnpm run check` — the validation gate (`check:dts`, `tasks:check`, lint, build, typecheck, test via turbo); also run `pnpm format:check`
 - `pnpm dev` / `pnpm typecheck` / `pnpm build` / `pnpm test` — run for every package, or scope with `--filter=@hominem/<pkg>...`
 - `pnpm format` — apply formatting across the repo
 - `pnpm lint` / `pnpm lint:fix` — lint the repo, or lint and apply fixes
@@ -215,12 +198,16 @@ For Omiro work, use the app bootstrap loop in
 - `just db migrate [test]` — apply database migrations
 - `just db codegen` — regenerate database types against the caller's `DATABASE_URL`
 - `pnpm --filter @hominem/api merge-user-data` — dry-run-first, insert-only local-to-production user-data merge (see below)
-- `just mobile <action>` — Omiro run, rebuild, check, Maestro, and OTA commands
+- `just mobile <action>` — Omiro run, rebuild, check, Maestro, and OTA commands. Omiro releases are built and uploaded locally; see the `omiro-release` skill
 - `cd ~/Developer/infra/foundation && just up` / `just health` / `just down` — local infrastructure, including the OTLP Collector and Jaeger
 
-Use the smallest relevant validation command first (`pnpm lint`/`typecheck`/
-`build`/`test`, scoped with `--filter=@hominem/<package>...`), not `pnpm run check`
-for every small change.
+## Completion gate
+
+Scoped commands are for iteration. Before reporting any change complete, run
+the full gate from the root [AGENTS.md](../../../AGENTS.md) ("Full validation"
+and "Existing failures"): `pnpm run check` plus `pnpm format:check`, or the same
+checks scoped with `--filter=@hominem/<package>...` so dependents are included.
+Never use a filter to skip a check, and fix failures you did not cause.
 
 ## Local OpenTelemetry
 
@@ -260,7 +247,7 @@ pnpm dlx @railway/cli@5.25.1 connect database --tunnel-only --environment produc
 ## Development rules
 
 - Use `just` and the root `pnpm` scripts as the repository command interface. Package scripts are Turbo implementation details, not contributor instructions.
-- Start with the smallest relevant validation command: `pnpm lint`, `pnpm typecheck`, `pnpm build`, or `pnpm test`. Scope it with `--filter=@hominem/<package>...`, for example `--filter=@hominem/api...`.
+- Iterate with scoped commands (`pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, scoped with `--filter=@hominem/<package>...`), then run the full completion gate before calling the work done.
 - The monorepo resolves types through compiled declaration contracts, not source. Package `exports` `types` conditions point at `build/`, and declaration emit is a types-only artifact. Run `pnpm dev:types` alongside `pnpm dev` when editing shared types: composite packages are watched via `tsc -b`, while the API/RPC boundaries use declaration-only emit watchers. Runtime (tsx, metro, vite) runs from source and is unaffected. If a type change ripples further than one hop, restart the TypeScript server. See [docs/type-system.md](../../../docs/type-system.md) for the model, why the watcher is shaped the way it is, and what else was tried to speed up type-checking.
 - Published shared packages expose compiled artifacts. Local development may use source aliases for hot reload, but CI, deployables, EAS, and external consumers must use the same compiled public exports.
 - Keep the shared UI package registry-resolved in manifests and lockfiles. Use `just ui link [path]`, `just ui status`, and `just ui unlink` for a reversible local source link. Never commit the local path.
@@ -289,5 +276,5 @@ repository and deployment rules remain here.
 
 ## Environment variables
 
-- **Dev Database**: `DATABASE_URL="postgresql://postgres:postgres@localhost:5434/hominem"`
+- **Dev Database**: `DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5434/hominem"`. Set `DATABASE_URL` explicitly for every command rather than relying on a default.
 - **Test Database**: `DATABASE_URL_TEST="postgresql://postgres:postgres@localhost:4433/hominem-test"`

@@ -15,7 +15,7 @@ comments (Codex and Copilot routinely flag the same issue) into one
 distinct issue per underlying claim:
 
 ```bash
-gh api repos/ponti-studios/hominem/pulls/<N>/comments \
+gh api --paginate repos/ponti-studios/hominem/pulls/<N>/comments \
   --jq '.[] | "\(.id) | \(.path):\(.line // .original_line) | \(.user.login)"'
 gh pr view <N> --json reviews,comments --jq .
 gh pr checks <N>
@@ -71,16 +71,28 @@ gh api repos/ponti-studios/hominem/pulls/<N>/comments/<THREAD_ID>/replies \
 ```
 
 Keep replies to one or two sentences: verdict, commit or
-counter-evidence. Verify afterwards that every thread ID has exactly
-one human reply:
+counter-evidence. When an Auto-fix event asked for it, end each reply
+with the line `_🤖 Addressed by [Claude Code](https://claude.com/claude-code)_`.
+Verify afterwards that every thread ID has exactly one reply from you:
 
 ```bash
-gh api repos/ponti-studios/hominem/pulls/<N>/comments \
-  --jq '[.[] | select(.user.login == "charlesponti") | .in_reply_to_id] | sort'
+me=$(gh api user --jq .login)
+gh api --paginate repos/ponti-studios/hominem/pulls/<N>/comments \
+  --jq "[.[] | select(.user.login == \"$me\") | .in_reply_to_id] | sort"
 ```
+
+Resolve each thread you fixed or answered (replying does not resolve it).
+Look up thread node IDs and resolve them:
+
+```bash
+gh api graphql -f query='{repository(owner:"ponti-studios",name:"hominem"){pullRequest(number:<N>){reviewThreads(first:100){nodes{id isResolved comments(first:1){nodes{databaseId}}}}}}}'
+gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<THREAD_NODE_ID>"}){thread{isResolved}}}'
+```
+
+Leave threads that need the user's decision unresolved.
 
 ## 6. Report
 
-Per issue: verdict, fix commit or reply summary, validationEvidence,
+Per issue: verdict, fix commit or reply summary, validation evidence,
 and anything still unverified (usually the fresh CI run). Name the PR
 URL and any threads deliberately left for the user to decide.

@@ -57,22 +57,49 @@ for the evidence harness details.
 
 ## Release
 
-The production binary has one standard path:
+Omiro is built and shipped from the maintainer's machine, not through the paid
+EAS cloud workflow. The production binary goes out like this:
 
 ```text
-merge to main -> validate-mobile -> deploy-mobile -> approve in EAS -> build -> TestFlight
+merge to main -> just mobile check -> build:prod:local -> submit:local -> TestFlight
 ```
 
-Do not run a local release command for a normal release. For an approved
-JavaScript-only hotfix that does not change native dependencies or config, run:
+Run it from `apps/omiro` on an up-to-date `main` with a clean working tree (the build
+script refuses to run with uncommitted changes to tracked files, so the IPA always
+corresponds to a commit):
+
+```bash
+pnpm eas:pull:prod      # refreshes the gitignored .eas-prod.local
+pnpm build:prod:local   # verifies the production identity, writes build/prod-local.ipa
+pnpm submit:local       # re-checks the identity, uploads that IPA to App Store Connect
+```
+
+- The build needs Xcode, a signed-in `eas-cli`, and `.eas-prod.local` with
+  `SENTRY_AUTH_TOKEN` (an EAS Secret cannot be pulled, so keep it in that file). It runs
+  `verify:release` first and stops unless the app resolves to `Omiro` with
+  `com.pontistudios.hakumi` in production.
+- `eas build --local` compiles on this machine. EAS only assigns the build
+  number (`autoIncrement`) and hands the IPA to App Store Connect.
+- Apple processes the upload for 5-10 minutes and emails when it is ready in
+  [TestFlight](https://appstoreconnect.apple.com/apps/6760221796/testflight/ios).
+  Install it and exercise a Time request on a real device before announcing it.
+- Do not set `SENTRY_DISABLE_AUTO_UPLOAD` or `SENTRY_ALLOW_FAILURE` for a
+  TestFlight candidate: source maps and dSYMs must upload.
+- `expo doctor` runs during the build and may warn about patch-level package
+  mismatches. That does not stop the build.
+
+Do not use `.eas/workflows/production-release.yml` for a normal release; it
+runs the build on EAS. The `deploy-mobile` GitHub workflow that starts it is
+disabled (manual dispatch only). A JavaScript-only hotfix that does
+not change native dependencies or config can use an OTA update, which does go
+through an EAS workflow, so check the cost first:
 
 ```bash
 just mobile update "<message>"
 ```
 
-That workflow validates first, waits for approval, then publishes to the
-production update channel. Local IPA recovery procedures live only in the
-`omiro-release` operational runbook.
+The `omiro-release` skill has the full operational runbook, including
+verification steps and recovery.
 
 ## Useful commands
 
@@ -82,7 +109,9 @@ production update channel. Local IPA recovery procedures live only in the
 | Everyday JS/TS development                                 | `just mobile run`                         |
 | Format, lint, build API types, typecheck, test, and export | `just mobile check`                       |
 | Run Maestro evidence                                       | `just mobile maestro [flow-or-directory]` |
-| Publish an approved JS-only OTA                            | `just mobile update "<message>"`          |
+| Build the production IPA locally                           | `pnpm build:prod:local` (in `apps/omiro`) |
+| Upload that IPA to TestFlight                              | `pnpm submit:local` (in `apps/omiro`)     |
+| Publish an approved JS-only OTA (EAS workflow)             | `just mobile update "<message>"`          |
 
 ## Testing
 

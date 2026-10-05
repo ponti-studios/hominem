@@ -1,3 +1,4 @@
 interface:
   display_name: 'Hominem Production Check'
-  short_description: 'Help with Hominem Production Check tasks'
+  short_description: 'Read-only health check of production Railway services and public domains'
+  default_prompt: 'Run the Hominem production check, report each service deployment and domain probe, and flag anything unexpected without changing infrastructure.'

@@ -1,13 +1,15 @@
 ---
 name: omiro-release
-description: Prepare, build, and release Omiro through local EAS artifacts, GitHub validation/deployment, or approval-gated EAS workflows. Use for readiness, TestFlight, App Store, OTA, EAS builds, and release troubleshooting.
+description: Prepare, build, and release Omiro. Releases are built and uploaded from the maintainer's machine (local IPA, then TestFlight) so no EAS cloud build is paid for. Use for readiness, TestFlight, App Store, OTA, and release troubleshooting.
 ---
 
 # Omiro Release
 
 Use this skill for Omiro production readiness and releases. It owns preflight,
-local signed artifacts, GitHub-driven deployment, EAS workflows, TestFlight,
-and JS-only OTA updates.
+the local release (the default), TestFlight, and JS-only OTA updates. The
+maintainer ships mobile only from their own machine so they do not pay Expo for
+EAS cloud builds: when asked to release, deploy, or ship Omiro, use the local
+release path below, never the EAS cloud workflow.
 
 ## Authorization boundary
 
@@ -15,21 +17,23 @@ Preflight checks are read-only or local and may run when asked for release
 readiness. Building, publishing an OTA, uploading an IPA, merging/pushing to
 `main`, and triggering an EAS workflow change external state. Do those only
 when the user explicitly asks for that action. Never turn a readiness request
-into a release.
+into a release. A request to release, deploy, or ship Omiro is explicit for the
+local release, but confirm right before the upload to App Store Connect, since a
+submitted build cannot be un-submitted.
 
 ## Choose the path
 
 | Goal                                                    | Path                                                                    | Result                                                                               |
 | ------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | Determine release readiness                             | Preflight below                                                         | Evidence and blockers; no release                                                    |
-| Normal CI release from `main`                           | GitHub Actions                                                          | `validate-mobile` → `deploy-mobile` → EAS approval → TestFlight                      |
-| Create and upload an explicitly requested local IPA     | `pnpm build:prod:local`, then `pnpm submit:local`                       | Locally signed IPA → App Store Connect/TestFlight                                    |
-| Ship a JS-only fix                                      | `just mobile update "<message>"`                                        | EAS approval → production OTA channel                                                |
+| Release, deploy, or ship Omiro (default)                | [Local release](#local-release-the-default)                             | `pnpm build:prod:local` → `pnpm submit:local` → TestFlight                           |
+| Ship a JS-only fix                                      | `just mobile update "<message>"`                                        | EAS approval → production OTA channel (EAS workflow: check cost first)               |
 | Agent asks to commit, push, build, and submit in one go | [Commit → push → local build → submit](#commit-push-local-build-submit) | Working tree committed and pushed; locally signed IPA → App Store Connect/TestFlight |
+| EAS cloud release (only if asked for by name)           | [EAS cloud release](#eas-cloud-release-not-the-default)                 | `validate-mobile` → `deploy-mobile` → EAS approval → TestFlight                      |
 
 The cloud release workflow is
 `apps/omiro/.eas/workflows/production-release.yml`; the OTA workflow is
-`apps/omiro/.eas/workflows/ota-update.yml`.
+`apps/omiro/.eas/workflows/ota-update.yml`. Both run on EAS.
 
 For the detailed Sentry, production verification, local IPA, TestFlight, and
 OTA operational reference, read
@@ -81,27 +85,46 @@ Before recommending or starting a production release:
 For a readiness report, include blockers, commands/tests run, manual evidence,
 unverified scope, and the next authorized action.
 
-## GitHub and EAS cloud releases
+## EAS cloud release (not the default)
+
+The repository still has the GitHub-to-EAS path, but it builds on EAS and the
+maintainer does not use it. `deploy-mobile.yml` is disabled: it only runs on
+manual `workflow_dispatch`, and its `workflow_run` trigger must be restored
+before a `main` push can start an EAS build. Use this path only when the user
+asks for it by name.
 
 `validate-mobile.yml` runs for the configured Omiro/shared paths on pull
-requests and pushes to `main`. A successful `main` validation triggers
-`deploy-mobile.yml`, which checks out that validated SHA and starts the EAS
+requests and pushes to `main`. When enabled, a successful `main` validation
+triggers `deploy-mobile.yml`, which checks out that validated SHA and starts the EAS
 production-release workflow with `EXPO_TOKEN`. The EAS workflow waits for
-approval, builds iOS, asserts
-`com.pontistudios.hakumi` and store distribution, then submits to TestFlight.
-
-There is no routine local production-release command. Merging to `main` is the
-single standard trigger, and the EAS approval job is the human release gate.
-When recovering a failed trigger, rerun the exact validated SHA from GitHub or
-the EAS dashboard; do not assemble a separate build/submit sequence from a
-developer checkout.
+approval, builds iOS, asserts `com.pontistudios.hakumi` and store distribution,
+then submits to TestFlight. When recovering a failed trigger, rerun the exact
+validated SHA from GitHub or the EAS dashboard.
 
 The `build.base.pnpm` pin applies only to EAS build jobs. Submit and update
 jobs need their own Corepack hook in the workflow; preserve the existing hook
 and never loosen root pnpm supply-chain settings to work around a runner
 version mismatch.
 
-## Explicitly requested local IPA
+## Local release (the default)
+
+Run from `apps/omiro` on an up-to-date `main` with a clean working tree after the
+preflight passes. `pnpm build:prod:local` refuses to run with uncommitted changes to
+tracked files (override only with `OMIRO_ALLOW_DIRTY=1` when the user asks for it), so
+the IPA always corresponds to a commit:
+
+```bash
+pnpm eas:pull:prod      # refresh the gitignored .eas-prod.local
+pnpm build:prod:local   # verify identity, write build/prod-local.ipa
+pnpm submit:local       # re-check identity, upload to App Store Connect
+```
+
+`eas:pull:prod` copies the production environment's plain and sensitive
+variables into `.eas-prod.local`. An EAS Secret cannot be pulled, so
+`SENTRY_AUTH_TOKEN` must already be in that file if it is stored as a secret.
+Run the build and submit as separate steps and pause before the submit.
+Afterwards report the IPA path and the submission URL, and say that Apple is
+still processing the build; do not claim it is in TestFlight until it is.
 
 `pnpm build:prod:local` runs `apps/omiro/scripts/build-prod-local.sh`. It
 loads and exports gitignored `.eas-prod.local`, forces `APP_ENV=production`, checks
@@ -124,9 +147,9 @@ Connect credentials are available.
 
 Use this only when the user explicitly asks for exactly this sequence (e.g.
 "commit and push, build local, submit to EAS") — it is a convenience path for
-an agent shipping a locally signed IPA end-to-end, not a substitute for the
-normal `main` → `validate-mobile` → `deploy-mobile` CI release. It skips the
-CI validation gate, so only use it when the user asks for it by name.
+an agent shipping a locally signed IPA end-to-end from a working tree. Prefer
+releasing from merged `main` as above; this path skips the CI validation gate
+for the pushed commit, so only use it when the user asks for it.
 
 1. **Commit.** Load the `conventional-commit` skill and follow it exactly.
    Stage specific paths (never a blind `git add -A`/`-u`); review
@@ -164,6 +187,9 @@ or other native changes require a new store binary.
 
 ## Troubleshooting
 
+- **`expo doctor` fails during the build** with patch-level package version
+  mismatches: the build still completes. Treat it as dependency cleanup, not a
+  release blocker, unless the mismatch is a native module you changed.
 - **Wrong app identity / `-19000`**: an ambient `.env.*.local` value likely
   selected the dev app. Export `APP_ENV=production` before local EAS commands
   and trust the identity guard.

@@ -1,11 +1,16 @@
 name: deploy-finance
 
+# Disabled: the finance Railway service is intentionally stopped, so a merge to
+# main must not bring it back. Re-enable by restoring the workflow_run trigger:
+#
+#   on:
+#     workflow_run:
+#       workflows: [validate-finance]
+#       types: [completed]
+#       branches: [main]
+#     workflow_dispatch:
 on:
-  workflow_run:
-    workflows: [validate-finance]
-    types: [completed]
-    branches: [main]
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 concurrency:
   group: deploy-finance

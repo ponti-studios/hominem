@@ -1,12 +1,13 @@
 # Pre-Push Validation
 
-Run the full validation suite before opening a PR or pushing to main:
+Before reporting any change complete, and before opening a PR or pushing to main, run the full gate:
 
 ```bash
 pnpm run check
+pnpm format:check
 ```
 
-This runs `pnpm check:dts && pnpm lint && pnpm build && pnpm typecheck && pnpm test` across all workspaces, with `DATABASE_URL` set (see the root `check` script in `package.json`).
+`pnpm run check` runs `check:dts`, `tasks:check`, lint, build, typecheck, and test across all workspaces, with `DATABASE_URL` set (see the root `check` script in `package.json`). It does not run `format:check`, so run that separately. Failures you did not cause are still yours to fix.
 
 If it fails, triage in this order:
 
@@ -15,13 +16,14 @@ If it fails, triage in this order:
 3. **Build errors** — check for missing exports or broken package references
 4. **Test failures** — ensure the test DB is up and migrations are applied (`just db migrate test`)
 
-For a faster per-package check on the API only:
+While iterating, scope to one package and its dependents (never to skip a check):
 
 ```bash
 pnpm lint --filter=@hominem/api...
 pnpm typecheck --filter=@hominem/api...
 pnpm build --filter=@hominem/api...
 pnpm test --filter=@hominem/api...
+pnpm format:check --filter=@hominem/api...
 ```
 
 ## Build order after changing a `services/api` route or schema
