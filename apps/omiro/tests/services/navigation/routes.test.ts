@@ -6,6 +6,7 @@ import {
   NEW_CHAT_ROUTE,
   SETTINGS_ROUTE,
   STREAM_ROUTE,
+  TASKS_ROUTE,
   TIME_ROUTE,
   getContentRoute,
   getTimeBlockRoute,
@@ -15,8 +16,9 @@ describe('protected routes', () => {
   it('builds the canonical Chat, Stream, and Time routes', () => {
     expect(HOME_ROUTE).toBe('/(protected)');
     expect(NEW_CHAT_ROUTE).toBe('/(protected)/new-chat');
-    expect(STREAM_ROUTE).toBe('/(protected)/stream');
-    expect(TIME_ROUTE).toBe('/(protected)/time');
+    expect(STREAM_ROUTE).toBe('/(protected)/(tabs)/stream');
+    expect(TIME_ROUTE).toBe('/(protected)/(tabs)/time');
+    expect(TASKS_ROUTE).toBe('/(protected)/(tabs)/tasks');
     expect(SETTINGS_ROUTE).toBe('/(protected)/settings');
     expect(ARCHIVED_CHATS_ROUTE).toBe('/(protected)/chats/archived');
     expect(getContentRoute('chat', 'chat-1')).toBe('/(protected)/chats/chat-1');

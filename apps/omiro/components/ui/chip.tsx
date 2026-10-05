@@ -10,12 +10,12 @@ interface ChipProps {
   label: string;
   onPress?: () => void;
   // 'ink' is the inverted, selected look; 'tonal' sits on a card or sheet.
-  tone?: 'ink' | 'tonal' | 'outline';
+  tone?: 'ink' | 'tonal' | 'outline' | 'card';
   testID?: string;
 }
 
 export function Chip({ icon, label, onPress, testID, tone = 'tonal' }: ChipProps) {
-  const { background, border, foreground, ink, inkForeground } = useAppTheme().colors;
+  const { background, border, card, foreground, ink, inkForeground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     chip: {
       alignItems: 'center',
@@ -32,9 +32,11 @@ export function Chip({ icon, label, onPress, testID, tone = 'tonal' }: ChipProps
   const surface =
     tone === 'ink'
       ? { backgroundColor: ink }
-      : tone === 'outline'
-        ? { backgroundColor: 'transparent', borderColor: border, borderWidth: 1.5 }
-        : { backgroundColor: background };
+      : tone === 'card'
+        ? { backgroundColor: card }
+        : tone === 'outline'
+          ? { backgroundColor: 'transparent', borderColor: border, borderWidth: 1.5 }
+          : { backgroundColor: background };
   const color = tone === 'ink' ? inkForeground : foreground;
   const content = (
     <>

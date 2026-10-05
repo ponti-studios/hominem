@@ -33,7 +33,7 @@ token that carries text.
 - `Checkbox`: chunky square, lime when done, with a UI-thread pop.
 - `BottomSheet`: the modal surface (scrim, spring slide, drag to dismiss).
 - `Card`: 22 px radius, no border.
-- `TextField`, `ListRow`, `EmptyState`, `SegmentedControl`: tokenized radii.
+- `TextField`, `ListRow`, `EmptyState`: tokenized radii.
 
 ## Rules
 

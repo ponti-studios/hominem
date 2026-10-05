@@ -37,15 +37,19 @@ The implemented protected routes are:
 | Route                           | Responsibility                                                 |
 | ------------------------------- | -------------------------------------------------------------- |
 | `/(protected)`                  | Compatibility/home route; redirects to `/(protected)/stream`.  |
-| `/(protected)/stream`           | Mixed content stream with `All`, `Chats`, and `Notes` filters. |
+| `/(protected)/(tabs)/stream`    | Stream tab: mixed content with `All`, `Chats`, `Notes` chips.  |
 | `/(protected)/new-chat`         | Empty chat-start surface with an optional `seed` parameter.    |
 | `/(protected)/chats/[id]`       | Chat detail and message generation.                            |
 | `/(protected)/chats/archived`   | Archived chat list.                                            |
 | `/(protected)/notes/[id]`       | Note detail and editing.                                       |
-| `/(protected)/time`             | Day-at-a-time Time screen and natural-language capture bar.    |
-| `/(protected)/time/unscheduled` | Tasks page (open tasks, in-app detail sheet).                  |
+| `/(protected)/(tabs)/time`      | Time tab: day-at-a-time screen and natural-language capture.   |
+| `/(protected)/(tabs)/tasks`     | Tasks tab (open tasks, in-app detail sheet).                   |
 | `/(protected)/time/event/[id]`  | Calendar-event deep link (opens Apple's native editor).        |
 | `/(protected)/settings`         | Protected form-sheet settings surface.                         |
+
+Navigation is three native bottom tabs (Stream, Time, Tasks) with native
+headers; pushed detail screens (chat, note) hide the tab bar, and Settings
+opens from the header profile button.
 
 Settings, enhance, and chat-to-note surfaces use native form-sheet
 presentations. Navigation helpers in `services/navigation/routes.ts` are the

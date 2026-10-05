@@ -4,8 +4,8 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useTabBarInset } from '~/components/navigation/tab-bar-inset';
 import { useStyles } from '~/components/theme';
 import { IconButton } from '~/components/ui';
 import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
@@ -44,13 +44,12 @@ function useNow(intervalMs: number) {
 interface TimeScreenProps {
   // Set by a `?prompt=` link; prefills the capture bar (see use-time-prompt-param).
   initialPrompt?: string;
-  topInset?: number;
 }
 
-export function TimeScreen({ initialPrompt, topInset = 0 }: TimeScreenProps = {}) {
+export function TimeScreen({ initialPrompt }: TimeScreenProps = {}) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { bottom: safeAreaBottom } = useSafeAreaInsets();
+  const safeAreaBottom = useTabBarInset();
   const now = useNow(NOW_TICK_MS);
   const data = useTimeData();
   const { mutate: toggleTask } = useTaskComplete();
@@ -246,7 +245,7 @@ export function TimeScreen({ initialPrompt, topInset = 0 }: TimeScreenProps = {}
       justifyContent: 'space-between',
       paddingBottom: 14,
       paddingHorizontal: 20,
-      paddingTop: topInset + 12,
+      paddingTop: 12,
     },
     weekday: {
       ...theme.textVariants.subhead,

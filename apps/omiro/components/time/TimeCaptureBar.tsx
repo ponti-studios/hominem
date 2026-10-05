@@ -3,10 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 import type { TextInput as RNTextInput } from 'react-native';
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useVoiceComposerInput } from '~/components/composer/useVoiceComposerInput';
 import { getVoiceComposerErrorPresentation } from '~/components/composer/voiceComposerInput.helpers';
+import { useTabBarInset } from '~/components/navigation/tab-bar-inset';
 import { fontFamilies, useAppTheme, useStyles, withAlpha } from '~/components/theme';
 import { Chip } from '~/components/ui';
 import AppIcon from '~/components/ui/icon';
@@ -43,7 +43,7 @@ interface TimeCaptureBarProps {
 // request is in flight the bar itself shows progress (no separate screen);
 // results arrive in a sheet (see TimeResultSheet).
 export function TimeCaptureBar({ controller }: TimeCaptureBarProps) {
-  const { bottom: safeAreaBottom } = useSafeAreaInsets();
+  const safeAreaBottom = useTabBarInset();
   const theme = useAppTheme();
   const { cancelProcessing, interaction, isSaving, processingStage, prompt, setPrompt, ask } =
     controller;

@@ -5,7 +5,13 @@ import { redirectSystemPath } from '~/app/+native-intent';
 describe('native Time intents', () => {
   it('rewrites task deep links to the Tasks list route', () => {
     expect(redirectSystemPath({ initial: true, path: 'time/task/task-1' })).toBe(
-      '/(protected)/time/unscheduled',
+      '/(protected)/(tabs)/tasks',
+    );
+  });
+
+  it('rewrites the old unscheduled-tasks link to the Tasks tab', () => {
+    expect(redirectSystemPath({ initial: true, path: 'time/unscheduled' })).toBe(
+      '/(protected)/(tabs)/tasks',
     );
   });
 

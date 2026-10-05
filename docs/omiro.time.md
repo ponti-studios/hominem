@@ -7,9 +7,14 @@ calendar data.
 
 ## Routes and screen composition
 
-- `/(protected)/time` renders `TimeScreen`.
-- `/(protected)/time/unscheduled` renders `TasksScreen`: every open task in the
-  same card style, with the in-app task detail sheet.
+- Stream, Time, and Tasks are the three native bottom tabs (`NativeTabs` in
+  `app/(protected)/(tabs)/_layout.tsx`); each owns a `Stack` with a native
+  header. The `(tabs)` group is not part of the URL.
+- `/(protected)/(tabs)/time` renders `TimeScreen`. Content docked to the bottom
+  edge adds `useTabBarInset()` so it clears the floating tab bar.
+- `/(protected)/(tabs)/tasks` renders `TasksScreen`: every open task in the
+  same card style, with the in-app task detail sheet. (`time/unscheduled` deep
+  links are rewritten to it.)
 - `/(protected)/time/[source]/[id]` is a deep-link route for calendar events
   only; it presents Apple's native editor and returns to Time. Tasks have no
   route: tapping one opens `TimeTaskDetailSheet` in place.
