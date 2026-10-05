@@ -9,6 +9,10 @@ only, `.agents/skills/run-omiro/driver.sh` wraps the underlying Expo and
 simulator operations so an agent does not have to babysit background processes
 or guess simulator UDIDs.
 
+In a Claude Code session, the iOS Simulator tool can also attach a live view,
+screenshot, and tap or type on an already-booted simulator; use `driver.sh` for
+the build, Metro, and env setup it does not cover.
+
 All paths below are relative to the repo root. macOS + Xcode + a simulator
 runtime are required — there is no Linux/headless path for iOS Simulator
 builds.

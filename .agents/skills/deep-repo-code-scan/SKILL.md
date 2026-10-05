@@ -33,7 +33,7 @@ rg -n "useQuery|useMutation|invalidateQueries|setQueryData|cancelQueries" .
 rg -n "fetch\(|client\.api|authClient|axios|XMLHttpRequest" .
 rg -n "AbortController|onSettled|retry|isPending|isFetching|isSaving|isLoading" .
 rg -n "\.filter\([^\n]*\)\.map|\.map\([^\n]*\)\.filter|\.flatMap\([^\n]*\)\.filter" .
-rg -n "await [^;]+;" apps packages services
+rg -U -n "await [^\n]+;\n\s*(const|let)?[^\n]*await " apps packages services   # back-to-back awaits that may be independent
 ```
 
 These are leads, not automatic violations. Verify ownership and behavior before changing code.

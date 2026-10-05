@@ -10,7 +10,7 @@
 #   driver.sh launch      # (re)launch the already-installed app, connecting to Metro
 #   driver.sh screenshot [path]   # capture simulator screen
 #   driver.sh status      # show simulator/metro/api state
-#   driver.sh all         # env -> boot -> build -> metro -> launch -> screenshot
+#   driver.sh all         # env -> boot -> metro -> build -> launch -> screenshot
 
 set -euo pipefail
 cd "$(dirname "$0")/../../../apps/omiro"   # -> apps/omiro
@@ -41,7 +41,8 @@ cmd_env() {
     sed -i '' '/^EXPO_PUBLIC_SENTRY_DSN=/d' .env.development.local
     log "removed placeholder EXPO_PUBLIC_SENTRY_DSN (invalid URL fails schema)"
   fi
-  cat .env.development.local
+  # Print the keys only: the file can hold secrets.
+  sed -E 's/=.*/=<set>/' .env.development.local
 }
 
 cmd_boot() {

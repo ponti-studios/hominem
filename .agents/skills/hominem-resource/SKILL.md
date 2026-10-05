@@ -37,8 +37,9 @@ argumentHint: the resource (domain) to add to the hominem API
 
 # Add an API resource to hominem
 
-A resource (e.g. `calendar`, `people`, `career`) is exposed over **two required outward
-surfaces, plus an optional third**:
+A resource (e.g. `calendar`, `people`, `career`) has **one shared service layer** and is exposed
+through whichever of these surfaces it needs. A resource can be MCP-only or RPC-only; every
+surface that exists must be a thin adapter over that one service:
 
 1. **MCP tools** — `services/api/src/mcp/tools/*.ts`, called by AI clients via `callTool`.
 2. **RPC routes** — `services/api/src/rpc/routes/*.ts`, plain HTTP JSON under `/api`, called by web/mobile clients.
@@ -93,8 +94,11 @@ DB (packages/db)  →  schemas/  ←  application/*.service.ts  →  mcp/tools  
      `app.` prefix (`app.people`, `app.events`, ...). `app.*` tables are RLS-forced; the service
      role bypasses RLS, so **scope every query by `ownerUserid`** — a caller must never see
      another user's rows.
-   - Throw typed errors from `@hominem/db` (`NotFoundError`, `ValidationError`, ...) rather than
-     returning error shapes; both adapters surface them consistently.
+   - Errors: throw `ValidationError` (and a create-time reference failure) rather than returning
+     error shapes. For an expected "not found" on an owner-scoped lookup, follow the convention
+     of the surfaces the resource has: a service that backs an MCP tool returns `null` / `false`
+     (as `notes`, `task`, and `possessions` do; see the `hominem-mcp-tool` skill), and the RPC
+     route turns that into `NotFoundError` (404). An RPC-only service may throw `NotFoundError`.
    - Keep list results bounded (apply a `limit`) so the MCP `resultCap` never trips.
    - Timestamps come back as raw Postgres strings (e.g. `2026-07-10 09:00:00+00`), not ISO,
      because `packages/db/src/db.ts` registers pg type parsers that return strings. Design your
@@ -108,7 +112,7 @@ DB (packages/db)  →  schemas/  ←  application/*.service.ts  →  mcp/tools  
      calendarEventsInputSchema,
      calendarEventsOutputSchema,
    } from '../../schemas/calendar.schema';
-   import { registerTool } from '../tools';
+   import { registerTool } from '../tool-registry';
 
    registerTool(
      {
@@ -126,18 +130,23 @@ DB (packages/db)  →  schemas/  ←  application/*.service.ts  →  mcp/tools  
    );
    ```
 
-   Wire the scope(s) in three places (see `calendar:read` / `travel:read` as the precedent):
-   - `services/api/src/auth/better-auth.ts` — add the scope to the `MCP_SCOPES` array.
-   - `services/api/src/mcp/routes.ts` — gate the tool file import on the scope:
-     `if (enabledScopes.size === 0 || enabledScopes.has('<scope>')) { await import('./tools/<domain>'); }`
-   - The tool's own `scopes` array — `mcp/server.ts` enforces that the caller holds **every**
-     listed scope (`hasRequiredScopes` uses `every`). A cross-domain tool (e.g. `person_timeline`
-     reads people + calendar + travel) must list all of them.
+   Wire the scope(s) and the tool import in three places, and keep each tool's own `scopes` array
+   accurate. The `hominem-mcp-tool` skill owns the details (use `task:read` / `task:write` as the
+   precedent):
+   - `services/api/src/application/capability.ts` — add the domain to `CAPABILITIES` (new domain).
+   - `services/api/src/scopes.ts` — add `<domain>:read` / `<domain>:write` to `MCP_SCOPES`;
+     `better-auth.ts` imports it for OAuth discovery.
+   - `services/api/src/mcp/register-tools.ts` — gate the tool file import on the scope with
+     `if (isEnabled('<domain>:read', '<domain>:write')) imports.push(import('./tools/<domain>'));`.
+   - The tool's own `scopes` array — the server enforces that the caller holds **every** listed
+     scope. A cross-domain tool (e.g. `person_timeline` reads people + calendar + travel) must
+     list all of them.
 
 5. **RPC adapter** (`rpc/routes/<domain>.ts`): Hono routes calling the same service.
-   - Response shape: `return c.json(outputSchema.parse(result));` — flat, no envelope. This is the
-     convention in `tasks.ts`, `notes.ts`, `collections.ts`, `chats.ts`, and every other route file
-     but one.
+   - Response shape: flat, no envelope. When the shared output schema is also the MCP contract,
+     `return c.json(outputSchema.parse(result));`. Otherwise return the repository DTO directly
+     (`c.json(toNoteDto(note))`) or a small object (`{ removed }`, `{ success: true }`), as
+     `tasks.ts`, `notes.ts`, and `collections.ts` do.
    - Do NOT use `parseDataEnvelope`/`{ data }` (`../response`) for a new resource. It exists for
      exactly one legacy route (`personal.ts`). Copying it for a new resource is a defect.
 
@@ -237,7 +246,7 @@ DB (packages/db)  →  schemas/  ←  application/*.service.ts  →  mcp/tools  
      don't just trust a `{ removed: true }` return value).
    - **MCP** (`mcp/tools/<domain>.test.ts`) — mirror `mcp/tools/people.test.ts` / `calendar.test.ts`:
      same `beforeAll`/`afterAll` setup, then `await import('./<domain>')`,
-     `await callTool(userId, '<tool>', input)` from `'../tools'`, and assert
+     `await callTool(userId, '<tool>', input)` from `'../tool-registry'`, and assert
      `res.structuredContent`. Assert exact timestamp strings in the DB's raw format.
    - **RPC** (`rpc/routes/<domain>.test.ts`) — mirror `rpc/routes/personal.test.ts`: build a Hono
      app with `requestIdMiddleware`, `apiErrorHandler`, `validationErrorMiddleware`, mount the
@@ -265,7 +274,8 @@ DB (packages/db)  →  schemas/  ←  application/*.service.ts  →  mcp/tools  
    pnpm exec oxfmt <changed files> --write      # oxfmt: single quotes, sorted imports
    ```
 
-   Then run `pnpm run check` before opening a PR.
+   Then run the full completion gate before reporting the work done: `pnpm run check` and
+   `pnpm format:check` (see `hominem-workflow`).
 
 ## Invariants to enforce in review
 
@@ -281,10 +291,10 @@ DB (packages/db)  →  schemas/  ←  application/*.service.ts  →  mcp/tools  
   invariant, not universal presence on both transports.
 - Every query is scoped by `ownerUserid` (multi-tenant correctness; `app.*` is RLS-forced).
 - Read-only operations use `readOnly: true`; write operations must declare write scopes
-  (e.g. `tags:write`) and gate their file import on them in `mcp/routes.ts`.
+  (e.g. `tags:write`) and gate their file import on them in `mcp/register-tools.ts`.
 - `resultCap` >= the largest array the tool can return, and list queries carry a `limit`.
-- New MCP scopes are added to `MCP_SCOPES` (advertised in OAuth discovery), gated in
-  `mcp/routes.ts`, and reflected in the `WWW-Authenticate` scope string asserted by
+- New MCP scopes are added to `MCP_SCOPES` in `scopes.ts` (advertised in OAuth discovery), gated in
+  `mcp/register-tools.ts`, and reflected in the `WWW-Authenticate` scope string asserted by
   `mcp/server.test.ts`.
 - Keep responses to the shared output schema; let `callTool`/`outputSchema.parse(result)` do the
   validation rather than hand-assembling payloads.
@@ -296,7 +306,7 @@ DB (packages/db)  →  schemas/  ←  application/*.service.ts  →  mcp/tools  
 
 - Goose migrations + type regen: `just db migrate` + `just db codegen` (see
   the `hominem-database` skill).
-- Full pre-push validation: `pnpm run check`.
+- Full completion gate: `pnpm run check` and `pnpm format:check` (see the `hominem-workflow` skill).
 - Warehouse (legacy SQLite data source): cross-check the warehouse schema
   directly when a new resource maps to tables that still exist in
   `~/Developer/warehouse`.

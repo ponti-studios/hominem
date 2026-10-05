@@ -1,6 +1,6 @@
 ---
 name: hominem-auth-production-verify
-description: Verify production web authentication (Career, Finance, Notes) after changing auth config or deployment topology. Use after touching HOMINEM_INTERNAL_API_URL, VITE_PUBLIC_API_URL, PUBLIC_APP_URL, Better Auth cookie settings, or Railway service topology for these apps.
+description: Verify production web authentication (Career, Finance, Web) after changing auth config or deployment topology. Use after touching HOMINEM_INTERNAL_API_URL, VITE_PUBLIC_API_URL, PUBLIC_APP_URL, Better Auth cookie settings, or Railway service topology for these apps.
 ---
 
 # Hominem production auth verification
@@ -13,13 +13,13 @@ after a change.
 ## When to run this
 
 After any change to auth configuration or deployment topology for Career,
-Finance, or Notes: env var edits (`HOMINEM_INTERNAL_API_URL`,
+Finance, or Web (served at `omiro.ponti.io`): env var edits (`HOMINEM_INTERNAL_API_URL`,
 `VITE_PUBLIC_API_URL`, `PUBLIC_APP_URL`), Better Auth cookie settings, or
 Railway service/network changes affecting these apps.
 
 ## Verification steps
 
-1. Visit a protected Career or Finance route in a browser and confirm it
+1. Visit a protected Career, Finance, or Web route in a browser and confirm it
    redirects to the API hosted `/login` page (`https://api.ponti.io/login`).
 2. Submit the OTP there and confirm the API response sets Better Auth session
    cookies (`Domain=.ponti.io`, `Secure`, `HttpOnly`, `SameSite=Lax`) accepted

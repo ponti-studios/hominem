@@ -44,7 +44,12 @@ tools and complete the Hominem email-OTP login/consent flow.
   token as plain text (re-check after every redeploy — a stale secret is a
   silent submission blocker).
 
-OAuth request scope: `openid profile email offline_access career:read career:write`.
+OAuth request scope: confirm the exact string against the submission copy in
+[docs/chatgpt-plugin/README.md](../../../docs/chatgpt-plugin/README.md) before
+submitting. The server advertises `openid profile email offline_access` plus every
+scope in `MCP_SCOPES` (`services/api/src/scopes.ts`), and the plugin's tools are
+career-only, so the requested scopes should be the career pair
+(`career:read career:write`) unless the listing says otherwise.
 
 ## After directory approval
 

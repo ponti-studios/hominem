@@ -39,7 +39,10 @@ failed=0
 while IFS=$'\t' read -r service deployment deployment_status instance_status; do
   [[ -z "$service" ]] && continue
   printf '%-14s %-38s %-10s %-10s\n' "$service" "$deployment" "$deployment_status" "$instance_status"
-  if [[ "$deployment_status" != SUCCESS || "$instance_status" != RUNNING ]]; then failed=1; fi
+  # A REMOVED instance on a successful deployment is a stopped or sleeping service,
+  # not an outage; the public-domain probes below carry the health signal for it.
+  if [[ "$deployment_status" != SUCCESS ]]; then failed=1
+  elif [[ "$instance_status" != RUNNING && "$instance_status" != REMOVED ]]; then failed=1; fi
 done <<<"$service_rows"
 
 echo
@@ -50,7 +53,7 @@ check_domain() {
   local host=$1 expected_code=$2 expected_location=$3 headers code location
   headers=$(curl -sS -D - -o /dev/null --max-time 15 --max-redirs 0 "https://$host/" 2>/dev/null || true)
   code=$(awk '/^HTTP\//{value=$2} END{print value}' <<<"$headers")
-  location=$(awk 'BEGIN{IGNORECASE=1}/^location:/{print substr($0,11)}' <<<"$headers" | tr -d '\r')
+  location=$(awk 'tolower($0) ~ /^location:/{print substr($0,11)}' <<<"$headers" | tr -d '\r')
   printf '%-22s %-6s %-52s\n' "$host" "${code:-ERR}" "${location:-—}"
   [[ "$code" == "$expected_code" ]] || { failed=1; return; }
   case "$expected_location" in
@@ -62,7 +65,9 @@ check_domain() {
 
 check_domain api.ponti.io 200 ''
 check_domain career.ponti.io 200 ''
+check_domain finance.ponti.io 200 ''
 check_domain labs.ponti.io 200 ''
+check_domain still.ponti.io 200 ''
 check_domain ponti.io 200 ''
 check_domain omiro.ponti.io 302 'prefix:https://api.ponti.io/login?'
 check_domain what.ponti.io 302 'exact:/reality'

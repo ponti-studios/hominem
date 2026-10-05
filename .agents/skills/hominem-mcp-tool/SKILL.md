@@ -146,6 +146,9 @@ This lets a `preview` function and a write tool's handler treat "not found" as o
 (`{ task: null }` / `{ removed: false }`) instead of an MCP error. `NotFoundError` has correct
 `Object.setPrototypeOf`, so `instanceof NotFoundError` is safe to rely on.
 
+If the same service also backs an RPC route, the route maps the `null` / `false` back to
+`NotFoundError` (404); see the `hominem-resource` skill.
+
 Exception: a _create_-time reference check (e.g. an invalid `parentTaskId`) is a genuine client
 error, not a "used to exist" case — leave that one throwing.
 
@@ -327,7 +330,8 @@ pnpm typecheck
 pnpm exec oxfmt <changed files> --write
 ```
 
-Run `pnpm run check` before opening a PR.
+Run the full completion gate before reporting the work done: `pnpm run check` and
+`pnpm format:check` (see the `hominem-workflow` skill).
 
 ## Invariants to enforce in review
 
@@ -347,4 +351,4 @@ Run `pnpm run check` before opening a PR.
 
 - Full resource pattern (MCP + RPC + web client): `hominem-resource` skill.
 - Goose migrations + type regen for new tables/columns: `hominem-database` skill.
-- Full pre-push validation: `pnpm run check`.
+- Full completion gate: `pnpm run check` and `pnpm format:check` (see the `hominem-workflow` skill).

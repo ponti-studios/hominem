@@ -28,10 +28,13 @@ already exists for the area you're touching before inventing a new one.
 2. Stage the intended files (never `git add -A` unless everything is
    intentionally included).
 3. Read the staged diff with `git diff --cached` and draft the message from it.
-4. Commit with a single-line message, e.g.:
+4. Commit with a conventional subject line, e.g.:
 
 ```bash
 git commit -m "feat(api): add finance MCP tools for hominem-owned finance surface"
 ```
+
+Add a body when the reason is not obvious from the subject, and any trailer
+the session requires (for example `Co-Authored-By`).
 
 5. Do not push unless the user asked you to push.
