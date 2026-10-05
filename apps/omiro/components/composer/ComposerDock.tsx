@@ -3,49 +3,48 @@ import { View } from 'react-native';
 import { KeyboardStickyView, useKeyboardState } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { getFloatingDockInset } from './composerDock.helpers';
+import {
+  getDockKeyboardOffset,
+  getDockRestingInset,
+  getFloatingDockInset,
+} from './composerDock.helpers';
+
+// Gap between a pushed screen's home indicator and the floating composer.
+const DEFAULT_CLEARANCE = 8;
 
 interface ComposerDockProps {
   children: ReactNode;
-  onHeightChange?: (height: number) => void;
-  safeAreaBottom: number;
+  // From useComposerDockMetrics: the distance from the screen's bottom edge
+  // to the composer's bottom edge while the keyboard is closed.
+  restingInset: number;
   testID?: string;
 }
 
-export function useComposerDockMetrics() {
+// `clearance` is the extra space under the composer beyond the home
+// indicator: tab screens pass their tab bar's clearance, pushed screens keep
+// the default.
+export function useComposerDockMetrics({ clearance = DEFAULT_CLEARANCE } = {}) {
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardState((state) => state.height);
+  const restingInset = getDockRestingInset({ clearance, safeAreaBottom: insets.bottom });
   return {
-    inset: getFloatingDockInset({ keyboardHeight, safeAreaBottom: insets.bottom }),
-    safeAreaBottom: insets.bottom,
+    inset: getFloatingDockInset({ keyboardHeight, restingInset }),
+    restingInset,
   };
 }
 
-// The dock floats over whatever scrollable content sits behind it, so that
-// content needs its own bottom inset equal to the dock's rendered height --
-// `useComposerDockMetrics().inset` only covers the extra space the keyboard
-// eats into beyond the safe area, not the dock itself. Callers should add
-// this measured height on top of that inset, or the last row(s) of their
-// list sit permanently half-hidden under the dock at rest.
-export function ComposerDock({
-  children,
-  onHeightChange,
-  safeAreaBottom,
-  testID,
-}: ComposerDockProps) {
+// The composer floats: it keeps its own margin from the screen edges and
+// rides above the keyboard (see getDockKeyboardOffset) instead of resizing
+// the screen. It sits in flow at the bottom of its screen, so at rest the
+// content above it is already bounded; callers add `inset` from
+// useComposerDockMetrics for the keyboard-lifted overlap only.
+export function ComposerDock({ children, restingInset, testID }: ComposerDockProps) {
   return (
     <KeyboardStickyView
-      offset={{ closed: 0, opened: safeAreaBottom }}
-      onLayout={
-        onHeightChange
-          ? (event) => {
-              onHeightChange(event.nativeEvent.layout.height);
-            }
-          : undefined
-      }
+      offset={{ closed: 0, opened: getDockKeyboardOffset(restingInset) }}
       testID={testID}
     >
-      <View>{children}</View>
+      <View style={{ paddingBottom: restingInset, paddingHorizontal: 12 }}>{children}</View>
     </KeyboardStickyView>
   );
 }

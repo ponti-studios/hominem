@@ -14,7 +14,7 @@ import { getContentRoute } from '~/services/navigation/routes';
 export function NewChatScreen() {
   const router = useRouter();
   const { seed } = useLocalSearchParams<{ seed?: string }>();
-  const { safeAreaBottom } = useComposerDockMetrics();
+  const { restingInset } = useComposerDockMetrics();
   const initialMessage = seed?.trim() || readNewChatDraft();
   const styles = useStyles((theme) => ({
     container: { backgroundColor: theme.colors.background, flex: 1 },
@@ -24,7 +24,7 @@ export function NewChatScreen() {
   return (
     <View style={styles.container} testID="new-chat-screen">
       <View style={styles.content} />
-      <ComposerDock safeAreaBottom={safeAreaBottom} testID="new-chat-composer-dock">
+      <ComposerDock restingInset={restingInset} testID="new-chat-composer-dock">
         <Composer
           entryMode="chat"
           initialMessage={initialMessage}

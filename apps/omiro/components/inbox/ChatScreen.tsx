@@ -48,7 +48,7 @@ export function ChatScreen({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const { data: activeChat, error: activeChatError } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
-  const { inset: composerInset, safeAreaBottom } = useComposerDockMetrics();
+  const { inset: composerInset, restingInset } = useComposerDockMetrics();
   const [showDebug, setShowDebug] = useState(false);
   const { isOnline } = useNetworkStatus();
   const styles = useStyles((theme) => ({
@@ -265,7 +265,7 @@ export function ChatScreen({ id }: { id: string }) {
         ) : null}
         {!isConversationGone ? (
           <>
-            <ComposerDock safeAreaBottom={safeAreaBottom} testID="chat-composer-dock">
+            <ComposerDock restingInset={restingInset} testID="chat-composer-dock">
               <Composer mode="chat" chatId={chatId} chatSend={chatSend} />
             </ComposerDock>
             <View style={styles.overlayContainer} pointerEvents="box-none">

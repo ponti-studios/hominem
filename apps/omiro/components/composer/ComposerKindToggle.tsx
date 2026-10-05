@@ -8,13 +8,13 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { useAppTheme, useStyles } from '~/components/theme';
+import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 import type { ComposerEntryKind } from './composer.types';
 
-const SEGMENT_SIZE = 26;
+const SEGMENT_SIZE = 34;
 const TRACK_PADDING = 2;
 // Matches the app's motion guidelines for on-screen movement (--ease-in-out).
 const MOVE_EASING = Easing.bezier(0.77, 0, 0.175, 1);
@@ -40,12 +40,12 @@ const options: { kind: ComposerEntryKind; label: string; icon: SFSymbol; iconFil
 // control. The thumb sliding between them is what makes the switch legible.
 export function ComposerKindToggle({ selected, onSelect }: ComposerKindToggleProps) {
   const theme = useAppTheme();
-  const { card, foreground, mutedForeground, muted } = theme.colors;
+  const { inkForeground, primary, primaryForeground } = theme.colors;
   const styles = useStyles(() => ({
     control: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: muted,
+      backgroundColor: withAlpha(inkForeground, 0.16),
       borderRadius: 999,
       borderCurve: 'continuous',
       padding: TRACK_PADDING,
@@ -73,10 +73,9 @@ export function ComposerKindToggle({ selected, onSelect }: ComposerKindTogglePro
         pointerEvents="none"
         style={[
           {
-            backgroundColor: card,
+            backgroundColor: primary,
             borderCurve: 'continuous',
             borderRadius: 999,
-            boxShadow: theme.shadows.sm,
             height: SEGMENT_SIZE,
             left: TRACK_PADDING,
             position: 'absolute',
@@ -105,8 +104,8 @@ export function ComposerKindToggle({ selected, onSelect }: ComposerKindTogglePro
           >
             <AppIcon
               name={isSelected ? option.iconFilled : option.icon}
-              size={14}
-              tintColor={isSelected ? foreground : mutedForeground}
+              size={16}
+              tintColor={isSelected ? primaryForeground : withAlpha(inkForeground, 0.75)}
             />
           </Pressable>
         );

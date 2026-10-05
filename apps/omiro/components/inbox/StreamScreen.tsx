@@ -39,8 +39,9 @@ interface StreamScreenProps {
 }
 
 export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
-  const { inset: composerInset, safeAreaBottom } = useComposerDockMetrics();
-  const [composerHeight, setComposerHeight] = useState(0);
+  const { inset: composerInset, restingInset } = useComposerDockMetrics({
+    clearance: 16,
+  });
   const inbox = useInboxStreamItems();
   const { isFetching: isFetchingTasks, refetch: refetchTasks } = useTasksQuery();
   const styles = useStyles((theme) => ({
@@ -53,7 +54,6 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
   }));
 
   const items = useMemo(() => filterItems(inbox.items, filter), [inbox.items, filter]);
-  const composerSpace = composerInset + composerHeight;
 
   // Seeded with whatever the first settled render holds (including empty),
   // then grows with every commit -- the same gating ChatMessageList uses so
@@ -86,11 +86,11 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
     <View style={styles.container} testID="stream-screen">
       <FlashList
         style={styles.list}
-        // Real reserved space, not `contentInset` -- inset only affects
-        // overscroll/bounce boundaries on iOS, so it can't keep a row that
-        // lands at a normal (non-bounced) resting scroll position from
-        // ending up underneath the floating composer dock.
-        contentContainerStyle={[styles.content, { paddingBottom: composerSpace }]}
+        // The dock sits in flow below the list, so at rest nothing overlaps
+        // the last row. Real reserved space (not `contentInset`, which only
+        // affects overscroll) covers the dock riding up over the list while
+        // the keyboard is open.
+        contentContainerStyle={[styles.content, { paddingBottom: composerInset + 16 }]}
         contentInsetAdjustmentBehavior="automatic"
         data={items}
         keyExtractor={(item) => item.id}
@@ -122,14 +122,10 @@ export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
           }}
         />
         renderItem={renderItem}
-        scrollIndicatorInsets={{ bottom: composerSpace }}
+        scrollIndicatorInsets={{ bottom: composerInset }}
         showsVerticalScrollIndicator={false}
       />
-      <ComposerDock
-        onHeightChange={setComposerHeight}
-        safeAreaBottom={safeAreaBottom}
-        testID="stream-composer-dock"
-      >
+      <ComposerDock restingInset={restingInset} testID="stream-composer-dock">
         <Composer
           entryMode="mixed"
           initialMessage={readAllDraft()}
