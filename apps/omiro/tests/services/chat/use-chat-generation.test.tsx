@@ -287,7 +287,7 @@ describe('useChatGeneration', () => {
     );
     expect(result.current.generation).toMatchObject({
       id: 'generation-1',
-      stage: 'saving',
+      stage: 'running',
       lastDurableSequence: 13,
     });
   });

@@ -8,6 +8,7 @@ import { useAuth } from '~/services/auth/auth-provider';
 import { chatKeys } from '~/services/notes/query-keys';
 
 import { invalidateChatQueries } from './chat-cache';
+import { toGenerationStage } from './chat-generation';
 import { useChatGeneration } from './use-chat-generation';
 import { toMessageOutput } from './use-chat-messages';
 
@@ -57,7 +58,7 @@ export function useRegenerateMessage(chatId: string) {
         }
         setGeneration({
           ...current,
-          stage: state.phase === 'cancel_requested' ? 'stopping' : state.phase,
+          stage: toGenerationStage(state.phase),
           lastDurableSequence: state.lastDurableSequence,
         });
         if ('event' in event) {

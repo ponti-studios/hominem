@@ -134,7 +134,7 @@ describe('useSendMessage', () => {
         payload: { type: 'generation.phase_changed', phase: 'saving' },
       });
     });
-    await waitFor(() => expect(result.current.generation).toMatchObject({ stage: 'saving' }));
+    await waitFor(() => expect(result.current.generation).toMatchObject({ stage: 'running' }));
 
     act(() => {
       pending?.onEvent({

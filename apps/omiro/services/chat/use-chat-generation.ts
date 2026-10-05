@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { API_BASE_URL } from '~/constants';
 import { storage } from '~/services/storage/mmkv';
 
-import type { ChatGenerationState } from './chat-generation';
+import { toGenerationStage, type ChatGenerationState } from './chat-generation';
 import { takeGenerationHandoff, type PendingGenerationHandoff } from './generation-handoff';
 
 const resumingGenerationIds = new Set<string>();
@@ -52,7 +52,7 @@ function restoreGeneration(chatId: string): ChatGenerationState | null {
     return {
       id: checkpoint.generationId,
       chatId,
-      stage: checkpoint.phase === 'cancel_requested' ? 'stopping' : checkpoint.phase,
+      stage: toGenerationStage(checkpoint.phase),
       lastDurableSequence: checkpoint.lastDurableSequence,
       ...(userMessageId ? { userMessageId } : {}),
     };
@@ -172,7 +172,7 @@ export function useChatGeneration({
       initialGeneration: {
         id: state.generationId,
         chatId,
-        stage: state.phase === 'cancel_requested' ? 'stopping' : state.phase,
+        stage: toGenerationStage(state.phase),
         lastDurableSequence: state.lastDurableSequence,
         ...(taken.userMessageId ? { userMessageId: taken.userMessageId } : {}),
       },
@@ -216,7 +216,7 @@ export function useChatGeneration({
         }
         setGeneration({
           ...current,
-          stage: state.phase === 'cancel_requested' ? 'stopping' : state.phase,
+          stage: toGenerationStage(state.phase),
           lastDurableSequence: state.lastDurableSequence,
         });
       });

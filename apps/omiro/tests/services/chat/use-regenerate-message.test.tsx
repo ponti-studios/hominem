@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import type { GenerationEvent } from '@hominem/chat';
+import type { GenerationEvent, GenerationPhase } from '@hominem/chat';
 import type { ChatMessageDto } from '@hominem/rpc/types';
 import { waitFor } from '@testing-library/react';
 import { act, useState } from 'react';
@@ -51,11 +51,12 @@ vi.mock('~/services/chat/use-chat-generation', () => ({
       mockGenerationRef.current = initial;
       let listener:
         | ((
-            state: { phase: ChatGenerationState['stage']; lastDurableSequence: number },
+            state: { phase: GenerationPhase; lastDurableSequence: number },
             event: GenerationEvent,
           ) => void)
         | null = null;
-      let currentPhase = initial.stage;
+      let currentPhase: GenerationPhase =
+        initial.stage === 'stopping' ? 'cancel_requested' : initial.stage;
       return {
         subscribe: (next: typeof listener) => {
           listener = next;
@@ -66,15 +67,13 @@ vi.mock('~/services/chat/use-chat-generation', () => ({
         start: async () => {
           await mockConsumeSseXhr({
             onEvent: (event: GenerationEvent) => {
-              const phase: ChatGenerationState['stage'] =
+              const phase: GenerationPhase =
                 event.type === 'generation.cancelled'
                   ? 'cancelled'
                   : event.type === 'generation.committed'
                     ? 'committed'
                     : event.type === 'generation.phase_changed'
-                      ? event.payload.phase === 'cancel_requested'
-                        ? 'stopping'
-                        : event.payload.phase
+                      ? event.payload.phase
                       : 'running';
               currentPhase = phase;
               listener?.({ phase, lastDurableSequence: event.sequence ?? 0 }, event);
@@ -90,14 +89,12 @@ vi.mock('~/services/chat/use-chat-generation', () => ({
       createGeneration: createMockGeneration,
       regenerateGeneration: (_input: unknown, initial: ChatGenerationState) => {
         const controller = createMockGeneration(initial);
-        let resolveDone!: (state: { phase: ChatGenerationState['stage']; error: null }) => void;
+        let resolveDone!: (state: { phase: GenerationPhase; error: null }) => void;
         let rejectDone!: (error: unknown) => void;
-        const done = new Promise<{ phase: ChatGenerationState['stage']; error: null }>(
-          (resolve, reject) => {
-            resolveDone = resolve;
-            rejectDone = reject;
-          },
-        );
+        const done = new Promise<{ phase: GenerationPhase; error: null }>((resolve, reject) => {
+          resolveDone = resolve;
+          rejectDone = reject;
+        });
         queueMicrotask(() => {
           void controller.start().then(resolveDone, rejectDone);
         });

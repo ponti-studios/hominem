@@ -46,16 +46,10 @@ export function ChatGenerationBar({
       ) : isStopping ? (
         <StoppingBar />
       ) : (
-        <WorkingBar label={getWorkingLabel(generation)} onCancel={onCancel} />
+        <WorkingBar onCancel={onCancel} />
       )}
     </Animated.View>
   );
-}
-
-function getWorkingLabel(generation: ChatGenerationState) {
-  return generation.stage === 'saving'
-    ? t.chat.generation.savingBar
-    : t.chat.generation.thinkingBar;
 }
 
 function useBarStyles() {
@@ -137,7 +131,7 @@ function useBarStyles() {
   }));
 }
 
-function WorkingBar({ label, onCancel }: { label: string; onCancel: () => void }) {
+function WorkingBar({ onCancel }: { onCancel: () => void }) {
   const styles = useBarStyles();
   const { lime } = useAppTheme().colors;
   return (
@@ -148,7 +142,11 @@ function WorkingBar({ label, onCancel }: { label: string; onCancel: () => void }
     >
       <Stripes />
       <View style={styles.grow}>
-        <ShimmerText fade={lime} label={label} style={styles.workingLabel} />
+        <ShimmerText
+          fade={lime}
+          label={t.chat.generation.thinkingBar}
+          style={styles.workingLabel}
+        />
       </View>
       <Pressable
         accessibilityLabel={t.chat.generation.stopA11y}
