@@ -1,6 +1,5 @@
-import { StackScreen } from 'expo-router/build/layouts/stack-utils';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { useStyles } from '~/components/theme';
 import type { TaskListItem } from '~/services/tasks/task-types';
@@ -36,8 +35,6 @@ export function TasksScreen() {
 
   return (
     <View style={styles.container} testID="unscheduled-tasks-screen">
-      <StackScreen options={{ headerShown: false }} />
-      <Text style={styles.title}>Tasks</Text>
       <TimeTaskList
         contentPaddingBottom={48}
         emptyText="You have no open tasks."

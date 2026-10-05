@@ -5,6 +5,7 @@ import { RefreshControl, View } from 'react-native';
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
 import { useStyles } from '~/components/theme';
+import { Chip } from '~/components/ui';
 import { useInboxStreamItems } from '~/services/inbox/use-inbox-stream-items';
 import { clearAllDraft, readAllDraft, writeAllDraft } from '~/services/navigation/launch-state';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
@@ -32,10 +33,10 @@ function filterItems(items: InboxStreamItemData[], filter: StreamFilter): InboxS
 
 interface StreamScreenProps {
   filter: StreamFilter;
-  topInset?: number;
+  onFilterChange: (filter: StreamFilter) => void;
 }
 
-export function StreamScreen({ filter, topInset = 0 }: StreamScreenProps) {
+export function StreamScreen({ filter, onFilterChange }: StreamScreenProps) {
   const { inset: composerInset, safeAreaBottom } = useComposerDockMetrics();
   const [composerHeight, setComposerHeight] = useState(0);
   const inbox = useInboxStreamItems();
@@ -87,12 +88,11 @@ export function StreamScreen({ filter, topInset = 0 }: StreamScreenProps) {
         // overscroll/bounce boundaries on iOS, so it can't keep a row that
         // lands at a normal (non-bounced) resting scroll position from
         // ending up underneath the floating composer dock.
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: topInset, paddingBottom: composerSpace },
-        ]}
+        contentContainerStyle={[styles.content, { paddingBottom: composerSpace }]}
+        contentInsetAdjustmentBehavior="automatic"
         data={items}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent=<StreamFilterChips onChange={onFilterChange} value={filter} />
         ListEmptyComponent={!inbox.isInitialLoading ? <StreamEmptyState filter={filter} /> : null}
         onEndReached={() => {
           if (inbox.hasNextPage && !inbox.isFetchingNextPage) {
@@ -124,6 +124,31 @@ export function StreamScreen({ filter, topInset = 0 }: StreamScreenProps) {
           onDraftChange={writeAllDraft}
         />
       </ComposerDock>
+    </View>
+  );
+}
+
+function StreamFilterChips({
+  onChange,
+  value,
+}: {
+  onChange: (filter: StreamFilter) => void;
+  value: StreamFilter;
+}) {
+  const styles = useStyles(() => ({
+    row: { flexDirection: 'row', gap: 8, paddingBottom: 8, paddingHorizontal: 16, paddingTop: 4 },
+  }));
+  return (
+    <View style={styles.row} testID="stream-filter">
+      {streamFilterOptions.map((option) => (
+        <Chip
+          key={option.key}
+          label={option.label}
+          onPress={() => onChange(option.key)}
+          testID={`stream-filter-${option.key}`}
+          tone={option.key === value ? 'ink' : 'card'}
+        />
+      ))}
     </View>
   );
 }

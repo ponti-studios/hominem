@@ -24,7 +24,7 @@ appId: com.pontistudios.hakumi.dev
 - tapOn:
     text: Close
     optional: true
-- openLink: hakumi-dev:///time/unscheduled
+- openLink: hakumi-dev:///tasks
 - extendedWaitUntil:
     visible:
       id: unscheduled-tasks-screen

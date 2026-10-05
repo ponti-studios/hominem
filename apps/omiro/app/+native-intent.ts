@@ -2,7 +2,7 @@ import {
   NEW_CHAT_ROUTE,
   SETTINGS_ROUTE,
   STREAM_ROUTE,
-  UNSCHEDULED_ROUTE,
+  TASKS_ROUTE,
   getContentRoute,
   getTimeBlockRoute,
 } from '~/services/navigation/routes';
@@ -27,11 +27,15 @@ export function redirectSystemPath({
     return `/(auth)/${normalized}`;
   }
 
-  // Tasks no longer have an in-app detail screen -- send task deep links to
-  // the Tasks list instead, where the reminder can be opened in Reminders.app.
+  // The Tasks list moved from /time/unscheduled to its own tab.
+  if (normalized.startsWith('time/unscheduled')) {
+    return TASKS_ROUTE;
+  }
+
+  // Task deep links open the Tasks tab, where the task has its detail sheet.
   const taskBlockMatch = normalized.match(/^time\/task\/([^?]+)/);
   if (taskBlockMatch) {
-    return UNSCHEDULED_ROUTE;
+    return TASKS_ROUTE;
   }
 
   const eventBlockMatch = normalized.match(/^time\/event\/([^?]+)/);
