@@ -5,8 +5,8 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { getRecordingSnapshot, subscribeRecording } from '~/components/media/audio.service';
 import { useAppTheme, useStyles } from '~/components/theme';
 
-const BAR_COUNT = 24;
-const BAR_MAX_HEIGHT = 20;
+const BAR_COUNT = 16;
+const BAR_MAX_HEIGHT = 28;
 const BAR_MIN_HEIGHT = 3;
 
 // iOS AVAudioRecorder metering is dBFS, roughly -160 (silence) to 0 (max
@@ -39,7 +39,7 @@ function LevelBar({ db, tintColor }: LevelBarProps) {
 
   return (
     <Animated.View
-      style={[levelBarStyles.bar, [{ maxWidth: 3, backgroundColor: tintColor }, animatedStyle]]}
+      style={[levelBarStyles.bar, [{ maxWidth: 4, backgroundColor: tintColor }, animatedStyle]]}
     />
   );
 }
@@ -49,13 +49,13 @@ const levelBarStyles = StyleSheet.create({
 });
 
 export function RecordingLevelMeter() {
-  const { primary: primaryColor } = useAppTheme().colors;
+  const { barAccent } = useAppTheme().colors;
   const styles = useStyles(() => ({
     meter: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      gap: 2,
+      gap: 3,
       width: '100%',
     },
   }));
@@ -73,7 +73,7 @@ export function RecordingLevelMeter() {
   return (
     <View style={[styles.meter, { height: BAR_MAX_HEIGHT }]}>
       {bars.map((db, index) => (
-        <LevelBar key={index} db={db} tintColor={primaryColor} />
+        <LevelBar key={index} db={db} tintColor={barAccent} />
       ))}
     </View>
   );

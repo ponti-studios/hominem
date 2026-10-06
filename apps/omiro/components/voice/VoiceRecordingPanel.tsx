@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -7,8 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
-import { IconButton } from '~/components/ui';
+import { useAppTheme, useStyles } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { RecordingLevelMeter } from '~/components/voice/RecordingLevelMeter';
 import { useElapsedTimer } from '~/components/voice/useElapsedTimer';
@@ -17,34 +16,48 @@ import t from '~/translations';
 interface VoiceRecordingPanelProps {
   startedAt: number | null;
   onCancel: () => void;
-  onDone?: () => void;
+  onDone: () => void;
   doneAccessibilityLabel?: string;
-  // 'ink' for panels that sit on the inverted floating composer surface.
-  tone?: 'default' | 'ink';
 }
 
+// Recording, as the composer flattened into one 44px row: cancel on the left,
+// a dot, the timer and the live waveform in the middle, a coral stop on the
+// right. It sits on the fixed dark bar, so it uses the bar tokens only.
 export function VoiceRecordingPanel({
   startedAt,
   onCancel,
   onDone,
   doneAccessibilityLabel,
-  tone = 'default',
 }: VoiceRecordingPanelProps) {
-  const {
-    card: cardColor,
-    destructive: destructiveColor,
-    barForeground,
-    mutedForeground,
-  } = useAppTheme().colors;
-  const onInk = tone === 'ink';
-  const pillColor = onInk ? withAlpha(barForeground, 0.16) : cardColor;
-  const textSecondaryColor = onInk ? barForeground : mutedForeground;
-  const iconTint = onInk ? barForeground : undefined;
-  const styles = useStyles(() => ({
-    recordingDot: { width: 8, height: 8, borderRadius: 999 },
-    recordingContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%' },
-    recordingContent: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-    meterContainer: { flex: 1 },
+  const { barForeground } = useAppTheme().colors;
+  const styles = useStyles((theme) => ({
+    row: { alignItems: 'center', flexDirection: 'row', gap: 10, width: '100%' },
+    cancel: {
+      alignItems: 'center',
+      backgroundColor: theme.colors.barControl,
+      borderRadius: 22,
+      height: 44,
+      justifyContent: 'center',
+      width: 44,
+    },
+    status: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10 },
+    dot: { backgroundColor: theme.colors.coral, borderRadius: 999, height: 10, width: 10 },
+    timer: {
+      color: theme.colors.barForeground,
+      fontSize: 15,
+      fontVariant: ['tabular-nums'],
+      fontWeight: '700',
+      minWidth: 36,
+    },
+    meter: { flex: 1 },
+    stop: {
+      alignItems: 'center',
+      backgroundColor: theme.colors.coral,
+      borderRadius: 22,
+      height: 44,
+      justifyContent: 'center',
+      width: 44,
+    },
   }));
   const elapsed = useElapsedTimer(startedAt);
   const dotOpacity = useAnimatedStyle(() => ({
@@ -56,53 +69,32 @@ export function VoiceRecordingPanel({
   }));
 
   return (
-    <View style={styles.recordingContainer}>
-      <IconButton
+    <View style={styles.row}>
+      <Pressable
         accessibilityLabel={t.inboxComposer.composer.cancelRecordingA11y}
-        testID="composer-cancel-recording-button"
+        accessibilityRole="button"
         onPress={onCancel}
+        style={styles.cancel}
+        testID="composer-cancel-recording-button"
       >
-        <AppIcon name="xmark" size={20} tintColor={iconTint} />
-      </IconButton>
-      {/* Fills the row between cancel and stop, mirroring the idle row's
-          [attach] [text, flex-1] [mic] layout. */}
-      <View
-        style={[
-          styles.recordingContent,
-          {
-            height: 44,
-            paddingHorizontal: 16,
-            borderRadius: 22,
-            backgroundColor: pillColor,
-          },
-        ]}
-      >
-        <Animated.View
-          style={[styles.recordingDot, [{ backgroundColor: destructiveColor }, dotOpacity]]}
-        />
-        <Text
-          style={{
-            color: textSecondaryColor,
-            fontSize: 13,
-            fontVariant: ['tabular-nums'],
-            minWidth: 34,
-          }}
-        >
-          {elapsed}
-        </Text>
-        <View style={styles.meterContainer}>
+        <AppIcon name="xmark" size={18} tintColor={barForeground} />
+      </Pressable>
+      <View style={styles.status}>
+        <Animated.View style={[styles.dot, dotOpacity]} />
+        <Text style={styles.timer}>{elapsed}</Text>
+        <View style={styles.meter}>
           <RecordingLevelMeter />
         </View>
       </View>
-      {onDone ? (
-        <IconButton
-          accessibilityLabel={doneAccessibilityLabel ?? t.inboxComposer.composer.stopVoiceInputA11y}
-          testID="composer-stop-recording-button"
-          onPress={onDone}
-        >
-          <AppIcon name="stop.fill" size={20} tintColor={onInk ? destructiveColor : undefined} />
-        </IconButton>
-      ) : null}
+      <Pressable
+        accessibilityLabel={doneAccessibilityLabel ?? t.inboxComposer.composer.stopVoiceInputA11y}
+        accessibilityRole="button"
+        onPress={onDone}
+        style={styles.stop}
+        testID="composer-stop-recording-button"
+      >
+        <AppIcon name="stop.fill" size={18} tintColor={barForeground} />
+      </Pressable>
     </View>
   );
 }

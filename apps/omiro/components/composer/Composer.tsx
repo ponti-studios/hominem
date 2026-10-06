@@ -107,6 +107,8 @@ function ComposerContent(props: ComposerProps) {
       boxShadow: currentTheme.shadows.bar,
     },
     surfaceContent: { gap: 8, paddingBottom: 8, paddingHorizontal: 16, paddingTop: 14 },
+    // Recording is one 44px row in a 56px bar, the height of every other bar.
+    surfaceRecording: { gap: 0, padding: 6 },
   }));
   const prefersReducedMotion = useReducedMotion();
 
@@ -135,7 +137,7 @@ function ComposerContent(props: ComposerProps) {
         style={styles.surface}
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
       >
-        <View style={styles.surfaceContent}>
+        <View style={[styles.surfaceContent, isRecording && styles.surfaceRecording]}>
           {controller.showAttachments ? <ComposerAttachmentRow /> : undefined}
           {errorBanner ? (
             // Split: entering/exiting on the outer view, layout on the inner
@@ -160,7 +162,6 @@ function ComposerContent(props: ComposerProps) {
                 onDone={() => {
                   void controller.voice.handleVoicePress();
                 }}
-                tone="ink"
               />
             </Animated.View>
           ) : (
