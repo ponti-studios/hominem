@@ -20,8 +20,7 @@ dropped.
   actions: Done, Move (to tomorrow or a picked day), Drop.
 - A task carried over more than a few times asks "Still real?" instead of
   carrying on a fourth time. The answer is Move or Drop; there is no "keep".
-- Drop removes the task from the view and completes it in Reminders as dropped,
-  so nothing disappears silently.
+- Drop deletes the task.
 
 ## Not doing
 
@@ -31,10 +30,11 @@ dropped.
 
 ## Today
 
-Nothing handles overdue tasks. A past-due reminder is a normal row in the list.
+Built. A task from an earlier day shows under Carried over with Done, Move
+(`MoveSheet`) and Drop. The "Still real?" prompt after repeated carry-overs is
+not built.
 
 ## Open questions
 
 - How many carry-overs before "Still real?": 2 or 3?
-- Does Drop delete the reminder, or complete it with a note? Deleting loses
-  history; completing it makes Reminders' completed list noisy.
+- Does Drop delete the task, or keep it as dropped? Deleting loses history.

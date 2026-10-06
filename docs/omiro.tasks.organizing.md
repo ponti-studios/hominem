@@ -12,18 +12,16 @@ makes the app heavier for everyone else.
 
 Users have no interest in tagging, organizing or creating custom lists, and the
 users who do are not the ones Omiro is built for. A task has a title and a day.
-Anything else is a reason to open Reminders.
+Anything else is a feature Omiro does not have.
 
 ## How Omiro solves it
 
 - A task in Omiro has three things: a title, a day (and optionally a time), and
   notes.
 - The task detail sheet offers only what moves the task forward: Done, Move,
-  Open in Reminders, Delete.
+  Delete.
 - Omiro never shows lists, tags, flags, priority, subtasks or recurrence
-  controls. If Reminders has them, they stay in Reminders.
-- When someone asks for an organizing feature, the answer is "that is in
-  Reminders", with the Open in Reminders row as the way there.
+  controls.
 
 ## Not doing
 
@@ -32,9 +30,9 @@ recurrence editing. Adding one means adding the next.
 
 ## Today
 
-The detail sheet offers Done, Open in Reminders and Delete, and shows location
-and notes (`apps/omiro/components/tasks/TaskDetailSheet.tsx:20`). It has no Move
-action, and there are no organizing controls to remove.
+The detail sheet offers Done and Delete, and shows location and notes
+(`apps/omiro/components/tasks/TaskDetailSheet.tsx`). Move lives on the
+Carried over card. There are no organizing controls to remove.
 
 ## Open questions
 

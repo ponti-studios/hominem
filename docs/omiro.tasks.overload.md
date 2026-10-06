@@ -15,14 +15,13 @@ by evening is the goal; a complete list is not.
 
 ## How Omiro solves it
 
-- The Tasks tab shows two sections: Today, and Upcoming for the next few days.
-  Nothing else is on the page.
+- The Tasks tab shows Carried over, Today, and Upcoming for the next seven days,
+  plus one "N to place" row for undated tasks. Nothing else is on the page.
 - Upcoming is capped. If more tasks fall in the window, the section ends with a
   count ("+4 this week") instead of more rows.
 - Finishing Today shows an empty state that says you are done. That is a win,
   not a blank screen.
-- Tasks outside the window stay in Reminders. A single row at the bottom,
-  "Open in Reminders", is the only way to the rest.
+- Tasks outside the window stay out of sight until their week.
 
 ## Not doing
 
@@ -32,10 +31,9 @@ by evening is the goal; a complete list is not.
 
 ## Today
 
-`TasksScreen` lists every non-completed reminder with no date filter and no cap
-(`apps/omiro/components/tasks/task-time.ts:4`,
-`apps/omiro/components/tasks/TasksScreen.tsx`). On a device with hundreds of
-reminders, the list is hundreds of rows long.
+Built. `groupTasks` (`apps/omiro/components/tasks/task-time.ts`) splits open
+dated tasks into the three sections; Upcoming shows three rows and a
+"+N this week" count.
 
 ## Open questions
 

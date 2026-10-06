@@ -10,8 +10,7 @@ reason a task exists, it feels stale and gets ignored or deleted unread.
 ## Philosophy
 
 A task is a promise made somewhere. Omiro keeps the somewhere: the chat or note
-it came from. Reminders cannot do this, so this is the reason to use Omiro's
-Tasks instead of Reminders.
+it came from. Apple Reminders cannot do this, which is why Omiro owns its tasks.
 
 ## How Omiro solves it
 
@@ -20,8 +19,8 @@ Tasks instead of Reminders.
 - A task row shows a quiet origin glyph (chat or note). Its detail sheet shows
   the origin card: the title of the chat or note, how long ago, and the line
   that produced the task. Tapping it opens that chat or note.
-- A task made directly in Reminders has no origin. Omiro shows nothing for it
-  instead of a placeholder.
+- A task made by hand has no origin. Omiro shows nothing for it instead of a
+  placeholder.
 
 ## Not doing
 
@@ -31,11 +30,10 @@ Tasks instead of Reminders.
 
 ## Today
 
-Nothing keeps the origin. `mirrorCompletedChatTasks` creates a plain reminder
-from the tool call's title, notes, date and priority
-(`apps/omiro/services/tasks/mirror-chat-tasks.ts`), and the link to the chat
-is lost. EventKit has no field for a back-reference, so the link has to be stored
-on our side, keyed by the reminder's id.
+Nothing keeps the origin. Chat-extracted tasks are created through the task
+service (`apps/omiro/hooks/use-task-extraction.ts`) as plain undated tasks, and
+the link to the chat is lost. Tasks are our own records now, so the origin can
+be a field on the task.
 
 ## Open questions
 
