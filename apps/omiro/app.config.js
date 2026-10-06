@@ -92,6 +92,7 @@ function createConfig({ config }) {
         ],
       },
     ],
+    'expo-sqlite',
     '@sentry/react-native',
     withPrivacyManifest,
     withSceneLifecycle,

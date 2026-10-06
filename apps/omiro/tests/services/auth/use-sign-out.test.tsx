@@ -7,6 +7,7 @@ import { renderHookWithQueryClient } from '../../utils/render-hook';
 const mockSignOut = vi.fn();
 const mockClearPersistedQueryCache = vi.fn();
 const mockClearAllData = vi.fn();
+const mockClearTaskData = vi.fn();
 const mockCaptureEvent = vi.fn();
 const mockCaptureFailure = vi.fn();
 
@@ -18,6 +19,9 @@ vi.mock('~/services/query-persistence', () => ({
   clearPersistedQueryCache: mockClearPersistedQueryCache,
 }));
 
+vi.mock('~/services/tasks/task-service-instance', () => ({
+  clearTaskData: mockClearTaskData,
+}));
 vi.mock('~/services/storage/local-store', () => ({
   LocalStore: { clearAllData: mockClearAllData },
 }));
@@ -47,6 +51,7 @@ describe('useSignOut', () => {
     expect(clearSpy).toHaveBeenCalledTimes(1);
     expect(mockClearPersistedQueryCache).toHaveBeenCalledTimes(1);
     expect(mockClearAllData).toHaveBeenCalledTimes(1);
+    expect(mockClearTaskData).toHaveBeenCalledTimes(1);
     expect(mockCaptureEvent).toHaveBeenCalledWith(
       'auth_sign_out_succeeded',
       expect.objectContaining({ email: 'user@example.com' }),

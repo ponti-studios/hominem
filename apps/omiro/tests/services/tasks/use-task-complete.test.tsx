@@ -1,20 +1,13 @@
 // @vitest-environment jsdom
-import { waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { taskKeys } from '~/services/tasks/query-keys';
-import type { TaskDetailOutput, TaskListItem } from '~/services/tasks/task-types';
-
-import { makeTaskListItem } from '../../fixtures';
 import { renderHookWithQueryClient } from '../../utils/render-hook';
 
-const mockCompleteReminder = vi.fn();
+const service = { complete: vi.fn() };
 
-vi.mock('~/services/tasks/reminders-gateway', () => ({
-  remindersGateway: {
-    completeReminder: mockCompleteReminder,
-  },
+vi.mock('~/services/tasks/task-service-instance', () => ({
+  getTaskService: () => service,
 }));
 
 const { useTaskComplete } = await import('~/services/tasks/use-task-complete');
@@ -24,86 +17,23 @@ describe('useTaskComplete', () => {
     vi.clearAllMocks();
   });
 
-  it('optimistically marks the task complete in the list cache', async () => {
-    mockCompleteReminder.mockImplementation(() => new Promise(() => {}));
-    const { result, queryClient } = renderHookWithQueryClient(() => useTaskComplete());
-    queryClient.setQueryData(taskKeys.all, [makeTaskListItem('1'), makeTaskListItem('2')]);
-
-    act(() => {
-      result.current.mutate({ taskId: '1', completed: true });
-    });
-
-    await waitFor(() => {
-      const tasks = queryClient.getQueryData<TaskListItem[]>(taskKeys.all);
-      expect(tasks?.find((t) => t.id === '1')?.status).toBe('completed');
-    });
-    const tasks = queryClient.getQueryData<TaskListItem[]>(taskKeys.all);
-    expect(tasks?.find((t) => t.id === '1')?.completedAt).not.toBeNull();
-    expect(tasks?.find((t) => t.id === '2')?.status).toBe('pending');
-  });
-
-  it('optimistically updates the task detail cache', async () => {
-    mockCompleteReminder.mockImplementation(() => new Promise(() => {}));
-    const { result, queryClient } = renderHookWithQueryClient(() => useTaskComplete());
-    queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail('1'), {
-      task: makeTaskListItem('1'),
-    });
-
-    act(() => {
-      result.current.mutate({ taskId: '1', completed: true });
-    });
-
-    await waitFor(() => {
-      const detail = queryClient.getQueryData<TaskDetailOutput>(taskKeys.detail('1'));
-      expect(detail?.task.status).toBe('completed');
-    });
-  });
-
-  it('rolls back the list and detail caches when the request fails', async () => {
-    mockCompleteReminder.mockRejectedValueOnce(new Error('network error'));
-    const { result, queryClient } = renderHookWithQueryClient(() => useTaskComplete());
-    const originalList = [makeTaskListItem('1')];
-    const originalDetail: TaskDetailOutput = { task: makeTaskListItem('1') };
-    queryClient.setQueryData(taskKeys.all, originalList);
-    queryClient.setQueryData(taskKeys.detail('1'), originalDetail);
+  it('completes the task in the local service', async () => {
+    const { result } = renderHookWithQueryClient(() => useTaskComplete());
 
     await act(async () => {
-      await result.current.mutateAsync({ taskId: '1', completed: true }).catch(() => undefined);
+      await result.current.mutateAsync({ taskId: 'task-1', completed: true });
     });
 
-    expect(queryClient.getQueryData(taskKeys.all)).toEqual(originalList);
-    expect(queryClient.getQueryData(taskKeys.detail('1'))).toEqual(originalDetail);
+    expect(service.complete).toHaveBeenCalledWith('task-1', true);
   });
 
-  it('reconciles the list cache with the server response on success', async () => {
-    mockCompleteReminder.mockResolvedValueOnce(
-      makeTaskListItem('1', { status: 'completed', title: 'Server title' }),
-    );
-    const { result, queryClient } = renderHookWithQueryClient(() => useTaskComplete());
-    queryClient.setQueryData(taskKeys.all, [makeTaskListItem('1')]);
+  it('can reopen a completed task', async () => {
+    const { result } = renderHookWithQueryClient(() => useTaskComplete());
 
     await act(async () => {
-      await result.current.mutateAsync({ taskId: '1', completed: true });
+      await result.current.mutateAsync({ taskId: 'task-1', completed: false });
     });
 
-    const tasks = queryClient.getQueryData<TaskListItem[]>(taskKeys.all);
-    expect(tasks?.[0]?.title).toBe('Server title');
-  });
-
-  it('reconciles the detail cache with the server response on success', async () => {
-    mockCompleteReminder.mockResolvedValueOnce(
-      makeTaskListItem('1', { status: 'completed', title: 'Server title' }),
-    );
-    const { result, queryClient } = renderHookWithQueryClient(() => useTaskComplete());
-    queryClient.setQueryData<TaskDetailOutput>(taskKeys.detail('1'), {
-      task: makeTaskListItem('1', { title: 'Old title' }),
-    });
-
-    await act(async () => {
-      await result.current.mutateAsync({ taskId: '1', completed: true });
-    });
-
-    const detail = queryClient.getQueryData<TaskDetailOutput>(taskKeys.detail('1'));
-    expect(detail?.task.title).toBe('Server title');
+    expect(service.complete).toHaveBeenCalledWith('task-1', false);
   });
 });

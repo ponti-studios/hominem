@@ -11,6 +11,10 @@ type _TasksListEndpoint = HonoClient['api']['tasks']['$get'];
 export type TasksListOutput = InferResponseType<_TasksListEndpoint, 200>;
 export type TaskListItem = TasksListOutput['tasks'][number];
 
+type _TasksChangesEndpoint = HonoClient['api']['tasks']['changes']['$get'];
+export type TasksChangesOutput = InferResponseType<_TasksChangesEndpoint, 200>;
+export type TaskChange = TasksChangesOutput['tasks'][number];
+
 type _TaskGetEndpoint = HonoClient['api']['tasks'][':id']['$get'];
 export type TaskDetailOutput = InferResponseType<_TaskGetEndpoint, 200>;
 

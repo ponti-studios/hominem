@@ -72,6 +72,7 @@
     "expo-secure-store": "~57.0.4",
     "expo-sharing": "^57.0.22",
     "expo-splash-screen": "~57.0.9",
+    "expo-sqlite": "~57.0.3",
     "expo-store-review": "^57.0.3",
     "expo-symbols": "^57.0.3",
     "expo-updates": "~57.0.24",

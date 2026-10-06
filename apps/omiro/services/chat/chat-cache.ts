@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import type { ChatMessageItem } from '~/components/chat';
 import { playAudioReply } from '~/components/media/audio-playback.service';
 import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
-import { mirrorCompletedChatTasks } from '~/services/tasks/mirror-chat-tasks';
+import { syncAfterChatTasks } from '~/services/tasks/sync-chat-tasks';
 
 import { toMessageOutput } from './use-chat-messages';
 
@@ -49,7 +49,7 @@ export function applyGenerationCommitted({
     }
   }
   triggerAssistantCompletionHaptic();
-  void mirrorCompletedChatTasks(queryClient, committed?.toolCalls);
+  syncAfterChatTasks(committed?.toolCalls);
   void queryClient.invalidateQueries({ queryKey: inboxKeys.pages() });
   void invalidateChatQueries(queryClient, chatId);
   return committed;

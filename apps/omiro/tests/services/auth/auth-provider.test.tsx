@@ -42,6 +42,7 @@ vi.mock('~/services/query-persistence', () => ({
   clearPersistedQueryCache: mockClearPersistedQueryCache,
 }));
 
+vi.mock('~/services/tasks/task-service-instance', () => ({ clearTaskData: vi.fn() }));
 vi.mock('~/services/storage/local-store', () => ({
   LocalStore: { clearAllData: mockClearAllData },
 }));

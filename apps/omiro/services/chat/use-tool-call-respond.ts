@@ -7,7 +7,7 @@ import { useCallback, useState } from 'react';
 import type { ChatMessageItem } from '~/components/chat';
 import { API_BASE_URL } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
-import { mirrorCompletedChatTasks } from '~/services/tasks/mirror-chat-tasks';
+import { syncAfterChatTasks } from '~/services/tasks/sync-chat-tasks';
 
 import { chatKeys } from '../notes/query-keys';
 
@@ -51,7 +51,7 @@ export function useToolCallRespond({ chatId }: { chatId: string }) {
         const answered = queryClient
           .getQueryData<ChatMessageItem[]>(chatKeys.messages(chatId))
           ?.find((message) => message.id === input.messageId);
-        await mirrorCompletedChatTasks(queryClient, answered?.toolCalls);
+        syncAfterChatTasks(answered?.toolCalls);
       }
     },
     [chatId, client, queryClient],
