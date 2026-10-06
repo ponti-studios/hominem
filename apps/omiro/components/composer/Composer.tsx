@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import { View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -40,27 +40,6 @@ export function Composer(props: ComposerProps) {
 
 function ComposerContent(props: ComposerProps) {
   const submission = useComposerSubmission(props);
-  const clearComposerRef = useRef<() => void>(() => {});
-  const handleWalkieTalkieTranscript = useCallback(
-    (rawText: string) => {
-      if (!rawText.trim()) {
-        return;
-      }
-      void submission.submit(
-        {
-          canSubmit: true,
-          clearComposer: () => clearComposerRef.current(),
-          fileIds: [],
-          message: rawText,
-          // Voice always starts a chat message, which never restores text.
-          restoreMessage: () => {},
-          responseModality: 'audio',
-        },
-        'message',
-      );
-    },
-    [submission],
-  );
   const controller = useComposerController({
     entryMode: props.mode === 'inbox' ? props.entryMode : undefined,
     defaultEntryKind: props.mode === 'inbox' ? props.defaultEntryKind : undefined,
@@ -68,11 +47,7 @@ function ComposerContent(props: ComposerProps) {
     isSubmitting: submission.isSubmitting,
     onDraftChange: submission.onDraftChange,
     onClearDraft: submission.onClearDraft,
-    onWalkieTalkieTranscript: props.mode === 'chat' ? handleWalkieTalkieTranscript : undefined,
   });
-  useEffect(() => {
-    clearComposerRef.current = controller.clearComposer;
-  }, [controller.clearComposer]);
   // Just the static (mode-only) fields for the outer shell -- the
   // kind-dependent fields (placeholder, submitTestID, ...) get recomputed
   // inside ComposerInput/ComposerToolbar, since those are the only places
@@ -119,11 +94,6 @@ function ComposerContent(props: ComposerProps) {
     ],
   );
 
-  const onToggleWalkieTalkie = useCallback(
-    () => controller.voice.setWalkieTalkie((prev) => !prev),
-    [controller.voice],
-  );
-
   const styles = useStyles((currentTheme) => ({
     composer: { width: '100%', gap: 8 },
     fields: { gap: 8 },
@@ -141,9 +111,6 @@ function ComposerContent(props: ComposerProps) {
   const prefersReducedMotion = useReducedMotion();
 
   const isRecording = controller.voice.isRecording;
-  const isWalkieTalkieSending =
-    controller.voice.isWalkieTalkie && !isRecording && submission.isSubmitting;
-  const showVoicePanel = isRecording || isWalkieTalkieSending;
 
   const errorBanner =
     controller.voice.voiceState === 'failed' && controller.voice.error ? (
@@ -179,7 +146,7 @@ function ComposerContent(props: ComposerProps) {
             </Animated.View>
           ) : undefined}
 
-          {showVoicePanel ? (
+          {isRecording ? (
             <Animated.View
               entering={nativeMotionAnimations.fadeInQuick}
               exiting={nativeMotionAnimations.fadeOutQuick}
@@ -193,7 +160,6 @@ function ComposerContent(props: ComposerProps) {
                 onDone={() => {
                   void controller.voice.handleVoicePress();
                 }}
-                phase={isRecording ? 'recording' : 'sending'}
                 tone="ink"
               />
             </Animated.View>
@@ -232,7 +198,6 @@ function ComposerContent(props: ComposerProps) {
                   }}
                   voice={controller.voice}
                   onChangeMessage={controller.setMessage}
-                  onToggleWalkieTalkie={props.mode === 'chat' ? onToggleWalkieTalkie : undefined}
                   onSubmit={handleActiveAreaSubmit}
                   onPlan={props.mode === 'inbox' && props.onPlan ? handlePlan : undefined}
                 />

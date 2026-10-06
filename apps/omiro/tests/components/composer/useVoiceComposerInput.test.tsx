@@ -71,14 +71,14 @@ vi.mock('expo-file-system', () => ({
 
 const { useVoiceComposerInput } = await import('~/components/composer/useVoiceComposerInput');
 
-function setup(overrides: { onWalkieTalkieSend?: (rawText: string) => void } = {}) {
+function setup() {
   let message = '';
   const getMessage = vi.fn(() => message);
   const setMessage = vi.fn((next: string) => {
     message = next;
   });
   const rendered = renderHookWithQueryClient(() =>
-    useVoiceComposerInput({ getMessage, setMessage, onError: mockOnError, ...overrides }),
+    useVoiceComposerInput({ getMessage, setMessage, onError: mockOnError }),
   );
   return { ...rendered, getMessage, setMessage };
 }
@@ -159,26 +159,6 @@ describe('useVoiceComposerInput', () => {
       await fakeRecorder.lastOptions?.onRecordingStopped('file://recording.m4a');
     });
 
-    expect(setMessage).not.toHaveBeenCalled();
-    expect(mockCleanup).not.toHaveBeenCalled();
-  });
-
-  it('auto-sends the raw transcript via onWalkieTalkieSend instead of updating the draft when walkie-talkie mode is on', async () => {
-    mockTranscribeFile.mockResolvedValue({
-      rawText: 'quick note',
-      locale: 'en-US',
-      isOnDevice: true,
-    });
-    const onWalkieTalkieSend = vi.fn();
-    const { result, setMessage } = setup({ onWalkieTalkieSend });
-
-    act(() => result.current.setWalkieTalkie(true));
-
-    await act(async () => {
-      await fakeRecorder.lastOptions?.onRecordingStopped('file://recording.m4a');
-    });
-
-    expect(onWalkieTalkieSend).toHaveBeenCalledWith('quick note');
     expect(setMessage).not.toHaveBeenCalled();
     expect(mockCleanup).not.toHaveBeenCalled();
   });

@@ -39,11 +39,9 @@ interface ComposerToolbarProps {
     isRecording: boolean;
     isCleaningVoice: boolean;
     isRecordingElsewhere: boolean;
-    isWalkieTalkie: boolean;
     handleVoicePress: () => void | Promise<void>;
   };
   onChangeMessage: (message: string) => void;
-  onToggleWalkieTalkie: (() => void) | undefined;
   onSubmit: (kind: ComposerSubmitKind, message: string, canSubmit: boolean) => void;
   onPlan: ((message: string) => void) | undefined;
 }
@@ -63,7 +61,6 @@ function ComposerToolbarComponent({
   capabilities,
   voice,
   onChangeMessage,
-  onToggleWalkieTalkie,
   onSubmit,
   onPlan,
 }: ComposerToolbarProps) {
@@ -144,25 +141,6 @@ function ComposerToolbarComponent({
             onPress={() => onPlan(messageStore.getMessage())}
           >
             <AppIcon name="calendar.badge.plus" size={20} tintColor={inkForeground} />
-          </IconButton>
-        ) : null}
-        {onToggleWalkieTalkie ? (
-          <IconButton
-            accessibilityLabel={
-              voice.isWalkieTalkie
-                ? t.inboxComposer.composer.disableWalkieTalkieA11y
-                : t.inboxComposer.composer.enableWalkieTalkieA11y
-            }
-            style={styles.compactIcon}
-            testID="composer-walkie-talkie-toggle"
-            variant="plain"
-            onPress={onToggleWalkieTalkie}
-          >
-            <AppIcon
-              name="antenna.radiowaves.left.and.right"
-              size={20}
-              tintColor={voice.isWalkieTalkie ? lime : inkForeground}
-            />
           </IconButton>
         ) : null}
         <IconButton

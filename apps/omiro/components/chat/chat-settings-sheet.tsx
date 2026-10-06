@@ -60,7 +60,7 @@ export function ChatSettingsSheet({ visible, onClose }: ChatSettingsSheetProps) 
 
   useEffect(() => {
     if (visible) {
-      // Trigger is a Stack.Toolbar.Menu action (native iOS UIMenu) -- its
+      // Trigger is a chat actions menu item -- its
       // dismiss animation is still running when onPress fires, so presenting
       // the sheet right away just gets silently dropped by UIKit. Wait for
       // the menu to actually finish closing first.

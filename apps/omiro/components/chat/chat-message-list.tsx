@@ -1,8 +1,26 @@
 import type { ChatMessageItem } from '@hominem/chat';
 import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, type RefreshControlProps, Text, View } from 'react-native';
+import {
+  createContext,
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  AccessibilityInfo,
+  Pressable,
+  type RefreshControlProps,
+  type ScrollViewProps,
+  Text,
+  View,
+} from 'react-native';
+import { KeyboardChatScrollView } from 'react-native-keyboard-controller';
+import type Animated from 'react-native-reanimated';
 
 import { useStyles } from '~/components/theme';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
@@ -12,6 +30,23 @@ import { MessageEditModal } from './chat-message-edit-modal';
 import { ChatShimmerMessage } from './chat-shimmer-message';
 
 const AUTO_SCROLL_TO_BOTTOM_THRESHOLD = 0.25;
+
+// How far the list's bottom edge sits above the keyboard's resting spot, so
+// the scroll view lifts its content by exactly the amount the keyboard (and the
+// composer riding on it) covers.
+const KeyboardOffsetContext = createContext(0);
+
+// The list's scroll view: when the keyboard opens the messages move up with it
+// (and back down when it closes), so the bottom of the conversation stays in
+// view instead of ending up behind the composer.
+const ChatScrollView = forwardRef<Animated.ScrollView, ScrollViewProps>(
+  function ChatScrollView(props, ref) {
+    const offset = useContext(KeyboardOffsetContext);
+    return (
+      <KeyboardChatScrollView {...props} keyboardLiftBehavior="always" offset={offset} ref={ref} />
+    );
+  },
+);
 const keyExtractor = (item: ChatMessageItem) => item.renderKey ?? item.id;
 function announceMessage(message: ChatMessageItem, previous?: ChatMessageItem) {
   const failed = Boolean(message.failed || message.error);
@@ -48,15 +83,13 @@ interface ChatMessageListProps {
   onRegenerate?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
   onRetry?: (messageId: string) => void;
-  onToolCallRespond?: (input: { messageId: string; toolCallId: string; approved: boolean }) => void;
-  isRespondingToToolCall?: boolean;
   formatTimestamp: (value: string) => string;
   emptyState?: React.ReactElement | null;
   refreshControl?: React.ReactElement<RefreshControlProps>;
-  // Extra bottom space to reserve while the keyboard is open and the composer
-  // lifts above its normal spot. Stays 0 at rest since the composer already
-  // takes up real layout space there.
+  // Bottom space the empty state keeps clear while the keyboard is open.
   bottomInset?: number;
+  // Where the list's bottom edge rests above the keyboard (see ChatScrollView).
+  keyboardOffset?: number;
   generation?: ChatGenerationState | null;
 }
 
@@ -70,12 +103,11 @@ export function ChatMessageList({
   onRegenerate,
   onDelete,
   onRetry,
-  onToolCallRespond,
-  isRespondingToToolCall,
   formatTimestamp,
   emptyState,
   refreshControl,
   bottomInset = 0,
+  keyboardOffset = 0,
   generation,
 }: ChatMessageListProps) {
   const styles = useStyles((theme) => ({
@@ -233,8 +265,6 @@ export function ChatMessageList({
             onRegenerate: item.isStreaming ? undefined : onRegenerate,
             onDelete: item.isStreaming ? undefined : onDelete,
             onRetry,
-            onToolCallRespond,
-            isRespondingToToolCall,
             showDebug,
           }}
         />
@@ -249,8 +279,6 @@ export function ChatMessageList({
       onRequestEdit,
       onRegenerate,
       onRetry,
-      onToolCallRespond,
-      isRespondingToToolCall,
       showDebug,
     ],
   );
@@ -286,41 +314,39 @@ export function ChatMessageList({
         onSave={saveEditModal}
         visible={editingMessageId !== null}
       />
-      <FlashList
-        ref={listRef}
-        style={styles.list}
-        pointerEvents={generation ? 'box-none' : 'auto'}
-        contentInsetAdjustmentBehavior="automatic"
-        ListEmptyComponent={listEmptyComponent}
-        ListFooterComponent={
-          renderedMessages.length > 0 ? (
-            <Pressable
-              accessibilityLabel="Chat message list bottom"
-              onPress={() => setActiveActionMessageId(null)}
-              style={styles.bottomSentinel}
-              testID="chat-message-list-bottom-sentinel"
-            />
-          ) : null
-        }
-        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
-        ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
-        // Composer sits in normal flow at rest (bottomInset 0, nothing extra
-        // reserved). When the keyboard's open it lifts by translating instead
-        // of resizing, so bottomInset just covers that transient overlap.
-        contentInset={{ bottom: bottomInset }}
-        scrollIndicatorInsets={{ bottom: bottomInset }}
-        data={renderedMessages}
-        keyExtractor={keyExtractor}
-        maintainVisibleContentPosition={{
-          startRenderingFromBottom: true,
-          autoscrollToBottomThreshold: AUTO_SCROLL_TO_BOTTOM_THRESHOLD,
-        }}
-        onScrollBeginDrag={() => setActiveActionMessageId(null)}
-        renderItem={renderItem}
-        refreshControl={refreshControl}
-        scrollEnabled={renderedMessages.length > 0 || refreshControl !== undefined}
-        testID="chat-message-list"
-      />
+      <KeyboardOffsetContext.Provider value={keyboardOffset}>
+        <FlashList
+          ref={listRef}
+          style={styles.list}
+          pointerEvents={generation ? 'box-none' : 'auto'}
+          contentInsetAdjustmentBehavior="automatic"
+          ListEmptyComponent={listEmptyComponent}
+          ListFooterComponent={
+            renderedMessages.length > 0 ? (
+              <Pressable
+                accessibilityLabel="Chat message list bottom"
+                onPress={() => setActiveActionMessageId(null)}
+                style={styles.bottomSentinel}
+                testID="chat-message-list-bottom-sentinel"
+              />
+            ) : null
+          }
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
+          ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+          renderScrollComponent={ChatScrollView}
+          data={renderedMessages}
+          keyExtractor={keyExtractor}
+          maintainVisibleContentPosition={{
+            startRenderingFromBottom: true,
+            autoscrollToBottomThreshold: AUTO_SCROLL_TO_BOTTOM_THRESHOLD,
+          }}
+          onScrollBeginDrag={() => setActiveActionMessageId(null)}
+          renderItem={renderItem}
+          refreshControl={refreshControl}
+          scrollEnabled={renderedMessages.length > 0 || refreshControl !== undefined}
+          testID="chat-message-list"
+        />
+      </KeyboardOffsetContext.Provider>
     </>
   );
 }

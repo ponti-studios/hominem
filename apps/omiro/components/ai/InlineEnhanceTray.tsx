@@ -1,10 +1,8 @@
 import type { SFSymbol } from 'expo-symbols';
-import { useEffect, useRef, useState } from 'react';
-import type { TextInput } from 'react-native';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { useAppTheme, useStyles } from '~/components/theme';
-import { IconButton, TextField } from '~/components/ui';
+import { TextField } from '~/components/ui';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
@@ -24,12 +22,10 @@ interface InlineEnhanceTrayProps {
 }
 
 type EnhanceSuggestion = (typeof t.enhance.suggestions)[number];
-const CUSTOM_SELECTION = '__custom__';
-
 const suggestionIcons: Record<EnhanceSuggestion, SFSymbol> = {
-  Fix: 'textformat.abc.dottedunderline',
-  Shorten: 'arrow.down.right.and.arrow.up.left',
-  Expand: 'arrow.up.left.and.arrow.down.right',
+  Fix: 'checkmark',
+  Shorten: 'chevron.down',
+  Expand: 'plus',
   Bullets: 'list.bullet',
 };
 
@@ -42,106 +38,86 @@ export function InlineEnhanceTray({
   isEnhancing = false,
   error = null,
 }: InlineEnhanceTrayProps) {
-  const { primary, mutedForeground, popover, foreground: textPrimary } = useAppTheme().colors;
-  const { borderRadii } = useAppTheme();
+  const { eventCoral, eventForeground, eventSky, eventSun, eventViolet } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
-    container: { gap: 8, marginVertical: 16 },
-    actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
+    container: { gap: 12, marginVertical: 12 },
+    actions: { flexDirection: 'row', gap: 10 },
+    action: { flex: 1 },
     errorText: { color: theme.colors.destructive, lineHeight: 16 },
-    suggestionRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    suggestionRow: { flexDirection: 'row', gap: 8 },
+    suggestion: {
+      alignItems: 'center',
+      borderCurve: 'continuous',
+      borderRadius: 20,
+      flex: 1,
+      gap: 6,
+      height: 64,
+      justifyContent: 'center',
+    },
+    suggestionLabel: { color: theme.colors.eventForeground, fontSize: 14, fontWeight: '800' },
+    input: {
+      backgroundColor: theme.colors.background,
+      borderCurve: 'continuous',
+      borderRadius: 24,
+      color: theme.colors.foreground,
+      fontSize: 16,
+      minHeight: 48,
+      paddingHorizontal: 18,
+      paddingVertical: 12,
+    },
   }));
-  const customInputRef = useRef<TextInput>(null);
-  const [isCustomOpen, setIsCustomOpen] = useState(false);
-  const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isCustomOpen) {
-      customInputRef.current?.focus();
-    }
-  }, [isCustomOpen]);
-
-  const handleSelect = (selection: string) => {
-    if (isEnhancing) {
-      return;
-    }
-
-    if (selection === CUSTOM_SELECTION) {
-      setSelectedSuggestion(CUSTOM_SELECTION);
-      setIsCustomOpen(true);
-      return;
-    }
-
-    setSelectedSuggestion(selection);
-    setIsCustomOpen(false);
-    onPresetSelect(selection);
+  const tints: Record<EnhanceSuggestion, string> = {
+    Fix: eventViolet,
+    Shorten: eventCoral,
+    Expand: eventSky,
+    Bullets: eventSun,
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.suggestionRow}>
         {t.enhance.suggestions.map((suggestion) => (
-          <IconButton
-            key={suggestion}
+          <Pressable
             accessibilityLabel={suggestion}
+            accessibilityRole="button"
             disabled={isEnhancing}
-            variant="plain"
-            onPress={() => handleSelect(suggestion)}
+            key={suggestion}
+            onPress={() => onPresetSelect(suggestion)}
+            style={[styles.suggestion, { backgroundColor: tints[suggestion] }]}
           >
-            <AppIcon
-              name={suggestionIcons[suggestion]}
-              size={20}
-              tintColor={selectedSuggestion === suggestion ? primary : mutedForeground}
-            />
-          </IconButton>
+            <AppIcon name={suggestionIcons[suggestion]} size={22} tintColor={eventForeground} />
+            <Text style={styles.suggestionLabel}>{suggestion}</Text>
+          </Pressable>
         ))}
-        <IconButton
-          accessibilityLabel="Custom"
-          disabled={isEnhancing}
-          variant="plain"
-          onPress={() => handleSelect(CUSTOM_SELECTION)}
-        >
-          <AppIcon
-            name="square.and.pencil"
-            size={20}
-            tintColor={selectedSuggestion === CUSTOM_SELECTION ? primary : mutedForeground}
-          />
-        </IconButton>
       </View>
 
-      {isCustomOpen ? (
-        <TextField
-          ref={customInputRef}
-          value={instruction}
-          onChangeText={onInstructionChange}
-          placeholder={t.enhance.instructionPlaceholder}
-          style={{
-            backgroundColor: popover,
-            borderRadius: borderRadii.xl,
-            color: textPrimary,
-            fontSize: 15,
-            lineHeight: 20,
-            minHeight: 44,
-            paddingHorizontal: 12,
-            paddingVertical: 10,
-          }}
-          returnKeyType="done"
-          onSubmitEditing={onConfirm}
-          editable={!isEnhancing}
-        />
-      ) : null}
+      <TextField
+        value={instruction}
+        onChangeText={onInstructionChange}
+        placeholder={t.enhance.instructionPlaceholder}
+        style={styles.input}
+        returnKeyType="done"
+        onSubmitEditing={onConfirm}
+        editable={!isEnhancing}
+      />
 
-      {isCustomOpen ? (
-        <View style={styles.actions}>
-          <Button label={t.enhance.cancel} onPress={onCancel} variant="outline" size="sm" />
-          <Button
-            label={t.enhance.confirm}
-            onPress={onConfirm}
-            variant="primary"
-            size="sm"
-            loading={isEnhancing}
-          />
-        </View>
-      ) : null}
+      <View style={styles.actions}>
+        <Button
+          label={t.enhance.cancel}
+          onPress={onCancel}
+          size="lg"
+          style={styles.action}
+          variant="secondary"
+        />
+        <Button
+          label={t.enhance.confirm}
+          loading={isEnhancing}
+          onPress={onConfirm}
+          size="lg"
+          style={styles.action}
+          variant="primary"
+        />
+      </View>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>

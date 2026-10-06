@@ -1058,19 +1058,17 @@ export const ChatRepository = {
       throw new ValidationError('One or more uploaded files are unavailable');
     }
 
-    return files.map(
-      (file): ChatMessageFileRecord => ({
-        type: file.mimetype.startsWith('image/') ? 'image' : 'file',
-        fileId: file.id,
-        url: file.url,
-        filename: file.originalName,
-        mimeType: file.mimetype,
-        size: file.size,
-        ...(file.textContent
-          ? { metadata: { extractedText: file.textContent.slice(0, 4_000) } }
-          : {}),
-      }),
-    );
+    return files.map((file): ChatMessageFileRecord => ({
+      type: file.mimetype.startsWith('image/') ? 'image' : 'file',
+      fileId: file.id,
+      url: file.url,
+      filename: file.originalName,
+      mimeType: file.mimetype,
+      size: file.size,
+      ...(file.textContent
+        ? { metadata: { extractedText: file.textContent.slice(0, 4_000) } }
+        : {}),
+    }));
   },
 };
 

@@ -1,5 +1,6 @@
 import { pool } from '@hominem/db/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import './possessions';
 import { callTool, type McpToolResult } from '../tool-registry';
@@ -10,7 +11,8 @@ const bob = 'e4000001-0000-4000-8000-000000000002';
 type Possession = { id: string; name: string; containerId: string | null; isArchived: boolean };
 type Container = { id: string; name: string; parentContainerId: string | null; itemCount: number };
 
-const content = <T>(result: McpToolResult) => result.structuredContent as T;
+// The tool's output schema is already enforced by callTool; this only types the result.
+const content = <T>(result: McpToolResult): T => z.custom<T>().parse(result.structuredContent);
 const call = async <T>(user: string, tool: string, input: unknown) =>
   content<T>(await callTool(user, tool, input));
 

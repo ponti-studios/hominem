@@ -8,6 +8,7 @@ import { useAuth } from '~/services/auth/auth-provider';
 import { chatKeys } from '~/services/notes/query-keys';
 
 import { invalidateChatQueries } from './chat-cache';
+import { toGenerationStage } from './chat-generation';
 import { useChatGeneration } from './use-chat-generation';
 import { toMessageOutput } from './use-chat-messages';
 
@@ -20,12 +21,18 @@ export function useRegenerateMessage(chatId: string) {
   const handleGenerationTerminal = useCallback(async () => {
     await invalidateChatQueries(queryClient, chatId);
   }, [chatId, queryClient]);
-  const { cancelGeneration, generation, generationRef, regenerateGeneration, setGeneration } =
-    useChatGeneration({
-      chatId,
-      getAuthHeaders,
-      onGenerationTerminal: handleGenerationTerminal,
-    });
+  const {
+    cancelGeneration,
+    dismissGeneration,
+    generation,
+    generationRef,
+    regenerateGeneration,
+    setGeneration,
+  } = useChatGeneration({
+    chatId,
+    getAuthHeaders,
+    onGenerationTerminal: handleGenerationTerminal,
+  });
 
   const mutation = useMutation<void, Error, RegenerateInput>({
     retry: false,
@@ -51,7 +58,7 @@ export function useRegenerateMessage(chatId: string) {
         }
         setGeneration({
           ...current,
-          stage: state.phase === 'cancel_requested' ? 'stopping' : state.phase,
+          stage: toGenerationStage(state.phase),
           lastDurableSequence: state.lastDurableSequence,
         });
         if ('event' in event) {
@@ -119,5 +126,5 @@ export function useRegenerateMessage(chatId: string) {
     }
   }, [regenerateMessage]);
 
-  return { cancelGeneration, generation, regenerateMessage, retryGeneration };
+  return { cancelGeneration, dismissGeneration, generation, regenerateMessage, retryGeneration };
 }

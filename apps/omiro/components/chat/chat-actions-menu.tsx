@@ -1,14 +1,15 @@
 import type { ChatMessageItem } from '@hominem/chat';
 import type { ArtifactType } from '@hominem/rpc/types';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Alert } from 'react-native';
 
 import { buildNoteDraft } from '~/components/chat/build-note-draft';
 import { buildConversationActionsModel } from '~/components/chat/conversation-actions.model';
+import type { ActionMenuItem, ActionMenuSection } from '~/components/ui/action-menu';
 import { useChatArchiveAction } from '~/hooks/use-chat-archive-action';
 import t from '~/translations';
 
-function getConversationActionIcon(kind: string, type?: string) {
+function getConversationActionIcon(kind: string, type?: string): ActionMenuItem['icon'] {
   if (kind === 'search') {
     return 'magnifyingglass';
   }
@@ -50,11 +51,8 @@ interface ChatActionsMenuInput {
   onTransform: (type: ArtifactType) => void;
 }
 
-// `Stack.Toolbar` only recognizes `Stack.Toolbar.Menu`/`.MenuAction` as literal
-// JSX children -- it reads the unrendered element tree, not what actually
-// renders out. So this just returns the menu action elements for the caller
-// to drop straight into a `<Stack.Toolbar.Menu>` instead of rendering that
-// wrapper itself.
+// Builds the sections the designed `ActionMenu` renders from the shared
+// conversation-actions model.
 export function useChatActionsMenu({
   chatId,
   messages,
@@ -67,7 +65,7 @@ export function useChatActionsMenu({
   onOpenSettings,
   onOpenSources,
   onTransform,
-}: ChatActionsMenuInput) {
+}: ChatActionsMenuInput): ActionMenuSection[] {
   const router = useRouter();
   const { handleArchiveChat, isArchiving } = useChatArchiveAction({ chatId, onChatArchive });
   const conversationActions = buildConversationActionsModel({
@@ -76,104 +74,54 @@ export function useChatActionsMenu({
     showDebug,
   });
 
-  return (isConversationGone ? [] : conversationActions).map((section) =>
-    section.items.map((item) => {
-      if (item.kind === 'search') {
-        return (
-          <Stack.Toolbar.MenuAction
-            key={item.kind}
-            icon={getConversationActionIcon(item.kind)}
-            onPress={onOpenSearch}
-          >
-            {item.label}
-          </Stack.Toolbar.MenuAction>
-        );
-      }
+  const transformToNote = () => {
+    const draft = buildNoteDraft(messages);
+    if (draft.transcript.trim().length === 0) {
+      Alert.alert(t.chat.noteDraft.emptyChat);
+      return;
+    }
+    router.push({
+      pathname: '/chat-to-note-sheet',
+      params: {
+        transcript: draft.transcript,
+        title: draft.title,
+        isTruncated: draft.isTruncated.toString(),
+        chatId,
+      },
+    });
+  };
 
-      if (item.kind === 'toggle-debug') {
-        return (
-          <Stack.Toolbar.MenuAction
-            key={item.kind}
-            icon={getConversationActionIcon(item.kind)}
-            isOn={showDebug}
-            onPress={onToggleDebug}
-          >
-            {item.label}
-          </Stack.Toolbar.MenuAction>
-        );
-      }
-
-      if (item.kind === 'settings') {
-        return (
-          <Stack.Toolbar.MenuAction
-            key={item.kind}
-            icon={getConversationActionIcon(item.kind)}
-            onPress={onOpenSettings}
-          >
-            {item.label}
-          </Stack.Toolbar.MenuAction>
-        );
-      }
-
-      if (item.kind === 'sources') {
-        return (
-          <Stack.Toolbar.MenuAction
-            key={item.kind}
-            icon={getConversationActionIcon(item.kind)}
-            onPress={onOpenSources}
-          >
-            {item.label}
-          </Stack.Toolbar.MenuAction>
-        );
-      }
-
-      if (item.kind === 'transform' && item.type) {
-        return (
-          <Stack.Toolbar.MenuAction
-            key={`${item.kind}:${item.type}`}
-            icon={getConversationActionIcon(item.kind, item.type)}
-            onPress={() => {
-              const transformType = item.type;
-              if (!transformType) {
-                return;
+  const sections = isConversationGone ? [] : conversationActions;
+  return sections.map((section) => ({
+    key: section.title,
+    title: section.title,
+    items: section.items.map((item): ActionMenuItem => {
+      const key = item.type ? `${item.kind}:${item.type}` : item.kind;
+      const icon = getConversationActionIcon(item.kind, item.type);
+      const base = { key, label: item.label, icon };
+      switch (item.kind) {
+        case 'search':
+          return { ...base, onPress: onOpenSearch };
+        case 'toggle-debug':
+          return { ...base, isOn: showDebug, onPress: onToggleDebug };
+        case 'settings':
+          return { ...base, onPress: onOpenSettings };
+        case 'sources':
+          return { ...base, onPress: onOpenSources };
+        case 'transform':
+          return {
+            ...base,
+            onPress: () => {
+              if (item.type === 'note') {
+                transformToNote();
+              } else if (item.type) {
+                onTransform(item.type);
               }
-
-              if (transformType === 'note') {
-                const draft = buildNoteDraft(messages);
-                if (draft.transcript.trim().length === 0) {
-                  Alert.alert(t.chat.noteDraft.emptyChat);
-                  return;
-                }
-
-                router.push({
-                  pathname: '/chat-to-note-sheet',
-                  params: {
-                    transcript: draft.transcript,
-                    title: draft.title,
-                    isTruncated: draft.isTruncated.toString(),
-                    chatId,
-                  },
-                });
-                return;
-              }
-
-              onTransform(transformType);
-            }}
-          >
-            {item.label}
-          </Stack.Toolbar.MenuAction>
-        );
+            },
+          };
+        default:
+          return { ...base, destructive: true, disabled: isArchiving, onPress: handleArchiveChat };
       }
-
-      return (
-        <Stack.Toolbar.MenuAction
-          key={item.kind}
-          icon={getConversationActionIcon(item.kind)}
-          onPress={handleArchiveChat}
-        >
-          {item.label}
-        </Stack.Toolbar.MenuAction>
-      );
     }),
-  );
+  }));
 }

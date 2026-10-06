@@ -31,7 +31,7 @@ describe('extractTimeBlock', () => {
         recurrence_rule: null,
       },
       usage: null,
-    } as Awaited<ReturnType<typeof createStructuredChatCompletion>>);
+    });
 
     await extractTimeBlock(
       {

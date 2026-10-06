@@ -1,8 +1,9 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
+import { FloatingCircleButton, FloatingHeader } from '~/components/navigation/floating-header';
 import { useStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
 import {
@@ -10,11 +11,12 @@ import {
   readNewChatDraft,
   writeNewChatDraft,
 } from '~/services/navigation/launch-state';
-import { getContentRoute } from '~/services/navigation/routes';
+import { CHAT_ROUTE, getContentRoute } from '~/services/navigation/routes';
 import t from '~/translations';
 
 export function NewChatScreen() {
   const router = useRouter();
+  const canGoBack = useNavigation().canGoBack();
   const { seed } = useLocalSearchParams<{ seed?: string }>();
   const { restingInset } = useComposerDockMetrics();
   const initialMessage = seed?.trim() || readNewChatDraft();
@@ -25,6 +27,14 @@ export function NewChatScreen() {
 
   return (
     <View style={styles.container} testID="new-chat-screen">
+      <FloatingHeader
+        left=<FloatingCircleButton
+          accessibilityLabel="BackButton"
+          icon="xmark"
+          onPress={() => (canGoBack ? router.back() : router.dismissTo(CHAT_ROUTE))}
+          testID="new-chat-close-button"
+        />
+      />
       <View style={styles.content}>
         <EmptyState
           description={t.chat.emptyState.description}

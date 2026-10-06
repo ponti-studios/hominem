@@ -1,23 +1,33 @@
 import type { SessionSource } from '@hominem/rpc/types';
 import { isObject } from '@hominem/utils';
 import { useQueryClient } from '@tanstack/react-query';
-import { Stack, useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, Text, View } from 'react-native';
 
 import {
-  ChatActivityTimeline,
+  ChatGenerationBar,
   ChatMessageList,
   ChatReviewOverlay,
   ChatSearchModal,
+  ChatToolApprovalBar,
+  getToolCallPhase,
 } from '~/components/chat';
 import { useChatActionsMenu } from '~/components/chat/chat-actions-menu';
 import { ChatSettingsSheet } from '~/components/chat/chat-settings-sheet';
 import { ChatSourcesSheet } from '~/components/chat/chat-sources-sheet';
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
+import { getDockKeyboardOffset } from '~/components/composer/composerDock.helpers';
+import {
+  FloatingActionPill,
+  FloatingCircleButton,
+  FloatingHeader,
+  FloatingPillButton,
+} from '~/components/navigation/floating-header';
 import { useStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
+import { ActionMenu } from '~/components/ui/action-menu';
 import { useChatData } from '~/hooks/use-chat-data';
 import { useChatSearch } from '~/hooks/use-chat-search';
 import { useNetworkStatus } from '~/hooks/use-network-status';
@@ -33,7 +43,11 @@ import {
 } from '~/services/chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
-import { clearResumeTarget, writeResumeTarget } from '~/services/navigation/launch-state';
+import {
+  clearResumeTarget,
+  writeChatDraft,
+  writeResumeTarget,
+} from '~/services/navigation/launch-state';
 import { NEW_CHAT_ROUTE, CHAT_ROUTE } from '~/services/navigation/routes';
 import t from '~/translations';
 
@@ -42,10 +56,6 @@ function isNotFoundError(error: unknown): boolean {
 }
 
 const NEW_SESSION_SOURCE: SessionSource = { kind: 'new' };
-
-// Approximate height of the generation row that sits on top of the dock; the
-// list reserves it while the keyboard lifts the dock over its content.
-const ACTIVITY_ROW_HEIGHT = 52;
 
 export function ChatScreen({ id }: { id: string }) {
   const router = useRouter();
@@ -106,6 +116,7 @@ export function ChatScreen({ id }: { id: string }) {
   // separate streams.
   const {
     cancelGeneration,
+    dismissGeneration,
     generation,
     sendChatMessage,
     isChatSending,
@@ -127,6 +138,7 @@ export function ChatScreen({ id }: { id: string }) {
 
   const {
     cancelGeneration: cancelRegeneration,
+    dismissGeneration: dismissRegeneration,
     generation: regeneration,
     regenerateMessage,
     retryGeneration,
@@ -134,6 +146,43 @@ export function ChatScreen({ id }: { id: string }) {
   const activeGeneration = generation ?? regeneration;
   const cancelActiveGeneration = generation ? cancelGeneration : cancelRegeneration;
   const retryActiveGeneration = generation ? retryLastGeneration : retryGeneration;
+  const dismissActiveGeneration = generation ? dismissGeneration : dismissRegeneration;
+  // The approval's continuation streams through its own client, so once it
+  // finishes the paused generation that was waiting on it is done too.
+  const respondToToolCall = async (approved: boolean) => {
+    if (!pendingToolCall) {
+      return;
+    }
+    try {
+      await toolCallRespond.respond({
+        messageId: pendingToolCall.messageId,
+        toolCallId: pendingToolCall.toolCall.toolCallId,
+        approved,
+      });
+    } finally {
+      dismissGeneration();
+      dismissRegeneration();
+    }
+  };
+  // The assistant is waiting on a yes/no for a tool call: that decision takes
+  // over the composer until it is answered.
+  const pendingToolCall = messages
+    .flatMap((message) =>
+      (message.toolCalls ?? []).map((toolCall) => ({ messageId: message.id, toolCall })),
+    )
+    .find(({ toolCall }) => getToolCallPhase(toolCall) === 'asking');
+  const failedMessageText =
+    activeGeneration?.stage === 'failed' && activeGeneration.userMessageId
+      ? messages.find((message) => message.id === activeGeneration.userMessageId)?.message
+      : undefined;
+  // Hands the failed message back to the composer: it reopens with the text
+  // restored, ready to edit and send again.
+  const editFailedMessage = useCallback(() => {
+    if (failedMessageText) {
+      writeChatDraft(chatId, failedMessageText);
+    }
+    dismissActiveGeneration();
+  }, [chatId, dismissActiveGeneration, failedMessageText]);
 
   const displayTitle = getChatTitle(activeChat?.title, extraction.resolvedSource);
 
@@ -155,7 +204,11 @@ export function ChatScreen({ id }: { id: string }) {
   const [showChatSettings, setShowChatSettings] = useState(false);
   const [showChatSources, setShowChatSources] = useState(false);
 
-  const chatMenuActions = useChatActionsMenu({
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const navigation = useNavigation();
+  const canGoBack = navigation.canGoBack();
+
+  const chatMenuSections = useChatActionsMenu({
     chatId,
     canTransform: extraction.canTransform,
     isConversationGone,
@@ -201,19 +254,36 @@ export function ChatScreen({ id }: { id: string }) {
 
   return (
     <>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Menu
-          accessibilityLabel={t.chat.conversationActionsLabel}
-          icon="ellipsis.circle"
-        >
-          {chatMenuActions}
-        </Stack.Toolbar.Menu>
-        <Stack.Toolbar.Button
-          accessibilityLabel="New chat"
-          icon="square.and.pencil"
-          onPress={() => router.push(NEW_CHAT_ROUTE)}
+      <FloatingHeader
+        left=<FloatingCircleButton
+          accessibilityLabel="BackButton"
+          icon={canGoBack ? 'chevron.left' : 'xmark'}
+          onPress={() => (canGoBack ? router.back() : router.dismissTo(CHAT_ROUTE))}
+          testID="chat-back-button"
         />
-      </Stack.Toolbar>
+        right={
+          <FloatingActionPill>
+            <FloatingPillButton
+              accessibilityLabel={t.chat.conversationActionsLabel}
+              icon="ellipsis.circle"
+              onPress={() => setShowActionsMenu(true)}
+              testID="chat-actions-button"
+            />
+            <FloatingPillButton
+              accessibilityLabel="New chat"
+              icon="square.and.pencil"
+              onPress={() => router.push(NEW_CHAT_ROUTE)}
+              testID="chat-new-button"
+            />
+          </FloatingActionPill>
+        }
+      />
+      <ActionMenu
+        onClose={() => setShowActionsMenu(false)}
+        sections={chatMenuSections}
+        testID="chat-actions-menu"
+        visible={showActionsMenu}
+      />
 
       <View style={styles.container}>
         <ChatSettingsSheet visible={showChatSettings} onClose={() => setShowChatSettings(false)} />
@@ -241,11 +311,8 @@ export function ChatScreen({ id }: { id: string }) {
           </View>
         ) : null}
         <ChatMessageList
-          bottomInset={
-            composerInset > 0 && activeGeneration
-              ? composerInset + ACTIVITY_ROW_HEIGHT
-              : composerInset
-          }
+          bottomInset={composerInset}
+          keyboardOffset={getDockKeyboardOffset(restingInset)}
           isMessagesLoading={isMessagesLoading}
           displayMessages={search.displayMessages}
           showSearch={search.showSearch}
@@ -254,8 +321,6 @@ export function ChatScreen({ id }: { id: string }) {
           onEdit={handleEditMessage}
           onRegenerate={regenerateMessage}
           onRetry={retryFailedMessage}
-          onToolCallRespond={toolCallRespond.respond}
-          isRespondingToToolCall={toolCallRespond.isResponding}
           generation={activeGeneration}
           formatTimestamp={formatRelativeAge}
           emptyState={
@@ -271,17 +336,31 @@ export function ChatScreen({ id }: { id: string }) {
         {!isConversationGone ? (
           <>
             <ComposerDock restingInset={restingInset} testID="chat-composer-dock">
-              {/* Inside the dock so it rides above the keyboard with the composer. */}
-              {activeGeneration ? (
-                <ChatActivityTimeline
+              {/* While a reply generates the composer flattens to one line
+                  (the bar), then springs back when it ends. */}
+              {pendingToolCall ? (
+                <ChatToolApprovalBar
+                  disabled={toolCallRespond.isResponding}
+                  onApprove={() => {
+                    void respondToToolCall(true);
+                  }}
+                  onReject={() => {
+                    void respondToToolCall(false);
+                  }}
+                  toolName={pendingToolCall.toolCall.toolName}
+                />
+              ) : activeGeneration ? (
+                <ChatGenerationBar
                   generation={activeGeneration}
                   onCancel={() => {
                     void cancelActiveGeneration();
                   }}
+                  onEdit={failedMessageText ? editFailedMessage : undefined}
                   onRetry={retryActiveGeneration}
                 />
-              ) : null}
-              <Composer mode="chat" chatId={chatId} chatSend={chatSend} />
+              ) : (
+                <Composer mode="chat" chatId={chatId} chatSend={chatSend} />
+              )}
             </ComposerDock>
             <View style={styles.overlayContainer} pointerEvents="box-none">
               <ChatReviewOverlay

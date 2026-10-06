@@ -23,6 +23,7 @@ vi.mock('react-native', () => ({
   Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   View: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
+vi.mock('react-native-keyboard-controller', () => ({ KeyboardChatScrollView: () => <div /> }));
 vi.mock('~/components/theme', () => ({
   useStyles: (factory: (theme: { colors: Record<string, string> }) => unknown) =>
     factory({

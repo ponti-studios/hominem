@@ -12,7 +12,6 @@ interface UseComposerControllerOptions {
   isSubmitting?: boolean;
   onDraftChange?: (message: string) => void;
   onClearDraft?: () => void;
-  onWalkieTalkieTranscript?: (rawText: string) => void;
   entryMode?: 'mixed' | ComposerEntryKind;
   defaultEntryKind?: ComposerEntryKind;
 }
@@ -34,7 +33,6 @@ export function useComposerController({
   isSubmitting = false,
   onDraftChange,
   onClearDraft,
-  onWalkieTalkieTranscript,
   entryMode = 'mixed',
   defaultEntryKind,
 }: UseComposerControllerOptions) {
@@ -55,7 +53,6 @@ export function useComposerController({
   const voice = useVoiceComposerInput({
     getMessage: draft.getMessage,
     setMessage: draft.setMessage,
-    onWalkieTalkieSend: onWalkieTalkieTranscript,
   });
 
   const showAttachments = attachments.length > 0 || errors.length > 0 || isUploading;

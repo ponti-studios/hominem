@@ -1,4 +1,3 @@
-import type { GenerationPhase } from '@hominem/chat';
 import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
@@ -11,6 +10,7 @@ import { chatKeys } from '~/services/notes/query-keys';
 
 import { applyGenerationCommitted, invalidateChatQueries } from './chat-cache';
 import { OFFLINE_UNAVAILABLE_ERROR } from './chat-errors';
+import { toGenerationStage } from './chat-generation';
 import { useChatGeneration } from './use-chat-generation';
 import { toMessageOutput } from './use-chat-messages';
 
@@ -48,10 +48,6 @@ export interface SendInput {
 type MutationInput = SendInput & { generationId: string };
 type SendContext = { userMessageId: string };
 
-function toStage(phase: GenerationPhase) {
-  return phase === 'cancel_requested' ? 'stopping' : phase;
-}
-
 export function useSendMessage({ chatId }: { chatId: string }) {
   const { getAuthHeaders } = useAuth();
   const queryClient = useQueryClient();
@@ -61,6 +57,7 @@ export function useSendMessage({ chatId }: { chatId: string }) {
   }, [chatId, queryClient]);
   const {
     cancelGeneration,
+    dismissGeneration,
     generation,
     generationRef,
     regenerateGeneration,
@@ -90,8 +87,8 @@ export function useSendMessage({ chatId }: { chatId: string }) {
         }
         const stage =
           event.type === 'generation.phase_changed'
-            ? toStage(event.payload.phase)
-            : toStage(state.phase);
+            ? toGenerationStage(event.payload.phase)
+            : toGenerationStage(state.phase);
         setGeneration({ ...current, stage, lastDurableSequence: state.lastDurableSequence });
         if (event.type === 'generation.failed') {
           setGeneration({ ...current, stage: 'failed', error: event.payload.message });
@@ -249,6 +246,7 @@ export function useSendMessage({ chatId }: { chatId: string }) {
 
   return {
     cancelGeneration,
+    dismissGeneration,
     generation,
     isChatSending: mutation.isPending,
     retryFailedMessage: retryLastGeneration,

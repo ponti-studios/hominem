@@ -18,10 +18,6 @@ interface UseVoiceComposerInputOptions {
   getMessage: () => string;
   setMessage: (message: string) => void;
   onError?: (error: VoiceComposerError) => void;
-  // Walkie-talkie mode: when it's on, a stopped recording auto-sends its raw
-  // transcript via onWalkieTalkieSend instead of landing in the draft for
-  // review -- see the fork in processStoppedRecording below.
-  onWalkieTalkieSend?: (rawText: string) => void;
 }
 
 // Drives the voice pipeline end to end: useVoiceRecorder owns record/stop and
@@ -33,11 +29,9 @@ export function useVoiceComposerInput({
   getMessage,
   setMessage,
   onError,
-  onWalkieTalkieSend,
 }: UseVoiceComposerInputOptions) {
   const { cleanup, isCleaningVoice } = useVoiceCleanup();
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [isWalkieTalkie, setWalkieTalkie] = useState(false);
   // Transcription/cleanup failures are separate from recording lifecycle
   // failures (permission/start), which useVoiceRecorder owns below. Keeping
   // them in their own state means processStoppedRecording doesn't need to
@@ -61,15 +55,6 @@ export function useVoiceComposerInput({
         const rawText = result.rawText.trim();
         if (!rawText) {
           logger.warn('[voice-transcriber] processStoppedRecording: empty rawText, aborting');
-          return;
-        }
-
-        if (isWalkieTalkie) {
-          logger.info(
-            '[voice-transcriber] processStoppedRecording: walkie-talkie mode, auto-sending raw transcript',
-          );
-          setIsTranscribing(false);
-          onWalkieTalkieSend?.(rawText);
           return;
         }
 
@@ -132,7 +117,7 @@ export function useVoiceComposerInput({
         logger.info('[voice-transcriber] processStoppedRecording: finished');
       }
     },
-    [cleanup, getMessage, setMessage, onError, isWalkieTalkie, onWalkieTalkieSend],
+    [cleanup, getMessage, setMessage, onError],
   );
 
   const {
@@ -187,7 +172,5 @@ export function useVoiceComposerInput({
     error,
     clearError,
     recordingStartedAt,
-    isWalkieTalkie,
-    setWalkieTalkie,
   };
 }

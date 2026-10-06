@@ -18,8 +18,14 @@ export default function EnhanceSheetScreen() {
   const [instruction, setInstruction] = useState('');
   const [error, setError] = useState<string | null>(null);
   const styles = useStyles((theme) => ({
-    container: { flex: 1, paddingHorizontal: 16, paddingTop: 24 },
-    title: { ...theme.textVariants.headline, color: theme.colors.foreground },
+    container: { flex: 1, paddingHorizontal: 20, paddingTop: 28 },
+    header: { alignItems: 'center', gap: 6 },
+    title: { ...theme.textVariants.headline, color: theme.colors.foreground, fontSize: 20 },
+    subtitle: {
+      ...theme.textVariants.subhead,
+      color: theme.colors.mutedForeground,
+      textAlign: 'center',
+    },
   }));
 
   const runEnhance = useCallback(
@@ -46,7 +52,10 @@ export default function EnhanceSheetScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t.enhance.title}</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t.enhance.title}</Text>
+        <Text style={styles.subtitle}>{t.enhance.subtitle}</Text>
+      </View>
       <InlineEnhanceTray
         instruction={instruction}
         onInstructionChange={setInstruction}

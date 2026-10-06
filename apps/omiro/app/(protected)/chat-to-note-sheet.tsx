@@ -1,4 +1,3 @@
-import { MenuView, type NativeActionEvent } from '@expo/ui/community/menu';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
@@ -6,12 +5,10 @@ import type { TextInput } from 'react-native';
 import { Pressable, Text, View } from 'react-native';
 
 import { PRESET_INSTRUCTIONS } from '~/components/chat/build-note-draft';
-import { ComposerSendButton } from '~/components/composer/ComposerSendButton';
 import { NoteDraftPreview } from '~/components/notes/NoteDraftPreview';
-import { useAppTheme, useStyles } from '~/components/theme';
+import { useStyles } from '~/components/theme';
 import { TextField } from '~/components/ui';
 import { Button } from '~/components/ui/button';
-import AppIcon from '~/components/ui/icon';
 import { updateChatTitleCaches } from '~/services/chat';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { useCreateNote } from '~/services/notes/use-create-note';
@@ -47,43 +44,55 @@ export default function ChatToNoteSheetScreen() {
   const [instruction, setInstruction] = useState('');
   const [saveError, setSaveError] = useState<string | null>(null);
   const customInputRef = useRef<TextInput>(null);
-  const { mutedForeground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
-    container: { flex: 1, paddingHorizontal: 16, paddingTop: 36, paddingBottom: 24, gap: 24 },
+    container: { flex: 1, paddingHorizontal: 20, paddingTop: 28, paddingBottom: 24, gap: 8 },
+    header: { alignItems: 'center', gap: 6, paddingBottom: 8 },
     title: {
       ...theme.textVariants.headline,
+      fontSize: 20,
       color: theme.colors.foreground,
-      ...theme.textVariants.title1,
+      fontWeight: '800',
+    },
+    subtitle: {
+      ...theme.textVariants.subhead,
+      color: theme.colors.mutedForeground,
+      textAlign: 'center',
     },
     label: {
-      ...theme.textVariants.footnote,
+      ...theme.textVariants.caption1,
       color: theme.colors.mutedForeground,
-      marginTop: 4,
+      fontWeight: '800',
+      letterSpacing: 0.6,
+      marginTop: 12,
     },
-    selectRow: {
-      flexDirection: 'row',
+    typeRow: { flexDirection: 'row', gap: 8 },
+    typeChip: {
       alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: theme.colors.popover,
-      borderRadius: theme.borderRadii.xl,
-      paddingHorizontal: 12,
-      paddingVertical: 12,
+      backgroundColor: theme.colors.background,
+      borderCurve: 'continuous',
+      borderRadius: 24,
+      flex: 1,
+      height: 48,
+      justifyContent: 'center',
     },
-    selectRowLabel: { ...theme.textVariants.body, color: theme.colors.foreground },
+    typeChipSelected: { backgroundColor: theme.colors.primary },
+    typeChipLabel: { color: theme.colors.foreground, fontSize: 15, fontWeight: '800' },
+    typeChipLabelSelected: { color: theme.colors.primaryForeground },
     customInput: {
-      backgroundColor: theme.colors.popover,
-      borderRadius: theme.borderRadii.xl,
+      backgroundColor: theme.colors.background,
+      borderCurve: 'continuous',
+      borderRadius: 28,
       color: theme.colors.foreground,
-      fontSize: 15,
-      lineHeight: 20,
-      minHeight: 88,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
+      fontSize: 16,
+      lineHeight: 22,
+      minHeight: 56,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
       textAlignVertical: 'top',
     },
     error: { ...theme.textVariants.footnote, color: theme.colors.destructive },
-    footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 },
-    submitButton: { flex: 1 },
+    footer: { flexDirection: 'row', gap: 10, marginTop: 10 },
+    footerButton: { flex: 1 },
   }));
 
   const isLoading = phase.kind === 'loading';
@@ -116,18 +125,6 @@ export default function ChatToNoteSheetScreen() {
     },
     [generate, isGenerating, transcript],
   );
-
-  const handleSelectPreset = (event: NativeActionEvent) => {
-    if (isLoading) {
-      return;
-    }
-    const preset = t.chat.noteDraft.presets.find(
-      (candidate) => candidate === event.nativeEvent.event,
-    );
-    if (preset) {
-      setSelectedPreset(preset);
-    }
-  };
 
   const handleSubmit = () => {
     if (isLoading) {
@@ -167,36 +164,40 @@ export default function ChatToNoteSheetScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t.chat.noteDraft.title}</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t.chat.noteDraft.title}</Text>
+        <Text style={styles.subtitle}>{t.chat.noteDraft.subtitle}</Text>
+      </View>
 
       {showForm ? (
         <>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Text style={styles.label}>{t.chat.noteDraft.typeLabel}</Text>
-            <MenuView
-              actions={t.chat.noteDraft.presets.map((preset) => ({
-                id: preset,
-                title: preset,
-                state: preset === selectedPreset ? ('on' as const) : undefined,
-              }))}
-              onPressAction={handleSelectPreset}
-            >
+          <Text style={styles.label}>{t.chat.noteDraft.typeLabel.toUpperCase()}</Text>
+          <View style={styles.typeRow}>
+            {t.chat.noteDraft.presets.map((preset) => (
               <Pressable
-                style={styles.selectRow}
+                accessibilityLabel={`${t.chat.noteDraft.typeLabel}, ${preset}`}
                 accessibilityRole="button"
-                accessibilityLabel={`${t.chat.noteDraft.typeLabel}, ${selectedPreset}`}
+                accessibilityState={{ selected: preset === selectedPreset }}
+                key={preset}
+                onPress={() => {
+                  if (!isLoading) {
+                    setSelectedPreset(preset);
+                  }
+                }}
+                style={[styles.typeChip, preset === selectedPreset && styles.typeChipSelected]}
               >
-                <Text style={styles.selectRowLabel}>{selectedPreset}</Text>
-                <AppIcon name="chevron.up.chevron.down" size={14} tintColor={mutedForeground} />
+                <Text
+                  style={[
+                    styles.typeChipLabel,
+                    preset === selectedPreset && styles.typeChipLabelSelected,
+                  ]}
+                >
+                  {preset}
+                </Text>
               </Pressable>
-            </MenuView>
+            ))}
           </View>
-          <Text style={styles.label}>{t.chat.noteDraft.instructionsLabel}</Text>
+          <Text style={styles.label}>{t.chat.noteDraft.instructionsLabel.toUpperCase()}</Text>
           <TextField
             ref={customInputRef}
             multiline
@@ -213,13 +214,15 @@ export default function ChatToNoteSheetScreen() {
             <Button
               label={t.chat.noteDraft.cancel}
               onPress={() => router.back()}
-              variant="outline"
-              size="sm"
+              size="lg"
+              style={styles.footerButton}
+              variant="secondary"
             />
             <Button
               label={t.chat.noteDraft.submit}
               onPress={handleSubmit}
-              style={styles.submitButton}
+              size="lg"
+              style={styles.footerButton}
             />
           </View>
         </>
@@ -238,20 +241,22 @@ export default function ChatToNoteSheetScreen() {
           {phase.kind === 'preview' ? (
             <View style={styles.footer}>
               <Button
-                label={t.chat.noteDraft.cancel}
+                label={t.chat.noteDraft.discard}
                 onPress={handleDiscardPreview}
-                variant="outline"
-                size="sm"
+                size="lg"
+                style={styles.footerButton}
+                variant="secondary"
               />
-              <ComposerSendButton
-                accessibilityLabel={t.chat.noteDraft.acceptA11y}
-                icon="checkmark"
+              <Button
                 disabled={createNote.isPending}
-                isLoading={createNote.isPending}
-                testID="note-draft-accept"
+                label={t.chat.noteDraft.accept}
+                loading={createNote.isPending}
                 onPress={() => {
                   void handleAccept();
                 }}
+                size="lg"
+                style={styles.footerButton}
+                testID="note-draft-accept"
               />
             </View>
           ) : null}

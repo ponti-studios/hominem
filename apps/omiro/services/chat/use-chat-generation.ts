@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { API_BASE_URL } from '~/constants';
 import { storage } from '~/services/storage/mmkv';
 
-import type { ChatGenerationState } from './chat-generation';
+import { toGenerationStage, type ChatGenerationState } from './chat-generation';
 import { takeGenerationHandoff, type PendingGenerationHandoff } from './generation-handoff';
 
 const resumingGenerationIds = new Set<string>();
@@ -49,10 +49,15 @@ function restoreGeneration(chatId: string): ChatGenerationState | null {
       return null;
     }
     const { checkpoint, userMessageId } = stored;
+    // A finished or stopped run has nothing to resume or show.
+    if (checkpoint.phase === 'committed' || checkpoint.phase === 'cancelled') {
+      storage.remove(generationStorageKey(chatId));
+      return null;
+    }
     return {
       id: checkpoint.generationId,
       chatId,
-      stage: checkpoint.phase === 'cancel_requested' ? 'stopping' : checkpoint.phase,
+      stage: toGenerationStage(checkpoint.phase),
       lastDurableSequence: checkpoint.lastDurableSequence,
       ...(userMessageId ? { userMessageId } : {}),
     };
@@ -172,7 +177,7 @@ export function useChatGeneration({
       initialGeneration: {
         id: state.generationId,
         chatId,
-        stage: state.phase === 'cancel_requested' ? 'stopping' : state.phase,
+        stage: toGenerationStage(state.phase),
         lastDurableSequence: state.lastDurableSequence,
         ...(taken.userMessageId ? { userMessageId: taken.userMessageId } : {}),
       },
@@ -216,7 +221,7 @@ export function useChatGeneration({
         }
         setGeneration({
           ...current,
-          stage: state.phase === 'cancel_requested' ? 'stopping' : state.phase,
+          stage: toGenerationStage(state.phase),
           lastDurableSequence: state.lastDurableSequence,
         });
       });
@@ -311,11 +316,17 @@ export function useChatGeneration({
       return;
     }
     controller.cancel();
-    setGeneration({ ...current, stage: 'cancelled' });
-  }, [chatId, client, setGeneration]);
+    // Nothing is left to show once a stop lands -- clear the generation so the
+    // composer comes back, and refresh to drop the partial reply.
+    setGeneration(null);
+    void onGenerationTerminal?.();
+  }, [chatId, client, onGenerationTerminal, setGeneration]);
+
+  const dismissGeneration = useCallback(() => setGeneration(null), [setGeneration]);
 
   return {
     cancelGeneration,
+    dismissGeneration,
     regenerateGeneration,
     sendGeneration,
     generation,

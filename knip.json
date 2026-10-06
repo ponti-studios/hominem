@@ -26,9 +26,7 @@
     "tw-animate-css",
     "tailwindcss",
     "expo-updates",
-    "@expo/plist",
-    "@expo/image-utils",
-    "@expo/prebuild-config"
+    "@expo/plist"
   ],
 
   "ignoreBinaries": [],

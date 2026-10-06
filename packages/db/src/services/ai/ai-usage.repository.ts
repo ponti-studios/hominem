@@ -406,19 +406,17 @@ export const AIUsageEventRepository = {
       .orderBy(sql`coalesce(sum(total_tokens), 0)`, 'desc')
       .execute();
 
-    return rows.map(
-      (row): AIUsageFeatureBreakdownRecord => ({
-        feature: parseAIUsageFeature(row.feature),
-        requestCount: Number(row.requestCount ?? 0),
-        succeededCount: Number(row.succeededCount ?? 0),
-        failedCount: Number(row.failedCount ?? 0),
-        usageAvailableCount: Number(row.usageAvailableCount ?? 0),
-        promptTokens: Number(row.promptTokens ?? 0),
-        outputTokens: Number(row.outputTokens ?? 0),
-        totalTokens: Number(row.totalTokens ?? 0),
-        totalCostUsd: toRequiredNumber(row.totalCostUsd),
-      }),
-    );
+    return rows.map((row): AIUsageFeatureBreakdownRecord => ({
+      feature: parseAIUsageFeature(row.feature),
+      requestCount: Number(row.requestCount ?? 0),
+      succeededCount: Number(row.succeededCount ?? 0),
+      failedCount: Number(row.failedCount ?? 0),
+      usageAvailableCount: Number(row.usageAvailableCount ?? 0),
+      promptTokens: Number(row.promptTokens ?? 0),
+      outputTokens: Number(row.outputTokens ?? 0),
+      totalTokens: Number(row.totalTokens ?? 0),
+      totalCostUsd: toRequiredNumber(row.totalCostUsd),
+    }));
   },
 
   async getModelBreakdown(
@@ -452,19 +450,17 @@ export const AIUsageEventRepository = {
       .orderBy(sql`coalesce(sum(total_tokens), 0)`, 'desc')
       .execute();
 
-    return rows.map(
-      (row): AIUsageModelBreakdownRecord => ({
-        model: row.model ?? null,
-        requestCount: Number(row.requestCount ?? 0),
-        succeededCount: Number(row.succeededCount ?? 0),
-        failedCount: Number(row.failedCount ?? 0),
-        usageAvailableCount: Number(row.usageAvailableCount ?? 0),
-        promptTokens: Number(row.promptTokens ?? 0),
-        outputTokens: Number(row.outputTokens ?? 0),
-        totalTokens: Number(row.totalTokens ?? 0),
-        totalCostUsd: toRequiredNumber(row.totalCostUsd),
-      }),
-    );
+    return rows.map((row): AIUsageModelBreakdownRecord => ({
+      model: row.model ?? null,
+      requestCount: Number(row.requestCount ?? 0),
+      succeededCount: Number(row.succeededCount ?? 0),
+      failedCount: Number(row.failedCount ?? 0),
+      usageAvailableCount: Number(row.usageAvailableCount ?? 0),
+      promptTokens: Number(row.promptTokens ?? 0),
+      outputTokens: Number(row.outputTokens ?? 0),
+      totalTokens: Number(row.totalTokens ?? 0),
+      totalCostUsd: toRequiredNumber(row.totalCostUsd),
+    }));
   },
 
   async getTimeseries(
@@ -533,19 +529,17 @@ export const AIUsageEventRepository = {
       .orderBy(sql`coalesce(sum(total_tokens), 0)`, 'desc')
       .execute();
 
-    return rows.map(
-      (row): AIUsageOperationBreakdownRecord => ({
-        operation: parseAIUsageOperation(row.operation),
-        requestCount: Number(row.requestCount ?? 0),
-        succeededCount: Number(row.succeededCount ?? 0),
-        failedCount: Number(row.failedCount ?? 0),
-        usageAvailableCount: Number(row.usageAvailableCount ?? 0),
-        promptTokens: Number(row.promptTokens ?? 0),
-        outputTokens: Number(row.outputTokens ?? 0),
-        totalTokens: Number(row.totalTokens ?? 0),
-        totalCostUsd: toRequiredNumber(row.totalCostUsd),
-      }),
-    );
+    return rows.map((row): AIUsageOperationBreakdownRecord => ({
+      operation: parseAIUsageOperation(row.operation),
+      requestCount: Number(row.requestCount ?? 0),
+      succeededCount: Number(row.succeededCount ?? 0),
+      failedCount: Number(row.failedCount ?? 0),
+      usageAvailableCount: Number(row.usageAvailableCount ?? 0),
+      promptTokens: Number(row.promptTokens ?? 0),
+      outputTokens: Number(row.outputTokens ?? 0),
+      totalTokens: Number(row.totalTokens ?? 0),
+      totalCostUsd: toRequiredNumber(row.totalCostUsd),
+    }));
   },
 
   // Most-expensive conversations of the period, keyed off the chatId each

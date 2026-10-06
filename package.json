@@ -42,14 +42,12 @@
     "portless-kill": "bash scripts/portless-kill.sh"
   },
   "devDependencies": {
-    "@expo/image-utils": "^0.11.4",
-    "@expo/prebuild-config": "~56.0.16",
     "@types/node": "catalog:",
     "@types/pg": "^8.23.1",
     "@types/react": "catalog:",
     "@xmldom/xmldom": "0.9.12",
     "knip": "^6.4.1",
-    "oxfmt": "0.56.0",
+    "oxfmt": "0.72.0",
     "oxlint": "^1.71.0",
     "portless": "0.15.6",
     "react-doctor": "^0.9.12",
