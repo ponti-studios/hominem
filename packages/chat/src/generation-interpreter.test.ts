@@ -293,13 +293,11 @@ describe('generation interpreter', () => {
       control: { waitBeforeRetry },
       provider: {
         open: vi.fn(async () => failedCompletion()),
-        retry: vi.fn(
-          (): GenerationInput => ({
-            type: 'provider-turn-completed',
-            requiredToolCall: false,
-            confirmationCallIds: [],
-          }),
-        ),
+        retry: vi.fn((): GenerationInput => ({
+          type: 'provider-turn-completed',
+          requiredToolCall: false,
+          confirmationCallIds: [],
+        })),
       },
       tools: {
         execute: vi.fn(),
@@ -344,13 +342,11 @@ describe('generation interpreter', () => {
       },
       provider: {
         open: vi.fn(async () => failedCompletion()),
-        retry: vi.fn(
-          (): GenerationInput => ({
-            type: 'provider-turn-completed',
-            requiredToolCall: false,
-            confirmationCallIds: [],
-          }),
-        ),
+        retry: vi.fn((): GenerationInput => ({
+          type: 'provider-turn-completed',
+          requiredToolCall: false,
+          confirmationCallIds: [],
+        })),
       },
       tools: {
         execute: vi.fn(),

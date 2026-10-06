@@ -82,12 +82,10 @@ export function buildMessages(
 ): ChatMessages[] {
   return [
     { role: 'system', content: systemPrompt },
-    ...history.map(
-      (entry): ChatMessages => ({
-        role: entry.role === 'assistant' ? 'assistant' : 'user',
-        content: entry.content,
-      }),
-    ),
+    ...history.map((entry): ChatMessages => ({
+      role: entry.role === 'assistant' ? 'assistant' : 'user',
+      content: entry.content,
+    })),
     { role: 'user', content: currentUserContent },
   ];
 }

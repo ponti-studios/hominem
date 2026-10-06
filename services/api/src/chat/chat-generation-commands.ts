@@ -353,12 +353,10 @@ export async function respondToConfirmation(
   const priorHistory = pendingMessageIndex === -1 ? history : history.slice(0, pendingMessageIndex);
   const messages: ChatMessages[] = [
     { role: 'system', content: buildChatSystemPrompt(input.responseLength) },
-    ...priorHistory.map(
-      (entry): ChatMessages => ({
-        role: entry.role === 'assistant' ? 'assistant' : 'user',
-        content: entry.content,
-      }),
-    ),
+    ...priorHistory.map((entry): ChatMessages => ({
+      role: entry.role === 'assistant' ? 'assistant' : 'user',
+      content: entry.content,
+    })),
     {
       role: 'assistant',
       content: message.content || null,
