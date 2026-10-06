@@ -3,6 +3,7 @@ import { View } from 'react-native';
 
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
+import { FloatingCircleButton, FloatingHeader } from '~/components/navigation/floating-header';
 import { useStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
 import {
@@ -25,6 +26,14 @@ export function NewChatScreen() {
 
   return (
     <View style={styles.container} testID="new-chat-screen">
+      <FloatingHeader
+        left=<FloatingCircleButton
+          accessibilityLabel="BackButton"
+          icon="xmark"
+          onPress={() => router.back()}
+          testID="new-chat-close-button"
+        />
+      />
       <View style={styles.content}>
         <EmptyState
           description={t.chat.emptyState.description}

@@ -1,7 +1,7 @@
 import type { SessionSource } from '@hominem/rpc/types';
 import { isObject } from '@hominem/utils';
 import { useQueryClient } from '@tanstack/react-query';
-import { Stack, useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, Text, View } from 'react-native';
 
@@ -19,8 +19,15 @@ import { ChatSourcesSheet } from '~/components/chat/chat-sources-sheet';
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
 import { getDockKeyboardOffset } from '~/components/composer/composerDock.helpers';
+import {
+  FloatingActionPill,
+  FloatingCircleButton,
+  FloatingHeader,
+  FloatingPillButton,
+} from '~/components/navigation/floating-header';
 import { useStyles } from '~/components/theme';
 import { EmptyState } from '~/components/ui';
+import { ActionMenu } from '~/components/ui/action-menu';
 import { useChatData } from '~/hooks/use-chat-data';
 import { useChatSearch } from '~/hooks/use-chat-search';
 import { useNetworkStatus } from '~/hooks/use-network-status';
@@ -180,7 +187,11 @@ export function ChatScreen({ id }: { id: string }) {
   const [showChatSettings, setShowChatSettings] = useState(false);
   const [showChatSources, setShowChatSources] = useState(false);
 
-  const chatMenuActions = useChatActionsMenu({
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const navigation = useNavigation();
+  const canGoBack = navigation.canGoBack();
+
+  const chatMenuSections = useChatActionsMenu({
     chatId,
     canTransform: extraction.canTransform,
     isConversationGone,
@@ -226,19 +237,36 @@ export function ChatScreen({ id }: { id: string }) {
 
   return (
     <>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Menu
-          accessibilityLabel={t.chat.conversationActionsLabel}
-          icon="ellipsis.circle"
-        >
-          {chatMenuActions}
-        </Stack.Toolbar.Menu>
-        <Stack.Toolbar.Button
-          accessibilityLabel="New chat"
-          icon="square.and.pencil"
-          onPress={() => router.push(NEW_CHAT_ROUTE)}
+      <FloatingHeader
+        left=<FloatingCircleButton
+          accessibilityLabel="BackButton"
+          icon={canGoBack ? 'chevron.left' : 'xmark'}
+          onPress={() => (canGoBack ? router.back() : router.dismissTo(CHAT_ROUTE))}
+          testID="chat-back-button"
         />
-      </Stack.Toolbar>
+        right={
+          <FloatingActionPill>
+            <FloatingPillButton
+              accessibilityLabel={t.chat.conversationActionsLabel}
+              icon="ellipsis.circle"
+              onPress={() => setShowActionsMenu(true)}
+              testID="chat-actions-button"
+            />
+            <FloatingPillButton
+              accessibilityLabel="New chat"
+              icon="square.and.pencil"
+              onPress={() => router.push(NEW_CHAT_ROUTE)}
+              testID="chat-new-button"
+            />
+          </FloatingActionPill>
+        }
+      />
+      <ActionMenu
+        onClose={() => setShowActionsMenu(false)}
+        sections={chatMenuSections}
+        testID="chat-actions-menu"
+        visible={showActionsMenu}
+      />
 
       <View style={styles.container}>
         <ChatSettingsSheet visible={showChatSettings} onClose={() => setShowChatSettings(false)} />

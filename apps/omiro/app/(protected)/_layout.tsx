@@ -96,7 +96,7 @@ function ProtectedShell() {
             >
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="new-chat" />
+              <Stack.Screen name="new-chat" options={{ headerShown: false }} />
               <Stack.Screen name="chats" options={{ headerShown: false }} />
               <Stack.Screen name="notes" options={{ headerShown: false }} />
               <Stack.Screen

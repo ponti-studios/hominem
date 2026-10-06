@@ -1,7 +1,7 @@
 import { parseInboxTimestamp } from '@hominem/chat';
 import type { Note } from '@hominem/rpc/types';
 import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -17,9 +17,16 @@ import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import Markdown from 'react-native-markdown-display';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
+import {
+  FloatingActionPill,
+  FloatingCircleButton,
+  FloatingHeader,
+  FloatingPillButton,
+} from '~/components/navigation/floating-header';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
 import { TextField } from '~/components/ui';
+import { ActionMenu } from '~/components/ui/action-menu';
 import { EmptyState } from '~/components/ui/EmptyState';
 import AppIcon from '~/components/ui/icon';
 import { useNoteEditor } from '~/hooks/use-note-editor';
@@ -172,6 +179,20 @@ function NoteDetailPlaceholder() {
   );
 }
 
+function NoteBackButton() {
+  const navigation = useNavigation();
+  const router = useRouter();
+  const canGoBack = navigation.canGoBack();
+  return (
+    <FloatingCircleButton
+      accessibilityLabel="BackButton"
+      icon={canGoBack ? 'chevron.left' : 'xmark'}
+      onPress={() => (canGoBack ? router.back() : router.dismissTo(NOTES_ROUTE))}
+      testID="note-back-button"
+    />
+  );
+}
+
 export function NoteScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const noteId = String(id ?? '');
@@ -208,6 +229,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   if (isInitialLoading) {
     return (
       <>
+        <FloatingHeader left=<NoteBackButton /> />
         <NoteDetailPlaceholder />
       </>
     );
@@ -216,6 +238,7 @@ function NoteDetailEditor({ noteId }: { noteId: string }) {
   if (!note) {
     return (
       <>
+        <FloatingHeader left=<NoteBackButton /> />
         <ScrollView
           style={styles.errorContainer}
           contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16 }}
@@ -415,6 +438,7 @@ function NoteEditorBody({
     startChat,
   ]);
 
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
   const dateline = formatNoteDateline(note);
   const saveStatusLabel =
     saveStatus === 'saving'
@@ -426,36 +450,65 @@ function NoteEditorBody({
 
   return (
     <>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.View>
-          <View style={styles.savePill}>
-            <View style={[styles.saveDot, { backgroundColor: saveStatusColor }]} />
-            <Text style={styles.saveText}>{saveStatusLabel}</Text>
-          </View>
-        </Stack.Toolbar.View>
-        <Stack.Toolbar.Button
-          accessibilityLabel={isPreviewing ? t.notes.editor.editMode : t.notes.editor.previewMode}
-          icon={isPreviewing ? 'pencil' : 'eye'}
-          onPress={() => setIsPreviewing((current) => !current)}
-        />
-        <Stack.Toolbar.Menu accessibilityLabel={t.notes.editor.actionsLabel} icon="ellipsis.circle">
-          <Stack.Toolbar.MenuAction icon="sparkles" onPress={handleToggleEnhance}>
-            {t.enhance.confirm}
-          </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction
-            disabled={isStartingChat}
-            icon="bubble.left"
-            onPress={() => {
-              void handleStartChat();
-            }}
-          >
-            {t.notes.editor.startChat}
-          </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction destructive icon="trash" onPress={onDeleteNote}>
-            {t.inbox.item.deleteNote.title}
-          </Stack.Toolbar.MenuAction>
-        </Stack.Toolbar.Menu>
-      </Stack.Toolbar>
+      <FloatingHeader
+        left=<NoteBackButton />
+        right={
+          <FloatingActionPill>
+            <View style={styles.savePill} testID="note-save-status">
+              <View style={[styles.saveDot, { backgroundColor: saveStatusColor }]} />
+              <Text style={styles.saveText}>{saveStatusLabel}</Text>
+            </View>
+            <FloatingPillButton
+              accessibilityLabel={
+                isPreviewing ? t.notes.editor.editMode : t.notes.editor.previewMode
+              }
+              icon={isPreviewing ? 'pencil' : 'eye'}
+              onPress={() => setIsPreviewing((current) => !current)}
+              testID="note-preview-toggle"
+            />
+            <FloatingPillButton
+              accessibilityLabel={t.notes.editor.actionsLabel}
+              icon="ellipsis.circle"
+              onPress={() => setShowActionsMenu(true)}
+              testID="note-actions-button"
+            />
+          </FloatingActionPill>
+        }
+      />
+      <ActionMenu
+        onClose={() => setShowActionsMenu(false)}
+        sections={[
+          {
+            key: 'note',
+            items: [
+              {
+                key: 'enhance',
+                icon: 'sparkles',
+                label: t.enhance.confirm,
+                onPress: handleToggleEnhance,
+              },
+              {
+                key: 'start-chat',
+                disabled: isStartingChat,
+                icon: 'bubble.left',
+                label: t.notes.editor.startChat,
+                onPress: () => {
+                  void handleStartChat();
+                },
+              },
+              {
+                key: 'delete',
+                destructive: true,
+                icon: 'trash',
+                label: t.inbox.item.deleteNote.title,
+                onPress: onDeleteNote,
+              },
+            ],
+          },
+        ]}
+        testID="note-actions-menu"
+        visible={showActionsMenu}
+      />
 
       <ScrollView
         style={styles.editorContainer}

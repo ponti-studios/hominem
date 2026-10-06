@@ -63,7 +63,7 @@ export function ChatSourcesSheet({ chatId, visible, onClose }: ChatSourcesSheetP
   useEffect(() => {
     if (visible) {
       // Same UIMenu-dismiss race as ChatSettingsSheet -- wait for the
-      // triggering Stack.Toolbar.Menu action's close animation first.
+      // triggering the actions menu's close animation first.
       const timeout = setTimeout(() => {
         modalRef.current?.present();
       }, 100);
