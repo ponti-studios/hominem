@@ -36,6 +36,23 @@ build them.
 | 4   | Organizing instead of doing    | [omiro.tasks.organizing.md](omiro.tasks.organizing.md) | `K4Organizing` |
 | 5   | Tasks with no context          | [omiro.tasks.context.md](omiro.tasks.context.md)       | `K5Context`    |
 
+## The screen
+
+The Tasks tab has three sections, in this order: Carried over, Today, Upcoming.
+Nothing else is on the page, and undated reminders are never shown. Frames are
+the `TS` boards on the canvas, in the "Tasks — the screen" row.
+
+| State       | Frame        | What it shows                                                                                       |
+| ----------- | ------------ | --------------------------------------------------------------------------------------------------- |
+| Busy day    | `TSToday`    | Carried over (Done, Move, Drop), Today, Upcoming capped with a count, and the Open in Reminders row |
+| Today clear | `TSClear`    | "All done for today" in place of the Today list; Upcoming still shows                               |
+| First run   | `TSFirstRun` | A one-line note that only dated reminders show here, dismissed with Got it                          |
+| Move        | `TSMove`     | A sheet: Tomorrow, Saturday, Next Monday, Pick a date                                               |
+
+Open decisions are listed on the canvas note beside these frames: whether Tasks
+gets the composer, what Drop does in Reminders, and how many days Upcoming
+covers. All of these frames are `[Not built]`.
+
 ## Keeping docs and designs in sync
 
 The design canvas is "Omiro — Chat, Notes & Tasks"
