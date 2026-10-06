@@ -7,17 +7,18 @@ these; they do not define their own colors, radii or type.
 
 Plain data, shared by the restyle theme (`theme.ts`), native code and tests.
 
-| Group    | Tokens                                                                                                  |
-| -------- | ------------------------------------------------------------------------------------------------------- |
-| Ground   | `background` (lavender `#F5F3FF` / near-black `#0E0C1A`), `card`, `muted`, `border`                     |
-| Text     | `foreground`, `mutedForeground`                                                                          |
-| Action   | `primary` (violet `#6C4DFF`) with `primaryForeground`; `destructive`                                    |
-| Inverted | `ink` / `inkForeground`: the capture bar, toasts, selected day pill, "ink" buttons                       |
-| Accents  | `coral` (now marker, badges, errors), `lime` / `limeForeground` (completion)                            |
-| Events   | `eventViolet`, `eventCoral`, `eventSky`, `eventSun` pastel fills with `eventForeground`                 |
-| Radii    | `sm 6`, `md 10`, `lg 14`, `xl 22` (cards), `2xl 28`, `pill 999` (buttons, chips, bars)                  |
-| Shadows  | `float` only (capture bar, sheets, toasts). List rows and cards are flat.                                |
-| Type     | Geist. Titles are 700; use `display`, `title1`, `title2`, `cardTitle`, `headline`, `label`, `chip`, `body`, `subhead`, `footnote`. |
+| Group    | Tokens                                                                                                                                                                                                                     |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ground   | `background` (lavender `#F5F3FF` / near-black `#0E0C1A`), `card`, `muted`, `border`                                                                                                                                        |
+| Text     | `foreground`, `mutedForeground`                                                                                                                                                                                            |
+| Action   | `primary` (violet `#6C4DFF`) with `primaryForeground`; `destructive`                                                                                                                                                       |
+| Inverted | `ink` / `inkForeground`: selected day pill, "ink" buttons. These flip with the color scheme.                                                                                                                               |
+| Bar      | `bar` / `barForeground` / `barAccent` / `barAccentForeground`: the composer, search bar, toasts, and the dock's stopping and failed bars. Fixed dark (`#14121F`, white text, violet `#6C4DFF` chip) in both color schemes. |
+| Accents  | `coral` (now marker, badges, errors), `lime` / `limeForeground` (completion)                                                                                                                                               |
+| Events   | `eventViolet`, `eventCoral`, `eventSky`, `eventSun` pastel fills with `eventForeground`                                                                                                                                    |
+| Radii    | `sm 6`, `md 10`, `lg 14`, `xl 22` (cards), `2xl 28`, `pill 999` (buttons, chips, bars)                                                                                                                                     |
+| Shadows  | `float` (sheets) and `bar` (`float` plus a 1px white 10% ring, for the fixed dark bars). List rows and cards are flat.                                                                                                     |
+| Type     | Geist. Titles are 700; use `display`, `title1`, `title2`, `cardTitle`, `headline`, `label`, `chip`, `body`, `subhead`, `footnote`.                                                                                         |
 
 `tests/components/theme/tokens.test.ts` enforces WCAG AA contrast for the
 text/fill pairs above in both light and dark. Add a pair there when you add a

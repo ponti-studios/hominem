@@ -39,6 +39,12 @@ export const lightColors = {
   overlayScrim: '#14121F',
   ink: '#14121F',
   inkForeground: '#FFFFFF',
+  // The composer family (composer, search bar, toasts, the dock's stopping and
+  // failed bars) is one fixed dark bar: these do not flip with the color scheme.
+  bar: '#14121F',
+  barForeground: '#FFFFFF',
+  barAccent: '#6C4DFF',
+  barAccentForeground: '#FFFFFF',
   coral: '#FF6B57',
   lime: '#C9F36B',
   limeForeground: '#14121F',
@@ -80,6 +86,12 @@ export const darkColors = {
   overlayScrim: '#000000',
   ink: '#F4F2FF',
   inkForeground: '#14121F',
+  // The composer family (composer, search bar, toasts, the dock's stopping and
+  // failed bars) is one fixed dark bar: these do not flip with the color scheme.
+  bar: '#14121F',
+  barForeground: '#FFFFFF',
+  barAccent: '#6C4DFF',
+  barAccentForeground: '#FFFFFF',
   coral: '#FF7D6B',
   lime: '#C9F36B',
   limeForeground: '#14121F',
@@ -139,6 +151,12 @@ export const shadows = {
   // sheets, toasts). List rows and cards stay flat -- blur shadows on every
   // row are the classic scroll-jank source.
   float: [
+    { color: '#14121F47', offsetX: 0, offsetY: 8, blurRadius: 24, spreadDistance: 0, inset: false },
+  ],
+  // `float` plus a 1px white 10% ring, so the fixed dark bar keeps a readable
+  // edge on a dark ground. The ring is invisible on a light ground.
+  bar: [
+    { color: '#FFFFFF1A', offsetX: 0, offsetY: 0, blurRadius: 0, spreadDistance: 1, inset: false },
     { color: '#14121F47', offsetX: 0, offsetY: 8, blurRadius: 24, spreadDistance: 0, inset: false },
   ],
 } as const;

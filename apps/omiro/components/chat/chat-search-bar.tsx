@@ -24,15 +24,15 @@ export function ChatSearchBar({
   query,
   resultCount,
 }: ChatSearchBarProps) {
-  const { ink, inkForeground } = useAppTheme().colors;
+  const { bar, barForeground } = useAppTheme().colors;
   const hasQuery = query.trim().length > 0;
   const styles = useStyles((theme) => ({
     bar: {
       alignItems: 'center',
-      backgroundColor: theme.colors.ink,
+      backgroundColor: theme.colors.bar,
       borderCurve: 'continuous',
       borderRadius: 28,
-      boxShadow: theme.shadows.float,
+      boxShadow: theme.shadows.bar,
       flexDirection: 'row',
       gap: 10,
       height: 56,
@@ -40,21 +40,21 @@ export function ChatSearchBar({
       paddingRight: 6,
     },
     input: {
-      color: theme.colors.inkForeground,
+      color: theme.colors.barForeground,
       flex: 1,
       fontSize: 17,
       fontWeight: '600',
       paddingVertical: 0,
     },
     count: {
-      color: theme.colors.inkForeground,
+      color: theme.colors.barForeground,
       fontSize: 13,
       fontWeight: '700',
       opacity: 0.6,
     },
     close: {
       alignItems: 'center',
-      backgroundColor: theme.colors.inkForeground,
+      backgroundColor: theme.colors.barForeground,
       borderRadius: 22,
       height: 44,
       justifyContent: 'center',
@@ -65,17 +65,17 @@ export function ChatSearchBar({
   return (
     <Animated.View entering={FadeIn.duration(160)} testID="chat-search-bar">
       <View style={styles.bar}>
-        <AppIcon name="magnifyingglass" size={18} tintColor={inkForeground} />
+        <AppIcon name="magnifyingglass" size={18} tintColor={barForeground} />
         <TextInput
           ref={inputRef}
           autoFocus
           accessibilityLabel={t.chat.search.title}
-          cursorColor={inkForeground}
+          cursorColor={barForeground}
           onChangeText={onChangeQuery}
           placeholder={t.chat.search.placeholder}
-          placeholderTextColor={inkForeground}
+          placeholderTextColor={barForeground}
           returnKeyType="search"
-          selectionColor={inkForeground}
+          selectionColor={barForeground}
           style={styles.input}
           testID="chat-search-input"
           value={query}
@@ -88,7 +88,7 @@ export function ChatSearchBar({
           style={styles.close}
           testID="chat-search-close"
         >
-          <AppIcon name="xmark" size={18} tintColor={ink} />
+          <AppIcon name="xmark" size={18} tintColor={bar} />
         </Pressable>
       </View>
     </Animated.View>

@@ -20,14 +20,14 @@ interface SavedPopupProps {
 // that goes there.
 export function SavedPopup({ bottom, label, onDismiss, onOpen }: SavedPopupProps) {
   const reducedMotion = useReducedMotion();
-  const { limeForeground, primaryForeground } = useAppTheme().colors;
+  const { barAccentForeground, limeForeground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     popup: {
       alignItems: 'center',
-      backgroundColor: theme.colors.ink,
+      backgroundColor: theme.colors.bar,
       borderCurve: 'continuous',
       borderRadius: 24,
-      boxShadow: theme.shadows.float,
+      boxShadow: theme.shadows.bar,
       flexDirection: 'row',
       gap: 10,
       height: 48,
@@ -44,10 +44,10 @@ export function SavedPopup({ bottom, label, onDismiss, onOpen }: SavedPopupProps
       justifyContent: 'center',
       width: 36,
     },
-    label: { ...theme.textVariants.subhead, color: theme.colors.inkForeground, flex: 1 },
+    label: { ...theme.textVariants.subhead, color: theme.colors.barForeground, flex: 1 },
     open: {
       alignItems: 'center',
-      backgroundColor: theme.colors.primary,
+      backgroundColor: theme.colors.barAccent,
       borderRadius: 18,
       height: 36,
       justifyContent: 'center',
@@ -80,7 +80,7 @@ export function SavedPopup({ bottom, label, onDismiss, onOpen }: SavedPopupProps
         style={styles.open}
         testID="saved-popup-open"
       >
-        <AppIcon name="arrow.right" size={16} tintColor={primaryForeground} />
+        <AppIcon name="arrow.right" size={16} tintColor={barAccentForeground} />
       </Pressable>
     </Animated.View>
   );

@@ -33,13 +33,13 @@ export function VoiceRecordingPanel({
   const {
     card: cardColor,
     destructive: destructiveColor,
-    inkForeground,
+    barForeground,
     mutedForeground,
   } = useAppTheme().colors;
   const onInk = tone === 'ink';
-  const pillColor = onInk ? withAlpha(inkForeground, 0.16) : cardColor;
-  const textSecondaryColor = onInk ? inkForeground : mutedForeground;
-  const iconTint = onInk ? inkForeground : undefined;
+  const pillColor = onInk ? withAlpha(barForeground, 0.16) : cardColor;
+  const textSecondaryColor = onInk ? barForeground : mutedForeground;
+  const iconTint = onInk ? barForeground : undefined;
   const styles = useStyles(() => ({
     recordingDot: { width: 8, height: 8, borderRadius: 999 },
     recordingContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%' },

@@ -67,9 +67,10 @@ function useBarStyles() {
       paddingRight: 6,
     },
     working: { backgroundColor: theme.colors.lime },
-    stopping: { backgroundColor: theme.colors.ink },
+    stopping: { backgroundColor: theme.colors.bar, boxShadow: theme.shadows.bar },
     failed: {
-      backgroundColor: theme.colors.ink,
+      backgroundColor: theme.colors.bar,
+      boxShadow: theme.shadows.bar,
       borderColor: theme.colors.coral,
       borderWidth: 2,
       paddingLeft: 6,
@@ -80,7 +81,7 @@ function useBarStyles() {
       fontWeight: '800',
       letterSpacing: -0.4,
     },
-    stoppingLabel: { color: theme.colors.inkForeground, fontSize: 18, fontWeight: '800' },
+    stoppingLabel: { color: theme.colors.barForeground, fontSize: 18, fontWeight: '800' },
     grow: { flex: 1 },
     stopButton: {
       alignItems: 'center',
@@ -105,9 +106,9 @@ function useBarStyles() {
       width: 40,
     },
     failedBody: { flex: 1, minWidth: 0 },
-    failedTitle: { color: theme.colors.inkForeground, fontSize: 16, fontWeight: '800' },
+    failedTitle: { color: theme.colors.barForeground, fontSize: 16, fontWeight: '800' },
     failedDetail: {
-      color: theme.colors.inkForeground,
+      color: theme.colors.barForeground,
       fontSize: 12,
       fontWeight: '600',
       opacity: 0.65,
@@ -163,7 +164,7 @@ function WorkingBar({ onCancel }: { onCancel: () => void }) {
 
 function StoppingBar() {
   const styles = useBarStyles();
-  const { ink } = useAppTheme().colors;
+  const { bar } = useAppTheme().colors;
   return (
     <View
       accessibilityLiveRegion="polite"
@@ -172,7 +173,7 @@ function StoppingBar() {
     >
       <View style={styles.grow}>
         <ShimmerText
-          fade={ink}
+          fade={bar}
           label={t.chat.generation.stoppingBar}
           style={styles.stoppingLabel}
         />
@@ -184,7 +185,7 @@ function StoppingBar() {
 
 function FailedBar({ onEdit, onRetry }: { onEdit?: () => void; onRetry?: () => void }) {
   const styles = useBarStyles();
-  const { inkForeground, limeForeground } = useAppTheme().colors;
+  const { barForeground, limeForeground } = useAppTheme().colors;
   return (
     <View
       accessibilityLiveRegion="polite"
@@ -221,7 +222,7 @@ function FailedBar({ onEdit, onRetry }: { onEdit?: () => void; onRetry?: () => v
           style={styles.editButton}
           testID="chat-generation-edit"
         >
-          <AppIcon name="square.and.pencil" size={20} tintColor={inkForeground} />
+          <AppIcon name="square.and.pencil" size={20} tintColor={barForeground} />
         </Pressable>
       ) : null}
     </View>

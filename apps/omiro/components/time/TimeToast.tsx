@@ -20,8 +20,8 @@ interface TimeToastProps {
   toast: TimeToastModel;
 }
 
-// Transient feedback floating above the capture bar. Success is the inverted
-// ink pill with a lime badge; errors are a bordered card with a coral icon
+// Transient feedback floating above the capture bar. Success is the fixed
+// dark bar pill with a lime badge; errors are a bordered card with a coral icon
 // and a retry.
 export function TimeToast({ onDismiss, toast, top }: TimeToastProps) {
   const reducedMotion = useReducedMotion();
@@ -30,13 +30,13 @@ export function TimeToast({ onDismiss, toast, top }: TimeToastProps) {
   const styles = useStyles((theme) => ({
     toast: {
       alignItems: 'center',
-      backgroundColor: isError ? theme.colors.card : theme.colors.ink,
+      backgroundColor: isError ? theme.colors.card : theme.colors.bar,
       borderColor: theme.colors.coral,
       borderCurve: 'continuous',
       borderRadius: 26,
       borderWidth: isError ? 2 : 0,
       top,
-      boxShadow: theme.shadows.float,
+      boxShadow: isError ? theme.shadows.float : theme.shadows.bar,
       flexDirection: 'row',
       gap: 14,
       left: 16,
@@ -61,11 +61,11 @@ export function TimeToast({ onDismiss, toast, top }: TimeToastProps) {
     body: { flex: 1, gap: 1 },
     message: {
       ...theme.textVariants.headline,
-      color: isError ? theme.colors.foreground : theme.colors.inkForeground,
+      color: isError ? theme.colors.foreground : theme.colors.barForeground,
     },
     detail: {
       ...theme.textVariants.footnote,
-      color: isError ? theme.colors.mutedForeground : theme.colors.inkForeground,
+      color: isError ? theme.colors.mutedForeground : theme.colors.barForeground,
       opacity: isError ? 1 : 0.7,
     },
     action: {

@@ -40,12 +40,12 @@ const options: { kind: ComposerEntryKind; label: string; icon: SFSymbol; iconFil
 // control. The thumb sliding between them is what makes the switch legible.
 export function ComposerKindToggle({ selected, onSelect }: ComposerKindToggleProps) {
   const theme = useAppTheme();
-  const { inkForeground, primary, primaryForeground } = theme.colors;
+  const { barAccent, barAccentForeground, barForeground } = theme.colors;
   const styles = useStyles(() => ({
     control: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: withAlpha(inkForeground, 0.16),
+      backgroundColor: withAlpha(barForeground, 0.16),
       borderRadius: 999,
       borderCurve: 'continuous',
       padding: TRACK_PADDING,
@@ -73,7 +73,7 @@ export function ComposerKindToggle({ selected, onSelect }: ComposerKindTogglePro
         pointerEvents="none"
         style={[
           {
-            backgroundColor: primary,
+            backgroundColor: barAccent,
             borderCurve: 'continuous',
             borderRadius: 999,
             height: SEGMENT_SIZE,
@@ -105,7 +105,7 @@ export function ComposerKindToggle({ selected, onSelect }: ComposerKindTogglePro
             <AppIcon
               name={isSelected ? option.iconFilled : option.icon}
               size={16}
-              tintColor={isSelected ? primaryForeground : withAlpha(inkForeground, 0.75)}
+              tintColor={isSelected ? barAccentForeground : withAlpha(barForeground, 0.75)}
             />
           </Pressable>
         );

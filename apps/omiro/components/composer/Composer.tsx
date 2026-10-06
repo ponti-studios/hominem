@@ -97,14 +97,14 @@ function ComposerContent(props: ComposerProps) {
   const styles = useStyles((currentTheme) => ({
     composer: { width: '100%', gap: 8 },
     fields: { gap: 8 },
-    // The inverted floating bar: `ink` flips with the color scheme, so the
-    // composer is the one dark-on-light (or light-on-dark) surface on screen,
-    // like the Time capture bar. Its own margin comes from ComposerDock.
+    // The floating bar: the same dark surface in light and dark mode (`bar`
+    // tokens do not flip with the color scheme). Its own margin comes from
+    // ComposerDock.
     surface: {
-      backgroundColor: currentTheme.colors.ink,
+      backgroundColor: currentTheme.colors.bar,
       borderCurve: 'continuous',
       borderRadius: SURFACE_RADIUS,
-      boxShadow: currentTheme.shadows.float,
+      boxShadow: currentTheme.shadows.bar,
     },
     surfaceContent: { gap: 8, paddingBottom: 8, paddingHorizontal: 16, paddingTop: 14 },
   }));

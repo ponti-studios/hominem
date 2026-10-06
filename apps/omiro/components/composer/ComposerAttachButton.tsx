@@ -16,7 +16,7 @@ export function ComposerAttachButton({ disabled }: ComposerAttachButtonProps) {
   const { pickAttachment, handleCameraCapture } = useComposerContext();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { inkForeground } = useAppTheme().colors;
+  const { barForeground } = useAppTheme().colors;
 
   const showMenu = useCallback(() => setIsMenuOpen(true), []);
 
@@ -30,7 +30,7 @@ export function ComposerAttachButton({ disabled }: ComposerAttachButtonProps) {
         variant="plain"
         onPress={showMenu}
       >
-        <AppIcon name="plus" size={22} tintColor={inkForeground} />
+        <AppIcon name="plus" size={22} tintColor={barForeground} />
       </IconButton>
       <ActionSheet
         cancelLabel={t.chat.input.actionSheet.cancel}

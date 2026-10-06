@@ -71,7 +71,7 @@ function ComposerToolbarComponent({
   const hasContent =
     useComposerMessageStore(messageStore, (value) => value.trim().length > 0) ||
     uploadedAttachmentCount > 0;
-  const { inkForeground, lime } = useAppTheme().colors;
+  const { barForeground, lime } = useAppTheme().colors;
   const styles = useStyles(() => ({
     trailingActions: {
       flexDirection: 'row',
@@ -140,7 +140,7 @@ function ComposerToolbarComponent({
             variant="plain"
             onPress={() => onPlan(messageStore.getMessage())}
           >
-            <AppIcon name="calendar.badge.plus" size={20} tintColor={inkForeground} />
+            <AppIcon name="calendar.badge.plus" size={20} tintColor={barForeground} />
           </IconButton>
         ) : null}
         <IconButton
@@ -157,7 +157,7 @@ function ComposerToolbarComponent({
             void voice.handleVoicePress();
           }}
         >
-          <AppIcon name="mic.fill" size={20} tintColor={inkForeground} />
+          <AppIcon name="mic.fill" size={20} tintColor={barForeground} />
         </IconButton>
         <ComposerSendButton
           accessibilityLabel={

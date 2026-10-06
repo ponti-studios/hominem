@@ -46,7 +46,7 @@ function ComposerInputComponent({
   // Mixed mode defaults to note and only changes via the explicit
   // ComposerKindToggle -- typing plain text should never flip it to chat.
   const selectedEntryKind = manualEntryKind ?? (entryMode === 'mixed' ? 'note' : entryMode);
-  const { destructive, inkForeground } = useAppTheme().colors;
+  const { destructive, barForeground } = useAppTheme().colors;
   const handleChangeMessage = useCallback(
     (text: string) =>
       onChangeMessage(text.length > MAX_MESSAGE_LENGTH ? text.slice(0, MAX_MESSAGE_LENGTH) : text),
@@ -67,13 +67,13 @@ function ComposerInputComponent({
         multiline
         focusBorder={false}
         numberOfLines={5}
-        cursorColor={inkForeground}
-        placeholderTextColor={withAlpha(inkForeground, 0.55)}
-        selectionColor={withAlpha(inkForeground, 0.35)}
+        cursorColor={barForeground}
+        placeholderTextColor={withAlpha(barForeground, 0.55)}
+        selectionColor={withAlpha(barForeground, 0.35)}
         style={{
           borderRadius: 0,
           borderWidth: 5,
-          color: inkForeground,
+          color: barForeground,
           fontFamily: fontFamilies.sans,
           fontSize: 17,
           fontWeight: '500',
@@ -89,7 +89,7 @@ function ComposerInputComponent({
           style={{
             alignSelf: 'flex-end',
             color:
-              message.length >= MAX_MESSAGE_LENGTH ? destructive : withAlpha(inkForeground, 0.6),
+              message.length >= MAX_MESSAGE_LENGTH ? destructive : withAlpha(barForeground, 0.6),
             fontSize: 11,
           }}
         >
