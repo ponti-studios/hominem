@@ -1,9 +1,11 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 
 import { useStyles } from '~/components/theme';
 import { Checkbox } from '~/components/ui';
 import { taskDurationMinutes, type TaskListItem } from '~/services/tasks/task-types';
+
+import { taskTimeLabel } from './task-time';
 
 interface TaskRowProps {
   item: TaskListItem;
@@ -30,6 +32,8 @@ const TaskRow = memo(function TaskRow({ item, onGround, onOpen, onToggle }: Task
     meta: { ...theme.textVariants.footnote, color: theme.colors.mutedForeground },
   }));
   const minutes = taskDurationMinutes(item);
+  const when = taskTimeLabel(item);
+  const meta = [when, minutes ? `${minutes} min` : null].filter(Boolean).join(' · ');
   const completed = item.status === 'completed';
   return (
     <Pressable
@@ -51,7 +55,7 @@ const TaskRow = memo(function TaskRow({ item, onGround, onOpen, onToggle }: Task
         >
           {item.title}
         </Text>
-        {minutes ? <Text style={styles.meta}>{minutes} min</Text> : null}
+        {meta ? <Text style={styles.meta}>{meta}</Text> : null}
       </View>
     </Pressable>
   );
@@ -64,6 +68,8 @@ interface TaskListProps {
   contentPaddingBottom?: number;
   contentPaddingTop?: number;
   emptyText: string;
+  // Rendered after the last row (and after the empty text).
+  footer?: ReactNode;
   // True on the app ground (Tasks page), where rows need the card fill to
   // stand out; false inside a sheet, where rows sit on the ground tone.
   onGround?: boolean;
@@ -83,6 +89,7 @@ export function TaskList({
   contentPaddingBottom = 0,
   contentPaddingTop = 0,
   emptyText,
+  footer,
   onGround = false,
   onOpen,
   onRefresh,
@@ -91,6 +98,7 @@ export function TaskList({
   tasks,
 }: TaskListProps) {
   const styles = useStyles((theme) => ({
+    footer: { paddingTop: 10 },
     empty: {
       ...theme.textVariants.callout,
       color: theme.colors.mutedForeground,
@@ -103,6 +111,7 @@ export function TaskList({
       ItemSeparatorComponent={Gap}
       contentInsetAdjustmentBehavior={adjustForHeader ? 'automatic' : 'never'}
       ListEmptyComponent={<Text style={styles.empty}>{emptyText}</Text>}
+      ListFooterComponent={footer ? <View style={styles.footer}>{footer}</View> : null}
       contentContainerStyle={{ paddingBottom: contentPaddingBottom, paddingTop: contentPaddingTop }}
       data={tasks}
       initialNumToRender={10}

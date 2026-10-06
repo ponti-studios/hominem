@@ -16,6 +16,7 @@ export default function TasksStackLayout() {
           title: 'Tasks',
         }}
       />
+      <Stack.Screen name="place" options={{ title: 'Place' }} />
     </Stack>
   );
 }

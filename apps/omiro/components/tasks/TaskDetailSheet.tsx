@@ -4,7 +4,6 @@ import { Alert, Text, View } from 'react-native';
 import { useStyles } from '~/components/theme';
 import { BottomSheet, Checkbox, Chip } from '~/components/ui';
 import { Button } from '~/components/ui/button';
-import { openReminderInSystemApp } from '~/services/tasks/open-reminder';
 import { taskDurationMinutes, type TaskListItem } from '~/services/tasks/task-types';
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTaskDelete } from '~/services/tasks/use-task-delete';
@@ -17,7 +16,7 @@ interface TaskDetailSheetProps {
   task: TaskListItem | null;
 }
 
-// In-app task detail: complete, open it in Reminders, or delete it. Reads the live task from the list so a toggle reflects at once.
+// In-app task detail: complete or delete it. Reads the live task from the list so a toggle reflects at once.
 export function TaskDetailSheet({ onClose, onError, task }: TaskDetailSheetProps) {
   const [lastTask, setLastTask] = useState<TaskListItem | null>(null);
   const complete = useTaskComplete();
@@ -67,15 +66,6 @@ export function TaskDetailSheet({ onClose, onError, task }: TaskDetailSheetProps
     ]);
   };
 
-  const openInReminders = () => {
-    if (!shown) {
-      return;
-    }
-    void openReminderInSystemApp(shown.id).catch(() =>
-      onError('Unable to open the Reminders app.'),
-    );
-  };
-
   const timeLabel = shown ? taskTimeLabel(shown) : null;
   const minutes = shown ? taskDurationMinutes(shown) : null;
   const completed = shown?.status === 'completed';
@@ -93,7 +83,7 @@ export function TaskDetailSheet({ onClose, onError, task }: TaskDetailSheetProps
             <Text style={styles.title}>{shown.title}</Text>
           </View>
           <View style={styles.chips}>
-            <Chip icon="calendar" label={timeLabel ?? 'No time yet'} />
+            <Chip icon="calendar" label={timeLabel ?? 'No day yet'} />
             {minutes ? <Chip icon="clock" label={`${minutes} min`} /> : null}
             {shown.location ? <Chip icon="mappin.and.ellipse" label={shown.location} /> : null}
             {shown.listTitle ? <Chip icon="list.bullet" label={shown.listTitle} /> : null}
@@ -109,7 +99,6 @@ export function TaskDetailSheet({ onClose, onError, task }: TaskDetailSheetProps
               variant={completed ? 'secondary' : 'primary'}
             />
           </View>
-          <Button label="Open in Reminders" onPress={openInReminders} size="md" variant="ghost" />
           <Button
             label="Delete task"
             onPress={confirmDelete}

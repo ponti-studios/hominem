@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 import { calendarEventGateway } from '~/services/calendar/calendar-event-gateway';
 import { CHAT_ROUTE } from '~/services/navigation/routes';
 
-// Only 'event' deep links reach here -- tasks have no in-app detail screen
-// and are opened directly in Reminders.app instead (see open-reminder.ts).
+// Only 'event' deep links reach here -- tasks open in the Tasks tab's detail
+// sheet, not through a route.
 export default function TimeBlockDetailRoute() {
   const { id, source } = useLocalSearchParams<{ id?: string; source?: string }>();
 

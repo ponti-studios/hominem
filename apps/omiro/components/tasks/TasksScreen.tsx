@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -6,16 +7,20 @@ import type { TaskListItem } from '~/services/tasks/task-types';
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 
-import { getOpenTasks } from './task-time';
+import { InboxRow } from './InboxRow';
+import { getDatedTasks, getInboxTasks } from './task-time';
 import { TaskDetailSheet } from './TaskDetailSheet';
 import { TaskList } from './TaskList';
 
-// The Tasks page: every open task as a card, with an in-app detail sheet.
+// The Tasks page: open tasks that have a day, as cards with an in-app detail
+// sheet. Tasks with no day yet are a single "to place" row that opens triage.
 export function TasksScreen() {
   const { data: tasks = [], isRefetching, refetch } = useTasksQuery();
   const { mutate: toggleTask } = useTaskComplete();
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
-  const openTasks = getOpenTasks(tasks);
+  const router = useRouter();
+  const datedTasks = getDatedTasks(tasks);
+  const inboxCount = getInboxTasks(tasks).length;
   const detailTask = tasks.find((task) => task.id === detailTaskId) ?? null;
   const styles = useStyles((theme) => ({
     container: {
@@ -38,6 +43,11 @@ export function TasksScreen() {
         contentPaddingBottom={48}
         contentPaddingTop={16}
         emptyText="You have no open tasks."
+        footer={
+          inboxCount > 0 ? (
+            <InboxRow count={inboxCount} onPress={() => router.push('/tasks/place')} />
+          ) : null
+        }
         onGround
         onOpen={(task: TaskListItem) => setDetailTaskId(task.id)}
         onRefresh={refetch}
@@ -45,7 +55,7 @@ export function TasksScreen() {
           toggleTask({ completed: task.status !== 'completed', taskId: task.id })
         }
         refreshing={isRefetching}
-        tasks={openTasks}
+        tasks={datedTasks}
       />
       <TaskDetailSheet
         onClose={() => setDetailTaskId(null)}
