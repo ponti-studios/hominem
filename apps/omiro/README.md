@@ -5,7 +5,7 @@ The mobile app is an Expo app that targets iOS only.
 Product and mobile architecture are documented in the repository-level
 documents [omiro.architecture](../../docs/omiro.architecture.md),
 [omiro.chat](../../docs/omiro.chat.md), [omiro.planning](../../docs/omiro.planning.md),
-and [omiro.voice](../../docs/omiro.voice.md). Release operations are in
+[omiro.tasks](../../docs/omiro.tasks.md), and [omiro.voice](../../docs/omiro.voice.md). Release operations are in
 the [`omiro-release` skill](../../.agents/skills/omiro-release/SKILL.md).
 
 ## Quick Start

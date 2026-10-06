@@ -1,9 +1,9 @@
 # Omiro architecture
 
 This document describes the implemented iOS app structure. Product behavior
-specific to chat, planning, or voice lives in the companion documents
-[`omiro.chat.md`](omiro.chat.md), [`omiro.planning.md`](omiro.planning.md), and
-[`omiro.voice.md`](omiro.voice.md).
+specific to chat, planning, tasks, or voice lives in the companion documents
+[`omiro.chat.md`](omiro.chat.md), [`omiro.planning.md`](omiro.planning.md),
+[`omiro.tasks.md`](omiro.tasks.md), and [`omiro.voice.md`](omiro.voice.md).
 
 ## Platform and runtime
 
