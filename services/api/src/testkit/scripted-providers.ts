@@ -181,12 +181,19 @@ function scriptedTimeBlock(userText: string) {
   return block;
 }
 
+const responseFormatSchema = z.object({
+  json_schema: z.object({ name: z.string().optional() }).optional(),
+  jsonSchema: z.object({ name: z.string().optional() }).optional(),
+});
+
 function structuredResponseName(format: unknown) {
-  const value = format as { json_schema?: { name?: string }; jsonSchema?: { name?: string } };
-  return value?.json_schema?.name ?? value?.jsonSchema?.name;
+  const value = responseFormatSchema.safeParse(format);
+  return value.success ? (value.data.json_schema?.name ?? value.data.jsonSchema?.name) : undefined;
 }
 
 const ADD_TASK_PATTERN = /\badd a task\b/i;
+const COLLECTION_WRITE_PATTERN = /collection/i;
+const LIST_PATTERN = /\b(list|show)\b/i;
 
 const toolNameRules: readonly ScriptedRule<string | null>[] = [
   // Mirrors a real model on "add a task ...": check existing tasks, then create.
@@ -199,6 +206,26 @@ const toolNameRules: readonly ScriptedRule<string | null>[] = [
     matches: ({ toolNames, userText, turnResults }) =>
       toolNames.has('task_create') && ADD_TASK_PATTERN.test(userText) && turnResults.length === 1,
     resolve: () => 'task_create',
+  },
+  // Steps are exposed one at a time, so a collection write is a lookup of what
+  // exists followed by the write itself.
+  {
+    matches: ({ toolNames, userText, turnResults }) =>
+      toolNames.has('list_collections') &&
+      !toolNames.has('create_collection') &&
+      COLLECTION_WRITE_PATTERN.test(userText) &&
+      !LIST_PATTERN.test(userText) &&
+      turnResults.length === 0,
+    resolve: () => 'list_collections',
+  },
+  {
+    matches: ({ toolNames, userText, turnResults, hasRejectedToolResult }) =>
+      toolNames.has('create_collection') &&
+      COLLECTION_WRITE_PATTERN.test(userText) &&
+      turnResults.some((result) => result.name === 'list_collections') &&
+      !turnResults.some((result) => result.name === 'create_collection') &&
+      !hasRejectedToolResult,
+    resolve: () => 'create_collection',
   },
   {
     matches: ({ hasToolResult }) => hasToolResult,
@@ -301,10 +328,26 @@ function openRouterResponseBody(request: OpenRouterRequest) {
   const responseContent = isStructured
     ? structuredResponseName(request.response_format) === 'time_block_extraction'
       ? JSON.stringify(scriptedTimeBlock(context.userText))
-      : JSON.stringify({
-          capabilities: ['collections'],
-          requiresLookup: /collection/i.test(context.userText),
-        })
+      : structuredResponseName(request.response_format) === 'chat_exact_tool_plan'
+        ? // The planner step that follows the capability router: without a valid
+          // plan it falls back to read-only tools, so collection writes would
+          // never be offered to the (scripted) model.
+          JSON.stringify({
+            steps: COLLECTION_WRITE_PATTERN.test(context.userText)
+              ? [
+                  { tool: 'list_collections', purpose: 'Check for a duplicate', dependsOn: [] },
+                  {
+                    tool: 'create_collection',
+                    purpose: 'Create the collection',
+                    dependsOn: ['list_collections'],
+                  },
+                ]
+              : [],
+          })
+        : JSON.stringify({
+            capabilities: ['collections'],
+            requiresLookup: /collection/i.test(context.userText),
+          })
     : content;
   const isInitialConfirmationRejection =
     /SCRIPT:CONFIRM_REJECT/i.test(context.userText) && !context.hasToolResult;
