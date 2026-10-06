@@ -3,7 +3,7 @@ import { ScrollView, Text, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useStyles } from '~/components/theme';
+import { fontFamilies, useStyles } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import { ModalOverlay } from '~/components/ui/modal-overlay';
 import t from '~/translations';
@@ -64,7 +64,7 @@ export function ClassificationReview({
       maxHeight: 120,
       padding: 16,
     },
-    previewText: { color: theme.colors.mutedForeground, fontFamily: 'Menlo' },
+    previewText: { color: theme.colors.mutedForeground, fontFamily: fontFamilies.mono },
     actions: { flexDirection: 'row', gap: 12 },
     acceptAction: { flex: 1 },
     rejectAction: { flex: 1 },

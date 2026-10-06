@@ -2,7 +2,7 @@ import { logger } from '@hominem/telemetry';
 import { createElement, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { useAppTheme } from '~/components/theme';
+import { fontFamilies, useAppTheme } from '~/components/theme';
 
 type MarkdownComponent = typeof import('react-native-markdown-display').default;
 
@@ -68,21 +68,21 @@ export function MessageContent({
         backgroundColor: popover,
         borderRadius: borderRadii.lg,
         color: textPrimary,
-        fontFamily: 'Menlo',
+        fontFamily: fontFamilies.mono,
         padding: 12,
       },
       code_inline: {
         backgroundColor: popover,
         borderRadius: 4,
         color: textPrimary,
-        fontFamily: 'Menlo',
+        fontFamily: fontFamilies.mono,
         paddingHorizontal: 4,
       },
       fence: {
         backgroundColor: popover,
         borderRadius: borderRadii.lg,
         color: textPrimary,
-        fontFamily: 'Menlo',
+        fontFamily: fontFamilies.mono,
         padding: 12,
       },
     }),

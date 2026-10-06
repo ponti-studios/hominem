@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 
-import { useAppTheme, useStyles } from '~/components/theme';
+import { fontFamilies, useAppTheme, useStyles } from '~/components/theme';
 import { Button } from '~/components/ui/button';
 import AppIcon from '~/components/ui/icon';
 
@@ -30,7 +30,7 @@ export function ErrorFallback({
     message: { lineHeight: 22, textAlign: 'center', color: theme.colors.mutedForeground },
     debugMessage: {
       ...theme.textVariants.caption1,
-      fontFamily: 'Menlo',
+      fontFamily: fontFamilies.mono,
       lineHeight: 18,
       textAlign: 'center',
       color: theme.colors.tertiary,

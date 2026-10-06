@@ -25,6 +25,7 @@ vi.mock('react-native', () => ({
 }));
 vi.mock('react-native-keyboard-controller', () => ({ KeyboardChatScrollView: () => <div /> }));
 vi.mock('~/components/theme', () => ({
+  fontFamilies: { mono: 'Geist Mono' },
   useStyles: (factory: (theme: { colors: Record<string, string> }) => unknown) =>
     factory({
       colors: {

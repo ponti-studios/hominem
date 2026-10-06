@@ -22,7 +22,7 @@ import {
 import { KeyboardChatScrollView } from 'react-native-keyboard-controller';
 import type Animated from 'react-native-reanimated';
 
-import { useStyles } from '~/components/theme';
+import { fontFamilies, useStyles } from '~/components/theme';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
 
 import { ChatMessage } from './chat-message';
@@ -112,7 +112,7 @@ export function ChatMessageList({
 }: ChatMessageListProps) {
   const styles = useStyles((theme) => ({
     emptySearch: { alignItems: 'center', paddingTop: 28 },
-    emptySearchText: { fontFamily: 'Menlo', color: theme.colors.tertiary },
+    emptySearchText: { fontFamily: fontFamilies.mono, color: theme.colors.tertiary },
     loadingState: { flex: 1, paddingTop: 12 },
     emptyState: { flex: 1 },
     list: { flex: 1 },

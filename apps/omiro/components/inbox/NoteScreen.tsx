@@ -24,7 +24,7 @@ import {
   FloatingPillButton,
 } from '~/components/navigation/floating-header';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
-import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
+import { fontFamilies, useAppTheme, useStyles, withAlpha } from '~/components/theme';
 import { TextField } from '~/components/ui';
 import { ActionMenu } from '~/components/ui/action-menu';
 import { EmptyState } from '~/components/ui/EmptyState';
@@ -700,21 +700,21 @@ function markdownStyles(mdColors: Record<string, string>, codeRadius: number) {
       color: mdColors['foreground'],
       backgroundColor: mdColors['popover'],
       borderRadius: 4,
-      fontFamily: 'Menlo',
+      fontFamily: fontFamilies.mono,
       paddingHorizontal: 4,
     },
     code_block: {
       color: mdColors['foreground'],
       backgroundColor: mdColors['popover'],
       borderRadius: codeRadius,
-      fontFamily: 'Menlo',
+      fontFamily: fontFamilies.mono,
       padding: 12,
     },
     fence: {
       color: mdColors['foreground'],
       backgroundColor: mdColors['popover'],
       borderRadius: codeRadius,
-      fontFamily: 'Menlo',
+      fontFamily: fontFamilies.mono,
       padding: 12,
     },
     blockquote: {
