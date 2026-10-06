@@ -1,0 +1,139 @@
+appId: com.pontistudios.hakumi.dev
+tags:
+  - regression
+---
+# The floating header buttons, the actions menu, the attach sheet and the
+# new-chat close button replace the native iOS equivalents; each must open,
+# act and dismiss.
+
+- runFlow: ../subflows/reset-to-home.yaml
+- tapOn:
+    id: 'inbox-item-chat-open'
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: 'chat-actions-button'
+    timeout: 15000
+
+# Actions menu
+- tapOn:
+    id: 'chat-actions-button'
+- extendedWaitUntil:
+    visible:
+      id: 'chat-actions-menu'
+    timeout: 5000
+- assertVisible:
+    id: 'chat-actions-menu-search'
+- takeScreenshot: /tmp/omiro-nav-actions-menu
+# Tapping the dimmed page closes the menu.
+- tapOn:
+    point: '8%,92%'
+- extendedWaitUntil:
+    notVisible:
+      id: 'chat-actions-menu'
+    timeout: 5000
+
+# A menu item closes the menu, then runs: Create note opens the transform sheet.
+- tapOn:
+    id: 'chat-actions-button'
+- tapOn:
+    id: 'chat-actions-menu-transform:note'
+- extendedWaitUntil:
+    visible: 'Transform chat'
+    timeout: 8000
+- takeScreenshot: /tmp/omiro-nav-transform-sheet
+- tapOn: 'Cancel'
+- extendedWaitUntil:
+    notVisible: 'Transform chat'
+    timeout: 5000
+
+# Attach sheet
+- tapOn:
+    id: 'composer-attach-button'
+- extendedWaitUntil:
+    visible:
+      id: 'composer-attach-menu'
+    timeout: 5000
+- assertVisible:
+    id: 'composer-attach-menu-take-photo'
+- assertVisible:
+    id: 'composer-attach-menu-library'
+- takeScreenshot: /tmp/omiro-nav-attach-sheet
+- tapOn:
+    id: 'composer-attach-menu-cancel'
+- extendedWaitUntil:
+    notVisible:
+      id: 'composer-attach-menu'
+    timeout: 5000
+
+# New chat opens with a close button that returns to the chat.
+- tapOn:
+    id: 'chat-new-button'
+- extendedWaitUntil:
+    visible:
+      id: 'new-chat-close-button'
+    timeout: 8000
+- takeScreenshot: /tmp/omiro-nav-new-chat
+- tapOn:
+    id: 'new-chat-close-button'
+- extendedWaitUntil:
+    visible:
+      id: 'chat-actions-button'
+    timeout: 8000
+
+# Back returns to the list.
+- tapOn:
+    id: 'chat-back-button'
+- extendedWaitUntil:
+    visible:
+      id: 'inbox-composer-input'
+    timeout: 8000
+
+# Note screen: the same floating header, with save status, preview toggle and
+# its own actions menu.
+- tapOn:
+    id: 'composer-kind-note'
+- tapOn:
+    id: 'inbox-composer-input'
+- inputText: 'Header check note'
+- tapOn:
+    id: 'composer-submit-note'
+- openLink: 'hakumi-dev:///notes'
+- extendedWaitUntil:
+    visible:
+      id: 'inbox-item-note-open'
+    timeout: 10000
+- tapOn:
+    id: 'inbox-item-note-open'
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: 'note-actions-button'
+    timeout: 10000
+- assertVisible:
+    id: 'note-save-status'
+- takeScreenshot: /tmp/omiro-nav-note-header
+- tapOn:
+    id: 'note-preview-toggle'
+- takeScreenshot: /tmp/omiro-nav-note-preview
+- tapOn:
+    id: 'note-actions-button'
+- extendedWaitUntil:
+    visible:
+      id: 'note-actions-menu'
+    timeout: 5000
+- assertVisible:
+    id: 'note-actions-menu-delete'
+- takeScreenshot: /tmp/omiro-nav-note-menu
+- tapOn:
+    point: '8%,92%'
+- extendedWaitUntil:
+    notVisible:
+      id: 'note-actions-menu'
+    timeout: 5000
+- tapOn:
+    id: 'note-back-button'
+- extendedWaitUntil:
+    visible:
+      id: 'inbox-composer-input'
+    timeout: 8000

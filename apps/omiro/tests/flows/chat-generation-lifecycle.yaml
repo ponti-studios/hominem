@@ -1,0 +1,84 @@
+appId: com.pontistudios.hakumi.dev
+tags:
+  - regression
+---
+# Tool approval and stop must hand the dock back to the composer once the run
+# is over. Each case starts a fresh chat from the Chat tab composer, then sends
+# the scripted message from inside the chat.
+
+- runFlow: ../subflows/reset-to-home.yaml
+
+# Reject: the lime approval bar appears, rejecting returns the composer.
+- tapOn:
+    id: 'inbox-composer-input'
+- inputText: 'hello'
+- tapOn:
+    id: 'composer-submit-chat'
+- extendedWaitUntil:
+    visible:
+      id: 'chat-composer-input'
+    timeout: 45000
+- tapOn:
+    id: 'chat-composer-input'
+- inputText: 'SCRIPT:CONFIRM_REJECT Create a collection called Zed'
+- tapOn:
+    id: 'composer-submit-message'
+- extendedWaitUntil:
+    visible:
+      id: 'tool-confirm-reject'
+    timeout: 45000
+- takeScreenshot: /tmp/omiro-lifecycle-approval-bar
+- tapOn:
+    id: 'tool-confirm-reject'
+- extendedWaitUntil:
+    notVisible:
+      id: 'tool-confirm-reject'
+    timeout: 45000
+- extendedWaitUntil:
+    visible:
+      id: 'chat-composer-input'
+    timeout: 15000
+- takeScreenshot: /tmp/omiro-lifecycle-after-reject
+
+# Approve: same dock hand-back once the approved tool call finishes.
+- tapOn:
+    id: 'chat-composer-input'
+- inputText: 'Create a collection called Zed Two'
+- tapOn:
+    id: 'composer-submit-message'
+- extendedWaitUntil:
+    visible:
+      id: 'tool-confirm-approve'
+    timeout: 45000
+- tapOn:
+    id: 'tool-confirm-approve'
+- extendedWaitUntil:
+    notVisible:
+      id: 'tool-confirm-approve'
+    timeout: 45000
+- extendedWaitUntil:
+    visible:
+      id: 'chat-composer-input'
+    timeout: 15000
+- takeScreenshot: /tmp/omiro-lifecycle-after-approve
+
+# Stop: a stopped reply clears the generation and the composer returns.
+- tapOn:
+    id: 'chat-composer-input'
+- inputText: 'SCRIPT:CANCEL_BEFORE __MAESTRO_SLOW_STREAM__'
+- tapOn:
+    id: 'composer-submit-message'
+- extendedWaitUntil:
+    visible:
+      id: 'chat-generation-stop'
+    timeout: 15000
+- takeScreenshot: /tmp/omiro-lifecycle-generating
+- tapOn:
+    id: 'chat-generation-stop'
+- extendedWaitUntil:
+    visible:
+      id: 'chat-composer-input'
+    timeout: 15000
+- assertNotVisible:
+    id: 'chat-generation-stop'
+- takeScreenshot: /tmp/omiro-lifecycle-after-stop
