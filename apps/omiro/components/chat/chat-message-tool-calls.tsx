@@ -96,7 +96,7 @@ export function MessageToolCalls({ toolCalls }: { toolCalls: ToolCall[] }) {
         const phase = getToolCallPhase(toolCall);
         const name = formatToolName(toolCall.toolName);
         const details = describeToolArgs(toolCall.args)
-          .slice(0, 2)
+          .slice(0, 1)
           .map((arg) => arg.value);
         const tileColor =
           phase === 'done'
