@@ -4,10 +4,10 @@ Status: proposed. The Tasks tab does not do most of this yet; each issue doc
 lists what is built and what is not.
 
 Omiro Tasks answers one question: what should I do now? It is not a task
-manager. Tasks are Apple Reminders records read through EventKit
-(`apps/omiro/services/tasks/task-types.ts`); Omiro adds a short, dated view and
-the link back to the conversation or note a task came from. Everything else
-belongs to Reminders.
+manager. Tasks are Omiro's own: they live in a local database on the device and
+sync with the server (`apps/omiro/services/tasks/sync/`), so every action works
+offline. Omiro shows a short, dated view and the link back to the conversation
+or note a task came from.
 
 ## Philosophy
 
@@ -17,8 +17,9 @@ lists and views enjoy organizing, not finishing, and are not who Omiro is for.
 
 Three rules follow from that and hold for every Tasks change:
 
-- A task without a date is a wish, not a task. Omiro does not show or design
-  for undated tasks.
+- A task does not need a date to exist, but an undated task never sits in the
+  list you act on. It waits in the inbox until you give it a date, turn it into
+  a note, or drop it.
 - No tagging, custom lists, or organizing features. Omiro does not chase
   Reminders views.
 - The list must never grow into something overwhelming.
@@ -31,22 +32,23 @@ build them.
 | #   | Issue                          | Doc                                                    | Design frame   |
 | --- | ------------------------------ | ------------------------------------------------------ | -------------- |
 | 1   | Overload: a list with no limit | [omiro.tasks.overload.md](omiro.tasks.overload.md)     | `K1Overload`   |
-| 2   | Wishes posing as tasks         | [omiro.tasks.wishes.md](omiro.tasks.wishes.md)         | `K2Wishes`     |
+| 2   | Undated tasks piling up        | [omiro.tasks.wishes.md](omiro.tasks.wishes.md)         | `K2Wishes`     |
 | 3   | The overdue pile               | [omiro.tasks.overdue.md](omiro.tasks.overdue.md)       | `K3Overdue`    |
 | 4   | Organizing instead of doing    | [omiro.tasks.organizing.md](omiro.tasks.organizing.md) | `K4Organizing` |
 | 5   | Tasks with no context          | [omiro.tasks.context.md](omiro.tasks.context.md)       | `K5Context`    |
 
 ## The screen
 
-The Tasks tab has three sections, in this order: Carried over, Today, Upcoming.
-Nothing else is on the page, and undated reminders are never shown. Frames are
-the `TS` boards on the canvas, in the "Tasks — the screen" row.
+The Tasks tab has three sections, in this order: Carried over, Today, Upcoming,
+and a single "N to place" row at the bottom that opens triage when the inbox is
+not empty. The inbox itself is never listed on the tab. Frames are the `TS`
+boards on the canvas, in the "Tasks — the screen" row.
 
 | State       | Frame        | What it shows                                                                                       |
 | ----------- | ------------ | --------------------------------------------------------------------------------------------------- |
 | Busy day    | `TSToday`    | Carried over (Done, Move, Drop), Today, Upcoming capped with a count, and the Open in Reminders row |
 | Today clear | `TSClear`    | "All done for today" in place of the Today list; Upcoming still shows                               |
-| First run   | `TSFirstRun` | A one-line note that only dated reminders show here, dismissed with Got it                          |
+| First run   | `TSFirstRun` | Import your reminders or start fresh                                                                |
 | Move        | `TSMove`     | A sheet: Tomorrow, Saturday, Next Monday, Pick a date                                               |
 
 Open decisions are listed on the canvas note beside these frames: whether Tasks

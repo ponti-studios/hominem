@@ -163,7 +163,9 @@ export function createSqliteTaskStore(db: SqliteDriver): TaskStore {
   return {
     listTasks: () =>
       db
-        .all('SELECT * FROM tasks WHERE deleted_at IS NULL ORDER BY COALESCE(start_at, due_at)')
+        .all(
+          'SELECT * FROM tasks WHERE deleted_at IS NULL ORDER BY COALESCE(start_at, due_at) IS NULL, COALESCE(start_at, due_at), created_at',
+        )
         .map(toTask),
     getTask: (id) => {
       const [row] = db.all('SELECT * FROM tasks WHERE id = ?', [id]);

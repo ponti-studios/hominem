@@ -10,10 +10,21 @@ export function createMemoryTaskStore(): TaskStore {
   let nextOpId = 1;
 
   return {
+    // Dated tasks by when they happen, then undated ones by when they were added.
     listTasks: () =>
       [...tasks.values()]
         .filter((task) => task.deletedAt === null)
-        .sort((a, b) => (a.startAt ?? a.dueAt ?? '￿').localeCompare(b.startAt ?? b.dueAt ?? '￿')),
+        .sort((a, b) => {
+          const aWhen = a.startAt ?? a.dueAt;
+          const bWhen = b.startAt ?? b.dueAt;
+          if (aWhen && bWhen) {
+            return aWhen.localeCompare(bWhen);
+          }
+          if (aWhen || bWhen) {
+            return aWhen ? -1 : 1;
+          }
+          return (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
+        }),
     getTask: (id) => tasks.get(id) ?? null,
     putTask: (task) => {
       tasks.set(task.id, task);

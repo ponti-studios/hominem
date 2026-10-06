@@ -88,6 +88,15 @@ describe.each(stores)('%s task store', (_name, create) => {
     expect(store.listTasks().map((t) => t.id)).toEqual(['b']);
   });
 
+  it('puts undated tasks after dated ones, oldest first', () => {
+    const store = create();
+    store.putTask(task('new', { dueAt: null, createdAt: '2026-10-06T12:00:00.000Z' }));
+    store.putTask(task('old', { dueAt: null, createdAt: '2026-10-01T12:00:00.000Z' }));
+    store.putTask(task('dated', { dueAt: '2026-10-09T10:00:00.000Z' }));
+
+    expect(store.listTasks().map((t) => t.id)).toEqual(['dated', 'old', 'new']);
+  });
+
   it('orders the list by when the task happens', () => {
     const store = create();
     store.putTask(task('late', { dueAt: '2026-10-09T10:00:00.000Z' }));

@@ -14,18 +14,6 @@ export type TaskPatch = Partial<
   Pick<NewTaskInput, 'title' | 'notes' | 'startAt' | 'dueAt' | 'location'>
 >;
 
-// A task without a date is a wish, not a task: the app refuses to create one.
-export class TaskNeedsDateError extends Error {
-  constructor() {
-    super('A task needs a date');
-    this.name = 'TaskNeedsDateError';
-  }
-}
-
-function hasDate(task: { startAt: string | null; dueAt: string | null }) {
-  return Boolean(task.startAt || task.dueAt);
-}
-
 interface TaskServiceOptions {
   store: TaskStore;
   // Absent while signed out; edits still queue and sync later.
@@ -109,11 +97,9 @@ export function createTaskService({
       return task && !task.deletedAt ? task : null;
     },
     create: (input) => {
+      // No date is fine: an undated task waits in the inbox until it is triaged.
       const startAt = input.startAt ?? null;
       const dueAt = input.dueAt ?? null;
-      if (!hasDate({ startAt, dueAt })) {
-        throw new TaskNeedsDateError();
-      }
       const task: StoredTask = {
         id: newId(),
         title: input.title.trim(),
@@ -137,9 +123,6 @@ export function createTaskService({
     update: (id, patch) => {
       const current = requireTask(id);
       const next: StoredTask = { ...current, ...patch };
-      if (!hasDate(next)) {
-        throw new TaskNeedsDateError();
-      }
       store.putTask(next);
       store.enqueue(id, { kind: 'update', fields: toServerFields(next) });
       changed();

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createMemoryTaskStore } from '~/services/tasks/sync/memory-task-store';
-import { createTaskService, TaskNeedsDateError } from '~/services/tasks/sync/task-service';
+import { createTaskService } from '~/services/tasks/sync/task-service';
 
 import { createFakeTaskServer } from './fake-task-server';
 
@@ -20,12 +20,35 @@ function setup() {
 }
 
 describe('task service (local first)', () => {
-  it('refuses a task with no date and queues nothing', () => {
-    const { service, store } = setup();
+  it('creates an undated task, sends it, and lets a date be added later', async () => {
+    const { service, server } = setup();
+    const task = service.create({ title: 'Someday' });
+    await service.sync();
 
-    expect(() => service.create({ title: 'Someday' })).toThrow(TaskNeedsDateError);
-    expect(store.listOps()).toEqual([]);
-    expect(service.list()).toEqual([]);
+    expect(task.dueAt).toBeNull();
+    expect(server.rows.get(task.id)).toMatchObject({
+      title: 'Someday',
+      dueAt: null,
+      scheduledStartAt: null,
+    });
+
+    service.update(task.id, { dueAt: DUE });
+    await service.sync();
+
+    expect(service.get(task.id)?.dueAt).toBe(DUE);
+    expect(server.rows.get(task.id)?.dueAt).toBe(DUE);
+  });
+
+  it('can take a date away again', async () => {
+    const { service, server } = setup();
+    const task = service.create({ title: 'Was planned', dueAt: DUE });
+    await service.sync();
+
+    service.update(task.id, { dueAt: null });
+    await service.sync();
+
+    expect(service.get(task.id)?.dueAt).toBeNull();
+    expect(server.rows.get(task.id)?.dueAt).toBeNull();
   });
 
   it('shows a created task immediately and sends it once online', async () => {

@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,7 +11,6 @@ vi.mock('~/services/tasks/task-service-instance', () => ({
 }));
 
 const { useTaskCreate } = await import('~/services/tasks/use-task-create');
-const { TaskNeedsDateError } = await import('~/services/tasks/sync/task-service');
 
 describe('useTaskCreate', () => {
   afterEach(() => {
@@ -40,16 +38,16 @@ describe('useTaskCreate', () => {
     });
   });
 
-  it('rejects a task with no date', async () => {
-    service.create.mockImplementation(() => {
-      throw new TaskNeedsDateError();
-    });
+  it('creates a task with no date', async () => {
+    service.create.mockReturnValue({ id: 'task-2' });
     const { result } = renderHookWithQueryClient(() => useTaskCreate());
 
-    act(() => {
-      result.current.mutate({ title: 'Someday' });
+    await act(async () => {
+      await result.current.mutateAsync({ title: 'Someday' });
     });
 
-    await waitFor(() => expect(result.current.error).toBeInstanceOf(TaskNeedsDateError));
+    expect(service.create).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Someday', dueAt: undefined, startAt: undefined }),
+    );
   });
 });

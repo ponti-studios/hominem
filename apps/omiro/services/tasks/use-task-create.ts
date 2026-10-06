@@ -13,7 +13,7 @@ interface CreateTaskInput {
 }
 
 // Writes to the local database and queues the change for the server, so it
-// succeeds offline. Throws TaskNeedsDateError for a task with no date.
+// succeeds offline. A task with no date waits in the inbox.
 export function useTaskCreate() {
   return useMutation({
     mutationFn: async ({ title, notes, startAt, dueAt, location }: CreateTaskInput) =>
