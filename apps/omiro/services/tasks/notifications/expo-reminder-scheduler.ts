@@ -4,7 +4,11 @@ import type { ReminderScheduler } from './task-reminders';
 
 const PREFIX = 'task-';
 
-// Asks once, and only when there is something to remind about.
+export async function hasNotificationPermission(): Promise<boolean> {
+  return (await Notifications.getPermissionsAsync()).granted;
+}
+
+// Shows the system prompt the first time; never again once the user has answered.
 export async function ensureNotificationPermission(): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) {

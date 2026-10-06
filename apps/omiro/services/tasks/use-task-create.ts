@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 
+import { askForReminders } from './notifications/reminder-access';
 import { getTaskService } from './task-service-instance';
 import type { TaskPriority } from './task-types';
 
@@ -18,5 +19,8 @@ export function useTaskCreate() {
   return useMutation({
     mutationFn: async ({ title, notes, startAt, dueAt, location }: CreateTaskInput) =>
       getTaskService().create({ title, notes, startAt, dueAt, location }),
+    onSuccess: (task) => {
+      void askForReminders(task);
+    },
   });
 }

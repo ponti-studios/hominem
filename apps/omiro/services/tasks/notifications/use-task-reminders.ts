@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 
 import { getTaskService } from '../task-service-instance';
-import { ensureNotificationPermission, expoReminderScheduler } from './expo-reminder-scheduler';
+import { expoReminderScheduler, hasNotificationPermission } from './expo-reminder-scheduler';
+import { onReminderAccessGranted } from './reminder-access';
 import { planReminders, reconcileReminders } from './task-reminders';
 
 // Keeps the device's local notifications matching the task list. Works offline:
-// it reads the local database, never the server.
+// it reads the local database, never the server. It never asks for permission;
+// placing a dated task does (`askForReminders`).
 export function useTaskReminders() {
   useEffect(() => {
     const service = getTaskService();
@@ -22,7 +24,7 @@ export function useTaskReminders() {
         do {
           again = false;
           const planned = planReminders(service.list(), new Date());
-          if (planned.length > 0 && !(await ensureNotificationPermission())) {
+          if (planned.length > 0 && !(await hasNotificationPermission())) {
             return;
           }
           await reconcileReminders(expoReminderScheduler, planned);
@@ -35,8 +37,15 @@ export function useTaskReminders() {
     };
 
     void run();
-    return service.subscribe(() => {
+    const stopChanges = service.subscribe(() => {
       void run();
     });
+    const stopAccess = onReminderAccessGranted(() => {
+      void run();
+    });
+    return () => {
+      stopChanges();
+      stopAccess();
+    };
   }, []);
 }
