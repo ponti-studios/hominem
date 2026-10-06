@@ -51,8 +51,7 @@ boards on the canvas, in the "Tasks — the screen" row.
 | First run   | `TSFirstRun` | Import your reminders or start fresh                                                                |
 | Move        | `TSMove`     | A sheet: Tomorrow, Saturday, Next Monday, Pick a date                                               |
 
-Open decisions are listed on the canvas note beside these frames: whether Tasks
-gets the composer, what Drop does, and how many days Upcoming
+Tasks has its own composer, only for adding tasks. It makes an undated task, which lands in the inbox. Open decisions are listed on the canvas note beside these frames: what Drop does, and how many days Upcoming
 covers. Upcoming looks seven days ahead; a task further out stays hidden until its week. All of these frames are built.
 
 ## Keeping docs and designs in sync

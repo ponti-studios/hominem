@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
+import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
 import { useStyles } from '~/components/theme';
 import { useRemindersImport } from '~/services/tasks/import/use-reminders-import';
 import type { TaskListItem } from '~/services/tasks/task-types';
@@ -15,6 +16,7 @@ import { ImportPrompt } from './ImportPrompt';
 import { InboxRow } from './InboxRow';
 import { MoveSheet } from './MoveSheet';
 import { getInboxTasks, groupTasks, moveToDayPatch } from './task-time';
+import { TaskComposer } from './TaskComposer';
 import { TaskDetailSheet } from './TaskDetailSheet';
 import { TaskRow } from './TaskList';
 import { TaskSectionHeader } from './TaskSectionHeader';
@@ -29,6 +31,7 @@ export function TasksScreen() {
   const remove = useTaskDelete();
   const reminders = useRemindersImport();
   const router = useRouter();
+  const { inset: composerInset, restingInset } = useComposerDockMetrics({ clearance: 16 });
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const [movingTaskId, setMovingTaskId] = useState<string | null>(null);
 
@@ -46,7 +49,8 @@ export function TasksScreen() {
 
   const styles = useStyles((theme) => ({
     container: { backgroundColor: theme.colors.background, flex: 1 },
-    content: { gap: 10, paddingBottom: 120, paddingHorizontal: 16, paddingTop: 6 },
+    list: { flex: 1 },
+    content: { gap: 10, paddingHorizontal: 16, paddingTop: 6 },
     more: {
       ...theme.textVariants.footnote,
       color: theme.colors.mutedForeground,
@@ -71,9 +75,13 @@ export function TasksScreen() {
   return (
     <View style={styles.container} testID="unscheduled-tasks-screen">
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: composerInset + 16 }]}
         contentInsetAdjustmentBehavior="automatic"
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        style={styles.list}
         refreshControl={refreshControl}
+        scrollIndicatorInsets={{ bottom: composerInset }}
         showsVerticalScrollIndicator={false}
         testID="unscheduled-task-list"
       >
@@ -135,6 +143,9 @@ export function TasksScreen() {
           </View>
         ) : null}
       </ScrollView>
+      <ComposerDock restingInset={restingInset} testID="tasks-composer-dock">
+        <TaskComposer />
+      </ComposerDock>
       <TaskDetailSheet
         onClose={() => setDetailTaskId(null)}
         onError={() => undefined}
