@@ -9,7 +9,7 @@ import {
   ChatGenerationBar,
   ChatMessageList,
   ChatReviewOverlay,
-  ChatSearchModal,
+  ChatSearchBar,
   ChatToolApprovalBar,
   getToolCallPhase,
 } from '~/components/chat';
@@ -292,14 +292,6 @@ export function ChatScreen({ id }: { id: string }) {
           visible={showChatSources}
           onClose={() => setShowChatSources(false)}
         />
-        <ChatSearchModal
-          visible={search.showSearch}
-          searchQuery={search.searchQuery}
-          resultCount={search.displayMessages.length}
-          searchInputRef={search.searchInputRef}
-          onClose={search.handleCloseSearch}
-          onChangeSearchQuery={search.handleSearchQueryChange}
-        />
         {!isOnline ? (
           <View
             accessibilityLiveRegion="polite"
@@ -357,6 +349,14 @@ export function ChatScreen({ id }: { id: string }) {
                   }}
                   onEdit={failedMessageText ? editFailedMessage : undefined}
                   onRetry={retryActiveGeneration}
+                />
+              ) : search.showSearch ? (
+                <ChatSearchBar
+                  inputRef={search.searchInputRef}
+                  onChangeQuery={search.handleSearchQueryChange}
+                  onClose={search.handleCloseSearch}
+                  query={search.searchQuery}
+                  resultCount={search.displayMessages.length}
                 />
               ) : (
                 <Composer mode="chat" chatId={chatId} chatSend={chatSend} />

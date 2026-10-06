@@ -143,7 +143,7 @@ const t = {
     search: {
       title: 'Search messages',
       placeholder: 'Search messages...',
-      emptyCaption: 'Search the current conversation',
+      close: 'Close search',
       results: (count: number) => `${count} result${count !== 1 ? 's' : ''}`,
     },
     actions: {
