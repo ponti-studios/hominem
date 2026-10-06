@@ -22,7 +22,6 @@ export function TasksScreen() {
       backgroundColor: theme.colors.background,
       flex: 1,
       paddingHorizontal: 16,
-      paddingTop: 16,
     },
     title: {
       ...theme.textVariants.display,
@@ -35,7 +34,9 @@ export function TasksScreen() {
   return (
     <View style={styles.container} testID="unscheduled-tasks-screen">
       <TaskList
+        adjustForHeader
         contentPaddingBottom={48}
+        contentPaddingTop={16}
         emptyText="You have no open tasks."
         onGround
         onOpen={(task: TaskListItem) => setDetailTaskId(task.id)}

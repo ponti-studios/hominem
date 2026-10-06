@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import type { Stack } from 'expo-router';
+import type { NativeStackHeaderItem, Stack } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useMemo } from 'react';
 
@@ -30,7 +30,10 @@ export function useNativeHeaderOptions(): StackScreenOptions {
   );
 }
 
-// The profile button that opens Settings, shown in every tab's header.
+// The profile button that opens Settings, shown in every tab's header. It is
+// our own round button, not a system bar button, so it is placed through
+// settingsHeaderRightItems below to keep the system from wrapping it in its
+// glass capsule.
 export function SettingsHeaderButton() {
   const router = useRouter();
   return (
@@ -41,7 +44,13 @@ export function SettingsHeaderButton() {
       testID="settings-button"
       variant="tonal"
     >
-      <AppIcon name="person.crop.circle" size={22} />
+      <AppIcon name="person" size={22} weight="medium" />
     </IconButton>
   );
 }
+
+// hidesSharedBackground is what drops the system capsule behind the custom
+// button (iOS 26); headerRight alone cannot turn it off.
+export const settingsHeaderRightItems = (): NativeStackHeaderItem[] => [
+  { type: 'custom', element: <SettingsHeaderButton />, hidesSharedBackground: true },
+];

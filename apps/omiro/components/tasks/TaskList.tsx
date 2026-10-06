@@ -58,7 +58,11 @@ const TaskRow = memo(function TaskRow({ item, onGround, onOpen, onToggle }: Task
 });
 
 interface TaskListProps {
+  // True when the list is the screen's scroll view under a native header, so
+  // the system insets it below the title and collapses the large title.
+  adjustForHeader?: boolean;
   contentPaddingBottom?: number;
+  contentPaddingTop?: number;
   emptyText: string;
   // True on the app ground (Tasks page), where rows need the card fill to
   // stand out; false inside a sheet, where rows sit on the ground tone.
@@ -75,7 +79,9 @@ function Gap() {
 }
 
 export function TaskList({
+  adjustForHeader = false,
   contentPaddingBottom = 0,
+  contentPaddingTop = 0,
   emptyText,
   onGround = false,
   onOpen,
@@ -95,8 +101,9 @@ export function TaskList({
   return (
     <FlatList
       ItemSeparatorComponent={Gap}
+      contentInsetAdjustmentBehavior={adjustForHeader ? 'automatic' : 'never'}
       ListEmptyComponent={<Text style={styles.empty}>{emptyText}</Text>}
-      contentContainerStyle={{ paddingBottom: contentPaddingBottom }}
+      contentContainerStyle={{ paddingBottom: contentPaddingBottom, paddingTop: contentPaddingTop }}
       data={tasks}
       initialNumToRender={10}
       keyExtractor={(task) => task.id}
