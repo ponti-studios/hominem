@@ -34,7 +34,7 @@ export function getToolCallPhase(toolCall: ToolCall): ToolCallPhase {
 export function MessageToolCalls({ toolCalls }: { toolCalls: ToolCall[] }) {
   const { coral, eventForeground, eventSun, lime, mutedForeground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
-    toolCalls: { gap: 10, marginBottom: 10, maxWidth: '94%' },
+    toolCalls: { gap: 10, marginBottom: 10, width: '94%' },
     card: {
       alignItems: 'center',
       backgroundColor: theme.colors.card,
