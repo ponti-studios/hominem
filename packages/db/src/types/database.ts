@@ -1028,6 +1028,7 @@ export interface AppTaskParticipants {
 export interface AppTasks {
   completedAt: ColumnType<string, Date | string, Date | string> | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  deletedAt: ColumnType<string, Date | string, Date | string> | null;
   description: string | null;
   dueAt: ColumnType<string, Date | string, Date | string> | null;
   durationMinutes: number | null;

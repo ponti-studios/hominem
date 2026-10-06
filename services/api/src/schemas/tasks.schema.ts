@@ -47,6 +47,8 @@ function validateScheduledInterval(
 
 export const CreateTaskSchema = z
   .object({
+    // Optional client-generated id: an offline device retries a create safely.
+    id: z.uuid().optional(),
     title: z.string().trim().min(1).max(120),
     description: z.string().trim().optional().nullable(),
     artifactType: z.enum(['task', 'task_list']),
@@ -117,6 +119,7 @@ export const TaskRecordSchema = z.object({
   completedAt: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  deletedAt: z.string().nullable(),
   artifactType: z.enum(['task', 'task_list']),
 });
 
@@ -181,6 +184,19 @@ export const TaskListQuerySchema = z.object({
     .describe(
       'A keyword from the title of the task the user means ("gym", "passport"). Leave out to list everything.',
     ),
+});
+
+// Incremental sync: everything changed after `since` (tombstones included), oldest
+// first. `cursor` is opaque; send it back as `since` to get the next page.
+export const TaskChangesQuerySchema = z.object({
+  since: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(500).optional().default(500),
+});
+
+export const taskChangesResultSchema = z.object({
+  tasks: z.array(TaskRecordSchema),
+  cursor: z.string().nullable(),
+  hasMore: z.boolean(),
 });
 
 export const TaskParamSchema = z.object({ id: z.uuid() });

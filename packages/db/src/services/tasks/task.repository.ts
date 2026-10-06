@@ -1,6 +1,6 @@
-import type { Selectable } from 'kysely';
+import { sql, type Selectable } from 'kysely';
 
-import { NotFoundError } from '../../errors';
+import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppTasks } from '../../types/database';
 
@@ -31,10 +31,15 @@ export interface TaskRecord {
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  // Set once the task is deleted; deleted rows only appear in `listChangesSince`.
+  deletedAt: string | null;
   artifactType: 'task' | 'task_list';
 }
 
 export interface CreateTaskInput {
+  // Client-generated id so an offline device can create the task and retry the
+  // write safely: replaying the same id returns the existing row.
+  id?: string;
   userId: string;
   title: string;
   description?: string | null;
@@ -109,6 +114,7 @@ function toTaskRecord(row: TaskRow, artifactType: 'task' | 'task_list'): TaskRec
     completedAt: row.completedAt ? new Date(row.completedAt).toISOString() : null,
     createdAt: new Date(row.createdat).toISOString(),
     updatedAt: new Date(row.updatedat).toISOString(),
+    deletedAt: row.deletedAt ? new Date(row.deletedAt).toISOString() : null,
     artifactType,
   };
 }
@@ -138,6 +144,7 @@ export const TaskRepository = {
       ])
       .where('participant.taskId', '=', input.taskId)
       .where('task.ownerUserid', '=', input.userId)
+      .where('task.deletedAt', 'is', null)
       .orderBy('participant.createdat', 'asc')
       // replaceParticipants is the only writer and caps a task at 20 (CreateTaskSchema /
       // UpdateTaskSchema), so this is a defensive ceiling, not an active page boundary.
@@ -188,9 +195,25 @@ export const TaskRepository = {
   },
 
   async create(handle: DbHandle, input: CreateTaskInput): Promise<TaskRecord> {
+    if (input.id) {
+      const existing = await handle
+        .selectFrom('app.tasks')
+        .selectAll()
+        .where('id', '=', input.id)
+        .executeTakeFirst();
+      if (existing) {
+        // Another user's id is indistinguishable from a bad id.
+        if (existing.ownerUserid !== input.userId) {
+          throw new ValidationError('Task id is already in use');
+        }
+        return toTaskRecord(existing, input.artifactType);
+      }
+    }
+
     const task = await handle
       .insertInto('app.tasks')
       .values({
+        ...(input.id ? { id: input.id } : {}),
         ownerUserid: input.userId,
         title: input.title.trim(),
         description: input.description?.trim() || null,
@@ -264,9 +287,11 @@ export const TaskRepository = {
           .selectFrom('app.tasks as c')
           .select((ceb) => ceb.fn.countAll().as('count'))
           .whereRef('c.parentTaskId', '=', 't.id')
+          .where('c.deletedAt', 'is', null)
           .as('childCount'),
       )
       .where('t.ownerUserid', '=', input.userId)
+      .where('t.deletedAt', 'is', null)
       .where('t.parentTaskId', 'is', null);
 
     if (input.status) q = q.where('t.status', '=', input.status);
@@ -298,6 +323,7 @@ export const TaskRepository = {
       .selectAll()
       .where('parentTaskId', '=', input.parentId)
       .where('ownerUserid', '=', input.userId)
+      .where('deletedAt', 'is', null)
       .orderBy('createdat', 'asc')
       .limit(200)
       .execute();
@@ -311,6 +337,7 @@ export const TaskRepository = {
       .selectAll()
       .where('id', '=', id)
       .where('ownerUserid', '=', userId)
+      .where('deletedAt', 'is', null)
       .executeTakeFirst();
 
     return row ?? null;
@@ -340,6 +367,7 @@ export const TaskRepository = {
       })
       .where('id', '=', id)
       .where('ownerUserid', '=', userId)
+      .where('deletedAt', 'is', null)
       .returningAll()
       .executeTakeFirst();
 
@@ -392,6 +420,7 @@ export const TaskRepository = {
       })
       .where('id', '=', id)
       .where('ownerUserid', '=', userId)
+      .where('deletedAt', 'is', null)
       .returningAll()
       .executeTakeFirst();
 
@@ -403,6 +432,8 @@ export const TaskRepository = {
     return toTaskRecord(row, children.length > 0 ? 'task_list' : 'task');
   },
 
+  // Soft delete: the row stays as a tombstone so devices that pull by
+  // `updatedat` learn about the deletion. A task list takes its children along.
   async remove(handle: DbHandle, id: string, userId: string): Promise<TaskRecord> {
     const row = await TaskRepository.getOwned(handle, id, userId);
     if (!row) {
@@ -410,20 +441,54 @@ export const TaskRepository = {
     }
 
     const children = await TaskRepository.listChildren(handle, { parentId: id, userId });
+    const deletedAt = new Date();
     if (children.length > 0) {
       await handle
-        .deleteFrom('app.tasks')
+        .updateTable('app.tasks')
+        .set({ deletedAt })
         .where('parentTaskId', '=', id)
         .where('ownerUserid', '=', userId)
+        .where('deletedAt', 'is', null)
         .execute();
     }
 
     await handle
-      .deleteFrom('app.tasks')
+      .updateTable('app.tasks')
+      .set({ deletedAt })
       .where('id', '=', id)
       .where('ownerUserid', '=', userId)
       .execute();
 
-    return toTaskRecord(row, children.length > 0 ? 'task_list' : 'task');
+    return toTaskRecord(
+      { ...row, deletedAt: deletedAt.toISOString() },
+      children.length > 0 ? 'task_list' : 'task',
+    );
+  },
+
+  // Everything the user changed after the `since` position, tombstones
+  // included, oldest first, for incremental sync. A position is the last row
+  // seen as `(updatedAt, id)`; `updatedat` is compared at millisecond
+  // precision because that is all an ISO cursor can carry.
+  async listChangesSince(
+    handle: DbHandle,
+    input: { userId: string; since?: { updatedAt: string; id: string }; limit?: number },
+  ): Promise<TaskRecord[]> {
+    const changedAt = sql<Date>`date_trunc('milliseconds', updatedat)`;
+    let q = handle.selectFrom('app.tasks').selectAll().where('ownerUserid', '=', input.userId);
+    if (input.since) {
+      const { updatedAt, id } = input.since;
+      q = q.where(
+        sql<boolean>`(${changedAt}, id) > (${new Date(updatedAt).toISOString()}::timestamptz, ${id}::uuid)`,
+      );
+    }
+
+    const rows = await q
+      .orderBy(changedAt)
+      .orderBy('id', 'asc')
+      .limit(input.limit ?? 500)
+      .execute();
+
+    const parentIds = new Set(rows.map((row) => row.parentTaskId).filter((id) => id !== null));
+    return rows.map((row) => toTaskRecord(row, parentIds.has(row.id) ? 'task_list' : 'task'));
   },
 };

@@ -387,12 +387,21 @@ describe('task_delete', () => {
     );
     expect(removed.removed).toBe(true);
 
-    const gone = await db
+    // Soft delete: the row stays as a tombstone so synced devices see the deletion.
+    const tombstone = await db
       .selectFrom('app.tasks')
-      .select('id')
+      .select('deletedAt')
       .where('id', '=', created.task.id)
       .executeTakeFirst();
-    expect(gone).toBeUndefined();
+    expect(tombstone?.deletedAt).toBeTruthy();
+
+    const detail = toolOutput(
+      await callTool(userId, 'task_detail', { id: created.task.id }),
+      taskDetailResultSchema,
+    );
+    expect(detail.task).toBeNull();
+
+    await db.deleteFrom('app.tasks').where('id', '=', created.task.id).execute();
   });
 
   it('does not delete another user’s task', async () => {

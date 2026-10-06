@@ -7,6 +7,7 @@ import {
   createTask,
   deleteTask,
   getTaskDetail,
+  listTaskChanges,
   listTasks,
   persistExtractedTasks,
   updateTask,
@@ -14,6 +15,7 @@ import {
 import {
   CreateTaskBatchSchema,
   CreateTaskSchema,
+  TaskChangesQuerySchema,
   TaskParamSchema,
   UpdateTaskSchema,
   UpdateTaskStatusSchema,
@@ -40,6 +42,11 @@ const taskCoreRoutes = new Hono<AppContext>()
 
     const result = await persistExtractedTasks(userId, { groups, tasks });
     return c.json(result, 201);
+  })
+  // Registered before '/:id' so "changes" is not parsed as a task id.
+  .get('/changes', zValidator('query', TaskChangesQuerySchema), async (c) => {
+    const userId = c.get('auth')!.userId;
+    return c.json(await listTaskChanges(userId, c.req.valid('query')));
   })
   .get('/:id', zValidator('param', TaskParamSchema), async (c) => {
     const userId = c.get('auth')!.userId;

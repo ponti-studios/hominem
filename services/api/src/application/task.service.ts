@@ -28,6 +28,39 @@ export async function listTasks(
   return TaskRepository.list(db, { userId: ownerUserId, ...filter });
 }
 
+export interface TaskChanges {
+  tasks: TaskRecord[];
+  cursor: string | null;
+  hasMore: boolean;
+}
+
+// A cursor is the last row seen, `<updatedAt>_<id>`. An unparseable cursor starts over,
+// which is safe because clients merge changes idempotently.
+function parseTaskCursor(cursor: string | undefined) {
+  const split = cursor?.lastIndexOf('_') ?? -1;
+  if (!cursor || split < 1) return undefined;
+  return { updatedAt: cursor.slice(0, split), id: cursor.slice(split + 1) };
+}
+
+// Fetches one extra row to learn whether another page exists without a count query.
+export async function listTaskChanges(
+  ownerUserId: string,
+  input: { since?: string; limit: number },
+): Promise<TaskChanges> {
+  const rows = await TaskRepository.listChangesSince(db, {
+    userId: ownerUserId,
+    since: parseTaskCursor(input.since),
+    limit: input.limit + 1,
+  });
+  const tasks = rows.slice(0, input.limit);
+  const last = tasks.at(-1);
+  return {
+    tasks,
+    cursor: last ? `${last.updatedAt}_${last.id}` : null,
+    hasMore: rows.length > input.limit,
+  };
+}
+
 export interface TaskDetail {
   task: TaskRecord | null;
   participants: TaskParticipantRecord[];

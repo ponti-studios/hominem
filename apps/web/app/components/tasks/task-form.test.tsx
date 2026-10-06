@@ -35,6 +35,7 @@ function MinimalTask(overrides: Partial<Task> = {}): Task {
     completedAt: null,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
+    deletedAt: null,
     artifactType: 'task',
     ...overrides,
   };

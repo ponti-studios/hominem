@@ -19,6 +19,7 @@ export const TaskRecordSchema = z.object({
   completedAt: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  deletedAt: z.string().nullable(),
   artifactType: z.enum(['task', 'task_list']),
 });
 
