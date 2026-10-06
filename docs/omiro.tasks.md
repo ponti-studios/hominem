@@ -44,8 +44,9 @@ the `K1`–`K5` boards, each with a note that names its doc.
 
 - A change to a rule in a doc updates its frame in the same change, and the
   reverse.
-- A frame's title carries its build state: `[Not built]`, `[Partial]`,
-  `[In PR]`, `[Built]`. The doc's Status section says the same thing. Update
-  both when it ships.
+- A frame's title carries its build state only while it is not built:
+  `[Not built]`, `[Partial]` or `[In PR]`. A frame that is built and deployed
+  has no label. The doc's Status line says the same. When it ships, delete the
+  label and update the Status line.
 - A doc never describes a screen that no frame shows, and a frame never shows
   behavior that no doc states.
