@@ -45,6 +45,12 @@ export const lightColors = {
   barForeground: '#FFFFFF',
   barAccent: '#6C4DFF',
   barAccentForeground: '#FFFFFF',
+  // Controls drawn on a bar surface (disabled stop, edit button).
+  barControl: 'rgba(127, 127, 160, 0.3)',
+  // Text and icons over the dark image scrim.
+  scrimForeground: '#FFFFFF',
+  // Neutral tile behind a tool-call icon that was rejected.
+  neutralTile: 'rgba(127, 127, 160, 0.2)',
   coral: '#FF6B57',
   lime: '#C9F36B',
   limeForeground: '#14121F',
@@ -92,6 +98,12 @@ export const darkColors = {
   barForeground: '#FFFFFF',
   barAccent: '#6C4DFF',
   barAccentForeground: '#FFFFFF',
+  // Controls drawn on a bar surface (disabled stop, edit button).
+  barControl: 'rgba(127, 127, 160, 0.3)',
+  // Text and icons over the dark image scrim.
+  scrimForeground: '#FFFFFF',
+  // Neutral tile behind a tool-call icon that was rejected.
+  neutralTile: 'rgba(127, 127, 160, 0.2)',
   coral: '#FF7D6B',
   lime: '#C9F36B',
   limeForeground: '#14121F',

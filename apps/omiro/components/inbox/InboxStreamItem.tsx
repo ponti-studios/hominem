@@ -140,7 +140,7 @@ export const InboxStreamItem = memo(({ isNew = false, item }: InboxStreamItemPro
     // corners instead of a rounded box with a square panel still visible
     // inside it.
     dragSurface: { overflow: 'hidden' },
-    swipeScrim: { backgroundColor: '#000' },
+    swipeScrim: { backgroundColor: theme.colors.overlayScrim },
     // Apple Mail/Reminders style: the revealed strip is a neutral backdrop,
     // not the action's own color -- the color lives on the pill itself,
     // which floats with margin on all sides instead of filling the strip.

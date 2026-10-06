@@ -124,7 +124,7 @@ function useNoteScreenStyles() {
     },
     attachmentThumbBadgeText: {
       ...theme.textVariants.caption2,
-      color: '#ffffff',
+      color: theme.colors.scrimForeground,
       maxWidth: 52,
     },
     attachmentThumbRemove: {
@@ -332,6 +332,7 @@ function NoteEditorBody({
     mutedForeground: textSecondary,
     border: borderDefault,
     popover,
+    scrimForeground,
     success: successColor,
     destructive: destructiveColor,
   } = useAppTheme().colors;
@@ -634,7 +635,7 @@ function NoteEditorBody({
                       }}
                       style={styles.attachmentThumbRemove}
                     >
-                      <AppIcon name="xmark" size={10} tintColor="#ffffff" />
+                      <AppIcon name="xmark" size={10} tintColor={scrimForeground} />
                     </Pressable>
                   </View>
                 );

@@ -32,7 +32,8 @@ export function getToolCallPhase(toolCall: ToolCall): ToolCallPhase {
 // the approval itself lives in the composer bar (ChatToolApprovalBar), so the
 // card stays quiet.
 export function MessageToolCalls({ toolCalls }: { toolCalls: ToolCall[] }) {
-  const { coral, eventForeground, eventSun, lime, mutedForeground } = useAppTheme().colors;
+  const { coral, eventForeground, eventSun, lime, mutedForeground, neutralTile } =
+    useAppTheme().colors;
   const styles = useStyles((theme) => ({
     toolCalls: { gap: 10, marginBottom: 10, width: '94%' },
     card: {
@@ -104,7 +105,7 @@ export function MessageToolCalls({ toolCalls }: { toolCalls: ToolCall[] }) {
             : phase === 'failed'
               ? coral
               : phase === 'rejected'
-                ? 'rgba(127, 127, 160, 0.2)'
+                ? neutralTile
                 : eventSun;
         return (
           <View

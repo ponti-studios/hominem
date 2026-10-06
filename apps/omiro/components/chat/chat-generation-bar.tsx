@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, Text, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { FadeIn, useDerivedValue } from 'react-native-reanimated';
 
-import { useAppTheme, useStyles } from '~/components/theme';
+import { useAppTheme, useStyles, withAlpha } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useShimmerProgress } from '~/hooks/use-shimmer-progress';
@@ -92,7 +92,7 @@ function useBarStyles() {
       width: 44,
     },
     disabledButton: {
-      backgroundColor: 'rgba(127, 127, 160, 0.3)',
+      backgroundColor: theme.colors.barControl,
       borderRadius: 22,
       height: 44,
       width: 44,
@@ -123,7 +123,7 @@ function useBarStyles() {
     },
     editButton: {
       alignItems: 'center',
-      backgroundColor: 'rgba(127, 127, 160, 0.3)',
+      backgroundColor: theme.colors.barControl,
       borderRadius: 22,
       height: 44,
       justifyContent: 'center',
@@ -232,6 +232,7 @@ function FailedBar({ onEdit, onRetry }: { onEdit?: () => void; onRetry?: () => v
 // Diagonal ink stripes sliding right: "working", at a glance. They hold still
 // under Reduce Motion.
 function Stripes() {
+  const { limeForeground } = useAppTheme().colors;
   const reducedMotion = useReducedMotion();
   const progress = useShimmerProgress(reducedMotion);
   const [width, setWidth] = useState(0);
@@ -263,7 +264,7 @@ function Stripes() {
         <Canvas style={{ height: BAR_HEIGHT, width }}>
           <Group transform={transform}>
             {paths.map((path, index) => (
-              <Path color="rgba(20, 18, 31, 0.07)" key={index} path={path} />
+              <Path color={withAlpha(limeForeground, 0.07)} key={index} path={path} />
             ))}
           </Group>
         </Canvas>
