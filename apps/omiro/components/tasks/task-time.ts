@@ -123,3 +123,150 @@ export function ageLabel(days: number): string {
   }
   return days === 1 ? 'Added yesterday' : `Added ${days} days ago`;
 }
+
+// How far ahead the Upcoming section looks, and how many rows it shows.
+export const UPCOMING_DAYS = 7;
+export const UPCOMING_VISIBLE = 3;
+
+export interface TaskSections {
+  // Open tasks from an earlier day, oldest first.
+  carriedOver: TaskListItem[];
+  today: TaskListItem[];
+  // The next few days' tasks, capped; `moreThisWeek` counts the rest.
+  upcoming: TaskListItem[];
+  moreThisWeek: number;
+  // Finished today, so an empty Today reads as done rather than unplanned.
+  doneToday: number;
+}
+
+function taskDay(task: Pick<TaskListItem, 'dueAt' | 'startAt'>): Date | null {
+  const when = task.startAt ?? task.dueAt;
+  return when ? startOfDay(new Date(when)) : null;
+}
+
+// Splits dated tasks into the Tasks tab's three sections. Tasks further out
+// than the Upcoming window stay out of sight until their week.
+export function groupTasks(tasks: TaskListItem[], now: Date = new Date()): TaskSections {
+  const today = startOfDay(now).getTime();
+  const horizon = addDays(startOfDay(now), UPCOMING_DAYS).getTime();
+  const sections: TaskSections = {
+    carriedOver: [],
+    today: [],
+    upcoming: [],
+    moreThisWeek: 0,
+    doneToday: 0,
+  };
+  const inWeek: TaskListItem[] = [];
+  const byTime = (a: TaskListItem, b: TaskListItem) =>
+    new Date(a.startAt ?? a.dueAt ?? 0).getTime() - new Date(b.startAt ?? b.dueAt ?? 0).getTime();
+
+  for (const task of tasks) {
+    if (task.status === 'completed') {
+      if (task.completedAt && startOfDay(new Date(task.completedAt)).getTime() === today) {
+        sections.doneToday += 1;
+      }
+      continue;
+    }
+    const day = taskDay(task)?.getTime();
+    if (day === undefined) {
+      continue;
+    }
+    if (day < today) {
+      sections.carriedOver.push(task);
+    } else if (day === today) {
+      sections.today.push(task);
+    } else if (day <= horizon) {
+      inWeek.push(task);
+    }
+  }
+  inWeek.sort(byTime);
+  sections.carriedOver.sort(byTime);
+  sections.today.sort(byTime);
+  sections.upcoming = inWeek.slice(0, UPCOMING_VISIBLE);
+  sections.moreThisWeek = inWeek.length - sections.upcoming.length;
+  return sections;
+}
+
+// "From Mon" for a task carried over from an earlier day.
+export function fromLabel(task: Pick<TaskListItem, 'dueAt' | 'startAt'>, now: Date = new Date()) {
+  const day = taskDay(task);
+  if (!day) {
+    return '';
+  }
+  const diff = Math.round((startOfDay(now).getTime() - day.getTime()) / DAY_MS);
+  if (diff <= 1) {
+    return 'From yesterday';
+  }
+  return diff < 7
+    ? `From ${day.toLocaleDateString(undefined, { weekday: 'short' })}`
+    : `From ${day.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+}
+
+export interface MoveOption {
+  key: 'tomorrow' | 'saturday' | 'nextMonday';
+  label: string;
+  // Weekday or date shown at the row's end.
+  detail: string;
+  date: Date;
+}
+
+// The quick dates in the Move sheet: tomorrow, the coming Saturday and the
+// Monday after. Options landing on the same day collapse into the first.
+export function moveOptions(now: Date = new Date()): MoveOption[] {
+  const today = startOfDay(now);
+  const day = today.getDay();
+  const tomorrow = addDays(today, 1);
+  const saturday = addDays(today, day === 6 ? 7 : (6 - day + 7) % 7);
+  const monday = addDays(today, (1 - day + 7) % 7 || 7);
+  const options: MoveOption[] = [
+    {
+      key: 'tomorrow',
+      label: 'Tomorrow',
+      detail: tomorrow.toLocaleDateString(undefined, { weekday: 'short' }),
+      date: tomorrow,
+    },
+    {
+      key: 'saturday',
+      label: 'Saturday',
+      detail: saturday.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      date: saturday,
+    },
+    {
+      key: 'nextMonday',
+      label: 'Next Monday',
+      detail: monday.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      date: monday,
+    },
+  ];
+  const seen = new Set<number>();
+  return options.filter((option) => {
+    const time = option.date.getTime();
+    if (seen.has(time)) {
+      return false;
+    }
+    seen.add(time);
+    return true;
+  });
+}
+
+// The same clock time on another day; a day-only value stays day-only.
+function onDay(value: string, day: Date): string {
+  const time = new Date(value);
+  return new Date(
+    day.getFullYear(),
+    day.getMonth(),
+    day.getDate(),
+    time.getHours(),
+    time.getMinutes(),
+    time.getSeconds(),
+    time.getMilliseconds(),
+  ).toISOString();
+}
+
+// The edit that moves a task to `day`, keeping its time of day and block length.
+export function moveToDayPatch(task: Pick<TaskListItem, 'dueAt' | 'startAt'>, day: Date) {
+  return {
+    startAt: task.startAt ? onDay(task.startAt, day) : null,
+    dueAt: task.dueAt ? onDay(task.dueAt, day) : startOfDay(day).toISOString(),
+  };
+}

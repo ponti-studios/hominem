@@ -14,7 +14,7 @@ interface TaskRowProps {
   onToggle: (task: TaskListItem) => void;
 }
 
-const TaskRow = memo(function TaskRow({ item, onGround, onOpen, onToggle }: TaskRowProps) {
+export const TaskRow = memo(function TaskRow({ item, onGround, onOpen, onToggle }: TaskRowProps) {
   const styles = useStyles((theme) => ({
     row: {
       alignItems: 'center',
