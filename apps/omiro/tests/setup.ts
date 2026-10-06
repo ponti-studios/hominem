@@ -17,3 +17,6 @@ vi.mock('expo-sqlite', () => ({
 vi.mock('expo-crypto', () => ({
   randomUUID: () => globalThis.crypto.randomUUID(),
 }));
+
+// expo-notifications is native; tests plan and reconcile with a fake scheduler.
+vi.mock('expo-notifications', () => ({}));

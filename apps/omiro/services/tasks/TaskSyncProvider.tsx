@@ -3,6 +3,7 @@ import { focusManager, onlineManager, useQueryClient } from '@tanstack/react-que
 import { useEffect, type ReactNode } from 'react';
 
 import { getRemindersImporter } from './import/reminders-importer-instance';
+import { useTaskReminders } from './notifications/use-task-reminders';
 import { taskKeys } from './query-keys';
 import { createRpcTaskSyncApi } from './sync/rpc-task-sync-api';
 import { getTaskService, setTaskSyncApi } from './task-service-instance';
@@ -13,6 +14,7 @@ import { getTaskService, setTaskSyncApi } from './task-service-instance';
 export function TaskSyncProvider({ children }: { children: ReactNode }) {
   const client = useApiClient();
   const queryClient = useQueryClient();
+  useTaskReminders();
 
   useEffect(() => {
     const service = getTaskService();

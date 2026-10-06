@@ -43,7 +43,7 @@ const back = vi.fn();
 vi.mock('expo-router', () => ({ useRouter: () => ({ back }) }));
 
 const mocks = vi.hoisted(() => ({
-  tasks: [] as unknown[],
+  tasks: new Array<unknown>(),
   update: vi.fn(),
   remove: vi.fn(),
   createNote: vi.fn(),

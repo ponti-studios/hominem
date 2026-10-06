@@ -93,6 +93,7 @@ function createConfig({ config }) {
       },
     ],
     'expo-sqlite',
+    'expo-notifications',
     '@sentry/react-native',
     withPrivacyManifest,
     withSceneLifecycle,
