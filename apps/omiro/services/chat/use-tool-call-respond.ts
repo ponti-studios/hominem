@@ -4,8 +4,10 @@ import { xhrChatTransport } from '@hominem/chat/transport/xhr';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
+import type { ChatMessageItem } from '~/components/chat';
 import { API_BASE_URL } from '~/constants';
 import { useAuth } from '~/services/auth/auth-provider';
+import { mirrorCompletedChatTasks } from '~/services/tasks/mirror-chat-tasks';
 
 import { chatKeys } from '../notes/query-keys';
 
@@ -46,6 +48,10 @@ export function useToolCallRespond({ chatId }: { chatId: string }) {
         setIsResponding(false);
         await queryClient.invalidateQueries({ queryKey: chatKeys.messages(chatId) });
         await queryClient.invalidateQueries({ queryKey: chatKeys.activeChat(chatId) });
+        const answered = queryClient
+          .getQueryData<ChatMessageItem[]>(chatKeys.messages(chatId))
+          ?.find((message) => message.id === input.messageId);
+        await mirrorCompletedChatTasks(queryClient, answered?.toolCalls);
       }
     },
     [chatId, client, queryClient],

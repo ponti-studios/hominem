@@ -12,7 +12,7 @@ import { TaskList } from './TaskList';
 
 // The Tasks page: every open task as a card, with an in-app detail sheet.
 export function TasksScreen() {
-  const { data: tasks = [] } = useTasksQuery();
+  const { data: tasks = [], isRefetching, refetch } = useTasksQuery();
   const { mutate: toggleTask } = useTaskComplete();
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const openTasks = getOpenTasks(tasks);
@@ -39,9 +39,11 @@ export function TasksScreen() {
         emptyText="You have no open tasks."
         onGround
         onOpen={(task: TaskListItem) => setDetailTaskId(task.id)}
+        onRefresh={refetch}
         onToggle={(task: TaskListItem) =>
           toggleTask({ completed: task.status !== 'completed', taskId: task.id })
         }
+        refreshing={isRefetching}
         tasks={openTasks}
       />
       <TaskDetailSheet

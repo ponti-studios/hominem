@@ -17,6 +17,9 @@ const mockGetAuthHeaders = vi.fn().mockResolvedValue({});
 const mockNetInfoFetch = vi.fn().mockResolvedValue({ isConnected: true });
 const mockConsumeSseXhr = vi.fn();
 
+vi.mock('~/services/tasks/mirror-chat-tasks', () => ({
+  mirrorCompletedChatTasks: vi.fn(),
+}));
 vi.mock('~/services/storage/mmkv', () => mockMmkvModule());
 vi.mock('expo-haptics', () => ({
   impactAsync: mockImpactAsync,

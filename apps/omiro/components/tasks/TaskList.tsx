@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 
 import { useStyles } from '~/components/theme';
 import { Checkbox } from '~/components/ui';
@@ -64,7 +64,9 @@ interface TaskListProps {
   // stand out; false inside a sheet, where rows sit on the ground tone.
   onGround?: boolean;
   onOpen: (task: TaskListItem) => void;
+  onRefresh?: () => void;
   onToggle: (task: TaskListItem) => void;
+  refreshing?: boolean;
   tasks: TaskListItem[];
 }
 
@@ -77,7 +79,9 @@ export function TaskList({
   emptyText,
   onGround = false,
   onOpen,
+  onRefresh,
   onToggle,
+  refreshing = false,
   tasks,
 }: TaskListProps) {
   const styles = useStyles((theme) => ({
@@ -96,6 +100,9 @@ export function TaskList({
       data={tasks}
       initialNumToRender={10}
       keyExtractor={(task) => task.id}
+      refreshControl={
+        onRefresh ? <RefreshControl onRefresh={onRefresh} refreshing={refreshing} /> : undefined
+      }
       removeClippedSubviews
       renderItem={({ item }) => (
         <TaskRow item={item} onGround={onGround} onOpen={onOpen} onToggle={onToggle} />

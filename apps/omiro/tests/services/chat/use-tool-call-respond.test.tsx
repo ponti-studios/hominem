@@ -9,6 +9,9 @@ const mockTransport = { request: vi.fn(), stream: vi.fn() };
 mockTransport.stream.mockImplementation(streamFromRequest((input) => mockTransport.request(input)));
 const mockGetAuthHeaders = vi.fn().mockResolvedValue({ cookie: 'session=test' });
 
+vi.mock('~/services/tasks/mirror-chat-tasks', () => ({
+  mirrorCompletedChatTasks: vi.fn(),
+}));
 vi.mock('~/services/auth/auth-provider', () => ({
   useAuth: () => ({ getAuthHeaders: mockGetAuthHeaders }),
 }));

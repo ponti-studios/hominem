@@ -54,6 +54,9 @@ const committedMessageWithAudio = {
   updatedAt: '2026-01-01',
 } satisfies ChatMessageDto;
 
+vi.mock('~/services/tasks/mirror-chat-tasks', () => ({
+  mirrorCompletedChatTasks: vi.fn(),
+}));
 vi.mock('~/services/storage/mmkv', () => mockMmkvModule());
 vi.mock('expo-crypto', () => ({ randomUUID: mockRandomUUID }));
 vi.mock('expo-haptics', () => ({
