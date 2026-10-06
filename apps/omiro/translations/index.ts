@@ -178,6 +178,8 @@ const t = {
       cancel: 'Cancel',
       retry: 'Try again',
       acceptA11y: 'Save note',
+      accept: 'Save note',
+      discard: 'Discard',
       emptyChat: 'There is nothing in this conversation to save yet.',
       generateError: 'Could not write that note. Try again.',
       saveError: 'Could not save the note. Try again.',
