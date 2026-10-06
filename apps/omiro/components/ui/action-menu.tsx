@@ -63,7 +63,7 @@ export function ActionMenu({ visible, onClose, sections, testID }: ActionMenuPro
       textTransform: 'uppercase',
     },
     row: {
-      height: 52,
+      minHeight: 52,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 14,

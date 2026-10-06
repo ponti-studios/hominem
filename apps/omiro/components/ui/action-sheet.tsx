@@ -51,7 +51,7 @@ export function ActionSheet({
       fontWeight: '700',
     },
     row: {
-      height: 60,
+      minHeight: 60,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 14,

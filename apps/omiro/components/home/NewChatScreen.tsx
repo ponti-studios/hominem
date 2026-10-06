@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import { Composer } from '~/components/composer/Composer';
@@ -11,11 +11,12 @@ import {
   readNewChatDraft,
   writeNewChatDraft,
 } from '~/services/navigation/launch-state';
-import { getContentRoute } from '~/services/navigation/routes';
+import { CHAT_ROUTE, getContentRoute } from '~/services/navigation/routes';
 import t from '~/translations';
 
 export function NewChatScreen() {
   const router = useRouter();
+  const canGoBack = useNavigation().canGoBack();
   const { seed } = useLocalSearchParams<{ seed?: string }>();
   const { restingInset } = useComposerDockMetrics();
   const initialMessage = seed?.trim() || readNewChatDraft();
@@ -30,7 +31,7 @@ export function NewChatScreen() {
         left=<FloatingCircleButton
           accessibilityLabel="BackButton"
           icon="xmark"
-          onPress={() => router.back()}
+          onPress={() => (canGoBack ? router.back() : router.dismissTo(CHAT_ROUTE))}
           testID="new-chat-close-button"
         />
       />

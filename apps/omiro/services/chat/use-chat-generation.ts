@@ -49,6 +49,11 @@ function restoreGeneration(chatId: string): ChatGenerationState | null {
       return null;
     }
     const { checkpoint, userMessageId } = stored;
+    // A finished or stopped run has nothing to resume or show.
+    if (checkpoint.phase === 'committed' || checkpoint.phase === 'cancelled') {
+      storage.remove(generationStorageKey(chatId));
+      return null;
+    }
     return {
       id: checkpoint.generationId,
       chatId,
@@ -311,8 +316,11 @@ export function useChatGeneration({
       return;
     }
     controller.cancel();
-    setGeneration({ ...current, stage: 'cancelled' });
-  }, [chatId, client, setGeneration]);
+    // Nothing is left to show once a stop lands -- clear the generation so the
+    // composer comes back, and refresh to drop the partial reply.
+    setGeneration(null);
+    void onGenerationTerminal?.();
+  }, [chatId, client, onGenerationTerminal, setGeneration]);
 
   const dismissGeneration = useCallback(() => setGeneration(null), [setGeneration]);
 

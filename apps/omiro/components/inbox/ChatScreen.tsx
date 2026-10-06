@@ -147,6 +147,23 @@ export function ChatScreen({ id }: { id: string }) {
   const cancelActiveGeneration = generation ? cancelGeneration : cancelRegeneration;
   const retryActiveGeneration = generation ? retryLastGeneration : retryGeneration;
   const dismissActiveGeneration = generation ? dismissGeneration : dismissRegeneration;
+  // The approval's continuation streams through its own client, so once it
+  // finishes the paused generation that was waiting on it is done too.
+  const respondToToolCall = async (approved: boolean) => {
+    if (!pendingToolCall) {
+      return;
+    }
+    try {
+      await toolCallRespond.respond({
+        messageId: pendingToolCall.messageId,
+        toolCallId: pendingToolCall.toolCall.toolCallId,
+        approved,
+      });
+    } finally {
+      dismissGeneration();
+      dismissRegeneration();
+    }
+  };
   // The assistant is waiting on a yes/no for a tool call: that decision takes
   // over the composer until it is answered.
   const pendingToolCall = messages
@@ -325,18 +342,10 @@ export function ChatScreen({ id }: { id: string }) {
                 <ChatToolApprovalBar
                   disabled={toolCallRespond.isResponding}
                   onApprove={() => {
-                    void toolCallRespond.respond({
-                      messageId: pendingToolCall.messageId,
-                      toolCallId: pendingToolCall.toolCall.toolCallId,
-                      approved: true,
-                    });
+                    void respondToToolCall(true);
                   }}
                   onReject={() => {
-                    void toolCallRespond.respond({
-                      messageId: pendingToolCall.messageId,
-                      toolCallId: pendingToolCall.toolCall.toolCallId,
-                      approved: false,
-                    });
+                    void respondToToolCall(false);
                   }}
                   toolName={pendingToolCall.toolCall.toolName}
                 />
