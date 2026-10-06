@@ -1,5 +1,10 @@
 const MAX_VALUE_LENGTH = 140;
 
+// A symbol that says what the tool does, so a card reads at a glance.
+export function getToolIcon(toolName: string): 'brain' | 'sparkles' {
+  return /remember|memory/i.test(toolName) ? 'brain' : 'sparkles';
+}
+
 // "create_collection" -> "Create collection".
 export function formatToolName(toolName: string): string {
   const words = toolName

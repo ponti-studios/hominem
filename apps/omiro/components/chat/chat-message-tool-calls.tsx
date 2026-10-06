@@ -6,7 +6,7 @@ import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
 import { ShimmerText } from './chat-thinking-indicator';
-import { describeToolArgs, formatToolName } from './chat-tool-call.helpers';
+import { describeToolArgs, formatToolName, getToolIcon } from './chat-tool-call.helpers';
 
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
 
@@ -39,10 +39,10 @@ export function MessageToolCalls({ toolCalls }: { toolCalls: ToolCall[] }) {
       alignItems: 'center',
       backgroundColor: theme.colors.card,
       borderCurve: 'continuous',
-      borderRadius: 22,
+      borderRadius: 18,
       flexDirection: 'row',
-      gap: 12,
-      padding: 14,
+      gap: 10,
+      padding: 10,
     },
     asking: { borderColor: theme.colors.primary, borderStyle: 'dashed', borderWidth: 2 },
     rejected: {
@@ -56,10 +56,10 @@ export function MessageToolCalls({ toolCalls }: { toolCalls: ToolCall[] }) {
     tile: {
       alignItems: 'center',
       borderCurve: 'continuous',
-      borderRadius: 14,
-      height: 42,
+      borderRadius: 11,
+      height: 32,
       justifyContent: 'center',
-      width: 42,
+      width: 32,
     },
     body: { flex: 1, gap: 2, minWidth: 0 },
     draftChip: {
@@ -75,13 +75,13 @@ export function MessageToolCalls({ toolCalls }: { toolCalls: ToolCall[] }) {
       fontWeight: '800',
       letterSpacing: 0.8,
     },
-    title: { color: theme.colors.foreground, fontSize: 16, fontWeight: '800' },
-    mutedTitle: { color: theme.colors.mutedForeground, fontSize: 16, fontWeight: '800' },
+    title: { color: theme.colors.foreground, fontSize: 14, fontWeight: '800' },
+    mutedTitle: { color: theme.colors.mutedForeground, fontSize: 14, fontWeight: '800' },
     detail: {
       color: theme.colors.mutedForeground,
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: '500',
-      lineHeight: 19,
+      lineHeight: 17,
     },
     struck: { textDecorationLine: 'line-through' },
   }));
@@ -120,15 +120,13 @@ export function MessageToolCalls({ toolCalls }: { toolCalls: ToolCall[] }) {
             <View style={[styles.tile, { backgroundColor: tileColor }]}>
               <AppIcon
                 name={
-                  phase === 'done'
-                    ? 'checkmark'
-                    : phase === 'failed'
-                      ? 'exclamationmark'
-                      : phase === 'rejected'
-                        ? 'xmark'
-                        : 'sparkles'
+                  phase === 'failed'
+                    ? 'exclamationmark'
+                    : phase === 'rejected'
+                      ? 'xmark'
+                      : getToolIcon(toolCall.toolName)
                 }
-                size={20}
+                size={16}
                 tintColor={phase === 'rejected' ? mutedForeground : eventForeground}
               />
             </View>
@@ -144,11 +142,9 @@ export function MessageToolCalls({ toolCalls }: { toolCalls: ToolCall[] }) {
                 <Text style={phase === 'rejected' ? styles.mutedTitle : styles.title}>
                   {phase === 'rejected'
                     ? t.chat.toolCall.rejected
-                    : phase === 'done'
-                      ? t.chat.toolCall.done(name)
-                      : phase === 'failed'
-                        ? t.chat.toolCall.failed(name)
-                        : name}
+                    : phase === 'failed'
+                      ? t.chat.toolCall.failed(name)
+                      : name}
                 </Text>
               )}
               {phase === 'failed' ? (

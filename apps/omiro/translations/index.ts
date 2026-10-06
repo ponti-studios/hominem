@@ -88,7 +88,6 @@ const t = {
       waiting: 'WAITING FOR YOUR OK',
       rejected: 'You rejected this',
       running: (name: string) => `${name}…`,
-      done: (name: string) => `${name}: done`,
       failed: (name: string) => `${name} failed`,
       failedDetail: 'This did not go through.',
       question: (name: string) => `${name}?`,
