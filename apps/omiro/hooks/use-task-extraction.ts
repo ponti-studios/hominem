@@ -14,7 +14,7 @@ import { useMemo } from 'react';
 import { Alert } from 'react-native';
 
 import { taskKeys } from '~/services/tasks/query-keys';
-import { remindersGateway } from '~/services/tasks/reminders-gateway';
+import { getTaskService } from '~/services/tasks/task-service-instance';
 import t from '~/translations';
 
 export type { ExtractedTasksCreated };
@@ -26,16 +26,17 @@ interface UseTaskExtractionInput {
   onContentCreated?: (content: ExtractedTasksCreated) => Promise<void>;
 }
 
-async function createReminderRef(task: ExtractedTask): Promise<CreatedTaskRef> {
-  const reminder = await remindersGateway.createReminder({
+// Extracted tasks have no day, so they land in the Tasks inbox to be placed.
+function createTaskRef(task: ExtractedTask): CreatedTaskRef {
+  const created = getTaskService().create({
     title: task.title,
     notes: task.description ?? null,
   });
   return {
-    id: reminder.id,
-    title: reminder.title,
+    id: created.id,
+    title: created.title,
     type: 'task',
-    ...(reminder.createdAt ? { updatedAt: reminder.createdAt } : {}),
+    ...(created.createdAt ? { updatedAt: created.createdAt } : {}),
   };
 }
 
@@ -74,19 +75,17 @@ export function useTaskExtraction({
     return json;
   };
 
-  // EventKit has no public parent/child reminder API, so a group's tasks are
-  // created as independent reminders -- the grouping only survives in this
-  // response, for the review UI to display, not in Reminders itself.
+  // Tasks have no parent/child relation, so a group's tasks are created as
+  // independent tasks -- the grouping only survives in this response, for the
+  // review UI to display.
   const createTasksBatch = useMutation({
     mutationKey: ['chat-task-batch', chatId],
     mutationFn: async ({ groups, tasks }: CreateTasksInput) => {
-      const createdGroups = await Promise.all(
-        groups.map(async (group) => ({
-          parent: await createReminderRef({ title: group.title }),
-          tasks: await Promise.all(group.tasks.map(createReminderRef)),
-        })),
-      );
-      const createdTasks = await Promise.all(tasks.map(createReminderRef));
+      const createdGroups = groups.map((group) => ({
+        parent: createTaskRef({ title: group.title }),
+        tasks: group.tasks.map(createTaskRef),
+      }));
+      const createdTasks = tasks.map(createTaskRef);
       return { groups: createdGroups, tasks: createdTasks };
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: taskKeys.all }),

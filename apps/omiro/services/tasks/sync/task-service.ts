@@ -1,5 +1,5 @@
 import { toServerFields, type StoredTask } from './task-mapping';
-import type { TaskStore } from './task-store';
+import type { OutboxOp, TaskStore } from './task-store';
 import { syncTasks, type SyncResult, type TaskSyncApi } from './task-sync';
 
 export interface NewTaskInput {
@@ -31,6 +31,8 @@ export interface TaskService {
   remove(id: string): void;
   sync(): Promise<SyncResult | null>;
   failedCount(): number;
+  // Changes for this task the server has not accepted; empty once it is settled.
+  outboxFor(id: string): OutboxOp[];
   subscribe(listener: () => void): () => void;
 }
 
@@ -147,6 +149,7 @@ export function createTaskService({
       changed();
     },
     sync,
+    outboxFor: (id) => store.listOps().filter((op) => op.taskId === id),
     failedCount: () => store.listOps().filter((op) => op.status === 'failed').length,
     subscribe: (listener) => {
       listeners.add(listener);

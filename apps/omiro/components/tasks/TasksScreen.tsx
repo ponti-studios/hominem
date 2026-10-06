@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useStyles } from '~/components/theme';
+import { useRemindersImport } from '~/services/tasks/import/use-reminders-import';
 import type { TaskListItem } from '~/services/tasks/task-types';
 import { useTaskComplete } from '~/services/tasks/use-task-complete';
 import { useTasksQuery } from '~/services/tasks/use-tasks-query';
 
+import { ImportPrompt } from './ImportPrompt';
 import { InboxRow } from './InboxRow';
 import { getDatedTasks, getInboxTasks } from './task-time';
 import { TaskDetailSheet } from './TaskDetailSheet';
@@ -19,6 +21,7 @@ export function TasksScreen() {
   const { mutate: toggleTask } = useTaskComplete();
   const [detailTaskId, setDetailTaskId] = useState<string | null>(null);
   const router = useRouter();
+  const reminders = useRemindersImport();
   const datedTasks = getDatedTasks(tasks);
   const inboxCount = getInboxTasks(tasks).length;
   const detailTask = tasks.find((task) => task.id === detailTaskId) ?? null;
@@ -28,6 +31,7 @@ export function TasksScreen() {
       flex: 1,
       paddingHorizontal: 16,
     },
+    footer: { gap: 12 },
     title: {
       ...theme.textVariants.display,
       color: theme.colors.foreground,
@@ -44,9 +48,19 @@ export function TasksScreen() {
         contentPaddingTop={16}
         emptyText="You have no open tasks."
         footer={
-          inboxCount > 0 ? (
-            <InboxRow count={inboxCount} onPress={() => router.push('/tasks/place')} />
-          ) : null
+          <View style={styles.footer}>
+            {reminders.state.kind === 'ask' ? (
+              <ImportPrompt
+                busy={reminders.busy}
+                count={reminders.state.count}
+                onImport={reminders.importAll}
+                onStartFresh={reminders.startFresh}
+              />
+            ) : null}
+            {inboxCount > 0 ? (
+              <InboxRow count={inboxCount} onPress={() => router.push('/tasks/place')} />
+            ) : null}
+          </View>
         }
         onGround
         onOpen={(task: TaskListItem) => setDetailTaskId(task.id)}

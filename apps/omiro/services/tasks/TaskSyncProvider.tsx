@@ -2,6 +2,7 @@ import { useApiClient } from '@hominem/rpc/react';
 import { focusManager, onlineManager, useQueryClient } from '@tanstack/react-query';
 import { useEffect, type ReactNode } from 'react';
 
+import { getRemindersImporter } from './import/reminders-importer-instance';
 import { taskKeys } from './query-keys';
 import { createRpcTaskSyncApi } from './sync/rpc-task-sync-api';
 import { getTaskService, setTaskSyncApi } from './task-service-instance';
@@ -17,7 +18,10 @@ export function TaskSyncProvider({ children }: { children: ReactNode }) {
     const service = getTaskService();
     setTaskSyncApi(createRpcTaskSyncApi(client));
 
+    const importer = getRemindersImporter();
     const stopChanges = service.subscribe(() => {
+      // Imported reminders leave Reminders once the server has their tasks.
+      void importer.settle().catch(() => undefined);
       void queryClient.invalidateQueries({ queryKey: taskKeys.all });
     });
     const stopOnline = onlineManager.subscribe((online) => {

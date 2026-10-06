@@ -10,6 +10,16 @@ import type { TaskSyncApi } from './sync/task-sync';
 let service: TaskService | null = null;
 let api: TaskSyncApi | null = null;
 let clearStore: (() => void) | null = null;
+const cleanups = new Set<() => void>();
+
+// Other per-account task state (the Reminders import) registers here so
+// sign-out clears it with the tasks.
+export function onTaskDataCleared(cleanup: () => void) {
+  cleanups.add(cleanup);
+  return () => {
+    cleanups.delete(cleanup);
+  };
+}
 
 export function getTaskService(): TaskService {
   if (!service) {
@@ -36,4 +46,5 @@ export function clearTaskData() {
   // rows are on disk either way.
   getTaskService();
   clearStore?.();
+  cleanups.forEach((cleanup) => cleanup());
 }

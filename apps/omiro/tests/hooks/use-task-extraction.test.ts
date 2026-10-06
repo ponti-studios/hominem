@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('~/services/tasks/reminders-gateway', () => ({
-  remindersGateway: { createReminder: vi.fn() },
+vi.mock('~/services/tasks/task-service-instance', () => ({
+  getTaskService: () => ({ create: vi.fn() }),
 }));
 
 const { buildExtractedTasksProposal } = await import('~/hooks/use-task-extraction');

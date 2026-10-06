@@ -9,7 +9,7 @@ import { renderHookWithQueryClient } from '../utils/render-hook';
 const mockTasksPost = vi.fn();
 const mockNotesPost = vi.fn();
 const mockTasksExtractPost = vi.fn();
-const mockCreateReminder = vi.fn();
+const mockCreateTask = vi.fn();
 const mockAlert = vi.fn();
 
 vi.mock('@hominem/rpc/react', async (importOriginal) => {
@@ -28,10 +28,8 @@ vi.mock('@hominem/rpc/react', async (importOriginal) => {
   };
 });
 
-vi.mock('~/services/tasks/reminders-gateway', () => ({
-  remindersGateway: {
-    createReminder: mockCreateReminder,
-  },
+vi.mock('~/services/tasks/task-service-instance', () => ({
+  getTaskService: () => ({ create: mockCreateTask }),
 }));
 
 vi.mock('react-native', async (importOriginal) => {
@@ -143,13 +141,11 @@ describe('useTaskExtraction', () => {
         tasks: [],
       }),
     });
-    mockCreateReminder.mockImplementation(({ title }: { title: string }) =>
-      Promise.resolve({
-        id: title === 'Launch tasks' ? 'parent-1' : title === 'Book venue' ? 'task-1' : 'task-2',
-        title,
-        createdAt: 't',
-      }),
-    );
+    mockCreateTask.mockImplementation(({ title }: { title: string }) => ({
+      id: title === 'Launch tasks' ? 'parent-1' : title === 'Book venue' ? 'task-1' : 'task-2',
+      title,
+      createdAt: 't',
+    }));
     const { result, onContentCreated } = renderTaskExtraction();
 
     await act(async () => {
@@ -159,15 +155,9 @@ describe('useTaskExtraction', () => {
       await result.current.handleAcceptReview();
     });
 
-    expect(mockCreateReminder).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Launch tasks' }),
-    );
-    expect(mockCreateReminder).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Book venue' }),
-    );
-    expect(mockCreateReminder).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Send invites' }),
-    );
+    expect(mockCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: 'Launch tasks' }));
+    expect(mockCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: 'Book venue' }));
+    expect(mockCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: 'Send invites' }));
     expect(onContentCreated).toHaveBeenCalledWith(
       expect.objectContaining({
         source: { kind: 'artifact', id: 'parent-1', title: 'Launch tasks', type: 'task' },
@@ -186,7 +176,7 @@ describe('useTaskExtraction', () => {
       await result.current.handleAcceptReview();
     });
 
-    expect(mockCreateReminder).not.toHaveBeenCalled();
+    expect(mockCreateTask).not.toHaveBeenCalled();
     expect(mockAlert).toHaveBeenCalledWith('Could not save content', 'Please try again.');
     // A rejected accept goes back to the reviewing state instead of clearing it.
     expect(result.current.isReviewVisible).toBe(true);
