@@ -41,7 +41,8 @@
     "export-user": "tsx scripts/export-user.ts",
     "invite-user": "tsx scripts/invite-user.ts",
     "merge-user-data": "tsx scripts/merge-user-data.ts",
-    "mcp:smoke": "tsx scripts/mcp-smoke-test.ts"
+    "mcp:smoke": "tsx scripts/mcp-smoke-test.ts",
+    "mcp:perf": "tsx --tsconfig tsconfig.dev.json scripts/mcp-perf-baseline.ts"
   },
   "dependencies": {
     "@better-auth/cimd": "1.7.1",

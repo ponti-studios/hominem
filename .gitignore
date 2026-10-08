@@ -36,6 +36,9 @@ test-results
 results/
 results.json
 
+# perf baselines (scratch, regenerated on each run)
+services/api/scripts/mcp-perf-baselines/
+
 # environment
 .env
 .env.*
