@@ -1,8 +1,8 @@
 import { db } from '@hominem/db/core';
 import { NoteRepository } from '@hominem/db/notes';
 import { VectorDocumentRepository } from '@hominem/db/vector';
-import { embeddingQueue } from '@hominem/queues';
 
+import { rememberMemory } from '../../application/memory.service';
 import {
   forgetMemoryInputSchema,
   forgetMemoryOutputSchema,
@@ -17,14 +17,6 @@ import { registerTool } from '../tool-registry';
 
 // Memories are just notes with kind = 'memory', so they show up anywhere notes already do.
 const MEMORY_KIND = 'memory' as const;
-
-async function enqueueMemoryEmbedding(userId: string, noteId: string) {
-  await embeddingQueue.add(
-    'generate-embedding',
-    { jobId: `note-${noteId}`, userId, entityType: 'note' as const, entityId: noteId },
-    { jobId: `note-${noteId}`, removeOnComplete: true, removeOnFail: false },
-  );
-}
 
 function toMemorySummary(note: {
   id: string;
@@ -54,7 +46,7 @@ registerTool(
     resultCap: 1,
     destructive: false,
     // An identical fact already saved is returned as-is rather than duplicated
-    // (see NoteRepository.createMemoryIfAbsent below), so repeat calls converge.
+    // (see rememberMemory), so repeat calls converge.
     idempotent: true,
     guidance: {
       whenToUse: 'The user explicitly asks to remember something or states a durable preference.',
@@ -64,13 +56,7 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
-    const result = await NoteRepository.createMemoryIfAbsent(db, {
-      userId: ownerUserId,
-      title: input.title ?? null,
-      content: input.content,
-      excerpt: input.content.slice(0, 200),
-    });
-    if (result.created) await enqueueMemoryEmbedding(ownerUserId, result.record.id);
+    const result = await rememberMemory(ownerUserId, input);
     return toMemorySummary(result.record);
   },
 );

@@ -6,8 +6,10 @@ import {
   inputResponse,
   McpServer,
   type AuthInfo,
+  type CacheHint,
   type CallToolResult,
   type ServerContext,
+  type StandardSchemaWithJSON,
 } from '@modelcontextprotocol/server';
 import type { Context } from 'hono';
 
@@ -21,6 +23,51 @@ import { describeCapability } from './tool-planner';
 import { callTool, listToolsForScopes } from './tool-registry';
 
 const CONFIRM_KEY = 'confirm';
+
+// The tool/prompt/discover lists are static per deploy (they only change when
+// new code ships), but `tools/list` alone is ~247 KiB. Let 2026-07-28 clients
+// cache them briefly instead of re-fetching on every connection. Private, never
+// public, because each result is filtered to the caller's granted scopes.
+const LIST_CACHE_HINT: CacheHint = { ttlMs: 5 * 60 * 1000, cacheScope: 'private' };
+
+const JSON_SCHEMA_TARGET = 'draft-2020-12';
+
+// zod's `~standard.jsonSchema` re-walks the whole schema tree (and deep-copies the
+// result via JSON.parse(JSON.stringify)) on every call. The MCP SDK calls it once at
+// registerTool and again at tools/list — for every tool, on every request, because
+// createMcpHandler builds a fresh McpServer per request. The schemas are static module
+// constants, so cache the conversion per schema and hand the SDK a wrapper that serves
+// the cached JSON Schema while delegating validation back to the original zod schema.
+// Validation semantics are therefore unchanged; only the repeated conversion is skipped.
+const jsonSchemaCache = new WeakMap<
+  object,
+  { input: Record<string, unknown>; output: Record<string, unknown> }
+>();
+
+function cachedJsonSchema(schema: StandardSchemaWithJSON): StandardSchemaWithJSON {
+  const cached =
+    jsonSchemaCache.get(schema) ??
+    (() => {
+      const entry = {
+        input: schema['~standard'].jsonSchema.input({ target: JSON_SCHEMA_TARGET }),
+        output: schema['~standard'].jsonSchema.output({ target: JSON_SCHEMA_TARGET }),
+      };
+      jsonSchemaCache.set(schema, entry);
+      return entry;
+    })();
+
+  return {
+    '~standard': {
+      version: 1,
+      vendor: 'hominem-cached-schema',
+      validate: schema['~standard'].validate,
+      jsonSchema: {
+        input: () => cached.input,
+        output: () => cached.output,
+      },
+    },
+  };
+}
 
 export type McpHonoEnv = {
   Variables: {
@@ -154,6 +201,11 @@ function createMcpServer(authInfo?: AuthInfo) {
       instructions:
         'MCP tools, resources and prompts for authenticated Hominem users. Resources under hominem:// expose your own profile, memories, collections, tasks and notes.',
       requestState: { verify: confirmationCodec.verify },
+      cacheHints: {
+        'tools/list': LIST_CACHE_HINT,
+        'prompts/list': LIST_CACHE_HINT,
+        'server/discover': LIST_CACHE_HINT,
+      },
     },
   );
 
@@ -171,8 +223,10 @@ function createMcpServer(authInfo?: AuthInfo) {
       {
         title: definition.title,
         description: describeCapability(definition),
-        inputSchema: definition.inputSchema,
-        outputSchema: definition.outputSchema,
+        inputSchema: cachedJsonSchema(definition.inputSchema),
+        outputSchema: definition.outputSchema
+          ? cachedJsonSchema(definition.outputSchema)
+          : undefined,
         annotations: {
           readOnlyHint: definition.readOnly,
           destructiveHint: destructive,

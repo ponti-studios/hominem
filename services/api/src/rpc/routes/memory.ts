@@ -5,10 +5,12 @@ import { VectorDocumentRepository } from '@hominem/db/vector';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
+import { rememberMemory } from '../../application/memory.service';
 import { NoteService } from '../../application/notes.service';
 import {
   listMemoriesInputSchema,
   MemoryParamSchema,
+  rememberInputSchema,
   UpdateMemoryInputSchema,
 } from '../../schemas/memory.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
@@ -57,6 +59,13 @@ export const memoryRoutes = new Hono<AppContext>()
       limit: limit ?? 50,
     });
     return c.json({ memories: notes.map(toMemoryDto) });
+  })
+  .post('/', zValidator('json', rememberInputSchema), async (c) => {
+    const userId = c.get('auth')!.userId;
+    const input = c.req.valid('json');
+
+    const result = await rememberMemory(userId, input);
+    return c.json(toMemoryDto(result.record), result.created ? 201 : 200);
   })
   .patch(
     '/:id',
