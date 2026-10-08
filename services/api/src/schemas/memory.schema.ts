@@ -27,15 +27,15 @@ export const rememberOutputSchema = z.object({
 
 const memorySummarySchema = rememberOutputSchema;
 
+/** Query strings arrive as text; turn a numeric string into a number and leave every other type to fail validation. */
+const numericString = (value: unknown) =>
+  typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+
 // ── list_memories ────────────────────────────────────────────────────
 
 export const listMemoriesInputSchema = z.object({
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(50)
-    .optional()
+  limit: z
+    .preprocess(numericString, z.number().int().min(1).max(50).optional())
     .describe('Maximum memories to return, from 1 to 50.'),
 });
 
