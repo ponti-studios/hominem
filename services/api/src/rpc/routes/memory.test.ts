@@ -1,5 +1,5 @@
 import { pool } from '@hominem/db/core';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createRpcTestApp, postJson } from '../../testkit/rpc-test-app';
 import type { RpcUser } from '../middleware/auth';
@@ -9,7 +9,7 @@ vi.mock('@hominem/queues', () => ({
   embeddingQueue: { add: vi.fn().mockResolvedValue(undefined) },
 }));
 
-const userId = 'a2000001-0000-4000-8000-000000000001';
+const userId = 'a2000001-0000-4000-8000-0000000000a4';
 const user: RpcUser = {
   id: userId,
   email: `${userId}@test.dev`,
@@ -28,6 +28,10 @@ beforeAll(async () => {
     [userId, user.name, user.email, true],
   );
   await pool.query('DELETE FROM app.notes WHERE owner_userid = $1', [userId]);
+});
+
+afterAll(async () => {
+  await pool.query('DELETE FROM "user" WHERE id = $1', [userId]);
 });
 
 describe('POST /memory', () => {

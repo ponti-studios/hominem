@@ -2,10 +2,10 @@ import { db } from '@hominem/db/core';
 import { NotFoundError } from '@hominem/db/errors';
 import { NoteRepository } from '@hominem/db/notes';
 import { VectorDocumentRepository } from '@hominem/db/vector';
-import { embeddingQueue } from '@hominem/queues';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
+import { rememberMemory } from '../../application/memory.service';
 import { NoteService } from '../../application/notes.service';
 import {
   listMemoriesInputSchema,
@@ -64,25 +64,7 @@ export const memoryRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
 
-    // Same write as the MCP `remember` tool: an identical fact is returned, not duplicated.
-    const result = await NoteRepository.createMemoryIfAbsent(db, {
-      userId,
-      title: input.title ?? null,
-      content: input.content,
-      excerpt: input.content.slice(0, 200),
-    });
-    if (result.created) {
-      await embeddingQueue.add(
-        'generate-embedding',
-        {
-          jobId: `note-${result.record.id}`,
-          userId,
-          entityType: 'note' as const,
-          entityId: result.record.id,
-        },
-        { jobId: `note-${result.record.id}`, removeOnComplete: true, removeOnFail: false },
-      );
-    }
+    const result = await rememberMemory(userId, input);
     return c.json(toMemoryDto(result.record), result.created ? 201 : 200);
   })
   .patch(
