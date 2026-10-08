@@ -30,7 +30,7 @@ const memorySummarySchema = rememberOutputSchema;
 // ── list_memories ────────────────────────────────────────────────────
 
 export const listMemoriesInputSchema = z.object({
-  limit: z
+  limit: z.coerce
     .number()
     .int()
     .min(1)
