@@ -1,4 +1,5 @@
 import { pool } from '@hominem/db/core';
+import { embeddingQueue } from '@hominem/queues';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createRpcTestApp, postJson } from '../../testkit/rpc-test-app';
@@ -46,6 +47,9 @@ describe('POST /memory', () => {
     const again = await postJson(app, '/memory', { content, title: 'Rowing' });
     expect(again.status).toBe(200);
     expect((await again.json()).id).toBe(memory.id);
+
+    // A repeat call enqueues again (same jobId) so a failed first enqueue is repaired.
+    expect(embeddingQueue.add).toHaveBeenCalledTimes(2);
 
     const list = await app.request('/memory?limit=5');
     expect(list.status).toBe(200);

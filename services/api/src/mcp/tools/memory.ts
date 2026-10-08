@@ -46,7 +46,7 @@ registerTool(
     resultCap: 1,
     destructive: false,
     // An identical fact already saved is returned as-is rather than duplicated
-    // (see NoteRepository.createMemoryIfAbsent below), so repeat calls converge.
+    // (see rememberMemory), so repeat calls converge.
     idempotent: true,
     guidance: {
       whenToUse: 'The user explicitly asks to remember something or states a durable preference.',
