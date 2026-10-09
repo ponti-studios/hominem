@@ -8,7 +8,7 @@ import { Hono } from 'hono';
 import { rememberMemory } from '../../application/memory.service';
 import { NoteService } from '../../application/notes.service';
 import {
-  listMemoriesInputSchema,
+  listMemoriesPageInputSchema,
   MemoryParamSchema,
   rememberInputSchema,
   UpdateMemoryInputSchema,
@@ -48,17 +48,28 @@ async function assertOwnedMemory(id: string, userId: string) {
 
 export const memoryRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  .get('/', zValidator('query', listMemoriesInputSchema), async (c) => {
+  .get('/', zValidator('query', listMemoriesPageInputSchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    const { limit } = c.req.valid('query');
-    const notes = await NoteRepository.list(db, {
+    const { limit, before, since } = c.req.valid('query');
+    // Taken before reading, so a client that asks for `since` this time next time cannot miss a
+    // memory saved while this page was being read (it may see one twice, and merges by id).
+    const serverTime = new Date().toISOString();
+    const page = await NoteRepository.listPage(db, {
       userId,
       kind: MEMORY_KIND,
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
       limit: limit ?? 50,
+      before,
+      since,
     });
-    return c.json({ memories: notes.map(toMemoryDto) });
+    return c.json({ memories: page.notes.map(toMemoryDto), next: page.next, serverTime });
+  })
+  // Every memory's id and last update time, so an app that keeps its own copy can drop the ones
+  // deleted elsewhere.
+  .get('/ids', async (c) => {
+    const userId = c.get('auth')!.userId;
+    const serverTime = new Date().toISOString();
+    const memories = await NoteRepository.listStamps(db, { userId, kind: MEMORY_KIND });
+    return c.json({ memories, serverTime });
   })
   .post('/', zValidator('json', rememberInputSchema), async (c) => {
     const userId = c.get('auth')!.userId;

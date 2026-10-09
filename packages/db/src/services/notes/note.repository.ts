@@ -1,5 +1,5 @@
 import { isObject } from '@hominem/utils';
-import type { Selectable, UpdateObject } from 'kysely';
+import { sql, type Selectable, type UpdateObject } from 'kysely';
 
 import type { Database } from '../../db';
 import { NotFoundError, ValidationError } from '../../errors';
@@ -120,6 +120,27 @@ export interface NoteContentRecord {
   createdAt: string;
 }
 
+export interface ListNotesPageInput {
+  userId: string;
+  kind: NoteKind;
+  limit?: number;
+  /** An opaque cursor from the previous page's `next`. */
+  before?: string;
+  /** Only notes updated at or after this time. */
+  since?: string;
+}
+
+export interface NotesPageRecord {
+  notes: NoteRecord[];
+  /** Cursor for the following page, or null on the last page. */
+  next: string | null;
+}
+
+export interface NoteStamp {
+  id: string;
+  updatedAt: string;
+}
+
 export interface SearchNotesPageRecord {
   notes: SearchNoteResult[];
   nextCursor: string | null;
@@ -184,6 +205,29 @@ function decodeNoteSearchCursor(cursor: string): { updatedAt: string; id: string
     };
   } catch {
     return null;
+  }
+}
+
+// A list page is ordered newest first by creation time, then id. Postgres keeps microseconds but a
+// JavaScript Date keeps milliseconds, so the order and the cursor both use the time cut to
+// milliseconds. Otherwise two notes made in the same millisecond could be skipped between pages.
+const createdAtMs = sql<string>`date_trunc('milliseconds', ${sql.ref('createdat')})`;
+
+function encodePageCursor(createdAt: string, id: string): string {
+  return Buffer.from(JSON.stringify({ createdAt, id }), 'utf8').toString('base64url');
+}
+
+function decodePageCursor(cursor: string): { createdAt: string; id: string } {
+  const bad = () => new ValidationError('Invalid cursor', { cursor });
+  try {
+    const parsed: { createdAt?: unknown; id?: unknown } = JSON.parse(
+      Buffer.from(cursor, 'base64url').toString('utf8'),
+    );
+    if (typeof parsed.createdAt !== 'string' || typeof parsed.id !== 'string') throw bad();
+    if (Number.isNaN(Date.parse(parsed.createdAt))) throw bad();
+    return { createdAt: new Date(parsed.createdAt).toISOString(), id: parsed.id };
+  } catch (error) {
+    throw error instanceof ValidationError ? error : bad();
   }
 }
 
@@ -343,6 +387,67 @@ export const NoteRepository = {
     );
 
     return rows.map((row) => toNoteRecord(row, attachedFiles.get(row.id) ?? []));
+  },
+
+  async listPage(handle: DbHandle, input: ListNotesPageInput): Promise<NotesPageRecord> {
+    const limit = Math.min(input.limit ?? 50, 100);
+    const after = input.before ? decodePageCursor(input.before) : null;
+
+    let query = handle
+      .selectFrom('app.notes')
+      .selectAll()
+      .where('ownerUserid', '=', input.userId)
+      .where('kind', '=', input.kind);
+
+    if (input.since) {
+      query = query.where('updatedat', '>=', new Date(input.since).toISOString());
+    }
+
+    if (after) {
+      const { createdAt, id } = after;
+      query = query.where((eb) =>
+        eb.or([
+          eb(createdAtMs, '<', createdAt),
+          eb.and([eb(createdAtMs, '=', createdAt), eb('id', '<', id)]),
+        ]),
+      );
+    }
+
+    const rows = await query
+      .orderBy(createdAtMs, 'desc')
+      .orderBy('id', 'desc')
+      .limit(limit + 1)
+      .execute();
+
+    const page = rows.slice(0, limit);
+    const last = page.at(-1);
+    const attachedFiles = await NoteRepository.getAttachedFiles(
+      handle,
+      page.map((row) => row.id),
+    );
+
+    return {
+      notes: page.map((row) => toNoteRecord(row, attachedFiles.get(row.id) ?? [])),
+      next:
+        rows.length > limit && last
+          ? encodePageCursor(new Date(last.createdat).toISOString(), last.id)
+          : null,
+    };
+  },
+
+  /** Every id with its last update time, so a client can tell which of its copies were deleted. */
+  async listStamps(
+    handle: DbHandle,
+    input: { userId: string; kind: NoteKind },
+  ): Promise<NoteStamp[]> {
+    const rows = await handle
+      .selectFrom('app.notes')
+      .select(['id', 'updatedat'])
+      .where('ownerUserid', '=', input.userId)
+      .where('kind', '=', input.kind)
+      .orderBy('id', 'asc')
+      .execute();
+    return rows.map((row) => ({ id: row.id, updatedAt: new Date(row.updatedat).toISOString() }));
   },
 
   async search(handle: DbHandle, input: SearchNotesInput): Promise<SearchNotesPageRecord> {
