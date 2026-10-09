@@ -5,7 +5,11 @@ import { VectorDocumentRepository } from '@hominem/db/vector';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
-import { rememberMemory } from '../../application/memory.service';
+import {
+  listMemoriesPage,
+  listMemoryStamps,
+  rememberMemory,
+} from '../../application/memory.service';
 import { NoteService } from '../../application/notes.service';
 import {
   listMemoriesPageInputSchema,
@@ -50,26 +54,12 @@ export const memoryRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', zValidator('query', listMemoriesPageInputSchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    const { limit, before, since } = c.req.valid('query');
-    // Taken before reading, so a client that asks for `since` this time next time cannot miss a
-    // memory saved while this page was being read (it may see one twice, and merges by id).
-    const serverTime = new Date().toISOString();
-    const page = await NoteRepository.listPage(db, {
-      userId,
-      kind: MEMORY_KIND,
-      limit: limit ?? 50,
-      before,
-      since,
-    });
-    return c.json({ memories: page.notes.map(toMemoryDto), next: page.next, serverTime });
+    const page = await listMemoriesPage(userId, c.req.valid('query'));
+    return c.json({ ...page, memories: page.memories.map(toMemoryDto) });
   })
-  // Every memory's id and last update time, so an app that keeps its own copy can drop the ones
-  // deleted elsewhere.
   .get('/ids', async (c) => {
     const userId = c.get('auth')!.userId;
-    const serverTime = new Date().toISOString();
-    const memories = await NoteRepository.listStamps(db, { userId, kind: MEMORY_KIND });
-    return c.json({ memories, serverTime });
+    return c.json(await listMemoryStamps(userId));
   })
   .post('/', zValidator('json', rememberInputSchema), async (c) => {
     const userId = c.get('auth')!.userId;

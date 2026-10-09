@@ -29,6 +29,8 @@ describe('listMemoriesPageInputSchema', () => {
     expect(listMemoriesPageInputSchema.safeParse({ limit: '101' }).success).toBe(false);
     expect(listMemoriesPageInputSchema.safeParse({ limit: '0' }).success).toBe(false);
     expect(listMemoriesPageInputSchema.safeParse({ since: 'yesterday' }).success).toBe(false);
+    expect(listMemoriesPageInputSchema.safeParse({ since: '2026-02-15' }).success).toBe(false);
+    expect(listMemoriesPageInputSchema.safeParse({ since: '01/02/2026' }).success).toBe(false);
     expect(listMemoriesPageInputSchema.safeParse({ since: '2026-02-15T00:00:00Z' }).success).toBe(
       true,
     );

@@ -134,6 +134,11 @@ export interface NotesPageRecord {
   notes: NoteRecord[];
   /** Cursor for the following page, or null on the last page. */
   next: string | null;
+  /**
+   * The database time when the walk began. The first page reads it, every cursor carries it, and
+   * every page of the walk returns the same value, so a client can ask for `since` it next time.
+   */
+  asOf: string;
 }
 
 export interface NoteStamp {
@@ -208,27 +213,35 @@ function decodeNoteSearchCursor(cursor: string): { updatedAt: string; id: string
   }
 }
 
-// A list page is ordered newest first by creation time, then id. Postgres keeps microseconds but a
-// JavaScript Date keeps milliseconds, so the order and the cursor both use the time cut to
-// milliseconds. Otherwise two notes made in the same millisecond could be skipped between pages.
-const createdAtMs = sql<string>`date_trunc('milliseconds', ${sql.ref('createdat')})`;
+// A list page is ordered newest first by creation time, then id. The cursor keeps the creation time
+// as PostgreSQL wrote it (microseconds), not as a JavaScript Date would (milliseconds), so notes
+// made within the same millisecond are neither skipped nor repeated between pages.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PG_TIMESTAMP = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}(:?\d{2})?)$/;
 
-function encodePageCursor(createdAt: string, id: string): string {
-  return Buffer.from(JSON.stringify({ createdAt, id }), 'utf8').toString('base64url');
+interface PageCursor {
+  createdAt: string;
+  id: string;
+  asOf: string;
 }
 
-function decodePageCursor(cursor: string): { createdAt: string; id: string } {
+function encodePageCursor(cursor: PageCursor): string {
+  return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
+}
+
+function decodePageCursor(cursor: string): PageCursor {
   const bad = () => new ValidationError('Invalid cursor', { cursor });
+  let parsed: { createdAt?: unknown; id?: unknown; asOf?: unknown };
   try {
-    const parsed: { createdAt?: unknown; id?: unknown } = JSON.parse(
-      Buffer.from(cursor, 'base64url').toString('utf8'),
-    );
-    if (typeof parsed.createdAt !== 'string' || typeof parsed.id !== 'string') throw bad();
-    if (Number.isNaN(Date.parse(parsed.createdAt))) throw bad();
-    return { createdAt: new Date(parsed.createdAt).toISOString(), id: parsed.id };
-  } catch (error) {
-    throw error instanceof ValidationError ? error : bad();
+    parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+  } catch {
+    throw bad();
   }
+  const { createdAt, id, asOf } = parsed;
+  if (typeof createdAt !== 'string' || !PG_TIMESTAMP.test(createdAt)) throw bad();
+  if (typeof id !== 'string' || !UUID.test(id)) throw bad();
+  if (typeof asOf !== 'string' || Number.isNaN(Date.parse(asOf))) throw bad();
+  return { createdAt, id, asOf };
 }
 
 export const NoteRepository = {
@@ -389,13 +402,23 @@ export const NoteRepository = {
     return rows.map((row) => toNoteRecord(row, attachedFiles.get(row.id) ?? []));
   },
 
+  /** The database's clock, as an ISO time. Used as the watermark a client syncs from. */
+  async databaseTime(handle: DbHandle): Promise<string> {
+    const row = await handle
+      .selectNoFrom(sql<string>`now()::text`.as('now'))
+      .executeTakeFirstOrThrow();
+    return new Date(row.now).toISOString();
+  },
+
   async listPage(handle: DbHandle, input: ListNotesPageInput): Promise<NotesPageRecord> {
     const limit = Math.min(input.limit ?? 50, 100);
     const after = input.before ? decodePageCursor(input.before) : null;
+    const asOf = after?.asOf ?? (await NoteRepository.databaseTime(handle));
 
     let query = handle
       .selectFrom('app.notes')
       .selectAll()
+      .select(sql<string>`createdat::text`.as('cursorAt'))
       .where('ownerUserid', '=', input.userId)
       .where('kind', '=', input.kind);
 
@@ -404,17 +427,17 @@ export const NoteRepository = {
     }
 
     if (after) {
-      const { createdAt, id } = after;
+      const createdAt = sql<string>`${after.createdAt}::timestamptz`;
       query = query.where((eb) =>
         eb.or([
-          eb(createdAtMs, '<', createdAt),
-          eb.and([eb(createdAtMs, '=', createdAt), eb('id', '<', id)]),
+          eb('createdat', '<', createdAt),
+          eb.and([eb('createdat', '=', createdAt), eb('id', '<', after.id)]),
         ]),
       );
     }
 
     const rows = await query
-      .orderBy(createdAtMs, 'desc')
+      .orderBy('createdat', 'desc')
       .orderBy('id', 'desc')
       .limit(limit + 1)
       .execute();
@@ -430,8 +453,9 @@ export const NoteRepository = {
       notes: page.map((row) => toNoteRecord(row, attachedFiles.get(row.id) ?? [])),
       next:
         rows.length > limit && last
-          ? encodePageCursor(new Date(last.createdat).toISOString(), last.id)
+          ? encodePageCursor({ createdAt: last.cursorAt, id: last.id, asOf })
           : null,
+      asOf,
     };
   },
 

@@ -55,9 +55,8 @@ export const listMemoriesPageInputSchema = z.object({
     .max(512)
     .optional()
     .describe('The `next` cursor from the previous page.'),
-  since: z
-    .string()
-    .refine((value) => !Number.isNaN(Date.parse(value)), 'Expected a date and time')
+  since: z.iso
+    .datetime({ offset: true })
     .optional()
     .describe('Only memories updated at or after this time (ISO 8601).'),
 });

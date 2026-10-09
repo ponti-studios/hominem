@@ -29,3 +29,31 @@ export async function rememberMemory(userId: string, input: RememberInput) {
 
   return result;
 }
+
+const MEMORY_KIND = 'memory' as const;
+
+interface ListInput {
+  limit?: number | undefined;
+  before?: string | undefined;
+  since?: string | undefined;
+}
+
+/** One page of a person's memories, newest first, for an app that keeps its own copy. */
+export async function listMemoriesPage(userId: string, input: ListInput) {
+  const page = await NoteRepository.listPage(db, {
+    userId,
+    kind: MEMORY_KIND,
+    limit: input.limit ?? 50,
+    before: input.before,
+    since: input.since,
+  });
+  return { memories: page.notes, next: page.next, serverTime: page.asOf };
+}
+
+/** Every memory id with its update time, so an app can drop the copies deleted elsewhere. */
+export async function listMemoryStamps(userId: string) {
+  // Read the clock first: anything that changes after it is found by the next `since`.
+  const serverTime = await NoteRepository.databaseTime(db);
+  const memories = await NoteRepository.listStamps(db, { userId, kind: MEMORY_KIND });
+  return { memories, serverTime };
+}
