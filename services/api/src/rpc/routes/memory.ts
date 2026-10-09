@@ -5,10 +5,14 @@ import { VectorDocumentRepository } from '@hominem/db/vector';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
-import { rememberMemory } from '../../application/memory.service';
+import {
+  listMemoriesPage,
+  listMemoryStamps,
+  rememberMemory,
+} from '../../application/memory.service';
 import { NoteService } from '../../application/notes.service';
 import {
-  listMemoriesInputSchema,
+  listMemoriesPageInputSchema,
   MemoryParamSchema,
   rememberInputSchema,
   UpdateMemoryInputSchema,
@@ -48,17 +52,14 @@ async function assertOwnedMemory(id: string, userId: string) {
 
 export const memoryRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  .get('/', zValidator('query', listMemoriesInputSchema), async (c) => {
+  .get('/', zValidator('query', listMemoriesPageInputSchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    const { limit } = c.req.valid('query');
-    const notes = await NoteRepository.list(db, {
-      userId,
-      kind: MEMORY_KIND,
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
-      limit: limit ?? 50,
-    });
-    return c.json({ memories: notes.map(toMemoryDto) });
+    const page = await listMemoriesPage(userId, c.req.valid('query'));
+    return c.json({ ...page, memories: page.memories.map(toMemoryDto) });
+  })
+  .get('/ids', async (c) => {
+    const userId = c.get('auth')!.userId;
+    return c.json(await listMemoryStamps(userId));
   })
   .post('/', zValidator('json', rememberInputSchema), async (c) => {
     const userId = c.get('auth')!.userId;

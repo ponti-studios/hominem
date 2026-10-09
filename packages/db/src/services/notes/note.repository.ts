@@ -1,5 +1,5 @@
 import { isObject } from '@hominem/utils';
-import type { Selectable, UpdateObject } from 'kysely';
+import { sql, type Selectable, type UpdateObject } from 'kysely';
 
 import type { Database } from '../../db';
 import { NotFoundError, ValidationError } from '../../errors';
@@ -120,6 +120,32 @@ export interface NoteContentRecord {
   createdAt: string;
 }
 
+export interface ListNotesPageInput {
+  userId: string;
+  kind: NoteKind;
+  limit?: number;
+  /** An opaque cursor from the previous page's `next`. */
+  before?: string;
+  /** Only notes updated at or after this time. */
+  since?: string;
+}
+
+export interface NotesPageRecord {
+  notes: NoteRecord[];
+  /** Cursor for the following page, or null on the last page. */
+  next: string | null;
+  /**
+   * The database time when the walk began. The first page reads it, every cursor carries it, and
+   * every page of the walk returns the same value, so a client can ask for `since` it next time.
+   */
+  asOf: string;
+}
+
+export interface NoteStamp {
+  id: string;
+  updatedAt: string;
+}
+
 export interface SearchNotesPageRecord {
   notes: SearchNoteResult[];
   nextCursor: string | null;
@@ -185,6 +211,37 @@ function decodeNoteSearchCursor(cursor: string): { updatedAt: string; id: string
   } catch {
     return null;
   }
+}
+
+// A list page is ordered newest first by creation time, then id. The cursor keeps the creation time
+// as PostgreSQL wrote it (microseconds), not as a JavaScript Date would (milliseconds), so notes
+// made within the same millisecond are neither skipped nor repeated between pages.
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PG_TIMESTAMP = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}(:?\d{2})?)$/;
+
+interface PageCursor {
+  createdAt: string;
+  id: string;
+  asOf: string;
+}
+
+function encodePageCursor(cursor: PageCursor): string {
+  return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
+}
+
+function decodePageCursor(cursor: string): PageCursor {
+  const bad = () => new ValidationError('Invalid cursor', { cursor });
+  let parsed: { createdAt?: unknown; id?: unknown; asOf?: unknown };
+  try {
+    parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+  } catch {
+    throw bad();
+  }
+  const { createdAt, id, asOf } = parsed;
+  if (typeof createdAt !== 'string' || !PG_TIMESTAMP.test(createdAt)) throw bad();
+  if (typeof id !== 'string' || !UUID.test(id)) throw bad();
+  if (typeof asOf !== 'string' || Number.isNaN(Date.parse(asOf))) throw bad();
+  return { createdAt, id, asOf };
 }
 
 export const NoteRepository = {
@@ -343,6 +400,78 @@ export const NoteRepository = {
     );
 
     return rows.map((row) => toNoteRecord(row, attachedFiles.get(row.id) ?? []));
+  },
+
+  /** The database's clock, as an ISO time. Used as the watermark a client syncs from. */
+  async databaseTime(handle: DbHandle): Promise<string> {
+    const row = await handle
+      .selectNoFrom(sql<string>`now()::text`.as('now'))
+      .executeTakeFirstOrThrow();
+    return new Date(row.now).toISOString();
+  },
+
+  async listPage(handle: DbHandle, input: ListNotesPageInput): Promise<NotesPageRecord> {
+    const limit = Math.min(input.limit ?? 50, 100);
+    const after = input.before ? decodePageCursor(input.before) : null;
+    const asOf = after?.asOf ?? (await NoteRepository.databaseTime(handle));
+
+    let query = handle
+      .selectFrom('app.notes')
+      .selectAll()
+      .select(sql<string>`createdat::text`.as('cursorAt'))
+      .where('ownerUserid', '=', input.userId)
+      .where('kind', '=', input.kind);
+
+    if (input.since) {
+      query = query.where('updatedat', '>=', new Date(input.since).toISOString());
+    }
+
+    if (after) {
+      const createdAt = sql<string>`${after.createdAt}::timestamptz`;
+      query = query.where((eb) =>
+        eb.or([
+          eb('createdat', '<', createdAt),
+          eb.and([eb('createdat', '=', createdAt), eb('id', '<', after.id)]),
+        ]),
+      );
+    }
+
+    const rows = await query
+      .orderBy('createdat', 'desc')
+      .orderBy('id', 'desc')
+      .limit(limit + 1)
+      .execute();
+
+    const page = rows.slice(0, limit);
+    const last = page.at(-1);
+    const attachedFiles = await NoteRepository.getAttachedFiles(
+      handle,
+      page.map((row) => row.id),
+    );
+
+    return {
+      notes: page.map((row) => toNoteRecord(row, attachedFiles.get(row.id) ?? [])),
+      next:
+        rows.length > limit && last
+          ? encodePageCursor({ createdAt: last.cursorAt, id: last.id, asOf })
+          : null,
+      asOf,
+    };
+  },
+
+  /** Every id with its last update time, so a client can tell which of its copies were deleted. */
+  async listStamps(
+    handle: DbHandle,
+    input: { userId: string; kind: NoteKind },
+  ): Promise<NoteStamp[]> {
+    const rows = await handle
+      .selectFrom('app.notes')
+      .select(['id', 'updatedat'])
+      .where('ownerUserid', '=', input.userId)
+      .where('kind', '=', input.kind)
+      .orderBy('id', 'asc')
+      .execute();
+    return rows.map((row) => ({ id: row.id, updatedAt: new Date(row.updatedat).toISOString() }));
   },
 
   async search(handle: DbHandle, input: SearchNotesInput): Promise<SearchNotesPageRecord> {

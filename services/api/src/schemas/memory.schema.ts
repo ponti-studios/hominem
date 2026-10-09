@@ -43,6 +43,44 @@ export const listMemoriesOutputSchema = z.object({
   memories: z.array(memorySummarySchema),
 });
 
+// ── GET /api/memory (paged, for apps that keep their own copy) ───────
+
+export const listMemoriesPageInputSchema = z.object({
+  limit: z
+    .preprocess(numericString, z.number().int().min(1).max(100).optional())
+    .describe('Memories per page, from 1 to 100. Defaults to 50.'),
+  before: z
+    .string()
+    .min(1)
+    .max(512)
+    .optional()
+    .describe('The `next` cursor from the previous page.'),
+  since: z.iso
+    .datetime({ offset: true })
+    .optional()
+    .describe('Only memories updated at or after this time (ISO 8601).'),
+});
+
+const memoryDtoSchema = z.object({
+  id: z.string(),
+  title: z.string().nullable(),
+  content: z.string(),
+  excerpt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const listMemoriesPageOutputSchema = z.object({
+  memories: z.array(memoryDtoSchema),
+  next: z.string().nullable(),
+  serverTime: z.string(),
+});
+
+export const listMemoryStampsOutputSchema = z.object({
+  memories: z.array(z.object({ id: z.string(), updatedAt: z.string() })),
+  serverTime: z.string(),
+});
+
 // ── search_memories ──────────────────────────────────────────────────
 
 export const searchMemoriesInputSchema = z.object({
