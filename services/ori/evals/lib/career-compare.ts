@@ -35,13 +35,27 @@ function isJobImportRecord(value: unknown): value is JobImportRecord {
 }
 
 function decodeJobEntities(value: string): string {
-  return value
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>');
+  // Single pass: decoding &amp; before &lt; in chained replaces would turn
+  // '&amp;lt;' into '<' instead of '&lt;'.
+  return value.replace(/&nbsp;|&amp;|&quot;|&#39;|&apos;|&lt;|&gt;/gi, (entity) => {
+    switch (entity.toLowerCase()) {
+      case '&nbsp;':
+        return ' ';
+      case '&amp;':
+        return '&';
+      case '&quot;':
+        return '"';
+      case '&#39;':
+      case '&apos;':
+        return "'";
+      case '&lt;':
+        return '<';
+      case '&gt;':
+        return '>';
+      default:
+        return entity;
+    }
+  });
 }
 
 function normalizeJobText(value: string): string {

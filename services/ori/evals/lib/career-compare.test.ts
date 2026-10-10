@@ -72,3 +72,26 @@ test('rejects invalid shapes before judging semantics', () => {
   }
   expect(failure).toContain('requirements must be an array of strings');
 });
+
+test('decodes each entity once instead of double-unescaping', () => {
+  // '&amp;lt;' is the literal text '&lt;', not '<' — decoding &amp; first and
+  // then &lt; would collapse it and falsely match a reference containing '<'.
+  let failure = '';
+  try {
+    assertJobImportOutput(
+      JSON.stringify({
+        ...validPayload,
+        fullText:
+          'Fish &amp;lt; Chips shop serves lunch and dinner every day with seating for forty guests.',
+      }),
+      JSON.stringify({
+        ...validPayload,
+        fullText:
+          'Fish < Chips shop serves lunch and dinner every day with seating for forty guests.',
+      }),
+    );
+  } catch (error) {
+    failure = error instanceof Error ? error.message : String(error);
+  }
+  expect(failure).toContain('omitted 1 reference span');
+});
