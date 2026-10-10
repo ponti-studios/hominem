@@ -22,8 +22,8 @@ chat-assistant: (_run "chat-assistant")
 # Normal-conversation baseline — response quality, token usage, cost, and latency.
 chat-baseline: (_run "chat-baseline")
 
-# Offer-comparison NL extraction — currency, equity, filing status, location inference.
-offer-extraction: (_run "offer-extraction")
+# Career offer-comparison NL extraction — currency, equity, filing status, location inference.
+career-offer-extraction: (_run "career-offer-extraction")
 
 # Chat-transcript task extraction — discriminates real commitments from vague musing.
 task-extraction: (_run "task-extraction")
@@ -31,8 +31,11 @@ task-extraction: (_run "task-extraction")
 # Voice transcript cleanup — filler removal without losing meaning.
 voice-cleanup: (_run "voice-cleanup")
 
-# Voice task extraction — priority/due-date inference, run across prompt candidates v1-v3.
+# Voice task extraction — priority/due-date inference for the production v3 prompt.
 voice-task-extraction: (_run "voice-task-extraction")
+
+# Voice prompt comparison — includes retired v1 and v2 candidates. Experimental, not a release gate.
+voice-task-extraction-variants: (_run "voice-task-extraction-variants")
 
 # Time-block extraction — intent, temporal grounding, no-invention. Iterate here.
 time-block-regression: (_run "time-block-regression")
@@ -49,3 +52,7 @@ career-job-import: (_run "career-job-import")
 # Typecheck every prompt, Golden dataset, and test file.
 typecheck:
     pnpm --filter @hominem/ori typecheck
+
+# Run every suite and report the per-suite cost (candidates vs judge). Spends credits.
+costs:
+    bash '{{ ROOT_DIR }}/services/ori/scripts/eval-costs.sh'

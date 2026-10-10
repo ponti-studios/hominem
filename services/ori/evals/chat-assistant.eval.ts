@@ -30,7 +30,9 @@ registerJsonSuite({
     const normalized = output.trim();
     if (!normalized) throw new Error('Chat assistant returned an empty response');
     if (normalized.length > 400) {
-      throw new Error(`Chat assistant response is not concise (${normalized.length} characters)`);
+      throw new Error(
+        `Chat assistant exceeded the product brevity contract (${normalized.length} characters)`,
+      );
     }
   },
 });
