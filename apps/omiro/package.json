@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@better-auth/expo": "1.7.1",
-    "@expo/ui": "~57.0.21",
+    "@expo/ui": "~57.0.22",
     "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/rpc": "workspace:*",
