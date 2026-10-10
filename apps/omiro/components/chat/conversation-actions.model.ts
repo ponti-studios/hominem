@@ -31,7 +31,6 @@ export interface ConversationActionsModelInput {
 
 const TRANSFORM_ITEMS: { type: ConversationActionType; label: string }[] = [
   { type: 'note', label: t.chat.actions.transformToNote },
-  { type: 'task_list', label: t.chat.actions.createTasks },
 ];
 
 export function buildConversationActionsModel(

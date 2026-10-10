@@ -30,9 +30,9 @@ it came from. Apple Reminders cannot do this, which is why Omiro owns its tasks.
 
 ## Today
 
-Nothing keeps the origin. Chat-extracted tasks are created through the task
-service (`apps/omiro/hooks/use-task-extraction.ts`) as plain undated tasks, and
-the link to the chat is lost. Tasks are our own records now, so the origin can
+Nothing keeps the origin. Chat no longer extracts tasks — tasks are created
+by voice capture, batch create, or direct creation, and the link to any
+source chat is lost. Tasks are our own records now, so the origin can
 be a field on the task.
 
 ## Open questions
