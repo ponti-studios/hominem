@@ -1,4 +1,4 @@
-import { Archive, Bug, Check, MoreHorizontal, Search, Settings2 } from 'lucide-react';
+import { Archive, Bug, MoreHorizontal, Search, Settings2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -15,14 +15,11 @@ import { useArchiveChat } from '~/hooks/use-chats';
 export interface ChatConversationActionsProps {
   chatId: string;
   isDebugOpen?: boolean;
-  canExtractTasks?: boolean;
-  isExtractingTasks?: boolean;
   isSettingsOpen?: boolean;
   isSearchOpen?: boolean;
   onDebug?: () => void;
   onResponseSettings: () => void;
   onSearch: () => void;
-  onExtractTasks?: () => void;
 }
 
 export function ChatConversationActions({
@@ -33,9 +30,6 @@ export function ChatConversationActions({
   onResponseSettings,
   onSearch,
   isDebugOpen = false,
-  canExtractTasks = false,
-  isExtractingTasks = false,
-  onExtractTasks,
 }: ChatConversationActionsProps) {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const navigate = useNavigate();
@@ -76,13 +70,6 @@ export function ChatConversationActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuLabel className="text-xs color-muted-foreground/25">Chat</DropdownMenuLabel>
-          <DropdownMenuItem
-            disabled={!canExtractTasks || isExtractingTasks}
-            onClick={onExtractTasks}
-          >
-            <Check aria-hidden="true" />
-            {isExtractingTasks ? 'Extracting tasks…' : 'Extract tasks'}
-          </DropdownMenuItem>
           <DropdownMenuItem disabled={isSettingsOpen} onClick={onResponseSettings}>
             <Settings2 aria-hidden="true" />
             Response settings

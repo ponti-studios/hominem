@@ -25,9 +25,6 @@ chat-baseline: (_run "chat-baseline")
 # Career offer-comparison NL extraction — currency, equity, filing status, location inference.
 career-offer-extraction: (_run "career-offer-extraction")
 
-# Chat-transcript task extraction — discriminates real commitments from vague musing.
-task-extraction: (_run "task-extraction")
-
 # Voice transcript cleanup — filler removal without losing meaning.
 voice-cleanup: (_run "voice-cleanup")
 
