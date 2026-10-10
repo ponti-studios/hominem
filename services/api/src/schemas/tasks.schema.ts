@@ -60,10 +60,6 @@ export const CreateTaskSchema = z
   })
   .superRefine(validateScheduledInterval);
 
-export const ExtractTasksInputSchema = z.object({
-  transcript: z.string().min(1).max(20000),
-});
-
 export const VoiceTasksInputSchema = z.object({
   transcript: z.string().min(1).max(20000),
   referenceDate: z.iso.datetime().optional(),

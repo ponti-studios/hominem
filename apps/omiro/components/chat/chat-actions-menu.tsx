@@ -1,5 +1,4 @@
 import type { ChatMessageItem } from '@hominem/chat';
-import type { ArtifactType } from '@hominem/rpc/types';
 import { useRouter } from 'expo-router';
 import { Alert } from 'react-native';
 
@@ -31,9 +30,6 @@ function getConversationActionIcon(kind: string, type?: string): ActionMenuItem[
   if (type === 'task') {
     return 'checkmark.circle';
   }
-  if (type === 'task_list') {
-    return 'checklist';
-  }
   return 'ellipsis.circle';
 }
 
@@ -48,7 +44,6 @@ interface ChatActionsMenuInput {
   onToggleDebug: () => void;
   onOpenSettings: () => void;
   onOpenSources: () => void;
-  onTransform: (type: ArtifactType) => void;
 }
 
 // Builds the sections the designed `ActionMenu` renders from the shared
@@ -64,7 +59,6 @@ export function useChatActionsMenu({
   onToggleDebug,
   onOpenSettings,
   onOpenSources,
-  onTransform,
 }: ChatActionsMenuInput): ActionMenuSection[] {
   const router = useRouter();
   const { handleArchiveChat, isArchiving } = useChatArchiveAction({ chatId, onChatArchive });
@@ -114,8 +108,6 @@ export function useChatActionsMenu({
             onPress: () => {
               if (item.type === 'note') {
                 transformToNote();
-              } else if (item.type) {
-                onTransform(item.type);
               }
             },
           };

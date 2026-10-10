@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test';
 import { pilotCases, setupAgent, setupJudge } from 'ori/eval';
 
 import chatHarness from './chat-harness';
+import { withEvaluationRetry } from './eval-infra';
 
 export type Golden = {
   name?: string;
@@ -18,7 +19,7 @@ export const judgeModel = process.env.ORI_JUDGE_MODEL?.trim() || 'openai/gpt-oss
 export const currentUtcDate = (): string =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(new Date());
 
-export const loadJson = async <T>(url: URL): Promise<T> => (await Bun.file(url).json()) as T;
+export const loadJson = async <T>(url: URL): Promise<T> => Bun.file(url).json<T>();
 
 export const loadText = (url: URL): Promise<string> => Bun.file(url).text();
 
@@ -45,8 +46,11 @@ export const renderMessages = (
 };
 
 // Cases run three at a time, each with a candidate call and a judge call, so a
-// suite of ~30 goldens outlasts bun's 120s default test timeout.
+// suite of ~30 goldens outlasts bun's 120s default test timeout. Slow judge
+// providers can still push wall time well past that ceiling, so scale the suite
+// ceiling with the sampled workload.
 const SUITE_TIMEOUT_MS = 900_000;
+const CASE_TIMEOUT_BUDGET_MS = 90_000;
 
 type SuiteOptions = {
   name: string;
@@ -56,6 +60,8 @@ type SuiteOptions = {
   outputSchema?: unknown;
   plainChat?: boolean;
   assertOutput?: (output: string, golden: Golden) => void;
+  normalizeCandidateForJudge?: (output: string, golden: Golden) => string;
+  normalizeReferenceForJudge?: (expectedOutput: string, golden: Golden) => string;
 };
 
 export const registerJsonSuite = ({
@@ -66,6 +72,8 @@ export const registerJsonSuite = ({
   outputSchema,
   plainChat = false,
   assertOutput,
+  normalizeCandidateForJudge,
+  normalizeReferenceForJudge,
 }: SuiteOptions): void => {
   const setupSuiteAgent = (model: string) =>
     plainChat ? setupAgent({ model, harness: chatHarness }) : setupAgent({ model });
@@ -75,6 +83,7 @@ export const registerJsonSuite = ({
     minScore: 0.7,
   });
   const sampledCases = pilotCases(cases);
+  const suiteTimeoutMs = Math.max(SUITE_TIMEOUT_MS, sampledCases.length * CASE_TIMEOUT_BUDGET_MS);
 
   test(
     name,
@@ -86,21 +95,28 @@ export const registerJsonSuite = ({
 
       for (const batch of batches) {
         const settled = await Promise.allSettled(
-          batch.map(async (golden) => {
-            const input = buildInput(golden);
-            const run = await agent.run({
-              ...input,
-              ...(outputSchema ? { outputSchema: { name, schema: outputSchema } } : {}),
-            });
-            assertOutput?.(run.text, golden);
-            run.toComplete();
-            run.toFinishWithin(120_000);
-            await judge.autoEvals({
-              criteria: `${rubric}\n\nReference output:\n${golden.expectedOutput}`,
-              prompt: input.prompt,
-              run,
-            });
-          }),
+          batch.map(async (golden) =>
+            withEvaluationRetry(async () => {
+              const input = buildInput(golden);
+              const run = await agent.run({
+                ...input,
+                ...(outputSchema ? { outputSchema: { name, schema: outputSchema } } : {}),
+              });
+              assertOutput?.(run.text, golden);
+              run.toComplete();
+              run.toFinishWithin(120_000);
+              const candidateForJudge = normalizeCandidateForJudge?.(run.text, golden) ?? run.text;
+              const referenceForJudge =
+                normalizeReferenceForJudge?.(golden.expectedOutput, golden) ??
+                golden.expectedOutput;
+              await judge.autoEvals({
+                criteria: `${rubric}\n\nReference output:\n${referenceForJudge}`,
+                prompt: input.prompt,
+                output: candidateForJudge,
+                run,
+              });
+            }),
+          ),
         );
 
         for (const result of settled) {
@@ -114,6 +130,6 @@ export const registerJsonSuite = ({
 
       expect(failures).toEqual([]);
     },
-    SUITE_TIMEOUT_MS,
+    suiteTimeoutMs,
   );
 };

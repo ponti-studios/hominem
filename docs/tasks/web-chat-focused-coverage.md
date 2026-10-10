@@ -32,8 +32,9 @@ Per the 2026-09-15 baseline carried in the matrix task: edit
 `UI-03`), retry (`use-stream-message.ts`, e2e `RECOVER-01`), regenerate
 (`use-regenerate-message.ts`, e2e `SEND-05` / `UI-04`), search
 (`use-chat-message-search.ts`), response settings (`use-response-length.ts`),
-archive (`useArchiveChat`), title (`useUpdateChatTitle`), task dialog
-(`ChatTaskDialog`, `chat-task-review.test.tsx`).
+archive (`useArchiveChat`), title (`useUpdateChatTitle`). (The task dialog
+(`ChatTaskDialog`, `chat-task-review.test.tsx`) listed in the 2026-09-15
+baseline was removed with the chat-extraction flow.)
 
 ## Acceptance criteria
 

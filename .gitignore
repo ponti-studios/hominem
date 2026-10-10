@@ -39,6 +39,9 @@ results.json
 # perf baselines (scratch, regenerated on each run)
 services/api/scripts/mcp-perf-baselines/
 
+# eval cost reports (scratch, regenerated on each run)
+services/ori/eval-costs/
+
 # environment
 .env
 .env.*

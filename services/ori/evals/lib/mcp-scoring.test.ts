@@ -29,6 +29,86 @@ test('scores dependency and forbidden-tool failures separately', () => {
   expect(score.failureCategory).toEqual('planning');
 });
 
+test('fails an overall scenario when arguments or results miss', () => {
+  const score = scoreMcpTrace(
+    {
+      toolCalls: ['trip_history', 'finance_recent_transactions'],
+      calls: [
+        {
+          tool: 'finance_recent_transactions',
+          input: { from: '2025-04-10', to: '2025-04-18' },
+          output: { transactions: [{ merchant: 'Bento Box' }] },
+          status: 'succeeded',
+        },
+      ],
+      text: 'Tokyo and Sushi Dai',
+    },
+    {
+      requiredTools: ['trip_history', 'finance_recent_transactions'],
+      argumentAssertions: [
+        { tool: 'finance_recent_transactions', matches: { from: '2025-04-10', to: '2025-04-19' } },
+      ],
+      resultAssertions: [{ tool: 'finance_recent_transactions', outputIncludes: ['Sushi Dai'] }],
+    },
+  );
+
+  expect(score.passed).toEqual(false);
+  expect(score.arguments).toEqual({ passed: false, failed: ['finance_recent_transactions'] });
+  expect(score.results).toEqual({ passed: false, failed: ['finance_recent_transactions'] });
+  expect(score.failureCategory).toEqual('planning');
+});
+
+test('matches required argument subsets and repeated calls by occurrence', () => {
+  const score = scoreMcpTrace(
+    {
+      toolCalls: ['finance_recent_transactions', 'trip_history', 'finance_recent_transactions'],
+      calls: [
+        {
+          tool: 'finance_recent_transactions',
+          input: { from: '2025-04-10', to: '2025-04-19' },
+          output: { transactions: [{ merchant: 'Bento Box' }] },
+          status: 'succeeded',
+        },
+        {
+          tool: 'finance_recent_transactions',
+          input: { to: '2025-04-18', from: '2025-04-10', limit: 10 },
+          output: { transactions: [{ merchant: 'Sushi Dai' }] },
+          status: 'succeeded',
+        },
+      ],
+      text: 'Tokyo and Sushi Dai',
+    },
+    {
+      requiredTools: ['trip_history', 'finance_recent_transactions'],
+      dependencies: [['trip_history', 'finance_recent_transactions']],
+      argumentAssertions: [
+        { tool: 'finance_recent_transactions', matches: { from: '2025-04-10', to: '2025-04-18' } },
+      ],
+      resultAssertions: [{ tool: 'finance_recent_transactions', outputIncludes: ['Sushi Dai'] }],
+    },
+  );
+
+  expect(score.passed).toEqual(true);
+  expect(score.dependencies).toEqual({ passed: true, violated: [] });
+  expect(score.arguments).toEqual({ passed: true, failed: [] });
+  expect(score.results).toEqual({ passed: true, failed: [] });
+});
+
+test('compares exact arguments without depending on key order', () => {
+  const score = scoreMcpTrace(
+    {
+      toolCalls: ['people_lookup'],
+      calls: [{ tool: 'people_lookup', input: { query: 'Alex' }, status: 'succeeded' }],
+      text: 'Alex',
+    },
+    {
+      argumentAssertions: [{ tool: 'people_lookup', equals: { query: 'Alex' } }],
+    },
+  );
+
+  expect(score.arguments).toEqual({ passed: true, failed: [] });
+});
+
 test('confirmation cannot execute dependent writes before approval', () => {
   const input = { collectionId: 'collection-japan', entityId: 'person-alex' };
   const pending = requestConfirmation({ status: 'ready' }, 'remove_collection_item', input);

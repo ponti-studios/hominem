@@ -1,6 +1,5 @@
 import type { SessionSource } from '@hominem/rpc/types';
 import { isObject } from '@hominem/utils';
-import { useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshControl, Text, View } from 'react-native';
@@ -8,7 +7,6 @@ import { RefreshControl, Text, View } from 'react-native';
 import {
   ChatGenerationBar,
   ChatMessageList,
-  ChatReviewOverlay,
   ChatSearchBar,
   ChatToolApprovalBar,
   getToolCallPhase,
@@ -31,10 +29,8 @@ import { ActionMenu } from '~/components/ui/action-menu';
 import { useChatData } from '~/hooks/use-chat-data';
 import { useChatSearch } from '~/hooks/use-chat-search';
 import { useNetworkStatus } from '~/hooks/use-network-status';
-import { useTaskExtraction, type ExtractedTasksCreated } from '~/hooks/use-task-extraction';
 import {
   getChatTitle,
-  updateChatTitleCaches,
   useActiveChat,
   useEditChatMessage,
   useRegenerateMessage,
@@ -42,7 +38,6 @@ import {
   useToolCallRespond,
 } from '~/services/chat';
 import { formatRelativeAge } from '~/services/date/format-relative-age';
-import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import {
   clearResumeTarget,
   writeChatDraft,
@@ -59,7 +54,6 @@ const NEW_SESSION_SOURCE: SessionSource = { kind: 'new' };
 
 export function ChatScreen({ id }: { id: string }) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { data: activeChat, error: activeChatError } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
   const { inset: composerInset, restingInset } = useComposerDockMetrics();
@@ -77,24 +71,8 @@ export function ChatScreen({ id }: { id: string }) {
     offlineText: {
       ...theme.textVariants.footnote,
       textAlign: 'center',
-      color: theme.colors.mutedForeground,
     },
-    overlayContainer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
   }));
-
-  const source = NEW_SESSION_SOURCE;
-
-  const handleContentCreated = useCallback(
-    async (content: ExtractedTasksCreated) => {
-      updateChatTitleCaches(queryClient, {
-        chatId,
-        title: content.source.title,
-        updatedAt: content.updatedAt,
-      });
-      await invalidateInboxQueries(queryClient);
-    },
-    [chatId, queryClient],
-  );
 
   const handleChatArchive = useCallback(() => {
     router.dismissTo(CHAT_ROUTE);
@@ -104,12 +82,6 @@ export function ChatScreen({ id }: { id: string }) {
     useChatData({ chatId });
   const isConversationGone = isNotFoundError(activeChatError) || isNotFoundError(messagesError);
   const search = useChatSearch(messages, chatId);
-  const extraction = useTaskExtraction({
-    chatId,
-    source,
-    messages,
-    onContentCreated: handleContentCreated,
-  });
   const handleToggleDebug = useCallback(() => setShowDebug((value) => !value), []);
   // Owned here rather than inside Composer, so the composer's send and the
   // message list's retry action share one mutation instead of racing two
@@ -184,7 +156,7 @@ export function ChatScreen({ id }: { id: string }) {
     dismissActiveGeneration();
   }, [chatId, dismissActiveGeneration, failedMessageText]);
 
-  const displayTitle = getChatTitle(activeChat?.title, extraction.resolvedSource);
+  const displayTitle = getChatTitle(activeChat?.title, NEW_SESSION_SOURCE);
 
   useEffect(() => {
     writeResumeTarget({
@@ -210,7 +182,7 @@ export function ChatScreen({ id }: { id: string }) {
 
   const chatMenuSections = useChatActionsMenu({
     chatId,
-    canTransform: extraction.canTransform,
+    canTransform: messages.length > 0,
     isConversationGone,
     messages,
     onChatArchive: handleChatArchive,
@@ -218,9 +190,6 @@ export function ChatScreen({ id }: { id: string }) {
     onOpenSettings: () => setShowChatSettings(true),
     onOpenSources: () => setShowChatSources(true),
     onToggleDebug: handleToggleDebug,
-    onTransform: (type) => {
-      void extraction.handleTransform(type);
-    },
     showDebug,
   });
 
@@ -362,18 +331,6 @@ export function ChatScreen({ id }: { id: string }) {
                 <Composer mode="chat" chatId={chatId} chatSend={chatSend} />
               )}
             </ComposerDock>
-            <View style={styles.overlayContainer} pointerEvents="box-none">
-              <ChatReviewOverlay
-                pendingReview={extraction.pendingReview}
-                isVisible={extraction.isReviewVisible}
-                onAccept={() => {
-                  void extraction.handleAcceptReview();
-                }}
-                onReject={() => {
-                  void extraction.handleRejectReview();
-                }}
-              />
-            </View>
           </>
         ) : null}
       </View>

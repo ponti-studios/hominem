@@ -27,9 +27,33 @@ Run all suites:
 pnpm --filter @hominem/ori eval:all
 ```
 
+The default voice-task run gates only the production prompt. Compare the older
+prompt candidates with:
+
+```bash
+pnpm --filter @hominem/ori eval:voice-task-extraction-variants
+```
+
 Set `ORI_TARGET_MODEL` to compare another target and `ORI_JUDGE_MODEL` to
 override the pinned judge. They default to `openai/gpt-5-mini` and the low-cost
 GPT-OSS judge `openai/gpt-oss-20b`, respectively.
+
+`just evals costs` runs the suites once each and records target/judge dollars by
+suite. It also saves each raw suite transcript, separates Bun test verdicts
+from Ori-graded run correctness, and records ungraded (`outcome?`) runs, which
+must not be treated as either correct or incorrect. Custom MCP and chat
+harnesses accumulate OpenRouter usage across router and agent turns into the
+run’s terminal `usage`, while default-agent suites get costs directly from Ori.
+
+The caller retries a failed case only for an explicitly retryable provider
+error, and only once. A suite `fail` can therefore mean:
+
+- the provider/runtime died before any graded answer,
+- a candidate or judge answer missed a correctness criterion, or
+- a test-level matcher such as `expect(score.passed)` failed.
+
+Use the full output or `--report` artifact, not the final pass/fail, to
+distinguish those categories.
 
 Run the comparison through OpenRouter:
 
@@ -56,6 +80,7 @@ make real model calls and can spend credits:
 pnpm --filter @hominem/ori eval:pilot
 ```
 
-The MCP suite uses a dedicated Ori harness that preserves the five Hominem
-tool definitions, simulated results, multi-turn limit, tool ordering, and
-completion checks.
+The MCP suites use a dedicated planning-only harness with a fixed set of
+simulated tools, multi-turn limits, tool ordering, and completion checks. They
+do not exercise the live MCP registry, schemas, ownership scoping, or
+confirmation runtime; use the API test suites for those integration checks.

@@ -44,7 +44,7 @@ Capabilities the gap map lists as missing that were implemented in
 | Response settings             | `app/lib/hooks/use-response-length.ts`, `chat-response-settings.tsx`; tests                                                                    |
 | Archive + archived list       | `useArchiveChat` in `app/hooks/use-chats.ts`, `routes/chats.tsx`, `chat-conversation-actions.tsx`, `routes/settings.archived-chats.tsx`; tests |
 | Chat title behavior           | `useUpdateChatTitle` in `app/hooks/use-chats.ts`; tests                                                                                        |
-| Task extraction dialog        | `ChatTaskDialog` wired in `chat.$chatId.tsx`; `chat-task-review.test.tsx`                                                                      |
+| Task extraction dialog        | Removed with the chat-extraction flow; formerly `ChatTaskDialog` wired in `chat.$chatId.tsx`                                                  |
 | Keyboard + named controls     | e2e `UI-06`                                                                                                                                    |
 | Smallest supported viewport   | e2e `UI-05`                                                                                                                                    |
 | Reduced motion                | e2e `UI-08`                                                                                                                                    |
@@ -56,7 +56,7 @@ Capabilities the gap map lists as missing that were implemented in
 - Chat-to-note from a web transcript: no `note-draft` / `chat-to-note` surface found in `apps/web` — confirm missing or locate it.
 - Mixed All/inbox capture model: gap map says missing — confirm still true.
 - Debug view, offline/recovery states: partially suggested (`You are offline…` in `chat.$chatId.tsx`) — confirm extent.
-- Omiro-side Partial/Unverified items (delete passthrough, tool-call approval on Omiro, task-extraction acceptance) bound what "parity" can mean — record the Omiro ceiling per capability.
+- Omiro-side Partial/Unverified items (delete passthrough, tool-call approval on Omiro) bound what "parity" can mean — record the Omiro ceiling per capability. (Chat task-extraction acceptance was removed with the extraction flow.)
 
 ## Acceptance criteria
 

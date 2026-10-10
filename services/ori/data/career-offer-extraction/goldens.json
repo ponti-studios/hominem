@@ -22,7 +22,7 @@
   {
     "name": "contradictory-currency",
     "input": "$135k salary, London office, 10% bonus",
-    "expectedOutput": "{\"offers\":[{\"baseSalary\":135000,\"currency\":\"GBP\",\"currencyAmbiguous\":false,\"location\":\"london\",\"hasEquity\":false,\"equityType\":null,\"equityValue\":null,\"equityGrantTotal\":null,\"equityVestingYears\":null,\"equityCliff\":null,\"equityVestingFrequency\":null,\"hasBonus\":true,\"bonusTargetPct\":10,\"bonusFrequency\":\"annual\",\"hasRelocation\":null,\"relocationAllowance\":null,\"relocationCurrency\":null,\"requiresVisa\":null,\"visaType\":null,\"employerCoversVisa\":null,\"startDate\":null,\"employmentType\":null}],\"person\":{\"homeCity\":null,\"filingStatus\":null,\"currentSavings\":null,\"currentRetirement\":null,\"currentMonthlySpend\":null,\"petCount\":null}}"
+    "expectedOutput": "{\"offers\":[{\"baseSalary\":135000,\"currency\":\"GBP\",\"currencyAmbiguous\":true,\"location\":\"london\",\"hasEquity\":false,\"equityType\":null,\"equityValue\":null,\"equityGrantTotal\":null,\"equityVestingYears\":null,\"equityCliff\":null,\"equityVestingFrequency\":null,\"hasBonus\":true,\"bonusTargetPct\":10,\"bonusFrequency\":\"annual\",\"hasRelocation\":null,\"relocationAllowance\":null,\"relocationCurrency\":null,\"requiresVisa\":null,\"visaType\":null,\"employerCoversVisa\":null,\"startDate\":null,\"employmentType\":null}],\"person\":{\"homeCity\":null,\"filingStatus\":null,\"currentSavings\":null,\"currentRetirement\":null,\"currentMonthlySpend\":null,\"petCount\":null}}"
   },
   {
     "name": "partial-info",
@@ -112,11 +112,11 @@
   {
     "name": "london-ontario",
     "input": "150k, London Ontario Canada, software engineer, 10% bonus",
-    "expectedOutput": "{\"offers\":[{\"baseSalary\":150000,\"currency\":\"CAD\",\"currencyAmbiguous\":false,\"location\":\"london\",\"hasEquity\":false,\"equityType\":null,\"equityValue\":null,\"equityGrantTotal\":null,\"equityVestingYears\":null,\"equityCliff\":null,\"equityVestingFrequency\":null,\"hasBonus\":true,\"bonusTargetPct\":10,\"bonusFrequency\":\"annual\",\"hasRelocation\":false,\"relocationAllowance\":null,\"relocationCurrency\":null,\"requiresVisa\":null,\"visaType\":null,\"employerCoversVisa\":null,\"startDate\":null,\"employmentType\":\"employee\"}],\"person\":{\"homeCity\":null,\"filingStatus\":null,\"currentSavings\":null,\"currentRetirement\":null,\"currentMonthlySpend\":null,\"petCount\":null}}"
+    "expectedOutput": "{\"offers\":[{\"baseSalary\":150000,\"currency\":\"CAD\",\"currencyAmbiguous\":false,\"location\":\"london-ontario\",\"hasEquity\":false,\"equityType\":null,\"equityValue\":null,\"equityGrantTotal\":null,\"equityVestingYears\":null,\"equityCliff\":null,\"equityVestingFrequency\":null,\"hasBonus\":true,\"bonusTargetPct\":10,\"bonusFrequency\":\"annual\",\"hasRelocation\":false,\"relocationAllowance\":null,\"relocationCurrency\":null,\"requiresVisa\":null,\"visaType\":null,\"employerCoversVisa\":null,\"startDate\":null,\"employmentType\":\"employee\"}],\"person\":{\"homeCity\":null,\"filingStatus\":null,\"currentSavings\":null,\"currentRetirement\":null,\"currentMonthlySpend\":null,\"petCount\":null}}"
   },
   {
     "name": "hourly-contractor",
-    "input": "$150 per hour, New York City, 6 month contract, no benefits, single",
+    "input": "$150 per hour, New York City, full time, 40 hours per week, 12-month contract, no benefits, single",
     "expectedOutput": "{\"offers\":[{\"baseSalary\":312000,\"currency\":\"USD\",\"currencyAmbiguous\":false,\"location\":\"new-york\",\"hasEquity\":false,\"equityType\":null,\"equityValue\":null,\"equityGrantTotal\":null,\"equityVestingYears\":null,\"equityCliff\":null,\"equityVestingFrequency\":null,\"hasBonus\":false,\"bonusTargetPct\":null,\"bonusFrequency\":null,\"hasRelocation\":false,\"relocationAllowance\":null,\"relocationCurrency\":null,\"requiresVisa\":null,\"visaType\":null,\"employerCoversVisa\":null,\"startDate\":null,\"employmentType\":\"contractor\"}],\"person\":{\"homeCity\":null,\"filingStatus\":\"single\",\"currentSavings\":null,\"currentRetirement\":null,\"currentMonthlySpend\":null,\"petCount\":null}}"
   },
   {
@@ -146,7 +146,7 @@
   },
   {
     "name": "no-location",
-    "input": "Total comp 350k, RSUs, 15% bonus, fully remote — location TBD",
+    "input": "350k base salary, RSUs, 15% bonus, fully remote — location TBD",
     "expectedOutput": "{\"offers\":[{\"baseSalary\":350000,\"currency\":null,\"currencyAmbiguous\":false,\"location\":null,\"hasEquity\":true,\"equityType\":\"rsu\",\"equityValue\":null,\"equityGrantTotal\":null,\"equityVestingYears\":null,\"equityCliff\":null,\"equityVestingFrequency\":null,\"hasBonus\":true,\"bonusTargetPct\":15,\"bonusFrequency\":\"annual\",\"hasRelocation\":false,\"relocationAllowance\":null,\"relocationCurrency\":null,\"requiresVisa\":false,\"visaType\":null,\"employerCoversVisa\":false,\"startDate\":null,\"employmentType\":\"employee\"}],\"person\":{\"homeCity\":null,\"filingStatus\":null,\"currentSavings\":null,\"currentRetirement\":null,\"currentMonthlySpend\":null,\"petCount\":null}}"
   },
   {

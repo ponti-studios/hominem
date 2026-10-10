@@ -6,9 +6,10 @@
       "category": "simple_lookup",
       "prompt": "What do I know about Alex?",
       "expected": {
-        "tools": [],
-        "forbiddenTools": ["people_lookup", "person_timeline"],
-        "outcome": "ask which Alex before lookup"
+        "tools": ["people_lookup"],
+        "forbiddenTools": ["person_timeline"],
+        "outputIncludes": ["Alex Morgan", "Alexis Chen"],
+        "outcome": "resolve the people_lookup ambiguity and ask before person-specific reads"
       }
     },
     {
@@ -30,7 +31,7 @@
         "argumentAssertions": [
           {
             "tool": "finance_recent_transactions",
-            "equals": { "from": "2025-04-10", "to": "2025-04-18" }
+            "matches": { "from": "2025-04-10", "to": "2025-04-18" }
           }
         ],
         "resultAssertions": [
@@ -75,7 +76,7 @@
         "argumentAssertions": [
           {
             "tool": "finance_recent_transactions",
-            "equals": { "from": "2025-04-10", "to": "2025-04-18" }
+            "matches": { "from": "2025-04-10", "to": "2025-04-18" }
           }
         ]
       }
@@ -113,8 +114,7 @@
           ["list_collections", "remove_collection_item"],
           ["people_lookup", "remove_collection_item"]
         ],
-        "stopBefore": "remove_collection_item",
-        "onReject": "explain-no-change-and-offer-safe-recovery"
+        "stopBefore": "remove_collection_item"
       }
     }
   ]

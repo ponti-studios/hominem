@@ -1,3 +1,4 @@
+import { assertJobImportOutput } from './lib/career-compare';
 import {
   loadJson,
   loadText,
@@ -10,17 +11,34 @@ import { jobImportSchema } from './lib/schemas';
 
 const suiteDir = new URL('../data/career-job-import/', import.meta.url);
 const prompt = await loadJson<PromptMessage[]>(new URL('prompt.json', suiteDir));
-const cases = await loadJson<Golden[]>(new URL('goldens.json', suiteDir));
 const postingText = await loadText(new URL('fixtures/whatnot-ashby-posting.html', suiteDir));
+const coreExcerptText = await loadText(new URL('fixtures/whatnot-core-excerpt.html', suiteDir));
+
+type CareerCase = Omit<Golden, 'additionalMetadata'> & {
+  additionalMetadata?: Record<string, unknown> & {
+    postingFixture?: 'whatnot-ashby-posting.html' | 'whatnot-core-excerpt.html';
+  };
+};
+
+const careerCases = await loadJson<CareerCase[]>(new URL('goldens.json', suiteDir));
 
 registerJsonSuite({
   name: 'career job import',
-  cases,
-  buildInput: () => renderMessages(prompt, { postingText }),
+  cases: careerCases,
+  buildInput: (golden) => {
+    const source =
+      golden.additionalMetadata?.postingFixture === 'whatnot-core-excerpt.html'
+        ? coreExcerptText
+        : postingText;
+    return renderMessages(prompt, { postingText: source });
+  },
   outputSchema: jobImportSchema,
+  assertOutput: (output, golden) => {
+    assertJobImportOutput(output, golden.expectedOutput);
+  },
   rubric: [
     'Require the correct Whatnot company and AI Tooling Engineer role.',
-    'Require fullText and jobDescription to retain the complete job description in source order, not a summary.',
-    'Require fields to be grounded only in the supplied posting and leave unavailable fields empty.',
+    'Require unavailable fields to be empty strings or arrays, not invented details.',
+    'Typography, punctuation, and whitespace variants in copied body text are already checked separately; focus field-level accuracy and grounding.',
   ].join('\n'),
 });

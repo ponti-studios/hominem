@@ -1,111 +1,31 @@
 # Task creation from chat
 
-Turning a conversation into durable work is one shared flow, not two. A
-transcript can resolve into a single task or a set of grouped tasks - the
-distinction is a side effect of how many tasks are found, not a separate
-product action the user picks up front.
+Chat no longer extracts tasks from the conversation. There is no
+"Create tasks" transform, no `POST /api/tasks/extract`, and no review
+overlay: mining a free-form transcript for commitments is not how the
+models should work, so the whole extract → review → batch-create flow
+was removed.
 
-## Entry point
+## Remaining creation paths
 
-Chat's conversation actions menu (`apps/omiro/components/chat/conversation-actions.model.ts`)
-offers exactly two transforms: `note` ("Save as note") and `task_list`
-("Create tasks"). There is no standalone "create one task" action - `task` as
-an `ArtifactType` still exists (`packages/chat/src/capture-types.ts`) and can
-be created directly through `POST /api/tasks`, but the chat transform surface
-only ever proposes `task_list`.
-
-## How "Create tasks" works
-
-One shared hook backs the action on every surface: `useTaskExtraction`
-(`@hominem/chat/react`, `packages/chat/src/use-task-extraction.ts`),
-orchestrated through `useChatLifecycle`. Each platform supplies a thin
-adapter — `apps/omiro/hooks/use-task-extraction.ts` on mobile,
-`apps/web/app/routes/chat/chat.$chatId.tsx` on web — injecting its RPC
-calls, cache invalidation, user-facing copy, and error presentation, plus
-the shared review surface described below. There is no per-platform
-reimplementation of the flow.
-
-1. **Extract** - the transcript is sent to `POST /api/tasks/extract`
-   (`services/api/src/rpc/routes/tasks.extract.ts`), which calls
-   `extractTasks` (`services/api/src/application/task-extraction.service.ts`, OpenRouter structured output)
-   with `TASK_EXTRACTION_PROMPT` and returns `{ groups, tasks }`: named
-   groups of genuinely related steps (2+ tasks each) plus standalone
-   items. Rate-limited (`ai-task-extract`, 20/min) and gated by the
-   caller's monthly AI usage limit. A model-returned one-item group is
-   demoted to standalone at parse time so it cannot fail the extraction.
-2. **Review** - the drafts render as a shared lifecycle/proposal model in a
-   platform-specific review surface (`ClassificationReview` on mobile and
-   `ChatTaskReview` (`chat-task-review.tsx`, with per-item group titles
-   and per-item reject tracked locally) on web) as a `task_list`-typed
-   proposal; the user can accept or reject before anything is persisted.
-   Proposal items receive stable client-local IDs plus their extraction
-   group index (titles are display-only and not unique) so duplicate
-   titles remain independently usable.
-3. **Create** - on accept, the hook reconstitutes `{groups, tasks}` from
-   the accepted subset (a group left with fewer than 2 items after
-   rejection is demoted to standalone), splits acceptance into as many
-   `POST /api/tasks/batch` calls as the endpoint caps require (10 groups
-   / 20 standalone / 20 per group per call; groups stay atomic across
-   calls), and persists via `persistExtractedTasks`
-   (`services/api/src/application/tasks.service.ts`):
-   - **Each group** -> a parent row with `artifactType: 'task_list'` titled
-     with the model's group title, plus child task rows under it via
-     `parentTaskId`.
-   - **Each standalone draft** -> its own top-level row with
-     `artifactType: 'task'`, no parent.
-   - **Nothing accepted** -> nothing is sent; all writes happen in one
-     transaction per batch call (except the single-standalone fast path).
-     Response shape is `{ groups: [{ parent, tasks }], tasks }`.
-
-The hook then resolves a canonical `SessionSource` (`kind: 'artifact'`, the
-created row's real `artifactType`) so the surrounding chat state updates
-immediately - the user never sees the artifact type they were promised
-("task list") diverge from what actually got saved.
-
-### Platform adapters
-
-- **Mobile** (`apps/omiro/hooks/use-task-extraction.ts`) - maps
-  `ChatMessageItem`s to `{ role, content }`, calls the RPC client, and
-  invalidates `taskKeys.all` after creation; errors surface via `Alert.alert`.
-- **Web** (`apps/web/app/routes/chat/chat.$chatId.tsx`) - maps
-  `ChatMessageView`s the same way, calls the same endpoints through
-  `useApiClient`, and invalidates `['tasks']` after creation. Dialog states map onto the
-  lifecycle: `classifying` shows the extracting shimmer,
-  `reviewing_changes` shows `ChatTaskReview` (`chat-task-review.tsx`, with
-  per-item reject tracked locally and the accepted subset passed to
-  `handleAcceptReview`), `persisting` drives its saving state, and failures
-  land in the dialog's error panel with retry. The accepted subset — not
-  the full proposal — is what gets created.
-
-### Recovery and submitted meaning
-
-- **Preserve submitted meaning** - users should not lose the meaning of what
-  they submitted even if secondary automation (like task extraction) fails.
-  Preserve the raw transcript before any optional cleanup. If task extraction
-  fails, show the transcript so the user can recover it and continue without
-  losing the original content.
-
-"Save as note" is a separate, unrelated path: `ChatScreen` intercepts that
-menu item before it reaches `useTaskExtraction` and routes to
-`chat-to-note-sheet.tsx` (an AI rewrite of the transcript into note content,
-not a deterministic task extraction).
-
-## Adjacent extraction paths
-
-- `POST /api/tasks/voice` - same idea for a voice transcript
-  (`extractVoiceTasks`, same service and route module as `/extract`), its
-  own rate-limit bucket (`ai-task-voice`).
-- `POST /api/tasks/parse` - server time-block parsing retained as a supported
+- `POST /api/tasks/voice` — structured tasks from a spoken quick-capture
+  (`extractVoiceTasks` in
+  `services/api/src/application/task-extraction.service.ts`), with its own
+  rate-limit bucket (`ai-task-voice`). Unlike the removed chat flow, the
+  speaker already intends each item as a task; the model only structures,
+  prioritizes, and dates them.
+- `POST /api/tasks/batch` — persists caller-built `{ groups, tasks }`
+  via `persistExtractedTasks`
+  (`services/api/src/application/tasks.service.ts`).
+- `POST /api/tasks` — direct single-task creation with the full scheduling
+  field set (`dueAt`, `schedulingWindowStartAt`, `scheduledStartAt`,
+  `participants`, ...) and an explicit `parentTaskId`/`artifactType`.
+- `POST /api/tasks/parse` — server time-block parsing retained as a supported
   surface for web task management, older Omiro builds, and Omiro's
   natural-language Time input
   (`extractTimeBlock` in
   `services/api/src/application/time-block-extraction.service.ts`, routed by
   `services/api/src/rpc/routes/tasks.parse.ts`); unrelated to task creation.
-- `POST /api/tasks` - direct single-task creation with the full scheduling
-  field set (`dueAt`, `schedulingWindowStartAt`, `scheduledStartAt`,
-  `participants`, ...) and an explicit `parentTaskId`/`artifactType`. This is
-  the primitive the extraction flows build on, not itself reachable from
-  chat.
 
 ## Current limitations
 
@@ -113,4 +33,4 @@ not a deterministic task extraction).
 family: a "list" is just a task row (`artifactType: 'task_list'`) with child
 tasks pointing at it via `parentTaskId` on the shared `app.tasks` table. There
 is no dedicated `task_lists` table, explicit ordering, or list-editing
-workflow beyond what chat's create-tasks flow produces.
+workflow.
