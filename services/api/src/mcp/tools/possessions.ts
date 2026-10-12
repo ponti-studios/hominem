@@ -72,7 +72,7 @@ registerTool(
     title: 'List possessions',
     description:
       "Lists the user's possessions, newest first. Filter by status (wishlist, planned, ordered, " +
-      'delivered, owned, in_use, retired, disposed), archived flag, containerId, category, and a ' +
+      'delivered, owned, in_use, retired, disposed, donated, sold), archived flag, containerId, category, and a ' +
       'text query matching name, brand or model — use these instead of listing everything and ' +
       'filtering client-side. Returns up to 100 per call; pass offset to page further. Archived ' +
       'items are included unless archived=false.',

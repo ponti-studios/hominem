@@ -16,9 +16,13 @@ export const POSSESSION_STATUSES = [
   'in_use',
   'retired',
   'disposed',
+  'donated',
+  'sold',
 ] as const;
 export type PossessionStatus = (typeof POSSESSION_STATUSES)[number];
 
+// Lifecycle enums from the sheet (plan §3) stay free strings: Charles invents new values
+// live, so gating them on a deploy would rot. Zod caps their length; validate audits usage.
 export interface PossessionRecord {
   id: string;
   name: string;
@@ -41,6 +45,13 @@ export interface PossessionRecord {
   notes: string | null;
   containerId: string | null;
   externalId: string | null;
+  weightKg: number | null;
+  volumeCbm: number | null;
+  moveAction: string | null;
+  acquisitionType: string | null;
+  purchaseCurrency: string | null;
+  retirementMethod: string | null;
+  ownershipType: string | null;
   metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -57,6 +68,9 @@ export interface ContainerRecord {
   currentLocation: string | null;
   weightKg: number | null;
   volumeCbm: number | null;
+  trackingReference: string | null;
+  limitKg: number | null;
+  tareKg: number | null;
   externalId: string | null;
   metadata: Record<string, unknown>;
   itemCount: number;
@@ -85,6 +99,13 @@ export interface PossessionInput {
   notes?: string | null;
   containerId?: string | null;
   externalId?: string | null;
+  weightKg?: number | null;
+  volumeCbm?: number | null;
+  moveAction?: string | null;
+  acquisitionType?: string | null;
+  purchaseCurrency?: string | null;
+  retirementMethod?: string | null;
+  ownershipType?: string | null;
   metadata?: Record<string, Json>;
 }
 
@@ -98,6 +119,9 @@ export interface ContainerInput {
   currentLocation?: string | null;
   weightKg?: number | null;
   volumeCbm?: number | null;
+  trackingReference?: string | null;
+  limitKg?: number | null;
+  tareKg?: number | null;
   externalId?: string | null;
   metadata?: Record<string, Json>;
 }
@@ -139,6 +163,13 @@ function toPossession(row: PossessionRow): PossessionRecord {
     notes: row.notes,
     containerId: row.containerId,
     externalId: row.externalId,
+    weightKg: numberOrNull(row.weightKg),
+    volumeCbm: numberOrNull(row.volumeCbm),
+    moveAction: row.moveAction,
+    acquisitionType: row.acquisitionType,
+    purchaseCurrency: row.purchaseCurrency,
+    retirementMethod: row.retirementMethod,
+    ownershipType: row.ownershipType,
     metadata: toObject(row.metadata),
     createdAt: iso(row.createdat),
     updatedAt: iso(row.updatedat),
@@ -157,6 +188,9 @@ function toContainer(row: ContainerRow & { itemCount?: string | number | null })
     currentLocation: row.currentLocation,
     weightKg: numberOrNull(row.weightKg),
     volumeCbm: numberOrNull(row.volumeCbm),
+    trackingReference: row.trackingReference,
+    limitKg: numberOrNull(row.limitKg),
+    tareKg: numberOrNull(row.tareKg),
     externalId: row.externalId,
     metadata: toObject(row.metadata),
     itemCount: Number(row.itemCount ?? 0),
@@ -188,6 +222,13 @@ function possessionValues(input: Partial<PossessionInput>): Updateable<AppPosses
     notes: input.notes,
     containerId: input.containerId,
     externalId: input.externalId,
+    weightKg: input.weightKg,
+    volumeCbm: input.volumeCbm,
+    moveAction: input.moveAction,
+    acquisitionType: input.acquisitionType,
+    purchaseCurrency: input.purchaseCurrency,
+    retirementMethod: input.retirementMethod,
+    ownershipType: input.ownershipType,
     metadata: input.metadata,
   };
 }
@@ -203,6 +244,9 @@ function containerValues(input: Partial<ContainerInput>): Updateable<AppPossessi
     currentLocation: input.currentLocation,
     weightKg: input.weightKg,
     volumeCbm: input.volumeCbm,
+    trackingReference: input.trackingReference,
+    limitKg: input.limitKg,
+    tareKg: input.tareKg,
     externalId: input.externalId,
     metadata: input.metadata,
   };

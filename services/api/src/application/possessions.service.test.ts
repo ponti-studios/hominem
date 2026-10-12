@@ -98,6 +98,31 @@ describe('possessions', () => {
     );
     await expect(removePossession(alice, missing)).rejects.toBeInstanceOf(NotFoundError);
   });
+
+  it('round-trips sheet-parity fields and the donated/sold statuses', async () => {
+    const created = await createPossession(alice, {
+      name: 'Donated Coat',
+      status: 'donated',
+      weightKg: 1.25,
+      volumeCbm: 0.02,
+      moveAction: 'send my bag box 1',
+      externalId: 'ITM-9998',
+      acquisitionType: 'purchased',
+      purchaseCurrency: 'USD',
+      retirementMethod: 'donated',
+      ownershipType: 'functional',
+    });
+    expect(created).toMatchObject({
+      status: 'donated',
+      weightKg: 1.25,
+      moveAction: 'send my bag box 1',
+      externalId: 'ITM-9998',
+      acquisitionType: 'purchased',
+    });
+    const updated = await updatePossession(alice, created.id, { status: 'sold' });
+    expect(updated.status).toBe('sold');
+    await removePossession(alice, created.id);
+  });
 });
 
 describe('containers', () => {
@@ -132,6 +157,23 @@ describe('containers', () => {
     expect(updated.metadata).toEqual({ sourceItemId: 'ITM-1', trackingReference: 'T-9' });
     expect(updated.description).toBe('Keepsakes');
     await removeContainer(alice, box.id);
+  });
+
+  it('round-trips vessel config and tracking references', async () => {
+    const vessel = await createContainer(alice, {
+      name: 'Send My Bag Box 1',
+      externalId: 'CON-9999',
+      trackingReference: 'SMB-123',
+      tareKg: 2.1,
+      limitKg: 30,
+    });
+    expect(vessel).toMatchObject({
+      trackingReference: 'SMB-123',
+      tareKg: 2.1,
+      limitKg: 30,
+      externalId: 'CON-9999',
+    });
+    await removeContainer(alice, vessel.id);
   });
 
   it('rejects a container that would sit inside itself or its own contents', async () => {
