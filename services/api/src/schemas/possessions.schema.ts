@@ -67,6 +67,7 @@ const containerFields = {
   trackingReference: z.string().trim().max(200).nullable().optional(),
   limitKg: z.number().min(0).nullable().optional(),
   tareKg: z.number().min(0).nullable().optional(),
+  externalId: z.string().trim().min(1).max(100).nullable().optional(),
   metadata: z.record(z.string(), z.json()).optional(),
 };
 
@@ -122,6 +123,28 @@ export const possessionMoveSchema = z.object({
 });
 export const containerMoveSchema = possessionIdParamSchema.extend({
   parentContainerId: z.uuid().nullable(),
+});
+
+const externalIdRequired = z.string().trim().min(1).max(100);
+export const possessionUpsertSchema = possessionCreateSchema.extend({
+  externalId: externalIdRequired,
+});
+export const possessionBulkUpsertSchema = z.object({
+  items: z.array(possessionUpsertSchema).min(1).max(100),
+});
+export const containerUpsertSchema = containerCreateSchema.extend({
+  externalId: externalIdRequired,
+});
+export const upsertResultSchema = z.object({ id: z.uuid(), created: z.boolean() });
+export const bulkUpsertResultSchema = z.object({
+  results: z.array(
+    z.object({
+      externalId: z.string(),
+      id: z.uuid().nullable(),
+      created: z.boolean(),
+      error: z.string().nullable(),
+    }),
+  ),
 });
 
 export const possessionRecordSchema = z.object({

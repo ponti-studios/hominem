@@ -377,6 +377,20 @@ export const PossessionRepository = {
     return row ? toPossession(row) : null;
   },
 
+  async getByExternalId(
+    handle: DbHandle,
+    userId: string,
+    externalId: string,
+  ): Promise<PossessionRecord | null> {
+    const row = await handle
+      .selectFrom('app.possessions')
+      .selectAll()
+      .where('ownerUserid', '=', userId)
+      .where('externalId', '=', externalId)
+      .executeTakeFirst();
+    return row ? toPossession(row) : null;
+  },
+
   // Moves many possessions at once. Returns the ids that belonged to the owner and were moved.
   async move(
     handle: DbHandle,
@@ -594,6 +608,17 @@ export const ContainerRepository = {
 
   async get(handle: DbHandle, userId: string, id: string): Promise<ContainerRecord | null> {
     const row = await containerQuery(handle, userId).where('c.id', '=', id).executeTakeFirst();
+    return row ? toContainer(row) : null;
+  },
+
+  async getByExternalId(
+    handle: DbHandle,
+    userId: string,
+    externalId: string,
+  ): Promise<ContainerRecord | null> {
+    const row = await containerQuery(handle, userId)
+      .where('c.externalId', '=', externalId)
+      .executeTakeFirst();
     return row ? toContainer(row) : null;
   },
 

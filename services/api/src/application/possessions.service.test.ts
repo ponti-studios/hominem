@@ -4,6 +4,7 @@ import { ContainerRepository } from '@hominem/db/possessions';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  bulkUpsertPossessions,
   createContainer,
   createPossession,
   listContainers,
@@ -12,6 +13,8 @@ import {
   removePossession,
   updateContainer,
   updatePossession,
+  upsertContainer,
+  upsertPossession,
 } from './possessions.service';
 
 const alice = 'd4000001-0000-4000-8000-000000000001';
@@ -122,6 +125,54 @@ describe('possessions', () => {
     const updated = await updatePossession(alice, created.id, { status: 'sold' });
     expect(updated.status).toBe('sold');
     await removePossession(alice, created.id);
+  });
+});
+
+describe('upserts', () => {
+  it('creates then updates the same row by externalId without duplicating', async () => {
+    const first = await upsertPossession(alice, { externalId: 'ITM-U1', name: 'Vase' });
+    expect(first.created).toBe(true);
+    const second = await upsertPossession(alice, {
+      externalId: 'ITM-U1',
+      name: 'Vase',
+      weightKg: 2.5,
+    });
+    expect(second).toMatchObject({ id: first.id, created: false });
+    expect(
+      (await listPossessions(alice, noQuery)).filter((p) => p.externalId === 'ITM-U1'),
+    ).toHaveLength(1);
+    await removePossession(alice, first.id);
+  });
+
+  it('bulk upserts with per-item results and partial success', async () => {
+    const result = await bulkUpsertPossessions(alice, [
+      { externalId: 'ITM-B1', name: 'One' },
+      { externalId: 'ITM-B2', name: 'Two', moveAction: 'send my bag box 1' },
+      {
+        externalId: 'ITM-B3',
+        name: 'Broken',
+        containerId: '00000000-0000-4000-8000-000000000000',
+      },
+    ]);
+    expect(result.filter((r) => r.error === null)).toHaveLength(2);
+    const broken = result.find((r) => r.externalId === 'ITM-B3')!;
+    expect(broken.error).toMatch(/container/i);
+    expect(broken.id).toBeNull();
+    for (const row of result) {
+      if (row.id) await removePossession(alice, row.id);
+    }
+  });
+
+  it('upserts a container by externalId', async () => {
+    const first = await upsertContainer(alice, { externalId: 'CON-U1', name: 'Crate' });
+    expect(first.created).toBe(true);
+    const second = await upsertContainer(alice, {
+      externalId: 'CON-U1',
+      name: 'Crate',
+      trackingReference: 'T-1',
+    });
+    expect(second).toMatchObject({ id: first.id, created: false });
+    await removeContainer(alice, first.id);
   });
 });
 

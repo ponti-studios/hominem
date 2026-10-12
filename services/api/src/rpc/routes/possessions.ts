@@ -2,6 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import {
+  bulkUpsertPossessions,
   createContainer,
   createPossession,
   listContainers,
@@ -10,14 +11,19 @@ import {
   removePossession,
   updateContainer,
   updatePossession,
+  upsertContainer,
+  upsertPossession,
 } from '../../application/possessions.service';
 import {
   containerCreateSchema,
   containerUpdateSchema,
+  containerUpsertSchema,
+  possessionBulkUpsertSchema,
   possessionCreateSchema,
   possessionIdParamSchema,
   possessionListQuerySchema,
   possessionUpdateSchema,
+  possessionUpsertSchema,
 } from '../../schemas/possessions.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
@@ -32,6 +38,14 @@ export const possessionsRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     return c.json({ possession: await createPossession(userId, c.req.valid('json')) }, 201);
   })
+  .post('/upsert', zValidator('json', possessionUpsertSchema), async (c) => {
+    const userId = c.get('auth')!.userId;
+    return c.json(await upsertPossession(userId, c.req.valid('json')));
+  })
+  .post('/bulk-upsert', zValidator('json', possessionBulkUpsertSchema), async (c) => {
+    const userId = c.get('auth')!.userId;
+    return c.json({ results: await bulkUpsertPossessions(userId, c.req.valid('json').items) });
+  })
   .get('/containers', async (c) => {
     const userId = c.get('auth')!.userId;
     return c.json({ containers: await listContainers(userId) });
@@ -39,6 +53,10 @@ export const possessionsRoutes = new Hono<AppContext>()
   .post('/containers', zValidator('json', containerCreateSchema), async (c) => {
     const userId = c.get('auth')!.userId;
     return c.json({ container: await createContainer(userId, c.req.valid('json')) }, 201);
+  })
+  .post('/containers/upsert', zValidator('json', containerUpsertSchema), async (c) => {
+    const userId = c.get('auth')!.userId;
+    return c.json(await upsertContainer(userId, c.req.valid('json')));
   })
   .patch(
     '/containers/:id',

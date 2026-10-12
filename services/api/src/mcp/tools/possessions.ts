@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  bulkUpsertPossessions,
   createContainer,
   createPossession,
   getContainer,
@@ -15,13 +16,18 @@ import {
   summarizePossessions,
   updateContainerOrNull,
   updatePossessionOrNull,
+  upsertContainer,
+  upsertPossession,
 } from '../../application/possessions.service';
 import {
+  bulkUpsertResultSchema,
   containerCreateSchema,
   containerSearchInputSchema,
   containerMcpUpdateSchema,
   containerMoveSchema,
   containerRecordSchema,
+  containerUpsertSchema,
+  possessionBulkUpsertSchema,
   possessionCreateSchema,
   possessionIdParamSchema,
   possessionMcpUpdateSchema,
@@ -29,6 +35,8 @@ import {
   possessionRecordSchema,
   possessionSearchInputSchema,
   possessionSummarySchema,
+  possessionUpsertSchema,
+  upsertResultSchema,
 } from '../../schemas/possessions.schema';
 import { registerTool } from '../tool-registry';
 
@@ -189,6 +197,51 @@ registerTool(
 registerTool(
   {
     ...writeTool,
+    idempotent: true,
+    name: 'possession_upsert',
+    title: 'Upsert a possession',
+    description:
+      'Creates a possession or updates the one already carrying externalId (e.g. ITM-023). ' +
+      'Returns the id and whether the row was created. Re-running with the same input never ' +
+      'duplicates: it is the primitive for imports and sync.',
+    inputSchema: possessionUpsertSchema,
+    outputSchema: upsertResultSchema,
+    guidance: {
+      whenToUse: 'Importing or syncing an item that has a stable external id.',
+      dependencies: [containerLookup],
+      produces: ['id'],
+    },
+  },
+  async (ownerUserId, input) => upsertPossession(ownerUserId, input),
+);
+
+registerTool(
+  {
+    ...writeTool,
+    idempotent: true,
+    name: 'possession_bulk_upsert',
+    title: 'Bulk upsert possessions',
+    description:
+      'Upserts up to 100 possessions keyed on externalId. Not atomic: each item succeeds or ' +
+      'fails on its own and the per-item results say which, so a single bad row never blocks ' +
+      'the rest.',
+    inputSchema: possessionBulkUpsertSchema,
+    outputSchema: bulkUpsertResultSchema,
+    resultCap: 100,
+    guidance: {
+      whenToUse: 'Importing many items at once, e.g. the sheet backlog.',
+      dependencies: [containerLookup],
+      produces: ['id'],
+    },
+  },
+  async (ownerUserId, input) => ({
+    results: await bulkUpsertPossessions(ownerUserId, input.items),
+  }),
+);
+
+registerTool(
+  {
+    ...writeTool,
     destructive: true,
     idempotent: true,
     requiresConfirmation: true,
@@ -336,6 +389,27 @@ registerTool(
       parentContainerId: input.parentContainerId,
     }),
   }),
+);
+
+registerTool(
+  {
+    ...writeTool,
+    idempotent: true,
+    name: 'container_upsert',
+    title: 'Upsert a container',
+    description:
+      'Creates a container or updates the one already carrying externalId (e.g. CON-023). ' +
+      'Returns the id and whether the row was created. Re-running with the same input never ' +
+      'duplicates.',
+    inputSchema: containerUpsertSchema,
+    outputSchema: upsertResultSchema,
+    guidance: {
+      whenToUse: 'Importing or syncing a container that has a stable external id.',
+      dependencies: [containerLookup],
+      produces: ['id'],
+    },
+  },
+  async (ownerUserId, input) => upsertContainer(ownerUserId, input),
 );
 
 registerTool(

@@ -118,6 +118,65 @@ export const movePossessions = (
 export const updatePossessionOrNull = (userId: string, id: string, input: PossessionUpdateInput) =>
   orNull('Possession not found', () => updatePossession(userId, id, input));
 
+export type UpsertInput = PossessionCreateInput & { externalId: string };
+export interface UpsertResult {
+  id: string;
+  created: boolean;
+}
+
+// The migration primitive: create-or-update keyed on externalId, so re-running an import
+// updates rows in place instead of duplicating them.
+export async function upsertPossession(userId: string, input: UpsertInput): Promise<UpsertResult> {
+  return runInTransaction(async (trx) => {
+    const existing = await PossessionRepository.getByExternalId(trx, userId, input.externalId);
+    const saved = await PossessionRepository.upsertByExternalId(trx, userId, input);
+    return { id: saved.id, created: existing === null };
+  });
+}
+
+export interface BulkUpsertItemResult {
+  externalId: string;
+  id: string | null;
+  created: boolean;
+  error: string | null;
+}
+
+// Up to 100 items per call. Not atomic: each item succeeds or fails on its own and the
+// per-item results say which. A failed item never blocks the rest.
+export async function bulkUpsertPossessions(
+  userId: string,
+  items: UpsertInput[],
+): Promise<BulkUpsertItemResult[]> {
+  const results: BulkUpsertItemResult[] = [];
+  for (const input of items) {
+    try {
+      const { id, created } = await upsertPossession(userId, input);
+      results.push({ externalId: input.externalId, id, created, error: null });
+    } catch (error) {
+      results.push({
+        externalId: input.externalId,
+        id: null,
+        created: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  return results;
+}
+
+export type ContainerUpsertInput = ContainerCreateInput & { externalId: string };
+
+export async function upsertContainer(
+  userId: string,
+  input: ContainerUpsertInput,
+): Promise<UpsertResult> {
+  return runInTransaction(async (trx) => {
+    const existing = await ContainerRepository.getByExternalId(trx, userId, input.externalId);
+    const saved = await ContainerRepository.upsertByExternalId(trx, userId, input);
+    return { id: saved.id, created: existing === null };
+  });
+}
+
 export const removePossessionIfExists = async (userId: string, id: string): Promise<boolean> =>
   (await orNull('Possession not found', () => removePossession(userId, id).then(() => true))) ??
   false;

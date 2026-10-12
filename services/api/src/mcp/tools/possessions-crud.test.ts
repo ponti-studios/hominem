@@ -236,6 +236,53 @@ describe('possessions', () => {
     expect(summary.valueByCurrency.find((v) => v.currencyCode === 'USD')?.priceCents).toBe(1500);
     expect(summary.valueByCurrency.find((v) => v.currencyCode === 'GBP')?.priceCents).toBe(700);
   });
+
+  it('upserts idempotently by externalId, singly and in bulk', async () => {
+    const one = await call<{ id: string; created: boolean }>(alice, 'possession_upsert', {
+      externalId: 'ITM-MCP-1',
+      name: 'MCP lamp',
+      weightKg: 1.5,
+      moveAction: 'send my bag box 1',
+    });
+    expect(one.created).toBe(true);
+    const two = await call<{ id: string; created: boolean }>(alice, 'possession_upsert', {
+      externalId: 'ITM-MCP-1',
+      name: 'MCP lamp',
+      weightKg: 1.5,
+    });
+    expect(two).toEqual({ id: one.id, created: false });
+
+    const bulk = await call<{
+      results: Array<{
+        externalId: string;
+        id: string | null;
+        created: boolean;
+        error: string | null;
+      }>;
+    }>(alice, 'possession_bulk_upsert', {
+      items: [
+        { externalId: 'ITM-MCP-1', name: 'MCP lamp' },
+        { externalId: 'ITM-MCP-2', name: 'MCP chair', status: 'donated' },
+      ],
+    });
+    expect(bulk.results).toHaveLength(2);
+    expect(bulk.results.find((r) => r.externalId === 'ITM-MCP-2')).toMatchObject({
+      created: true,
+      error: null,
+    });
+
+    const cup = await call<{ id: string; created: boolean }>(alice, 'container_upsert', {
+      externalId: 'CON-MCP-1',
+      name: 'MCP crate',
+      trackingReference: 'T-1',
+    });
+    expect(cup.created).toBe(true);
+    await callTool(alice, 'possession_delete', { id: one.id });
+    await callTool(alice, 'possession_delete', {
+      id: bulk.results.find((r) => r.externalId === 'ITM-MCP-2')!.id!,
+    });
+    await callTool(alice, 'container_delete', { id: cup.id });
+  });
 });
 
 describe('container discovery and delete preview', () => {
