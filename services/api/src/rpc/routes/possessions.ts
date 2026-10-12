@@ -28,6 +28,7 @@ import {
   possessionListQuerySchema,
   possessionUpdateSchema,
   possessionUpsertSchema,
+  possessionValidateQuerySchema,
 } from '../../schemas/possessions.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
@@ -54,9 +55,9 @@ export const possessionsRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     return c.json({ report: await vesselWeightReport(userId) });
   })
-  .get('/validate', async (c) => {
+  .get('/validate', zValidator('query', possessionValidateQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    return c.json({ findings: await validatePossessions(userId) });
+    return c.json(await validatePossessions(userId, c.req.valid('query')));
   })
   .get('/containers', async (c) => {
     const userId = c.get('auth')!.userId;

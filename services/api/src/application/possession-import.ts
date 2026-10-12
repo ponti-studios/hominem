@@ -40,6 +40,24 @@ const parseNumber = (value: string | undefined): number | null => {
   return Number.isFinite(number) ? number : null;
 };
 
+// Weights and volumes are physical: negatives are data errors, not values. Null means blank
+// (unknown); a present-but-unusable value (text, negative) is reported so the import report
+// can flag it instead of silently storing null.
+export function parseNonNegative(
+  value: string | undefined,
+  pushWarning: (message: string) => void,
+  label: string,
+): number | null {
+  const text = clean(value);
+  if (!text) return null;
+  const number = Number(text);
+  if (!Number.isFinite(number) || number < 0) {
+    pushWarning(`ignoring ${label} "${text}"`);
+    return null;
+  }
+  return number;
+}
+
 // Ways an item leaves the inventory without a first-class status. donated and sold used to
 // be folded into disposed here; since the status enum grew them they map 1:1 instead.
 const LEFT_INVENTORY = new Set(['gifted', 'lost', 'given_away']);
@@ -90,12 +108,8 @@ export function mapPossessionRow(row: SheetRow): MappedPossession | null {
   const status = parseStatus(rawStatus ?? undefined);
   if (rawStatus && !status) warnings.push(`${externalId}: unknown status "${rawStatus}"`);
 
-  const numberOrWarn = (raw: string | undefined, label: string): number | null => {
-    const parsed = parseNumber(raw);
-    if (clean(raw) && parsed === null)
-      warnings.push(`${externalId}: ignoring ${label} "${raw?.trim()}"`);
-    return parsed;
-  };
+  const numberOrWarn = (raw: string | undefined, label: string): number | null =>
+    parseNonNegative(raw, (message) => warnings.push(`${externalId}: ${message}`), label);
   const dateOrWarn = (raw: string | undefined, label: string): string | null => {
     const parsed = parseIsoDate(raw);
     if (clean(raw) && parsed === null)
@@ -156,15 +170,20 @@ export interface MappedContainer {
   externalId: string;
   parentExternalId: string | null;
   input: ContainerInput & { externalId: string };
+  warnings: string[];
 }
 
 export function mapContainerRow(row: SheetRow): MappedContainer | null {
   const externalId = clean(row['container_id']);
   const name = clean(row['name']);
   if (!externalId || !name || !/^CON-\d+/i.test(externalId)) return null;
+  const warnings: string[] = [];
+  const numberOrWarn = (raw: string | undefined, label: string): number | null =>
+    parseNonNegative(raw, (message) => warnings.push(`${externalId}: ${message}`), label);
   return {
     externalId,
     parentExternalId: clean(row['parent_container_id']),
+    warnings,
     input: {
       externalId,
       name,
@@ -173,8 +192,8 @@ export function mapContainerRow(row: SheetRow): MappedContainer | null {
       status: clean(row['status']) ?? 'active',
       description: clean(row['notes']),
       currentLocation: clean(row['current_location']),
-      weightKg: parseNumber(row['weight_kg']),
-      volumeCbm: parseNumber(row['vol_cbm']),
+      weightKg: numberOrWarn(row['weight_kg'], 'weight_kg'),
+      volumeCbm: numberOrWarn(row['vol_cbm'], 'vol_cbm'),
       trackingReference: clean(row['tracking_reference']),
       metadata: compact({
         sourceItemId: clean(row['source_item_id']),

@@ -33,7 +33,6 @@ import {
   possessionBulkUpsertSchema,
   possessionCreateSchema,
   possessionEventSchema,
-  possessionFindingSchema,
   possessionHistoryInputSchema,
   possessionIdParamSchema,
   possessionMcpUpdateSchema,
@@ -42,6 +41,8 @@ import {
   possessionSearchInputSchema,
   possessionSummarySchema,
   possessionUpsertSchema,
+  possessionValidateInputSchema,
+  possessionValidateResultSchema,
   upsertResultSchema,
   vesselWeightReportSchema,
 } from '../../schemas/possessions.schema';
@@ -191,13 +192,14 @@ registerTool(
       'Integrity audit replacing manual sheet audits: unplaced live items, items missing ' +
       'weight, moveAction tokens matching no container, retired statuses that are not ' +
       'archived, archived items still in a container, zero prices, prices without currency, ' +
-      'and unknown vessel groups. Returns findings with severity error or warning.',
-    inputSchema: z.object({}),
-    outputSchema: z.object({ findings: z.array(possessionFindingSchema) }),
+      'and unknown vessel groups. Returns findings with severity error or warning, ' +
+      'paginated with limit/offset while total says how many exist.',
+    inputSchema: possessionValidateInputSchema,
+    outputSchema: possessionValidateResultSchema,
     resultCap: 1000,
     guidance: { whenToUse: 'Scheduled audits or after an import to catch data problems.' },
   },
-  async (ownerUserId) => ({ findings: await validatePossessions(ownerUserId) }),
+  async (ownerUserId, input) => validatePossessions(ownerUserId, input),
 );
 
 // ---- possessions: write ----

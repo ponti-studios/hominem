@@ -412,13 +412,19 @@ export const PossessionRepository = {
     return rows.map(toPossession);
   },
 
-  async get(handle: DbHandle, userId: string, id: string): Promise<PossessionRecord | null> {
-    const row = await handle
+  async get(
+    handle: DbHandle,
+    userId: string,
+    id: string,
+    options?: { forUpdate?: boolean },
+  ): Promise<PossessionRecord | null> {
+    let query = handle
       .selectFrom('app.possessions')
       .selectAll()
       .where('id', '=', id)
-      .where('ownerUserid', '=', userId)
-      .executeTakeFirst();
+      .where('ownerUserid', '=', userId);
+    if (options?.forUpdate) query = query.forUpdate();
+    const row = await query.executeTakeFirst();
     return row ? toPossession(row) : null;
   },
 
@@ -426,24 +432,32 @@ export const PossessionRepository = {
     handle: DbHandle,
     userId: string,
     externalId: string,
+    options?: { forUpdate?: boolean },
   ): Promise<PossessionRecord | null> {
-    const row = await handle
+    let query = handle
       .selectFrom('app.possessions')
       .selectAll()
       .where('ownerUserid', '=', userId)
-      .where('externalId', '=', externalId)
-      .executeTakeFirst();
+      .where('externalId', '=', externalId);
+    if (options?.forUpdate) query = query.forUpdate();
+    const row = await query.executeTakeFirst();
     return row ? toPossession(row) : null;
   },
 
-  async listByIds(handle: DbHandle, userId: string, ids: string[]): Promise<PossessionRecord[]> {
+  async listByIds(
+    handle: DbHandle,
+    userId: string,
+    ids: string[],
+    options?: { forUpdate?: boolean },
+  ): Promise<PossessionRecord[]> {
     if (ids.length === 0) return [];
-    const rows = await handle
+    let query = handle
       .selectFrom('app.possessions')
       .selectAll()
       .where('ownerUserid', '=', userId)
-      .where('id', 'in', ids)
-      .execute();
+      .where('id', 'in', ids);
+    if (options?.forUpdate) query = query.forUpdate();
+    const rows = await query.execute();
     return rows.map(toPossession);
   },
   async recordEvent(
@@ -643,11 +657,16 @@ export const PossessionRepository = {
   },
 
   // For imports: same external id updates the row in place, so re-running never duplicates.
+  // The container reference is validated first (like create/update) so a bad id surfaces as a
+  // typed 404, not a raw foreign-key 500. `created` comes from the row's xmax, not a
+  // preceding read, so concurrent upserts of the same new externalId cannot both report
+  // created:true.
   async upsertByExternalId(
     handle: DbHandle,
     userId: string,
     input: PossessionInput & { externalId: string },
-  ): Promise<PossessionRecord> {
+  ): Promise<{ record: PossessionRecord; created: boolean }> {
+    if (input.containerId) await assertOwnedContainer(handle, userId, input.containerId);
     const { externalId: _external, ...updates } = possessionValues(input);
     const values = { ...possessionValues(input), name: input.name, ownerUserid: userId };
     const row = await handle
@@ -660,8 +679,9 @@ export const PossessionRepository = {
           .doUpdateSet(updates),
       )
       .returningAll()
+      .returning(sql<boolean>`(xmax = 0)`.as('created'))
       .executeTakeFirstOrThrow();
-    return toPossession(row);
+    return { record: toPossession(row), created: row.created };
   },
 };
 
@@ -798,7 +818,8 @@ export const ContainerRepository = {
     handle: DbHandle,
     userId: string,
     input: ContainerInput & { externalId: string },
-  ): Promise<ContainerRecord> {
+  ): Promise<{ record: ContainerRecord; created: boolean }> {
+    if (input.parentContainerId) await assertOwnedParent(handle, userId, input.parentContainerId);
     const { externalId: _external, ...updates } = containerValues(input);
     const values = { ...containerValues(input), name: input.name, ownerUserid: userId };
     const row = await rejectingCycles(() =>
@@ -812,8 +833,9 @@ export const ContainerRepository = {
             .doUpdateSet(updates),
         )
         .returningAll()
+        .returning(sql<boolean>`(xmax = 0)`.as('created'))
         .executeTakeFirstOrThrow(),
     );
-    return toContainer(row);
+    return { record: toContainer(row), created: row.created };
   },
 };

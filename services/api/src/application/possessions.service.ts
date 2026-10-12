@@ -97,7 +97,7 @@ export const updatePossession = (
 ): Promise<PossessionRecord> =>
   runInTransaction(async (trx) => {
     const before =
-      (await PossessionRepository.get(trx, userId, id)) ??
+      (await PossessionRepository.get(trx, userId, id, { forUpdate: true })) ??
       (() => {
         throw new NotFoundError('Possession');
       })();
@@ -177,7 +177,10 @@ export const movePossessions = (
   runInTransaction(async (trx) => {
     const unique = [...new Set(ids)];
     const before = new Map(
-      (await PossessionRepository.listByIds(trx, userId, unique)).map((p) => [p.id, p]),
+      (await PossessionRepository.listByIds(trx, userId, unique, { forUpdate: true })).map((p) => [
+        p.id,
+        p,
+      ]),
     );
     const moved = await PossessionRepository.move(trx, userId, unique, containerId);
     for (const id of moved) {
@@ -222,6 +225,7 @@ export interface VesselWeightReport {
     overLimit: boolean;
   }>;
   unassigned: { count: number; weightKg: number };
+  truncated: boolean;
 }
 
 const roundKg = (value: number) => Math.round(value * 1000) / 1000;
@@ -323,6 +327,12 @@ export async function vesselWeightReport(userId: string): Promise<VesselWeightRe
   }
   vessels.sort((a, b) => a.vessel.localeCompare(b.vessel));
 
+  // Guardrail, not pagination: a registry this size never reaches 500 vessels, but the MCP
+  // response must stay bounded however strange the tokens get. Group totals always cover the
+  // full list; only the per-vessel rows truncate, and truncated says so.
+  const truncated = vessels.length > 500;
+  const shown = truncated ? vessels.slice(0, 500) : vessels;
+
   const groupTotals = new Map<
     string,
     { contentsKg: number; tareKg: number; limitKg: number; hasLimit: boolean }
@@ -356,9 +366,10 @@ export async function vesselWeightReport(userId: string): Promise<VesselWeightRe
     .sort((a, b) => a.group.localeCompare(b.group));
 
   return {
-    vessels,
+    vessels: shown,
     groups,
     unassigned: { count: unassignedCount, weightKg: roundKg(unassignedKg) },
+    truncated,
   };
 }
 
@@ -376,21 +387,34 @@ export interface UpsertResult {
 // the idempotency check (re-import creates nothing new) leaves history untouched too.
 export async function upsertPossession(userId: string, input: UpsertInput): Promise<UpsertResult> {
   return runInTransaction(async (trx) => {
-    const existing = await PossessionRepository.getByExternalId(trx, userId, input.externalId);
-    const saved = await PossessionRepository.upsertByExternalId(trx, userId, input);
-    if (existing === null) {
+    const firstRead = await PossessionRepository.getByExternalId(trx, userId, input.externalId, {
+      forUpdate: true,
+    });
+    const { record: saved, created } = await PossessionRepository.upsertByExternalId(
+      trx,
+      userId,
+      input,
+    );
+    if (created) {
       await PossessionRepository.recordEvent(trx, userId, saved.id, 'created', {
         after: definedFields(input),
       });
       return { id: saved.id, created: true };
     }
-    const diff = changedFields(existing, saved, Object.keys(input));
-    if (Object.keys(diff).length > 0) {
+    // A lost creation race lands here with a stale null read; re-read so the diff — and the
+    // event kind — describe the row that actually won.
+    const before =
+      firstRead ??
+      (await PossessionRepository.getByExternalId(trx, userId, input.externalId, {
+        forUpdate: true,
+      }));
+    const diff = before ? changedFields(before, saved, Object.keys(input)) : {};
+    if (before && Object.keys(diff).length > 0) {
       await PossessionRepository.recordEvent(
         trx,
         userId,
         saved.id,
-        classifyUpdate(existing, saved, input),
+        classifyUpdate(before, saved, input),
         diff,
       );
     }
@@ -435,9 +459,12 @@ export async function upsertContainer(
   input: ContainerUpsertInput,
 ): Promise<UpsertResult> {
   return runInTransaction(async (trx) => {
-    const existing = await ContainerRepository.getByExternalId(trx, userId, input.externalId);
-    const saved = await ContainerRepository.upsertByExternalId(trx, userId, input);
-    return { id: saved.id, created: existing === null };
+    const { record: saved, created } = await ContainerRepository.upsertByExternalId(
+      trx,
+      userId,
+      input,
+    );
+    return { id: saved.id, created };
   });
 }
 
@@ -498,13 +525,18 @@ export interface PossessionFinding {
   message: string;
 }
 
-const RETIRED_STATUSES = new Set(['disposed', 'donated', 'sold']);
+const RETIRED_STATUSES = new Set(['disposed', 'donated', 'sold', 'retired']);
 const KNOWN_VESSEL_GROUPS = new Set(['cabin', 'checked']);
 
 // The manual sheet-audit replacement (plan §6.6): every finding names the row and the rule.
 // Orphan container refs (the CON-036 class) cannot occur here — the database foreign key
 // rejects them — so that check lives in the import report (Phase 2) instead.
-export async function validatePossessions(userId: string): Promise<PossessionFinding[]> {
+// Paginated: findings are deterministic (sorted by row), and total says how many exist, so an
+// audit larger than one page is continued with offset, never truncated.
+export async function validatePossessions(
+  userId: string,
+  input: { limit?: number; offset?: number } = {},
+): Promise<{ findings: PossessionFinding[]; total: number }> {
   const [graph, items] = await Promise.all([
     loadVesselGraph(userId),
     PossessionRepository.auditables(db, userId),
@@ -587,5 +619,7 @@ export async function validatePossessions(userId: string): Promise<PossessionFin
   findings.sort((a, b) =>
     (a.possessionId ?? a.externalId ?? '').localeCompare(b.possessionId ?? b.externalId ?? ''),
   );
-  return findings;
+  const limit = input.limit ?? 500;
+  const offset = input.offset ?? 0;
+  return { findings: findings.slice(offset, offset + limit), total: findings.length };
 }

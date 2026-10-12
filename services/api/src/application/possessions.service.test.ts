@@ -178,6 +178,20 @@ describe('upserts', () => {
     expect(second).toMatchObject({ id: first.id, created: false });
     await removeContainer(alice, first.id);
   });
+
+  it('rejects foreign references with a typed 404, not a raw constraint error', async () => {
+    const missing = '00000000-0000-4000-8000-000000000000';
+    await expect(
+      upsertPossession(alice, { externalId: 'ITM-U9', name: 'Bad ref', containerId: missing }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      upsertContainer(alice, {
+        externalId: 'CON-U9',
+        name: 'Bad parent',
+        parentContainerId: missing,
+      }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
 });
 
 describe('history', () => {
@@ -284,7 +298,7 @@ describe('validate', () => {
       weightKg: 1,
     });
 
-    const codes = (await validatePossessions(alice))
+    const codes = (await validatePossessions(alice)).findings
       .filter((f) => [stray, ghost, boxed, retired, loose].some((p) => p.id === f.possessionId))
       .map((f) => f.code)
       .sort();
@@ -295,8 +309,11 @@ describe('validate', () => {
     expect(codes).toContain('disposed_not_archived');
     expect(codes).toContain('zero_price');
     expect(codes).toContain('missing_currency');
+    const page = await validatePossessions(alice, { limit: 2, offset: 0 });
+    expect(page.findings.length).toBeLessThanOrEqual(2);
+    expect(page.total).toBeGreaterThanOrEqual(codes.length);
     expect(
-      (await validatePossessions(bob)).some((f) =>
+      (await validatePossessions(bob)).findings.some((f) =>
         [stray, ghost, boxed, retired, loose].some((p) => p.id === f.possessionId),
       ),
     ).toBe(false);
@@ -456,15 +473,19 @@ describe('containers', () => {
   });
 
   it('refuses a cycle introduced through the import upsert', async () => {
-    const a = await ContainerRepository.upsertByExternalId(db, alice, {
-      name: 'ImpA',
-      externalId: 'CON-CYCLE-A',
-    });
-    const b = await ContainerRepository.upsertByExternalId(db, alice, {
-      name: 'ImpB',
-      externalId: 'CON-CYCLE-B',
-      parentContainerId: a.id,
-    });
+    const a = (
+      await ContainerRepository.upsertByExternalId(db, alice, {
+        name: 'ImpA',
+        externalId: 'CON-CYCLE-A',
+      })
+    ).record;
+    const b = (
+      await ContainerRepository.upsertByExternalId(db, alice, {
+        name: 'ImpB',
+        externalId: 'CON-CYCLE-B',
+        parentContainerId: a.id,
+      })
+    ).record;
     await expect(
       ContainerRepository.upsertByExternalId(db, alice, {
         name: 'ImpA',

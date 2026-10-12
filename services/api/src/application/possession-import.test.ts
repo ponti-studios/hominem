@@ -101,6 +101,18 @@ describe('mapPossessionRow', () => {
     expect(mapped.input.acquiredDate).toBeNull();
     expect(mapped.warnings).toHaveLength(3);
   });
+  it('rejects negative weights instead of importing impossible mass', () => {
+    const mapped = mapPossessionRow({ ...docking, 'Column 1': 'ITM-0304', weight_kg: '-2' })!;
+    expect(mapped.input.weightKg).toBeNull();
+    expect(mapped.warnings).toHaveLength(1);
+    const container = mapContainerRow({
+      container_id: 'CON-008',
+      name: 'neg box',
+      weight_kg: '-1',
+    })!;
+    expect(container.input.weightKg).toBeNull();
+    expect(container.warnings).toHaveLength(1);
+  });
 });
 
 describe('mapContainerRow', () => {

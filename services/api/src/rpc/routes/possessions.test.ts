@@ -136,8 +136,9 @@ describe('possessions routes', () => {
       vessels: [],
       groups: [],
       unassigned: { count: 0, weightKg: 0 },
+      truncated: false,
     });
-    service.validatePossessions.mockResolvedValue([]);
+    service.validatePossessions.mockResolvedValue({ findings: [], total: 0 });
     const get = async (path: string) => (await app.request(path)).json();
 
     const id = '22222222-2222-4222-8222-222222222222';
@@ -146,6 +147,7 @@ describe('possessions routes', () => {
     await expect(get('/api/possessions/weight-report')).resolves.toHaveProperty('report');
     await expect(get('/api/possessions/validate')).resolves.toEqual({
       findings: [],
+      total: 0,
     });
   });
 });

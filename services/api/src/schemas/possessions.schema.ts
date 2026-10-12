@@ -24,8 +24,10 @@ const possessionFields = {
   notes: text(5000),
   containerId: z.uuid().nullable().optional(),
   externalId: z.string().trim().min(1).max(100).nullable().optional(),
-  weightKg: z.number().min(0).nullable().optional(),
-  volumeCbm: z.number().min(0).nullable().optional(),
+  // numeric(8,3) columns cap at 99_999.999; Zod rejects larger values with a 400 instead
+  // of letting PostgreSQL fail the write with a 500.
+  weightKg: z.number().min(0).max(99_999.999).nullable().optional(),
+  volumeCbm: z.number().min(0).max(99_999.999).nullable().optional(),
   moveAction: z.string().trim().min(1).max(100).nullable().optional(),
   acquisitionType: z.string().trim().min(1).max(100).nullable().optional(),
   purchaseCurrency: z.string().trim().toUpperCase().length(3).nullable().optional(),
@@ -62,11 +64,13 @@ const containerFields = {
   parentContainerId: z.uuid().nullable().optional(),
   description: text(2000),
   currentLocation: text(300),
-  weightKg: z.number().min(0).nullable().optional(),
-  volumeCbm: z.number().min(0).nullable().optional(),
+  // numeric(8,3) columns cap at 99_999.999; Zod rejects larger values with a 400 instead
+  // of letting PostgreSQL fail the write with a 500.
+  weightKg: z.number().min(0).max(99_999.999).nullable().optional(),
+  volumeCbm: z.number().min(0).max(99_999.999).nullable().optional(),
   trackingReference: z.string().trim().max(200).nullable().optional(),
-  limitKg: z.number().min(0).nullable().optional(),
-  tareKg: z.number().min(0).nullable().optional(),
+  limitKg: z.number().min(0).max(99_999.999).nullable().optional(),
+  tareKg: z.number().min(0).max(99_999.999).nullable().optional(),
   vesselGroup: z.string().trim().min(1).max(50).nullable().optional(),
   externalId: z.string().trim().min(1).max(100).nullable().optional(),
   metadata: z.record(z.string(), z.json()).optional(),
@@ -185,6 +189,7 @@ export const vesselWeightReportSchema = z.object({
     }),
   ),
   unassigned: z.object({ count: z.number(), weightKg: z.number() }),
+  truncated: z.boolean(),
 });
 export const possessionFindingSchema = z.object({
   code: z.string(),
@@ -192,6 +197,18 @@ export const possessionFindingSchema = z.object({
   possessionId: z.uuid().nullable(),
   externalId: z.string().nullable(),
   message: z.string(),
+});
+export const possessionValidateInputSchema = z.object({
+  limit: z.number().int().min(1).max(1000).optional().default(500),
+  offset: z.number().int().min(0).optional().default(0),
+});
+export const possessionValidateQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(1000).optional().default(500),
+  offset: z.coerce.number().int().min(0).optional().default(0),
+});
+export const possessionValidateResultSchema = z.object({
+  findings: z.array(possessionFindingSchema),
+  total: z.number(),
 });
 
 export const possessionRecordSchema = z.object({

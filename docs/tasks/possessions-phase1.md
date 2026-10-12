@@ -42,7 +42,7 @@ Out of scope: Phase 2 backlog import execution, Phase 5 cutover, `move_plan`, `p
 | W-203 | Upsert tools + REST endpoints | api service/mcp/rpc | W-202 | crud + route tests | idempotent re-import proven |
 | W-204 | History + event emission | `packages/db` + api | W-202 | history tests | every write emits an event |
 | W-205 | Vessel weight report | api service/mcp | W-202 | report tests | dual convention + ghost-token warning |
-| W-206 | Validate audit | api service/mcp | W-202 | validate tests | CON-036 class caught, triaged flags |
+| W-206 | Validate audit | api service/mcp | W-202 | validate tests | 8 finding codes live; orphan-container refs impossible via API (FK) so the CON-036 class is a Phase 2 import-report check |
 | W-207 | Import mapper to first-class fields | api import | W-202 | import tests | no lifecycle data left in metadata |
 | W-208 | Full gate | repo | W-201–207 | `pnpm run check` | Gate green |
 
