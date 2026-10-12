@@ -294,6 +294,46 @@ describe('possessions', () => {
     expect(events[0]).toMatchObject({ possessionId: item.id, actor: alice });
     await callTool(alice, 'possession_delete', { id: item.id });
   });
+
+  it('reports vessel weights with tare, limits, and ghost tokens flagged', async () => {
+    const box = await newContainer(alice, {
+      name: 'MCP Box 1',
+      tareKg: 1,
+      limitKg: 10,
+      vesselGroup: 'cabin',
+    });
+    const heavy = await newPossession(alice, {
+      name: 'MCP heavy',
+      weightKg: 2,
+      moveAction: 'mcp box 1',
+    });
+    const { report } = await call<{
+      report: {
+        vessels: Array<{
+          vessel: string;
+          contentsKg: number;
+          tareKg: number;
+          totalKg: number;
+          limitKg: number | null;
+          overLimit: boolean;
+          unknownVessel: boolean;
+        }>;
+        groups: Array<{ group: string; totalKg: number }>;
+      };
+    }>(alice, 'vessel_weight_report', {});
+    const row = report.vessels.find((v) => v.vessel === 'MCP Box 1')!;
+    expect(row).toMatchObject({
+      contentsKg: 2,
+      tareKg: 1,
+      totalKg: 3,
+      limitKg: 10,
+      overLimit: false,
+      unknownVessel: false,
+    });
+    expect(report.groups.find((g) => g.group === 'cabin')?.totalKg).toBe(3);
+    await callTool(alice, 'possession_delete', { id: heavy.id });
+    await callTool(alice, 'container_delete', { id: box.id });
+  });
 });
 
 describe('container discovery and delete preview', () => {

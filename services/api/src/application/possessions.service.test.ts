@@ -17,6 +17,7 @@ import {
   updatePossession,
   upsertContainer,
   upsertPossession,
+  vesselWeightReport,
 } from './possessions.service';
 
 const alice = 'd4000001-0000-4000-8000-000000000001';
@@ -197,6 +198,59 @@ describe('history', () => {
     const item = await createPossession(alice, { name: 'Private history' });
     expect(await getPossessionHistory(bob, item.id, 50)).toEqual([]);
     await removePossession(alice, item.id);
+  });
+});
+
+describe('vessel weights', () => {
+  it('rolls item weights up to vessels by moveAction and container nesting', async () => {
+    const box = await createContainer(alice, {
+      name: 'Report Box 1',
+      tareKg: 2,
+      limitKg: 30,
+      vesselGroup: 'checked',
+    });
+    const pouch = await createContainer(alice, { name: 'Inner pouch', parentContainerId: box.id });
+    const a = await createPossession(alice, {
+      name: 'Weight A',
+      weightKg: 1.25,
+      moveAction: 'report box 1',
+    });
+    const b = await createPossession(alice, {
+      name: 'Weight B',
+      weightKg: 0.5,
+      containerId: pouch.id,
+    });
+    const ghost = await createPossession(alice, {
+      name: 'Ghost',
+      weightKg: 0.1,
+      moveAction: 'no_such_bag',
+    });
+    const archived = await createPossession(alice, {
+      name: 'Gone',
+      weightKg: 9,
+      moveAction: 'report box 1',
+      status: 'disposed',
+      isArchived: true,
+    });
+
+    const report = await vesselWeightReport(alice);
+    const vessel = report.vessels.find((v) => v.vessel === 'Report Box 1')!;
+    expect(vessel).toMatchObject({
+      contentsKg: 1.75,
+      tareKg: 2,
+      totalKg: 3.75,
+      limitKg: 30,
+      overLimit: false,
+      unknownVessel: false,
+    });
+    const ghostRow = report.vessels.find((v) => v.vessel === 'no_such_bag')!;
+    expect(ghostRow).toMatchObject({ contentsKg: 0.1, unknownVessel: true });
+    expect(report.vessels.some((v) => v.contentsKg === 9)).toBe(false);
+    expect(report.unassigned.count).toBe(0);
+
+    for (const item of [a, b, ghost, archived]) await removePossession(alice, item.id);
+    await removeContainer(alice, pouch.id);
+    await removeContainer(alice, box.id);
   });
 });
 

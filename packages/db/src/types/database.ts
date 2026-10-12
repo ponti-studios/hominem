@@ -873,6 +873,7 @@ export interface AppPossessionContainers {
   tareKg: Numeric | null;
   trackingReference: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  vesselGroup: string | null;
   volumeCbm: Numeric | null;
   weightKg: Numeric | null;
 }

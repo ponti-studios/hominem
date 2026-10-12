@@ -19,6 +19,7 @@ import {
   updatePossessionOrNull,
   upsertContainer,
   upsertPossession,
+  vesselWeightReport,
 } from '../../application/possessions.service';
 import {
   bulkUpsertResultSchema,
@@ -40,6 +41,7 @@ import {
   possessionSummarySchema,
   possessionUpsertSchema,
   upsertResultSchema,
+  vesselWeightReportSchema,
 } from '../../schemas/possessions.schema';
 import { registerTool } from '../tool-registry';
 
@@ -140,6 +142,25 @@ registerTool(
   async (ownerUserId, input) => ({
     events: await getPossessionHistory(ownerUserId, input.id, input.limit),
   }),
+);
+
+registerTool(
+  {
+    ...readTool,
+    name: 'vessel_weight_report',
+    title: 'Vessel weight report',
+    description:
+      'Packing report replacing the sheet weights tab: per vessel the summed item weights, ' +
+      'case tare, total, airline limit, notes, and whether it is over the limit, plus ' +
+      'cabin/checked group rollups. An item counts toward its moveAction vessel first, else its ' +
+      'outermost container. Tokens matching no container are still summed but flagged ' +
+      'unknownVessel — investigate those before trusting the totals.',
+    inputSchema: z.object({}),
+    outputSchema: z.object({ report: vesselWeightReportSchema }),
+    resultCap: 200,
+    guidance: { whenToUse: 'Questions like "are my bags overweight" or "what is in box N".' },
+  },
+  async (ownerUserId) => ({ report: await vesselWeightReport(ownerUserId) }),
 );
 
 registerTool(

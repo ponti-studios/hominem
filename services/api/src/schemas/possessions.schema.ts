@@ -67,6 +67,7 @@ const containerFields = {
   trackingReference: z.string().trim().max(200).nullable().optional(),
   limitKg: z.number().min(0).nullable().optional(),
   tareKg: z.number().min(0).nullable().optional(),
+  vesselGroup: z.string().trim().min(1).max(50).nullable().optional(),
   externalId: z.string().trim().min(1).max(100).nullable().optional(),
   metadata: z.record(z.string(), z.json()).optional(),
 };
@@ -160,6 +161,31 @@ export const possessionHistoryInputSchema = possessionIdParamSchema.extend({
 export const possessionHistoryQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional().default(50),
 });
+export const vesselWeightRowSchema = z.object({
+  vessel: z.string(),
+  contentsKg: z.number(),
+  tareKg: z.number(),
+  totalKg: z.number(),
+  limitKg: z.number().nullable(),
+  notes: z.string().nullable(),
+  group: z.string().nullable(),
+  overLimit: z.boolean(),
+  unknownVessel: z.boolean(),
+});
+export const vesselWeightReportSchema = z.object({
+  vessels: z.array(vesselWeightRowSchema),
+  groups: z.array(
+    z.object({
+      group: z.string(),
+      contentsKg: z.number(),
+      tareKg: z.number(),
+      totalKg: z.number(),
+      limitKg: z.number(),
+      overLimit: z.boolean(),
+    }),
+  ),
+  unassigned: z.object({ count: z.number(), weightKg: z.number() }),
+});
 
 export const possessionRecordSchema = z.object({
   id: z.uuid(),
@@ -209,6 +235,7 @@ export const containerRecordSchema = z.object({
   trackingReference: z.string().nullable(),
   limitKg: z.number().nullable(),
   tareKg: z.number().nullable(),
+  vesselGroup: z.string().nullable(),
   externalId: z.string().nullable(),
   metadata: z.record(z.string(), z.unknown()),
   itemCount: z.number(),

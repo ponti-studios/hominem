@@ -76,6 +76,7 @@ export interface ContainerRecord {
   trackingReference: string | null;
   limitKg: number | null;
   tareKg: number | null;
+  vesselGroup: string | null;
   externalId: string | null;
   metadata: Record<string, unknown>;
   itemCount: number;
@@ -127,6 +128,7 @@ export interface ContainerInput {
   trackingReference?: string | null;
   limitKg?: number | null;
   tareKg?: number | null;
+  vesselGroup?: string | null;
   externalId?: string | null;
   metadata?: Record<string, Json>;
 }
@@ -196,6 +198,7 @@ function toContainer(row: ContainerRow & { itemCount?: string | number | null })
     trackingReference: row.trackingReference,
     limitKg: numberOrNull(row.limitKg),
     tareKg: numberOrNull(row.tareKg),
+    vesselGroup: row.vesselGroup,
     externalId: row.externalId,
     metadata: toObject(row.metadata),
     itemCount: Number(row.itemCount ?? 0),
@@ -252,6 +255,7 @@ function containerValues(input: Partial<ContainerInput>): Updateable<AppPossessi
     trackingReference: input.trackingReference,
     limitKg: input.limitKg,
     tareKg: input.tareKg,
+    vesselGroup: input.vesselGroup,
     externalId: input.externalId,
     metadata: input.metadata,
   };
@@ -442,7 +446,6 @@ export const PossessionRepository = {
       .execute();
     return rows.map(toPossession);
   },
-
   async recordEvent(
     handle: DbHandle,
     userId: string,
@@ -474,6 +477,28 @@ export const PossessionRepository = {
       .limit(limit)
       .execute();
     return rows.map(toEvent);
+  },
+
+  // Every live (non-archived) possession with the columns the weight report needs.
+  // Unbounded by design: the registry is hundreds of rows, and a capped read would silently
+  // drop weight from the rollup.
+  async weighables(
+    handle: DbHandle,
+    userId: string,
+  ): Promise<
+    Array<{ weightKg: number | null; moveAction: string | null; containerId: string | null }>
+  > {
+    const rows = await handle
+      .selectFrom('app.possessions')
+      .select(['weightKg', 'moveAction', 'containerId'])
+      .where('ownerUserid', '=', userId)
+      .where('isArchived', '=', false)
+      .execute();
+    return rows.map((row) => ({
+      weightKg: numberOrNull(row.weightKg),
+      moveAction: row.moveAction,
+      containerId: row.containerId,
+    }));
   },
 
   // Moves many possessions at once. Returns the ids that belonged to the owner and were moved.

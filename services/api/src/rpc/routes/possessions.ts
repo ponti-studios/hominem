@@ -14,6 +14,7 @@ import {
   updatePossession,
   upsertContainer,
   upsertPossession,
+  vesselWeightReport,
 } from '../../application/possessions.service';
 import {
   containerCreateSchema,
@@ -47,6 +48,10 @@ export const possessionsRoutes = new Hono<AppContext>()
   .post('/bulk-upsert', zValidator('json', possessionBulkUpsertSchema), async (c) => {
     const userId = c.get('auth')!.userId;
     return c.json({ results: await bulkUpsertPossessions(userId, c.req.valid('json').items) });
+  })
+  .get('/weight-report', async (c) => {
+    const userId = c.get('auth')!.userId;
+    return c.json({ report: await vesselWeightReport(userId) });
   })
   .get('/containers', async (c) => {
     const userId = c.get('auth')!.userId;

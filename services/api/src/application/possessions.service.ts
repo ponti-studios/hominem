@@ -199,6 +199,157 @@ export const getPossessionHistory = (
   limit: number,
 ): Promise<PossessionEvent[]> => PossessionRepository.history(db, userId, id, limit);
 
+export interface VesselWeightRow {
+  vessel: string;
+  contentsKg: number;
+  tareKg: number;
+  totalKg: number;
+  limitKg: number | null;
+  notes: string | null;
+  group: string | null;
+  overLimit: boolean;
+  unknownVessel: boolean;
+}
+
+export interface VesselWeightReport {
+  vessels: VesselWeightRow[];
+  groups: Array<{
+    group: string;
+    contentsKg: number;
+    tareKg: number;
+    totalKg: number;
+    limitKg: number;
+    overLimit: boolean;
+  }>;
+  unassigned: { count: number; weightKg: number };
+}
+
+const roundKg = (value: number) => Math.round(value * 1000) / 1000;
+
+// The weights-tab replacement (plan §6.5): every live item's weight rolls up to exactly one
+// vessel. moveAction wins when set (the sheet's Q column); otherwise the item follows its
+// innermost container up to the outermost ancestor. A token matching no container is still
+// summed under its own row but flagged unknownVessel — the vacuum_shirts_tees ghost class —
+// so a typo can never silently vanish from the totals.
+export async function vesselWeightReport(userId: string): Promise<VesselWeightReport> {
+  const [containers, items] = await Promise.all([
+    ContainerRepository.list(db, userId),
+    PossessionRepository.weighables(db, userId),
+  ]);
+  const byId = new Map(containers.map((c) => [c.id, c]));
+  const byName = new Map<string, (typeof containers)[number]>();
+  for (const container of containers) {
+    const key = container.name.trim().toLowerCase();
+    if (key && !byName.has(key)) byName.set(key, container);
+  }
+  const outermostName = (containerId: string): string | null => {
+    let current = byId.get(containerId);
+    if (!current) return null;
+    const seen = new Set<string>();
+    while (
+      current.parentContainerId &&
+      byId.get(current.parentContainerId) &&
+      !seen.has(current.id)
+    ) {
+      seen.add(current.id);
+      current = byId.get(current.parentContainerId)!;
+    }
+    return current.name;
+  };
+
+  const rows = new Map<string, { display: string; contentsKg: number }>();
+  let unassignedCount = 0;
+  let unassignedKg = 0;
+  for (const item of items) {
+    const token =
+      item.moveAction?.trim() || (item.containerId ? outermostName(item.containerId) : null);
+    if (!token) {
+      unassignedCount += 1;
+      unassignedKg += item.weightKg ?? 0;
+      continue;
+    }
+    const key = token.toLowerCase();
+    const row = rows.get(key) ?? { display: token, contentsKg: 0 };
+    row.contentsKg += item.weightKg ?? 0;
+    rows.set(key, row);
+  }
+
+  const vessels: VesselWeightRow[] = [];
+  for (const [key, row] of rows) {
+    const container = byName.get(key);
+    const tareKg = container?.tareKg ?? 0;
+    const contentsKg = roundKg(row.contentsKg);
+    const totalKg = roundKg(contentsKg + tareKg);
+    vessels.push({
+      vessel: container?.name ?? row.display,
+      contentsKg,
+      tareKg,
+      totalKg,
+      limitKg: container?.limitKg ?? null,
+      notes: container?.description ?? null,
+      group: container?.vesselGroup ?? null,
+      overLimit: container?.limitKg != null && totalKg > container.limitKg,
+      unknownVessel: !container,
+    });
+  }
+  // Declared packing vessels with nothing in them yet still count their tare.
+  const keyed = new Set(vessels.map((v) => v.vessel.trim().toLowerCase()));
+  for (const container of containers) {
+    if (!container.vesselGroup || keyed.has(container.name.trim().toLowerCase())) continue;
+    const tareKg = container.tareKg ?? 0;
+    vessels.push({
+      vessel: container.name,
+      contentsKg: 0,
+      tareKg,
+      totalKg: roundKg(tareKg),
+      limitKg: container.limitKg,
+      notes: container.description,
+      group: container.vesselGroup,
+      overLimit: container.limitKg != null && tareKg > container.limitKg,
+      unknownVessel: false,
+    });
+  }
+  vessels.sort((a, b) => a.vessel.localeCompare(b.vessel));
+
+  const groupTotals = new Map<
+    string,
+    { contentsKg: number; tareKg: number; limitKg: number; hasLimit: boolean }
+  >();
+  for (const vessel of vessels) {
+    if (!vessel.group) continue;
+    const total = groupTotals.get(vessel.group) ?? {
+      contentsKg: 0,
+      tareKg: 0,
+      limitKg: 0,
+      hasLimit: false,
+    };
+    total.contentsKg += vessel.contentsKg;
+    total.tareKg += vessel.tareKg;
+    if (vessel.limitKg != null) {
+      total.limitKg += vessel.limitKg;
+      total.hasLimit = true;
+    }
+    groupTotals.set(vessel.group, total);
+  }
+  const groups = [...groupTotals]
+    .map(([group, total]) => ({
+      group,
+      contentsKg: roundKg(total.contentsKg),
+      tareKg: roundKg(total.tareKg),
+      totalKg: roundKg(total.contentsKg + total.tareKg),
+      limitKg: roundKg(total.limitKg),
+      overLimit:
+        total.hasLimit && roundKg(total.contentsKg + total.tareKg) > roundKg(total.limitKg),
+    }))
+    .sort((a, b) => a.group.localeCompare(b.group));
+
+  return {
+    vessels,
+    groups,
+    unassigned: { count: unassignedCount, weightKg: roundKg(unassignedKg) },
+  };
+}
+
 export const updatePossessionOrNull = (userId: string, id: string, input: PossessionUpdateInput) =>
   orNull('Possession not found', () => updatePossession(userId, id, input));
 
