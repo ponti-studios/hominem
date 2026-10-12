@@ -74,4 +74,18 @@ describe('parseSheetTransactionsCsv', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ description: 'Tea', amountCents: -200 });
   });
+
+  it('keeps embedded newlines inside quoted cells in one record', () => {
+    const csv = [
+      HEADER,
+      '2026-03-02,Cash,Dinner,-45.00,USD,,manual,,Dining Out,FALSE,FALSE,"line one',
+      'line two"',
+      '2026-03-03,Cash,Tea,-2.00,USD,,manual,,,,,',
+    ].join('\n');
+    const { rows, invalid } = parseSheetTransactionsCsv(csv);
+    expect(invalid).toEqual([]);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.notes).toBe('line one\nline two');
+    expect(rows[1]).toMatchObject({ description: 'Tea' });
+  });
 });

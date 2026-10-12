@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { runSheetBackfill } from './sheet-backfill';
+import { runSheetBackfill, type SheetBatchCaller } from './sheet-backfill';
 import type { SheetTransactionInput } from './sheet-import';
 
 function row(description: string, postedOn = '2026-10-01'): SheetTransactionInput {
@@ -16,12 +16,12 @@ function row(description: string, postedOn = '2026-10-01'): SheetTransactionInpu
 describe('runSheetBackfill', () => {
   it('chunks at 1000 rows and aggregates summaries with re-indexed rejections', async () => {
     const rows = Array.from({ length: 2500 }, (_, i) => row(`Row ${i}`));
-    const caller = vi.fn(async (batch: SheetTransactionInput[], _mode: 'append' | 'replace') => ({
+    const caller: SheetBatchCaller = vi.fn(async (batch) => ({
       received: batch.length,
       upserted: batch.length,
       created: batch.length,
       updated: 0,
-      rejected: [{ index: 0, reason: 'unknown_account' as const }],
+      rejected: [{ index: 0, reason: 'unknown_account' }],
       accountsAutoProvisioned: [],
     }));
     const result = await runSheetBackfill(rows, { mode: 'append' }, caller);
@@ -35,7 +35,7 @@ describe('runSheetBackfill', () => {
 
   it('fails fast on the first throwing batch and keeps completed work', async () => {
     const rows = Array.from({ length: 3000 }, (_, i) => row(`Row ${i}`));
-    const caller = vi.fn(async (batch: SheetTransactionInput[]) => {
+    const caller: SheetBatchCaller = vi.fn(async (batch) => {
       if ((batch[0]?.description ?? '') === 'Row 1000') throw new Error('transport down');
       return {
         received: batch.length,
@@ -56,7 +56,7 @@ describe('runSheetBackfill', () => {
   it('resume by re-run yields created: 0', async () => {
     const rows = Array.from({ length: 1500 }, (_, i) => row(`Row ${i}`));
     let pass = 0;
-    const caller = vi.fn(async (batch: SheetTransactionInput[]) => {
+    const caller: SheetBatchCaller = vi.fn(async (batch) => {
       pass++;
       const created = pass <= 2 ? batch.length : 0;
       return {
@@ -73,5 +73,40 @@ describe('runSheetBackfill', () => {
     const second = await runSheetBackfill(rows, { mode: 'append' }, caller);
     expect(second.totals.created).toBe(0);
     expect(second.failed).toBeNull();
+  });
+
+  it('sends replace only for the first chunk and append for the rest', async () => {
+    const rows = Array.from({ length: 2500 }, (_, i) => row(`Row ${i}`));
+    const caller: SheetBatchCaller = vi.fn(async (batch) => ({
+      received: batch.length,
+      upserted: batch.length,
+      created: batch.length,
+      updated: 0,
+      rejected: [],
+      accountsAutoProvisioned: [],
+    }));
+    const result = await runSheetBackfill(
+      rows,
+      { mode: 'replace', dryRun: false, iUnderstand: true },
+      caller,
+    );
+    expect(caller).toHaveBeenCalledTimes(3);
+    expect(caller.mock.calls.map((call) => call[1].mode)).toEqual(['replace', 'append', 'append']);
+    expect(caller.mock.calls.every((call) => call[1].iUnderstand === true)).toBe(true);
+    expect(result.failed).toBeNull();
+  });
+
+  it('passes dryRun through to every chunk', async () => {
+    const rows = Array.from({ length: 1500 }, (_, i) => row(`Row ${i}`));
+    const caller: SheetBatchCaller = vi.fn(async (batch) => ({
+      received: batch.length,
+      upserted: batch.length,
+      created: 0,
+      updated: 0,
+      rejected: [],
+      accountsAutoProvisioned: [],
+    }));
+    await runSheetBackfill(rows, { mode: 'append', dryRun: true }, caller);
+    expect(caller.mock.calls.every((call) => call[1].dryRun === true)).toBe(true);
   });
 });

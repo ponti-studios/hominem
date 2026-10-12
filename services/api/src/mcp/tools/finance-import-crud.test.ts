@@ -1,4 +1,5 @@
 import { db, pool } from '@hominem/db/core';
+import { parseSheetTransactionsCsv } from '@hominem/finance-services';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { callTool, type McpToolResult } from '../tool-registry';
@@ -239,6 +240,22 @@ describe('finance_transactions_import', () => {
 
     const second = await callTool(userId, 'finance_transactions_import', batch);
     expect(content(second)).toMatchObject({ received: 4, upserted: 2, created: 0, updated: 0 });
+  });
+
+  it('imports parser output with blank cells straight through the tool contract', async () => {
+    const { rows, invalid } = parseSheetTransactionsCsv(
+      [
+        'date,Bank,Merchant,Amount,Currency,Tags,Source,Order #,Category,Exclude?,Recurring?,Notes',
+        '2026-08-24,Sheet Checking,Air France,"(1,648.50)",USD,,Plaid,,Air Travel,FALSE,FALSE,',
+      ].join('\n'),
+    );
+    expect(invalid).toEqual([]);
+    const result = await callTool(userId, 'finance_transactions_import', {
+      mode: 'append',
+      transactions: rows,
+    });
+    expect(content(result)).toMatchObject({ received: 1, created: 1 });
+    expect(content(result).rejected).toEqual([]);
   });
 
   it('dryRun writes nothing', async () => {

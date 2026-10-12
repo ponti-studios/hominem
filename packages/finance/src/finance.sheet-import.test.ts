@@ -8,6 +8,7 @@ import {
   normalizeDescription,
   normalizeSource,
   parseTags,
+  toSheetRejectionReason,
 } from './sheet-import';
 
 describe('sheet-import pure transforms', () => {
@@ -59,5 +60,12 @@ describe('sheet-import pure transforms', () => {
     expect(a).toBe(b);
     expect(a).not.toBe(c);
     expect(a.startsWith('sheet:')).toBe(true);
+  });
+
+  it('classifies only recognized domain errors, never masking operational failures', () => {
+    expect(toSheetRejectionReason(new Error('currency_mismatch'))).toBe('currency_mismatch');
+    expect(toSheetRejectionReason(new Error('pending_row'))).toBe('pending_row');
+    expect(toSheetRejectionReason(new Error('relation "x" does not exist'))).toBeNull();
+    expect(toSheetRejectionReason('bang')).toBeNull();
   });
 });

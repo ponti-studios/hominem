@@ -2,9 +2,15 @@ import type { SheetImportSummary, SheetTransactionInput } from './sheet-import';
 
 export const SHEET_BACKFILL_BATCH_SIZE = 1000;
 
+export interface SheetBackfillCall {
+  mode: 'append' | 'replace';
+  dryRun?: boolean;
+  iUnderstand?: boolean;
+}
+
 export type SheetBatchCaller = (
   batch: SheetTransactionInput[],
-  mode: 'append' | 'replace',
+  call: SheetBackfillCall,
 ) => Promise<SheetImportSummary>;
 
 export interface SheetBackfillTotals {
@@ -29,11 +35,13 @@ function emptyTotals(): SheetBackfillTotals {
  * Push rows through the batch import tool 1000 at a time, in order. Fail fast
  * on the first throwing batch — completed batches stay committed and a re-run
  * resumes idempotently to created: 0. Per-row rejections never stop the run;
- * their indexes are re-based to the full row list.
+ * their indexes are re-based to the full row list. In replace mode only the
+ * first chunk wipes (later chunks append), so one dry-run authorization
+ * covers the run and a resume never deletes completed work.
  */
 export async function runSheetBackfill(
   rows: SheetTransactionInput[],
-  options: { mode: 'append' | 'replace' },
+  options: { mode: 'append' | 'replace'; dryRun?: boolean; iUnderstand?: boolean },
   caller: SheetBatchCaller,
 ): Promise<SheetBackfillResult> {
   const totals = emptyTotals();
@@ -42,7 +50,11 @@ export async function runSheetBackfill(
     const batch = rows.slice(offset, offset + SHEET_BACKFILL_BATCH_SIZE);
     let summary: SheetImportSummary;
     try {
-      summary = await caller(batch, options.mode);
+      summary = await caller(batch, {
+        mode: offset === 0 ? options.mode : 'append',
+        ...(options.dryRun !== undefined ? { dryRun: options.dryRun } : {}),
+        ...(options.iUnderstand !== undefined ? { iUnderstand: options.iUnderstand } : {}),
+      });
     } catch (error) {
       return {
         batches,

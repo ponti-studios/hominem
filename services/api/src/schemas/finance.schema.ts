@@ -482,11 +482,15 @@ const sheetTransactionPayloadSchema = z.object({
   description: z.string().min(1).describe('Merchant text.'),
   amountCents: z.number().int().describe('Signed cents; negative = outflow.'),
   currencyCode: z.string().min(3).max(3).describe('ISO-4217 code.'),
-  category: z.string().optional().describe('Sheet Category name; blank/unknown → Uncategorized.'),
+  category: z
+    .string()
+    .nullable()
+    .optional()
+    .describe('Sheet Category name; blank/unknown → Uncategorized.'),
   tags: z.array(z.string()).optional().describe('Sheet Tags; comma-separated values also split.'),
-  notes: z.string().max(2000).optional().describe('Sheet Notes.'),
-  orderNumber: z.string().optional().describe('Sheet Order #; appended into notes.'),
-  source: z.string().optional().describe('plaid | starling | manual; unknown → manual.'),
+  notes: z.string().max(2000).nullable().optional().describe('Sheet Notes.'),
+  orderNumber: z.string().nullable().optional().describe('Sheet Order #; appended into notes.'),
+  source: z.string().nullable().optional().describe('plaid | starling | manual; unknown → manual.'),
   excluded: z.boolean().default(false),
   recurring: z.boolean().default(false).describe('Sheet Recurring? column.'),
   transactionType: z.enum(['debit', 'credit', 'transfer']).optional(),

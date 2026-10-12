@@ -138,7 +138,9 @@ export function computeSheetExternalId(
     amountCents,
     currencyCode,
   ].join('|');
-  return `sheet:${createHash('sha1').update(key).digest('hex')}`;
+  // SHA-256, not the PRD's SHA-1: same internal dedup role, no CodeQL-class
+  // weakness, zero interop cost (keys never leave the `sheet:` namespace).
+  return `sheet:${createHash('sha256').update(key).digest('hex')}`;
 }
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -153,12 +155,120 @@ function validateRow(input: SheetTransactionInput): SheetRejectionReason | null 
   return null;
 }
 
-// Per-user replace arming: a clean dry run in this server session unlocks one
-// mode: "replace". Consumed by the replace so every wipe needs a fresh dry run.
-const replaceArmedByUser = new Map<string, number>();
+// Replace arming binds a clean dry run to its exact payload: user → set of
+// {fingerprint, accountMap, multiCurrencyAccounts}. A replace consumes the
+// matching arm, so every wipe needs a fresh dry run of the same rows with
+// the same options. Process-local by design (same-session guard).
+interface ReplaceArm {
+  fingerprint: string;
+  accountMap?: Record<string, string>;
+  multiCurrencyAccounts?: string[];
+}
+
+const replaceArmsByUser = new Map<string, ReplaceArm[]>();
 
 export function isReplaceArmed(userId: string): boolean {
-  return replaceArmedByUser.has(userId);
+  return (replaceArmsByUser.get(userId) ?? []).length > 0;
+}
+
+const KNOWN_REJECTION_MESSAGES: readonly SheetRejectionReason[] = [
+  'unknown_account',
+  'currency_mismatch',
+  'invalid_posted_on',
+  'invalid_amount',
+  'invalid_currency',
+  'invalid_description',
+  'pending_row',
+];
+
+/**
+ * Classify a write-phase failure: recognized domain reasons are collected
+ * per row, anything else (unique-index race, tag insert failure, transient
+ * database error) rethrows so the batch fails loudly instead of masquerading
+ * as an ordinary data rejection.
+ */
+export function toSheetRejectionReason(error: unknown): SheetRejectionReason | null {
+  const message = error instanceof Error ? error.message : String(error);
+  for (const known of KNOWN_REJECTION_MESSAGES) {
+    if (known === message) return known;
+  }
+  return null;
+}
+
+export interface ValidatedSheetRow {
+  index: number;
+  input: SheetTransactionInput;
+  accountId: string;
+  currencyCode: string;
+  externalId: string;
+}
+
+export interface SheetBatchValidation {
+  valid: ValidatedSheetRow[];
+  rejected: Array<{ index: number; reason: SheetRejectionReason }>;
+}
+
+function stableOptionsFingerprint(
+  valid: ValidatedSheetRow[],
+  accountMap: Record<string, string> | undefined,
+  multiCurrencyAccounts: string[] | undefined,
+): string {
+  return createHash('sha256')
+    .update(
+      JSON.stringify({
+        keys: valid.map((row) => row.externalId).sort(),
+        accountMap: accountMap ?? null,
+        multiCurrencyAccounts: [...(multiCurrencyAccounts ?? [])].sort(),
+      }),
+    )
+    .digest('hex');
+}
+
+/** Validate + resolve a batch with zero writes. Shared by dry runs, the
+ * replace pre-wipe check, and the write phase. */
+export async function validateSheetBatch(
+  userId: string,
+  transactions: SheetTransactionInput[],
+  accountMap?: Record<string, string>,
+  multiCurrencyAccounts?: string[],
+): Promise<SheetBatchValidation> {
+  const valid: ValidatedSheetRow[] = [];
+  const rejected: Array<{ index: number; reason: SheetRejectionReason }> = [];
+  for (let index = 0; index < transactions.length; index++) {
+    const input = transactions[index];
+    const invalid = validateRow(input);
+    if (invalid) {
+      rejected.push({ index, reason: invalid });
+      continue;
+    }
+    const resolved = await resolveAccount(userId, input.account, accountMap);
+    if ('reason' in resolved) {
+      rejected.push({ index, reason: resolved.reason });
+      continue;
+    }
+    const currencyCode = input.currencyCode.toUpperCase();
+    if (
+      currencyCode !== resolved.currencyCode.toUpperCase() &&
+      !isMultiCurrencyAllowed(input.account, resolved, multiCurrencyAccounts)
+    ) {
+      rejected.push({ index, reason: 'currency_mismatch' });
+      continue;
+    }
+    valid.push({
+      index,
+      input,
+      accountId: resolved.accountId,
+      currencyCode,
+      externalId: computeSheetExternalId(
+        input.postedOn,
+        resolved.accountId,
+        input.description.trim(),
+        input.amountCents,
+        currencyCode,
+      ),
+    });
+  }
+  return { valid, rejected };
 }
 
 export async function ensureFinanceCategoryId(
@@ -493,62 +603,61 @@ export async function importSheetTransactions(
     accountsAutoProvisioned: [],
   };
 
-  if (mode === 'replace' && !dryRun) {
+  // Phase 1 validates everything before any write, so a replace never wipes
+  // and then discovers rejections.
+  const { valid, rejected } = await validateSheetBatch(
+    userId,
+    transactions,
+    accountMap,
+    multiCurrencyAccounts,
+  );
+  summary.rejected.push(...rejected);
+
+  if (dryRun) {
+    summary.upserted += valid.length;
+    if (rejected.length === 0) {
+      const arms = replaceArmsByUser.get(userId) ?? [];
+      arms.push({
+        fingerprint: stableOptionsFingerprint(valid, accountMap, multiCurrencyAccounts),
+        ...(accountMap ? { accountMap } : {}),
+        ...(multiCurrencyAccounts ? { multiCurrencyAccounts } : {}),
+      });
+      replaceArmsByUser.set(userId, arms);
+    }
+    return summary;
+  }
+
+  if (mode === 'replace') {
     if (!iUnderstand) throw new Error('replace_requires_confirmation');
-    if (!replaceArmedByUser.has(userId)) throw new Error('replace_requires_dry_run');
-    replaceArmedByUser.delete(userId);
+    const fingerprint = stableOptionsFingerprint(valid, accountMap, multiCurrencyAccounts);
+    const arms = replaceArmsByUser.get(userId) ?? [];
+    if (arms.length === 0) throw new Error('replace_requires_dry_run');
+    const armIndex = arms.findIndex(
+      (arm) =>
+        arm.fingerprint === fingerprint &&
+        JSON.stringify(arm.accountMap ?? null) === JSON.stringify(accountMap ?? null) &&
+        JSON.stringify([...(arm.multiCurrencyAccounts ?? [])].sort()) ===
+          JSON.stringify([...(multiCurrencyAccounts ?? [])].sort()),
+    );
+    if (armIndex === -1) throw new Error('replace_payload_mismatch');
+    arms.splice(armIndex, 1);
+    if (arms.length === 0) replaceArmsByUser.delete(userId);
     await db.deleteFrom('app.financeTransactions').where('userId', '=', userId).execute();
   }
 
-  for (let index = 0; index < transactions.length; index++) {
-    const input = transactions[index];
-    const invalid = validateRow(input);
-    if (invalid) {
-      summary.rejected.push({ index, reason: invalid });
-      continue;
-    }
-    const resolved = await resolveAccount(userId, input.account, accountMap);
-    if ('reason' in resolved) {
-      summary.rejected.push({ index, reason: resolved.reason });
-      continue;
-    }
-    const currencyCode = input.currencyCode.toUpperCase();
-    if (
-      currencyCode !== resolved.currencyCode.toUpperCase() &&
-      !isMultiCurrencyAllowed(input.account, resolved, multiCurrencyAccounts)
-    ) {
-      summary.rejected.push({ index, reason: 'currency_mismatch' });
-      continue;
-    }
-    if (dryRun) {
-      summary.upserted += 1;
-      continue;
-    }
+  for (const row of valid) {
     try {
-      const result = await upsertSheetTransaction(userId, input, accountMap, {
+      const result = await upsertSheetTransaction(userId, row.input, accountMap, {
         multiCurrencyAccounts,
       });
       summary.upserted += 1;
       if (result.created) summary.created += 1;
       else if (result.updated) summary.updated += 1;
     } catch (error) {
-      const message = error instanceof Error ? error.message : '';
-      const knownReasons: SheetRejectionReason[] = [
-        'unknown_account',
-        'currency_mismatch',
-        'invalid_posted_on',
-        'invalid_amount',
-        'invalid_currency',
-        'invalid_description',
-        'pending_row',
-      ];
-      const matched = knownReasons.find((reason) => reason === message);
-      summary.rejected.push({ index, reason: matched ?? 'unknown_account' });
+      const reason = toSheetRejectionReason(error);
+      if (!reason) throw error;
+      summary.rejected.push({ index: row.index, reason });
     }
-  }
-
-  if (dryRun && summary.rejected.length === 0) {
-    replaceArmedByUser.set(userId, Date.now());
   }
   return summary;
 }

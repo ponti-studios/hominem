@@ -118,6 +118,49 @@ describe('replace guards', () => {
       }),
     ).rejects.toThrow('replace_requires_dry_run');
   });
+
+  it('refuses replace when the payload differs from the dry run, without wiping', async () => {
+    const seeded = await callTool(multiUser, 'finance_transactions_import', {
+      mode: 'append',
+      transactions: [oneRow('Guard Checking')],
+    });
+    expect(content(seeded).created).toBe(1);
+    const otherRow = { ...oneRow('Guard Checking'), description: 'Different Row' };
+    await callTool(multiUser, 'finance_transactions_import', {
+      mode: 'append',
+      dryRun: true,
+      transactions: [oneRow('Guard Checking')],
+    });
+    await expect(
+      callTool(multiUser, 'finance_transactions_import', {
+        mode: 'replace',
+        iUnderstand: true,
+        transactions: [otherRow],
+      }),
+    ).rejects.toThrow('replace_payload_mismatch');
+    const survivors = await db
+      .selectFrom('app.financeTransactions')
+      .select('description')
+      .where('userId', '=', multiUser)
+      .execute();
+    expect(survivors.map((row) => row.description)).toEqual(['Guard Row']);
+  });
+
+  it('refuses replace when the options differ from the dry run', async () => {
+    await callTool(allowUser, 'finance_transactions_import', {
+      mode: 'append',
+      dryRun: true,
+      transactions: [oneRow('Guard Checking')],
+    });
+    await expect(
+      callTool(allowUser, 'finance_transactions_import', {
+        mode: 'replace',
+        iUnderstand: true,
+        multiCurrencyAccounts: ['Guard Checking'],
+        transactions: [oneRow('Guard Checking')],
+      }),
+    ).rejects.toThrow('replace_payload_mismatch');
+  });
 });
 
 describe('pending rows', () => {
