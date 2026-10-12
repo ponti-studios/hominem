@@ -334,6 +334,18 @@ describe('possessions', () => {
     await callTool(alice, 'possession_delete', { id: heavy.id });
     await callTool(alice, 'container_delete', { id: box.id });
   });
+
+  it('lists integrity findings with severities', async () => {
+    const stray = await newPossession(alice, { name: 'Validate stray', status: 'owned' });
+    const { findings } = await call<{
+      findings: Array<{ code: string; severity: string; possessionId: string | null }>;
+    }>(alice, 'possession_validate', {});
+    const mine = findings.filter((f) => f.possessionId === stray.id).map((f) => f.code);
+    expect(mine).toContain('unplaced_item');
+    expect(mine).toContain('missing_weight');
+    expect(findings.every((f) => f.severity === 'error' || f.severity === 'warning')).toBe(true);
+    await callTool(alice, 'possession_delete', { id: stray.id });
+  });
 });
 
 describe('container discovery and delete preview', () => {

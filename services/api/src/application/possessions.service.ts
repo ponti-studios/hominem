@@ -226,18 +226,16 @@ export interface VesselWeightReport {
 
 const roundKg = (value: number) => Math.round(value * 1000) / 1000;
 
-// The weights-tab replacement (plan §6.5): every live item's weight rolls up to exactly one
-// vessel. moveAction wins when set (the sheet's Q column); otherwise the item follows its
-// innermost container up to the outermost ancestor. A token matching no container is still
-// summed under its own row but flagged unknownVessel — the vacuum_shirts_tees ghost class —
-// so a typo can never silently vanish from the totals.
-export async function vesselWeightReport(userId: string): Promise<VesselWeightReport> {
-  const [containers, items] = await Promise.all([
-    ContainerRepository.list(db, userId),
-    PossessionRepository.weighables(db, userId),
-  ]);
+interface VesselGraph {
+  containers: ContainerRecord[];
+  byName: Map<string, ContainerRecord>;
+  outermostName: (containerId: string) => string | null;
+}
+
+async function loadVesselGraph(userId: string): Promise<VesselGraph> {
+  const containers = await ContainerRepository.list(db, userId);
   const byId = new Map(containers.map((c) => [c.id, c]));
-  const byName = new Map<string, (typeof containers)[number]>();
+  const byName = new Map<string, ContainerRecord>();
   for (const container of containers) {
     const key = container.name.trim().toLowerCase();
     if (key && !byName.has(key)) byName.set(key, container);
@@ -256,6 +254,20 @@ export async function vesselWeightReport(userId: string): Promise<VesselWeightRe
     }
     return current.name;
   };
+  return { containers, byName, outermostName };
+}
+
+// The weights-tab replacement (plan §6.5): every live item's weight rolls up to exactly one
+// vessel. moveAction wins when set (the sheet's Q column); otherwise the item follows its
+// innermost container up to the outermost ancestor. A token matching no container is still
+// summed under its own row but flagged unknownVessel — the vacuum_shirts_tees ghost class —
+// so a typo can never silently vanish from the totals.
+export async function vesselWeightReport(userId: string): Promise<VesselWeightReport> {
+  const [graph, items] = await Promise.all([
+    loadVesselGraph(userId),
+    PossessionRepository.weighables(db, userId),
+  ]);
+  const { containers, byName, outermostName } = graph;
 
   const rows = new Map<string, { display: string; contentsKg: number }>();
   let unassignedCount = 0;
@@ -474,3 +486,106 @@ export const updateContainerOrNull = (userId: string, id: string, input: Contain
 export const removeContainerIfExists = async (userId: string, id: string): Promise<boolean> =>
   (await orNull('Container not found', () => removeContainer(userId, id).then(() => true))) ??
   false;
+
+export const VALIDATION_SEVERITIES = ['error', 'warning'] as const;
+export type ValidationSeverity = (typeof VALIDATION_SEVERITIES)[number];
+
+export interface PossessionFinding {
+  code: string;
+  severity: ValidationSeverity;
+  possessionId: string | null;
+  externalId: string | null;
+  message: string;
+}
+
+const RETIRED_STATUSES = new Set(['disposed', 'donated', 'sold']);
+const KNOWN_VESSEL_GROUPS = new Set(['cabin', 'checked']);
+
+// The manual sheet-audit replacement (plan §6.6): every finding names the row and the rule.
+// Orphan container refs (the CON-036 class) cannot occur here — the database foreign key
+// rejects them — so that check lives in the import report (Phase 2) instead.
+export async function validatePossessions(userId: string): Promise<PossessionFinding[]> {
+  const [graph, items] = await Promise.all([
+    loadVesselGraph(userId),
+    PossessionRepository.auditables(db, userId),
+  ]);
+  const findings: PossessionFinding[] = [];
+  const at = (possessionId: string, externalId: string | null) => ({
+    possessionId,
+    externalId,
+  });
+  for (const item of items) {
+    const token = item.moveAction?.trim() || null;
+    if (!item.isArchived && !item.containerId && !token) {
+      findings.push({
+        code: 'unplaced_item',
+        severity: 'warning',
+        ...at(item.id, item.externalId),
+        message: 'Live item sits in no container and names no vessel',
+      });
+    }
+    if (!item.isArchived && item.weightKg == null) {
+      findings.push({
+        code: 'missing_weight',
+        severity: 'warning',
+        ...at(item.id, item.externalId),
+        message: 'Live item has no weight, so vessel totals undercount it',
+      });
+    }
+    if (!item.isArchived && token && !graph.byName.has(token.toLowerCase())) {
+      findings.push({
+        code: 'unknown_vessel',
+        severity: 'warning',
+        ...at(item.id, item.externalId),
+        message: `moveAction "${token}" matches no container — a typo would silently mis-sum`,
+      });
+    }
+    if (item.status && RETIRED_STATUSES.has(item.status) && !item.isArchived) {
+      findings.push({
+        code: 'disposed_not_archived',
+        severity: 'error',
+        ...at(item.id, item.externalId),
+        message: `Status is ${item.status} but the item is not archived`,
+      });
+    }
+    if (item.isArchived && item.containerId) {
+      findings.push({
+        code: 'archived_in_container',
+        severity: 'warning',
+        ...at(item.id, item.externalId),
+        message: 'Archived item still sits in a container',
+      });
+    }
+    if (item.priceCents === 0) {
+      findings.push({
+        code: 'zero_price',
+        severity: 'warning',
+        ...at(item.id, item.externalId),
+        message: 'Price is zero — correct for gifts, suspicious otherwise',
+      });
+    }
+    if (item.priceCents != null && item.currencyCode == null) {
+      findings.push({
+        code: 'missing_currency',
+        severity: 'warning',
+        ...at(item.id, item.externalId),
+        message: 'Price has no currency, so value rollups skip it',
+      });
+    }
+  }
+  for (const container of graph.containers) {
+    if (container.vesselGroup && !KNOWN_VESSEL_GROUPS.has(container.vesselGroup)) {
+      findings.push({
+        code: 'unknown_vessel_group',
+        severity: 'warning',
+        possessionId: null,
+        externalId: container.externalId,
+        message: `Container "${container.name}" has vesselGroup "${container.vesselGroup}" (expected cabin or checked)`,
+      });
+    }
+  }
+  findings.sort((a, b) =>
+    (a.possessionId ?? a.externalId ?? '').localeCompare(b.possessionId ?? b.externalId ?? ''),
+  );
+  return findings;
+}

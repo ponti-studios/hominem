@@ -14,6 +14,7 @@ import {
   updatePossession,
   upsertContainer,
   upsertPossession,
+  validatePossessions,
   vesselWeightReport,
 } from '../../application/possessions.service';
 import {
@@ -52,6 +53,10 @@ export const possessionsRoutes = new Hono<AppContext>()
   .get('/weight-report', async (c) => {
     const userId = c.get('auth')!.userId;
     return c.json({ report: await vesselWeightReport(userId) });
+  })
+  .get('/validate', async (c) => {
+    const userId = c.get('auth')!.userId;
+    return c.json({ findings: await validatePossessions(userId) });
   })
   .get('/containers', async (c) => {
     const userId = c.get('auth')!.userId;

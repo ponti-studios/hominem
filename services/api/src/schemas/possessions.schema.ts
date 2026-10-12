@@ -186,6 +186,13 @@ export const vesselWeightReportSchema = z.object({
   ),
   unassigned: z.object({ count: z.number(), weightKg: z.number() }),
 });
+export const possessionFindingSchema = z.object({
+  code: z.string(),
+  severity: z.enum(['error', 'warning']),
+  possessionId: z.uuid().nullable(),
+  externalId: z.string().nullable(),
+  message: z.string(),
+});
 
 export const possessionRecordSchema = z.object({
   id: z.uuid(),

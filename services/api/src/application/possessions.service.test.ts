@@ -17,6 +17,7 @@ import {
   updatePossession,
   upsertContainer,
   upsertPossession,
+  validatePossessions,
   vesselWeightReport,
 } from './possessions.service';
 
@@ -250,6 +251,58 @@ describe('vessel weights', () => {
 
     for (const item of [a, b, ghost, archived]) await removePossession(alice, item.id);
     await removeContainer(alice, pouch.id);
+    await removeContainer(alice, box.id);
+  });
+});
+
+describe('validate', () => {
+  it('flags unplaced, weightless, ghost-vessel, lifecycle, and pricing issues', async () => {
+    const box = await createContainer(alice, { name: 'Validate box' });
+    const stray = await createPossession(alice, { name: 'Stray', status: 'owned', priceCents: 0 });
+    const ghost = await createPossession(alice, {
+      name: 'Ghost item',
+      status: 'owned',
+      weightKg: 0.2,
+      moveAction: 'ghost_bag_xyz',
+    });
+    const boxed = await createPossession(alice, {
+      name: 'Boxed debt',
+      status: 'owned',
+      weightKg: 1,
+      containerId: box.id,
+    });
+    const retired = await createPossession(alice, {
+      name: 'Retired boxed',
+      status: 'disposed',
+      weightKg: 1,
+      containerId: box.id,
+      isArchived: true,
+    });
+    const loose = await createPossession(alice, {
+      name: 'Loose end',
+      status: 'disposed',
+      weightKg: 1,
+    });
+
+    const codes = (await validatePossessions(alice))
+      .filter((f) => [stray, ghost, boxed, retired, loose].some((p) => p.id === f.possessionId))
+      .map((f) => f.code)
+      .sort();
+    expect(codes).toContain('unplaced_item');
+    expect(codes).toContain('missing_weight');
+    expect(codes).toContain('unknown_vessel');
+    expect(codes).toContain('archived_in_container');
+    expect(codes).toContain('disposed_not_archived');
+    expect(codes).toContain('zero_price');
+    expect(codes).toContain('missing_currency');
+    expect(
+      (await validatePossessions(bob)).some((f) =>
+        [stray, ghost, boxed, retired, loose].some((p) => p.id === f.possessionId),
+      ),
+    ).toBe(false);
+
+    for (const item of [stray, ghost, boxed, retired, loose])
+      await removePossession(alice, item.id);
     await removeContainer(alice, box.id);
   });
 });

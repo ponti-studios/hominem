@@ -501,6 +501,17 @@ export const PossessionRepository = {
     }));
   },
 
+  // Full rows for the integrity audit. Unbounded for the same reason as weighables.
+  async auditables(handle: DbHandle, userId: string): Promise<PossessionRecord[]> {
+    const rows = await handle
+      .selectFrom('app.possessions')
+      .selectAll()
+      .where('ownerUserid', '=', userId)
+      .orderBy('id')
+      .execute();
+    return rows.map(toPossession);
+  },
+
   // Moves many possessions at once. Returns the ids that belonged to the owner and were moved.
   async move(
     handle: DbHandle,
