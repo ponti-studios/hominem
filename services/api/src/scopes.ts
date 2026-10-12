@@ -7,6 +7,7 @@ export const MCP_SCOPES = [
   'collections:read',
   'collections:write',
   'finance:read',
+  'finance:write',
   'health:read',
   'media:read',
   'memory:read',

@@ -3,9 +3,15 @@ import {
   FINANCE_TRANSACTION_ENTITY_TYPE,
   getMonthlyStatsByContract,
   getTopMerchantsByContract,
+  importSheetTransactions,
+  listFinanceCategories,
   queryAnalyticsTransactionsByContract,
   summarizeCurrencies,
+  upsertSheetTransaction,
+  type SheetTransactionInput,
 } from '@hominem/finance-services';
+
+export type { SheetTransactionInput };
 
 // queryAnalyticsTransactionsByContract's own cap; also the ceiling documented in REPORT_CAVEAT.
 const MAX_ANALYTICS_TRANSACTIONS = 200;
@@ -232,4 +238,44 @@ export async function searchTransactions(userId: string, input: TransactionSearc
     filteredCount: Number(filteredRow?.count ?? 0),
     totalUserCount: Number(totalRow?.count ?? 0),
   };
+}
+
+// ── Sheet mirror import (finance_transaction_upsert / finance_transactions_import) ──
+
+export async function upsertFinanceTransaction(
+  ownerUserId: string,
+  input: SheetTransactionInput & {
+    accountMap?: Record<string, string>;
+    multiCurrencyAccounts?: string[];
+  },
+) {
+  const { accountMap, multiCurrencyAccounts, ...row } = input;
+  try {
+    const result = await upsertSheetTransaction(ownerUserId, row, accountMap, {
+      multiCurrencyAccounts,
+    });
+    return { id: result.id, created: result.created, accountId: result.accountId };
+  } catch (error) {
+    if (error instanceof Error) throw new Error(error.message);
+    throw error;
+  }
+}
+
+export async function importFinanceTransactions(
+  ownerUserId: string,
+  options: {
+    transactions: SheetTransactionInput[];
+    mode?: 'append' | 'replace';
+    dryRun?: boolean;
+    accountMap?: Record<string, string>;
+    multiCurrencyAccounts?: string[];
+    iUnderstand?: boolean;
+  },
+) {
+  return importSheetTransactions(ownerUserId, options);
+}
+
+export async function listFinanceCategoryOptions(ownerUserId: string) {
+  const categories = await listFinanceCategories(ownerUserId);
+  return { categories, count: categories.length };
 }

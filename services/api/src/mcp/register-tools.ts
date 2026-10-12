@@ -16,7 +16,7 @@ async function registerAll(): Promise<void> {
   if (isEnabled('collections:read', 'collections:write')) {
     imports.push(import('./tools/collections'));
   }
-  if (isEnabled('finance:read')) imports.push(import('./tools/finance'));
+  if (isEnabled('finance:read', 'finance:write')) imports.push(import('./tools/finance'));
   if (isEnabled('health:read')) imports.push(import('./tools/health'));
   if (isEnabled('media:read')) imports.push(import('./tools/media'));
   if (isEnabled('memory:read', 'memory:write')) imports.push(import('./tools/memory'));
