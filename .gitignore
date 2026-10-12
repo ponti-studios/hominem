@@ -96,3 +96,6 @@ tmp/
 .worktrees/
 .claude/settings.local.json
 debug-storybook.log
+
+# generated eval cost reports
+services/ori/eval-costs/
