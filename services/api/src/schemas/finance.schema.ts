@@ -464,3 +464,99 @@ export const financeBudgetBreakdownOutputSchema = z.object({
   savingsCents: z.number().int(),
   unallocatedCents: z.number().int(),
 });
+
+// -- finance_categories --
+
+export const financeCategoriesInputSchema = z.object({});
+
+export const financeCategoriesOutputSchema = z.object({
+  categories: z.array(z.object({ id: z.string(), name: z.string() })),
+  count: z.number().int().min(0),
+});
+
+// -- finance_transaction_upsert --
+
+const sheetTransactionPayloadSchema = z.object({
+  postedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).'),
+  account: z.string().min(1).describe('Sheet Bank label or a Hominem account id.'),
+  description: z.string().min(1).describe('Merchant text.'),
+  amountCents: z.number().int().describe('Signed cents; negative = outflow.'),
+  currencyCode: z.string().min(3).max(3).describe('ISO-4217 code.'),
+  category: z
+    .string()
+    .nullable()
+    .optional()
+    .describe('Sheet Category name; blank/unknown → Uncategorized.'),
+  tags: z.array(z.string()).optional().describe('Sheet Tags; comma-separated values also split.'),
+  notes: z.string().max(2000).nullable().optional().describe('Sheet Notes.'),
+  orderNumber: z.string().nullable().optional().describe('Sheet Order #; appended into notes.'),
+  source: z.string().nullable().optional().describe('plaid | starling | manual; unknown → manual.'),
+  excluded: z.boolean().default(false),
+  recurring: z.boolean().default(false).describe('Sheet Recurring? column.'),
+  transactionType: z.enum(['debit', 'credit', 'transfer']).optional(),
+  pending: z
+    .boolean()
+    .default(false)
+    .describe('v1 has no pending state — pending rows are rejected loudly.'),
+});
+
+const multiCurrencyAccountsSchema = z
+  .array(z.string().min(1))
+  .default([])
+  .describe('Sheet labels or account ids exempt from the currency sanity check.');
+
+export const financeTransactionUpsertInputSchema = sheetTransactionPayloadSchema.extend({
+  accountMap: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe('Explicit { "Sheet Label": "hominem-account-id" } overrides.'),
+  multiCurrencyAccounts: multiCurrencyAccountsSchema,
+});
+
+export const financeTransactionUpsertOutputSchema = z.object({
+  id: z.string(),
+  created: z.boolean(),
+  accountId: z.string(),
+});
+
+// -- finance_transactions_import --
+
+export const financeTransactionsImportInputSchema = z.object({
+  transactions: z
+    .array(sheetTransactionPayloadSchema)
+    .min(1)
+    .max(1000)
+    .describe('Batch of sheet rows, in order, max 1000 per call.'),
+  mode: z.enum(['append', 'replace']).default('append'),
+  dryRun: z.boolean().default(false).describe('Validate and report without writing.'),
+  iUnderstand: z
+    .boolean()
+    .default(false)
+    .describe('Explicit confirmation for mode: "replace", which wipes the store first.'),
+  multiCurrencyAccounts: multiCurrencyAccountsSchema,
+  accountMap: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe('Explicit { "Sheet Label": "hominem-account-id" } overrides.'),
+});
+
+const sheetRejectionReasonSchema = z.enum([
+  'unknown_account',
+  'currency_mismatch',
+  'invalid_posted_on',
+  'invalid_amount',
+  'invalid_currency',
+  'invalid_description',
+  'pending_row',
+]);
+
+export const financeTransactionsImportOutputSchema = z.object({
+  received: z.number().int().min(0),
+  upserted: z.number().int().min(0),
+  created: z.number().int().min(0),
+  updated: z.number().int().min(0),
+  rejected: z.array(
+    z.object({ index: z.number().int().min(0), reason: sheetRejectionReasonSchema }),
+  ),
+  accountsAutoProvisioned: z.array(z.string()),
+});

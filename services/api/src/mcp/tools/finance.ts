@@ -11,14 +11,19 @@ import {
   getMonthlyStatsReport,
   getTagBreakdownReport,
   getTopMerchantsReport,
+  importFinanceTransactions,
   isUuid,
+  listFinanceCategoryOptions,
   searchTransactions,
+  upsertFinanceTransaction,
 } from '../../application/finance.service';
 import {
   financeAccountsInputSchema,
   financeAccountsOutputSchema,
   financeBudgetBreakdownInputSchema,
   financeBudgetBreakdownOutputSchema,
+  financeCategoriesInputSchema,
+  financeCategoriesOutputSchema,
   financeMonthlyStatsInputSchema,
   financeMonthlyStatsOutputSchema,
   financeNetWorthInputSchema,
@@ -35,6 +40,10 @@ import {
   financeTopMerchantsOutputSchema,
   financeTransactionSearchInputSchema,
   financeTransactionSearchOutputSchema,
+  financeTransactionUpsertInputSchema,
+  financeTransactionUpsertOutputSchema,
+  financeTransactionsImportInputSchema,
+  financeTransactionsImportOutputSchema,
 } from '../../schemas/finance.schema';
 import { registerTool } from '../tool-registry';
 
@@ -402,4 +411,82 @@ registerTool(
     const unallocatedCents = remainderCents - savingsCents;
     return { needsCents, wantsCents, savingsCents, unallocatedCents };
   },
+);
+
+const financeWriteTool = {
+  readOnly: false as const,
+  scopes: ['finance:write'] as const,
+  destructive: false as const,
+  idempotent: true as const,
+  standaloneWrite: true as const,
+};
+
+registerTool(
+  {
+    ...financeWriteTool,
+    name: 'finance_categories',
+    title: 'Finance Categories',
+    description:
+      'List finance categories (id, name) for the authenticated user. Use to resolve sheet Category names before import.',
+    inputSchema: financeCategoriesInputSchema,
+    outputSchema: financeCategoriesOutputSchema,
+    readOnly: true,
+    scopes: ['finance:read'],
+    resultCap: 500,
+  },
+  async (ownerUserId) => listFinanceCategoryOptions(ownerUserId),
+);
+
+registerTool(
+  {
+    ...financeWriteTool,
+    name: 'finance_transaction_upsert',
+    title: 'Finance Transaction Upsert',
+    description:
+      'Upsert a single finance transaction. Idempotent on the natural key (postedOn, account, description, amountCents, currencyCode). Unknown accounts are rejected, never auto-created.',
+    inputSchema: financeTransactionUpsertInputSchema,
+    outputSchema: financeTransactionUpsertOutputSchema,
+    resultCap: 1,
+    guidance: {
+      whenToUse: 'Pushing one sheet row or correcting a single transaction.',
+      whenNotToUse: 'Do not invent account labels; resolve them via finance_accounts first.',
+      dependencies: [
+        { tool: 'finance_accounts', reason: 'resolve the account id', provides: ['id'] },
+      ],
+    },
+  },
+  async (ownerUserId, input) => upsertFinanceTransaction(ownerUserId, input),
+);
+
+registerTool(
+  {
+    ...financeWriteTool,
+    destructive: true,
+    requiresConfirmation: true,
+    name: 'finance_transactions_import',
+    title: 'Finance Transactions Import',
+    description:
+      'Batch upsert for backfill and daily deltas (max 1000 per call). Mode append adds/updates; mode replace wipes the finance store first. dryRun validates without writing. Per-row rejections never fail the batch.',
+    inputSchema: financeTransactionsImportInputSchema,
+    outputSchema: financeTransactionsImportOutputSchema,
+    resultCap: 1000,
+    guidance: {
+      whenToUse: 'Backfilling sheet history or pushing daily deltas.',
+      whenNotToUse: 'Do not use mode replace without explicit confirmation.',
+      dependencies: [
+        { tool: 'finance_accounts', reason: 'build the sheet-label map', provides: ['id'] },
+      ],
+    },
+    preview: async (_ownerUserId, input) => {
+      const parsed = financeTransactionsImportInputSchema.safeParse(input);
+      if (!parsed.success) return null;
+      if (parsed.data.mode !== 'replace') return null;
+      return {
+        mode: 'replace',
+        count: parsed.data.transactions.length,
+        dryRun: parsed.data.dryRun,
+      };
+    },
+  },
+  async (ownerUserId, input) => importFinanceTransactions(ownerUserId, input),
 );

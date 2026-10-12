@@ -327,13 +327,18 @@ describe('mcp server transport', () => {
     }
   });
 
-  it('requires only finance:read for finance tools', () => {
+  it('scopes finance read tools to finance:read and write tools to finance:write', () => {
     const financeTools = listTools().filter((tool) => tool.name.startsWith('finance_'));
 
     expect(financeTools).not.toHaveLength(0);
+    const readTools = financeTools.filter((tool) => tool.readOnly);
+    const writeTools = financeTools.filter((tool) => !tool.readOnly);
+    expect(readTools.length).toBeGreaterThan(0);
+    expect(writeTools.length).toBeGreaterThan(0);
     expect(
-      financeTools.every((tool) => tool.scopes.length === 1 && tool.scopes[0] === 'finance:read'),
+      readTools.every((tool) => tool.scopes.length === 1 && tool.scopes[0] === 'finance:read'),
     ).toBe(true);
+    expect(writeTools.every((tool) => tool.scopes.includes('finance:write'))).toBe(true);
   });
 
   it('invokes a career tool with a scoped MCP token', async () => {
