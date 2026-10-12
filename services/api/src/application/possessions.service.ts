@@ -4,6 +4,9 @@ import {
   ContainerRepository,
   PossessionRepository,
   type ContainerRecord,
+  type Json,
+  type PossessionEvent,
+  type PossessionEventKind,
   type PossessionRecord,
   type PossessionSummary,
 } from '@hominem/db/possessions';
@@ -22,6 +25,46 @@ import type {
 // The single implementation behind the possessions routes. Writes that validate a reference
 // (container ownership, nesting cycles) run in a transaction so a rejection leaves nothing behind.
 
+// Every possession write records one history event in the same transaction, so the audit log
+// can never drift from the rows. Hard deletes cascade their events away, so DELETE emits nothing.
+const toJson = (value: unknown): Json => JSON.parse(JSON.stringify(value ?? null));
+
+const definedFields = (input: Record<string, unknown>): Record<string, Json> => {
+  const fields: Record<string, Json> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (value !== undefined) fields[key] = toJson(value);
+  }
+  return fields;
+};
+
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+const changedFields = (
+  before: PossessionRecord,
+  after: PossessionRecord,
+  keys: string[],
+): Record<string, Json> => {
+  const beforeMap = new Map(Object.entries(before));
+  const afterMap = new Map(Object.entries(after));
+  const diff: Record<string, Json> = {};
+  for (const key of keys) {
+    const pair = { before: toJson(beforeMap.get(key)), after: toJson(afterMap.get(key)) };
+    if (!sameJson(pair.before, pair.after)) diff[key] = pair;
+  }
+  return diff;
+};
+
+const classifyUpdate = (
+  before: PossessionRecord,
+  after: PossessionRecord,
+  input: PossessionUpdateInput,
+): PossessionEventKind => {
+  if (!before.isArchived && after.isArchived) return 'archived';
+  if (input.status !== undefined && before.status !== after.status) return 'status_changed';
+  if (input.containerId !== undefined && before.containerId !== after.containerId) return 'moved';
+  return 'updated';
+};
+
 export async function listPossessions(
   userId: string,
   query: PossessionListQuery,
@@ -39,14 +82,36 @@ export const createPossession = (
   userId: string,
   input: PossessionCreateInput,
 ): Promise<PossessionRecord> =>
-  runInTransaction((trx) => PossessionRepository.create(trx, userId, input));
+  runInTransaction(async (trx) => {
+    const saved = await PossessionRepository.create(trx, userId, input);
+    await PossessionRepository.recordEvent(trx, userId, saved.id, 'created', {
+      after: definedFields(input),
+    });
+    return saved;
+  });
 
 export const updatePossession = (
   userId: string,
   id: string,
   input: PossessionUpdateInput,
 ): Promise<PossessionRecord> =>
-  runInTransaction((trx) => PossessionRepository.update(trx, userId, id, input));
+  runInTransaction(async (trx) => {
+    const before =
+      (await PossessionRepository.get(trx, userId, id)) ??
+      (() => {
+        throw new NotFoundError('Possession');
+      })();
+    const after = await PossessionRepository.update(trx, userId, id, input);
+    const diff = changedFields(before, after, Object.keys(input));
+    await PossessionRepository.recordEvent(
+      trx,
+      userId,
+      id,
+      classifyUpdate(before, after, input),
+      diff,
+    );
+    return after;
+  });
 
 export const removePossession = (userId: string, id: string): Promise<void> =>
   PossessionRepository.remove(db, userId, id);
@@ -110,10 +175,29 @@ export const movePossessions = (
   containerId: string | null,
 ): Promise<{ moved: string[]; missing: string[] }> =>
   runInTransaction(async (trx) => {
-    const moved = await PossessionRepository.move(trx, userId, [...new Set(ids)], containerId);
+    const unique = [...new Set(ids)];
+    const before = new Map(
+      (await PossessionRepository.listByIds(trx, userId, unique)).map((p) => [p.id, p]),
+    );
+    const moved = await PossessionRepository.move(trx, userId, unique, containerId);
+    for (const id of moved) {
+      const was = before.get(id)?.containerId ?? null;
+      if (was !== containerId) {
+        await PossessionRepository.recordEvent(trx, userId, id, 'moved', {
+          before: { containerId: was },
+          after: { containerId },
+        });
+      }
+    }
     const movedSet = new Set(moved);
-    return { moved, missing: [...new Set(ids)].filter((id) => !movedSet.has(id)) };
+    return { moved, missing: unique.filter((id) => !movedSet.has(id)) };
   });
+
+export const getPossessionHistory = (
+  userId: string,
+  id: string,
+  limit: number,
+): Promise<PossessionEvent[]> => PossessionRepository.history(db, userId, id, limit);
 
 export const updatePossessionOrNull = (userId: string, id: string, input: PossessionUpdateInput) =>
   orNull('Possession not found', () => updatePossession(userId, id, input));
@@ -125,12 +209,29 @@ export interface UpsertResult {
 }
 
 // The migration primitive: create-or-update keyed on externalId, so re-running an import
-// updates rows in place instead of duplicating them.
+// updates rows in place instead of duplicating them. A no-change re-run emits no event, so
+// the idempotency check (re-import creates nothing new) leaves history untouched too.
 export async function upsertPossession(userId: string, input: UpsertInput): Promise<UpsertResult> {
   return runInTransaction(async (trx) => {
     const existing = await PossessionRepository.getByExternalId(trx, userId, input.externalId);
     const saved = await PossessionRepository.upsertByExternalId(trx, userId, input);
-    return { id: saved.id, created: existing === null };
+    if (existing === null) {
+      await PossessionRepository.recordEvent(trx, userId, saved.id, 'created', {
+        after: definedFields(input),
+      });
+      return { id: saved.id, created: true };
+    }
+    const diff = changedFields(existing, saved, Object.keys(input));
+    if (Object.keys(diff).length > 0) {
+      await PossessionRepository.recordEvent(
+        trx,
+        userId,
+        saved.id,
+        classifyUpdate(existing, saved, input),
+        diff,
+      );
+    }
+    return { id: saved.id, created: false };
   });
 }
 

@@ -8,6 +8,7 @@ import {
   getContainerImpact,
   getContainerContents,
   getPossession,
+  getPossessionHistory,
   movePossessions,
   removeContainerIfExists,
   removePossessionIfExists,
@@ -29,6 +30,8 @@ import {
   containerUpsertSchema,
   possessionBulkUpsertSchema,
   possessionCreateSchema,
+  possessionEventSchema,
+  possessionHistoryInputSchema,
   possessionIdParamSchema,
   possessionMcpUpdateSchema,
   possessionMoveSchema,
@@ -115,6 +118,28 @@ registerTool(
     },
   },
   async (ownerUserId, input) => ({ possession: await getPossession(ownerUserId, input.id) }),
+);
+
+registerTool(
+  {
+    ...readTool,
+    name: 'possession_history',
+    title: 'Possession history',
+    description:
+      'Returns the append-only audit log for one possession, newest first: creations, updates, ' +
+      'moves, status changes, and archivals with the fields that changed.',
+    inputSchema: possessionHistoryInputSchema,
+    outputSchema: z.object({ events: z.array(possessionEventSchema) }),
+    resultCap: 100,
+    guidance: {
+      whenToUse: 'Asking "what changed on X" or auditing an item.',
+      whenNotToUse: 'Do not invent a possession id.',
+      dependencies: [possessionLookup],
+    },
+  },
+  async (ownerUserId, input) => ({
+    events: await getPossessionHistory(ownerUserId, input.id, input.limit),
+  }),
 );
 
 registerTool(

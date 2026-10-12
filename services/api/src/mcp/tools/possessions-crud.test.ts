@@ -283,6 +283,17 @@ describe('possessions', () => {
     });
     await callTool(alice, 'container_delete', { id: cup.id });
   });
+
+  it('reads the audit log newest-first', async () => {
+    const item = await newPossession(alice, { name: 'Logged lamp', status: 'owned' });
+    await callTool(alice, 'possession_update', { id: item.id, data: { status: 'in_use' } });
+    const { events } = await call<{
+      events: Array<{ kind: string; possessionId: string; actor: string }>;
+    }>(alice, 'possession_history', { id: item.id });
+    expect(events.map((e) => e.kind)).toEqual(['status_changed', 'created']);
+    expect(events[0]).toMatchObject({ possessionId: item.id, actor: alice });
+    await callTool(alice, 'possession_delete', { id: item.id });
+  });
 });
 
 describe('container discovery and delete preview', () => {

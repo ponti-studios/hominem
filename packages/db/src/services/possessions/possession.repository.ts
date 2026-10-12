@@ -2,7 +2,12 @@ import { sql, type Selectable, type Updateable } from 'kysely';
 
 import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
-import type { AppPossessionContainers, AppPossessions, Json } from '../../types/database';
+import type {
+  AppPossessionContainers,
+  AppPossessionEvents,
+  AppPossessions,
+  Json,
+} from '../../types/database';
 
 type PossessionRow = Selectable<AppPossessions>;
 type ContainerRow = Selectable<AppPossessionContainers>;
@@ -321,6 +326,42 @@ export interface PossessionSummary {
   }>;
 }
 
+export const POSSESSION_EVENT_KINDS = [
+  'created',
+  'updated',
+  'moved',
+  'status_changed',
+  'archived',
+  'deleted',
+] as const;
+export type PossessionEventKind = (typeof POSSESSION_EVENT_KINDS)[number];
+
+export interface PossessionEvent {
+  id: string;
+  possessionId: string;
+  at: string;
+  actor: string;
+  kind: PossessionEventKind;
+  diff: Record<string, unknown>;
+}
+
+function parseEventKind(value: string): PossessionEventKind {
+  const kind = POSSESSION_EVENT_KINDS.find((candidate) => candidate === value);
+  if (kind) return kind;
+  throw new ValidationError(`Invalid possession event kind: ${value}`, { kind: value });
+}
+
+function toEvent(row: Selectable<AppPossessionEvents>): PossessionEvent {
+  return {
+    id: row.id,
+    possessionId: row.possessionId,
+    at: iso(row.at),
+    actor: row.actor,
+    kind: parseEventKind(row.kind),
+    diff: toObject(row.diff),
+  };
+}
+
 export interface ListContainersInput {
   parentContainerId?: string;
   query?: string;
@@ -389,6 +430,50 @@ export const PossessionRepository = {
       .where('externalId', '=', externalId)
       .executeTakeFirst();
     return row ? toPossession(row) : null;
+  },
+
+  async listByIds(handle: DbHandle, userId: string, ids: string[]): Promise<PossessionRecord[]> {
+    if (ids.length === 0) return [];
+    const rows = await handle
+      .selectFrom('app.possessions')
+      .selectAll()
+      .where('ownerUserid', '=', userId)
+      .where('id', 'in', ids)
+      .execute();
+    return rows.map(toPossession);
+  },
+
+  async recordEvent(
+    handle: DbHandle,
+    userId: string,
+    possessionId: string,
+    kind: PossessionEventKind,
+    diff: Record<string, Json>,
+  ): Promise<PossessionEvent> {
+    const row = await handle
+      .insertInto('app.possessionEvents')
+      .values({ ownerUserid: userId, possessionId, actor: userId, kind, diff })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return toEvent(row);
+  },
+
+  async history(
+    handle: DbHandle,
+    userId: string,
+    possessionId: string,
+    limit: number,
+  ): Promise<PossessionEvent[]> {
+    const rows = await handle
+      .selectFrom('app.possessionEvents')
+      .selectAll()
+      .where('ownerUserid', '=', userId)
+      .where('possessionId', '=', possessionId)
+      .orderBy('at', 'desc')
+      .orderBy('id', 'desc')
+      .limit(limit)
+      .execute();
+    return rows.map(toEvent);
   },
 
   // Moves many possessions at once. Returns the ids that belonged to the owner and were moved.

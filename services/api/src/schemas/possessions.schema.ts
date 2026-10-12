@@ -146,6 +146,20 @@ export const bulkUpsertResultSchema = z.object({
     }),
   ),
 });
+export const possessionEventSchema = z.object({
+  id: z.uuid(),
+  possessionId: z.uuid(),
+  at: z.string(),
+  actor: z.string(),
+  kind: z.enum(['created', 'updated', 'moved', 'status_changed', 'archived', 'deleted']),
+  diff: z.record(z.string(), z.unknown()),
+});
+export const possessionHistoryInputSchema = possessionIdParamSchema.extend({
+  limit: z.number().int().min(1).max(100).optional().default(50),
+});
+export const possessionHistoryQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+});
 
 export const possessionRecordSchema = z.object({
   id: z.uuid(),

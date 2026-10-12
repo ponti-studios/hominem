@@ -877,6 +877,16 @@ export interface AppPossessionContainers {
   weightKg: Numeric | null;
 }
 
+export interface AppPossessionEvents {
+  actor: string;
+  at: Generated<ColumnType<string, Date | string, Date | string>>;
+  diff: Generated<Json>;
+  id: Generated<string>;
+  kind: string;
+  ownerUserid: string;
+  possessionId: string;
+}
+
 export interface AppPossessionImages {
   altText: string | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1412,6 +1422,7 @@ export interface DB {
   'app.placeVisits': AppPlaceVisits;
   'app.plaidItems': AppPlaidItems;
   'app.possessionContainers': AppPossessionContainers;
+  'app.possessionEvents': AppPossessionEvents;
   'app.possessionImages': AppPossessionImages;
   'app.possessions': AppPossessions;
   'app.socialContacts': AppSocialContacts;

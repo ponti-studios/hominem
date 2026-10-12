@@ -7,8 +7,10 @@ import {
   bulkUpsertPossessions,
   createContainer,
   createPossession,
+  getPossessionHistory,
   listContainers,
   listPossessions,
+  movePossessions,
   removeContainer,
   removePossession,
   updateContainer,
@@ -173,6 +175,28 @@ describe('upserts', () => {
     });
     expect(second).toMatchObject({ id: first.id, created: false });
     await removeContainer(alice, first.id);
+  });
+});
+
+describe('history', () => {
+  it('records created, status_changed, moved, and archived events in order', async () => {
+    const box = await createContainer(alice, { name: 'History box' });
+    const item = await createPossession(alice, { name: 'Heirloom', status: 'owned' });
+    await updatePossession(alice, item.id, { status: 'in_use' });
+    await movePossessions(alice, [item.id], box.id);
+    await updatePossession(alice, item.id, { isArchived: true });
+
+    const history = await getPossessionHistory(alice, item.id, 50);
+    expect(history.map((e) => e.kind)).toEqual(['archived', 'moved', 'status_changed', 'created']);
+    expect(history[0]).toMatchObject({ possessionId: item.id, actor: alice });
+    await removePossession(alice, item.id);
+    await removeContainer(alice, box.id);
+  });
+
+  it('isolates history by owner', async () => {
+    const item = await createPossession(alice, { name: 'Private history' });
+    expect(await getPossessionHistory(bob, item.id, 50)).toEqual([]);
+    await removePossession(alice, item.id);
   });
 });
 

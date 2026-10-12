@@ -5,6 +5,7 @@ import {
   bulkUpsertPossessions,
   createContainer,
   createPossession,
+  getPossessionHistory,
   listContainers,
   listPossessions,
   removeContainer,
@@ -20,6 +21,7 @@ import {
   containerUpsertSchema,
   possessionBulkUpsertSchema,
   possessionCreateSchema,
+  possessionHistoryQuerySchema,
   possessionIdParamSchema,
   possessionListQuerySchema,
   possessionUpdateSchema,
@@ -81,6 +83,18 @@ export const possessionsRoutes = new Hono<AppContext>()
       const userId = c.get('auth')!.userId;
       const { id } = c.req.valid('param');
       return c.json({ possession: await updatePossession(userId, id, c.req.valid('json')) });
+    },
+  )
+  .get(
+    '/:id/history',
+    zValidator('param', possessionIdParamSchema),
+    zValidator('query', possessionHistoryQuerySchema),
+    async (c) => {
+      const userId = c.get('auth')!.userId;
+      const { id } = c.req.valid('param');
+      return c.json({
+        events: await getPossessionHistory(userId, id, c.req.valid('query').limit),
+      });
     },
   )
   .delete('/:id', zValidator('param', possessionIdParamSchema), async (c) => {
