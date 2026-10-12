@@ -40,8 +40,9 @@ const parseNumber = (value: string | undefined): number | null => {
   return Number.isFinite(number) ? number : null;
 };
 
-// Ways an item leaves the inventory. All of them are "disposed" here; the wording is kept in metadata.
-const LEFT_INVENTORY = new Set(['sold', 'donated', 'gifted', 'lost', 'given_away']);
+// Ways an item leaves the inventory without a first-class status. donated and sold used to
+// be folded into disposed here; since the status enum grew them they map 1:1 instead.
+const LEFT_INVENTORY = new Set(['gifted', 'lost', 'given_away']);
 
 export function parseStatus(value: string | undefined): PossessionStatus | null {
   const text = clean(value)
@@ -89,7 +90,26 @@ export function mapPossessionRow(row: SheetRow): MappedPossession | null {
   const status = parseStatus(rawStatus ?? undefined);
   if (rawStatus && !status) warnings.push(`${externalId}: unknown status "${rawStatus}"`);
 
+  const numberOrWarn = (raw: string | undefined, label: string): number | null => {
+    const parsed = parseNumber(raw);
+    if (clean(raw) && parsed === null)
+      warnings.push(`${externalId}: ignoring ${label} "${raw?.trim()}"`);
+    return parsed;
+  };
+  const dateOrWarn = (raw: string | undefined, label: string): string | null => {
+    const parsed = parseIsoDate(raw);
+    if (clean(raw) && parsed === null)
+      warnings.push(`${externalId}: ignoring ${label} "${raw?.trim()}"`);
+    return parsed;
+  };
+
   const size = clean(row['size']);
+  const moveAction = clean(row['move_action']);
+  const priceCents = parseMoneyCents(row['purchase_price']);
+  const purchaseCurrency = inferCurrency(row['purchase_price'], row['purchase_currency']);
+  if (priceCents != null && purchaseCurrency == null) {
+    warnings.push(`${externalId}: price has no currency and none could be inferred`);
+  }
   return {
     externalId,
     containerExternalId: clean(row['container_id']),
@@ -102,24 +122,29 @@ export function mapPossessionRow(row: SheetRow): MappedPossession | null {
       brand: clean(row['brand']),
       model: clean(row['model']),
       status,
-      isArchived: status === 'disposed' || status === 'retired',
-      acquiredDate: parseIsoDate(row['acquired_date']),
-      retiredDate: parseIsoDate(row['retired_date']),
-      priceCents: parseMoneyCents(row['purchase_price']),
+      isArchived:
+        status === 'disposed' || status === 'retired' || status === 'donated' || status === 'sold',
+      acquiredDate: dateOrWarn(row['acquired_date'], 'acquired_date'),
+      retiredDate: dateOrWarn(row['retired_date'], 'retired_date'),
+      priceCents,
       sellPriceCents: parseMoneyCents(row['sale_price']),
-      currencyCode: inferCurrency(row['purchase_price'], row['purchase_currency']),
+      currencyCode: purchaseCurrency,
       color: clean(row['color']),
       size: size === '0' ? null : size,
       serialNumber: clean(row['serial_number']),
-      placement: clean(row['move_action']),
+      // The vessel token moved to moveAction; placement is explicitly cleared so a re-import
+      // retires the old convention instead of leaving a stale duplicate behind.
+      placement: null,
       url: clean(row['url']),
       notes: clean(row['notes']),
+      weightKg: numberOrWarn(row['weight_kg'], 'weight_kg'),
+      volumeCbm: numberOrWarn(row['vol_cbm'], 'vol_cbm'),
+      moveAction,
+      acquisitionType: clean(row['acquisition_type']),
+      purchaseCurrency,
+      retirementMethod: clean(row['retirement_method']),
+      ownershipType: clean(row['ownership_type']),
       metadata: compact({
-        weightKg: parseNumber(row['weight_kg']),
-        volumeCbm: parseNumber(row['vol_cbm']),
-        acquisitionType: clean(row['acquisition_type']),
-        ownershipType: clean(row['ownership_type']),
-        retirementMethod: clean(row['retirement_method']),
         originalStatus: rawStatus && rawStatus.toLowerCase() !== status ? rawStatus : null,
         importedFrom: 'possessions-sheet',
       }),
@@ -150,9 +175,9 @@ export function mapContainerRow(row: SheetRow): MappedContainer | null {
       currentLocation: clean(row['current_location']),
       weightKg: parseNumber(row['weight_kg']),
       volumeCbm: parseNumber(row['vol_cbm']),
+      trackingReference: clean(row['tracking_reference']),
       metadata: compact({
         sourceItemId: clean(row['source_item_id']),
-        trackingReference: clean(row['tracking_reference']),
         importedFrom: 'possessions-sheet',
       }),
     },
