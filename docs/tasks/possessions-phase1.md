@@ -1,6 +1,6 @@
 ---
 title: 'Possessions Phase 1 — sheet-parity fields, upserts, history, weight report, validate'
-status: 'In progress'
+status: 'Implemented'
 priority: 'high'
 labels: [possessions, mcp]
 depends_on: []
