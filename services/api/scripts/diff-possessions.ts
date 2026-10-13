@@ -10,8 +10,11 @@
  * Reads `master.csv` and `containers.csv` (the Google Sheet tab exports), resolves the
  * owner by email, and prints, scoped to that owner:
  *   - sheet items/containers missing from Hominem (the candidate backlog to import),
- *   - existing rows whose mapped sheet values differ from the live record (the fields an
- *     import would overwrite — the "live data wins" review surface),
+ *   - existing possessions and containers whose mapped sheet values differ from the live
+ *     record (the fields an import would overwrite, including parent links — the
+ *     "live data wins" review surface),
+ *   - item/parent references to a sheet-only container as pending link changes (the
+ *     importer creates the container in the same run),
  *   - Hominem-only records absent from the sheet (reconcile — keep unless told otherwise),
  *   - item container references that resolve nowhere (the CON-036 orphan class),
  *   - references to a container the sheet lacks but Hominem has (the CON-024 class),
@@ -28,6 +31,8 @@ import { db } from '@hominem/db/core';
 import {
   ContainerRepository,
   PossessionRepository,
+  type ContainerInput,
+  type ContainerRecord,
   type PossessionInput,
   type PossessionRecord,
 } from '@hominem/db/possessions';
@@ -116,12 +121,21 @@ async function main() {
   const sheetPossessionIds = new Set(possessions.map((p) => p.externalId));
   const sheetContainerIds = new Set(containers.map((c) => c.externalId));
   // Resolution mirroring import-possessions.ts: the live registry first, then sheet
-  // containers (the importer upserts those and links against the result).
+  // containers (the importer upserts those and links against the result within the run).
   const containerIdByExternalId = new Map<string, string>();
   for (const c of liveContainers) if (c.externalId) containerIdByExternalId.set(c.externalId, c.id);
 
-  const resolveContainerRef = (externalId: string | null): string | null =>
-    externalId ? (containerIdByExternalId.get(externalId) ?? null) : null;
+  // A ref to a sheet-only container is not "resolves nowhere": the importer creates the
+  // container in the same run and links against it, so it is a pending link change.
+  const resolveLink = (
+    externalId: string | null,
+  ): { id: string | null; pending: string | null } => {
+    if (!externalId) return { id: null, pending: null };
+    const id = containerIdByExternalId.get(externalId);
+    if (id) return { id, pending: null };
+    if (sheetContainerIds.has(externalId)) return { id: null, pending: externalId };
+    return { id: null, pending: null };
+  };
 
   const missingItems = possessions.filter((p) => !livePossessionIds.has(p.externalId));
   const missingContainers = containers.filter((c) => !liveContainerIds.has(c.externalId));
@@ -191,14 +205,48 @@ async function main() {
     for (const field of DELTA_FIELDS) {
       if (!same(input[field], live[field])) changed.push(field);
     }
-    if (!same(resolveContainerRef(possession.containerExternalId), live.containerId))
-      changed.push('containerId');
+    const link = resolveLink(possession.containerExternalId);
+    if (link.pending) changed.push(`containerId (pending link to ${link.pending})`);
+    else if (!same(link.id, live.containerId)) changed.push('containerId');
     if (JSON.stringify(input.metadata ?? {}) !== JSON.stringify(live.metadata ?? {}))
       changed.push('metadata');
     if (changed.length)
       modifiedRows.push({ externalId: possession.externalId, name: live.name, changed });
   }
   modifiedRows.sort((a, b) => a.externalId.localeCompare(b.externalId));
+
+  // Existing containers the importer will overwrite, field by field, including the parent
+  // link (a sheet-only parent is a pending link; an empty parent clears the live parent).
+  const CONTAINER_DELTA_FIELDS = [
+    'name',
+    'containerType',
+    'containerKind',
+    'status',
+    'description',
+    'currentLocation',
+    'weightKg',
+    'volumeCbm',
+    'trackingReference',
+  ] as const satisfies ReadonlyArray<keyof ContainerInput & keyof ContainerRecord>;
+  const liveContainerById = new Map(liveContainers.map((c) => [c.externalId, c]));
+  const modifiedContainers: Array<{ externalId: string; name: string; changed: string[] }> = [];
+  for (const container of containers) {
+    const live = container.externalId ? liveContainerById.get(container.externalId) : undefined;
+    if (!live) continue;
+    const input = container.input;
+    const changed: string[] = [];
+    for (const field of CONTAINER_DELTA_FIELDS) {
+      if (!same(input[field], live[field])) changed.push(field);
+    }
+    if (JSON.stringify(input.metadata ?? {}) !== JSON.stringify(live.metadata ?? {}))
+      changed.push('metadata');
+    const parent = resolveLink(container.parentExternalId);
+    if (parent.pending) changed.push(`parentContainerId (pending link to ${parent.pending})`);
+    else if (!same(parent.id, live.parentContainerId)) changed.push('parentContainerId');
+    if (changed.length)
+      modifiedContainers.push({ externalId: container.externalId, name: live.name, changed });
+  }
+  modifiedContainers.sort((a, b) => a.externalId.localeCompare(b.externalId));
 
   console.log(`User: ${user.email}`);
   console.log(`Sheet: ${possessions.length} items, ${containers.length} containers`);
@@ -211,11 +259,16 @@ async function main() {
   for (const c of missingContainers) console.log(`    ${c.externalId} — ${c.input.name}`);
 
   console.log(`\n== Will modify existing rows (fields the import overwrites) ==`);
-  console.log(`  rows with field deltas: ${modifiedRows.length}`);
+  console.log(`  possessions: ${modifiedRows.length}`);
   for (const row of modifiedRows.slice(0, 20))
     console.log(`    ${row.externalId} — ${row.name}: ${row.changed.join(', ')}`);
   if (modifiedRows.length > 20)
     console.log(`    … and ${modifiedRows.length - 20} more (full list in diff-report.json)`);
+  console.log(`  containers: ${modifiedContainers.length}`);
+  for (const row of modifiedContainers.slice(0, 20))
+    console.log(`    ${row.externalId} — ${row.name}: ${row.changed.join(', ')}`);
+  if (modifiedContainers.length > 20)
+    console.log(`    … and ${modifiedContainers.length - 20} more (full list in diff-report.json)`);
 
   console.log(`\n== Hominem-only (in Hominem, absent from sheet) — keep unless told otherwise ==`);
   console.log(`  containers: ${hominemOnlyContainers.length}`);
@@ -245,6 +298,7 @@ async function main() {
     resolvesOnlyInHominem: resolvesOnlyInHominem.map((r) => `${r.item}->${r.container}`),
     nextCon,
     modifiedRows,
+    modifiedContainers,
   };
   writeFileSync(join(dir, 'diff-report.json'), JSON.stringify(mapped, null, 2));
   console.log(
