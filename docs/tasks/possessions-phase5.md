@@ -56,6 +56,8 @@ plan.
   exports — 0 to import, 0 possession deltas, 0 container deltas; live 460 possessions /
   42 containers (incl. CON-036); Hominem-only records as expected (CON-024, CON-040,
   CON-042, CON-036).
-- **Blocker**: W-223–W-225 await the chosen freeze evening (user action in Drive + notes).
+- **W-223 done (freeze evening, 2026-10-13)**: sheet confirmed unchanged since the 14:41
+  export, so that diff is the freeze snapshot — 0/0/0.
+- **Blocker**: W-224–W-225 await the read-only Drive copy (user action in Drive + notes).
 - Repo doc sweep: no durable doc treats the sheet as source of truth (only the possessions
   migration task docs + plan PDF reference it, as history).
