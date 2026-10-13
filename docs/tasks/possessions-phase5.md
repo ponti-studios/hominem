@@ -1,6 +1,6 @@
 ---
 title: 'Possessions Phase 5 — cutover (sheet frozen, Hominem canonical)'
-status: 'Blocked'
+status: 'Implemented'
 priority: 'high'
 labels: [possessions]
 depends_on: [possessions-phase3.md]
@@ -56,6 +56,11 @@ plan.
   exports — 0 to import, 0 possession deltas, 0 container deltas; live 460 possessions /
   42 containers (incl. CON-036); Hominem-only records as expected (CON-024, CON-040,
   CON-042, CON-036).
-- **Blocker**: W-223–W-225 await the chosen freeze evening (user action in Drive + notes).
+- **W-223 done (freeze evening, 2026-10-13)**: sheet confirmed unchanged since the 14:41
+  export, so that diff is the freeze snapshot — 0/0/0.
+- **W-224 done (2026-10-13)**: sheet frozen as a dated read-only Drive copy (per Q4 the
+  frozen copy stays in Drive, not the repo, so there is no in-repo reference).
+- **W-225 done (2026-10-13)**: column-position map retired; operating notes repointed at
+  the Hominem tools.
 - Repo doc sweep: no durable doc treats the sheet as source of truth (only the possessions
   migration task docs + plan PDF reference it, as history).
