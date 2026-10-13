@@ -236,6 +236,116 @@ describe('possessions', () => {
     expect(summary.valueByCurrency.find((v) => v.currencyCode === 'USD')?.priceCents).toBe(1500);
     expect(summary.valueByCurrency.find((v) => v.currencyCode === 'GBP')?.priceCents).toBe(700);
   });
+
+  it('upserts idempotently by externalId, singly and in bulk', async () => {
+    const one = await call<{ id: string; created: boolean }>(alice, 'possession_upsert', {
+      externalId: 'ITM-MCP-1',
+      name: 'MCP lamp',
+      weightKg: 1.5,
+      moveAction: 'send my bag box 1',
+    });
+    expect(one.created).toBe(true);
+    const two = await call<{ id: string; created: boolean }>(alice, 'possession_upsert', {
+      externalId: 'ITM-MCP-1',
+      name: 'MCP lamp',
+      weightKg: 1.5,
+    });
+    expect(two).toEqual({ id: one.id, created: false });
+
+    const bulk = await call<{
+      results: Array<{
+        externalId: string;
+        id: string | null;
+        created: boolean;
+        error: string | null;
+      }>;
+    }>(alice, 'possession_bulk_upsert', {
+      items: [
+        { externalId: 'ITM-MCP-1', name: 'MCP lamp' },
+        { externalId: 'ITM-MCP-2', name: 'MCP chair', status: 'donated' },
+      ],
+    });
+    expect(bulk.results).toHaveLength(2);
+    expect(bulk.results.find((r) => r.externalId === 'ITM-MCP-2')).toMatchObject({
+      created: true,
+      error: null,
+    });
+
+    const cup = await call<{ id: string; created: boolean }>(alice, 'container_upsert', {
+      externalId: 'CON-MCP-1',
+      name: 'MCP crate',
+      trackingReference: 'T-1',
+    });
+    expect(cup.created).toBe(true);
+    await callTool(alice, 'possession_delete', { id: one.id });
+    await callTool(alice, 'possession_delete', {
+      id: bulk.results.find((r) => r.externalId === 'ITM-MCP-2')!.id!,
+    });
+    await callTool(alice, 'container_delete', { id: cup.id });
+  });
+
+  it('reads the audit log newest-first', async () => {
+    const item = await newPossession(alice, { name: 'Logged lamp', status: 'owned' });
+    await callTool(alice, 'possession_update', { id: item.id, data: { status: 'in_use' } });
+    const { events } = await call<{
+      events: Array<{ kind: string; possessionId: string; actor: string }>;
+    }>(alice, 'possession_history', { id: item.id });
+    expect(events.map((e) => e.kind)).toEqual(['status_changed', 'created']);
+    expect(events[0]).toMatchObject({ possessionId: item.id, actor: alice });
+    await callTool(alice, 'possession_delete', { id: item.id });
+  });
+
+  it('reports vessel weights with tare, limits, and ghost tokens flagged', async () => {
+    const box = await newContainer(alice, {
+      name: 'MCP Box 1',
+      tareKg: 1,
+      limitKg: 10,
+      vesselGroup: 'cabin',
+    });
+    const heavy = await newPossession(alice, {
+      name: 'MCP heavy',
+      weightKg: 2,
+      moveAction: 'mcp box 1',
+    });
+    const { report } = await call<{
+      report: {
+        vessels: Array<{
+          vessel: string;
+          contentsKg: number;
+          tareKg: number;
+          totalKg: number;
+          limitKg: number | null;
+          overLimit: boolean;
+          unknownVessel: boolean;
+        }>;
+        groups: Array<{ group: string; totalKg: number }>;
+      };
+    }>(alice, 'vessel_weight_report', {});
+    const row = report.vessels.find((v) => v.vessel === 'MCP Box 1')!;
+    expect(row).toMatchObject({
+      contentsKg: 2,
+      tareKg: 1,
+      totalKg: 3,
+      limitKg: 10,
+      overLimit: false,
+      unknownVessel: false,
+    });
+    expect(report.groups.find((g) => g.group === 'cabin')?.totalKg).toBe(3);
+    await callTool(alice, 'possession_delete', { id: heavy.id });
+    await callTool(alice, 'container_delete', { id: box.id });
+  });
+
+  it('lists integrity findings with severities', async () => {
+    const stray = await newPossession(alice, { name: 'Validate stray', status: 'owned' });
+    const { findings } = await call<{
+      findings: Array<{ code: string; severity: string; possessionId: string | null }>;
+    }>(alice, 'possession_validate', {});
+    const mine = findings.filter((f) => f.possessionId === stray.id).map((f) => f.code);
+    expect(mine).toContain('unplaced_item');
+    expect(mine).toContain('missing_weight');
+    expect(findings.every((f) => f.severity === 'error' || f.severity === 'warning')).toBe(true);
+    await callTool(alice, 'possession_delete', { id: stray.id });
+  });
 });
 
 describe('container discovery and delete preview', () => {

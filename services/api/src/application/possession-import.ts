@@ -40,8 +40,27 @@ const parseNumber = (value: string | undefined): number | null => {
   return Number.isFinite(number) ? number : null;
 };
 
-// Ways an item leaves the inventory. All of them are "disposed" here; the wording is kept in metadata.
-const LEFT_INVENTORY = new Set(['sold', 'donated', 'gifted', 'lost', 'given_away']);
+// Weights and volumes are physical: negatives are data errors, not values. Null means blank
+// (unknown); a present-but-unusable value (text, negative) is reported so the import report
+// can flag it instead of silently storing null.
+export function parseNonNegative(
+  value: string | undefined,
+  pushWarning: (message: string) => void,
+  label: string,
+): number | null {
+  const text = clean(value);
+  if (!text) return null;
+  const number = Number(text);
+  if (!Number.isFinite(number) || number < 0) {
+    pushWarning(`ignoring ${label} "${text}"`);
+    return null;
+  }
+  return number;
+}
+
+// Ways an item leaves the inventory without a first-class status. donated and sold used to
+// be folded into disposed here; since the status enum grew them they map 1:1 instead.
+const LEFT_INVENTORY = new Set(['gifted', 'lost', 'given_away']);
 
 export function parseStatus(value: string | undefined): PossessionStatus | null {
   const text = clean(value)
@@ -89,7 +108,22 @@ export function mapPossessionRow(row: SheetRow): MappedPossession | null {
   const status = parseStatus(rawStatus ?? undefined);
   if (rawStatus && !status) warnings.push(`${externalId}: unknown status "${rawStatus}"`);
 
+  const numberOrWarn = (raw: string | undefined, label: string): number | null =>
+    parseNonNegative(raw, (message) => warnings.push(`${externalId}: ${message}`), label);
+  const dateOrWarn = (raw: string | undefined, label: string): string | null => {
+    const parsed = parseIsoDate(raw);
+    if (clean(raw) && parsed === null)
+      warnings.push(`${externalId}: ignoring ${label} "${raw?.trim()}"`);
+    return parsed;
+  };
+
   const size = clean(row['size']);
+  const moveAction = clean(row['move_action']);
+  const priceCents = parseMoneyCents(row['purchase_price']);
+  const purchaseCurrency = inferCurrency(row['purchase_price'], row['purchase_currency']);
+  if (priceCents != null && purchaseCurrency == null) {
+    warnings.push(`${externalId}: price has no currency and none could be inferred`);
+  }
   return {
     externalId,
     containerExternalId: clean(row['container_id']),
@@ -102,24 +136,29 @@ export function mapPossessionRow(row: SheetRow): MappedPossession | null {
       brand: clean(row['brand']),
       model: clean(row['model']),
       status,
-      isArchived: status === 'disposed' || status === 'retired',
-      acquiredDate: parseIsoDate(row['acquired_date']),
-      retiredDate: parseIsoDate(row['retired_date']),
-      priceCents: parseMoneyCents(row['purchase_price']),
+      isArchived:
+        status === 'disposed' || status === 'retired' || status === 'donated' || status === 'sold',
+      acquiredDate: dateOrWarn(row['acquired_date'], 'acquired_date'),
+      retiredDate: dateOrWarn(row['retired_date'], 'retired_date'),
+      priceCents,
       sellPriceCents: parseMoneyCents(row['sale_price']),
-      currencyCode: inferCurrency(row['purchase_price'], row['purchase_currency']),
+      currencyCode: purchaseCurrency,
       color: clean(row['color']),
       size: size === '0' ? null : size,
       serialNumber: clean(row['serial_number']),
-      placement: clean(row['move_action']),
+      // The vessel token moved to moveAction; placement is explicitly cleared so a re-import
+      // retires the old convention instead of leaving a stale duplicate behind.
+      placement: null,
       url: clean(row['url']),
       notes: clean(row['notes']),
+      weightKg: numberOrWarn(row['weight_kg'], 'weight_kg'),
+      volumeCbm: numberOrWarn(row['vol_cbm'], 'vol_cbm'),
+      moveAction,
+      acquisitionType: clean(row['acquisition_type']),
+      purchaseCurrency,
+      retirementMethod: clean(row['retirement_method']),
+      ownershipType: clean(row['ownership_type']),
       metadata: compact({
-        weightKg: parseNumber(row['weight_kg']),
-        volumeCbm: parseNumber(row['vol_cbm']),
-        acquisitionType: clean(row['acquisition_type']),
-        ownershipType: clean(row['ownership_type']),
-        retirementMethod: clean(row['retirement_method']),
         originalStatus: rawStatus && rawStatus.toLowerCase() !== status ? rawStatus : null,
         importedFrom: 'possessions-sheet',
       }),
@@ -131,15 +170,20 @@ export interface MappedContainer {
   externalId: string;
   parentExternalId: string | null;
   input: ContainerInput & { externalId: string };
+  warnings: string[];
 }
 
 export function mapContainerRow(row: SheetRow): MappedContainer | null {
   const externalId = clean(row['container_id']);
   const name = clean(row['name']);
   if (!externalId || !name || !/^CON-\d+/i.test(externalId)) return null;
+  const warnings: string[] = [];
+  const numberOrWarn = (raw: string | undefined, label: string): number | null =>
+    parseNonNegative(raw, (message) => warnings.push(`${externalId}: ${message}`), label);
   return {
     externalId,
     parentExternalId: clean(row['parent_container_id']),
+    warnings,
     input: {
       externalId,
       name,
@@ -148,11 +192,11 @@ export function mapContainerRow(row: SheetRow): MappedContainer | null {
       status: clean(row['status']) ?? 'active',
       description: clean(row['notes']),
       currentLocation: clean(row['current_location']),
-      weightKg: parseNumber(row['weight_kg']),
-      volumeCbm: parseNumber(row['vol_cbm']),
+      weightKg: numberOrWarn(row['weight_kg'], 'weight_kg'),
+      volumeCbm: numberOrWarn(row['vol_cbm'], 'vol_cbm'),
+      trackingReference: clean(row['tracking_reference']),
       metadata: compact({
         sourceItemId: clean(row['source_item_id']),
-        trackingReference: clean(row['tracking_reference']),
         importedFrom: 'possessions-sheet',
       }),
     },

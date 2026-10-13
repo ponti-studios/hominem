@@ -5,10 +5,10 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { callTool, type McpToolResult } from '../tool-registry';
 import './finance';
 
-const userId = 'f2000000-0000-4000-8000-000000000001';
-const otherUserId = 'f2000000-0000-4000-8000-000000000002';
-const checkingId = 'f2000003-0000-4000-8000-000000000001';
-const gbpId = 'f2000003-0000-4000-8000-000000000002';
+const userId = 'f2000010-0000-4000-8000-000000000001';
+const otherUserId = 'f2000010-0000-4000-8000-000000000002';
+const checkingId = 'f2000011-0000-4000-8000-000000000001';
+const gbpId = 'f2000011-0000-4000-8000-000000000002';
 
 type Content = Record<string, unknown> & {
   categories?: Array<{ id: string; name: string }>;

@@ -61,12 +61,14 @@ describe('mapPossessionRow', () => {
       isArchived: false,
       priceCents: 22994,
       currencyCode: 'USD',
-      placement: 'ziploc_antique_electronics',
-    });
-    expect(mapped.input.metadata).toMatchObject({
+      purchaseCurrency: 'USD',
+      // The vessel token moved to moveAction; the old placement convention is retired.
+      placement: null,
+      moveAction: 'ziploc_antique_electronics',
       acquisitionType: 'purchased',
       ownershipType: 'functional',
     });
+    expect(mapped.input.metadata).toEqual({ importedFrom: 'possessions-sheet' });
   });
   it('archives disposed items and drops the meaningless size 0', () => {
     const mapped = mapPossessionRow({
@@ -78,17 +80,43 @@ describe('mapPossessionRow', () => {
     })!;
     expect(mapped.input.isArchived).toBe(true);
     expect(mapped.input.size).toBeNull();
-    expect(mapped.input.metadata).toMatchObject({ retirementMethod: 'discarded' });
+    expect(mapped.input.retirementMethod).toBe('discarded');
+    expect(mapped.input.metadata).toEqual({ importedFrom: 'possessions-sheet' });
   });
   it('skips debris rows and warns about unknown statuses', () => {
     expect(mapPossessionRow({ 'Column 1': '#REF!' })).toBeNull();
     expect(mapPossessionRow({ 'Column 1': 'Column 1', item_id: 'item_id' })).toBeNull();
     expect(mapPossessionRow({ ...docking, status: 'mystery' })!.warnings).toHaveLength(1);
   });
+  it('flags unparseable weights, dates, and currency-less prices', () => {
+    const mapped = mapPossessionRow({
+      ...docking,
+      'Column 1': 'ITM-0303',
+      weight_kg: 'heavy',
+      acquired_date: '10/06/2022',
+      purchase_price: '12',
+      purchase_currency: '',
+    })!;
+    expect(mapped.input.weightKg).toBeNull();
+    expect(mapped.input.acquiredDate).toBeNull();
+    expect(mapped.warnings).toHaveLength(3);
+  });
+  it('rejects negative weights instead of importing impossible mass', () => {
+    const mapped = mapPossessionRow({ ...docking, 'Column 1': 'ITM-0304', weight_kg: '-2' })!;
+    expect(mapped.input.weightKg).toBeNull();
+    expect(mapped.warnings).toHaveLength(1);
+    const container = mapContainerRow({
+      container_id: 'CON-008',
+      name: 'neg box',
+      weight_kg: '-1',
+    })!;
+    expect(container.input.weightKg).toBeNull();
+    expect(container.warnings).toHaveLength(1);
+  });
 });
 
 describe('mapContainerRow', () => {
-  it('maps nesting, weight and source item', () => {
+  it('maps nesting, weight and tracking reference', () => {
     const mapped = mapContainerRow({
       container_id: 'CON-007',
       name: 'pouch_camera',
@@ -98,12 +126,14 @@ describe('mapContainerRow', () => {
       source_item_id: 'ITM-0329',
       parent_container_id: 'CON-002',
       weight_kg: '2.322',
+      tracking_reference: 'SMB-1',
     })!;
     expect(mapped.parentExternalId).toBe('CON-002');
     expect(mapped.input).toMatchObject({
       name: 'pouch_camera',
       containerKind: 'organizational',
       weightKg: 2.322,
+      trackingReference: 'SMB-1',
     });
     expect(mapped.input.metadata).toMatchObject({ sourceItemId: 'ITM-0329' });
   });
@@ -119,8 +149,9 @@ describe('currency and status edge cases', () => {
     expect(inferCurrency('12', 'usd')).toBe('USD');
     expect(inferCurrency('12', '')).toBeNull();
   });
-  it('treats sold and donated as disposed and keeps the original word', () => {
-    expect(parseStatus('donated')).toBe('disposed');
+  it('keeps donated and sold as first-class archived statuses', () => {
+    expect(parseStatus('donated')).toBe('donated');
+    expect(parseStatus('gifted')).toBe('disposed');
     const mapped = mapPossessionRow({
       'Column 1': 'ITM-0009',
       item_id: 'TV',
@@ -128,11 +159,11 @@ describe('currency and status edge cases', () => {
       sale_price: '350',
     })!;
     expect(mapped.input).toMatchObject({
-      status: 'disposed',
+      status: 'sold',
       isArchived: true,
       sellPriceCents: 35000,
     });
-    expect(mapped.input.metadata).toMatchObject({ originalStatus: 'sold' });
+    expect(mapped.input.metadata).toEqual({ importedFrom: 'possessions-sheet' });
   });
 });
 

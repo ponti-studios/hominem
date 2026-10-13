@@ -101,7 +101,10 @@ async function main() {
   const missing = possessions.filter(
     (p) => p.containerExternalId && !knownContainers.has(p.containerExternalId),
   );
-  const warnings = possessions.flatMap((p) => p.warnings);
+  const warnings = [
+    ...containers.flatMap((c) => c.warnings),
+    ...possessions.flatMap((p) => p.warnings),
+  ];
   const byStatus = possessions.reduce<Record<string, number>>((acc, p) => {
     const key = p.input.status ?? 'none';
     acc[key] = (acc[key] ?? 0) + 1;
@@ -125,7 +128,7 @@ async function main() {
     const containerIds = new Map<string, string>();
     for (const container of containers) {
       const saved = await ContainerRepository.upsertByExternalId(trx, user.id, container.input);
-      containerIds.set(container.externalId, saved.id);
+      containerIds.set(container.externalId, saved.record.id);
     }
     // Parents need every container to exist first.
     for (const container of containers) {

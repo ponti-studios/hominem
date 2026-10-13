@@ -1,12 +1,14 @@
 import { z } from 'zod';
 
 import {
+  bulkUpsertPossessions,
   createContainer,
   createPossession,
   getContainer,
   getContainerImpact,
   getContainerContents,
   getPossession,
+  getPossessionHistory,
   movePossessions,
   removeContainerIfExists,
   removePossessionIfExists,
@@ -15,20 +17,34 @@ import {
   summarizePossessions,
   updateContainerOrNull,
   updatePossessionOrNull,
+  upsertContainer,
+  upsertPossession,
+  validatePossessions,
+  vesselWeightReport,
 } from '../../application/possessions.service';
 import {
+  bulkUpsertResultSchema,
   containerCreateSchema,
   containerSearchInputSchema,
   containerMcpUpdateSchema,
   containerMoveSchema,
   containerRecordSchema,
+  containerUpsertSchema,
+  possessionBulkUpsertSchema,
   possessionCreateSchema,
+  possessionEventSchema,
+  possessionHistoryInputSchema,
   possessionIdParamSchema,
   possessionMcpUpdateSchema,
   possessionMoveSchema,
   possessionRecordSchema,
   possessionSearchInputSchema,
   possessionSummarySchema,
+  possessionUpsertSchema,
+  possessionValidateInputSchema,
+  possessionValidateResultSchema,
+  upsertResultSchema,
+  vesselWeightReportSchema,
 } from '../../schemas/possessions.schema';
 import { registerTool } from '../tool-registry';
 
@@ -72,7 +88,7 @@ registerTool(
     title: 'List possessions',
     description:
       "Lists the user's possessions, newest first. Filter by status (wishlist, planned, ordered, " +
-      'delivered, owned, in_use, retired, disposed), archived flag, containerId, category, and a ' +
+      'delivered, owned, in_use, retired, disposed, donated, sold), archived flag, containerId, category, and a ' +
       'text query matching name, brand or model — use these instead of listing everything and ' +
       'filtering client-side. Returns up to 100 per call; pass offset to page further. Archived ' +
       'items are included unless archived=false.',
@@ -112,6 +128,47 @@ registerTool(
 registerTool(
   {
     ...readTool,
+    name: 'possession_history',
+    title: 'Possession history',
+    description:
+      'Returns the append-only audit log for one possession, newest first: creations, updates, ' +
+      'moves, status changes, and archivals with the fields that changed.',
+    inputSchema: possessionHistoryInputSchema,
+    outputSchema: z.object({ events: z.array(possessionEventSchema) }),
+    resultCap: 100,
+    guidance: {
+      whenToUse: 'Asking "what changed on X" or auditing an item.',
+      whenNotToUse: 'Do not invent a possession id.',
+      dependencies: [possessionLookup],
+    },
+  },
+  async (ownerUserId, input) => ({
+    events: await getPossessionHistory(ownerUserId, input.id, input.limit),
+  }),
+);
+
+registerTool(
+  {
+    ...readTool,
+    name: 'vessel_weight_report',
+    title: 'Vessel weight report',
+    description:
+      'Packing report replacing the sheet weights tab: per vessel the summed item weights, ' +
+      'case tare, total, airline limit, notes, and whether it is over the limit, plus ' +
+      'cabin/checked group rollups. An item counts toward its moveAction vessel first, else its ' +
+      'outermost container. Tokens matching no container are still summed but flagged ' +
+      'unknownVessel — investigate those before trusting the totals.',
+    inputSchema: z.object({}),
+    outputSchema: z.object({ report: vesselWeightReportSchema }),
+    resultCap: 200,
+    guidance: { whenToUse: 'Questions like "are my bags overweight" or "what is in box N".' },
+  },
+  async (ownerUserId) => ({ report: await vesselWeightReport(ownerUserId) }),
+);
+
+registerTool(
+  {
+    ...readTool,
     name: 'possession_summary',
     title: 'Summarize possessions',
     description:
@@ -124,6 +181,25 @@ registerTool(
     guidance: { whenToUse: 'Questions like "how much stuff do I own" or "what is it all worth".' },
   },
   async (ownerUserId) => ({ summary: await summarizePossessions(ownerUserId) }),
+);
+
+registerTool(
+  {
+    ...readTool,
+    name: 'possession_validate',
+    title: 'Validate possessions',
+    description:
+      'Integrity audit replacing manual sheet audits: unplaced live items, items missing ' +
+      'weight, moveAction tokens matching no container, retired statuses that are not ' +
+      'archived, archived items still in a container, zero prices, prices without currency, ' +
+      'and unknown vessel groups. Returns findings with severity error or warning, ' +
+      'paginated with limit/offset while total says how many exist.',
+    inputSchema: possessionValidateInputSchema,
+    outputSchema: possessionValidateResultSchema,
+    resultCap: 1000,
+    guidance: { whenToUse: 'Scheduled audits or after an import to catch data problems.' },
+  },
+  async (ownerUserId, input) => validatePossessions(ownerUserId, input),
 );
 
 // ---- possessions: write ----
@@ -184,6 +260,51 @@ registerTool(
     },
   },
   async (ownerUserId, input) => movePossessions(ownerUserId, input.ids, input.containerId),
+);
+
+registerTool(
+  {
+    ...writeTool,
+    idempotent: true,
+    name: 'possession_upsert',
+    title: 'Upsert a possession',
+    description:
+      'Creates a possession or updates the one already carrying externalId (e.g. ITM-023). ' +
+      'Returns the id and whether the row was created. Re-running with the same input never ' +
+      'duplicates: it is the primitive for imports and sync.',
+    inputSchema: possessionUpsertSchema,
+    outputSchema: upsertResultSchema,
+    guidance: {
+      whenToUse: 'Importing or syncing an item that has a stable external id.',
+      dependencies: [containerLookup],
+      produces: ['id'],
+    },
+  },
+  async (ownerUserId, input) => upsertPossession(ownerUserId, input),
+);
+
+registerTool(
+  {
+    ...writeTool,
+    idempotent: true,
+    name: 'possession_bulk_upsert',
+    title: 'Bulk upsert possessions',
+    description:
+      'Upserts up to 100 possessions keyed on externalId. Not atomic: each item succeeds or ' +
+      'fails on its own and the per-item results say which, so a single bad row never blocks ' +
+      'the rest.',
+    inputSchema: possessionBulkUpsertSchema,
+    outputSchema: bulkUpsertResultSchema,
+    resultCap: 100,
+    guidance: {
+      whenToUse: 'Importing many items at once, e.g. the sheet backlog.',
+      dependencies: [containerLookup],
+      produces: ['id'],
+    },
+  },
+  async (ownerUserId, input) => ({
+    results: await bulkUpsertPossessions(ownerUserId, input.items),
+  }),
 );
 
 registerTool(
@@ -336,6 +457,27 @@ registerTool(
       parentContainerId: input.parentContainerId,
     }),
   }),
+);
+
+registerTool(
+  {
+    ...writeTool,
+    idempotent: true,
+    name: 'container_upsert',
+    title: 'Upsert a container',
+    description:
+      'Creates a container or updates the one already carrying externalId (e.g. CON-023). ' +
+      'Returns the id and whether the row was created. Re-running with the same input never ' +
+      'duplicates.',
+    inputSchema: containerUpsertSchema,
+    outputSchema: upsertResultSchema,
+    guidance: {
+      whenToUse: 'Importing or syncing a container that has a stable external id.',
+      dependencies: [containerLookup],
+      produces: ['id'],
+    },
+  },
+  async (ownerUserId, input) => upsertContainer(ownerUserId, input),
 );
 
 registerTool(

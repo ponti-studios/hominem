@@ -4,14 +4,21 @@ import { ContainerRepository } from '@hominem/db/possessions';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  bulkUpsertPossessions,
   createContainer,
   createPossession,
+  getPossessionHistory,
   listContainers,
   listPossessions,
+  movePossessions,
   removeContainer,
   removePossession,
   updateContainer,
   updatePossession,
+  upsertContainer,
+  upsertPossession,
+  validatePossessions,
+  vesselWeightReport,
 } from './possessions.service';
 
 const alice = 'd4000001-0000-4000-8000-000000000001';
@@ -98,6 +105,223 @@ describe('possessions', () => {
     );
     await expect(removePossession(alice, missing)).rejects.toBeInstanceOf(NotFoundError);
   });
+
+  it('round-trips sheet-parity fields and the donated/sold statuses', async () => {
+    const created = await createPossession(alice, {
+      name: 'Donated Coat',
+      status: 'donated',
+      weightKg: 1.25,
+      volumeCbm: 0.02,
+      moveAction: 'send my bag box 1',
+      externalId: 'ITM-9998',
+      acquisitionType: 'purchased',
+      purchaseCurrency: 'USD',
+      retirementMethod: 'donated',
+      ownershipType: 'functional',
+    });
+    expect(created).toMatchObject({
+      status: 'donated',
+      weightKg: 1.25,
+      moveAction: 'send my bag box 1',
+      externalId: 'ITM-9998',
+      acquisitionType: 'purchased',
+    });
+    const updated = await updatePossession(alice, created.id, { status: 'sold' });
+    expect(updated.status).toBe('sold');
+    await removePossession(alice, created.id);
+  });
+});
+
+describe('upserts', () => {
+  it('creates then updates the same row by externalId without duplicating', async () => {
+    const first = await upsertPossession(alice, { externalId: 'ITM-U1', name: 'Vase' });
+    expect(first.created).toBe(true);
+    const second = await upsertPossession(alice, {
+      externalId: 'ITM-U1',
+      name: 'Vase',
+      weightKg: 2.5,
+    });
+    expect(second).toMatchObject({ id: first.id, created: false });
+    expect(
+      (await listPossessions(alice, noQuery)).filter((p) => p.externalId === 'ITM-U1'),
+    ).toHaveLength(1);
+    await removePossession(alice, first.id);
+  });
+
+  it('bulk upserts with per-item results and partial success', async () => {
+    const result = await bulkUpsertPossessions(alice, [
+      { externalId: 'ITM-B1', name: 'One' },
+      { externalId: 'ITM-B2', name: 'Two', moveAction: 'send my bag box 1' },
+      {
+        externalId: 'ITM-B3',
+        name: 'Broken',
+        containerId: '00000000-0000-4000-8000-000000000000',
+      },
+    ]);
+    expect(result.filter((r) => r.error === null)).toHaveLength(2);
+    const broken = result.find((r) => r.externalId === 'ITM-B3')!;
+    expect(broken.error).toMatch(/container/i);
+    expect(broken.id).toBeNull();
+    for (const row of result) {
+      if (row.id) await removePossession(alice, row.id);
+    }
+  });
+
+  it('upserts a container by externalId', async () => {
+    const first = await upsertContainer(alice, { externalId: 'CON-U1', name: 'Crate' });
+    expect(first.created).toBe(true);
+    const second = await upsertContainer(alice, {
+      externalId: 'CON-U1',
+      name: 'Crate',
+      trackingReference: 'T-1',
+    });
+    expect(second).toMatchObject({ id: first.id, created: false });
+    await removeContainer(alice, first.id);
+  });
+
+  it('rejects foreign references with a typed 404, not a raw constraint error', async () => {
+    const missing = '00000000-0000-4000-8000-000000000000';
+    await expect(
+      upsertPossession(alice, { externalId: 'ITM-U9', name: 'Bad ref', containerId: missing }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+    await expect(
+      upsertContainer(alice, {
+        externalId: 'CON-U9',
+        name: 'Bad parent',
+        parentContainerId: missing,
+      }),
+    ).rejects.toBeInstanceOf(NotFoundError);
+  });
+});
+
+describe('history', () => {
+  it('records created, status_changed, moved, and archived events in order', async () => {
+    const box = await createContainer(alice, { name: 'History box' });
+    const item = await createPossession(alice, { name: 'Heirloom', status: 'owned' });
+    await updatePossession(alice, item.id, { status: 'in_use' });
+    await movePossessions(alice, [item.id], box.id);
+    await updatePossession(alice, item.id, { isArchived: true });
+
+    const history = await getPossessionHistory(alice, item.id, 50);
+    expect(history.map((e) => e.kind)).toEqual(['archived', 'moved', 'status_changed', 'created']);
+    expect(history[0]).toMatchObject({ possessionId: item.id, actor: alice });
+    await removePossession(alice, item.id);
+    await removeContainer(alice, box.id);
+  });
+
+  it('isolates history by owner', async () => {
+    const item = await createPossession(alice, { name: 'Private history' });
+    expect(await getPossessionHistory(bob, item.id, 50)).toEqual([]);
+    await removePossession(alice, item.id);
+  });
+});
+
+describe('vessel weights', () => {
+  it('rolls item weights up to vessels by moveAction and container nesting', async () => {
+    const box = await createContainer(alice, {
+      name: 'Report Box 1',
+      tareKg: 2,
+      limitKg: 30,
+      vesselGroup: 'checked',
+    });
+    const pouch = await createContainer(alice, { name: 'Inner pouch', parentContainerId: box.id });
+    const a = await createPossession(alice, {
+      name: 'Weight A',
+      weightKg: 1.25,
+      moveAction: 'report box 1',
+    });
+    const b = await createPossession(alice, {
+      name: 'Weight B',
+      weightKg: 0.5,
+      containerId: pouch.id,
+    });
+    const ghost = await createPossession(alice, {
+      name: 'Ghost',
+      weightKg: 0.1,
+      moveAction: 'no_such_bag',
+    });
+    const archived = await createPossession(alice, {
+      name: 'Gone',
+      weightKg: 9,
+      moveAction: 'report box 1',
+      status: 'disposed',
+      isArchived: true,
+    });
+
+    const report = await vesselWeightReport(alice);
+    const vessel = report.vessels.find((v) => v.vessel === 'Report Box 1')!;
+    expect(vessel).toMatchObject({
+      contentsKg: 1.75,
+      tareKg: 2,
+      totalKg: 3.75,
+      limitKg: 30,
+      overLimit: false,
+      unknownVessel: false,
+    });
+    const ghostRow = report.vessels.find((v) => v.vessel === 'no_such_bag')!;
+    expect(ghostRow).toMatchObject({ contentsKg: 0.1, unknownVessel: true });
+    expect(report.vessels.some((v) => v.contentsKg === 9)).toBe(false);
+    expect(report.unassigned.count).toBe(0);
+
+    for (const item of [a, b, ghost, archived]) await removePossession(alice, item.id);
+    await removeContainer(alice, pouch.id);
+    await removeContainer(alice, box.id);
+  });
+});
+
+describe('validate', () => {
+  it('flags unplaced, weightless, ghost-vessel, lifecycle, and pricing issues', async () => {
+    const box = await createContainer(alice, { name: 'Validate box' });
+    const stray = await createPossession(alice, { name: 'Stray', status: 'owned', priceCents: 0 });
+    const ghost = await createPossession(alice, {
+      name: 'Ghost item',
+      status: 'owned',
+      weightKg: 0.2,
+      moveAction: 'ghost_bag_xyz',
+    });
+    const boxed = await createPossession(alice, {
+      name: 'Boxed debt',
+      status: 'owned',
+      weightKg: 1,
+      containerId: box.id,
+    });
+    const retired = await createPossession(alice, {
+      name: 'Retired boxed',
+      status: 'disposed',
+      weightKg: 1,
+      containerId: box.id,
+      isArchived: true,
+    });
+    const loose = await createPossession(alice, {
+      name: 'Loose end',
+      status: 'disposed',
+      weightKg: 1,
+    });
+
+    const codes = (await validatePossessions(alice)).findings
+      .filter((f) => [stray, ghost, boxed, retired, loose].some((p) => p.id === f.possessionId))
+      .map((f) => f.code)
+      .sort();
+    expect(codes).toContain('unplaced_item');
+    expect(codes).toContain('missing_weight');
+    expect(codes).toContain('unknown_vessel');
+    expect(codes).toContain('archived_in_container');
+    expect(codes).toContain('disposed_not_archived');
+    expect(codes).toContain('zero_price');
+    expect(codes).toContain('missing_currency');
+    const page = await validatePossessions(alice, { limit: 2, offset: 0 });
+    expect(page.findings.length).toBeLessThanOrEqual(2);
+    expect(page.total).toBeGreaterThanOrEqual(codes.length);
+    expect(
+      (await validatePossessions(bob)).findings.some((f) =>
+        [stray, ghost, boxed, retired, loose].some((p) => p.id === f.possessionId),
+      ),
+    ).toBe(false);
+
+    for (const item of [stray, ghost, boxed, retired, loose])
+      await removePossession(alice, item.id);
+    await removeContainer(alice, box.id);
+  });
 });
 
 describe('containers', () => {
@@ -132,6 +356,23 @@ describe('containers', () => {
     expect(updated.metadata).toEqual({ sourceItemId: 'ITM-1', trackingReference: 'T-9' });
     expect(updated.description).toBe('Keepsakes');
     await removeContainer(alice, box.id);
+  });
+
+  it('round-trips vessel config and tracking references', async () => {
+    const vessel = await createContainer(alice, {
+      name: 'Send My Bag Box 1',
+      externalId: 'CON-9999',
+      trackingReference: 'SMB-123',
+      tareKg: 2.1,
+      limitKg: 30,
+    });
+    expect(vessel).toMatchObject({
+      trackingReference: 'SMB-123',
+      tareKg: 2.1,
+      limitKg: 30,
+      externalId: 'CON-9999',
+    });
+    await removeContainer(alice, vessel.id);
   });
 
   it('rejects a container that would sit inside itself or its own contents', async () => {
@@ -232,15 +473,19 @@ describe('containers', () => {
   });
 
   it('refuses a cycle introduced through the import upsert', async () => {
-    const a = await ContainerRepository.upsertByExternalId(db, alice, {
-      name: 'ImpA',
-      externalId: 'CON-CYCLE-A',
-    });
-    const b = await ContainerRepository.upsertByExternalId(db, alice, {
-      name: 'ImpB',
-      externalId: 'CON-CYCLE-B',
-      parentContainerId: a.id,
-    });
+    const a = (
+      await ContainerRepository.upsertByExternalId(db, alice, {
+        name: 'ImpA',
+        externalId: 'CON-CYCLE-A',
+      })
+    ).record;
+    const b = (
+      await ContainerRepository.upsertByExternalId(db, alice, {
+        name: 'ImpB',
+        externalId: 'CON-CYCLE-B',
+        parentContainerId: a.id,
+      })
+    ).record;
     await expect(
       ContainerRepository.upsertByExternalId(db, alice, {
         name: 'ImpA',

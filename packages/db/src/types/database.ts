@@ -864,14 +864,28 @@ export interface AppPossessionContainers {
   description: string | null;
   externalId: string | null;
   id: Generated<string>;
+  limitKg: Numeric | null;
   metadata: Generated<Json>;
   name: string;
   ownerUserid: string;
   parentContainerId: string | null;
   status: Generated<string>;
+  tareKg: Numeric | null;
+  trackingReference: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+  vesselGroup: string | null;
   volumeCbm: Numeric | null;
   weightKg: Numeric | null;
+}
+
+export interface AppPossessionEvents {
+  actor: string;
+  at: Generated<ColumnType<string, Date | string, Date | string>>;
+  diff: Generated<Json>;
+  id: Generated<string>;
+  kind: string;
+  ownerUserid: string;
+  possessionId: string;
 }
 
 export interface AppPossessionImages {
@@ -887,6 +901,7 @@ export interface AppPossessionImages {
 
 export interface AppPossessions {
   acquiredDate: ColumnType<string, Date | string, Date | string> | null;
+  acquisitionType: string | null;
   artDimensions: string | null;
   artistPersonId: string | null;
   artMedium: string | null;
@@ -902,14 +917,18 @@ export interface AppPossessions {
   isArchived: Generated<boolean>;
   metadata: Generated<Json>;
   model: string | null;
+  moveAction: string | null;
   name: string;
   netValueCents: number | null;
   notes: string | null;
+  ownershipType: string | null;
   ownerUserid: string;
   placement: string | null;
   possessionType: string | null;
   priceCents: number | null;
+  purchaseCurrency: string | null;
   retiredDate: ColumnType<string, Date | string, Date | string> | null;
+  retirementMethod: string | null;
   sellPriceCents: number | null;
   serialNumber: string | null;
   size: string | null;
@@ -917,6 +936,8 @@ export interface AppPossessions {
   subCategory: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
   url: string | null;
+  volumeCbm: Numeric | null;
+  weightKg: Numeric | null;
 }
 
 export interface AppSocialContacts {
@@ -1402,6 +1423,7 @@ export interface DB {
   'app.placeVisits': AppPlaceVisits;
   'app.plaidItems': AppPlaidItems;
   'app.possessionContainers': AppPossessionContainers;
+  'app.possessionEvents': AppPossessionEvents;
   'app.possessionImages': AppPossessionImages;
   'app.possessions': AppPossessions;
   'app.socialContacts': AppSocialContacts;

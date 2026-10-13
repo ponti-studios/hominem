@@ -2,7 +2,12 @@ import { sql, type Selectable, type Updateable } from 'kysely';
 
 import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
-import type { AppPossessionContainers, AppPossessions, Json } from '../../types/database';
+import type {
+  AppPossessionContainers,
+  AppPossessionEvents,
+  AppPossessions,
+  Json,
+} from '../../types/database';
 
 type PossessionRow = Selectable<AppPossessions>;
 type ContainerRow = Selectable<AppPossessionContainers>;
@@ -16,9 +21,13 @@ export const POSSESSION_STATUSES = [
   'in_use',
   'retired',
   'disposed',
+  'donated',
+  'sold',
 ] as const;
 export type PossessionStatus = (typeof POSSESSION_STATUSES)[number];
 
+// Lifecycle enums from the sheet (plan §3) stay free strings: Charles invents new values
+// live, so gating them on a deploy would rot. Zod caps their length; validate audits usage.
 export interface PossessionRecord {
   id: string;
   name: string;
@@ -41,6 +50,13 @@ export interface PossessionRecord {
   notes: string | null;
   containerId: string | null;
   externalId: string | null;
+  weightKg: number | null;
+  volumeCbm: number | null;
+  moveAction: string | null;
+  acquisitionType: string | null;
+  purchaseCurrency: string | null;
+  retirementMethod: string | null;
+  ownershipType: string | null;
   metadata: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -57,6 +73,10 @@ export interface ContainerRecord {
   currentLocation: string | null;
   weightKg: number | null;
   volumeCbm: number | null;
+  trackingReference: string | null;
+  limitKg: number | null;
+  tareKg: number | null;
+  vesselGroup: string | null;
   externalId: string | null;
   metadata: Record<string, unknown>;
   itemCount: number;
@@ -85,6 +105,13 @@ export interface PossessionInput {
   notes?: string | null;
   containerId?: string | null;
   externalId?: string | null;
+  weightKg?: number | null;
+  volumeCbm?: number | null;
+  moveAction?: string | null;
+  acquisitionType?: string | null;
+  purchaseCurrency?: string | null;
+  retirementMethod?: string | null;
+  ownershipType?: string | null;
   metadata?: Record<string, Json>;
 }
 
@@ -98,6 +125,10 @@ export interface ContainerInput {
   currentLocation?: string | null;
   weightKg?: number | null;
   volumeCbm?: number | null;
+  trackingReference?: string | null;
+  limitKg?: number | null;
+  tareKg?: number | null;
+  vesselGroup?: string | null;
   externalId?: string | null;
   metadata?: Record<string, Json>;
 }
@@ -139,6 +170,13 @@ function toPossession(row: PossessionRow): PossessionRecord {
     notes: row.notes,
     containerId: row.containerId,
     externalId: row.externalId,
+    weightKg: numberOrNull(row.weightKg),
+    volumeCbm: numberOrNull(row.volumeCbm),
+    moveAction: row.moveAction,
+    acquisitionType: row.acquisitionType,
+    purchaseCurrency: row.purchaseCurrency,
+    retirementMethod: row.retirementMethod,
+    ownershipType: row.ownershipType,
     metadata: toObject(row.metadata),
     createdAt: iso(row.createdat),
     updatedAt: iso(row.updatedat),
@@ -157,6 +195,10 @@ function toContainer(row: ContainerRow & { itemCount?: string | number | null })
     currentLocation: row.currentLocation,
     weightKg: numberOrNull(row.weightKg),
     volumeCbm: numberOrNull(row.volumeCbm),
+    trackingReference: row.trackingReference,
+    limitKg: numberOrNull(row.limitKg),
+    tareKg: numberOrNull(row.tareKg),
+    vesselGroup: row.vesselGroup,
     externalId: row.externalId,
     metadata: toObject(row.metadata),
     itemCount: Number(row.itemCount ?? 0),
@@ -188,6 +230,13 @@ function possessionValues(input: Partial<PossessionInput>): Updateable<AppPosses
     notes: input.notes,
     containerId: input.containerId,
     externalId: input.externalId,
+    weightKg: input.weightKg,
+    volumeCbm: input.volumeCbm,
+    moveAction: input.moveAction,
+    acquisitionType: input.acquisitionType,
+    purchaseCurrency: input.purchaseCurrency,
+    retirementMethod: input.retirementMethod,
+    ownershipType: input.ownershipType,
     metadata: input.metadata,
   };
 }
@@ -203,6 +252,10 @@ function containerValues(input: Partial<ContainerInput>): Updateable<AppPossessi
     currentLocation: input.currentLocation,
     weightKg: input.weightKg,
     volumeCbm: input.volumeCbm,
+    trackingReference: input.trackingReference,
+    limitKg: input.limitKg,
+    tareKg: input.tareKg,
+    vesselGroup: input.vesselGroup,
     externalId: input.externalId,
     metadata: input.metadata,
   };
@@ -277,6 +330,42 @@ export interface PossessionSummary {
   }>;
 }
 
+export const POSSESSION_EVENT_KINDS = [
+  'created',
+  'updated',
+  'moved',
+  'status_changed',
+  'archived',
+  'deleted',
+] as const;
+export type PossessionEventKind = (typeof POSSESSION_EVENT_KINDS)[number];
+
+export interface PossessionEvent {
+  id: string;
+  possessionId: string;
+  at: string;
+  actor: string;
+  kind: PossessionEventKind;
+  diff: Record<string, unknown>;
+}
+
+function parseEventKind(value: string): PossessionEventKind {
+  const kind = POSSESSION_EVENT_KINDS.find((candidate) => candidate === value);
+  if (kind) return kind;
+  throw new ValidationError(`Invalid possession event kind: ${value}`, { kind: value });
+}
+
+function toEvent(row: Selectable<AppPossessionEvents>): PossessionEvent {
+  return {
+    id: row.id,
+    possessionId: row.possessionId,
+    at: iso(row.at),
+    actor: row.actor,
+    kind: parseEventKind(row.kind),
+    diff: toObject(row.diff),
+  };
+}
+
 export interface ListContainersInput {
   parentContainerId?: string;
   query?: string;
@@ -323,14 +412,118 @@ export const PossessionRepository = {
     return rows.map(toPossession);
   },
 
-  async get(handle: DbHandle, userId: string, id: string): Promise<PossessionRecord | null> {
-    const row = await handle
+  async get(
+    handle: DbHandle,
+    userId: string,
+    id: string,
+    options?: { forUpdate?: boolean },
+  ): Promise<PossessionRecord | null> {
+    let query = handle
       .selectFrom('app.possessions')
       .selectAll()
       .where('id', '=', id)
-      .where('ownerUserid', '=', userId)
-      .executeTakeFirst();
+      .where('ownerUserid', '=', userId);
+    if (options?.forUpdate) query = query.forUpdate();
+    const row = await query.executeTakeFirst();
     return row ? toPossession(row) : null;
+  },
+
+  async getByExternalId(
+    handle: DbHandle,
+    userId: string,
+    externalId: string,
+    options?: { forUpdate?: boolean },
+  ): Promise<PossessionRecord | null> {
+    let query = handle
+      .selectFrom('app.possessions')
+      .selectAll()
+      .where('ownerUserid', '=', userId)
+      .where('externalId', '=', externalId);
+    if (options?.forUpdate) query = query.forUpdate();
+    const row = await query.executeTakeFirst();
+    return row ? toPossession(row) : null;
+  },
+
+  async listByIds(
+    handle: DbHandle,
+    userId: string,
+    ids: string[],
+    options?: { forUpdate?: boolean },
+  ): Promise<PossessionRecord[]> {
+    if (ids.length === 0) return [];
+    let query = handle
+      .selectFrom('app.possessions')
+      .selectAll()
+      .where('ownerUserid', '=', userId)
+      .where('id', 'in', ids);
+    if (options?.forUpdate) query = query.forUpdate();
+    const rows = await query.execute();
+    return rows.map(toPossession);
+  },
+  async recordEvent(
+    handle: DbHandle,
+    userId: string,
+    possessionId: string,
+    kind: PossessionEventKind,
+    diff: Record<string, Json>,
+  ): Promise<PossessionEvent> {
+    const row = await handle
+      .insertInto('app.possessionEvents')
+      .values({ ownerUserid: userId, possessionId, actor: userId, kind, diff })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return toEvent(row);
+  },
+
+  async history(
+    handle: DbHandle,
+    userId: string,
+    possessionId: string,
+    limit: number,
+  ): Promise<PossessionEvent[]> {
+    const rows = await handle
+      .selectFrom('app.possessionEvents')
+      .selectAll()
+      .where('ownerUserid', '=', userId)
+      .where('possessionId', '=', possessionId)
+      .orderBy('at', 'desc')
+      .orderBy('id', 'desc')
+      .limit(limit)
+      .execute();
+    return rows.map(toEvent);
+  },
+
+  // Every live (non-archived) possession with the columns the weight report needs.
+  // Unbounded by design: the registry is hundreds of rows, and a capped read would silently
+  // drop weight from the rollup.
+  async weighables(
+    handle: DbHandle,
+    userId: string,
+  ): Promise<
+    Array<{ weightKg: number | null; moveAction: string | null; containerId: string | null }>
+  > {
+    const rows = await handle
+      .selectFrom('app.possessions')
+      .select(['weightKg', 'moveAction', 'containerId'])
+      .where('ownerUserid', '=', userId)
+      .where('isArchived', '=', false)
+      .execute();
+    return rows.map((row) => ({
+      weightKg: numberOrNull(row.weightKg),
+      moveAction: row.moveAction,
+      containerId: row.containerId,
+    }));
+  },
+
+  // Full rows for the integrity audit. Unbounded for the same reason as weighables.
+  async auditables(handle: DbHandle, userId: string): Promise<PossessionRecord[]> {
+    const rows = await handle
+      .selectFrom('app.possessions')
+      .selectAll()
+      .where('ownerUserid', '=', userId)
+      .orderBy('id')
+      .execute();
+    return rows.map(toPossession);
   },
 
   // Moves many possessions at once. Returns the ids that belonged to the owner and were moved.
@@ -464,11 +657,16 @@ export const PossessionRepository = {
   },
 
   // For imports: same external id updates the row in place, so re-running never duplicates.
+  // The container reference is validated first (like create/update) so a bad id surfaces as a
+  // typed 404, not a raw foreign-key 500. `created` comes from the row's xmax, not a
+  // preceding read, so concurrent upserts of the same new externalId cannot both report
+  // created:true.
   async upsertByExternalId(
     handle: DbHandle,
     userId: string,
     input: PossessionInput & { externalId: string },
-  ): Promise<PossessionRecord> {
+  ): Promise<{ record: PossessionRecord; created: boolean }> {
+    if (input.containerId) await assertOwnedContainer(handle, userId, input.containerId);
     const { externalId: _external, ...updates } = possessionValues(input);
     const values = { ...possessionValues(input), name: input.name, ownerUserid: userId };
     const row = await handle
@@ -481,8 +679,9 @@ export const PossessionRepository = {
           .doUpdateSet(updates),
       )
       .returningAll()
+      .returning(sql<boolean>`(xmax = 0)`.as('created'))
       .executeTakeFirstOrThrow();
-    return toPossession(row);
+    return { record: toPossession(row), created: row.created };
   },
 };
 
@@ -553,6 +752,17 @@ export const ContainerRepository = {
     return row ? toContainer(row) : null;
   },
 
+  async getByExternalId(
+    handle: DbHandle,
+    userId: string,
+    externalId: string,
+  ): Promise<ContainerRecord | null> {
+    const row = await containerQuery(handle, userId)
+      .where('c.externalId', '=', externalId)
+      .executeTakeFirst();
+    return row ? toContainer(row) : null;
+  },
+
   async create(handle: DbHandle, userId: string, input: ContainerInput): Promise<ContainerRecord> {
     if (input.parentContainerId) await assertOwnedParent(handle, userId, input.parentContainerId);
     const row = await rejectingCycles(() =>
@@ -608,7 +818,8 @@ export const ContainerRepository = {
     handle: DbHandle,
     userId: string,
     input: ContainerInput & { externalId: string },
-  ): Promise<ContainerRecord> {
+  ): Promise<{ record: ContainerRecord; created: boolean }> {
+    if (input.parentContainerId) await assertOwnedParent(handle, userId, input.parentContainerId);
     const { externalId: _external, ...updates } = containerValues(input);
     const values = { ...containerValues(input), name: input.name, ownerUserid: userId };
     const row = await rejectingCycles(() =>
@@ -622,8 +833,9 @@ export const ContainerRepository = {
             .doUpdateSet(updates),
         )
         .returningAll()
+        .returning(sql<boolean>`(xmax = 0)`.as('created'))
         .executeTakeFirstOrThrow(),
     );
-    return toContainer(row);
+    return { record: toContainer(row), created: row.created };
   },
 };
