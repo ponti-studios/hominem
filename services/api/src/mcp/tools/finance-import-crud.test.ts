@@ -1,4 +1,4 @@
-import { db, pool } from '@hominem/db/core';
+import { db, pool, sql } from '@hominem/db/core';
 import { parseSheetTransactionsCsv } from '@hominem/finance-services';
 import { beforeAll, describe, expect, it } from 'vitest';
 
@@ -388,5 +388,49 @@ describe('finance_transactions_import', () => {
       .where('userId', '=', userId)
       .execute();
     expect(rows.map((r) => r.description)).toEqual(['Sole Survivor']);
+  });
+});
+
+// B6: app.tags is unique on (owner, lower(name)) and on (owner, slug), but a sheet tag
+// arrives with whatever casing the sheet used. A row tagged "Art" used to fail the whole
+// write with a unique-violation 500 when an "art" tag already existed.
+describe('tag name casing', () => {
+  it('reuses an existing tag when the sheet uses different casing', async () => {
+    await db
+      .insertInto('app.tags')
+      .values({ ownerUserid: userId, name: 'art', slug: 'art', path: 'art' })
+      .onConflict((oc) => oc.doNothing())
+      .execute();
+
+    const result = await callTool(userId, 'finance_transactions_import', {
+      mode: 'append',
+      transactions: [
+        {
+          postedOn: '2026-10-09',
+          account: 'Sheet Checking',
+          description: 'Art Supplies',
+          amountCents: -2500,
+          currencyCode: 'USD',
+          tags: ['Art'],
+        },
+      ],
+    });
+    expect(content(result)).toMatchObject({ received: 1, created: 1, rejected: [] });
+
+    const tags = await db
+      .selectFrom('app.tags')
+      .select(['id', 'name'])
+      .where('ownerUserid', '=', userId)
+      .where(sql<boolean>`lower(name) = 'art'`)
+      .execute();
+    expect(tags).toHaveLength(1);
+    expect(tags[0]?.name).toBe('art');
+
+    const assignments = await db
+      .selectFrom('app.tagAssignments')
+      .select('id')
+      .where('tagId', '=', tags[0]?.id ?? '')
+      .execute();
+    expect(assignments).toHaveLength(1);
   });
 });

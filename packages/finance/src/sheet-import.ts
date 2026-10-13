@@ -296,11 +296,14 @@ export async function listFinanceCategories(
 async function ensureTagIds(userId: string, names: string[]): Promise<string[]> {
   const ids: string[] = [];
   for (const name of names) {
+    // app.tags is unique on (owner, lower(name)) and on (owner, slug), but a sheet tag
+    // arrives with whatever casing the sheet used. Match case-insensitively so "Art" finds
+    // the existing "art" instead of attempting an insert that the unique index rejects.
     const existing = await db
       .selectFrom('app.tags')
       .select('id')
       .where('ownerUserid', '=', userId)
-      .where('name', '=', name)
+      .where(sql<boolean>`lower(name) = lower(${name})`)
       .limit(1)
       .executeTakeFirst();
     if (existing) {
@@ -312,18 +315,20 @@ async function ensureTagIds(userId: string, names: string[]): Promise<string[]> 
     const inserted = await db
       .insertInto('app.tags')
       .values({ id: randomUUID(), ownerUserid: userId, name, slug, path })
-      .onConflict((oc) => oc.column('id').doNothing())
+      .onConflict((oc) => oc.doNothing())
       .returning('id')
       .executeTakeFirst();
     if (inserted) {
       ids.push(inserted.id);
       continue;
     }
+    // No row inserted: either unique index already holds this tag — under a different
+    // casing, or (via the slug) an equivalent name. Reuse it rather than fail the write.
     const retry = await db
       .selectFrom('app.tags')
       .select('id')
       .where('ownerUserid', '=', userId)
-      .where('name', '=', name)
+      .where(sql<boolean>`(lower(name) = lower(${name}) or slug = ${slug})`)
       .limit(1)
       .executeTakeFirstOrThrow();
     ids.push(retry.id);
