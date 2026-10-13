@@ -160,37 +160,34 @@ describe('finance_transaction_upsert', () => {
   });
 
   it('rejects unknown accounts and currency mismatches', async () => {
-    await expect(
-      callTool(userId, 'finance_transaction_upsert', {
-        postedOn: '2026-09-04',
-        account: 'No Such Bank …9999',
-        description: 'Bogus',
-        amountCents: -100,
-        currencyCode: 'USD',
-      }),
-    ).rejects.toThrow('unknown_account');
+    const unknown = await callTool(userId, 'finance_transaction_upsert', {
+      postedOn: '2026-09-04',
+      account: 'No Such Bank …9999',
+      description: 'Bogus',
+      amountCents: -100,
+      currencyCode: 'USD',
+    });
+    expect(content(unknown)).toMatchObject({ id: null, reason: 'unknown_account' });
 
-    await expect(
-      callTool(userId, 'finance_transaction_upsert', {
-        postedOn: '2026-09-04',
-        account: gbpId,
-        description: 'Bogus GBP',
-        amountCents: -100,
-        currencyCode: 'USD',
-      }),
-    ).rejects.toThrow('currency_mismatch');
+    const mismatch = await callTool(userId, 'finance_transaction_upsert', {
+      postedOn: '2026-09-04',
+      account: gbpId,
+      description: 'Bogus GBP',
+      amountCents: -100,
+      currencyCode: 'USD',
+    });
+    expect(content(mismatch)).toMatchObject({ id: null, reason: 'currency_mismatch' });
   });
 
   it('isolates cross-user account resolution', async () => {
-    await expect(
-      callTool(otherUserId, 'finance_transaction_upsert', {
-        postedOn: '2026-09-05',
-        account: checkingId,
-        description: 'Sneaky',
-        amountCents: -100,
-        currencyCode: 'USD',
-      }),
-    ).rejects.toThrow('unknown_account');
+    const result = await callTool(otherUserId, 'finance_transaction_upsert', {
+      postedOn: '2026-09-05',
+      account: checkingId,
+      description: 'Sneaky',
+      amountCents: -100,
+      currencyCode: 'USD',
+    });
+    expect(content(result)).toMatchObject({ id: null, reason: 'unknown_account' });
   });
 });
 
@@ -277,13 +274,42 @@ describe('finance_transactions_import', () => {
         },
       ],
     });
-    expect(content(result)).toMatchObject({ received: 1, upserted: 1, created: 0, updated: 0 });
+    expect(content(result)).toMatchObject({ received: 1, upserted: 1, created: 1, updated: 0 });
     const after = await db
       .selectFrom('app.financeTransactions')
       .select('id')
       .where('userId', '=', userId)
       .execute();
     expect(after.length).toBe(before.length);
+  });
+
+  it('dryRun projects an update for a row that already exists', async () => {
+    await callTool(userId, 'finance_transactions_import', {
+      mode: 'append',
+      transactions: [
+        {
+          postedOn: '2026-10-07',
+          account: 'Sheet Checking',
+          description: 'Projection Row',
+          amountCents: -321,
+          currencyCode: 'USD',
+        },
+      ],
+    });
+    const rerun = await callTool(userId, 'finance_transactions_import', {
+      mode: 'append',
+      dryRun: true,
+      transactions: [
+        {
+          postedOn: '2026-10-07',
+          account: 'Sheet Checking',
+          description: 'Projection Row',
+          amountCents: -321,
+          currencyCode: 'USD',
+        },
+      ],
+    });
+    expect(content(rerun)).toMatchObject({ received: 1, upserted: 1, created: 0, updated: 1 });
   });
 
   it('replace wipes only the caller store then inserts', async () => {

@@ -1,7 +1,7 @@
 import { db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { callTool, getToolDefinition, type McpToolResult } from '../tool-registry';
 import './finance';
 
 type Content = Record<string, unknown> & {
@@ -174,12 +174,29 @@ describe('pending rows', () => {
     });
     expect(content(batch)).toMatchObject({ received: 2, upserted: 1, created: 1 });
     expect(content(batch).rejected).toEqual([{ index: 1, reason: 'pending_row' }]);
-    await expect(
-      callTool(allowUser, 'finance_transaction_upsert', {
-        ...oneRow('Guard Checking'),
-        pending: true,
-      }),
-    ).rejects.toThrow('pending_row');
+    const single = await callTool(allowUser, 'finance_transaction_upsert', {
+      ...oneRow('Guard Checking'),
+      pending: true,
+    });
+    expect(content(single)).toMatchObject({ id: null, reason: 'pending_row' });
+  });
+});
+
+describe('replace confirmation (B5)', () => {
+  it('skips the elicitation when iUnderstand or a dry run already confirms', async () => {
+    const definition = getToolDefinition('finance_transactions_import');
+    expect(definition?.preview).toBeTypeOf('function');
+    const preview = definition!.preview!;
+    const row = oneRow('Guard Checking');
+    // Non-null preview => the server elicits; null => it proceeds without one.
+    expect(await preview(guardUser, { mode: 'replace', transactions: [row] })).not.toBeNull();
+    expect(
+      await preview(guardUser, { mode: 'replace', iUnderstand: true, transactions: [row] }),
+    ).toBeNull();
+    expect(
+      await preview(guardUser, { mode: 'replace', dryRun: true, transactions: [row] }),
+    ).toBeNull();
+    expect(await preview(guardUser, { mode: 'append', transactions: [row] })).toBeNull();
   });
 });
 

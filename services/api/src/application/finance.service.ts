@@ -7,6 +7,7 @@ import {
   listFinanceCategories,
   queryAnalyticsTransactionsByContract,
   summarizeCurrencies,
+  toSheetRejectionReason,
   upsertSheetTransaction,
   type SheetTransactionInput,
 } from '@hominem/finance-services';
@@ -254,10 +255,14 @@ export async function upsertFinanceTransaction(
     const result = await upsertSheetTransaction(ownerUserId, row, accountMap, {
       multiCurrencyAccounts,
     });
-    return { id: result.id, created: result.created, accountId: result.accountId };
+    return { id: result.id, created: result.created, accountId: result.accountId, reason: null };
   } catch (error) {
-    if (error instanceof Error) throw new Error(error.message);
-    throw error;
+    // A row-level rejection (unknown account, currency mismatch, invalid row) is ordinary
+    // data, not a server fault — return it structured, the same shape the batch import's
+    // per-row results use, instead of an opaque MCP failure.
+    const reason = toSheetRejectionReason(error);
+    if (!reason) throw error;
+    return { id: null, created: false, accountId: null, reason };
   }
 }
 

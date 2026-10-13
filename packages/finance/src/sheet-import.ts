@@ -90,10 +90,14 @@ export function inferTransactionType(
   description: string,
   amountCents: number,
   explicit?: 'debit' | 'credit' | 'transfer' | null,
-): 'debit' | 'credit' | 'transfer' {
+): 'debit' | 'credit' | 'transfer' | 'adjustment' {
   if (explicit === 'debit' || explicit === 'credit' || explicit === 'transfer') return explicit;
   if (/transfer/i.test(description)) return 'transfer';
-  return amountCents < 0 ? 'debit' : 'credit';
+  if (amountCents > 0) return 'credit';
+  if (amountCents < 0) return 'debit';
+  // Zero-amount rows are authorizations/placeholders with no direction; `adjustment` is the
+  // schema's existing home for a non-directional entry (the column's CHECK allows it).
+  return 'adjustment';
 }
 
 export function combineNotes(
@@ -575,6 +579,39 @@ export async function upsertSheetTransaction(
   return { id, created: true, updated: false, accountId: resolved.accountId };
 }
 
+// Read-only projection of the create/update split for a dry run, so it is a planning tool
+// rather than a bare count. Existence is checked on the same natural key the upsert uses
+// (userId + source + externalId), in bounded chunks to keep the predicate small.
+async function projectImportSplit(
+  userId: string,
+  valid: ValidatedSheetRow[],
+): Promise<{ created: number; updated: number }> {
+  const keys = valid.map((row) => ({
+    source: normalizeSource(row.input.source),
+    externalId: row.externalId,
+  }));
+  const existing = new Set<string>();
+  const chunkSize = 250;
+  for (let i = 0; i < keys.length; i += chunkSize) {
+    const chunk = keys.slice(i, i + chunkSize);
+    const rows = await db
+      .selectFrom('app.financeTransactions')
+      .select(['source', 'externalId'])
+      .where('userId', '=', userId)
+      .where((eb) =>
+        eb.or(
+          chunk.map((key) =>
+            eb.and([eb('source', '=', key.source), eb('externalId', '=', key.externalId)]),
+          ),
+        ),
+      )
+      .execute();
+    for (const row of rows) existing.add(`${row.source}|${row.externalId}`);
+  }
+  const updated = keys.filter((key) => existing.has(`${key.source}|${key.externalId}`)).length;
+  return { created: keys.length - updated, updated };
+}
+
 export async function importSheetTransactions(
   userId: string,
   options: {
@@ -615,6 +652,9 @@ export async function importSheetTransactions(
 
   if (dryRun) {
     summary.upserted += valid.length;
+    const split = await projectImportSplit(userId, valid);
+    summary.created = split.created;
+    summary.updated = split.updated;
     if (rejected.length === 0) {
       const arms = replaceArmsByUser.get(userId) ?? [];
       arms.push({

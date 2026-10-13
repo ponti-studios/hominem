@@ -513,10 +513,23 @@ export const financeTransactionUpsertInputSchema = sheetTransactionPayloadSchema
   multiCurrencyAccounts: multiCurrencyAccountsSchema,
 });
 
+const sheetRejectionReasonSchema = z.enum([
+  'unknown_account',
+  'currency_mismatch',
+  'invalid_posted_on',
+  'invalid_amount',
+  'invalid_currency',
+  'invalid_description',
+  'pending_row',
+]);
+
 export const financeTransactionUpsertOutputSchema = z.object({
-  id: z.string(),
+  id: z.string().nullable(),
   created: z.boolean(),
-  accountId: z.string(),
+  accountId: z.string().nullable(),
+  reason: sheetRejectionReasonSchema
+    .nullable()
+    .describe('Row-level rejection reason; null when the row was accepted.'),
 });
 
 // -- finance_transactions_import --
@@ -539,16 +552,6 @@ export const financeTransactionsImportInputSchema = z.object({
     .optional()
     .describe('Explicit { "Sheet Label": "hominem-account-id" } overrides.'),
 });
-
-const sheetRejectionReasonSchema = z.enum([
-  'unknown_account',
-  'currency_mismatch',
-  'invalid_posted_on',
-  'invalid_amount',
-  'invalid_currency',
-  'invalid_description',
-  'pending_row',
-]);
 
 export const financeTransactionsImportOutputSchema = z.object({
   received: z.number().int().min(0),
