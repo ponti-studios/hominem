@@ -3,12 +3,14 @@ import {
   computeLedgerRunway,
   countAccounts,
   createOrGetAccount,
+  createOrGetFinanceCategory,
   deleteTransactionsByIds,
   getAccountSummaries,
   getFinanceNetWorth,
   getFinanceRecentTransactions,
   getFinanceSpendingByCategory,
   listAccounts,
+  mergeFinanceCategories,
 } from '@hominem/finance-services';
 
 import {
@@ -33,6 +35,10 @@ import {
   financeBudgetBreakdownOutputSchema,
   financeCategoriesInputSchema,
   financeCategoriesOutputSchema,
+  financeCategoryCreateInputSchema,
+  financeCategoryCreateOutputSchema,
+  financeCategoryMergeInputSchema,
+  financeCategoryMergeOutputSchema,
   financeMonthlyStatsInputSchema,
   financeMonthlyStatsOutputSchema,
   financeNetWorthInputSchema,
@@ -382,6 +388,7 @@ registerTool(
         tags: t.tags,
         notes: t.notes,
         orderNumber: t.orderNumber,
+        counterpartId: t.counterpartId,
         source: t.source,
         recurring: t.recurring,
         pending: t.pending,
@@ -538,6 +545,40 @@ registerTool(
     resultCap: 500,
   },
   async (ownerUserId) => listFinanceCategoryOptions(ownerUserId),
+);
+
+registerTool(
+  {
+    ...financeWriteTool,
+    name: 'finance_category_create',
+    title: 'Finance Category Create',
+    description:
+      'Create a finance category, or return the existing one when the name matches case-insensitively (created: false). Categories are what the sheet import resolves against and what budgets reference. dryRun reports the outcome without writing.',
+    inputSchema: financeCategoryCreateInputSchema,
+    outputSchema: financeCategoryCreateOutputSchema,
+    resultCap: 1,
+  },
+  async (ownerUserId, input) =>
+    createOrGetFinanceCategory(ownerUserId, input.name, { dryRun: input.dryRun }),
+);
+
+registerTool(
+  {
+    ...financeWriteTool,
+    name: 'finance_category_merge',
+    title: 'Finance Category Merge',
+    description:
+      'Reassign every transaction from one category to another. The emptied category stays in place (budgets reference categories) but unused. Uncategorized may be a target, never a source. dryRun counts what would move without writing.',
+    inputSchema: financeCategoryMergeInputSchema,
+    outputSchema: financeCategoryMergeOutputSchema,
+    resultCap: 1,
+  },
+  async (ownerUserId, input) =>
+    mergeFinanceCategories(
+      ownerUserId,
+      { from: input.from, into: input.into },
+      { dryRun: input.dryRun },
+    ),
 );
 
 registerTool(

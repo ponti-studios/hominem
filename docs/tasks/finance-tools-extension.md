@@ -23,8 +23,8 @@ every new tool.
 - [x] §4 `finance_transaction_delete`.
 - [x] §5 `orderNumber` read parity (schema fix, not a new tool).
 - [x] §6 `finance_tag_rename` + `finance_tag_merge`.
-- [ ] §7 `finance_category_create` + `finance_category_merge`.
-- [ ] §8 transfer linking (`counterpartId`) — data model change.
+- [x] §7 `finance_category_create` + `finance_category_merge`.
+- [x] §8 transfer linking (`counterpartId`) — data model change.
 
 ## Notes and deviations
 
@@ -49,3 +49,15 @@ every new tool.
   and `tags:write` (a finance-scoped client can mutate tags other domains display). Merge
   deletes the emptied tag — its remaining assignments go via the ON DELETE CASCADE — and
   skips assignments the target already holds (the active-assignment unique index).
+- §7: `finance_categories` has no unique index on (user_id, lower(name)); create resolves
+  case-insensitively in code (no duplicates exist in production today — 74 categories).
+  Merge keeps the emptied category in place (budgets reference categories).
+- §8: `counterpart_id` landed as its own migration PR (#431) ahead of the code that reads it
+  (expand/contract), applied to production via `deploy-db-migrations` after a verified
+  `pg_dump`. A counterpart must already exist and sit on a **different** account
+  (`invalid_counterpart` otherwise); a link is mirrored on both rows, re-pointing clears the
+  old side, and `ON DELETE SET NULL` clears the surviving leg when one is deleted. Same-batch
+  pairs must therefore be linked in a second call.
+- §1.4 `dryRun`: implemented on §2, §7 and §8's mutating tools. **OPEN — USER DECISION
+  REQUIRED:** whether to retro-fit `dryRun` to §4 delete and §6 rename/merge, which shipped
+  without it.

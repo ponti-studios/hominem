@@ -104,6 +104,10 @@ export const financeTransactionSchema = z.object({
   recurring: z.boolean(),
   pending: z.boolean(),
   excluded: z.boolean(),
+  counterpartId: z
+    .string()
+    .nullable()
+    .describe('Other leg of an internal transfer; mirrored on both rows.'),
 });
 
 export const financeRecentTransactionsInputSchema = z
@@ -568,6 +572,14 @@ const sheetTransactionPayloadSchema = z.object({
     .boolean()
     .default(false)
     .describe('v1 has no pending state — pending rows are rejected loudly.'),
+  counterpartId: z
+    .string()
+    .uuid()
+    .nullable()
+    .optional()
+    .describe(
+      'Other leg of an internal transfer: an owned transaction on a different account. The link is mirrored on both rows; invalid targets are rejected as invalid_counterpart.',
+    ),
 });
 
 const multiCurrencyAccountsSchema = z
@@ -590,6 +602,7 @@ const sheetRejectionReasonSchema = z.enum([
   'invalid_amount',
   'invalid_currency',
   'invalid_description',
+  'invalid_counterpart',
   'pending_row',
 ]);
 
@@ -683,3 +696,32 @@ export const financeTagMergeInputSchema = z.object({
 });
 
 export const financeTagMergeOutputSchema = z.object(tagMutationOutputShape);
+
+// -- finance_category_create / finance_category_merge --
+
+const categoryMergeReasonSchema = z
+  .enum(['protected_category', 'unknown_category'])
+  .describe('Stable machine-readable reason; null when the merge succeeded.');
+
+export const financeCategoryCreateInputSchema = z.object({
+  name: z.string().trim().min(1, 'invalid_name').describe('Category name.'),
+  dryRun: z.boolean().default(false).describe('Report the outcome without writing.'),
+});
+
+export const financeCategoryCreateOutputSchema = z.object({
+  id: z.string().nullable().describe('Category id; null on a dry run that would create.'),
+  name: z.string(),
+  created: z.boolean(),
+});
+
+export const financeCategoryMergeInputSchema = z.object({
+  from: z.string().min(1).describe('Category to fold away, by name or id.'),
+  into: z.string().min(1).describe('Category to keep, by name or id.'),
+  dryRun: z.boolean().default(false).describe('Count what would move without writing.'),
+});
+
+export const financeCategoryMergeOutputSchema = z.object({
+  transactionsReassigned: z.number().int().min(0),
+  category: z.object({ id: z.string(), name: z.string() }).nullable(),
+  reason: categoryMergeReasonSchema.nullable(),
+});
