@@ -29,6 +29,8 @@ export interface SheetTransactionInput {
   transactionType?: 'debit' | 'credit' | 'transfer' | null;
   /** v1 has no pending state — pending rows are rejected loudly. */
   pending?: boolean;
+  /** Other leg of an internal transfer; must exist, be owned, and sit on a different account. */
+  counterpartId?: string | null;
 }
 
 export interface SheetImportOptions {
@@ -51,6 +53,7 @@ export type SheetRejectionReason =
   | 'invalid_amount'
   | 'invalid_currency'
   | 'invalid_description'
+  | 'invalid_counterpart'
   | 'pending_row';
 
 export interface SheetImportRowResult {
@@ -185,6 +188,7 @@ const KNOWN_REJECTION_MESSAGES: readonly SheetRejectionReason[] = [
   'invalid_amount',
   'invalid_currency',
   'invalid_description',
+  'invalid_counterpart',
   'pending_row',
 ];
 
@@ -208,11 +212,33 @@ export interface ValidatedSheetRow {
   accountId: string;
   currencyCode: string;
   externalId: string;
+  counterpartId: string | null;
 }
 
 export interface SheetBatchValidation {
   valid: ValidatedSheetRow[];
   rejected: Array<{ index: number; reason: SheetRejectionReason }>;
+}
+
+/**
+ * Resolve a transfer counterpart: it must be an owned transaction on a *different* account.
+ * Anything else is `invalid_counterpart` — the model holds a link once it is known, it never
+ * guesses one.
+ */
+async function resolveCounterpartId(
+  userId: string,
+  counterpartId: string,
+  accountId: string,
+): Promise<string> {
+  const target = await db
+    .selectFrom('app.financeTransactions')
+    .select(['id', 'accountId'])
+    .where('id', '=', counterpartId)
+    .where('userId', '=', userId)
+    .limit(1)
+    .executeTakeFirst();
+  if (!target || target.accountId === accountId) throw new Error('invalid_counterpart');
+  return target.id;
 }
 
 /** Validate + resolve a batch with zero writes. Shared by dry runs, the
@@ -245,11 +271,21 @@ export async function validateSheetBatch(
       rejected.push({ index, reason: 'currency_mismatch' });
       continue;
     }
+    let counterpartId: string | null = null;
+    if (input.counterpartId) {
+      try {
+        counterpartId = await resolveCounterpartId(userId, input.counterpartId, resolved.accountId);
+      } catch {
+        rejected.push({ index, reason: 'invalid_counterpart' });
+        continue;
+      }
+    }
     valid.push({
       index,
       input,
       accountId: resolved.accountId,
       currencyCode,
+      counterpartId,
       externalId: computeSheetExternalId(
         input.postedOn,
         resolved.accountId,
@@ -291,6 +327,111 @@ export async function ensureFinanceCategoryId(
     .limit(1)
     .executeTakeFirstOrThrow();
   return retry.id;
+}
+
+export interface CreateFinanceCategoryResult {
+  id: string | null;
+  name: string;
+  created: boolean;
+}
+
+/**
+ * Create a finance category, or return the existing one when the name matches
+ * case-insensitively — the same identity rule the import's ensure step uses. `dryRun` reports
+ * the outcome without writing; a would-be create has no id yet.
+ */
+export async function createOrGetFinanceCategory(
+  userId: string,
+  name: string,
+  options?: { dryRun?: boolean },
+): Promise<CreateFinanceCategoryResult> {
+  const trimmed = name.trim();
+  const existing = await db
+    .selectFrom('app.financeCategories')
+    .select(['id', 'name'])
+    .where('userId', '=', userId)
+    .where(sql<string>`lower(name)`, '=', trimmed.toLowerCase())
+    .limit(1)
+    .executeTakeFirst();
+  if (existing) return { id: existing.id, name: existing.name, created: false };
+  if (options?.dryRun) return { id: null, name: trimmed, created: true };
+
+  const id = randomUUID();
+  await db.insertInto('app.financeCategories').values({ id, userId, name: trimmed }).execute();
+  return { id, name: trimmed, created: true };
+}
+
+export type FinanceCategoryMergeReason = 'protected_category' | 'unknown_category';
+
+export interface MergeFinanceCategoriesResult {
+  transactionsReassigned: number;
+  category: { id: string; name: string } | null;
+  reason: FinanceCategoryMergeReason | null;
+}
+
+async function resolveFinanceCategory(
+  userId: string,
+  nameOrId: string,
+): Promise<{ id: string; name: string } | null> {
+  const trimmed = nameOrId.trim();
+  const base = db
+    .selectFrom('app.financeCategories')
+    .select(['id', 'name'])
+    .where('userId', '=', userId);
+  const row = UUID_PATTERN.test(trimmed)
+    ? await base.where('id', '=', trimmed).limit(1).executeTakeFirst()
+    : await base
+        .where(sql<string>`lower(name)`, '=', trimmed.toLowerCase())
+        .limit(1)
+        .executeTakeFirst();
+  return row ?? null;
+}
+
+/**
+ * Reassign every transaction from one category to another. The emptied category is left in
+ * place (budgets reference categories) but unused. `Uncategorized` may be a target, never a
+ * source. `dryRun` counts what would move without writing.
+ */
+export async function mergeFinanceCategories(
+  userId: string,
+  input: { from: string; into: string },
+  options?: { dryRun?: boolean },
+): Promise<MergeFinanceCategoriesResult> {
+  const source = await resolveFinanceCategory(userId, input.from);
+  if (!source) return { transactionsReassigned: 0, category: null, reason: 'unknown_category' };
+  if (source.name.toLowerCase() === UNCATEGORIZED_NAME.toLowerCase()) {
+    return { transactionsReassigned: 0, category: null, reason: 'protected_category' };
+  }
+
+  const target = await resolveFinanceCategory(userId, input.into);
+  if (!target) return { transactionsReassigned: 0, category: null, reason: 'unknown_category' };
+
+  if (source.id === target.id) {
+    return { transactionsReassigned: 0, category: target, reason: null };
+  }
+
+  if (options?.dryRun) {
+    const row = await db
+      .selectFrom('app.financeTransactions')
+      .select((eb) => eb.fn.countAll<number>().as('count'))
+      .where('userId', '=', userId)
+      .where('categoryId', '=', source.id)
+      .executeTakeFirst();
+    return { transactionsReassigned: Number(row?.count ?? 0), category: target, reason: null };
+  }
+
+  const result = await db
+    .updateTable('app.financeTransactions')
+    .set({ categoryId: target.id })
+    .where('userId', '=', userId)
+    .where('categoryId', '=', source.id)
+    .executeTakeFirst();
+
+  return {
+    transactionsReassigned: Number(result.numUpdatedRows),
+    category: target,
+    reason: null,
+  };
 }
 
 export async function listFinanceCategories(
@@ -463,6 +604,35 @@ async function getTransactionTagIds(transactionId: string, userId: string): Prom
   return result.map((row) => row.tagId);
 }
 
+/**
+ * Mirror a transfer link: the counterpart points back at this row, and a link this row used to
+ * hold is cleared from the other side, so re-pointing (or nulling) stays symmetric.
+ */
+async function applyCounterpartLink(
+  userId: string,
+  transactionId: string,
+  previousCounterpartId: string | null,
+  counterpartId: string | null,
+): Promise<void> {
+  if (previousCounterpartId && previousCounterpartId !== counterpartId) {
+    await db
+      .updateTable('app.financeTransactions')
+      .set({ counterpartId: null })
+      .where('id', '=', previousCounterpartId)
+      .where('userId', '=', userId)
+      .where('counterpartId', '=', transactionId)
+      .execute();
+  }
+  if (counterpartId) {
+    await db
+      .updateTable('app.financeTransactions')
+      .set({ counterpartId: transactionId })
+      .where('id', '=', counterpartId)
+      .where('userId', '=', userId)
+      .execute();
+  }
+}
+
 export async function upsertSheetTransaction(
   userId: string,
   input: SheetTransactionInput,
@@ -475,6 +645,10 @@ export async function upsertSheetTransaction(
   if ('reason' in resolved) throw new Error(resolved.reason);
   const currencyCode = input.currencyCode.toUpperCase();
   assertCurrencyAllowed(input.account, currencyCode, resolved, options?.multiCurrencyAccounts);
+
+  const counterpartId = input.counterpartId
+    ? await resolveCounterpartId(userId, input.counterpartId, resolved.accountId)
+    : null;
 
   const source = normalizeSource(input.source);
   const description = input.description.trim();
@@ -496,7 +670,7 @@ export async function upsertSheetTransaction(
 
   const existing = await db
     .selectFrom('app.financeTransactions')
-    .select(['id', 'categoryId', 'excluded', 'notes', 'recurring', 'merchantName'])
+    .select(['id', 'categoryId', 'counterpartId', 'excluded', 'notes', 'recurring', 'merchantName'])
     .where('userId', '=', userId)
     .where('source', '=', source)
     .where('externalId', '=', externalId)
@@ -522,6 +696,7 @@ export async function upsertSheetTransaction(
     }
     const mutableSame =
       existing.categoryId === categoryId &&
+      (existing.counterpartId ?? null) === counterpartId &&
       existing.excluded === excluded &&
       (existing.notes ?? null) === notes &&
       existing.recurring === recurring &&
@@ -534,6 +709,7 @@ export async function upsertSheetTransaction(
       .updateTable('app.financeTransactions')
       .set({
         categoryId,
+        counterpartId,
         excluded,
         notes,
         recurring,
@@ -542,6 +718,7 @@ export async function upsertSheetTransaction(
       .where('id', '=', existing.id)
       .where('userId', '=', userId)
       .execute();
+    await applyCounterpartLink(userId, existing.id, existing.counterpartId, counterpartId);
     await setTransactionTags(existing.id, userId, tagIds);
     return { id: existing.id, created: false, updated: true, accountId: resolved.accountId };
   }
@@ -560,6 +737,7 @@ export async function upsertSheetTransaction(
       postedOn: input.postedOn,
       currencyCode,
       categoryId,
+      counterpartId,
       excluded: input.excluded ?? false,
       recurring: input.recurring ?? false,
       notes,
@@ -567,6 +745,7 @@ export async function upsertSheetTransaction(
       externalId,
     })
     .execute();
+  await applyCounterpartLink(userId, id, null, counterpartId);
   await setTransactionTags(id, userId, tagIds);
   return { id, created: true, updated: false, accountId: resolved.accountId };
 }
