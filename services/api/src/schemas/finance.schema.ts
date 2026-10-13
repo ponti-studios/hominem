@@ -96,6 +96,10 @@ export const financeTransactionSchema = z.object({
   categoryName: z.string().nullable(),
   tags: z.array(z.string()),
   notes: z.string().nullable(),
+  orderNumber: z
+    .string()
+    .nullable()
+    .describe('Read back out of notes; the write DTO folds it in as an "Order #: <value>" line.'),
   source: z.string().nullable(),
   recurring: z.boolean(),
   pending: z.boolean(),
@@ -653,3 +657,29 @@ export const financeTransactionDeleteOutputSchema = z.object({
   ),
   notFound: z.array(z.string()),
 });
+
+// -- finance_tag_rename / finance_tag_merge --
+
+const tagMutationReasonSchema = z
+  .enum(['invalid_name', 'target_exists', 'unknown_tag'])
+  .describe('Stable machine-readable reason; null when the mutation succeeded.');
+
+const tagMutationOutputShape = {
+  assignmentsMoved: z.number().int().min(0),
+  tag: z.object({ id: z.string(), name: z.string() }).nullable(),
+  reason: tagMutationReasonSchema.nullable(),
+};
+
+export const financeTagRenameInputSchema = z.object({
+  from: z.string().min(1).describe('Existing tag name, matched case-insensitively.'),
+  to: z.string().min(1).describe('New display name.'),
+});
+
+export const financeTagRenameOutputSchema = z.object(tagMutationOutputShape);
+
+export const financeTagMergeInputSchema = z.object({
+  from: z.string().min(1).describe('Tag to fold away, matched case-insensitively.'),
+  into: z.string().min(1).describe('Tag to keep, matched case-insensitively.'),
+});
+
+export const financeTagMergeOutputSchema = z.object(tagMutationOutputShape);

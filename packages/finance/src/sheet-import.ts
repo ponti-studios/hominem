@@ -114,6 +114,20 @@ export function combineNotes(
   return parts.join('\n').slice(0, 2000);
 }
 
+/**
+ * Read the order number back out of `notes` — there is no order-number column, the write
+ * path folds it into notes as an `Order #: <value>` line (see combineNotes). Returns null
+ * when the notes carry no order number.
+ */
+export function extractOrderNumber(notes: string | null | undefined): string | null {
+  if (!notes) return null;
+  for (const line of notes.split('\n')) {
+    const match = /^Order #:\s*(.+)$/.exec(line.trim());
+    if (match?.[1]) return match[1].trim();
+  }
+  return null;
+}
+
 export function parseTags(tags: string[] | undefined): string[] {
   if (!tags) return [];
   const seen = new Set<string>();

@@ -21,8 +21,8 @@ every new tool.
 - [x] §2 `finance_account_create` — unblocks the staged 1,712-row parked import.
 - [x] §3 `finance_account_summary` — the reconciliation primitive.
 - [x] §4 `finance_transaction_delete`.
-- [ ] §5 `orderNumber` read parity (schema fix, not a new tool).
-- [ ] §6 `finance_tag_rename` + `finance_tag_merge`.
+- [x] §5 `orderNumber` read parity (schema fix, not a new tool).
+- [x] §6 `finance_tag_rename` + `finance_tag_merge`.
 - [ ] §7 `finance_category_create` + `finance_category_merge`.
 - [ ] §8 transfer linking (`counterpartId`) — data model change.
 
@@ -42,3 +42,10 @@ every new tool.
 - §1.1: MCP input-validation failures (Zod schema rejections) now surface a named reason
   instead of the generic "Unable to complete the MCP tool request", which previously hid
   client input mistakes behind the same text as a server fault.
+- §5: there is no `order_number` column — the write path folds it into `notes` as an
+  `Order #: <value>` line (`combineNotes`), so read parity derives it back out
+  (`extractOrderNumber`) for search and recent. All 9 production rows carry that exact form.
+- §6: tags are owner-wide, not finance-only, so both tools require **both** `finance:write`
+  and `tags:write` (a finance-scoped client can mutate tags other domains display). Merge
+  deletes the emptied tag — its remaining assignments go via the ON DELETE CASCADE — and
+  skips assignments the target already holds (the active-assignment unique index).
