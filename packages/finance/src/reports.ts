@@ -1,5 +1,6 @@
 import { db, sql } from '@hominem/db/core';
 
+import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
 import { toCents } from './utils';
 
 function fallbackDate(daysAgo: number, now: Date): string {
@@ -99,12 +100,16 @@ export async function getFinanceRecentTransactions(
       'a.name as accountName',
       't.postedOn',
       't.description',
+      't.merchantName',
       't.amount',
       't.currencyCode',
+      't.transactionType',
       't.categoryId',
       'c.name as categoryName',
+      't.notes',
+      't.source',
+      't.recurring',
       't.excluded',
-      't.transactionType',
     ])
     .where('t.userId', '=', ownerUserId)
     .where('t.pending', '=', false);
@@ -119,19 +124,16 @@ export async function getFinanceRecentTransactions(
     query = query.where('t.postedOn', '<=', to);
   }
 
-  const rows: Array<{
-    id: string;
-    accountId: string;
-    accountName: string;
-    postedOn: string;
-    description: string | null;
-    amount: number | string;
-    currencyCode: string;
-    categoryId: string | null;
-    categoryName: string | null;
-    excluded: boolean;
-    transactionType: string;
-  }> = await query.orderBy('t.postedOn', 'desc').orderBy('t.id', 'desc').limit(limit).execute();
+  const rows = await query
+    .orderBy('t.postedOn', 'desc')
+    .orderBy('t.id', 'desc')
+    .limit(limit)
+    .execute();
+
+  const tagNames = await getTransactionTagNames(
+    ownerUserId,
+    rows.map((row) => row.id),
+  );
 
   const transactions = rows.map((row) => ({
     id: row.id,
@@ -139,15 +141,44 @@ export async function getFinanceRecentTransactions(
     accountName: row.accountName,
     postedOn: row.postedOn,
     description: row.description ?? null,
+    merchantName: row.merchantName ?? null,
     amountCents: toCents(row.amount),
     currencyCode: row.currencyCode,
+    transactionType: row.transactionType,
     categoryId: row.categoryId ?? null,
     categoryName: row.categoryName ?? null,
+    tags: tagNames.get(row.id) ?? [],
+    notes: row.notes ?? null,
+    source: row.source,
+    recurring: row.recurring === true,
+    pending: false,
     excluded: row.excluded === true,
-    transactionType: row.transactionType,
   }));
 
   return { transactions, count: transactions.length };
+}
+
+/** Tag names per transaction, owner-scoped, for a bounded set of transaction ids. */
+export async function getTransactionTagNames(
+  ownerUserId: string,
+  ids: readonly string[],
+): Promise<Map<string, string[]>> {
+  const map = new Map<string, string[]>();
+  if (ids.length === 0) return map;
+  const rows = await db
+    .selectFrom('app.tagAssignments as ta')
+    .innerJoin('app.tags as g', 'g.id', 'ta.tagId')
+    .select(['ta.entityId', 'g.name'])
+    .where('g.ownerUserid', '=', ownerUserId)
+    .where('ta.entityTable', '=', sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)
+    .where('ta.entityId', 'in', ids)
+    .execute();
+  for (const row of rows) {
+    const list = map.get(row.entityId) ?? [];
+    list.push(row.name);
+    map.set(row.entityId, list);
+  }
+  return map;
 }
 
 export async function getFinanceSpendingByCategory(

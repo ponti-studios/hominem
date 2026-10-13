@@ -307,11 +307,19 @@ registerTool(
       transactions: result.data.map((t) => ({
         id: t.id,
         accountId: t.accountId,
+        accountName: t.accountName,
         postedOn: t.postedOn,
         description: t.description,
         merchantName: t.merchantName,
         amountCents: toCents(t.amount),
         currencyCode: t.currencyCode,
+        transactionType: t.transactionType,
+        categoryId: t.categoryId,
+        categoryName: t.categoryName,
+        tags: t.tags,
+        notes: t.notes,
+        source: t.source,
+        recurring: t.recurring,
         pending: t.pending,
         excluded: t.excluded,
       })),
@@ -443,7 +451,7 @@ registerTool(
     name: 'finance_transaction_upsert',
     title: 'Finance Transaction Upsert',
     description:
-      'Upsert a single finance transaction. Idempotent on the natural key (postedOn, account, description, amountCents, currencyCode). Unknown accounts are rejected, never auto-created.',
+      'Upsert a single finance transaction. Idempotent on the natural key (postedOn, account, description, amountCents, currencyCode). Unknown accounts are rejected, never auto-created. A rejected row returns reason and null id instead of failing the call.',
     inputSchema: financeTransactionUpsertInputSchema,
     outputSchema: financeTransactionUpsertOutputSchema,
     resultCap: 1,
@@ -480,12 +488,15 @@ registerTool(
     preview: async (_ownerUserId, input) => {
       const parsed = financeTransactionsImportInputSchema.safeParse(input);
       if (!parsed.success) return null;
-      if (parsed.data.mode !== 'replace') return null;
-      return {
-        mode: 'replace',
-        count: parsed.data.transactions.length,
-        dryRun: parsed.data.dryRun,
-      };
+      const { mode, dryRun, iUnderstand, transactions } = parsed.data;
+      // Confirmation is only needed for a real wipe. A dry run writes nothing, and
+      // `iUnderstand: true` is the tool's documented confirmation contract for replace —
+      // the service already enforces both (it refuses replace without iUnderstand and a
+      // matching prior dry run). Eliciting on top of that hard-fails every MCP client
+      // that does not declare the elicitation capability, so skip it in both cases.
+      if (mode !== 'replace') return null;
+      if (dryRun || iUnderstand) return null;
+      return { mode: 'replace', count: transactions.length, dryRun };
     },
   },
   async (ownerUserId, input) => importFinanceTransactions(ownerUserId, input),

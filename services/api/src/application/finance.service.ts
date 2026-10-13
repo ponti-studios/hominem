@@ -3,10 +3,12 @@ import {
   FINANCE_TRANSACTION_ENTITY_TYPE,
   getMonthlyStatsByContract,
   getTopMerchantsByContract,
+  getTransactionTagNames,
   importSheetTransactions,
   listFinanceCategories,
   queryAnalyticsTransactionsByContract,
   summarizeCurrencies,
+  toSheetRejectionReason,
   upsertSheetTransaction,
   type SheetTransactionInput,
 } from '@hominem/finance-services';
@@ -164,17 +166,21 @@ export async function searchTransactions(userId: string, input: TransactionSearc
   const tagNames = input.tagNames ?? [];
 
   const filterableBase = () =>
-    db.selectFrom('app.financeTransactions').where('userId', '=', userId);
+    db
+      .selectFrom('app.financeTransactions as t')
+      .innerJoin('app.financeAccounts as a', 'a.id', 't.accountId')
+      .leftJoin('app.financeCategories as c', 'c.id', 't.categoryId')
+      .where('t.userId', '=', userId);
 
   const applyFilters = (query: ReturnType<typeof filterableBase>) => {
     let filtered = query;
-    if (accountIds.length > 0) filtered = filtered.where('accountId', 'in', accountIds);
-    if (input.dateFrom) filtered = filtered.where('postedOn', '>=', input.dateFrom);
-    if (input.dateTo) filtered = filtered.where('postedOn', '<=', input.dateTo);
+    if (accountIds.length > 0) filtered = filtered.where('t.accountId', 'in', accountIds);
+    if (input.dateFrom) filtered = filtered.where('t.postedOn', '>=', input.dateFrom);
+    if (input.dateTo) filtered = filtered.where('t.postedOn', '<=', input.dateTo);
     if (input.text) {
       const term = `%${input.text}%`;
       filtered = filtered.where((eb) =>
-        eb.or([eb('description', 'ilike', term), eb('merchantName', 'ilike', term)]),
+        eb.or([eb('t.description', 'ilike', term), eb('t.merchantName', 'ilike', term)]),
       );
     }
     // A correlated EXISTS subquery (rather than materializing every matching transaction id
@@ -192,7 +198,7 @@ export async function searchTransactions(userId: string, input: TransactionSearc
               '=',
               sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
             )
-            .where('app.tagAssignments.entityId', '=', eb.ref('app.financeTransactions.id'))
+            .where('app.tagAssignments.entityId', '=', eb.ref('t.id'))
             .where('app.tags.ownerUserid', '=', userId)
             .where((eb2) => {
               const conditions = [];
@@ -208,9 +214,27 @@ export async function searchTransactions(userId: string, input: TransactionSearc
 
   const [rows, filteredRow, totalRow] = await Promise.all([
     applyFilters(filterableBase())
-      .selectAll()
-      .orderBy('postedOn', 'desc')
-      .orderBy('id', 'desc')
+      .select([
+        't.id',
+        't.userId',
+        't.accountId',
+        'a.name as accountName',
+        't.amount',
+        't.description',
+        't.merchantName',
+        't.postedOn',
+        't.currencyCode',
+        't.transactionType',
+        't.categoryId',
+        'c.name as categoryName',
+        't.notes',
+        't.source',
+        't.recurring',
+        't.pending',
+        't.excluded',
+      ])
+      .orderBy('t.postedOn', 'desc')
+      .orderBy('t.id', 'desc')
       .limit(input.limit)
       .offset(input.offset)
       .execute(),
@@ -222,18 +246,31 @@ export async function searchTransactions(userId: string, input: TransactionSearc
       .executeTakeFirst(),
   ]);
 
+  const tagNamesById = await getTransactionTagNames(
+    userId,
+    rows.map((row) => row.id),
+  );
+
   return {
     data: rows.map((t) => ({
       id: t.id,
       userId: t.userId,
       accountId: t.accountId,
+      accountName: t.accountName,
       amount: t.amount ? Number(t.amount) : 0,
       description: t.description ?? null,
-      postedOn: t.postedOn ? String(t.postedOn) : '',
       merchantName: t.merchantName ?? null,
+      postedOn: t.postedOn ? String(t.postedOn) : '',
       currencyCode: t.currencyCode,
-      pending: t.pending,
-      excluded: t.excluded,
+      transactionType: t.transactionType,
+      categoryId: t.categoryId ?? null,
+      categoryName: t.categoryName ?? null,
+      tags: tagNamesById.get(t.id) ?? [],
+      notes: t.notes ?? null,
+      source: t.source,
+      recurring: t.recurring === true,
+      pending: t.pending === true,
+      excluded: t.excluded === true,
     })),
     filteredCount: Number(filteredRow?.count ?? 0),
     totalUserCount: Number(totalRow?.count ?? 0),
@@ -254,10 +291,14 @@ export async function upsertFinanceTransaction(
     const result = await upsertSheetTransaction(ownerUserId, row, accountMap, {
       multiCurrencyAccounts,
     });
-    return { id: result.id, created: result.created, accountId: result.accountId };
+    return { id: result.id, created: result.created, accountId: result.accountId, reason: null };
   } catch (error) {
-    if (error instanceof Error) throw new Error(error.message);
-    throw error;
+    // A row-level rejection (unknown account, currency mismatch, invalid row) is ordinary
+    // data, not a server fault — return it structured, the same shape the batch import's
+    // per-row results use, instead of an opaque MCP failure.
+    const reason = toSheetRejectionReason(error);
+    if (!reason) throw error;
+    return { id: null, created: false, accountId: null, reason };
   }
 }
 

@@ -37,6 +37,8 @@ describe('sheet-import pure transforms', () => {
     expect(inferTransactionType('Paycheck', 200000, null)).toBe('credit');
     expect(inferTransactionType('Autopay Electric Bill', -3000, null)).toBe('debit');
     expect(inferTransactionType('McDonalds', -108, 'credit')).toBe('credit');
+    // Zero-amount rows have no direction — not a credit.
+    expect(inferTransactionType('U-haul Moving & Storage', 0, null)).toBe('adjustment');
   });
 
   it('combines notes with order number and truncates', () => {
