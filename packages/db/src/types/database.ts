@@ -502,6 +502,7 @@ export interface AppFinanceTransactions {
   accountId: string;
   amount: Numeric;
   categoryId: string | null;
+  counterpartId: string | null;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   currencyCode: Generated<string>;
   description: string | null;
