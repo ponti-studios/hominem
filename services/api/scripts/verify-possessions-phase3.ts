@@ -252,6 +252,7 @@ async function main() {
       vessels: report.vessels,
       groups: report.groups,
       unassigned: report.unassigned,
+      markers: report.markers,
       truncated: report.truncated,
     },
   };
@@ -289,7 +290,7 @@ async function main() {
   console.log(
     `Vessel report: ${report.vessels.length} vessels, groups:`,
     report.groups.map((g) => `${g.group} ${g.totalKg.toFixed(2)}/limit ${g.limitKg}`).join(', '),
-    `unassigned ${report.unassigned.count}`,
+    `unassigned ${report.unassigned.count} markers ${report.markers.count}`,
   );
 }
 

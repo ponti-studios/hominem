@@ -72,6 +72,7 @@ const containerFields = {
   limitKg: z.number().min(0).max(99_999.999).nullable().optional(),
   tareKg: z.number().min(0).max(99_999.999).nullable().optional(),
   vesselGroup: z.string().trim().min(1).max(50).nullable().optional(),
+  vesselTokens: z.array(z.string().trim().min(1).max(100)).nullable().optional(),
   externalId: z.string().trim().min(1).max(100).nullable().optional(),
   metadata: z.record(z.string(), z.json()).optional(),
 };
@@ -189,6 +190,7 @@ export const vesselWeightReportSchema = z.object({
     }),
   ),
   unassigned: z.object({ count: z.number(), weightKg: z.number() }),
+  markers: z.object({ count: z.number(), weightKg: z.number() }),
   truncated: z.boolean(),
 });
 export const possessionFindingSchema = z.object({
@@ -260,6 +262,7 @@ export const containerRecordSchema = z.object({
   limitKg: z.number().nullable(),
   tareKg: z.number().nullable(),
   vesselGroup: z.string().nullable(),
+  vesselTokens: z.array(z.string()).nullable(),
   externalId: z.string().nullable(),
   metadata: z.record(z.string(), z.unknown()),
   itemCount: z.number(),

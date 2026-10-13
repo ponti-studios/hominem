@@ -874,6 +874,7 @@ export interface AppPossessionContainers {
   trackingReference: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
   vesselGroup: string | null;
+  vesselTokens: string[] | null;
   volumeCbm: Numeric | null;
   weightKg: Numeric | null;
 }
@@ -938,6 +939,14 @@ export interface AppPossessions {
   url: string | null;
   volumeCbm: Numeric | null;
   weightKg: Numeric | null;
+}
+
+export interface AppPossessionVesselConfig {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  groupAllowances: Generated<Json>;
+  markerTokens: Generated<string[]>;
+  ownerUserid: string;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
 export interface AppSocialContacts {
@@ -1426,6 +1435,7 @@ export interface DB {
   'app.possessionEvents': AppPossessionEvents;
   'app.possessionImages': AppPossessionImages;
   'app.possessions': AppPossessions;
+  'app.possessionVesselConfig': AppPossessionVesselConfig;
   'app.socialContacts': AppSocialContacts;
   'app.socialEngagements': AppSocialEngagements;
   'app.socialMessages': AppSocialMessages;

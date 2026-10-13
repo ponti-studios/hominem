@@ -1,6 +1,6 @@
 import { db, pool } from '@hominem/db/core';
 import { NotFoundError, ValidationError } from '@hominem/db/errors';
-import { ContainerRepository } from '@hominem/db/possessions';
+import { ContainerRepository, VesselConfigRepository } from '@hominem/db/possessions';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
@@ -266,6 +266,68 @@ describe('vessel weights', () => {
     for (const item of [a, b, ghost, archived]) await removePossession(alice, item.id);
     await removeContainer(alice, pouch.id);
     await removeContainer(alice, box.id);
+  });
+
+  it('resolves declared vessel membership, excludes markers, and uses group allowances', async () => {
+    await VesselConfigRepository.set(db, alice, {
+      markerTokens: ['carry'],
+      groupAllowances: { cabin: 12, checked: 46 },
+    });
+    const medium = await createContainer(alice, {
+      name: 'Membership case',
+      tareKg: 4.5,
+      limitKg: 23,
+      vesselGroup: 'checked',
+    });
+    await updateContainer(alice, medium.id, { vesselTokens: ['luggage_medium', 'vacuum_pants'] });
+    const cabinCase = await createContainer(alice, {
+      name: 'Membership cabin',
+      tareKg: 1,
+      limitKg: 12,
+      vesselGroup: 'cabin',
+    });
+    await updateContainer(alice, cabinCase.id, { vesselTokens: ['luggage_small'] });
+
+    // Two tokens that resolve to the same vessel, one marker, one genuinely unknown.
+    const trousers = await createPossession(alice, {
+      name: 'Trousers',
+      weightKg: 1.1,
+      moveAction: 'vacuum_pants',
+    });
+    const jacket = await createPossession(alice, {
+      name: 'Jacket',
+      weightKg: 0.9,
+      moveAction: 'luggage_medium',
+    });
+    const carried = await createPossession(alice, {
+      name: 'Jeans',
+      weightKg: 0.7,
+      moveAction: 'carry',
+    });
+    const ghost = await createPossession(alice, {
+      name: 'Ghost',
+      weightKg: 0.2,
+      moveAction: 'no_such_vessel',
+    });
+
+    const report = await vesselWeightReport(alice);
+    const mediumRow = report.vessels.find((v) => v.vessel === 'Membership case')!;
+    expect(mediumRow).toMatchObject({ contentsKg: 2, tareKg: 4.5, totalKg: 6.5, group: 'checked' });
+    expect(report.markers).toEqual({ count: 1, weightKg: 0.7 });
+    const checked = report.groups.find((g) => g.group === 'checked')!;
+    expect(checked).toMatchObject({ contentsKg: 2, tareKg: 4.5, limitKg: 46, overLimit: false });
+    expect(report.vessels.find((v) => v.vessel === 'no_such_vessel')?.unknownVessel).toBe(true);
+
+    const findings = (await validatePossessions(alice)).findings;
+    const codesFor = (id: string) =>
+      findings.filter((f) => f.possessionId === id).map((f) => f.code);
+    expect(codesFor(carried.id)).not.toContain('unknown_vessel');
+    expect(codesFor(trousers.id)).not.toContain('unknown_vessel');
+    expect(codesFor(ghost.id)).toContain('unknown_vessel');
+
+    for (const item of [trousers, jacket, carried, ghost]) await removePossession(alice, item.id);
+    await removeContainer(alice, medium.id);
+    await removeContainer(alice, cabinCase.id);
   });
 });
 
