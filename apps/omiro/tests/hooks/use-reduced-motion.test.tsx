@@ -38,13 +38,19 @@ describe('useReducedMotion', () => {
     mockRemove.mockReset();
   });
 
-  it('starts false and picks up the initial async accessibility value', async () => {
-    mockIsReduceMotionEnabled.mockResolvedValueOnce(true);
-    const { useReducedMotion } = await loadHook();
-    const { result } = renderHook(() => useReducedMotion());
+  it(
+    'starts false and picks up the initial async accessibility value',
+    async () => {
+      mockIsReduceMotionEnabled.mockResolvedValueOnce(true);
+      const { useReducedMotion } = await loadHook();
+      const { result } = renderHook(() => useReducedMotion());
 
-    await waitFor(() => expect(result.current).toBe(true));
-  });
+      await waitFor(() => expect(result.current).toBe(true));
+    },
+    // The dynamic re-import + render can exceed vitest's 5s default under a loaded parallel
+    // gate; the assertion itself is still bounded by waitFor.
+    20000,
+  );
 
   it('reacts to reduceMotionChanged events', async () => {
     mockIsReduceMotionEnabled.mockResolvedValueOnce(false);
