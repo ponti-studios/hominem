@@ -68,5 +68,6 @@ Out of scope: Phase 5 cutover, `move_plan`, `possession_merge`.
 
 - Script smoke run (synthetic post-import state): counts 8/8, zero missing/dupes, spot
   items resolved (created_from_existing_item, leading-zero serial, CON-024).
-- Live run + triage notes once the prod tunnel is reachable (or run by the user via
-  `verify-possessions-phase3.ts --email ... --dir ...`).
+- Live run 2026-10-13 against production (via the database TCP proxy): results in the
+  Run results section above; `~/Downloads/verify-report.json` and
+  `~/Downloads/diff-report.json` are the artifacts.
