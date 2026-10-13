@@ -122,7 +122,9 @@ describe('UsagePage', () => {
     render(<UsagePage />);
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Month' })).toBeTruthy(), {
-      timeout: 5000,
+      // Above vitest's 5s default test timeout would guarantee a race under a loaded gate,
+      // so wait longer for the first render and give the test headroom beyond that.
+      timeout: 10000,
     });
     fireEvent.click(screen.getByRole('button', { name: 'Month' }));
     fireEvent.click(screen.getByRole('button', { name: 'Price' }));
@@ -136,5 +138,5 @@ describe('UsagePage', () => {
     expect(useUsageTimeseries).toHaveBeenLastCalledWith(
       expect.objectContaining({ granularity: 'month' }),
     );
-  });
+  }, 20000);
 });

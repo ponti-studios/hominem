@@ -88,6 +88,7 @@ export interface CreateOrGetAccountInput {
   institution?: string | null;
   mask?: string | null;
   status?: 'open' | 'closed';
+  accountType?: string;
   dryRun?: boolean;
 }
 
@@ -152,7 +153,7 @@ export async function createOrGetAccount(
       name,
       currencyCode,
       lifecycleStatus: status,
-      accountType: 'checking',
+      accountType: input.accountType ?? 'checking',
       metadata: {},
       ...(institutionId ? { institutionId } : {}),
       ...(input.mask ? { mask: input.mask } : {}),
@@ -391,4 +392,119 @@ export async function getAccountByPlaidId(
     .limit(1)
     .executeTakeFirst();
   return result ? withBalance(result) : null;
+}
+
+export interface AccountSummary {
+  accountId: string;
+  accountName: string;
+  status: string;
+  transactionCount: number;
+  excludedCount: number;
+  totals: Array<{ currencyCode: string; sumAmount: number }>;
+  minPostedOn: string | null;
+  maxPostedOn: string | null;
+}
+
+export interface AccountSummaries {
+  summaries: AccountSummary[];
+  totalCount: number;
+}
+
+/**
+ * Per-account reconciliation totals: transaction and excluded counts, per-currency sums, and
+ * the posted-on span. Counts and sums cover every row (pending and excluded included) so the
+ * figures reconcile against a full ledger enumeration. Closed accounts are included by
+ * default — reconciliation has to see everything.
+ */
+export async function getAccountSummaries(
+  userId: string,
+  options?: { accountId?: string; includeClosed?: boolean },
+): Promise<AccountSummaries> {
+  const includeClosed = options?.includeClosed ?? true;
+  let accountQuery = db
+    .selectFrom('app.financeAccounts')
+    .select(['id', 'name', 'lifecycleStatus'])
+    .where('userId', '=', userId);
+  if (!includeClosed) {
+    accountQuery = accountQuery.where('lifecycleStatus', '!=', 'closed');
+  }
+  if (options?.accountId) {
+    accountQuery = accountQuery.where('id', '=', options.accountId);
+  }
+  accountQuery = accountQuery.orderBy('name', 'asc').orderBy('id', 'asc');
+  const accounts = await accountQuery.execute();
+
+  const accountIds = accounts.map((account) => account.id);
+  const totals = new Map<string, Array<{ currencyCode: string; sumAmount: number }>>();
+  const counts = new Map<string, { count: number; min: string | null; max: string | null }>();
+  const excluded = new Map<string, number>();
+
+  if (accountIds.length > 0) {
+    const rows = await db
+      .selectFrom('app.financeTransactions')
+      .select((eb) => [
+        'accountId',
+        'currencyCode',
+        eb.fn.countAll<number>().as('txCount'),
+        eb.fn.sum<number>('amount').as('sumAmount'),
+        eb.fn.min('postedOn').as('minPostedOn'),
+        eb.fn.max('postedOn').as('maxPostedOn'),
+      ])
+      .where('userId', '=', userId)
+      .where('accountId', 'in', accountIds)
+      .groupBy(['accountId', 'currencyCode'])
+      .execute();
+
+    for (const row of rows) {
+      const currencyTotals = totals.get(row.accountId) ?? [];
+      currencyTotals.push({
+        currencyCode: row.currencyCode,
+        sumAmount: Number(row.sumAmount ?? 0),
+      });
+      totals.set(row.accountId, currencyTotals);
+
+      const accountCount = counts.get(row.accountId) ?? { count: 0, min: null, max: null };
+      accountCount.count += Number(row.txCount);
+      if (
+        row.minPostedOn !== null &&
+        (accountCount.min === null || row.minPostedOn < accountCount.min)
+      ) {
+        accountCount.min = row.minPostedOn;
+      }
+      if (
+        row.maxPostedOn !== null &&
+        (accountCount.max === null || row.maxPostedOn > accountCount.max)
+      ) {
+        accountCount.max = row.maxPostedOn;
+      }
+      counts.set(row.accountId, accountCount);
+    }
+
+    const excludedRows = await db
+      .selectFrom('app.financeTransactions')
+      .select((eb) => ['accountId', eb.fn.countAll<number>().as('excludedCount')])
+      .where('userId', '=', userId)
+      .where('accountId', 'in', accountIds)
+      .where('excluded', '=', true)
+      .groupBy('accountId')
+      .execute();
+    for (const row of excludedRows) {
+      excluded.set(row.accountId, Number(row.excludedCount));
+    }
+  }
+
+  const summaries = accounts.map((account) => ({
+    accountId: account.id,
+    accountName: account.name,
+    status: account.lifecycleStatus,
+    transactionCount: counts.get(account.id)?.count ?? 0,
+    excludedCount: excluded.get(account.id) ?? 0,
+    totals: (totals.get(account.id) ?? []).sort((a, b) =>
+      a.currencyCode.localeCompare(b.currencyCode),
+    ),
+    minPostedOn: counts.get(account.id)?.min ?? null,
+    maxPostedOn: counts.get(account.id)?.max ?? null,
+  }));
+
+  return { summaries, totalCount: summaries.length };
 }
