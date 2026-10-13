@@ -3,6 +3,7 @@ import { NotFoundError } from '@hominem/db/errors';
 import {
   ContainerRepository,
   PossessionRepository,
+  VesselConfigRepository,
   type ContainerRecord,
   type Json,
   type PossessionEvent,
@@ -21,6 +22,7 @@ import type {
   PossessionSearchInput,
   PossessionUpdateInput,
 } from '../schemas/possessions.schema';
+import { buildVesselLookup, normalizeVesselToken, type VesselLookup } from './vessel-config';
 
 // The single implementation behind the possessions routes. Writes that validate a reference
 // (container ownership, nesting cycles) run in a transaction so a rejection leaves nothing behind.
@@ -225,6 +227,7 @@ export interface VesselWeightReport {
     overLimit: boolean;
   }>;
   unassigned: { count: number; weightKg: number };
+  markers: { count: number; weightKg: number };
   truncated: boolean;
 }
 
@@ -232,6 +235,7 @@ const roundKg = (value: number) => Math.round(value * 1000) / 1000;
 
 interface VesselGraph {
   containers: ContainerRecord[];
+  lookup: VesselLookup;
   byName: Map<string, ContainerRecord>;
   outermostName: (containerId: string) => string | null;
 }
@@ -239,11 +243,7 @@ interface VesselGraph {
 async function loadVesselGraph(userId: string): Promise<VesselGraph> {
   const containers = await ContainerRepository.list(db, userId);
   const byId = new Map(containers.map((c) => [c.id, c]));
-  const byName = new Map<string, ContainerRecord>();
-  for (const container of containers) {
-    const key = container.name.trim().toLowerCase();
-    if (key && !byName.has(key)) byName.set(key, container);
-  }
+  const lookup = buildVesselLookup(containers);
   const outermostName = (containerId: string): string | null => {
     let current = byId.get(containerId);
     if (!current) return null;
@@ -258,7 +258,7 @@ async function loadVesselGraph(userId: string): Promise<VesselGraph> {
     }
     return current.name;
   };
-  return { containers, byName, outermostName };
+  return { containers, lookup, byName: lookup.byName, outermostName };
 }
 
 // The weights-tab replacement (plan §6.5): every live item's weight rolls up to exactly one
@@ -267,15 +267,27 @@ async function loadVesselGraph(userId: string): Promise<VesselGraph> {
 // summed under its own row but flagged unknownVessel — the vacuum_shirts_tees ghost class —
 // so a typo can never silently vanish from the totals.
 export async function vesselWeightReport(userId: string): Promise<VesselWeightReport> {
-  const [graph, items] = await Promise.all([
+  const [graph, items, config] = await Promise.all([
     loadVesselGraph(userId),
     PossessionRepository.weighables(db, userId),
+    VesselConfigRepository.get(db, userId),
   ]);
-  const { containers, byName, outermostName } = graph;
+  const { containers, lookup, outermostName } = graph;
+  const markers = new Set(config.markerTokens.map(normalizeVesselToken));
 
-  const rows = new Map<string, { display: string; contentsKg: number }>();
+  // Every live item rolls up to exactly one vessel: its moveAction token (the sheet's Q
+  // column) resolved through the vessel membership, else its outermost container. Tokens
+  // that are travel/disposal markers are counted separately, never as vessels. A token
+  // resolving to no vessel is still summed under its own flagged row — a typo can never
+  // silently vanish from the totals.
+  const rows = new Map<
+    string,
+    { vessel: ContainerRecord | null; display: string; contentsKg: number }
+  >();
   let unassignedCount = 0;
   let unassignedKg = 0;
+  let markerCount = 0;
+  let markerKg = 0;
   for (const item of items) {
     const token =
       item.moveAction?.trim() || (item.containerId ? outermostName(item.containerId) : null);
@@ -284,34 +296,41 @@ export async function vesselWeightReport(userId: string): Promise<VesselWeightRe
       unassignedKg += item.weightKg ?? 0;
       continue;
     }
-    const key = token.toLowerCase();
-    const row = rows.get(key) ?? { display: token, contentsKg: 0 };
+    if (markers.has(token.toLowerCase())) {
+      markerCount += 1;
+      markerKg += item.weightKg ?? 0;
+      continue;
+    }
+    const vessel = lookup.resolve(token);
+    const key = vessel ? `id:${vessel.id}` : `token:${token.toLowerCase()}`;
+    const row = rows.get(key) ?? { vessel, display: token, contentsKg: 0 };
     row.contentsKg += item.weightKg ?? 0;
     rows.set(key, row);
   }
 
   const vessels: VesselWeightRow[] = [];
-  for (const [key, row] of rows) {
-    const container = byName.get(key);
-    const tareKg = container?.tareKg ?? 0;
+  for (const row of rows.values()) {
+    const vessel = row.vessel;
+    const tareKg = vessel?.tareKg ?? 0;
     const contentsKg = roundKg(row.contentsKg);
     const totalKg = roundKg(contentsKg + tareKg);
     vessels.push({
-      vessel: container?.name ?? row.display,
+      vessel: vessel?.name ?? row.display,
       contentsKg,
       tareKg,
       totalKg,
-      limitKg: container?.limitKg ?? null,
-      notes: container?.description ?? null,
-      group: container?.vesselGroup ?? null,
-      overLimit: container?.limitKg != null && totalKg > container.limitKg,
-      unknownVessel: !container,
+      limitKg: vessel?.limitKg ?? null,
+      notes: vessel?.description ?? null,
+      group: vessel?.vesselGroup ?? null,
+      overLimit: vessel?.limitKg != null && totalKg > vessel.limitKg,
+      unknownVessel: !vessel,
     });
   }
   // Declared packing vessels with nothing in them yet still count their tare.
   const keyed = new Set(vessels.map((v) => v.vessel.trim().toLowerCase()));
   for (const container of containers) {
-    if (!container.vesselGroup || keyed.has(container.name.trim().toLowerCase())) continue;
+    const declared = (container.vesselTokens?.length ?? 0) > 0 || container.vesselGroup != null;
+    if (!declared || keyed.has(container.name.trim().toLowerCase())) continue;
     const tareKg = container.tareKg ?? 0;
     vessels.push({
       vessel: container.name,
@@ -333,42 +352,38 @@ export async function vesselWeightReport(userId: string): Promise<VesselWeightRe
   const truncated = vessels.length > 500;
   const shown = truncated ? vessels.slice(0, 500) : vessels;
 
-  const groupTotals = new Map<
-    string,
-    { contentsKg: number; tareKg: number; limitKg: number; hasLimit: boolean }
-  >();
+  // Group allowances are shared airline limits, not the sum of member limits (the tab shows
+  // cabin 12 across three bags and checked 46 across two).
+  const groupTotals = new Map<string, { contentsKg: number; tareKg: number }>();
   for (const vessel of vessels) {
     if (!vessel.group) continue;
-    const total = groupTotals.get(vessel.group) ?? {
-      contentsKg: 0,
-      tareKg: 0,
-      limitKg: 0,
-      hasLimit: false,
-    };
+    const total = groupTotals.get(vessel.group) ?? { contentsKg: 0, tareKg: 0 };
     total.contentsKg += vessel.contentsKg;
     total.tareKg += vessel.tareKg;
-    if (vessel.limitKg != null) {
-      total.limitKg += vessel.limitKg;
-      total.hasLimit = true;
-    }
     groupTotals.set(vessel.group, total);
   }
   const groups = [...groupTotals]
-    .map(([group, total]) => ({
-      group,
-      contentsKg: roundKg(total.contentsKg),
-      tareKg: roundKg(total.tareKg),
-      totalKg: roundKg(total.contentsKg + total.tareKg),
-      limitKg: roundKg(total.limitKg),
-      overLimit:
-        total.hasLimit && roundKg(total.contentsKg + total.tareKg) > roundKg(total.limitKg),
-    }))
+    .map(([group, total]) => {
+      const contentsKg = roundKg(total.contentsKg);
+      const tareKg = roundKg(total.tareKg);
+      const totalKg = roundKg(contentsKg + tareKg);
+      const limitKg = config.groupAllowances[group] ?? 0;
+      return {
+        group,
+        contentsKg,
+        tareKg,
+        totalKg,
+        limitKg,
+        overLimit: limitKg > 0 && totalKg > limitKg,
+      };
+    })
     .sort((a, b) => a.group.localeCompare(b.group));
 
   return {
     vessels: shown,
     groups,
     unassigned: { count: unassignedCount, weightKg: roundKg(unassignedKg) },
+    markers: { count: markerCount, weightKg: roundKg(markerKg) },
     truncated,
   };
 }
@@ -537,10 +552,12 @@ export async function validatePossessions(
   userId: string,
   input: { limit?: number; offset?: number } = {},
 ): Promise<{ findings: PossessionFinding[]; total: number }> {
-  const [graph, items] = await Promise.all([
+  const [graph, items, config] = await Promise.all([
     loadVesselGraph(userId),
     PossessionRepository.auditables(db, userId),
+    VesselConfigRepository.get(db, userId),
   ]);
+  const markers = new Set(config.markerTokens.map(normalizeVesselToken));
   const findings: PossessionFinding[] = [];
   const at = (possessionId: string, externalId: string | null) => ({
     possessionId,
@@ -564,7 +581,12 @@ export async function validatePossessions(
         message: 'Live item has no weight, so vessel totals undercount it',
       });
     }
-    if (!item.isArchived && token && !graph.byName.has(token.toLowerCase())) {
+    if (
+      !item.isArchived &&
+      token &&
+      !markers.has(token.toLowerCase()) &&
+      !graph.lookup.resolve(token)
+    ) {
       findings.push({
         code: 'unknown_vessel',
         severity: 'warning',

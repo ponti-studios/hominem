@@ -77,6 +77,7 @@ export interface ContainerRecord {
   limitKg: number | null;
   tareKg: number | null;
   vesselGroup: string | null;
+  vesselTokens: string[] | null;
   externalId: string | null;
   metadata: Record<string, unknown>;
   itemCount: number;
@@ -129,6 +130,7 @@ export interface ContainerInput {
   limitKg?: number | null;
   tareKg?: number | null;
   vesselGroup?: string | null;
+  vesselTokens?: string[] | null;
   externalId?: string | null;
   metadata?: Record<string, Json>;
 }
@@ -199,6 +201,7 @@ function toContainer(row: ContainerRow & { itemCount?: string | number | null })
     limitKg: numberOrNull(row.limitKg),
     tareKg: numberOrNull(row.tareKg),
     vesselGroup: row.vesselGroup,
+    vesselTokens: row.vesselTokens ?? null,
     externalId: row.externalId,
     metadata: toObject(row.metadata),
     itemCount: Number(row.itemCount ?? 0),
@@ -256,6 +259,7 @@ function containerValues(input: Partial<ContainerInput>): Updateable<AppPossessi
     limitKg: input.limitKg,
     tareKg: input.tareKg,
     vesselGroup: input.vesselGroup,
+    vesselTokens: input.vesselTokens,
     externalId: input.externalId,
     metadata: input.metadata,
   };
@@ -837,5 +841,57 @@ export const ContainerRepository = {
         .executeTakeFirstOrThrow(),
     );
     return { record: toContainer(row), created: row.created };
+  },
+};
+
+export interface VesselConfig {
+  markerTokens: string[];
+  groupAllowances: Record<string, number>;
+}
+
+const toNumberRecord = (value: Json): Record<string, number> => {
+  const record: Record<string, number> = {};
+  for (const [key, entry] of Object.entries(toObject(value))) {
+    if (typeof entry === 'number' && Number.isFinite(entry)) record[key] = entry;
+  }
+  return record;
+};
+
+// Per-owner weight-report config (plan §6.5): the tokens that name no vessel, and the
+// shared allowance per packing group. Owner-owned data, never hardcoded.
+export const VesselConfigRepository = {
+  async get(handle: DbHandle, userId: string): Promise<VesselConfig> {
+    const row = await handle
+      .selectFrom('app.possessionVesselConfig')
+      .selectAll()
+      .where('ownerUserid', '=', userId)
+      .executeTakeFirst();
+    return {
+      markerTokens: row?.markerTokens ?? [],
+      groupAllowances: row ? toNumberRecord(row.groupAllowances) : {},
+    };
+  },
+
+  async set(handle: DbHandle, userId: string, input: VesselConfig): Promise<VesselConfig> {
+    const row = await handle
+      .insertInto('app.possessionVesselConfig')
+      .values({
+        ownerUserid: userId,
+        markerTokens: input.markerTokens,
+        groupAllowances: input.groupAllowances,
+      })
+      .onConflict((oc) =>
+        oc.column('ownerUserid').doUpdateSet({
+          markerTokens: input.markerTokens,
+          groupAllowances: input.groupAllowances,
+          updatedat: sql`now()`,
+        }),
+      )
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    return {
+      markerTokens: row.markerTokens,
+      groupAllowances: toNumberRecord(row.groupAllowances),
+    };
   },
 };

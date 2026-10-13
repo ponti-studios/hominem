@@ -3,6 +3,7 @@ export {
   POSSESSION_EVENT_KINDS,
   POSSESSION_STATUSES,
   PossessionRepository,
+  VesselConfigRepository,
 } from './services/possessions/possession.repository';
 export type {
   ContainerImpact,
@@ -16,5 +17,6 @@ export type {
   PossessionRecord,
   PossessionStatus,
   PossessionSummary,
+  VesselConfig,
 } from './services/possessions/possession.repository';
 export type { Json } from './types/database';
