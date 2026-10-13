@@ -159,6 +159,42 @@ describe('finance_transaction_upsert', () => {
     expect(row.notes).toContain('Order #: ABC-123');
   });
 
+  it('reads tags, notes, source and recurring back through the read tools (B2)', async () => {
+    const up = await callTool(userId, 'finance_transaction_upsert', {
+      postedOn: '2026-10-08',
+      account: 'Sheet Checking',
+      description: 'Round Trip Row',
+      amountCents: -4200,
+      currencyCode: 'USD',
+      tags: ['weekly-shop'],
+      notes: 'round trip',
+      source: 'plaid',
+      recurring: true,
+    });
+    const id = content(up).id as string;
+
+    const byId = (res: unknown) =>
+      (content(res as McpToolResult<Content>).transactions as Array<Record<string, unknown>>).find(
+        (t) => t.id === id,
+      );
+
+    const search = byId(
+      await callTool(userId, 'finance_transaction_search', { query: 'Round Trip Row' }),
+    );
+    expect(search).toMatchObject({
+      notes: 'round trip',
+      source: 'plaid',
+      recurring: true,
+      transactionType: 'debit',
+      accountName: 'Sheet Checking',
+    });
+    expect(search?.tags).toEqual(['weekly-shop']);
+
+    const recent = byId(await callTool(userId, 'finance_recent_transactions', { limit: 50 }));
+    expect(recent).toMatchObject({ notes: 'round trip', source: 'plaid', recurring: true });
+    expect(recent?.tags).toEqual(['weekly-shop']);
+  });
+
   it('rejects unknown accounts and currency mismatches', async () => {
     const unknown = await callTool(userId, 'finance_transaction_upsert', {
       postedOn: '2026-09-04',
