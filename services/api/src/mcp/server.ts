@@ -15,7 +15,7 @@ import type { Context } from 'hono';
 
 import type { CapabilityDefinition } from '../application/capability';
 import type { AuthContext } from '../auth/types';
-import { UnauthorizedError } from '../errors';
+import { isServiceError, UnauthorizedError } from '../errors';
 import { confirmationCodec, type ConfirmationState } from './confirmation';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
@@ -122,6 +122,10 @@ async function invokeTool(
       userId: ownerUserId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
+    // A known service error (e.g. a validation failure the caller can act on) carries a
+    // client-safe message — surface it instead of the opaque generic text, which gave the
+    // caller no way to tell a bad payload from a server fault. Anything else stays generic.
+    if (isServiceError(error)) return createErrorResult(error.message);
     return createErrorResult(PUBLIC_TOOL_ERROR);
   }
 }

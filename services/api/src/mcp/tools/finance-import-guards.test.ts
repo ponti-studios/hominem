@@ -69,97 +69,46 @@ describe('replace guards', () => {
         mode: 'replace',
         transactions: [oneRow('Guard Checking')],
       }),
-    ).rejects.toThrow('replace_requires_confirmation');
+    ).rejects.toThrow(/requires iUnderstand/);
   });
 
-  it('refuses replace without a prior session dry run', async () => {
-    await expect(
-      callTool(guardUser, 'finance_transactions_import', {
-        mode: 'replace',
-        iUnderstand: true,
-        transactions: [oneRow('Guard Checking')],
-      }),
-    ).rejects.toThrow('replace_requires_dry_run');
-  });
-
-  it('refuses replace after a dry run that had rejections', async () => {
+  it('replaces with iUnderstand and a fully valid payload, with no prior dry run', async () => {
     await callTool(guardUser, 'finance_transactions_import', {
       mode: 'append',
-      dryRun: true,
-      transactions: [oneRow('Guard Checking'), oneRow('Missing Bank …0000')],
-    });
-    await expect(
-      callTool(guardUser, 'finance_transactions_import', {
-        mode: 'replace',
-        iUnderstand: true,
-        transactions: [oneRow('Guard Checking')],
-      }),
-    ).rejects.toThrow('replace_requires_dry_run');
-  });
-
-  it('allows replace after a clean dry run, then disarms', async () => {
-    const dry = await callTool(guardUser, 'finance_transactions_import', {
-      mode: 'append',
-      dryRun: true,
       transactions: [oneRow('Guard Checking')],
     });
-    expect(content(dry).rejected).toEqual([]);
     const replaced = await callTool(guardUser, 'finance_transactions_import', {
       mode: 'replace',
       iUnderstand: true,
       transactions: [oneRow('Guard Checking')],
     });
-    expect(content(replaced)).toMatchObject({ received: 1, created: 1 });
-    await expect(
-      callTool(guardUser, 'finance_transactions_import', {
-        mode: 'replace',
-        iUnderstand: true,
-        transactions: [oneRow('Guard Checking')],
-      }),
-    ).rejects.toThrow('replace_requires_dry_run');
+    expect(content(replaced)).toMatchObject({ received: 1, upserted: 1, created: 1 });
+    const rows = await db
+      .selectFrom('app.financeTransactions')
+      .select('description')
+      .where('userId', '=', guardUser)
+      .execute();
+    expect(rows.map((row) => row.description)).toEqual(['Guard Row']);
   });
 
-  it('refuses replace when the payload differs from the dry run, without wiping', async () => {
-    const seeded = await callTool(multiUser, 'finance_transactions_import', {
-      mode: 'append',
-      transactions: [oneRow('Guard Checking')],
-    });
-    expect(content(seeded).created).toBe(1);
-    const otherRow = { ...oneRow('Guard Checking'), description: 'Different Row' };
+  it('refuses replace when any row would be rejected, without wiping', async () => {
     await callTool(multiUser, 'finance_transactions_import', {
       mode: 'append',
-      dryRun: true,
       transactions: [oneRow('Guard Checking')],
     });
     await expect(
       callTool(multiUser, 'finance_transactions_import', {
         mode: 'replace',
         iUnderstand: true,
-        transactions: [otherRow],
+        transactions: [oneRow('Guard Checking'), oneRow('Missing Bank …0000')],
       }),
-    ).rejects.toThrow('replace_payload_mismatch');
+    ).rejects.toThrow(/would be rejected/);
     const survivors = await db
       .selectFrom('app.financeTransactions')
       .select('description')
       .where('userId', '=', multiUser)
       .execute();
     expect(survivors.map((row) => row.description)).toEqual(['Guard Row']);
-  });
-
-  it('refuses replace when the options differ from the dry run', async () => {
-    await callTool(allowUser, 'finance_transactions_import', {
-      mode: 'append',
-      dryRun: true,
-      transactions: [oneRow('Guard Checking')],
-    });
-    await expect(
-      callTool(allowUser, 'finance_transactions_import', {
-        mode: 'replace',
-        iUnderstand: true,
-        multiCurrencyAccounts: ['Guard Checking'],
-        transactions: [oneRow('Guard Checking')],
-      }),
-    ).rejects.toThrow('replace_payload_mismatch');
   });
 });
 

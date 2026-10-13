@@ -941,3 +941,47 @@ describe('mcp server transport', () => {
     });
   });
 });
+
+// B5 regression: a client that does NOT declare the elicitation capability must be able to
+// run a confirmed replace. Before the fix the server elicited for every replace and such a
+// client could never answer, so the call failed; now iUnderstand is the confirmation and no
+// elicitation is sent. This exercises the real MCP server + tool handler end to end.
+describe('finance replace from a client without elicitation', () => {
+  const accountId = '11111111-1111-4111-8111-111111111b05';
+
+  beforeAll(async () => {
+    await pool.query(
+      'INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
+      [testUser.id, testUser.name, testUser.email, true],
+    );
+    await pool.query(
+      `INSERT INTO app.finance_accounts
+         (id, user_id, name, account_type, currency_code, lifecycle_status, include_in_net_worth)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING`,
+      [accountId, testUser.id, 'B5 Checking', 'checking', 'USD', 'open', true],
+    );
+  });
+
+  it('runs mode replace with iUnderstand and no elicitation handler', async () => {
+    const client = await createClient(createApp(), 'finance:write');
+    const result = await client.callTool({
+      name: 'finance_transactions_import',
+      arguments: {
+        mode: 'replace',
+        iUnderstand: true,
+        transactions: [
+          {
+            postedOn: '2026-10-10',
+            account: accountId,
+            description: 'B5 Replace',
+            amountCents: -100,
+            currencyCode: 'USD',
+          },
+        ],
+      },
+    });
+    expect(result.isError ?? false).toBe(false);
+    expect(result.structuredContent).toMatchObject({ received: 1, upserted: 1, created: 1 });
+    await client.close();
+  });
+});

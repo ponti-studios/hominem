@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 
 import { db, sql } from '@hominem/db/core';
+import { ValidationError } from '@hominem/db/errors';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
 import { toNumber } from './utils';
@@ -163,18 +164,6 @@ function validateRow(input: SheetTransactionInput): SheetRejectionReason | null 
 // {fingerprint, accountMap, multiCurrencyAccounts}. A replace consumes the
 // matching arm, so every wipe needs a fresh dry run of the same rows with
 // the same options. Process-local by design (same-session guard).
-interface ReplaceArm {
-  fingerprint: string;
-  accountMap?: Record<string, string>;
-  multiCurrencyAccounts?: string[];
-}
-
-const replaceArmsByUser = new Map<string, ReplaceArm[]>();
-
-export function isReplaceArmed(userId: string): boolean {
-  return (replaceArmsByUser.get(userId) ?? []).length > 0;
-}
-
 const KNOWN_REJECTION_MESSAGES: readonly SheetRejectionReason[] = [
   'unknown_account',
   'currency_mismatch',
@@ -210,22 +199,6 @@ export interface ValidatedSheetRow {
 export interface SheetBatchValidation {
   valid: ValidatedSheetRow[];
   rejected: Array<{ index: number; reason: SheetRejectionReason }>;
-}
-
-function stableOptionsFingerprint(
-  valid: ValidatedSheetRow[],
-  accountMap: Record<string, string> | undefined,
-  multiCurrencyAccounts: string[] | undefined,
-): string {
-  return createHash('sha256')
-    .update(
-      JSON.stringify({
-        keys: valid.map((row) => row.externalId).sort(),
-        accountMap: accountMap ?? null,
-        multiCurrencyAccounts: [...(multiCurrencyAccounts ?? [])].sort(),
-      }),
-    )
-    .digest('hex');
 }
 
 /** Validate + resolve a batch with zero writes. Shared by dry runs, the
@@ -742,33 +715,24 @@ export async function importSheetTransactions(
     const split = await projectImportSplit(userId, valid, mode);
     summary.created = split.created;
     summary.updated = split.updated;
-    if (rejected.length === 0) {
-      const arms = replaceArmsByUser.get(userId) ?? [];
-      arms.push({
-        fingerprint: stableOptionsFingerprint(valid, accountMap, multiCurrencyAccounts),
-        ...(accountMap ? { accountMap } : {}),
-        ...(multiCurrencyAccounts ? { multiCurrencyAccounts } : {}),
-      });
-      replaceArmsByUser.set(userId, arms);
-    }
     return summary;
   }
 
+  // Replace wipes the caller's transactions before inserting. It is gated on the explicit
+  // confirmation (iUnderstand) and on the payload being fully valid — the batch was
+  // validated above, so a replace can never wipe and then discover rejections. There is no
+  // in-process dry-run "arm": that state did not survive a restart (it silently made
+  // replace unusable after any deploy), and the inline validation is the guarantee it
+  // provided.
   if (mode === 'replace') {
-    if (!iUnderstand) throw new Error('replace_requires_confirmation');
-    const fingerprint = stableOptionsFingerprint(valid, accountMap, multiCurrencyAccounts);
-    const arms = replaceArmsByUser.get(userId) ?? [];
-    if (arms.length === 0) throw new Error('replace_requires_dry_run');
-    const armIndex = arms.findIndex(
-      (arm) =>
-        arm.fingerprint === fingerprint &&
-        JSON.stringify(arm.accountMap ?? null) === JSON.stringify(accountMap ?? null) &&
-        JSON.stringify([...(arm.multiCurrencyAccounts ?? [])].sort()) ===
-          JSON.stringify([...(multiCurrencyAccounts ?? [])].sort()),
-    );
-    if (armIndex === -1) throw new Error('replace_payload_mismatch');
-    arms.splice(armIndex, 1);
-    if (arms.length === 0) replaceArmsByUser.delete(userId);
+    if (!iUnderstand) {
+      throw new ValidationError('mode "replace" requires iUnderstand: true.');
+    }
+    if (rejected.length > 0) {
+      throw new ValidationError(
+        `mode "replace" refused: ${rejected.length} row(s) would be rejected; fix them and retry (nothing was wiped).`,
+      );
+    }
     await db.deleteFrom('app.financeTransactions').where('userId', '=', userId).execute();
   }
 
