@@ -164,6 +164,19 @@ async function main() {
   // Existing rows whose mapped sheet values differ from the live record: the importer
   // upserts every sheet row, so these are the non-new rows it will overwrite. This is the
   // "live data wins" review surface the plan wants before any --apply.
+  // jsonb returns object keys in its own order, so a raw JSON.stringify comparison reports
+  // a spurious metadata delta whenever the key order differs from the mapper's insertion
+  // order. Canonicalise (sort keys, recursively) before comparing.
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+  const canonicalJson = (value: unknown): string => {
+    if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+    if (isRecord(value)) {
+      const entries = Object.entries(value).sort(([a], [b]) => a.localeCompare(b));
+      return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(',')}}`;
+    }
+    return JSON.stringify(value ?? null);
+  };
   const same = (a: unknown, b: unknown): boolean => {
     if (typeof a === 'number' && typeof b === 'number') return Math.abs(a - b) < 1e-9;
     return a === b;
@@ -208,7 +221,7 @@ async function main() {
     const link = resolveLink(possession.containerExternalId);
     if (link.pending) changed.push(`containerId (pending link to ${link.pending})`);
     else if (!same(link.id, live.containerId)) changed.push('containerId');
-    if (JSON.stringify(input.metadata ?? {}) !== JSON.stringify(live.metadata ?? {}))
+    if (canonicalJson(input.metadata ?? {}) !== canonicalJson(live.metadata ?? {}))
       changed.push('metadata');
     if (changed.length)
       modifiedRows.push({ externalId: possession.externalId, name: live.name, changed });
@@ -238,7 +251,7 @@ async function main() {
     for (const field of CONTAINER_DELTA_FIELDS) {
       if (!same(input[field], live[field])) changed.push(field);
     }
-    if (JSON.stringify(input.metadata ?? {}) !== JSON.stringify(live.metadata ?? {}))
+    if (canonicalJson(input.metadata ?? {}) !== canonicalJson(live.metadata ?? {}))
       changed.push('metadata');
     const parent = resolveLink(container.parentExternalId);
     if (parent.pending) changed.push(`parentContainerId (pending link to ${parent.pending})`);
