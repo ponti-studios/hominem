@@ -271,10 +271,12 @@ async function main() {
       ` | duplicate ids: live ${out.counts.duplicateLiveItemIds.length}/${out.counts.duplicateLiveContainerIds.length}, sheet ${out.counts.duplicateSheetItemIds.length}/${out.counts.duplicateSheetContainerIds.length}`,
   );
   console.log(`Field parity: ${parityLabel}`);
+  const verdict = (result: { matches: boolean } | null) =>
+    result ? (result.matches ? 'match' : 'MISMATCH') : 'n/a (no such item)';
   console.log(
-    `Spot sample: created_from_existing_item=${out.spotSample.createdFromExistingItem?.matches ? 'match' : 'MISMATCH'}` +
-      ` serial-leading-zero=${out.spotSample.serialWithLeadingZero?.matches ? 'match' : 'MISMATCH'}` +
-      ` in-CON-024=${out.spotSample.inCon024?.matches ? 'match' : 'MISMATCH'}` +
+    `Spot sample: created_from_existing_item=${verdict(out.spotSample.createdFromExistingItem)}` +
+      ` serial-leading-zero=${verdict(out.spotSample.serialWithLeadingZero)}` +
+      ` in-CON-024=${verdict(out.spotSample.inCon024)}` +
       ` top-20 mismatched fields=${spotMismatches}`,
   );
   console.log(`Validate: ${findingsTotal} findings`, byCode);
