@@ -25,8 +25,11 @@ yields `created: 0`.
 - Categories: pre-create taxonomy on demand — unknown/blank names auto-create
   (case-insensitive), plus a guaranteed `Uncategorized`. No hardcoded 52-list;
   the backfill creates whatever the sheet holds.
-- Recurring kept: sheet col K → `recurring` boolean (column already exists).
-- Order # kept: sheet col H appended into `notes` as `Order #: <value>`,
+- Replace gate: `mode: replace` requires `iUnderstand: true` and a payload in which every
+  row validates; it wipes only once both hold, so it can never wipe and then discover
+  rejections. No in-process dry-run "arm": that state lived in memory and silently made
+  replace unusable after any restart (a deploy invalidated it).
+- Recurring kept: sheet col K → `recurring` boolean (column already exists).- Order # kept: sheet col H appended into `notes` as `Order #: <value>`,
   truncated to 2000 chars.
 - Idempotency: `externalId = sheet:<sha1(postedOn|accountId|normalized
   description|amountCents|currencyCode)>` stored with the sheet `source`
@@ -58,7 +61,7 @@ daily wiring, deletes, write-back (Phases 2–4).
 - [x] AC-001: Single upsert creates then re-upsert returns `created: false` with no duplicate row.
 - [x] AC-002: Batch append of N rows then re-run returns `created: 0, updated: 0` (unchanged rows).
 - [x] AC-003: `dryRun: true` writes nothing and reports per-row rejections.
-- [x] AC-004: `mode: replace` (confirmation) wipes only the caller's finance transactions then inserts.
+- [x] AC-004: `mode: replace` (confirmation) wipes only the caller's finance transactions then inserts; refused, with nothing wiped, if any row would be rejected.
 - [x] AC-005: Unknown account → `unknown_account`; currency mismatch → `currency_mismatch`; batch continues.
 - [x] AC-006: `transfer` substring in description → `transfer`; otherwise sign rule (negative → debit, positive → credit, zero → adjustment).
 - [x] AC-007: Unknown/blank category auto-creates (case-insensitive); `finance_categories` lists it.
