@@ -231,6 +231,28 @@ export const financeAccountsOutputSchema = z.object({
     .describe('Total visible accounts before the 50-account result cap.'),
 });
 
+// -- finance_account_create --
+
+export const financeAccountCreateInputSchema = z.object({
+  name: z.string().trim().min(1, 'invalid_name').describe('Display name of the account.'),
+  currencyCode: z
+    .string()
+    .regex(/^[A-Za-z]{3}$/, 'invalid_currency')
+    .describe('ISO 4217 currency code, e.g. USD or GBP.'),
+  institution: z.string().optional().describe('Institution name, e.g. Wise.'),
+  accountNumber: z.string().optional().describe('Mask / last digits as displayed elsewhere.'),
+  status: z.enum(['open', 'closed']).default('open').describe('Account lifecycle status.'),
+  dryRun: z.boolean().default(false).describe('Report the outcome without writing.'),
+});
+
+export const financeAccountCreateOutputSchema = z.object({
+  id: z.string().nullable().describe('Account id; null on a dry run that would create.'),
+  name: z.string(),
+  currencyCode: z.string(),
+  status: z.string(),
+  created: z.boolean(),
+});
+
 // -- finance_top_merchants --
 
 const financeTopMerchantsFieldsSchema = z.object({

@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { db } from '@hominem/db/core';
+import { db, sql } from '@hominem/db/core';
 import type { Selectable } from '@hominem/db/core';
 import type { AppFinanceInstitutions } from '@hominem/db/types';
 
@@ -31,14 +31,15 @@ export async function createInstitution(name: string): Promise<InstitutionRow> {
 }
 
 export async function ensureInstitutionExists(name: string): Promise<InstitutionRow> {
+  const trimmed = name.trim();
   const existing = await db
     .selectFrom('app.financeInstitutions')
     .selectAll()
-    .where('name', '=', name)
+    .where(sql<boolean>`lower(name) = lower(${trimmed})`)
     .limit(1)
     .executeTakeFirst();
   if (existing) {
     return existing;
   }
-  return createInstitution(name);
+  return createInstitution(trimmed);
 }

@@ -12,6 +12,7 @@ import {
   type StandardSchemaWithJSON,
 } from '@modelcontextprotocol/server';
 import type { Context } from 'hono';
+import { ZodError } from 'zod';
 
 import type { CapabilityDefinition } from '../application/capability';
 import type { AuthContext } from '../auth/types';
@@ -124,7 +125,15 @@ async function invokeTool(
     });
     // A known service error (e.g. a validation failure the caller can act on) carries a
     // client-safe message — surface it instead of the opaque generic text, which gave the
-    // caller no way to tell a bad payload from a server fault. Anything else stays generic.
+    // caller no way to tell a bad payload from a server fault. Invalid input (a Zod schema
+    // failure) is likewise the caller's to fix, so it gets the same treatment. Anything else
+    // stays generic so internals are never leaked.
+    if (error instanceof ZodError) {
+      const detail = error.issues
+        .map((issue) => `${issue.path.join('.') || 'input'}: ${issue.message}`)
+        .join('; ');
+      return createErrorResult(`Invalid input: ${detail}`);
+    }
     if (isServiceError(error)) return createErrorResult(error.message);
     return createErrorResult(PUBLIC_TOOL_ERROR);
   }
