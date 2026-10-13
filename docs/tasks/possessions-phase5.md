@@ -14,14 +14,15 @@ The Google Sheet stops being a living registry: it becomes a frozen, dated backu
 Hominem is the single source of truth for inventory work. The column-position map is
 retired and every inventory workflow points at Hominem tools.
 
-## Decisions — OPEN, USER DECISION REQUIRED
+## Decisions
 
-- **Q3 cutover style** (plan §10): hard-freeze one evening, or rolling dual-write with a
-  final diff before freezing. Deferred to cutover in Phase 1.
-- **Q4 frozen backup location** (plan §10): keep the frozen sheet in Drive, or also export
-  a dated CSV into the repo. Deferred to cutover in Phase 1.
-- **Packing list home** (plan §9 Phase 4 residue): the `luggage` tab's 3 rows become a
-  note or a container description in Hominem — which one, and under what name.
+- **Q3 cutover style**: **hard freeze one evening** (2026-10-13) — Charles stops editing
+  the sheet for one evening; the final diff runs against that quiet state, then the sheet
+  is frozen. No rolling dual-write.
+- **Q4 frozen backup location**: **keep the frozen sheet in Drive** (2026-10-13) — a
+  dated, read-only copy; no inventory CSV enters the repo.
+- **Packing list home** — OPEN, USER DECISION REQUIRED: the `luggage` tab's 3 rows become
+  a note or a container description in Hominem; needs the tab export and a chosen home.
 
 ## Scope
 
@@ -37,8 +38,8 @@ plan.
 | ----- | --------- | -------------- | ---------- | --------------------- | --------- |
 | W-221 | Resolve Q3/Q4 + packing-list home | user | — | recorded decision | decisions recorded in this task |
 | W-222 | Fold the luggage packing list into Hominem | api data | W-221 | the note/description live | content present, sheet row count matches |
-| W-223 | Final live-data diff (if dual-write) | api script | W-221 | `diff-possessions.ts` output | 0 unexplained deltas before freeze |
-| W-224 | Freeze the sheet (read-only / dated copy) | user (Drive) | W-223 | frozen sheet exists | sheet no longer accepts edits |
+| W-223 | Final live-data diff on the freeze evening | api script | W-221 | `diff-possessions.ts` output | 0 unexplained deltas before freeze |
+| W-224 | Freeze the sheet (read-only / dated Drive copy) | user (Drive) | W-223 | frozen sheet exists | sheet no longer accepts edits |
 | W-225 | Retire the column-position map; repoint workflows | user + repo docs | W-224 | operating notes updated | no workflow reads the sheet |
 
 ## Evidence
