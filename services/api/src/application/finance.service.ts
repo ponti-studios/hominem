@@ -1,6 +1,7 @@
 import { db, sql } from '@hominem/db/core';
 import {
   FINANCE_TRANSACTION_ENTITY_TYPE,
+  extractOrderNumber,
   getMonthlyStatsByContract,
   getTopMerchantsByContract,
   getTransactionTagNames,
@@ -267,6 +268,7 @@ export async function searchTransactions(userId: string, input: TransactionSearc
       categoryName: t.categoryName ?? null,
       tags: tagNamesById.get(t.id) ?? [],
       notes: t.notes ?? null,
+      orderNumber: extractOrderNumber(t.notes),
       source: t.source,
       recurring: t.recurring === true,
       pending: t.pending === true,

@@ -21,6 +21,7 @@ import {
   searchTransactions,
   upsertFinanceTransaction,
 } from '../../application/finance.service';
+import { mergeTags, renameTag } from '../../application/tags.service';
 import {
   financeAccountCreateInputSchema,
   financeAccountCreateOutputSchema,
@@ -44,6 +45,10 @@ import {
   financeSpendingByCategoryOutputSchema,
   financeTagBreakdownInputSchema,
   financeTagBreakdownOutputSchema,
+  financeTagMergeInputSchema,
+  financeTagMergeOutputSchema,
+  financeTagRenameInputSchema,
+  financeTagRenameOutputSchema,
   financeTopMerchantsInputSchema,
   financeTopMerchantsOutputSchema,
   financeTransactionSearchInputSchema,
@@ -376,6 +381,7 @@ registerTool(
         categoryName: t.categoryName,
         tags: t.tags,
         notes: t.notes,
+        orderNumber: t.orderNumber,
         source: t.source,
         recurring: t.recurring,
         pending: t.pending,
@@ -600,6 +606,46 @@ registerTool(
       notFound,
     };
   },
+);
+
+// Tags are owner-wide, not finance-only, so these carry both scopes: a finance client must
+// hold tags:write to rename or merge a tag that other domains also display.
+registerTool(
+  {
+    readOnly: false,
+    scopes: ['finance:write', 'tags:write'],
+    destructive: false,
+    idempotent: true,
+    name: 'finance_tag_rename',
+    title: 'Finance Tag Rename',
+    description:
+      'Rename a tag (display name only), keeping its id and every assignment. Refuses with target_exists when another tag already holds the new name — merge is for that. Tags are owner-wide, so a rename shows wherever the tag is used.',
+    inputSchema: financeTagRenameInputSchema,
+    outputSchema: financeTagRenameOutputSchema,
+    resultCap: 1,
+  },
+  async (ownerUserId, input) => renameTag(ownerUserId, input),
+);
+
+registerTool(
+  {
+    readOnly: false,
+    scopes: ['finance:write', 'tags:write'],
+    destructive: true,
+    idempotent: true,
+    requiresConfirmation: true,
+    name: 'finance_tag_merge',
+    title: 'Finance Tag Merge',
+    description:
+      'Move every assignment from one tag to another, then delete the emptied tag. Assignments the target already holds are not duplicated. Tags are owner-wide, so a merge affects every domain that uses them.',
+    inputSchema: financeTagMergeInputSchema,
+    outputSchema: financeTagMergeOutputSchema,
+    resultCap: 1,
+    // No elicitation: a client that does not declare the capability would hard-fail on the
+    // prompt (the B5 lesson), and a merge is reversible by re-tagging.
+    preview: async () => null,
+  },
+  async (ownerUserId, input) => mergeTags(ownerUserId, input),
 );
 
 registerTool(

@@ -169,3 +169,97 @@ export async function getEntityDisplayName(
     .executeTakeFirst();
   return row?.name ?? null;
 }
+
+export type TagMutationReason = 'invalid_name' | 'target_exists' | 'unknown_tag';
+
+export interface TagMutationResult {
+  assignmentsMoved: number;
+  tag: { id: string; name: string } | null;
+  reason: TagMutationReason | null;
+}
+
+async function findOwnedTagByName(ownerUserId: string, name: string) {
+  return db
+    .selectFrom('app.tags')
+    .select(['id', 'name'])
+    .where('ownerUserid', '=', ownerUserId)
+    .where(sql<boolean>`lower(name) = lower(${name})`)
+    .executeTakeFirst();
+}
+
+/**
+ * Rename a tag's display name, keeping its id and every assignment. Refuses with
+ * `target_exists` when another tag already holds the target name — that is what merge is for.
+ */
+export async function renameTag(
+  ownerUserId: string,
+  input: { from: string; to: string },
+): Promise<TagMutationResult> {
+  const source = await findOwnedTagByName(ownerUserId, input.from);
+  if (!source) return { assignmentsMoved: 0, tag: null, reason: 'unknown_tag' };
+
+  const to = input.to.trim();
+  if (!to) return { assignmentsMoved: 0, tag: null, reason: 'invalid_name' };
+
+  const existing = await findOwnedTagByName(ownerUserId, to);
+  if (existing && existing.id !== source.id) {
+    return { assignmentsMoved: 0, tag: null, reason: 'target_exists' };
+  }
+
+  // Display name only: slug/path are internal identifiers and stay stable, so a rename can
+  // never collide with another tag's slug.
+  await db
+    .updateTable('app.tags')
+    .set({ name: to })
+    .where('id', '=', source.id)
+    .where('ownerUserid', '=', ownerUserId)
+    .execute();
+
+  return { assignmentsMoved: 0, tag: { id: source.id, name: to }, reason: null };
+}
+
+/**
+ * Move every assignment from one tag to another, then remove the emptied tag. Assignments the
+ * target already holds are dropped rather than duplicated — the active-assignment unique index
+ * is (tag_id, entity_table, entity_id).
+ */
+export async function mergeTags(
+  ownerUserId: string,
+  input: { from: string; into: string },
+): Promise<TagMutationResult> {
+  const source = await findOwnedTagByName(ownerUserId, input.from);
+  if (!source) return { assignmentsMoved: 0, tag: null, reason: 'unknown_tag' };
+
+  const target = await findOwnedTagByName(ownerUserId, input.into);
+  if (!target) return { assignmentsMoved: 0, tag: null, reason: 'unknown_tag' };
+
+  if (source.id === target.id) {
+    return { assignmentsMoved: 0, tag: target, reason: null };
+  }
+
+  const moved = await sql<{ id: string }>`
+    UPDATE app.tag_assignments ta
+    SET tag_id = ${target.id}
+    WHERE ta.tag_id = ${source.id}
+      AND ta.removed_at IS NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM app.tag_assignments other
+        WHERE other.tag_id = ${target.id}
+          AND other.entity_table = ta.entity_table
+          AND other.entity_id = ta.entity_id
+          AND other.removed_at IS NULL
+      )
+    RETURNING ta.id
+  `.execute(db);
+
+  // Removes the emptied tag; whatever assignments remain on it (duplicates of the target's, or
+  // already-removed rows) go with it via the ON DELETE CASCADE on tag_assignments.tag_id.
+  await db
+    .deleteFrom('app.tags')
+    .where('id', '=', source.id)
+    .where('ownerUserid', '=', ownerUserId)
+    .execute();
+
+  return { assignmentsMoved: moved.rows.length, tag: target, reason: null };
+}

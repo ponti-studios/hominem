@@ -434,3 +434,28 @@ describe('tag name casing', () => {
     expect(assignments).toHaveLength(1);
   });
 });
+
+// §5: orderNumber is folded into notes on write, so it must be read back out of them.
+describe('orderNumber read parity', () => {
+  it('reads orderNumber back through search and recent', async () => {
+    const up = await callTool(userId, 'finance_transaction_upsert', {
+      postedOn: '2026-12-30',
+      account: 'Sheet Checking',
+      description: 'ACCB UKFX-USD',
+      amountCents: -12345,
+      currencyCode: 'USD',
+      orderNumber: 'ACCB-UKFX-001',
+    });
+    const id = content(up).id ?? '';
+
+    const search = content(
+      await callTool(userId, 'finance_transaction_search', { query: 'ACCB UKFX-USD' }),
+    );
+    const searched = search.transactions?.find((row) => row.id === id);
+    expect(searched?.orderNumber).toBe('ACCB-UKFX-001');
+
+    const recent = content(await callTool(userId, 'finance_recent_transactions', { limit: 50 }));
+    const recentRow = recent.transactions?.find((row) => row.id === id);
+    expect(recentRow?.orderNumber).toBe('ACCB-UKFX-001');
+  });
+});
