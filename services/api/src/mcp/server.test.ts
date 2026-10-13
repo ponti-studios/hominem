@@ -985,3 +985,23 @@ describe('finance replace from a client without elicitation', () => {
     await client.close();
   });
 });
+
+// §1.1: an invalid input must carry a stable reason, not the opaque generic error that
+// previously hid client mistakes behind the same text as a server fault.
+describe('invalid input surfaces a named reason', () => {
+  it('reports invalid_currency instead of the generic tool error', async () => {
+    const client = await createClient(createApp(), 'finance:write');
+    try {
+      const result = await client.callTool({
+        name: 'finance_account_create',
+        arguments: { name: 'Bad Currency', currencyCode: 'POUNDS' },
+      });
+      expect(result.isError).toBe(true);
+      const body = JSON.stringify(result);
+      expect(body).toContain('invalid_currency');
+      expect(body).not.toContain('Unable to complete the MCP tool request');
+    } finally {
+      await client.close();
+    }
+  });
+});

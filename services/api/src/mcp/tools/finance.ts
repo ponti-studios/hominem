@@ -1,6 +1,7 @@
 import {
   computeLedgerRunway,
   countAccounts,
+  createOrGetAccount,
   getFinanceNetWorth,
   getFinanceRecentTransactions,
   getFinanceSpendingByCategory,
@@ -18,6 +19,8 @@ import {
   upsertFinanceTransaction,
 } from '../../application/finance.service';
 import {
+  financeAccountCreateInputSchema,
+  financeAccountCreateOutputSchema,
   financeAccountsInputSchema,
   financeAccountsOutputSchema,
   financeBudgetBreakdownInputSchema,
@@ -428,6 +431,36 @@ const financeWriteTool = {
   idempotent: true as const,
   standaloneWrite: true as const,
 };
+
+registerTool(
+  {
+    ...financeWriteTool,
+    name: 'finance_account_create',
+    title: 'Finance Account Create',
+    description:
+      'Create a finance account, or return the existing one when the name matches case-insensitively (created: false). ' +
+      'Accounts created here are what sheet imports resolve against; the import never auto-creates an unknown account. ' +
+      'dryRun reports the outcome without writing.',
+    inputSchema: financeAccountCreateInputSchema,
+    outputSchema: financeAccountCreateOutputSchema,
+    resultCap: 1,
+    guidance: {
+      whenToUse: 'A sheet label or sync source needs an account that does not exist yet.',
+      whenNotToUse: 'Do not use to rename, close, or merge an existing account.',
+      produces: ['account ids', 'account names'],
+    },
+  },
+  async (ownerUserId, input) =>
+    createOrGetAccount({
+      userId: ownerUserId,
+      name: input.name,
+      currencyCode: input.currencyCode,
+      ...(input.institution ? { institution: input.institution } : {}),
+      ...(input.accountNumber ? { mask: input.accountNumber } : {}),
+      status: input.status,
+      dryRun: input.dryRun,
+    }),
+);
 
 registerTool(
   {

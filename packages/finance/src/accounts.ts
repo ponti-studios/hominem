@@ -1,9 +1,10 @@
 import crypto from 'node:crypto';
 
-import { db } from '@hominem/db/core';
+import { db, sql } from '@hominem/db/core';
 import type { AppFinanceAccounts } from '@hominem/db/types';
 import type { Insertable, Selectable, Updateable } from 'kysely';
 
+import { ensureInstitutionExists } from './institutions';
 import { getAffectedRows } from './utils';
 
 export type AccountWithBalance = Selectable<AppFinanceAccounts> & { currentBalance: number };
@@ -78,6 +79,87 @@ export async function createAccount(input: CreateAccountInput): Promise<AccountW
   }
 
   return withBalance(result);
+}
+
+export interface CreateOrGetAccountInput {
+  userId: string;
+  name: string;
+  currencyCode: string;
+  institution?: string | null;
+  mask?: string | null;
+  status?: 'open' | 'closed';
+  dryRun?: boolean;
+}
+
+export interface CreateOrGetAccountResult {
+  id: string | null;
+  name: string;
+  currencyCode: string;
+  status: string;
+  created: boolean;
+}
+
+/**
+ * Create an account, or return the existing one when the name matches
+ * case-insensitively. Open and closed accounts both match, so re-creating a
+ * closed account returns it instead of duplicating it. `dryRun` reports the
+ * outcome without writing; a would-be create has no id yet.
+ */
+export async function createOrGetAccount(
+  input: CreateOrGetAccountInput,
+): Promise<CreateOrGetAccountResult> {
+  const name = input.name.trim();
+  const existing = await db
+    .selectFrom('app.financeAccounts')
+    .select(['id', 'name', 'currencyCode', 'lifecycleStatus'])
+    .where('userId', '=', input.userId)
+    .where(sql<boolean>`lower(name) = lower(${name})`)
+    .orderBy('id', 'asc')
+    .limit(1)
+    .executeTakeFirst();
+
+  if (existing) {
+    return {
+      id: existing.id,
+      name: existing.name,
+      currencyCode: existing.currencyCode,
+      status: existing.lifecycleStatus,
+      created: false,
+    };
+  }
+
+  const status = input.status ?? 'open';
+  if (input.dryRun) {
+    return {
+      id: null,
+      name,
+      currencyCode: input.currencyCode.toUpperCase(),
+      status,
+      created: true,
+    };
+  }
+
+  const id = crypto.randomUUID();
+  const currencyCode = input.currencyCode.toUpperCase();
+  const institutionId = input.institution
+    ? (await ensureInstitutionExists(input.institution)).id
+    : null;
+  await db
+    .insertInto('app.financeAccounts')
+    .values({
+      id,
+      userId: input.userId,
+      name,
+      currencyCode,
+      lifecycleStatus: status,
+      accountType: 'checking',
+      metadata: {},
+      ...(institutionId ? { institutionId } : {}),
+      ...(input.mask ? { mask: input.mask } : {}),
+    })
+    .execute();
+
+  return { id, name, currencyCode, status, created: true };
 }
 
 function accountsForUser(userId: string) {
