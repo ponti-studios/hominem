@@ -29,7 +29,8 @@ yields `created: 0`.
   row validates; it wipes only once both hold, so it can never wipe and then discover
   rejections. No in-process dry-run "arm": that state lived in memory and silently made
   replace unusable after any restart (a deploy invalidated it).
-- Recurring kept: sheet col K → `recurring` boolean (column already exists).- Order # kept: sheet col H appended into `notes` as `Order #: <value>`,
+- Recurring kept: sheet col K → `recurring` boolean (column already exists).
+- Order # kept: sheet col H appended into `notes` as `Order #: <value>`,
   truncated to 2000 chars.
 - Idempotency: `externalId = sheet:<sha1(postedOn|accountId|normalized
   description|amountCents|currencyCode)>` stored with the sheet `source`
@@ -38,6 +39,9 @@ yields `created: 0`.
 - Account resolution: explicit `accountMap` first, then uuid-owned, then exact
   name match (case-insensitive); else `unknown_account`. Currency mismatch →
   `currency_mismatch`. Never auto-provision.
+- Tag resolution: sheet tags match case-insensitively and reuse an existing tag —
+  `app.tags` is unique on `(owner, lower(name))` and on `(owner, slug)`, so a sheet tag
+  that differs only in case must never create a duplicate or fail the write.
 
 ## Scope
 
