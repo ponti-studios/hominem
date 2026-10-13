@@ -20,6 +20,7 @@ type Content = Record<string, unknown> & {
   upserted?: number;
   createdCount?: number;
   rejected?: Array<{ index: number; reason: string }>;
+  transactions?: Array<Record<string, unknown>>;
 };
 
 function content(res: McpToolResult<Content>): Content {
@@ -171,12 +172,10 @@ describe('finance_transaction_upsert', () => {
       source: 'plaid',
       recurring: true,
     });
-    const id = content(up).id as string;
+    const id = content(up).id ?? '';
 
-    const byId = (res: unknown) =>
-      (content(res as McpToolResult<Content>).transactions as Array<Record<string, unknown>>).find(
-        (t) => t.id === id,
-      );
+    const byId = (res: McpToolResult<Content>) =>
+      content(res).transactions?.find((t) => t.id === id);
 
     const search = byId(
       await callTool(userId, 'finance_transaction_search', { query: 'Round Trip Row' }),

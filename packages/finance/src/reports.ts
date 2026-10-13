@@ -171,7 +171,7 @@ export async function getTransactionTagNames(
     .select(['ta.entityId', 'g.name'])
     .where('g.ownerUserid', '=', ownerUserId)
     .where('ta.entityTable', '=', sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)
-    .where('ta.entityId', 'in', ids as string[])
+    .where('ta.entityId', 'in', ids)
     .execute();
   for (const row of rows) {
     const list = map.get(row.entityId) ?? [];
