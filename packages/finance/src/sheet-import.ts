@@ -668,9 +668,10 @@ async function projectImportSplit(
   const categoryIdByName = new Map(
     categories.map((category) => [category.name.toLowerCase(), category.id]),
   );
-  const incomingCategoryId = (name: string | null | undefined) =>
-    categoryIdByName.get((((name ?? '').trim() || UNCATEGORIZED_NAME) as string).toLowerCase()) ??
-    null;
+  const incomingCategoryId = (name: string | null | undefined) => {
+    const target = (name ?? '').trim() || UNCATEGORIZED_NAME;
+    return categoryIdByName.get(target.toLowerCase()) ?? null;
+  };
 
   let created = 0;
   let updated = 0;
