@@ -318,33 +318,39 @@ describe('finance_transactions_import', () => {
     expect(after.length).toBe(before.length);
   });
 
-  it('dryRun projects an update for a row that already exists', async () => {
+  it('dryRun projects updates for changed rows and creates for a replace', async () => {
+    const row = {
+      postedOn: '2026-10-07',
+      account: 'Sheet Checking',
+      description: 'Projection Row',
+      amountCents: -321,
+      currencyCode: 'USD',
+    };
     await callTool(userId, 'finance_transactions_import', {
       mode: 'append',
-      transactions: [
-        {
-          postedOn: '2026-10-07',
-          account: 'Sheet Checking',
-          description: 'Projection Row',
-          amountCents: -321,
-          currencyCode: 'USD',
-        },
-      ],
+      transactions: [row],
     });
-    const rerun = await callTool(userId, 'finance_transactions_import', {
+    // Identical row: nothing changes, so neither created nor updated.
+    const identical = await callTool(userId, 'finance_transactions_import', {
       mode: 'append',
       dryRun: true,
-      transactions: [
-        {
-          postedOn: '2026-10-07',
-          account: 'Sheet Checking',
-          description: 'Projection Row',
-          amountCents: -321,
-          currencyCode: 'USD',
-        },
-      ],
+      transactions: [row],
     });
-    expect(content(rerun)).toMatchObject({ received: 1, upserted: 1, created: 0, updated: 1 });
+    expect(content(identical)).toMatchObject({ received: 1, upserted: 1, created: 0, updated: 0 });
+    // Changed row: projects as an update.
+    const changed = await callTool(userId, 'finance_transactions_import', {
+      mode: 'append',
+      dryRun: true,
+      transactions: [{ ...row, notes: 'now changed' }],
+    });
+    expect(content(changed)).toMatchObject({ received: 1, upserted: 1, created: 0, updated: 1 });
+    // A replace dry run wipes first, so every valid row projects as a create.
+    const replace = await callTool(userId, 'finance_transactions_import', {
+      mode: 'replace',
+      dryRun: true,
+      transactions: [row],
+    });
+    expect(content(replace)).toMatchObject({ received: 1, upserted: 1, created: 1, updated: 0 });
   });
 
   it('replace wipes only the caller store then inserts', async () => {

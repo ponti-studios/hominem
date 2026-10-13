@@ -579,24 +579,73 @@ export async function upsertSheetTransaction(
   return { id, created: true, updated: false, accountId: resolved.accountId };
 }
 
-// Read-only projection of the create/update split for a dry run, so it is a planning tool
-// rather than a bare count. Existence is checked on the same natural key the upsert uses
-// (userId + source + externalId), in bounded chunks to keep the predicate small.
+// Existing transaction tag names per id, owner-scoped, for the projection.
+async function existingTransactionTagNames(
+  userId: string,
+  ids: readonly string[],
+): Promise<Map<string, Set<string>>> {
+  const map = new Map<string, Set<string>>();
+  if (ids.length === 0) return map;
+  const rows = await db
+    .selectFrom('app.tagAssignments as ta')
+    .innerJoin('app.tags as tg', 'tg.id', 'ta.tagId')
+    .select(['ta.entityId', 'tg.name'])
+    .where('tg.ownerUserid', '=', userId)
+    .where('ta.entityTable', '=', sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)
+    .where('ta.entityId', 'in', ids)
+    .execute();
+  for (const row of rows) {
+    const set = map.get(row.entityId) ?? new Set<string>();
+    set.add(row.name);
+    map.set(row.entityId, set);
+  }
+  return map;
+}
+
+// Read-only projection of the create/update split for a dry run, mirroring what the real
+// upsert would do: a replace dry run wipes the store first, so every row projects as a
+// create; an append dry run counts a row as updated only when it actually changes
+// (matching upsertSheetTransaction's mutable-field comparison), and leaves unchanged rows
+// out of both counts.
 async function projectImportSplit(
   userId: string,
   valid: ValidatedSheetRow[],
+  mode: 'append' | 'replace',
 ): Promise<{ created: number; updated: number }> {
+  if (mode === 'replace') return { created: valid.length, updated: 0 };
+
   const keys = valid.map((row) => ({
+    row,
     source: normalizeSource(row.input.source),
     externalId: row.externalId,
   }));
-  const existing = new Set<string>();
+
+  const existing = new Map<
+    string,
+    {
+      id: string;
+      categoryId: string | null;
+      excluded: boolean;
+      notes: string | null;
+      recurring: boolean;
+      merchantName: string | null;
+    }
+  >();
   const chunkSize = 250;
   for (let i = 0; i < keys.length; i += chunkSize) {
     const chunk = keys.slice(i, i + chunkSize);
     const rows = await db
       .selectFrom('app.financeTransactions')
-      .select(['source', 'externalId'])
+      .select([
+        'id',
+        'source',
+        'externalId',
+        'categoryId',
+        'excluded',
+        'notes',
+        'recurring',
+        'merchantName',
+      ])
       .where('userId', '=', userId)
       .where((eb) =>
         eb.or(
@@ -606,10 +655,47 @@ async function projectImportSplit(
         ),
       )
       .execute();
-    for (const row of rows) existing.add(`${row.source}|${row.externalId}`);
+    for (const row of rows) existing.set(`${row.source}|${row.externalId}`, row);
   }
-  const updated = keys.filter((key) => existing.has(`${key.source}|${key.externalId}`)).length;
-  return { created: keys.length - updated, updated };
+
+  const [categories, existingTags] = await Promise.all([
+    listFinanceCategories(userId),
+    existingTransactionTagNames(
+      userId,
+      [...existing.values()].map((row) => row.id),
+    ),
+  ]);
+  const categoryIdByName = new Map(
+    categories.map((category) => [category.name.toLowerCase(), category.id]),
+  );
+  const incomingCategoryId = (name: string | null | undefined) =>
+    categoryIdByName.get((((name ?? '').trim() || UNCATEGORIZED_NAME) as string).toLowerCase()) ??
+    null;
+
+  let created = 0;
+  let updated = 0;
+  for (const key of keys) {
+    const found = existing.get(`${key.source}|${key.externalId}`);
+    if (!found) {
+      created += 1;
+      continue;
+    }
+    const input = key.row.input;
+    const description = input.description.trim();
+    const tagNames = new Set(parseTags(input.tags));
+    const currentTags = existingTags.get(found.id) ?? new Set<string>();
+    const tagsSame =
+      tagNames.size === currentTags.size && [...tagNames].every((name) => currentTags.has(name));
+    const unchanged =
+      found.categoryId === incomingCategoryId(input.category) &&
+      found.excluded === (input.excluded ?? false) &&
+      (found.notes ?? null) === combineNotes(input.notes, input.orderNumber) &&
+      found.recurring === (input.recurring ?? false) &&
+      (found.merchantName ?? null) === description &&
+      tagsSame;
+    if (!unchanged) updated += 1;
+  }
+  return { created, updated };
 }
 
 export async function importSheetTransactions(
@@ -652,7 +738,7 @@ export async function importSheetTransactions(
 
   if (dryRun) {
     summary.upserted += valid.length;
-    const split = await projectImportSplit(userId, valid);
+    const split = await projectImportSplit(userId, valid, mode);
     summary.created = split.created;
     summary.updated = split.updated;
     if (rejected.length === 0) {

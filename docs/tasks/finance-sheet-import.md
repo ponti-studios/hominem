@@ -18,9 +18,10 @@ yields `created: 0`.
 ## Decisions
 
 - Transfer detection v1: case-insensitive substring `transfer` in the
-  description → `transfer`; else sign (negative → debit, positive/zero →
-  credit). Credit-card autopay / bill-pay rows are NOT auto-marked transfers
-  (v2 paired-transaction work).
+  description → `transfer`; else sign (negative → debit, positive → credit,
+  zero → `adjustment` — a zero-amount row has no direction). Credit-card
+  autopay / bill-pay rows are NOT auto-marked transfers (v2 paired-transaction
+  work).
 - Categories: pre-create taxonomy on demand — unknown/blank names auto-create
   (case-insensitive), plus a guaranteed `Uncategorized`. No hardcoded 52-list;
   the backfill creates whatever the sheet holds.
@@ -59,7 +60,7 @@ daily wiring, deletes, write-back (Phases 2–4).
 - [x] AC-003: `dryRun: true` writes nothing and reports per-row rejections.
 - [x] AC-004: `mode: replace` (confirmation) wipes only the caller's finance transactions then inserts.
 - [x] AC-005: Unknown account → `unknown_account`; currency mismatch → `currency_mismatch`; batch continues.
-- [x] AC-006: `transfer` substring in description → `transfer`; otherwise sign rule.
+- [x] AC-006: `transfer` substring in description → `transfer`; otherwise sign rule (negative → debit, positive → credit, zero → adjustment).
 - [x] AC-007: Unknown/blank category auto-creates (case-insensitive); `finance_categories` lists it.
 - [x] AC-008: Cross-user isolation — id-scoped reads/writes as another user return not-found, never rows.
 - [x] AC-009: `pnpm run check:all` green (exit 0: lint 17/17, build 17/17, typecheck 33/33, test 29/29).
