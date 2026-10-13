@@ -97,9 +97,22 @@ async function main() {
     return acc;
   }, {});
 
-  const knownContainers = new Set(containers.map((c) => c.externalId));
+  // Container refs resolve against both the sheet and the live registry: a CON-xxx that only
+  // exists in Hominem (the CON-024 class) must resolve against the Hominem record, and only a
+  // ref that resolves nowhere (the CON-036 class) is left unassigned.
+  const liveContainers = await ContainerRepository.list(db, user.id);
+  const liveContainerIds = new Set(
+    liveContainers.map((c) => c.externalId).filter((id): id is string => id !== null),
+  );
+  const knownContainers = new Set([...containers.map((c) => c.externalId), ...liveContainerIds]);
   const missing = possessions.filter(
     (p) => p.containerExternalId && !knownContainers.has(p.containerExternalId),
+  );
+  const refs = possessions.filter((p) => p.containerExternalId);
+  const refsToHominemOnly = refs.filter(
+    (p) =>
+      liveContainerIds.has(p.containerExternalId!) &&
+      !containers.some((c) => c.externalId === p.containerExternalId),
   );
   const warnings = [
     ...containers.flatMap((c) => c.warnings),
@@ -115,8 +128,15 @@ async function main() {
   console.log(`Containers: ${containers.length}`);
   console.log(`Possessions: ${possessions.length}`, byStatus);
   if (shoppingRows.length) console.log(`Shopping rows: ${shopping.length}`, shoppingByStatus);
-  if (missing.length)
-    console.log(`⚠ ${missing.length} items point at unknown containers (left unassigned)`);
+  if (refs.length)
+    console.log(
+      `Container refs: ${refs.length} items — ${refs.length - missing.length} resolve` +
+        ` (${refsToHominemOnly.length} via a Hominem-only container, CON-024 class), ` +
+        `${missing.length} unresolved (left unassigned)` +
+        (missing.length
+          ? `: ${missing.map((p) => `${p.externalId}->${p.containerExternalId}`).join(', ')}`
+          : ''),
+    );
   warnings.slice(0, 20).forEach((w) => console.log(`⚠ ${w}`));
 
   if (!apply) {
@@ -126,6 +146,9 @@ async function main() {
 
   await runInTransaction(async (trx) => {
     const containerIds = new Map<string, string>();
+    for (const live of await ContainerRepository.list(trx, user.id)) {
+      if (live.externalId) containerIds.set(live.externalId, live.id);
+    }
     for (const container of containers) {
       const saved = await ContainerRepository.upsertByExternalId(trx, user.id, container.input);
       containerIds.set(container.externalId, saved.record.id);
