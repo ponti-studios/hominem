@@ -4,7 +4,7 @@ declare const process: {
 
 declare const Bun: {
   file(url: URL): {
-    json(): Promise<unknown>;
+    json<T = unknown>(): Promise<T>;
     text(): Promise<string>;
   };
 };
@@ -76,7 +76,12 @@ declare module 'ori/eval' {
   };
 
   type Judge = {
-    autoEvals(options: { criteria: string; prompt: string; run: AgentRun }): Promise<void>;
+    autoEvals(options: {
+      criteria: string;
+      prompt: string;
+      run: AgentRun;
+      output?: string;
+    }): Promise<void>;
   };
 
   export function pilotCases<T>(cases: T[]): T[];

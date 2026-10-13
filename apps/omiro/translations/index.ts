@@ -1,5 +1,3 @@
-import type { ArtifactType } from '@hominem/chat';
-
 const t = {
   enhance: {
     title: 'Enhance text',
@@ -156,11 +154,6 @@ const t = {
       chatSettings: 'Chat settings',
       sources: 'Sources',
       transformToNote: 'Create note',
-      createTasks: 'Create tasks',
-      noTasksFoundTitle: 'No tasks found',
-      noTasksFoundDescription: 'No actionable tasks found in this conversation.',
-      tasksFoundTitle: (count: number) => `${count} tasks`,
-      createTasksLabel: (count: number) => `CREATE ${count} TASK${count === 1 ? '' : 'S'}`,
       archiving: 'Archiving…',
       archiveChat: 'Archive chat',
     },
@@ -207,20 +200,6 @@ const t = {
       searchPlaceholder: 'Search your notes',
       searchEmpty: 'No matching notes',
       done: 'Done',
-    },
-    classification: {
-      saveAsPrefix: 'SAVE AS',
-      typeLabel: {
-        note: 'NOTE',
-        task: 'TASK',
-        task_list: 'TASK LIST',
-      } satisfies Record<ArtifactType, string>,
-      saveLabel: {
-        note: 'SAVE NOTE',
-        task: 'SAVE TASK',
-        task_list: 'SAVE TASK LIST',
-      } satisfies Record<ArtifactType, string>,
-      discard: 'DISCARD',
     },
   },
   inbox: {

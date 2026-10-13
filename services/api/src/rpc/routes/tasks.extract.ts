@@ -10,57 +10,16 @@ import {
   recordAIUsageEvent,
   startAIUsageTimer,
 } from '../../application/ai-usage.service';
-import { extractTasks, extractVoiceTasks } from '../../application/task-extraction.service';
+import { extractVoiceTasks } from '../../application/task-extraction.service';
 import { persistExtractedTasks } from '../../application/task.service';
-import { ExtractTasksInputSchema, VoiceTasksInputSchema } from '../../schemas/tasks.schema';
+import { VoiceTasksInputSchema } from '../../schemas/tasks.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
-import { TASK_EXTRACTION_PROMPT, VOICE_TASK_EXTRACTION_PROMPT } from '../prompts';
+import { VOICE_TASK_EXTRACTION_PROMPT } from '../prompts';
 
 // AI task-extraction endpoints. Mounted under /tasks by tasks.ts.
 export const taskExtractRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  .use('/extract', rateLimitMiddleware({ bucket: 'ai-task-extract', windowSec: 60, max: 20 }))
-  .post('/extract', zValidator('json', ExtractTasksInputSchema), async (c) => {
-    const userId = c.get('auth')!.userId;
-    const { transcript } = c.req.valid('json');
-
-    await assertUnderMonthlyUsageLimit(userId);
-
-    const eventId = randomUUID();
-    const getDurationMs = startAIUsageTimer();
-
-    try {
-      const { groups, tasks, usage } = await extractTasks({ transcript }, TASK_EXTRACTION_PROMPT);
-      await recordAIUsageEvent({
-        eventId,
-        userId,
-        feature: 'task_extract',
-        operation: 'structured_output',
-        usage,
-        status: 'succeeded',
-        durationMs: getDurationMs(),
-      });
-      return c.json({ groups, tasks });
-    } catch (error) {
-      const usage = getStructuredOutputUsage(error);
-      await recordAIUsageEvent({
-        eventId,
-        userId,
-        feature: 'task_extract',
-        operation: 'structured_output',
-        usage,
-        status: 'failed',
-        error,
-        durationMs: getDurationMs(),
-      });
-
-      logger.error('[ai/tasks/extract] OpenRouter error', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      return c.json({ error: 'Task extraction failed' }, 500);
-    }
-  })
   .use('/voice', rateLimitMiddleware({ bucket: 'ai-task-voice', windowSec: 60, max: 20 }))
   .post('/voice', zValidator('json', VoiceTasksInputSchema), async (c) => {
     const userId = c.get('auth')!.userId;

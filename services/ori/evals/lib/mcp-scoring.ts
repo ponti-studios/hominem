@@ -13,6 +13,20 @@ export type McpTrace = {
   runtimeError?: boolean;
 };
 
+export type McpArgumentAssertion = {
+  tool: string;
+  /**
+   * Exact payload semantics after canonicalizing object key order. Use only when
+   * the test genuinely forbids extra provider fields such as optional limits.
+   */
+  equals?: Record<string, unknown>;
+  /**
+   * Required argument subset. Extra fields and key order are accepted because a
+   * semantically correct call may carry legitimate optional arguments.
+   */
+  matches?: Record<string, unknown>;
+};
+
 export type McpExpectation = {
   requiredTools?: readonly string[];
   forbiddenTools?: readonly string[];
@@ -20,7 +34,7 @@ export type McpExpectation = {
   stopBefore?: string;
   confirmation?: boolean;
   outputIncludes?: readonly string[];
-  argumentAssertions?: readonly { tool: string; equals: Record<string, unknown> }[];
+  argumentAssertions?: readonly McpArgumentAssertion[];
   resultAssertions?: readonly {
     tool: string;
     outputIncludes?: readonly string[];
@@ -40,20 +54,56 @@ export type McpScenarioScore = {
   failureCategory?: 'provider' | 'runtime' | 'planning' | 'grounding';
 };
 
-const positions = (calls: readonly string[]): Map<string, number> =>
-  new Map(calls.map((call, index) => [call, index]));
+function canonicalizeArgument(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalizeArgument);
+  if (isArgumentObject(value)) {
+    return Object.fromEntries(
+      Object.entries(value)
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([key, entry]) => [key, canonicalizeArgument(entry)]),
+    );
+  }
+  return value;
+}
+
+function isArgumentObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function argumentMatches(actual: unknown, assertion: McpArgumentAssertion): boolean {
+  if (assertion.equals !== undefined) {
+    return (
+      JSON.stringify(canonicalizeArgument(actual)) ===
+      JSON.stringify(canonicalizeArgument(assertion.equals))
+    );
+  }
+  if (assertion.matches !== undefined) {
+    if (!isArgumentObject(actual) || !isArgumentObject(assertion.matches)) return false;
+    return Object.entries(assertion.matches).every(
+      ([key, expected]) =>
+        JSON.stringify(canonicalizeArgument(actual[key])) ===
+        JSON.stringify(canonicalizeArgument(expected)),
+    );
+  }
+  return false;
+}
 
 export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpScenarioScore {
   const calls = trace.toolCalls;
   const required = expected.requiredTools ?? [];
   const missing = required.filter((tool) => !calls.includes(tool));
   const forbidden = (expected.forbiddenTools ?? []).filter((tool) => calls.includes(tool));
-  const indexByTool = positions(calls);
+  const positionsByTool = new Map<string, number[]>();
+  calls.forEach((tool, index) => {
+    positionsByTool.set(tool, [...(positionsByTool.get(tool) ?? []), index]);
+  });
   const violated = (expected.dependencies ?? [])
     .filter(([before, after]) => {
-      const beforeIndex = indexByTool.get(before);
-      const afterIndex = indexByTool.get(after);
-      return beforeIndex === undefined || afterIndex === undefined || beforeIndex >= afterIndex;
+      const beforePositions = positionsByTool.get(before) ?? [];
+      const afterPositions = positionsByTool.get(after) ?? [];
+      return !beforePositions.some((beforeIndex) =>
+        afterPositions.some((afterIndex) => beforeIndex < afterIndex),
+      );
     })
     .map(([before, after]) => `${before} -> ${after}`);
 
@@ -81,22 +131,29 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
   const missingOutput = (expected.outputIncludes ?? []).filter(
     (value) => !(trace.text ?? '').includes(value),
   );
-  const callsByTool = new Map((trace.calls ?? []).map((call) => [call.tool, call]));
+  const callsByTool = new Map<string, NonNullable<McpTrace['calls']>[number][]>();
+  for (const call of trace.calls ?? []) {
+    const prior = callsByTool.get(call.tool) ?? [];
+    callsByTool.set(call.tool, [...prior, call]);
+  }
   const failedArguments = (expected.argumentAssertions ?? [])
-    .filter(
-      (assertion) =>
-        JSON.stringify(callsByTool.get(assertion.tool)?.input) !== JSON.stringify(assertion.equals),
-    )
+    .filter((assertion) => {
+      const candidates = callsByTool.get(assertion.tool) ?? [];
+      return !candidates.some((call) => argumentMatches(call.input, assertion));
+    })
     .map((assertion) => assertion.tool);
   const failedResults = (expected.resultAssertions ?? []).flatMap((assertion) => {
-    const call = callsByTool.get(assertion.tool);
-    if (!call) return [assertion.tool];
-    if (assertion.error && call.error !== assertion.error) return [assertion.tool];
-    if (
-      assertion.outputIncludes?.some((value) => !JSON.stringify(call.output ?? '').includes(value))
-    )
-      return [assertion.tool];
-    return [];
+    const candidates = callsByTool.get(assertion.tool) ?? [];
+    if (candidates.length === 0) return [assertion.tool];
+    const satisfied = candidates.some((call) => {
+      if (assertion.error && call.error !== assertion.error) return false;
+      return !(
+        assertion.outputIncludes?.some(
+          (value) => !JSON.stringify(call.output ?? '').includes(value),
+        ) ?? false
+      );
+    });
+    return satisfied ? [] : [assertion.tool];
   });
   const failureCategory = trace.providerError
     ? 'provider'
@@ -120,6 +177,8 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
       violated.length === 0 &&
       confirmationPassed &&
       missingOutput.length === 0 &&
+      failedArguments.length === 0 &&
+      failedResults.length === 0 &&
       !trace.providerError &&
       !trace.runtimeError,
     requiredTools: { passed: missing.length === 0, missing },

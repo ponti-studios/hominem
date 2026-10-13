@@ -6,11 +6,17 @@ import {
   type HarnessInvokeOptions,
 } from 'ori';
 
+import { openRouterError } from './eval-infra';
+import { pricedUsageFromOpenRouter } from './openrouter-usage';
+
 const event = (
   type: AgentRuntimeEventTag,
   payload: Record<string, unknown>,
   model: string,
-): AgentRuntimeEvent => ({ type, payload, model, harness: 'hominem-chat' }) as AgentRuntimeEvent;
+): AgentRuntimeEvent => {
+  const record: AgentRuntimeEvent = { type, payload, model, harness: 'hominem-chat' };
+  return record;
+};
 
 /** A plain OpenRouter chat-completion harness: no Codex tools, filesystem, or agent loop. */
 const chatHarness: AgentHarness = defineHarness({
@@ -41,36 +47,40 @@ const chatHarness: AgentHarness = defineHarness({
       });
 
       if (!response.ok) {
-        const detail = await response.text();
-        const failure = {
-          failure: { message: `OpenRouter request failed (${response.status})` },
-          errorCategory: 'provider',
-          latencyMs: performance.now() - turnStartedAt,
-        };
-        yield event(AgentRuntimeEventTag.TurnFailed, failure, model);
+        const failure = openRouterError(response.status, await response.text());
+        yield event(
+          AgentRuntimeEventTag.TurnFailed,
+          {
+            failure: { message: failure.message },
+            errorCategory: 'provider',
+            latencyMs: performance.now() - turnStartedAt,
+          },
+          model,
+        );
         yield event(
           AgentRuntimeEventTag.SessionFailed,
           {
-            failure: { message: detail },
+            failure: { message: failure.message },
             errorCategory: 'provider',
             latencyMs: performance.now() - startedAt,
           },
           model,
         );
-        return;
+        throw failure;
       }
 
-      const body = (await response.json()) as {
+      const body: {
+        id?: string | null;
         choices?: Array<{ message?: { content?: string | null } }>;
         model?: string;
-        usage?: Record<string, unknown> | null;
-      };
+        usage?: { cost?: number | null; total_tokens?: number | null } | null;
+      } = await response.json();
       const content = body.choices?.[0]?.message?.content ?? '';
       if (content) yield event(AgentRuntimeEventTag.AssistantTextDelta, { delta: content }, model);
       const metrics = {
         latencyMs: performance.now() - turnStartedAt,
         totalLatencyMs: performance.now() - startedAt,
-        usage: body.usage ?? null,
+        usage: pricedUsageFromOpenRouter(body),
         servedModel: body.model ?? model,
       };
       yield event(AgentRuntimeEventTag.TurnSucceeded, metrics, model);

@@ -3,7 +3,7 @@ import type { ChatsGetMessagesOutput } from '@hominem/rpc/types/chat.types';
 import type { NotesGetOutput } from '@hominem/rpc/types/notes.types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@ponti-studios/ui/overlays';
 import { domAnimation, LazyMotion, m } from 'motion/react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { data, useNavigate } from 'react-router';
 
 import { ChatComposerPanel } from '~/components/chat/chat-composer-panel';
@@ -11,7 +11,6 @@ import { ChatConversation } from '~/components/chat/chat-conversation';
 import { ChatConversationActions } from '~/components/chat/chat-conversation-actions';
 import { ChatMessageSearch } from '~/components/chat/chat-message-search';
 import { ChatResponseSettings } from '~/components/chat/chat-response-settings';
-import { ChatTaskDialog } from '~/components/chat/chat-task-dialog';
 import { preloadPersona } from '~/components/chat/persona';
 import { RouteHeader } from '~/components/route-header';
 import { useChatsList, useUpdateChatTitle } from '~/hooks/use-chats';
@@ -82,7 +81,6 @@ export default function ChatPage({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDebugOpen, setIsDebugOpen] = useState(false);
-  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [activeSpeechMessageId, setActiveSpeechMessageId] = useState<string | null>(null);
   const [autoSpeakMessageId, setAutoSpeakMessageId] = useState<string | null>(null);
   const { walkieTalkieMode, setWalkieTalkieMode } = useWalkieTalkieMode();
@@ -121,26 +119,10 @@ export default function ChatPage({
   const toolCallRespond = useToolCallRespond({ chatId });
   const display = useChatDisplayMessages({ messages });
   const search = useChatMessageSearch(chatId, isSearchOpen);
-  const taskMessages = useMemo(
-    () => messages.map((message) => ({ role: message.role, content: message.content })),
-    [messages],
-  );
   const updateChatTitle = useUpdateChatTitle();
   const { data: chats = [] } = useChatsList();
   const { responseLength, setResponseLength } = useResponseLength();
   const currentChat = chats.find((chat) => chat.id === chatId);
-  const transcript = messages
-    .reduce<string[]>((lines, message) => {
-      const content = message.content.trim();
-      if (content) lines.push(`${message.role}: ${content}`);
-      return lines;
-    }, [])
-    .join('\n\n');
-  const canExtractTasks =
-    transcript.length > 0 &&
-    !streamMessage.isStreaming &&
-    !regeneration.isRegenerating &&
-    !isTaskDialogOpen;
   const visibleMessages =
     isSearchOpen && search.debouncedQuery ? search.results : display.displayMessages;
   const regenerateMessage = useCallback(
@@ -188,17 +170,11 @@ export default function ChatPage({
               <ChatConversationActions
                 chatId={chatId}
                 isDebugOpen={isDebugOpen}
-                canExtractTasks={canExtractTasks}
-                isExtractingTasks={false}
                 isSearchOpen={isSearchOpen}
                 isSettingsOpen={isSettingsOpen}
                 onDebug={() => setIsDebugOpen((open) => !open)}
                 onResponseSettings={() => setIsSettingsOpen(true)}
                 onSearch={() => setIsSearchOpen(true)}
-                onExtractTasks={() => {
-                  if (!canExtractTasks) return;
-                  setIsTaskDialogOpen(true);
-                }}
               />
             </div>
             <ChatMessageSearch
@@ -268,10 +244,6 @@ export default function ChatPage({
             onRetryLoad={() => retry()}
             onStartNewChat={() => navigate('/', { viewTransition: true })}
           />
-
-          {isTaskDialogOpen ? (
-            <ChatTaskDialog messages={taskMessages} onOpenChange={setIsTaskDialogOpen} />
-          ) : null}
 
           {loadState.kind === 'ready' ? (
             <div className="mx-auto w-full max-w-5xl">

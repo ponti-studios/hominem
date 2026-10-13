@@ -88,7 +88,7 @@
     }
   },
   {
-    "name": "call-mom-sunday-afternoon",
+    "name": "named part of day becomes an event: call Mom Sunday afternoon",
     "input": "Call Mom Sunday afternoon for 30 minutes",
     "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Call Mom\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":30,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T12:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T17:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -99,7 +99,7 @@
     }
   },
   {
-    "name": "deep-work-tomorrow-morning",
+    "name": "named part of day with duration: deep work tomorrow morning",
     "input": "Block two hours for deep work tomorrow morning",
     "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Deep work\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":120,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T06:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T12:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -110,7 +110,7 @@
     }
   },
   {
-    "name": "dentist-monday-afternoon",
+    "name": "explicit clock time becomes an event: dentist Monday 3 PM",
     "input": "Dentist appointment Monday at 3 PM",
     "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Dentist appointment\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-27T15:00:00-07:00\",\"end_time\":\"2026-07-27T16:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -121,7 +121,7 @@
     }
   },
   {
-    "name": "lunch-alex-next-thursday",
+    "name": "explicit clock time becomes an event: lunch with Alex next Thursday",
     "input": "Lunch with Alex next Thursday at noon",
     "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Lunch with Alex\",\"target_title\":null,\"participants\":[\"Alex\"],\"location\":null,\"duration\":null,\"start_time\":\"2026-07-30T12:00:00-07:00\",\"end_time\":\"2026-07-30T13:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -132,7 +132,7 @@
     }
   },
   {
-    "name": "submit-invoice-friday",
+    "name": "deadline without time becomes a task: submit invoice by Friday",
     "input": "Remind me to submit the invoice by Friday",
     "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Submit invoice\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":\"2026-07-31\",\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -143,7 +143,7 @@
     }
   },
   {
-    "name": "board-meeting-next-week",
+    "name": "vague timing invents nothing: board meeting next week",
     "input": "I need to prepare for the board meeting sometime next week",
     "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Prepare for board meeting\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -154,7 +154,7 @@
     }
   },
   {
-    "name": "find-slot-sarah",
+    "name": "slot request becomes gap fill: 45 minutes with Sarah",
     "input": "Find me a 45-minute slot with Sarah this week",
     "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"Meet with Sarah\",\"target_title\":null,\"participants\":[\"Sarah\"],\"location\":null,\"duration\":45,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T11:17:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -165,7 +165,7 @@
     }
   },
   {
-    "name": "workout-tomorrow",
+    "name": "availability question becomes gap fill: work out tomorrow",
     "input": "When can I work out tomorrow?",
     "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":\"Work out\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T00:00:00-07:00\",\"scheduling_window_end\":\"2026-07-27T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -176,7 +176,7 @@
     }
   },
   {
-    "name": "move-meeting-time",
+    "name": "edits the event from conversation context: move 2 PM meeting to 4 PM",
     "input": "Move my 2 PM meeting to 4 PM",
     "expectedOutput": "{\"primary_intent\":\"edit_event\",\"title\":null,\"target_title\":\"planning meeting\",\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-26T16:00:00-07:00\",\"end_time\":\"2026-07-26T17:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -187,7 +187,7 @@
     }
   },
   {
-    "name": "correction-friday",
+    "name": "later correction wins: tomorrow 10 AM becomes Friday 2 PM",
     "input": "Schedule it tomorrow at 10, actually Friday at 2 PM",
     "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-31T14:00:00-07:00\",\"end_time\":\"2026-07-31T15:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -198,7 +198,7 @@
     }
   },
   {
-    "name": "recurring-team-sync",
+    "name": "weekly phrasing becomes a recurring event: team sync Mondays 9 AM",
     "input": "Add a team sync every Monday at 9 AM",
     "expectedOutput": "{\"primary_intent\":\"add_recurring_event\",\"title\":\"Team sync\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":\"2026-07-27T09:00:00-07:00\",\"end_time\":\"2026-07-27T10:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":\"FREQ=WEEKLY;BYDAY=MO\"}",
     "additionalMetadata": {
@@ -209,7 +209,7 @@
     }
   },
   {
-    "name": "haircut-saturday-morning",
+    "name": "named morning without clock leaves times null: haircut Saturday morning",
     "input": "Book a haircut sometime Saturday morning",
     "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Haircut\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-08-01T06:00:00-07:00\",\"scheduling_window_end\":\"2026-08-01T12:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -220,7 +220,7 @@
     }
   },
   {
-    "name": "groceries-after-work",
+    "name": "relative time without clock invents nothing: groceries after work",
     "input": "Plan groceries after work today",
     "expectedOutput": "{\"primary_intent\":\"add_task\",\"title\":\"Plan groceries\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -231,7 +231,7 @@
     }
   },
   {
-    "name": "presentation-afternoon-window",
+    "name": "explicit time window sets start and end: presentation 2 to 5 PM",
     "input": "Work on the presentation between 2 and 5 PM",
     "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Work on the presentation\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":180,\"start_time\":\"2026-07-25T14:00:00-07:00\",\"end_time\":\"2026-07-25T17:00:00-07:00\",\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -242,7 +242,7 @@
     }
   },
   {
-    "name": "jordan-office-planning",
+    "name": "schedule-with-person becomes an event: 90 minutes with Jordan at the office",
     "input": "Schedule 90 minutes with Jordan at the office",
     "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Meeting with Jordan\",\"target_title\":null,\"participants\":[\"Jordan\"],\"location\":\"the office\",\"duration\":90,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -253,7 +253,7 @@
     }
   },
   {
-    "name": "search-after-lunch",
+    "name": "schedule question becomes search: what is scheduled after lunch",
     "input": "What do I have scheduled after lunch?",
     "expectedOutput": "{\"primary_intent\":\"search\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T13:00:00-07:00\",\"scheduling_window_end\":\"2026-07-25T17:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -264,7 +264,7 @@
     }
   },
   {
-    "name": "free-time-tomorrow-morning",
+    "name": "free-time question becomes gap fill: tomorrow morning",
     "input": "Do I have any free time tomorrow morning?",
     "expectedOutput": "{\"primary_intent\":\"schedule_gap_fill\",\"title\":null,\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-26T06:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T12:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -275,7 +275,7 @@
     }
   },
   {
-    "name": "cancel-dentist",
+    "name": "cancel names the target: cancel dentist appointment",
     "input": "Cancel my dentist appointment",
     "expectedOutput": "{\"primary_intent\":\"cancel_event\",\"title\":null,\"target_title\":\"dentist appointment\",\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -286,7 +286,7 @@
     }
   },
   {
-    "name": "reschedule-meeting",
+    "name": "reschedule from context becomes edit: 10 AM meeting finds another time",
     "input": "I can't make the 10 AM meeting—find another time",
     "expectedOutput": "{\"primary_intent\":\"edit_event\",\"title\":null,\"target_title\":\"meeting\",\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":null,\"scheduling_window_end\":null,\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {
@@ -297,7 +297,7 @@
     }
   },
   {
-    "name": "reading-before-bed",
+    "name": "bedtime routine becomes an event: reading before bed tonight",
     "input": "Put reading before bed tonight",
     "expectedOutput": "{\"primary_intent\":\"add_event\",\"title\":\"Reading\",\"target_title\":null,\"participants\":null,\"location\":null,\"duration\":null,\"start_time\":null,\"end_time\":null,\"scheduling_window_start\":\"2026-07-25T18:00:00-07:00\",\"scheduling_window_end\":\"2026-07-26T00:00:00-07:00\",\"deadline_fixed\":null,\"recurrence_rule\":null}",
     "additionalMetadata": {

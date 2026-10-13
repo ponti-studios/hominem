@@ -6,13 +6,17 @@ import {
   type HarnessInvokeOptions,
 } from 'ori';
 
+import { openRouterError } from './eval-infra';
 import type { McpTrace } from './mcp-scoring';
+import { addPricedUsage, pricedUsageFromOpenRouter, type PricedUsage } from './openrouter-usage';
 
 type ToolCall = { id?: string; function?: { name?: string; arguments?: string } };
 type ToolInput = Record<string, unknown>;
 type ToolOutcome = { output: unknown; confirmationRequired?: boolean };
 
-const tools = [
+type MockToolDefinition = readonly [string, string, Record<string, unknown>];
+
+const toolDefinitions: MockToolDefinition[] = [
   [
     'place_visit_history',
     'Lists visits to places, not flights or trips.',
@@ -75,23 +79,34 @@ const tools = [
     { collectionId: { type: 'string' }, entityId: { type: 'string' } },
   ],
   ['career_profile', 'Retrieves current career profile, roles, and skills.', {}],
-].map(([name, description, properties]) => ({
-  type: 'function' as const,
+];
+
+const mockPlanningTools: Array<{
+  type: 'function';
   function: {
-    name: name as string,
-    description: description as string,
+    name: string;
+    description: string;
+    parameters: { type: 'object'; properties: Record<string, unknown> };
+  };
+}> = toolDefinitions.map(([name, description, properties]) => ({
+  type: 'function',
+  function: {
+    name,
+    description,
     parameters: { type: 'object', properties },
   },
 }));
 
 const toolsByDomain: Record<string, readonly unknown[]> = {
-  career: tools.filter((tool) => tool.function.name.startsWith('career_')),
-  travel: tools.filter((tool) =>
+  career: mockPlanningTools.filter((tool) => tool.function.name.startsWith('career_')),
+  travel: mockPlanningTools.filter((tool) =>
     ['place_visit_history', 'trip_history'].includes(tool.function.name),
   ),
-  finance: tools.filter((tool) => tool.function.name.startsWith('finance_')),
-  people: tools.filter((tool) => ['people_lookup', 'person_timeline'].includes(tool.function.name)),
-  all: tools,
+  finance: mockPlanningTools.filter((tool) => tool.function.name.startsWith('finance_')),
+  people: mockPlanningTools.filter((tool) =>
+    ['people_lookup', 'person_timeline'].includes(tool.function.name),
+  ),
+  all: mockPlanningTools,
   general: [],
 };
 
@@ -109,7 +124,11 @@ const parseDomain = (content: string): string => {
   return match?.[1]?.toLowerCase() ?? 'all';
 };
 
-const routePrompt = async (prompt: string, model: string, apiKey: string): Promise<string> => {
+const routePrompt = async (
+  prompt: string,
+  model: string,
+  apiKey: string,
+): Promise<{ domain: string; usage: PricedUsage }> => {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
@@ -126,18 +145,38 @@ const routePrompt = async (prompt: string, model: string, apiKey: string): Promi
       temperature: 0,
     }),
   });
-  if (!response.ok) return 'all';
-  const body = (await response.json()) as {
+  if (!response.ok) {
+    throw openRouterError(response.status, await response.text());
+  }
+  const body: {
+    id?: string | null;
     choices?: Array<{ message?: { content?: string | null } }>;
+    usage?: { cost?: number | null; total_tokens?: number | null } | null;
+  } = await response.json();
+  return {
+    domain: parseDomain(body.choices?.[0]?.message?.content ?? ''),
+    usage: pricedUsageFromOpenRouter(body),
   };
-  return parseDomain(body.choices?.[0]?.message?.content ?? '');
 };
 
 const event = (
   type: AgentRuntimeEventTag,
   payload: Record<string, unknown>,
   model: string,
-): AgentRuntimeEvent => ({ type, payload, model, harness: 'hominem-mcp' }) as AgentRuntimeEvent;
+): AgentRuntimeEvent => {
+  const record: AgentRuntimeEvent = { type, payload, model, harness: 'hominem-mcp' };
+  return record;
+};
+
+function isErrorRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function outcomeError(output: unknown): string | undefined {
+  if (!isErrorRecord(output)) return undefined;
+  const error = output.error;
+  return typeof error === 'string' ? error : undefined;
+}
 
 function executeToolInternal(name: string, input: ToolInput, state: HarnessState): ToolOutcome {
   if (state.calls.includes(name)) return { output: { error: 'duplicate_tool_call', name } };
@@ -246,17 +285,17 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
 
 function executeTool(name: string, input: ToolInput, state: HarnessState): ToolOutcome {
   const outcome = executeToolInternal(name, input, state);
-  const output = outcome.output as { error?: string };
+  const error = outcomeError(outcome.output);
   state.trace.calls = [
     ...(state.trace.calls ?? []),
     {
       tool: name,
       input,
       output: outcome.output,
-      ...(output?.error ? { error: output.error } : {}),
+      ...(error === undefined ? {} : { error }),
       status: outcome.confirmationRequired
         ? 'confirmation_required'
-        : output?.error
+        : error
           ? 'failed'
           : 'succeeded',
     },
@@ -275,10 +314,15 @@ const mcpHarness: AgentHarness = defineHarness({
       if (!apiKey) throw new Error('OPENROUTER_API_KEY is required for MCP evaluation');
       const startedAt = performance.now();
       const routing = process.env.ORI_MCP_ROUTER !== '0';
-      const domain = routing
-        ? await routePrompt(options.prompt, routerModel, apiKey).catch(() => 'all')
-        : 'all';
-      const availableTools = toolsByDomain[domain] ?? tools;
+      const routed = routing
+        ? await routePrompt(options.prompt, routerModel, apiKey).catch(() => ({
+            domain: 'all',
+            usage: {},
+          }))
+        : { domain: 'all', usage: {} };
+      const domain = routed.domain;
+      let usage: PricedUsage = routed.usage;
+      const availableTools = toolsByDomain[domain] ?? mockPlanningTools;
       const messages: Array<Record<string, unknown>> = [
         ...(options.systemPrompt ? [{ role: 'system', content: options.systemPrompt }] : []),
         { role: 'user', content: options.prompt },
@@ -309,24 +353,27 @@ const mcpHarness: AgentHarness = defineHarness({
           body: JSON.stringify({ model, messages, temperature: 0, tools: availableTools }),
         });
         if (!response.ok) {
-          const detail = await response.text();
-          const message = `OpenRouter request failed (${response.status}): ${detail}`;
+          const failure = openRouterError(response.status, await response.text());
           yield event(
             AgentRuntimeEventTag.TurnFailed,
-            { failure: { message }, errorCategory: 'provider' },
+            { failure: { message: failure.message }, errorCategory: 'provider' },
             model,
           );
           yield event(
             AgentRuntimeEventTag.SessionFailed,
-            { failure: { message }, errorCategory: 'provider' },
+            { failure: { message: failure.message }, errorCategory: 'provider', usage },
             model,
           );
-          throw new Error(message);
+          throw failure;
         }
-        const body = (await response.json()) as {
+        const body: {
+          id?: string | null;
           choices?: Array<{ message?: { content?: string | null; tool_calls?: ToolCall[] } }>;
-          usage?: Record<string, unknown>;
-        };
+          usage?: { cost?: number | null; total_tokens?: number | null } | null;
+        } = await response.json();
+        // Ori prices a run from cumulative usage.costUsd on its terminal event.
+        // Include router and prior turns, not only the successful final turn.
+        usage = addPricedUsage(usage, pricedUsageFromOpenRouter(body));
         const message = body.choices?.[0]?.message;
         const toolCalls = message?.tool_calls ?? [];
         const content = message?.content ?? '';
@@ -343,7 +390,7 @@ const mcpHarness: AgentHarness = defineHarness({
           latestTrace = state.trace;
           yield event(
             AgentRuntimeEventTag.TurnSucceeded,
-            { latencyMs: performance.now() - turnStartedAt, usage: body.usage ?? null },
+            { latencyMs: performance.now() - turnStartedAt, usage },
             model,
           );
           yield event(
@@ -351,7 +398,7 @@ const mcpHarness: AgentHarness = defineHarness({
             {
               latencyMs: performance.now() - startedAt,
               toolCalls: state.calls,
-              usage: body.usage ?? null,
+              usage,
             },
             model,
           );
@@ -361,7 +408,7 @@ const mcpHarness: AgentHarness = defineHarness({
           const name = call.function?.name ?? 'unknown';
           let input: ToolInput;
           try {
-            input = JSON.parse(call.function?.arguments ?? '{}') as ToolInput;
+            input = JSON.parse(call.function?.arguments ?? '{}');
           } catch {
             input = {};
           }
@@ -385,6 +432,7 @@ const mcpHarness: AgentHarness = defineHarness({
                 pendingConfirmation: name,
                 toolCalls: state.calls,
                 latencyMs: performance.now() - startedAt,
+                usage,
               },
               model,
             );
@@ -397,7 +445,7 @@ const mcpHarness: AgentHarness = defineHarness({
               input,
               output: outcome.output,
               toolCallId: call.id,
-              error: Boolean((outcome.output as { error?: string }).error),
+              error: outcomeError(outcome.output) !== undefined,
             },
             model,
           );
@@ -409,7 +457,7 @@ const mcpHarness: AgentHarness = defineHarness({
         }
         yield event(
           AgentRuntimeEventTag.TurnSucceeded,
-          { latencyMs: performance.now() - turnStartedAt, usage: body.usage ?? null },
+          { latencyMs: performance.now() - turnStartedAt, usage },
           model,
         );
       }
@@ -418,6 +466,7 @@ const mcpHarness: AgentHarness = defineHarness({
         {
           failure: { message: 'The agent exceeded the allowed MCP interaction budget.' },
           errorCategory: 'planning',
+          usage,
         },
         model,
       );
