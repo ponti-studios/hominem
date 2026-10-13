@@ -313,6 +313,68 @@ export async function deleteTransaction(id: string, userId?: string): Promise<bo
   return getAffectedRows(result) > 0;
 }
 
+export interface DeletedTransactionSnapshot {
+  id: string;
+  postedOn: string;
+  accountId: string;
+  description: string | null;
+  amount: number;
+  currencyCode: string;
+}
+
+export interface DeleteTransactionsResult {
+  deleted: DeletedTransactionSnapshot[];
+  notFound: string[];
+}
+
+/**
+ * Hard-delete the caller's transactions by id. Returns a snapshot of each deleted row (the
+ * operator's audit record) plus the ids that did not resolve — an unknown id is reported, not
+ * fatal. Tag assignments for the deleted rows are removed too: they key on entity id and would
+ * otherwise be left orphaned.
+ */
+export async function deleteTransactionsByIds(
+  userId: string,
+  ids: string[],
+): Promise<DeleteTransactionsResult> {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return { deleted: [], notFound: [] };
+
+  const rows = await db
+    .selectFrom('app.financeTransactions')
+    .select(['id', 'postedOn', 'accountId', 'description', 'amount', 'currencyCode'])
+    .where('userId', '=', userId)
+    .where('id', 'in', unique)
+    .execute();
+
+  if (rows.length > 0) {
+    const found = rows.map((row) => row.id);
+    await db
+      .deleteFrom('app.tagAssignments')
+      .where('entityTable', '=', sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)
+      .where('entityId', 'in', found)
+      .execute();
+    await db
+      .deleteFrom('app.financeTransactions')
+      .where('userId', '=', userId)
+      .where('id', 'in', found)
+      .execute();
+  }
+
+  const foundIds = new Set(rows.map((row) => row.id));
+  return {
+    deleted: rows.map((row) => ({
+      id: row.id,
+      postedOn: row.postedOn,
+      accountId: row.accountId,
+      description: row.description,
+      amount: toNumber(row.amount),
+      currencyCode: row.currencyCode,
+    })),
+    notFound: unique.filter((id) => !foundIds.has(id)),
+  };
+}
+
 export async function insertTransaction(input: {
   id?: string;
   userId: string;

@@ -242,6 +242,21 @@ export const financeAccountCreateInputSchema = z.object({
   institution: z.string().optional().describe('Institution name, e.g. Wise.'),
   accountNumber: z.string().optional().describe('Mask / last digits as displayed elsewhere.'),
   status: z.enum(['open', 'closed']).default('open').describe('Account lifecycle status.'),
+  accountType: z
+    .enum([
+      'cash',
+      'checking',
+      'credit_card',
+      'investment',
+      'loan',
+      'other',
+      'retirement',
+      'savings',
+    ])
+    .default('checking')
+    .describe(
+      'Account type; cash/checking/savings count as liquid in finance_runway, so pick it deliberately.',
+    ),
   dryRun: z.boolean().default(false).describe('Report the outcome without writing.'),
 });
 
@@ -251,6 +266,41 @@ export const financeAccountCreateOutputSchema = z.object({
   currencyCode: z.string(),
   status: z.string(),
   created: z.boolean(),
+});
+
+// -- finance_account_summary --
+
+export const financeAccountSummaryInputSchema = z.object({
+  accountId: z
+    .string()
+    .uuid()
+    .optional()
+    .describe('Restrict to a single account; omit to summarize every account.'),
+  includeClosed: z
+    .boolean()
+    .default(true)
+    .describe('Include closed accounts (default true — reconciliation must see everything).'),
+});
+
+export const financeAccountSummaryOutputSchema = z.object({
+  accounts: z.array(
+    z.object({
+      accountId: z.string(),
+      accountName: z.string(),
+      status: z.string(),
+      transactionCount: z.number().int().min(0),
+      excludedCount: z.number().int().min(0),
+      totals: z.array(z.object({ currencyCode: z.string(), sumCents: z.number().int() })),
+      minPostedOn: z.string().nullable(),
+      maxPostedOn: z.string().nullable(),
+    }),
+  ),
+  count: z.number().int().min(0),
+  totalCount: z
+    .number()
+    .int()
+    .min(0)
+    .describe('Total accounts before the result cap, so truncation is visible.'),
 });
 
 // -- finance_top_merchants --
@@ -578,4 +628,28 @@ export const financeTransactionsImportOutputSchema = z.object({
     z.object({ index: z.number().int().min(0), reason: sheetRejectionReasonSchema }),
   ),
   accountsAutoProvisioned: z.array(z.string()),
+});
+
+// -- finance_transaction_delete --
+
+export const financeTransactionDeleteInputSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(200).describe('Transaction ids to delete (1–200).'),
+  iUnderstand: z
+    .boolean()
+    .default(false)
+    .describe('Must be true. This flag is the confirmation contract; the server never elicits.'),
+});
+
+export const financeTransactionDeleteOutputSchema = z.object({
+  deleted: z.array(
+    z.object({
+      id: z.string(),
+      postedOn: z.string(),
+      accountId: z.string(),
+      description: z.string().nullable(),
+      amountCents: z.number().int(),
+      currencyCode: z.string(),
+    }),
+  ),
+  notFound: z.array(z.string()),
 });

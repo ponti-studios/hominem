@@ -136,6 +136,22 @@ describe('finance_account_create', () => {
     expect(theirs.id).not.toBe(mine.id);
   });
 
+  it('records the requested accountType', async () => {
+    const created = content(
+      await callTool(userId, 'finance_account_create', {
+        name: 'Type Savings',
+        currencyCode: 'USD',
+        accountType: 'savings',
+      }),
+    );
+    const row = await db
+      .selectFrom('app.financeAccounts')
+      .select('accountType')
+      .where('id', '=', created.id ?? '')
+      .executeTakeFirstOrThrow();
+    expect(row.accountType).toBe('savings');
+  });
+
   it('lets the sheet import resolve an account created here', async () => {
     const result = await callTool(userId, 'finance_transactions_import', {
       mode: 'append',

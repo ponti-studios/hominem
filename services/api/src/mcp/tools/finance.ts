@@ -1,7 +1,10 @@
+import { ValidationError } from '@hominem/db/errors';
 import {
   computeLedgerRunway,
   countAccounts,
   createOrGetAccount,
+  deleteTransactionsByIds,
+  getAccountSummaries,
   getFinanceNetWorth,
   getFinanceRecentTransactions,
   getFinanceSpendingByCategory,
@@ -23,6 +26,8 @@ import {
   financeAccountCreateOutputSchema,
   financeAccountsInputSchema,
   financeAccountsOutputSchema,
+  financeAccountSummaryInputSchema,
+  financeAccountSummaryOutputSchema,
   financeBudgetBreakdownInputSchema,
   financeBudgetBreakdownOutputSchema,
   financeCategoriesInputSchema,
@@ -43,6 +48,8 @@ import {
   financeTopMerchantsOutputSchema,
   financeTransactionSearchInputSchema,
   financeTransactionSearchOutputSchema,
+  financeTransactionDeleteInputSchema,
+  financeTransactionDeleteOutputSchema,
   financeTransactionUpsertInputSchema,
   financeTransactionUpsertOutputSchema,
   financeTransactionsImportInputSchema,
@@ -59,6 +66,10 @@ function toCents(amount: number): number {
 // resultCap; these tools have no pagination input, so their arrays are truncated here to
 // stay under cap instead of throwing for a user with more accounts than that.
 const MAX_ACCOUNTS_RESULT = 50;
+
+// Reconciliation must see every account, so the summary cap is far higher than the accounts
+// list cap; it exists only to bound the result, with totalCount exposing any truncation.
+const MAX_SUMMARY_ACCOUNTS = 500;
 
 const REPORT_CAVEAT =
   'Computed from the most recent 200 non-excluded transactions in the range; narrow the range for exact totals. ' +
@@ -154,6 +165,50 @@ registerTool(
       })),
       count: limited.length,
       totalCount,
+    };
+  },
+);
+
+registerTool(
+  {
+    name: 'finance_account_summary',
+    title: 'Finance Account Summary',
+    description:
+      'Reconcile per account: transaction and excluded counts, per-currency totals, and the posted-on span. ' +
+      'Counts and totals cover every row (pending and excluded included), and closed accounts are included by default.',
+    inputSchema: financeAccountSummaryInputSchema,
+    outputSchema: financeAccountSummaryOutputSchema,
+    readOnly: true,
+    scopes: ['finance:read'],
+    resultCap: MAX_SUMMARY_ACCOUNTS,
+    guidance: {
+      whenToUse: 'Verifying an import or reconciling account totals without paging transactions.',
+      whenNotToUse: 'Do not use for spending breakdowns; use finance_spending_by_category.',
+      produces: ['per-account transaction counts', 'per-account totals'],
+    },
+  },
+  async (ownerUserId, input) => {
+    const { summaries } = await getAccountSummaries(ownerUserId, {
+      ...(input.accountId ? { accountId: input.accountId } : {}),
+      includeClosed: input.includeClosed,
+    });
+    const limited = summaries.slice(0, MAX_SUMMARY_ACCOUNTS);
+    return {
+      accounts: limited.map((summary) => ({
+        accountId: summary.accountId,
+        accountName: summary.accountName,
+        status: summary.status,
+        transactionCount: summary.transactionCount,
+        excludedCount: summary.excludedCount,
+        totals: summary.totals.map((total) => ({
+          currencyCode: total.currencyCode,
+          sumCents: toCents(total.sumAmount),
+        })),
+        minPostedOn: summary.minPostedOn,
+        maxPostedOn: summary.maxPostedOn,
+      })),
+      count: limited.length,
+      totalCount: summaries.length,
     };
   },
 );
@@ -458,6 +513,7 @@ registerTool(
       ...(input.institution ? { institution: input.institution } : {}),
       ...(input.accountNumber ? { mask: input.accountNumber } : {}),
       status: input.status,
+      accountType: input.accountType,
       dryRun: input.dryRun,
     }),
 );
@@ -497,6 +553,53 @@ registerTool(
     },
   },
   async (ownerUserId, input) => upsertFinanceTransaction(ownerUserId, input),
+);
+
+registerTool(
+  {
+    ...financeWriteTool,
+    destructive: true,
+    requiresConfirmation: true,
+    name: 'finance_transaction_delete',
+    title: 'Finance Transaction Delete',
+    description:
+      'Hard-delete finance transactions by id (1–200). Requires iUnderstand: true — that flag is the confirmation contract and the server never elicits on top of it. Unknown ids come back in notFound, never as an error.',
+    inputSchema: financeTransactionDeleteInputSchema,
+    outputSchema: financeTransactionDeleteOutputSchema,
+    resultCap: 200,
+    guidance: {
+      whenToUse: 'Removing a synthetic, duplicate or bad-sync transaction by id.',
+      whenNotToUse: 'Do not guess ids; resolve them via finance_transaction_search first.',
+      dependencies: [
+        {
+          tool: 'finance_transaction_search',
+          reason: 'resolve the stable transaction id',
+          provides: ['id'],
+        },
+      ],
+    },
+    // §4: iUnderstand is the confirmation contract — eliciting on top of it hard-fails every
+    // MCP client without an elicitation handler (the B5 lesson). Returning null skips the
+    // protocol prompt; the handler refuses without the flag with a named error instead.
+    preview: async () => null,
+  },
+  async (ownerUserId, input) => {
+    if (!input.iUnderstand) {
+      throw new ValidationError('confirmation_required');
+    }
+    const { deleted, notFound } = await deleteTransactionsByIds(ownerUserId, input.ids);
+    return {
+      deleted: deleted.map((row) => ({
+        id: row.id,
+        postedOn: row.postedOn,
+        accountId: row.accountId,
+        description: row.description,
+        amountCents: toCents(row.amount),
+        currencyCode: row.currencyCode,
+      })),
+      notFound,
+    };
+  },
 );
 
 registerTool(
