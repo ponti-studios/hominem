@@ -7,23 +7,31 @@
  *
  * Checks, scoped to the owner:
  *   1. Counts & exactly-once: every sheet item/container id present in Hominem exactly
- *      once by externalId; no duplicates on either side.
- *   2. Field parity: existing-row deltas reported by diff-possessions.ts (run it on the
- *      same dir) — this script prints only the count plus the plan's spot sample.
- *   3. Spot sample: the plan's required cases — one `created_from_existing_item`, one
- *      serial number with leading zeros, one item in CON-024, and the highest-value items.
- *   4. possession_validate findings, grouped for triage (CON-036 is expected + pre-triaged).
+ *      once by externalId; duplicates detected on the raw source rows (not pre-deduped).
+ *   2. Field parity: embeds the field deltas computed by diff-possessions.ts (run it on
+ *      the same dir first) and says so explicitly when it has not been run.
+ *   3. Spot samples: the plan's required cases — one `created_from_existing_item`, one
+ *      serial number with leading zeros, one item in CON-024 — plus every one of the 20
+ *      highest-value items, each compared field-by-field against the sheet.
+ *   4. possession_validate findings, paged to completion, grouped for triage
+ *      (CON-036 is expected + pre-triaged).
  *   5. possession_summary totals (compare against the finance sheet's expectations).
- *   6. vessel_weight_report (compare against the weights tab, row by row).
+ *   6. vessel_weight_report, including every per-vessel row (compare against the weights
+ *      tab, row by row).
  *
  * Writes `verify-report.json` beside the CSVs. Everything is read-only.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { db } from '@hominem/db/core';
-import { ContainerRepository, PossessionRepository } from '@hominem/db/possessions';
+import {
+  ContainerRepository,
+  PossessionRepository,
+  type PossessionInput,
+  type PossessionRecord,
+} from '@hominem/db/possessions';
 import { parse } from 'csv-parse/sync';
 
 import {
@@ -37,6 +45,7 @@ import {
   summarizePossessions,
   validatePossessions,
   vesselWeightReport,
+  type PossessionFinding,
 } from '../src/application/possessions.service';
 
 function die(message: string): never {
@@ -84,13 +93,15 @@ async function main() {
   if (!user) die(`No user with email ${email}`);
 
   // ── 1. Counts & exactly-once ─────────────────────────────────────
-  const seen = new Set<string>();
-  const sheetItems = readCsv(dir, 'master.csv')
+  // Keep every mapped row for duplicate detection; de-duplicate only for the presence and
+  // parity comparisons, so the exactly-once check sees the source file as written.
+  const rawSheetItems = readCsv(dir, 'master.csv')
     .map(mapPossessionRow)
-    .filter(
-      (p): p is MappedPossession =>
-        p !== null && !seen.has(p.externalId) && !!seen.add(p.externalId),
-    );
+    .filter((p): p is MappedPossession => p !== null);
+  const seen = new Set<string>();
+  const sheetItems = rawSheetItems.filter(
+    (p) => !seen.has(p.externalId) && !!seen.add(p.externalId),
+  );
   const sheetContainers = readCsv(dir, 'containers.csv')
     .map(mapContainerRow)
     .filter((c): c is MappedContainer => c !== null);
@@ -102,7 +113,7 @@ async function main() {
   const liveExternalIds = liveItems.map((p) => p.externalId);
   const liveItemById = new Map(liveItems.map((p) => [p.externalId, p]));
   const missingItems = sheetItems.filter((p) => !liveItemById.has(p.externalId));
-  const dupSheet = duplicates(sheetItems.map((p) => p.externalId));
+  const dupSheet = duplicates(rawSheetItems.map((p) => p.externalId));
   const dupLive = duplicates(liveExternalIds);
 
   const liveContainerById = new Map(liveContainers.map((c) => [c.externalId, c]));
@@ -110,24 +121,91 @@ async function main() {
   const dupContainers = duplicates(sheetContainers.map((c) => c.externalId));
   const dupContainersLive = duplicates(liveContainers.map((c) => c.externalId));
 
-  // ── 3. Spot sample ───────────────────────────────────────────────
+  // ── 2. Field parity (diff-possessions.ts output on the same dir) ──
+  const diffPath = join(dir, 'diff-report.json');
+  const diffExists = existsSync(diffPath);
+  const diff: {
+    modifiedRows?: Array<{ externalId: string; changed: string[] }>;
+    modifiedContainers?: Array<{ externalId: string; changed: string[] }>;
+  } = diffExists ? JSON.parse(readFileSync(diffPath, 'utf8')) : {};
+  const fieldParity = {
+    available: diffExists,
+    note: diffExists
+      ? null
+      : 'run diff-possessions.ts --dir <same dir> first to establish field parity',
+    modifiedPossessions: diff.modifiedRows ?? [],
+    modifiedContainers: diff.modifiedContainers ?? [],
+  };
+
+  // ── 3. Spot samples: compare values, not mere existence ───────────
+  const same = (a: unknown, b: unknown) =>
+    typeof a === 'number' && typeof b === 'number' ? Math.abs(a - b) < 1e-9 : a === b;
+  const compareField = (
+    possession: MappedPossession | undefined,
+    field: keyof PossessionInput & keyof PossessionRecord,
+  ) => {
+    if (!possession) return null;
+    const live = liveItemById.get(possession.externalId);
+    return {
+      externalId: possession.externalId,
+      field,
+      expected: possession.input[field] ?? null,
+      actual: live ? (live[field] ?? null) : null,
+      matches: live ? same(possession.input[field], live[field]) : false,
+    };
+  };
   const spotAquisition = sheetItems.find(
-    (p) =>
-      p.input.acquisitionType === 'created_from_existing_item' && liveItemById.has(p.externalId),
+    (p) => p.input.acquisitionType === 'created_from_existing_item',
   );
-  const spotSerial = sheetItems.find(
-    (p) => (p.input.serialNumber ?? '').startsWith('0') && liveItemById.has(p.externalId),
-  );
-  const con024 = [...liveContainers].find((c) => c.externalId === 'CON-024');
+  const spotSerial = sheetItems.find((p) => (p.input.serialNumber ?? '').startsWith('0'));
+  const con024 = liveContainers.find((c) => c.externalId === 'CON-024');
   const spotCon024 = sheetItems.find((p) => p.containerExternalId === 'CON-024');
-  const topValue = [...liveItems]
+
+  const SPOT_FIELDS = [
+    'name',
+    'status',
+    'category',
+    'subCategory',
+    'brand',
+    'model',
+    'acquiredDate',
+    'retiredDate',
+    'priceCents',
+    'sellPriceCents',
+    'currencyCode',
+    'color',
+    'size',
+    'serialNumber',
+    'notes',
+    'weightKg',
+    'moveAction',
+    'acquisitionType',
+    'purchaseCurrency',
+    'retirementMethod',
+    'ownershipType',
+  ] as const satisfies ReadonlyArray<keyof PossessionInput & keyof PossessionRecord>;
+  const sheetItemById = new Map(sheetItems.map((p) => [p.externalId, p]));
+  const topValueChecks = [...liveItems]
     .filter((p) => (p.priceCents ?? 0) > 0)
     .sort((a, b) => (b.priceCents ?? 0) - (a.priceCents ?? 0))
-    .slice(0, 5)
-    .map((p) => p.externalId);
+    .slice(0, 20)
+    .map((live): { externalId: string | null; inSheet: boolean; mismatches: string[] } => {
+      const sheet = live.externalId ? sheetItemById.get(live.externalId) : undefined;
+      if (!sheet) return { externalId: live.externalId, inSheet: false, mismatches: [] };
+      const mismatches = SPOT_FIELDS.filter((field) => !same(sheet.input[field], live[field]));
+      return { externalId: live.externalId, inSheet: true, mismatches };
+    });
 
-  // ── 4. validate ──────────────────────────────────────────────────
-  const { findings, total: findingsTotal } = await validatePossessions(user.id);
+  // ── 4. validate (paged to completion) ─────────────────────────────
+  const findings: PossessionFinding[] = [];
+  let findingsTotal = 0;
+  for (let offset = 0; ;) {
+    const page = await validatePossessions(user.id, { limit: 1000, offset });
+    findings.push(...page.findings);
+    findingsTotal = page.total;
+    offset += page.findings.length;
+    if (page.findings.length === 0 || offset >= findingsTotal) break;
+  }
   const byCode = findings.reduce<Record<string, number>>((acc, f) => {
     acc[f.code] = (acc[f.code] ?? 0) + 1;
     return acc;
@@ -141,7 +219,8 @@ async function main() {
 
   const out = {
     counts: {
-      sheetItems: sheetItems.length,
+      sheetItems: rawSheetItems.length,
+      sheetItemsUnique: sheetItems.length,
       sheetContainers: sheetContainers.length,
       liveItems: liveItems.length,
       liveContainers: liveContainers.length,
@@ -152,24 +231,25 @@ async function main() {
       duplicateSheetContainerIds: dupContainers,
       duplicateLiveContainerIds: dupContainersLive,
     },
+    fieldParity,
     spotSample: {
-      createdFromExistingItem: spotAquisition
-        ? { externalId: spotAquisition.externalId, name: spotAquisition.input.name }
+      createdFromExistingItem: compareField(spotAquisition, 'acquisitionType'),
+      serialWithLeadingZero: compareField(spotSerial, 'serialNumber'),
+      inCon024: spotCon024
+        ? {
+            externalId: spotCon024.externalId,
+            expectedContainer: 'CON-024',
+            actualContainerId: liveItemById.get(spotCon024.externalId)?.containerId ?? null,
+            matches: liveItemById.get(spotCon024.externalId)?.containerId === con024?.id,
+          }
         : null,
-      serialWithLeadingZero: spotSerial
-        ? { externalId: spotSerial.externalId, serial: spotSerial.input.serialNumber }
-        : null,
-      inCon024: spotCon024 ? { externalId: spotCon024.externalId } : null,
       con024InLive: Boolean(con024),
-      topValueByPrice: topValue,
+      topValueFieldChecks: topValueChecks,
     },
     validate: { total: findingsTotal, byCode, codes: [...new Set(findings.map((f) => f.code))] },
-    summary: {
-      total: summary.total,
-      valueByCurrency: summary.valueByCurrency,
-    },
+    summary: { total: summary.total, valueByCurrency: summary.valueByCurrency },
     vesselReport: {
-      vessels: report.vessels.length,
+      vessels: report.vessels,
       groups: report.groups,
       unassigned: report.unassigned,
       truncated: report.truncated,
@@ -177,6 +257,10 @@ async function main() {
   };
   writeFileSync(join(dir, 'verify-report.json'), JSON.stringify(out, null, 2));
 
+  const parityLabel = fieldParity.available
+    ? `${fieldParity.modifiedPossessions.length} item + ${fieldParity.modifiedContainers.length} container deltas`
+    : `NOT RUN (${fieldParity.note})`;
+  const spotMismatches = topValueChecks.reduce((n, c) => n + c.mismatches.length, 0);
   console.log(`User: ${user.email}`);
   console.log(
     `Counts: ${out.counts.liveItems} live possessions / ${out.counts.sheetItems} sheet items` +
@@ -186,10 +270,12 @@ async function main() {
     `  missing: ${out.counts.missingItems.length} items, ${out.counts.missingContainers.length} containers` +
       ` | duplicate ids: live ${out.counts.duplicateLiveItemIds.length}/${out.counts.duplicateLiveContainerIds.length}, sheet ${out.counts.duplicateSheetItemIds.length}/${out.counts.duplicateSheetContainerIds.length}`,
   );
+  console.log(`Field parity: ${parityLabel}`);
   console.log(
-    `Spot sample: created_from_existing_item=${spotAquisition?.externalId}` +
-      ` serial-leading-zero=${spotSerial?.externalId} in-CON-024=${spotCon024?.externalId}` +
-      ` (CON-024 live=${con024 ? 'yes' : 'no'}) top-value=${topValue.slice(0, 3).join(',')}...`,
+    `Spot sample: created_from_existing_item=${out.spotSample.createdFromExistingItem?.matches ? 'match' : 'MISMATCH'}` +
+      ` serial-leading-zero=${out.spotSample.serialWithLeadingZero?.matches ? 'match' : 'MISMATCH'}` +
+      ` in-CON-024=${out.spotSample.inCon024?.matches ? 'match' : 'MISMATCH'}` +
+      ` top-20 mismatched fields=${spotMismatches}`,
   );
   console.log(`Validate: ${findingsTotal} findings`, byCode);
   console.log(
