@@ -37,30 +37,30 @@ describe('remember', () => {
   it('saves a fact as a memory note', async () => {
     const result = toolOutput(
       await callTool(userId, 'remember', {
-        title: 'Cyndi',
-        content: 'Cyndi is my dog',
+        title: 'Rex',
+        content: 'Rex is my dog',
       }),
       rememberOutputSchema,
     );
 
     expect(result.id).toMatch(/^[0-9a-f-]{36}$/);
-    expect(result.title).toBe('Cyndi');
+    expect(result.title).toBe('Rex');
     expect(await memoryCount(userId)).toBe(1);
   });
 
   it('returns the existing memory instead of duplicating identical content', async () => {
     const first = toolOutput(
       await callTool(userId, 'remember', {
-        title: 'Kelsey',
-        content: 'Kelsey is my girlfriend',
+        title: 'Sam',
+        content: 'Sam is my brother',
       }),
       rememberOutputSchema,
     );
 
     const duplicate = toolOutput(
       await callTool(userId, 'remember', {
-        title: 'girlfriend',
-        content: 'Kelsey is my girlfriend',
+        title: 'brother',
+        content: 'Sam is my brother',
       }),
       rememberOutputSchema,
     );
@@ -72,22 +72,22 @@ describe('remember', () => {
   it('saves distinct facts as separate memories', async () => {
     const before = await memoryCount(userId);
 
-    const cyndi = toolOutput(
+    const dog = toolOutput(
       await callTool(userId, 'remember', {
-        title: 'Cyndi',
-        content: 'Cyndi is my dog',
+        title: 'Rex',
+        content: 'Rex is my dog',
       }),
       rememberOutputSchema,
     );
-    const kelsey = toolOutput(
+    const brother = toolOutput(
       await callTool(userId, 'remember', {
-        title: 'Kelsey',
-        content: 'Kelsey is my girlfriend',
+        title: 'Sam',
+        content: 'Sam is my brother',
       }),
       rememberOutputSchema,
     );
 
-    expect(cyndi.id).not.toBe(kelsey.id);
+    expect(dog.id).not.toBe(brother.id);
     expect(await memoryCount(userId)).toBe(before + 2);
   });
 });

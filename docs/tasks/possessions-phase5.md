@@ -16,7 +16,7 @@ retired and every inventory workflow points at Hominem tools.
 
 ## Decisions
 
-- **Q3 cutover style**: **hard freeze one evening** (2026-10-13) — Charles stops editing
+- **Q3 cutover style**: **hard freeze one evening** (2026-10-13) — the owner stops editing
   the sheet for one evening; the final diff runs against that quiet state, then the sheet
   is frozen. No rolling dual-write.
 - **Q4 frozen backup location**: **keep the frozen sheet in Drive** (2026-10-13) — a

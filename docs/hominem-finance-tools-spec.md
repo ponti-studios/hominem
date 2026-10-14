@@ -1,13 +1,13 @@
 # Hominem Finance Tools — Extension Spec
 
-**Author:** Wyatt (operator), for Charles's coding agent · **Date:** 2026-10-13
+**Author:** the operator, for the coding agent · **Date:** 2026-10-13
 **Status:** Ready to build · **Scope:** MCP finance domain at api.ponti.io
 **Evidence base:** the 2026-10-13 finance port (16,426 sheet rows → 14,486
 reconciled transactions) and bug log B1–B6 (`finance-import/bug-log.md`).
 
 Every item below exists because a concrete operation on 2026-10-13 was
 impossible, unverifiable, or absurdly expensive without it. Acceptance tests
-are live and runnable by Wyatt against production data; §9 ships with
+are live and runnable by the operator against production data; §9 ships with
 ground-truth numbers from the completed reconciliation.
 
 ---
@@ -68,8 +68,8 @@ ground-truth numbers from the completed reconciliation.
 **Problem.** No client path can provision an account: the import rejects
 unknown accounts and `accountsAutoProvisioned` never fires for an external
 MCP client (probed 2026-10-13). 1,712 staged historical rows wait on four
-accounts; the daily Plaid/Starling sync will keep surfacing new accounts
-(it already banks Wise rows locally because it cannot create the account).
+accounts; the daily provider sync will keep surfacing new accounts
+(it already stages rows for an institution it cannot create).
 
 **Input**
 
@@ -77,7 +77,7 @@ accounts; the daily Plaid/Starling sync will keep surfacing new accounts
 |---|---|---|---|
 | `name` | string | ✓ | display name, non-empty |
 | `currencyCode` | string | ✓ | ISO 4217 |
-| `institution` | string | | e.g. "Wise" |
+| `institution` | string | | e.g. "Acme Bank" |
 | `accountNumber` | string | | mask/last digits as displayed elsewhere |
 | `status` | enum `open`\|`closed` | | default `open` |
 
@@ -86,9 +86,10 @@ accounts; the daily Plaid/Starling sync will keep surfacing new accounts
 
 **Errors.** `invalid_currency`, `invalid_name` — named, per §1.1.
 
-**Acceptance (live).** (a) Create Wise GBP / Starling V1 (2017-18) /
-Apple Savings / Unattributed - Copilot legacy → all `created: true`.
-(b) Re-create "wise gbp" → `created: false`, same id. (c) The four appear in
+**Acceptance (live).** (a) Create the four parked accounts named in the
+parked-rows register (one GBP, one legacy, one savings, one catch-all) →
+all `created: true`. (b) Re-create one with different casing →
+`created: false`, same id. (c) The four appear in
 `finance_accounts` (closed ones under `includeClosed`). (d) The staged
 1,712-row parked pack imports with zero `unknown_account` rejections.
 
@@ -144,16 +145,16 @@ returns 0 for it, `finance_account_summary` count decremented by 1.
 model — a write-only field (B2 class). Verified live 2026-10-13: upsert
 with `orderNumber` succeeds (`created: false` on the existing row); the
 subsequent search returns 17 fields, none of them `orderNumber`.
-Charles's standing data rule is a transaction → order → item chain; the
+The owner's standing data rule is a transaction → order → item chain; the
 chain is unverifiable while the field can't be read back. Scope is small
 (9 sheet rows carry order numbers) but the fix is smaller.
 
 **Change.** Add `orderNumber` to the transaction read DTO everywhere it
 is returned (search, recent, and any by-id read).
 
-**Acceptance (live).** Repeat tonight's probe: upsert the 2026-09-21
-Amex Platinum "ACCB UKFX-USD" row with its order numbers → search returns
-the row **with** `orderNumber` equal to what was written. Wyatt then
+**Acceptance (live).** Repeat tonight's probe: upsert the target row
+with its order numbers → search returns
+the row **with** `orderNumber` equal to what was written. The operator then
 populates the remaining 8 rows and verifies each.
 
 ## 6. `finance_tag_rename` + `finance_tag_merge` — Tier 2
@@ -201,9 +202,9 @@ with different casing → `created: false`. Merge probe into `Uncategorized`
 
 ## 8. Transfer linking (`counterpartId`) — Tier 3 (data model)
 
-**Problem.** Transfers between Charles's own accounts are two unlinked
-rows. Tonight's Apple Savings identification hinged on one description
-happening to name its destination ("Transfer -> Apple Savings"); nothing
+**Problem.** Transfers between the owner's own accounts are two unlinked
+rows. A transfer identification hinged on one description
+happening to name its destination ("Transfer -> <account>"); nothing
 in the data model records the pairing, so any cross-account aggregation
 double-counts internal movement (cf. `finance_net_worth`).
 
@@ -218,44 +219,22 @@ double-counts internal movement (cf. `finance_net_worth`).
   (the operator proved the manual workflow tonight); the model's job is
   to hold the link once known.
 
-**Acceptance (live).** Link the real pair — Amex Savings −$9,917.56
-(2026-05-08, "Transfer -> Apple Savings") ↔ Apple Savings +$9,917.56
-(2026-05-08, "Deposit", importable once §2 lands) — read both back, link
+**Acceptance (live).** Link a real pair — the two legs of a dated internal
+transfer (one on each account) — read both back, link
 present on both sides; delete-probe on a synthetic pair clears the
 survivor's link.
 
-## 9. Appendix — reconciliation ground truth (post-port store, 2026-10-13)
+## 9. Appendix — reconciliation ground truth
 
-Verified by full enumeration after the backfill. §3's acceptance compares
-against this table. Sums are mixed-currency per account (the port's
-baseline convention); §3's grouped totals must add to them.
+Verified by full enumeration after the backfill. §3's acceptance compares against it:
+per-account counts must match, and each account's grouped totals must sum to the same figure.
 
-| account | count | sum (cents) |
-|---|---:|---:|
-| American Express Gold | 2,729 | −3,305,474 |
-| American Express Platinum | 1,150 | −1,243,079 |
-| American Express Rewards Checking | 28 | 0 |
-| American Express Savings | 47 | 698,311 |
-| Apple Card | 2,003 | −1,314,659 |
-| Apple Cash | 2,175 | −5,566 |
-| Barclays View | 33 | 0 |
-| Bending Spoons 401(k) Plan | 33 | 2,665,767 |
-| Capital One 360 Checking | 1,076 | 13,171,879 |
-| Capital One 360 Money Market | 83 | −3,391,781 |
-| Capital One 360 Performance Savings | 76 | 1,071,872 |
-| Capital One Quicksilver | 1,026 | −1,697,248 |
-| Capital One Savor | 112 | 219 |
-| Capital One Venture One | 1,041 | −1,879,771 |
-| Cash | 4 | 80,400 |
-| Charles Schwab Investor Checking | 63 | 201,212 |
-| Citi Double Cash Card | 28 | −42,333 |
-| Citi Rewards+ Card | 28 | −1,818 |
-| Lloyd's Platinum Current | 2,045 | 2,078,432 |
-| Lloyd's Platinum Savings | 43 | 89,369 |
-| Monzo | 30 | −18,268 |
-| Santander Premier Plus Checking | 580 | 348,565 |
-| Starling Bank | 53 | 25,676 |
-| **Total** | **14,486** | |
+**The table itself is deliberately not committed.** It is the owner's per-account transaction
+counts and sums — personal financial data — so it lives outside the repository. Regenerate it
+at acceptance time by running `finance_account_summary` with no `accountId` against the
+post-port store and comparing per-account `transactionCount` and `totals` against the same
+figures read directly from the database. The store held **14,486** transactions on 2026-10-13;
+that total is the invariant §3 must reproduce.
 
 ## 10. Build order & non-goals
 

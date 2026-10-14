@@ -74,8 +74,8 @@ beforeAll(async () => {
   await db
     .insertInto('app.financeAccounts')
     .values([
-      account(typoId, userId, 'Merril Lynch', 'open'),
-      account(appleId, userId, 'Apple Savings', 'open', 'savings'),
+      account(typoId, userId, 'Exmaple Broker', 'open'),
+      account(appleId, userId, 'Example Savings', 'open', 'savings'),
       account(probeId, userId, 'ZZZ Probe Account', 'closed'),
       account(otherAccountId, otherUserId, 'Other Account', 'open'),
     ])
@@ -109,17 +109,17 @@ describe('finance_account_update', () => {
     const result = content(
       await callTool(userId, 'finance_account_update', {
         accountId: typoId,
-        name: 'Merrill Lynch',
+        name: 'Example Broker',
       }),
     );
     expect(result.reason).toBeNull();
     expect(result.updated).toBe(true);
     expect(result.id).toBe(typoId);
-    expect(result.changes).toEqual({ name: ['Merril Lynch', 'Merrill Lynch'] });
-    expect(await nameOf(typoId)).toBe('Merrill Lynch');
+    expect(result.changes).toEqual({ name: ['Exmaple Broker', 'Example Broker'] });
+    expect(await nameOf(typoId)).toBe('Example Broker');
 
     const after = content(await callTool(userId, 'finance_account_summary', { accountId: typoId }));
-    expect(after.accounts?.[0]).toMatchObject({ accountId: typoId, accountName: 'Merrill Lynch' });
+    expect(after.accounts?.[0]).toMatchObject({ accountId: typoId, accountName: 'Example Broker' });
     expect(after.accounts?.[0]?.transactionCount).toBe(before.accounts?.[0]?.transactionCount);
   });
 
@@ -127,31 +127,31 @@ describe('finance_account_update', () => {
     const result = content(
       await callTool(userId, 'finance_account_update', {
         accountId: appleId,
-        name: 'merrill lynch',
+        name: 'example broker',
       }),
     );
     expect(result.reason).toBe('name_conflict');
-    expect(await nameOf(appleId)).toBe('Apple Savings');
-    expect(await nameOf(typoId)).toBe('Merrill Lynch');
+    expect(await nameOf(appleId)).toBe('Example Savings');
+    expect(await nameOf(typoId)).toBe('Example Broker');
   });
 
   it('allows re-casing the account’s own name', async () => {
     const result = content(
       await callTool(userId, 'finance_account_update', {
         accountId: appleId,
-        name: 'apple savings',
+        name: 'example savings',
       }),
     );
     expect(result.reason).toBeNull();
     expect(result.updated).toBe(true);
-    expect(result.changes).toEqual({ name: ['Apple Savings', 'apple savings'] });
+    expect(result.changes).toEqual({ name: ['Example Savings', 'example savings'] });
   });
 
   it('reports a no-op as updated: false with an empty change set', async () => {
     const result = content(
       await callTool(userId, 'finance_account_update', {
         accountId: appleId,
-        name: 'apple savings',
+        name: 'example savings',
       }),
     );
     expect(result.reason).toBeNull();
@@ -183,13 +183,13 @@ describe('finance_account_update', () => {
     const result = content(
       await callTool(userId, 'finance_account_update', {
         accountId: appleId,
-        name: 'Apple Savings',
+        name: 'Example Savings',
         dryRun: true,
       }),
     );
     expect(result.updated).toBe(true);
-    expect(result.changes).toEqual({ name: ['apple savings', 'Apple Savings'] });
-    expect(await nameOf(appleId)).toBe('apple savings');
+    expect(result.changes).toEqual({ name: ['example savings', 'Example Savings'] });
+    expect(await nameOf(appleId)).toBe('example savings');
   });
 
   it('refuses a currency change and a blank name', async () => {
@@ -208,12 +208,12 @@ describe('finance_account_update', () => {
     const set = content(
       await callTool(userId, 'finance_account_update', {
         accountId: appleId,
-        institution: 'Wise',
+        institution: 'Example Bank',
         accountNumber: '0895',
       }),
     );
     expect(set.updated).toBe(true);
-    expect(set.changes?.institution).toEqual([null, 'Wise']);
+    expect(set.changes?.institution).toEqual([null, 'Example Bank']);
     expect(set.changes?.accountNumber).toEqual([null, '0895']);
 
     const cleared = content(
@@ -223,7 +223,7 @@ describe('finance_account_update', () => {
         accountNumber: null,
       }),
     );
-    expect(cleared.changes?.institution).toEqual(['Wise', null]);
+    expect(cleared.changes?.institution).toEqual(['Example Bank', null]);
     expect(cleared.changes?.accountNumber).toEqual(['0895', null]);
   });
 

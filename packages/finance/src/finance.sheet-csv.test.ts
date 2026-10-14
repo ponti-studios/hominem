@@ -9,23 +9,23 @@ describe('parseSheetTransactionsCsv', () => {
   it('parses the PRD example row end to end', () => {
     const csv = [
       HEADER,
-      `2026-08-24,Capital One VentureOne …9645,Air France,"(1,648.50)",USD,project-london,Plaid,,Air Travel,FALSE,FALSE,Kelsey's ticket`,
+      `2026-08-24,Example Card …0000,Example Airways,"(100.00)",USD,example-project,Plaid,,Air Travel,FALSE,FALSE,example note`,
     ].join('\n');
     const { rows, invalid } = parseSheetTransactionsCsv(csv);
     expect(invalid).toEqual([]);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       postedOn: '2026-08-24',
-      account: 'Capital One VentureOne …9645',
-      description: 'Air France',
-      amountCents: -164850,
+      account: 'Example Card …0000',
+      description: 'Example Airways',
+      amountCents: -10000,
       currencyCode: 'USD',
-      tags: ['project-london'],
+      tags: ['example-project'],
       source: 'Plaid',
       category: 'Air Travel',
       excluded: false,
       recurring: false,
-      notes: "Kelsey's ticket",
+      notes: 'example note',
     });
   });
 

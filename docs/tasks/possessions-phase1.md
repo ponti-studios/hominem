@@ -15,7 +15,7 @@ fields on possessions, `donated`/`sold` statuses, container tracking + vessel co
 upserts over `externalId`, append-only history, a computed vessel weight report replacing the
 weights tab, and an integrity audit replacing manual sheet audits. TDD throughout.
 
-## Decisions (resolved with Charles 2026-10-12)
+## Decisions (resolved with the owner 2026-10-12)
 
 - Q1: `donated`/`sold` are first-class statuses (extend enum).
 - Q2: acquisition/purchase-currency/retirement/ownership are first-class fields, not metadata.

@@ -27,16 +27,16 @@ re-run idempotently to resume. No checkpointing.
 - Tags: plain names, no namespacing.
 - Transfers: description contains `transfer`; autopays excluded.
 - Multi-currency: strict `currency_mismatch` stands, with a one-account
-  allowlist (Amex Platinum …4009: USD+GBP) via `multiCurrencyAccounts`.
-- Accounts: 21 labels map directly; 6 created (CapOne 360 Money Market
-  historical, CapOne 360 Savings open, Wise GBP open, HY Savings …4217
-  historical, Starling 2017 historical USD-as-is, quarantined "Savings
-  (Copilot)" historical); 3 flips to historical (Monzo, Citi Double Cash,
-  Citi Rewards+); 1 currency fix (Starling account USD → GBP).
-- Sheet "Savings" (241 micro-deposit rows) is unidentifiable — quarantined
-  historical account, remappable later. Never misattributed.
-- Starling V1 rows say USD (Copilot quirk) — preserved as-is against a USD
-  historical account, never "corrected" into a mismatch.
+  allowlist (a label declared as multi-currency) via `multiCurrencyAccounts`.
+- Accounts: most labels map directly; the rest are created or flipped
+  (a historical money-market account, an open savings account, a GBP account,
+  a historical high-yield savings account, a legacy 2017 account kept
+  USD-as-is, and a quarantined catch-all), with the legacy account's currency
+  fixed USD → GBP.
+- The sheet's generic "Savings" label (micro-deposit rows) is unidentifiable —
+  quarantined as a historical account, remappable later. Never misattributed.
+- The legacy 2017 account's rows say USD (Copilot quirk) — preserved as-is
+  against a USD historical account, never "corrected" into a mismatch.
 
 ## Scope
 
@@ -66,7 +66,7 @@ the VM-side wiring itself, the 7-day soak observation.
 - [x] AC-103: `pending: true` rows reject with `pending_row`, batch continues.
 - [x] AC-104: Allowlisted account accepts either currency; non-allowlisted rejects mismatch.
 - [x] AC-105: Map validator lists every gap (unmapped label, missing create-spec field, unknown flip target).
-- [x] AC-106: Ensure creates 6 accounts with specified lifecycle/currency, flips 3 to historical, fixes Starling currency — all owner-scoped, idempotent on re-run.
+- [x] AC-106: Ensure creates the missing accounts with specified lifecycle/currency, flips the historical ones, fixes the legacy account currency — all owner-scoped, idempotent on re-run.
 - [x] AC-107: Runner chunks at 1000, stops on first throwing batch, aggregates counts, re-indexes rejections; resume by re-run yields created: 0.
 - [x] AC-108: Comparators verify count equality, monthly income/expense/net within $0.01, top-category and tag totals.
 - [x] AC-109: Push payload covers appended + trailing-14-day rows; VM script never blocks the sheet write on push failure.

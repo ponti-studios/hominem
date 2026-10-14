@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 
 -- Containers hold possessions (suitcase, pouch, shelf) and can nest via parent_container_id.
--- external_id keeps an id from an import source (e.g. a spreadsheet's CON-023) so re-running
+-- external_id keeps an id from an import source (e.g. a spreadsheet's CON-001) so re-running
 -- an import updates rows instead of duplicating them.
 CREATE TABLE IF NOT EXISTS app.possession_containers (
   id uuid PRIMARY KEY DEFAULT uuidv7(),

@@ -13,7 +13,7 @@ import {
 
 describe('sheet-import pure transforms', () => {
   it('normalizes descriptions for key computation only', () => {
-    expect(normalizeDescription('  Air   France\t')).toBe('air france');
+    expect(normalizeDescription('  Example   Airways\t')).toBe('example airways');
   });
 
   it('validates ISO dates strictly', () => {
@@ -48,17 +48,17 @@ describe('sheet-import pure transforms', () => {
   });
 
   it('splits tags on commas and dedupes case-insensitively', () => {
-    expect(parseTags(['project-london', ' Project-London , travel '])).toEqual([
-      'project-london',
+    expect(parseTags(['example-project', ' Example-Project , travel '])).toEqual([
+      'example-project',
       'travel',
     ]);
     expect(parseTags(undefined)).toEqual([]);
   });
 
   it('computes a stable natural key', () => {
-    const a = computeSheetExternalId('2026-08-24', 'acct-1', 'Air France', -164850, 'USD');
-    const b = computeSheetExternalId('2026-08-24', 'acct-1', '  air   FRANCE ', -164850, 'USD');
-    const c = computeSheetExternalId('2026-08-24', 'acct-1', 'Air France', -164851, 'USD');
+    const a = computeSheetExternalId('2026-08-24', 'acct-1', 'Example Airways', -10000, 'USD');
+    const b = computeSheetExternalId('2026-08-24', 'acct-1', '  example   AIRWAYS ', -10000, 'USD');
+    const c = computeSheetExternalId('2026-08-24', 'acct-1', 'Example Airways', -10001, 'USD');
     expect(a).toBe(b);
     expect(a).not.toBe(c);
     expect(a.startsWith('sheet:')).toBe(true);

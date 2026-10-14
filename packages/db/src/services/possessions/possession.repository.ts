@@ -26,7 +26,7 @@ export const POSSESSION_STATUSES = [
 ] as const;
 export type PossessionStatus = (typeof POSSESSION_STATUSES)[number];
 
-// Lifecycle enums from the sheet (plan §3) stay free strings: Charles invents new values
+// Lifecycle enums from the sheet (plan §3) stay free strings: the owner invents new values
 // live, so gating them on a deploy would rot. Zod caps their length; validate audits usage.
 export interface PossessionRecord {
   id: string;

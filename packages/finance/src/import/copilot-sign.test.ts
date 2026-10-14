@@ -77,8 +77,8 @@ describe('resolveCopilotSign', () => {
 describe('applyDescriptionSplits', () => {
   const splits = [
     {
-      sourceAccount: 'American Express Savings',
-      targetAccount: 'Apple Savings',
+      sourceAccount: 'Example Checking',
+      targetAccount: 'Example Savings',
       csvAccountLabel: 'Savings',
       descriptions: ['Deposit', 'Interest', 'Withdrawal'],
       alwaysCreditDescriptions: ['Deposit', 'Interest'],
@@ -94,7 +94,7 @@ describe('applyDescriptionSplits', () => {
       splits,
     );
 
-    expect(rows.map((entry) => entry.account)).toEqual(['Apple Savings', 'Apple Savings']);
+    expect(rows.map((entry) => entry.account)).toEqual(['Example Savings', 'Example Savings']);
     expect(forcedCreditLines).toEqual(new Set([2]));
   });
 

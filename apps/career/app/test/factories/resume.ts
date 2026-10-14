@@ -12,15 +12,15 @@ type UploadResponseOverrides = Partial<Omit<UploadResumeApiResponse, 'data'>> & 
 export function makeConvertedResumeData(overrides: ResumeDataOverrides = {}): ConvertedResumeData {
   const base: ConvertedResumeData = {
     portfolio: {
-      slug: 'charles-ponti',
+      slug: 'alex-example',
       title: 'Portfolio',
-      name: 'Charles Ponti',
-      initials: 'CP',
+      name: 'Alex Example',
+      initials: 'AE',
       job_title: 'Engineer',
       bio: 'Bio',
       tagline: 'Tagline',
       current_location: 'Los Angeles',
-      email: 'charles@example.com',
+      email: 'alex@example.com',
       phone: null,
       availability_status: true,
       open_to_remote: false,

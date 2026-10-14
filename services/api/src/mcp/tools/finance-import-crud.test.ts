@@ -74,8 +74,8 @@ describe('finance_categories', () => {
     await callTool(userId, 'finance_transaction_upsert', {
       postedOn: '2026-08-24',
       account: checkingId,
-      description: 'Air France',
-      amountCents: -164850,
+      description: 'Example Airways',
+      amountCents: -10000,
       currencyCode: 'USD',
       category: 'Air Travel',
     });
@@ -278,7 +278,7 @@ describe('finance_transactions_import', () => {
     const { rows, invalid } = parseSheetTransactionsCsv(
       [
         'date,Bank,Merchant,Amount,Currency,Tags,Source,Order #,Category,Exclude?,Recurring?,Notes',
-        '2026-08-24,Sheet Checking,Air France,"(1,648.50)",USD,,Plaid,,Air Travel,FALSE,FALSE,',
+        '2026-08-24,Sheet Checking,Example Airways,"(100.00)",USD,,Plaid,,Air Travel,FALSE,FALSE,',
       ].join('\n'),
     );
     expect(invalid).toEqual([]);
@@ -441,21 +441,21 @@ describe('orderNumber read parity', () => {
     const up = await callTool(userId, 'finance_transaction_upsert', {
       postedOn: '2026-12-30',
       account: 'Sheet Checking',
-      description: 'ACCB UKFX-USD',
+      description: 'Example Order Merchant',
       amountCents: -12345,
       currencyCode: 'USD',
-      orderNumber: 'ACCB-UKFX-001',
+      orderNumber: 'ORDER-0001',
     });
     const id = content(up).id ?? '';
 
     const search = content(
-      await callTool(userId, 'finance_transaction_search', { query: 'ACCB UKFX-USD' }),
+      await callTool(userId, 'finance_transaction_search', { query: 'Example Order Merchant' }),
     );
     const searched = search.transactions?.find((row) => row.id === id);
-    expect(searched?.orderNumber).toBe('ACCB-UKFX-001');
+    expect(searched?.orderNumber).toBe('ORDER-0001');
 
     const recent = content(await callTool(userId, 'finance_recent_transactions', { limit: 50 }));
     const recentRow = recent.transactions?.find((row) => row.id === id);
-    expect(recentRow?.orderNumber).toBe('ACCB-UKFX-001');
+    expect(recentRow?.orderNumber).toBe('ORDER-0001');
   });
 });

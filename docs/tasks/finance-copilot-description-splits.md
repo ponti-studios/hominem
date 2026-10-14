@@ -9,8 +9,7 @@ estimated_size: 'S'
 
 ## Outcome
 
-A Copilot `account`-label collision between two real accounts (the
-Apple Savings / American Express Savings precedent) can be recorded
+A Copilot `account`-label collision between two real accounts can be recorded
 per user and applied during import preflight, instead of living in a
 hardcoded list or a checkout-local JSON file.
 
