@@ -135,7 +135,7 @@ registerTool(
     name: 'finance_spending_by_category',
     title: 'Finance Spending by Category',
     description:
-      'Sum posted, non-excluded, non-transfer spending grouped by category and currency over a date range. Each category row is reported in its own currency; mixed-currency values are never combined.',
+      'Sum posted, non-excluded, non-transfer spending grouped by category and currency over a date range. Each category row is reported in its own currency; mixed-currency values are never combined. Check truncated and warnings because results may omit categories beyond the requested limit.',
     inputSchema: financeSpendingByCategoryInputSchema,
     outputSchema: financeSpendingByCategoryOutputSchema,
     readOnly: true,

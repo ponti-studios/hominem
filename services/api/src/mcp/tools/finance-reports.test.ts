@@ -389,6 +389,58 @@ describe('finance_spending_by_category', () => {
       'Spending spans multiple currencies; categories are reported separately by currency.',
     );
   });
+
+  it('reports when matching categories are omitted by the requested limit', async () => {
+    const categoryIds = Array.from(
+      { length: 21 },
+      (_, index) => `f2000008-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+    );
+    await db
+      .insertInto('app.financeCategories')
+      .values(categoryIds.map((id, index) => ({ id, userId, name: `Limit Category ${index + 1}` })))
+      .execute();
+
+    for (const [index, categoryId] of categoryIds.entries()) {
+      const transactionId = await insertTransaction({
+        owner: userId,
+        accountId: checkingId,
+        postedOn: '2025-12-15',
+        description: `Category truncation ${index + 1}`,
+        merchantName: null,
+        amount: -(index + 1),
+      });
+      await db
+        .updateTable('app.financeTransactions')
+        .set({ categoryId })
+        .where('id', '=', transactionId)
+        .execute();
+    }
+
+    const limited = content(
+      await callTool(userId, 'finance_spending_by_category', {
+        from: '2025-01-01',
+        to: '2025-12-31',
+      }),
+    );
+    expect(limited.categories).toHaveLength(20);
+    expect(limited.truncated).toBe(true);
+    expect(limited.warnings).toContain(
+      'Category results are truncated at the requested limit (20); additional matching categories were omitted.',
+    );
+
+    const complete = content(
+      await callTool(userId, 'finance_spending_by_category', {
+        from: '2025-01-01',
+        to: '2025-12-31',
+        limit: 50,
+      }),
+    );
+    expect(complete.categories).toHaveLength(21);
+    expect(complete.truncated).toBe(false);
+    expect(complete.warnings).not.toEqual(
+      expect.arrayContaining([expect.stringContaining('truncated')]),
+    );
+  });
 });
 
 describe('finance_tag_breakdown', () => {
