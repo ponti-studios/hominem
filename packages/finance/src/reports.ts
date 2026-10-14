@@ -219,10 +219,11 @@ export async function getFinanceSpendingByCategory(
     .where('t.postedOn', '<=', toDate)
     .groupBy(['c.id', 'c.name', 't.currencyCode'])
     .orderBy('netAmount', 'asc')
-    .limit(limit)
+    .limit(limit + 1)
     .execute();
 
-  const categories = rows.map((row) => ({
+  const truncated = rows.length > limit;
+  const categories = rows.slice(0, limit).map((row) => ({
     categoryId: row.categoryId,
     categoryName: row.categoryName,
     currencyCode: row.currencyCode,
@@ -245,16 +246,23 @@ export async function getFinanceSpendingByCategory(
     .execute();
   const currencies = currencyRows.map((row) => row.currencyCode);
   const currencyCode = currencies.length === 1 ? (currencies[0] ?? null) : null;
-  const warnings =
-    currencies.length > 1
+  const warnings = [
+    ...(currencies.length > 1
       ? ['Spending spans multiple currencies; categories are reported separately by currency.']
-      : [];
+      : []),
+    ...(truncated
+      ? [
+          `Category results are truncated at the requested limit (${limit}); additional matching categories were omitted.`,
+        ]
+      : []),
+  ];
 
   return {
     from: fromDate,
     to: toDate,
     currencyCode,
     categories,
+    truncated,
     warnings,
   };
 }

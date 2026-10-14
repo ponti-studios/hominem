@@ -170,6 +170,7 @@ export const financeSpendingByCategoryOutputSchema = z.object({
   from: z.string(),
   to: z.string(),
   currencyCode: z.string().nullable(),
+  truncated: z.boolean(),
   categories: z.array(
     z.object({
       categoryId: z.string(),
