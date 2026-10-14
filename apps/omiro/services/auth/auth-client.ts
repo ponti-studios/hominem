@@ -1,25 +1,13 @@
-import { expoClient } from '@better-auth/expo/client';
-import { emailOTPClient } from 'better-auth/client/plugins';
-import { createAuthClient } from 'better-auth/react';
-import * as SecureStore from 'expo-secure-store';
+import { API_BASE_URL } from '~/constants';
+import HominemAuth from '~/modules/hominem-auth-bridge';
 
-import { API_BASE_URL, APP_SCHEME } from '~/constants';
-
-import { getApiBaseOrigin } from './api-origin';
-
-export const authClient = createAuthClient({
-  baseURL: API_BASE_URL,
-  fetchOptions: {
-    headers: {
-      Origin: getApiBaseOrigin(),
-    },
-  },
-  plugins: [
-    expoClient({
-      scheme: APP_SCHEME,
-      storage: SecureStore,
-      storagePrefix: 'mobile',
-    }),
-    emailOTPClient(),
-  ],
-});
+export const authClient = {
+  getSession: () => HominemAuth.getSession(API_BASE_URL),
+  requestEmailOtp: (email: string) => HominemAuth.requestOTP(API_BASE_URL, email),
+  verifyEmailOtp: (input: { email: string; otp: string }) =>
+    HominemAuth.verifyOTP(API_BASE_URL, input.email, input.otp),
+  signOut: () => HominemAuth.signOut(API_BASE_URL),
+  updateUser: (updates: { name?: string; image?: string | null }) =>
+    HominemAuth.updateUser(API_BASE_URL, updates.name ?? null, updates.image ?? null),
+  getCookie: () => HominemAuth.getCookie(API_BASE_URL),
+};

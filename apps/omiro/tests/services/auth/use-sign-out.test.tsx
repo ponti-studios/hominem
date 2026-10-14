@@ -39,7 +39,7 @@ describe('useSignOut', () => {
   });
 
   it('signs out, clears query cache and storage, and records success with the current email', async () => {
-    mockSignOut.mockResolvedValueOnce({ error: null });
+    mockSignOut.mockResolvedValueOnce(undefined);
     const { result, queryClient } = renderHookWithQueryClient(() => useSignOut('user@example.com'));
     const clearSpy = vi.spyOn(queryClient, 'clear');
 
@@ -58,11 +58,8 @@ describe('useSignOut', () => {
     );
   });
 
-  it('records the real response status code instead of a hardcoded value', async () => {
-    mockSignOut.mockImplementationOnce(async ({ fetchOptions }) => {
-      fetchOptions.onResponse({ response: { status: 204 } });
-      return { error: null };
-    });
+  it('records successful sign-out', async () => {
+    mockSignOut.mockResolvedValueOnce(undefined);
     const { result } = renderHookWithQueryClient(() => useSignOut('user@example.com'));
 
     await act(async () => {
@@ -71,12 +68,12 @@ describe('useSignOut', () => {
 
     expect(mockCaptureEvent).toHaveBeenCalledWith(
       'auth_sign_out_succeeded',
-      expect.objectContaining({ statusCode: 204 }),
+      expect.objectContaining({ statusCode: 200 }),
     );
   });
 
-  it('still clears query cache and storage when Better Auth returns an error, then throws', async () => {
-    mockSignOut.mockResolvedValueOnce({ error: { message: 'Session already expired' } });
+  it('still clears query cache and storage when HominemAuth rejects, then throws', async () => {
+    mockSignOut.mockRejectedValueOnce(new Error('Session already expired'));
     const { result, queryClient } = renderHookWithQueryClient(() => useSignOut('user@example.com'));
     const clearSpy = vi.spyOn(queryClient, 'clear');
 
@@ -93,7 +90,7 @@ describe('useSignOut', () => {
     );
   });
 
-  it('still clears query cache and storage when the sign-out request itself rejects, then throws', async () => {
+  it('still clears query cache and storage when the sign-out request rejects, then throws', async () => {
     mockSignOut.mockRejectedValueOnce(new Error('network down'));
     const { result, queryClient } = renderHookWithQueryClient(() => useSignOut('user@example.com'));
     const clearSpy = vi.spyOn(queryClient, 'clear');

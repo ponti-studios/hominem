@@ -4,7 +4,10 @@ Better Auth, running inside the API, is the sole authority for sessions. Keep
 its session database, signed cookies, and native client-storage contract —
 no application creates, translates, or stores its own end-user credential.
 
-- **Omiro** — Persists and forwards the Better Auth session cookie.
+- **Omiro** — Uses the `HominemAuth` Swift package for native email OTP,
+  session validation, and sign-out. It persists the Better Auth session cookie
+  in Keychain and forwards it with API requests; its React Native screens remain
+  app-owned.
 - **Career, Finance, Notes (`apps/web`)** — Unauthenticated browsers redirect
   to the API-hosted `/login`; server-side session and data calls use the
   required private API URL.

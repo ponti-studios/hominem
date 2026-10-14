@@ -11,19 +11,16 @@ vi.mock('~/services/auth/auth-client', () => ({
 }));
 
 describe('updateProfile', () => {
-  it('calls Better Auth update-user with only the provided fields', async () => {
-    mocks.updateUser.mockResolvedValue({ data: { status: true }, error: null });
+  it('calls HominemAuth update-user with only the provided fields', async () => {
+    mocks.updateUser.mockResolvedValue({ id: 'user-1', name: 'New Name' });
 
     await updateProfile({ name: 'New Name' });
 
     expect(mocks.updateUser).toHaveBeenCalledWith({ name: 'New Name' });
   });
 
-  it('throws when Better Auth returns an error', async () => {
-    mocks.updateUser.mockResolvedValue({
-      data: null,
-      error: { message: 'Failed to update profile' },
-    });
+  it('throws when HominemAuth rejects the update', async () => {
+    mocks.updateUser.mockRejectedValue(new Error('Failed to update profile'));
 
     await expect(updateProfile({ name: 'New Name' })).rejects.toThrow('Failed to update profile');
   });

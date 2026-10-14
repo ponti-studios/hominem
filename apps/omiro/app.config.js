@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const withPrivacyManifest = require('./plugins/withPrivacyManifest');
 const withSceneLifecycle = require('./plugins/withSceneLifecycle');
+const withHominemAuthSPM = require('./plugins/withHominemAuthSPM');
 
 // Keeping this schema local (instead of importing env.ts's) because Expo
 // evaluates this config during native builds, before that module is usable.
@@ -26,7 +27,7 @@ const PRODUCTION_APP_CONFIG = Object.freeze({
   icon: './assets/icon.png',
 });
 
-const SPLASH_IMAGE = './assets/logo.splash-screen.png';
+const SPLASH_IMAGE = './assets/omiro-splash.png';
 
 // EAS sets EAS_BUILD_PROFILE on the builder, and unlike APP_ENV it can't get
 // shadowed by a stray local .env file (we got bit once by a "production"
@@ -97,6 +98,7 @@ function createConfig({ config }) {
     '@sentry/react-native',
     withPrivacyManifest,
     withSceneLifecycle,
+    withHominemAuthSPM,
     [
       'expo-build-properties',
       {
@@ -115,11 +117,13 @@ function createConfig({ config }) {
       'expo-splash-screen',
       {
         image: SPLASH_IMAGE,
-        enableFullScreenImage_legacy: true,
-        resizeMode: 'cover',
+        enableFullScreenImage_legacy: false,
+        imageWidth: 260,
+        backgroundColor: '#F5F3FF',
+        resizeMode: 'contain',
+        dark: { backgroundColor: '#0E0C1A' },
       },
     ],
-    ['expo-secure-store'],
     'expo-asset',
     'expo-audio',
     'expo-image',
@@ -163,7 +167,6 @@ function createConfig({ config }) {
     orientation: 'portrait',
     icon: appEnvironmentConfig.icon,
     userInterfaceStyle: 'automatic',
-    backgroundColor: '#111113',
     assetBundlePatterns: ['assets/**/*', 'api/**/*', 'app/**/*', 'constants/**/*', 'hooks/**/*', 'navigation/**/*', 'services/**/*'],
     plugins,
     experiments: {

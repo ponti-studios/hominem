@@ -56,7 +56,10 @@ if ! curl --silent --fail --max-time 2 "$API_URL/api/status" >/dev/null 2>&1; th
 fi
 
 cd "$APP_DIR"
-APP_ENV=e2e pnpm exec expo start --dev-client --ios --clear --port "$METRO_PORT" >"$METRO_LOG" 2>&1 &
+# The canonical Maestro runner targets the already-booted simulator itself.
+# Avoid Expo's --ios device discovery here; Xcode 27's Device Hub is not yet
+# recognized correctly by Expo CLI and makes Metro exit before Maestro starts.
+APP_ENV=e2e pnpm exec expo start --dev-client --clear --port "$METRO_PORT" >"$METRO_LOG" 2>&1 &
 metro_pid=$!
 
 for _ in {1..60}; do
