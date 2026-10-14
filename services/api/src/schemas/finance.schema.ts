@@ -513,8 +513,8 @@ export const financeTransactionSearchInputSchema = z
 export const financeTransactionSearchOutputSchema = z.object({
   transactions: z.array(financeTransactionSchema),
   count: z.number().int().min(0),
-  filteredCount: z.number().int().min(0),
-  totalCount: z.number().int().min(0).describe('Total matches before paging.'),
+  filteredCount: z.number().int().min(0).describe('Matches after filters, before paging.'),
+  totalUserCount: z.number().int().min(0),
 });
 
 // -- finance_runway --
@@ -523,11 +523,13 @@ export const financeRunwayInputSchema = z
   .object({
     monthlyBudgets: z
       .array(
-        z.object({
-          category: z.string().min(1),
-          amountCents: z.number().int().min(0),
-          note: z.string().optional(),
-        }),
+        z
+          .object({
+            category: z.string().min(1),
+            amountCents: z.number().int().min(0),
+            note: z.string().optional(),
+          })
+          .strict(),
       )
       .default([])
       .describe(
@@ -746,7 +748,7 @@ export const financeTagRenameInputSchema = z.object({
 });
 
 export const financeTagRenameOutputSchema = z.object({
-  assignmentsPreserved: z.number().int().min(0),
+  assignmentsMoved: z.number().int().min(0),
   tag: z.object({ id: z.string(), name: z.string() }).nullable(),
   reason: tagMutationReasonSchema.nullable(),
 });

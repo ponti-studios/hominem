@@ -52,6 +52,7 @@ export async function getTagBreakdownReport(userId: string, filter: FinanceRepor
     .leftJoin('app.tagAssignments as ta', (join) =>
       join
         .onRef('ta.entityId', '=', 't.id')
+        .on('ta.removedAt', 'is', null)
         .on('ta.entityTable', '=', sql`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`),
     )
     .leftJoin('app.tags as tg', (join) =>
@@ -80,6 +81,7 @@ export async function getTagBreakdownReport(userId: string, filter: FinanceRepor
           .innerJoin('app.tags as filterTag', 'filterTag.id', 'filterTa.tagId')
           .select('filterTa.entityId')
           .whereRef('filterTa.entityId', '=', 't.id')
+          .where('filterTa.removedAt', 'is', null)
           .where(
             sql<boolean>`filter_ta.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
           )
@@ -92,6 +94,43 @@ export async function getTagBreakdownReport(userId: string, filter: FinanceRepor
       ),
     );
   }
+  let totalsQuery = db
+    .selectFrom('app.financeTransactions as t')
+    .select((eb) => [
+      't.currencyCode as currencyCode',
+      eb.fn.sum<number>(sql`abs(t.amount)`).as('amount'),
+      eb.fn.min('t.postedOn').as('firstPostedOn'),
+      eb.fn.max('t.postedOn').as('lastPostedOn'),
+    ])
+    .where('t.userId', '=', userId)
+    .where('t.excluded', '=', false)
+    .where('t.pending', '=', false)
+    .where(sql<boolean>`t.amount < 0`);
+  if (filter.accountId) totalsQuery = totalsQuery.where('t.accountId', '=', filter.accountId);
+  if (filter.from) totalsQuery = totalsQuery.where('t.postedOn', '>=', filter.from);
+  if (filter.to) totalsQuery = totalsQuery.where('t.postedOn', '<=', filter.to);
+  if (filter.tag) {
+    totalsQuery = totalsQuery.where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom('app.tagAssignments as filterTa')
+          .innerJoin('app.tags as filterTag', 'filterTag.id', 'filterTa.tagId')
+          .select('filterTa.entityId')
+          .whereRef('filterTa.entityId', '=', 't.id')
+          .where('filterTa.removedAt', 'is', null)
+          .where(
+            sql<boolean>`filter_ta.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
+          )
+          .where('filterTag.ownerUserid', '=', userId)
+          .where((eb2) =>
+            isUuid(filter.tag!)
+              ? eb2('filterTag.id', '=', filter.tag!)
+              : eb2('filterTag.name', '=', filter.tag!),
+          ),
+      ),
+    );
+  }
+  const totals = await totalsQuery.groupBy('t.currencyCode').execute();
   const rows = await query
     .groupBy(['tg.name', 't.currencyCode'])
     .orderBy('amount', 'desc')
@@ -121,9 +160,9 @@ export async function getTagBreakdownReport(userId: string, filter: FinanceRepor
       if (!lastPostedOn || date > lastPostedOn) lastPostedOn = date;
     }
   }
-  const totalsByCurrency = [...breakdownByCurrency.entries()].map(([currencyCode, items]) => ({
-    currencyCode,
-    totalSpending: items.reduce((sum, item) => sum + item.amount, 0),
+  const totalsByCurrency = totals.map((row) => ({
+    currencyCode: row.currencyCode,
+    totalSpending: Number(row.amount),
   }));
   const limit = Math.max(1, Math.floor(filter.limit ?? 5));
   const rankedByCurrency = [...breakdownByCurrency.entries()]
@@ -165,7 +204,7 @@ export async function getTagBreakdownReport(userId: string, filter: FinanceRepor
     averagePerDay: item.totalSpending / daySpan,
   }));
   const totalSpending =
-    totalsByCurrency.length === 1 ? (totalsByCurrency[0]?.totalSpending ?? 0) : null;
+    totalsByCurrency.length > 1 ? null : (totalsByCurrency[0]?.totalSpending ?? 0);
 
   const currencyCode =
     totalsByCurrency.length === 1 ? (totalsByCurrency[0]?.currencyCode ?? null) : null;

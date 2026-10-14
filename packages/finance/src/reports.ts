@@ -230,7 +230,20 @@ export async function getFinanceSpendingByCategory(
     transactionCount: Number(row.transactionCount),
   }));
 
-  const currencies = [...new Set(rows.map((row) => row.currencyCode))];
+  const currencyRows = await db
+    .selectFrom('app.financeTransactions as t')
+    .innerJoin('app.financeCategories as c', 'c.id', 't.categoryId')
+    .select('t.currencyCode')
+    .distinct()
+    .where('t.userId', '=', ownerUserId)
+    .where('t.pending', '=', false)
+    .where(sql<boolean>`t.amount < 0`)
+    .where('t.excluded', '=', false)
+    .where('t.transactionType', '!=', 'transfer')
+    .where('t.postedOn', '>=', fromDate)
+    .where('t.postedOn', '<=', toDate)
+    .execute();
+  const currencies = currencyRows.map((row) => row.currencyCode);
   const currencyCode = currencies.length === 1 ? (currencies[0] ?? null) : null;
   const warnings =
     currencies.length > 1

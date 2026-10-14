@@ -72,7 +72,7 @@ describe('finance_tag_rename', () => {
     );
     expect(result.reason).toBeNull();
     expect(result.tag).toEqual({ id: tagId, name: 'Art' });
-    expect(result.assignmentsPreserved).toBe(2);
+    expect(result.assignmentsMoved).toBe(2);
 
     const row = await tagById(tagId);
     expect(row?.name).toBe('Art');

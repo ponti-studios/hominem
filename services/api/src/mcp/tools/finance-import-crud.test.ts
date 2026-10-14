@@ -392,6 +392,32 @@ describe('finance_transactions_import', () => {
     expect(content(replace)).toMatchObject({ received: 1, upserted: 1, created: 1, updated: 0 });
   });
 
+  it('projects a cross-source natural-key match as an update', async () => {
+    const row = {
+      postedOn: '2026-10-08',
+      account: 'Sheet Checking',
+      description: 'Cross-source projection',
+      amountCents: -1750,
+      currencyCode: 'USD',
+      source: 'plaid',
+    };
+    await callTool(userId, 'finance_transactions_import', {
+      mode: 'append',
+      transactions: [row],
+    });
+    const projection = await callTool(userId, 'finance_transactions_import', {
+      mode: 'append',
+      dryRun: true,
+      transactions: [{ ...row, source: 'manual' }],
+    });
+    expect(content(projection)).toMatchObject({
+      received: 1,
+      upserted: 1,
+      created: 0,
+      updated: 1,
+    });
+  });
+
   it('replace wipes only the caller store then inserts', async () => {
     const dry = await callTool(userId, 'finance_transactions_import', {
       mode: 'append',

@@ -84,6 +84,7 @@ const MAX_ACCOUNTS_RESULT = 50;
 // Reconciliation must see every account, so the summary cap is far higher than the accounts
 // list cap; it exists only to bound the result, with totalCount exposing any truncation.
 const MAX_SUMMARY_ACCOUNTS = 500;
+const MAX_REPORT_CURRENCIES = 500;
 
 const REPORT_CAVEAT =
   'Computed from posted, non-excluded transactions in the range; totals are separated by currency. ' +
@@ -273,7 +274,7 @@ registerTool(
     outputSchema: financeTagBreakdownOutputSchema,
     readOnly: true,
     scopes: ['finance:read'],
-    resultCap: 50,
+    resultCap: MAX_REPORT_CURRENCIES,
     guidance: {
       whenToUse: 'The user asks how spending splits across their own tags.',
       whenNotToUse:
@@ -298,14 +299,20 @@ registerTool(
         currencyCode: b.currencyCode,
       })),
       totalSpendingCents: report.totalSpending === null ? null : toCents(report.totalSpending),
-      totalsByCurrency: report.totalsByCurrency.map((item) => ({
+      totalsByCurrency: report.totalsByCurrency.slice(0, MAX_REPORT_CURRENCIES).map((item) => ({
         currencyCode: item.currencyCode,
         totalSpendingCents: toCents(item.totalSpending),
         averagePerDayCents: toCents(item.averagePerDay),
       })),
       averagePerDayCents: report.averagePerDay === null ? null : toCents(report.averagePerDay),
       currencyCode: report.currencyCode,
-      warnings: report.warnings,
+      warnings:
+        report.totalsByCurrency.length > MAX_REPORT_CURRENCIES
+          ? [
+              ...report.warnings,
+              `Currency totals truncated after ${MAX_REPORT_CURRENCIES} currencies.`,
+            ]
+          : report.warnings,
     };
   },
 );
@@ -319,7 +326,7 @@ registerTool(
     outputSchema: financeMonthlyStatsOutputSchema,
     readOnly: true,
     scopes: ['finance:read'],
-    resultCap: 10,
+    resultCap: MAX_REPORT_CURRENCIES,
     guidance: {
       whenToUse: 'The user asks how a month went financially.',
       whenNotToUse: 'Do not use for multi-month trends.',
@@ -343,24 +350,32 @@ registerTool(
         amountCents: toCents(t.amount),
         currencyCode: t.currencyCode,
       })),
-      currencyBreakdown: stats.currencyBreakdown.map((currency) => ({
-        currencyCode: currency.currencyCode,
-        incomeCents: toCents(currency.income),
-        expensesCents: toCents(currency.expenses),
-        netCents: toCents(currency.net),
-        transactionCount: currency.transactionCount,
-        averageTransactionCents: toCents(currency.averageTransaction),
-        topTag: currency.topTag,
-        topMerchant: currency.topMerchant,
-        tagSpending: currency.tagSpending.map((t) => ({
-          name: t.name,
-          amountCents: toCents(t.amount),
+      currencyBreakdown: stats.currencyBreakdown
+        .slice(0, MAX_REPORT_CURRENCIES)
+        .map((currency) => ({
+          currencyCode: currency.currencyCode,
+          incomeCents: toCents(currency.income),
+          expensesCents: toCents(currency.expenses),
+          netCents: toCents(currency.net),
+          transactionCount: currency.transactionCount,
+          averageTransactionCents: toCents(currency.averageTransaction),
+          topTag: currency.topTag,
+          topMerchant: currency.topMerchant,
+          tagSpending: currency.tagSpending.map((t) => ({
+            name: t.name,
+            amountCents: toCents(t.amount),
+          })),
         })),
-      })),
       ...(stats.startDate ? { startDate: stats.startDate } : {}),
       ...(stats.endDate ? { endDate: stats.endDate } : {}),
       currencyCode: stats.currencyCode,
-      warnings: stats.warnings,
+      warnings:
+        stats.currencyBreakdown.length > MAX_REPORT_CURRENCIES
+          ? [
+              ...stats.warnings,
+              `Currency breakdown truncated after ${MAX_REPORT_CURRENCIES} currencies.`,
+            ]
+          : stats.warnings,
     };
   },
 );
@@ -421,7 +436,7 @@ registerTool(
       })),
       count: result.data.length,
       filteredCount: result.filteredCount,
-      totalCount: result.filteredCount,
+      totalUserCount: result.totalUserCount,
     };
   },
 );
@@ -593,7 +608,7 @@ registerTool(
       },
       { dryRun: input.dryRun },
     );
-    return { ...result, updated: input.dryRun ? false : result.updated, dryRun: input.dryRun };
+    return { ...result, dryRun: input.dryRun };
   },
 );
 
@@ -735,7 +750,14 @@ registerTool(
     outputSchema: financeTagRenameOutputSchema,
     resultCap: 1,
   },
-  async (ownerUserId, input) => renameTag(ownerUserId, input),
+  async (ownerUserId, input) => {
+    const result = await renameTag(ownerUserId, input);
+    return {
+      assignmentsMoved: result.assignmentsPreserved,
+      tag: result.tag,
+      reason: result.reason,
+    };
+  },
 );
 
 registerTool(

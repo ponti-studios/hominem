@@ -805,6 +805,7 @@ async function projectImportSplit(
     string,
     {
       id: string;
+      source: string | null;
       categoryId: string | null;
       excluded: boolean;
       notes: string | null;
@@ -828,15 +829,15 @@ async function projectImportSplit(
         'merchantName',
       ])
       .where('userId', '=', userId)
-      .where((eb) =>
-        eb.or(
-          chunk.map((key) =>
-            eb.and([eb('source', '=', key.source), eb('externalId', '=', key.externalId)]),
-          ),
-        ),
+      .where(
+        'externalId',
+        'in',
+        chunk.map((key) => key.externalId),
       )
       .execute();
-    for (const row of rows) existing.set(`${row.source}|${row.externalId}`, row);
+    for (const row of rows) {
+      if (row.externalId) existing.set(row.externalId, row);
+    }
   }
 
   const [categories, existingTags] = await Promise.all([
@@ -857,7 +858,7 @@ async function projectImportSplit(
   let created = 0;
   let updated = 0;
   for (const key of keys) {
-    const found = existing.get(`${key.source}|${key.externalId}`);
+    const found = existing.get(key.externalId);
     if (!found) {
       created += 1;
       continue;
@@ -874,6 +875,7 @@ async function projectImportSplit(
       (found.notes ?? null) === combineNotes(input.notes, input.orderNumber) &&
       found.recurring === (input.recurring ?? false) &&
       (found.merchantName ?? null) === description &&
+      found.source === key.source &&
       tagsSame;
     if (!unchanged) updated += 1;
   }

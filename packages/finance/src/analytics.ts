@@ -71,16 +71,21 @@ export async function getTagBreakdownByContract(input: {
   tagNames?: string[];
   limit?: number;
 }): Promise<Array<{ tag: string; amount: number; transactionCount: number }>> {
-  const transactions = await queryAnalyticsTransactionsByContract({
-    userId: input.userId,
-    accountId: input.accountId,
-    dateFrom: input.dateFrom,
-    dateTo: input.dateTo,
-    tagIds: input.tagIds,
-    tagNames: input.tagNames,
-    limit: 200,
-    offset: 0,
-  });
+  const transactions: Awaited<ReturnType<typeof queryAnalyticsTransactionsByContract>> = [];
+  for (let offset = 0; ; offset += 200) {
+    const page = await queryAnalyticsTransactionsByContract({
+      userId: input.userId,
+      accountId: input.accountId,
+      dateFrom: input.dateFrom,
+      dateTo: input.dateTo,
+      tagIds: input.tagIds,
+      tagNames: input.tagNames,
+      limit: 200,
+      offset,
+    });
+    transactions.push(...page);
+    if (page.length < 200) break;
+  }
 
   const breakdownByLabel = new Map<string, { amount: number; transactionCount: number }>();
   for (const tx of transactions) {
@@ -117,16 +122,21 @@ export async function getTopMerchantsByContract(input: {
   currencyCode: string | null;
   warnings: string[];
 }> {
-  const transactions = await queryAnalyticsTransactionsByContract({
-    userId: input.userId,
-    accountId: input.accountId,
-    dateFrom: input.dateFrom,
-    dateTo: input.dateTo,
-    tagIds: input.tagIds,
-    tagNames: input.tagNames,
-    limit: 200,
-    offset: 0,
-  });
+  const transactions: Awaited<ReturnType<typeof queryAnalyticsTransactionsByContract>> = [];
+  for (let offset = 0; ; offset += 200) {
+    const page = await queryAnalyticsTransactionsByContract({
+      userId: input.userId,
+      accountId: input.accountId,
+      dateFrom: input.dateFrom,
+      dateTo: input.dateTo,
+      tagIds: input.tagIds,
+      tagNames: input.tagNames,
+      limit: 200,
+      offset,
+    });
+    transactions.push(...page);
+    if (page.length < 200) break;
+  }
 
   const merchantTotals = new Map<string, { totalSpent: number; transactionCount: number }>();
   const spendingCurrencies: string[] = [];

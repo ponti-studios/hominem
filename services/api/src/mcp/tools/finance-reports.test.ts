@@ -11,6 +11,7 @@ const otherUserId = 'f2000000-0000-4000-8000-000000000002';
 const checkingId = 'f2000003-0000-4000-8000-000000000001';
 const cardId = 'f2000003-0000-4000-8000-000000000002';
 const otherCheckingId = 'f2000003-0000-4000-8000-000000000003';
+const categoryGbpAccountId = 'f2000003-0000-4000-8000-000000000004';
 const foodTagId = 'f2000005-0000-4000-8000-000000000001';
 const otherFoodTagId = 'f2000005-0000-4000-8000-000000000002';
 
@@ -38,6 +39,7 @@ async function removeUser(id: string) {
   );
   await pool.query(`DELETE FROM app.tags WHERE owner_userid = $1`, [id]);
   await pool.query(`DELETE FROM app.finance_transactions WHERE user_id = $1`, [id]);
+  await pool.query(`DELETE FROM app.finance_categories WHERE user_id = $1`, [id]);
   await pool.query(`DELETE FROM app.finance_accounts WHERE user_id = $1`, [id]);
   await pool.query(`DELETE FROM "user" WHERE id = $1`, [id]);
 }
@@ -55,6 +57,7 @@ async function insertAccount(
   name: string,
   accountType: string,
   includeInNetWorth = true,
+  currencyCode = 'USD',
 ) {
   await db
     .insertInto('app.financeAccounts')
@@ -63,7 +66,7 @@ async function insertAccount(
       userId: owner,
       name,
       accountType,
-      currencyCode: 'USD',
+      currencyCode,
       lifecycleStatus: 'open',
       includeInNetWorth,
       metadata: {},
@@ -85,6 +88,7 @@ async function insertTransaction(input: {
   transactionType?: string;
   excluded?: boolean;
   recurring?: boolean;
+  pending?: boolean;
 }): Promise<string> {
   txCounter += 1;
   const id = `f2000004-0000-4000-8000-${String(txCounter).padStart(12, '0')}`;
@@ -101,7 +105,7 @@ async function insertTransaction(input: {
       amount: input.amount,
       currencyCode: input.currencyCode ?? 'USD',
       transactionType: input.transactionType ?? (input.amount < 0 ? 'debit' : 'credit'),
-      pending: false,
+      pending: input.pending ?? false,
       externalId: `report-${txCounter}`,
       excluded: input.excluded ?? false,
       recurring: input.recurring ?? false,
@@ -266,6 +270,30 @@ describe('finance_top_merchants', () => {
     ]);
   });
 
+  it('aggregates all matching transactions beyond the analytics page size', async () => {
+    for (let index = 0; index < 201; index += 1) {
+      await insertTransaction({
+        owner: userId,
+        accountId: checkingId,
+        postedOn: '2026-11-01',
+        description: `Merchant page row ${index}`,
+        merchantName: 'Paged Merchant',
+        amount: -1,
+      });
+    }
+    const data = content(
+      await callTool(userId, 'finance_top_merchants', {
+        from: '2026-11-01',
+        to: '2026-11-30',
+      }),
+    );
+    expect(data.merchants).toContainEqual({
+      name: 'Paged Merchant',
+      totalSpentCents: 20_100,
+      transactionCount: 201,
+    });
+  });
+
   it('honors the account, date and tag filters', async () => {
     const byAccount = content(
       await callTool(userId, 'finance_top_merchants', { ...JULY, accountId: cardId }),
@@ -307,6 +335,62 @@ describe('finance_top_merchants', () => {
   });
 });
 
+describe('finance_spending_by_category', () => {
+  it('detects mixed currencies even when the category limit omits one', async () => {
+    await insertAccount(categoryGbpAccountId, userId, 'Category GBP', 'checking', true, 'GBP');
+    const usd = await insertTransaction({
+      owner: userId,
+      accountId: checkingId,
+      postedOn: '2026-12-03',
+      description: 'USD category limit row',
+      merchantName: 'Category USD',
+      amount: -10,
+    });
+    const gbp = await insertTransaction({
+      owner: userId,
+      accountId: categoryGbpAccountId,
+      postedOn: '2026-12-03',
+      description: 'GBP category limit row',
+      merchantName: 'Category GBP',
+      amount: -5,
+      currencyCode: 'GBP',
+    });
+    const categoryIds = [
+      'f2000006-0000-4000-8000-000000000001',
+      'f2000006-0000-4000-8000-000000000002',
+    ];
+    await db
+      .insertInto('app.financeCategories')
+      .values([
+        { id: categoryIds[0]!, userId, name: 'Category Limit USD' },
+        { id: categoryIds[1]!, userId, name: 'Category Limit GBP' },
+      ])
+      .execute();
+    await db
+      .updateTable('app.financeTransactions')
+      .set({ categoryId: categoryIds[0]! })
+      .where('id', '=', usd)
+      .execute();
+    await db
+      .updateTable('app.financeTransactions')
+      .set({ categoryId: categoryIds[1]! })
+      .where('id', '=', gbp)
+      .execute();
+    const data = content(
+      await callTool(userId, 'finance_spending_by_category', {
+        from: '2026-12-03',
+        to: '2026-12-03',
+        limit: 1,
+      }),
+    );
+    expect(data.categories).toHaveLength(1);
+    expect(data.currencyCode).toBeNull();
+    expect(data.warnings).toContain(
+      'Spending spans multiple currencies; categories are reported separately by currency.',
+    );
+  });
+});
+
 describe('finance_tag_breakdown', () => {
   it('splits spending by tag with shares of the total', async () => {
     const data = content(await callTool(userId, 'finance_tag_breakdown', { ...JULY, limit: 10 }));
@@ -344,6 +428,28 @@ describe('finance_tag_breakdown', () => {
     expect(limited.breakdown).toHaveLength(1);
     // Must still be the full total (Uncategorized 1025 + Food 80), not just the shown tag.
     expect(limited.totalSpendingCents).toBe(110_500);
+  });
+
+  it('returns currency totals beyond the former result cap', async () => {
+    for (let index = 0; index < 501; index += 1) {
+      await insertTransaction({
+        owner: userId,
+        accountId: checkingId,
+        postedOn: '2026-12-02',
+        description: `Currency ${index}`,
+        merchantName: 'Currency Report',
+        amount: -1,
+        currencyCode: `X${index.toString(36).toUpperCase().padStart(2, '0')}`,
+      });
+    }
+    const data = content(
+      await callTool(userId, 'finance_tag_breakdown', {
+        from: '2026-12-02',
+        to: '2026-12-02',
+      }),
+    );
+    expect(data.totalsByCurrency).toHaveLength(500);
+    expect(data.warnings).toContain('Currency totals truncated after 500 currencies.');
   });
 
   it('counts a co-tagged transaction under every assigned tag and distinguishes untagged spend', async () => {
@@ -390,6 +496,54 @@ describe('finance_tag_breakdown', () => {
       expect.objectContaining({ tag: 'Art', amountCents: 1495, transactionCount: 1 }),
     );
     expect(data.breakdown).toContainEqual(expect.objectContaining({ tag: '(untagged)' }));
+    expect(data.totalSpendingCents).toBe(1995);
+    expect(data.totalsByCurrency).toEqual([
+      expect.objectContaining({ currencyCode: 'USD', totalSpendingCents: 1995 }),
+    ]);
+  });
+
+  it('ignores removed tag assignments but retains the transaction in untagged totals', async () => {
+    const transactionId = await insertTransaction({
+      owner: userId,
+      accountId: checkingId,
+      postedOn: '2026-12-01',
+      description: 'Removed tag report test',
+      merchantName: 'Report Test',
+      amount: -12,
+    });
+    const removedTagId = 'f2000005-0000-4000-8000-000000000006';
+    await tag(userId, removedTagId, 'Removed', [transactionId]);
+    await db
+      .updateTable('app.tagAssignments')
+      .set({ removedAt: new Date().toISOString() })
+      .where('tagId', '=', removedTagId)
+      .execute();
+    const data = content(
+      await callTool(userId, 'finance_tag_breakdown', {
+        from: '2026-12-01',
+        to: '2026-12-31',
+        limit: 10,
+      }),
+    );
+    expect(data.breakdown).toEqual([
+      expect.objectContaining({ tag: '(untagged)', amountCents: 1200, transactionCount: 1 }),
+    ]);
+    expect(data.totalSpendingCents).toBe(1200);
+  });
+
+  it('returns zero totals for an empty range', async () => {
+    const data = content(
+      await callTool(userId, 'finance_tag_breakdown', {
+        from: '2025-01-01',
+        to: '2025-01-31',
+      }),
+    );
+    expect(data).toMatchObject({
+      totalSpendingCents: 0,
+      averagePerDayCents: 0,
+      currencyCode: null,
+      totalsByCurrency: [],
+    });
   });
 
   it('keeps tag totals and daily averages separate by currency', async () => {
@@ -497,6 +651,37 @@ describe('finance_monthly_stats', () => {
     expect(data.expensesCents).toBe(20_500);
   });
 
+  it('returns currency breakdowns beyond the former result cap', async () => {
+    for (let index = 0; index < 501; index += 1) {
+      await insertTransaction({
+        owner: userId,
+        accountId: checkingId,
+        postedOn: '2026-11-03',
+        description: `Monthly currency ${index}`,
+        merchantName: 'Currency Report',
+        amount: -1,
+        currencyCode: `Y${index.toString(36).toUpperCase().padStart(2, '0')}`,
+      });
+    }
+    const data = content(await callTool(userId, 'finance_monthly_stats', { month: '2026-11' }));
+    expect(data.currencyBreakdown).toHaveLength(500);
+    expect(data.warnings).toContain('Currency breakdown truncated after 500 currencies.');
+  });
+
+  it('omits pending transactions from posted monthly activity', async () => {
+    await insertTransaction({
+      owner: userId,
+      accountId: checkingId,
+      postedOn: '2026-11-02',
+      description: 'Pending report row',
+      merchantName: 'Pending Merchant',
+      amount: -900,
+      pending: true,
+    });
+    const data = content(await callTool(userId, 'finance_monthly_stats', { month: '2026-11' }));
+    expect(data).toMatchObject({ transactionCount: 0, expensesCents: 0 });
+  });
+
   it('is empty for a month with no activity and for a different user', async () => {
     const empty = content(await callTool(userId, 'finance_monthly_stats', { month: '2025-01' }));
     expect(empty).toMatchObject({ incomeCents: 0, expensesCents: 0, transactionCount: 0 });
@@ -602,8 +787,12 @@ describe('finance_transaction_search', () => {
       await callTool(userId, 'finance_transaction_search', { limit: 2, offset: 2 }),
     );
     expect(firstPage.filteredCount).toBe(6);
-    expect(firstPage.totalCount).toBe(6);
+    expect(firstPage.totalUserCount).toBe(6);
     expect(firstPage.count).toBe(2);
+    const filtered = content(
+      await callTool(userId, 'finance_transaction_search', { query: 'shell', limit: 1 }),
+    );
+    expect(filtered).toMatchObject({ filteredCount: 2, totalUserCount: 6 });
     const ids = [...(firstPage.transactions ?? []), ...(secondPage.transactions ?? [])].map(
       (t) => t.id,
     );
@@ -630,6 +819,14 @@ describe('finance_transaction_search', () => {
 });
 
 describe('finance_runway', () => {
+  it('rejects unsupported fields inside monthly budget rows', async () => {
+    await expect(
+      callTool(userId, 'finance_runway', {
+        monthlyBudgets: [{ category: 'Food', amountCents: 100, amuontCents: 200 }],
+      }),
+    ).rejects.toThrow();
+  });
+
   it('projects from liquid accounts only', async () => {
     const data = content(
       await callTool(userId, 'finance_runway', {

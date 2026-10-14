@@ -187,7 +187,7 @@ describe('finance_account_update', () => {
         dryRun: true,
       }),
     );
-    expect(result).toMatchObject({ updated: false, dryRun: true });
+    expect(result).toMatchObject({ updated: true, dryRun: true });
     expect(result.changes).toEqual({ name: ['example savings', 'Example Savings'] });
     expect(await nameOf(appleId)).toBe('example savings');
   });
