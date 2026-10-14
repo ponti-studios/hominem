@@ -515,7 +515,7 @@ describe('finance_tag_breakdown', () => {
     await tag(userId, removedTagId, 'Removed', [transactionId]);
     await db
       .updateTable('app.tagAssignments')
-      .set({ removedAt: new Date().toISOString() })
+      .set({ removedAt: new Date(Date.now() + 60_000).toISOString() })
       .where('tagId', '=', removedTagId)
       .execute();
     const data = content(
