@@ -670,9 +670,17 @@ export async function upsertSheetTransaction(
 
   const existing = await db
     .selectFrom('app.financeTransactions')
-    .select(['id', 'categoryId', 'counterpartId', 'excluded', 'notes', 'recurring', 'merchantName'])
+    .select([
+      'id',
+      'categoryId',
+      'counterpartId',
+      'excluded',
+      'notes',
+      'recurring',
+      'merchantName',
+      'source',
+    ])
     .where('userId', '=', userId)
-    .where('source', '=', source)
     .where('externalId', '=', externalId)
     .limit(1)
     .executeTakeFirst();
@@ -701,6 +709,7 @@ export async function upsertSheetTransaction(
       (existing.notes ?? null) === notes &&
       existing.recurring === recurring &&
       (existing.merchantName ?? null) === description &&
+      existing.source === source &&
       tagsSame;
     if (mutableSame) {
       return { id: existing.id, created: false, updated: false, accountId: resolved.accountId };
@@ -714,6 +723,7 @@ export async function upsertSheetTransaction(
         notes,
         recurring,
         merchantName: description,
+        source,
       })
       .where('id', '=', existing.id)
       .where('userId', '=', userId)

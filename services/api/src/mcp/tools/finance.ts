@@ -86,7 +86,7 @@ const MAX_ACCOUNTS_RESULT = 50;
 const MAX_SUMMARY_ACCOUNTS = 500;
 
 const REPORT_CAVEAT =
-  'Computed from the most recent 200 non-excluded transactions in the range; narrow the range for exact totals. ' +
+  'Computed from posted, non-excluded transactions in the range; totals are separated by currency. ' +
   'Spending is every negative amount, so transfers between accounts are included.';
 
 registerTool(
@@ -94,7 +94,7 @@ registerTool(
     name: 'finance_net_worth',
     title: 'Finance Net Worth',
     description:
-      'Compute current net worth from finance accounts included in net-worth totals, summing posted transaction activity per account. Returns per-account balances grouped by currency.',
+      'Compute current net worth from finance accounts included in net-worth totals, summing posted transaction activity per account. Returns per-account balances grouped by currency. Includes excluded rows; pending rows are omitted.',
     inputSchema: financeNetWorthInputSchema,
     outputSchema: financeNetWorthOutputSchema,
     readOnly: true,
@@ -134,7 +134,7 @@ registerTool(
     name: 'finance_spending_by_category',
     title: 'Finance Spending by Category',
     description:
-      'Sum posted, non-excluded, non-transfer spending grouped by category over a date range. Returns spend totals in cents.',
+      'Sum posted, non-excluded, non-transfer spending grouped by category and currency over a date range. Each category row is reported in its own currency; mixed-currency values are never combined.',
     inputSchema: financeSpendingByCategoryInputSchema,
     outputSchema: financeSpendingByCategoryOutputSchema,
     readOnly: true,
@@ -268,7 +268,7 @@ registerTool(
   {
     name: 'finance_tag_breakdown',
     title: 'Finance Tag Breakdown',
-    description: `Break spending down by tag with each tag's share of the total and a per-day average. ${REPORT_CAVEAT}`,
+    description: `Break posted, non-excluded spending down by each assigned tag with per-currency shares and a per-day average. Untagged transactions appear as (untagged); a co-tagged transaction counts under every tag. ${REPORT_CAVEAT}`,
     inputSchema: financeTagBreakdownInputSchema,
     outputSchema: financeTagBreakdownOutputSchema,
     readOnly: true,
@@ -295,9 +295,15 @@ registerTool(
         amountCents: toCents(b.amount),
         percentage: b.percentage,
         transactionCount: b.transactionCount,
+        currencyCode: b.currencyCode,
       })),
-      totalSpendingCents: toCents(report.totalSpending),
-      averagePerDayCents: toCents(report.averagePerDay),
+      totalSpendingCents: report.totalSpending === null ? null : toCents(report.totalSpending),
+      totalsByCurrency: report.totalsByCurrency.map((item) => ({
+        currencyCode: item.currencyCode,
+        totalSpendingCents: toCents(item.totalSpending),
+        averagePerDayCents: toCents(item.averagePerDay),
+      })),
+      averagePerDayCents: report.averagePerDay === null ? null : toCents(report.averagePerDay),
       currencyCode: report.currencyCode,
       warnings: report.warnings,
     };
@@ -308,7 +314,7 @@ registerTool(
   {
     name: 'finance_monthly_stats',
     title: 'Finance Monthly Stats',
-    description: `Summarize one month: income, expenses, net, transaction count, top tag and top merchant. ${REPORT_CAVEAT}`,
+    description: `Summarize posted, non-excluded activity for one month by currency: income, expenses, net, transaction count, top tag and top merchant. Mixed-currency months return null for combined monetary values and include currencyBreakdown. ${REPORT_CAVEAT}`,
     inputSchema: financeMonthlyStatsInputSchema,
     outputSchema: financeMonthlyStatsOutputSchema,
     readOnly: true,
@@ -324,16 +330,32 @@ registerTool(
     const stats = await getMonthlyStatsReport(ownerUserId, input.month);
     return {
       month: stats.month,
-      incomeCents: toCents(stats.income),
-      expensesCents: toCents(stats.expenses),
-      netCents: toCents(stats.net),
+      incomeCents: stats.income === null ? null : toCents(stats.income),
+      expensesCents: stats.expenses === null ? null : toCents(stats.expenses),
+      netCents: stats.net === null ? null : toCents(stats.net),
       transactionCount: stats.transactionCount,
-      averageTransactionCents: toCents(stats.averageTransaction),
+      averageTransactionCents:
+        stats.averageTransaction === null ? null : toCents(stats.averageTransaction),
       topTag: stats.topTag,
       topMerchant: stats.topMerchant,
       tagSpending: stats.tagSpending.map((t) => ({
         name: t.name,
         amountCents: toCents(t.amount),
+        currencyCode: t.currencyCode,
+      })),
+      currencyBreakdown: stats.currencyBreakdown.map((currency) => ({
+        currencyCode: currency.currencyCode,
+        incomeCents: toCents(currency.income),
+        expensesCents: toCents(currency.expenses),
+        netCents: toCents(currency.net),
+        transactionCount: currency.transactionCount,
+        averageTransactionCents: toCents(currency.averageTransaction),
+        topTag: currency.topTag,
+        topMerchant: currency.topMerchant,
+        tagSpending: currency.tagSpending.map((t) => ({
+          name: t.name,
+          amountCents: toCents(t.amount),
+        })),
       })),
       ...(stats.startDate ? { startDate: stats.startDate } : {}),
       ...(stats.endDate ? { endDate: stats.endDate } : {}),
@@ -399,6 +421,7 @@ registerTool(
       })),
       count: result.data.length,
       filteredCount: result.filteredCount,
+      totalCount: result.filteredCount,
     };
   },
 );
@@ -409,7 +432,7 @@ registerTool(
     title: 'Finance Runway',
     description:
       'Project weekly cash from liquid accounts (checking, savings, cash) using trailing recurring outflows plus an optional ' +
-      'monthly budget allowance. Derived from current data on every call; nothing is stored.',
+      'monthly budget allowance. Uses posted, non-excluded ledger rows. Derived from current data on every call; nothing is stored.',
     inputSchema: financeRunwayInputSchema,
     outputSchema: financeRunwayOutputSchema,
     readOnly: true,
@@ -521,8 +544,8 @@ registerTool(
       produces: ['account ids', 'account names'],
     },
   },
-  async (ownerUserId, input) =>
-    createOrGetAccount({
+  async (ownerUserId, input) => ({
+    ...(await createOrGetAccount({
       userId: ownerUserId,
       name: input.name,
       currencyCode: input.currencyCode,
@@ -531,7 +554,9 @@ registerTool(
       status: input.status,
       accountType: input.accountType,
       dryRun: input.dryRun,
-    }),
+    })),
+    dryRun: input.dryRun,
+  }),
 );
 
 registerTool(
@@ -554,8 +579,8 @@ registerTool(
       ],
     },
   },
-  async (ownerUserId, input) =>
-    applyAccountUpdate(
+  async (ownerUserId, input) => {
+    const result = await applyAccountUpdate(
       ownerUserId,
       input.accountId,
       {
@@ -567,7 +592,9 @@ registerTool(
         ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
       },
       { dryRun: input.dryRun },
-    ),
+    );
+    return { ...result, updated: input.dryRun ? false : result.updated, dryRun: input.dryRun };
+  },
 );
 
 registerTool(
@@ -597,8 +624,10 @@ registerTool(
     outputSchema: financeCategoryCreateOutputSchema,
     resultCap: 1,
   },
-  async (ownerUserId, input) =>
-    createOrGetFinanceCategory(ownerUserId, input.name, { dryRun: input.dryRun }),
+  async (ownerUserId, input) => ({
+    ...(await createOrGetFinanceCategory(ownerUserId, input.name, { dryRun: input.dryRun })),
+    dryRun: input.dryRun,
+  }),
 );
 
 registerTool(
@@ -612,12 +641,14 @@ registerTool(
     outputSchema: financeCategoryMergeOutputSchema,
     resultCap: 1,
   },
-  async (ownerUserId, input) =>
-    mergeFinanceCategories(
+  async (ownerUserId, input) => ({
+    ...(await mergeFinanceCategories(
       ownerUserId,
       { from: input.from, into: input.into },
       { dryRun: input.dryRun },
-    ),
+    )),
+    dryRun: input.dryRun,
+  }),
 );
 
 registerTool(
@@ -761,5 +792,8 @@ registerTool(
       return { mode: 'replace', count: transactions.length, dryRun };
     },
   },
-  async (ownerUserId, input) => importFinanceTransactions(ownerUserId, input),
+  async (ownerUserId, input) => ({
+    ...(await importFinanceTransactions(ownerUserId, input)),
+    dryRun: input.dryRun,
+  }),
 );

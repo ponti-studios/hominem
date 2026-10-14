@@ -14,9 +14,13 @@ type TagBreakdownOutput = {
     amount: number;
     percentage: number;
     transactionCount: number;
+    currencyCode: string;
   }>;
-  totalSpending: number;
-  averagePerDay: number;
+  totalSpending: number | null;
+  totalsByCurrency: Array<{ currencyCode: string; totalSpending: number; averagePerDay: number }>;
+  averagePerDay: number | null;
+  currencyCode: string | null;
+  warnings: string[];
 };
 
 interface TagBreakdownParams {

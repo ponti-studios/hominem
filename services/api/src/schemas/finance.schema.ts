@@ -60,12 +60,14 @@ const financeAccountBalanceSchema = z.object({
   balanceAsOf: z.string().nullable(),
 });
 
-export const financeNetWorthInputSchema = z.object({
-  includeClosed: z
-    .boolean()
-    .default(false)
-    .describe('Whether to include closed accounts in the current balance totals.'),
-});
+export const financeNetWorthInputSchema = z
+  .object({
+    includeClosed: z
+      .boolean()
+      .default(false)
+      .describe('Whether to include closed accounts in the current balance totals.'),
+  })
+  .strict();
 
 export const financeNetWorthOutputSchema = z.object({
   asOf: z.string(),
@@ -123,6 +125,7 @@ export const financeRecentTransactionsInputSchema = z
       .default(20)
       .describe('Maximum number of transactions to return, from 1 to 50.'),
   })
+  .strict()
   .superRefine((value, context) => {
     if (value.from && value.to && value.from > value.to) {
       context.addIssue({
@@ -152,6 +155,7 @@ export const financeSpendingByCategoryInputSchema = z
       .default(20)
       .describe('Maximum number of categories to return, from 1 to 50.'),
   })
+  .strict()
   .superRefine((value, context) => {
     if (value.from && value.to && value.from > value.to) {
       context.addIssue({
@@ -170,6 +174,7 @@ export const financeSpendingByCategoryOutputSchema = z.object({
     z.object({
       categoryId: z.string(),
       categoryName: z.string(),
+      currencyCode: z.string(),
       spentCents: z.number().int(),
       transactionCount: z.number().int(),
     }),
@@ -215,9 +220,11 @@ const tagField = z
 
 // -- finance_accounts --
 
-export const financeAccountsInputSchema = z.object({
-  includeClosed: z.boolean().default(false).describe('Whether to include closed accounts.'),
-});
+export const financeAccountsInputSchema = z
+  .object({
+    includeClosed: z.boolean().default(false).describe('Whether to include closed accounts.'),
+  })
+  .strict();
 
 export const financeAccountsOutputSchema = z.object({
   accounts: z.array(
@@ -257,6 +264,16 @@ export const financeAccountCreateInputSchema = z.object({
   currencyCode: z
     .string()
     .regex(/^[A-Za-z]{3}$/, 'invalid_currency')
+    .refine((code) => {
+      try {
+        return (
+          code.toUpperCase() === 'XXX' ||
+          Intl.supportedValuesOf('currency').includes(code.toUpperCase())
+        );
+      } catch {
+        return false;
+      }
+    }, 'invalid_currency')
     .describe('ISO 4217 currency code, e.g. USD or GBP.'),
   institution: z.string().optional().describe('Institution name, e.g. Acme Bank.'),
   accountNumber: z.string().optional().describe('Mask / last digits as displayed elsewhere.'),
@@ -275,21 +292,24 @@ export const financeAccountCreateOutputSchema = z.object({
   currencyCode: z.string(),
   status: z.string(),
   created: z.boolean(),
+  dryRun: z.boolean(),
 });
 
 // -- finance_account_summary --
 
-export const financeAccountSummaryInputSchema = z.object({
-  accountId: z
-    .string()
-    .uuid()
-    .optional()
-    .describe('Restrict to a single account; omit to summarize every account.'),
-  includeClosed: z
-    .boolean()
-    .default(true)
-    .describe('Include closed accounts (default true — reconciliation must see everything).'),
-});
+export const financeAccountSummaryInputSchema = z
+  .object({
+    accountId: z
+      .string()
+      .uuid()
+      .optional()
+      .describe('Restrict to a single account; omit to summarize every account.'),
+    includeClosed: z
+      .boolean()
+      .default(true)
+      .describe('Include closed accounts (default true — reconciliation must see everything).'),
+  })
+  .strict();
 
 export const financeAccountSummaryOutputSchema = z.object({
   accounts: z.array(
@@ -314,12 +334,14 @@ export const financeAccountSummaryOutputSchema = z.object({
 
 // -- finance_top_merchants --
 
-const financeTopMerchantsFieldsSchema = z.object({
-  ...dateRangeFields,
-  accountId: accountIdField,
-  tag: tagField,
-  limit: mcpLimitSchema.default(10).describe('Maximum merchants to return, from 1 to 50.'),
-});
+const financeTopMerchantsFieldsSchema = z
+  .object({
+    ...dateRangeFields,
+    accountId: accountIdField,
+    tag: tagField,
+    limit: mcpLimitSchema.default(10).describe('Maximum merchants to return, from 1 to 50.'),
+  })
+  .strict();
 
 export const financeTopMerchantsInputSchema =
   financeTopMerchantsFieldsSchema.superRefine(rejectInvertedRange);
@@ -342,12 +364,14 @@ export const financeTopMerchantsOutputSchema = z.object({
 
 // -- finance_tag_breakdown --
 
-const financeTagBreakdownFieldsSchema = z.object({
-  ...dateRangeFields,
-  accountId: accountIdField,
-  tag: tagField,
-  limit: mcpLimitSchema.default(5).describe('Maximum tags to return, from 1 to 50.'),
-});
+const financeTagBreakdownFieldsSchema = z
+  .object({
+    ...dateRangeFields,
+    accountId: accountIdField,
+    tag: tagField,
+    limit: mcpLimitSchema.default(5).describe('Maximum tags to return, from 1 to 50.'),
+  })
+  .strict();
 
 export const financeTagBreakdownInputSchema =
   financeTagBreakdownFieldsSchema.superRefine(rejectInvertedRange);
@@ -359,10 +383,18 @@ export const financeTagBreakdownOutputSchema = z.object({
       amountCents: z.number().int(),
       percentage: z.number(),
       transactionCount: z.number().int().min(0),
+      currencyCode: z.string(),
     }),
   ),
-  totalSpendingCents: z.number().int(),
-  averagePerDayCents: z.number().int(),
+  totalSpendingCents: z.number().int().nullable(),
+  totalsByCurrency: z.array(
+    z.object({
+      currencyCode: z.string(),
+      totalSpendingCents: z.number().int(),
+      averagePerDayCents: z.number().int(),
+    }),
+  ),
+  averagePerDayCents: z.number().int().nullable(),
   currencyCode: z
     .string()
     .nullable()
@@ -416,30 +448,47 @@ export const financeTagBreakdownQuerySchema = z.preprocess(
 
 // -- finance_monthly_stats --
 
-export const financeMonthlyStatsInputSchema = z.object({
-  month: z
-    .string()
-    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected a month as YYYY-MM.')
-    .optional()
-    .describe('Month as YYYY-MM. Defaults to the current month.'),
-});
+export const financeMonthlyStatsInputSchema = z
+  .object({
+    month: z
+      .string()
+      .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected a month as YYYY-MM.')
+      .optional()
+      .describe('Month as YYYY-MM. Defaults to the current month.'),
+  })
+  .strict();
 
 export const financeMonthlyStatsOutputSchema = z.object({
   month: z.string(),
-  incomeCents: z.number().int(),
-  expensesCents: z.number().int(),
-  netCents: z.number().int(),
+  incomeCents: z.number().int().nullable(),
+  expensesCents: z.number().int().nullable(),
+  netCents: z.number().int().nullable(),
   transactionCount: z.number().int().min(0),
-  averageTransactionCents: z.number().int(),
-  topTag: z.string(),
-  topMerchant: z.string(),
-  tagSpending: z.array(z.object({ name: z.string(), amountCents: z.number().int() })),
+  averageTransactionCents: z.number().int().nullable(),
+  topTag: z.string().nullable(),
+  topMerchant: z.string().nullable(),
+  tagSpending: z.array(
+    z.object({ name: z.string(), amountCents: z.number().int(), currencyCode: z.string() }),
+  ),
+  currencyBreakdown: z.array(
+    z.object({
+      currencyCode: z.string(),
+      incomeCents: z.number().int(),
+      expensesCents: z.number().int(),
+      netCents: z.number().int(),
+      transactionCount: z.number().int().min(0),
+      averageTransactionCents: z.number().int(),
+      topTag: z.string(),
+      topMerchant: z.string(),
+      tagSpending: z.array(z.object({ name: z.string(), amountCents: z.number().int() })),
+    }),
+  ),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   currencyCode: z
     .string()
     .nullable()
-    .describe('Null when spending spans multiple currencies; see warnings.'),
+    .describe('Null when activity spans multiple currencies; see currencyBreakdown.'),
   warnings: z.array(z.string()),
 });
 
@@ -458,38 +507,42 @@ export const financeTransactionSearchInputSchema = z
     limit: mcpLimitSchema.default(20).describe('Maximum transactions to return, from 1 to 50.'),
     offset: z.number().int().min(0).default(0).describe('Number of matches to skip, for paging.'),
   })
+  .strict()
   .superRefine(rejectInvertedRange);
 
 export const financeTransactionSearchOutputSchema = z.object({
   transactions: z.array(financeTransactionSchema),
   count: z.number().int().min(0),
   filteredCount: z.number().int().min(0),
+  totalCount: z.number().int().min(0).describe('Total matches before paging.'),
 });
 
 // -- finance_runway --
 
-export const financeRunwayInputSchema = z.object({
-  monthlyBudgets: z
-    .array(
-      z.object({
-        category: z.string().min(1),
-        amountCents: z.number().int().min(0),
-        note: z.string().optional(),
-      }),
-    )
-    .default([])
-    .describe(
-      'Optional monthly spending caps per category, in cents, used as the flat variable allowance.',
-    ),
-  projectionWeeks: z
-    .number()
-    .int()
-    .min(1)
-    .max(52)
-    .default(16)
-    .describe('Number of weeks to project, from 1 to 52.'),
-  asOf: isoDateSchema.optional().describe('Projection start date. Defaults to today.'),
-});
+export const financeRunwayInputSchema = z
+  .object({
+    monthlyBudgets: z
+      .array(
+        z.object({
+          category: z.string().min(1),
+          amountCents: z.number().int().min(0),
+          note: z.string().optional(),
+        }),
+      )
+      .default([])
+      .describe(
+        'Optional monthly spending caps per category, in cents, used as the flat variable allowance.',
+      ),
+    projectionWeeks: z
+      .number()
+      .int()
+      .min(1)
+      .max(52)
+      .default(16)
+      .describe('Number of weeks to project, from 1 to 52.'),
+    asOf: isoDateSchema.optional().describe('Projection start date. Defaults to today.'),
+  })
+  .strict();
 
 export const financeRunwayOutputSchema = z.object({
   asOfDate: z.string(),
@@ -523,15 +576,17 @@ export const financeRunwayOutputSchema = z.object({
 
 // -- finance_budget_breakdown --
 
-export const financeBudgetBreakdownInputSchema = z.object({
-  monthlyIncomeCents: z.number().int().min(0).describe('Monthly take-home income, in cents.'),
-  savingsTargetCents: z
-    .number()
-    .int()
-    .min(0)
-    .optional()
-    .describe('Desired monthly savings in cents. Capped at 20% of income.'),
-});
+export const financeBudgetBreakdownInputSchema = z
+  .object({
+    monthlyIncomeCents: z.number().int().min(0).describe('Monthly take-home income, in cents.'),
+    savingsTargetCents: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe('Desired monthly savings in cents. Capped at 20% of income.'),
+  })
+  .strict();
 
 export const financeBudgetBreakdownOutputSchema = z.object({
   needsCents: z.number().int(),
@@ -542,7 +597,7 @@ export const financeBudgetBreakdownOutputSchema = z.object({
 
 // -- finance_categories --
 
-export const financeCategoriesInputSchema = z.object({});
+export const financeCategoriesInputSchema = z.object({}).strict();
 
 export const financeCategoriesOutputSchema = z.object({
   categories: z.array(z.object({ id: z.string(), name: z.string() })),
@@ -646,6 +701,7 @@ export const financeTransactionsImportOutputSchema = z.object({
     z.object({ index: z.number().int().min(0), reason: sheetRejectionReasonSchema }),
   ),
   accountsAutoProvisioned: z.array(z.string()),
+  dryRun: z.boolean(),
 });
 
 // -- finance_transaction_delete --
@@ -689,7 +745,11 @@ export const financeTagRenameInputSchema = z.object({
   to: z.string().min(1).describe('New display name.'),
 });
 
-export const financeTagRenameOutputSchema = z.object(tagMutationOutputShape);
+export const financeTagRenameOutputSchema = z.object({
+  assignmentsPreserved: z.number().int().min(0),
+  tag: z.object({ id: z.string(), name: z.string() }).nullable(),
+  reason: tagMutationReasonSchema.nullable(),
+});
 
 export const financeTagMergeInputSchema = z.object({
   from: z.string().min(1).describe('Tag to fold away, matched case-insensitively.'),
@@ -713,6 +773,7 @@ export const financeCategoryCreateOutputSchema = z.object({
   id: z.string().nullable().describe('Category id; null on a dry run that would create.'),
   name: z.string(),
   created: z.boolean(),
+  dryRun: z.boolean(),
 });
 
 export const financeCategoryMergeInputSchema = z.object({
@@ -725,6 +786,7 @@ export const financeCategoryMergeOutputSchema = z.object({
   transactionsReassigned: z.number().int().min(0),
   category: z.object({ id: z.string(), name: z.string() }).nullable(),
   reason: categoryMergeReasonSchema.nullable(),
+  dryRun: z.boolean(),
 });
 
 // -- finance_account_update --
@@ -767,7 +829,8 @@ export const financeAccountUpdateOutputSchema = z.object({
   name: z.string().nullable(),
   currencyCode: z.string().nullable(),
   status: z.string().nullable(),
-  updated: z.boolean().describe('False when every value already matched (an idempotent no-op).'),
+  updated: z.boolean().describe('False when every value already matched or this is a dry run.'),
+  dryRun: z.boolean(),
   changes: z
     .record(z.string(), z.tuple([z.string().nullable(), z.string().nullable()]))
     .describe('Each altered field mapped to [from, to] — the audit record.'),

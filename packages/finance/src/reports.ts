@@ -194,32 +194,10 @@ export async function getFinanceSpendingByCategory(
   const fromDate = from ?? fallbackDate(30, now);
   const toDate = to ?? now.toISOString().slice(0, 10);
 
-  const currencyRows: Array<{ currencyCode: string }> = await db
-    .selectFrom('app.financeTransactions')
-    .select('currencyCode')
-    .distinct()
-    .where('userId', '=', ownerUserId)
-    .where('pending', '=', false)
-    .where(sql<boolean>`amount < 0`)
-    .where('excluded', '=', false)
-    .where('transactionType', '!=', 'transfer')
-    .where('postedOn', '>=', fromDate)
-    .where('postedOn', '<=', toDate)
-    .execute();
-
-  const warnings: string[] = [];
-  let currencyCode: string | null = null;
-  if (currencyRows.length === 1) {
-    currencyCode = currencyRows[0]?.currencyCode ?? null;
-  } else if (currencyRows.length > 1) {
-    warnings.push(
-      'Spending spans multiple currencies; amounts were not converted or summed across currencies.',
-    );
-  }
-
   const rows: Array<{
     categoryId: string;
     categoryName: string;
+    currencyCode: string;
     netAmount: number | null;
     transactionCount: number;
   }> = await db
@@ -228,6 +206,7 @@ export async function getFinanceSpendingByCategory(
     .select((eb) => [
       'c.id as categoryId',
       'c.name as categoryName',
+      't.currencyCode as currencyCode',
       eb.fn.sum<number>('t.amount').as('netAmount'),
       eb.fn.countAll<number>().as('transactionCount'),
     ])
@@ -238,7 +217,7 @@ export async function getFinanceSpendingByCategory(
     .where('t.transactionType', '!=', 'transfer')
     .where('t.postedOn', '>=', fromDate)
     .where('t.postedOn', '<=', toDate)
-    .groupBy(['c.id', 'c.name'])
+    .groupBy(['c.id', 'c.name', 't.currencyCode'])
     .orderBy('netAmount', 'asc')
     .limit(limit)
     .execute();
@@ -246,9 +225,17 @@ export async function getFinanceSpendingByCategory(
   const categories = rows.map((row) => ({
     categoryId: row.categoryId,
     categoryName: row.categoryName,
+    currencyCode: row.currencyCode,
     spentCents: Math.abs(toCents(row.netAmount)),
     transactionCount: Number(row.transactionCount),
   }));
+
+  const currencies = [...new Set(rows.map((row) => row.currencyCode))];
+  const currencyCode = currencies.length === 1 ? (currencies[0] ?? null) : null;
+  const warnings =
+    currencies.length > 1
+      ? ['Spending spans multiple currencies; categories are reported separately by currency.']
+      : [];
 
   return {
     from: fromDate,

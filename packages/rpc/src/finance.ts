@@ -216,28 +216,47 @@ export type TopMerchantsOutput = {
 };
 
 export type TagBreakdownOutput = {
-  breakdown: TagBreakdownItem[];
-  totalSpending: number;
-  averagePerDay: number;
+  breakdown: Array<TagBreakdownItem & { currencyCode: string }>;
+  totalSpending: number | null;
+  totalsByCurrency: Array<{
+    currencyCode: string;
+    totalSpending: number;
+    averagePerDay: number;
+  }>;
+  averagePerDay: number | null;
+  currencyCode: string | null;
+  warnings: string[];
 };
 
 export type MonthlyStatsOutput = {
   month: string;
-  income: number;
-  expenses: number;
-  net: number;
+  income: number | null;
+  expenses: number | null;
+  net: number | null;
   transactionCount: number;
-  averageTransaction: number;
-  topTag: string;
-  topMerchant: string;
-  formattedIncome: string;
-  formattedExpenses: string;
-  formattedNet: string;
-  formattedAverage: string;
-  totalIncome?: number;
-  totalExpenses?: number;
-  netIncome?: number;
-  tagSpending?: TagSpendingItem[];
+  averageTransaction: number | null;
+  topTag: string | null;
+  topMerchant: string | null;
+  formattedIncome: string | null;
+  formattedExpenses: string | null;
+  formattedNet: string | null;
+  formattedAverage: string | null;
+  totalIncome?: number | null;
+  totalExpenses?: number | null;
+  netIncome?: number | null;
+  tagSpending?: Array<TagSpendingItem & { currencyCode: string }>;
+  currencyCode: string | null;
+  currencyBreakdown: Array<{
+    currencyCode: string;
+    income: number;
+    expenses: number;
+    net: number;
+    transactionCount: number;
+    averageTransaction: number;
+    topTag: string;
+    topMerchant: string;
+    tagSpending: TagSpendingItem[];
+  }>;
   startDate?: string;
   endDate?: string;
 };

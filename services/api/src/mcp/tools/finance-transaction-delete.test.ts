@@ -1,7 +1,7 @@
 import { db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { callTool, getToolDefinition, type McpToolResult } from '../tool-registry';
 import './finance';
 
 const userId = 'f20000c0-0000-4000-8000-000000000001';
@@ -73,6 +73,12 @@ async function upsertProbe(owner: string, account: string, description: string):
 }
 
 describe('finance_transaction_delete', () => {
+  it('uses the explicit confirmation flag instead of elicitation', async () => {
+    const preview = getToolDefinition('finance_transaction_delete')?.preview;
+    expect(preview).toBeTypeOf('function');
+    await expect(preview?.(userId, { ids: [] })).resolves.toBeNull();
+  });
+
   it('refuses without iUnderstand and leaves the row intact', async () => {
     const id = await upsertProbe(userId, 'Delete Checking', 'Delete Probe A');
     await expect(callTool(userId, 'finance_transaction_delete', { ids: [id] })).rejects.toThrow(

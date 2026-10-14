@@ -156,6 +156,25 @@ describe('finance_account_create', () => {
     expect(row.accountType).toBe('savings');
   });
 
+  it('identifies a projected account create and does not persist it', async () => {
+    const projected = content(
+      await callTool(userId, 'finance_account_create', {
+        name: 'Projected Account',
+        currencyCode: 'USD',
+        dryRun: true,
+      }),
+    );
+    expect(projected).toMatchObject({ id: null, created: true, dryRun: true });
+    await expect(
+      db
+        .selectFrom('app.financeAccounts')
+        .select('id')
+        .where('userId', '=', userId)
+        .where('name', '=', 'Projected Account')
+        .executeTakeFirst(),
+    ).resolves.toBeUndefined();
+  });
+
   it('lets the sheet import resolve an account created here', async () => {
     const result = await callTool(userId, 'finance_transactions_import', {
       mode: 'append',
@@ -176,6 +195,20 @@ describe('finance_account_create', () => {
     await expect(
       callTool(userId, 'finance_account_create', { name: 'Bad Currency', currencyCode: 'POUNDS' }),
     ).rejects.toThrow(/invalid_currency/);
+  });
+
+  it('rejects a three-letter code outside ISO 4217 and accepts XXX', async () => {
+    await expect(
+      callTool(userId, 'finance_account_create', { name: 'Unknown Currency', currencyCode: 'ZZZ' }),
+    ).rejects.toThrow(/invalid_currency/);
+
+    const noCurrency = content(
+      await callTool(userId, 'finance_account_create', {
+        name: 'No Currency Account',
+        currencyCode: 'XXX',
+      }),
+    );
+    expect(noCurrency).toMatchObject({ created: true, currencyCode: 'XXX' });
   });
 
   it('rejects a blank name with a named reason', async () => {

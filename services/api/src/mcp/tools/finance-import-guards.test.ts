@@ -138,6 +138,7 @@ describe('replace confirmation (B5)', () => {
     const preview = definition!.preview!;
     const row = oneRow('Guard Checking');
     // Non-null preview => the server elicits; null => it proceeds without one.
+    expect(await preview(guardUser, { mode: 'replace', transactions: 'not-an-array' })).toBeNull();
     expect(await preview(guardUser, { mode: 'replace', transactions: [row] })).not.toBeNull();
     expect(
       await preview(guardUser, { mode: 'replace', iUnderstand: true, transactions: [row] }),

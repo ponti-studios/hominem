@@ -122,6 +122,45 @@ describe('finance_transaction_upsert', () => {
     expect(rows).toHaveLength(1);
   });
 
+  it('matches the natural key across sources and updates source metadata', async () => {
+    const input = {
+      postedOn: '2026-09-03',
+      account: 'Sheet Checking',
+      description: 'Source Correction',
+      amountCents: -4200,
+      currencyCode: 'USD',
+    };
+    const imported = await callTool(userId, 'finance_transaction_upsert', {
+      ...input,
+      source: 'plaid',
+    });
+    const corrected = await callTool(userId, 'finance_transaction_upsert', {
+      ...input,
+      source: 'manual',
+    });
+
+    expect(content(imported)).toMatchObject({ created: true });
+    expect(content(corrected)).toMatchObject({
+      id: content(imported).id,
+      created: false,
+      accountId: checkingId,
+    });
+    const row = await db
+      .selectFrom('app.financeTransactions')
+      .select(['source', 'externalId'])
+      .where('id', '=', String(content(imported).id))
+      .executeTakeFirstOrThrow();
+    expect(row.source).toBe('manual');
+    expect(row.externalId).toBeTruthy();
+    const duplicateCount = await db
+      .selectFrom('app.financeTransactions')
+      .select((eb) => eb.fn.countAll<number>().as('count'))
+      .where('userId', '=', userId)
+      .where('description', '=', input.description)
+      .executeTakeFirstOrThrow();
+    expect(Number(duplicateCount.count)).toBe(1);
+  });
+
   it('infers transfer from description text', async () => {
     const result = await callTool(userId, 'finance_transaction_upsert', {
       postedOn: '2026-09-02',
@@ -286,7 +325,7 @@ describe('finance_transactions_import', () => {
       mode: 'append',
       transactions: rows,
     });
-    expect(content(result)).toMatchObject({ received: 1, created: 1 });
+    expect(content(result)).toMatchObject({ received: 1, created: 0, updated: 1 });
     expect(content(result).rejected).toEqual([]);
   });
 
@@ -368,6 +407,7 @@ describe('finance_transactions_import', () => {
       ],
     });
     expect(content(dry).rejected).toEqual([]);
+    expect(content(dry).dryRun).toBe(true);
     const result = await callTool(userId, 'finance_transactions_import', {
       mode: 'replace',
       iUnderstand: true,

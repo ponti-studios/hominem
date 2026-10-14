@@ -12,6 +12,7 @@ type CategoryResult = {
   id?: string | null;
   name?: string;
   created?: boolean;
+  dryRun?: boolean;
   transactionsReassigned?: number;
   category?: { id: string; name: string } | null;
   reason?: string | null;
@@ -80,7 +81,7 @@ describe('finance_category_create', () => {
     const wouldCreate = content(
       await callTool(userId, 'finance_category_create', { name: 'Dry Run Cat', dryRun: true }),
     );
-    expect(wouldCreate).toMatchObject({ created: true, id: null });
+    expect(wouldCreate).toMatchObject({ created: true, id: null, dryRun: true });
     expect(await categoryByName(userId, 'Dry Run Cat')).toBeUndefined();
   });
 });
@@ -187,6 +188,7 @@ describe('finance_category_merge', () => {
       }),
     );
     expect(result.transactionsReassigned).toBe(1);
+    expect(result.dryRun).toBe(true);
 
     const row = await db
       .selectFrom('app.financeTransactions')

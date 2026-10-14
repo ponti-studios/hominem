@@ -178,6 +178,12 @@ export interface TagMutationResult {
   reason: TagMutationReason | null;
 }
 
+export interface TagRenameResult {
+  assignmentsPreserved: number;
+  tag: { id: string; name: string } | null;
+  reason: TagMutationReason | null;
+}
+
 async function findOwnedTagByName(ownerUserId: string, name: string) {
   return db
     .selectFrom('app.tags')
@@ -194,17 +200,24 @@ async function findOwnedTagByName(ownerUserId: string, name: string) {
 export async function renameTag(
   ownerUserId: string,
   input: { from: string; to: string },
-): Promise<TagMutationResult> {
+): Promise<TagRenameResult> {
   const source = await findOwnedTagByName(ownerUserId, input.from);
-  if (!source) return { assignmentsMoved: 0, tag: null, reason: 'unknown_tag' };
+  if (!source) return { assignmentsPreserved: 0, tag: null, reason: 'unknown_tag' };
 
   const to = input.to.trim();
-  if (!to) return { assignmentsMoved: 0, tag: null, reason: 'invalid_name' };
+  if (!to) return { assignmentsPreserved: 0, tag: null, reason: 'invalid_name' };
 
   const existing = await findOwnedTagByName(ownerUserId, to);
   if (existing && existing.id !== source.id) {
-    return { assignmentsMoved: 0, tag: null, reason: 'target_exists' };
+    return { assignmentsPreserved: 0, tag: null, reason: 'target_exists' };
   }
+
+  const assignments = await db
+    .selectFrom('app.tagAssignments')
+    .select((eb) => eb.fn.countAll<number>().as('count'))
+    .where('tagId', '=', source.id)
+    .where('removedAt', 'is', null)
+    .executeTakeFirst();
 
   // Display name only: slug/path are internal identifiers and stay stable, so a rename can
   // never collide with another tag's slug.
@@ -215,7 +228,11 @@ export async function renameTag(
     .where('ownerUserid', '=', ownerUserId)
     .execute();
 
-  return { assignmentsMoved: 0, tag: { id: source.id, name: to }, reason: null };
+  return {
+    assignmentsPreserved: Number(assignments?.count ?? 0),
+    tag: { id: source.id, name: to },
+    reason: null,
+  };
 }
 
 /**

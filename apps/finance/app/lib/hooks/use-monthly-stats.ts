@@ -2,10 +2,7 @@ import type { MonthlyStatsOutput } from '@hominem/rpc/finance';
 
 import { useHonoQuery } from '~/lib/api';
 
-export type MonthlyStatsContract = MonthlyStatsOutput & {
-  topTag?: string;
-  tagSpending?: Array<{ name: string | null; amount: number }>;
-};
+export type MonthlyStatsContract = MonthlyStatsOutput;
 
 // month is 'YYYY-MM'
 export function useMonthlyStats(month: string | undefined | null, options = {}) {

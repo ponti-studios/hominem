@@ -163,68 +163,133 @@ export async function getMonthlyStatsByContract(input: {
   month?: string;
 }): Promise<{
   month: string;
-  income: number;
-  expenses: number;
-  net: number;
+  income: number | null;
+  expenses: number | null;
+  net: number | null;
   transactionCount: number;
-  averageTransaction: number;
-  topTag: string;
-  topMerchant: string;
-  tagSpending: Array<{ name: string; amount: number }>;
+  averageTransaction: number | null;
+  topTag: string | null;
+  topMerchant: string | null;
+  tagSpending: Array<{ name: string; amount: number; currencyCode: string }>;
+  currencyBreakdown: Array<{
+    currencyCode: string;
+    income: number;
+    expenses: number;
+    net: number;
+    transactionCount: number;
+    averageTransaction: number;
+    topTag: string;
+    topMerchant: string;
+    tagSpending: Array<{ name: string; amount: number }>;
+  }>;
   startDate?: string;
   endDate?: string;
   currencyCode: string | null;
   warnings: string[];
 }> {
   const range = parseMonthRange(input.month);
-  const transactions = await queryAnalyticsTransactionsByContract({
+  const query = {
     userId: input.userId,
     ...(range.from ? { dateFrom: range.from } : {}),
     ...(range.to ? { dateTo: range.to } : {}),
-    limit: 200,
-    offset: 0,
-  });
+  };
+  const transactions: Awaited<ReturnType<typeof queryAnalyticsTransactionsByContract>> = [];
+  for (let offset = 0; ; offset += 200) {
+    const page = await queryAnalyticsTransactionsByContract({ ...query, limit: 200, offset });
+    transactions.push(...page);
+    if (page.length < 200) break;
+  }
 
-  let income = 0;
-  let expenses = 0;
-  const categoryTotals = new Map<string, number>();
-  const merchantTotals = new Map<string, number>();
-  const currencies = transactions.map((tx) => tx.currencyCode);
+  const byCurrency = new Map<
+    string,
+    {
+      income: number;
+      expenses: number;
+      categoryTotals: Map<string, number>;
+      merchantTotals: Map<string, number>;
+      transactionCount: number;
+    }
+  >();
   for (const tx of transactions) {
+    const current = byCurrency.get(tx.currencyCode) ?? {
+      income: 0,
+      expenses: 0,
+      categoryTotals: new Map<string, number>(),
+      merchantTotals: new Map<string, number>(),
+      transactionCount: 0,
+    };
+    current.transactionCount += 1;
     if (tx.amount >= 0) {
-      income += tx.amount;
+      current.income += tx.amount;
+      byCurrency.set(tx.currencyCode, current);
       continue;
     }
     const spend = Math.abs(tx.amount);
-    expenses += spend;
-    categoryTotals.set(tx.classification, (categoryTotals.get(tx.classification) ?? 0) + spend);
+    current.expenses += spend;
+    current.categoryTotals.set(
+      tx.classification,
+      (current.categoryTotals.get(tx.classification) ?? 0) + spend,
+    );
     const merchantName = tx.merchantName ?? 'Unknown';
-    merchantTotals.set(merchantName, (merchantTotals.get(merchantName) ?? 0) + spend);
+    current.merchantTotals.set(
+      merchantName,
+      (current.merchantTotals.get(merchantName) ?? 0) + spend,
+    );
+    byCurrency.set(tx.currencyCode, current);
   }
-
-  const topTag =
-    [...categoryTotals.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ??
-    'Uncategorized';
-  const topMerchant =
-    [...merchantTotals.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ??
-    'Unknown';
-
+  const currencyBreakdown = [...byCurrency.entries()]
+    .map(([currencyCode, value]) => {
+      const topTag =
+        [...value.categoryTotals.entries()].sort(
+          (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+        )[0]?.[0] ?? 'Uncategorized';
+      const topMerchant =
+        [...value.merchantTotals.entries()].sort(
+          (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+        )[0]?.[0] ?? 'Unknown';
+      return {
+        currencyCode,
+        income: value.income,
+        expenses: value.expenses,
+        net: value.income - value.expenses,
+        transactionCount: value.transactionCount,
+        averageTransaction:
+          value.transactionCount === 0
+            ? 0
+            : (value.income + value.expenses) / value.transactionCount,
+        topTag,
+        topMerchant,
+        tagSpending: [...value.categoryTotals.entries()]
+          .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+          .slice(0, 10)
+          .map(([name, amount]) => ({ name, amount })),
+      };
+    })
+    .sort((a, b) => a.currencyCode.localeCompare(b.currencyCode));
+  const currencyCode =
+    currencyBreakdown.length === 1 ? (currencyBreakdown[0]?.currencyCode ?? null) : null;
+  const warnings =
+    currencyBreakdown.length > 1
+      ? [
+          'Monthly totals span multiple currencies; totals and rankings are reported separately by currency.',
+        ]
+      : [];
+  const single = currencyBreakdown.length === 1 ? currencyBreakdown[0] : null;
   const transactionCount = transactions.length;
-  const averageTransaction = transactionCount === 0 ? 0 : (income + expenses) / transactionCount;
-  const { currencyCode, warnings } = summarizeCurrencies(currencies);
+  const averageTransaction =
+    single?.averageTransaction ?? (currencyBreakdown.length === 0 ? 0 : null);
   return {
     month: input.month ?? new Date().toISOString().slice(0, 7),
-    income,
-    expenses,
-    net: income - expenses,
+    income: single?.income ?? (currencyBreakdown.length === 0 ? 0 : null),
+    expenses: single?.expenses ?? (currencyBreakdown.length === 0 ? 0 : null),
+    net: single?.net ?? (currencyBreakdown.length === 0 ? 0 : null),
     transactionCount,
     averageTransaction,
-    topTag,
-    topMerchant,
-    tagSpending: [...categoryTotals.entries()]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .slice(0, 10)
-      .map(([name, amount]) => ({ name, amount })),
+    topTag: single?.topTag ?? (currencyBreakdown.length === 0 ? 'Uncategorized' : null),
+    topMerchant: single?.topMerchant ?? (currencyBreakdown.length === 0 ? 'Unknown' : null),
+    tagSpending:
+      single?.tagSpending.map((item) => ({ ...item, currencyCode: single.currencyCode })) ?? [],
+    currencyBreakdown,
     ...(range.from ? { startDate: range.from } : {}),
     ...(range.to ? { endDate: range.to } : {}),
     currencyCode,

@@ -17,6 +17,8 @@ interface TagBreakdownRow {
   tag: string;
   amount: number;
   transactionCount: number;
+  percentage: number;
+  currencyCode: string;
 }
 
 export default function TagsAnalyticsPage() {
@@ -69,14 +71,6 @@ export default function TagsAnalyticsPage() {
 
   const tagRows = breakdown?.breakdown ?? [];
 
-  // fall back to summing rows if the API didn't send a total
-  const totalSpending = useMemo(() => {
-    if (typeof breakdown?.totalSpending === 'number') {
-      return breakdown.totalSpending;
-    }
-    return tagRows.reduce((sum, item) => sum + item.amount, 0);
-  }, [breakdown?.totalSpending, tagRows]);
-
   const filteredAndSortedData = useMemo<TagBreakdownRow[]>(() => {
     let result = [...tagRows];
 
@@ -88,6 +82,9 @@ export default function TagsAnalyticsPage() {
       const sort = sortOptions[0];
       if (sort) {
         result.sort((a, b) => {
+          if (a.currencyCode !== b.currencyCode) {
+            return a.currencyCode.localeCompare(b.currencyCode);
+          }
           let aValue: string | number;
           let bValue: string | number;
 
@@ -355,11 +352,11 @@ export default function TagsAnalyticsPage() {
             </thead>
             <tbody>
               {filteredAndSortedData.map((item) => {
-                const percentage = totalSpending > 0 ? (item.amount / totalSpending) * 100 : 0;
+                const percentage = item.percentage;
 
                 return (
                   <tr
-                    key={item.tag}
+                    key={`${item.currencyCode}-${item.tag}`}
                     className="border-b border-border "
                     onClick={() => navigate(`/analytics/tag/${encodeURIComponent(item.tag)}`)}
                     tabIndex={0}
@@ -378,7 +375,9 @@ export default function TagsAnalyticsPage() {
                     </td>
                     <td className="text-right py-3">
                       <div className="flex flex-col items-end gap-1">
-                        <div className="font-mono font-semibold">{formatCurrency(item.amount)}</div>
+                        <div className="font-mono font-semibold">
+                          {formatCurrency(item.amount, item.currencyCode)}
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {percentage.toFixed(1)}%
                         </div>
