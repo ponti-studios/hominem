@@ -508,3 +508,164 @@ export async function getAccountSummaries(
 
   return { summaries, totalCount: summaries.length };
 }
+
+export type AccountUpdateReason =
+  | 'currency_immutable'
+  | 'invalid_name'
+  | 'invalid_status_transition'
+  | 'name_conflict'
+  | 'unknown_account';
+
+export interface AccountUpdateInput {
+  name?: string;
+  institution?: string | null;
+  mask?: string | null;
+  accountType?: string;
+  status?: string;
+  currencyCode?: string;
+}
+
+export interface AccountUpdateResult {
+  id: string | null;
+  name: string | null;
+  currencyCode: string | null;
+  status: string | null;
+  updated: boolean;
+  changes: Record<string, [string | null, string | null]>;
+  reason: AccountUpdateReason | null;
+}
+
+function accountRefusal(reason: AccountUpdateReason): AccountUpdateResult {
+  return {
+    id: null,
+    name: null,
+    currencyCode: null,
+    status: null,
+    updated: false,
+    changes: {},
+    reason,
+  };
+}
+
+/**
+ * Partial update of an account's mutable fields, addressed by id (names are mutable, so a
+ * name is never the handle). An omitted field is unchanged; an explicit null clears
+ * `institution`/`accountNumber`. Identity — id, transactions, balances-by-history, links — is
+ * untouched. `currencyCode` is immutable here: changing it would reinterpret every stored
+ * amount, which is a migration rather than an update. Status transitions are unrestricted
+ * among the states the registry uses (open/closed/historical, plus the schema's `unknown`), so
+ * there is no restricted transition graph to violate and `invalid_status_transition` is never
+ * returned today. `dryRun` projects the change set without writing.
+ */
+export async function applyAccountUpdate(
+  userId: string,
+  accountId: string,
+  input: AccountUpdateInput,
+  options?: { dryRun?: boolean },
+): Promise<AccountUpdateResult> {
+  const existing = await db
+    .selectFrom('app.financeAccounts as a')
+    .leftJoin('app.financeInstitutions as i', 'i.id', 'a.institutionId')
+    .select([
+      'a.id',
+      'a.name',
+      'a.currencyCode',
+      'a.lifecycleStatus',
+      'a.accountType',
+      'a.mask',
+      'a.institutionId',
+      'i.name as institutionName',
+    ])
+    .where('a.id', '=', accountId)
+    .where('a.userId', '=', userId)
+    .limit(1)
+    .executeTakeFirst();
+  if (!existing) return accountRefusal('unknown_account');
+
+  if (
+    input.currencyCode !== undefined &&
+    input.currencyCode.toUpperCase() !== existing.currencyCode.toUpperCase()
+  ) {
+    return accountRefusal('currency_immutable');
+  }
+
+  let nextName = existing.name;
+  if (input.name !== undefined) {
+    const trimmed = input.name.trim();
+    if (!trimmed) return accountRefusal('invalid_name');
+    nextName = trimmed;
+  }
+
+  const nextStatus = input.status ?? existing.lifecycleStatus;
+  const nextAccountType = input.accountType ?? existing.accountType;
+  const nextMask = input.mask === undefined ? existing.mask : input.mask;
+
+  let nextInstitutionId = existing.institutionId;
+  let nextInstitutionName = existing.institutionName;
+  if (input.institution !== undefined) {
+    const requested = input.institution?.trim() ?? '';
+    if (!requested) {
+      nextInstitutionId = null;
+      nextInstitutionName = null;
+    } else {
+      const institution = await ensureInstitutionExists(requested);
+      nextInstitutionId = institution.id;
+      nextInstitutionName = institution.name;
+    }
+  }
+
+  if (nextName !== existing.name) {
+    // Uniqueness is checked against every *other* account, open and closed; re-casing the
+    // account's own name is allowed and is a real change.
+    const clash = await db
+      .selectFrom('app.financeAccounts')
+      .select('id')
+      .where('userId', '=', userId)
+      .where('id', '!=', accountId)
+      .where(sql<boolean>`lower(name) = lower(${nextName})`)
+      .limit(1)
+      .executeTakeFirst();
+    if (clash) return accountRefusal('name_conflict');
+  }
+
+  const changes: Record<string, [string | null, string | null]> = {};
+  if (nextName !== existing.name) changes.name = [existing.name, nextName];
+  if (nextAccountType !== existing.accountType) {
+    changes.accountType = [existing.accountType, nextAccountType];
+  }
+  if (nextStatus !== existing.lifecycleStatus) {
+    changes.status = [existing.lifecycleStatus, nextStatus];
+  }
+  if ((nextMask ?? null) !== (existing.mask ?? null)) {
+    changes.accountNumber = [existing.mask, nextMask ?? null];
+  }
+  if (nextInstitutionId !== existing.institutionId) {
+    changes.institution = [existing.institutionName, nextInstitutionName];
+  }
+
+  const result: AccountUpdateResult = {
+    id: existing.id,
+    name: nextName,
+    currencyCode: existing.currencyCode,
+    status: nextStatus,
+    updated: Object.keys(changes).length > 0,
+    changes,
+    reason: null,
+  };
+  if (!result.updated || options?.dryRun) return result;
+
+  await db
+    .updateTable('app.financeAccounts')
+    .set({
+      name: nextName,
+      accountType: nextAccountType,
+      lifecycleStatus: nextStatus,
+      mask: nextMask,
+      institutionId: nextInstitutionId,
+    })
+    .where('id', '=', accountId)
+    .where('userId', '=', userId)
+    .execute();
+
+  return result;
+}

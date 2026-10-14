@@ -1,5 +1,6 @@
 import { ValidationError } from '@hominem/db/errors';
 import {
+  applyAccountUpdate,
   computeLedgerRunway,
   countAccounts,
   createOrGetAccount,
@@ -31,6 +32,8 @@ import {
   financeAccountsOutputSchema,
   financeAccountSummaryInputSchema,
   financeAccountSummaryOutputSchema,
+  financeAccountUpdateInputSchema,
+  financeAccountUpdateOutputSchema,
   financeBudgetBreakdownInputSchema,
   financeBudgetBreakdownOutputSchema,
   financeCategoriesInputSchema,
@@ -529,6 +532,42 @@ registerTool(
       accountType: input.accountType,
       dryRun: input.dryRun,
     }),
+);
+
+registerTool(
+  {
+    ...financeWriteTool,
+    name: 'finance_account_update',
+    title: 'Finance Account Update',
+    description:
+      'Partially update an account addressed by id: name, institution, accountNumber (mask), accountType and status. Omitted fields are unchanged; null clears institution/accountNumber. Identity — id, transactions, links — never changes, and currencyCode is immutable here. dryRun projects the change set without applying it.',
+    inputSchema: financeAccountUpdateInputSchema,
+    outputSchema: financeAccountUpdateOutputSchema,
+    resultCap: 1,
+    guidance: {
+      whenToUse:
+        'Correcting an account name (typos), mask, institution, type, or its open/closed status.',
+      whenNotToUse:
+        'Do not use to change an account currency (immutable) or to delete/merge accounts (out of scope).',
+      dependencies: [
+        { tool: 'finance_accounts', reason: 'resolve the account id', provides: ['id'] },
+      ],
+    },
+  },
+  async (ownerUserId, input) =>
+    applyAccountUpdate(
+      ownerUserId,
+      input.accountId,
+      {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.institution !== undefined ? { institution: input.institution } : {}),
+        ...(input.accountNumber !== undefined ? { mask: input.accountNumber } : {}),
+        ...(input.accountType !== undefined ? { accountType: input.accountType } : {}),
+        ...(input.status !== undefined ? { status: input.status } : {}),
+        ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
+      },
+      { dryRun: input.dryRun },
+    ),
 );
 
 registerTool(
