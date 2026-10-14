@@ -450,7 +450,7 @@ const t = {
       title: 'Verify',
       signedIn: 'Signed in',
       codeSentTo: 'Code sent to',
-      codePlaceholder: '123456',
+      codePlaceholder: '6-digit code',
       verifyButton: 'Verify',
       resendButton: 'Resend code',
       expired: 'Expired',

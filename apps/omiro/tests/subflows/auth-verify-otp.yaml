@@ -8,8 +8,8 @@ appId: com.pontistudios.hakumi.dev
 #
 # OTP arrives via `-e OTP=...` and is label-masked so the code never appears
 # in console output or test reports.
-- assertVisible: Omiro
-- assertVisible: Check your email
+- assertVisible:
+    id: auth-brand
 - takeScreenshot: omiro-auth-code
 - tapOn:
     id: auth-otp-input-container

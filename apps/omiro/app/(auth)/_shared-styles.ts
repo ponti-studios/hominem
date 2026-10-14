@@ -5,7 +5,7 @@ export function authSharedStyles(theme: Theme) {
   return {
     container: { flex: 1, backgroundColor: theme.colors.background },
     content: { width: '100%', alignItems: 'center' },
-    form: { width: '100%', maxWidth: 420, gap: 18 },
+    form: { width: '100%', maxWidth: 420, gap: 24 },
     header: { gap: 8 },
     title: { ...theme.textVariants.title1, color: theme.colors.foreground },
     progressHelper: {

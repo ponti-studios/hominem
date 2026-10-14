@@ -36,7 +36,8 @@ appId: com.pontistudios.hakumi.dev
       visible:
         id: auth-email-input
     commands:
-      - assertVisible: Omiro
+      - assertVisible:
+          id: auth-brand
       - takeScreenshot: omiro-auth-email
       - tapOn:
           id: auth-email-input

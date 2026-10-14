@@ -1,13 +1,11 @@
-import { maskEmail } from '@ponti-studios/auth/shared/mask-email';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
 
-import { AuthArtwork } from '~/components/auth/AuthArtwork';
+import { AuthMascot } from '~/components/auth/AuthMascot';
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { useAppTheme, useStyles } from '~/components/theme';
 import { Button } from '~/components/ui/button';
-import AppIcon from '~/components/ui/icon';
 import { TextField } from '~/components/ui/text-field';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -42,35 +40,41 @@ function VerifyScreen() {
   const resolvedEmail = emailParam ?? '';
   const autoSubmitKeyRef = React.useRef<string | null>(null);
   const [verifySucceeded, setVerifySucceeded] = React.useState(false);
-  const { otp, setOtp, error, isSubmitting, handleVerifyOtp } = useEmailAuth({
-    verifyOtp: async (email, code) => {
-      await verifyEmailOtp({ email, otp: normalizeOtp(code) });
-      setVerifySucceeded(true);
-    },
-    resendOtp: async (email) => requestEmailOtp(email),
-  });
+  const { otp, setOtp, error, isSubmitting, isResending, handleVerifyOtp, handleResendOtp } =
+    useEmailAuth({
+      verifyOtp: async (email, code) => {
+        await verifyEmailOtp({ email, otp: normalizeOtp(code) });
+        setVerifySucceeded(true);
+      },
+      resendOtp: async (email) => requestEmailOtp(email),
+    });
   const normalizedOtp = normalizeOtp(otp);
-  const { foreground, mutedForeground, destructive, primaryForeground } = useAppTheme().colors;
+  const { foreground, destructive, border: inputBorder } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     ...authSharedStyles(theme),
-    brand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-    brandMark: {
-      width: 32,
-      height: 32,
-      alignItems: 'center',
+    brand: { alignItems: 'flex-start' },
+    brandName: { ...theme.textVariants.title2, color: theme.colors.foreground, fontWeight: '600' },
+    mascot: { alignSelf: 'center', marginBottom: 4 },
+    back: {
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: 'flex-start',
       justifyContent: 'center',
-      borderRadius: theme.borderRadii.lg,
-      backgroundColor: theme.colors.primary,
     },
-    brandName: { ...theme.textVariants.title2, color: theme.colors.foreground, fontWeight: '700' },
-    subtitle: { ...theme.textVariants.footnote, color: theme.colors.mutedForeground },
-    emailText: { ...theme.textVariants.subhead, color: theme.colors.foreground, fontWeight: '600' },
+    backText: { ...theme.textVariants.title2, color: theme.colors.foreground },
     error: { ...theme.textVariants.footnote, color: theme.colors.destructive, textAlign: 'center' },
     link: {
       ...theme.textVariants.footnote,
-      color: theme.colors.primary,
+      color: theme.colors.mutedForeground,
       textAlign: 'center',
       padding: 8,
+    },
+    codeInput: {
+      borderBottomWidth: 1,
+      borderBottomColor: inputBorder,
+      borderRadius: 0,
+      paddingHorizontal: 0,
+      textAlign: 'left',
     },
     successContainer: {
       flex: 1,
@@ -131,28 +135,25 @@ function VerifyScreen() {
         <View style={styles.content}>
           <View style={styles.form}>
             <View style={styles.brand}>
-              <View style={styles.brandMark}>
-                <AppIcon
-                  name="bubble.left.and.bubble.right.fill"
-                  size={18}
-                  tintColor={primaryForeground}
-                />
-              </View>
-              <Text style={styles.brandName}>Omiro</Text>
+              <Text testID="auth-brand" style={styles.brandName}>
+                omiro
+              </Text>
             </View>
-            <AuthArtwork compact />
-            <View style={styles.header}>
-              <Text style={styles.title}>Check your email</Text>
-              <Text style={styles.subtitle}>A code is on its way to</Text>
-              <Pressable
-                testID="auth-change-email"
-                onPress={() => {
-                  posthog.capture('auth_change_email_pressed');
-                  router.replace('/(auth)');
-                }}
-              >
-                <Text style={styles.emailText}>{maskEmail(resolvedEmail)}</Text>
-              </Pressable>
+            <Pressable
+              testID="auth-change-email"
+              accessibilityRole="button"
+              accessibilityLabel="Change email"
+              onPress={() => {
+                posthog.capture('auth_change_email_pressed');
+                router.replace('/(auth)');
+              }}
+              disabled={isSubmitting}
+              style={styles.back}
+            >
+              <Text style={styles.backText}>←</Text>
+            </Pressable>
+            <View style={styles.mascot}>
+              <AuthMascot />
             </View>
             <TextField
               testID="auth-otp-input-container"
@@ -168,6 +169,8 @@ function VerifyScreen() {
               hasError={Boolean(error)}
               cursorColor={foreground}
               selectionColor={foreground}
+              focusBorder={false}
+              style={styles.codeInput}
               accessibilityLabel={t.auth.verify.oneTimeVerificationCodeA11y}
               onChangeText={(value) => setOtp(normalizeOtp(value))}
               onSubmitEditing={() => {
@@ -195,17 +198,20 @@ function VerifyScreen() {
               }}
               disabled={isSubmitting || normalizedOtp.length !== 6}
               loading={isSubmitting}
-              variant="primary"
+              variant="ink"
+              style={{ borderRadius: 4 }}
             />
             <Pressable
-              testID="auth-use-different-email"
+              testID="auth-resend-otp"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isResending || isSubmitting, busy: isResending }}
               onPress={() => {
-                posthog.capture('auth_change_email_pressed');
-                router.replace('/(auth)');
+                posthog.capture('auth_resend_code_pressed');
+                void handleResendOtp(resolvedEmail);
               }}
-              disabled={isSubmitting}
+              disabled={isResending || isSubmitting}
             >
-              <Text style={[styles.link, { color: mutedForeground }]}>Use a different email</Text>
+              <Text style={styles.link}>{isResending ? 'Sending…' : 'Resend'}</Text>
             </Pressable>
           </View>
         </View>
