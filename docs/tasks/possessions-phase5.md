@@ -42,7 +42,7 @@ plan.
 | ----- | --------- | -------------- | ---------- | --------------------- | --------- |
 | W-221 | Resolve Q3/Q4 + packing-list home | user | — | recorded decision | decisions recorded in this task |
 | W-222 | Fold the luggage packing list into Hominem | api data | W-221 | note `01a13639…` | content present, 26 slots match the tab |
-| W-223 | Final live-data diff on the freeze evening | api script | W-221 | `diff-possessions.ts` output | 0 unexplained deltas before freeze |
+| W-223 | Final live-data diff on the freeze evening | api script | W-221 | possessions diff script output (one-off runner, since retired) | 0 unexplained deltas before freeze |
 | W-224 | Freeze the sheet (read-only / dated Drive copy) | user (Drive) | W-223 | frozen sheet exists | sheet no longer accepts edits |
 | W-225 | Retire the column-position map; repoint workflows | user + repo docs | W-224 | operating notes updated | no workflow reads the sheet |
 
@@ -52,10 +52,10 @@ plan.
 - **W-222**: note `01a13639-7a29-7e0b-b347-326f5bddaa2c` in `app.notes` (kind `note`),
   content verified against the tab: 26 slots, verbatim order, counts Osprey ×12 /
   LEVEL8 28in ×7 / Container ×5 / John Lewis ×1 / carry-on ×1.
-- **Cutover readiness (pre-freeze)**: `diff-possessions.ts` against the 2026-10-13
-  exports — 0 to import, 0 possession deltas, 0 container deltas; live 460 possessions /
-  42 containers (incl. CON-036); Hominem-only records as expected (CON-024, CON-040,
-  CON-042, CON-036).
+- **Cutover readiness (pre-freeze)**: the possessions diff script (one-off, since retired)
+  against the 2026-10-13 exports — 0 to import, 0 possession deltas, 0 container deltas; live
+  460 possessions / 42 containers (incl. CON-036); Hominem-only records as expected (CON-024,
+  CON-040, CON-042, CON-036).
 - **W-223 done (freeze evening, 2026-10-13)**: sheet confirmed unchanged since the 14:41
   export, so that diff is the freeze snapshot — 0/0/0.
 - **W-224 done (2026-10-13)**: sheet frozen as a dated read-only Drive copy (per Q4 the
