@@ -37,6 +37,13 @@ ground-truth numbers from the completed reconciliation.
 - Natural key for transaction upsert: `(postedOn, accountId, description,
   amountCents, currencyCode)`. Upserts are idempotent; import batches are
   safe to re-run.
+- Transaction currency validation is account-scoped: rows must match
+  `currencyCode` or an account's stored `allowedCurrencies`; callers cannot
+  grant themselves currency exemptions. The account currency is included in
+  the effective list returned by account tools. Starling Bank is GBP, and
+  American Express Platinum permits USD and GBP.
+- `finance_transaction_upsert` accepts all persisted transaction types,
+  including `adjustment`.
 
 ## 1. Cross-cutting conventions (apply to every tool in this spec)
 
@@ -73,16 +80,17 @@ accounts; the daily provider sync will keep surfacing new accounts
 
 **Input**
 
-| field | type | req | notes |
-|---|---|---|---|
-| `name` | string | ✓ | display name, non-empty |
-| `currencyCode` | string | ✓ | ISO 4217 |
-| `institution` | string | | e.g. "Acme Bank" |
-| `accountNumber` | string | | mask/last digits as displayed elsewhere |
-| `status` | enum `open`\|`closed` | | default `open` |
+| field               | type                  | req | notes                                                                           |
+| ------------------- | --------------------- | --- | ------------------------------------------------------------------------------- |
+| `name`              | string                | ✓   | display name, non-empty                                                         |
+| `currencyCode`      | string                | ✓   | ISO 4217                                                                        |
+| `allowedCurrencies` | string[]              |     | additional accepted transaction currencies; primary currency is always included |
+| `institution`       | string                |     | e.g. "Acme Bank"                                                                |
+| `accountNumber`     | string                |     | mask/last digits as displayed elsewhere                                         |
+| `status`            | enum `open`\|`closed` |     | default `open`                                                                  |
 
 **Behavior.** §1.2 applies (open and closed accounts both match). Returns
-`{ id, name, currencyCode, status, created }`.
+`{ id, name, currencyCode, allowedCurrencies, status, created }`.
 
 **Errors.** `invalid_currency`, `invalid_name` — named, per §1.1.
 
@@ -104,7 +112,7 @@ cap, paging 14,486 transactions out to add them up client-side (~10 min).
 everything).
 
 **Result.** One entry per account:
-`{ accountId, accountName, status, transactionCount, excludedCount,
+`{ accountId, accountName, allowedCurrencies, status, transactionCount, excludedCount,
 totals: [{ currencyCode, sumCents }], minPostedOn, maxPostedOn }`.
 Totals are grouped **by currency** — a single mixed-currency sum is
 arithmetically meaningless and must not be the only output.
@@ -210,6 +218,7 @@ double-counts internal movement (cf. `finance_net_worth`).
 
 **Change.** Add nullable `counterpartId` to the transaction write DTO
 (upsert + import item) and to all read models. Semantics:
+
 - Setting `counterpartId` on row A pointing at row B mirrors the link on B.
 - Re-pointing or nulling updates both sides symmetrically.
 - Deleting a row (§4) clears the link on its counterpart.

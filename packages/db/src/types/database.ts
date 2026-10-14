@@ -465,6 +465,7 @@ export interface AppFiles {
 
 export interface AppFinanceAccounts {
   accountType: string;
+  allowedCurrencies: Generated<string[]>;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   csvImportKey: string | null;
   currencyCode: Generated<string>;

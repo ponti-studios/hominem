@@ -26,8 +26,10 @@ re-run idempotently to resume. No checkpointing.
 - Identity: personal account (`ownerUserId` of the caller).
 - Tags: plain names, no namespacing.
 - Transfers: description contains `transfer`; autopays excluded.
-- Multi-currency: strict `currency_mismatch` stands, with a one-account
-  allowlist (a label declared as multi-currency) via `multiCurrencyAccounts`.
+- Multi-currency: strict `currency_mismatch` stands by default. An account's
+  stored `allowedCurrencies` extends its primary `currencyCode`; the caller
+  cannot supply exemptions. Starling is GBP; American Express Platinum allows
+  USD and GBP.
 - Accounts: most labels map directly; the rest are created or flipped
   (a historical money-market account, an open savings account, a GBP account,
   a historical high-yield savings account, a legacy 2017 account kept
@@ -41,7 +43,7 @@ re-run idempotently to resume. No checkpointing.
 ## Scope
 
 In scope: sheet CSV parser (cols A–L), replace guards, `pending_row`,
-`multiCurrencyAccounts`, 28-label map template + validator, account
+account-owned `allowedCurrencies`, 28-label map template + validator, account
 ensure/flip/fix, backfill runner (chunk 1000, fail-fast, aggregate),
 §14 verification comparators, daily-push payload + VM reference script.
 Out of scope: executing the real backfill (needs live store + filled map),

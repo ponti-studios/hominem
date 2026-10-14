@@ -2,11 +2,10 @@ import { Redirect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 
-import { AuthArtwork } from '~/components/auth/AuthArtwork';
+import { AuthMascot } from '~/components/auth/AuthMascot';
 import { FeatureErrorBoundary } from '~/components/error-boundary/FeatureErrorBoundary';
 import { useAppTheme, useStyles } from '~/components/theme';
 import { Button } from '~/components/ui/button';
-import AppIcon from '~/components/ui/icon';
 import { TextField } from '~/components/ui/text-field';
 import { CHAT_AUTH_CONFIG } from '~/config/auth';
 import { useAuth } from '~/services/auth/auth-provider';
@@ -24,27 +23,15 @@ function AuthScreen() {
   const [authError, setAuthError] = useState<string | null>(null);
   const normalizedEmail = normalizeEmail(email);
 
-  const { foreground: textPrimary, primaryForeground } = useAppTheme().colors;
+  const { foreground: textPrimary, border: inputBorder } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     ...authSharedStyles(theme),
     restoringMessage: { ...theme.textVariants.subhead, color: theme.colors.mutedForeground },
-    inputContainer: { gap: 12 },
+    inputContainer: { gap: 28 },
     errorText: { ...theme.textVariants.footnote, color: theme.colors.destructive },
-    brand: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-    brandMark: {
-      width: 32,
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: theme.borderRadii.lg,
-      backgroundColor: theme.colors.primary,
-    },
-    brandName: { ...theme.textVariants.title2, color: theme.colors.foreground, fontWeight: '700' },
-    helper: {
-      ...theme.textVariants.footnote,
-      textAlign: 'center',
-      color: theme.colors.mutedForeground,
-    },
+    brand: { alignItems: 'flex-start' },
+    brandName: { ...theme.textVariants.title2, color: theme.colors.foreground, fontWeight: '600' },
+    mascot: { alignSelf: 'center', marginBottom: 4 },
   }));
 
   const handleSendCode = useCallback(async () => {
@@ -97,23 +84,20 @@ function AuthScreen() {
           <View style={styles.content}>
             <View style={styles.form}>
               <View style={styles.brand}>
-                <View style={styles.brandMark}>
-                  <AppIcon
-                    name="bubble.left.and.bubble.right.fill"
-                    size={18}
-                    tintColor={primaryForeground}
-                  />
+                <Text testID="auth-brand" style={styles.brandName}>
+                  omiro
+                </Text>
+              </View>
+
+              <View style={styles.mascot}>
+                <AuthMascot />
+              </View>
+
+              {isProbing ? (
+                <View style={styles.header}>
+                  <Text style={styles.restoringMessage}>{t.auth.restoringSignIn}</Text>
                 </View>
-                <Text style={styles.brandName}>Omiro</Text>
-              </View>
-
-              <AuthArtwork />
-
-              <View style={styles.header}>
-                <Text style={styles.title}>{t.auth.emailEntry.title}</Text>
-                {isProbing && <Text style={styles.restoringMessage}>{t.auth.restoringSignIn}</Text>}
-                {!isProbing ? <Text style={styles.helper}>{t.auth.emailEntry.helper}</Text> : null}
-              </View>
+              ) : null}
 
               {!isProbing ? (
                 <View style={styles.inputContainer}>
@@ -130,7 +114,14 @@ function AuthScreen() {
                     hasError={Boolean(displayError)}
                     cursorColor={textPrimary}
                     selectionColor={textPrimary}
-                    style={{ opacity: isSubmitting ? 0.6 : 1 }}
+                    focusBorder={false}
+                    style={{
+                      opacity: isSubmitting ? 0.6 : 1,
+                      borderBottomWidth: 1,
+                      borderBottomColor: inputBorder,
+                      borderRadius: 0,
+                      paddingHorizontal: 0,
+                    }}
                     onChangeText={(text) => {
                       setEmail(text);
                       setAuthError(null);
@@ -161,7 +152,8 @@ function AuthScreen() {
                     onPress={() => handleSendCode()}
                     disabled={isSubmitting}
                     loading={isSubmitting}
-                    variant="primary"
+                    variant="ink"
+                    style={{ borderRadius: 4 }}
                   />
                 </View>
               ) : null}

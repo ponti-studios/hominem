@@ -28,6 +28,7 @@ type Content = {
     transactionCount?: number;
   }>;
   transactionCount?: number;
+  allowedCurrencies?: string[];
 };
 
 function content(res: McpToolResult<Content>): Content {
@@ -240,6 +241,38 @@ describe('finance_account_update', () => {
     });
   });
 
+  it('updates allowed currencies while preserving the primary currency', async () => {
+    const result = content(
+      await callTool(userId, 'finance_account_update', {
+        accountId: appleId,
+        allowedCurrencies: ['GBP'],
+      }),
+    );
+    expect(result).toMatchObject({
+      currencyCode: 'USD',
+      allowedCurrencies: ['USD', 'GBP'],
+      updated: true,
+    });
+
+    const row = await db
+      .selectFrom('app.financeAccounts')
+      .select(['currencyCode', 'allowedCurrencies'])
+      .where('id', '=', appleId)
+      .executeTakeFirstOrThrow();
+    expect(row).toMatchObject({ currencyCode: 'USD', allowedCurrencies: ['USD', 'GBP'] });
+
+    const reordered = content(
+      await callTool(userId, 'finance_account_update', {
+        accountId: appleId,
+        allowedCurrencies: ['GBP', 'USD'],
+      }),
+    );
+    expect(reordered).toMatchObject({
+      allowedCurrencies: ['USD', 'GBP'],
+      updated: false,
+      changes: {},
+    });
+  });
   it('never updates another user’s account', async () => {
     const result = content(
       await callTool(userId, 'finance_account_update', {

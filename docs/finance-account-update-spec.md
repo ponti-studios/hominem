@@ -36,6 +36,7 @@ Input:
 | `accountNumber` | string \| null | | mask/last digits; null clears |
 | `accountType` | string | | matches `finance_account_create`'s field |
 | `status` | enum | | see status semantics below |
+| `allowedCurrencies` | string[] | | complete set accepted for transaction rows; primary `currencyCode` is always included |
 | `dryRun` | boolean | | projects the change set, applies nothing |
 
 Partial-update semantics: an omitted field is unchanged; an explicit
@@ -64,9 +65,13 @@ no way to null `name`, `accountType`, or `status` — omitting is the only
   migration, not an update. Attempts refuse with `currency_immutable`.
   (If currency correction is ever truly needed, it belongs in a guarded
   replace-style operation, specced separately.)
+- **`allowedCurrencies` is mutable per-account policy.** When omitted it is
+  unchanged; when supplied it replaces the account's additional allowances.
+  `currencyCode` remains allowed automatically. Transaction writes on accounts
+  without additional allowances must match `currencyCode` exactly.
 - **Idempotence / no-op:** an update whose values equal the current state
   succeeds with `updated: false` and an empty change set.
-- **Result:** `{ id, name, currencyCode, status, updated, changes }`
+- **Result:** `{ id, name, currencyCode, allowedCurrencies, status, updated, changes }`
   where `changes` maps each altered field to `[from, to]` — the
   operator's audit record, mirroring `finance_transaction_delete`'s
   snapshot philosophy.

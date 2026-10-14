@@ -3,9 +3,11 @@
 // ============================================================================
 
 import type { financeRoutes } from '@hominem/api/finance';
+import type { InferResponseType } from 'hono/client';
 import { hc } from 'hono/client';
 
 import type { ClientConfig } from './core/api-client';
+import type { HonoClient } from './core/api-client';
 import { customFetch } from './core/api-client';
 
 // ---------------------------------------------------------------------------
@@ -186,24 +188,12 @@ export type Merchant = {
   transactionCount: number;
 };
 
-export type TagBreakdownItem = {
-  tag: string;
-  amount: number;
-  percentage: number;
-  transactionCount: number;
-};
-
 export type TransactionStats = {
   min: number;
   max: number;
   mean: number;
   median: number;
   stdDev: number;
-};
-
-export type TagSpendingItem = {
-  name: string | null;
-  amount: number;
 };
 
 export type SpendingTimeSeriesOutput = {
@@ -215,51 +205,13 @@ export type TopMerchantsOutput = {
   merchants: Merchant[];
 };
 
-export type TagBreakdownOutput = {
-  breakdown: Array<TagBreakdownItem & { currencyCode: string }>;
-  totalSpending: number | null;
-  totalsByCurrency: Array<{
-    currencyCode: string;
-    totalSpending: number;
-    averagePerDay: number;
-  }>;
-  averagePerDay: number | null;
-  currencyCode: string | null;
-  warnings: string[];
-};
+type _FinanceTagBreakdownEndpoint =
+  HonoClient['api']['finance']['analyze']['tag-breakdown']['$get'];
+export type TagBreakdownOutput = InferResponseType<_FinanceTagBreakdownEndpoint, 200>;
 
-export type MonthlyStatsOutput = {
-  month: string;
-  income: number | null;
-  expenses: number | null;
-  net: number | null;
-  transactionCount: number;
-  averageTransaction: number | null;
-  topTag: string | null;
-  topMerchant: string | null;
-  formattedIncome: string | null;
-  formattedExpenses: string | null;
-  formattedNet: string | null;
-  formattedAverage: string | null;
-  totalIncome?: number | null;
-  totalExpenses?: number | null;
-  netIncome?: number | null;
-  tagSpending?: Array<TagSpendingItem & { currencyCode: string }>;
-  currencyCode: string | null;
-  currencyBreakdown: Array<{
-    currencyCode: string;
-    income: number;
-    expenses: number;
-    net: number;
-    transactionCount: number;
-    averageTransaction: number;
-    topTag: string;
-    topMerchant: string;
-    tagSpending: TagSpendingItem[];
-  }>;
-  startDate?: string;
-  endDate?: string;
-};
+type _FinanceMonthlyStatsEndpoint =
+  HonoClient['api']['finance']['analyze']['monthly-stats']['$get'];
+export type MonthlyStatsOutput = InferResponseType<_FinanceMonthlyStatsEndpoint, 200>;
 
 // ---------------------------------------------------------------------------
 // Budget

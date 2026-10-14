@@ -110,6 +110,7 @@ describe('finance_account_summary', () => {
 
     expect(checking).toMatchObject({
       accountName: 'Summary Checking',
+      allowedCurrencies: ['USD'],
       status: 'open',
       transactionCount: 4,
       excludedCount: 1,

@@ -246,6 +246,7 @@ describe('finance_accounts', () => {
       includeInNetWorth: false,
     });
     expect(byName.Checking).toMatchObject({ accountType: 'checking', includeInNetWorth: true });
+    expect(byName.Card.allowedCurrencies).toContain(byName.Card.currencyCode);
   });
 
   it("never returns another user's accounts", async () => {
@@ -389,7 +390,6 @@ describe('finance_spending_by_category', () => {
       'Spending spans multiple currencies; categories are reported separately by currency.',
     );
   });
-
   it('reports when matching categories are omitted by the requested limit', async () => {
     const categoryIds = Array.from(
       { length: 21 },
@@ -744,10 +744,23 @@ describe('finance_monthly_stats', () => {
     expect(other).toMatchObject({ incomeCents: 0, expensesCents: 99_900, transactionCount: 1 });
   });
 
-  it('omits the date range when the month defaults to the current month', async () => {
+  it('filters to the current month when the month argument is omitted', async () => {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    await insertTransaction({
+      owner: userId,
+      accountId: checkingId,
+      postedOn: `${currentMonth}-01`,
+      description: 'Default month report row',
+      merchantName: 'Current Month Merchant',
+      amount: -321,
+    });
     const data = content(await callTool(userId, 'finance_monthly_stats', {}));
-    expect(data.startDate).toBeUndefined();
-    expect(data.endDate).toBeUndefined();
+    expect(data).toMatchObject({
+      month: currentMonth,
+      startDate: `${currentMonth}-01`,
+      transactionCount: 1,
+      expensesCents: 32_100,
+    });
   });
 
   it('rejects a malformed month', async () => {

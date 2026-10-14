@@ -11,6 +11,7 @@ type Content = {
   id?: string | null;
   name?: string;
   currencyCode?: string;
+  allowedCurrencies?: string[];
   status?: string;
   created?: boolean;
   accounts?: Array<{ id: string; name: string; lifecycleStatus: string }>;
@@ -49,6 +50,23 @@ describe('finance_account_create', () => {
       name: 'Example GBP Account',
       currencyCode: 'GBP',
       status: 'open',
+    });
+  });
+
+  it('persists and returns account-specific allowed currencies', async () => {
+    const created = content(
+      await callTool(userId, 'finance_account_create', {
+        name: 'USD and GBP Account',
+        currencyCode: 'USD',
+        allowedCurrencies: ['GBP'],
+      }),
+    );
+    expect(created.allowedCurrencies).toEqual(['USD', 'GBP']);
+
+    const listed = content(await callTool(userId, 'finance_accounts', {}));
+    expect(listed.accounts?.find((item) => item.id === created.id)).toMatchObject({
+      currencyCode: 'USD',
+      allowedCurrencies: ['USD', 'GBP'],
     });
   });
 

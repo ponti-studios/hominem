@@ -18,8 +18,9 @@ No new credentials. The sheet ID is config, not a secret.
    (`packages/finance/src/sheet-csv.ts`): accounting amounts, TRUE/FALSE
    flags, comma tags, Order # into notes.
 4. Call `finance_transactions_import` with `mode: "append"` (never
-   `"replace"` here), the checked-in account map, and
-   `multiCurrencyAccounts` listing any label exempt from the currency check.
+   `"replace"` here) and the checked-in account map. Currency allowances are
+   stored per account in `allowedCurrencies`; all other accounts remain strict
+   to their `currencyCode`.
 5. On push failure: log loudly (row counts, batch index, tool error) but
    never block or roll back the sheet write. Re-push any morning by
    re-running over the trailing window.

@@ -1,5 +1,4 @@
 import { requireMcpAuth } from '@better-auth/mcp';
-import { createInsufficientScopeError } from 'better-auth/oauth2';
 import { Hono, type Context, type Next } from 'hono';
 
 import { MCP_TOKEN_PREFIX, resolveMcpToken } from '../application/mcp-tokens.service';
@@ -27,7 +26,10 @@ function createMcpAuthorizationMiddleware(dependencies: McpDependencies) {
   const runAuthorizedRequest = async (c: Context<McpHonoEnv>, next: Next) => {
     const auth = c.get('auth');
     if (!auth || !MCP_SCOPES.some((scope) => auth.scopes.includes(scope))) {
-      throw createInsufficientScopeError([...MCP_SCOPES]);
+      return new Response(JSON.stringify({ error: 'insufficient_scope' }), {
+        status: 403,
+        headers: { 'content-type': 'application/json' },
+      });
     }
 
     if (inputEnv.NODE_ENV === 'production') {

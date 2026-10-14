@@ -85,9 +85,10 @@ const MAX_ACCOUNTS_RESULT = 50;
 // list cap; it exists only to bound the result, with totalCount exposing any truncation.
 const MAX_SUMMARY_ACCOUNTS = 500;
 const MAX_REPORT_CURRENCIES = 500;
+const MAX_ACCOUNT_CURRENCIES = 500;
 
 const REPORT_CAVEAT =
-  'Computed from posted, non-excluded transactions in the range; totals are separated by currency. ' +
+  'Computed from posted, non-excluded transactions in the range. ' +
   'Spending is every negative amount, so transfers between accounts are included.';
 
 registerTool(
@@ -174,6 +175,7 @@ registerTool(
         name: a.name,
         accountType: a.accountType,
         currencyCode: a.currencyCode,
+        allowedCurrencies: [...new Set([a.currencyCode, ...(a.allowedCurrencies ?? [])])],
         lifecycleStatus: a.lifecycleStatus,
         includeInNetWorth: a.includeInNetWorth,
         balanceCents: toCents(a.currentBalance),
@@ -212,6 +214,7 @@ registerTool(
       accounts: limited.map((summary) => ({
         accountId: summary.accountId,
         accountName: summary.accountName,
+        allowedCurrencies: summary.allowedCurrencies,
         status: summary.status,
         transactionCount: summary.transactionCount,
         excludedCount: summary.excludedCount,
@@ -552,7 +555,7 @@ registerTool(
       'dryRun reports the outcome without writing.',
     inputSchema: financeAccountCreateInputSchema,
     outputSchema: financeAccountCreateOutputSchema,
-    resultCap: 1,
+    resultCap: MAX_ACCOUNT_CURRENCIES,
     guidance: {
       whenToUse: 'A sheet label or sync source needs an account that does not exist yet.',
       whenNotToUse: 'Do not use to rename, close, or merge an existing account.',
@@ -564,6 +567,7 @@ registerTool(
       userId: ownerUserId,
       name: input.name,
       currencyCode: input.currencyCode,
+      allowedCurrencies: input.allowedCurrencies,
       ...(input.institution ? { institution: input.institution } : {}),
       ...(input.accountNumber ? { mask: input.accountNumber } : {}),
       status: input.status,
@@ -580,13 +584,13 @@ registerTool(
     name: 'finance_account_update',
     title: 'Finance Account Update',
     description:
-      'Partially update an account addressed by id: name, institution, accountNumber (mask), accountType and status. Omitted fields are unchanged; null clears institution/accountNumber. Identity — id, transactions, links — never changes, and currencyCode is immutable here. dryRun projects the change set without applying it.',
+      'Partially update an account addressed by id: name, institution, accountNumber (mask), accountType, status and allowedCurrencies. Omitted fields are unchanged; null clears institution/accountNumber. Identity — id, transactions, links — never changes, and currencyCode is immutable here. dryRun projects the change set without applying it.',
     inputSchema: financeAccountUpdateInputSchema,
     outputSchema: financeAccountUpdateOutputSchema,
-    resultCap: 1,
+    resultCap: MAX_ACCOUNT_CURRENCIES,
     guidance: {
       whenToUse:
-        'Correcting an account name (typos), mask, institution, type, or its open/closed status.',
+        'Correcting account metadata or changing the currencies allowed for its transactions.',
       whenNotToUse:
         'Do not use to change an account currency (immutable) or to delete/merge accounts (out of scope).',
       dependencies: [
@@ -605,6 +609,9 @@ registerTool(
         ...(input.accountType !== undefined ? { accountType: input.accountType } : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
         ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
+        ...(input.allowedCurrencies !== undefined
+          ? { allowedCurrencies: input.allowedCurrencies }
+          : {}),
       },
       { dryRun: input.dryRun },
     );

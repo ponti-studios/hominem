@@ -1,9 +1,63 @@
 import { db } from '@hominem/db/core';
-import { sql } from 'kysely';
+import { sql, type SqlBool } from 'kysely';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
-import { queryAnalyticsTransactionsByContract } from './transactions';
-import { summarizeCurrencies, toNumber } from './utils';
+import {
+  financeTransactionQueryContractSchema,
+  queryAnalyticsTransactionsByContract,
+} from './transactions';
+import { sqlValueList, summarizeCurrencies, toNumber } from './utils';
+
+type AnalyticsFilters = {
+  userId: string;
+  accountId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  tagIds?: string[];
+  tagNames?: string[];
+};
+
+function analyticsFilters(input: AnalyticsFilters) {
+  const parsed = financeTransactionQueryContractSchema.parse(input);
+  const tagIds = parsed.tagIds ?? [];
+  const tagNames = parsed.tagNames ?? [];
+  const tagMatch =
+    tagIds.length > 0 && tagNames.length > 0
+      ? sql`(ti.tag_id in (${sqlValueList(tagIds)}) or tg.name in (${sqlValueList(tagNames)}))`
+      : tagIds.length > 0
+        ? sql`ti.tag_id in (${sqlValueList(tagIds)})`
+        : tagNames.length > 0
+          ? sql`tg.name in (${sqlValueList(tagNames)})`
+          : null;
+  const tagFilter = tagMatch
+    ? sql`and exists (
+        select 1 from app.tag_assignments ti
+        join app.tags tg on tg.id = ti.tag_id and tg.owner_userid = ${parsed.userId}
+        where ti.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass
+          and ti.entity_id = t.id and ${tagMatch}
+      )`
+    : sql``;
+
+  return sql<SqlBool>`
+    t.user_id = ${parsed.userId}
+    and t.excluded = false
+    and t.pending = false
+    ${parsed.accountId ? sql`and t.account_id = ${parsed.accountId}` : sql``}
+    ${parsed.dateFrom ? sql`and t.posted_on >= ${parsed.dateFrom}` : sql``}
+    ${parsed.dateTo ? sql`and t.posted_on <= ${parsed.dateTo}` : sql``}
+    ${tagFilter}
+  `;
+}
+
+function classificationExpression(ownerId: string) {
+  return sql<string>`coalesce((
+    select min(tg.name)
+    from app.tag_assignments ti
+    join app.tags tg on tg.id = ti.tag_id and tg.owner_userid = ${ownerId}
+    where ti.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass
+      and ti.entity_id = t.id
+  ), ${sql.lit('Uncategorized')})`;
+}
 
 async function getTagBreakdown(ownerId: string): Promise<Array<{ tag: string; total: number }>> {
   const result = await db
@@ -71,39 +125,24 @@ export async function getTagBreakdownByContract(input: {
   tagNames?: string[];
   limit?: number;
 }): Promise<Array<{ tag: string; amount: number; transactionCount: number }>> {
-  const transactions: Awaited<ReturnType<typeof queryAnalyticsTransactionsByContract>> = [];
-  for (let offset = 0; ; offset += 200) {
-    const page = await queryAnalyticsTransactionsByContract({
-      userId: input.userId,
-      accountId: input.accountId,
-      dateFrom: input.dateFrom,
-      dateTo: input.dateTo,
-      tagIds: input.tagIds,
-      tagNames: input.tagNames,
-      limit: 200,
-      offset,
-    });
-    transactions.push(...page);
-    if (page.length < 200) break;
-  }
-
-  const breakdownByLabel = new Map<string, { amount: number; transactionCount: number }>();
-  for (const tx of transactions) {
-    if (tx.amount >= 0) {
-      continue;
-    }
-    const current = breakdownByLabel.get(tx.classification) ?? { amount: 0, transactionCount: 0 };
-    current.amount += Math.abs(tx.amount);
-    current.transactionCount += 1;
-    breakdownByLabel.set(tx.classification, current);
-  }
+  const rows = await db
+    .selectFrom('app.financeTransactions as t')
+    .select([
+      classificationExpression(input.userId).as('tag'),
+      sql<number>`sum(abs(t.amount))`.as('amount'),
+      sql<number>`count(t.id)`.as('transactionCount'),
+    ])
+    .where(analyticsFilters(input))
+    .where(sql<SqlBool>`t.amount < 0`)
+    .groupBy('tag')
+    .execute();
 
   const normalizedLimit = Math.max(1, Math.floor(input.limit ?? 5));
-  return [...breakdownByLabel.entries()]
-    .map(([tag, value]) => ({
-      tag,
-      amount: value.amount,
-      transactionCount: value.transactionCount,
+  return rows
+    .map((row) => ({
+      tag: row.tag,
+      amount: toNumber(row.amount),
+      transactionCount: Number(row.transactionCount),
     }))
     .sort((a, b) => b.amount - a.amount || a.tag.localeCompare(b.tag))
     .slice(0, normalizedLimit);
@@ -122,38 +161,30 @@ export async function getTopMerchantsByContract(input: {
   currencyCode: string | null;
   warnings: string[];
 }> {
-  const transactions: Awaited<ReturnType<typeof queryAnalyticsTransactionsByContract>> = [];
-  for (let offset = 0; ; offset += 200) {
-    const page = await queryAnalyticsTransactionsByContract({
-      userId: input.userId,
-      accountId: input.accountId,
-      dateFrom: input.dateFrom,
-      dateTo: input.dateTo,
-      tagIds: input.tagIds,
-      tagNames: input.tagNames,
-      limit: 200,
-      offset,
-    });
-    transactions.push(...page);
-    if (page.length < 200) break;
-  }
+  const rows = await db
+    .selectFrom('app.financeTransactions as t')
+    .select([
+      sql<string>`coalesce(nullif(t.merchant_name, ''), 'Unknown')`.as('merchant'),
+      't.currencyCode',
+      sql<number>`sum(abs(t.amount))`.as('totalSpent'),
+      sql<number>`count(t.id)`.as('transactionCount'),
+    ])
+    .where(analyticsFilters(input))
+    .where(sql<SqlBool>`t.amount < 0`)
+    .groupBy(['merchant', 't.currencyCode'])
+    .execute();
 
   const merchantTotals = new Map<string, { totalSpent: number; transactionCount: number }>();
-  const spendingCurrencies: string[] = [];
-  for (const tx of transactions) {
-    if (tx.amount >= 0) {
-      continue;
-    }
-    spendingCurrencies.push(tx.currencyCode);
-    const merchantName = tx.merchantName ?? 'Unknown';
+  for (const row of rows) {
+    const merchantName = row.merchant;
     const current = merchantTotals.get(merchantName) ?? { totalSpent: 0, transactionCount: 0 };
-    current.totalSpent += Math.abs(tx.amount);
-    current.transactionCount += 1;
+    current.totalSpent += toNumber(row.totalSpent);
+    current.transactionCount += Number(row.transactionCount);
     merchantTotals.set(merchantName, current);
   }
 
   const normalizedLimit = Math.max(1, Math.floor(input.limit ?? 5));
-  const { currencyCode, warnings } = summarizeCurrencies(spendingCurrencies);
+  const { currencyCode, warnings } = summarizeCurrencies(rows.map((row) => row.currencyCode));
   return {
     merchants: [...merchantTotals.entries()]
       .map(([name, value]) => ({
@@ -197,55 +228,64 @@ export async function getMonthlyStatsByContract(input: {
   currencyCode: string | null;
   warnings: string[];
 }> {
-  const range = parseMonthRange(input.month);
+  const month = input.month ?? new Date().toISOString().slice(0, 7);
+  const range = parseMonthRange(month);
   const query = {
     userId: input.userId,
     ...(range.from ? { dateFrom: range.from } : {}),
     ...(range.to ? { dateTo: range.to } : {}),
   };
-  const transactions: Awaited<ReturnType<typeof queryAnalyticsTransactionsByContract>> = [];
-  for (let offset = 0; ; offset += 200) {
-    const page = await queryAnalyticsTransactionsByContract({ ...query, limit: 200, offset });
-    transactions.push(...page);
-    if (page.length < 200) break;
+  const filters = analyticsFilters(query);
+  const totals = await db
+    .selectFrom('app.financeTransactions as t')
+    .select([
+      't.currencyCode',
+      sql<number>`sum(case when t.amount >= 0 then t.amount else 0 end)`.as('income'),
+      sql<number>`sum(case when t.amount < 0 then abs(t.amount) else 0 end)`.as('expenses'),
+      sql<number>`count(t.id)`.as('transactionCount'),
+    ])
+    .where(filters)
+    .groupBy('t.currencyCode')
+    .execute();
+  const categories = await db
+    .selectFrom('app.financeTransactions as t')
+    .select([
+      't.currencyCode',
+      classificationExpression(input.userId).as('tag'),
+      sql<number>`sum(abs(t.amount))`.as('amount'),
+    ])
+    .where(filters)
+    .where(sql<SqlBool>`t.amount < 0`)
+    .groupBy(['t.currencyCode', 'tag'])
+    .execute();
+  const merchants = await db
+    .selectFrom('app.financeTransactions as t')
+    .select([
+      't.currencyCode',
+      sql<string>`coalesce(nullif(t.merchant_name, ''), 'Unknown')`.as('merchant'),
+      sql<number>`sum(abs(t.amount))`.as('amount'),
+    ])
+    .where(filters)
+    .where(sql<SqlBool>`t.amount < 0`)
+    .groupBy(['t.currencyCode', 'merchant'])
+    .execute();
+  const byCurrency = new Map(
+    totals.map((row) => [
+      row.currencyCode,
+      {
+        income: toNumber(row.income),
+        expenses: toNumber(row.expenses),
+        transactionCount: Number(row.transactionCount),
+        categoryTotals: new Map<string, number>(),
+        merchantTotals: new Map<string, number>(),
+      },
+    ]),
+  );
+  for (const row of categories) {
+    byCurrency.get(row.currencyCode)?.categoryTotals.set(row.tag, toNumber(row.amount));
   }
-
-  const byCurrency = new Map<
-    string,
-    {
-      income: number;
-      expenses: number;
-      categoryTotals: Map<string, number>;
-      merchantTotals: Map<string, number>;
-      transactionCount: number;
-    }
-  >();
-  for (const tx of transactions) {
-    const current = byCurrency.get(tx.currencyCode) ?? {
-      income: 0,
-      expenses: 0,
-      categoryTotals: new Map<string, number>(),
-      merchantTotals: new Map<string, number>(),
-      transactionCount: 0,
-    };
-    current.transactionCount += 1;
-    if (tx.amount >= 0) {
-      current.income += tx.amount;
-      byCurrency.set(tx.currencyCode, current);
-      continue;
-    }
-    const spend = Math.abs(tx.amount);
-    current.expenses += spend;
-    current.categoryTotals.set(
-      tx.classification,
-      (current.categoryTotals.get(tx.classification) ?? 0) + spend,
-    );
-    const merchantName = tx.merchantName ?? 'Unknown';
-    current.merchantTotals.set(
-      merchantName,
-      (current.merchantTotals.get(merchantName) ?? 0) + spend,
-    );
-    byCurrency.set(tx.currencyCode, current);
+  for (const row of merchants) {
+    byCurrency.get(row.currencyCode)?.merchantTotals.set(row.merchant, toNumber(row.amount));
   }
   const currencyBreakdown = [...byCurrency.entries()]
     .map(([currencyCode, value]) => {
@@ -285,11 +325,11 @@ export async function getMonthlyStatsByContract(input: {
         ]
       : [];
   const single = currencyBreakdown.length === 1 ? currencyBreakdown[0] : null;
-  const transactionCount = transactions.length;
+  const transactionCount = currencyBreakdown.reduce((sum, row) => sum + row.transactionCount, 0);
   const averageTransaction =
     single?.averageTransaction ?? (currencyBreakdown.length === 0 ? 0 : null);
   return {
-    month: input.month ?? new Date().toISOString().slice(0, 7),
+    month,
     income: single?.income ?? (currencyBreakdown.length === 0 ? 0 : null),
     expenses: single?.expenses ?? (currencyBreakdown.length === 0 ? 0 : null),
     net: single?.net ?? (currencyBreakdown.length === 0 ? 0 : null),

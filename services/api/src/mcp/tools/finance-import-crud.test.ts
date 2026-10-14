@@ -161,6 +161,31 @@ describe('finance_transaction_upsert', () => {
     expect(Number(duplicateCount.count)).toBe(1);
   });
 
+  it('serializes concurrent cross-source inserts for the same sheet identity', async () => {
+    const input = {
+      postedOn: '2026-09-05',
+      account: checkingId,
+      description: 'Concurrent source import',
+      amountCents: -765,
+      currencyCode: 'USD',
+    };
+    const results = await Promise.all([
+      callTool(userId, 'finance_transaction_upsert', { ...input, source: 'plaid' }),
+      callTool(userId, 'finance_transaction_upsert', { ...input, source: 'starling' }),
+    ]);
+    const ids = results.map((result) => content(result).id);
+    expect(ids[0]).toBeTruthy();
+    expect(ids[1]).toBe(ids[0]);
+
+    const duplicateCount = await db
+      .selectFrom('app.financeTransactions')
+      .select((eb) => eb.fn.countAll<number>().as('count'))
+      .where('userId', '=', userId)
+      .where('description', '=', input.description)
+      .executeTakeFirstOrThrow();
+    expect(Number(duplicateCount.count)).toBe(1);
+  });
+
   it('infers transfer from description text', async () => {
     const result = await callTool(userId, 'finance_transaction_upsert', {
       postedOn: '2026-09-02',
@@ -176,6 +201,23 @@ describe('finance_transaction_upsert', () => {
       .where('id', '=', id)
       .executeTakeFirstOrThrow();
     expect(row.transactionType).toBe('transfer');
+  });
+
+  it('accepts an explicit adjustment transaction type', async () => {
+    const result = await callTool(userId, 'finance_transaction_upsert', {
+      postedOn: '2026-09-04',
+      account: checkingId,
+      description: 'Balance normalization',
+      amountCents: 125,
+      currencyCode: 'USD',
+      transactionType: 'adjustment',
+    });
+    const row = await db
+      .selectFrom('app.financeTransactions')
+      .select('transactionType')
+      .where('id', '=', String(content(result).id))
+      .executeTakeFirstOrThrow();
+    expect(row.transactionType).toBe('adjustment');
   });
 
   it('keeps recurring and order number in notes', async () => {

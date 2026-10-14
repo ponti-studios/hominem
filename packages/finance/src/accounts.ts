@@ -9,6 +9,19 @@ import { getAffectedRows } from './utils';
 
 export type AccountWithBalance = Selectable<AppFinanceAccounts> & { currentBalance: number };
 
+export function normalizeAllowedCurrencies(
+  currencyCode: string,
+  allowedCurrencies: readonly string[] = [],
+): string[] {
+  const primaryCurrency = currencyCode.toUpperCase();
+  const additionalCurrencies = [
+    ...new Set(allowedCurrencies.map((currency) => currency.toUpperCase())),
+  ]
+    .filter((currency) => currency !== primaryCurrency)
+    .sort();
+  return [primaryCurrency, ...additionalCurrencies];
+}
+
 type CreateAccountInput = Partial<Insertable<AppFinanceAccounts>> & {
   userId: string;
   name: string;
@@ -85,6 +98,7 @@ export interface CreateOrGetAccountInput {
   userId: string;
   name: string;
   currencyCode: string;
+  allowedCurrencies?: string[];
   institution?: string | null;
   mask?: string | null;
   status?: 'open' | 'closed';
@@ -96,6 +110,7 @@ export interface CreateOrGetAccountResult {
   id: string | null;
   name: string;
   currencyCode: string;
+  allowedCurrencies: string[];
   status: string;
   created: boolean;
 }
@@ -112,7 +127,7 @@ export async function createOrGetAccount(
   const name = input.name.trim();
   const existing = await db
     .selectFrom('app.financeAccounts')
-    .select(['id', 'name', 'currencyCode', 'lifecycleStatus'])
+    .select(['id', 'name', 'allowedCurrencies', 'currencyCode', 'lifecycleStatus'])
     .where('userId', '=', input.userId)
     .where(sql<boolean>`lower(name) = lower(${name})`)
     .orderBy('id', 'asc')
@@ -124,6 +139,10 @@ export async function createOrGetAccount(
       id: existing.id,
       name: existing.name,
       currencyCode: existing.currencyCode,
+      allowedCurrencies: normalizeAllowedCurrencies(
+        existing.currencyCode,
+        existing.allowedCurrencies ?? [],
+      ),
       status: existing.lifecycleStatus,
       created: false,
     };
@@ -135,6 +154,7 @@ export async function createOrGetAccount(
       id: null,
       name,
       currencyCode: input.currencyCode.toUpperCase(),
+      allowedCurrencies: normalizeAllowedCurrencies(input.currencyCode, input.allowedCurrencies),
       status,
       created: true,
     };
@@ -142,6 +162,7 @@ export async function createOrGetAccount(
 
   const id = crypto.randomUUID();
   const currencyCode = input.currencyCode.toUpperCase();
+  const allowedCurrencies = normalizeAllowedCurrencies(currencyCode, input.allowedCurrencies);
   const institutionId = input.institution
     ? (await ensureInstitutionExists(input.institution)).id
     : null;
@@ -152,6 +173,7 @@ export async function createOrGetAccount(
       userId: input.userId,
       name,
       currencyCode,
+      allowedCurrencies,
       lifecycleStatus: status,
       accountType: input.accountType ?? 'checking',
       metadata: {},
@@ -160,7 +182,7 @@ export async function createOrGetAccount(
     })
     .execute();
 
-  return { id, name, currencyCode, status, created: true };
+  return { id, name, currencyCode, allowedCurrencies, status, created: true };
 }
 
 function accountsForUser(userId: string) {
@@ -397,6 +419,7 @@ export async function getAccountByPlaidId(
 export interface AccountSummary {
   accountId: string;
   accountName: string;
+  allowedCurrencies: string[];
   status: string;
   transactionCount: number;
   excludedCount: number;
@@ -423,7 +446,7 @@ export async function getAccountSummaries(
   const includeClosed = options?.includeClosed ?? true;
   let accountQuery = db
     .selectFrom('app.financeAccounts')
-    .select(['id', 'name', 'lifecycleStatus'])
+    .select(['id', 'name', 'allowedCurrencies', 'currencyCode', 'lifecycleStatus'])
     .where('userId', '=', userId);
   if (!includeClosed) {
     accountQuery = accountQuery.where('lifecycleStatus', '!=', 'closed');
@@ -496,6 +519,10 @@ export async function getAccountSummaries(
   const summaries = accounts.map((account) => ({
     accountId: account.id,
     accountName: account.name,
+    allowedCurrencies: normalizeAllowedCurrencies(
+      account.currencyCode,
+      account.allowedCurrencies ?? [],
+    ),
     status: account.lifecycleStatus,
     transactionCount: counts.get(account.id)?.count ?? 0,
     excludedCount: excluded.get(account.id) ?? 0,
@@ -523,12 +550,14 @@ export interface AccountUpdateInput {
   accountType?: string;
   status?: string;
   currencyCode?: string;
+  allowedCurrencies?: string[];
 }
 
 export interface AccountUpdateResult {
   id: string | null;
   name: string | null;
   currencyCode: string | null;
+  allowedCurrencies: string[] | null;
   status: string | null;
   updated: boolean;
   changes: Record<string, [string | null, string | null]>;
@@ -540,6 +569,7 @@ function accountRefusal(reason: AccountUpdateReason): AccountUpdateResult {
     id: null,
     name: null,
     currencyCode: null,
+    allowedCurrencies: null,
     status: null,
     updated: false,
     changes: {},
@@ -570,6 +600,7 @@ export async function applyAccountUpdate(
       'a.id',
       'a.name',
       'a.currencyCode',
+      'a.allowedCurrencies',
       'a.lifecycleStatus',
       'a.accountType',
       'a.mask',
@@ -599,6 +630,14 @@ export async function applyAccountUpdate(
   const nextStatus = input.status ?? existing.lifecycleStatus;
   const nextAccountType = input.accountType ?? existing.accountType;
   const nextMask = input.mask === undefined ? existing.mask : input.mask;
+  const existingAllowedCurrencies = normalizeAllowedCurrencies(
+    existing.currencyCode,
+    existing.allowedCurrencies ?? [],
+  );
+  const nextAllowedCurrencies = normalizeAllowedCurrencies(
+    existing.currencyCode,
+    input.allowedCurrencies ?? existing.allowedCurrencies ?? [],
+  );
 
   let nextInstitutionId = existing.institutionId;
   let nextInstitutionName = existing.institutionName;
@@ -630,6 +669,12 @@ export async function applyAccountUpdate(
 
   const changes: Record<string, [string | null, string | null]> = {};
   if (nextName !== existing.name) changes.name = [existing.name, nextName];
+  if (JSON.stringify(nextAllowedCurrencies) !== JSON.stringify(existingAllowedCurrencies)) {
+    changes.allowedCurrencies = [
+      existingAllowedCurrencies.join(','),
+      nextAllowedCurrencies.join(','),
+    ];
+  }
   if (nextAccountType !== existing.accountType) {
     changes.accountType = [existing.accountType, nextAccountType];
   }
@@ -647,6 +692,7 @@ export async function applyAccountUpdate(
     id: existing.id,
     name: nextName,
     currencyCode: existing.currencyCode,
+    allowedCurrencies: nextAllowedCurrencies,
     status: nextStatus,
     updated: Object.keys(changes).length > 0,
     changes,
@@ -658,6 +704,7 @@ export async function applyAccountUpdate(
     .updateTable('app.financeAccounts')
     .set({
       name: nextName,
+      allowedCurrencies: nextAllowedCurrencies,
       accountType: nextAccountType,
       lifecycleStatus: nextStatus,
       mask: nextMask,
