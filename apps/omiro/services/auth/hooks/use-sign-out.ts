@@ -18,16 +18,8 @@ export function useSignOut(currentEmail: string | null | undefined) {
 
     let signOutError: Error | null = null;
     try {
-      const result = await authClient.signOut({
-        fetchOptions: {
-          onResponse: ({ response }) => {
-            statusCode = response.status;
-          },
-        },
-      });
-      if (result.error) {
-        signOutError = new Error(result.error.message ?? 'Failed to sign out. Please try again.');
-      }
+      await authClient.signOut();
+      statusCode = 200;
     } catch (error) {
       signOutError =
         error instanceof Error ? error : new Error('Failed to sign out. Please try again.');

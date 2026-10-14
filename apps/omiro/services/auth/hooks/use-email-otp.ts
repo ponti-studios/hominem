@@ -1,17 +1,12 @@
 import { useCallback } from 'react';
 
+import type { HominemAuthUser } from '~/modules/hominem-auth-bridge';
 import { captureAuthAnalyticsEvent, captureAuthAnalyticsFailure } from '~/services/auth/analytics';
 import { authClient } from '~/services/auth/auth-client';
 
-const OTP_REQUEST_TIMEOUT_MS = 12000;
-const OTP_VERIFY_TIMEOUT_MS = 20000;
-
-export function useEmailOtp() {
+export function useEmailOtp(onAuthenticated: (user: HominemAuthUser) => void = () => {}) {
   const requestEmailOtp = useCallback(async (email: string) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), OTP_REQUEST_TIMEOUT_MS);
     const startedAt = Date.now();
-    let statusCode: number | undefined;
 
     captureAuthAnalyticsEvent('auth_email_otp_request_started', {
       phase: 'email_otp_request',
@@ -19,20 +14,7 @@ export function useEmailOtp() {
     });
 
     try {
-      const result = await authClient.emailOtp.sendVerificationOtp({
-        email,
-        type: 'sign-in',
-        fetchOptions: {
-          signal: controller.signal,
-          onResponse: ({ response }) => {
-            statusCode = response.status;
-          },
-        },
-      });
-
-      if (result.error) {
-        throw new Error(result.error.message ?? 'Unable to send verification code.');
-      }
+      await authClient.requestEmailOtp(email);
     } catch (error) {
       const resolvedError =
         error instanceof Error && error.name === 'AbortError'
@@ -45,25 +27,19 @@ export function useEmailOtp() {
         durationMs: Date.now() - startedAt,
         email,
         error: resolvedError,
-        statusCode,
       });
       throw resolvedError;
-    } finally {
-      clearTimeout(timeoutId);
     }
 
     captureAuthAnalyticsEvent('auth_email_otp_request_succeeded', {
       phase: 'email_otp_request',
       durationMs: Date.now() - startedAt,
       email,
-      statusCode,
     });
   }, []);
 
   const verifyEmailOtp = useCallback(
     async (input: { email: string; otp: string; name?: string }) => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), OTP_VERIFY_TIMEOUT_MS);
       const startedAt = Date.now();
       let statusCode: number | undefined;
 
@@ -73,21 +49,12 @@ export function useEmailOtp() {
       });
 
       try {
-        const result = await authClient.signIn.emailOtp({
-          email: input.email,
-          otp: input.otp,
-          ...(input.name ? { name: input.name } : {}),
-          fetchOptions: {
-            signal: controller.signal,
-            onResponse: ({ response }: { response: Response }) => {
-              statusCode = response.status;
-            },
-          },
-        });
-
-        if (result.error || !result.data?.user?.id) {
-          throw new Error(result.error?.message ?? 'Verification failed. Please try again.');
+        let user = await authClient.verifyEmailOtp({ email: input.email, otp: input.otp });
+        if (input.name) {
+          user = await authClient.updateUser({ name: input.name });
         }
+        statusCode = 200;
+        onAuthenticated(user);
 
         captureAuthAnalyticsEvent('auth_email_otp_verify_succeeded', {
           phase: 'email_otp_verify',
@@ -105,11 +72,9 @@ export function useEmailOtp() {
           statusCode,
         });
         throw resolvedError;
-      } finally {
-        clearTimeout(timeoutId);
       }
     },
-    [],
+    [onAuthenticated],
   );
 
   return { requestEmailOtp, verifyEmailOtp };

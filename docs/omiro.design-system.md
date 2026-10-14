@@ -47,3 +47,13 @@ token that carries text.
   tasks are white cards with a checkbox).
 - No blur shadows on repeated rows. Animate `transform` and `opacity` only, on
   the UI thread.
+
+## Auth and launch surfaces
+
+The splash and signed-out screens use the same visual language as the inbox:
+lavender ground, an ink composer, violet action, and the existing chat/note/task
+tile colors. `components/auth/AuthArtwork.tsx` is the shared auth motif; the
+native splash artwork is sourced from `apps/omiro/assets/omiro-splash.svg` and
+exported to the PNG referenced by `app.config.js`. Keep the illustration tied
+to the real Chat, Notes, Tasks, and composer surfaces, and keep the email and
+verification actions as the visual focus.

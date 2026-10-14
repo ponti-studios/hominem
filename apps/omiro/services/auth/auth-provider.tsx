@@ -11,6 +11,7 @@ import React, {
   type PropsWithChildren,
 } from 'react';
 
+import type { HominemAuthUser } from '~/modules/hominem-auth-bridge';
 import { authClient } from '~/services/auth/auth-client';
 import { clearLegacyDataOnce } from '~/services/auth/boot-legacy-data';
 import { clearLocalSessionState } from '~/services/auth/clear-local-session-state';
@@ -45,39 +46,39 @@ export const useAuth = () => {
   return ctx;
 };
 
-function toUser(sessionUser: {
-  id: string;
-  email: string;
-  emailVerified: boolean;
-  name: string;
-  image?: string | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
-}): User {
+function toUser(sessionUser: HominemAuthUser): User {
   return {
     id: sessionUser.id,
     email: sessionUser.email,
-    name: sessionUser.name,
+    name: sessionUser.name ?? '',
     image: sessionUser.image ?? null,
-    emailVerified: sessionUser.emailVerified,
-    createdAt: new Date(sessionUser.createdAt).toISOString(),
-    updatedAt: new Date(sessionUser.updatedAt).toISOString(),
+    emailVerified: sessionUser.emailVerified ?? false,
+    createdAt: new Date(sessionUser.createdAt ?? 0).toISOString(),
+    updatedAt: new Date(sessionUser.updatedAt ?? 0).toISOString(),
   };
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const { data, isPending } = authClient.useSession();
+  const [sessionUser, setSessionUser] = useState<HominemAuthUser | null>(null);
+  const [isPending, setIsPending] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const hasRunLegacyMigrationRef = useRef(false);
 
-  const sessionUser = data?.user;
   const currentUser = useMemo(() => (sessionUser ? toUser(sessionUser) : null), [sessionUser]);
   const isSignedIn = Boolean(currentUser) && !isSigningOut;
 
-  const { requestEmailOtp, verifyEmailOtp } = useEmailOtp();
-  const updateProfile = useUpdateProfile();
+  const onAuthenticated = useCallback((user: HominemAuthUser) => setSessionUser(user), []);
+  const { requestEmailOtp, verifyEmailOtp } = useEmailOtp(onAuthenticated);
+  const updateProfileRequest = useUpdateProfile();
+  const updateProfile = useCallback(
+    async (updates: Partial<User>) => {
+      const user = await updateProfileRequest(updates);
+      setSessionUser(user);
+    },
+    [updateProfileRequest],
+  );
   const getAuthHeaders = useAuthHeaders();
-  const resetAuthForE2E = useResetAuthForE2E();
+  const resetAuth = useResetAuthForE2E();
   const runSignOut = useSignOut(currentUser?.email);
 
   useEffect(() => {
@@ -88,11 +89,37 @@ export function AuthProvider({ children }: PropsWithChildren) {
     void clearLegacyDataOnce();
   }, []);
 
+  const resetAuthForE2E = useCallback(async () => {
+    await resetAuth();
+    setSessionUser(null);
+  }, [resetAuth]);
+
+  useEffect(() => {
+    let active = true;
+    void authClient
+      .getSession()
+      .then((user) => {
+        if (active) {
+          setSessionUser(user);
+        }
+      })
+      .catch((error) => logger.warn('[AuthProvider] Session restore failed', { error }))
+      .finally(() => {
+        if (active) {
+          setIsPending(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const signOut = useCallback(async () => {
     setIsSigningOut(true);
     try {
       await runSignOut();
     } finally {
+      setSessionUser(null);
       setIsSigningOut(false);
     }
   }, [runSignOut]);
@@ -102,6 +129,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       .signOut()
       .catch((error) => logger.warn('[AuthProvider] Best-effort sign-out failed', { error }));
     await clearLocalSessionState(queryClient);
+    setSessionUser(null);
   }, []);
 
   const value = useMemo<AuthContextType>(

@@ -4,7 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { act, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const mockUseSession = vi.fn();
+const mockGetSession = vi.fn();
 const mockGetCookie = vi.fn();
 const mockAuthSignOut = vi.fn();
 const mockSendVerificationOtp = vi.fn();
@@ -21,7 +21,7 @@ vi.mock('~/constants', () => ({ E2E_TESTING: false }));
 
 vi.mock('~/services/auth/auth-client', () => ({
   authClient: {
-    useSession: mockUseSession,
+    getSession: mockGetSession,
     getCookie: mockGetCookie,
     signOut: mockAuthSignOut,
     emailOtp: { sendVerificationOtp: mockSendVerificationOtp },
@@ -82,6 +82,7 @@ function fakeSessionUser(overrides: Partial<Record<string, unknown>> = {}) {
 describe('AuthProvider / useAuth', () => {
   afterEach(() => {
     vi.clearAllMocks();
+    mockGetSession.mockResolvedValue(null);
     mockClearLegacyDataOnce.mockResolvedValue(undefined);
     mockClearPersistedQueryCache.mockResolvedValue(undefined);
     mockClearAllData.mockResolvedValue(undefined);
@@ -92,7 +93,7 @@ describe('AuthProvider / useAuth', () => {
   });
 
   it('reports isPending and no current user while the session is loading', () => {
-    mockUseSession.mockReturnValue({ data: undefined, isPending: true });
+    mockGetSession.mockReturnValue(new Promise(() => {}));
     const { Wrapper } = withProviders();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
 
@@ -101,12 +102,12 @@ describe('AuthProvider / useAuth', () => {
     expect(result.current.currentUser).toBeNull();
   });
 
-  it('derives currentUser and isSignedIn from a resolved session', () => {
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
+  it('derives currentUser and isSignedIn from a resolved session', async () => {
+    mockGetSession.mockResolvedValue(fakeSessionUser());
     const { Wrapper } = withProviders();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
 
-    expect(result.current.isPending).toBe(false);
+    await waitFor(() => expect(result.current.isPending).toBe(false));
     expect(result.current.isSignedIn).toBe(true);
     expect(result.current.currentUser).toEqual({
       id: 'user-1',
@@ -120,7 +121,7 @@ describe('AuthProvider / useAuth', () => {
   });
 
   it('reports signed out when the session has no user', () => {
-    mockUseSession.mockReturnValue({ data: { user: null }, isPending: false });
+    mockGetSession.mockResolvedValue(null);
     const { Wrapper } = withProviders();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
 
@@ -129,7 +130,7 @@ describe('AuthProvider / useAuth', () => {
   });
 
   it('getAuthHeaders returns the session cookie header from the auth client', async () => {
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
+    mockGetSession.mockResolvedValue(fakeSessionUser());
     mockGetCookie.mockReturnValue('session=abc123');
     const { Wrapper } = withProviders();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
@@ -138,7 +139,7 @@ describe('AuthProvider / useAuth', () => {
   });
 
   it('getAuthHeaders returns an empty object when there is no cookie', async () => {
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
+    mockGetSession.mockResolvedValue(fakeSessionUser());
     mockGetCookie.mockReturnValue(undefined);
     const { Wrapper } = withProviders();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
@@ -147,10 +148,10 @@ describe('AuthProvider / useAuth', () => {
   });
 
   it('flips isSigningOut around signOut and turns isSignedIn false while signing out', async () => {
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
-    let resolveSignOut: (value: { error: null }) => void = () => {};
+    mockGetSession.mockResolvedValue(fakeSessionUser());
+    let resolveSignOut: () => void = () => {};
     mockAuthSignOut.mockReturnValue(
-      new Promise((resolve) => {
+      new Promise<void>((resolve) => {
         resolveSignOut = resolve;
       }),
     );
@@ -158,7 +159,7 @@ describe('AuthProvider / useAuth', () => {
     const clearSpy = vi.spyOn(queryClient, 'clear');
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
 
-    expect(result.current.isSignedIn).toBe(true);
+    await waitFor(() => expect(result.current.isSignedIn).toBe(true));
 
     let signOutPromise: Promise<void> | undefined;
     act(() => {
@@ -169,7 +170,7 @@ describe('AuthProvider / useAuth', () => {
     expect(result.current.isSignedIn).toBe(false);
 
     await act(async () => {
-      resolveSignOut({ error: null });
+      resolveSignOut();
       await signOutPromise;
     });
 
@@ -180,8 +181,8 @@ describe('AuthProvider / useAuth', () => {
   });
 
   it('resets isSigningOut even when the sign-out request fails', async () => {
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
-    mockAuthSignOut.mockResolvedValueOnce({ error: { message: 'boom' } });
+    mockGetSession.mockResolvedValue(fakeSessionUser());
+    mockAuthSignOut.mockRejectedValueOnce(new Error('boom'));
     const { Wrapper } = withProviders();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
 
@@ -193,8 +194,8 @@ describe('AuthProvider / useAuth', () => {
   });
 
   it('handleUnauthorized signs out, clears the query client, cache, and local storage', async () => {
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
-    mockAuthSignOut.mockResolvedValueOnce({ error: null });
+    mockGetSession.mockResolvedValue(fakeSessionUser());
+    mockAuthSignOut.mockResolvedValueOnce(undefined);
     const { Wrapper } = withProviders();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
 
@@ -209,7 +210,7 @@ describe('AuthProvider / useAuth', () => {
   });
 
   it('handleUnauthorized swallows a failing sign-out call and still clears local state', async () => {
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
+    mockGetSession.mockResolvedValue(fakeSessionUser());
     mockAuthSignOut.mockRejectedValueOnce(new Error('network down'));
     const { Wrapper } = withProviders();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
@@ -224,14 +225,14 @@ describe('AuthProvider / useAuth', () => {
   });
 
   it('clears legacy local data once on mount', async () => {
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
+    mockGetSession.mockResolvedValue(fakeSessionUser());
     renderHook(() => useAuth(), { wrapper: withProviders().Wrapper });
 
     await waitFor(() => expect(mockClearLegacyDataOnce).toHaveBeenCalledTimes(1));
   });
 
-  it('updateProfile delegates to Better Auth updateUser', async () => {
-    mockUseSession.mockReturnValue({ data: { user: fakeSessionUser() }, isPending: false });
+  it('updateProfile delegates to HominemAuth updateUser', async () => {
+    mockGetSession.mockResolvedValue(fakeSessionUser());
     mockUpdateUser.mockResolvedValueOnce({ data: { status: true }, error: null });
     const { Wrapper } = withProviders();
     const { result } = renderHook(() => useAuth(), { wrapper: Wrapper });
