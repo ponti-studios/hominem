@@ -178,6 +178,23 @@ describe('finance_transaction_upsert', () => {
     expect(row.transactionType).toBe('transfer');
   });
 
+  it('accepts an explicit adjustment transaction type', async () => {
+    const result = await callTool(userId, 'finance_transaction_upsert', {
+      postedOn: '2026-09-04',
+      account: checkingId,
+      description: 'Balance normalization',
+      amountCents: 125,
+      currencyCode: 'USD',
+      transactionType: 'adjustment',
+    });
+    const row = await db
+      .selectFrom('app.financeTransactions')
+      .select('transactionType')
+      .where('id', '=', String(content(result).id))
+      .executeTakeFirstOrThrow();
+    expect(row.transactionType).toBe('adjustment');
+  });
+
   it('keeps recurring and order number in notes', async () => {
     const result = await callTool(userId, 'finance_transaction_upsert', {
       postedOn: '2026-09-03',

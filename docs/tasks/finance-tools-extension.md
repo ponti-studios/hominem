@@ -1,6 +1,6 @@
 ---
 title: 'Finance tools extension (operator spec)'
-status: 'Proposed'
+status: 'Implemented'
 priority: 'high'
 labels: [finance, mcp]
 depends_on: []
@@ -69,3 +69,9 @@ every new tool.
   refusal rather than a silently stripped field. Status is unrestricted across
   open/closed/historical/unknown — **no restricted transition graph is enforced**, so
   `invalid_status_transition` is part of the error contract but never returned today.
+- Account currencies: transaction writes are strict to the primary `currencyCode`
+  unless that account stores additional `allowedCurrencies`. The account create,
+  update, list, and summary tools expose the effective set. The 2026-10-14
+  migration repairs Starling Bank to GBP and configures American Express Platinum
+  for USD and GBP; transaction rows are untouched. Upsert accepts explicit
+  `adjustment` transaction types.

@@ -23,7 +23,12 @@ const guardCheckingId = 'f2000003-0000-4000-8000-000000000101';
 const allowCheckingId = 'f2000003-0000-4000-8000-000000000102';
 const multiCheckingId = 'f2000003-0000-4000-8000-000000000103';
 
-async function seedUser(userId: string, accountId: string, currency = 'USD') {
+async function seedUser(
+  userId: string,
+  accountId: string,
+  currency = 'USD',
+  allowedCurrencies: string[] = [],
+) {
   await pool.query(
     `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
     [userId, `Guard User ${userId}`, `${userId}@test.hominem.dev`, true],
@@ -40,6 +45,7 @@ async function seedUser(userId: string, accountId: string, currency = 'USD') {
       name: 'Guard Checking',
       accountType: 'checking',
       currencyCode: currency,
+      allowedCurrencies,
       lifecycleStatus: 'open',
       includeInNetWorth: true,
       metadata: {},
@@ -59,7 +65,7 @@ const oneRow = (account: string) => ({
 beforeAll(async () => {
   await seedUser(guardUser, guardCheckingId);
   await seedUser(allowUser, allowCheckingId);
-  await seedUser(multiUser, multiCheckingId);
+  await seedUser(multiUser, multiCheckingId, 'USD', ['GBP']);
 });
 
 describe('replace guards', () => {
@@ -160,22 +166,40 @@ describe('multi-currency allowlist', () => {
   };
 
   it('rejects cross-currency rows without the allowlist', async () => {
-    const result = await callTool(multiUser, 'finance_transactions_import', {
+    const result = await callTool(guardUser, 'finance_transactions_import', {
       mode: 'append',
       transactions: [gbpRow],
     });
     expect(content(result).rejected).toEqual([{ index: 0, reason: 'currency_mismatch' }]);
   });
 
-  it('accepts either currency for an allowlisted account by label or id', async () => {
-    for (const entry of ['Guard Checking', multiCheckingId]) {
-      const result = await callTool(multiUser, 'finance_transactions_import', {
-        mode: 'append',
-        multiCurrencyAccounts: [entry],
-        transactions: [{ ...gbpRow, description: `London Spend ${entry.slice(-4)}` }],
-      });
-      expect(content(result).rejected).toEqual([]);
-      expect(content(result).created).toBe(1);
-    }
+  it('accepts an account-owned GBP allowance and still rejects EUR', async () => {
+    const gbp = await callTool(multiUser, 'finance_transactions_import', {
+      mode: 'append',
+      dryRun: true,
+      transactions: [gbpRow],
+    });
+    expect(content(gbp).rejected).toEqual([]);
+
+    const eur = await callTool(multiUser, 'finance_transactions_import', {
+      mode: 'append',
+      dryRun: true,
+      transactions: [{ ...gbpRow, description: 'Euro Spend', currencyCode: 'EUR' }],
+    });
+    expect(content(eur).rejected).toEqual([{ index: 0, reason: 'currency_mismatch' }]);
+
+    const upsert = await callTool(multiUser, 'finance_transaction_upsert', {
+      ...gbpRow,
+      description: 'Direct GBP Upsert',
+    });
+    expect(content(upsert)).toMatchObject({ accountId: multiCheckingId });
+
+    const strict = await callTool(guardUser, 'finance_transactions_import', {
+      mode: 'append',
+      dryRun: true,
+      multiCurrencyAccounts: ['Guard Checking'],
+      transactions: [gbpRow],
+    });
+    expect(content(strict).rejected).toEqual([{ index: 0, reason: 'currency_mismatch' }]);
   });
 });

@@ -246,6 +246,7 @@ describe('finance_accounts', () => {
       includeInNetWorth: false,
     });
     expect(byName.Checking).toMatchObject({ accountType: 'checking', includeInNetWorth: true });
+    expect(byName.Card.allowedCurrencies).toContain(byName.Card.currencyCode);
   });
 
   it("never returns another user's accounts", async () => {

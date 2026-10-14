@@ -26,7 +26,7 @@ export interface SheetTransactionInput {
   source?: string | null;
   excluded?: boolean;
   recurring?: boolean;
-  transactionType?: 'debit' | 'credit' | 'transfer' | null;
+  transactionType?: 'adjustment' | 'debit' | 'credit' | 'transfer' | null;
   /** v1 has no pending state — pending rows are rejected loudly. */
   pending?: boolean;
   /** Other leg of an internal transfer; must exist, be owned, and sit on a different account. */
@@ -35,8 +35,6 @@ export interface SheetTransactionInput {
 
 export interface SheetImportOptions {
   accountMap?: Record<string, string>;
-  /** Sheet labels or account ids exempt from the currency sanity check. */
-  multiCurrencyAccounts?: string[];
 }
 
 export interface SheetBatchOptions extends SheetImportOptions {
@@ -93,9 +91,16 @@ export function normalizeSource(value: string | null | undefined): SheetSource {
 export function inferTransactionType(
   description: string,
   amountCents: number,
-  explicit?: 'debit' | 'credit' | 'transfer' | null,
+  explicit?: 'adjustment' | 'debit' | 'credit' | 'transfer' | null,
 ): 'debit' | 'credit' | 'transfer' | 'adjustment' {
-  if (explicit === 'debit' || explicit === 'credit' || explicit === 'transfer') return explicit;
+  if (
+    explicit === 'adjustment' ||
+    explicit === 'debit' ||
+    explicit === 'credit' ||
+    explicit === 'transfer'
+  ) {
+    return explicit;
+  }
   if (/transfer/i.test(description)) return 'transfer';
   if (amountCents > 0) return 'credit';
   if (amountCents < 0) return 'debit';
@@ -178,7 +183,7 @@ function validateRow(input: SheetTransactionInput): SheetRejectionReason | null 
 }
 
 // Replace arming binds a clean dry run to its exact payload: user → set of
-// {fingerprint, accountMap, multiCurrencyAccounts}. A replace consumes the
+// {fingerprint, accountMap}. A replace consumes the
 // matching arm, so every wipe needs a fresh dry run of the same rows with
 // the same options. Process-local by design (same-session guard).
 const KNOWN_REJECTION_MESSAGES: readonly SheetRejectionReason[] = [
@@ -247,7 +252,6 @@ export async function validateSheetBatch(
   userId: string,
   transactions: SheetTransactionInput[],
   accountMap?: Record<string, string>,
-  multiCurrencyAccounts?: string[],
 ): Promise<SheetBatchValidation> {
   const valid: ValidatedSheetRow[] = [];
   const rejected: Array<{ index: number; reason: SheetRejectionReason }> = [];
@@ -264,10 +268,7 @@ export async function validateSheetBatch(
       continue;
     }
     const currencyCode = input.currencyCode.toUpperCase();
-    if (
-      currencyCode !== resolved.currencyCode.toUpperCase() &&
-      !isMultiCurrencyAllowed(input.account, resolved, multiCurrencyAccounts)
-    ) {
+    if (!isCurrencyAllowed(currencyCode, resolved)) {
       rejected.push({ index, reason: 'currency_mismatch' });
       continue;
     }
@@ -527,7 +528,8 @@ async function resolveAccount(
   account: string,
   accountMap?: Record<string, string>,
 ): Promise<
-  { accountId: string; currencyCode: string; name: string } | { reason: SheetRejectionReason }
+  | { accountId: string; allowedCurrencies: string[]; currencyCode: string; name: string }
+  | { reason: SheetRejectionReason }
 > {
   const trimmed = account.trim();
   const mapped = accountMap?.[trimmed];
@@ -537,57 +539,71 @@ async function resolveAccount(
   for (const id of candidates) {
     const row = await db
       .selectFrom('app.financeAccounts')
-      .select(['id', 'currencyCode', 'name'])
+      .select(['id', 'allowedCurrencies', 'currencyCode', 'name'])
       .where('id', '=', id)
       .where('userId', '=', userId)
       .limit(1)
       .executeTakeFirst();
-    if (row) return { accountId: row.id, currencyCode: row.currencyCode, name: row.name };
+    if (row) {
+      return {
+        accountId: row.id,
+        allowedCurrencies: row.allowedCurrencies ?? [],
+        currencyCode: row.currencyCode,
+        name: row.name,
+      };
+    }
   }
   if (mapped) {
     const named = await db
       .selectFrom('app.financeAccounts')
-      .select(['id', 'currencyCode', 'name'])
+      .select(['id', 'allowedCurrencies', 'currencyCode', 'name'])
       .where('userId', '=', userId)
       .where(sql<string>`lower(name)`, '=', mapped.toLowerCase())
       .limit(1)
       .executeTakeFirst();
-    if (named) return { accountId: named.id, currencyCode: named.currencyCode, name: named.name };
+    if (named) {
+      return {
+        accountId: named.id,
+        allowedCurrencies: named.allowedCurrencies ?? [],
+        currencyCode: named.currencyCode,
+        name: named.name,
+      };
+    }
     return { reason: 'unknown_account' };
   }
   const direct = await db
     .selectFrom('app.financeAccounts')
-    .select(['id', 'currencyCode', 'name'])
+    .select(['id', 'allowedCurrencies', 'currencyCode', 'name'])
     .where('userId', '=', userId)
     .where(sql<string>`lower(name)`, '=', trimmed.toLowerCase())
     .limit(1)
     .executeTakeFirst();
-  if (direct) return { accountId: direct.id, currencyCode: direct.currencyCode, name: direct.name };
+  if (direct) {
+    return {
+      accountId: direct.id,
+      allowedCurrencies: direct.allowedCurrencies ?? [],
+      currencyCode: direct.currencyCode,
+      name: direct.name,
+    };
+  }
   return { reason: 'unknown_account' };
 }
 
-export function isMultiCurrencyAllowed(
-  label: string,
-  resolved: { accountId: string; name: string },
-  allowlist: readonly string[] | undefined,
+function isCurrencyAllowed(
+  rowCurrency: string,
+  account: { currencyCode: string; allowedCurrencies: readonly string[] },
 ): boolean {
-  if (!allowlist) return false;
-  const wanted = new Set(allowlist.map((entry) => entry.trim().toLowerCase()));
-  return (
-    wanted.has(label.trim().toLowerCase()) ||
-    wanted.has(resolved.accountId.toLowerCase()) ||
-    wanted.has(resolved.name.toLowerCase())
+  const allowedCurrencies = new Set(
+    [account.currencyCode, ...account.allowedCurrencies].map((currency) => currency.toUpperCase()),
   );
+  return allowedCurrencies.has(rowCurrency.toUpperCase());
 }
 
 function assertCurrencyAllowed(
-  label: string,
   rowCurrency: string,
-  resolved: { accountId: string; currencyCode: string; name: string },
-  allowlist: readonly string[] | undefined,
+  resolved: { currencyCode: string; allowedCurrencies: readonly string[] },
 ): void {
-  if (rowCurrency === resolved.currencyCode.toUpperCase()) return;
-  if (isMultiCurrencyAllowed(label, resolved, allowlist)) return;
+  if (isCurrencyAllowed(rowCurrency, resolved)) return;
   throw new Error('currency_mismatch');
 }
 
@@ -637,14 +653,13 @@ export async function upsertSheetTransaction(
   userId: string,
   input: SheetTransactionInput,
   accountMap?: Record<string, string>,
-  options?: SheetImportOptions,
 ): Promise<{ id: string; created: boolean; updated: boolean; accountId: string }> {
   const invalid = validateRow(input);
   if (invalid) throw new Error(invalid);
   const resolved = await resolveAccount(userId, input.account, accountMap);
   if ('reason' in resolved) throw new Error(resolved.reason);
   const currencyCode = input.currencyCode.toUpperCase();
-  assertCurrencyAllowed(input.account, currencyCode, resolved, options?.multiCurrencyAccounts);
+  assertCurrencyAllowed(currencyCode, resolved);
 
   const counterpartId = input.counterpartId
     ? await resolveCounterpartId(userId, input.counterpartId, resolved.accountId)
@@ -889,7 +904,6 @@ export async function importSheetTransactions(
     mode?: 'append' | 'replace';
     dryRun?: boolean;
     accountMap?: Record<string, string>;
-    multiCurrencyAccounts?: string[];
     iUnderstand?: boolean;
   },
 ): Promise<SheetImportSummary> {
@@ -898,7 +912,6 @@ export async function importSheetTransactions(
     mode = 'append',
     dryRun = false,
     accountMap,
-    multiCurrencyAccounts,
     iUnderstand = false,
   } = options;
   const summary: SheetImportSummary = {
@@ -912,12 +925,7 @@ export async function importSheetTransactions(
 
   // Phase 1 validates everything before any write, so a replace never wipes
   // and then discovers rejections.
-  const { valid, rejected } = await validateSheetBatch(
-    userId,
-    transactions,
-    accountMap,
-    multiCurrencyAccounts,
-  );
+  const { valid, rejected } = await validateSheetBatch(userId, transactions, accountMap);
   summary.rejected.push(...rejected);
 
   if (dryRun) {
@@ -948,9 +956,7 @@ export async function importSheetTransactions(
 
   for (const row of valid) {
     try {
-      const result = await upsertSheetTransaction(userId, row.input, accountMap, {
-        multiCurrencyAccounts,
-      });
+      const result = await upsertSheetTransaction(userId, row.input, accountMap);
       summary.upserted += 1;
       if (result.created) summary.created += 1;
       else if (result.updated) summary.updated += 1;

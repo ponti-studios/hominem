@@ -401,14 +401,11 @@ export async function upsertFinanceTransaction(
   ownerUserId: string,
   input: SheetTransactionInput & {
     accountMap?: Record<string, string>;
-    multiCurrencyAccounts?: string[];
   },
 ) {
-  const { accountMap, multiCurrencyAccounts, ...row } = input;
+  const { accountMap, ...row } = input;
   try {
-    const result = await upsertSheetTransaction(ownerUserId, row, accountMap, {
-      multiCurrencyAccounts,
-    });
+    const result = await upsertSheetTransaction(ownerUserId, row, accountMap);
     return { id: result.id, created: result.created, accountId: result.accountId, reason: null };
   } catch (error) {
     // A row-level rejection (unknown account, currency mismatch, invalid row) is ordinary
@@ -427,7 +424,6 @@ export async function importFinanceTransactions(
     mode?: 'append' | 'replace';
     dryRun?: boolean;
     accountMap?: Record<string, string>;
-    multiCurrencyAccounts?: string[];
     iUnderstand?: boolean;
   },
 ) {

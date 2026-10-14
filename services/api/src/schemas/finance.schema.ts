@@ -233,6 +233,7 @@ export const financeAccountsOutputSchema = z.object({
       name: z.string(),
       accountType: z.string(),
       currencyCode: z.string(),
+      allowedCurrencies: z.array(z.string()),
       lifecycleStatus: z.string(),
       includeInNetWorth: z.boolean(),
       balanceCents: z.number().int(),
@@ -259,22 +260,27 @@ const accountTypeSchema = z.enum([
   'savings',
 ]);
 
+const accountCurrencySchema = z
+  .string()
+  .regex(/^[A-Za-z]{3}$/, 'invalid_currency')
+  .refine((code) => {
+    try {
+      return (
+        code.toUpperCase() === 'XXX' ||
+        Intl.supportedValuesOf('currency').includes(code.toUpperCase())
+      );
+    } catch {
+      return false;
+    }
+  }, 'invalid_currency');
+
 export const financeAccountCreateInputSchema = z.object({
   name: z.string().trim().min(1, 'invalid_name').describe('Display name of the account.'),
-  currencyCode: z
-    .string()
-    .regex(/^[A-Za-z]{3}$/, 'invalid_currency')
-    .refine((code) => {
-      try {
-        return (
-          code.toUpperCase() === 'XXX' ||
-          Intl.supportedValuesOf('currency').includes(code.toUpperCase())
-        );
-      } catch {
-        return false;
-      }
-    }, 'invalid_currency')
-    .describe('ISO 4217 currency code, e.g. USD or GBP.'),
+  currencyCode: accountCurrencySchema.describe('ISO 4217 currency code, e.g. USD or GBP.'),
+  allowedCurrencies: z
+    .array(accountCurrencySchema)
+    .optional()
+    .describe('Currencies this account can hold; currencyCode is always allowed.'),
   institution: z.string().optional().describe('Institution name, e.g. Acme Bank.'),
   accountNumber: z.string().optional().describe('Mask / last digits as displayed elsewhere.'),
   status: z.enum(['open', 'closed']).default('open').describe('Account lifecycle status.'),
@@ -290,6 +296,7 @@ export const financeAccountCreateOutputSchema = z.object({
   id: z.string().nullable().describe('Account id; null on a dry run that would create.'),
   name: z.string(),
   currencyCode: z.string(),
+  allowedCurrencies: z.array(z.string()),
   status: z.string(),
   created: z.boolean(),
   dryRun: z.boolean(),
@@ -316,6 +323,7 @@ export const financeAccountSummaryOutputSchema = z.object({
     z.object({
       accountId: z.string(),
       accountName: z.string(),
+      allowedCurrencies: z.array(z.string()),
       status: z.string(),
       transactionCount: z.number().int().min(0),
       excludedCount: z.number().int().min(0),
@@ -625,7 +633,7 @@ const sheetTransactionPayloadSchema = z.object({
   source: z.string().nullable().optional().describe('plaid | starling | manual; unknown → manual.'),
   excluded: z.boolean().default(false),
   recurring: z.boolean().default(false).describe('Sheet Recurring? column.'),
-  transactionType: z.enum(['debit', 'credit', 'transfer']).optional(),
+  transactionType: z.enum(['adjustment', 'debit', 'credit', 'transfer']).optional(),
   pending: z
     .boolean()
     .default(false)
@@ -640,17 +648,11 @@ const sheetTransactionPayloadSchema = z.object({
     ),
 });
 
-const multiCurrencyAccountsSchema = z
-  .array(z.string().min(1))
-  .default([])
-  .describe('Sheet labels or account ids exempt from the currency sanity check.');
-
 export const financeTransactionUpsertInputSchema = sheetTransactionPayloadSchema.extend({
   accountMap: z
     .record(z.string(), z.string())
     .optional()
     .describe('Explicit { "Sheet Label": "hominem-account-id" } overrides.'),
-  multiCurrencyAccounts: multiCurrencyAccountsSchema,
 });
 
 const sheetRejectionReasonSchema = z.enum([
@@ -687,7 +689,6 @@ export const financeTransactionsImportInputSchema = z.object({
     .boolean()
     .default(false)
     .describe('Explicit confirmation for mode: "replace", which wipes the store first.'),
-  multiCurrencyAccounts: multiCurrencyAccountsSchema,
   accountMap: z
     .record(z.string(), z.string())
     .optional()
@@ -823,6 +824,10 @@ export const financeAccountUpdateInputSchema = z.object({
     .string()
     .optional()
     .describe('Immutable through this tool — any change is refused with currency_immutable.'),
+  allowedCurrencies: z
+    .array(accountCurrencySchema)
+    .optional()
+    .describe('Full set of currencies this account may hold; currencyCode is always included.'),
   dryRun: z.boolean().default(false).describe('Project the change set without applying it.'),
 });
 
@@ -830,6 +835,7 @@ export const financeAccountUpdateOutputSchema = z.object({
   id: z.string().nullable(),
   name: z.string().nullable(),
   currencyCode: z.string().nullable(),
+  allowedCurrencies: z.array(z.string()).nullable(),
   status: z.string().nullable(),
   updated: z.boolean().describe('False when every value already matched or this is a dry run.'),
   dryRun: z.boolean(),
