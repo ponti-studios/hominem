@@ -13,9 +13,13 @@ export function normalizeAllowedCurrencies(
   currencyCode: string,
   allowedCurrencies: readonly string[] = [],
 ): string[] {
-  return [
-    ...new Set([currencyCode, ...allowedCurrencies].map((currency) => currency.toUpperCase())),
-  ];
+  const primaryCurrency = currencyCode.toUpperCase();
+  const additionalCurrencies = [
+    ...new Set(allowedCurrencies.map((currency) => currency.toUpperCase())),
+  ]
+    .filter((currency) => currency !== primaryCurrency)
+    .sort();
+  return [primaryCurrency, ...additionalCurrencies];
 }
 
 type CreateAccountInput = Partial<Insertable<AppFinanceAccounts>> & {

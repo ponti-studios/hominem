@@ -170,6 +170,7 @@ export const financeSpendingByCategoryOutputSchema = z.object({
   from: z.string(),
   to: z.string(),
   currencyCode: z.string().nullable(),
+  truncated: z.boolean(),
   categories: z.array(
     z.object({
       categoryId: z.string(),
@@ -279,6 +280,7 @@ export const financeAccountCreateInputSchema = z.object({
   currencyCode: accountCurrencySchema.describe('ISO 4217 currency code, e.g. USD or GBP.'),
   allowedCurrencies: z
     .array(accountCurrencySchema)
+    .max(500)
     .optional()
     .describe('Currencies this account can hold; currencyCode is always allowed.'),
   institution: z.string().optional().describe('Institution name, e.g. Acme Bank.'),
@@ -296,7 +298,7 @@ export const financeAccountCreateOutputSchema = z.object({
   id: z.string().nullable().describe('Account id; null on a dry run that would create.'),
   name: z.string(),
   currencyCode: z.string(),
-  allowedCurrencies: z.array(z.string()),
+  allowedCurrencies: z.array(z.string()).max(500),
   status: z.string(),
   created: z.boolean(),
   dryRun: z.boolean(),
@@ -835,9 +837,13 @@ export const financeAccountUpdateOutputSchema = z.object({
   id: z.string().nullable(),
   name: z.string().nullable(),
   currencyCode: z.string().nullable(),
-  allowedCurrencies: z.array(z.string()).nullable(),
+  allowedCurrencies: z.array(z.string()).max(500).nullable(),
   status: z.string().nullable(),
-  updated: z.boolean().describe('False when every value already matched or this is a dry run.'),
+  updated: z
+    .boolean()
+    .describe(
+      'True when changes were applied or projected by a dry run; false when nothing changed.',
+    ),
   dryRun: z.boolean(),
   changes: z
     .record(z.string(), z.tuple([z.string().nullable(), z.string().nullable()]))

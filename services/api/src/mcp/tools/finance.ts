@@ -85,9 +85,10 @@ const MAX_ACCOUNTS_RESULT = 50;
 // list cap; it exists only to bound the result, with totalCount exposing any truncation.
 const MAX_SUMMARY_ACCOUNTS = 500;
 const MAX_REPORT_CURRENCIES = 500;
+const MAX_ACCOUNT_CURRENCIES = 500;
 
 const REPORT_CAVEAT =
-  'Computed from posted, non-excluded transactions in the range; totals are separated by currency. ' +
+  'Computed from posted, non-excluded transactions in the range. ' +
   'Spending is every negative amount, so transfers between accounts are included.';
 
 registerTool(
@@ -135,7 +136,7 @@ registerTool(
     name: 'finance_spending_by_category',
     title: 'Finance Spending by Category',
     description:
-      'Sum posted, non-excluded, non-transfer spending grouped by category and currency over a date range. Each category row is reported in its own currency; mixed-currency values are never combined.',
+      'Sum posted, non-excluded, non-transfer spending grouped by category and currency over a date range. Each category row is reported in its own currency; mixed-currency values are never combined. Check truncated and warnings because results may omit categories beyond the requested limit.',
     inputSchema: financeSpendingByCategoryInputSchema,
     outputSchema: financeSpendingByCategoryOutputSchema,
     readOnly: true,
@@ -554,7 +555,7 @@ registerTool(
       'dryRun reports the outcome without writing.',
     inputSchema: financeAccountCreateInputSchema,
     outputSchema: financeAccountCreateOutputSchema,
-    resultCap: 50,
+    resultCap: MAX_ACCOUNT_CURRENCIES,
     guidance: {
       whenToUse: 'A sheet label or sync source needs an account that does not exist yet.',
       whenNotToUse: 'Do not use to rename, close, or merge an existing account.',
@@ -586,7 +587,7 @@ registerTool(
       'Partially update an account addressed by id: name, institution, accountNumber (mask), accountType, status and allowedCurrencies. Omitted fields are unchanged; null clears institution/accountNumber. Identity — id, transactions, links — never changes, and currencyCode is immutable here. dryRun projects the change set without applying it.',
     inputSchema: financeAccountUpdateInputSchema,
     outputSchema: financeAccountUpdateOutputSchema,
-    resultCap: 50,
+    resultCap: MAX_ACCOUNT_CURRENCIES,
     guidance: {
       whenToUse:
         'Correcting account metadata or changing the currencies allowed for its transactions.',

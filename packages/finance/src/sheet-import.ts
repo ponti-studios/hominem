@@ -697,6 +697,7 @@ export async function upsertSheetTransaction(
     ])
     .where('userId', '=', userId)
     .where('externalId', '=', externalId)
+    .orderBy(sql<number>`case when source = ${source} then 0 else 1 end`)
     .limit(1)
     .executeTakeFirst();
 
@@ -749,30 +750,53 @@ export async function upsertSheetTransaction(
   }
 
   const id = randomUUID();
-  await db
-    .insertInto('app.financeTransactions')
-    .values({
-      id,
-      userId,
-      accountId: resolved.accountId,
-      amount,
-      transactionType,
-      description,
-      merchantName: description,
-      postedOn: input.postedOn,
-      currencyCode,
-      categoryId,
-      counterpartId,
-      excluded: input.excluded ?? false,
-      recurring: input.recurring ?? false,
-      notes,
-      source,
-      externalId,
-    })
-    .execute();
+  try {
+    await db
+      .insertInto('app.financeTransactions')
+      .values({
+        id,
+        userId,
+        accountId: resolved.accountId,
+        amount,
+        transactionType,
+        description,
+        merchantName: description,
+        postedOn: input.postedOn,
+        currencyCode,
+        categoryId,
+        counterpartId,
+        excluded: input.excluded ?? false,
+        recurring: input.recurring ?? false,
+        notes,
+        source,
+        externalId,
+      })
+      .execute();
+  } catch (error) {
+    if (isSheetExternalIdConflict(error)) {
+      return upsertSheetTransaction(userId, input, accountMap);
+    }
+    throw error;
+  }
   await applyCounterpartLink(userId, id, null, counterpartId);
   await setTransactionTags(id, userId, tagIds);
   return { id, created: true, updated: false, accountId: resolved.accountId };
+}
+
+function isSheetExternalIdConflict(error: unknown): boolean {
+  if (
+    typeof error !== 'object' ||
+    error === null ||
+    !('code' in error) ||
+    !('constraint' in error)
+  ) {
+    return false;
+  }
+  return (
+    error.code === '23505' &&
+    (error.constraint === 'app_finance_transactions_owner_sheet_external_key' ||
+      error.constraint === 'app_finance_transactions_owner_source_external_key')
+  );
 }
 
 // Existing transaction tag names per id, owner-scoped, for the projection.
