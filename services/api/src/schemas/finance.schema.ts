@@ -241,6 +241,17 @@ export const financeAccountsOutputSchema = z.object({
 
 // -- finance_account_create --
 
+const accountTypeSchema = z.enum([
+  'cash',
+  'checking',
+  'credit_card',
+  'investment',
+  'loan',
+  'other',
+  'retirement',
+  'savings',
+]);
+
 export const financeAccountCreateInputSchema = z.object({
   name: z.string().trim().min(1, 'invalid_name').describe('Display name of the account.'),
   currencyCode: z
@@ -250,17 +261,7 @@ export const financeAccountCreateInputSchema = z.object({
   institution: z.string().optional().describe('Institution name, e.g. Wise.'),
   accountNumber: z.string().optional().describe('Mask / last digits as displayed elsewhere.'),
   status: z.enum(['open', 'closed']).default('open').describe('Account lifecycle status.'),
-  accountType: z
-    .enum([
-      'cash',
-      'checking',
-      'credit_card',
-      'investment',
-      'loan',
-      'other',
-      'retirement',
-      'savings',
-    ])
+  accountType: accountTypeSchema
     .default('checking')
     .describe(
       'Account type; cash/checking/savings count as liquid in finance_runway, so pick it deliberately.',
@@ -724,4 +725,51 @@ export const financeCategoryMergeOutputSchema = z.object({
   transactionsReassigned: z.number().int().min(0),
   category: z.object({ id: z.string(), name: z.string() }).nullable(),
   reason: categoryMergeReasonSchema.nullable(),
+});
+
+// -- finance_account_update --
+
+const accountUpdateReasonSchema = z
+  .enum([
+    'currency_immutable',
+    'invalid_name',
+    'invalid_status_transition',
+    'name_conflict',
+    'unknown_account',
+  ])
+  .describe('Stable machine-readable reason; null when the update was accepted.');
+
+export const financeAccountUpdateInputSchema = z.object({
+  accountId: z
+    .string()
+    .uuid()
+    .describe('Stable account id — names are mutable, so updates address by id, never by name.'),
+  name: z
+    .string()
+    .optional()
+    .describe('New display name; must stay unique per owner (case-insensitive).'),
+  institution: z.string().nullable().optional().describe('Institution name; null clears it.'),
+  accountNumber: z.string().nullable().optional().describe('Mask / last digits; null clears it.'),
+  accountType: accountTypeSchema.optional(),
+  status: z
+    .enum(['open', 'closed', 'historical', 'unknown'])
+    .optional()
+    .describe('Lifecycle status; transitions are unrestricted.'),
+  currencyCode: z
+    .string()
+    .optional()
+    .describe('Immutable through this tool — any change is refused with currency_immutable.'),
+  dryRun: z.boolean().default(false).describe('Project the change set without applying it.'),
+});
+
+export const financeAccountUpdateOutputSchema = z.object({
+  id: z.string().nullable(),
+  name: z.string().nullable(),
+  currencyCode: z.string().nullable(),
+  status: z.string().nullable(),
+  updated: z.boolean().describe('False when every value already matched (an idempotent no-op).'),
+  changes: z
+    .record(z.string(), z.tuple([z.string().nullable(), z.string().nullable()]))
+    .describe('Each altered field mapped to [from, to] — the audit record.'),
+  reason: accountUpdateReasonSchema.nullable(),
 });

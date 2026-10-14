@@ -25,6 +25,9 @@ every new tool.
 - [x] §6 `finance_tag_rename` + `finance_tag_merge`.
 - [x] §7 `finance_category_create` + `finance_category_merge`.
 - [x] §8 transfer linking (`counterpartId`) — data model change.
+- [x] Companion: `finance_account_update` ([`docs/finance-account-update-spec.md`](../finance-account-update-spec.md))
+  — corrects name/institution/mask/type/status; `currencyCode` immutable; no restricted
+  status-transition graph.
 
 ## Notes and deviations
 
@@ -61,3 +64,8 @@ every new tool.
 - §1.4 `dryRun`: implemented on §2, §7 and §8's mutating tools. **OPEN — USER DECISION
   REQUIRED:** whether to retro-fit `dryRun` to §4 delete and §6 rename/merge, which shipped
   without it.
+- `finance_account_update` (companion spec): `currencyCode` is accepted by the schema but
+  refused with `currency_immutable` when it differs, so a currency change is an explicit
+  refusal rather than a silently stripped field. Status is unrestricted across
+  open/closed/historical/unknown — **no restricted transition graph is enforced**, so
+  `invalid_status_transition` is part of the error contract but never returned today.
