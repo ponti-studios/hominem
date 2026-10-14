@@ -16,7 +16,7 @@ comparison, and the vessel-weight report vs the weights tab.
 
 ## Scope
 
-In scope: `verify-possessions-phase3.ts` (read-only runner), the Phase 3 checks against
+In scope: the one-off Phase 3 verification runner (since retired), the Phase 3 checks against
 live production data, triage of `possession_validate` findings, finance-sheet comparison,
 weights-tab row-by-row comparison.
 Out of scope: Phase 5 cutover, `move_plan`, `possession_merge`.
@@ -29,7 +29,7 @@ Out of scope: Phase 5 cutover, `move_plan`, `possession_merge`.
 | W-216 | Run against live production | prod data | W-215 | `verify-report.json` | all checks reported; no untriaged findings |
 | W-217 | Weights-tab row-by-row vs vessel report | prod data + sheet | W-216 | weights tab export | no >0.05kg unexplained diffs |
 | W-218 | Finance-sheet value comparison | prod data + finance sheet | W-216 | summary vs finance | value totals reconciled |
-| W-219 | Vessel config import (owner data, not code) | db + api script | W-217 | migrate + `configure-possessions-vessels.ts` dry run/apply | tare/limit/group/tokens live; config row set |
+| W-219 | Vessel config import (owner data, not code) | db + api script | W-217 | migrate + vessel-config applier dry run/apply (one-off script, since retired) | tare/limit/group/tokens live; config row set |
 | W-220 | Token→vessel resolution in report + validate | api service | W-219 | tests + live verify | weights tab reconciled ≤0.05kg; unknown_vessel 0 |
 
 ## Run results (2026-10-13, live production)
@@ -54,9 +54,9 @@ Out of scope: Phase 5 cutover, `move_plan`, `possession_merge`.
 - Migration adds `possession_containers.vessel_tokens text[]` and a per-owner
   `app.possession_vessel_config` (marker tokens + group allowances). All values are owner
   data — nothing owner-specific in code.
-- `configure-possessions-vessels.ts` applies the frozen weights tab's formulas, driven by
-  a config JSON (`~/Downloads/possessions-vessel-config.json`); dry run by default,
-  idempotent.
+- The vessel-config applier (a one-off script, since retired) applied the frozen weights tab's
+  formulas, driven by a config JSON (`~/Downloads/possessions-vessel-config.json`); dry run by
+  default, idempotent.
 - Applied live: 9 vessels configured (tare/limit/group/tokens); `CON-036` created as
   a named crate and `ITM-0263` linked to it; markers `carry/<name>/dispose/sell`;
   allowances `{cabin: 12, checked: 46}`.

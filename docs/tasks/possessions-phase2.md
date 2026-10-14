@@ -35,7 +35,7 @@ Out of scope: Phase 5 cutover, `move_plan`, `possession_merge`, finance links.
 
 | ID    | Work item | Owner boundary | Depends on | Validation / artifact | Done when |
 | ----- | --------- | -------------- | ---------- | --------------------- | --------- |
-| W-209 | Re-run §9 diffs against live data | api script | W-201–208 (phase 1) | `diff-possessions.ts` output | backlog = 32 items + CON-041, reconciliations confirmed |
+| W-209 | Re-run §9 diffs against live data | api script | W-201–208 (phase 1) | possessions diff script output (one-off runner, since retired) | backlog = 32 items + CON-041, reconciliations confirmed |
 | W-210 | Importer resolves live-container refs | api script | W-209 | dry run | CON-024 class links; CON-036 class left unassigned |
 | W-211 | Backlog import apply + CON-042 | prod data | W-210 | backup + apply | 32 items + CON-041 live; pouch → CON-042 |
 | W-212 | Count/idempotency verification | prod data | W-211 | re-run diff + re-apply | 460 possessions / 41 containers; 0 to import; 0 new rows on re-apply |
