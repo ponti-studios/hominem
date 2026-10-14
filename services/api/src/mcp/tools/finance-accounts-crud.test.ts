@@ -37,27 +37,31 @@ describe('finance_account_create', () => {
   it('creates an account and reports created: true', async () => {
     const result = content(
       await callTool(userId, 'finance_account_create', {
-        name: 'Wise GBP',
+        name: 'Example GBP Account',
         currencyCode: 'GBP',
-        institution: 'Wise',
+        institution: 'Example Bank',
         accountNumber: '0895',
       }),
     );
     expect(result.created).toBe(true);
     expect(result.id).toBeTruthy();
-    expect(result).toMatchObject({ name: 'Wise GBP', currencyCode: 'GBP', status: 'open' });
+    expect(result).toMatchObject({
+      name: 'Example GBP Account',
+      currencyCode: 'GBP',
+      status: 'open',
+    });
   });
 
   it('returns the existing account on a case-insensitive re-create', async () => {
     const first = content(
       await callTool(userId, 'finance_account_create', {
-        name: 'Starling V1',
+        name: 'Example Legacy Account',
         currencyCode: 'GBP',
       }),
     );
     const second = content(
       await callTool(userId, 'finance_account_create', {
-        name: 'starling v1',
+        name: 'example legacy account',
         currencyCode: 'GBP',
       }),
     );
@@ -68,7 +72,7 @@ describe('finance_account_create', () => {
       .selectFrom('app.financeAccounts')
       .select('id')
       .where('userId', '=', userId)
-      .where(sql<boolean>`lower(name) = 'starling v1'`)
+      .where(sql<boolean>`lower(name) = 'example legacy account'`)
       .execute();
     expect(rows).toHaveLength(1);
   });
@@ -76,7 +80,7 @@ describe('finance_account_create', () => {
   it('creates a closed account visible only with includeClosed', async () => {
     const created = content(
       await callTool(userId, 'finance_account_create', {
-        name: 'Unattributed - Copilot legacy',
+        name: 'Example Closed Account',
         currencyCode: 'USD',
         status: 'closed',
       }),
@@ -93,7 +97,7 @@ describe('finance_account_create', () => {
   it('dryRun reports the outcome without writing', async () => {
     const wouldCreate = content(
       await callTool(userId, 'finance_account_create', {
-        name: 'Apple Savings',
+        name: 'Example Savings',
         currencyCode: 'USD',
         dryRun: true,
       }),
@@ -104,13 +108,13 @@ describe('finance_account_create', () => {
       .selectFrom('app.financeAccounts')
       .select('id')
       .where('userId', '=', userId)
-      .where(sql<boolean>`lower(name) = 'apple savings'`)
+      .where(sql<boolean>`lower(name) = 'example savings'`)
       .execute();
     expect(rows).toHaveLength(0);
 
     const existing = content(
       await callTool(userId, 'finance_account_create', {
-        name: 'Wise GBP',
+        name: 'Example GBP Account',
         currencyCode: 'GBP',
         dryRun: true,
       }),
@@ -158,8 +162,8 @@ describe('finance_account_create', () => {
       transactions: [
         {
           postedOn: '2026-10-10',
-          account: 'Wise GBP',
-          description: 'Wise Row',
+          account: 'Example GBP Account',
+          description: 'Example Row',
           amountCents: -100,
           currencyCode: 'GBP',
         },

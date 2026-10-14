@@ -258,7 +258,7 @@ export const financeAccountCreateInputSchema = z.object({
     .string()
     .regex(/^[A-Za-z]{3}$/, 'invalid_currency')
     .describe('ISO 4217 currency code, e.g. USD or GBP.'),
-  institution: z.string().optional().describe('Institution name, e.g. Wise.'),
+  institution: z.string().optional().describe('Institution name, e.g. Acme Bank.'),
   accountNumber: z.string().optional().describe('Mask / last digits as displayed elsewhere.'),
   status: z.enum(['open', 'closed']).default('open').describe('Account lifecycle status.'),
   accountType: accountTypeSchema

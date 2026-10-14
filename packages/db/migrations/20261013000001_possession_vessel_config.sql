@@ -5,7 +5,7 @@
 -- formulas are the source, but the values are the owner's, so they live here rather than
 -- in code:
 --   marker_tokens      moveAction values that name no vessel and no container — travel or
---                      disposal annotations (e.g. carry, kelsey, dispose, sell). The report
+--                      disposal annotations (e.g. carry, donate, dispose, sell). The report
 --                      counts these separately instead of treating them as unknown vessels.
 --   group_allowances   shared airline allowance (kg) per packing group, e.g. {"cabin": 12,
 --                      "checked": 46} — a group limit is an allowance, not the sum of the

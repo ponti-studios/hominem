@@ -10,8 +10,8 @@ const meta = {
   args: {
     user: {
       id: 'user-1',
-      name: 'Charles Ponti',
-      email: 'charles@example.com',
+      name: 'Alex Example',
+      email: 'alex@example.com',
       emailVerified: true,
       image: null,
       createdAt: '2026-01-01T00:00:00.000Z',

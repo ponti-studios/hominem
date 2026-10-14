@@ -173,25 +173,25 @@ describe('mapShoppingRow', () => {
     'order date': '2026-09-22',
     Category: 'technology',
     Subcategory: 'power_accessory',
-    'Item type': 'Power lead',
-    Product: 'C2G Figure 8',
+    'Item type': 'Cable',
+    Product: 'Example brand',
     Quantity: '3',
-    Source: 'https://www.amazon.co.uk/dp/B00H7COWHG',
+    Source: 'https://www.amazon.co.uk/dp/B000000000',
     Priority: 'Essential',
     price: '4.99',
     'Delivery day': '2026-09-23',
-    'Order #': '202-8319460-2213900',
+    'Order #': '000-0000000-0000000',
   };
   it('uses the line total, GBP for UK stores, and marks arrived orders delivered', () => {
     const { input } = mapShoppingRow(base, 1, today)!;
     expect(input).toMatchObject({
-      name: 'Power lead (C2G Figure 8) ×3',
+      name: 'Cable (Example brand) ×3',
       status: 'delivered',
       priceCents: 1497,
       currencyCode: 'GBP',
     });
     expect(input.metadata).toMatchObject({
-      orderNumber: '202-8319460-2213900',
+      orderNumber: '000-0000000-0000000',
       merchant: 'Amazon UK',
       priority: 'Essential',
       quantity: 3,

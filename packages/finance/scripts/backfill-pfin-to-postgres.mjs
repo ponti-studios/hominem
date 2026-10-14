@@ -11,7 +11,7 @@
  *
  * Not exported, not typechecked, not linted. Delete after W-005.
  *
- *   node backfill-pfin-to-postgres.mjs --user charles.ponti@icloud.com
+ *   node backfill-pfin-to-postgres.mjs --user user@example.com
  *       --sqlite <personal_finance.db path> [--commit]
  *   Options: --db-url (default $DATABASE_URL, required), --sqlite (required),
  *   --allow-remote (refuse non-local hosts otherwise)

@@ -42,12 +42,11 @@ Out of scope: Phase 5 cutover, `move_plan`, `possession_merge`.
 - **Spot samples**: `created_from_existing_item` (ITM-0395) match; CON-024 (ITM-0202 →
   live container id) match; 20 highest-value items: 0 mismatched fields. Leading-zero
   serial: no such item exists in the sheet (reported `n/a`, not a failure).
-- **Finance (W-218)**: **exact** — live ITM sums USD 43477.27 / GBP 373.15 purchase and
-  USD 9846.00 sale match `finance-expectations.json` master aggregates to the cent.
+- **Finance (W-218)**: **exact** — live ITM sums match `finance-expectations.json`
+  master aggregates to the cent (USD purchase, GBP purchase, USD sale).
 - **Weights (W-217)**: **reconciles with the weights tab to ≤0.05 kg** after the vessel
-  config import and token resolution (below): small carry-on 5.305 vs 5.31, medium 5.65,
-  large 9.076 vs 9.08, backpack 1.59, shopper 0, boxes 20.125 / 4.54 / 13.75, Cyndi
-  crate 0.5; groups cabin 6.895 vs 6.90 and checked 14.726 vs 14.73 with the configured
+  config import and token resolution (below): small carry-on, medium, large, backpack,
+  shopper, boxes and a named crate; groups cabin and checked with the configured
   allowances (12 / 46). Unknown-vessel findings: **0**.
 
 ## Vessel configuration (2026-10-13)
@@ -59,7 +58,7 @@ Out of scope: Phase 5 cutover, `move_plan`, `possession_merge`.
   a config JSON (`~/Downloads/possessions-vessel-config.json`); dry run by default,
   idempotent.
 - Applied live: 9 vessels configured (tare/limit/group/tokens); `CON-036` created as
-  "Cyndi crate" and `ITM-0263` linked to it; markers `carry/kelsey/dispose/sell`;
+  a named crate and `ITM-0263` linked to it; markers `carry/<name>/dispose/sell`;
   allowances `{cabin: 12, checked: 46}`.
 - The report and `possession_validate` resolve tokens through the declared membership;
   markers are counted separately (`markers`), never as vessels; group limits use the

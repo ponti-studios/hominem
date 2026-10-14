@@ -2,8 +2,8 @@
 
 ## Status
 
-Accepted (2026-09-09) — approved directly by the product owner (Charles
-Ponti, chat session, 2026-09-09: "resolve W-001 and record the audio
+Accepted (2026-09-09) — approved directly by the product owner (chat
+session, 2026-09-09: "resolve W-001 and record the audio
 decision"), not inferred from the behavior already shipping. That instruction
 is the sign-off `composer-parity.md` required before this document existed.
 

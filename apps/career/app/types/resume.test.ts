@@ -6,8 +6,8 @@ import { normalizePortfolioSlug, resumeSchema } from './resume';
 
 describe('resume schema', () => {
   it('normalizes portfolio slugs', () => {
-    expect(normalizePortfolioSlug('  Charles Ponti!! Senior Engineer  ')).toBe(
-      'charles-ponti-senior-engineer',
+    expect(normalizePortfolioSlug('  Alex Example!! Senior Engineer  ')).toBe(
+      'alex-example-senior-engineer',
     );
   });
 

@@ -2,10 +2,10 @@ import type { CopilotTransactionType, ParsedRow } from './types';
 
 /**
  * A known collision where one Copilot `account` label covers rows that belong
- * to a different real account (e.g. Apple Savings vs American Express
- * Savings, ADR-0006 in the retired pfin pipeline). `descriptions` selects the
- * rows to redirect; `alwaysCreditDescriptions` marks the subset that is
- * always inbound on the target (ADR-0007), ignoring raw sign entirely.
+ * to a sibling real account (ADR-0006 in the retired pfin pipeline).
+ * `descriptions` selects the rows to redirect; `alwaysCreditDescriptions`
+ * marks the subset that is always inbound on the target (ADR-0007), ignoring
+ * raw sign entirely.
  * Resolution never mints accounts — an unmatched target still goes through
  * normal account resolution so a human confirms it.
  */

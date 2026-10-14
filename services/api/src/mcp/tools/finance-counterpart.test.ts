@@ -37,7 +37,7 @@ async function upsert(account: string, description: string, extra?: Record<strin
       postedOn: '2026-05-08',
       account,
       description,
-      amountCents: -991756,
+      amountCents: -123400,
       currencyCode: 'USD',
       ...extra,
     }),

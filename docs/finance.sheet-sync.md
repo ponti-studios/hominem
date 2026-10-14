@@ -19,15 +19,16 @@ No new credentials. The sheet ID is config, not a secret.
    flags, comma tags, Order # into notes.
 4. Call `finance_transactions_import` with `mode: "append"` (never
    `"replace"` here), the checked-in account map, and
-   `multiCurrencyAccounts: ["Amex Platinum …4009"]`.
+   `multiCurrencyAccounts` listing any label exempt from the currency check.
 5. On push failure: log loudly (row counts, batch index, tool error) but
    never block or roll back the sheet write. Re-push any morning by
    re-running over the trailing window.
 
 ## Backfill (one-time, before the daily push goes live)
 
-1. `ensureSheetAccounts` (6 creates, 3 historical flips, 1 Starling
-   currency fix) against live `finance_accounts`.
+1. Create/flip the accounts the port needs (the `finance_account_create` and
+   `finance_account_update` tools superseded the retired one-off
+   `ensureSheetAccounts` helper) against live `finance_accounts`.
 2. Full dry run over all ~16,424 rows: expect zero rejections.
 3. Clean dry run arms one `mode: "replace"` call, which additionally
    requires `iUnderstand: true`. Batches of 1000 (≈17 calls), fail fast
