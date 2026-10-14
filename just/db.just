@@ -57,5 +57,5 @@ codegen:
     #!/usr/bin/env bash
     [[ -n "${DATABASE_URL:-}" ]] || { echo 'error: DATABASE_URL must be set' >&2; exit 1; }
     cd "{{ justfile_directory() }}/packages/db"
-    pnpm exec kysely-codegen
+    pnpm exec kysely-codegen --exclude-pattern 'app.finance_account_allowed_currencies_migration_state'
     pnpm exec oxfmt ./src/types/database.ts --write
