@@ -35,6 +35,10 @@ outputs:
 
 `packages/db` is PostgreSQL access code and server-only. Client code uses `@hominem/rpc`, never the database package directly.
 
+For connection strings and the production read-only Railway tunnel, follow
+[`docs/database.md`](../../../docs/database.md). Do not copy production
+credentials into chat, logs, shell history, or repository files.
+
 ## Local development: migrations, codegen, and repositories
 
 ### Migrations and generated types

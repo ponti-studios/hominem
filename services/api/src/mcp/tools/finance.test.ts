@@ -239,14 +239,122 @@ describe('finance_spending_by_category', () => {
     expect(resultContent(result).categories?.[0]).toEqual({
       categoryId: foodId,
       categoryName: 'Food & Drink',
+      currencyCode: 'USD',
       spentCents: 5000,
       transactionCount: 1,
     });
     expect(resultContent(result).categories?.[1]).toEqual({
       categoryId: transportId,
       categoryName: 'Transport',
+      currencyCode: 'USD',
       spentCents: 2500,
       transactionCount: 1,
     });
+  });
+
+  it('rejects unsupported parameters rather than falling back to the default window', async () => {
+    await expect(
+      callTool(userId, 'finance_spending_by_category', { period: '2026-09' }),
+    ).rejects.toThrow();
+  });
+
+  it('keeps category sums separate when the range contains multiple currencies', async () => {
+    const ids = ['f1000004-0000-4000-8000-000000000007', 'f1000004-0000-4000-8000-000000000008'];
+    try {
+      await db
+        .insertInto('app.financeTransactions')
+        .values([
+          {
+            id: ids[0]!,
+            userId,
+            accountId: checkingId,
+            postedOn: '2026-08-01',
+            description: 'USD category sample',
+            amount: -10,
+            currencyCode: 'USD',
+            transactionType: 'debit',
+            pending: false,
+            externalId: 'finance-category-currency-usd',
+            categoryId: foodId,
+            excluded: false,
+            providerPayload: {},
+          },
+          {
+            id: ids[1]!,
+            userId,
+            accountId: checkingId,
+            postedOn: '2026-08-02',
+            description: 'GBP category sample',
+            amount: -20,
+            currencyCode: 'GBP',
+            transactionType: 'debit',
+            pending: false,
+            externalId: 'finance-category-currency-gbp',
+            categoryId: foodId,
+            excluded: false,
+            providerPayload: {},
+          },
+        ])
+        .execute();
+
+      const data = resultContent(
+        await callTool(userId, 'finance_spending_by_category', {
+          from: '2026-08-01',
+          to: '2026-08-31',
+        }),
+      );
+      expect(data.currencyCode).toBeNull();
+      expect(data.categories).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            categoryName: 'Food & Drink',
+            currencyCode: 'USD',
+            spentCents: 1000,
+          }),
+          expect.objectContaining({
+            categoryName: 'Food & Drink',
+            currencyCode: 'GBP',
+            spentCents: 2000,
+          }),
+        ]),
+      );
+    } finally {
+      await db.deleteFrom('app.financeTransactions').where('id', 'in', ids).execute();
+    }
+  });
+
+  it('aggregates all matching rows at store scale without a transaction scan cap', async () => {
+    const marker = 'spending-cap-regression';
+    try {
+      await pool.query(
+        `INSERT INTO app.finance_transactions
+          (id, user_id, account_id, posted_on, description, amount, currency_code,
+           transaction_type, pending, external_id, category_id, excluded, provider_payload)
+         SELECT gen_random_uuid(), $1, $2, DATE '2026-08-15', $3, -0.01, 'USD',
+                'debit', false, $4 || '-' || n, $5, false, '{}'::jsonb
+         FROM generate_series(1, 10001) AS n`,
+        [userId, checkingId, marker, marker, foodId],
+      );
+
+      const data = resultContent(
+        await callTool(userId, 'finance_spending_by_category', {
+          from: '2026-08-01',
+          to: '2026-08-31',
+        }),
+      );
+      expect(data.categories).toContainEqual(
+        expect.objectContaining({
+          categoryId: foodId,
+          currencyCode: 'USD',
+          spentCents: 10_001,
+          transactionCount: 10_001,
+        }),
+      );
+    } finally {
+      await pool.query(
+        'DELETE FROM app.finance_transactions WHERE description = $1 AND user_id = $2',
+        [marker, userId],
+      );
+    }
   });
 });

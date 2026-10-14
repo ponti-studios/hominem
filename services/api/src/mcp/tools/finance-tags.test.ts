@@ -1,7 +1,7 @@
 import { db, pool, sql } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { callTool, type McpToolResult } from '../tool-registry';
+import { callTool, getToolDefinition, type McpToolResult } from '../tool-registry';
 import './finance';
 
 const userId = 'f20000d0-0000-4000-8000-000000000001';
@@ -11,6 +11,7 @@ const entityTwo = 'f20000d1-0000-4000-8000-000000000002';
 
 type TagResult = {
   assignmentsMoved?: number;
+  assignmentsPreserved?: number;
   tag?: { id: string; name: string } | null;
   reason?: string | null;
 };
@@ -71,6 +72,7 @@ describe('finance_tag_rename', () => {
     );
     expect(result.reason).toBeNull();
     expect(result.tag).toEqual({ id: tagId, name: 'Art' });
+    expect(result.assignmentsMoved).toBe(2);
 
     const row = await tagById(tagId);
     expect(row?.name).toBe('Art');
@@ -100,6 +102,12 @@ describe('finance_tag_rename', () => {
 });
 
 describe('finance_tag_merge', () => {
+  it('skips elicitation for the documented reversible merge operation', async () => {
+    const preview = getToolDefinition('finance_tag_merge')?.preview;
+    expect(preview).toBeTypeOf('function');
+    await expect(preview?.(userId, { from: 'source', into: 'target' })).resolves.toBeNull();
+  });
+
   it('moves assignments, drops duplicates and removes the emptied tag', async () => {
     const source = await createTag(userId, 'merge-a');
     const target = await createTag(userId, 'merge-b');

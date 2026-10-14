@@ -569,6 +569,8 @@ export async function queryAnalyticsTransactionsByContract(input: {
     .where('t.userId', '=', parsed.userId)
     .where('t.excluded', '=', false);
 
+  query = query.where('t.pending', '=', false);
+
   if (parsed.accountId) {
     query = query.where('t.accountId', '=', parsed.accountId);
   }

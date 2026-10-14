@@ -132,7 +132,7 @@ describeIntegration('finance analytics integration', () => {
     expect(monthly.expenses).toBe(120);
     expect(monthly.topTag).toBe('food');
     expect(monthly.topMerchant).toBe('Store');
-    expect(monthly.tagSpending).toEqual([{ name: 'food', amount: 120 }]);
+    expect(monthly.tagSpending).toEqual([{ name: 'food', amount: 120, currencyCode: 'USD' }]);
 
     const series = await getSpendingTimeSeriesByContract({
       userId: ownerId,

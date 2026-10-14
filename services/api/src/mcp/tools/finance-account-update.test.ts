@@ -113,7 +113,7 @@ describe('finance_account_update', () => {
       }),
     );
     expect(result.reason).toBeNull();
-    expect(result.updated).toBe(true);
+    expect(result).toMatchObject({ updated: true, dryRun: false });
     expect(result.id).toBe(typoId);
     expect(result.changes).toEqual({ name: ['Exmaple Broker', 'Example Broker'] });
     expect(await nameOf(typoId)).toBe('Example Broker');
@@ -143,7 +143,7 @@ describe('finance_account_update', () => {
       }),
     );
     expect(result.reason).toBeNull();
-    expect(result.updated).toBe(true);
+    expect(result).toMatchObject({ updated: true, dryRun: false });
     expect(result.changes).toEqual({ name: ['Example Savings', 'example savings'] });
   });
 
@@ -187,7 +187,7 @@ describe('finance_account_update', () => {
         dryRun: true,
       }),
     );
-    expect(result.updated).toBe(true);
+    expect(result).toMatchObject({ updated: true, dryRun: true });
     expect(result.changes).toEqual({ name: ['example savings', 'Example Savings'] });
     expect(await nameOf(appleId)).toBe('example savings');
   });
@@ -225,6 +225,19 @@ describe('finance_account_update', () => {
     );
     expect(cleared.changes?.institution).toEqual(['Example Bank', null]);
     expect(cleared.changes?.accountNumber).toEqual(['0895', null]);
+  });
+
+  it('updates accountType when provided', async () => {
+    const result = content(
+      await callTool(userId, 'finance_account_update', {
+        accountId: appleId,
+        accountType: 'investment',
+      }),
+    );
+    expect(result).toMatchObject({
+      updated: true,
+      changes: { accountType: ['savings', 'investment'] },
+    });
   });
 
   it('never updates another user’s account', async () => {

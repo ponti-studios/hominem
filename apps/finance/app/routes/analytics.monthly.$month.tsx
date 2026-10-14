@@ -2,6 +2,7 @@ import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 import { redirect, useParams } from 'react-router';
 
+import { MonthlySummaryCard } from '~/components/analytics/monthly-summary-card';
 import { createServerHonoClient } from '~/lib/api.server';
 import { useMonthlyStats } from '~/lib/hooks/use-monthly-stats';
 import { formatCurrency } from '~/lib/number.utils';
@@ -39,7 +40,12 @@ export default function MonthlyAnalyticsPage({ loaderData }: Route.ComponentProp
   const { stats, isLoading, error } = useMonthlyStats(month, { initialData: initialStats });
 
   const formattedMonth = formatMonthDisplay(month);
-  const spendingByTag = stats?.tagSpending ?? [];
+  const spendingByTag =
+    stats?.currencyBreakdown.length && stats.currencyBreakdown.length > 1
+      ? stats.currencyBreakdown.flatMap((currency) =>
+          currency.tagSpending.map((tag) => ({ ...tag, currencyCode: currency.currencyCode })),
+        )
+      : (stats?.tagSpending ?? []);
 
   return (
     <div className="p-4 md:p-8">
@@ -86,33 +92,7 @@ export default function MonthlyAnalyticsPage({ loaderData }: Route.ComponentProp
 
       {stats && !isLoading && !error && (
         <div className="flex flex-col gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Net Income</span>
-                  <span
-                    className={`font-bold ${(stats.netIncome ?? 0) >= 0 ? 'text-foreground' : 'text-destructive'}`}
-                  >
-                    {formatCurrency(stats.netIncome ?? 0)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Total Income</span>
-                  <span className="text-foreground">{formatCurrency(stats.totalIncome ?? 0)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm ">
-                  <span className="font-medium">Total Expenses</span>
-                  <span className="text-destructive">
-                    {formatCurrency(stats.totalExpenses ?? 0)}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <MonthlySummaryCard stats={stats} />
 
           <Card>
             <CardHeader>
@@ -123,11 +103,16 @@ export default function MonthlyAnalyticsPage({ loaderData }: Route.ComponentProp
                 <ul className="space-y-2">
                   {spendingByTag.map((tag) => (
                     <li
-                      key={tag.name ?? 'untagged'}
+                      key={`${tag.currencyCode ?? stats?.currencyCode ?? 'USD'}-${tag.name ?? 'untagged'}`}
                       className="flex justify-between items-center border-b pb-1"
                     >
                       <span>{tag.name}</span>
-                      <span className="font-mono">{formatCurrency(tag.amount)}</span>
+                      <span className="font-mono">
+                        {formatCurrency(
+                          tag.amount,
+                          tag.currencyCode ?? stats?.currencyCode ?? 'USD',
+                        )}
+                      </span>
                     </li>
                   ))}
                 </ul>

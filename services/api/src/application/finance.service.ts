@@ -7,17 +7,12 @@ import {
   getTransactionTagNames,
   importSheetTransactions,
   listFinanceCategories,
-  queryAnalyticsTransactionsByContract,
-  summarizeCurrencies,
   toSheetRejectionReason,
   upsertSheetTransaction,
   type SheetTransactionInput,
 } from '@hominem/finance-services';
 
 export type { SheetTransactionInput };
-
-// queryAnalyticsTransactionsByContract's own cap; also the ceiling documented in REPORT_CAVEAT.
-const MAX_ANALYTICS_TRANSACTIONS = 200;
 
 export interface FinanceReportFilter {
   from?: string | undefined;
@@ -52,59 +47,176 @@ export function toContractFilter(filter: FinanceReportFilter) {
 }
 
 export async function getTagBreakdownReport(userId: string, filter: FinanceReportFilter) {
-  const transactions = await queryAnalyticsTransactionsByContract({
-    userId,
-    ...toContractFilter(filter),
-    limit: MAX_ANALYTICS_TRANSACTIONS,
-  });
+  let query = db
+    .selectFrom('app.financeTransactions as t')
+    .leftJoin('app.tagAssignments as ta', (join) =>
+      join
+        .onRef('ta.entityId', '=', 't.id')
+        .on('ta.removedAt', 'is', null)
+        .on('ta.entityTable', '=', sql`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`),
+    )
+    .leftJoin('app.tags as tg', (join) =>
+      join.onRef('tg.id', '=', 'ta.tagId').on('tg.ownerUserid', '=', userId),
+    )
+    .select((eb) => [
+      eb.fn.coalesce('tg.name', sql<string>`'(untagged)'`).as('tag'),
+      't.currencyCode as currencyCode',
+      eb.fn.sum<number>(sql`abs(t.amount)`).as('amount'),
+      eb.fn.countAll<number>().as('transactionCount'),
+      eb.fn.min('t.postedOn').as('firstPostedOn'),
+      eb.fn.max('t.postedOn').as('lastPostedOn'),
+    ])
+    .where('t.userId', '=', userId)
+    .where('t.excluded', '=', false)
+    .where('t.pending', '=', false)
+    .where(sql<boolean>`t.amount < 0`);
+  if (filter.accountId) query = query.where('t.accountId', '=', filter.accountId);
+  if (filter.from) query = query.where('t.postedOn', '>=', filter.from);
+  if (filter.to) query = query.where('t.postedOn', '<=', filter.to);
+  if (filter.tag) {
+    query = query.where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom('app.tagAssignments as filterTa')
+          .innerJoin('app.tags as filterTag', 'filterTag.id', 'filterTa.tagId')
+          .select('filterTa.entityId')
+          .whereRef('filterTa.entityId', '=', 't.id')
+          .where('filterTa.removedAt', 'is', null)
+          .where(
+            sql<boolean>`filter_ta.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
+          )
+          .where('filterTag.ownerUserid', '=', userId)
+          .where((eb2) =>
+            isUuid(filter.tag!)
+              ? eb2('filterTag.id', '=', filter.tag!)
+              : eb2('filterTag.name', '=', filter.tag!),
+          ),
+      ),
+    );
+  }
+  let totalsQuery = db
+    .selectFrom('app.financeTransactions as t')
+    .select((eb) => [
+      't.currencyCode as currencyCode',
+      eb.fn.sum<number>(sql`abs(t.amount)`).as('amount'),
+      eb.fn.min('t.postedOn').as('firstPostedOn'),
+      eb.fn.max('t.postedOn').as('lastPostedOn'),
+    ])
+    .where('t.userId', '=', userId)
+    .where('t.excluded', '=', false)
+    .where('t.pending', '=', false)
+    .where(sql<boolean>`t.amount < 0`);
+  if (filter.accountId) totalsQuery = totalsQuery.where('t.accountId', '=', filter.accountId);
+  if (filter.from) totalsQuery = totalsQuery.where('t.postedOn', '>=', filter.from);
+  if (filter.to) totalsQuery = totalsQuery.where('t.postedOn', '<=', filter.to);
+  if (filter.tag) {
+    totalsQuery = totalsQuery.where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom('app.tagAssignments as filterTa')
+          .innerJoin('app.tags as filterTag', 'filterTag.id', 'filterTa.tagId')
+          .select('filterTa.entityId')
+          .whereRef('filterTa.entityId', '=', 't.id')
+          .where('filterTa.removedAt', 'is', null)
+          .where(
+            sql<boolean>`filter_ta.entity_table = ${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
+          )
+          .where('filterTag.ownerUserid', '=', userId)
+          .where((eb2) =>
+            isUuid(filter.tag!)
+              ? eb2('filterTag.id', '=', filter.tag!)
+              : eb2('filterTag.name', '=', filter.tag!),
+          ),
+      ),
+    );
+  }
+  const totals = await totalsQuery.groupBy('t.currencyCode').execute();
+  const rows = await query
+    .groupBy(['tg.name', 't.currencyCode'])
+    .orderBy('amount', 'desc')
+    .orderBy('tag', 'asc')
+    .execute();
 
-  const breakdownByLabel = new Map<string, { amount: number; transactionCount: number }>();
-  const spendingCurrencies: string[] = [];
-  let minPostedOn: Date | null = null;
-  let maxPostedOn: Date | null = null;
-  for (const tx of transactions) {
-    if (tx.postedOn) {
-      const postedOn = new Date(tx.postedOn);
-      if (!minPostedOn || postedOn < minPostedOn) minPostedOn = postedOn;
-      if (!maxPostedOn || postedOn > maxPostedOn) maxPostedOn = postedOn;
+  const breakdownByCurrency = new Map<
+    string,
+    Array<{ tag: string; amount: number; transactionCount: number }>
+  >();
+  let firstPostedOn: Date | null = null;
+  let lastPostedOn: Date | null = null;
+  for (const row of rows) {
+    const items = breakdownByCurrency.get(row.currencyCode) ?? [];
+    items.push({
+      tag: row.tag,
+      amount: Number(row.amount),
+      transactionCount: Number(row.transactionCount),
+    });
+    breakdownByCurrency.set(row.currencyCode, items);
+    if (row.firstPostedOn) {
+      const date = new Date(row.firstPostedOn);
+      if (!firstPostedOn || date < firstPostedOn) firstPostedOn = date;
     }
-    if (tx.amount >= 0) continue;
-    spendingCurrencies.push(tx.currencyCode);
-    const current = breakdownByLabel.get(tx.classification) ?? { amount: 0, transactionCount: 0 };
-    current.amount += Math.abs(tx.amount);
-    current.transactionCount += 1;
-    breakdownByLabel.set(tx.classification, current);
+    if (row.lastPostedOn) {
+      const date = new Date(row.lastPostedOn);
+      if (!lastPostedOn || date > lastPostedOn) lastPostedOn = date;
+    }
+  }
+  const totalsByCurrency = totals.map((row) => ({
+    currencyCode: row.currencyCode,
+    totalSpending: Number(row.amount),
+  }));
+  const limit = Math.max(1, Math.floor(filter.limit ?? 5));
+  const rankedByCurrency = [...breakdownByCurrency.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .flatMap(([currencyCode, items]) => {
+      const currencyTotal =
+        totalsByCurrency.find((item) => item.currencyCode === currencyCode)?.totalSpending ?? 0;
+      return items
+        .sort((a, b) => b.amount - a.amount || a.tag.localeCompare(b.tag))
+        .map((item) => ({
+          ...item,
+          currencyCode,
+          percentage: currencyTotal === 0 ? 0 : (item.amount / currencyTotal) * 100,
+        }));
+    });
+  const breakdown: typeof rankedByCurrency = [];
+  const currencyCodes = [...breakdownByCurrency.keys()].sort((a, b) => a.localeCompare(b));
+  for (let rank = 0; breakdown.length < limit; rank += 1) {
+    let found = false;
+    for (const currencyCode of currencyCodes) {
+      const currencyItems = rankedByCurrency.filter((row) => row.currencyCode === currencyCode);
+      const next = currencyItems[rank];
+      if (!next) continue;
+      found = true;
+      breakdown.push(next);
+      if (breakdown.length === limit) break;
+    }
+    if (!found) break;
   }
 
-  // Compute the total and day span over every matching tag before the display limit
-  // truncates the breakdown, so totals and percentages account for all of them.
-  const allBreakdown = [...breakdownByLabel.entries()]
-    .map(([tag, value]) => ({
-      tag,
-      amount: value.amount,
-      transactionCount: value.transactionCount,
-    }))
-    .sort((a, b) => b.amount - a.amount || a.tag.localeCompare(b.tag));
-  const totalSpending = allBreakdown.reduce((sum, item) => sum + item.amount, 0);
-
-  const fromDate = filter.from ? new Date(filter.from) : minPostedOn;
-  const toDate = filter.to ? new Date(filter.to) : maxPostedOn;
+  const fromDate = filter.from ? new Date(filter.from) : firstPostedOn;
+  const toDate = filter.to ? new Date(filter.to) : lastPostedOn;
   const daySpan =
     fromDate && toDate
       ? Math.max(1, Math.floor((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1)
       : 1;
+  const totalsByCurrencyWithDailyAverage = totalsByCurrency.map((item) => ({
+    ...item,
+    averagePerDay: item.totalSpending / daySpan,
+  }));
+  const totalSpending =
+    totalsByCurrency.length > 1 ? null : (totalsByCurrency[0]?.totalSpending ?? 0);
 
-  const limit = Math.max(1, Math.floor(filter.limit ?? 5));
-  const { currencyCode, warnings } = summarizeCurrencies(spendingCurrencies);
+  const currencyCode =
+    totalsByCurrency.length === 1 ? (totalsByCurrency[0]?.currencyCode ?? null) : null;
+  const warnings =
+    totalsByCurrency.length > 1
+      ? ['Spending spans multiple currencies; totals are reported separately by currency.']
+      : [];
   return {
-    breakdown: allBreakdown.slice(0, limit).map((item) => ({
-      tag: item.tag,
-      amount: item.amount,
-      percentage: totalSpending === 0 ? 0 : (item.amount / totalSpending) * 100,
-      transactionCount: item.transactionCount,
-    })),
+    breakdown,
     totalSpending,
-    averagePerDay: totalSpending / daySpan,
+    totalsByCurrency: totalsByCurrencyWithDailyAverage,
+    averagePerDay: totalSpending === null ? null : totalSpending / daySpan,
     currencyCode,
     warnings,
   };
@@ -134,14 +246,16 @@ export async function getMonthlyStatsReport(userId: string, month?: string) {
     averageTransaction: monthly.averageTransaction,
     topTag: monthly.topTag,
     topMerchant: monthly.topMerchant,
-    formattedIncome: toCurrency(monthly.income),
-    formattedExpenses: toCurrency(monthly.expenses),
-    formattedNet: toCurrency(monthly.net),
-    formattedAverage: toCurrency(monthly.averageTransaction),
+    formattedIncome: monthly.income === null ? null : toCurrency(monthly.income),
+    formattedExpenses: monthly.expenses === null ? null : toCurrency(monthly.expenses),
+    formattedNet: monthly.net === null ? null : toCurrency(monthly.net),
+    formattedAverage:
+      monthly.averageTransaction === null ? null : toCurrency(monthly.averageTransaction),
     totalIncome: monthly.income,
     totalExpenses: monthly.expenses,
     netIncome: monthly.net,
     tagSpending: monthly.tagSpending,
+    currencyBreakdown: monthly.currencyBreakdown,
     ...(monthly.startDate ? { startDate: monthly.startDate } : {}),
     ...(monthly.endDate ? { endDate: monthly.endDate } : {}),
     currencyCode: monthly.currencyCode,

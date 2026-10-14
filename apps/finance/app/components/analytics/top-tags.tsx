@@ -53,14 +53,22 @@ export function TopTags({ dateFrom, dateTo, selectedAccount }: TopTagsProps) {
           categoryBreakdown.breakdown.length > 0 ? (
           <div className="space-y-3">
             {categoryBreakdown.breakdown.map(
-              (cat: { tag: string; amount: number; transactionCount: number }) => {
+              (cat: {
+                tag: string;
+                amount: number;
+                transactionCount: number;
+                currencyCode: string;
+              }) => {
                 const tagLabel = cat.tag;
                 return (
-                  <div key={tagLabel} className="grid grid-cols-[auto_1fr_auto] gap-3 items-center">
+                  <div
+                    key={`${cat.currencyCode}-${tagLabel}`}
+                    className="grid grid-cols-[auto_1fr_auto] gap-3 items-center"
+                  >
                     <Badge variant="secondary">{cat.transactionCount}x</Badge>
                     <span className="text-sm">{tagLabel}</span>
                     <span className="text-sm font-mono text-right">
-                      {formatCurrency(cat.amount)}
+                      {formatCurrency(cat.amount, cat.currencyCode)}
                     </span>
                   </div>
                 );
