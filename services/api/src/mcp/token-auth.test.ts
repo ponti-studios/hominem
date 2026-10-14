@@ -1,3 +1,4 @@
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -80,6 +81,24 @@ function tokenRequest(token: string) {
   });
 }
 
+async function createClient(token: string) {
+  const transport = new StreamableHTTPClientTransport(new URL('http://localhost/api/mcp'), {
+    fetch: async (input, init) =>
+      await createApp().fetch(
+        new Request(input, {
+          ...init,
+          headers: {
+            ...Object.fromEntries(new Headers(init?.headers)),
+            authorization: `Bearer ${token}`,
+          },
+        }),
+      ),
+  });
+  const client = new Client({ name: 'mcp-token-test', version: '1.0.0' });
+  await client.connect(transport);
+  return client;
+}
+
 beforeEach(() => {
   vi.mocked(resolveMcpToken).mockReset();
   captured.claims = null;
@@ -119,6 +138,39 @@ describe('mcp bearer token auth', () => {
 
     expect(captured.claims?.scope).toBe('career:read');
     expect(response.status).not.toBe(401);
+  });
+
+  it('does not expose or allow calling tools outside a personal token scope allow-list', async () => {
+    vi.mocked(resolveMcpToken).mockResolvedValue({
+      ownerUserId: testUser.id,
+      scopes: ['career:read'],
+    });
+    const client = await createClient('hmt_career_only_token');
+
+    try {
+      const tools = await client.listTools();
+      const names = tools.tools.map((tool) => tool.name);
+
+      expect(names).toContain('career_profile');
+      expect(names).not.toContain('finance_net_worth');
+      await expect(client.callTool({ name: 'finance_net_worth', arguments: {} })).rejects.toThrow(
+        'not found',
+      );
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('rejects a valid personal token that has no MCP scopes', async () => {
+    vi.mocked(resolveMcpToken).mockResolvedValue({
+      ownerUserId: testUser.id,
+      scopes: ['openid', 'profile'],
+    });
+
+    const response = await createApp().fetch(tokenRequest('hmt_no_mcp_scope_token'));
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({ error: 'insufficient_scope' });
   });
 
   it('rejects an unknown or revoked hmt_ token with 401', async () => {
