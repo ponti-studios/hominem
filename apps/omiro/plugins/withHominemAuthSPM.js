@@ -9,7 +9,7 @@ def add_hominem_auth_package(installer)
   unless package
     package = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
     package.repositoryURL = 'https://github.com/charlesponti/HominemAuth.git'
-    package.requirement = { 'kind' => 'upToNextMajorVersion', 'minimumVersion' => '0.1.0' }
+    package.requirement = { 'kind' => 'upToNextMinorVersion', 'minimumVersion' => '0.2.0' }
     project.root_object.package_references << package
   end
   target = project.targets.find { |candidate| candidate.name == 'HominemAuthBridge' }
