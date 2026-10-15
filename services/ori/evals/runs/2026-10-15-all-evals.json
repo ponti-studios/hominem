@@ -34,7 +34,8 @@
     "totalCostUsd": 0.3214265,
     "candidateCalls": 132,
     "judgeCalls": 105,
-    "totalModelCalls": 237
+    "totalModelCalls": 237,
+    "costCoverageNote": "Reported cost and token totals include recorded candidate and judge results only. The MCP eval harness makes a separate domain-routing request before each MCP candidate run; that direct request is not emitted as an Ori usage event, so its tokens and cost are not included. Its latency is included in MCP candidate run duration."
   },
   "oriResult": {
     "ok": false,

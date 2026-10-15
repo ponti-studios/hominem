@@ -44,8 +44,9 @@ export const renderMessages = (
   return { prompt, systemPrompt };
 };
 
-// Cases run three at a time, each with a candidate call and a judge call, so a
-// suite of ~30 goldens outlasts bun's 120s default test timeout.
+// Cases run six at a time, each with a candidate call and a judge call, so a
+// suite of ~30 goldens finishes in fewer provider round trips.
+const BATCH_SIZE = 6;
 const SUITE_TIMEOUT_MS = 900_000;
 
 type SuiteOptions = {
@@ -80,8 +81,9 @@ export const registerJsonSuite = ({
     name,
     async () => {
       const failures: Error[] = [];
-      const batches = Array.from({ length: Math.ceil(sampledCases.length / 3) }, (_, index) =>
-        sampledCases.slice(index * 3, index * 3 + 3),
+      const batches = Array.from(
+        { length: Math.ceil(sampledCases.length / BATCH_SIZE) },
+        (_, index) => sampledCases.slice(index * BATCH_SIZE, index * BATCH_SIZE + BATCH_SIZE),
       );
 
       for (const batch of batches) {

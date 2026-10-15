@@ -133,10 +133,17 @@ const toolsByDomain: Record<string, readonly unknown[]> = {
 type HarnessState = { calls: string[]; prompt: string; trace: McpTrace };
 
 let latestTrace: McpTrace | null = null;
+const tracesByPrompt = new Map<string, McpTrace>();
 
-export function getLastMcpTrace(): McpTrace {
-  if (!latestTrace) throw new Error('MCP harness did not produce a trace');
-  return latestTrace;
+export function getLastMcpTrace(prompt?: string): McpTrace {
+  const trace = prompt === undefined ? latestTrace : tracesByPrompt.get(prompt);
+  if (!trace) throw new Error('MCP harness did not produce a trace');
+  return trace;
+}
+
+function recordTrace(state: HarnessState): void {
+  latestTrace = state.trace;
+  tracesByPrompt.set(state.prompt, state.trace);
 }
 
 const parseDomain = (content: string): string => {
@@ -527,7 +534,7 @@ const mcpHarness: AgentHarness = defineHarness({
         });
         if (toolCalls.length === 0) {
           state.trace.toolCalls = state.calls;
-          latestTrace = state.trace;
+          recordTrace(state);
           yield event(
             AgentRuntimeEventTag.TurnSucceeded,
             { latencyMs: performance.now() - turnStartedAt, usage: body.usage ?? null },
@@ -560,7 +567,7 @@ const mcpHarness: AgentHarness = defineHarness({
           const outcome = executeTool(name, input, state);
           if (outcome.confirmationRequired) {
             state.trace.toolCalls = state.calls;
-            latestTrace = state.trace;
+            recordTrace(state);
             yield event(
               AgentRuntimeEventTag.ConfirmationRequired,
               { name, input, toolCallId: call.id, preview: outcome.output },
@@ -610,7 +617,7 @@ const mcpHarness: AgentHarness = defineHarness({
       );
       state.trace.toolCalls = state.calls;
       state.trace.runtimeError = true;
-      latestTrace = state.trace;
+      recordTrace(state);
       throw new Error('The agent exceeded the allowed MCP interaction budget.');
     });
   },
