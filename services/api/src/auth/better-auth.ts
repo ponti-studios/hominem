@@ -212,6 +212,11 @@ export function createBetterAuthServer(inputEnv: ApiEnv) {
       enabled: false,
     },
     session: {
+      // Rolling: a session lasts 90 days from the last day it was used (renewed at most once a
+      // day), so someone who opens an app now and then is never asked to sign in again. The
+      // server default was 7 days. A device that goes unused for 90 days signs in again.
+      expiresIn: 60 * 60 * 24 * 90,
+      updateAge: 60 * 60 * 24,
       freshAge: 60 * 60 * 24, // 24 hours
       cookieCache: { enabled: true, maxAge: 60 * 5 },
     },
