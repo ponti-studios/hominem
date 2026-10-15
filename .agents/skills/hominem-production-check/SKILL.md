@@ -17,7 +17,7 @@ The script resolves the linked Railway project and production environment unless
 
 Expected public behavior:
 
-- `api.ponti.io`, `career.ponti.io`, `labs.ponti.io`, `still.ponti.io`, and `ponti.io`: HTTP `200`.
+- `api.ponti.io`, `career.ponti.io`, `labs.ponti.io`, and `ponti.io`: HTTP `200`.
 - `omiro.ponti.io`: HTTP `302` with a `Location` beginning `https://api.ponti.io/login?`.
 - `what.ponti.io`: HTTP `302` with `Location: /reality`.
 
