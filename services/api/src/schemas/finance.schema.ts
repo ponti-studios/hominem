@@ -56,7 +56,7 @@ const financeAccountBalanceSchema = z.object({
   institution: z.string().nullable(),
   accountType: z.string(),
   currencyCode: z.string(),
-  balanceCents: z.number().int(),
+  balance: z.number(),
   balanceAsOf: z.string().nullable(),
 });
 
@@ -74,7 +74,7 @@ export const financeNetWorthOutputSchema = z.object({
   totals: z.array(
     z.object({
       currencyCode: z.string(),
-      totalCents: z.number().int(),
+      total: z.number(),
       accountCount: z.number().int().min(0),
     }),
   ),
@@ -91,7 +91,7 @@ export const financeTransactionSchema = z.object({
   postedOn: z.string(),
   description: z.string().nullable(),
   merchantName: z.string().nullable(),
-  amountCents: z.number().int(),
+  amount: z.number(),
   currencyCode: z.string(),
   transactionType: z.string(),
   categoryId: z.string().nullable(),
@@ -174,7 +174,7 @@ export const financeSpendingByCategoryOutputSchema = z.object({
       categoryId: z.string(),
       categoryName: z.string(),
       currencyCode: z.string(),
-      spentCents: z.number().int(),
+      spent: z.number(),
       transactionCount: z.number().int(),
     }),
   ),
@@ -244,6 +244,23 @@ export const financeAccountsOutputSchema = z.object({
     .int()
     .min(0)
     .describe('Total visible accounts before the 50-account result cap.'),
+});
+
+export const financeMcpAccountsOutputSchema = z.object({
+  accounts: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      accountType: z.string(),
+      currencyCode: z.string(),
+      allowedCurrencies: z.array(z.string()),
+      lifecycleStatus: z.string(),
+      includeInNetWorth: z.boolean(),
+      balance: z.number(),
+    }),
+  ),
+  count: z.number().int().min(0),
+  totalCount: z.number().int().min(0),
 });
 
 // -- finance_account_create --
@@ -327,7 +344,7 @@ export const financeAccountSummaryOutputSchema = z.object({
       status: z.string(),
       transactionCount: z.number().int().min(0),
       excludedCount: z.number().int().min(0),
-      totals: z.array(z.object({ currencyCode: z.string(), sumCents: z.number().int() })),
+      totals: z.array(z.object({ currencyCode: z.string(), sum: z.number() })),
       minPostedOn: z.string().nullable(),
       maxPostedOn: z.string().nullable(),
     }),
@@ -358,7 +375,7 @@ export const financeTopMerchantsOutputSchema = z.object({
   merchants: z.array(
     z.object({
       name: z.string(),
-      totalSpentCents: z.number().int(),
+      totalSpent: z.number(),
       transactionCount: z.number().int().min(0),
     }),
   ),
@@ -388,21 +405,21 @@ export const financeTagBreakdownOutputSchema = z.object({
   breakdown: z.array(
     z.object({
       tag: z.string(),
-      amountCents: z.number().int(),
+      amount: z.number(),
       percentage: z.number(),
       transactionCount: z.number().int().min(0),
       currencyCode: z.string(),
     }),
   ),
-  totalSpendingCents: z.number().int().nullable(),
+  totalSpending: z.number().nullable(),
   totalsByCurrency: z.array(
     z.object({
       currencyCode: z.string(),
-      totalSpendingCents: z.number().int(),
-      averagePerDayCents: z.number().int(),
+      totalSpending: z.number(),
+      averagePerDay: z.number(),
     }),
   ),
-  averagePerDayCents: z.number().int().nullable(),
+  averagePerDay: z.number().nullable(),
   currencyCode: z
     .string()
     .nullable()
@@ -468,27 +485,27 @@ export const financeMonthlyStatsInputSchema = z
 
 export const financeMonthlyStatsOutputSchema = z.object({
   month: z.string(),
-  incomeCents: z.number().int().nullable(),
-  expensesCents: z.number().int().nullable(),
-  netCents: z.number().int().nullable(),
+  income: z.number().nullable(),
+  expenses: z.number().nullable(),
+  net: z.number().nullable(),
   transactionCount: z.number().int().min(0),
-  averageTransactionCents: z.number().int().nullable(),
+  averageTransaction: z.number().nullable(),
   topTag: z.string().nullable(),
   topMerchant: z.string().nullable(),
   tagSpending: z.array(
-    z.object({ name: z.string(), amountCents: z.number().int(), currencyCode: z.string() }),
+    z.object({ name: z.string(), amount: z.number(), currencyCode: z.string() }),
   ),
   currencyBreakdown: z.array(
     z.object({
       currencyCode: z.string(),
-      incomeCents: z.number().int(),
-      expensesCents: z.number().int(),
-      netCents: z.number().int(),
+      income: z.number(),
+      expenses: z.number(),
+      net: z.number(),
       transactionCount: z.number().int().min(0),
-      averageTransactionCents: z.number().int(),
+      averageTransaction: z.number(),
       topTag: z.string(),
       topMerchant: z.string(),
-      tagSpending: z.array(z.object({ name: z.string(), amountCents: z.number().int() })),
+      tagSpending: z.array(z.object({ name: z.string(), amount: z.number() })),
     }),
   ),
   startDate: z.string().optional(),
@@ -558,30 +575,30 @@ export const financeRunwayInputSchema = z
 
 export const financeRunwayOutputSchema = z.object({
   asOfDate: z.string(),
-  liquidAccounts: z.array(z.object({ accountName: z.string(), balanceCents: z.number().int() })),
+  liquidAccounts: z.array(z.object({ accountName: z.string(), balance: z.number() })),
   currencyCode: z
     .string()
     .nullable()
     .describe(
-      'Currency of startingCashCents and the weekly projection. When liquid accounts span ' +
+      'Currency of startingCash and the weekly projection. When liquid accounts span ' +
         'multiple currencies, only the dominant-currency accounts are included; see warnings.',
     ),
   warnings: z.array(z.string()),
-  startingCashCents: z.number().int(),
-  weeklyRecurringOutflowCents: z.number().int(),
+  startingCash: z.number(),
+  weeklyRecurringOutflow: z.number(),
   recurringLookbackMonths: z.number(),
   recurringTxnCount: z.number().int().min(0),
-  weeklyVariableAllowanceCents: z.number().int(),
+  weeklyVariableAllowance: z.number(),
   weeks: z.array(
     z.object({
       week: z.number().int(),
       weekStart: z.string(),
       weekEnd: z.string(),
-      beginningCashCents: z.number().int(),
-      recurringOutflowsCents: z.number().int(),
-      variableAllowanceCents: z.number().int(),
-      netChangeCents: z.number().int(),
-      endingCashCents: z.number().int(),
+      beginningCash: z.number(),
+      recurringOutflows: z.number(),
+      variableAllowance: z.number(),
+      netChange: z.number(),
+      endingCash: z.number(),
     }),
   ),
 });
@@ -601,10 +618,10 @@ export const financeBudgetBreakdownInputSchema = z
   .strict();
 
 export const financeBudgetBreakdownOutputSchema = z.object({
-  needsCents: z.number().int(),
-  wantsCents: z.number().int(),
-  savingsCents: z.number().int(),
-  unallocatedCents: z.number().int(),
+  needs: z.number(),
+  wants: z.number(),
+  savings: z.number(),
+  unallocated: z.number(),
 });
 
 // -- finance_categories --
@@ -622,7 +639,7 @@ const sheetTransactionPayloadSchema = z.object({
   postedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).'),
   account: z.string().min(1).describe('Sheet Bank label or a Hominem account id.'),
   description: z.string().min(1).describe('Merchant text.'),
-  amountCents: z.number().int().describe('Signed cents; negative = outflow.'),
+  amountCents: z.number().int().describe('Signed amount in cents; negative = outflow.'),
   currencyCode: z.string().min(3).max(3).describe('ISO-4217 code.'),
   category: z
     .string()
@@ -745,7 +762,7 @@ export const financeTransactionDeleteOutputSchema = z.object({
       postedOn: z.string(),
       accountId: z.string(),
       description: z.string().nullable(),
-      amountCents: z.number().int(),
+      amount: z.number(),
       currencyCode: z.string(),
     }),
   ),

@@ -42,11 +42,6 @@ import {
 } from '../../schemas/finance.schema';
 import { registerTool } from '../tool-registry';
 
-// Ledger amounts are stored as decimal currency units; tool outputs are integer cents.
-function toCents(amount: number): number {
-  return Math.round(amount * 100);
-}
-
 // enforceResultCap in tool-registry rejects any top-level array longer than the tool's
 // resultCap; these tools have no pagination input, so their arrays are truncated here to
 // stay under cap instead of throwing for a user with more accounts than that.
@@ -77,7 +72,17 @@ registerTool(
       produces: ['account balances', 'net worth totals'],
     },
   },
-  async (ownerUserId, input) => getFinanceNetWorth(ownerUserId, input.includeClosed),
+  async (ownerUserId, input) => {
+    const report = await getFinanceNetWorth(ownerUserId, input.includeClosed);
+    return {
+      ...report,
+      totals: report.totals.map((total) => ({ ...total, total: total.totalCents / 100 })),
+      accounts: report.accounts.map((account) => ({
+        ...account,
+        balance: account.balanceCents / 100,
+      })),
+    };
+  },
 );
 
 registerTool(
@@ -92,7 +97,19 @@ registerTool(
     scopes: ['finance:read'],
     resultCap: 50,
   },
-  async (ownerUserId, input) => getFinanceSpendingByCategory(ownerUserId, input),
+  async (ownerUserId, input) => {
+    const report = await getFinanceSpendingByCategory(ownerUserId, input);
+    return {
+      ...report,
+      categories: report.categories.map((category) => ({
+        categoryId: category.categoryId,
+        categoryName: category.categoryName,
+        currencyCode: category.currencyCode,
+        spent: category.spentCents / 100,
+        transactionCount: category.transactionCount,
+      })),
+    };
+  },
 );
 
 registerTool(
@@ -122,7 +139,7 @@ registerTool(
     return {
       merchants: merchants.map((m) => ({
         name: m.name,
-        totalSpentCents: toCents(m.totalSpent),
+        totalSpent: m.totalSpent,
         transactionCount: m.transactionCount,
       })),
       count: merchants.length,
@@ -160,18 +177,18 @@ registerTool(
     return {
       breakdown: report.breakdown.map((b) => ({
         tag: b.tag,
-        amountCents: toCents(b.amount),
+        amount: b.amount,
         percentage: b.percentage,
         transactionCount: b.transactionCount,
         currencyCode: b.currencyCode,
       })),
-      totalSpendingCents: report.totalSpending === null ? null : toCents(report.totalSpending),
+      totalSpending: report.totalSpending,
       totalsByCurrency: report.totalsByCurrency.slice(0, MAX_REPORT_CURRENCIES).map((item) => ({
         currencyCode: item.currencyCode,
-        totalSpendingCents: toCents(item.totalSpending),
-        averagePerDayCents: toCents(item.averagePerDay),
+        totalSpending: item.totalSpending,
+        averagePerDay: item.averagePerDay,
       })),
-      averagePerDayCents: report.averagePerDay === null ? null : toCents(report.averagePerDay),
+      averagePerDay: report.averagePerDay,
       currencyCode: report.currencyCode,
       warnings:
         report.totalsByCurrency.length > MAX_REPORT_CURRENCIES
@@ -204,33 +221,32 @@ registerTool(
     const stats = await getMonthlyStatsReport(ownerUserId, input.month);
     return {
       month: stats.month,
-      incomeCents: stats.income === null ? null : toCents(stats.income),
-      expensesCents: stats.expenses === null ? null : toCents(stats.expenses),
-      netCents: stats.net === null ? null : toCents(stats.net),
+      income: stats.income,
+      expenses: stats.expenses,
+      net: stats.net,
       transactionCount: stats.transactionCount,
-      averageTransactionCents:
-        stats.averageTransaction === null ? null : toCents(stats.averageTransaction),
+      averageTransaction: stats.averageTransaction,
       topTag: stats.topTag,
       topMerchant: stats.topMerchant,
       tagSpending: stats.tagSpending.map((t) => ({
         name: t.name,
-        amountCents: toCents(t.amount),
+        amount: t.amount,
         currencyCode: t.currencyCode,
       })),
       currencyBreakdown: stats.currencyBreakdown
         .slice(0, MAX_REPORT_CURRENCIES)
         .map((currency) => ({
           currencyCode: currency.currencyCode,
-          incomeCents: toCents(currency.income),
-          expensesCents: toCents(currency.expenses),
-          netCents: toCents(currency.net),
+          income: currency.income,
+          expenses: currency.expenses,
+          net: currency.net,
           transactionCount: currency.transactionCount,
-          averageTransactionCents: toCents(currency.averageTransaction),
+          averageTransaction: currency.averageTransaction,
           topTag: currency.topTag,
           topMerchant: currency.topMerchant,
           tagSpending: currency.tagSpending.map((t) => ({
             name: t.name,
-            amountCents: toCents(t.amount),
+            amount: t.amount,
           })),
         })),
       ...(stats.startDate ? { startDate: stats.startDate } : {}),
@@ -281,24 +297,24 @@ registerTool(
       asOfDate: runway.asOfDate,
       liquidAccounts: runway.liquidAccounts.slice(0, MAX_RUNWAY_ACCOUNTS_RESULT).map((a) => ({
         accountName: a.accountName,
-        balanceCents: toCents(a.balance),
+        balance: a.balance,
       })),
       currencyCode: runway.currencyCode,
       warnings: runway.warnings,
-      startingCashCents: toCents(runway.startingCash),
-      weeklyRecurringOutflowCents: toCents(runway.weeklyRecurringOutflow),
+      startingCash: runway.startingCash,
+      weeklyRecurringOutflow: runway.weeklyRecurringOutflow,
       recurringLookbackMonths: runway.recurringLookbackMonths,
       recurringTxnCount: runway.recurringTxnCount,
-      weeklyVariableAllowanceCents: toCents(runway.weeklyVariableAllowance),
+      weeklyVariableAllowance: runway.weeklyVariableAllowance,
       weeks: runway.weeks.map((w) => ({
         week: w.week,
         weekStart: w.weekStart,
         weekEnd: w.weekEnd,
-        beginningCashCents: toCents(w.beginningCash),
-        recurringOutflowsCents: toCents(w.recurringOutflows),
-        variableAllowanceCents: toCents(w.variableAllowance),
-        netChangeCents: toCents(w.netChange),
-        endingCashCents: toCents(w.endingCash),
+        beginningCash: w.beginningCash,
+        recurringOutflows: w.recurringOutflows,
+        variableAllowance: w.variableAllowance,
+        netChange: w.netChange,
+        endingCash: w.endingCash,
       })),
     };
   },
@@ -335,7 +351,12 @@ registerTool(
     const requestedSavingsCents = input.savingsTargetCents ?? capCents;
     const savingsCents = Math.max(0, Math.min(requestedSavingsCents, capCents, remainderCents));
     const unallocatedCents = remainderCents - savingsCents;
-    return { needsCents, wantsCents, savingsCents, unallocatedCents };
+    return {
+      needs: needsCents / 100,
+      wants: wantsCents / 100,
+      savings: savingsCents / 100,
+      unallocated: unallocatedCents / 100,
+    };
   },
 );
 

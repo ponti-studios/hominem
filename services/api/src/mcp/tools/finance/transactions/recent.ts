@@ -23,5 +23,14 @@ export const financeRecentTransactionsTool = defineMcpTool(
       produces: ['transaction ids', 'transaction dates', 'merchant names', 'amounts'],
     },
   },
-  async (ownerUserId, input) => getFinanceRecentTransactions(ownerUserId, input),
+  async (ownerUserId, input) => {
+    const result = await getFinanceRecentTransactions(ownerUserId, input);
+    return {
+      ...result,
+      transactions: result.transactions.map((transaction) => ({
+        ...transaction,
+        amount: transaction.amountCents / 100,
+      })),
+    };
+  },
 );

@@ -5,10 +5,6 @@ import {
 } from '../../../../schemas/finance.schema';
 import { defineMcpTool } from '../../../tool-registry';
 
-function toCents(amount: number): number {
-  return Math.round(amount * 100);
-}
-
 export const financeTransactionSearchTool = defineMcpTool(
   {
     name: 'finance_transaction_search',
@@ -51,7 +47,7 @@ export const financeTransactionSearchTool = defineMcpTool(
         postedOn: transaction.postedOn,
         description: transaction.description,
         merchantName: transaction.merchantName,
-        amountCents: toCents(transaction.amount),
+        amount: transaction.amount,
         currencyCode: transaction.currencyCode,
         transactionType: transaction.transactionType,
         categoryId: transaction.categoryId,

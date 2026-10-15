@@ -42,7 +42,7 @@ export const financeAccountSummaryTool = defineMcpTool(
         excludedCount: summary.excludedCount,
         totals: summary.totals.map((total) => ({
           currencyCode: total.currencyCode,
-          sumCents: Math.round(total.sumAmount * 100),
+          sum: total.sumAmount,
         })),
         minPostedOn: summary.minPostedOn,
         maxPostedOn: summary.maxPostedOn,

@@ -7,10 +7,6 @@ import {
 } from '../../../../schemas/finance.schema';
 import { defineMcpTool } from '../../../tool-registry';
 
-function toCents(amount: number): number {
-  return Math.round(amount * 100);
-}
-
 export const financeTransactionDeleteTool = defineMcpTool(
   {
     readOnly: false,
@@ -48,7 +44,7 @@ export const financeTransactionDeleteTool = defineMcpTool(
         postedOn: transaction.postedOn,
         accountId: transaction.accountId,
         description: transaction.description,
-        amountCents: toCents(transaction.amount),
+        amount: transaction.amount,
         currencyCode: transaction.currencyCode,
       })),
       notFound,

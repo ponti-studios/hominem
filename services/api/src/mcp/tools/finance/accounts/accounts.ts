@@ -2,7 +2,7 @@ import { getFinanceAccountList } from '@hominem/finance-services';
 
 import {
   financeAccountsInputSchema,
-  financeAccountsOutputSchema,
+  financeMcpAccountsOutputSchema,
 } from '../../../../schemas/finance.schema';
 import { defineMcpTool } from '../../../tool-registry';
 
@@ -16,7 +16,7 @@ export const financeAccountsTool = defineMcpTool(
       'List finance accounts with type, currency, lifecycle status and current balance (posted transactions only). ' +
       'Unlike finance_net_worth this includes accounts left out of net-worth totals, such as credit cards.',
     inputSchema: financeAccountsInputSchema,
-    outputSchema: financeAccountsOutputSchema,
+    outputSchema: financeMcpAccountsOutputSchema,
     readOnly: true,
     scopes: ['finance:read'],
     resultCap: MAX_ACCOUNTS_RESULT,
@@ -26,5 +26,14 @@ export const financeAccountsTool = defineMcpTool(
       produces: ['account ids', 'account names', 'account balances'],
     },
   },
-  (ownerUserId, input) => getFinanceAccountList(ownerUserId, input),
+  async (ownerUserId, input) => {
+    const result = await getFinanceAccountList(ownerUserId, input);
+    return {
+      ...result,
+      accounts: result.accounts.map((account) => ({
+        ...account,
+        balance: account.balanceCents / 100,
+      })),
+    };
+  },
 );
