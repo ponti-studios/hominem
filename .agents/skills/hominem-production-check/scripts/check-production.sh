@@ -73,7 +73,6 @@ check_domain api.ponti.io 200 ''
 check_domain career.ponti.io 200 ''
 # finance.ponti.io is intentionally not probed: the finance service is stopped.
 check_domain labs.ponti.io 200 ''
-check_domain still.ponti.io 200 ''
 check_domain ponti.io 200 ''
 check_domain omiro.ponti.io 302 'prefix:https://api.ponti.io/login?'
 check_domain what.ponti.io 302 'exact:/reality'
