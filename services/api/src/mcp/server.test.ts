@@ -11,6 +11,10 @@ import { apiErrorHandler } from '../rpc/middleware/error';
 import { validationErrorMiddleware } from '../rpc/middleware/validation';
 import { careerWishlistAddOutputSchema } from '../schemas/career.schema';
 import { createCollectionOutputSchema } from '../schemas/collections.schema';
+import {
+  financeTransactionMoveOutputSchema,
+  financeTransactionUpsertOutputSchema,
+} from '../schemas/finance.schema';
 import { toolOutput } from '../testkit/tool-result';
 import { mcpRoutes, oauthDiscoveryRoutes } from './routes';
 import { callTool, listTools, registerTool } from './tool-registry';
@@ -971,6 +975,7 @@ describe('mcp server transport', () => {
 // elicitation is sent. This exercises the real MCP server + tool handler end to end.
 describe('finance replace from a client without elicitation', () => {
   const accountId = '11111111-1111-4111-8111-111111111b05';
+  const counterpartAccountId = '11111111-1111-4111-8111-111111111b06';
 
   beforeAll(async () => {
     await pool.query(
@@ -982,6 +987,12 @@ describe('finance replace from a client without elicitation', () => {
          (id, user_id, name, account_type, currency_code, lifecycle_status, include_in_net_worth)
        VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING`,
       [accountId, testUser.id, 'B5 Checking', 'checking', 'USD', 'open', true],
+    );
+    await pool.query(
+      `INSERT INTO app.finance_accounts
+         (id, user_id, name, account_type, currency_code, lifecycle_status, include_in_net_worth)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING`,
+      [counterpartAccountId, testUser.id, 'B5 Counterpart', 'checking', 'USD', 'open', true],
     );
   });
 
@@ -1006,6 +1017,64 @@ describe('finance replace from a client without elicitation', () => {
     expect(result.isError ?? false).toBe(false);
     expect(result.structuredContent).toMatchObject({ received: 1, upserted: 1, created: 1 });
     await client.close();
+  });
+
+  it('returns actionable move validation errors through the MCP client', async () => {
+    const client = await createClient(createApp(), 'finance:write');
+    try {
+      const mirror = await client.callTool({
+        name: 'finance_transaction_upsert',
+        arguments: {
+          postedOn: '2026-10-13',
+          account: counterpartAccountId,
+          description: 'B5 mirror',
+          amountCents: 100,
+          currencyCode: 'USD',
+          externalId: 'b5-move-mirror',
+          transactionType: 'transfer',
+        },
+      });
+      const mirrorId = toolOutput(mirror, financeTransactionUpsertOutputSchema).id;
+      if (!mirrorId) throw new Error('Expected the mirrored transaction to be created');
+      const source = await client.callTool({
+        name: 'finance_transaction_upsert',
+        arguments: {
+          postedOn: '2026-10-13',
+          account: accountId,
+          description: 'B5 source',
+          amountCents: -100,
+          currencyCode: 'USD',
+          externalId: 'b5-move-source',
+          transactionType: 'transfer',
+          counterpartId: mirrorId,
+        },
+      });
+      const sourceId = toolOutput(source, financeTransactionUpsertOutputSchema).id;
+      if (!sourceId) throw new Error('Expected the source transaction to be created');
+      const move = await client.callTool({
+        name: 'finance_transaction_move',
+        arguments: {
+          ids: [sourceId],
+          toAccount: counterpartAccountId,
+        },
+      });
+      expect(move.isError).toBe(true);
+      expect(JSON.stringify(move)).toContain('move_would_break_counterpart_accounts');
+      expect(JSON.stringify(move)).not.toContain('Unable to complete the MCP tool request');
+      const missingId = '11111111-1111-4111-8111-111111111b99';
+      const missing = await client.callTool({
+        name: 'finance_transaction_move',
+        arguments: { ids: [missingId], toAccount: accountId },
+      });
+      expect(missing.isError).not.toBe(true);
+      expect(toolOutput(missing, financeTransactionMoveOutputSchema)).toMatchObject({
+        moved: [],
+        count: 0,
+        notFound: [missingId],
+      });
+    } finally {
+      await client.close();
+    }
   });
 });
 

@@ -1,7 +1,7 @@
 import { db, sql } from '@hominem/db/core';
+import { ValidationError } from '@hominem/db/errors';
 import {
   FINANCE_TRANSACTION_ENTITY_TYPE,
-  extractOrderNumber,
   getMonthlyStatsByContract,
   getTopMerchantsByContract,
   getTransactionTagNames,
@@ -391,7 +391,7 @@ export async function searchTransactions(userId: string, input: TransactionSearc
       categoryName: t.categoryName ?? null,
       tags: tagNamesById.get(t.id) ?? [],
       notes: t.notes ?? null,
-      orderNumber: t.orderNumber ?? extractOrderNumber(t.notes),
+      orderNumber: t.orderNumber,
       counterpartId: t.counterpartId ?? null,
       source: t.source,
       externalId: t.externalId,
@@ -450,19 +450,40 @@ export async function moveFinanceTransactions(
     .where('id', '=', toAccount)
     .where('userId', '=', ownerUserId)
     .executeTakeFirst();
-  if (!account) throw new Error('unknown_account');
+  if (!account) throw new ValidationError('unknown_account');
   const rows = await db
     .selectFrom('app.financeTransactions')
-    .select(['id', 'currencyCode'])
+    .select(['id', 'currencyCode', 'counterpartId', 'accountId'])
     .where('userId', '=', ownerUserId)
     .where('id', 'in', ids)
     .execute();
-  if (rows.length !== new Set(ids).size) throw new Error('unknown_transaction');
+  const foundIds = new Set(rows.map((row) => row.id));
+  const notFound = [...new Set(ids)].filter((id) => !foundIds.has(id));
+  if (notFound.length > 0) {
+    return { moved: [], count: 0, accountId: account.id, notFound };
+  }
   const allowed = new Set(
     [account.currencyCode, ...account.allowedCurrencies].map((code) => code.toUpperCase()),
   );
   if (rows.some((row) => !allowed.has(row.currencyCode.toUpperCase())))
-    throw new Error('currency_mismatch');
+    throw new ValidationError('currency_mismatch');
+  const movedIds = new Set(ids);
+  const counterpartIds = rows.flatMap((row) =>
+    row.counterpartId && !movedIds.has(row.counterpartId) ? [row.counterpartId] : [],
+  );
+  const counterpartAccounts = counterpartIds.length
+    ? await db
+        .selectFrom('app.financeTransactions')
+        .select(['id', 'accountId'])
+        .where('userId', '=', ownerUserId)
+        .where('id', 'in', counterpartIds)
+        .execute()
+    : [];
+  const accountById = new Map(rows.map((row) => [row.id, account.id]));
+  for (const row of counterpartAccounts) accountById.set(row.id, row.accountId);
+  if (rows.some((row) => row.counterpartId && accountById.get(row.counterpartId) === account.id)) {
+    throw new ValidationError('move_would_break_counterpart_accounts');
+  }
   const moved = await db
     .updateTable('app.financeTransactions')
     .set({ accountId: account.id })
@@ -470,7 +491,12 @@ export async function moveFinanceTransactions(
     .where('id', 'in', ids)
     .returning('id')
     .execute();
-  return { moved: moved.map((row) => row.id), count: moved.length, accountId: account.id };
+  return {
+    moved: moved.map((row) => row.id),
+    count: moved.length,
+    accountId: account.id,
+    notFound: [],
+  };
 }
 
 export async function listFinanceCategoryOptions(ownerUserId: string) {

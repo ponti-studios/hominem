@@ -132,6 +132,24 @@ describeIntegration('finance accounts integration', () => {
     });
   });
 
+  it('returns every account to HTTP callers while supporting an explicit bounded list', async () => {
+    await Promise.all(
+      Array.from({ length: 51 }, (_, index) =>
+        createAccount({
+          userId: ownerId,
+          name: `Account ${String(index).padStart(2, '0')}`,
+          accountType: 'checking',
+        }),
+      ),
+    );
+
+    const complete = await getFinanceAccountList(ownerId);
+    const bounded = await getFinanceAccountList(ownerId, { limit: 50 });
+
+    expect(complete).toMatchObject({ count: 51, totalCount: 51 });
+    expect(bounded).toMatchObject({ count: 50, totalCount: 51 });
+  });
+
   it('enforces owner scope for update and delete', async () => {
     const created = await createAccount({
       userId: ownerId,

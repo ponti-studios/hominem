@@ -27,7 +27,10 @@ export const financeAccountsTool = defineMcpTool(
     },
   },
   async (ownerUserId, input) => {
-    const result = await getFinanceAccountList(ownerUserId, input);
+    const result = await getFinanceAccountList(ownerUserId, {
+      ...input,
+      limit: MAX_ACCOUNTS_RESULT,
+    });
     return {
       ...result,
       accounts: result.accounts.map((account) => ({

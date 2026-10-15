@@ -1,3 +1,4 @@
+import { db } from '@hominem/db/core';
 import { ensureIntegrationUsers, isIntegrationDatabaseAvailable } from '@hominem/db/test/utils';
 import { createDeterministicIdFactory } from '@hominem/db/test/utils';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -124,5 +125,38 @@ describeIntegration('finance import composite dedup integration', () => {
       transactions: confirmed.transactions,
     });
     expect(result).toMatchObject({ created: 1, skipped: 0 });
+  });
+
+  it('assigns categories and tags when the account is created by the same import', async () => {
+    const rows = [
+      row(2, {
+        account: 'New Account',
+        category: 'Coffee',
+        parentCategory: 'Food',
+        tags: ['weekly'],
+      }),
+    ];
+    const resolution = resolveCopilotAccounts(rows, []);
+    const plan = createCopilotImportPlan(rows, resolution);
+    const selected = plan.transactions;
+
+    const result = await applyCopilotImportBatch({ userId: ownerId, plan, transactions: selected });
+    const transaction = await db
+      .selectFrom('app.financeTransactions')
+      .select(['id', 'accountId'])
+      .where('userId', '=', ownerId)
+      .where('accountId', '!=', checkingId)
+      .executeTakeFirstOrThrow();
+    const assignments = await db
+      .selectFrom('app.tagAssignments as assignment')
+      .innerJoin('app.tags as tag', 'tag.id', 'assignment.tagId')
+      .select('tag.name')
+      .where('assignment.entityId', '=', transaction.id)
+      .where('tag.ownerUserid', '=', ownerId)
+      .execute();
+
+    expect(result).toMatchObject({ created: 1, skipped: 0 });
+    expect(transaction.accountId).not.toBeNull();
+    expect(assignments.map(({ name }) => name).sort()).toEqual(['Coffee', 'Food', 'weekly']);
   });
 });

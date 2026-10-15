@@ -240,10 +240,8 @@ export async function applyCopilotImportBatch(
     const insertedByExternalId = new Map(
       inserted.map((row) => [`${row.accountId}:${row.externalId}`, row.id]),
     );
-    for (const transaction of input.transactions) {
-      const transactionId = insertedByExternalId.get(
-        `${transaction.accountId}:${transaction.externalId}`,
-      );
+    for (const { transaction, accountId } of freshPairs) {
+      const transactionId = insertedByExternalId.get(`${accountId}:${transaction.externalId}`);
       if (!transactionId) continue;
       const tagInputs = [
         ...(transaction.parentCategory

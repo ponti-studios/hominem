@@ -745,6 +745,7 @@ export const financeTransactionMoveOutputSchema = z.object({
   moved: z.array(z.string()),
   count: z.number().int(),
   accountId: z.string(),
+  notFound: z.array(z.string()),
 });
 
 export const financeTransactionDeleteInputSchema = z.object({

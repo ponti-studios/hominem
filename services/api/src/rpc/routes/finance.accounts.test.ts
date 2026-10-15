@@ -86,4 +86,29 @@ describe('finance account routes', () => {
       includeClosed: true,
     });
   });
+
+  it('returns all accounts when the shared service reports more than 50', async () => {
+    const accounts = Array.from({ length: 51 }, (_, index) => ({
+      id: `22222222-2222-4222-8222-${String(index + 1).padStart(12, '0')}`,
+      name: `Account ${index + 1}`,
+      accountType: 'checking',
+      currencyCode: 'USD',
+      allowedCurrencies: ['USD'],
+      lifecycleStatus: 'open',
+      includeInNetWorth: true,
+      balanceCents: 0,
+    }));
+    accountService.getFinanceAccountList.mockResolvedValue({
+      accounts,
+      count: accounts.length,
+      totalCount: accounts.length,
+    });
+
+    const response = await createApp().request('/api/finance/accounts/list');
+
+    expect(response.status).toBe(200);
+    const body: { accounts: unknown[]; count: number } = await response.json();
+    expect(body.accounts).toHaveLength(51);
+    expect(body.count).toBe(51);
+  });
 });

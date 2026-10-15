@@ -9,8 +9,6 @@ import { getAffectedRows } from './utils';
 
 export type AccountWithBalance = Selectable<AppFinanceAccounts> & { currentBalance: number };
 
-const MAX_FINANCE_ACCOUNTS_RESULT = 50;
-
 export type FinanceAccountsResult = {
   accounts: Array<{
     id: string;
@@ -242,12 +240,12 @@ export async function countAccounts(
 
 export async function getFinanceAccountList(
   userId: string,
-  options?: { includeClosed?: boolean },
+  options?: { includeClosed?: boolean; limit?: number },
 ): Promise<FinanceAccountsResult> {
   const [accounts, totalCount] = await Promise.all([
     listAccounts(userId, {
       includeClosed: options?.includeClosed,
-      limit: MAX_FINANCE_ACCOUNTS_RESULT,
+      limit: options?.limit,
     }),
     countAccounts(userId, { includeClosed: options?.includeClosed }),
   ]);

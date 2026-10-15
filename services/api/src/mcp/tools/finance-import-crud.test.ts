@@ -639,6 +639,142 @@ describe('finance_transactions_import', () => {
     expect(content(replace)).toMatchObject({ received: 1, upserted: 1, created: 1, updated: 0 });
   });
 
+  it('dryRun counts corrections to external-id transaction fields', async () => {
+    await db
+      .updateTable('app.financeAccounts')
+      .set({ allowedCurrencies: ['USD'] })
+      .where('id', '=', gbpId)
+      .execute();
+    const original = {
+      postedOn: '2026-10-09',
+      account: gbpId,
+      description: 'Original provider description',
+      amountCents: -500,
+      currencyCode: 'GBP',
+      externalId: 'provider-correction-1',
+    };
+    await callTool(userId, 'finance_transactions_import', { transactions: [original] });
+
+    const corrected = {
+      ...original,
+      postedOn: '2026-10-10',
+      description: 'Corrected provider description',
+      amountCents: -650,
+      currencyCode: 'USD',
+    };
+    const dryRun = await callTool(userId, 'finance_transactions_import', {
+      dryRun: true,
+      transactions: [corrected],
+    });
+    expect(content(dryRun)).toMatchObject({ created: 0, updated: 1 });
+
+    await callTool(userId, 'finance_transactions_import', { transactions: [corrected] });
+    const stored = await db
+      .selectFrom('app.financeTransactions')
+      .select(['amount', 'description', 'postedOn', 'currencyCode'])
+      .where('userId', '=', userId)
+      .where('externalId', '=', original.externalId)
+      .executeTakeFirstOrThrow();
+    expect(stored).toMatchObject({
+      amount: -6.5,
+      description: corrected.description,
+      postedOn: corrected.postedOn,
+      currencyCode: corrected.currencyCode,
+    });
+    await db
+      .updateTable('app.financeAccounts')
+      .set({ allowedCurrencies: [] })
+      .where('id', '=', gbpId)
+      .execute();
+  });
+
+  it('updates merchantName when an explicit provider identity corrects description', async () => {
+    const row = {
+      postedOn: '2026-10-11',
+      account: checkingId,
+      description: 'Old Merchant Label',
+      amountCents: -1250,
+      currencyCode: 'USD',
+      externalId: 'provider-merchant-correction',
+    };
+    await callTool(userId, 'finance_transaction_upsert', row);
+    await callTool(userId, 'finance_transaction_upsert', {
+      ...row,
+      description: 'Corrected Merchant Label',
+    });
+    const stored = await db
+      .selectFrom('app.financeTransactions')
+      .select(['description', 'merchantName'])
+      .where('userId', '=', userId)
+      .where('externalId', '=', row.externalId)
+      .executeTakeFirstOrThrow();
+    expect(stored).toEqual({
+      description: 'Corrected Merchant Label',
+      merchantName: 'Corrected Merchant Label',
+    });
+  });
+
+  it('resolves a sheet identity across a corrected source without retrying inserts', async () => {
+    const row = {
+      postedOn: '2026-10-12',
+      account: checkingId,
+      description: 'Stable sheet identity',
+      amountCents: -1250,
+      currencyCode: 'USD',
+      source: 'plaid',
+    };
+    const created = content(await callTool(userId, 'finance_transaction_upsert', row));
+    const existing = await db
+      .selectFrom('app.financeTransactions')
+      .select(['id', 'externalId'])
+      .where('id', '=', String(created.id))
+      .executeTakeFirstOrThrow();
+    const updated = content(
+      await callTool(userId, 'finance_transaction_upsert', {
+        ...row,
+        source: 'manual',
+        externalId: existing.externalId,
+        description: 'Corrected stable sheet identity',
+      }),
+    );
+    expect(updated).toMatchObject({ id: existing.id, created: false });
+    const rows = await db
+      .selectFrom('app.financeTransactions')
+      .select(['id', 'source', 'description'])
+      .where('userId', '=', userId)
+      .where('externalId', '=', existing.externalId)
+      .execute();
+    expect(rows).toEqual([
+      { id: existing.id, source: 'plaid', description: 'Corrected stable sheet identity' },
+    ]);
+  });
+
+  it('recovers a concurrent sheet external-id insert conflict with one bounded retry', async () => {
+    const row = {
+      postedOn: '2026-10-14',
+      account: checkingId,
+      description: 'Concurrent identity',
+      amountCents: -300,
+      currencyCode: 'USD',
+      source: 'manual',
+      externalId: 'sheet:concurrent-insert-test',
+    };
+    const [first, second] = await Promise.all([
+      callTool(userId, 'finance_transaction_upsert', row),
+      callTool(userId, 'finance_transaction_upsert', row),
+    ]);
+    expect(first.isError).not.toBe(true);
+    expect(second.isError).not.toBe(true);
+    expect(content(first).id).toBe(content(second).id);
+    const rows = await db
+      .selectFrom('app.financeTransactions')
+      .select('id')
+      .where('userId', '=', userId)
+      .where('externalId', '=', row.externalId)
+      .execute();
+    expect(rows).toHaveLength(1);
+  });
+
   it('projects a cross-source natural-key match as an update', async () => {
     const row = {
       postedOn: '2026-10-08',
@@ -732,6 +868,18 @@ describe('finance_transaction_move', () => {
         externalId: 'move-source',
       }),
     );
+    await expect(
+      callTool(userId, 'finance_transaction_move', {
+        ids: [source.id],
+        toAccount: secondCheckingId,
+      }),
+    ).rejects.toThrow('move_would_break_counterpart_accounts');
+    await expect(
+      callTool(userId, 'finance_transaction_move', {
+        ids: [source.id, mirror.id],
+        toAccount: thirdCheckingId,
+      }),
+    ).rejects.toThrow('move_would_break_counterpart_accounts');
     const before = await db
       .selectFrom('app.financeTransactions')
       .selectAll()
@@ -743,7 +891,12 @@ describe('finance_transaction_move', () => {
         toAccount: thirdCheckingId,
       }),
     );
-    expect(result).toMatchObject({ moved: [source.id], count: 1, accountId: thirdCheckingId });
+    expect(result).toMatchObject({
+      moved: [source.id],
+      count: 1,
+      accountId: thirdCheckingId,
+      notFound: [],
+    });
     const after = await db
       .selectFrom('app.financeTransactions')
       .selectAll()
@@ -770,6 +923,15 @@ describe('finance_transaction_move', () => {
     await expect(
       callTool(userId, 'finance_transaction_move', { ids: [source.id], toAccount: gbpId }),
     ).rejects.toThrow('currency_mismatch');
+    const missingId = 'f2000022-0000-4000-8000-000000000099';
+    expect(
+      content(
+        await callTool(userId, 'finance_transaction_move', {
+          ids: [missingId],
+          toAccount: checkingId,
+        }),
+      ),
+    ).toMatchObject({ moved: [], count: 0, notFound: [missingId] });
   });
 });
 
@@ -839,5 +1001,38 @@ describe('orderNumber read parity', () => {
     const recent = content(await callTool(userId, 'finance_recent_transactions', { limit: 50 }));
     const recentRow = recent.transactions?.find((row) => row.id === id);
     expect(recentRow?.orderNumber).toBe('ORDER-0001');
+
+    const cleared = content(
+      await callTool(userId, 'finance_transaction_upsert', {
+        postedOn: '2026-12-30',
+        account: 'Sheet Checking',
+        description: 'Example Order Merchant',
+        amountCents: -12345,
+        currencyCode: 'USD',
+        externalId: 'order-number-clear-test',
+        notes: 'Order #: LEGACY-ORDER',
+      }),
+    );
+    await callTool(userId, 'finance_transaction_upsert', {
+      postedOn: '2026-12-30',
+      account: 'Sheet Checking',
+      description: 'Example Order Merchant',
+      amountCents: -12345,
+      currencyCode: 'USD',
+      externalId: 'order-number-clear-test',
+      orderNumber: null,
+    });
+    const clearedSearch = content(
+      await callTool(userId, 'finance_transaction_search', { query: 'Example Order Merchant' }),
+    );
+    expect(
+      clearedSearch.transactions?.find((row) => row.id === cleared.id)?.orderNumber,
+    ).toBeNull();
+    const clearedRecent = content(
+      await callTool(userId, 'finance_recent_transactions', { limit: 50 }),
+    );
+    expect(
+      clearedRecent.transactions?.find((row) => row.id === cleared.id)?.orderNumber,
+    ).toBeNull();
   });
 });

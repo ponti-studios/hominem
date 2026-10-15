@@ -683,6 +683,7 @@ export async function upsertSheetTransaction(
   userId: string,
   input: SheetTransactionInput,
   accountMap?: Record<string, string>,
+  conflictRetry = 0,
 ): Promise<{ id: string; created: boolean; updated: boolean; accountId: string }> {
   const invalid = validateRow(input);
   if (invalid) throw new Error(invalid);
@@ -733,8 +734,9 @@ export async function upsertSheetTransaction(
     ])
     .where('userId', '=', userId)
     .where('externalId', '=', externalId)
-    .$if(Boolean(input.externalId?.trim()), (query) =>
-      query.where('accountId', '=', resolved.accountId).where('source', '=', source),
+    .$if(
+      Boolean(input.externalId?.trim()) && !input.externalId?.trim().startsWith('sheet:'),
+      (query) => query.where('accountId', '=', resolved.accountId).where('source', '=', source),
     )
     .orderBy(sql<number>`case when source = ${source} then 0 else 1 end`)
     .limit(1)
@@ -753,13 +755,16 @@ export async function upsertSheetTransaction(
     input.transactionType === undefined
       ? (existing?.transactionType ?? inferredTransactionType)
       : inferredTransactionType;
-  const effectiveSource = input.source === undefined ? (existing?.source ?? source) : source;
+  const isSheetIdentity = Boolean(input.externalId?.trim().startsWith('sheet:'));
+  const effectiveSource =
+    input.source === undefined || isSheetIdentity ? (existing?.source ?? source) : source;
 
   const tagIds = await ensureTagIds(userId, parseTags(input.tags));
 
   if (existing) {
     const excluded = input.excluded ?? existing.excluded;
     const recurring = input.recurring ?? existing.recurring;
+    const merchantName = existing.description === description ? existing.merchantName : description;
     const currentTagIds = await getTransactionTagIds(existing.id, userId);
     const currentTagSet = new Set(currentTagIds);
     const nextTagSet = input.tags === undefined ? currentTagSet : new Set(tagIds);
@@ -781,6 +786,7 @@ export async function upsertSheetTransaction(
       (existing.orderNumber ?? null) === orderNumber &&
       existing.recurring === recurring &&
       existing.source === effectiveSource &&
+      existing.merchantName === merchantName &&
       existing.transactionType === transactionType &&
       Number(existing.amount) === amount &&
       existing.description === description &&
@@ -799,6 +805,7 @@ export async function upsertSheetTransaction(
         notes,
         orderNumber,
         transactionType,
+        merchantName,
         amount,
         description,
         postedOn: input.postedOn,
@@ -842,7 +849,18 @@ export async function upsertSheetTransaction(
       .execute();
   } catch (error) {
     if (isSheetExternalIdConflict(error)) {
-      return upsertSheetTransaction(userId, input, accountMap);
+      const raced = await db
+        .selectFrom('app.financeTransactions')
+        .select('id')
+        .where('userId', '=', userId)
+        .where('externalId', '=', externalId)
+        .$if(!externalId.startsWith('sheet:'), (query) =>
+          query.where('accountId', '=', resolved.accountId).where('source', '=', source),
+        )
+        .executeTakeFirst();
+      if (raced && conflictRetry < 1)
+        return upsertSheetTransaction(userId, input, accountMap, conflictRetry + 1);
+      throw new ValidationError('external_id_conflict');
     }
     throw error;
   }
@@ -907,9 +925,11 @@ async function projectImportSplit(
     row,
     source: normalizeSource(row.input.source),
     externalId: row.externalId,
-    lookupKey: row.input.externalId?.trim()
-      ? `${row.accountId}|${normalizeSource(row.input.source)}|${row.externalId}`
-      : row.externalId,
+    lookupKey: row.input.externalId?.trim()?.startsWith('sheet:')
+      ? row.externalId
+      : row.input.externalId?.trim()
+        ? `${row.accountId}|${normalizeSource(row.input.source)}|${row.externalId}`
+        : row.externalId,
   }));
 
   const existing = new Map<
@@ -925,6 +945,10 @@ async function projectImportSplit(
       merchantName: string | null;
       orderNumber: string | null;
       transactionType: string;
+      amount: number | string;
+      description: string | null;
+      postedOn: string | Date;
+      currencyCode: string;
     }
   >();
   const chunkSize = 250;
@@ -944,6 +968,10 @@ async function projectImportSplit(
         'merchantName',
         'orderNumber',
         'transactionType',
+        'amount',
+        'description',
+        'postedOn',
+        'currencyCode',
       ])
       .where('userId', '=', userId)
       .where(
@@ -999,8 +1027,18 @@ async function projectImportSplit(
       (found.orderNumber ?? null) ===
         (input.orderNumber === undefined ? found.orderNumber : input.orderNumber) &&
       found.recurring === (input.recurring ?? found.recurring) &&
+      found.merchantName ===
+        (found.description === input.description.trim()
+          ? found.merchantName
+          : input.description.trim()) &&
       found.transactionType === (input.transactionType ?? found.transactionType) &&
-      (input.source === undefined ? found.source : found.source === key.source) &&
+      Number(found.amount) === toNumber(input.amountCents) / 100 &&
+      found.description === input.description.trim() &&
+      String(found.postedOn).slice(0, 10) === input.postedOn &&
+      found.currencyCode === input.currencyCode.trim().toUpperCase() &&
+      (input.source === undefined || input.externalId?.trim()?.startsWith('sheet:')
+        ? true
+        : found.source === key.source) &&
       tagsSame;
     if (!unchanged) updated += 1;
   }
