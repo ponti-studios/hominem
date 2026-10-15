@@ -20,7 +20,11 @@ export type McpExpectation = {
   stopBefore?: string;
   confirmation?: boolean;
   outputIncludes?: readonly string[];
-  argumentAssertions?: readonly { tool: string; equals: Record<string, unknown> }[];
+  argumentAssertions?: readonly {
+    tool: string;
+    equals?: Record<string, unknown>;
+    contains?: Record<string, unknown>;
+  }[];
   resultAssertions?: readonly {
     tool: string;
     outputIncludes?: readonly string[];
@@ -42,6 +46,18 @@ export type McpScenarioScore = {
 
 const positions = (calls: readonly string[]): Map<string, number> =>
   new Map(calls.map((call, index) => [call, index]));
+
+const stableStringify = (value: unknown): string =>
+  JSON.stringify(value, (_key, nested: unknown) => {
+    if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+      return Object.fromEntries(
+        Object.entries(nested as Record<string, unknown>).sort(([left], [right]) =>
+          left.localeCompare(right),
+        ),
+      );
+    }
+    return nested;
+  });
 
 export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpScenarioScore {
   const calls = trace.toolCalls;
@@ -83,9 +99,15 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
   );
   const callsByTool = new Map((trace.calls ?? []).map((call) => [call.tool, call]));
   const failedArguments = (expected.argumentAssertions ?? [])
-    .filter(
-      (assertion) =>
-        JSON.stringify(callsByTool.get(assertion.tool)?.input) !== JSON.stringify(assertion.equals),
+    .filter((assertion) =>
+      assertion.equals
+        ? stableStringify(callsByTool.get(assertion.tool)?.input) !==
+          stableStringify(assertion.equals)
+        : Object.entries(assertion.contains ?? {}).some(
+            ([key, value]) =>
+              stableStringify(callsByTool.get(assertion.tool)?.input[key]) !==
+              stableStringify(value),
+          ),
     )
     .map((assertion) => assertion.tool);
   const failedResults = (expected.resultAssertions ?? []).flatMap((assertion) => {
@@ -120,6 +142,8 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
       violated.length === 0 &&
       confirmationPassed &&
       missingOutput.length === 0 &&
+      failedArguments.length === 0 &&
+      failedResults.length === 0 &&
       !trace.providerError &&
       !trace.runtimeError,
     requiredTools: { passed: missing.length === 0, missing },

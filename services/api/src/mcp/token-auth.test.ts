@@ -10,6 +10,7 @@ import { apiErrorHandler } from '../rpc/middleware/error';
 import { validationErrorMiddleware } from '../rpc/middleware/validation';
 import { MCP_SCOPES } from '../scopes';
 import { mcpRoutes } from './routes';
+import { listTools } from './tool-registry';
 
 vi.mock('@better-auth/mcp', async (importOriginal) => ({
   // The token path must never reach the OAuth flow — if requireMcpAuth runs,
@@ -158,6 +159,59 @@ describe('mcp bearer token auth', () => {
       );
     } finally {
       await client.close();
+    }
+  });
+
+  it('enforces finance tool scopes for personal tokens at discovery and call time', async () => {
+    const scopesByToken: Record<string, string[]> = {
+      hmt_finance_read_token: ['finance:read'],
+      hmt_finance_write_token: ['finance:write'],
+      hmt_finance_full_write_token: ['finance:write', 'tags:write'],
+    };
+    vi.mocked(resolveMcpToken).mockImplementation(async (token) => {
+      const scopes = scopesByToken[token];
+      return scopes ? { ownerUserId: testUser.id, scopes } : null;
+    });
+
+    const financeTools = listTools().filter((tool) => tool.name.startsWith('finance_'));
+    const readToolNames = financeTools.filter((tool) => tool.readOnly).map((tool) => tool.name);
+    const writeToolNames = financeTools.filter((tool) => !tool.readOnly).map((tool) => tool.name);
+    const financeReader = await createClient('hmt_finance_read_token');
+    const financeWriter = await createClient('hmt_finance_write_token');
+    const fullyScopedFinanceWriter = await createClient('hmt_finance_full_write_token');
+
+    try {
+      const readerTools = (await financeReader.listTools()).tools.map((tool) => tool.name);
+      expect(readerTools.filter((name) => name.startsWith('finance_'))).toEqual(readToolNames);
+      for (const toolName of writeToolNames) {
+        await expect(financeReader.callTool({ name: toolName, arguments: {} })).rejects.toThrow(
+          'not found',
+        );
+      }
+
+      const writerTools = (await financeWriter.listTools()).tools.map((tool) => tool.name);
+      const financeWriteNamesGrantedByFinanceWrite = financeTools
+        .filter((tool) => !tool.readOnly && tool.scopes.every((scope) => scope === 'finance:write'))
+        .map((tool) => tool.name);
+      expect(writerTools.filter((name) => name.startsWith('finance_'))).toEqual(
+        financeWriteNamesGrantedByFinanceWrite,
+      );
+      for (const toolName of readToolNames) {
+        await expect(financeWriter.callTool({ name: toolName, arguments: {} })).rejects.toThrow(
+          'not found',
+        );
+      }
+
+      const fullyScopedWriterTools = (await fullyScopedFinanceWriter.listTools()).tools.map(
+        (tool) => tool.name,
+      );
+      expect(fullyScopedWriterTools.filter((name) => name.startsWith('finance_'))).toEqual(
+        writeToolNames,
+      );
+    } finally {
+      await financeReader.close();
+      await financeWriter.close();
+      await fullyScopedFinanceWriter.close();
     }
   });
 
