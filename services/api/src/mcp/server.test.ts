@@ -939,6 +939,29 @@ describe('mcp server transport', () => {
         expect(completion.completion.values).toEqual(['high']);
       });
     });
+
+    it('exposes the monthly finance review only with finance:read and keeps it read-only', async () => {
+      await withClient('finance:write', async (client) => {
+        const { prompts } = await client.listPrompts();
+        expect(prompts.map((prompt) => prompt.name)).not.toContain('monthly_finance_review');
+      });
+
+      await withClient('finance:read', async (client) => {
+        const { prompts } = await client.listPrompts();
+        expect(prompts.map((prompt) => prompt.name)).toContain('monthly_finance_review');
+
+        const review = await client.getPrompt({
+          name: 'monthly_finance_review',
+          arguments: { month: '2026-09' },
+        });
+        const text = JSON.stringify(review.messages[0]?.content);
+        expect(text).toContain('finance_monthly_stats');
+        expect(text).toContain('finance_spending_by_category');
+        expect(text).toContain('finance_top_merchants');
+        expect(text).toContain('Keep currencies separate');
+        expect(text).toContain('read-only');
+      });
+    });
   });
 });
 
