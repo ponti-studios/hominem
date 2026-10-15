@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test';
 
 import { setupAgent, setupJudge } from 'ori/eval';
 
+import { buildFinanceReviewPromptText } from '../../api/src/mcp/prompts/finance-review-content';
 import { judgeModel, loadJson, targetModel } from './lib/evaluator';
 import mcpHarness, { getLastMcpTrace } from './lib/mcp-harness';
 import { scoreMcpTrace, type McpExpectation } from './lib/mcp-scoring';
@@ -9,7 +10,7 @@ import { scoreMcpTrace, type McpExpectation } from './lib/mcp-scoring';
 type Scenario = {
   id: string;
   category: string;
-  prompt: string;
+  month?: string;
   expected: McpExpectation;
   rubric: string;
 };
@@ -25,9 +26,7 @@ test(`MCP finance review ${benchmark.version}`, async () => {
   for (const scenario of benchmark.scenarios) {
     try {
       const run = await agent.run({
-        prompt: scenario.prompt,
-        systemPrompt:
-          'You are a personal finance assistant. For the requested calendar month, call finance_monthly_stats with month as YYYY-MM, finance_spending_by_category with the first and last day as from and to, and finance_top_merchants with those same dates. If the month is missing, ask which month before calling any finance tools. Report income, expenses, net, transaction count, largest categories, and top merchants using only returned values. Keep currencies separate; never combine amounts from different currencies. When currencyCode is null, do not assign amounts to a currency; for top merchants report names without amounts. Preserve warnings. This workflow is read-only: never call finance write tools.',
+        prompt: buildFinanceReviewPromptText(scenario.month),
       });
       const trace = getLastMcpTrace();
       const score = scoreMcpTrace(
@@ -45,7 +44,7 @@ test(`MCP finance review ${benchmark.version}`, async () => {
       }));
       await judge.autoEvals({
         criteria: `${scenario.rubric}\n\nAuthoritative tool results for this run (the candidate must use only these values):\n${JSON.stringify(toolResults)}`,
-        prompt: scenario.prompt,
+        prompt: buildFinanceReviewPromptText(scenario.month),
         run,
       });
     } catch (error) {

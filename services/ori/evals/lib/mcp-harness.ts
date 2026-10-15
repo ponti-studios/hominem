@@ -6,6 +6,7 @@ import {
   type HarnessInvokeOptions,
 } from 'ori';
 
+import { financeSpendingByCategoryOutputSchema } from '../../../api/src/schemas/finance.schema';
 import type { McpTrace } from './mcp-scoring';
 
 type ToolCall = { id?: string; function?: { name?: string; arguments?: string } };
@@ -250,7 +251,7 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
         },
       };
     case 'finance_monthly_stats': {
-      const mixed = state.prompt.toLowerCase().includes('mixed currency');
+      const mixed = state.prompt.includes('2026-02');
       return {
         output: mixed
           ? {
@@ -322,55 +323,57 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
             },
       };
     }
-    case 'finance_spending_by_category':
-      return {
-        output:
-          input.from === '2026-02-01'
-            ? {
-                from: '2026-02-01',
-                to: '2026-02-28',
-                currencyCode: null,
-                truncated: false,
-                categories: [
-                  {
-                    categoryId: 'category-groceries',
-                    name: 'Groceries',
-                    amountCents: 42000,
-                    currencyCode: 'GBP',
-                  },
-                  {
-                    categoryId: 'category-software',
-                    name: 'Software',
-                    amountCents: 32000,
-                    currencyCode: 'USD',
-                  },
-                ],
-                count: 2,
-                warnings: ['Category amounts are reported separately by currency.'],
-              }
-            : {
-                from: '2026-09-01',
-                to: '2026-09-30',
-                currencyCode: 'GBP',
-                truncated: false,
-                categories: [
-                  {
-                    categoryId: 'category-housing',
-                    name: 'Housing',
-                    amountCents: 180000,
-                    currencyCode: 'GBP',
-                  },
-                  {
-                    categoryId: 'category-food',
-                    name: 'Food',
-                    amountCents: 70000,
-                    currencyCode: 'GBP',
-                  },
-                ],
-                count: 2,
-                warnings: [],
-              },
-      };
+    case 'finance_spending_by_category': {
+      const output =
+        input.from === '2026-02-01'
+          ? {
+              from: '2026-02-01',
+              to: '2026-02-28',
+              currencyCode: null,
+              truncated: false,
+              categories: [
+                {
+                  categoryId: 'category-groceries',
+                  categoryName: 'Groceries',
+                  currencyCode: 'GBP',
+                  spentCents: 42000,
+                  transactionCount: 6,
+                },
+                {
+                  categoryId: 'category-software',
+                  categoryName: 'Software',
+                  currencyCode: 'USD',
+                  spentCents: 32000,
+                  transactionCount: 3,
+                },
+              ],
+              warnings: ['Category amounts are reported separately by currency.'],
+            }
+          : {
+              from: '2026-09-01',
+              to: '2026-09-30',
+              currencyCode: 'GBP',
+              truncated: false,
+              categories: [
+                {
+                  categoryId: 'category-housing',
+                  categoryName: 'Housing',
+                  currencyCode: 'GBP',
+                  spentCents: 180000,
+                  transactionCount: 18,
+                },
+                {
+                  categoryId: 'category-food',
+                  categoryName: 'Food',
+                  currencyCode: 'GBP',
+                  spentCents: 70000,
+                  transactionCount: 12,
+                },
+              ],
+              warnings: [],
+            };
+      return { output: financeSpendingByCategoryOutputSchema.parse(output) };
+    }
     case 'finance_top_merchants':
       return {
         output:

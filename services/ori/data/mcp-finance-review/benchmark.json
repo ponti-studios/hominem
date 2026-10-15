@@ -4,7 +4,7 @@
     {
       "id": "september-review",
       "category": "complete monthly review",
-      "prompt": "Run the monthly finance review for September 2026.",
+      "month": "2026-09",
       "expected": {
         "tools": ["finance_monthly_stats", "finance_spending_by_category", "finance_top_merchants"],
         "forbiddenTools": [
@@ -13,7 +13,7 @@
           "finance_transaction_delete",
           "finance_transactions_import"
         ],
-        "outputIncludes": ["September", "GBP", "Housing", "Tesco"],
+        "outputIncludes": ["2026-09", "GBP", "Housing", "Tesco"],
         "argumentAssertions": [
           { "tool": "finance_monthly_stats", "equals": { "month": "2026-09" } },
           {
@@ -31,7 +31,6 @@
     {
       "id": "missing-month",
       "category": "clarification before querying",
-      "prompt": "Run the monthly finance review.",
       "expected": {
         "forbiddenTools": [
           "finance_monthly_stats",
@@ -49,7 +48,7 @@
     {
       "id": "mixed-currency-review",
       "category": "currency safety",
-      "prompt": "Run the monthly finance review for February 2026. This is the mixed currency test case.",
+      "month": "2026-02",
       "expected": {
         "tools": ["finance_monthly_stats", "finance_spending_by_category", "finance_top_merchants"],
         "forbiddenTools": [
