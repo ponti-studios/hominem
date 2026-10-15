@@ -39,6 +39,40 @@ const tools = [
     { from: { type: 'string' }, to: { type: 'string' }, limit: { type: 'integer' } },
   ],
   [
+    'finance_monthly_stats',
+    'Summarizes one month by currency with income, expenses, net, transaction count and top merchant.',
+    { month: { type: 'string' } },
+  ],
+  [
+    'finance_spending_by_category',
+    'Reports posted, non-excluded, non-transfer spending by category and currency over a date range.',
+    { from: { type: 'string' }, to: { type: 'string' }, limit: { type: 'integer' } },
+  ],
+  [
+    'finance_top_merchants',
+    'Ranks spending by merchant for a date range. currencyCode is null when totals span currencies; requires finance:read.',
+    { from: { type: 'string' }, to: { type: 'string' }, limit: { type: 'integer' } },
+  ],
+  [
+    'finance_transaction_upsert',
+    'Creates or updates a finance transaction. Writes finance data and requires confirmation.',
+    {
+      accountId: { type: 'string' },
+      amountCents: { type: 'integer' },
+      postedOn: { type: 'string' },
+    },
+  ],
+  [
+    'finance_transaction_delete',
+    'Deletes a finance transaction. Destructive write that requires confirmation.',
+    { id: { type: 'string' } },
+  ],
+  [
+    'finance_transactions_import',
+    'Imports or replaces finance transactions. Write that requires confirmation.',
+    { transactions: { type: 'array' }, mode: { type: 'string' } },
+  ],
+  [
     'search_memories',
     'Searches personal memories before a conditional memory write.',
     { query: { type: 'string' } },
@@ -215,6 +249,153 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
           count: 1,
         },
       };
+    case 'finance_monthly_stats': {
+      const mixed = state.prompt.toLowerCase().includes('mixed currency');
+      return {
+        output: mixed
+          ? {
+              month: '2026-02',
+              incomeCents: null,
+              expensesCents: null,
+              netCents: null,
+              transactionCount: 31,
+              averageTransactionCents: null,
+              topTag: null,
+              topMerchant: null,
+              tagSpending: [],
+              currencyBreakdown: [
+                {
+                  currencyCode: 'GBP',
+                  incomeCents: 260000,
+                  expensesCents: 180000,
+                  netCents: 80000,
+                  transactionCount: 20,
+                  averageTransactionCents: 9000,
+                  topTag: 'Food',
+                  topMerchant: 'Grocer',
+                  tagSpending: [],
+                },
+                {
+                  currencyCode: 'USD',
+                  incomeCents: 100000,
+                  expensesCents: 50000,
+                  netCents: 50000,
+                  transactionCount: 11,
+                  averageTransactionCents: 4545,
+                  topTag: 'Work',
+                  topMerchant: 'Cloud Tools',
+                  tagSpending: [],
+                },
+              ],
+              startDate: '2026-02-01',
+              endDate: '2026-02-28',
+              currencyCode: null,
+              warnings: ['Activity spans multiple currencies; combined totals are omitted.'],
+            }
+          : {
+              month: '2026-09',
+              incomeCents: 420000,
+              expensesCents: 310000,
+              netCents: 110000,
+              transactionCount: 42,
+              averageTransactionCents: 7381,
+              topTag: 'Household',
+              topMerchant: 'Tesco',
+              tagSpending: [],
+              currencyBreakdown: [
+                {
+                  currencyCode: 'GBP',
+                  incomeCents: 420000,
+                  expensesCents: 310000,
+                  netCents: 110000,
+                  transactionCount: 42,
+                  averageTransactionCents: 7381,
+                  topTag: 'Household',
+                  topMerchant: 'Tesco',
+                  tagSpending: [],
+                },
+              ],
+              startDate: '2026-09-01',
+              endDate: '2026-09-30',
+              currencyCode: 'GBP',
+              warnings: [],
+            },
+      };
+    }
+    case 'finance_spending_by_category':
+      return {
+        output:
+          input.from === '2026-02-01'
+            ? {
+                from: '2026-02-01',
+                to: '2026-02-28',
+                currencyCode: null,
+                truncated: false,
+                categories: [
+                  {
+                    categoryId: 'category-groceries',
+                    name: 'Groceries',
+                    amountCents: 42000,
+                    currencyCode: 'GBP',
+                  },
+                  {
+                    categoryId: 'category-software',
+                    name: 'Software',
+                    amountCents: 32000,
+                    currencyCode: 'USD',
+                  },
+                ],
+                count: 2,
+                warnings: ['Category amounts are reported separately by currency.'],
+              }
+            : {
+                from: '2026-09-01',
+                to: '2026-09-30',
+                currencyCode: 'GBP',
+                truncated: false,
+                categories: [
+                  {
+                    categoryId: 'category-housing',
+                    name: 'Housing',
+                    amountCents: 180000,
+                    currencyCode: 'GBP',
+                  },
+                  {
+                    categoryId: 'category-food',
+                    name: 'Food',
+                    amountCents: 70000,
+                    currencyCode: 'GBP',
+                  },
+                ],
+                count: 2,
+                warnings: [],
+              },
+      };
+    case 'finance_top_merchants':
+      return {
+        output:
+          input.from === '2026-02-01'
+            ? {
+                merchants: [
+                  { name: 'Grocer', totalSpentCents: 42000, transactionCount: 6 },
+                  { name: 'Cloud Tools', totalSpentCents: 32000, transactionCount: 3 },
+                ],
+                count: 2,
+                currencyCode: null,
+                warnings: [
+                  'Merchant amounts span multiple currencies; currency per merchant is unavailable.',
+                ],
+              }
+            : {
+                merchants: [
+                  { name: 'Tesco', totalSpentCents: 65000, transactionCount: 5 },
+                  { name: 'Trainline', totalSpentCents: 25000, transactionCount: 2 },
+                ],
+                count: 2,
+                currencyCode: 'GBP',
+                warnings: [],
+              },
+      };
     case 'career_profile':
       return {
         output: {
@@ -235,6 +416,9 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
     case 'invite_member':
     case 'career_application_delete':
     case 'remove_collection_item':
+    case 'finance_transaction_upsert':
+    case 'finance_transaction_delete':
+    case 'finance_transactions_import':
       return {
         output: { confirmationRequired: true, pendingAction: name },
         confirmationRequired: true,

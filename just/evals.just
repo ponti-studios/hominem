@@ -43,6 +43,9 @@ time-block-holdout: (_run "time-block-holdout")
 # MCP tool selection — does the model call get_career_portfolio only when appropriate?
 mcp-tool-selection: (_run "mcp-tool-selection")
 
+# Monthly finance review — period grounding, read-only behavior, and currency safety.
+mcp-finance-review: (_run "mcp-finance-review")
+
 # Career job-import extraction against the checked-in Whatnot/Ashby fixture.
 career-job-import: (_run "career-job-import")
 
