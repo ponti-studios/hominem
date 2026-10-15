@@ -12,6 +12,7 @@ type Scenario = {
   prompt: string;
   expected: {
     tools?: string[];
+    allowedTools?: string[];
     forbiddenTools?: string[];
     dependencies?: [string, string][];
     stopBefore?: string;
@@ -50,6 +51,7 @@ test(
           const trace = getLastMcpTrace(scenario.prompt);
           const score = scoreMcpTrace({ ...trace, toolCalls: run.toolCalls, text: run.text }, {
             requiredTools: scenario.expected.tools,
+            allowedTools: scenario.expected.allowedTools ?? scenario.expected.tools ?? [],
             forbiddenTools: scenario.expected.forbiddenTools,
             dependencies: scenario.expected.dependencies,
             stopBefore: scenario.expected.stopBefore,

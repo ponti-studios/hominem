@@ -15,6 +15,7 @@ export type McpTrace = {
 
 export type McpExpectation = {
   requiredTools?: readonly string[];
+  allowedTools?: readonly string[];
   forbiddenTools?: readonly string[];
   dependencies?: readonly (readonly [string, string])[];
   stopBefore?: string;
@@ -35,6 +36,7 @@ export type McpExpectation = {
 export type McpScenarioScore = {
   passed: boolean;
   requiredTools: { passed: boolean; missing: string[] };
+  allowedTools: { passed: boolean; unexpected: string[] };
   forbiddenTools: { passed: boolean; found: string[] };
   dependencies: { passed: boolean; violated: string[] };
   confirmation: { passed: boolean; reason?: string };
@@ -63,6 +65,8 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
   const calls = trace.toolCalls;
   const required = expected.requiredTools ?? [];
   const missing = required.filter((tool) => !calls.includes(tool));
+  const allowed = expected.allowedTools;
+  const unexpected = allowed ? calls.filter((tool) => !allowed.includes(tool)) : [];
   const forbidden = (expected.forbiddenTools ?? []).filter((tool) => calls.includes(tool));
   const indexByTool = positions(calls);
   const violated = (expected.dependencies ?? [])
@@ -125,6 +129,7 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
     : trace.runtimeError
       ? 'runtime'
       : missing.length ||
+          unexpected.length ||
           forbidden.length ||
           violated.length ||
           !confirmationPassed ||
@@ -138,6 +143,7 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
   return {
     passed:
       missing.length === 0 &&
+      unexpected.length === 0 &&
       forbidden.length === 0 &&
       violated.length === 0 &&
       confirmationPassed &&
@@ -147,6 +153,7 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
       !trace.providerError &&
       !trace.runtimeError,
     requiredTools: { passed: missing.length === 0, missing },
+    allowedTools: { passed: unexpected.length === 0, unexpected },
     forbiddenTools: { passed: forbidden.length === 0, found: forbidden },
     dependencies: { passed: violated.length === 0, violated },
     confirmation: {

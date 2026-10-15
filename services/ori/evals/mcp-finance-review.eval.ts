@@ -11,7 +11,10 @@ type Scenario = {
   id: string;
   category: string;
   month?: string;
-  expected: McpExpectation;
+  expected: Omit<McpExpectation, 'requiredTools' | 'allowedTools'> & {
+    tools?: string[];
+    allowedTools?: string[];
+  };
   rubric: string;
 };
 
@@ -41,7 +44,11 @@ test(
           const trace = getLastMcpTrace(prompt);
           const score = scoreMcpTrace(
             { ...trace, toolCalls: run.toolCalls, text: run.text },
-            scenario.expected,
+            {
+              ...scenario.expected,
+              requiredTools: scenario.expected.tools,
+              allowedTools: scenario.expected.allowedTools ?? scenario.expected.tools ?? [],
+            },
           );
           if (!score.passed) {
             throw new Error(
