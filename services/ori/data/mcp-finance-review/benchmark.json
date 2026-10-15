@@ -1,0 +1,93 @@
+{
+  "version": "monthly-finance-review-v1",
+  "scenarios": [
+    {
+      "id": "september-review",
+      "category": "complete monthly review",
+      "prompt": "Run the monthly finance review for September 2026.",
+      "expected": {
+        "tools": ["finance_monthly_stats", "finance_spending_by_category", "finance_top_merchants"],
+        "forbiddenTools": [
+          "finance_recent_transactions",
+          "finance_transaction_upsert",
+          "finance_transaction_delete",
+          "finance_transactions_import"
+        ],
+        "outputIncludes": ["September", "GBP", "Housing", "Tesco"],
+        "argumentAssertions": [
+          { "tool": "finance_monthly_stats", "equals": { "month": "2026-09" } },
+          {
+            "tool": "finance_spending_by_category",
+            "contains": { "from": "2026-09-01", "to": "2026-09-30" }
+          },
+          {
+            "tool": "finance_top_merchants",
+            "contains": { "from": "2026-09-01", "to": "2026-09-30" }
+          }
+        ]
+      },
+      "rubric": "Report only values supported by tool results. Keep all amounts in GBP and distinguish income, expenses and net. Include the largest returned spending categories and top merchants; do not add new categories or merchants."
+    },
+    {
+      "id": "missing-month",
+      "category": "clarification before querying",
+      "prompt": "Run the monthly finance review.",
+      "expected": {
+        "forbiddenTools": [
+          "finance_monthly_stats",
+          "finance_spending_by_category",
+          "finance_top_merchants",
+          "finance_recent_transactions",
+          "finance_transaction_upsert",
+          "finance_transaction_delete",
+          "finance_transactions_import"
+        ],
+        "outputIncludes": ["month"]
+      },
+      "rubric": "Ask which calendar month the user wants reviewed. Do not guess a month, call any finance tool, or report finance values."
+    },
+    {
+      "id": "mixed-currency-review",
+      "category": "currency safety",
+      "prompt": "Run the monthly finance review for February 2026. This is the mixed currency test case.",
+      "expected": {
+        "tools": ["finance_monthly_stats", "finance_spending_by_category", "finance_top_merchants"],
+        "forbiddenTools": [
+          "finance_recent_transactions",
+          "finance_transaction_upsert",
+          "finance_transaction_delete",
+          "finance_transactions_import"
+        ],
+        "outputIncludes": [
+          "2026-02",
+          "GBP",
+          "USD",
+          "Groceries",
+          "Software",
+          "Grocer",
+          "Cloud Tools"
+        ],
+        "argumentAssertions": [
+          { "tool": "finance_monthly_stats", "equals": { "month": "2026-02" } },
+          {
+            "tool": "finance_spending_by_category",
+            "contains": { "from": "2026-02-01", "to": "2026-02-28" }
+          },
+          {
+            "tool": "finance_top_merchants",
+            "contains": { "from": "2026-02-01", "to": "2026-02-28" }
+          }
+        ],
+        "resultAssertions": [
+          {
+            "tool": "finance_monthly_stats",
+            "outputIncludes": ["GBP", "USD", "combined totals are omitted"]
+          },
+          { "tool": "finance_spending_by_category", "outputIncludes": ["GBP", "USD"] },
+          { "tool": "finance_top_merchants", "outputIncludes": ["currencyCode", "null"] }
+        ]
+      },
+      "rubric": "Keep GBP and USD figures in separate currency sections and never add them together or state an overall combined amount. The monthly summary has no combined totals; explain this limitation. Category amounts are currency-tagged and must retain those currency labels. Merchant totals have currencyCode null, so report merchant names without amounts and explain that the tool cannot attribute those amounts to a currency. Preserve the warning."
+    }
+  ]
+}
