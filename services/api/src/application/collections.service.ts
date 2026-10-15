@@ -582,3 +582,41 @@ export async function collectionDetail(
 
   return { collection, items, members, viewerRole: role };
 }
+
+/**
+ * Every collection-item link the caller can see, in one call. Still's library
+ * sync uses this instead of one `collectionDetail` per collection (N+1).
+ * Unbounded: accessible collections are capped by sharing, not by the
+ * `listCollections` page size, so sync never misses membership.
+ */
+export async function collectionMembership(ownerUserId: string) {
+  const ownedRows = await db
+    .selectFrom('app.collections')
+    .select('id')
+    .where('ownerUserid', '=', ownerUserId)
+    .execute();
+
+  const memberRows = await db
+    .selectFrom('app.collectionMembers')
+    .select('collectionId as id')
+    .where('userId', '=', ownerUserId)
+    .where('acceptedAt', 'is not', null)
+    .execute();
+
+  const ids = [...new Set([...ownedRows, ...memberRows].map((row) => row.id))];
+  if (ids.length === 0) return { membership: [], count: 0 };
+
+  const itemRows = await db
+    .selectFrom('app.collectionItems')
+    .select(['collectionId', 'entityTable', 'entityId'])
+    .where('collectionId', 'in', ids)
+    .execute();
+
+  const membership = itemRows.flatMap((row) => {
+    const entityType = entityTypeForTable(row.entityTable);
+    if (!entityType) return [];
+    return [{ collectionId: row.collectionId, entityType, entityId: row.entityId }];
+  });
+
+  return { membership, count: membership.length };
+}

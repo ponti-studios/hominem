@@ -77,6 +77,7 @@ export async function listPossessions(
     ...(query.archived ? { archived: query.archived === 'true' } : {}),
     ...(query.containerId ? { containerId: query.containerId } : {}),
     ...(query.limit ? { limit: query.limit } : {}),
+    ...(query.offset ? { offset: query.offset } : {}),
   });
 }
 

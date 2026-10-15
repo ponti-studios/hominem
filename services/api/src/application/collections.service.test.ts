@@ -5,6 +5,7 @@ import {
   acceptMemberInvite,
   addCollectionItem,
   collectionDetail,
+  collectionMembership,
   createCollection,
   deleteCollection,
   inviteMember,
@@ -132,5 +133,49 @@ describe('leaveCollection', () => {
     const { collection } = await makeCollection(ownerId, 'No Access');
 
     await expect(leaveCollection(strangerId, { collectionId: collection.id })).rejects.toThrow();
+  });
+});
+
+describe('collectionMembership', () => {
+  it('returns every visible link in one call', async () => {
+    const { collection: first } = await makeCollection(ownerId, 'Membership One');
+    const { collection: second } = await makeCollection(ownerId, 'Membership Two');
+    await addCollectionItem(ownerId, {
+      collectionId: first.id,
+      entityType: 'places',
+      entityId: placeId,
+    });
+    await addCollectionItem(ownerId, {
+      collectionId: second.id,
+      entityType: 'places',
+      entityId: placeId,
+    });
+
+    const { membership, count } = await collectionMembership(ownerId);
+
+    expect(count).toBeGreaterThanOrEqual(2);
+    expect(membership).toContainEqual({
+      collectionId: first.id,
+      entityType: 'places',
+      entityId: placeId,
+    });
+    expect(membership).toContainEqual({
+      collectionId: second.id,
+      entityType: 'places',
+      entityId: placeId,
+    });
+  });
+
+  it('hides collections the caller cannot see', async () => {
+    const { collection } = await makeCollection(ownerId, 'Membership Hidden');
+    await addCollectionItem(ownerId, {
+      collectionId: collection.id,
+      entityType: 'places',
+      entityId: placeId,
+    });
+
+    const { membership } = await collectionMembership(strangerId);
+
+    expect(membership.find((link) => link.collectionId === collection.id)).toBeUndefined();
   });
 });

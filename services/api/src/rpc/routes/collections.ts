@@ -6,6 +6,7 @@ import {
   acceptMemberInvite,
   addCollectionItem,
   collectionDetail,
+  collectionMembership,
   createCollection,
   declineMemberInvite,
   deleteCollection,
@@ -24,6 +25,7 @@ import {
   addCollectionItemInputSchema,
   addCollectionItemOutputSchema,
   collectionDetailOutputSchema,
+  collectionMembershipOutputSchema,
   createCollectionInputSchema,
   createCollectionOutputSchema,
   deleteCollectionOutputSchema,
@@ -78,6 +80,10 @@ export const collectionsRoutes = new Hono<AppContext>()
       acceptMemberInviteInputSchema.parse({ collectionId: c.req.param('collectionId') }),
     );
     return c.json(result);
+  })
+  .get('/membership', async (c) => {
+    const result = await collectionMembership(c.get('auth')!.userId);
+    return c.json(collectionMembershipOutputSchema.parse(result));
   })
   .get('/:collectionId', zValidator('param', collectionParamSchema), async (c) => {
     const { collectionId } = c.req.valid('param');

@@ -142,6 +142,19 @@ export const collectionDetailInputSchema = z.object({
 
 export const collectionDetailOutputSchema = collectionDetailSchema;
 
+// ── collection_membership ────────────────────────────────────────────
+
+const collectionMembershipLinkSchema = z.object({
+  collectionId: z.string(),
+  entityType: entityTypeSchema,
+  entityId: z.string(),
+});
+
+export const collectionMembershipOutputSchema = z.object({
+  membership: z.array(collectionMembershipLinkSchema),
+  count: z.number().int().min(0),
+});
+
 // ── invite_member ────────────────────────────────────────────────────
 
 export const inviteMemberInputSchema = z.object({
@@ -216,6 +229,7 @@ export type CollectionSummary = z.output<typeof collectionSummarySchema>;
 export type CollectionMember = z.output<typeof collectionMemberSchema>;
 export type CollectionItem = z.output<typeof collectionItemSchema>;
 export type CollectionDetail = z.output<typeof collectionDetailSchema>;
+export type CollectionMembershipLink = z.output<typeof collectionMembershipLinkSchema>;
 export type CreateCollectionInput = z.output<typeof createCollectionInputSchema>;
 export type UpdateCollectionInput = z.output<typeof updateCollectionInputSchema>;
 export type DeleteCollectionInput = z.output<typeof deleteCollectionInputSchema>;
