@@ -513,6 +513,7 @@ export interface AppFinanceTransactions {
   merchantName: string | null;
   notes: string | null;
   occurredAt: ColumnType<string, Date | string, Date | string> | null;
+  orderNumber: string | null;
   pending: Generated<boolean>;
   postedOn: ColumnType<string, Date | string, Date | string>;
   providerPayload: Generated<Json>;

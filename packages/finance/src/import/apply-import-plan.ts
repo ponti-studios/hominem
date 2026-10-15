@@ -229,17 +229,21 @@ export async function applyCopilotImportBatch(
       .values(rows)
       .onConflict((conflict) =>
         conflict
-          .columns(['userId', 'source', 'externalId'])
+          .columns(['userId', 'accountId', 'source', 'externalId'])
           .where('source', 'is not', null)
           .where('externalId', 'is not', null)
           .doNothing(),
       )
-      .returning(['id', 'externalId'])
+      .returning(['id', 'accountId', 'externalId'])
       .execute();
 
-    const insertedByExternalId = new Map(inserted.map((row) => [row.externalId, row.id]));
+    const insertedByExternalId = new Map(
+      inserted.map((row) => [`${row.accountId}:${row.externalId}`, row.id]),
+    );
     for (const transaction of input.transactions) {
-      const transactionId = insertedByExternalId.get(transaction.externalId);
+      const transactionId = insertedByExternalId.get(
+        `${transaction.accountId}:${transaction.externalId}`,
+      );
       if (!transactionId) continue;
       const tagInputs = [
         ...(transaction.parentCategory

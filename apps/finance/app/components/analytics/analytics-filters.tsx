@@ -190,7 +190,7 @@ export function AnalyticsFilters({
 
   // fall back to empty arrays while the queries are still loading
   const safeAccounts: Array<{ id: string; name: string }> = (
-    Array.isArray(accountsQuery.data) ? accountsQuery.data : []
+    accountsQuery.data?.accounts ?? []
   ).map((acc) => ({ id: acc.id, name: acc.name }));
   const safeTags = tags
     .map((tag) => ({

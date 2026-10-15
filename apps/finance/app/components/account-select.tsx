@@ -54,7 +54,7 @@ export function AccountSelect(props: AccountSelectProps) {
 
   // accounts always come from this hook; only isLoading can be overridden by the caller
   const { data: internalAccounts, isLoading: internalLoading } = useFinanceAccounts();
-  const accounts = Array.isArray(internalAccounts) ? internalAccounts : [];
+  const accounts = internalAccounts?.accounts ?? [];
   const isLoading = externalLoading !== undefined ? externalLoading : internalLoading;
 
   const items = useMemo(

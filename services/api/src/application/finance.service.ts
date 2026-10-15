@@ -271,6 +271,8 @@ export interface TransactionSearchInput {
   text?: string | undefined;
   tagIds?: string[] | undefined;
   tagNames?: string[] | undefined;
+  categoryName?: string | undefined;
+  transactionType?: string | undefined;
   limit: number;
   offset: number;
 }
@@ -292,6 +294,10 @@ export async function searchTransactions(userId: string, input: TransactionSearc
     if (accountIds.length > 0) filtered = filtered.where('t.accountId', 'in', accountIds);
     if (input.dateFrom) filtered = filtered.where('t.postedOn', '>=', input.dateFrom);
     if (input.dateTo) filtered = filtered.where('t.postedOn', '<=', input.dateTo);
+    if (input.categoryName)
+      filtered = filtered.where(sql`lower(c.name)`, '=', input.categoryName.toLowerCase());
+    if (input.transactionType)
+      filtered = filtered.where('t.transactionType', '=', input.transactionType);
     if (input.text) {
       const term = `%${input.text}%`;
       filtered = filtered.where((eb) =>
@@ -343,8 +349,10 @@ export async function searchTransactions(userId: string, input: TransactionSearc
         't.categoryId',
         'c.name as categoryName',
         't.notes',
+        't.orderNumber',
         't.counterpartId',
         't.source',
+        't.externalId',
         't.recurring',
         't.pending',
         't.excluded',
@@ -383,9 +391,10 @@ export async function searchTransactions(userId: string, input: TransactionSearc
       categoryName: t.categoryName ?? null,
       tags: tagNamesById.get(t.id) ?? [],
       notes: t.notes ?? null,
-      orderNumber: extractOrderNumber(t.notes),
+      orderNumber: t.orderNumber ?? extractOrderNumber(t.notes),
       counterpartId: t.counterpartId ?? null,
       source: t.source,
+      externalId: t.externalId,
       recurring: t.recurring === true,
       pending: t.pending === true,
       excluded: t.excluded === true,
@@ -428,6 +437,40 @@ export async function importFinanceTransactions(
   },
 ) {
   return importSheetTransactions(ownerUserId, options);
+}
+
+export async function moveFinanceTransactions(
+  ownerUserId: string,
+  ids: string[],
+  toAccount: string,
+) {
+  const account = await db
+    .selectFrom('app.financeAccounts')
+    .select(['id', 'currencyCode', 'allowedCurrencies'])
+    .where('id', '=', toAccount)
+    .where('userId', '=', ownerUserId)
+    .executeTakeFirst();
+  if (!account) throw new Error('unknown_account');
+  const rows = await db
+    .selectFrom('app.financeTransactions')
+    .select(['id', 'currencyCode'])
+    .where('userId', '=', ownerUserId)
+    .where('id', 'in', ids)
+    .execute();
+  if (rows.length !== new Set(ids).size) throw new Error('unknown_transaction');
+  const allowed = new Set(
+    [account.currencyCode, ...account.allowedCurrencies].map((code) => code.toUpperCase()),
+  );
+  if (rows.some((row) => !allowed.has(row.currencyCode.toUpperCase())))
+    throw new Error('currency_mismatch');
+  const moved = await db
+    .updateTable('app.financeTransactions')
+    .set({ accountId: account.id })
+    .where('userId', '=', ownerUserId)
+    .where('id', 'in', ids)
+    .returning('id')
+    .execute();
+  return { moved: moved.map((row) => row.id), count: moved.length, accountId: account.id };
 }
 
 export async function listFinanceCategoryOptions(ownerUserId: string) {

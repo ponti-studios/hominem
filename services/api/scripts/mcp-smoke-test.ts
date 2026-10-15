@@ -44,6 +44,8 @@ const mcpUrl = new URL(args.url ?? process.env.MCP_URL ?? 'https://api.ponti.io/
 const token = args.token ?? process.env.MCP_TOKEN;
 const authTimeoutMs = Number(args.timeout) * 1000;
 const PROTOCOL_VERSION = '2026-07-28';
+const CLIENT_INFO = { name: 'hominem-mcp-smoke-test', version: '1.0.0' };
+const CLIENT_CAPABILITIES = {};
 
 // Read tools that need no arguments, in order of preference.
 const PREFERRED_READ_TOOLS = [
@@ -266,17 +268,50 @@ async function obtainOAuthToken(): Promise<string> {
   }
 }
 
-async function rpc(accessToken: string, sessionId: string | undefined, body: Json) {
+async function rpc(
+  accessToken: string,
+  sessionId: string | undefined,
+  body: Json,
+  includeProtocolVersion = true,
+) {
+  const params =
+    typeof body.params === 'object' && body.params !== null && !Array.isArray(body.params)
+      ? (body.params as Json)
+      : {};
+  const requestBody =
+    includeProtocolVersion && body.id !== undefined
+      ? {
+          ...body,
+          params: {
+            ...params,
+            _meta: {
+              'io.modelcontextprotocol/protocolVersion': PROTOCOL_VERSION,
+              'io.modelcontextprotocol/clientInfo': CLIENT_INFO,
+              'io.modelcontextprotocol/clientCapabilities': CLIENT_CAPABILITIES,
+              ...(typeof params._meta === 'object' && params._meta !== null ? params._meta : {}),
+            },
+          },
+        }
+      : body;
   const response = await http(mcpUrl, {
     method: 'POST',
     headers: {
       authorization: `Bearer ${accessToken}`,
       'content-type': 'application/json',
       accept: 'application/json, text/event-stream',
-      'mcp-protocol-version': PROTOCOL_VERSION,
+      ...(includeProtocolVersion ? { 'mcp-protocol-version': PROTOCOL_VERSION } : {}),
+      ...(includeProtocolVersion && body.id !== undefined && typeof body.method === 'string'
+        ? { 'mcp-method': body.method }
+        : {}),
+      ...(includeProtocolVersion &&
+      body.id !== undefined &&
+      body.method === 'tools/call' &&
+      typeof params.name === 'string'
+        ? { 'mcp-name': params.name }
+        : {}),
       ...(sessionId ? { 'mcp-session-id': sessionId } : {}),
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(requestBody),
   });
   return response;
 }
@@ -323,16 +358,21 @@ async function main() {
   }
 
   // 4. MCP handshake
-  const init = await rpc(accessToken, undefined, {
-    jsonrpc: '2.0',
-    id: 1,
-    method: 'initialize',
-    params: {
-      protocolVersion: PROTOCOL_VERSION,
-      capabilities: {},
-      clientInfo: { name: 'hominem-mcp-smoke-test', version: '1.0.0' },
+  const init = await rpc(
+    accessToken,
+    undefined,
+    {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: PROTOCOL_VERSION,
+        capabilities: {},
+        clientInfo: CLIENT_INFO,
+      },
     },
-  });
+    false,
+  );
   if (!init.ok) fail('initialize', `HTTP ${init.status} ${(await init.text()).slice(0, 300)}`);
   const sessionId = init.headers.get('mcp-session-id') ?? undefined;
   const initBody = await readMcpBody(init);

@@ -29,7 +29,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     finance.accounts.list
       .$get({ query: {} })
       .then((r) => r.json())
-      .catch(() => []),
+      .catch(() => ({ accounts: [], count: 0, totalCount: 0 })),
     finance.transactions.list
       .$get({ query: { limit: '25' } })
       .then((r) => r.json())

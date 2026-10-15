@@ -98,10 +98,8 @@ export const financeTransactionSchema = z.object({
   categoryName: z.string().nullable(),
   tags: z.array(z.string()),
   notes: z.string().nullable(),
-  orderNumber: z
-    .string()
-    .nullable()
-    .describe('Read back out of notes; the write DTO folds it in as an "Order #: <value>" line.'),
+  externalId: z.string().nullable().optional(),
+  orderNumber: z.string().nullable().describe('Order number stored independently from notes.'),
   source: z.string().nullable(),
   recurring: z.boolean(),
   pending: z.boolean(),
@@ -514,6 +512,8 @@ export const financeTransactionSearchInputSchema = z
     ...dateRangeFields,
     accountId: accountIdField,
     tag: tagField,
+    categoryName: z.string().min(1).optional(),
+    transactionType: z.enum(['adjustment', 'debit', 'credit', 'transfer']).optional(),
     limit: mcpLimitSchema.default(20).describe('Maximum transactions to return, from 1 to 50.'),
     offset: z.number().int().min(0).default(0).describe('Number of matches to skip, for paging.'),
   })
@@ -632,9 +632,10 @@ const sheetTransactionPayloadSchema = z.object({
   tags: z.array(z.string()).optional().describe('Sheet Tags; comma-separated values also split.'),
   notes: z.string().max(2000).nullable().optional().describe('Sheet Notes.'),
   orderNumber: z.string().nullable().optional().describe('Sheet Order #; appended into notes.'),
+  externalId: z.string().min(1).max(500).nullable().optional(),
   source: z.string().nullable().optional().describe('plaid | starling | manual; unknown → manual.'),
-  excluded: z.boolean().default(false),
-  recurring: z.boolean().default(false).describe('Sheet Recurring? column.'),
+  excluded: z.boolean().optional(),
+  recurring: z.boolean().optional().describe('Sheet Recurring? column.'),
   transactionType: z.enum(['adjustment', 'debit', 'credit', 'transfer']).optional(),
   pending: z
     .boolean()
@@ -666,6 +667,7 @@ const sheetRejectionReasonSchema = z.enum([
   'invalid_description',
   'invalid_counterpart',
   'pending_row',
+  'unknown_item_key',
 ]);
 
 export const financeTransactionUpsertOutputSchema = z.object({
@@ -681,7 +683,7 @@ export const financeTransactionUpsertOutputSchema = z.object({
 
 export const financeTransactionsImportInputSchema = z.object({
   transactions: z
-    .array(sheetTransactionPayloadSchema)
+    .array(sheetTransactionPayloadSchema.passthrough())
     .min(1)
     .max(1000)
     .describe('Batch of sheet rows, in order, max 1000 per call.'),
@@ -703,13 +705,30 @@ export const financeTransactionsImportOutputSchema = z.object({
   created: z.number().int().min(0),
   updated: z.number().int().min(0),
   rejected: z.array(
-    z.object({ index: z.number().int().min(0), reason: sheetRejectionReasonSchema }),
+    z.object({
+      index: z.number().int().min(0),
+      reason: sheetRejectionReasonSchema,
+      key: z.string().optional(),
+    }),
   ),
   accountsAutoProvisioned: z.array(z.string()),
   dryRun: z.boolean(),
 });
 
 // -- finance_transaction_delete --
+
+export const financeTransactionMoveInputSchema = z
+  .object({
+    ids: z.array(z.string().uuid()).min(1).max(200),
+    toAccount: z.string().uuid(),
+  })
+  .strict();
+
+export const financeTransactionMoveOutputSchema = z.object({
+  moved: z.array(z.string()),
+  count: z.number().int(),
+  accountId: z.string(),
+});
 
 export const financeTransactionDeleteInputSchema = z.object({
   ids: z.array(z.string().uuid()).min(1).max(200).describe('Transaction ids to delete (1–200).'),
