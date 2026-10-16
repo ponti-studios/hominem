@@ -3,7 +3,7 @@ import type { Note } from '@hominem/rpc/types';
 import { logger } from '@hominem/telemetry';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 
 import { useLatch } from '~/hooks/use-latch';
 import { patchInboxEntity } from '~/services/inbox/inbox-entities';
@@ -14,6 +14,10 @@ import t from '~/translations';
 import { createDebouncedNoteSaver, type NoteSavePayload } from './debounced-note-saver';
 
 const NOTE_SAVE_DEBOUNCE_MS = 600;
+
+function isNotFound(error: unknown) {
+  return error instanceof Error && 'status' in error && error.status === 404;
+}
 
 export type NoteSaveStatus = 'saving' | 'saved' | 'error';
 
@@ -55,6 +59,12 @@ export function useNoteEditor(noteId: string) {
 
   const handleSaveError = useCallback(
     (error: unknown) => {
+      // A note deleted somewhere else cannot be saved; the detail query refetch shows it is gone.
+      if (isNotFound(error)) {
+        setSaveStatus('saved');
+        void queryClient.invalidateQueries({ queryKey: noteKeys.detail(noteId) });
+        return;
+      }
       logger.error(
         '[note-editor] save failed',
         error instanceof Error ? error : new Error(String(error)),
@@ -77,12 +87,24 @@ export function useNoteEditor(noteId: string) {
         commit: commitServerResponse,
         delayMs: NOTE_SAVE_DEBOUNCE_MS,
         onError: handleSaveError,
+        // An empty note is not sent (the server refuses it); the draft stays on screen.
+        onSkip: () => setSaveStatus('saved'),
         persist: persistSave,
       }),
     [commitServerResponse, handleSaveError, persistSave],
   );
 
   useEffect(() => () => saver.flush(), [saver]);
+
+  // Send a waiting edit before the app is suspended, not 600 ms later.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') {
+        saver.flush();
+      }
+    });
+    return () => subscription.remove();
+  }, [saver]);
 
   const save = useCallback(
     (title: string | null, content: string, fileIds: string[]) => {
