@@ -25,6 +25,7 @@ export const MCP_SCOPES = [
   'task:read',
   'task:write',
   'travel:read',
+  'travel:write',
 ] as const;
 
 export type McpScope = (typeof MCP_SCOPES)[number];

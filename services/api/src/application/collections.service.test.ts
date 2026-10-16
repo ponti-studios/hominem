@@ -17,6 +17,7 @@ const ownerId = 'd3000010-0000-4000-8000-000000000001';
 const memberId = 'd3000010-0000-4000-8000-000000000002';
 const strangerId = 'd3000010-0000-4000-8000-000000000003';
 const placeId = 'd3000012-0000-4000-8000-000000000001';
+const journeyId = 'd3000013-0000-4000-8000-000000000001';
 
 beforeAll(async () => {
   for (const id of [ownerId, memberId, strangerId]) {
@@ -29,6 +30,15 @@ beforeAll(async () => {
   await db
     .insertInto('app.places')
     .values({ id: placeId, ownerUserid: ownerId, name: 'Service Test Place' })
+    .execute();
+  await db
+    .insertInto('app.travelJourneys')
+    .values({
+      id: journeyId,
+      ownerUserid: ownerId,
+      legacyId: 'JRN-COLLECTION',
+      name: 'Collection Journey',
+    })
     .execute();
 });
 
@@ -137,6 +147,20 @@ describe('leaveCollection', () => {
 });
 
 describe('collectionMembership', () => {
+  it('loads names for newly supported travel collection entity types', async () => {
+    const { collection } = await makeCollection(ownerId, 'Travel Items');
+    await addCollectionItem(ownerId, {
+      collectionId: collection.id,
+      entityType: 'travel_journeys',
+      entityId: journeyId,
+    });
+
+    const detail = await collectionDetail(ownerId, collection.id);
+    expect(detail.items).toMatchObject([
+      { entityType: 'travel_journeys', entityId: journeyId, entityName: 'Collection Journey' },
+    ]);
+  });
+
   it('returns every visible link in one call', async () => {
     const { collection: first } = await makeCollection(ownerId, 'Membership One');
     const { collection: second } = await makeCollection(ownerId, 'Membership Two');
