@@ -76,6 +76,50 @@ describe('travel atomic maintenance', () => {
     ).toHaveLength(1);
   });
 
+  it('validates airport codes and saves a journey transport leg', async () => {
+    const { owner } = await fixture();
+    await db
+      .insertInto('app.travelAirports')
+      .values([
+        {
+          ownerUserid: owner,
+          legacyId: 'ARP-LHR-PROBE',
+          code: 'LHR',
+          name: 'Heathrow',
+          servesPlace: 'London',
+          city: 'London',
+          country: 'UK',
+        },
+        {
+          ownerUserid: owner,
+          legacyId: 'ARP-KEF-PROBE',
+          code: 'KEF',
+          name: 'Keflavik',
+          servesPlace: 'Reykjavik',
+          city: 'Reykjavik',
+          country: 'Iceland',
+        },
+      ])
+      .execute();
+
+    const result = await saveTravelJourney(owner, {
+      journey: { legacyId: 'JRN-AIRPORT-PROBE', name: 'ZZZ LHR to KEF probe' },
+      segments: [],
+      transport: [{ legacyId: 'T-9901', mode: 'air', origin: 'LHR', destination: 'KEF' }],
+      stays: [],
+      dryRun: false,
+    });
+
+    expect(result).toMatchObject({ counters: { transport: { created: 1 } } });
+    await expect(
+      db
+        .selectFrom('app.travelTransport')
+        .select(['origin', 'destination'])
+        .where('ownerUserid', '=', owner)
+        .execute(),
+    ).resolves.toEqual([{ origin: 'LHR', destination: 'KEF' }]);
+  });
+
   it('reorders the complete segment list without sequence conflicts', async () => {
     const { owner, placeId } = await fixture();
     const [journey] = await db

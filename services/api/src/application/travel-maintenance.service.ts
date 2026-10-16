@@ -200,12 +200,12 @@ export async function saveTravelJourney(
       )
         throw new ValidationError(`unknown_segment:${legacyId}`);
       const airports = await sql<{
-        origin_exists: boolean;
-        destination_exists: boolean;
-      }>`SELECT EXISTS (SELECT 1 FROM app.travel_airports WHERE owner_userid = ${owner} AND code = ${fields.origin}) AS origin_exists, EXISTS (SELECT 1 FROM app.travel_airports WHERE owner_userid = ${owner} AND code = ${fields.destination}) AS destination_exists`.execute(
+        originExists: boolean;
+        destinationExists: boolean;
+      }>`SELECT EXISTS (SELECT 1 FROM app.travel_airports WHERE owner_userid = ${owner} AND code = ${fields.origin}) AS "originExists", EXISTS (SELECT 1 FROM app.travel_airports WHERE owner_userid = ${owner} AND code = ${fields.destination}) AS "destinationExists"`.execute(
         trx,
       );
-      if (!airports.rows[0]?.origin_exists || !airports.rows[0]?.destination_exists)
+      if (!airports.rows[0]?.originExists || !airports.rows[0]?.destinationExists)
         throw new ValidationError(`transport_invalid:unknown_airport:${legacyId}`);
       const saved = await upsertDossierRow(
         trx,
