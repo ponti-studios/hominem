@@ -24,7 +24,7 @@ tags:
     timeout: 5000
 - assertVisible:
     id: 'chat-actions-menu-search'
-- takeScreenshot: /tmp/omiro-nav-actions-menu
+- takeScreenshot: omiro-nav-actions-menu
 # Tapping the dimmed page closes the menu.
 - tapOn:
     point: '8%,92%'
@@ -41,7 +41,7 @@ tags:
 - extendedWaitUntil:
     visible: 'Transform chat'
     timeout: 8000
-- takeScreenshot: /tmp/omiro-nav-transform-sheet
+- takeScreenshot: omiro-nav-transform-sheet
 - tapOn: 'Cancel'
 - extendedWaitUntil:
     notVisible: 'Transform chat'
@@ -58,7 +58,7 @@ tags:
     id: 'composer-attach-menu-take-photo'
 - assertVisible:
     id: 'composer-attach-menu-library'
-- takeScreenshot: /tmp/omiro-nav-attach-sheet
+- takeScreenshot: omiro-nav-attach-sheet
 - tapOn:
     id: 'composer-attach-menu-cancel'
 - extendedWaitUntil:
@@ -73,7 +73,7 @@ tags:
     visible:
       id: 'new-chat-close-button'
     timeout: 8000
-- takeScreenshot: /tmp/omiro-nav-new-chat
+- takeScreenshot: omiro-nav-new-chat
 - tapOn:
     id: 'new-chat-close-button'
 - extendedWaitUntil:
@@ -112,10 +112,10 @@ tags:
     timeout: 10000
 - assertVisible:
     id: 'note-save-status'
-- takeScreenshot: /tmp/omiro-nav-note-header
+- takeScreenshot: omiro-nav-note-header
 - tapOn:
     id: 'note-preview-toggle'
-- takeScreenshot: /tmp/omiro-nav-note-preview
+- takeScreenshot: omiro-nav-note-preview
 - tapOn:
     id: 'note-actions-button'
 - extendedWaitUntil:
@@ -124,7 +124,7 @@ tags:
     timeout: 5000
 - assertVisible:
     id: 'note-actions-menu-delete'
-- takeScreenshot: /tmp/omiro-nav-note-menu
+- takeScreenshot: omiro-nav-note-menu
 - tapOn:
     point: '8%,92%'
 - extendedWaitUntil:

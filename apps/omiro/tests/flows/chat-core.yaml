@@ -12,7 +12,7 @@ tags:
 - runFlow: ../subflows/reset-to-home.yaml
 - assertVisible:
     id: 'inbox-composer-input'
-- takeScreenshot: /tmp/omiro-send01-home
+- takeScreenshot: omiro-send01-home
 
 # SEND-01: open the most recent completed chat directly.
 - tapOn:
@@ -22,7 +22,7 @@ tags:
     timeout: 4000
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro-send01-direct-load
+- takeScreenshot: omiro-send01-direct-load
 
 # SEND-02: send one message and verify the response appears once. The composer
 # on an existing chat can hold a draft, so it is cleared first. extendedWaitUntil
@@ -38,7 +38,7 @@ tags:
 - extendedWaitUntil:
     visible: ${output.send02}
     timeout: 30000
-- takeScreenshot: /tmp/omiro-send02-send-complete
+- takeScreenshot: omiro-send02-send-complete
 
 # SEND-03: create a chat through the normal new-chat entry point. Reset to the
 # inbox first so this scenario does not depend on SEND-02's detail route. The
@@ -61,7 +61,7 @@ tags:
     timeout: 30000
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro-send03-new-chat
+- takeScreenshot: omiro-send03-new-chat
 
 # SEND-04: return from the new chat detail to the inbox, then open the chat again.
 # The header back chevron is a native SwiftUI Stack.Toolbar.Button
@@ -84,7 +84,7 @@ tags:
 - assertVisible:
     id: 'chat-composer-input'
 - assertVisible: ${output.send03}
-- takeScreenshot: /tmp/omiro-send04-navigation
+- takeScreenshot: omiro-send04-navigation
 
 # SEND-05: activate the latest assistant message, regenerate it, and verify the
 # chat remains usable. The durable generation/message duplicate check belongs in
@@ -100,4 +100,4 @@ tags:
     timeout: 30000
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro-send05-regeneration
+- takeScreenshot: omiro-send05-regeneration

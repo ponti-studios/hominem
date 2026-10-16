@@ -1,3 +1,22 @@
+# Omiro's studio verbs: setup, doctor, run, sim, check, e2e (see STUDIO.md in the studio-dev repo).
+# The work is in apps/omiro/tests/scripts; these are the names everyone uses.
+
+# Dependencies, workspace packages and the scripted API's database. Run first in any checkout or worktree.
+setup:
+    "{{ justfile_directory() }}/apps/omiro/tests/scripts/setup.sh"
+
+# Read-only checks with a fix named for each problem.
+doctor:
+    "{{ justfile_directory() }}/apps/omiro/tests/scripts/doctor.sh"
+
+# Build the dev client (ad-hoc signed), install it on the booted simulator. Skips when nothing native changed; FORCE=1 rebuilds.
+sim:
+    "{{ justfile_directory() }}/apps/omiro/tests/scripts/sim.sh"
+
+# Add a few notes for the e2e user (needs the scripted API running; `just mobile e2e` starts it).
+seed:
+    "{{ justfile_directory() }}/apps/omiro/tests/scripts/seed.sh"
+
 # Reuse the installed development client for JavaScript and TypeScript work.
 run:
     pnpm --filter @hominem/omiro dev
@@ -16,6 +35,10 @@ check:
     pnpm typecheck --filter=@hominem/omiro...
     pnpm test --filter=@hominem/omiro...
     pnpm --filter @hominem/omiro export:embed:ios
+
+# Same as `maestro`: the self-contained scripted run (API, Metro, seed, sign-in, flows).
+e2e *flows:
+    pnpm --filter @hominem/omiro run test:maestro -- {{ flows }}
 
 # Run the installed development client against an isolated E2E Metro session.
 maestro *flows:

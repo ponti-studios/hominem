@@ -18,7 +18,7 @@ appId: com.pontistudios.hakumi.dev
 # UI-01: the list and chat entry are loaded without an empty-state crash.
 - assertVisible:
     id: 'chat-message-list'
-- takeScreenshot: /tmp/omiro-ui01-loaded
+- takeScreenshot: omiro-ui01-loaded
 
 # UI-02: explicit missing-chat route checkpoint. The app should show the
 # recovery screen rather than render a composer for an unowned chat.
@@ -27,7 +27,7 @@ appId: com.pontistudios.hakumi.dev
     timeout: 5000
 - assertVisible:
     id: 'chat-entry-error'
-- takeScreenshot: /tmp/omiro-ui02-error-recovery
+- takeScreenshot: omiro-ui02-error-recovery
 - openLink: 'hakumi-dev://'
 - waitForAnimationToEnd:
     timeout: 4000
@@ -53,14 +53,14 @@ appId: com.pontistudios.hakumi.dev
     timeout: 1000
 - assertVisible: 'Edit message'
 - assertVisible: 'Save'
-- takeScreenshot: /tmp/omiro-ui03-edit
+- takeScreenshot: omiro-ui03-edit
 - tapOn: 'Cancel'
 - waitForAnimationToEnd:
     timeout: 500
 - tapOn: 'trash'
 - waitForAnimationToEnd:
     timeout: 500
-- takeScreenshot: /tmp/omiro-ui03-delete-confirmation
+- takeScreenshot: omiro-ui03-delete-confirmation
 - pressKey: Escape
 
 # UI-04: copy/share/listen action labels are present where supported by the
@@ -68,15 +68,15 @@ appId: com.pontistudios.hakumi.dev
 # capabilities and may be absent for text-only replies.
 - assertVisible: 'doc.on.doc'
 - tapOn: 'doc.on.doc'
-- takeScreenshot: /tmp/omiro-ui04-copy
+- takeScreenshot: omiro-ui04-copy
 - assertVisible: 'arrow.clockwise'
-- takeScreenshot: /tmp/omiro-ui04-regenerate
+- takeScreenshot: omiro-ui04-regenerate
 
 # UI-05: smallest supported device is the booted iPhone 17 Pro simulator. Keep
 # the composer and action row visible in the captured visual artifact.
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro-ui05-smallest-supported-viewport
+- takeScreenshot: omiro-ui05-smallest-supported-viewport
 
 # UI-06: keyboard submission and accessible labels.
 - tapOn:
@@ -88,4 +88,4 @@ appId: com.pontistudios.hakumi.dev
     timeout: 8000
 - assertVisible: 'UI-06-OMIRO-KEYBOARD'
 - assertVisible: 'Stop reply'
-- takeScreenshot: /tmp/omiro-ui06-keyboard-accessibility
+- takeScreenshot: omiro-ui06-keyboard-accessibility

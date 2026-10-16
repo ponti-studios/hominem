@@ -9,9 +9,13 @@ appId: com.pontistudios.hakumi.dev
 # flow, so a stale, possibly wrong-account cache and a dead resume target
 # can't survive into the new session — that combination is what strands a
 # fresh login on a 404'd chat detail instead of the inbox.
-- launchApp:
-    clearKeychain: true
-    stopApp: true
+- stopApp
+- clearKeychain
+# Start the app through the dev-client link rather than `launchApp`: launching first makes the dev
+# client load its last server, and the link then reloads it while views are mounting, which crashes
+# it ("The app context has been lost"). The link also covers a freshly installed dev client, which
+# opens on its launcher.
+- openLink: 'exp+hakumi://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8082&disableOnboarding=1'
 # The simulator's iCloud account can throw an "Apple Account Verification"
 # system alert whenever the app's keychain is cleared. It covers the screen,
 # so dismiss it between auth-screen waits rather than allowing a stale session

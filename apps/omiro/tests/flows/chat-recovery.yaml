@@ -36,14 +36,14 @@ appId: com.pontistudios.hakumi.dev
     timeout: 8000
 - assertVisible:
     id: 'chat-activity'
-- takeScreenshot: /tmp/omiro-recover01-failure
+- takeScreenshot: omiro-recover01-failure
 - assertVisible: 'Retry reply'
 - tapOn: 'Retry reply'
 - waitForAnimationToEnd:
     timeout: 8000
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro-recover01-retry-complete
+- takeScreenshot: omiro-recover01-retry-complete
 
 # RECOVER-02/RECOVER-03: stop before execution and while a controlled stream
 # is active.
@@ -61,7 +61,7 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 5000
 - assertVisible: 'Reply stopped'
-- takeScreenshot: /tmp/omiro-recover02-cancel-before
+- takeScreenshot: omiro-recover02-cancel-before
 
 - tapOn:
     id: 'chat-composer-input'
@@ -72,12 +72,12 @@ appId: com.pontistudios.hakumi.dev
 - pressKey: BACK
 - assertVisible:
     id: 'chat-generation-stop'
-- takeScreenshot: /tmp/omiro-recover03-streaming
+- takeScreenshot: omiro-recover03-streaming
 - tapOn: 'Stop reply'
 - waitForAnimationToEnd:
     timeout: 5000
 - assertVisible: 'Reply stopped'
-- takeScreenshot: /tmp/omiro-recover03-cancelled
+- takeScreenshot: omiro-recover03-cancelled
 
 # RECOVER-04/RECOVER-05: relaunch during a controlled stream and verify the
 # durable chat remains available. Maestro cannot sever only one HTTP stream,
@@ -96,7 +96,7 @@ appId: com.pontistudios.hakumi.dev
     timeout: 5000
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro-recover04-recover05-reconnect-replay
+- takeScreenshot: omiro-recover04-recover05-reconnect-replay
 
 # RECOVER-06/LAUNCH-02: confirmation/reload and active-generation reload.
 - tapOn:
@@ -113,7 +113,7 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 5000
 - assertVisible: 'Approve create_collection'
-- takeScreenshot: /tmp/omiro-recover06-confirmation-reload
+- takeScreenshot: omiro-recover06-confirmation-reload
 - tapOn: 'Reject create_collection'
 - waitForAnimationToEnd:
     timeout: 8000
@@ -133,10 +133,10 @@ appId: com.pontistudios.hakumi.dev
     timeout: 5000
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro-launch02-active-reload
+- takeScreenshot: omiro-launch02-active-reload
 
 # LAUNCH-01/LAUNCH-04 are recorded as explicit harness checkpoints. A second
 # signed-in account and API-side ownership probes cannot be created by this
 # UI-only flow. Do not claim authorization isolation from this file alone.
-- takeScreenshot: /tmp/omiro-launch01-fresh-launch-checkpoint
-- takeScreenshot: /tmp/omiro-launch04-authorization-checkpoint
+- takeScreenshot: omiro-launch01-fresh-launch-checkpoint
+- takeScreenshot: omiro-launch04-authorization-checkpoint

@@ -5,14 +5,14 @@ appId: com.pontistudios.hakumi.dev
 
 # ── 1. Home / Inbox ──────────────────────────────────────────────────────────
 - runFlow: ../subflows/reset-to-home.yaml
-- assertVisible: 'Omiro'
-- takeScreenshot: /tmp/omiro_screen_01_inbox
+- assertVisible: 'Chat'
+- takeScreenshot: omiro_screen_01_inbox
 
 # ── 2. Inbox – search focused ────────────────────────────────────────────────
 - tapOn: 'Search'
 - waitForAnimationToEnd:
     timeout: 1000
-- takeScreenshot: /tmp/omiro_screen_02_search_focused
+- takeScreenshot: omiro_screen_02_search_focused
 # Dismiss by tapping the list area
 - tapOn:
     point: '50%, 50%'
@@ -25,7 +25,7 @@ appId: com.pontistudios.hakumi.dev
 - inputText: 'Some example note content for the screenshot tour'
 - waitForAnimationToEnd:
     timeout: 500
-- takeScreenshot: /tmp/omiro_screen_03_composer_feed_text
+- takeScreenshot: omiro_screen_03_composer_feed_text
 # Clear and dismiss keyboard
 - eraseText: 100
 - pressKey: Escape
@@ -34,13 +34,13 @@ appId: com.pontistudios.hakumi.dev
 - tapOn: 'gearshape'
 - waitForAnimationToEnd:
     timeout: 2000
-- takeScreenshot: /tmp/omiro_screen_04_settings
+- takeScreenshot: omiro_screen_04_settings
 
 # ── 5. Archived chats (from Settings) ────────────────────────────────────────
 - tapOn: 'Archived chats'
 - waitForAnimationToEnd:
     timeout: 2000
-- takeScreenshot: /tmp/omiro_screen_05_archived_chats
+- takeScreenshot: omiro_screen_05_archived_chats
 - tapOn: 'Back'
 - waitForAnimationToEnd:
     timeout: 1000
@@ -49,21 +49,28 @@ appId: com.pontistudios.hakumi.dev
     timeout: 1000
 
 # ── 6. Note detail ────────────────────────────────────────────────────────────
+# Notes are listed on the Notes tab; the chat list (next section) is on the Chat tab.
+- tapOn: 'Notes'
+- waitForAnimationToEnd:
+    timeout: 2000
 - tapOn:
     id: 'inbox-item-note'
 - waitForAnimationToEnd:
     timeout: 2500
-- takeScreenshot: /tmp/omiro_screen_06_note_detail
+- takeScreenshot: omiro_screen_06_note_detail
 - tapOn: 'Back'
 - waitForAnimationToEnd:
     timeout: 1000
+- tapOn: 'Chat'
+- waitForAnimationToEnd:
+    timeout: 1500
 
 # ── 7. Chat detail ────────────────────────────────────────────────────────────
 - tapOn:
     id: 'inbox-item-chat'
 - waitForAnimationToEnd:
     timeout: 2500
-- takeScreenshot: /tmp/omiro_screen_07_chat_detail
+- takeScreenshot: omiro_screen_07_chat_detail
 - tapOn: 'Back'
 - waitForAnimationToEnd:
     timeout: 1000

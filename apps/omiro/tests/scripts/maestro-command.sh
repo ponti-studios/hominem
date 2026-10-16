@@ -44,7 +44,8 @@ done
 if ! curl --silent --fail --max-time 2 "$API_URL/api/status" >/dev/null 2>&1; then
   [[ "$API_URL" == 'http://localhost:4040' ]] || fail "API is not reachable at $API_URL"
   cd "$REPO_DIR"
-  ENV=scripted pnpm --filter @hominem/api dev:app >"$API_LOG" 2>&1 &
+  # The scripted API takes its settings from a checked-in file, so no .env is needed.
+  (set -a; source services/api/.env.scripted; set +a; exec pnpm --filter @hominem/api dev:app) >"$API_LOG" 2>&1 &
   api_pid=$!
   for _ in {1..60}; do
     curl --silent --fail --max-time 2 "$API_URL/api/status" >/dev/null 2>&1 && break
@@ -59,11 +60,18 @@ cd "$APP_DIR"
 # The canonical Maestro runner targets the already-booted simulator itself.
 # Avoid Expo's --ios device discovery here; Xcode 27's Device Hub is not yet
 # recognized correctly by Expo CLI and makes Metro exit before Maestro starts.
-APP_ENV=e2e pnpm exec expo start --dev-client --clear --port "$METRO_PORT" >"$METRO_LOG" 2>&1 &
+EXPO_PUBLIC_API_BASE_URL="$API_URL" APP_ENV=e2e pnpm exec expo start --dev-client --clear --port "$METRO_PORT" >"$METRO_LOG" 2>&1 &
 metro_pid=$!
+
+# Give the e2e user a few notes so flows that open one have one.
+"$SCRIPT_DIR/seed.sh" || echo 'seed failed; flows that need data may not find any' >&2
 
 for _ in {1..60}; do
   if curl --silent --fail "http://localhost:$METRO_PORT/status" 2>/dev/null | grep -q running; then
+    # Metro answers /status before it can bundle. Fetch the real bundle once (the URL comes from the
+    # manifest) so the first screen the app opens is not the one that waits a minute for it.
+    bundle_url="$(curl --silent -H 'expo-platform: ios' -H 'accept: application/expo+json' "http://localhost:$METRO_PORT" | jq -r '.launchAsset.url // empty')"
+    [[ -n "$bundle_url" ]] && curl --silent --max-time 420 -o /dev/null "$bundle_url" || echo 'bundle warm-up skipped' >&2
     "$SCRIPT_DIR/maestro-run.sh" "${flow_args[@]}"
     exit
   fi
