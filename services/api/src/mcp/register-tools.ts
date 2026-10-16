@@ -12,7 +12,13 @@ async function registerAll(): Promise<void> {
 
   const imports: Array<Promise<unknown>> = [];
   if (isEnabled('travel:read', 'travel:write')) {
-    imports.push(import('./tools/travel'), import('./tools/travel-analytics'));
+    imports.push(
+      import('./tools/travel'),
+      import('./tools/travel-analytics'),
+      import('./tools/travel-history-export'),
+    );
+    if (isEnabled('travel:write')) imports.push(import('./tools/travel-writes'));
+    if (isEnabled('travel:write')) imports.push(import('./tools/travel-maintenance'));
   }
   if (isEnabled('career:read', 'career:write')) imports.push(import('./tools/career'));
   if (isEnabled('collections:read', 'collections:write')) {

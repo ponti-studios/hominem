@@ -11,11 +11,13 @@
     // enforcement only gets in the way of the @hominem/api/career path
     // alias below, which points outside this project's own file set.
     "composite": false,
-    // @hominem/api/career is type-only here (see app/lib/api.server.ts) —
+    // @hominem/api/career and the shared Hono client type are type-only here
+    // (see app/lib/api.server.ts) —
     // not a real runtime dependency, so it isn't listed in package.json.
     // Keep this path in sync with services/api/package.json's "./career" export.
     "paths": {
       "~/*": ["./app/*"],
+      "@hominem/api/types": ["../../services/api/build/rpc/app.d.ts"],
       "@hominem/api/career": ["../../services/api/build/rpc/routes/career.d.ts"]
     }
   },

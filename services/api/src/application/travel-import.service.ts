@@ -6,7 +6,7 @@ import type { TransactionHandle } from '@hominem/db/core';
 import { ValidationError } from '@hominem/db/errors';
 import type { z } from 'zod';
 
-import { travelImportInputSchema } from '../schemas/travel-import.schema';
+import { nativeTravelRows, travelImportInputSchema } from '../schemas/travel-import.schema';
 import { travelResidenceImportedPeriodsSchema } from '../schemas/travel-residences.schema';
 
 type Entity = keyof z.infer<typeof travelImportInputSchema>['rows'];
@@ -188,10 +188,13 @@ function payload(
     case 'segments': {
       const journey = refs.journeys.get(required(row, 'journey_id'));
       if (!journey) throw new Error('unknown_journey');
-      const placeName = required(row, 'place').toLowerCase();
-      const matches = [
-        ...new Map([...refs.places.values()].map((place) => [place.id, place])).values(),
-      ].filter((place) => String(place.place).toLowerCase() === placeName);
+      const placeLegacyId = optional(row, 'place_legacy_id');
+      const placeName = value(row, 'place').toLowerCase();
+      const matches = placeLegacyId
+        ? [refs.places.get(placeLegacyId)].filter((place): place is StoredRow => Boolean(place))
+        : [...new Map([...refs.places.values()].map((place) => [place.id, place])).values()].filter(
+            (place) => String(place.place).toLowerCase() === placeName,
+          );
       if (matches.length !== 1)
         throw new Error(matches.length ? 'ambiguous_place' : 'unknown_place');
       const seq = Number(required(row, 'seq'));
@@ -377,6 +380,7 @@ export async function importTravelRows(
   ownerUserId: string,
   input: z.infer<typeof travelImportInputSchema>,
 ) {
+  if (input.entities) input = { ...input, rows: nativeTravelRows(input.entities) };
   if (input.mode === 'replace' && input.iUnderstand !== true)
     throw new ValidationError('confirmation_required');
   return runInTransaction(async (trx) => {

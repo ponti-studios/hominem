@@ -32,6 +32,8 @@ export const travelResidenceImportedPeriodsSchema = z
   });
 
 export const travelResidenceListInputSchema = z.object({
+  limit: z.number().int().min(1).max(200).default(100),
+  offset: z.number().int().min(0).default(0),
   placeId: z.string().uuid().optional(),
   place: z.string().optional(),
   current: z.boolean().optional(),
@@ -39,6 +41,28 @@ export const travelResidenceListInputSchema = z.object({
 export const travelResidenceGetInputSchema = z
   .object({ id: z.string().uuid().optional(), legacyId: z.string().optional() })
   .refine((v) => Boolean(v.id || v.legacyId));
+export const travelResidenceCreateInputSchema = z.object({
+  placeId: z.string().uuid(),
+  legacyId: z.string().optional(),
+  dryRun: z.boolean().default(false),
+  periods: z.array(period).min(1),
+  notes: z.string().nullable().optional(),
+});
+export const travelResidenceUpdateInputSchema = z
+  .object({
+    id: z.string().uuid(),
+    ifUpdatedAt: z.string().datetime().optional(),
+    dryRun: z.boolean().default(false),
+    periods: z.array(period).min(1).optional(),
+    notes: z.string().nullable().optional(),
+  })
+  .refine((v) => v.periods !== undefined || v.notes !== undefined);
+export const travelResidenceDeleteInputSchema = z.object({
+  id: z.string().uuid(),
+  iUnderstand: z.literal(true),
+  ifUpdatedAt: z.string().datetime().optional(),
+  dryRun: z.boolean().default(false),
+});
 export const travelResidenceOutputSchema = z.object({
   id: z.string(),
   legacyId: z.string(),
@@ -47,7 +71,21 @@ export const travelResidenceOutputSchema = z.object({
   country: z.string(),
   periods: z.array(period),
   notes: z.string().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 export const travelResidenceListOutputSchema = z.object({
   residences: z.array(travelResidenceOutputSchema),
+  total: z.number().int(),
+  limit: z.number().int(),
+  offset: z.number().int(),
+  truncated: z.boolean(),
+});
+export const travelResidenceMutationOutputSchema = z.object({
+  residence: travelResidenceOutputSchema.nullable(),
+  created: z.number().int().min(0).default(0),
+  updated: z.number().int().min(0).default(0),
+  unchanged: z.number().int().min(0).default(0),
+  deleted: z.boolean().optional(),
+  reason: z.string().optional(),
 });

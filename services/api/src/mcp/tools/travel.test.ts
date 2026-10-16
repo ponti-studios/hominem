@@ -13,6 +13,7 @@ import {
   travelPlaceListOutputSchema,
   travelWishlistOutputSchema,
 } from '../../schemas/travel-read.schema';
+import { travelResidenceCreateInputSchema } from '../../schemas/travel-residences.schema';
 import { tripHistoryOutputSchema } from '../../schemas/travel.schema';
 import { toolOutput } from '../../testkit/tool-result';
 import { callTool, getToolDefinition } from '../tool-registry';
@@ -311,7 +312,22 @@ describe('travel_import', () => {
 });
 
 describe('travel residence tools', () => {
-  it('exposes residence reads while the Tier 2 write gate is blocked', () => {
+  it('validates residence dates and defaults omitted precision to day', () => {
+    const parsed = travelResidenceCreateInputSchema.safeParse({
+      placeId: 'e1000000-0000-4000-8000-000000000001',
+      periods: [{ startDate: '2017-01-01', endDate: null, ongoing: false }],
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(parsed.data.periods[0]?.precision).toBe('day');
+    expect(
+      travelResidenceCreateInputSchema.safeParse({
+        placeId: 'e1000000-0000-4000-8000-000000000001',
+        periods: [{ startDate: '2026-99-99', endDate: null, ongoing: false }],
+      }).success,
+    ).toBe(false);
+  });
+
+  it('registers residence reads and writes with their required scopes', () => {
     for (const name of ['travel_residence_list', 'travel_residence_get']) {
       expect(getToolDefinition(name)).toMatchObject({ readOnly: true, scopes: ['travel:read'] });
     }
@@ -320,8 +336,12 @@ describe('travel residence tools', () => {
       'travel_residence_update',
       'travel_residence_delete',
     ]) {
-      expect(getToolDefinition(name)).toBeUndefined();
+      expect(getToolDefinition(name)).toMatchObject({ readOnly: false, scopes: ['travel:write'] });
     }
+    expect(getToolDefinition('travel_residence_delete')).toMatchObject({
+      destructive: true,
+      requiresConfirmation: true,
+    });
   });
 
   it('returns an object from residence list, including when no residences exist', async () => {
@@ -333,7 +353,12 @@ describe('travel residence tools', () => {
 
     const empty = await callTool(otherUserId, 'travel_residence_list', {});
     expect(empty.isError).not.toBe(true);
-    expect(empty.structuredContent).toEqual({ residences: [] });
+    expect(empty.structuredContent).toMatchObject({
+      residences: [],
+      total: 0,
+      limit: 100,
+      offset: 0,
+    });
   });
 });
 

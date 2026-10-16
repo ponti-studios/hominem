@@ -147,7 +147,7 @@ describe('mcp bearer token auth', () => {
             },
           },
         }),
-      ).rejects.toThrow('travel:write');
+      ).rejects.toThrow('insufficient_scope');
       expect(await countTravelIdeas()).toBe(before);
     } finally {
       await client.close();

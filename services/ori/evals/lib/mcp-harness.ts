@@ -16,12 +16,12 @@ type ToolOutcome = { output: unknown; confirmationRequired?: boolean };
 const tools = [
   [
     'place_visit_history',
-    'Lists visits to places, not flights or trips.',
+    'Lists visits to places (restaurants, venues, addresses), newest first, with the visited place name and address. Use when the user asks which restaurants, venues, or addresses they visited. Do not use for trip-history questions, destinations, flights, or travel history unless they also ask about place visits.',
     { limit: { type: 'integer' } },
   ],
   [
     'trip_history',
-    'Lists trips with stable IDs and normalized start and end dates.',
+    'Lists past and upcoming trips, newest first, with attendee names. Use when the user asks about past or upcoming trips, destinations, dates, or attendees. Do not use for restaurant or venue visits without a travel question.',
     { from: { type: 'string' }, to: { type: 'string' } },
   ],
   [
