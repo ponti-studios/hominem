@@ -68,11 +68,11 @@ describe('POST /api/credentials', () => {
     ['rate_limited', 429],
     ['not_listed', 403],
     ['blocked', 403],
-  ])('maps %s to %i with a code', async (kind, status) => {
+  ])('maps %s to %i with an error code', async (kind, status) => {
     mocks.mintCredential.mockResolvedValue({ kind });
     const response = await postJson(app, '/api/credentials', { deviceId: DEVICE });
     expect(response.status).toBe(status);
-    expect(await response.json()).toEqual({ code: kind });
+    expect(await response.json()).toEqual({ error: kind });
   });
 
   it('is unavailable, not an error, when the management key is not set', async () => {
