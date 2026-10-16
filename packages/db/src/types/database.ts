@@ -448,6 +448,16 @@ export interface AppCollections {
   visibility: Generated<string>;
 }
 
+export interface AppCredentialAllowedEmails {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  email: string;
+}
+
+export interface AppCredentialBlocks {
+  blockedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
 export interface AppFiles {
   content: string | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -950,6 +960,18 @@ export interface AppPossessionVesselConfig {
   markerTokens: Generated<string[]>;
   ownerUserid: string;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppProviderCredentials {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  deviceId: string;
+  disabledAt: ColumnType<string, Date | string, Date | string> | null;
+  id: Generated<string>;
+  keyHash: string;
+  limitUsd: Numeric;
+  period: string;
+  revokedAt: ColumnType<string, Date | string, Date | string> | null;
+  userId: string;
 }
 
 export interface AppSocialContacts {
@@ -1539,6 +1561,8 @@ export interface DB {
   'app.collectionItems': AppCollectionItems;
   'app.collectionMembers': AppCollectionMembers;
   'app.collections': AppCollections;
+  'app.credentialAllowedEmails': AppCredentialAllowedEmails;
+  'app.credentialBlocks': AppCredentialBlocks;
   'app.files': AppFiles;
   'app.financeAccounts': AppFinanceAccounts;
   'app.financeCategories': AppFinanceCategories;
@@ -1573,6 +1597,7 @@ export interface DB {
   'app.possessionImages': AppPossessionImages;
   'app.possessions': AppPossessions;
   'app.possessionVesselConfig': AppPossessionVesselConfig;
+  'app.providerCredentials': AppProviderCredentials;
   'app.socialContacts': AppSocialContacts;
   'app.socialEngagements': AppSocialEngagements;
   'app.socialMessages': AppSocialMessages;

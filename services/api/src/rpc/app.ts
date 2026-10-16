@@ -6,6 +6,7 @@ import { validationErrorMiddleware } from './middleware/validation';
 import { careerRoutes } from './routes/career';
 import { chatsRoutes } from './routes/chats';
 import { collectionsRoutes } from './routes/collections';
+import { credentialsRoutes } from './routes/credentials';
 import { enhanceRoutes } from './routes/enhance';
 import { filesRoutes } from './routes/files';
 import { financeRoutes } from './routes/finance';
@@ -24,6 +25,7 @@ export const rpcRoutes = new Hono<AppContext>()
   .route('/career', careerRoutes)
   .route('/chats', chatsRoutes)
   .route('/collections', collectionsRoutes)
+  .route('/credentials', credentialsRoutes)
   .route('/enhance', enhanceRoutes)
   .route('/files', filesRoutes)
   .route('/finance', financeRoutes)
