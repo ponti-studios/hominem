@@ -300,18 +300,7 @@ registerTool(
     idempotent: false,
     resultCap: 1,
   },
-  async (owner, input) => {
-    const existing = input.legacyId
-      ? await getTravelResidence(owner, { legacyId: input.legacyId })
-      : null;
-    const residence = await createTravelResidence(owner, input);
-    return {
-      residence: residence ? travelResidenceOutputSchema.parse(residence) : null,
-      created: existing ? 0 : 1,
-      updated: 0,
-      unchanged: existing ? 1 : 0,
-    };
-  },
+  (owner, input) => createTravelResidence(owner, input),
 );
 registerTool(
   {
@@ -325,20 +314,7 @@ registerTool(
     idempotent: true,
     resultCap: 1,
   },
-  async (owner, input) => {
-    const current = await getTravelResidence(owner, { id: input.id });
-    const residence = await updateTravelResidence(owner, input);
-    const unchanged =
-      !current ||
-      (JSON.stringify(input.periods ?? current.periods) === JSON.stringify(current.periods) &&
-        (input.notes === undefined || input.notes === current.notes));
-    return {
-      residence: residence ? travelResidenceOutputSchema.parse(residence) : null,
-      created: 0,
-      updated: current && !unchanged ? 1 : 0,
-      unchanged: unchanged ? 1 : 0,
-    };
-  },
+  (owner, input) => updateTravelResidence(owner, input),
 );
 registerTool(
   {
@@ -355,16 +331,7 @@ registerTool(
     resultCap: 1,
     preview: async () => null,
   },
-  async (owner, input) => {
-    const residence = await deleteTravelResidence(owner, input);
-    return {
-      residence: residence ? travelResidenceOutputSchema.parse(residence) : null,
-      created: 0,
-      updated: 0,
-      unchanged: 0,
-      deleted: Boolean(residence) && !input.dryRun,
-    };
-  },
+  (owner, input) => deleteTravelResidence(owner, input),
 );
 
 registerTool(

@@ -34,6 +34,20 @@ const decode = <T extends { periods: unknown; createdAt: string | Date; updatedA
   ),
 });
 
+type ResidenceMutation = {
+  residence: Awaited<ReturnType<typeof getTravelResidence>>;
+  created: number;
+  updated: number;
+  unchanged: number;
+  deleted?: boolean;
+};
+
+const residenceMutation = (
+  residence: NonNullable<ResidenceMutation['residence']> | null,
+  counts: Pick<ResidenceMutation, 'created' | 'updated' | 'unchanged'>,
+  deleted?: boolean,
+): ResidenceMutation => ({ ...counts, residence, ...(deleted === undefined ? {} : { deleted }) });
+
 export async function listTravelResidences(
   owner: string,
   input: { limit: number; offset: number; placeId?: string; place?: string; current?: boolean },
@@ -150,23 +164,27 @@ export async function createTravelResidence(
         .where('r.ownerUserid', '=', owner)
         .where('r.legacyId', '=', input.legacyId)
         .executeTakeFirst();
-      if (existing) return decode(existing);
+      if (existing)
+        return residenceMutation(decode(existing), { created: 0, updated: 0, unchanged: 1 });
     }
     await ensureSingleCurrent(trx, owner, input.periods);
     const legacyId = input.legacyId ?? crypto.randomUUID();
     if (input.dryRun) {
       const now = new Date().toISOString();
-      return {
-        id: crypto.randomUUID(),
-        legacyId,
-        placeId: place.id,
-        place: place.place,
-        country: place.country,
-        periods: input.periods,
-        notes: input.notes ?? null,
-        createdAt: now,
-        updatedAt: now,
-      };
+      return residenceMutation(
+        {
+          id: crypto.randomUUID(),
+          legacyId,
+          placeId: place.id,
+          place: place.place,
+          country: place.country,
+          periods: input.periods,
+          notes: input.notes ?? null,
+          createdAt: now,
+          updatedAt: now,
+        },
+        { created: 1, updated: 0, unchanged: 0 },
+      );
     }
     const [row] = await trx
       .insertInto('app.travelResidences')
@@ -196,7 +214,7 @@ export async function createTravelResidence(
       .where('r.ownerUserid', '=', owner)
       .where('r.id', '=', row!.id)
       .executeTakeFirstOrThrow();
-    return decode(saved);
+    return residenceMutation(decode(saved), { created: 1, updated: 0, unchanged: 0 });
   });
 }
 
@@ -236,7 +254,7 @@ export async function updateTravelResidence(
       .forUpdate()
       .executeTakeFirst();
     const current = currentRow ? decode(currentRow) : null;
-    if (!current) return null;
+    if (!current) return residenceMutation(null, { created: 0, updated: 0, unchanged: 0 });
     if (
       input.ifUpdatedAt &&
       Date.parse(String(current.updatedAt)) !== Date.parse(input.ifUpdatedAt)
@@ -248,11 +266,13 @@ export async function updateTravelResidence(
     }
     const periods = input.periods ?? current.periods;
     const notes = input.notes !== undefined ? input.notes : current.notes;
-    if (
-      input.dryRun ||
-      (JSON.stringify(periods) === JSON.stringify(current.periods) && notes === current.notes)
-    )
-      return { ...current, periods, notes };
+    const unchanged =
+      JSON.stringify(periods) === JSON.stringify(current.periods) && notes === current.notes;
+    if (input.dryRun || unchanged)
+      return residenceMutation(
+        { ...current, periods, notes },
+        { created: 0, updated: input.dryRun && !unchanged ? 1 : 0, unchanged: unchanged ? 1 : 0 },
+      );
     let update = trx
       .updateTable('app.travelResidences')
       .set({
@@ -281,7 +301,7 @@ export async function updateTravelResidence(
       .where('r.ownerUserid', '=', owner)
       .where('r.id', '=', input.id)
       .executeTakeFirstOrThrow();
-    return decode(saved);
+    return residenceMutation(decode(saved), { created: 0, updated: 1, unchanged: 0 });
   });
 }
 
@@ -310,14 +330,15 @@ export async function deleteTravelResidence(
       .forUpdate()
       .executeTakeFirst();
     const row = rawRow ? decode(rawRow) : null;
-    if (!row) return null;
+    if (!row) return residenceMutation(null, { created: 0, updated: 0, unchanged: 0 }, false);
     if (
       typeof input !== 'string' &&
       input.ifUpdatedAt &&
       Date.parse(String(row.updatedAt)) !== Date.parse(input.ifUpdatedAt)
     )
       throw new ValidationError('version_conflict');
-    if (typeof input !== 'string' && input.dryRun) return row;
+    if (typeof input !== 'string' && input.dryRun)
+      return residenceMutation(row, { created: 0, updated: 0, unchanged: 0 }, false);
     let deletion = trx
       .deleteFrom('app.travelResidences')
       .where('id', '=', id)
@@ -326,6 +347,6 @@ export async function deleteTravelResidence(
       deletion = deletion.where('updatedAt', '=', input.ifUpdatedAt);
     const result = await deletion.returning('id').execute();
     if (!result.length) throw new ValidationError('version_conflict');
-    return row;
+    return residenceMutation(row, { created: 0, updated: 0, unchanged: 0 }, true);
   });
 }
