@@ -497,7 +497,13 @@ function NoteEditorBody({
         left=<NoteBackButton />
         right={
           <FloatingActionPill>
-            <View style={styles.savePill} testID="note-save-status">
+            <View
+              accessibilityLabel={saveStatusLabel}
+              accessibilityLiveRegion="polite"
+              accessible
+              style={styles.savePill}
+              testID="note-save-status"
+            >
               <View style={[styles.saveDot, { backgroundColor: saveStatusColor }]} />
               <Text style={styles.saveText}>{saveStatusLabel}</Text>
             </View>

@@ -25,8 +25,39 @@ export interface FormatCommandResult {
 }
 
 function lineStart(text: string, pos: number): number {
+  if (pos <= 0) {
+    return 0;
+  }
   const idx = text.lastIndexOf('\n', pos - 1);
   return idx === -1 ? 0 : idx + 1;
+}
+
+/**
+ * Applies `change` to every line the selection touches. `change` returns the new line; the
+ * selection start moves by the first line's change (never before that line) and the end by the
+ * total change.
+ */
+function mapSelectedLines(
+  text: string,
+  sel: TextSelection,
+  change: (line: string) => string,
+): FormatCommandResult {
+  const start = lineStart(text, sel.start);
+  // A selection that ends just after a newline does not include the next line.
+  const lastChar = sel.end > sel.start && text[sel.end - 1] === '\n' ? sel.end - 1 : sel.end;
+  const nextBreak = text.indexOf('\n', lastChar);
+  const end = nextBreak === -1 ? text.length : nextBreak;
+  const lines = text.slice(start, end).split('\n');
+  const changed = lines.map(change);
+  const firstDelta = changed[0].length - lines[0].length;
+  const totalDelta = changed.join('\n').length - (end - start);
+  return {
+    text: text.slice(0, start) + changed.join('\n') + text.slice(end),
+    selection: {
+      start: Math.max(sel.start + firstDelta, start),
+      end: Math.max(sel.end + totalDelta, start),
+    },
+  };
 }
 
 function wrapSelection(
@@ -62,52 +93,27 @@ function wrapSelection(
 
 function toggleLinePrefix(text: string, sel: TextSelection, prefix: string): FormatCommandResult {
   const start = lineStart(text, sel.start);
-  const hasPrefix = text.slice(start, start + prefix.length) === prefix;
-
-  if (hasPrefix) {
-    const next = text.slice(0, start) + text.slice(start + prefix.length);
-    const offset = prefix.length;
-    return {
-      text: next,
-      selection: {
-        start: Math.max(sel.start - offset, start),
-        end: Math.max(sel.end - offset, start),
-      },
-    };
-  }
-
-  const next = text.slice(0, start) + prefix + text.slice(start);
-  return {
-    text: next,
-    selection: { start: sel.start + prefix.length, end: sel.end + prefix.length },
-  };
+  const nextBreak = text.indexOf('\n', sel.end > sel.start ? sel.end - 1 : sel.end);
+  const block = text.slice(start, nextBreak === -1 ? text.length : nextBreak);
+  const blockLines = block.split('\n');
+  // Blank lines are left alone in a multi-line selection, but a single blank line gets the prefix.
+  const skipBlank = blockLines.length > 1;
+  const filled = blockLines.filter((line) => line.length > 0);
+  const allHave = filled.length > 0 && filled.every((line) => line.startsWith(prefix));
+  return mapSelectedLines(text, sel, (line) => {
+    if (allHave) {
+      return line.startsWith(prefix) ? line.slice(prefix.length) : line;
+    }
+    return (skipBlank && line.length === 0) || line.startsWith(prefix) ? line : prefix + line;
+  });
 }
 
 function indentLine(text: string, sel: TextSelection, spaces = '  '): FormatCommandResult {
-  const start = lineStart(text, sel.start);
-  const next = text.slice(0, start) + spaces + text.slice(start);
-  return {
-    text: next,
-    selection: { start: sel.start + spaces.length, end: sel.end + spaces.length },
-  };
+  return mapSelectedLines(text, sel, (line) => spaces + line);
 }
 
 function outdentLine(text: string, sel: TextSelection): FormatCommandResult {
-  const start = lineStart(text, sel.start);
-  const slice = text.slice(start);
-  const match = slice.match(/^( {1,2})/);
-  if (!match) {
-    return { text, selection: sel };
-  }
-  const removed = match[1].length;
-  const next = text.slice(0, start) + text.slice(start + removed);
-  return {
-    text: next,
-    selection: {
-      start: Math.max(sel.start - removed, start),
-      end: Math.max(sel.end - removed, start),
-    },
-  };
+  return mapSelectedLines(text, sel, (line) => line.replace(/^ {1,2}/, ''));
 }
 
 export function applyFormatCommand(
