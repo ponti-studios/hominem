@@ -5,6 +5,9 @@ set positional-arguments := true
 
 ROOT_DIR := justfile_directory()
 
+# Shared studio recipes (studio-version, studio-update, studio-check); see .studio/STUDIO.md.
+import '.studio/studio.just'
+
 otp email:
     pnpm --filter @hominem/api exec tsx scripts/otp.ts "{{ email }}"
 

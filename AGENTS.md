@@ -143,3 +143,7 @@ Documentation on type-checking in this monorepo can be found in `docs/type-syste
 - [apps/omiro/AGENTS.md](apps/omiro/AGENTS.md) — Expo/EAS, navigation, mobile commands, Maestro/simulator evidence.
 - [services/api/AGENTS.md](services/api/AGENTS.md) — Hono/BullMQ implementation rules, production authentication.
 - `packages/db` — migrations, generated types, repository boundary. Covered by the `hominem-database` skill, not a nested `AGENTS.md`.
+
+## Studio verbs
+
+Studio repos share a convention (`.studio/STUDIO.md`, copied from the `studio-dev` repo; do not edit it here, run `just studio-update`). For Omiro the verbs are `just mobile setup | doctor | sim | run | check | e2e`.
