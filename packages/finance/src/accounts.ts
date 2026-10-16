@@ -9,6 +9,21 @@ import { getAffectedRows } from './utils';
 
 export type AccountWithBalance = Selectable<AppFinanceAccounts> & { currentBalance: number };
 
+export type FinanceAccountsResult = {
+  accounts: Array<{
+    id: string;
+    name: string;
+    accountType: string;
+    currencyCode: string;
+    allowedCurrencies: string[];
+    lifecycleStatus: string;
+    includeInNetWorth: boolean;
+    balanceCents: number;
+  }>;
+  count: number;
+  totalCount: number;
+};
+
 export function normalizeAllowedCurrencies(
   currencyCode: string,
   allowedCurrencies: readonly string[] = [],
@@ -221,6 +236,34 @@ export async function countAccounts(
   }
   const row = await query.executeTakeFirst();
   return Number(row?.count ?? 0);
+}
+
+export async function getFinanceAccountList(
+  userId: string,
+  options?: { includeClosed?: boolean; limit?: number },
+): Promise<FinanceAccountsResult> {
+  const [accounts, totalCount] = await Promise.all([
+    listAccounts(userId, {
+      includeClosed: options?.includeClosed,
+      limit: options?.limit,
+    }),
+    countAccounts(userId, { includeClosed: options?.includeClosed }),
+  ]);
+
+  return {
+    accounts: accounts.map((account) => ({
+      id: account.id,
+      name: account.name,
+      accountType: account.accountType,
+      currencyCode: account.currencyCode,
+      allowedCurrencies: [...new Set([account.currencyCode, ...(account.allowedCurrencies ?? [])])],
+      lifecycleStatus: account.lifecycleStatus,
+      includeInNetWorth: account.includeInNetWorth,
+      balanceCents: Math.round(account.currentBalance * 100),
+    })),
+    count: accounts.length,
+    totalCount,
+  };
 }
 
 export async function getAccountById(

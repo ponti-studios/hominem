@@ -1,7 +1,6 @@
 import { db, sql } from '@hominem/db/core';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
-import { extractOrderNumber } from './sheet-import';
 import { toCents } from './utils';
 
 function fallbackDate(daysAgo: number, now: Date): string {
@@ -108,6 +107,8 @@ export async function getFinanceRecentTransactions(
       't.categoryId',
       'c.name as categoryName',
       't.notes',
+      't.orderNumber',
+      't.externalId',
       't.counterpartId',
       't.source',
       't.recurring',
@@ -151,7 +152,8 @@ export async function getFinanceRecentTransactions(
     categoryName: row.categoryName ?? null,
     tags: tagNames.get(row.id) ?? [],
     notes: row.notes ?? null,
-    orderNumber: extractOrderNumber(row.notes),
+    orderNumber: row.orderNumber,
+    externalId: row.externalId,
     counterpartId: row.counterpartId ?? null,
     source: row.source,
     recurring: row.recurring === true,

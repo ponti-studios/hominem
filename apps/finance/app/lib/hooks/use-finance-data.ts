@@ -69,12 +69,9 @@ export const useFinanceAccounts = ({ initialData }: UseFinanceAccountsOptions = 
     initialData ? { initialData } : {},
   );
 
-  const accountsData: AccountListOutput = Array.isArray(data) ? data : [];
+  const accountsData = data?.accounts ?? [];
 
   const accountsMap = useMemo(() => {
-    if (!Array.isArray(accountsData)) {
-      return new Map<string, AccountListOutput[number]>();
-    }
     return new Map(accountsData.map((account) => [account.id, account]));
   }, [accountsData]);
 

@@ -133,10 +133,17 @@ const toolsByDomain: Record<string, readonly unknown[]> = {
 type HarnessState = { calls: string[]; prompt: string; trace: McpTrace };
 
 let latestTrace: McpTrace | null = null;
+const tracesByPrompt = new Map<string, McpTrace>();
 
-export function getLastMcpTrace(): McpTrace {
-  if (!latestTrace) throw new Error('MCP harness did not produce a trace');
-  return latestTrace;
+export function getLastMcpTrace(prompt?: string): McpTrace {
+  const trace = prompt === undefined ? latestTrace : tracesByPrompt.get(prompt);
+  if (!trace) throw new Error('MCP harness did not produce a trace');
+  return trace;
+}
+
+function recordTrace(state: HarnessState): void {
+  latestTrace = state.trace;
+  tracesByPrompt.set(state.prompt, state.trace);
 }
 
 const parseDomain = (content: string): string => {
@@ -256,33 +263,33 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
         output: mixed
           ? {
               month: '2026-02',
-              incomeCents: null,
-              expensesCents: null,
-              netCents: null,
+              income: null,
+              expenses: null,
+              net: null,
               transactionCount: 31,
-              averageTransactionCents: null,
+              averageTransaction: null,
               topTag: null,
               topMerchant: null,
               tagSpending: [],
               currencyBreakdown: [
                 {
                   currencyCode: 'GBP',
-                  incomeCents: 260000,
-                  expensesCents: 180000,
-                  netCents: 80000,
+                  income: 2600,
+                  expenses: 1800,
+                  net: 800,
                   transactionCount: 20,
-                  averageTransactionCents: 9000,
+                  averageTransaction: 90,
                   topTag: 'Food',
                   topMerchant: 'Grocer',
                   tagSpending: [],
                 },
                 {
                   currencyCode: 'USD',
-                  incomeCents: 100000,
-                  expensesCents: 50000,
-                  netCents: 50000,
+                  income: 1000,
+                  expenses: 500,
+                  net: 500,
                   transactionCount: 11,
-                  averageTransactionCents: 4545,
+                  averageTransaction: 45.45,
                   topTag: 'Work',
                   topMerchant: 'Cloud Tools',
                   tagSpending: [],
@@ -295,22 +302,22 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
             }
           : {
               month: '2026-09',
-              incomeCents: 420000,
-              expensesCents: 310000,
-              netCents: 110000,
+              income: 4200,
+              expenses: 3100,
+              net: 1100,
               transactionCount: 42,
-              averageTransactionCents: 7381,
+              averageTransaction: 73.81,
               topTag: 'Household',
               topMerchant: 'Tesco',
               tagSpending: [],
               currencyBreakdown: [
                 {
                   currencyCode: 'GBP',
-                  incomeCents: 420000,
-                  expensesCents: 310000,
-                  netCents: 110000,
+                  income: 4200,
+                  expenses: 3100,
+                  net: 1100,
                   transactionCount: 42,
-                  averageTransactionCents: 7381,
+                  averageTransaction: 73.81,
                   topTag: 'Household',
                   topMerchant: 'Tesco',
                   tagSpending: [],
@@ -336,14 +343,14 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
                   categoryId: 'category-groceries',
                   categoryName: 'Groceries',
                   currencyCode: 'GBP',
-                  spentCents: 42000,
+                  spent: 420,
                   transactionCount: 6,
                 },
                 {
                   categoryId: 'category-software',
                   categoryName: 'Software',
                   currencyCode: 'USD',
-                  spentCents: 32000,
+                  spent: 320,
                   transactionCount: 3,
                 },
               ],
@@ -359,14 +366,14 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
                   categoryId: 'category-housing',
                   categoryName: 'Housing',
                   currencyCode: 'GBP',
-                  spentCents: 180000,
+                  spent: 1800,
                   transactionCount: 18,
                 },
                 {
                   categoryId: 'category-food',
                   categoryName: 'Food',
                   currencyCode: 'GBP',
-                  spentCents: 70000,
+                  spent: 700,
                   transactionCount: 12,
                 },
               ],
@@ -380,8 +387,8 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
           input.from === '2026-02-01'
             ? {
                 merchants: [
-                  { name: 'Grocer', totalSpentCents: 42000, transactionCount: 6 },
-                  { name: 'Cloud Tools', totalSpentCents: 32000, transactionCount: 3 },
+                  { name: 'Grocer', totalSpent: 420, transactionCount: 6 },
+                  { name: 'Cloud Tools', totalSpent: 320, transactionCount: 3 },
                 ],
                 count: 2,
                 currencyCode: null,
@@ -391,8 +398,8 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
               }
             : {
                 merchants: [
-                  { name: 'Tesco', totalSpentCents: 65000, transactionCount: 5 },
-                  { name: 'Trainline', totalSpentCents: 25000, transactionCount: 2 },
+                  { name: 'Tesco', totalSpent: 650, transactionCount: 5 },
+                  { name: 'Trainline', totalSpent: 250, transactionCount: 2 },
                 ],
                 count: 2,
                 currencyCode: 'GBP',
@@ -527,7 +534,7 @@ const mcpHarness: AgentHarness = defineHarness({
         });
         if (toolCalls.length === 0) {
           state.trace.toolCalls = state.calls;
-          latestTrace = state.trace;
+          recordTrace(state);
           yield event(
             AgentRuntimeEventTag.TurnSucceeded,
             { latencyMs: performance.now() - turnStartedAt, usage: body.usage ?? null },
@@ -560,7 +567,7 @@ const mcpHarness: AgentHarness = defineHarness({
           const outcome = executeTool(name, input, state);
           if (outcome.confirmationRequired) {
             state.trace.toolCalls = state.calls;
-            latestTrace = state.trace;
+            recordTrace(state);
             yield event(
               AgentRuntimeEventTag.ConfirmationRequired,
               { name, input, toolCallId: call.id, preview: outcome.output },
@@ -610,7 +617,7 @@ const mcpHarness: AgentHarness = defineHarness({
       );
       state.trace.toolCalls = state.calls;
       state.trace.runtimeError = true;
-      latestTrace = state.trace;
+      recordTrace(state);
       throw new Error('The agent exceeded the allowed MCP interaction budget.');
     });
   },

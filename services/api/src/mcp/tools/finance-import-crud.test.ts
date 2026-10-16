@@ -9,6 +9,8 @@ const userId = 'f2000010-0000-4000-8000-000000000001';
 const otherUserId = 'f2000010-0000-4000-8000-000000000002';
 const checkingId = 'f2000011-0000-4000-8000-000000000001';
 const gbpId = 'f2000011-0000-4000-8000-000000000002';
+const secondCheckingId = 'f2000011-0000-4000-8000-000000000003';
+const thirdCheckingId = 'f2000011-0000-4000-8000-000000000004';
 
 type Content = Record<string, unknown> & {
   categories?: Array<{ id: string; name: string }>;
@@ -19,7 +21,7 @@ type Content = Record<string, unknown> & {
   received?: number;
   upserted?: number;
   createdCount?: number;
-  rejected?: Array<{ index: number; reason: string }>;
+  rejected?: Array<{ index: number; reason: string; key?: string }>;
   transactions?: Array<Record<string, unknown>>;
 };
 
@@ -61,6 +63,26 @@ beforeAll(async () => {
         includeInNetWorth: true,
         metadata: {},
       },
+      {
+        id: secondCheckingId,
+        userId,
+        name: 'Sheet Checking Two',
+        accountType: 'checking',
+        currencyCode: 'USD',
+        lifecycleStatus: 'open',
+        includeInNetWorth: true,
+        metadata: {},
+      },
+      {
+        id: thirdCheckingId,
+        userId,
+        name: 'Sheet Checking Three',
+        accountType: 'checking',
+        currencyCode: 'USD',
+        lifecycleStatus: 'open',
+        includeInNetWorth: true,
+        metadata: {},
+      },
     ])
     .onConflict((oc) => oc.column('id').doNothing())
     .execute();
@@ -87,6 +109,160 @@ describe('finance_categories', () => {
 });
 
 describe('finance_transaction_upsert', () => {
+  it('preserves omitted fields, applies explicit clears, and supports provider identity and type changes', async () => {
+    const row = {
+      postedOn: '2026-09-04',
+      account: checkingId,
+      description: 'Patch Semantics',
+      amountCents: -1234,
+      currencyCode: 'USD',
+      category: 'Initial Category',
+      tags: ['keep-me'],
+      notes: 'N',
+      orderNumber: 'ORDER-7',
+      excluded: true,
+      recurring: true,
+      transactionType: 'debit',
+      externalId: 'provider-patch-1',
+    };
+    const created = content(await callTool(userId, 'finance_transaction_upsert', row));
+    const id = String(created.id);
+    const partial = content(
+      await callTool(userId, 'finance_transaction_upsert', {
+        postedOn: row.postedOn,
+        account: row.account,
+        description: row.description,
+        amountCents: row.amountCents,
+        currencyCode: row.currencyCode,
+        category: 'Updated Category',
+        externalId: row.externalId,
+      }),
+    );
+    expect(partial).toMatchObject({ id, created: false });
+    let stored = await db
+      .selectFrom('app.financeTransactions')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirstOrThrow();
+    expect(stored).toMatchObject({
+      notes: 'N',
+      orderNumber: 'ORDER-7',
+      excluded: true,
+      recurring: true,
+      transactionType: 'debit',
+    });
+    expect(
+      await db.selectFrom('app.tagAssignments').select('id').where('entityId', '=', id).execute(),
+    ).toHaveLength(1);
+
+    const search = content(
+      await callTool(userId, 'finance_transaction_search', { query: 'Patch Semantics' }),
+    );
+    expect(search.transactions?.[0]).toMatchObject({ id, notes: 'N', orderNumber: 'ORDER-7' });
+
+    const changedType = content(
+      await callTool(userId, 'finance_transaction_upsert', { ...row, transactionType: 'transfer' }),
+    );
+    expect(changedType).toMatchObject({ id, created: false });
+    stored = await db
+      .selectFrom('app.financeTransactions')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirstOrThrow();
+    expect(stored.transactionType).toBe('transfer');
+    const transferSearch = content(
+      await callTool(userId, 'finance_transaction_search', {
+        transactionType: 'transfer',
+        categoryName: 'Initial Category',
+      }),
+    );
+    expect(transferSearch.transactions?.some((transaction) => transaction.id === id)).toBe(true);
+    await db
+      .updateTable('app.financeTransactions')
+      .set({ excluded: false })
+      .where('id', '=', id)
+      .execute();
+    const transferSpending = content(
+      await callTool(userId, 'finance_spending_by_category', {
+        from: '2026-09-01',
+        to: '2026-09-30',
+      }),
+    );
+    expect(transferSpending.categories).toHaveLength(0);
+    await callTool(userId, 'finance_transaction_upsert', { ...row, transactionType: 'debit' });
+    await db
+      .updateTable('app.financeTransactions')
+      .set({ excluded: false })
+      .where('id', '=', id)
+      .execute();
+    stored = await db
+      .selectFrom('app.financeTransactions')
+      .selectAll()
+      .where('id', '=', id)
+      .executeTakeFirstOrThrow();
+    expect(stored.transactionType).toBe('debit');
+    const debitSpending = content(
+      await callTool(userId, 'finance_spending_by_category', {
+        from: '2026-09-01',
+        to: '2026-09-30',
+      }),
+    );
+    expect(debitSpending.categories).toHaveLength(1);
+
+    await callTool(userId, 'finance_transaction_upsert', { ...row, tags: [] });
+    expect(
+      await db.selectFrom('app.tagAssignments').select('id').where('entityId', '=', id).execute(),
+    ).toHaveLength(0);
+  });
+
+  it('uses externalId across corrected source values without merging distinct transactions', async () => {
+    const common = {
+      postedOn: '2026-09-05',
+      account: checkingId,
+      description: 'Same Natural Row',
+      amountCents: -250,
+      currencyCode: 'USD',
+      source: 'plaid',
+    };
+    const one = content(
+      await callTool(userId, 'finance_transaction_upsert', {
+        ...common,
+        externalId: 'provider-one',
+      }),
+    );
+    const two = content(
+      await callTool(userId, 'finance_transaction_upsert', {
+        ...common,
+        externalId: 'provider-two',
+      }),
+    );
+    expect(one.id).not.toBe(two.id);
+    const replay = content(
+      await callTool(userId, 'finance_transactions_import', {
+        transactions: [
+          { ...common, externalId: 'provider-one' },
+          { ...common, externalId: 'provider-two' },
+        ],
+      }),
+    );
+    expect(replay).toMatchObject({ created: 0, updated: 0 });
+    const corrected = content(
+      await callTool(userId, 'finance_transaction_upsert', {
+        ...common,
+        externalId: 'provider-one',
+        amountCents: -325,
+        description: 'Corrected Description',
+      }),
+    );
+    expect(corrected).toMatchObject({ id: one.id, created: false });
+    const row = await db
+      .selectFrom('app.financeTransactions')
+      .select(['amount', 'description'])
+      .where('id', '=', String(one.id))
+      .executeTakeFirstOrThrow();
+    expect(row).toMatchObject({ amount: -3.25, description: 'Corrected Description' });
+  });
+
   it('creates then re-upserts without duplicating', async () => {
     const first = await callTool(userId, 'finance_transaction_upsert', {
       postedOn: '2026-09-01',
@@ -220,7 +396,7 @@ describe('finance_transaction_upsert', () => {
     expect(row.transactionType).toBe('adjustment');
   });
 
-  it('keeps recurring and order number in notes', async () => {
+  it('keeps notes verbatim and stores order number independently', async () => {
     const result = await callTool(userId, 'finance_transaction_upsert', {
       postedOn: '2026-09-03',
       account: checkingId,
@@ -234,11 +410,12 @@ describe('finance_transaction_upsert', () => {
     const id = content(result).id ?? '';
     const row = await db
       .selectFrom('app.financeTransactions')
-      .select(['recurring', 'notes'])
+      .select(['recurring', 'notes', 'orderNumber'])
       .where('id', '=', id)
       .executeTakeFirstOrThrow();
     expect(row.recurring).toBe(true);
-    expect(row.notes).toContain('Order #: ABC-123');
+    expect(row.notes).toBe('monthly sub');
+    expect(row.orderNumber).toBe('ABC-123');
   });
 
   it('reads tags, notes, source and recurring back through the read tools (B2)', async () => {
@@ -308,6 +485,34 @@ describe('finance_transaction_upsert', () => {
 });
 
 describe('finance_transactions_import', () => {
+  it('rejects unknown item keys individually while importing valid neighbors', async () => {
+    const result = content(
+      await callTool(userId, 'finance_transactions_import', {
+        transactions: [
+          {
+            postedOn: '2026-10-06',
+            account: checkingId,
+            description: 'Wrong Field',
+            amountCents: -100,
+            currencyCode: 'USD',
+            categoryName: 'Ignored',
+          },
+          {
+            postedOn: '2026-10-07',
+            account: checkingId,
+            description: 'Valid Neighbor',
+            amountCents: -200,
+            currencyCode: 'USD',
+          },
+        ],
+      }),
+    );
+    expect(result).toMatchObject({ received: 2, upserted: 1, created: 1 });
+    expect(result.rejected).toEqual([
+      { index: 0, reason: 'unknown_item_key', key: 'categoryName' },
+    ]);
+  });
+
   it('imports a batch, collects rejections, and re-runs to zero', async () => {
     const batch = {
       mode: 'append',
@@ -434,6 +639,142 @@ describe('finance_transactions_import', () => {
     expect(content(replace)).toMatchObject({ received: 1, upserted: 1, created: 1, updated: 0 });
   });
 
+  it('dryRun counts corrections to external-id transaction fields', async () => {
+    await db
+      .updateTable('app.financeAccounts')
+      .set({ allowedCurrencies: ['USD'] })
+      .where('id', '=', gbpId)
+      .execute();
+    const original = {
+      postedOn: '2026-10-09',
+      account: gbpId,
+      description: 'Original provider description',
+      amountCents: -500,
+      currencyCode: 'GBP',
+      externalId: 'provider-correction-1',
+    };
+    await callTool(userId, 'finance_transactions_import', { transactions: [original] });
+
+    const corrected = {
+      ...original,
+      postedOn: '2026-10-10',
+      description: 'Corrected provider description',
+      amountCents: -650,
+      currencyCode: 'USD',
+    };
+    const dryRun = await callTool(userId, 'finance_transactions_import', {
+      dryRun: true,
+      transactions: [corrected],
+    });
+    expect(content(dryRun)).toMatchObject({ created: 0, updated: 1 });
+
+    await callTool(userId, 'finance_transactions_import', { transactions: [corrected] });
+    const stored = await db
+      .selectFrom('app.financeTransactions')
+      .select(['amount', 'description', 'postedOn', 'currencyCode'])
+      .where('userId', '=', userId)
+      .where('externalId', '=', original.externalId)
+      .executeTakeFirstOrThrow();
+    expect(stored).toMatchObject({
+      amount: -6.5,
+      description: corrected.description,
+      postedOn: corrected.postedOn,
+      currencyCode: corrected.currencyCode,
+    });
+    await db
+      .updateTable('app.financeAccounts')
+      .set({ allowedCurrencies: [] })
+      .where('id', '=', gbpId)
+      .execute();
+  });
+
+  it('updates merchantName when an explicit provider identity corrects description', async () => {
+    const row = {
+      postedOn: '2026-10-11',
+      account: checkingId,
+      description: 'Old Merchant Label',
+      amountCents: -1250,
+      currencyCode: 'USD',
+      externalId: 'provider-merchant-correction',
+    };
+    await callTool(userId, 'finance_transaction_upsert', row);
+    await callTool(userId, 'finance_transaction_upsert', {
+      ...row,
+      description: 'Corrected Merchant Label',
+    });
+    const stored = await db
+      .selectFrom('app.financeTransactions')
+      .select(['description', 'merchantName'])
+      .where('userId', '=', userId)
+      .where('externalId', '=', row.externalId)
+      .executeTakeFirstOrThrow();
+    expect(stored).toEqual({
+      description: 'Corrected Merchant Label',
+      merchantName: 'Corrected Merchant Label',
+    });
+  });
+
+  it('resolves a sheet identity across a corrected source without retrying inserts', async () => {
+    const row = {
+      postedOn: '2026-10-12',
+      account: checkingId,
+      description: 'Stable sheet identity',
+      amountCents: -1250,
+      currencyCode: 'USD',
+      source: 'plaid',
+    };
+    const created = content(await callTool(userId, 'finance_transaction_upsert', row));
+    const existing = await db
+      .selectFrom('app.financeTransactions')
+      .select(['id', 'externalId'])
+      .where('id', '=', String(created.id))
+      .executeTakeFirstOrThrow();
+    const updated = content(
+      await callTool(userId, 'finance_transaction_upsert', {
+        ...row,
+        source: 'manual',
+        externalId: existing.externalId,
+        description: 'Corrected stable sheet identity',
+      }),
+    );
+    expect(updated).toMatchObject({ id: existing.id, created: false });
+    const rows = await db
+      .selectFrom('app.financeTransactions')
+      .select(['id', 'source', 'description'])
+      .where('userId', '=', userId)
+      .where('externalId', '=', existing.externalId)
+      .execute();
+    expect(rows).toEqual([
+      { id: existing.id, source: 'plaid', description: 'Corrected stable sheet identity' },
+    ]);
+  });
+
+  it('recovers a concurrent sheet external-id insert conflict with one bounded retry', async () => {
+    const row = {
+      postedOn: '2026-10-14',
+      account: checkingId,
+      description: 'Concurrent identity',
+      amountCents: -300,
+      currencyCode: 'USD',
+      source: 'manual',
+      externalId: 'sheet:concurrent-insert-test',
+    };
+    const [first, second] = await Promise.all([
+      callTool(userId, 'finance_transaction_upsert', row),
+      callTool(userId, 'finance_transaction_upsert', row),
+    ]);
+    expect(first.isError).not.toBe(true);
+    expect(second.isError).not.toBe(true);
+    expect(content(first).id).toBe(content(second).id);
+    const rows = await db
+      .selectFrom('app.financeTransactions')
+      .select('id')
+      .where('userId', '=', userId)
+      .where('externalId', '=', row.externalId)
+      .execute();
+    expect(rows).toHaveLength(1);
+  });
+
   it('projects a cross-source natural-key match as an update', async () => {
     const row = {
       postedOn: '2026-10-08',
@@ -496,6 +837,101 @@ describe('finance_transactions_import', () => {
       .where('userId', '=', userId)
       .execute();
     expect(rows.map((r) => r.description)).toEqual(['Sole Survivor']);
+  });
+});
+
+describe('finance_transaction_move', () => {
+  it('moves a linked excluded row without changing its identity or fields and enforces currency', async () => {
+    const mirror = content(
+      await callTool(userId, 'finance_transaction_upsert', {
+        postedOn: '2026-09-08',
+        account: secondCheckingId,
+        description: 'Mirror Leg',
+        amountCents: 5000,
+        currencyCode: 'USD',
+        transactionType: 'transfer',
+        externalId: 'move-mirror',
+      }),
+    );
+    const source = content(
+      await callTool(userId, 'finance_transaction_upsert', {
+        postedOn: '2026-09-08',
+        account: checkingId,
+        description: 'Move Leg',
+        amountCents: -5000,
+        currencyCode: 'USD',
+        transactionType: 'transfer',
+        tags: ['move-tag'],
+        notes: 'keep notes',
+        excluded: true,
+        counterpartId: String(mirror.id),
+        externalId: 'move-source',
+      }),
+    );
+    await expect(
+      callTool(userId, 'finance_transaction_move', {
+        ids: [source.id],
+        toAccount: secondCheckingId,
+      }),
+    ).rejects.toThrow('move_would_break_counterpart_accounts');
+    await expect(
+      callTool(userId, 'finance_transaction_move', {
+        ids: [source.id, mirror.id],
+        toAccount: thirdCheckingId,
+      }),
+    ).rejects.toThrow('move_would_break_counterpart_accounts');
+    const before = await db
+      .selectFrom('app.financeTransactions')
+      .selectAll()
+      .where('id', '=', String(source.id))
+      .executeTakeFirstOrThrow();
+    const result = content(
+      await callTool(userId, 'finance_transaction_move', {
+        ids: [source.id],
+        toAccount: thirdCheckingId,
+      }),
+    );
+    expect(result).toMatchObject({
+      moved: [source.id],
+      count: 1,
+      accountId: thirdCheckingId,
+      notFound: [],
+    });
+    const after = await db
+      .selectFrom('app.financeTransactions')
+      .selectAll()
+      .where('id', '=', String(source.id))
+      .executeTakeFirstOrThrow();
+    expect(after).toMatchObject({
+      id: before.id,
+      accountId: thirdCheckingId,
+      amount: before.amount,
+      description: before.description,
+      postedOn: before.postedOn,
+      currencyCode: before.currencyCode,
+      notes: before.notes,
+      excluded: before.excluded,
+      counterpartId: before.counterpartId,
+    });
+    expect(after.counterpartId).toBe(mirror.id);
+    const mirrorAfter = await db
+      .selectFrom('app.financeTransactions')
+      .select('counterpartId')
+      .where('id', '=', String(mirror.id))
+      .executeTakeFirstOrThrow();
+    expect(mirrorAfter.counterpartId).toBe(source.id);
+    await expect(
+      callTool(userId, 'finance_transaction_move', { ids: [source.id], toAccount: gbpId }),
+    ).rejects.toThrow('currency_mismatch');
+    const missingId = 'f2000022-0000-4000-8000-000000000099';
+    expect(
+      content(
+        await callTool(userId, 'finance_transaction_move', {
+          ids: [missingId],
+          toAccount: checkingId,
+        }),
+      ),
+    ).toMatchObject({ moved: [], count: 0, notFound: [missingId] });
   });
 });
 
@@ -565,5 +1001,38 @@ describe('orderNumber read parity', () => {
     const recent = content(await callTool(userId, 'finance_recent_transactions', { limit: 50 }));
     const recentRow = recent.transactions?.find((row) => row.id === id);
     expect(recentRow?.orderNumber).toBe('ORDER-0001');
+
+    const cleared = content(
+      await callTool(userId, 'finance_transaction_upsert', {
+        postedOn: '2026-12-30',
+        account: 'Sheet Checking',
+        description: 'Example Order Merchant',
+        amountCents: -12345,
+        currencyCode: 'USD',
+        externalId: 'order-number-clear-test',
+        notes: 'Order #: LEGACY-ORDER',
+      }),
+    );
+    await callTool(userId, 'finance_transaction_upsert', {
+      postedOn: '2026-12-30',
+      account: 'Sheet Checking',
+      description: 'Example Order Merchant',
+      amountCents: -12345,
+      currencyCode: 'USD',
+      externalId: 'order-number-clear-test',
+      orderNumber: null,
+    });
+    const clearedSearch = content(
+      await callTool(userId, 'finance_transaction_search', { query: 'Example Order Merchant' }),
+    );
+    expect(
+      clearedSearch.transactions?.find((row) => row.id === cleared.id)?.orderNumber,
+    ).toBeNull();
+    const clearedRecent = content(
+      await callTool(userId, 'finance_recent_transactions', { limit: 50 }),
+    );
+    expect(
+      clearedRecent.transactions?.find((row) => row.id === cleared.id)?.orderNumber,
+    ).toBeNull();
   });
 });

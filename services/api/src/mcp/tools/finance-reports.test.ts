@@ -242,7 +242,7 @@ describe('finance_accounts', () => {
     const byName = Object.fromEntries((data.accounts ?? []).map((a) => [a.name, a]));
     expect(byName.Card).toMatchObject({
       accountType: 'credit_card',
-      balanceCents: -3000,
+      balance: -30,
       includeInNetWorth: false,
     });
     expect(byName.Checking).toMatchObject({ accountType: 'checking', includeInNetWorth: true });
@@ -265,9 +265,9 @@ describe('finance_top_merchants', () => {
   it('ranks merchants by spend and skips excluded transactions', async () => {
     const data = content(await callTool(userId, 'finance_top_merchants', JULY));
     expect(data.merchants).toEqual([
-      { name: 'Unknown', totalSpentCents: 100_000, transactionCount: 1 },
-      { name: 'Whole Foods', totalSpentCents: 8000, transactionCount: 2 },
-      { name: 'Shell', totalSpentCents: 2500, transactionCount: 1 },
+      { name: 'Unknown', totalSpent: 1000, transactionCount: 1 },
+      { name: 'Whole Foods', totalSpent: 80, transactionCount: 2 },
+      { name: 'Shell', totalSpent: 25, transactionCount: 1 },
     ]);
   });
 
@@ -290,7 +290,7 @@ describe('finance_top_merchants', () => {
     );
     expect(data.merchants).toContainEqual({
       name: 'Paged Merchant',
-      totalSpentCents: 20_100,
+      totalSpent: 201,
       transactionCount: 201,
     });
   });
@@ -300,7 +300,7 @@ describe('finance_top_merchants', () => {
       await callTool(userId, 'finance_top_merchants', { ...JULY, accountId: cardId }),
     );
     expect(byAccount.merchants).toEqual([
-      { name: 'Whole Foods', totalSpentCents: 3000, transactionCount: 1 },
+      { name: 'Whole Foods', totalSpent: 30, transactionCount: 1 },
     ]);
 
     const byDate = content(
@@ -310,7 +310,7 @@ describe('finance_top_merchants', () => {
 
     const byTagName = content(await callTool(userId, 'finance_top_merchants', { tag: 'Food' }));
     expect(byTagName.merchants).toEqual([
-      { name: 'Whole Foods', totalSpentCents: 8000, transactionCount: 2 },
+      { name: 'Whole Foods', totalSpent: 80, transactionCount: 2 },
     ]);
 
     const byTagId = content(await callTool(userId, 'finance_top_merchants', { tag: foodTagId }));
@@ -319,9 +319,7 @@ describe('finance_top_merchants', () => {
 
   it("does not include another user's spending, even given their account id", async () => {
     const own = content(await callTool(otherUserId, 'finance_top_merchants', JULY));
-    expect(own.merchants).toEqual([
-      { name: 'Whole Foods', totalSpentCents: 99_900, transactionCount: 1 },
-    ]);
+    expect(own.merchants).toEqual([{ name: 'Whole Foods', totalSpent: 999, transactionCount: 1 }]);
 
     const crossAccount = content(
       await callTool(otherUserId, 'finance_top_merchants', { ...JULY, accountId: checkingId }),
@@ -446,18 +444,18 @@ describe('finance_spending_by_category', () => {
 describe('finance_tag_breakdown', () => {
   it('splits spending by tag with shares of the total', async () => {
     const data = content(await callTool(userId, 'finance_tag_breakdown', { ...JULY, limit: 10 }));
-    expect(data.totalSpendingCents).toBe(110_500);
+    expect(data.totalSpending).toBe(1105);
     expect(data.breakdown).toEqual([
       {
         tag: '(untagged)',
-        amountCents: 102_500,
+        amount: 1025,
         percentage: expect.any(Number),
         transactionCount: 2,
         currencyCode: 'USD',
       },
       {
         tag: 'Food',
-        amountCents: 8000,
+        amount: 80,
         percentage: expect.any(Number),
         transactionCount: 2,
         currencyCode: 'USD',
@@ -469,17 +467,17 @@ describe('finance_tag_breakdown', () => {
 
   it('restricts to one tag and never counts the other user', async () => {
     const own = content(await callTool(userId, 'finance_tag_breakdown', { tag: 'Food' }));
-    expect(own.totalSpendingCents).toBe(8000);
+    expect(own.totalSpending).toBe(80);
 
     const other = content(await callTool(otherUserId, 'finance_tag_breakdown', { tag: 'Food' }));
-    expect(other.totalSpendingCents).toBe(99_900);
+    expect(other.totalSpending).toBe(999);
   });
 
   it('totals spending across every tag even when the display limit truncates the breakdown', async () => {
     const limited = content(await callTool(userId, 'finance_tag_breakdown', { ...JULY, limit: 1 }));
     expect(limited.breakdown).toHaveLength(1);
     // Must still be the full total (Uncategorized 1025 + Food 80), not just the shown tag.
-    expect(limited.totalSpendingCents).toBe(110_500);
+    expect(limited.totalSpending).toBe(1105);
   });
 
   it('returns currency totals beyond the former result cap', async () => {
@@ -542,15 +540,15 @@ describe('finance_tag_breakdown', () => {
       }),
     );
     expect(data.breakdown).toContainEqual(
-      expect.objectContaining({ tag: 'Karen', amountCents: 1495, transactionCount: 1 }),
+      expect.objectContaining({ tag: 'Karen', amount: 14.95, transactionCount: 1 }),
     );
     expect(data.breakdown).toContainEqual(
-      expect.objectContaining({ tag: 'Art', amountCents: 1495, transactionCount: 1 }),
+      expect.objectContaining({ tag: 'Art', amount: 14.95, transactionCount: 1 }),
     );
     expect(data.breakdown).toContainEqual(expect.objectContaining({ tag: '(untagged)' }));
-    expect(data.totalSpendingCents).toBe(1995);
+    expect(data.totalSpending).toBe(19.95);
     expect(data.totalsByCurrency).toEqual([
-      expect.objectContaining({ currencyCode: 'USD', totalSpendingCents: 1995 }),
+      expect.objectContaining({ currencyCode: 'USD', totalSpending: 19.95 }),
     ]);
   });
 
@@ -578,9 +576,9 @@ describe('finance_tag_breakdown', () => {
       }),
     );
     expect(data.breakdown).toEqual([
-      expect.objectContaining({ tag: '(untagged)', amountCents: 1200, transactionCount: 1 }),
+      expect.objectContaining({ tag: '(untagged)', amount: 12, transactionCount: 1 }),
     ]);
-    expect(data.totalSpendingCents).toBe(1200);
+    expect(data.totalSpending).toBe(12);
   });
 
   it('returns zero totals for an empty range', async () => {
@@ -591,8 +589,8 @@ describe('finance_tag_breakdown', () => {
       }),
     );
     expect(data).toMatchObject({
-      totalSpendingCents: 0,
-      averagePerDayCents: 0,
+      totalSpending: 0,
+      averagePerDay: 0,
       currencyCode: null,
       totalsByCurrency: [],
     });
@@ -627,12 +625,12 @@ describe('finance_tag_breakdown', () => {
       }),
     );
     expect(data.currencyCode).toBeNull();
-    expect(data.totalSpendingCents).toBeNull();
-    expect(data.averagePerDayCents).toBeNull();
+    expect(data.totalSpending).toBeNull();
+    expect(data.averagePerDay).toBeNull();
     expect(data.totalsByCurrency).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ currencyCode: 'USD', totalSpendingCents: 100 }),
-        expect.objectContaining({ currencyCode: 'GBP', totalSpendingCents: 200 }),
+        expect.objectContaining({ currencyCode: 'USD', totalSpending: 1 }),
+        expect.objectContaining({ currencyCode: 'GBP', totalSpending: 2 }),
       ]),
     );
   });
@@ -642,7 +640,7 @@ describe('finance_tag_breakdown', () => {
       await callTool(userId, 'finance_tag_breakdown', { from: '2026-07-01', limit: 10 }),
     );
     // A real multi-day span must average out to less than treating the whole total as one day.
-    expect(Number(openEnded.averagePerDayCents)).toBeLessThan(Number(openEnded.totalSpendingCents));
+    expect(Number(openEnded.averagePerDay)).toBeLessThan(Number(openEnded.totalSpending));
   });
 });
 
@@ -651,9 +649,9 @@ describe('finance_monthly_stats', () => {
     const data = content(await callTool(userId, 'finance_monthly_stats', { month: '2026-07' }));
     expect(data).toMatchObject({
       month: '2026-07',
-      incomeCents: 200_000,
-      expensesCents: 110_500,
-      netCents: 89_500,
+      income: 2000,
+      expenses: 1105,
+      net: 895,
       transactionCount: 5,
       topMerchant: 'Unknown',
     });
@@ -681,8 +679,8 @@ describe('finance_monthly_stats', () => {
     expect(data.currencyCode).toBeNull();
     expect(data.currencyBreakdown).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ currencyCode: 'USD', expensesCents: 10_000 }),
-        expect.objectContaining({ currencyCode: 'GBP', expensesCents: 25_000 }),
+        expect.objectContaining({ currencyCode: 'USD', expenses: 100 }),
+        expect.objectContaining({ currencyCode: 'GBP', expenses: 250 }),
       ]),
     );
   });
@@ -700,7 +698,7 @@ describe('finance_monthly_stats', () => {
     }
     const data = content(await callTool(userId, 'finance_monthly_stats', { month: '2026-10' }));
     expect(data.transactionCount).toBe(205);
-    expect(data.expensesCents).toBe(20_500);
+    expect(data.expenses).toBe(205);
   });
 
   it('returns currency breakdowns beyond the former result cap', async () => {
@@ -731,17 +729,17 @@ describe('finance_monthly_stats', () => {
       pending: true,
     });
     const data = content(await callTool(userId, 'finance_monthly_stats', { month: '2026-11' }));
-    expect(data).toMatchObject({ transactionCount: 0, expensesCents: 0 });
+    expect(data).toMatchObject({ transactionCount: 0, expenses: 0 });
   });
 
   it('is empty for a month with no activity and for a different user', async () => {
     const empty = content(await callTool(userId, 'finance_monthly_stats', { month: '2025-01' }));
-    expect(empty).toMatchObject({ incomeCents: 0, expensesCents: 0, transactionCount: 0 });
+    expect(empty).toMatchObject({ income: 0, expenses: 0, transactionCount: 0 });
 
     const other = content(
       await callTool(otherUserId, 'finance_monthly_stats', { month: '2026-07' }),
     );
-    expect(other).toMatchObject({ incomeCents: 0, expensesCents: 99_900, transactionCount: 1 });
+    expect(other).toMatchObject({ income: 0, expenses: 999, transactionCount: 1 });
   });
 
   it('filters to the current month when the month argument is omitted', async () => {
@@ -759,7 +757,7 @@ describe('finance_monthly_stats', () => {
       month: currentMonth,
       startDate: `${currentMonth}-01`,
       transactionCount: 1,
-      expensesCents: 32_100,
+      expenses: 321,
     });
   });
 
@@ -821,9 +819,9 @@ describe('finance_transaction_search', () => {
     const data = content(await callTool(userId, 'finance_transaction_search', { query: 'shell' }));
     expect(data.count).toBe(2);
     const excluded = data.transactions?.find((t) => t.excluded === true);
-    expect(excluded).toMatchObject({ amountCents: -1000, description: 'Shell refund adjustment' });
+    expect(excluded).toMatchObject({ amount: -10, description: 'Shell refund adjustment' });
     const kept = data.transactions?.find((t) => t.excluded === false);
-    expect(kept).toMatchObject({ amountCents: -2500, merchantName: 'Shell' });
+    expect(kept).toMatchObject({ amount: -25, merchantName: 'Shell' });
   });
 
   it('filters by account, tag and date, and pages with offset', async () => {
@@ -873,7 +871,7 @@ describe('finance_transaction_search', () => {
     const ownFood = content(
       await callTool(otherUserId, 'finance_transaction_search', { tag: 'Food' }),
     );
-    expect(ownFood.transactions?.map((t) => t.amountCents)).toEqual([-99_900]);
+    expect(ownFood.transactions?.map((t) => t.amount)).toEqual([-999]);
   });
 
   it('rejects unsupported search parameters instead of silently ignoring them', async () => {
@@ -900,16 +898,16 @@ describe('finance_runway', () => {
         monthlyBudgets: [{ category: 'Food', amountCents: 40_000, note: 'planned cap' }],
       }),
     );
-    expect(data.liquidAccounts).toEqual([{ accountName: 'Checking', balanceCents: 92_500 }]);
-    expect(data.startingCashCents).toBe(92_500);
+    expect(data.liquidAccounts).toEqual([{ accountName: 'Checking', balance: 925 }]);
+    expect(data.startingCash).toBe(925);
     expect(data.recurringTxnCount).toBe(1);
     expect(data.weeks).toHaveLength(4);
-    expect(Number(data.weeklyRecurringOutflowCents)).toBeGreaterThan(0);
+    expect(Number(data.weeklyRecurringOutflow)).toBeGreaterThan(0);
   });
 
   it("does not see another user's accounts", async () => {
     const data = content(await callTool(otherUserId, 'finance_runway', { asOf: '2026-07-31' }));
-    expect(data.liquidAccounts).toEqual([{ accountName: 'Other Checking', balanceCents: -99_900 }]);
+    expect(data.liquidAccounts).toEqual([{ accountName: 'Other Checking', balance: -999 }]);
     expect(data.recurringTxnCount).toBe(0);
   });
 
@@ -935,10 +933,10 @@ describe('finance_budget_breakdown', () => {
       await callTool(userId, 'finance_budget_breakdown', { monthlyIncomeCents: 500_000 }),
     );
     expect(data).toEqual({
-      needsCents: 250_000,
-      wantsCents: 150_000,
-      savingsCents: 100_000,
-      unallocatedCents: 0,
+      needs: 2500,
+      wants: 1500,
+      savings: 1000,
+      unallocated: 0,
     });
   });
 
@@ -949,7 +947,7 @@ describe('finance_budget_breakdown', () => {
         savingsTargetCents: 10_000,
       }),
     );
-    expect(data).toMatchObject({ savingsCents: 10_000, unallocatedCents: 90_000 });
+    expect(data).toMatchObject({ savings: 100, unallocated: 900 });
   });
 
   it('caps the savings target at 20% when the requested target exceeds it', async () => {
@@ -959,7 +957,7 @@ describe('finance_budget_breakdown', () => {
         savingsTargetCents: 150_000,
       }),
     );
-    expect(data).toMatchObject({ savingsCents: 100_000, unallocatedCents: 0 });
+    expect(data).toMatchObject({ savings: 1000, unallocated: 0 });
   });
 
   it('always sums to the supplied income, even when percentages round unevenly', async () => {
@@ -968,11 +966,11 @@ describe('finance_budget_breakdown', () => {
         await callTool(userId, 'finance_budget_breakdown', { monthlyIncomeCents }),
       );
       const total =
-        Number(data.needsCents ?? 0) +
-        Number(data.wantsCents ?? 0) +
-        Number(data.savingsCents ?? 0) +
-        Number(data.unallocatedCents ?? 0);
-      expect(total).toBe(monthlyIncomeCents);
+        Number(data.needs ?? 0) +
+        Number(data.wants ?? 0) +
+        Number(data.savings ?? 0) +
+        Number(data.unallocated ?? 0);
+      expect(Math.round(total * 100)).toBe(monthlyIncomeCents);
     }
   });
 });

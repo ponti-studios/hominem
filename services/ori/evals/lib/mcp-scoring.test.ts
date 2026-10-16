@@ -29,6 +29,59 @@ test('scores dependency and forbidden-tool failures separately', () => {
   expect(score.failureCategory).toEqual('planning');
 });
 
+test('rejects tool calls outside an explicit allow-list', () => {
+  const score = scoreMcpTrace(
+    { toolCalls: ['trip_history', 'finance_recent_transactions', 'people_lookup'] },
+    {
+      requiredTools: ['trip_history', 'finance_recent_transactions'],
+      allowedTools: ['trip_history', 'finance_recent_transactions'],
+    },
+  );
+
+  expect(score.passed).toEqual(false);
+  expect(score.allowedTools).toEqual({ passed: false, unexpected: ['people_lookup'] });
+  expect(score.failureCategory).toEqual('planning');
+});
+
+test('accepts a no-tool response when the allow-list is empty', () => {
+  const score = scoreMcpTrace(
+    { toolCalls: [], text: 'Which month should I review?' },
+    {
+      allowedTools: [],
+      outputIncludes: ['Which month'],
+    },
+  );
+
+  expect(score.passed).toEqual(true);
+});
+
+test('checks tool arguments against the observed call trace', () => {
+  const score = scoreMcpTrace(
+    {
+      toolCalls: ['finance_recent_transactions'],
+      calls: [
+        {
+          tool: 'finance_recent_transactions',
+          input: { from: '2025-04-10', to: '2025-04-19' },
+          status: 'succeeded',
+        },
+      ],
+    },
+    {
+      allowedTools: ['finance_recent_transactions'],
+      argumentAssertions: [
+        {
+          tool: 'finance_recent_transactions',
+          equals: { from: '2025-04-10', to: '2025-04-18' },
+        },
+      ],
+    },
+  );
+
+  expect(score.passed).toEqual(false);
+  expect(score.arguments.failed).toEqual(['finance_recent_transactions']);
+});
+
 test('confirmation cannot execute dependent writes before approval', () => {
   const input = { collectionId: 'collection-japan', entityId: 'person-alex' };
   const pending = requestConfirmation({ status: 'ready' }, 'remove_collection_item', input);

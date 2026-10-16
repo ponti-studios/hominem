@@ -8,10 +8,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   countOwnedAccounts,
   createAccount,
+  createOrGetAccount,
   createTransaction,
   deleteAccount,
   getAccountById,
   getAccountByPlaidId,
+  getFinanceAccountList,
   listAccounts,
   listImportAccountSnapshots,
   updateAccount,
@@ -93,6 +95,59 @@ describeIntegration('finance accounts integration', () => {
     const fetched = await getAccountById(created.id, ownerId);
     expect(fetched?.id).toBe(created.id);
     expect(Number(fetched?.currentBalance)).toBe(2500.55);
+  });
+
+  it('returns the shared account-list response in cents with owner-scoped totals', async () => {
+    const created = await createOrGetAccount({
+      userId: ownerId,
+      name: 'Multicurrency Checking',
+      currencyCode: 'USD',
+      allowedCurrencies: ['GBP'],
+      accountType: 'depository',
+    });
+    const accountId = created.id;
+    if (!accountId) throw new Error('Expected account creation to return an id');
+    await createAccount({
+      userId: otherUserId,
+      name: 'Private Account',
+      accountType: 'depository',
+    });
+    await createTransaction({ userId: ownerId, accountId, amount: 12.34 });
+
+    await expect(getFinanceAccountList(ownerId)).resolves.toEqual({
+      accounts: [
+        {
+          id: accountId,
+          name: 'Multicurrency Checking',
+          accountType: 'depository',
+          currencyCode: 'USD',
+          allowedCurrencies: ['USD', 'GBP'],
+          lifecycleStatus: 'open',
+          includeInNetWorth: true,
+          balanceCents: 1234,
+        },
+      ],
+      count: 1,
+      totalCount: 1,
+    });
+  });
+
+  it('returns every account to HTTP callers while supporting an explicit bounded list', async () => {
+    await Promise.all(
+      Array.from({ length: 51 }, (_, index) =>
+        createAccount({
+          userId: ownerId,
+          name: `Account ${String(index).padStart(2, '0')}`,
+          accountType: 'checking',
+        }),
+      ),
+    );
+
+    const complete = await getFinanceAccountList(ownerId);
+    const bounded = await getFinanceAccountList(ownerId, { limit: 50 });
+
+    expect(complete).toMatchObject({ count: 51, totalCount: 51 });
+    expect(bounded).toMatchObject({ count: 50, totalCount: 51 });
   });
 
   it('enforces owner scope for update and delete', async () => {

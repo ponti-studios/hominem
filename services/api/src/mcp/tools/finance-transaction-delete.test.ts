@@ -106,7 +106,7 @@ describe('finance_transaction_delete', () => {
     expect(result.deleted?.[0]).toMatchObject({
       id,
       description: 'Delete Probe B',
-      amountCents: -1234,
+      amount: -12.34,
       currencyCode: 'USD',
     });
 

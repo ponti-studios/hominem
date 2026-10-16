@@ -16,7 +16,7 @@ type SummaryAccount = {
   status: string;
   transactionCount: number;
   excludedCount: number;
-  totals: Array<{ currencyCode: string; sumCents: number }>;
+  totals: Array<{ currencyCode: string; sum: number }>;
   minPostedOn: string | null;
   maxPostedOn: string | null;
 };
@@ -119,8 +119,8 @@ describe('finance_account_summary', () => {
     });
     // Grouped by currency — USD and GBP are never collapsed into one meaningless total.
     expect(checking?.totals).toEqual([
-      { currencyCode: 'GBP', sumCents: -700 },
-      { currencyCode: 'USD', sumCents: -4000 },
+      { currencyCode: 'GBP', sum: -7 },
+      { currencyCode: 'USD', sum: -40 },
     ]);
   });
 

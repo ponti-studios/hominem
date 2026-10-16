@@ -39,7 +39,7 @@ export type McpToolResult<T = Record<string, unknown>> = Omit<
   structuredContent: T | Record<string, unknown> | null;
 };
 
-type RegisteredTool = {
+export type DefinedMcpTool = {
   definition: CapabilityDefinition;
   invoke: (
     ownerUserId: string,
@@ -47,6 +47,42 @@ type RegisteredTool = {
     context?: { idempotencyKey?: string },
   ) => Promise<unknown>;
 };
+
+export type DefinedMcpSlice = {
+  name: string;
+  tools: readonly DefinedMcpTool[];
+};
+
+export function defineMcpSlice(slice: {
+  name: string;
+  tools: readonly DefinedMcpTool[];
+}): DefinedMcpSlice {
+  const name = slice.name.trim();
+  if (!name) throw new ValidationError('MCP slice name cannot be empty');
+  if (slice.tools.length === 0) throw new ValidationError(`MCP slice cannot be empty: ${name}`);
+
+  const toolNames = slice.tools.map((tool) => tool.definition.name);
+  if (new Set(toolNames).size !== toolNames.length) {
+    throw new ValidationError(`MCP slice contains duplicate tools: ${name}`);
+  }
+
+  return Object.freeze({ name, tools: Object.freeze([...slice.tools]) });
+}
+
+export function defineMcpTool<TInputSchema extends z.ZodType, TOutputSchema extends z.ZodType>(
+  definition: CapabilityDefinition<string, TInputSchema, TOutputSchema>,
+  invoke: (
+    ownerUserId: string,
+    input: z.output<TInputSchema>,
+    context?: { idempotencyKey?: string },
+  ) => Promise<z.output<TOutputSchema>>,
+): DefinedMcpTool {
+  return {
+    definition,
+    invoke: (ownerUserId, input, context) =>
+      invoke(ownerUserId, definition.inputSchema.parse(input), context),
+  };
+}
 
 function toolResult(
   structuredContent: Record<string, unknown> | null,
@@ -77,35 +113,108 @@ function enforceResultCap(result: Record<string, unknown>, toolName: string, res
   }
 }
 
-const tools = new Map<string, RegisteredTool>();
-let toolDefinitionsSnapshot: readonly CapabilityDefinition[] | null = null;
+export function createToolRegistry(initialSlices: readonly DefinedMcpSlice[] = []) {
+  const tools = new Map<string, DefinedMcpTool>();
+  const slices = new Set<string>();
+  let toolDefinitionsSnapshot: readonly CapabilityDefinition[] | null = null;
 
-export function listTools(): readonly CapabilityDefinition[] {
-  if (!toolDefinitionsSnapshot) {
-    // Sorted by name rather than left at Map insertion order: register-tools.ts
-    // loads per-domain tool files via concurrent dynamic import()s, whose
-    // resolution order (and therefore registerTool() call order) isn't
-    // guaranteed across cold starts. The 2026-07-28 MCP spec recommends a
-    // deterministic tools/list order for client-side caching and prompt-cache
-    // hit rates, which an unstable Map order would undermine.
-    toolDefinitionsSnapshot = Object.freeze(
-      [...tools.values()]
-        .map(({ definition }) => definition)
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    );
-  }
+  const registerToolDefinition = (tool: DefinedMcpTool) => {
+    if (tools.has(tool.definition.name)) {
+      throw new ValidationError(`MCP tool is already registered: ${tool.definition.name}`);
+    }
 
-  return toolDefinitionsSnapshot;
+    tools.set(tool.definition.name, tool);
+    toolDefinitionsSnapshot = null;
+  };
+
+  const registerSlice = (slice: DefinedMcpSlice) => {
+    if (slices.has(slice.name)) {
+      throw new ValidationError(`MCP slice is already registered: ${slice.name}`);
+    }
+
+    const toolNames = slice.tools.map((tool) => tool.definition.name);
+    const duplicateTool = toolNames.find((name, index) => toolNames.indexOf(name) !== index);
+    const existingTool = toolNames.find((name) => tools.has(name));
+    if (duplicateTool || existingTool) {
+      throw new ValidationError(
+        `MCP slice contains a duplicate tool: ${duplicateTool ?? existingTool}`,
+      );
+    }
+
+    slices.add(slice.name);
+    for (const tool of slice.tools) registerToolDefinition(tool);
+  };
+
+  for (const slice of initialSlices) registerSlice(slice);
+
+  const listTools = (): readonly CapabilityDefinition[] => {
+    if (!toolDefinitionsSnapshot) {
+      // Sorted by name rather than left at Map insertion order: registration order may vary
+      // across cold starts. Stable order helps client-side and prompt-cache hits.
+      toolDefinitionsSnapshot = Object.freeze(
+        [...tools.values()]
+          .map(({ definition }) => definition)
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
+    }
+
+    return toolDefinitionsSnapshot;
+  };
+
+  const listToolsForScopes = (grantedScopes: readonly string[]): CapabilityDefinition[] => {
+    const granted = new Set(grantedScopes);
+    return listTools().filter((tool) => tool.scopes.every((scope) => granted.has(scope)));
+  };
+
+  const getToolDefinition = (name: string): CapabilityDefinition | undefined =>
+    tools.get(name)?.definition;
+
+  const callTool = async (
+    ownerUserId: string,
+    name: string,
+    input: unknown,
+    context?: { idempotencyKey?: string },
+  ): Promise<McpToolResult> => {
+    const implementation = tools.get(name);
+    if (!implementation) {
+      throw new ValidationError(`Unknown MCP tool: ${name}`);
+    }
+
+    const structuredContent = await implementation.invoke(ownerUserId, input, context);
+    const parsedOutput = implementation.definition.outputSchema.parse(structuredContent);
+
+    if (parsedOutput === null) {
+      return toolResult(null);
+    }
+
+    if (!isRecord(parsedOutput)) {
+      throw new ValidationError(`MCP tool returned invalid structured content: ${name}`);
+    }
+
+    const result = parsedOutput;
+    enforceResultCap(result, name, implementation.definition.resultCap);
+    const resourceLinks = implementation.definition.resourceLinks?.(result) ?? [];
+    return toolResult(result, resourceLinks);
+  };
+
+  return {
+    callTool,
+    getToolDefinition,
+    listTools,
+    listToolsForScopes,
+    registerSlice,
+    registerToolDefinition,
+  };
 }
 
-export function listToolsForScopes(grantedScopes: readonly string[]): CapabilityDefinition[] {
-  const granted = new Set(grantedScopes);
-  return listTools().filter((tool) => tool.scopes.every((scope) => granted.has(scope)));
-}
+const defaultToolRegistry = createToolRegistry();
 
-export function getToolDefinition(name: string): CapabilityDefinition | undefined {
-  return tools.get(name)?.definition;
-}
+export const listTools = () => defaultToolRegistry.listTools();
+
+export const listToolsForScopes = (grantedScopes: readonly string[]) =>
+  defaultToolRegistry.listToolsForScopes(grantedScopes);
+
+export const getToolDefinition = (name: string) => defaultToolRegistry.getToolDefinition(name);
 
 export function registerTool<TInputSchema extends z.ZodType, TOutputSchema extends z.ZodType>(
   definition: CapabilityDefinition<string, TInputSchema, TOutputSchema>,
@@ -115,16 +224,11 @@ export function registerTool<TInputSchema extends z.ZodType, TOutputSchema exten
     context?: { idempotencyKey?: string },
   ) => Promise<z.output<TOutputSchema>>,
 ): void {
-  if (tools.has(definition.name)) {
-    throw new ValidationError(`MCP tool is already registered: ${definition.name}`);
-  }
+  defaultToolRegistry.registerToolDefinition(defineMcpTool(definition, invoke));
+}
 
-  tools.set(definition.name, {
-    definition,
-    invoke: (ownerUserId, input, context) =>
-      invoke(ownerUserId, definition.inputSchema.parse(input), context),
-  });
-  toolDefinitionsSnapshot = null;
+export function registerDefinedMcpSlice(slice: DefinedMcpSlice): void {
+  defaultToolRegistry.registerSlice(slice);
 }
 
 export async function callTool(
@@ -133,24 +237,5 @@ export async function callTool(
   input: unknown,
   context?: { idempotencyKey?: string },
 ): Promise<McpToolResult> {
-  const implementation = tools.get(name);
-  if (!implementation) {
-    throw new ValidationError(`Unknown MCP tool: ${name}`);
-  }
-
-  const structuredContent = await implementation.invoke(ownerUserId, input, context);
-  const parsedOutput = implementation.definition.outputSchema.parse(structuredContent);
-
-  if (parsedOutput === null) {
-    return toolResult(null);
-  }
-
-  if (!isRecord(parsedOutput)) {
-    throw new ValidationError(`MCP tool returned invalid structured content: ${name}`);
-  }
-
-  const result = parsedOutput;
-  enforceResultCap(result, name, implementation.definition.resultCap);
-  const resourceLinks = implementation.definition.resourceLinks?.(result) ?? [];
-  return toolResult(result, resourceLinks);
+  return defaultToolRegistry.callTool(ownerUserId, name, input, context);
 }

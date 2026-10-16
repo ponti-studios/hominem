@@ -23,6 +23,9 @@ services/api/public/settings.js
 services/api/public/settings-ai.js
 services/api/public/settings-ai-footprint.js
 
+# Evals
+services/ori/runs
+
 # signing
 *.p8
 *.p12

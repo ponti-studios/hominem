@@ -1,16 +1,22 @@
 import { randomUUID } from 'crypto';
 
 import { db } from '@hominem/db/core';
+import { getFinanceAccountList } from '@hominem/finance-services';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { financeAccountsOutputSchema } from '../../schemas/finance.schema';
 import { NotFoundError } from '../errors';
 import type { AppContext } from '../middleware/auth';
 import { authMiddleware } from '../middleware/auth';
 
 const accountListSchema = z.object({
   includeInactive: z.coerce.boolean().optional().default(false),
+  includeClosed: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => value === 'true'),
 });
 
 const accountGetSchema = z.object({
@@ -164,25 +170,10 @@ function normalizePlaidConnection(
 export const accountsRoutes = new Hono<AppContext>()
   .get('/list', authMiddleware, zValidator('query', accountListSchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    const accounts = await db
-      .selectFrom('app.financeAccounts')
-      .selectAll()
-      .where('userId', '=', userId)
-      .orderBy('createdAt', 'desc')
-      .execute();
+    const input = c.req.valid('query');
+    const result = await getFinanceAccountList(userId, { includeClosed: input.includeClosed });
 
-    const balances = await getAccountBalances(accounts.map((account) => account.id));
-
-    return c.json(
-      accounts.map((account) => ({
-        id: String(account.id),
-        userId: account.userId,
-        name: account.name,
-        accountType: account.accountType,
-        currentBalance: balances.get(account.id) ?? 0,
-      })),
-      200,
-    );
+    return c.json(financeAccountsOutputSchema.parse(result));
   })
   .get('/get', authMiddleware, zValidator('query', accountGetSchema), async (c) => {
     const userId = c.get('auth')!.userId;

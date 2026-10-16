@@ -173,9 +173,9 @@ describe('finance_net_worth', () => {
     expect(data.accounts).toHaveLength(1);
     expect(data.accounts?.[0]).toMatchObject({
       name: 'Checking',
-      balanceCents: 181_500,
+      balance: 1815,
     });
-    expect(data.totals).toEqual([{ currencyCode: 'USD', totalCents: 181_500, accountCount: 1 }]);
+    expect(data.totals).toEqual([{ currencyCode: 'USD', total: 1815, accountCount: 1 }]);
   });
 
   it('excludes closed accounts unless requested', async () => {
@@ -215,7 +215,7 @@ describe('finance_recent_transactions', () => {
     );
     expect(grocery).toMatchObject({
       categoryName: 'Food & Drink',
-      amountCents: -5000,
+      amount: -50,
       excluded: false,
     });
 
@@ -240,14 +240,14 @@ describe('finance_spending_by_category', () => {
       categoryId: foodId,
       categoryName: 'Food & Drink',
       currencyCode: 'USD',
-      spentCents: 5000,
+      spent: 50,
       transactionCount: 1,
     });
     expect(resultContent(result).categories?.[1]).toEqual({
       categoryId: transportId,
       categoryName: 'Transport',
       currencyCode: 'USD',
-      spentCents: 2500,
+      spent: 25,
       transactionCount: 1,
     });
   });
@@ -309,12 +309,12 @@ describe('finance_spending_by_category', () => {
           expect.objectContaining({
             categoryName: 'Food & Drink',
             currencyCode: 'USD',
-            spentCents: 1000,
+            spent: 10,
           }),
           expect.objectContaining({
             categoryName: 'Food & Drink',
             currencyCode: 'GBP',
-            spentCents: 2000,
+            spent: 20,
           }),
         ]),
       );
@@ -346,7 +346,7 @@ describe('finance_spending_by_category', () => {
         expect.objectContaining({
           categoryId: foodId,
           currencyCode: 'USD',
-          spentCents: 10_001,
+          spent: 100.01,
           transactionCount: 10_001,
         }),
       );

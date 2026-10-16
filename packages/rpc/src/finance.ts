@@ -118,7 +118,8 @@ export type AccountsAllData = {
   connections: PlaidConnection[];
 };
 
-export type AccountListOutput = AccountData[];
+type _AccountListEndpoint = HonoClient['api']['finance']['accounts']['list']['$get'];
+export type AccountListOutput = InferResponseType<_AccountListEndpoint, 200>;
 export type AccountGetOutput = AccountWithTransactions;
 export type AccountCreateOutput = AccountData;
 export type AccountUpdateOutput = AccountData;
