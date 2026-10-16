@@ -56,6 +56,8 @@ export const possessionListQuerySchema = z.object({
   containerId: z.uuid().optional(),
   limit: z.coerce.number().int().min(1).max(5000).optional(),
   offset: z.coerce.number().int().min(0).optional(),
+  // Delta pulls: only rows updated after this instant, plus tombstones.
+  since: z.iso.datetime({ offset: true }).optional(),
 });
 
 const containerFields = {
@@ -88,6 +90,11 @@ export const containerUpdateSchema = z.object({
 });
 
 export const possessionIdParamSchema = z.object({ id: z.uuid() });
+
+export const containerListQuerySchema = z.object({
+  // Delta pulls: only rows updated after this instant, plus tombstones.
+  since: z.iso.datetime({ offset: true }).optional(),
+});
 
 export type PossessionCreateInput = z.infer<typeof possessionCreateSchema>;
 export type PossessionUpdateInput = z.infer<typeof possessionUpdateSchema>;

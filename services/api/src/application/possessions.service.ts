@@ -4,6 +4,8 @@ import {
   ContainerRepository,
   PossessionRepository,
   VesselConfigRepository,
+  listTombstones,
+  serverTime,
   type ContainerRecord,
   type Json,
   type PossessionEvent,
@@ -13,6 +15,7 @@ import {
 } from '@hominem/db/possessions';
 import { runInTransaction } from '@hominem/db/transaction';
 
+import type { SyncTombstone } from '../schemas/collections.schema';
 import type {
   ContainerCreateInput,
   ContainerSearchInput,
@@ -78,7 +81,28 @@ export async function listPossessions(
     ...(query.containerId ? { containerId: query.containerId } : {}),
     ...(query.limit ? { limit: query.limit } : {}),
     ...(query.offset ? { offset: query.offset } : {}),
+    ...(query.since ? { since: query.since } : {}),
   });
+}
+
+/**
+ * Delta pull: possessions updated after `query.since`, plus tombstones. The
+ * caller stores `serverTime` as the next cursor. Full pulls (no `since`) keep
+ * the original shape via `listPossessions`.
+ */
+export async function listPossessionsDelta(
+  userId: string,
+  query: PossessionListQuery & { since: string },
+): Promise<{ possessions: PossessionRecord[]; tombstones: SyncTombstone[]; serverTime: string }> {
+  const since = query.since;
+  const [possessions, now] = await Promise.all([listPossessions(userId, query), serverTime()]);
+  const tombstones = (await listTombstones(db, userId, ['app.possessions'], since)).map((row) => ({
+    entity: 'possession' as const,
+    entityId: row.entityId,
+    collectionId: null,
+    deletedAt: row.deletedAt,
+  }));
+  return { possessions, tombstones, serverTime: now.toISOString() };
 }
 
 export const createPossession = (
@@ -121,6 +145,29 @@ export const removePossession = (userId: string, id: string): Promise<void> =>
 
 export const listContainers = (userId: string): Promise<ContainerRecord[]> =>
   ContainerRepository.list(db, userId);
+
+/**
+ * Delta pull: containers updated after `since`, plus tombstones. The caller
+ * stores `serverTime` as the next cursor.
+ */
+export const listContainersDelta = async (
+  userId: string,
+  since: string,
+): Promise<{ containers: ContainerRecord[]; tombstones: SyncTombstone[]; serverTime: string }> => {
+  const [containers, now] = await Promise.all([
+    ContainerRepository.list(db, userId, { since }),
+    serverTime(),
+  ]);
+  const tombstones = (await listTombstones(db, userId, ['app.possession_containers'], since)).map(
+    (row) => ({
+      entity: 'container' as const,
+      entityId: row.entityId,
+      collectionId: null,
+      deletedAt: row.deletedAt,
+    }),
+  );
+  return { containers, tombstones, serverTime: now.toISOString() };
+};
 
 export const createContainer = (
   userId: string,

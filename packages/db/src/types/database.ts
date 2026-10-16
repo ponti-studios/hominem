@@ -1029,6 +1029,15 @@ export interface AppSocialThreads {
   title: string | null;
 }
 
+export interface AppSyncTombstones {
+  collectionId: string | null;
+  deletedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  entityId: string;
+  entityTable: string;
+  id: Generated<string>;
+  ownerUserid: string;
+}
+
 export interface AppTagAssignments {
   assignmentSource: Generated<string>;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1445,6 +1454,7 @@ export interface DB {
   'app.socialPosts': AppSocialPosts;
   'app.socialThreadParticipants': AppSocialThreadParticipants;
   'app.socialThreads': AppSocialThreads;
+  'app.syncTombstones': AppSyncTombstones;
   'app.tagAssignments': AppTagAssignments;
   'app.tags': AppTags;
   'app.taskParticipants': AppTaskParticipants;

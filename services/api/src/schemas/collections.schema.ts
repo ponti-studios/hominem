@@ -127,11 +127,32 @@ export const removeCollectionItemOutputSchema = z.object({
 
 export const listCollectionsInputSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
+  // Delta pulls: only rows updated after this instant, plus tombstones.
+  since: z.iso.datetime({ offset: true }).optional(),
 });
 
 export const listCollectionsOutputSchema = z.object({
   collections: z.array(collectionSummarySchema),
   count: z.number().int().min(0),
+});
+
+// ── sync deltas ──────────────────────────────────────────────────────
+// Delta pulls add tombstones and the server clock to the full-pull shape.
+// Clients store serverTime as the next `since`: cursors come from the
+// database clock, never the device. See docs/sync-contract.md.
+
+export const syncTombstoneSchema = z.object({
+  // What disappeared. collectionItem means a membership link was removed (the
+  // entity lives on); the others mean the entity itself was deleted.
+  entity: z.enum(['possession', 'container', 'collection', 'collectionItem']),
+  entityId: z.string(),
+  collectionId: z.string().nullable(),
+  deletedAt: z.string(),
+});
+
+export const listCollectionsDeltaOutputSchema = listCollectionsOutputSchema.extend({
+  tombstones: z.array(syncTombstoneSchema),
+  serverTime: z.string(),
 });
 
 // ── collection_detail ────────────────────────────────────────────────
@@ -153,6 +174,16 @@ const collectionMembershipLinkSchema = z.object({
 export const collectionMembershipOutputSchema = z.object({
   membership: z.array(collectionMembershipLinkSchema),
   count: z.number().int().min(0),
+});
+
+export const collectionMembershipInputSchema = z.object({
+  // Delta pulls: only links added after this instant, plus tombstones.
+  since: z.iso.datetime({ offset: true }).optional(),
+});
+
+export const collectionMembershipDeltaOutputSchema = collectionMembershipOutputSchema.extend({
+  tombstones: z.array(syncTombstoneSchema),
+  serverTime: z.string(),
 });
 
 // ── invite_member ────────────────────────────────────────────────────
@@ -230,6 +261,7 @@ export type CollectionMember = z.output<typeof collectionMemberSchema>;
 export type CollectionItem = z.output<typeof collectionItemSchema>;
 export type CollectionDetail = z.output<typeof collectionDetailSchema>;
 export type CollectionMembershipLink = z.output<typeof collectionMembershipLinkSchema>;
+export type SyncTombstone = z.output<typeof syncTombstoneSchema>;
 export type CreateCollectionInput = z.output<typeof createCollectionInputSchema>;
 export type UpdateCollectionInput = z.output<typeof updateCollectionInputSchema>;
 export type DeleteCollectionInput = z.output<typeof deleteCollectionInputSchema>;

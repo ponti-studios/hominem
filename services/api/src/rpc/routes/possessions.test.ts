@@ -151,3 +151,15 @@ describe('possessions routes', () => {
     });
   });
 });
+
+describe('delta query validation', () => {
+  it('rejects an unparsable since cursor', async () => {
+    const response = await createApp(true).request('/api/possessions?since=not-a-date');
+    expect(response.status).toBe(400);
+  });
+
+  it('rejects an unparsable since cursor on containers', async () => {
+    const response = await createApp(true).request('/api/possessions/containers?since=yesterday');
+    expect(response.status).toBe(400);
+  });
+});

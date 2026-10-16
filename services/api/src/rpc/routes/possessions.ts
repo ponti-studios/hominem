@@ -7,7 +7,9 @@ import {
   createPossession,
   getPossessionHistory,
   listContainers,
+  listContainersDelta,
   listPossessions,
+  listPossessionsDelta,
   removeContainer,
   removePossession,
   updateContainer,
@@ -19,6 +21,7 @@ import {
 } from '../../application/possessions.service';
 import {
   containerCreateSchema,
+  containerListQuerySchema,
   containerUpdateSchema,
   containerUpsertSchema,
   possessionBulkUpsertSchema,
@@ -37,7 +40,11 @@ export const possessionsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', zValidator('query', possessionListQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    return c.json({ possessions: await listPossessions(userId, c.req.valid('query')) });
+    const query = c.req.valid('query');
+    if (query.since) {
+      return c.json(await listPossessionsDelta(userId, { ...query, since: query.since }));
+    }
+    return c.json({ possessions: await listPossessions(userId, query) });
   })
   .post('/', zValidator('json', possessionCreateSchema), async (c) => {
     const userId = c.get('auth')!.userId;
@@ -59,8 +66,12 @@ export const possessionsRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     return c.json(await validatePossessions(userId, c.req.valid('query')));
   })
-  .get('/containers', async (c) => {
+  .get('/containers', zValidator('query', containerListQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
+    const query = c.req.valid('query');
+    if (query.since) {
+      return c.json(await listContainersDelta(userId, query.since));
+    }
     return c.json({ containers: await listContainers(userId) });
   })
   .post('/containers', zValidator('json', containerCreateSchema), async (c) => {

@@ -6,10 +6,13 @@ import {
   addCollectionItem,
   collectionDetail,
   collectionMembership,
+  collectionMembershipDelta,
   createCollection,
   deleteCollection,
   inviteMember,
   leaveCollection,
+  listCollectionsDelta,
+  removeCollectionItem,
   updateCollection,
 } from './collections.service';
 
@@ -177,5 +180,59 @@ describe('collectionMembership', () => {
     const { membership } = await collectionMembership(strangerId);
 
     expect(membership.find((link) => link.collectionId === collection.id)).toBeUndefined();
+  });
+});
+
+describe('delta sync', () => {
+  it('deltas membership links with tombstones', async () => {
+    const { collection } = await makeCollection(ownerId, 'Delta Links');
+    const baseline = await collectionMembershipDelta(ownerId, new Date(0).toISOString());
+
+    await addCollectionItem(ownerId, {
+      collectionId: collection.id,
+      entityType: 'places',
+      entityId: placeId,
+    });
+    const added = await collectionMembershipDelta(ownerId, baseline.serverTime);
+    expect(added.membership).toContainEqual({
+      collectionId: collection.id,
+      entityType: 'places',
+      entityId: placeId,
+    });
+
+    await removeCollectionItem(ownerId, {
+      collectionId: collection.id,
+      entityType: 'places',
+      entityId: placeId,
+    });
+    const removed = await collectionMembershipDelta(ownerId, added.serverTime);
+    expect(removed.tombstones).toContainEqual(
+      expect.objectContaining({
+        entity: 'collectionItem',
+        entityId: placeId,
+        collectionId: collection.id,
+      }),
+    );
+
+    await deleteCollection(ownerId, { collectionId: collection.id });
+  });
+
+  it('deltas collections and tombstones deletes', async () => {
+    const { collection } = await makeCollection(ownerId, 'Delta Gone');
+    const baseline = await listCollectionsDelta(ownerId, {
+      limit: 50,
+      since: new Date(0).toISOString(),
+    });
+
+    await deleteCollection(ownerId, { collectionId: collection.id });
+    const delta = await listCollectionsDelta(ownerId, { limit: 50, since: baseline.serverTime });
+
+    expect(delta.tombstones).toContainEqual(
+      expect.objectContaining({
+        entity: 'collection',
+        entityId: collection.id,
+        collectionId: null,
+      }),
+    );
   });
 });

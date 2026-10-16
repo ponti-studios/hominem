@@ -1,5 +1,7 @@
 import { db, sql } from '@hominem/db/core';
 import { NotFoundError, ValidationError } from '@hominem/db/errors';
+import { listTombstones, recordTombstone, serverTime } from '@hominem/db/possessions';
+import { runInTransaction } from '@hominem/db/transaction';
 
 import type {
   AcceptMemberInviteInput,
@@ -182,13 +184,35 @@ export async function updateCollection(ownerUserId: string, input: UpdateCollect
 }
 
 export async function deleteCollection(ownerUserId: string, input: DeleteCollectionInput) {
-  const result = await db
-    .deleteFrom('app.collections')
-    .where('id', '=', input.collectionId)
-    .where('ownerUserid', '=', ownerUserId)
-    .executeTakeFirst();
+  return runInTransaction(async (trx) => {
+    // Tombstone the links first: they vanish by FK cascade with the delete,
+    // and the collection tombstone below tells clients to drop them anyway.
+    await trx
+      .insertInto('app.syncTombstones')
+      .columns(['ownerUserid', 'entityTable', 'entityId', 'collectionId'])
+      .expression(
+        trx
+          .selectFrom('app.collectionItems')
+          .select([
+            'ownerUserid',
+            sql<string>`'app.collection_items'`.as('entityTable'),
+            'entityId',
+            'collectionId',
+          ])
+          .where('collectionId', '=', input.collectionId)
+          .where('ownerUserid', '=', ownerUserId),
+      )
+      .execute();
+    await recordTombstone(trx, ownerUserId, 'app.collections', input.collectionId);
 
-  return { deleted: result.numDeletedRows > 0n };
+    const result = await trx
+      .deleteFrom('app.collections')
+      .where('id', '=', input.collectionId)
+      .where('ownerUserid', '=', ownerUserId)
+      .executeTakeFirst();
+
+    return { deleted: result.numDeletedRows > 0n };
+  });
 }
 
 export async function leaveCollection(userId: string, input: LeaveCollectionInput) {
@@ -262,14 +286,26 @@ export async function removeCollectionItem(ownerUserId: string, input: RemoveCol
   const role = await getAccessRole(ownerUserId, input.collectionId);
   if (!hasAtLeast(role, 'editor')) throw new NotFoundError('Collection');
 
-  const result = await db
-    .deleteFrom('app.collectionItems')
-    .where('collectionId', '=', input.collectionId)
-    .where(sql`entity_table::text`, '=', entityTable)
-    .where('entityId', '=', input.entityId)
-    .executeTakeFirst();
+  return runInTransaction(async (trx) => {
+    const result = await trx
+      .deleteFrom('app.collectionItems')
+      .where('collectionId', '=', input.collectionId)
+      .where(sql`entity_table::text`, '=', entityTable)
+      .where('entityId', '=', input.entityId)
+      .executeTakeFirst();
 
-  return { removed: result.numDeletedRows > 0n };
+    if (result.numDeletedRows > 0n) {
+      await recordTombstone(
+        trx,
+        ownerUserId,
+        'app.collection_items',
+        input.entityId,
+        input.collectionId,
+      );
+    }
+
+    return { removed: result.numDeletedRows > 0n };
+  });
 }
 
 function mapMemberRow(row: {
@@ -590,20 +626,7 @@ export async function collectionDetail(
  * `listCollections` page size, so sync never misses membership.
  */
 export async function collectionMembership(ownerUserId: string) {
-  const ownedRows = await db
-    .selectFrom('app.collections')
-    .select('id')
-    .where('ownerUserid', '=', ownerUserId)
-    .execute();
-
-  const memberRows = await db
-    .selectFrom('app.collectionMembers')
-    .select('collectionId as id')
-    .where('userId', '=', ownerUserId)
-    .where('acceptedAt', 'is not', null)
-    .execute();
-
-  const ids = [...new Set([...ownedRows, ...memberRows].map((row) => row.id))];
+  const ids = await accessibleCollectionIds(ownerUserId);
   if (ids.length === 0) return { membership: [], count: 0 };
 
   const itemRows = await db
@@ -619,4 +642,128 @@ export async function collectionMembership(ownerUserId: string) {
   });
 
   return { membership, count: membership.length };
+}
+
+type TombstoneKind = 'possession' | 'container' | 'collection' | 'collectionItem';
+
+function toSyncTombstone(row: {
+  entityTable: string;
+  entityId: string;
+  collectionId: string | null;
+  deletedAt: string;
+}): { entity: TombstoneKind; entityId: string; collectionId: string | null; deletedAt: string } {
+  switch (row.entityTable) {
+    case 'app.possessions':
+      return {
+        entity: 'possession',
+        entityId: row.entityId,
+        collectionId: null,
+        deletedAt: row.deletedAt,
+      };
+    case 'app.possession_containers':
+      return {
+        entity: 'container',
+        entityId: row.entityId,
+        collectionId: null,
+        deletedAt: row.deletedAt,
+      };
+    case 'app.collections':
+      return {
+        entity: 'collection',
+        entityId: row.entityId,
+        collectionId: null,
+        deletedAt: row.deletedAt,
+      };
+    case 'app.collection_items':
+      return {
+        entity: 'collectionItem',
+        entityId: row.entityId,
+        collectionId: row.collectionId,
+        deletedAt: row.deletedAt,
+      };
+    default:
+      throw new Error(`Unexpected tombstone entity table: ${row.entityTable}`);
+  }
+}
+
+async function accessibleCollectionIds(ownerUserId: string): Promise<string[]> {
+  const ownedRows = await db
+    .selectFrom('app.collections')
+    .select('id')
+    .where('ownerUserid', '=', ownerUserId)
+    .execute();
+
+  const memberRows = await db
+    .selectFrom('app.collectionMembers')
+    .select('collectionId as id')
+    .where('userId', '=', ownerUserId)
+    .where('acceptedAt', 'is not', null)
+    .execute();
+
+  return [...new Set([...ownedRows, ...memberRows].map((row) => row.id))];
+}
+
+/**
+ * Delta pull: collections updated after `since`, plus tombstones. The caller
+ * stores `serverTime` as the next cursor. Full pulls (no `since`) keep the
+ * original shape via `listCollections`.
+ */
+export async function listCollectionsDelta(ownerUserId: string, input: ListCollectionsInput) {
+  const since = input.since!;
+  const sinceDate = new Date(since);
+  const now = await serverTime();
+  const ids = await accessibleCollectionIds(ownerUserId);
+
+  const summaries = await Promise.all(ids.map((id) => loadCollectionSummary(id)));
+  const changed = summaries
+    .filter((summary) => summary !== null)
+    .filter((summary) => new Date(summary.updatedAt) > sinceDate)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const limited = changed.slice(0, input.limit);
+
+  const tombstones = (await listTombstones(db, ownerUserId, ['app.collections'], since)).map(
+    toSyncTombstone,
+  );
+
+  return {
+    collections: limited,
+    count: limited.length,
+    tombstones,
+    serverTime: now.toISOString(),
+  };
+}
+
+/**
+ * Delta pull for the membership index: links added after `since`, plus link
+ * tombstones and collection tombstones (a deleted collection takes its links
+ * with it by FK cascade, so clients drop them with the collection).
+ */
+export async function collectionMembershipDelta(ownerUserId: string, since: string) {
+  const now = await serverTime();
+  const ids = await accessibleCollectionIds(ownerUserId);
+  if (ids.length === 0) {
+    const tombstones = (
+      await listTombstones(db, ownerUserId, ['app.collections', 'app.collection_items'], since)
+    ).map(toSyncTombstone);
+    return { membership: [], count: 0, tombstones, serverTime: now.toISOString() };
+  }
+
+  const itemRows = await db
+    .selectFrom('app.collectionItems')
+    .select(['collectionId', 'entityTable', 'entityId'])
+    .where('collectionId', 'in', ids)
+    .where('createdat', '>', since)
+    .execute();
+
+  const membership = itemRows.flatMap((row) => {
+    const entityType = entityTypeForTable(row.entityTable);
+    if (!entityType) return [];
+    return [{ collectionId: row.collectionId, entityType, entityId: row.entityId }];
+  });
+
+  const tombstones = (
+    await listTombstones(db, ownerUserId, ['app.collections', 'app.collection_items'], since)
+  ).map(toSyncTombstone);
+
+  return { membership, count: membership.length, tombstones, serverTime: now.toISOString() };
 }

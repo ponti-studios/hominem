@@ -7,12 +7,14 @@ import {
   addCollectionItem,
   collectionDetail,
   collectionMembership,
+  collectionMembershipDelta,
   createCollection,
   declineMemberInvite,
   deleteCollection,
   inviteMember,
   leaveCollection,
   listCollections,
+  listCollectionsDelta,
   listPendingInvites,
   removeCollectionItem,
   removeMember,
@@ -25,6 +27,8 @@ import {
   addCollectionItemInputSchema,
   addCollectionItemOutputSchema,
   collectionDetailOutputSchema,
+  collectionMembershipDeltaOutputSchema,
+  collectionMembershipInputSchema,
   collectionMembershipOutputSchema,
   createCollectionInputSchema,
   createCollectionOutputSchema,
@@ -32,6 +36,7 @@ import {
   inviteMemberInputSchema,
   inviteMemberOutputSchema,
   leaveCollectionOutputSchema,
+  listCollectionsDeltaOutputSchema,
   listCollectionsInputSchema,
   listCollectionsOutputSchema,
   listPendingInvitesInputSchema,
@@ -56,7 +61,12 @@ const itemParamSchema = collectionParamSchema.extend({
 export const collectionsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', zValidator('query', listCollectionsInputSchema), async (c) => {
-    const result = await listCollections(c.get('auth')!.userId, c.req.valid('query'));
+    const query = c.req.valid('query');
+    if (query.since) {
+      const result = await listCollectionsDelta(c.get('auth')!.userId, query);
+      return c.json(listCollectionsDeltaOutputSchema.parse(result));
+    }
+    const result = await listCollections(c.get('auth')!.userId, query);
     return c.json(listCollectionsOutputSchema.parse(result));
   })
   .post('/', zValidator('json', createCollectionInputSchema), async (c) => {
@@ -81,7 +91,12 @@ export const collectionsRoutes = new Hono<AppContext>()
     );
     return c.json(result);
   })
-  .get('/membership', async (c) => {
+  .get('/membership', zValidator('query', collectionMembershipInputSchema), async (c) => {
+    const query = c.req.valid('query');
+    if (query.since) {
+      const result = await collectionMembershipDelta(c.get('auth')!.userId, query.since);
+      return c.json(collectionMembershipDeltaOutputSchema.parse(result));
+    }
     const result = await collectionMembership(c.get('auth')!.userId);
     return c.json(collectionMembershipOutputSchema.parse(result));
   })

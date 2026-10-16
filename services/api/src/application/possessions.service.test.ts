@@ -9,7 +9,9 @@ import {
   createPossession,
   getPossessionHistory,
   listContainers,
+  listContainersDelta,
   listPossessions,
+  listPossessionsDelta,
   movePossessions,
   removeContainer,
   removePossession,
@@ -573,5 +575,47 @@ describe('containers', () => {
       ),
     ).rejects.toThrow(/foreign key/i);
     await removeContainer(bob, theirs.id);
+  });
+});
+
+describe('delta sync', () => {
+  it('returns changed rows, tombstones, and a server cursor', async () => {
+    const first = await createPossession(alice, { name: 'Delta Lamp' });
+    const baseline = await listPossessionsDelta(alice, {
+      status: [],
+      since: new Date(0).toISOString(),
+    });
+    const cursor = baseline.serverTime;
+    expect(baseline.possessions.some((p) => p.id === first.id)).toBe(true);
+
+    const second = await createPossession(alice, { name: 'Delta Chair' });
+    await updatePossession(alice, first.id, { name: 'Delta Lamp Renamed' });
+    await removePossession(alice, second.id);
+
+    const delta = await listPossessionsDelta(alice, { status: [], since: cursor });
+    expect(delta.possessions.find((p) => p.id === first.id)?.name).toBe('Delta Lamp Renamed');
+    expect(delta.tombstones).toContainEqual(
+      expect.objectContaining({ entity: 'possession', entityId: second.id, collectionId: null }),
+    );
+    expect(typeof delta.serverTime).toBe('string');
+
+    // Full pulls keep the original shape: rows only, no cursor keys.
+    const full = await listPossessions(alice, noQuery);
+    expect(full.some((p) => p.id === first.id)).toBe(true);
+    expect('tombstones' in (full as unknown as Record<string, unknown>)).toBe(false);
+
+    await removePossession(alice, first.id);
+  });
+
+  it('deltas containers with tombstones', async () => {
+    const container = await createContainer(alice, { name: 'Delta Box' });
+    const baseline = await listContainersDelta(alice, new Date(0).toISOString());
+
+    await removeContainer(alice, container.id);
+    const delta = await listContainersDelta(alice, baseline.serverTime);
+
+    expect(delta.tombstones).toContainEqual(
+      expect.objectContaining({ entity: 'container', entityId: container.id }),
+    );
   });
 });

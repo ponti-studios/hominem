@@ -8,6 +8,7 @@ import type {
   AppPossessions,
   Json,
 } from '../../types/database';
+import { recordTombstone } from './sync-tombstones';
 
 type PossessionRow = Selectable<AppPossessions>;
 type ContainerRow = Selectable<AppPossessionContainers>;
@@ -318,6 +319,8 @@ export interface ListPossessionsInput {
   query?: string;
   limit?: number;
   offset?: number;
+  /** Delta pulls: only rows updated after this ISO instant. */
+  since?: string;
 }
 
 export interface PossessionSummary {
@@ -375,6 +378,8 @@ export interface ListContainersInput {
   query?: string;
   limit?: number;
   offset?: number;
+  /** Delta pulls: only rows updated after this ISO instant. */
+  since?: string;
 }
 
 export interface ContainerImpact {
@@ -407,6 +412,7 @@ export const PossessionRepository = {
         ]),
       );
     }
+    if (input.since) query = query.where('updatedat', '>', input.since);
     const rows = await query
       .orderBy('createdat', 'desc')
       .orderBy('id', 'desc')
@@ -658,6 +664,7 @@ export const PossessionRepository = {
       .where('ownerUserid', '=', userId)
       .executeTakeFirst();
     if (result.numDeletedRows === 0n) throw new NotFoundError('Possession');
+    await recordTombstone(handle, userId, 'app.possessions', id);
   },
 
   // For imports: same external id updates the row in place, so re-running never duplicates.
@@ -714,6 +721,7 @@ export const ContainerRepository = {
       query = query.where('c.parentContainerId', '=', input.parentContainerId);
     }
     if (input.query) query = query.where('c.name', 'ilike', `%${escapeLike(input.query)}%`);
+    if (input.since) query = query.where('c.updatedat', '>', input.since);
     const rows = await query
       .orderBy('c.name')
       .orderBy('c.id')
@@ -816,6 +824,7 @@ export const ContainerRepository = {
       .where('ownerUserid', '=', userId)
       .executeTakeFirst();
     if (result.numDeletedRows === 0n) throw new NotFoundError('Container');
+    await recordTombstone(handle, userId, 'app.possession_containers', id);
   },
 
   async upsertByExternalId(
