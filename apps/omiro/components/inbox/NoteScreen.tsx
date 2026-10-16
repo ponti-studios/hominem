@@ -65,6 +65,11 @@ function formatNoteDateline(
   }
 }
 
+/** The most the server accepts for a note body. */
+const NOTE_CONTENT_LIMIT = 50_000;
+const LIMIT_HINT_FROM = 45_000;
+const UNDO_ENHANCE_MS = 8000;
+
 function useNoteScreenStyles() {
   return useStyles((theme) => ({
     scrollContainer: { flex: 1 },
@@ -90,6 +95,8 @@ function useNoteScreenStyles() {
     metaText: { ...theme.textVariants.overline, color: theme.colors.tertiary },
     metaSeparator: { ...theme.textVariants.overline, color: theme.colors.border },
     divider: { height: 1, backgroundColor: theme.colors.border, marginBottom: 20 },
+    undoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+    undoText: { ...theme.textVariants.caption1, color: theme.colors.primary },
     previewEmptyText: { color: theme.colors.tertiary, fontStyle: 'italic', minHeight: 240 },
     savePill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 4 },
     saveDot: { width: 6, height: 6, borderRadius: 3 },
@@ -311,6 +318,28 @@ function NoteEditorBody({
     content: note.content,
   }));
 
+  const [undoContent, setUndoContent] = useState<string | null>(null);
+
+  // When every edit made here is saved and the note changes underneath (Thames kept a conversation
+  // into it, a refetch brought a newer version), show the newer text. While a save is waiting or
+  // failed, the text on screen wins, so typing is never overwritten.
+  const serverText = `${note.title ?? ''}\u0000${note.content}`;
+  const [seenServerText, setSeenServerText] = useState(serverText);
+  if (seenServerText !== serverText) {
+    setSeenServerText(serverText);
+    if (saveStatus === 'saved') {
+      setDraft({ title: note.title ?? '', content: note.content });
+    }
+  }
+
+  useEffect(() => {
+    if (undoContent === null) {
+      return undefined;
+    }
+    const timer = setTimeout(() => setUndoContent(null), UNDO_ENHANCE_MS);
+    return () => clearTimeout(timer);
+  }, [undoContent]);
+
   const formatting = useNoteFormatting();
   const {
     isEnhanceOpen,
@@ -349,13 +378,17 @@ function NoteEditorBody({
     popover,
   };
 
+  // The title only matters when the app is reopened, so it is saved once typing pauses.
   useEffect(() => {
-    writeResumeTarget({
-      kind: 'note',
-      id: note.id,
-      title: draft.title.trim() || t.notes.editor.titleFallback,
-      updatedAt: note.updatedAt ?? null,
-    });
+    const timer = setTimeout(() => {
+      writeResumeTarget({
+        kind: 'note',
+        id: note.id,
+        title: draft.title.trim() || t.notes.editor.titleFallback,
+        updatedAt: note.updatedAt ?? null,
+      });
+    }, 400);
+    return () => clearTimeout(timer);
   }, [draft.title, note.id, note.updatedAt]);
 
   useEffect(() => {
@@ -401,11 +434,20 @@ function NoteEditorBody({
 
   const handleEnhanced = useCallback(
     (enhanced: string) => {
-      commitDraft({ title: draft.title, content: enhanced });
+      setUndoContent(draft.content);
+      commitDraft({ title: draft.title, content: enhanced.slice(0, NOTE_CONTENT_LIMIT) });
       requestAnimationFrame(() => contentInputRef.current?.focus());
     },
-    [commitDraft, draft.title],
+    [commitDraft, draft.content, draft.title],
   );
+
+  const handleUndoEnhance = useCallback(() => {
+    if (undoContent === null) {
+      return;
+    }
+    commitDraft({ title: draft.title, content: undoContent });
+    setUndoContent(null);
+  }, [commitDraft, draft.title, undoContent]);
 
   const handleStartChat = useCallback(async () => {
     if (isStartingChat) {
@@ -562,7 +604,27 @@ function NoteEditorBody({
           ) : null}
         </View>
 
+        {draft.content.length >= LIMIT_HINT_FROM ? (
+          <Text style={styles.metaText}>
+            {t.notes.editor.charactersLeft(NOTE_CONTENT_LIMIT - draft.content.length)}
+          </Text>
+        ) : null}
+
         <View style={styles.divider} />
+
+        {undoContent !== null ? (
+          <View style={styles.undoRow}>
+            <Pressable
+              accessibilityLabel={t.notes.editor.undoEnhance}
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={handleUndoEnhance}
+              testID="note-undo-enhance"
+            >
+              <Text style={styles.undoText}>{t.notes.editor.undoEnhance}</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {isPreviewing ? (
           draft.content.trim().length > 0 ? (
@@ -576,6 +638,7 @@ function NoteEditorBody({
             multiline
             focusBorder={false}
             value={draft.content}
+            maxLength={NOTE_CONTENT_LIMIT}
             selection={formatting.controlledSelection}
             onChangeText={handleContentChange}
             onSelectionChange={formatting.onSelectionChange}
