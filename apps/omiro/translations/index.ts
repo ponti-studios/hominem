@@ -53,6 +53,9 @@ const t = {
       statusSaving: 'Saving…',
       statusSaved: 'Saved',
       statusError: "Couldn't save",
+      undoEnhance: 'Undo enhance',
+      charactersLeft: (count: number) =>
+        `${count.toLocaleString()} character${count === 1 ? '' : 's'} left`,
       wordCount: (count: number) => `${count} word${count === 1 ? '' : 's'}`,
       readTime: (minutes: number) => (minutes < 1 ? '<1 min read' : `${minutes} min read`),
     },

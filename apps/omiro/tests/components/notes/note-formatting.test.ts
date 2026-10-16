@@ -153,3 +153,28 @@ describe('note-formatting public API', () => {
     });
   });
 });
+
+describe('formatting several lines', () => {
+  it('adds a bullet to every selected line and removes it from all when all have it', () => {
+    const text = 'one\ntwo\nthree';
+    const added = applyFormatCommand(text, { start: 1, end: 9 }, 'bullet');
+    expect(added.text).toBe('- one\n- two\n- three');
+    const removed = applyFormatCommand(added.text, { start: 3, end: 15 }, 'bullet');
+    expect(removed.text).toBe(text);
+  });
+
+  it('skips blank lines and the line after a trailing newline', () => {
+    const text = 'a\n\nb\nc';
+    expect(applyFormatCommand(text, { start: 0, end: 5 }, 'bullet').text).toBe('- a\n\n- b\nc');
+  });
+
+  it('indents and outdents every selected line', () => {
+    const indented = applyFormatCommand('a\nb', { start: 0, end: 3 }, 'indent');
+    expect(indented.text).toBe('  a\n  b');
+    expect(applyFormatCommand(indented.text, { start: 0, end: 7 }, 'outdent').text).toBe('a\nb');
+  });
+
+  it('finds the first line when the cursor is at the very start of a blank first line', () => {
+    expect(applyFormatCommand('\nx', { start: 0, end: 0 }, 'heading').text).toBe('# \nx');
+  });
+});
