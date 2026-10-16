@@ -2,12 +2,14 @@ import { db } from '@hominem/db/core';
 import { NotFoundError } from '@hominem/db/errors';
 import {
   ContainerRepository,
+  PossessionCategoryRepository,
   PossessionRepository,
   VesselConfigRepository,
   listTombstones,
   serverTime,
   type ContainerRecord,
   type Json,
+  type PossessionCategoryRecord,
   type PossessionEvent,
   type PossessionEventKind,
   type PossessionRecord,
@@ -83,6 +85,17 @@ export async function listPossessions(
     ...(query.offset ? { offset: query.offset } : {}),
     ...(query.since ? { since: query.since } : {}),
   });
+}
+
+/**
+ * The managed category records, so a client can offer the full set rather than
+ * only the spellings its items happen to use. Writes still resolve by name
+ * (`PossessionRepository`), so this list is for choosing, not for storing.
+ */
+export async function listPossessionCategories(
+  userId: string,
+): Promise<PossessionCategoryRecord[]> {
+  return PossessionCategoryRepository.list(db, userId);
 }
 
 /**

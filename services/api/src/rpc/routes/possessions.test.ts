@@ -13,6 +13,7 @@ const service = vi.hoisted(() => ({
   getPossessionHistory: vi.fn(),
   vesselWeightReport: vi.fn(),
   validatePossessions: vi.fn(),
+  listPossessionCategories: vi.fn(),
 }));
 
 vi.mock('../../application/possessions.service', async (importOriginal) => ({
@@ -23,6 +24,7 @@ vi.mock('../../application/possessions.service', async (importOriginal) => ({
   getPossessionHistory: service.getPossessionHistory,
   vesselWeightReport: service.vesselWeightReport,
   validatePossessions: service.validatePossessions,
+  listPossessionCategories: service.listPossessionCategories,
 }));
 
 import { possessionsRoutes } from './possessions';
@@ -149,6 +151,21 @@ describe('possessions routes', () => {
       findings: [],
       total: 0,
     });
+  });
+
+  it('serves the managed categories for this owner', async () => {
+    const app = createApp(true);
+    service.listPossessionCategories.mockResolvedValue([
+      { id: '33333333-3333-4333-8333-333333333333', name: 'Photography' },
+    ]);
+
+    const response = await app.request('/api/possessions/categories');
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      categories: [{ id: '33333333-3333-4333-8333-333333333333', name: 'Photography' }],
+    });
+    expect(service.listPossessionCategories).toHaveBeenCalledWith(testUser.id);
   });
 });
 

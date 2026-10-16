@@ -5,6 +5,8 @@ export {
   PossessionRepository,
   VesselConfigRepository,
 } from './services/possessions/possession.repository';
+export { PossessionCategoryRepository } from './services/possessions/category.repository';
+export type { PossessionCategoryRecord } from './services/possessions/category.repository';
 export type {
   ContainerImpact,
   ContainerInput,

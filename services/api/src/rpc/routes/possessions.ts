@@ -8,6 +8,7 @@ import {
   getPossessionHistory,
   listContainers,
   listContainersDelta,
+  listPossessionCategories,
   listPossessions,
   listPossessionsDelta,
   removeContainer,
@@ -65,6 +66,10 @@ export const possessionsRoutes = new Hono<AppContext>()
   .get('/validate', zValidator('query', possessionValidateQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
     return c.json(await validatePossessions(userId, c.req.valid('query')));
+  })
+  .get('/categories', async (c) => {
+    const userId = c.get('auth')!.userId;
+    return c.json({ categories: await listPossessionCategories(userId) });
   })
   .get('/containers', zValidator('query', containerListQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
