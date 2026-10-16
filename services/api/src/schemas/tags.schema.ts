@@ -6,7 +6,20 @@ import { z } from 'zod';
 // more taggable domains (see application/tags.service.ts's ENTITY_TABLE_MAP). Not a
 // generic passthrough to arbitrary table names, since entity_table casts straight to
 // a Postgres regclass.
-export const entityTypeSchema = z.enum(['people', 'places', 'possessions', 'notes']);
+export const entityTypeSchema = z.enum([
+  'people',
+  'places',
+  'possessions',
+  'notes',
+  'travel_journeys',
+  'travel_journey_segments',
+  'travel_transport',
+  'travel_stays',
+  'travel_airports',
+  'travel_places',
+  'travel_ideas',
+  'residence',
+]);
 
 const tagSchema = z.object({
   id: z.string(),

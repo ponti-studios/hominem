@@ -1081,6 +1081,102 @@ export interface AppTasks {
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
+export interface AppTravelAirports {
+  city: string;
+  code: string;
+  country: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  latitude: number | null;
+  legacyId: string;
+  longitude: number | null;
+  name: string;
+  notes: string | null;
+  ownerUserid: string;
+  servesPlace: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppTravelEntityHistory {
+  changedFields: Generated<Json>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  entityId: string;
+  entityTable: string;
+  id: Generated<string>;
+  operation: string;
+  ownerUserid: string;
+  snapshot: Json;
+}
+
+export interface AppTravelIdeas {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  idea: string;
+  legacyId: string;
+  notes: string | null;
+  ownerUserid: string;
+  status: string;
+  type: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppTravelJourneys {
+  archived: Generated<boolean>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  endDate: ColumnType<string, Date | string, Date | string> | null;
+  id: Generated<string>;
+  legacyId: string;
+  name: string;
+  notes: string | null;
+  ownerUserid: string;
+  purpose: string | null;
+  startDate: ColumnType<string, Date | string, Date | string> | null;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppTravelJourneySegments {
+  arrivalDate: ColumnType<string, Date | string, Date | string> | null;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  departureDate: ColumnType<string, Date | string, Date | string> | null;
+  id: Generated<string>;
+  journeyId: string;
+  legacyId: string;
+  notes: string | null;
+  ownerUserid: string;
+  placeId: string;
+  seq: number;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppTravelPlaces {
+  archived: Generated<boolean>;
+  country: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  firstVisited: ColumnType<string, Date | string, Date | string> | null;
+  id: Generated<string>;
+  lastVisited: ColumnType<string, Date | string, Date | string> | null;
+  legacyId: string;
+  notes: string | null;
+  ownerUserid: string;
+  place: string;
+  status: string;
+  type: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppTravelResidences {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  legacyId: string;
+  notes: string | null;
+  ownerUserid: string;
+  periods: Json;
+  placeId: string;
+  sourceFirstVisited: ColumnType<string, Date | string, Date | string> | null;
+  sourceLastVisited: ColumnType<string, Date | string, Date | string> | null;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
 export interface AppTravelSegments {
   arrivesAt: ColumnType<string, Date | string, Date | string> | null;
   confirmationCode: string | null;
@@ -1099,6 +1195,44 @@ export interface AppTravelSegments {
   segmentType: string;
   tripId: string;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppTravelStays {
+  bookingRef: string | null;
+  checkIn: ColumnType<string, Date | string, Date | string> | null;
+  checkOut: ColumnType<string, Date | string, Date | string> | null;
+  city: string;
+  country: string | null;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  evidence: string;
+  id: Generated<string>;
+  journeyId: string | null;
+  legacyId: string;
+  notes: string | null;
+  ownerUserid: string;
+  property: string | null;
+  segmentId: string | null;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppTravelTransport {
+  arrSegmentId: string | null;
+  bookingRef: string | null;
+  carrier: string | null;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  date: ColumnType<string, Date | string, Date | string> | null;
+  depSegmentId: string | null;
+  destination: string;
+  id: Generated<string>;
+  journeyId: string;
+  legacyId: string;
+  legacyTrip: string | null;
+  mode: string;
+  notes: string | null;
+  number: string | null;
+  origin: string;
+  ownerUserid: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
 export interface AppTravelTripAttendees {
@@ -1449,7 +1583,16 @@ export interface DB {
   'app.tags': AppTags;
   'app.taskParticipants': AppTaskParticipants;
   'app.tasks': AppTasks;
+  'app.travelAirports': AppTravelAirports;
+  'app.travelEntityHistory': AppTravelEntityHistory;
+  'app.travelIdeas': AppTravelIdeas;
+  'app.travelJourneys': AppTravelJourneys;
+  'app.travelJourneySegments': AppTravelJourneySegments;
+  'app.travelPlaces': AppTravelPlaces;
+  'app.travelResidences': AppTravelResidences;
   'app.travelSegments': AppTravelSegments;
+  'app.travelStays': AppTravelStays;
+  'app.travelTransport': AppTravelTransport;
   'app.travelTripAttendees': AppTravelTripAttendees;
   'app.travelTrips': AppTravelTrips;
   'app.vectorDocuments': AppVectorDocuments;

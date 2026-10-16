@@ -13,7 +13,23 @@ export const ENTITY_TABLE_MAP: Record<EntityType, string> = {
   places: 'app.places',
   possessions: 'app.possessions',
   notes: 'app.notes',
+  travel_journeys: 'app.travel_journeys',
+  travel_journey_segments: 'app.travel_journey_segments',
+  travel_transport: 'app.travel_transport',
+  travel_stays: 'app.travel_stays',
+  travel_airports: 'app.travel_airports',
+  travel_places: 'app.travel_places',
+  travel_ideas: 'app.travel_ideas',
+  residence: 'app.travel_residences',
 };
+
+async function ensureOwnedEntity(ownerUserId: string, entityType: EntityType, entityId: string) {
+  const entityTable = ENTITY_TABLE_MAP[entityType];
+  const result = await sql<{ id: string }>`
+    SELECT id FROM ${sql.raw(entityTable)} WHERE id = ${entityId} AND owner_userid = ${ownerUserId}
+  `.execute(db);
+  if (!result.rows.length) throw new Error('Entity not found');
+}
 
 function slugify(name: string): string {
   const slug = name
@@ -63,6 +79,7 @@ export async function tagEntity(
   ownerUserId: string,
   input: { entityType: EntityType; entityId: string; tagName: string },
 ) {
+  await ensureOwnedEntity(ownerUserId, input.entityType, input.entityId);
   const tag = await findOrCreateTag(ownerUserId, input.tagName);
   const entityTable = ENTITY_TABLE_MAP[input.entityType];
 
@@ -80,6 +97,7 @@ export async function untagEntity(
   ownerUserId: string,
   input: { entityType: EntityType; entityId: string; tagId: string },
 ) {
+  await ensureOwnedEntity(ownerUserId, input.entityType, input.entityId);
   const entityTable = ENTITY_TABLE_MAP[input.entityType];
 
   const result = await sql<{ id: string }>`
@@ -100,6 +118,7 @@ export async function listEntityTags(
   ownerUserId: string,
   input: { entityType: EntityType; entityId: string },
 ) {
+  await ensureOwnedEntity(ownerUserId, input.entityType, input.entityId);
   const entityTable = ENTITY_TABLE_MAP[input.entityType];
 
   const rows = await sql<{ id: string; name: string }>`
@@ -158,6 +177,49 @@ export async function getEntityDisplayName(
       .where('ownerUserid', '=', ownerUserId)
       .executeTakeFirst();
     return row?.title || '(untitled note)';
+  }
+
+  if (entityType === 'residence') {
+    const result = await sql<{ display_name: string }>`
+      SELECT p.place AS display_name
+      FROM app.travel_residences r
+      JOIN app.travel_places p
+        ON p.id = r.place_id AND p.owner_userid = r.owner_userid
+      WHERE r.id = ${entityId} AND r.owner_userid = ${ownerUserId}
+    `.execute(db);
+    return result.rows[0]?.display_name ?? null;
+  }
+
+  if (entityType.startsWith('travel_')) {
+    const displayColumns: Record<EntityType, string> = {
+      people: 'display_name',
+      places: 'name',
+      possessions: 'name',
+      notes: 'title',
+      travel_journeys: 'name',
+      travel_journey_segments: 'legacy_id',
+      travel_transport: 'legacy_id',
+      travel_stays: 'property',
+      travel_airports: 'name',
+      travel_places: 'place',
+      travel_ideas: 'idea',
+      residence: 'place_id',
+    };
+    const result = await sql<{ display_name: string | null }>`
+      SELECT ${sql.raw(displayColumns[entityType])} as display_name FROM ${sql.raw(ENTITY_TABLE_MAP[entityType])}
+      WHERE id = ${entityId} AND owner_userid = ${ownerUserId}
+    `.execute(db);
+    if (result.rows.length) {
+      const name = result.rows[0]?.display_name;
+      if (name) return name;
+      if (entityType === 'travel_stays') {
+        const city = await sql<{ city: string }>`
+          SELECT city FROM app.travel_stays WHERE id = ${entityId} AND owner_userid = ${ownerUserId}
+        `.execute(db);
+        return city.rows[0]?.city ?? null;
+      }
+    }
+    return null;
   }
 
   const table = entityType === 'places' ? 'app.places' : 'app.possessions';

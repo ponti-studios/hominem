@@ -15,6 +15,9 @@ const userId = 'd1000000-0000-4000-8000-000000000001';
 const personId = 'd1000001-0000-4000-8000-000000000001';
 const placeId = 'd1000002-0000-4000-8000-000000000001';
 const noteId = 'd1000003-0000-4000-8000-000000000001';
+const journeyId = 'd1000004-0000-4000-8000-000000000001';
+const travelPlaceId = 'd1000005-0000-4000-8000-000000000001';
+const residenceId = 'd1000006-0000-4000-8000-000000000001';
 
 beforeAll(async () => {
   // Deleting the user cascades to every app.* row it owns, so each run starts clean.
@@ -43,6 +46,56 @@ beforeAll(async () => {
     ])
     .onConflict((oc) => oc.column('id').doNothing())
     .execute();
+
+  await db
+    .insertInto('app.travelJourneys')
+    .values({
+      id: journeyId,
+      ownerUserid: userId,
+      legacyId: 'JRN-tag-test',
+      name: 'Tag Test Journey',
+      startDate: null,
+      endDate: null,
+      purpose: null,
+      notes: null,
+    })
+    .onConflict((oc) => oc.column('id').doNothing())
+    .execute();
+  await db
+    .insertInto('app.travelPlaces')
+    .values({
+      id: travelPlaceId,
+      ownerUserid: userId,
+      legacyId: 'PLC-tag-test',
+      place: 'Tag Test City',
+      country: 'Testland',
+      type: 'city',
+      status: 'Want to go',
+      firstVisited: null,
+      lastVisited: null,
+      notes: null,
+    })
+    .onConflict((oc) => oc.column('id').doNothing())
+    .execute();
+  await pool.query(
+    `INSERT INTO app.travel_residences (id, owner_userid, legacy_id, place_id, periods)
+     VALUES ($1, $2, $3, $4, $5::jsonb) ON CONFLICT (id) DO NOTHING`,
+    [
+      residenceId,
+      userId,
+      'PLC-residence-tag-test',
+      travelPlaceId,
+      JSON.stringify([
+        {
+          startDate: '2026-01-01',
+          endDate: null,
+          ongoing: true,
+          precision: 'day',
+          note: null,
+        },
+      ]),
+    ],
+  );
 });
 
 describe('tag_entity / untag_entity / entity_tags', () => {
@@ -63,6 +116,53 @@ describe('tag_entity / untag_entity / entity_tags', () => {
     expect(toolOutput(listed, entityTagsOutputSchema).tags).toEqual([
       { id: data.tag?.id, name: 'Close Friend' },
     ]);
+  });
+
+  it('keeps travel Place separate from venue Place and allows tagging journeys', async () => {
+    const journeyTag = await callTool(userId, 'tag_entity', {
+      entityType: 'travel_journeys',
+      entityId: journeyId,
+      tagName: 'Travel Plan',
+    });
+    const placeTag = await callTool(userId, 'tag_entity', {
+      entityType: 'travel_places',
+      entityId: travelPlaceId,
+      tagName: 'Travel Place Tag',
+    });
+    expect(toolOutput(journeyTag, tagEntityOutputSchema).tag?.name).toBe('Travel Plan');
+    expect(toolOutput(placeTag, tagEntityOutputSchema).tag?.name).toBe('Travel Place Tag');
+    expect(
+      toolOutput(
+        await callTool(userId, 'entity_tags', {
+          entityType: 'travel_journeys',
+          entityId: journeyId,
+        }),
+        entityTagsOutputSchema,
+      ).tags,
+    ).toHaveLength(1);
+    expect(
+      toolOutput(
+        await callTool(userId, 'entity_tags', {
+          entityType: 'places',
+          entityId: placeId,
+        }),
+        entityTagsOutputSchema,
+      ).tags,
+    ).toHaveLength(0);
+  });
+
+  it('tags a Residence through its distinct entity type', async () => {
+    const result = await callTool(userId, 'tag_entity', {
+      entityType: 'residence',
+      entityId: residenceId,
+      tagName: 'Current Home',
+    });
+    expect(toolOutput(result, tagEntityOutputSchema).tag?.name).toBe('Current Home');
+    const tags = await callTool(userId, 'entity_tags', {
+      entityType: 'residence',
+      entityId: residenceId,
+    });
+    expect(toolOutput(tags, entityTagsOutputSchema).tags).toHaveLength(1);
   });
 
   it('creates a new tag and assigns it to a note (notes are graph nodes)', async () => {

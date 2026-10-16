@@ -9,6 +9,7 @@ import { MCP_SCOPES } from '../scopes';
 import { checkRateLimit } from './rate-limiter';
 import { ensureMcpToolsRegistered } from './register-tools';
 import { handleMcpRequest, type McpHonoEnv } from './server';
+import { listTools } from './tool-registry';
 
 // Top-level await works fine here since services/api is ESM
 await ensureMcpToolsRegistered();
@@ -30,6 +31,35 @@ function createMcpAuthorizationMiddleware(dependencies: McpDependencies) {
         status: 403,
         headers: { 'content-type': 'application/json' },
       });
+    }
+
+    if (c.req.method === 'POST') {
+      try {
+        const request: unknown = await c.req.raw.clone().json();
+        const calls = Array.isArray(request) ? request : [request];
+        for (const item of calls) {
+          if (
+            !item ||
+            typeof item !== 'object' ||
+            !('method' in item) ||
+            item.method !== 'tools/call'
+          ) {
+            continue;
+          }
+          const params =
+            'params' in item && item.params && typeof item.params === 'object' ? item.params : null;
+          const toolName =
+            params && 'name' in params && typeof params.name === 'string' ? params.name : null;
+          const tool = toolName ? listTools().find(({ name }) => name === toolName) : null;
+          if (!tool) continue;
+          const missingScopes = tool.scopes.filter((scope) => !auth.scopes.includes(scope));
+          if (missingScopes.length > 0) {
+            return c.json({ error: 'insufficient_scope', required_scopes: missingScopes }, 403);
+          }
+        }
+      } catch {
+        // Let the MCP protocol handler return its normal invalid-request response.
+      }
     }
 
     if (inputEnv.NODE_ENV === 'production') {

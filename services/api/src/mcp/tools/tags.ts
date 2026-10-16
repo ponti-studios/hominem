@@ -20,7 +20,7 @@ registerTool(
     name: 'tag_entity',
     title: 'Tag an entity',
     description:
-      'Tags a person or place with a named tag, creating the tag if it does not already exist.',
+      'Tags an owned person, venue place, possession, note, or travel entity with a named tag. Travel Place and Residence are distinct from venue places.',
     inputSchema: tagEntityInputSchema,
     outputSchema: tagEntityOutputSchema,
     readOnly: false,
@@ -36,7 +36,8 @@ registerTool(
   {
     name: 'untag_entity',
     title: 'Untag an entity',
-    description: 'Removes a tag from a person or place.',
+    description:
+      'Removes a tag from an owned person, venue place, possession, note, or travel entity, including a Residence.',
     inputSchema: untagEntityInputSchema,
     outputSchema: untagEntityOutputSchema,
     readOnly: false,
@@ -65,7 +66,8 @@ registerTool(
   {
     name: 'entity_tags',
     title: 'List tags on an entity',
-    description: 'Lists the tags currently assigned to a person or place.',
+    description:
+      'Lists tags assigned to an owned person, venue place, possession, note, or travel entity, including a Residence.',
     inputSchema: entityTagsInputSchema,
     outputSchema: entityTagsOutputSchema,
     readOnly: true,

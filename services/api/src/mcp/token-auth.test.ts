@@ -1,3 +1,4 @@
+import { db } from '@hominem/db/core';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -108,6 +109,71 @@ beforeEach(() => {
 });
 
 describe('mcp bearer token auth', () => {
+  it('refuses travel_import to travel:read credentials without changing travel rows', async () => {
+    vi.mocked(resolveMcpToken).mockResolvedValue({
+      ownerUserId: testUser.id,
+      scopes: ['travel:read'],
+    });
+    const countTravelIdeas = async () =>
+      Number(
+        (
+          await db
+            .selectFrom('app.travelIdeas')
+            .select((eb) => eb.fn.countAll<number>().as('count'))
+            .where('ownerUserid', '=', testUser.id)
+            .executeTakeFirstOrThrow()
+        ).count,
+      );
+    const before = await countTravelIdeas();
+    const client = await createClient('hmt_travel_reader_token');
+
+    try {
+      const names = (await client.listTools()).tools.map((tool) => tool.name);
+      expect(names).toContain('trip_history');
+      expect(names).not.toContain('travel_import');
+      await expect(
+        client.callTool({
+          name: 'travel_import',
+          arguments: {
+            rows: {
+              ideas: [
+                {
+                  idea_id: 'IDA-DENIED',
+                  idea: 'Must not exist',
+                  type: 'experience',
+                  status: 'open',
+                },
+              ],
+            },
+          },
+        }),
+      ).rejects.toThrow('travel:write');
+      expect(await countTravelIdeas()).toBe(before);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('allows travel_import dry-run to a credential granted travel:write', async () => {
+    vi.mocked(resolveMcpToken).mockResolvedValue({
+      ownerUserId: testUser.id,
+      scopes: ['travel:write'],
+    });
+    const client = await createClient('hmt_existing_travel_writer_token');
+
+    try {
+      const result = await client.callTool({
+        name: 'travel_import',
+        arguments: { rows: { ideas: [] }, dryRun: true },
+      });
+
+      expect(result.isError).not.toBe(true);
+      expect(result.structuredContent).toMatchObject({ dryRun: true });
+    } finally {
+      await client.close();
+    }
+  });
+
   it('resolves an hmt_ token to the owner with all scopes when token scopes are empty', async () => {
     vi.mocked(resolveMcpToken).mockResolvedValue({
       ownerUserId: testUser.id,
@@ -155,7 +221,7 @@ describe('mcp bearer token auth', () => {
       expect(names).toContain('career_profile');
       expect(names).not.toContain('finance_net_worth');
       await expect(client.callTool({ name: 'finance_net_worth', arguments: {} })).rejects.toThrow(
-        'not found',
+        'insufficient_scope',
       );
     } finally {
       await client.close();
@@ -185,7 +251,7 @@ describe('mcp bearer token auth', () => {
       expect(readerTools.filter((name) => name.startsWith('finance_'))).toEqual(readToolNames);
       for (const toolName of writeToolNames) {
         await expect(financeReader.callTool({ name: toolName, arguments: {} })).rejects.toThrow(
-          'not found',
+          'insufficient_scope',
         );
       }
 
@@ -198,7 +264,7 @@ describe('mcp bearer token auth', () => {
       );
       for (const toolName of readToolNames) {
         await expect(financeWriter.callTool({ name: toolName, arguments: {} })).rejects.toThrow(
-          'not found',
+          'insufficient_scope',
         );
       }
 
@@ -212,6 +278,46 @@ describe('mcp bearer token auth', () => {
       await financeReader.close();
       await financeWriter.close();
       await fullyScopedFinanceWriter.close();
+    }
+  });
+
+  it('enforces travel read and write scopes for personal tokens at discovery and call time', async () => {
+    vi.mocked(resolveMcpToken).mockImplementation(async (token) => {
+      if (token === 'hmt_travel_read_token')
+        return { ownerUserId: testUser.id, scopes: ['travel:read'] };
+      if (token === 'hmt_travel_write_token')
+        return { ownerUserId: testUser.id, scopes: ['travel:write'] };
+      return null;
+    });
+
+    const travelTools = listTools().filter((tool) => tool.name.startsWith('travel_'));
+    const readNames = travelTools.filter((tool) => tool.readOnly).map((tool) => tool.name);
+    const writeNames = travelTools.filter((tool) => !tool.readOnly).map((tool) => tool.name);
+    const reader = await createClient('hmt_travel_read_token');
+    const writer = await createClient('hmt_travel_write_token');
+
+    try {
+      const discoveredRead = (await reader.listTools()).tools.map((tool) => tool.name);
+      expect(discoveredRead.filter((name) => name.startsWith('travel_'))).toEqual(readNames);
+      expect(readNames).toContain('travel_validate');
+      expect(readNames).toContain('travel_timeline');
+      await reader.callTool({ name: 'travel_validate', arguments: {} });
+      for (const name of writeNames) {
+        await expect(reader.callTool({ name, arguments: {} })).rejects.toThrow(
+          'insufficient_scope',
+        );
+      }
+
+      const discoveredWrite = (await writer.listTools()).tools.map((tool) => tool.name);
+      expect(discoveredWrite.filter((name) => name.startsWith('travel_'))).toEqual(writeNames);
+      for (const name of readNames) {
+        await expect(writer.callTool({ name, arguments: {} })).rejects.toThrow(
+          'insufficient_scope',
+        );
+      }
+    } finally {
+      await reader.close();
+      await writer.close();
     }
   });
 

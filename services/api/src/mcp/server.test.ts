@@ -229,6 +229,32 @@ describe('mcp server transport', () => {
     });
   });
 
+  it('returns insufficient_scope with the required scope when a read-only caller invokes a write tool', async () => {
+    const app = createApp();
+    const response = await app.fetch(
+      new Request('http://localhost/api/mcp', {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer test-token',
+          'content-type': 'application/json',
+          'x-mcp-scopes': 'finance:read',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 99,
+          method: 'tools/call',
+          params: { name: 'finance_transaction_upsert', arguments: {} },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'insufficient_scope',
+      required_scopes: ['finance:write'],
+    });
+  });
+
   it('does not authorize a Better Auth cookie session as MCP', async () => {
     const app = createApp({
       ...mcpAuthContext,
@@ -365,7 +391,7 @@ describe('mcp server transport', () => {
     try {
       await expect(
         client.callTool({ name: 'career_wishlist_add', arguments: { company: 'Acme' } }),
-      ).rejects.toThrow('not found');
+      ).rejects.toThrow('insufficient_scope');
     } finally {
       await client.close();
     }
