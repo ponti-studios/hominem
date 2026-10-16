@@ -20,6 +20,7 @@ import type {
   RemoveMemberInput,
   UpdateCollectionInput,
   UpdateMemberRoleInput,
+  UpsertCollectionInput,
 } from '../schemas/collections.schema';
 import { ENTITY_TABLE_MAP, getEntityDisplayName, type EntityType } from './tags.service';
 
@@ -162,6 +163,55 @@ export async function createCollection(ownerUserId: string, input: CreateCollect
   const collection = await loadCollectionSummary(row.id);
   if (!collection) throw new Error('Failed to load created collection');
   return { collection };
+}
+
+/**
+ * Idempotent create for the offline outbox: keyed on (owner, externalId), so
+ * re-sending an op updates the same collection instead of duplicating it.
+ * Mirrors `upsertPossession`. `created` comes from the row's xmax, so
+ * concurrent upserts of the same new externalId cannot both report created.
+ */
+export async function upsertCollection(ownerUserId: string, input: UpsertCollectionInput) {
+  return runInTransaction(async (trx) => {
+    const row = await trx
+      .insertInto('app.collections')
+      .values({
+        ownerUserid: ownerUserId,
+        name: input.name,
+        description: input.description ?? null,
+        visibility: input.visibility,
+        externalId: input.externalId,
+      })
+      .onConflict((oc) =>
+        oc
+          .columns(['ownerUserid', 'externalId'])
+          .where('externalId', 'is not', null)
+          .doUpdateSet({
+            name: input.name,
+            description: input.description ?? null,
+            visibility: input.visibility,
+          }),
+      )
+      .returning(['id'])
+      .returning(sql<boolean>`(xmax = 0)`.as('created'))
+      .executeTakeFirstOrThrow();
+
+    // The owner is always a member. Re-running the upsert must not add a second
+    // row; the unique key is (collection_id, user_id).
+    await trx
+      .insertInto('app.collectionMembers')
+      .values({
+        ownerUserid: ownerUserId,
+        collectionId: row.id,
+        userId: ownerUserId,
+        role: 'owner',
+        acceptedAt: new Date(),
+      })
+      .onConflict((oc) => oc.columns(['collectionId', 'userId']).doNothing())
+      .execute();
+
+    return { id: row.id, created: row.created };
+  });
 }
 
 export async function updateCollection(ownerUserId: string, input: UpdateCollectionInput) {

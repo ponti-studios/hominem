@@ -441,6 +441,7 @@ export interface AppCollectionMembers {
 export interface AppCollections {
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
   description: string | null;
+  externalId: string | null;
   id: Generated<string>;
   name: string;
   ownerUserid: string;

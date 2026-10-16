@@ -14,6 +14,7 @@ import {
   listCollectionsDelta,
   removeCollectionItem,
   updateCollection,
+  upsertCollection,
 } from './collections.service';
 
 const ownerId = 'd3000010-0000-4000-8000-000000000001';
@@ -234,5 +235,44 @@ describe('delta sync', () => {
         collectionId: null,
       }),
     );
+  });
+});
+
+describe('upsertCollection', () => {
+  it('creates once and updates in place when the same external id is re-sent', async () => {
+    const externalId = `still-${crypto.randomUUID()}`;
+
+    const first = await upsertCollection(ownerId, {
+      externalId,
+      name: 'Outbox One',
+      visibility: 'private',
+    });
+    expect(first.created).toBe(true);
+
+    const second = await upsertCollection(ownerId, {
+      externalId,
+      name: 'Outbox Renamed',
+      visibility: 'private',
+    });
+    expect(second.created).toBe(false);
+    expect(second.id).toBe(first.id);
+
+    const rows = await db
+      .selectFrom('app.collections')
+      .select(['id', 'name'])
+      .where('id', '=', first.id)
+      .execute();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.name).toBe('Outbox Renamed');
+
+    // The owner membership is created once, not once per upsert.
+    const members = await db
+      .selectFrom('app.collectionMembers')
+      .select(['id'])
+      .where('collectionId', '=', first.id)
+      .execute();
+    expect(members).toHaveLength(1);
+
+    await deleteCollection(ownerId, { collectionId: first.id });
   });
 });

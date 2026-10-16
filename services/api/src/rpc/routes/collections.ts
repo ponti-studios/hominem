@@ -20,6 +20,7 @@ import {
   removeMember,
   updateCollection,
   updateMemberRole,
+  upsertCollection,
 } from '../../application/collections.service';
 import {
   acceptMemberInviteInputSchema,
@@ -47,6 +48,8 @@ import {
   updateCollectionOutputSchema,
   updateMemberRoleInputSchema,
   updateMemberRoleOutputSchema,
+  upsertCollectionInputSchema,
+  upsertCollectionOutputSchema,
 } from '../../schemas/collections.schema';
 import { entityTypeSchema } from '../../schemas/tags.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
@@ -72,6 +75,10 @@ export const collectionsRoutes = new Hono<AppContext>()
   .post('/', zValidator('json', createCollectionInputSchema), async (c) => {
     const result = await createCollection(c.get('auth')!.userId, c.req.valid('json'));
     return c.json(createCollectionOutputSchema.parse(result));
+  })
+  .post('/upsert', zValidator('json', upsertCollectionInputSchema), async (c) => {
+    const result = await upsertCollection(c.get('auth')!.userId, c.req.valid('json'));
+    return c.json(upsertCollectionOutputSchema.parse(result));
   })
   .get('/invites', zValidator('query', listPendingInvitesInputSchema), async (c) => {
     const result = await listPendingInvites(c.get('auth')!.userId, c.req.valid('query'));

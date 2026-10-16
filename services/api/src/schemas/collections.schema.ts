@@ -54,6 +54,20 @@ export const createCollectionOutputSchema = z.object({
   collection: collectionSummarySchema,
 });
 
+// ── upsert_collection ────────────────────────────────────────────────
+// Idempotent create keyed on a client-supplied external id: the offline
+// outbox re-sends an op after a crash and updates the same collection
+// instead of duplicating it. Mirrors the possessions/containers upsert.
+
+export const upsertCollectionInputSchema = createCollectionInputSchema.extend({
+  externalId: z.string().trim().min(1).max(100),
+});
+
+export const upsertCollectionOutputSchema = z.object({
+  id: z.string().uuid(),
+  created: z.boolean(),
+});
+
 // ── update_collection ───────────────────────────────────────────────
 
 export const updateCollectionFieldsSchema = z
@@ -263,6 +277,7 @@ export type CollectionDetail = z.output<typeof collectionDetailSchema>;
 export type CollectionMembershipLink = z.output<typeof collectionMembershipLinkSchema>;
 export type SyncTombstone = z.output<typeof syncTombstoneSchema>;
 export type CreateCollectionInput = z.output<typeof createCollectionInputSchema>;
+export type UpsertCollectionInput = z.output<typeof upsertCollectionInputSchema>;
 export type UpdateCollectionInput = z.output<typeof updateCollectionInputSchema>;
 export type DeleteCollectionInput = z.output<typeof deleteCollectionInputSchema>;
 export type LeaveCollectionInput = z.output<typeof leaveCollectionInputSchema>;
