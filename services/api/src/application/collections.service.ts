@@ -49,6 +49,22 @@ function entityTypeForTable(table: string): EntityType | undefined {
       return 'possessions';
     case ENTITY_TABLE_MAP.notes:
       return 'notes';
+    case ENTITY_TABLE_MAP.travel_journeys:
+      return 'travel_journeys';
+    case ENTITY_TABLE_MAP.travel_journey_segments:
+      return 'travel_journey_segments';
+    case ENTITY_TABLE_MAP.travel_transport:
+      return 'travel_transport';
+    case ENTITY_TABLE_MAP.travel_stays:
+      return 'travel_stays';
+    case ENTITY_TABLE_MAP.travel_airports:
+      return 'travel_airports';
+    case ENTITY_TABLE_MAP.travel_places:
+      return 'travel_places';
+    case ENTITY_TABLE_MAP.travel_ideas:
+      return 'travel_ideas';
+    case ENTITY_TABLE_MAP.residence:
+      return 'residence';
     default:
       return undefined;
   }

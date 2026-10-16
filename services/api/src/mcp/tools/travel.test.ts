@@ -1,4 +1,6 @@
-import { db, pool } from '@hominem/db/core';
+import { randomUUID } from 'node:crypto';
+
+import { authDb, db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import './travel';
@@ -11,7 +13,6 @@ import {
   travelPlaceListOutputSchema,
   travelWishlistOutputSchema,
 } from '../../schemas/travel-read.schema';
-import { travelResidenceCreateInputSchema } from '../../schemas/travel-residences.schema';
 import { tripHistoryOutputSchema } from '../../schemas/travel.schema';
 import { toolOutput } from '../../testkit/tool-result';
 import { callTool, getToolDefinition } from '../tool-registry';
@@ -310,22 +311,7 @@ describe('travel_import', () => {
 });
 
 describe('travel residence tools', () => {
-  it('requires real ISO dates and defaults omitted precision to day', () => {
-    const parsed = travelResidenceCreateInputSchema.safeParse({
-      placeId: 'e1000000-0000-4000-8000-000000000001',
-      periods: [{ startDate: '2017-01-01', endDate: null, ongoing: false }],
-    });
-    expect(parsed.success).toBe(true);
-    if (parsed.success) expect(parsed.data.periods[0]?.precision).toBe('day');
-    expect(
-      travelResidenceCreateInputSchema.safeParse({
-        placeId: 'e1000000-0000-4000-8000-000000000001',
-        periods: [{ startDate: '2026-99-99', endDate: null, ongoing: false }],
-      }).success,
-    ).toBe(false);
-  });
-
-  it('registers both read tools on travel:read and every mutation on travel:write', () => {
+  it('exposes residence reads while the Tier 2 write gate is blocked', () => {
     for (const name of ['travel_residence_list', 'travel_residence_get']) {
       expect(getToolDefinition(name)).toMatchObject({ readOnly: true, scopes: ['travel:read'] });
     }
@@ -334,12 +320,20 @@ describe('travel residence tools', () => {
       'travel_residence_update',
       'travel_residence_delete',
     ]) {
-      expect(getToolDefinition(name)).toMatchObject({ readOnly: false, scopes: ['travel:write'] });
+      expect(getToolDefinition(name)).toBeUndefined();
     }
-    expect(getToolDefinition('travel_residence_delete')).toMatchObject({
-      destructive: true,
-      requiresConfirmation: true,
+  });
+
+  it('returns an object from residence list, including when no residences exist', async () => {
+    const listed = await callTool(ownerId, 'travel_residence_list', {});
+    expect(listed.isError).not.toBe(true);
+    expect(listed.structuredContent).toMatchObject({
+      residences: [{ id: readResidenceId, place: 'London', country: 'UK' }],
     });
+
+    const empty = await callTool(otherUserId, 'travel_residence_list', {});
+    expect(empty.isError).not.toBe(true);
+    expect(empty.structuredContent).toEqual({ residences: [] });
   });
 });
 
@@ -401,6 +395,10 @@ describe('travel Tier 1 reads', () => {
     expect(search.structuredContent).toMatchObject({
       total: 3,
       journeys: { items: [{ legacyId: 'JRN-READ' }], total: 1 },
+      stays: { items: [{ legacyId: 'STY-READ' }], total: 1 },
+    });
+    const bookingSearch = await callTool(ownerId, 'travel_search', { query: 'BOOK-READ' });
+    expect(bookingSearch.structuredContent).toMatchObject({
       stays: { items: [{ legacyId: 'STY-READ' }], total: 1 },
     });
     const validation = await callTool(ownerId, 'travel_validate', {});
@@ -609,5 +607,144 @@ describe('travel Tier 1 reads', () => {
       stays: { total: 1, items: [{ id: wishlistStayId }] },
       ideas: { total: 1, items: [{ id: readIdeaId }] },
     });
+  });
+
+  it('finds an owned airport outside the first airport-list page', async () => {
+    const airportOwner = randomUUID();
+    await authDb
+      .insertInto('user')
+      .values({
+        id: airportOwner,
+        name: 'Airport pagination test',
+        email: `${airportOwner}@example.com`,
+      })
+      .execute();
+
+    try {
+      await db
+        .insertInto('app.travelAirports')
+        .values(
+          Array.from({ length: 201 }, (_, index) => {
+            const suffix = String(index).padStart(3, '0');
+            return {
+              ownerUserid: airportOwner,
+              legacyId: `ARP-PAGE-${suffix}`,
+              code: `A${suffix}`,
+              name: `Airport ${suffix}`,
+              servesPlace: 'Test City',
+              city: 'Test City',
+              country: 'Testland',
+            };
+          }),
+        )
+        .execute();
+
+      const result = await callTool(airportOwner, 'travel_airport_get', { code: 'A200' });
+      expect(result.structuredContent).toMatchObject({ code: 'A200', name: 'Airport 200' });
+    } finally {
+      await authDb.deleteFrom('user').where('id', '=', airportOwner).execute();
+    }
+  });
+
+  it('matches transport by airport city and pages timeline events within the result cap', async () => {
+    const userId = randomUUID();
+    await authDb
+      .insertInto('user')
+      .values({ id: userId, name: 'Travel endpoint test', email: `${userId}@example.com` })
+      .execute();
+    try {
+      const journey = await db
+        .insertInto('app.travelJourneys')
+        .values({ ownerUserid: userId, legacyId: 'JRN-ENDPOINT', name: 'Endpoint journey' })
+        .returning('id')
+        .executeTakeFirstOrThrow();
+      const place = await db
+        .insertInto('app.travelPlaces')
+        .values({
+          ownerUserid: userId,
+          legacyId: 'PLC-ENDPOINT',
+          place: 'Byron Bay',
+          country: 'Australia',
+          type: 'city',
+          status: 'Visited',
+        })
+        .returning('id')
+        .executeTakeFirstOrThrow();
+      await db
+        .insertInto('app.travelAirports')
+        .values([
+          {
+            ownerUserid: userId,
+            legacyId: 'ARP-ENDPOINT-1',
+            code: 'BNK',
+            name: 'Ballina Byron Gateway Airport',
+            servesPlace: 'Byron Bay',
+            city: 'Ballina',
+            country: 'Australia',
+          },
+          {
+            ownerUserid: userId,
+            legacyId: 'ARP-ENDPOINT-2',
+            code: 'SYD',
+            name: 'Sydney Airport',
+            servesPlace: 'Sydney',
+            city: 'Sydney',
+            country: 'Australia',
+          },
+        ])
+        .execute();
+      await db
+        .insertInto('app.travelTransport')
+        .values({
+          ownerUserid: userId,
+          legacyId: 'T-ENDPOINT',
+          mode: 'air',
+          origin: 'BNK',
+          destination: 'SYD',
+          journeyId: journey.id,
+        })
+        .execute();
+      await db
+        .insertInto('app.travelJourneySegments')
+        .values([
+          {
+            ownerUserid: userId,
+            legacyId: 'SEG-ENDPOINT-1',
+            journeyId: journey.id,
+            placeId: place.id,
+            seq: 1,
+          },
+          {
+            ownerUserid: userId,
+            legacyId: 'SEG-ENDPOINT-2',
+            journeyId: journey.id,
+            placeId: place.id,
+            seq: 2,
+          },
+        ])
+        .execute();
+
+      const byCity = await callTool(userId, 'travel_transport_list', { from: 'Ballina' });
+      expect(byCity.structuredContent).toMatchObject({
+        transport: [{ legacyId: 'T-ENDPOINT', origin: 'BNK' }],
+        total: 1,
+      });
+      const first = await callTool(userId, 'travel_timeline', { limit: 1 });
+      expect(first.structuredContent).toMatchObject({
+        total: 2,
+        limit: 1,
+        offset: 0,
+        truncated: true,
+      });
+      const second = await callTool(userId, 'travel_timeline', { limit: 1, offset: 1 });
+      expect(second.structuredContent).toMatchObject({
+        total: 2,
+        limit: 1,
+        offset: 1,
+        truncated: false,
+      });
+    } finally {
+      await authDb.deleteFrom('user').where('id', '=', userId).execute();
+    }
   });
 });

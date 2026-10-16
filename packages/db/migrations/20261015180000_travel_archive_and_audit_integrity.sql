@@ -6,7 +6,8 @@ ALTER TABLE app.travel_places ADD COLUMN archived boolean NOT NULL DEFAULT false
 CREATE FUNCTION app.prevent_travel_history_mutation() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
-  IF nullif(current_setting('app.travel_owner_deleting', true), '') = OLD.owner_userId THEN
+  IF position(',' || OLD.owner_userId || ',' IN ',' || current_setting('app.travel_owner_deleting', true) || ',') > 0
+    OR NOT EXISTS (SELECT 1 FROM public."user" WHERE id = OLD.owner_userId) THEN
     RETURN OLD;
   END IF;
   RAISE EXCEPTION 'travel entity history is append-only' USING ERRCODE = '42501';

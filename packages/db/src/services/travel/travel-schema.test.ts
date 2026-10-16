@@ -186,6 +186,29 @@ describe('travel v2 schema', () => {
     ).rejects.toThrow('append-only');
   });
 
+  it('skips cascade audit writes when one statement deletes multiple travel owners', async () => {
+    const owners = [await createUser(), await createUser()];
+    await db
+      .insertInto('app.travelIdeas')
+      .values(
+        owners.map((owner, index) => ({
+          ownerUserid: owner,
+          legacyId: `IDA-multi-delete-${index}`,
+          idea: 'Cascade test',
+          type: 'experience',
+          status: 'open',
+        })),
+      )
+      .execute();
+
+    await expect(
+      authDb.deleteFrom('user').where('id', 'in', owners).execute(),
+    ).resolves.toBeDefined();
+    await expect(
+      db.selectFrom('app.travelIdeas').select('id').where('ownerUserid', 'in', owners).execute(),
+    ).resolves.toEqual([]);
+  });
+
   it('allows only fully linked stays or unlinked wishlist stays', async () => {
     const owner = await createUser();
     const journey = await db

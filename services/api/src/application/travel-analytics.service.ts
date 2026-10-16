@@ -18,6 +18,27 @@ type Residence = {
   }[];
 };
 
+export function findOutOfOrderSegmentPairs(
+  segments: { id: string; journeyId: string; seq: number; arrivalDate: string | null }[],
+) {
+  const pairs: [string, string][] = [];
+  for (let index = 0; index < segments.length; index++) {
+    const segment = segments[index]!;
+    for (const other of segments.slice(index + 1)) {
+      if (segment.journeyId !== other.journeyId || segment.seq === other.seq) continue;
+      const earlier = segment.seq < other.seq ? segment : other;
+      const later = segment.seq < other.seq ? other : segment;
+      if (
+        earlier.arrivalDate !== null &&
+        later.arrivalDate !== null &&
+        earlier.arrivalDate > later.arrivalDate
+      )
+        pairs.push([earlier.id, later.id]);
+    }
+  }
+  return pairs;
+}
+
 export function haversineKm(a: Coordinates, b: Coordinates): number | null {
   if (a.latitude === null || a.longitude === null || b.latitude === null || b.longitude === null)
     return null;
@@ -361,14 +382,20 @@ export async function travelValidate(owner: string) {
           sequenceOffenders.push(ref(row, `Sequence ${seq} is duplicated within its journey.`));
       }
     }
-    const maximum = Math.max(0, ...rows.map((row) => row.seq));
-    for (let expected = 1; expected <= maximum; expected++) {
-      if (counts.has(expected)) continue;
-      const next = rows.find((row) => row.seq > expected);
-      if (next)
+    const ordered = [...counts.keys()].filter((seq) => seq >= 1).sort((a, b) => a - b);
+    if (ordered[0] !== undefined && ordered[0] > 1) {
+      const first = rows.find((row) => row.seq === ordered[0])!;
+      sequenceOffenders.push(ref(first, `Missing sequence range 1..${ordered[0] - 1}.`));
+    }
+    for (let index = 1; index < ordered.length; index++) {
+      const previous = ordered[index - 1]!;
+      const nextSeq = ordered[index]!;
+      if (nextSeq > previous + 1) {
+        const next = rows.find((row) => row.seq === nextSeq)!;
         sequenceOffenders.push(
-          ref(next, `Sequence ${expected} is missing before sequence ${next.seq}.`),
+          ref(next, `Missing sequence range ${previous + 1}..${nextSeq - 1}.`),
         );
+      }
     }
     for (const row of rows.filter((candidate) => candidate.seq < 1))
       sequenceOffenders.push(ref(row, `Sequence ${row.seq} is below the valid range 1..n.`));
@@ -412,16 +439,16 @@ export async function travelValidate(owner: string) {
   add('journey_overlap', journeyOverlapOffenders, journeyOverlapCount);
   const segmentOverlapOffenders: Offender[] = [];
   let segmentOverlapCount = 0;
+  const outOfOrderPairs = new Set(
+    findOutOfOrderSegmentPairs(data.segments).map(([earlier, later]) => `${earlier}\u001f${later}`),
+  );
   for (let i = 0; i < data.segments.length; i++) {
     const segment = data.segments[i]!;
     for (const other of data.segments.slice(i + 1)) {
       const samePlace = segment.placeId === other.placeId;
-      const sameJourneyOutOfOrder =
-        segment.journeyId === other.journeyId &&
-        segment.seq < other.seq &&
-        segment.arrivalDate !== null &&
-        other.arrivalDate !== null &&
-        segment.arrivalDate > other.arrivalDate;
+      const earlier = segment.seq < other.seq ? segment : other;
+      const later = segment.seq < other.seq ? other : segment;
+      const sameJourneyOutOfOrder = outOfOrderPairs.has(`${earlier.id}\u001f${later.id}`);
       if (
         (samePlace &&
           overlaps(
@@ -522,7 +549,12 @@ export async function travelSearch(owner: string, input: { query: string; limit:
       .filter((row) => contains(row.place, input.query))
       .sort((a, b) => a.legacyId.localeCompare(b.legacyId) || a.id.localeCompare(b.id)),
     stays: data.stays
-      .filter((row) => contains(row.property, input.query) || contains(row.city, input.query))
+      .filter(
+        (row) =>
+          contains(row.property, input.query) ||
+          contains(row.city, input.query) ||
+          contains(row.bookingRef, input.query),
+      )
       .sort((a, b) => a.legacyId.localeCompare(b.legacyId) || a.id.localeCompare(b.id)),
     transport: data.transport
       .filter((row) => contains(row.carrier, input.query) || contains(row.bookingRef, input.query))
@@ -657,7 +689,10 @@ export async function travelStats(owner: string, input: { year?: number } = {}) 
   };
 }
 
-export async function travelTimeline(owner: string, input: { from?: string; to?: string } = {}) {
+export async function travelTimeline(
+  owner: string,
+  input: { from?: string; to?: string; limit?: number; offset?: number } = {},
+) {
   const data = await loadTravelData(owner);
   const events: Record<string, unknown>[] = data.segments.map((segment) => ({
     type: 'segment',
@@ -675,12 +710,20 @@ export async function travelTimeline(owner: string, input: { from?: string; to?:
   const journeys = [...data.journeys]
     .filter((journey) => journey.startDate && journey.endDate)
     .sort((a, b) => compareDate(a.startDate, b.startDate));
-  for (let index = 0; index < journeys.length - 1; index++) {
-    const previous = journeys[index]!;
-    const next = journeys[index + 1]!;
-    if (!previous.endDate || !next.startDate || next.startDate < previous.endDate) continue;
-    const start = previous.endDate;
-    const end = next.startDate;
+  let active: (typeof journeys)[number] | undefined;
+  for (const next of journeys) {
+    if (!active) {
+      active = next;
+      continue;
+    }
+    if (!active.endDate || !next.startDate) continue;
+    if (next.startDate <= active.endDate) {
+      if (next.endDate && next.endDate > active.endDate) active = next;
+      continue;
+    }
+    const previous = active;
+    const start = previous.endDate!;
+    const end = next.startDate!;
     const boundaries = residenceBoundaries(start, end, data.residences);
     let cursor = start;
     for (const boundary of [...boundaries, end]) {
@@ -697,6 +740,7 @@ export async function travelTimeline(owner: string, input: { from?: string; to?:
       });
       cursor = boundary;
     }
+    active = next;
   }
   const filtered = events
     .filter((event) => {
@@ -722,9 +766,14 @@ export async function travelTimeline(owner: string, input: { from?: string; to?:
         )
       );
     });
+  const limit = input.limit ?? 100;
+  const offset = input.offset ?? 0;
   return {
-    events: filtered,
+    events: filtered.slice(offset, offset + limit),
     total: filtered.length,
+    limit,
+    offset,
+    truncated: offset + limit < filtered.length,
     from: input.from ?? null,
     to: input.to ?? null,
   };

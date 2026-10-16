@@ -124,4 +124,5 @@ DROP TABLE IF EXISTS app.travel_journey_segments;
 DROP TABLE IF EXISTS app.travel_places;
 DROP TABLE IF EXISTS app.travel_ideas;
 DROP TABLE IF EXISTS app.travel_journeys;
+DROP FUNCTION IF EXISTS app.log_travel_entity_history();
 -- +goose StatementEnd

@@ -57,9 +57,11 @@ async function allTransport(owner: string) {
       originCode: leg.origin,
       originName: origin?.name ?? null,
       originPlace: origin?.servesPlace ?? null,
+      originCity: origin?.city ?? null,
       destinationCode: leg.destination,
       destinationName: destination?.name ?? null,
       destinationPlace: destination?.servesPlace ?? null,
+      destinationCity: destination?.city ?? null,
       distanceKm: origin && destination ? distanceKm(origin, destination) : null,
     };
   });
@@ -539,8 +541,8 @@ export async function listTravelTransport(
     query?: string,
   ) =>
     !query ||
-    [leg[endpoint], leg[`${endpoint}Name`], leg[`${endpoint}Place`]].some((value) =>
-      includes(value, query),
+    [leg[endpoint], leg[`${endpoint}Name`], leg[`${endpoint}Place`], leg[`${endpoint}City`]].some(
+      (value) => includes(value, query),
     );
   const filtered = rows.filter(
     (leg) =>
@@ -608,12 +610,21 @@ export async function listTravelAirports(
 }
 
 export async function getTravelAirport(owner: string, input: { id?: string; code?: string }) {
-  const rows = await listTravelAirports(owner, { limit: 200, offset: 0 });
-  return (
-    rows.airports.find((airport) =>
-      input.id ? airport.id === input.id : norm(airport.code) === norm(input.code),
-    ) ?? null
-  );
+  let query = db.selectFrom('app.travelAirports').selectAll().where('ownerUserid', '=', owner);
+  query = input.id
+    ? query.where('id', '=', input.id)
+    : query.where('code', '=', input.code!.toUpperCase());
+  const airport = await query.executeTakeFirst();
+  if (!airport) return null;
+
+  const legs = await db
+    .selectFrom('app.travelTransport')
+    .select((eb) => eb.fn.countAll<number>().as('count'))
+    .where('ownerUserid', '=', owner)
+    .where((eb) => eb.or([eb('origin', '=', airport.code), eb('destination', '=', airport.code)]))
+    .executeTakeFirstOrThrow();
+
+  return { ...airport, legCount: Number(legs.count) };
 }
 
 export async function listTravelStays(

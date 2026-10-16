@@ -180,14 +180,14 @@ export async function getEntityDisplayName(
   }
 
   if (entityType === 'residence') {
-    const result = await sql<{ display_name: string }>`
+    const result = await sql<{ displayName: string }>`
       SELECT p.place AS display_name
       FROM app.travel_residences r
       JOIN app.travel_places p
         ON p.id = r.place_id AND p.owner_userid = r.owner_userid
       WHERE r.id = ${entityId} AND r.owner_userid = ${ownerUserId}
     `.execute(db);
-    return result.rows[0]?.display_name ?? null;
+    return result.rows[0]?.displayName ?? null;
   }
 
   if (entityType.startsWith('travel_')) {
@@ -205,12 +205,12 @@ export async function getEntityDisplayName(
       travel_ideas: 'idea',
       residence: 'place_id',
     };
-    const result = await sql<{ display_name: string | null }>`
+    const result = await sql<{ displayName: string | null }>`
       SELECT ${sql.raw(displayColumns[entityType])} as display_name FROM ${sql.raw(ENTITY_TABLE_MAP[entityType])}
       WHERE id = ${entityId} AND owner_userid = ${ownerUserId}
     `.execute(db);
     if (result.rows.length) {
-      const name = result.rows[0]?.display_name;
+      const name = result.rows[0]?.displayName;
       if (name) return name;
       if (entityType === 'travel_stays') {
         const city = await sql<{ city: string }>`

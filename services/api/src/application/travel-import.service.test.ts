@@ -560,4 +560,97 @@ describe('travel import', () => {
     expect(result.entities.transport.created).toBe(2);
     expect(result.entities.transport.rejected).toEqual([]);
   });
+
+  it('runs database constraint checks during dry-run and rolls the projection back', async () => {
+    const owner = await createOwner();
+    const rows = sampleRows();
+    rows.segments.push({ ...rows.segments[0]!, segment_id: 'SEG-002' });
+
+    const preview = await importTravelRows(owner, { rows, mode: 'append', dryRun: true });
+    expect(preview.entities.segments.rejected).toEqual([
+      { legacyId: 'SEG-002', reason: 'duplicate_key' },
+    ]);
+    await expect(
+      db.selectFrom('app.travelJourneys').select('id').where('ownerUserid', '=', owner).execute(),
+    ).resolves.toEqual([]);
+    const applied = await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
+    expect(applied.entities).toEqual(preview.entities);
+  });
+
+  it('validates residence periods with the shared contract and rejects multiple current periods', async () => {
+    const owner = await createOwner();
+    const rows = sampleRows();
+    rows.residences = [
+      {
+        legacyId: 'PLC-HOME',
+        placeLegacyId: 'PLC-001',
+        periods: [
+          { startDate: '2026-01-02', endDate: '2026-01-01', ongoing: false, precision: 'day' },
+        ],
+        sourceFirstVisited: null,
+        sourceLastVisited: null,
+        notes: null,
+      },
+      {
+        legacyId: 'PLC-HOME-2',
+        placeLegacyId: 'PLC-001',
+        periods: [
+          { startDate: '2020-01-01', endDate: null, ongoing: true, precision: 'day' },
+          { startDate: '2021-01-01', endDate: null, ongoing: true, precision: 'day' },
+        ],
+        sourceFirstVisited: null,
+        sourceLastVisited: null,
+        notes: null,
+      },
+    ];
+
+    const result = await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
+    expect(result.entities.residences.rejected).toEqual([
+      { legacyId: 'PLC-HOME', reason: 'invalid_period' },
+      { legacyId: 'PLC-HOME-2', reason: 'multiple_current_homes' },
+    ]);
+    await expect(
+      db.selectFrom('app.travelResidences').select('id').where('ownerUserid', '=', owner).execute(),
+    ).resolves.toEqual([]);
+  });
+
+  it('serializes imports per owner so concurrent runs cannot create two current homes', async () => {
+    const owner = await createOwner();
+    const makeRows = (suffix: string): z.infer<typeof travelImportInputSchema>['rows'] => {
+      const rows = sampleRows();
+      rows.places = [
+        {
+          place_id: `PLC-${suffix}`,
+          place: `Home ${suffix}`,
+          country: 'Testland',
+          type: 'city',
+          status: 'Visited',
+          first_visited: '',
+          last_visited: '',
+          notes: '',
+        },
+      ];
+      rows.residences = [
+        {
+          legacyId: `RES-${suffix}`,
+          placeLegacyId: `PLC-${suffix}`,
+          periods: [{ startDate: '2026-10-01', endDate: null, ongoing: true, precision: 'day' }],
+          sourceFirstVisited: null,
+          sourceLastVisited: null,
+          notes: null,
+        },
+      ];
+      return rows;
+    };
+
+    const results = await Promise.all([
+      importTravelRows(owner, { rows: makeRows('A'), mode: 'append', dryRun: false }),
+      importTravelRows(owner, { rows: makeRows('B'), mode: 'append', dryRun: false }),
+    ]);
+    const residenceResults = results.map((result) => result.entities.residences);
+    expect(residenceResults.reduce((sum, result) => sum + result.created, 0)).toBe(1);
+    expect(residenceResults.flatMap((result) => result.rejected)).toEqual([
+      expect.objectContaining({ reason: 'multiple_current_homes' }),
+    ]);
+  });
 });

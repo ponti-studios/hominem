@@ -7,6 +7,7 @@ import { ValidationError } from '@hominem/db/errors';
 import type { z } from 'zod';
 
 import { travelImportInputSchema } from '../schemas/travel-import.schema';
+import { travelResidenceImportedPeriodsSchema } from '../schemas/travel-residences.schema';
 
 type Entity = keyof z.infer<typeof travelImportInputSchema>['rows'];
 type Row = Record<string, unknown>;
@@ -99,12 +100,6 @@ function number(row: Row, key: string): number | null {
   return parsed;
 }
 
-function isValidDate(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
-}
-
 function legacyId(entity: Entity, row: Row): string {
   const field = {
     airports: 'airport_id',
@@ -164,24 +159,14 @@ function payload(
       ) {
         throw new Error('residence_place_mismatch');
       }
-      const periods = row.periods;
-      if (!Array.isArray(periods) || periods.length === 0) throw new Error('invalid_period');
-      for (const period of periods) {
-        if (!period || typeof period !== 'object' || Array.isArray(period))
-          throw new Error('invalid_period');
-        const item: Row = Object.fromEntries(Object.entries(period));
-        const start = value(item, 'startDate');
-        const end = value(item, 'endDate');
-        const ongoing = item.ongoing === true;
-        const precision = value(item, 'precision');
-        if (
-          !isValidDate(start) ||
-          (end && !isValidDate(end)) ||
-          (ongoing && end) ||
-          !['day', 'month', 'year'].includes(precision)
-        )
-          throw new Error('invalid_period');
+      const parsedPeriods = travelResidenceImportedPeriodsSchema.safeParse(row.periods);
+      if (!parsedPeriods.success) {
+        const multipleOngoing = parsedPeriods.error.issues.some(
+          (issue) => issue.message === 'multiple_current_homes',
+        );
+        throw new Error(multipleOngoing ? 'multiple_current_homes' : 'invalid_period');
       }
+      const periods = parsedPeriods.data;
       return {
         legacy_id: required(row, 'legacyId'),
         place_id: place.id,
@@ -395,6 +380,8 @@ export async function importTravelRows(
   if (input.mode === 'replace' && input.iUnderstand !== true)
     throw new ValidationError('confirmation_required');
   return runInTransaction(async (trx) => {
+    await sql`SELECT pg_advisory_xact_lock(hashtextextended(${ownerUserId}, 0))`.execute(trx);
+    if (input.dryRun) await sql`SAVEPOINT travel_import_dry_run`.execute(trx);
     const rows: Record<Entity, Row[]> = { ...EMPTY, ...input.rows };
     let residenceOnlyPlaces = 0;
     const preDeleteCounts: Record<Entity, number> = {
@@ -410,7 +397,7 @@ export async function importTravelRows(
     for (const entity of ORDER) {
       preDeleteCounts[entity] = await countRows(trx, entity, ownerUserId);
     }
-    if (input.mode === 'replace' && !input.dryRun) {
+    if (input.mode === 'replace') {
       const deleteOrder: Entity[] = [
         'transport',
         'stays',
@@ -487,14 +474,7 @@ export async function importTravelRows(
               const current = [...existing.places.values()].find(
                 (candidate) => String(candidate.legacy_id) === value(sourceRow, 'place_id'),
               );
-              const result = await writeRow(
-                trx,
-                ownerUserId,
-                entity,
-                fields,
-                current,
-                input.dryRun,
-              );
+              const result = await writeRow(trx, ownerUserId, entity, fields, current, false);
               existing.places.set(result.row.id, result.row);
               refs.places.set(result.row.id, result.row);
               refs.places.set(String(fields.legacy_id), result.row);
@@ -529,7 +509,7 @@ export async function importTravelRows(
           const current = [...existing[entity].values()].find(
             (candidate) => keyFor(entity, candidate) === composite,
           );
-          const result = await writeRow(trx, ownerUserId, entity, fields, current, input.dryRun);
+          const result = await writeRow(trx, ownerUserId, entity, fields, current, false);
           const stored = result.row;
           existing[entity].set(stored.id, stored);
           entities[entity][result.action] += 1;
@@ -552,12 +532,17 @@ export async function importTravelRows(
         }
       }
     }
-    return {
+    const result = {
       entities,
       droppedColumns: ['journeys.segments', 'segments.destinations'],
       residenceOnlyPlaces,
       ...(input.mode === 'replace' ? { preDeleteCounts } : {}),
       dryRun: input.dryRun,
     };
+    if (input.dryRun) {
+      await sql`ROLLBACK TO SAVEPOINT travel_import_dry_run`.execute(trx);
+      await sql`RELEASE SAVEPOINT travel_import_dry_run`.execute(trx);
+    }
+    return result;
   });
 }

@@ -22,6 +22,14 @@ const period = z
       ctx.addIssue({ code: 'custom', message: 'invalid_period' });
   });
 export const travelResidencePeriodsSchema = z.array(period);
+export const travelResidenceImportedPeriodsSchema = z
+  .array(period)
+  .min(1)
+  .superRefine((periods, context) => {
+    if (periods.filter((item) => item.ongoing).length > 1) {
+      context.addIssue({ code: 'custom', message: 'multiple_current_homes' });
+    }
+  });
 
 export const travelResidenceListInputSchema = z.object({
   placeId: z.string().uuid().optional(),
@@ -31,23 +39,6 @@ export const travelResidenceListInputSchema = z.object({
 export const travelResidenceGetInputSchema = z
   .object({ id: z.string().uuid().optional(), legacyId: z.string().optional() })
   .refine((v) => Boolean(v.id || v.legacyId));
-export const travelResidenceCreateInputSchema = z.object({
-  placeId: z.string().uuid(),
-  legacyId: z.string().optional(),
-  periods: z.array(period).min(1),
-  notes: z.string().nullable().optional(),
-});
-export const travelResidenceUpdateInputSchema = z
-  .object({
-    id: z.string().uuid(),
-    periods: z.array(period).min(1).optional(),
-    notes: z.string().nullable().optional(),
-  })
-  .refine((v) => v.periods !== undefined || v.notes !== undefined);
-export const travelResidenceDeleteInputSchema = z.object({
-  id: z.string().uuid(),
-  iUnderstand: z.literal(true),
-});
 export const travelResidenceOutputSchema = z.object({
   id: z.string(),
   legacyId: z.string(),
@@ -56,4 +47,7 @@ export const travelResidenceOutputSchema = z.object({
   country: z.string(),
   periods: z.array(period),
   notes: z.string().nullable(),
+});
+export const travelResidenceListOutputSchema = z.object({
+  residences: z.array(travelResidenceOutputSchema),
 });

@@ -16,7 +16,12 @@ export const travelSearchInputSchema = z.object({
 });
 export const travelValidateInputSchema = z.object({});
 export const travelTimelineInputSchema = z
-  .object({ from: date.optional(), to: date.optional() })
+  .object({
+    from: date.optional(),
+    to: date.optional(),
+    limit: z.number().int().min(1).max(200).default(100),
+    offset: z.number().int().min(0).default(0),
+  })
   .superRefine((value, context) => {
     if (value.from && value.to && value.from > value.to) {
       context.addIssue({
@@ -60,6 +65,9 @@ export const travelValidateOutputSchema = z.object({
 export const travelTimelineOutputSchema = z.object({
   events: z.array(row),
   total: z.number().int(),
+  limit: z.number().int(),
+  offset: z.number().int(),
+  truncated: z.boolean(),
   from: z.string().nullable(),
   to: z.string().nullable(),
 });

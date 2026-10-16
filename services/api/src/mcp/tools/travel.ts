@@ -16,11 +16,8 @@ import {
   lookupTravelBooking,
 } from '../../application/travel-read.service';
 import {
-  createTravelResidence,
-  deleteTravelResidence,
   getTravelResidence,
   listTravelResidences,
-  updateTravelResidence,
 } from '../../application/travel-residences.service';
 import { listTripHistory } from '../../application/travel.service';
 import {
@@ -55,12 +52,10 @@ import {
   travelWishlistOutputSchema,
 } from '../../schemas/travel-read.schema';
 import {
-  travelResidenceCreateInputSchema,
-  travelResidenceDeleteInputSchema,
   travelResidenceGetInputSchema,
   travelResidenceListInputSchema,
+  travelResidenceListOutputSchema,
   travelResidenceOutputSchema,
-  travelResidenceUpdateInputSchema,
 } from '../../schemas/travel-residences.schema';
 import { tripHistoryInputSchema, tripHistoryOutputSchema } from '../../schemas/travel.schema';
 import { registerTool } from '../tool-registry';
@@ -265,12 +260,12 @@ registerTool(
     title: 'List residences',
     description: 'Lists residences and their canonical travel places.',
     inputSchema: travelResidenceListInputSchema,
-    outputSchema: travelResidenceOutputSchema.array(),
+    outputSchema: travelResidenceListOutputSchema,
     readOnly: true,
     scopes: ['travel:read'],
     resultCap: 100,
   },
-  (owner, input) => listTravelResidences(owner, input),
+  async (owner, input) => ({ residences: await listTravelResidences(owner, input) }),
 );
 registerTool(
   {
@@ -285,51 +280,6 @@ registerTool(
   },
   (owner, input) => getTravelResidence(owner, input),
 );
-registerTool(
-  {
-    name: 'travel_residence_create',
-    title: 'Create residence',
-    description: 'Creates a residence for an owned travel place.',
-    inputSchema: travelResidenceCreateInputSchema,
-    outputSchema: travelResidenceOutputSchema.nullable(),
-    readOnly: false,
-    scopes: ['travel:write'],
-    idempotent: true,
-    resultCap: 1,
-  },
-  (owner, input) => createTravelResidence(owner, input),
-);
-registerTool(
-  {
-    name: 'travel_residence_update',
-    title: 'Update residence',
-    description: 'Replaces residence periods and/or notes.',
-    inputSchema: travelResidenceUpdateInputSchema,
-    outputSchema: travelResidenceOutputSchema.nullable(),
-    readOnly: false,
-    scopes: ['travel:write'],
-    idempotent: true,
-    resultCap: 1,
-  },
-  (owner, input) => updateTravelResidence(owner, input),
-);
-registerTool(
-  {
-    name: 'travel_residence_delete',
-    title: 'Delete residence',
-    description: 'Deletes a residence after explicit confirmation; its place remains.',
-    inputSchema: travelResidenceDeleteInputSchema,
-    outputSchema: travelResidenceOutputSchema.nullable(),
-    readOnly: false,
-    scopes: ['travel:write'],
-    destructive: true,
-    idempotent: true,
-    requiresConfirmation: true,
-    resultCap: 1,
-  },
-  (owner, input) => deleteTravelResidence(owner, input.id),
-);
-
 registerTool(
   {
     readOnly: false,

@@ -51,6 +51,7 @@ ALTER TABLE app.travel_entity_history
   ADD CONSTRAINT travel_entity_history_entity_table_check
   CHECK (entity_table IN (
     'travel_journeys', 'travel_journey_segments', 'travel_places',
-    'travel_transport', 'travel_stays', 'travel_airports', 'travel_ideas'
+    'travel_transport', 'travel_stays', 'travel_airports', 'travel_ideas',
+    'travel_residences'
   ));
 -- +goose StatementEnd
