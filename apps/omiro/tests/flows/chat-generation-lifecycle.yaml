@@ -27,7 +27,7 @@ tags:
     visible:
       id: 'tool-confirm-reject'
     timeout: 45000
-- takeScreenshot: /tmp/omiro-lifecycle-approval-bar
+- takeScreenshot: omiro-lifecycle-approval-bar
 - tapOn:
     id: 'tool-confirm-reject'
 - extendedWaitUntil:
@@ -38,7 +38,7 @@ tags:
     visible:
       id: 'chat-composer-input'
     timeout: 15000
-- takeScreenshot: /tmp/omiro-lifecycle-after-reject
+- takeScreenshot: omiro-lifecycle-after-reject
 
 # Approve: same dock hand-back once the approved tool call finishes.
 - tapOn:
@@ -60,7 +60,7 @@ tags:
     visible:
       id: 'chat-composer-input'
     timeout: 15000
-- takeScreenshot: /tmp/omiro-lifecycle-after-approve
+- takeScreenshot: omiro-lifecycle-after-approve
 
 # Stop: a stopped reply clears the generation and the composer returns.
 - tapOn:
@@ -72,7 +72,7 @@ tags:
     visible:
       id: 'chat-generation-stop'
     timeout: 15000
-- takeScreenshot: /tmp/omiro-lifecycle-generating
+- takeScreenshot: omiro-lifecycle-generating
 - tapOn:
     id: 'chat-generation-stop'
 - extendedWaitUntil:
@@ -81,4 +81,4 @@ tags:
     timeout: 15000
 - assertNotVisible:
     id: 'chat-generation-stop'
-- takeScreenshot: /tmp/omiro-lifecycle-after-stop
+- takeScreenshot: omiro-lifecycle-after-stop

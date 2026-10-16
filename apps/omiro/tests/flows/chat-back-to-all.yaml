@@ -31,4 +31,4 @@ appId: com.pontistudios.hakumi.dev
     timeout: 3000
 - assertVisible:
     id: 'inbox-composer-input'
-- takeScreenshot: /tmp/omiro_chat_back_to_all
+- takeScreenshot: omiro_chat_back_to_all
