@@ -20,4 +20,4 @@ appId: com.pontistudios.hakumi.dev
 - waitForAnimationToEnd:
     timeout: 1000
 - assertVisible: 'Delete'
-- takeScreenshot: /tmp/omiro_inbox_note_actions_menu
+- takeScreenshot: omiro_inbox_note_actions_menu

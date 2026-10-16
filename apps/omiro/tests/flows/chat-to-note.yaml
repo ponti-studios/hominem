@@ -24,7 +24,7 @@ tags:
 - runFlow: ../subflows/ensure-authenticated.yaml
 - assertVisible:
     id: 'inbox-composer-input'
-- takeScreenshot: /tmp/omiro_flow_1_home
+- takeScreenshot: omiro_flow_1_home
 
 # Open the most recent conversation.
 - tapOn:
@@ -34,7 +34,7 @@ tags:
     timeout: 4000
 - assertVisible:
     id: 'chat-composer-input'
-- takeScreenshot: /tmp/omiro_flow_2_chat_opened
+- takeScreenshot: omiro_flow_2_chat_opened
 
 # Send a message through the chat composer; the mock streams 'mock AI response'.
 # The composer is NOT cleared first blindly: this opens an existing chat whose
@@ -48,13 +48,13 @@ tags:
 - extendedWaitUntil:
     visible: 'mock AI response'
     timeout: 30000
-- takeScreenshot: /tmp/omiro_flow_4_ai_responded
+- takeScreenshot: omiro_flow_4_ai_responded
 
 # Open the conversation actions menu from the header.
 - tapOn: 'Conversation actions'
 - waitForAnimationToEnd:
     timeout: 2000
-- takeScreenshot: /tmp/omiro_flow_5_menu_open
+- takeScreenshot: omiro_flow_5_menu_open
 
 # Tap "Create note" in the native menu, then wait for the review screen itself
 # rather than a fixed pause.
@@ -63,14 +63,14 @@ tags:
     visible:
       id: 'classification-review-accept'
     timeout: 15000
-- takeScreenshot: /tmp/omiro_flow_6_review_shown
+- takeScreenshot: omiro_flow_6_review_shown
 
 # Accept the classification review.
 - tapOn:
     id: 'classification-review-accept'
 - waitForAnimationToEnd:
     timeout: 6000
-- takeScreenshot: /tmp/omiro_flow_7_accepted
+- takeScreenshot: omiro_flow_7_accepted
 
 # Return to the inbox via the enable-test-mode deep link (redirects to '/').
 - openLink: 'hakumi-dev:///enable-test-mode'
@@ -81,9 +81,12 @@ tags:
     timeout: 3000
 - assertVisible:
     id: 'inbox-composer-input'
-- takeScreenshot: /tmp/omiro_flow_8_inbox
+- takeScreenshot: omiro_flow_8_inbox
 
-# The transformed conversation is a note row in the inbox.
+# The transformed conversation is a note row on the Notes tab.
+- tapOn: 'Notes'
+- waitForAnimationToEnd:
+    timeout: 2000
 - assertVisible:
     id: 'inbox-item-note'
-- takeScreenshot: /tmp/omiro_flow_9_note_visible
+- takeScreenshot: omiro_flow_9_note_visible

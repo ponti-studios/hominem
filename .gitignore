@@ -46,6 +46,7 @@ services/api/scripts/mcp-perf-baselines/
 .env
 .env.*
 !.env.example
+!.env.scripted
 !packages/env
 
 # credentials

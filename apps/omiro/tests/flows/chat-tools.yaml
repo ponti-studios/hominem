@@ -34,7 +34,7 @@ tags:
 
 # TOOL-01: successful tool call.
 - assertVisible: 'list_collections'
-- takeScreenshot: /tmp/omiro-tool01-tool-success
+- takeScreenshot: omiro-tool01-tool-success
 
 # TOOL-02 uses a fresh chat so its approval result cannot match an earlier
 # assistant response or confirmation card.
@@ -56,7 +56,7 @@ tags:
 
 # TOOL-02: confirmation-required tool, then approve.
 - assertVisible: 'Approve create_collection'
-- takeScreenshot: /tmp/omiro-tool02-confirmation-pending
+- takeScreenshot: omiro-tool02-confirmation-pending
 - tapOn:
     id: 'tool-confirm-approve'
 - extendedWaitUntil:
@@ -64,7 +64,7 @@ tags:
     timeout: 30000
 - assertNotVisible:
     id: 'tool-confirm-approve'
-- takeScreenshot: /tmp/omiro-tool02-approved
+- takeScreenshot: omiro-tool02-approved
 
 # TOOL-03 also uses a fresh chat so the rejection targets exactly one pending
 # confirmation.
@@ -86,7 +86,7 @@ tags:
 
 # TOOL-03: confirmation-required tool, then reject.
 - assertVisible: 'Reject create_collection'
-- takeScreenshot: /tmp/omiro-tool03-confirmation-pending
+- takeScreenshot: omiro-tool03-confirmation-pending
 - tapOn:
     id: 'tool-confirm-reject'
 - extendedWaitUntil:
@@ -94,7 +94,7 @@ tags:
     timeout: 30000
 - assertNotVisible:
     id: 'tool-confirm-reject'
-- takeScreenshot: /tmp/omiro-tool03-rejected
+- takeScreenshot: omiro-tool03-rejected
 
 # TOOL-04 uses a fresh chat for an isolated failed tool card.
 - runFlow: ../subflows/reset-to-home.yaml
@@ -117,4 +117,4 @@ tags:
 - extendedWaitUntil:
     visible: 'SCRIPT:TOOL_FAIL'
     timeout: 30000
-- takeScreenshot: /tmp/omiro-tool04-tool-failure
+- takeScreenshot: omiro-tool04-tool-failure

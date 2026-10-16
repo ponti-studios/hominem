@@ -7,6 +7,10 @@ appId: com.pontistudios.hakumi.dev
 - runFlow: ../subflows/open-dev-home.yaml
 - assertVisible:
     id: 'inbox-composer-input'
+# The app opens on the Chat tab; notes are listed on the Notes tab.
+- tapOn: 'Notes'
+- waitForAnimationToEnd:
+    timeout: 2000
 - assertVisible:
     id: 'inbox-item-note'
 - tapOn:
@@ -24,4 +28,4 @@ appId: com.pontistudios.hakumi.dev
     timeout: 1000
 - assertVisible:
     id: 'note-title-input'
-- takeScreenshot: /tmp/omiro_note_title_edit
+- takeScreenshot: omiro_note_title_edit
