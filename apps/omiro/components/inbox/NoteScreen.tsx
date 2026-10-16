@@ -13,7 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { KeyboardStickyView } from 'react-native-keyboard-controller';
+import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import Markdown from 'react-native-markdown-display';
 
 import { InlineEnhanceTray } from '~/components/ai/InlineEnhanceTray';
@@ -511,9 +511,12 @@ function NoteEditorBody({
         visible={showActionsMenu}
       />
 
-      <ScrollView
+      <KeyboardAwareScrollView
         style={styles.editorContainer}
-        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16 }}
+        // The bottom padding lets the last lines scroll up past the keyboard and the formatting toolbar; the
+        // offset keeps the line being typed above the toolbar instead of behind it.
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 120 }}
+        bottomOffset={96}
         keyboardDismissMode="interactive"
         refreshControl=<RefreshControl
           refreshing={isRefreshing}
@@ -643,7 +646,7 @@ function NoteEditorBody({
             </ScrollView>
           </View>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {isEnhanceOpen ? (
         <KeyboardStickyView style={styles.enhanceTray}>
