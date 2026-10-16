@@ -32,6 +32,9 @@ export const apiSchema = runtimeSchema.extend({
   RESEND_FROM_EMAIL: z.string(),
   RESEND_FROM_NAME: z.string(),
   OPENROUTER_API_KEY: z.string(),
+  // Creates, reads and disables the per-person keys handed to Thames. Never leaves the API.
+  OPENROUTER_MANAGEMENT_KEY: z.string().optional(),
+  THAMES_MONTHLY_CAP_USD: z.coerce.number().positive().default(5),
   SENTRY_DSN: z.string().optional(),
   OPENAI_APPS_CHALLENGE: z.string().optional(),
   SAVE_VOICE_AUDIO: z.stringbool().default(false),
