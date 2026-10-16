@@ -1,0 +1,40 @@
+appId: com.pontistudios.hakumi.dev
+tags:
+  - regression
+---
+# Flow: long note body with the keyboard open
+# Regresses the bug where typing near the end of a long note left the caret and the last lines
+# hidden behind the keyboard and the formatting toolbar. Types a long body, then checks the last
+# line is on screen above the toolbar (screenshots are saved for visual inspection) and that the
+# page scrolls back when the keyboard is dismissed.
+
+- runFlow: ../subflows/open-dev-home.yaml
+- tapOn: 'Notes'
+- waitForAnimationToEnd:
+    timeout: 2000
+- assertVisible:
+    id: 'inbox-item-note'
+- tapOn:
+    id: 'inbox-item-note'
+    index: 0
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: 'Note content'
+- eraseText: 2000
+- inputText: "Line 01\nLine 02\nLine 03\nLine 04\nLine 05\nLine 06\nLine 07\nLine 08\nLine 09\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\nLine 16\nLine 17\nLine 18\nLine 19\nLINE 20 LAST"
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: note-long-body-keyboard-open
+# The caret is on the last line. The text field exposes the whole body as one element, so match the
+# last line inside it. Maestro reads the accessibility tree, which still lists text that is hidden
+# behind the keyboard, so this is a smoke check; the screenshot above is the evidence to inspect
+# (last lines and caret above the formatting toolbar).
+- assertVisible:
+    text: '(?s).*LINE 20 LAST.*'
+# Dismiss with the toolbar's own button (Maestro's hideKeyboard is unreliable on iOS).
+- tapOn: 'Dismiss keyboard'
+- waitForAnimationToEnd:
+    timeout: 1500
+- takeScreenshot: note-long-body-keyboard-closed
+- assertVisible:
+    id: 'note-title-input'
