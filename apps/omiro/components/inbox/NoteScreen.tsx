@@ -562,9 +562,11 @@ function NoteEditorBody({
       <KeyboardAwareScrollView
         style={styles.editorContainer}
         // The bottom padding lets the last lines scroll up past the keyboard and the formatting toolbar; the
-        // offset keeps the line being typed above the toolbar instead of behind it.
+        // offset keeps the line being typed above the toolbar instead of behind it. `layout` mode is needed:
+        // the default `insets` mode left the caret hidden behind the keyboard in a long note.
         contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 120 }}
         bottomOffset={96}
+        mode="layout"
         keyboardDismissMode="interactive"
         refreshControl=<RefreshControl
           refreshing={isRefreshing}
