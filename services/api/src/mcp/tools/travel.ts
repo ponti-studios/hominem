@@ -16,12 +16,16 @@ import {
   lookupTravelBooking,
 } from '../../application/travel-read.service';
 import {
+  createTravelResidence,
+  deleteTravelResidence,
   getTravelResidence,
   listTravelResidences,
+  updateTravelResidence,
 } from '../../application/travel-residences.service';
 import { listTripHistory } from '../../application/travel.service';
 import {
   travelImportInputSchema,
+  nativeTravelRows,
   travelImportOutputSchema,
 } from '../../schemas/travel-import.schema';
 import {
@@ -52,10 +56,14 @@ import {
   travelWishlistOutputSchema,
 } from '../../schemas/travel-read.schema';
 import {
+  travelResidenceCreateInputSchema,
+  travelResidenceDeleteInputSchema,
   travelResidenceGetInputSchema,
   travelResidenceListInputSchema,
   travelResidenceListOutputSchema,
+  travelResidenceMutationOutputSchema,
   travelResidenceOutputSchema,
+  travelResidenceUpdateInputSchema,
 } from '../../schemas/travel-residences.schema';
 import { tripHistoryInputSchema, tripHistoryOutputSchema } from '../../schemas/travel.schema';
 import { registerTool } from '../tool-registry';
@@ -263,9 +271,9 @@ registerTool(
     outputSchema: travelResidenceListOutputSchema,
     readOnly: true,
     scopes: ['travel:read'],
-    resultCap: 100,
+    resultCap: 200,
   },
-  async (owner, input) => ({ residences: await listTravelResidences(owner, input) }),
+  (owner, input) => listTravelResidences(owner, input),
 );
 registerTool(
   {
@@ -280,6 +288,85 @@ registerTool(
   },
   (owner, input) => getTravelResidence(owner, input),
 );
+registerTool(
+  {
+    name: 'travel_residence_create',
+    title: 'Create residence',
+    description: 'Creates a residence for an owned travel place.',
+    inputSchema: travelResidenceCreateInputSchema,
+    outputSchema: travelResidenceMutationOutputSchema,
+    readOnly: false,
+    scopes: ['travel:write'],
+    idempotent: false,
+    resultCap: 1,
+  },
+  async (owner, input) => {
+    const existing = input.legacyId
+      ? await getTravelResidence(owner, { legacyId: input.legacyId })
+      : null;
+    const residence = await createTravelResidence(owner, input);
+    return {
+      residence: residence ? travelResidenceOutputSchema.parse(residence) : null,
+      created: existing ? 0 : 1,
+      updated: 0,
+      unchanged: existing ? 1 : 0,
+    };
+  },
+);
+registerTool(
+  {
+    name: 'travel_residence_update',
+    title: 'Update residence',
+    description: 'Replaces residence periods and/or notes.',
+    inputSchema: travelResidenceUpdateInputSchema,
+    outputSchema: travelResidenceMutationOutputSchema,
+    readOnly: false,
+    scopes: ['travel:write'],
+    idempotent: true,
+    resultCap: 1,
+  },
+  async (owner, input) => {
+    const current = await getTravelResidence(owner, { id: input.id });
+    const residence = await updateTravelResidence(owner, input);
+    const unchanged =
+      !current ||
+      (JSON.stringify(input.periods ?? current.periods) === JSON.stringify(current.periods) &&
+        (input.notes === undefined || input.notes === current.notes));
+    return {
+      residence: residence ? travelResidenceOutputSchema.parse(residence) : null,
+      created: 0,
+      updated: current && !unchanged ? 1 : 0,
+      unchanged: unchanged ? 1 : 0,
+    };
+  },
+);
+registerTool(
+  {
+    name: 'travel_residence_delete',
+    title: 'Delete residence',
+    description: 'Deletes a residence after explicit confirmation; its place remains.',
+    inputSchema: travelResidenceDeleteInputSchema,
+    outputSchema: travelResidenceMutationOutputSchema,
+    readOnly: false,
+    scopes: ['travel:write'],
+    destructive: true,
+    idempotent: true,
+    requiresConfirmation: true,
+    resultCap: 1,
+    preview: async () => null,
+  },
+  async (owner, input) => {
+    const residence = await deleteTravelResidence(owner, input);
+    return {
+      residence: residence ? travelResidenceOutputSchema.parse(residence) : null,
+      created: 0,
+      updated: 0,
+      unchanged: 0,
+      deleted: Boolean(residence) && !input.dryRun,
+    };
+  },
+);
+
 registerTool(
   {
     readOnly: false,
@@ -302,7 +389,8 @@ registerTool(
     preview: async (_ownerUserId, input) => {
       const parsed = travelImportInputSchema.safeParse(input);
       if (!parsed.success) return null;
-      const { mode, dryRun, iUnderstand, rows } = parsed.data;
+      const { mode, dryRun, iUnderstand } = parsed.data;
+      const rows = parsed.data.entities ? nativeTravelRows(parsed.data.entities) : parsed.data.rows;
       if (mode !== 'replace' || dryRun || iUnderstand) return null;
       const count = Object.values(rows).reduce(
         (total, entityRows) => total + (Array.isArray(entityRows) ? entityRows.length : 0),

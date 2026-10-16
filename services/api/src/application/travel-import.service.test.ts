@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 
 import { travelImportInputSchema } from '../schemas/travel-import.schema';
+import { travelExport } from './travel-history-export.service';
 import { importTravelRows } from './travel-import.service';
 
 describe('travel import', () => {
@@ -368,6 +369,42 @@ describe('travel import', () => {
         ]),
       ),
     );
+  });
+
+  it('converges native and sheet exports, including separate residence rows', async () => {
+    const owner = await createOwner();
+    const rows = sampleRows();
+    rows.residences = [
+      {
+        legacyId: 'RES-001',
+        placeLegacyId: 'PLC-001',
+        periods: [
+          { startDate: '2020-01-01', endDate: '2021-01-01', ongoing: false, precision: 'day' },
+        ],
+        notes: 'probe',
+      },
+    ];
+    await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
+
+    const native = await travelExport(owner, 'native');
+    const nativeResult = await importTravelRows(
+      owner,
+      travelImportInputSchema.parse({ ...native, dryRun: true }),
+    );
+    expect(nativeResult.entities.places.created).toBe(0);
+    expect(nativeResult.entities.residences.created).toBe(0);
+    expect(nativeResult.entities.journeys.created).toBe(0);
+
+    const sheet = await travelExport(owner, 'sheet');
+    expect(sheet.residences).toHaveLength(1);
+    const sheetResult = await importTravelRows(
+      owner,
+      travelImportInputSchema.parse({
+        rows: { places: sheet.places, residences: sheet.residences },
+        dryRun: true,
+      }),
+    );
+    expect(sheetResult.entities.residences.created).toBe(0);
   });
 
   it('upserts sparse values, preserves archive state, and audits imported updates', async () => {

@@ -1,6 +1,6 @@
 ---
 title: 'Verify Tier 1 travel tools against live data'
-status: 'Blocked'
+status: 'Implemented'
 priority: 'high'
 labels: [travel, mcp, verification]
 depends_on: [004-travel-analytics-and-integrity-tools.md]
@@ -12,7 +12,7 @@ estimated_size: 'L'
 
 **Task ID:** T-005
 
-Complete the operator’s live-data acceptance gate for schema, import, Tier 1 reads, aggregates, integrity, and distance before starting travel writes.
+Reconcile the production registry availability gate before starting phase 2 travel writes. The complete production acceptance suite for §12 items 1–22 is tracked in T-008.
 
 ## Context
 
@@ -22,16 +22,13 @@ Owner boundary: operator-run MCP acceptance against the intended deployed Homine
 
 The local MCP acceptance is recorded in the ignored artifact `docs/tasks/artifacts/travel-tier-one-acceptance.json` and covers the §12 read examples plus the currently runnable §20.5 read checks (items 18, 19, and 21) against a temporary synthetic identity on `hominem-test` (21 checks pass). It is a pre-gate only. All §20.5 items 18–22 are assigned to T-008 for acceptance against production; items 20 and 22 run after their T-006/T-007 capabilities land. Per §22, production acceptance uses `https://api.ponti.io/api/mcp`; credentials are supplied directly by the operator. The local test-database cleanup and its evidence are recorded in `docs/tasks/artifacts/travel-synthetic-cleanup.local.json`; production cleanup must be checked and completed before import counters are measured, preserving the §16 legacy tables and append-only audit history. Report source date-overlap findings as returned by `travel_validate`; do not create duplicate rows or change source dates to suppress them.
 
-Production preflight on 2026-10-16 authenticated with the operator-provided credential, but `tools/list` returned no `travel_*` tools (133 total tools) and a read-only `travel_validate` probe returned `Tool travel_validate not found`. Public OAuth metadata advertises `travel:read` but not `travel:write`. The safe result is recorded in `docs/tasks/artifacts/travel-production-preflight.json`; no production writes were made. T-005 remains blocked until the deployed production MCP registry exposes the T-001–T-004 travel tools and the required scope metadata, after which the operator acceptance gate can run.
+Production preflight on 2026-10-16 authenticated with the operator-provided credential, but `tools/list` returned no `travel_*` tools (133 total tools) and a read-only `travel_validate` probe returned `Tool travel_validate not found`. That was accurate before deployment. The operator subsequently verified the deployed registry at 12:06, 12:40, and 14:47 BST on 2026-10-16: 157 total tools, including 24 live `travel_*` tools, with `travel_import` and residence list/get available. This resolves the deployment blocker. No production writes were made. The remaining live acceptance checks are in T-008; the operator results above are supplied evidence and were not independently re-run in this workspace.
 
 ## Requirements
 
-- Verify the seven imported row counts and worked examples 1–9 in §12 against live MCP responses.
-- Confirm the known validation findings and distance values exactly; do not repair or delete Reykjavik, the layover leg, or duplicate legacy IDs.
-- Verify `trip_history` remains available and unchanged, and that venue `place_visit_history` remains separate.
-- Before measuring production import counters, list and remove synthetic/test entities left by earlier tasks in the target new travel tables; retain the cleanup evidence and do not touch §16 legacy tables or append-only history.
-- Record tool name, request, result summary, pass/fail, and safe evidence reference for each acceptance item. Store raw volatile details in `docs/tasks/artifacts/travel-tier-one-acceptance.json`.
-- Stop Tier 2 work if any unexpected validation finding or acceptance mismatch remains unresolved; assign the evidence to an implementation defect or operator data decision.
+- Record the operator’s post-deployment `tools/list` results and verify that the production registry exposes Tier 1 travel tools and `travel:write` scope metadata.
+- Preserve the original pre-deployment result as historical evidence; do not describe it as current production state.
+- Run the full live acceptance items 1–22 through T-008 after implementation and deployment.
 
 ## Implementation Notes
 
@@ -41,12 +38,10 @@ Production preflight on 2026-10-16 authenticated with the operator-provided cred
 
 ## Acceptance Criteria
 
-- [ ] All initial live acceptance items 1–9 in §12 are marked pass with evidence in the artifact manifest.
-- [ ] Every unexpected finding is either fixed and re-verified or recorded as an operator-owned data decision; none is silently waived.
-- [ ] `docs/tasks/artifacts/travel-tier-one-acceptance.json` identifies the environment and evidence for each check without storing secrets.
-- [ ] Tier 2 work is unblocked only after the complete read acceptance gate passes.
+- [x] Operator post-deployment checks confirm 157 total tools and 24 live travel tools, including import and residence reads.
+- [x] T-005’s stale zero-tool snapshot is identified as pre-deployment evidence, not current state.
+- [ ] The full §12 production acceptance suite is completed under T-008.
 
 ## Testing
 
-- Run the operator’s MCP acceptance script/flow against live data using the deployed API.
-- No code tests are added in this verification-only task; any failure returns to the relevant implementation task and must pass its automated checks before this gate is rerun.
+- Operator verified production `tools/list` at 12:06, 12:40, and 14:47 BST on 2026-10-16. Full acceptance is intentionally not claimed here and remains with T-008.

@@ -147,7 +147,7 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
     }
 
     if (!hasRequiredScopes(context.grantedScopes, definition.scopes)) {
-      return createErrorResult(`Missing required scope(s): ${definition.scopes.join(', ')}`);
+      return createErrorResult('insufficient_scope');
     }
 
     // Protocol-level confirmation (Multi Round-Trip Requests, spec revision

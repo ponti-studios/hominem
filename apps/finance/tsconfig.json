@@ -17,8 +17,8 @@
     // narrow per-domain AppType (financeRoutes) instead of the root
     // @hominem/api/types export, so tsserver here never has to include
     // career/chats/notes/etc.'s type graph (docs/type-performance.md). The
-    // root @hominem/api/types path alias that used to live here is gone —
-    // nothing in this app references it anymore.
+    // Keep the root API contract on emitted declarations too: @hominem/rpc
+    // exposes a shared client type that references @hominem/api/types.
     //
     // @hominem/finance-services below isn't this app's own dependency
     // either — services/api's build/rpc/routes/finance.d.ts preserves
@@ -29,6 +29,7 @@
     // (docs/type-performance.md).
     "paths": {
       "~/*": ["./app/*"],
+      "@hominem/api/types": ["../../services/api/build/rpc/app.d.ts"],
       "@hominem/api/finance": ["../../services/api/build/rpc/routes/finance.d.ts"],
       "@hominem/finance-services": ["../../packages/finance/build/index.d.ts"]
     }

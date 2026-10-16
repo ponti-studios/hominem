@@ -181,7 +181,7 @@ export async function getEntityDisplayName(
 
   if (entityType === 'residence') {
     const result = await sql<{ displayName: string }>`
-      SELECT p.place AS display_name
+      SELECT p.place AS "displayName"
       FROM app.travel_residences r
       JOIN app.travel_places p
         ON p.id = r.place_id AND p.owner_userid = r.owner_userid
@@ -206,7 +206,7 @@ export async function getEntityDisplayName(
       residence: 'place_id',
     };
     const result = await sql<{ displayName: string | null }>`
-      SELECT ${sql.raw(displayColumns[entityType])} as display_name FROM ${sql.raw(ENTITY_TABLE_MAP[entityType])}
+      SELECT ${sql.raw(displayColumns[entityType])} as "displayName" FROM ${sql.raw(ENTITY_TABLE_MAP[entityType])}
       WHERE id = ${entityId} AND owner_userid = ${ownerUserId}
     `.execute(db);
     if (result.rows.length) {
