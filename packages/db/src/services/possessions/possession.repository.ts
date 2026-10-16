@@ -8,6 +8,8 @@ import type {
   AppPossessions,
   Json,
 } from '../../types/database';
+import { PossessionCategoryRepository } from './category.repository';
+import { canonicalizeStatus } from './status';
 import { recordTombstone } from './sync-tombstones';
 
 type PossessionRow = Selectable<AppPossessions>;
@@ -392,6 +394,38 @@ export const VALUE_CURRENCY_LIMIT = 20;
 
 const escapeLike = (value: string) => value.replace(/[\\%_]/g, (char) => `\\${char}`);
 
+// Converges a write onto the canonical model before it is stored: the status
+// onto the Still lifecycle (an end state archives, its reason kept in metadata)
+// and the category onto its managed record. See ./status.ts and Still's
+// docs/status-category-mapping.md.
+async function canonicalizeInput(
+  handle: DbHandle,
+  userId: string,
+  input: Partial<PossessionInput>,
+): Promise<Partial<PossessionInput>> {
+  const next: Partial<PossessionInput> = { ...input };
+  if (input.status !== undefined) {
+    const canon = canonicalizeStatus(input.status, input.isArchived ?? false);
+    next.status = canon.status;
+    if (canon.archivedReason) {
+      next.isArchived = true;
+      next.metadata = {
+        ...input.metadata,
+        archivedReason: canon.archivedReason,
+        archivedFrom: input.status,
+      };
+    } else if (input.isArchived === false) {
+      // Explicitly un-archiving clears a reason left by an end state.
+      next.metadata = { ...input.metadata, archivedReason: null };
+    }
+  }
+  if (input.category) {
+    const record = await PossessionCategoryRepository.resolve(handle, userId, input.category);
+    next.category = record.name;
+  }
+  return next;
+}
+
 export const PossessionRepository = {
   async list(handle: DbHandle, input: ListPossessionsInput): Promise<PossessionRecord[]> {
     let query = handle
@@ -615,9 +649,10 @@ export const PossessionRepository = {
     input: PossessionInput,
   ): Promise<PossessionRecord> {
     if (input.containerId) await assertOwnedContainer(handle, userId, input.containerId);
+    const prepared = await canonicalizeInput(handle, userId, input);
     const row = await handle
       .insertInto('app.possessions')
-      .values({ ...possessionValues(input), name: input.name, ownerUserid: userId })
+      .values({ ...possessionValues(prepared), name: input.name, ownerUserid: userId })
       .returningAll()
       .executeTakeFirstOrThrow();
     return toPossession(row);
@@ -631,12 +666,13 @@ export const PossessionRepository = {
   ): Promise<PossessionRecord> {
     if (input.containerId) await assertOwnedContainer(handle, userId, input.containerId);
     // Metadata is merged, never replaced, so a client that only knows one key can't erase the rest.
-    const plain = possessionValues({ ...input, metadata: undefined });
+    const prepared = await canonicalizeInput(handle, userId, input);
+    const plain = possessionValues({ ...prepared, metadata: undefined });
     const merged =
-      input.metadata === undefined
+      prepared.metadata === undefined
         ? {}
-        : { metadata: sql<Json>`metadata || ${JSON.stringify(input.metadata)}::jsonb` };
-    if (!hasValues(plain) && input.metadata === undefined) {
+        : { metadata: sql<Json>`metadata || ${JSON.stringify(prepared.metadata)}::jsonb` };
+    if (!hasValues(plain) && prepared.metadata === undefined) {
       const existing = await handle
         .selectFrom('app.possessions')
         .selectAll()
@@ -678,8 +714,9 @@ export const PossessionRepository = {
     input: PossessionInput & { externalId: string },
   ): Promise<{ record: PossessionRecord; created: boolean }> {
     if (input.containerId) await assertOwnedContainer(handle, userId, input.containerId);
-    const { externalId: _external, ...updates } = possessionValues(input);
-    const values = { ...possessionValues(input), name: input.name, ownerUserid: userId };
+    const prepared = await canonicalizeInput(handle, userId, input);
+    const { externalId: _external, ...updates } = possessionValues(prepared);
+    const values = { ...possessionValues(prepared), name: input.name, ownerUserid: userId };
     const row = await handle
       .insertInto('app.possessions')
       .values(values)

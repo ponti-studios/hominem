@@ -285,8 +285,8 @@ describe('possessions', () => {
   });
 
   it('reads the audit log newest-first', async () => {
-    const item = await newPossession(alice, { name: 'Logged lamp', status: 'owned' });
-    await callTool(alice, 'possession_update', { id: item.id, data: { status: 'in_use' } });
+    const item = await newPossession(alice, { name: 'Logged lamp', status: 'wishlist' });
+    await callTool(alice, 'possession_update', { id: item.id, data: { status: 'owned' } });
     const { events } = await call<{
       events: Array<{ kind: string; possessionId: string; actor: string }>;
     }>(alice, 'possession_history', { id: item.id });

@@ -108,7 +108,7 @@ describe('possessions', () => {
     await expect(removePossession(alice, missing)).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it('round-trips sheet-parity fields and the donated/sold statuses', async () => {
+  it('round-trips sheet-parity fields and canonicalises the donated/sold end states', async () => {
     const created = await createPossession(alice, {
       name: 'Donated Coat',
       status: 'donated',
@@ -122,14 +122,17 @@ describe('possessions', () => {
       ownershipType: 'functional',
     });
     expect(created).toMatchObject({
-      status: 'donated',
+      status: 'owned',
+      isArchived: true,
       weightKg: 1.25,
       moveAction: 'send my bag box 1',
       externalId: 'ITM-9998',
       acquisitionType: 'purchased',
     });
+    expect(created.metadata).toMatchObject({ archivedReason: 'donated' });
     const updated = await updatePossession(alice, created.id, { status: 'sold' });
-    expect(updated.status).toBe('sold');
+    expect(updated).toMatchObject({ status: 'owned', isArchived: true });
+    expect(updated.metadata).toMatchObject({ archivedReason: 'sold' });
     await removePossession(alice, created.id);
   });
 });
@@ -199,8 +202,8 @@ describe('upserts', () => {
 describe('history', () => {
   it('records created, status_changed, moved, and archived events in order', async () => {
     const box = await createContainer(alice, { name: 'History box' });
-    const item = await createPossession(alice, { name: 'Heirloom', status: 'owned' });
-    await updatePossession(alice, item.id, { status: 'in_use' });
+    const item = await createPossession(alice, { name: 'Heirloom', status: 'wishlist' });
+    await updatePossession(alice, item.id, { status: 'owned' });
     await movePossessions(alice, [item.id], box.id);
     await updatePossession(alice, item.id, { isArchived: true });
 
@@ -370,7 +373,8 @@ describe('validate', () => {
     expect(codes).toContain('missing_weight');
     expect(codes).toContain('unknown_vessel');
     expect(codes).toContain('archived_in_container');
-    expect(codes).toContain('disposed_not_archived');
+    // An end state is archived on write, so it can never be disposed-and-unarchived.
+    expect(codes).not.toContain('disposed_not_archived');
     expect(codes).toContain('zero_price');
     expect(codes).toContain('missing_currency');
     const page = await validatePossessions(alice, { limit: 2, offset: 0 });

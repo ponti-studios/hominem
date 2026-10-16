@@ -860,6 +860,14 @@ export interface AppPlaidItems {
   userId: string;
 }
 
+export interface AppPossessionCategories {
+  createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  name: string;
+  ownerUserid: string;
+  updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
 export interface AppPossessionContainers {
   containerKind: string | null;
   containerType: string | null;
@@ -1444,6 +1452,7 @@ export interface DB {
   'app.places': AppPlaces;
   'app.placeVisits': AppPlaceVisits;
   'app.plaidItems': AppPlaidItems;
+  'app.possessionCategories': AppPossessionCategories;
   'app.possessionContainers': AppPossessionContainers;
   'app.possessionEvents': AppPossessionEvents;
   'app.possessionImages': AppPossessionImages;
