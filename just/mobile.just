@@ -36,6 +36,10 @@ check:
     pnpm test --filter=@hominem/omiro...
     pnpm --filter @hominem/omiro export:embed:ios
 
+# Same as `maestro`: the self-contained scripted run (API, Metro, seed, sign-in, flows).
+e2e *flows:
+    pnpm --filter @hominem/omiro run test:maestro -- {{ flows }}
+
 # Run the installed development client against an isolated E2E Metro session.
 maestro *flows:
     pnpm --filter @hominem/omiro run test:maestro -- {{ flows }}

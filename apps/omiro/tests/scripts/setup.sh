@@ -15,7 +15,17 @@ pnpm install --frozen-lockfile
 
 # Metro resolves these through their built output, so a fresh checkout cannot bundle without them.
 note 'Workspace packages the app imports'
-pnpm --filter @ponti-studios/auth build
+# "..." builds the package's own workspace dependencies first (auth imports @hominem/utils).
+pnpm --filter "@ponti-studios/auth..." build
+
+note 'App environment'
+env_local="$APP_DIR/.env.development.local"
+if grep -qs '^EXPO_PUBLIC_API_BASE_URL=' "$APP_DIR"/.env* 2>/dev/null; then
+  echo 'EXPO_PUBLIC_API_BASE_URL is already set in an apps/omiro/.env file; leaving it'
+else
+  echo 'EXPO_PUBLIC_API_BASE_URL=http://localhost:4040' >>"$env_local"
+  echo "wrote $env_local (points the dev app at the local API)"
+fi
 
 note "Scripted API database"
 [[ -f "$ENV_FILE" ]] || fail "$ENV_FILE is missing"

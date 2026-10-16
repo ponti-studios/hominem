@@ -7,8 +7,9 @@ cd "$APP_DIR"
 {
   cat package.json ../../pnpm-lock.yaml
   for file in app.config.* app.json; do [[ -f "$file" ]] && cat "$file"; done
-  for dir in modules plugins; do
+  # Icons, splash and fonts are embedded into the native client by prebuild.
+  for dir in modules plugins assets; do
     [[ -d "$dir" ]] || continue
-    find "$dir" -type f \( -name '*.swift' -o -name '*.m' -o -name '*.h' -o -name '*.podspec' -o -name '*.json' -o -name '*.ts' -o -name '*.js' \) -not -path '*/node_modules/*' | sort | xargs cat
+    find "$dir" -type f \( -name '*.swift' -o -name '*.m' -o -name '*.h' -o -name '*.podspec' -o -name '*.json' -o -name '*.ts' -o -name '*.js' -o -name '*.png' -o -name '*.jpg' -o -name '*.ttf' -o -name '*.otf' \) -not -path '*/node_modules/*' | sort | xargs cat
   done
 } | shasum -a 256 | cut -d' ' -f1
