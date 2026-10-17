@@ -1,6 +1,6 @@
 ROOT_DIR := justfile_directory()
 ENV_FILE := ROOT_DIR / "services/api/.env"
-JOB_IMPORT_FIXTURE := ROOT_DIR / "services/ori/data/career-job-import/fixtures/whatnot-ashby-posting.html"
+JOB_IMPORT_FIXTURE := ROOT_DIR / "services/ori/evals/career/job-import/fixtures/whatnot-ai-tooling-engineer-posting.html"
 JOB_IMPORT_ORG := "whatnot"
 JOB_IMPORT_POSTING_ID := "7cfa0536-94de-42b7-9fe7-d646f4addc29"
 
@@ -31,7 +31,7 @@ task-extraction: (_run "task-extraction")
 # Voice transcript cleanup — filler removal without losing meaning.
 voice-cleanup: (_run "voice-cleanup")
 
-# Voice task extraction — priority/due-date inference, run across prompt candidates v1-v3.
+# Voice task extraction — priority/due-date inference using the current prompt.
 voice-task-extraction: (_run "voice-task-extraction")
 
 # Time-block extraction — intent, temporal grounding, no-invention. Iterate here.
@@ -40,11 +40,14 @@ time-block-regression: (_run "time-block-regression")
 # Time-block extraction — held-out release gate. Run only after selecting a prompt/model candidate.
 time-block-holdout: (_run "time-block-holdout")
 
-# MCP tool selection — does the model call get_career_portfolio only when appropriate?
-mcp-tool-selection: (_run "mcp-tool-selection")
+# Cross-domain routing — does the model call the appropriate tool only when needed?
+mcp-tool-routing: (_run "mcp-tool-routing")
+
+# Cross-domain tool workflows — dependent reads, conditional writes, and confirmation.
+mcp-workflow-planning: (_run "mcp-workflow-planning")
 
 # Monthly finance review — period grounding, read-only behavior, and currency safety.
-mcp-finance-review: (_run "mcp-finance-review")
+mcp-monthly-review: (_run "mcp-monthly-review")
 
 # Travel presence — countries explained by stops, layovers, visits, and residence evidence.
 mcp-travel-presence: (_run "mcp-travel-presence")
@@ -52,6 +55,6 @@ mcp-travel-presence: (_run "mcp-travel-presence")
 # Career job-import extraction against the checked-in Whatnot/Ashby fixture.
 career-job-import: (_run "career-job-import")
 
-# Typecheck every prompt, Golden dataset, and test file.
+# Typecheck every eval suite, case dataset, and test file.
 typecheck:
     pnpm --filter @hominem/ori typecheck

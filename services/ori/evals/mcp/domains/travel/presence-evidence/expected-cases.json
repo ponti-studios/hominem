@@ -1,0 +1,92 @@
+[
+  {
+    "name": "all countries preserve presence evidence",
+    "category": "travel_presence",
+    "promptVersion": "evidence-v1",
+    "input": "Which countries have I been to?",
+    "expectedOutput": "A country list grounded in the returned places and evidence, with layovers distinguished from stops, visits, and residences.",
+    "expectedTools": [{ "name": "travel_countries" }],
+    "expectedOutputIncludes": ["Iceland", "United Kingdom", "United States"]
+  },
+  {
+    "name": "country count explains inclusion rule",
+    "category": "travel_presence",
+    "promptVersion": "evidence-v1",
+    "input": "How many countries have I visited?",
+    "expectedOutput": "The assistant gives the distinct country count and says the available records include stops, layovers, visits, and residence evidence, so the count is evidence-based rather than a single visit-status rule.",
+    "expectedTools": [{ "name": "travel_countries" }],
+    "expectedOutputIncludes": ["9"]
+  },
+  {
+    "name": "Iceland layover is not described as a destination stop",
+    "category": "travel_presence",
+    "promptVersion": "evidence-v1",
+    "input": "Have I ever been to Iceland, and what place/evidence is recorded?",
+    "expectedOutput": "The assistant says Reykjavik is supported by a KEF airport layover on 2018-06-01 and makes clear that it was not a destination stop.",
+    "expectedTools": [{ "name": "travel_countries" }],
+    "expectedOutputIncludes": ["Iceland", "KEF"]
+  },
+  {
+    "name": "lived countries use residence evidence",
+    "category": "travel_presence",
+    "promptVersion": "evidence-v1",
+    "input": "Which countries have I lived in?",
+    "expectedOutput": "The assistant reports the United Kingdom and Ireland from Residence periods and does not treat visits or layovers alone as living there.",
+    "expectedTools": [{ "name": "travel_countries" }],
+    "expectedOutputIncludes": ["United Kingdom", "Ireland"]
+  },
+  {
+    "name": "visited but never lived excludes residence countries",
+    "category": "travel_presence",
+    "promptVersion": "evidence-v1",
+    "input": "Which countries have I visited but never lived in?",
+    "expectedOutput": "The assistant includes evidence-backed non-residence countries such as Iceland and France, and excludes the United Kingdom and Ireland because Residence evidence exists there. Other countries may also be included when their returned evidence qualifies; the answer should not imply Iceland and France are the only qualifying countries.",
+    "expectedTools": [{ "name": "travel_countries" }],
+    "expectedOutputIncludes": ["France", "Iceland"]
+  },
+  {
+    "name": "layovers require connecting-flight evidence",
+    "category": "travel_presence",
+    "promptVersion": "evidence-v1",
+    "input": "Where have I only had airport layovers?",
+    "expectedOutput": "The assistant identifies Dubai as having only layover evidence. It excludes Reykjavik because a Visit is also recorded there, and does not label ordinary final-destination airports as layovers.",
+    "expectedTools": [{ "name": "travel_countries" }],
+    "expectedOutputIncludes": ["Dubai"]
+  },
+  {
+    "name": "residence and trip evidence can overlap",
+    "category": "travel_presence",
+    "promptVersion": "evidence-v1",
+    "input": "Which countries have I both lived in and visited on a trip?",
+    "expectedOutput": "The assistant identifies the United Kingdom as having both residence and Journey-stop evidence for London.",
+    "expectedTools": [{ "name": "travel_countries" }],
+    "expectedOutputIncludes": ["United Kingdom", "residence", "stop"]
+  },
+  {
+    "name": "latest presence compares evidence dates",
+    "category": "travel_presence",
+    "promptVersion": "evidence-v1",
+    "input": "When was the last time I was in Sweden?",
+    "expectedOutput": "The assistant returns the latest Stockholm visit, August 12, 2024, rather than the older visit.",
+    "expectedTools": [{ "name": "travel_countries" }],
+    "expectedOutputIncludes": ["Stockholm", "2024"]
+  },
+  {
+    "name": "repeat country evidence remains multiple occurrences",
+    "category": "travel_presence",
+    "promptVersion": "evidence-v1",
+    "input": "Which countries have I been to more than once?",
+    "expectedOutput": "The assistant identifies Japan from two distinct Tokyo Journey stops and does not merge distinct Places based only on similar names.",
+    "expectedTools": [{ "name": "travel_countries" }],
+    "expectedOutputIncludes": ["Japan", "Tokyo"]
+  },
+  {
+    "name": "country evidence is explainable",
+    "category": "travel_presence",
+    "promptVersion": "evidence-v1",
+    "input": "What countries have I been to, and how do you know?",
+    "expectedOutput": "The assistant supports each country with named places and the corresponding stop, layover, visit, or residence evidence instead of referring to a method difference.",
+    "expectedTools": [{ "name": "travel_countries" }],
+    "expectedOutputIncludes": ["Iceland", "KEF", "United Kingdom", "residence"]
+  }
+]
