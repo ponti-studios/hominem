@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/node';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { cors } from 'hono/cors';
 import { prettyJSON } from 'hono/pretty-json';
+import { routePath } from 'hono/route';
 
 import { betterAuthServer, createBetterAuthServer } from './auth/better-auth';
 import type { AuthContext } from './auth/types';
@@ -148,7 +149,7 @@ function registerErrorHandlers(app: Hono<AppEnv>, inputEnv: ApiEnv) {
     logger.error('[services/api] Error', {
       error: err,
       method: c.req.method,
-      path: c.req.path,
+      path: routePath(c) || 'unmatched',
       requestId: c.get('requestId'),
     });
 
@@ -177,7 +178,7 @@ function registerErrorHandlers(app: Hono<AppEnv>, inputEnv: ApiEnv) {
 
   app.notFound((c) => {
     logger.warn(LOG_MESSAGES.ROUTE_NOT_FOUND, {
-      path: c.req.path,
+      path: 'unmatched',
       method: c.req.method,
       userAgent: c.req.header('user-agent'),
     });

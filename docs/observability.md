@@ -76,7 +76,9 @@ Every event emitted through the shared Hominem logger is sent to New Relic.
 Messages use stable event names; unstructured message text is replaced with a
 generic event name. Attributes remain explicitly allowlisted to bounded
 operational scalars such as HTTP method/path/status, queue, duration, outcome,
-and error type. Paths have query strings and ID-like segments removed. Prompts,
+and error type. HTTP paths use registered route templates; unmatched paths use
+a static label. Other path values have query strings and ID-like segments
+removed. Prompts,
 model outputs, message contents, email addresses, user IDs, request IDs, message
 IDs, generation IDs, provider URLs, authorization data, and provider error
 bodies are not exported. Error messages, stacks, job IDs, and arbitrary payload

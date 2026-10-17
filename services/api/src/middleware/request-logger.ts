@@ -37,7 +37,7 @@ export function requestLogger(): MiddlewareHandler {
         if (process.env.NODE_ENV !== 'test') {
           logger.info('http_request_started', {
             method: c.req.method,
-            path: c.req.path,
+            path: routePath(c) || 'unmatched',
             ...(c.get('requestId') ? { requestId: c.get('requestId') } : {}),
           });
         }
@@ -67,7 +67,7 @@ export function requestLogger(): MiddlewareHandler {
             logCompletedRequest({
               durationMs,
               method: c.req.method,
-              path: c.req.path,
+              path: route || 'unmatched',
               status: c.res.status,
               ...(c.get('requestId') ? { requestId: c.get('requestId') } : {}),
             });
