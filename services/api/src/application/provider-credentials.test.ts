@@ -5,6 +5,7 @@ import {
   type CredentialRow,
   type CredentialStore,
   type KeysClient,
+  budgetFor,
   DEVICE_LIMIT,
   MINTS_PER_HOUR,
   mintCredential,
@@ -227,5 +228,49 @@ describe('revokeAllCredentials', () => {
     expect(f.rows.every((row) => row.revokedAt !== null)).toBe(true);
     const blocked = fakes({ blocked: true });
     expect(await mint(blocked, 'device-aaaa')).toEqual({ kind: 'blocked' });
+  });
+});
+
+describe('budgetFor', () => {
+  it('is the whole budget for a person with no keys, and says when it resets', async () => {
+    const { deps } = fakes();
+    expect(await budgetFor(deps, USER)).toEqual({
+      capUsd: CAP,
+      spentUsd: 0,
+      remainingUsd: CAP,
+      resetsAt: '2026-11-01T00:00:00.000Z',
+      asOf: START.toISOString(),
+    });
+  });
+
+  it('adds up every key of this month, revoked ones included', async () => {
+    const { deps, usage } = fakes();
+    await mintCredential(deps, { userId: USER, email: EMAIL, deviceId: 'phone-0001' });
+    await mintCredential(deps, { userId: USER, email: EMAIL, deviceId: 'phone-0001' });
+    usage.set('hash-1', 1.25);
+    usage.set('hash-2', 0.5);
+    const budget = await budgetFor(deps, USER);
+    expect(budget.spentUsd).toBe(1.75);
+    expect(budget.remainingUsd).toBe(3.25);
+  });
+
+  it('never goes below zero when the soft limits were overshot', async () => {
+    const { deps, usage } = fakes();
+    await mintCredential(deps, { userId: USER, email: EMAIL, deviceId: 'phone-0001' });
+    usage.set('hash-1', 6.1);
+    const budget = await budgetFor(deps, USER);
+    expect(budget.spentUsd).toBe(6.1);
+    expect(budget.remainingUsd).toBe(0);
+  });
+
+  it('starts again on the first of the month, ignoring last month’s keys', async () => {
+    const { deps, usage, advance } = fakes();
+    await mintCredential(deps, { userId: USER, email: EMAIL, deviceId: 'phone-0001' });
+    usage.set('hash-1', 2);
+    advance(20 * 24 * 60 * 60 * 1000);
+    const budget = await budgetFor(deps, USER);
+    expect(budget.spentUsd).toBe(0);
+    expect(budget.remainingUsd).toBe(CAP);
+    expect(budget.resetsAt).toBe('2026-12-01T00:00:00.000Z');
   });
 });

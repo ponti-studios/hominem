@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { createOpenRouterKeys } from '../../application/openrouter-keys';
 import {
+  budgetFor,
   type CredentialDeps,
   mintCredential,
   revokeCredential,
@@ -52,6 +53,26 @@ export const credentialsRoutes = new Hono<AppContext>()
       case 'not_listed':
       case 'blocked':
         return c.json({ error: outcome.kind }, 403);
+    }
+  })
+  // How much of the monthly budget the person has used, for the app's Settings. A person who
+  // cannot hold a key gets the same refusal as minting, so the app shows one calm reason.
+  .get('/budget', async (c) => {
+    const auth = c.get('auth')!;
+    const deps = credentialDeps();
+    c.header('Cache-Control', 'no-store');
+    if (!deps) return c.json({ error: 'unavailable' as const }, 503);
+    if (await deps.store.isBlocked(auth.userId)) return c.json({ error: 'blocked' as const }, 403);
+    if (!(await deps.store.isAllowed(auth.user.email.trim().toLowerCase()))) {
+      return c.json({ error: 'not_listed' as const }, 403);
+    }
+    try {
+      return c.json(await budgetFor(deps, auth.userId));
+    } catch (error) {
+      logger.error('credential_budget_failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return c.json({ error: 'unavailable' as const }, 503);
     }
   })
   .delete('/:deviceId', zValidator('param', z.object({ deviceId: deviceIdSchema })), async (c) => {

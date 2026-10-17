@@ -147,6 +147,42 @@ export async function mintCredential(
   return { kind: 'minted', key: created.key, hash: created.hash, limitUsd: grant };
 }
 
+export interface Budget {
+  /** The person's whole monthly budget. */
+  capUsd: number;
+  /** What all their keys have spent this month, as OpenRouter reports it (minutes late). */
+  spentUsd: number;
+  remainingUsd: number;
+  /** When the budget starts again: the first of next month, UTC. */
+  resetsAt: string;
+  /** When this was read. */
+  asOf: string;
+}
+
+function round4(value: number): number {
+  return Math.round(value * 10_000) / 10_000;
+}
+
+/**
+ * What a person has used of their monthly budget: every key of this month, revoked ones
+ * included, the same sum a new key's grant is taken from. OpenRouter reports usage a few
+ * minutes late, so this can lag what was just spent.
+ */
+export async function budgetFor(deps: CredentialDeps, userId: string): Promise<Budget> {
+  const now = (deps.now ?? (() => new Date()))();
+  const period = periodOf(now);
+  const rows = (await deps.store.rows(userId)).filter((row) => row.period === period);
+  let spent = 0;
+  for (const row of rows) spent += await deps.keys.usageMonthly(row.keyHash);
+  return {
+    capUsd: deps.capUsd,
+    spentUsd: round4(spent),
+    remainingUsd: round4(Math.max(0, deps.capUsd - spent)),
+    resetsAt: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString(),
+    asOf: now.toISOString(),
+  };
+}
+
 /** Ends one device's key for this person. False when they have no live key for that device. */
 export async function revokeCredential(
   deps: CredentialDeps,

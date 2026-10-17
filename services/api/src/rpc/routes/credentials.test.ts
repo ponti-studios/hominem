@@ -5,14 +5,20 @@ import type { RpcUser } from '../middleware/auth';
 const mocks = vi.hoisted(() => ({
   mintCredential: vi.fn(),
   revokeCredential: vi.fn(),
+  budgetFor: vi.fn(),
+  isBlocked: vi.fn(),
+  isAllowed: vi.fn(),
   managementKey: { value: 'mgmt-key' as string | undefined },
 }));
 
 vi.mock('../../application/provider-credentials', () => ({
   mintCredential: mocks.mintCredential,
   revokeCredential: mocks.revokeCredential,
+  budgetFor: mocks.budgetFor,
 }));
-vi.mock('../../application/provider-credentials.store', () => ({ dbCredentialStore: {} }));
+vi.mock('../../application/provider-credentials.store', () => ({
+  dbCredentialStore: { isBlocked: mocks.isBlocked, isAllowed: mocks.isAllowed },
+}));
 vi.mock('../../application/openrouter-keys', () => ({ createOpenRouterKeys: () => ({}) }));
 vi.mock('../../env', () => ({
   env: {
@@ -42,6 +48,8 @@ const DEVICE = 'device-12345678';
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.managementKey.value = 'mgmt-key';
+  mocks.isBlocked.mockResolvedValue(false);
+  mocks.isAllowed.mockResolvedValue(true);
 });
 
 describe('POST /api/credentials', () => {
@@ -112,5 +120,52 @@ describe('DELETE /api/credentials/:deviceId', () => {
     mocks.revokeCredential.mockResolvedValue(false);
     const response = await app.request(`/api/credentials/${DEVICE}`, { method: 'DELETE' });
     expect(response.status).toBe(404);
+  });
+});
+
+describe('GET /api/credentials/budget', () => {
+  const budget = {
+    capUsd: 5,
+    spentUsd: 1.2,
+    remainingUsd: 3.8,
+    resetsAt: '2026-11-01T00:00:00.000Z',
+    asOf: '2026-10-17T10:00:00.000Z',
+  };
+
+  it('returns the person’s budget, never cached', async () => {
+    mocks.budgetFor.mockResolvedValue(budget);
+    const response = await app.request('/api/credentials/budget');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual(budget);
+    expect(mocks.budgetFor).toHaveBeenCalledWith(expect.anything(), user.id);
+  });
+
+  it.each([
+    ['blocked', 'isBlocked', true],
+    ['not_listed', 'isAllowed', false],
+  ] as const)('refuses a person who is %s, as minting does', async (code, check, value) => {
+    mocks[check].mockResolvedValue(value);
+    const response = await app.request('/api/credentials/budget');
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: code });
+    expect(mocks.budgetFor).not.toHaveBeenCalled();
+  });
+
+  it('is unavailable when the management key is not set or OpenRouter fails', async () => {
+    mocks.managementKey.value = undefined;
+    expect((await app.request('/api/credentials/budget')).status).toBe(503);
+    mocks.managementKey.value = 'mgmt-key';
+    mocks.budgetFor.mockRejectedValue(new Error('OpenRouter usage failed (502)'));
+    expect((await app.request('/api/credentials/budget')).status).toBe(503);
+  });
+
+  it('requires a signed-in person', async () => {
+    const anonymous = createRpcTestApp(credentialsRoutes, {
+      path: '/api/credentials',
+      user,
+      authenticated: false,
+    });
+    expect((await anonymous.request('/api/credentials/budget')).status).toBe(401);
   });
 });
