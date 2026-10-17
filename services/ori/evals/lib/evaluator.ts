@@ -89,19 +89,26 @@ export const registerJsonSuite = ({
       for (const batch of batches) {
         const settled = await Promise.allSettled(
           batch.map(async (golden) => {
-            const input = buildInput(golden);
-            const run = await agent.run({
-              ...input,
-              ...(outputSchema ? { outputSchema: { name, schema: outputSchema } } : {}),
-            });
-            assertOutput?.(run.text, golden);
-            run.toComplete();
-            run.toFinishWithin(120_000);
-            await judge.autoEvals({
-              criteria: `${rubric}\n\nReference output:\n${golden.expectedOutput}`,
-              prompt: input.prompt,
-              run,
-            });
+            try {
+              const input = buildInput(golden);
+              const run = await agent.run({
+                ...input,
+                ...(outputSchema ? { outputSchema: { name, schema: outputSchema } } : {}),
+              });
+              assertOutput?.(run.text, golden);
+              run.toComplete();
+              run.toFinishWithin(120_000);
+              await judge.autoEvals({
+                criteria: `${rubric}\n\nReference output:\n${golden.expectedOutput}`,
+                prompt: input.prompt,
+                run,
+              });
+            } catch (error) {
+              const detail = error instanceof Error ? error.message : String(error);
+              throw new Error(`${name} case "${golden.name ?? 'unnamed'}": ${detail}`, {
+                cause: error,
+              });
+            }
           }),
         );
 

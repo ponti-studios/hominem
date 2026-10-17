@@ -86,6 +86,7 @@ export const offerSchema = {
         additionalProperties: false,
         required: [
           'baseSalary',
+          'totalComp',
           'currency',
           'currencyAmbiguous',
           'location',
@@ -99,6 +100,7 @@ export const offerSchema = {
           'hasBonus',
           'bonusTargetPct',
           'bonusFrequency',
+          'oneTimeBonusAmount',
           'hasRelocation',
           'relocationAllowance',
           'relocationCurrency',
@@ -110,6 +112,7 @@ export const offerSchema = {
         ],
         properties: {
           baseSalary: nullableNumber,
+          totalComp: nullableNumber,
           currency: nullableString,
           currencyAmbiguous: { type: 'boolean' },
           location: nullableString,
@@ -123,6 +126,7 @@ export const offerSchema = {
           hasBonus: nullableBoolean,
           bonusTargetPct: nullableNumber,
           bonusFrequency: nullableString,
+          oneTimeBonusAmount: nullableNumber,
           hasRelocation: nullableBoolean,
           relocationAllowance: nullableNumber,
           relocationCurrency: nullableString,
@@ -147,7 +151,9 @@ export const offerSchema = {
       ],
       properties: {
         homeCity: nullableString,
-        filingStatus: nullableString,
+        filingStatus: {
+          enum: ['single', 'married', 'married-filing-jointly', 'married-filing-separately', null],
+        },
         currentSavings: nullableNumber,
         currentRetirement: nullableNumber,
         currentMonthlySpend: nullableNumber,

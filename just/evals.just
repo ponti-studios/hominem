@@ -22,8 +22,8 @@ chat-assistant: (_run "chat-assistant")
 # Normal-conversation baseline — response quality, token usage, cost, and latency.
 chat-baseline: (_run "chat-baseline")
 
-# Offer-comparison NL extraction — currency, equity, filing status, location inference.
-offer-extraction: (_run "offer-extraction")
+# Offer-comparison extraction — compensation, benefits, and profile details.
+career-offer-extraction: (_run "career-offer-extraction")
 
 # Chat-transcript task extraction — discriminates real commitments from vague musing.
 task-extraction: (_run "task-extraction")
