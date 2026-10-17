@@ -483,50 +483,334 @@ export async function getTravelPlace(owner: string, input: { id: string }) {
 }
 
 export async function listTravelCountries(owner: string) {
-  const segments = await db
-    .selectFrom('app.travelJourneySegments as s')
-    .innerJoin('app.places as p', 'p.id', 's.placeId')
-    .select(['p.country', 'p.name as place'])
-    .where('s.ownerUserid', '=', owner)
-    .execute();
-  const countryMap = new Map<string, Set<string>>();
-  for (const segment of segments) {
-    if (!segment.country) continue;
-    const current = countryMap.get(segment.country) ?? new Set<string>();
-    current.add(segment.place);
-    countryMap.set(segment.country, current);
+  const [stops, visits, periods, transports, places] = await Promise.all([
+    db
+      .selectFrom('app.travelJourneySegments as s')
+      .innerJoin('app.travelJourneys as j', 'j.id', 's.journeyId')
+      .innerJoin('app.places as p', 'p.id', 's.placeId')
+      .select([
+        'p.id as placeId',
+        'p.name',
+        'p.country',
+        'p.countryCode',
+        's.id as segmentId',
+        's.arrivalDate',
+        's.departureDate',
+        'j.id as journeyId',
+        'j.name as journeyName',
+      ])
+      .where('s.ownerUserid', '=', owner)
+      .execute(),
+    db
+      .selectFrom('app.placeVisits as v')
+      .innerJoin('app.places as p', 'p.id', 'v.placeId')
+      .select([
+        'p.id as placeId',
+        'p.name',
+        'p.country',
+        'p.countryCode',
+        'v.id as visitId',
+        'v.visitedAt',
+        'v.purpose',
+        'v.source',
+      ])
+      .where('v.ownerUserid', '=', owner)
+      .where('v.placeId', 'is not', null)
+      .execute(),
+    db
+      .selectFrom('app.placeResidencePeriods as rp')
+      .innerJoin('app.placeResidences as r', 'r.id', 'rp.residenceId')
+      .innerJoin('app.places as p', 'p.id', 'r.placeId')
+      .select([
+        'p.id as placeId',
+        'p.name',
+        'p.country',
+        'p.countryCode',
+        'r.id as residenceId',
+        'rp.id as periodId',
+        'rp.startDate',
+        'rp.endDate',
+        'rp.ongoing',
+        'rp.precision',
+      ])
+      .where('r.ownerUserid', '=', owner)
+      .execute(),
+    db
+      .selectFrom('app.travelTransport')
+      .select(['id', 'journeyId', 'date', 'origin', 'destination', 'arrSegmentId', 'depSegmentId'])
+      .where('ownerUserid', '=', owner)
+      .where('mode', '=', 'air')
+      .execute(),
+    db
+      .selectFrom('app.places')
+      .select(['id', 'name', 'country', 'countryCode'])
+      .where('ownerUserid', '=', owner)
+      .execute(),
+  ]);
+  const airportCodes = [
+    ...new Set(transports.flatMap(({ origin, destination }) => [origin, destination])),
+  ];
+  const [airportReference, airportCuration] = await Promise.all([
+    db
+      .selectFrom('app.travelAirportReference')
+      .selectAll()
+      .where('code', 'in', airportCodes)
+      .execute(),
+    db
+      .selectFrom('app.travelAirports')
+      .selectAll()
+      .where('ownerUserid', '=', owner)
+      .where('code', 'in', airportCodes)
+      .execute(),
+  ]);
+
+  type Evidence =
+    | {
+        type: 'stop';
+        id: string;
+        journeyId: string;
+        journeyName: string;
+        arrivalDate: string | null;
+        departureDate: string | null;
+      }
+    | {
+        type: 'visit';
+        id: string;
+        visitedAt: string | null;
+        purpose: string | null;
+        source: string | null;
+      }
+    | {
+        type: 'residence';
+        residenceId: string;
+        periodId: string;
+        startDate: string;
+        endDate: string | null;
+        ongoing: boolean;
+        precision: string;
+      }
+    | {
+        type: 'layover';
+        airportCode: string;
+        airportName: string | null;
+        journeyId: string;
+        journeyName: string;
+        arrivalTransportId: string;
+        departureTransportId: string;
+        date: string | null;
+      };
+  type EvidenceType = Evidence['type'];
+  type PlaceEvidence = {
+    placeId: string | null;
+    name: string;
+    locationType: 'place' | 'airport';
+    evidence: Evidence[];
+  };
+  type CountryEvidence = {
+    country: string;
+    countryCode: string | null;
+    places: Map<string, PlaceEvidence>;
+  };
+  const countries = new Map<string, CountryEvidence>();
+  const countryAliases: Record<string, string> = {
+    uk: 'GB',
+    'united kingdom': 'GB',
+    usa: 'US',
+    'united states': 'US',
+    'united states of america': 'US',
+  };
+  const countryKey = (name: string | null, code: string | null) => {
+    const normalizedCode = code?.trim().toUpperCase();
+    const codeAlias = countryAliases[code?.trim().toLowerCase() ?? ''];
+    const nameAlias = countryAliases[name?.trim().toLowerCase() ?? ''];
+    return codeAlias || nameAlias || normalizedCode || null;
+  };
+  const countryNames: Record<string, string> = {
+    GB: 'United Kingdom',
+    US: 'United States',
+  };
+  const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+  const getPlaceEvidence = (
+    name: string | null,
+    code: string | null,
+    placeId: string | null,
+    placeName: string,
+    locationType: PlaceEvidence['locationType'],
+  ) => {
+    const key = countryKey(name, code);
+    if (!key) return null;
+    let country = countries.get(key);
+    if (!country) {
+      country = {
+        country: countryNames[key] ?? regionNames.of(key) ?? name ?? key,
+        countryCode: key,
+        places: new Map(),
+      };
+      countries.set(key, country);
+    }
+    const placeKey = placeId ?? `${locationType}:${placeName.toLocaleLowerCase()}`;
+    let place = country.places.get(placeKey);
+    if (!place) {
+      place = { placeId, name: placeName, locationType, evidence: [] };
+      country.places.set(placeKey, place);
+    }
+    return place;
+  };
+
+  for (const stop of stops) {
+    const place = getPlaceEvidence(
+      stop.country,
+      stop.countryCode,
+      stop.placeId,
+      stop.name,
+      'place',
+    );
+    place?.evidence.push({
+      type: 'stop',
+      id: stop.segmentId,
+      journeyId: stop.journeyId,
+      journeyName: stop.journeyName,
+      arrivalDate: stop.arrivalDate,
+      departureDate: stop.departureDate,
+    });
   }
-  const residencePlaces = await db
-    .selectFrom('app.placeResidences as r')
-    .innerJoin('app.places as p', 'p.id', 'r.placeId')
-    .select('p.country')
-    .where('r.ownerUserid', '=', owner)
-    .execute();
-  const placeIdsWithVisits = await db
-    .selectFrom('app.placeVisits as v')
-    .innerJoin('app.places as p', 'p.id', 'v.placeId')
-    .select('p.country')
-    .where('v.ownerUserid', '=', owner)
-    .execute();
-  const placesStatus = new Set(
-    placeIdsWithVisits.flatMap((place) => (place.country ? [place.country] : [])),
-  );
-  for (const residence of residencePlaces)
-    if (residence.country) placesStatus.add(residence.country);
-  const countries = [...countryMap]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([country, names]) => ({ country, places: [...names].sort() }));
-  const segmentCountries = new Set(countryMap.keys());
-  const excludedByMethod = [...placesStatus]
-    .filter((country) => !segmentCountries.has(country))
-    .sort();
+  for (const visit of visits) {
+    const place = getPlaceEvidence(
+      visit.country,
+      visit.countryCode,
+      visit.placeId,
+      visit.name,
+      'place',
+    );
+    place?.evidence.push({
+      type: 'visit',
+      id: visit.visitId,
+      visitedAt: visit.visitedAt,
+      purpose: visit.purpose,
+      source: visit.source,
+    });
+  }
+  for (const period of periods) {
+    const place = getPlaceEvidence(
+      period.country,
+      period.countryCode,
+      period.placeId,
+      period.name,
+      'place',
+    );
+    place?.evidence.push({
+      type: 'residence',
+      residenceId: period.residenceId,
+      periodId: period.periodId,
+      startDate: period.startDate,
+      endDate: period.endDate,
+      ongoing: period.ongoing,
+      precision: period.precision,
+    });
+  }
+
+  type AirportEvidenceLocation = {
+    code: string | null;
+    name: string | null;
+    city: string | null;
+    country: string | null;
+  };
+  const airportByCode = new Map<string, AirportEvidenceLocation>();
+  for (const airport of airportReference)
+    if (airport.code) airportByCode.set(airport.code.toUpperCase(), airport);
+  for (const airport of airportCuration) airportByCode.set(airport.code.toUpperCase(), airport);
+  const journeyNames = new Map(stops.map((stop) => [stop.journeyId, stop.journeyName]));
+  const groupedFlights = new Map<string, typeof transports>();
+  for (const flight of transports) {
+    const group = groupedFlights.get(flight.journeyId) ?? [];
+    group.push(flight);
+    groupedFlights.set(flight.journeyId, group);
+  }
+  for (const [journeyId, flights] of groupedFlights) {
+    const connected = new Map<
+      string,
+      { inbound: (typeof flights)[number]; outbound: (typeof flights)[number] }
+    >();
+    for (const inbound of flights) {
+      for (const outbound of flights) {
+        const code = inbound.destination.trim().toUpperCase();
+        if (
+          inbound.id !== outbound.id &&
+          inbound.destination.trim().toUpperCase() === outbound.origin.trim().toUpperCase() &&
+          !inbound.arrSegmentId &&
+          !outbound.depSegmentId
+        )
+          connected.set(code, { inbound, outbound });
+      }
+    }
+    for (const [code, pair] of connected) {
+      const airport = airportByCode.get(code);
+      if (!airport?.country) continue;
+      const curated = airportCuration.find((row) => row.code.toUpperCase() === code);
+      const airportName = curated?.name ?? airport.name;
+      const locationName = curated?.servesPlace ?? airport.city ?? airportName ?? code;
+      const countryCode =
+        /^[A-Z]{2}$/.test(airport.country) && !countryAliases[airport.country.toLowerCase()]
+          ? airport.country
+          : null;
+      const country = countryCode
+        ? (countryNames[countryCode] ?? airport.country)
+        : airport.country;
+      const matchingPlaces = places.filter(
+        (place) =>
+          place.name.toLocaleLowerCase() === locationName.toLocaleLowerCase() &&
+          countryKey(place.country, place.countryCode) === countryKey(country, countryCode),
+      );
+      const resolved = matchingPlaces.length === 1 ? matchingPlaces[0] : null;
+      const place = getPlaceEvidence(
+        resolved?.country ?? country,
+        resolved?.countryCode ?? countryCode,
+        resolved?.id ?? null,
+        locationName,
+        resolved ? 'place' : 'airport',
+      );
+      if (!place) continue;
+      place.evidence.push({
+        type: 'layover',
+        airportCode: code,
+        airportName,
+        journeyId,
+        journeyName: journeyNames.get(journeyId) ?? 'Journey',
+        arrivalTransportId: pair.inbound.id,
+        departureTransportId: pair.outbound.id,
+        date: pair.inbound.date,
+      });
+    }
+  }
+
+  const evidenceOrder: EvidenceType[] = ['stop', 'layover', 'visit', 'residence'];
+  const countryRows = [...countries.values()]
+    .sort((a, b) => a.country.localeCompare(b.country))
+    .map((country) => {
+      const placeRows = [...country.places.values()]
+        .map((place) => ({
+          ...place,
+          evidence: place.evidence.sort(
+            (a, b) =>
+              evidenceOrder.indexOf(a.type) - evidenceOrder.indexOf(b.type) ||
+              JSON.stringify(a).localeCompare(JSON.stringify(b)),
+          ),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return {
+        country: country.country,
+        countryCode: country.countryCode,
+        places: placeRows,
+        evidenceTypes: evidenceOrder.filter((type) =>
+          placeRows.some((place) => place.evidence.some((evidence) => evidence.type === type)),
+        ),
+      };
+    });
   return {
-    countries,
-    countryCount: countries.length,
-    placesStatusCountryCount: placesStatus.size,
-    excludedByMethod,
-    method:
-      'Countries and place names are derived from journey stops; placesStatusCountryCount counts countries with a recorded Visit or Residence.',
+    countries: countryRows,
+    evidenceTypes: evidenceOrder.filter((type) =>
+      countryRows.some((country) => country.evidenceTypes.includes(type)),
+    ),
   };
 }
 

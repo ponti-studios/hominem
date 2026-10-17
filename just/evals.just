@@ -46,6 +46,9 @@ mcp-tool-selection: (_run "mcp-tool-selection")
 # Monthly finance review — period grounding, read-only behavior, and currency safety.
 mcp-finance-review: (_run "mcp-finance-review")
 
+# Travel presence — countries explained by stops, layovers, visits, and residence evidence.
+mcp-travel-presence: (_run "mcp-travel-presence")
+
 # Career job-import extraction against the checked-in Whatnot/Ashby fixture.
 career-job-import: (_run "career-job-import")
 

@@ -151,9 +151,9 @@ registerTool(
   {
     ...readTool,
     name: 'travel_countries',
-    title: 'List travel countries',
+    title: 'List travel presence evidence by country',
     description:
-      'Returns countries and places derived from journey segments with a transparent comparison to stored place statuses. Mode: read-only. Use when: the user asks which countries they travelled to. Do not use when: they ask for a destination wish list. Prerequisites: none. Produces: country and place names.',
+      'Returns places grouped by country with all recorded presence evidence: itinerary stops, connected-flight layovers, visits, and residence periods. A place can have multiple evidence types. Mode: read-only. Use when: the user asks where they have been, lived, stopped, or had a layover, or asks for country totals. Do not treat a layover as a destination stop or collapse multiple evidence types. Prerequisites: none. Produces: country identities, places, evidence types, dates, and source record IDs.',
     inputSchema: travelCountriesInputSchema,
     outputSchema: travelCountriesOutputSchema,
   },
