@@ -45,11 +45,13 @@ function getAdvancedOptions(inputEnv: ApiEnv) {
   };
 }
 
-type SendEmailParams = {
+export type SendEmailParams = {
   to: string;
   subject: string;
   text: string;
   html?: string;
+  /** Inline images referenced from the html as `cid:<contentId>`. */
+  attachments?: { filename: string; content: Buffer; contentId: string }[];
 };
 
 type VerificationOtpType = 'sign-in' | 'email-verification' | 'forget-password' | string;
@@ -73,9 +75,9 @@ function emailLogContext(email: string): { recipientHash: string; recipientDomai
   };
 }
 
-async function sendEmail(
+export async function sendEmail(
   inputEnv: ApiEnv,
-  { to, subject, text, html }: SendEmailParams,
+  { to, subject, text, html, attachments }: SendEmailParams,
 ): Promise<void> {
   const from = inputEnv.RESEND_FROM_NAME
     ? `${inputEnv.RESEND_FROM_NAME} <${inputEnv.RESEND_FROM_EMAIL}>`
@@ -94,6 +96,7 @@ async function sendEmail(
     subject,
     text,
     ...(html ? { html } : {}),
+    ...(attachments ? { attachments } : {}),
   });
 
   if (error) {

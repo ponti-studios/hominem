@@ -11,6 +11,7 @@ import { enhanceRoutes } from './routes/enhance';
 import { filesRoutes } from './routes/files';
 import { financeRoutes } from './routes/finance';
 import { inboxRoutes } from './routes/inbox';
+import { invitesRoutes } from './routes/invites';
 import { memoryRoutes } from './routes/memory';
 import { notesRoutes } from './routes/notes';
 import { peopleRoutes } from './routes/people';
@@ -30,6 +31,7 @@ export const rpcRoutes = new Hono<AppContext>()
   .route('/files', filesRoutes)
   .route('/finance', financeRoutes)
   .route('/inbox', inboxRoutes)
+  .route('/invites', invitesRoutes)
   .route('/memory', memoryRoutes)
   .route('/notes', notesRoutes)
   .route('/people', peopleRoutes)

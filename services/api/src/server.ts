@@ -42,6 +42,7 @@ function createAllowedOrigins(inputEnv = env) {
     inputEnv.CAREER_URL,
     inputEnv.WHAT_URL,
     inputEnv.STILL_URL,
+    ...(inputEnv.THAMES_SITE_URL ? [new URL(inputEnv.THAMES_SITE_URL).origin] : []),
     ...CHATGPT_ORIGINS,
   ]);
 }
