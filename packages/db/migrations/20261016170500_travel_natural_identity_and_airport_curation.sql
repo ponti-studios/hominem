@@ -9,10 +9,10 @@ BEGIN
     EXECUTE $travel_stmt_0_$
     -- The sheet identifiers are kept in the operator's frozen mapping snapshot,
     -- not in the live travel domain. Existing UUIDs and relationships stay intact.
-    DROP INDEX IF EXISTS app_travel_transport_legacy_lookup_idx;
+    DROP INDEX IF EXISTS app.app_travel_transport_legacy_lookup_idx;
     $travel_stmt_0_$;
     EXECUTE $travel_stmt_1_$
-    DROP INDEX IF EXISTS app_travel_transport_import_key;
+    DROP INDEX IF EXISTS app.app_travel_transport_import_key;
     $travel_stmt_1_$;
     EXECUTE $travel_stmt_2_$
     ALTER TABLE app.travel_transport
@@ -93,22 +93,22 @@ BEGIN
       DROP COLUMN IF EXISTS destination_airport_id;
     $travel_stmt_20_$;
     EXECUTE $travel_stmt_21_$
-    DROP INDEX IF EXISTS airport_catalogue_iata_idx;
+    DROP INDEX IF EXISTS app.airport_catalogue_iata_idx;
     $travel_stmt_21_$;
     EXECUTE $travel_stmt_22_$
-    DROP INDEX IF EXISTS airport_catalogue_icao_idx;
+    DROP INDEX IF EXISTS app.airport_catalogue_icao_idx;
     $travel_stmt_22_$;
     EXECUTE $travel_stmt_23_$
-    DROP INDEX IF EXISTS airport_catalogue_gps_idx;
+    DROP INDEX IF EXISTS app.airport_catalogue_gps_idx;
     $travel_stmt_23_$;
     EXECUTE $travel_stmt_24_$
-    DROP INDEX IF EXISTS airport_catalogue_local_idx;
+    DROP INDEX IF EXISTS app.airport_catalogue_local_idx;
     $travel_stmt_24_$;
     EXECUTE $travel_stmt_25_$
-    DROP INDEX IF EXISTS airport_catalogue_name_idx;
+    DROP INDEX IF EXISTS app.airport_catalogue_name_idx;
     $travel_stmt_25_$;
     EXECUTE $travel_stmt_26_$
-    DROP INDEX IF EXISTS airport_catalogue_municipality_idx;
+    DROP INDEX IF EXISTS app.airport_catalogue_municipality_idx;
     $travel_stmt_26_$;
     EXECUTE $travel_stmt_27_$
     DROP INDEX IF EXISTS app.travel_airport_reference_code_idx;
