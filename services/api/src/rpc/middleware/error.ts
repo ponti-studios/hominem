@@ -70,10 +70,12 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
     );
   }
 
-  logger.error(`[API Error] ${method} ${path} [${requestId}]`, {
-    error: err,
-    name: err instanceof Error ? err.name : 'unknown',
-    message: err instanceof Error ? err.message : 'unknown',
+  logger.error('http_request_failed', {
+    method,
+    path,
+    status: 500,
+    requestId,
+    error_name: err instanceof Error ? err.name : 'unknown',
   });
 
   const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';

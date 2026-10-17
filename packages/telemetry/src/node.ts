@@ -24,6 +24,8 @@ type TelemetryConfig = {
   otlpProtocol?: string;
   samplingRatio?: number;
   otlpHeaders?: Record<string, string>;
+  otlpLogsEndpoint?: string;
+  otlpLogsHeaders?: Record<string, string>;
 };
 
 const OTEL_LOG_PREFIXES = [
@@ -42,11 +44,15 @@ const OTEL_LOG_ATTRIBUTES = new Set([
   'characterCount',
   'durationMs',
   'error_name',
+  'failureCategory',
+  'httpStatus',
+  'httpRoute',
   'outcome',
   'path',
   'method',
   'queue',
   'status',
+  'statusCode',
   'serviceName',
   'serviceVersion',
   'samplingRatio',
@@ -90,8 +96,24 @@ function isExportableLog(message: string) {
   return OTEL_LOG_PREFIXES.some((prefix) => message.startsWith(prefix));
 }
 
+function safeEventName(message: string) {
+  return /^[a-z][a-z0-9_.:-]{0,127}$/.test(message) ? message : 'application_log';
+}
+
+function safeLogValue(key: string, value: string | number | boolean) {
+  if (!['path', 'httpRoute'].includes(key) || typeof value !== 'string') return value;
+
+  return value
+    .split('?')[0]
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[redacted]')
+    .replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '/:id')
+    .replace(/\/[A-Za-z0-9_-]{24,}(?=\/|$)/g, '/:id')
+    .replace(/\/\d{4,}(?=\/|$)/g, '/:id');
+}
+
 export function initTelemetry(config: TelemetryConfig) {
-  if (!config.otlpEndpoint) {
+  const logsEndpoint = config.otlpLogsEndpoint ?? config.otlpEndpoint;
+  if (!config.otlpEndpoint && !logsEndpoint) {
     setTelemetryLogSink(null);
     logger.info('telemetry_initialized', {
       serviceName: config.serviceName,
@@ -112,49 +134,55 @@ export function initTelemetry(config: TelemetryConfig) {
     'deployment.environment.name': config.environment,
   });
   const headers = config.otlpHeaders ?? {};
-  const tracerProvider = new NodeTracerProvider({
-    resource,
-    sampler: new SpeechAwareSampler(Math.min(1, Math.max(0, config.samplingRatio ?? 0.1))),
-    spanProcessors: [
-      new BatchSpanProcessor(
-        new OTLPTraceExporter({
-          url: withPath(config.otlpEndpoint, '/v1/traces'),
-          headers,
-        }),
-      ),
-    ],
-  });
-  tracerProvider.register({ propagator: new W3CTraceContextPropagator() });
+  const exportAllLogs = Boolean(config.otlpLogsEndpoint);
+  const tracerProvider = config.otlpEndpoint
+    ? new NodeTracerProvider({
+        resource,
+        sampler: new SpeechAwareSampler(Math.min(1, Math.max(0, config.samplingRatio ?? 0.1))),
+        spanProcessors: [
+          new BatchSpanProcessor(
+            new OTLPTraceExporter({
+              url: withPath(config.otlpEndpoint, '/v1/traces'),
+              headers,
+            }),
+          ),
+        ],
+      })
+    : null;
+  tracerProvider?.register({ propagator: new W3CTraceContextPropagator() });
 
-  const loggerProvider = new LoggerProvider({
-    resource,
-    processors: [
-      new BatchLogRecordProcessor(
-        new OTLPLogExporter({
-          url: withPath(config.otlpEndpoint, '/v1/logs'),
-          headers,
-        }),
-      ),
-    ],
-  });
-  logs.setGlobalLoggerProvider(loggerProvider);
-  const otelLogger = loggerProvider.getLogger(config.serviceName, config.serviceVersion);
+  const loggerProvider = logsEndpoint
+    ? new LoggerProvider({
+        resource,
+        processors: [
+          new BatchLogRecordProcessor(
+            new OTLPLogExporter({
+              url: withPath(logsEndpoint, '/v1/logs'),
+              headers: config.otlpLogsHeaders ?? headers,
+            }),
+          ),
+        ],
+      })
+    : null;
+  if (loggerProvider) logs.setGlobalLoggerProvider(loggerProvider);
+  const otelLogger = loggerProvider?.getLogger(config.serviceName, config.serviceVersion);
   setTelemetryLogSink((level, message, data) => {
-    if (!isExportableLog(message)) return;
+    if (!otelLogger || (!exportAllLogs && !isExportableLog(message))) return;
 
-    const attributes: LogAttributes = { 'log.event': message, 'log.level': level };
+    const eventName = safeEventName(message);
+    const attributes: LogAttributes = { 'log.event': eventName, 'log.level': level };
     for (const [key, value] of Object.entries(data ?? {})) {
       if (
         OTEL_LOG_ATTRIBUTES.has(key) &&
         (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
       ) {
-        attributes[key] = value;
+        attributes[key] = safeLogValue(key, value);
       }
     }
     otelLogger.emit({
-      eventName: message,
+      eventName,
       severityText: level.toUpperCase(),
-      body: message,
+      body: eventName,
       attributes,
     });
   });
@@ -164,6 +192,7 @@ export function initTelemetry(config: TelemetryConfig) {
     serviceVersion: config.serviceVersion,
     environment: config.environment,
     otlpEnabled: true,
+    allApplicationLogsExported: exportAllLogs,
     otlpProtocol: config.otlpProtocol,
     samplingRatio: config.samplingRatio,
   });
@@ -171,7 +200,10 @@ export function initTelemetry(config: TelemetryConfig) {
   return {
     shutdown: async () => {
       setTelemetryLogSink(null);
-      await Promise.all([tracerProvider.shutdown(), loggerProvider.shutdown()]);
+      await Promise.all([
+        ...(tracerProvider ? [tracerProvider.shutdown()] : []),
+        ...(loggerProvider ? [loggerProvider.shutdown()] : []),
+      ]);
     },
   };
 }

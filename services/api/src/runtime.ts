@@ -29,6 +29,12 @@ export function initRuntime(serviceName: string) {
     ...(env.OTEL_EXPORTER_OTLP_HEADERS
       ? { otlpHeaders: parseOtlpHeaders(env.OTEL_EXPORTER_OTLP_HEADERS) }
       : {}),
+    ...(env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+      ? { otlpLogsEndpoint: env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT }
+      : {}),
+    ...(env.OTEL_EXPORTER_OTLP_LOGS_HEADERS
+      ? { otlpLogsHeaders: parseOtlpHeaders(env.OTEL_EXPORTER_OTLP_LOGS_HEADERS) }
+      : {}),
     samplingRatio: env.OTEL_TRACES_SAMPLER_ARG,
   });
 

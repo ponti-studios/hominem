@@ -9,10 +9,12 @@ Ownership split and the instrumentation privacy contract live in
 [docs/observability.md](../../../docs/observability.md) — read it if you need
 the "why" behind what's allowed in telemetry. This skill is the runbook.
 
-Railway is the source of truth for live container/worker/build/HTTP/Redis/
-database logs. Sentry is the source of truth for application errors, OTel
-traces, trace-derived dashboards, and alerts. Do not use Sentry as a live
-stdout tail; do not put OTLP credentials in the Web bundle.
+New Relic is the searchable home for privacy-filtered API and worker logs
+emitted through Hominem's shared logger. Railway is the source of truth for
+complete container stdout/stderr and platform HTTP/build/Redis/database logs.
+Sentry is the source of truth for application errors, OTel traces, trace-derived
+dashboards, and alerts. Do not use Sentry as a live stdout tail; do not put OTLP
+credentials in the Web bundle.
 
 ## Pull production logs
 
@@ -51,6 +53,13 @@ Select the `hominem` project first. Navigation: Issues (unhandled exceptions),
 Explore → Traces (`chat.speech`, `speech.playback`, `speech.reconciliation`,
 `http.server` spans), Dashboards (latency/failure/usage/reconciliation),
 Monitors (threshold alerts).
+
+## New Relic logs
+
+Open Logs in the `hominem` account and filter by `service.name` (`api` or
+`worker`), `deployment.environment.name`, `log.event`, `log.level`, or the
+bounded attributes emitted by the shared logger. Use Railway for raw dependency
+stdout/stderr and Railway edge/build logs, which are not forwarded to New Relic.
 
 Response procedure for an incident: Railway logs → Sentry trace waterfall →
 database usage/reconciliation rows → local reproduction. Do not change
