@@ -856,7 +856,6 @@ export interface AppPlaceResidences {
 }
 
 export interface AppPlaces {
-  archived: Generated<boolean>;
   city: string | null;
   country: string | null;
   countryCode: string | null;
@@ -878,7 +877,6 @@ export interface AppPlaces {
   state: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
   url: string | null;
-  wantToGo: Generated<boolean>;
 }
 
 export interface AppPlaceVisits {
