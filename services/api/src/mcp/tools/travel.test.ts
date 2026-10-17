@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import './travel';
 import './travel-analytics';
 import './places';
+import './travel-writes';
 import { placeResidenceCreateInputSchema } from '../../schemas/place-residences.schema';
 import { travelImportOutputSchema } from '../../schemas/travel-import.schema';
 import {
@@ -86,6 +87,17 @@ beforeAll(async () => {
         type: 'large_airport',
         latitude: 51.885,
         longitude: 0.235,
+        scheduledService: true,
+      },
+      {
+        sourceId: 983004,
+        code: 'SFO',
+        name: 'San Francisco International Airport',
+        city: 'San Francisco',
+        country: 'US',
+        type: 'large_airport',
+        latitude: 37.6213,
+        longitude: -122.379,
         scheduledService: true,
       },
       {
@@ -794,7 +806,13 @@ describe('travel Tier 1 reads', () => {
               placeId: reykjavikPlaceId,
               locationType: 'place',
               evidence: [
-                { type: 'layover', airportCode: 'KEF' },
+                {
+                  type: 'layover',
+                  airportCode: 'KEF',
+                  journeyName: 'Reykjavik connection probe',
+                  arrivalTransportId: inboundTransportId,
+                  departureTransportId: outboundTransportId,
+                },
                 { type: 'visit', id: reykjavikVisitId },
                 {
                   type: 'residence',
@@ -825,6 +843,7 @@ describe('travel Tier 1 reads', () => {
       evidenceTypes: ['stop', 'layover', 'visit', 'residence'],
     });
     expect(countries).not.toHaveProperty('excludedByMethod');
+    expect(countries.countries.some((country) => country.countryCode === 'US')).toBe(false);
     expect(
       countries.countries
         .flatMap((country) => country.places)
@@ -836,6 +855,139 @@ describe('travel Tier 1 reads', () => {
       stays: { total: 1, items: [{ id: wishlistStayId }] },
       ideas: { total: 1, items: [{ id: readIdeaId }] },
     });
+  });
+
+  it('includes country-only places and stops when there are no air transports', async () => {
+    const placeName = 'France country-only probe';
+    const journeyName = 'France country-only journey';
+    await callTool(otherUserId, 'travel_place_create', {
+      place: placeName,
+      country: 'France',
+      type: 'city',
+    });
+    const place = await db
+      .selectFrom('app.places')
+      .select('id')
+      .where('ownerUserid', '=', otherUserId)
+      .where('name', '=', placeName)
+      .executeTakeFirstOrThrow();
+    await callTool(otherUserId, 'travel_journey_create', {
+      name: journeyName,
+      startDate: '2026-01-01',
+      endDate: '2026-01-01',
+    });
+    const journey = await db
+      .selectFrom('app.travelJourneys')
+      .select('id')
+      .where('ownerUserid', '=', otherUserId)
+      .where('name', '=', journeyName)
+      .executeTakeFirstOrThrow();
+    await callTool(otherUserId, 'travel_segment_create', {
+      journeyId: journey.id,
+      seq: 1,
+      placeId: place.id,
+      arrivalDate: '2026-01-01',
+    });
+
+    const countries = travelCountriesOutputSchema.parse(
+      (await callTool(otherUserId, 'travel_countries', {})).structuredContent,
+    );
+    expect(countries.countries).toMatchObject([
+      {
+        country: 'France',
+        countryCode: 'FR',
+        evidenceTypes: ['stop'],
+        places: [{ placeId: place.id, name: placeName, evidence: [{ type: 'stop' }] }],
+      },
+    ]);
+  });
+
+  it('preserves each chronological connection through the same airport', async () => {
+    const journeyId = randomUUID();
+    const journeyName = 'Repeated KEF connection probe';
+    await db
+      .insertInto('app.travelJourneys')
+      .values({
+        id: journeyId,
+        ownerUserid: ownerId,
+        name: journeyName,
+        purpose: 'leisure',
+        startDate: '2020-01-01',
+        endDate: '2020-02-02',
+      })
+      .execute();
+    await db
+      .insertInto('app.travelTransport')
+      .values([
+        {
+          ownerUserid: ownerId,
+          journeyId,
+          date: '2020-01-01',
+          mode: 'air',
+          origin: 'LHR',
+          destination: 'KEF',
+        },
+        {
+          ownerUserid: ownerId,
+          journeyId,
+          date: '2020-01-02',
+          mode: 'air',
+          origin: 'KEF',
+          destination: 'LHR',
+        },
+        {
+          ownerUserid: ownerId,
+          journeyId,
+          date: '2020-02-01',
+          mode: 'air',
+          origin: 'LHR',
+          destination: 'KEF',
+        },
+        {
+          ownerUserid: ownerId,
+          journeyId,
+          date: '2020-02-02',
+          mode: 'air',
+          origin: 'KEF',
+          destination: 'LHR',
+        },
+      ])
+      .execute();
+
+    const countries = travelCountriesOutputSchema.parse(
+      (await callTool(ownerId, 'travel_countries', {})).structuredContent,
+    );
+    const reykjavik = countries.countries
+      .find((country) => country.countryCode === 'IS')
+      ?.places.find((place) => place.name === 'Reykjavik');
+    const evidence = reykjavik?.evidence.filter(
+      (item) => item.type === 'layover' && item.journeyId === journeyId,
+    );
+    expect(evidence).toHaveLength(2);
+    expect(
+      evidence?.map((item) => item.type === 'layover' && item.arrivalTransportId),
+    ).toHaveLength(2);
+    expect(
+      evidence?.every((item) => item.type === 'layover' && item.journeyName === journeyName),
+    ).toBe(true);
+  });
+
+  it('retains reference airport geography when curation fields are null', async () => {
+    await db
+      .updateTable('app.travelAirports')
+      .set({ name: null, city: null, country: null })
+      .where('ownerUserid', '=', ownerId)
+      .where('code', '=', 'KEF')
+      .execute();
+
+    const countries = travelCountriesOutputSchema.parse(
+      (await callTool(ownerId, 'travel_countries', {})).structuredContent,
+    );
+    const evidence = countries.countries
+      .find((country) => country.countryCode === 'IS')
+      ?.places.find((place) => place.name === 'Reykjavik')
+      ?.evidence.find((item) => item.type === 'layover' && item.journeyId === layoverJourneyId);
+    expect(evidence).toMatchObject({ type: 'layover', airportName: expect.any(String) });
   });
 
   it('finds a shared catalogue airport by code independently of owner airport rows', async () => {
