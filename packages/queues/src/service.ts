@@ -16,7 +16,9 @@ export async function getJobStatus<T>(jobId: string): Promise<T | null> {
     const parsed: T | null = job ? JSON.parse(job) : null;
     return parsed;
   } catch (error) {
-    logger.error(`Failed to get job status for ${jobId}:`, { error });
+    logger.error('queue_job_status_lookup_failed', {
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
     return null;
   }
 }
@@ -78,7 +80,9 @@ export async function getUserJobs<T extends BaseJob<string>>(
       pages: Math.ceil(total / limit),
     };
   } catch (error) {
-    logger.error(`Failed to get jobs for user ${userId}:`, { error });
+    logger.error('queue_user_jobs_lookup_failed', {
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
     return { jobs: [], total: 0, page, pages: 0 };
   }
 }

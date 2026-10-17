@@ -1,9 +1,11 @@
 # Observability
 
-Hominem uses two production observability surfaces with different jobs:
+Hominem uses three production observability surfaces with different jobs:
 
-- Railway is the source of truth for live container, worker, build, HTTP, Redis,
-  and database logs.
+- New Relic is the searchable home for privacy-filtered API and worker
+  application logs.
+- Railway is the source of truth for complete container stdout/stderr, build,
+  HTTP edge, Redis, and database logs.
 - Sentry is the source of truth for application errors, OpenTelemetry traces,
   trace-derived dashboards, and alerts.
 
@@ -17,13 +19,22 @@ runbook steps — see the `hominem-observability` skill
 (`.agents/skills/hominem-observability/`) for the exact commands and
 navigation path.
 
-The API and worker export directly to Sentry's generated OTLP endpoint. Configure
-these Railway variables on both services:
+The API and worker send traces to Sentry and searchable application logs to
+New Relic. Configure these Railway variables on both services:
 
 - `OTEL_EXPORTER_OTLP_ENDPOINT`
-- `OTEL_EXPORTER_OTLP_HEADERS` (URL-encoded, write-only Sentry headers)
+- `OTEL_EXPORTER_OTLP_HEADERS` (Sentry OTLP headers)
+- `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` (New Relic EU OTLP logs endpoint)
+- `OTEL_EXPORTER_OTLP_LOGS_HEADERS` (`api-key` header with the New Relic license
+  key; store it as a write-only Railway secret)
 - `OTEL_TRACES_SAMPLER_ARG`
 - `SENTRY_DSN`
+
+New Relic's EU endpoint is
+`https://otlp.eu01.nr-data.net:4318/v1/logs`. The log-specific variables keep
+the log destination independent from the trace exporter. When a log-specific
+endpoint is absent, the generic endpoint and header variables remain the
+fallback for local development.
 
 General root traces should normally use a 10% ratio. Speech traces are sampled
 at 100% because the speech funnel is latency-sensitive and currently small.
@@ -59,16 +70,25 @@ reconciliation outcome.
 The browser sends one terminal playback event through the authenticated API
 proxy. The API converts it into a `speech.playback` span.
 
-### Logs exported to Sentry
+### Application logs exported to New Relic
 
-Railway receives all application stdout/stderr. OTEL log export is intentionally
-allowlisted to operational messages and scalar fields, including HTTP request
-start/completion; speech lifecycle events; usage reconciliation start, success,
-retry, terminal failure, and missing generation ID; worker startup and speech
-queue snapshots, completion, stall, and failure; and telemetry initialization.
+Every event emitted through the shared Hominem logger is sent to New Relic.
+Messages use stable event names; unstructured message text is replaced with a
+generic event name. Attributes remain explicitly allowlisted to bounded
+operational scalars such as HTTP method/path/status, queue, duration, outcome,
+and error type. HTTP paths use registered route templates; unmatched paths use
+a static label. Other path values have query strings and ID-like segments
+removed. Prompts,
+model outputs, message contents, email addresses, user IDs, request IDs, message
+IDs, generation IDs, provider URLs, authorization data, and provider error
+bodies are not exported. Error messages, stacks, job IDs, and arbitrary payload
+objects are omitted.
 
-This keeps Sentry useful for correlation without turning every application log
-into an indexed event or leaking sensitive context.
+Railway continues to capture the complete stdout/stderr stream, including logs
+written directly by dependencies. New Relic receives events emitted through
+Hominem's shared logger; it is not a raw Railway log drain. Railway does not
+provide a native log drain, so platform HTTP/build logs and direct dependency
+stdout remain searchable in Railway.
 
 ## Operational error logging contract
 
@@ -115,7 +135,8 @@ skill (`.agents/skills/hominem-observability/`).
 - Explicit production log/runbook documentation.
 - Active HTTP span context so child AI and speech spans correlate with the
   originating request.
-- Safe OTEL export of operational HTTP, worker, queue, AI usage, and speech logs.
+- Safe OTEL export of every shared-logger event to New Relic, with bounded
+  attributes and path redaction.
 - Speech reconciliation spans and bounded outcome/usage attributes.
 - Speech queue startup, completion, stall, failure, and pending snapshot signals.
 - Browser playback funnel and privacy constraints.
