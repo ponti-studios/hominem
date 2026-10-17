@@ -23,7 +23,14 @@ export const dbCredentialStore: CredentialStore = {
       .select('email')
       .where('email', '=', email)
       .executeTakeFirst();
-    return row !== undefined;
+    if (row !== undefined) return true;
+    const domain = email.slice(email.lastIndexOf('@') + 1);
+    const byDomain = await db
+      .selectFrom('app.credentialAllowedDomains')
+      .select('domain')
+      .where('domain', '=', domain)
+      .executeTakeFirst();
+    return byDomain !== undefined;
   },
 
   async rows(userId) {
@@ -101,6 +108,21 @@ export async function disallowEmail(email: string): Promise<void> {
   await db
     .deleteFrom('app.credentialAllowedEmails')
     .where('email', '=', email.trim().toLowerCase())
+    .execute();
+}
+
+export async function allowDomain(domain: string): Promise<void> {
+  await db
+    .insertInto('app.credentialAllowedDomains')
+    .values({ domain: domain.trim().toLowerCase().replace(/^@/, '') })
+    .onConflict((conflict) => conflict.doNothing())
+    .execute();
+}
+
+export async function disallowDomain(domain: string): Promise<void> {
+  await db
+    .deleteFrom('app.credentialAllowedDomains')
+    .where('domain', '=', domain.trim().toLowerCase().replace(/^@/, ''))
     .execute();
 }
 

@@ -34,6 +34,10 @@ export const apiSchema = runtimeSchema.extend({
   OPENROUTER_API_KEY: z.string(),
   // Creates, reads and disables the per-person keys handed to Thames. Never leaves the API.
   OPENROUTER_MANAGEMENT_KEY: z.string().optional(),
+  // The TestFlight public link, kept off the website: only emailed (as a QR code) to an allowed domain.
+  THAMES_TESTFLIGHT_URL: z.url().optional(),
+  // Origin of the Thames website, allowed to call the invite endpoint from the browser.
+  THAMES_SITE_URL: z.url().optional(),
   THAMES_MONTHLY_CAP_USD: z.coerce.number().positive().default(5),
   SENTRY_DSN: z.string().optional(),
   OPENAI_APPS_CHALLENGE: z.string().optional(),

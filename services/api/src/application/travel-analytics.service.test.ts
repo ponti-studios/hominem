@@ -8,7 +8,12 @@ import {
   findOutOfOrderSegmentPairs,
   haversineKm,
   labelHomeGap,
+  travelDistance,
+  travelInsights,
+  travelSearch,
+  travelStats,
   travelTimeline,
+  travelUnresolved,
   travelValidate,
 } from './travel-analytics.service';
 
@@ -227,5 +232,82 @@ describe('travel analytics calculations', () => {
       fromJourneyId: expect.any(String),
       toJourneyId: expect.any(String),
     });
+  });
+
+  it('keeps search, stats, insights, unresolved results, and distance errors stable', async () => {
+    const ownerId = await owner();
+    const journey = await db
+      .insertInto('app.travelJourneys')
+      .values({
+        ownerUserid: ownerId,
+        name: 'Iceland visit',
+        startDate: '2020-06-01',
+        endDate: '2020-06-03',
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    const place = await db
+      .insertInto('app.places')
+      .values({ ownerUserid: ownerId, name: 'Reykjavik', country: 'Iceland', placeType: 'city' })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    await db
+      .insertInto('app.travelPlaces')
+      .values({ ownerUserid: ownerId, placeId: place.id })
+      .execute();
+    const segment = await db
+      .insertInto('app.travelJourneySegments')
+      .values({
+        ownerUserid: ownerId,
+        journeyId: journey.id,
+        placeId: place.id,
+        seq: 1,
+        arrivalDate: '2020-06-01',
+        departureDate: '2020-06-03',
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    await db
+      .insertInto('app.travelStays')
+      .values({
+        ownerUserid: ownerId,
+        journeyId: journey.id,
+        segmentId: segment.id,
+        city: 'Reykjavik',
+        property: 'Harbor House',
+        evidence: 'thin',
+      })
+      .execute();
+    await db
+      .insertInto('app.travelIdeas')
+      .values({ ownerUserid: ownerId, idea: 'Visit the harbor', type: 'admin', status: 'open' })
+      .execute();
+
+    const search = await travelSearch(ownerId, { query: 'Reykjavik', limit: 10 });
+    expect(search).toMatchObject({
+      total: 2,
+      places: { total: 1, items: [{ place: 'Reykjavik' }] },
+      stays: { total: 1, items: [{ city: 'Reykjavik', property: 'Harbor House' }] },
+    });
+    const stats = await travelStats(ownerId, { year: 2020 });
+    expect(stats).toMatchObject({
+      journeyCount: 1,
+      segmentCount: 1,
+      placeCount: 1,
+      countryCount: 1,
+    });
+    const insights = await travelInsights(ownerId, { year: 2020 });
+    expect(insights).toMatchObject({
+      daysPerPlace: { total: 1, items: [{ place: 'Reykjavik', days: 3, nights: 2 }] },
+      daysPerCountry: { total: 1, items: [{ country: 'Iceland', days: 3, nights: 2 }] },
+    });
+    const unresolved = await travelUnresolved(ownerId);
+    expect(unresolved).toMatchObject({
+      stays: { total: 1, items: [{ property: 'Harbor House' }] },
+      ideas: { total: 1, items: [{ idea: 'Visit the harbor' }] },
+    });
+    await expect(
+      travelDistance(ownerId, { origin: 'missing-origin', destination: 'missing-destination' }),
+    ).rejects.toThrow('unknown_airport');
   });
 });

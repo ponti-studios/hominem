@@ -448,6 +448,11 @@ export interface AppCollections {
   visibility: Generated<string>;
 }
 
+export interface AppCredentialAllowedDomains {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  domain: string;
+}
+
 export interface AppCredentialAllowedEmails {
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   email: string;
@@ -1617,6 +1622,7 @@ export interface DB {
   'app.collectionItems': AppCollectionItems;
   'app.collectionMembers': AppCollectionMembers;
   'app.collections': AppCollections;
+  'app.credentialAllowedDomains': AppCredentialAllowedDomains;
   'app.credentialAllowedEmails': AppCredentialAllowedEmails;
   'app.credentialBlocks': AppCredentialBlocks;
   'app.files': AppFiles;
