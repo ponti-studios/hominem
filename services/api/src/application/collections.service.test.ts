@@ -36,7 +36,6 @@ beforeAll(async () => {
     .values({
       id: journeyId,
       ownerUserid: ownerId,
-      legacyId: 'JRN-COLLECTION',
       name: 'Collection Journey',
     })
     .execute();

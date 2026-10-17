@@ -8,6 +8,7 @@ import { logger } from '@hominem/telemetry';
 
 import { env } from './env';
 import { initRuntime } from './runtime';
+import { startAirportCatalogueSyncWorker } from './workers/airport-catalogue-sync';
 import { startCareerJobImportWorker } from './workers/career-job-import';
 import { startChatFileCleanupWorker } from './workers/chat-file-cleanup';
 import { startEmbeddingGenerationWorker } from './workers/embedding-generation';
@@ -24,6 +25,7 @@ const speechUsageReconciliationWorker = startSpeechUsageReconciliationWorker();
 // Started here (not elsewhere) so dev watchers actually reload the queue handlers.
 const careerJobImportWorker = startCareerJobImportWorker();
 const chatFileCleanupWorker = startChatFileCleanupWorker();
+const airportCatalogueSyncWorker = await startAirportCatalogueSyncWorker();
 const workerVersion = 'career-import-v2';
 
 const healthServer = createServer((req, res) => {
@@ -48,6 +50,7 @@ initRuntime('worker').installSignalHandlers(
       speechUsageReconciliationWorker.close(),
       careerJobImportWorker.close(),
       chatFileCleanupWorker.close(),
+      airportCatalogueSyncWorker.close(),
     ]);
   },
   () => new Promise<void>((resolve) => healthServer.close(() => resolve())),
@@ -60,3 +63,4 @@ logger.info('worker_started', { queue: QUEUE_NAMES.RESUME_ANALYSIS });
 logger.info('worker_started', { queue: QUEUE_NAMES.CAREER_JOB_IMPORT });
 logger.info('worker_started', { queue: QUEUE_NAMES.SPEECH_USAGE_RECONCILIATION });
 logger.info('worker_started', { queue: QUEUE_NAMES.CHAT_FILE_CLEANUP });
+logger.info('worker_started', { queue: 'airport-catalogue-sync' });

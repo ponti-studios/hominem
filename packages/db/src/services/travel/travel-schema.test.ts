@@ -36,18 +36,20 @@ describe('travel v2 schema', () => {
         'travel_stays',
         'travel_airports',
         'travel_ideas',
-        'travel_residences',
+        'place_residences',
+        'place_residence_periods',
         'travel_entity_history',
       ]}) ORDER BY table_name
     `.execute(db);
     expect(result.rows.map(({ tableName }) => tableName)).toEqual([
+      'place_residence_periods',
+      'place_residences',
       'travel_airports',
       'travel_entity_history',
       'travel_ideas',
       'travel_journey_segments',
       'travel_journeys',
       'travel_places',
-      'travel_residences',
       'travel_segments',
       'travel_stays',
       'travel_transport',
@@ -63,7 +65,6 @@ describe('travel v2 schema', () => {
       .insertInto('app.travelJourneys')
       .values({
         ownerUserid: owner,
-        legacyId: 'JRN-test',
         name: 'Test',
         startDate: null,
         endDate: null,
@@ -73,27 +74,25 @@ describe('travel v2 schema', () => {
       .returning('id')
       .executeTakeFirstOrThrow();
     const place = await db
-      .insertInto('app.travelPlaces')
+      .insertInto('app.places')
       .values({
         ownerUserid: owner,
-        legacyId: 'PLC-test',
-        place: 'Test City',
+        name: 'Test City',
         country: 'Testland',
-        type: 'city',
-        status: 'Visited',
-        firstVisited: null,
-        lastVisited: null,
-        notes: null,
+        placeType: 'city',
       })
       .returning('id')
       .executeTakeFirstOrThrow();
+    await db
+      .insertInto('app.travelPlaces')
+      .values({ placeId: place.id, ownerUserid: owner })
+      .execute();
 
     await expect(
       db
         .insertInto('app.travelJourneySegments')
         .values({
           ownerUserid: owner,
-          legacyId: 'SEG-1',
           journeyId: journey.id,
           seq: 1,
           placeId: place.id,
@@ -107,7 +106,6 @@ describe('travel v2 schema', () => {
       .insertInto('app.travelJourneySegments')
       .values({
         ownerUserid: owner,
-        legacyId: 'SEG-1',
         journeyId: journey.id,
         seq: 1,
         placeId: place.id,
@@ -121,7 +119,6 @@ describe('travel v2 schema', () => {
         .insertInto('app.travelJourneySegments')
         .values({
           ownerUserid: owner,
-          legacyId: 'SEG-2',
           journeyId: journey.id,
           seq: 1,
           placeId: place.id,
@@ -136,7 +133,6 @@ describe('travel v2 schema', () => {
         .insertInto('app.travelJourneySegments')
         .values({
           ownerUserid: otherOwner,
-          legacyId: 'SEG-other',
           journeyId: journey.id,
           seq: 2,
           placeId: place.id,
@@ -154,7 +150,6 @@ describe('travel v2 schema', () => {
       .insertInto('app.travelIdeas')
       .values({
         ownerUserid: owner,
-        legacyId: 'IDA-test',
         idea: 'First',
         type: 'experience',
         status: 'open',
@@ -191,9 +186,8 @@ describe('travel v2 schema', () => {
     await db
       .insertInto('app.travelIdeas')
       .values(
-        owners.map((owner, index) => ({
+        owners.map((owner) => ({
           ownerUserid: owner,
-          legacyId: `IDA-multi-delete-${index}`,
           idea: 'Cascade test',
           type: 'experience',
           status: 'open',
@@ -213,26 +207,18 @@ describe('travel v2 schema', () => {
     const owner = await createUser();
     const journey = await db
       .insertInto('app.travelJourneys')
-      .values({ ownerUserid: owner, legacyId: 'JRN-stay', name: 'Stay', purpose: null })
+      .values({ ownerUserid: owner, name: 'Stay', purpose: null })
       .returning('id')
       .executeTakeFirstOrThrow();
     const place = await db
-      .insertInto('app.travelPlaces')
-      .values({
-        ownerUserid: owner,
-        legacyId: 'PLC-stay',
-        place: 'Stay City',
-        country: 'Testland',
-        type: 'city',
-        status: 'Visited',
-      })
+      .insertInto('app.places')
+      .values({ ownerUserid: owner, name: 'Stay City', country: 'Testland', placeType: 'city' })
       .returning('id')
       .executeTakeFirstOrThrow();
     const segment = await db
       .insertInto('app.travelJourneySegments')
       .values({
         ownerUserid: owner,
-        legacyId: 'SEG-stay',
         journeyId: journey.id,
         seq: 1,
         placeId: place.id,
@@ -242,7 +228,6 @@ describe('travel v2 schema', () => {
     const base = {
       ownerUserid: owner,
       city: 'Stay City',
-      legacyId: 'STY-test',
       checkIn: null,
       checkOut: null,
       country: null,
@@ -253,14 +238,13 @@ describe('travel v2 schema', () => {
 
     await db
       .insertInto('app.travelStays')
-      .values({ ...base, legacyId: 'STY-wish', evidence: 'want', segmentId: null, journeyId: null })
+      .values({ ...base, evidence: 'want', segmentId: null, journeyId: null })
       .execute();
     await expect(
       db
         .insertInto('app.travelStays')
         .values({
           ...base,
-          legacyId: 'STY-partial',
           evidence: 'want',
           segmentId: segment.id,
           journeyId: null,
@@ -272,7 +256,6 @@ describe('travel v2 schema', () => {
         .insertInto('app.travelStays')
         .values({
           ...base,
-          legacyId: 'STY-unlinked',
           evidence: 'email',
           segmentId: null,
           journeyId: null,
@@ -284,53 +267,46 @@ describe('travel v2 schema', () => {
   it('stores Residence periods under canonical Places and audits them', async () => {
     const owner = await createUser();
     const place = await db
-      .insertInto('app.travelPlaces')
+      .insertInto('app.places')
       .values({
         ownerUserid: owner,
-        legacyId: 'PLC-residence',
-        place: 'Residence City',
+        name: 'Residence City',
         country: 'Testland',
-        type: 'city',
-        status: 'Visited',
+        placeType: 'city',
       })
       .returning('id')
       .executeTakeFirstOrThrow();
-    const periods = [
-      {
-        startDate: '2016-01-01',
-        endDate: null,
-        ongoing: false,
-        precision: 'day',
-        note: 'ended, exact end unrecorded',
-      },
-    ];
     const residenceId = randomUUID();
+    const periodId = randomUUID();
 
     await sql`
-      INSERT INTO app.travel_residences (id, owner_userid, legacy_id, place_id, periods)
-      VALUES (${residenceId}, ${owner}, 'PLC-residence-row', ${place.id}, ${JSON.stringify(periods)}::jsonb)
+      INSERT INTO app.place_residences (id, owner_userid, place_id)
+        VALUES (${residenceId}, ${owner}, ${place.id})
+    `.execute(db);
+    await sql`
+      INSERT INTO app.place_residence_periods
+        (id, owner_userid, residence_id, start_date, ongoing, precision, note)
+      VALUES (${periodId}, ${owner}, ${residenceId}, '2016-01-01', false, 'day', 'ended, exact end unrecorded')
     `.execute(db);
     await expect(
       sql`
-        INSERT INTO app.travel_residences (owner_userid, legacy_id, place_id, periods)
-        VALUES (${owner}, 'PLC-empty-periods', ${place.id}, '[]'::jsonb)
-      `.execute(db),
-    ).rejects.toThrow();
-    await expect(
-      sql`
-        INSERT INTO app.travel_residences (owner_userid, legacy_id, place_id, periods)
-        VALUES (${owner}, 'PLC-residence-row', ${place.id}, ${JSON.stringify(periods)}::jsonb)
+        INSERT INTO app.place_residences (owner_userid, place_id)
+        VALUES (${owner}, ${place.id})
       `.execute(db),
     ).rejects.toThrow();
 
-    const residence = await sql<{ periods: unknown }>`
-      SELECT periods FROM app.travel_residences WHERE id = ${residenceId}
+    const residence = await sql<{ startDate: string; ongoing: boolean; note: string }>`
+      SELECT start_date AS "startDate", ongoing, note FROM app.place_residence_periods WHERE id = ${periodId}
     `.execute(db);
-    expect(residence.rows[0]?.periods).toEqual(periods);
+    expect(residence.rows[0]).toMatchObject({
+      startDate: '2016-01-01',
+      ongoing: false,
+      note: 'ended, exact end unrecorded',
+    });
     const history = await sql<{ operation: string; entityTable: string }>`
-      SELECT operation, entity_table AS "entityTable" FROM app.travel_entity_history
-      WHERE entity_id = ${residenceId}
+      SELECT operation, entity_table AS "entityTable" FROM app.place_entity_history
+      WHERE entity_id = ${periodId}
     `.execute(db);
-    expect(history.rows).toEqual([{ operation: 'create', entityTable: 'travel_residences' }]);
+    expect(history.rows).toEqual([{ operation: 'create', entityTable: 'place_residence_periods' }]);
   });
 });

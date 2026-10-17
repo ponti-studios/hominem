@@ -2,16 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RpcUser } from '../middleware/auth';
 
-const mocks = vi.hoisted(() => ({
-  BudgetUnavailableError: class BudgetUnavailableError extends Error {},
-  OpenRouterKeysError: class OpenRouterKeysError extends Error {},
-  mintCredential: vi.fn(),
-  revokeCredential: vi.fn(),
-  budgetFor: vi.fn(),
-  isBlocked: vi.fn(),
-  isAllowed: vi.fn(),
-  managementKey: { value: 'mgmt-key' as string | undefined },
-}));
+const mocks = vi.hoisted(() => {
+  const managementKey: { value: string | undefined } = { value: 'mgmt-key' };
+  return {
+    BudgetUnavailableError: class BudgetUnavailableError extends Error {},
+    OpenRouterKeysError: class OpenRouterKeysError extends Error {},
+    mintCredential: vi.fn(),
+    revokeCredential: vi.fn(),
+    budgetFor: vi.fn(),
+    isBlocked: vi.fn(),
+    isAllowed: vi.fn(),
+    managementKey,
+  };
+});
 
 vi.mock('../../application/provider-credentials', () => ({
   mintCredential: mocks.mintCredential,

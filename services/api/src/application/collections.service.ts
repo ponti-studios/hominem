@@ -59,8 +59,6 @@ function entityTypeForTable(table: string): EntityType | undefined {
       return 'travel_stays';
     case ENTITY_TABLE_MAP.travel_airports:
       return 'travel_airports';
-    case ENTITY_TABLE_MAP.travel_places:
-      return 'travel_places';
     case ENTITY_TABLE_MAP.travel_ideas:
       return 'travel_ideas';
     case ENTITY_TABLE_MAP.residence:

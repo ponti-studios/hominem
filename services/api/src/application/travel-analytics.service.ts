@@ -1,12 +1,11 @@
-import { db } from '@hominem/db/core';
+import { db, sql } from '@hominem/db/core';
 import { ValidationError } from '@hominem/db/errors';
 
-import { travelResidencePeriodsSchema } from '../schemas/travel-residences.schema';
+import { getTravelAirport } from './airport-catalogue.service';
 
 type Coordinates = { latitude: number | null; longitude: number | null };
 type Residence = {
   id: string;
-  legacyId: string;
   placeId: string;
   place: string;
   periods: {
@@ -66,7 +65,6 @@ export function labelHomeGap(start: string, end: string, residences: Residence[]
     rule: string,
   ) => ({
     place: residence.place,
-    legacyId: residence.legacyId,
     placeId: residence.placeId,
     period: { ...period },
     inferred,
@@ -166,42 +164,188 @@ const makePage = <T>(items: T[], limit: number) => ({
 });
 
 async function loadTravelData(owner: string) {
-  const [journeys, segments, places, transport, stays, airports, ideas, residenceRows] =
-    await Promise.all([
-      db.selectFrom('app.travelJourneys').selectAll().where('ownerUserid', '=', owner).execute(),
-      db
-        .selectFrom('app.travelJourneySegments')
-        .selectAll()
-        .where('ownerUserid', '=', owner)
-        .execute(),
-      db.selectFrom('app.travelPlaces').selectAll().where('ownerUserid', '=', owner).execute(),
-      db.selectFrom('app.travelTransport').selectAll().where('ownerUserid', '=', owner).execute(),
-      db.selectFrom('app.travelStays').selectAll().where('ownerUserid', '=', owner).execute(),
-      db.selectFrom('app.travelAirports').selectAll().where('ownerUserid', '=', owner).execute(),
-      db.selectFrom('app.travelIdeas').selectAll().where('ownerUserid', '=', owner).execute(),
-      db
-        .selectFrom('app.travelResidences as r')
-        .innerJoin('app.travelPlaces as p', 'p.id', 'r.placeId')
-        .select(['r.id', 'r.legacyId', 'r.placeId', 'p.place', 'r.periods'])
-        .where('r.ownerUserid', '=', owner)
-        .execute(),
-    ]);
-  const residences: Residence[] = residenceRows.map((row) => ({
-    id: row.id,
-    legacyId: row.legacyId,
-    placeId: row.placeId,
-    place: row.place,
-    periods: travelResidencePeriodsSchema.parse(
-      typeof row.periods === 'string' ? JSON.parse(row.periods) : row.periods,
+  const [
+    journeys,
+    segments,
+    places,
+    canonicalPlaces,
+    transport,
+    stays,
+    curations,
+    referenceRows,
+    ideas,
+    residenceRows,
+  ] = await Promise.all([
+    db.selectFrom('app.travelJourneys').selectAll().where('ownerUserid', '=', owner).execute(),
+    db
+      .selectFrom('app.travelJourneySegments')
+      .selectAll()
+      .where('ownerUserid', '=', owner)
+      .execute(),
+    sql<{
+      id: string;
+      place: string;
+      country: string | null;
+      type: string | null;
+      notes: string | null;
+      archived: boolean;
+      want_to_go: boolean;
+      created_at: string;
+      updated_at: string;
+    }>`SELECT p.id, p.name AS place, p.country, p.place_type AS type, p.notes,
+      t.archived, t.want_to_go, t.created_at, t.updated_at FROM app.travel_places t
+      JOIN app.places p ON p.id=t.place_id AND p.owner_userid=t.owner_userid
+      WHERE t.owner_userid=${owner}`
+      .execute(db)
+      .then((result) =>
+        result.rows.map((row) => ({
+          id: row.id,
+          place: row.place,
+          country: row.country,
+          type: row.type,
+          notes: row.notes,
+          archived: row.archived,
+          wantToGo: row.want_to_go,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        })),
+      ),
+    db
+      .selectFrom('app.places')
+      .select(['id', 'name as place', 'country'])
+      .where('ownerUserid', '=', owner)
+      .execute(),
+    db.selectFrom('app.travelTransport').selectAll().where('ownerUserid', '=', owner).execute(),
+    db.selectFrom('app.travelStays').selectAll().where('ownerUserid', '=', owner).execute(),
+    db.selectFrom('app.travelAirports').selectAll().where('ownerUserid', '=', owner).execute(),
+    db.selectFrom('app.travelAirportReference').selectAll().where('code', 'is not', null).execute(),
+    db.selectFrom('app.travelIdeas').selectAll().where('ownerUserid', '=', owner).execute(),
+    sql<{
+      id: string;
+      place_id: string;
+      place: string;
+      start_date: string;
+      end_date: string | null;
+      ongoing: boolean;
+      precision: string;
+      note: string | null;
+    }>`SELECT r.id, r.place_id, p.name AS place, rp.start_date, rp.end_date,
+      rp.ongoing, rp.precision, rp.note FROM app.place_residences r
+      JOIN app.places p ON p.id=r.place_id AND p.owner_userid=r.owner_userid
+      JOIN app.place_residence_periods rp ON rp.residence_id=r.id AND rp.owner_userid=r.owner_userid
+      WHERE r.owner_userid=${owner}`
+      .execute(db)
+      .then((result) =>
+        result.rows.map((row) => ({
+          id: row.id,
+          placeId: row.place_id,
+          place: row.place,
+          startDate: row.start_date,
+          endDate: row.end_date,
+          ongoing: row.ongoing,
+          precision: row.precision,
+          note: row.note,
+        })),
+      ),
+  ]);
+  const residenceMap = new Map<string, Residence>();
+  for (const row of residenceRows) {
+    const residence = residenceMap.get(row.id) ?? {
+      id: row.id,
+      placeId: row.placeId,
+      place: row.place,
+      periods: [],
+    };
+    residence.periods.push({
+      startDate: String(row.startDate).slice(0, 10),
+      endDate: row.endDate ? String(row.endDate).slice(0, 10) : null,
+      ongoing: row.ongoing,
+      precision: row.precision === 'month' ? 'month' : row.precision === 'year' ? 'year' : 'day',
+      ...(row.note ? { note: row.note } : {}),
+    });
+    residenceMap.set(row.id, residence);
+  }
+  const residences = [...residenceMap.values()];
+  const airportByCode = new Map<
+    string,
+    Coordinates & {
+      code: string;
+      name: string | null;
+      servesPlace: string | null;
+      city: string | null;
+      country: string | null;
+    }
+  >();
+  for (const airport of referenceRows) {
+    const code = airport.code!.toUpperCase();
+    if (!airportByCode.has(code))
+      airportByCode.set(code, {
+        code,
+        name: airport.name,
+        servesPlace: airport.city,
+        city: airport.city,
+        country: airport.country,
+        latitude: airport.latitude,
+        longitude: airport.longitude,
+      });
+  }
+  for (const airport of curations) {
+    const code = airport.code.toUpperCase();
+    const reference = airportByCode.get(code);
+    airportByCode.set(code, {
+      code,
+      name: airport.name ?? reference?.name ?? null,
+      servesPlace: airport.servesPlace ?? reference?.servesPlace ?? null,
+      city: airport.city ?? reference?.city ?? null,
+      country: airport.country ?? reference?.country ?? null,
+      latitude: airport.latitude ?? reference?.latitude ?? null,
+      longitude: airport.longitude ?? reference?.longitude ?? null,
+    });
+  }
+  for (const leg of transport)
+    for (const rawCode of [leg.origin, leg.destination]) {
+      const code = rawCode.toUpperCase();
+      if (!airportByCode.has(code))
+        airportByCode.set(code, {
+          code,
+          name: null,
+          servesPlace: null,
+          city: null,
+          country: null,
+          latitude: null,
+          longitude: null,
+        });
+    }
+  const airports = [...airportByCode.values()];
+  const endpointKey = (code: string, referenceId: string | null) =>
+    `${code.toUpperCase()}:${referenceId ?? ''}`;
+  const endpointSelections = new Map<string, { code: string; referenceId: string | null }>();
+  for (const leg of transport) {
+    for (const endpoint of [
+      { code: leg.origin, referenceId: leg.originReferenceId },
+      { code: leg.destination, referenceId: leg.destinationReferenceId },
+    ]) {
+      endpointSelections.set(endpointKey(endpoint.code, endpoint.referenceId), endpoint);
+    }
+  }
+  const selectedEndpoints = new Map(
+    await Promise.all(
+      [...endpointSelections].map(
+        async ([key, endpoint]) =>
+          [key, await getTravelAirport(owner, endpoint.code, endpoint.referenceId)] as const,
+      ),
     ),
-  }));
-  const airportByCode = new Map(airports.map((airport) => [airport.code.toUpperCase(), airport]));
-  const placeById = new Map(places.map((place) => [place.id, place]));
+  );
+  const placeById = new Map(canonicalPlaces.map((place) => [place.id, place]));
   const journeyById = new Map(journeys.map((journey) => [journey.id, journey]));
   const segmentById = new Map(segments.map((segment) => [segment.id, segment]));
   const resolveLeg = (leg: (typeof transport)[number]) => {
-    const origin = airportByCode.get(leg.origin.toUpperCase());
-    const destination = airportByCode.get(leg.destination.toUpperCase());
+    const origin =
+      selectedEndpoints.get(endpointKey(leg.origin, leg.originReferenceId)) ??
+      airportByCode.get(leg.origin.toUpperCase());
+    const destination =
+      selectedEndpoints.get(endpointKey(leg.destination, leg.destinationReferenceId)) ??
+      airportByCode.get(leg.destination.toUpperCase());
     return {
       ...leg,
       originCode: leg.origin,
@@ -233,13 +377,10 @@ export async function travelDistance(
   owner: string,
   input: { origin: string; destination: string },
 ) {
-  const airports = await db
-    .selectFrom('app.travelAirports')
-    .selectAll()
-    .where('ownerUserid', '=', owner)
-    .execute();
-  const origin = airports.find((airport) => lower(airport.code) === lower(input.origin));
-  const destination = airports.find((airport) => lower(airport.code) === lower(input.destination));
+  const [origin, destination] = await Promise.all([
+    getTravelAirport(owner, input.origin),
+    getTravelAirport(owner, input.destination),
+  ]);
   if (!origin || !destination) throw new ValidationError('unknown_airport');
   return {
     origin,
@@ -250,13 +391,12 @@ export async function travelDistance(
 
 export async function travelValidate(owner: string) {
   const data = await loadTravelData(owner);
-  type Offender = { id: string; legacyId: string; detail: string };
+  type Offender = { id: string; detail: string };
   const checks: Record<string, { count: number; offenders: Offender[] }> = {};
   const add = (name: string, offenders: Offender[], count = offenders.length) =>
     (checks[name] = { count, offenders });
-  const ref = (row: { id: string; legacyId: string }, detail: string): Offender => ({
+  const ref = (row: { id: string }, detail: string): Offender => ({
     id: row.id,
-    legacyId: row.legacyId,
     detail,
   });
   add(
@@ -296,44 +436,6 @@ export async function travelValidate(owner: string) {
           !data.airportByCode.has(row.destination.toUpperCase()),
       )
       .map((row) => ref(row, 'Origin or destination airport code is not registered.')),
-  );
-  const duplicateLegacyOffenders: (Offender & { entityType: string })[] = [];
-  let duplicateLegacyGroupCount = 0;
-  const collectDuplicateIds = (entity: string, rows: { id: string; legacyId: string }[]) => {
-    const byLegacy = new Map<string, typeof rows>();
-    for (const row of rows)
-      byLegacy.set(row.legacyId, [...(byLegacy.get(row.legacyId) ?? []), row]);
-    const duplicates = [...byLegacy].filter(([, matches]) => matches.length > 1);
-    duplicateLegacyGroupCount += duplicates.length;
-    return duplicates.flatMap(([legacyId, matches]) =>
-      matches.map((row) => ({
-        ...ref(row, `Duplicate ${entity} legacyId ${legacyId}.`),
-        entityType: entity.toLocaleLowerCase(),
-      })),
-    );
-  };
-  const duplicateEntities: [string, { id: string; legacyId: string }[]][] = [
-    ['Journey', data.journeys],
-    ['Segment', data.segments],
-    ['Place', data.places],
-    ['Transport', data.transport],
-    ['Stay', data.stays],
-    ['Airport', data.airports],
-    ['Idea', data.ideas],
-    ['Residence', data.residences],
-  ];
-  for (const [entity, rows] of duplicateEntities) {
-    duplicateLegacyOffenders.push(...collectDuplicateIds(entity, rows));
-  }
-  add('duplicate_legacy_id', duplicateLegacyOffenders, duplicateLegacyGroupCount);
-  const segmentCounts = new Map<string, number>();
-  for (const segment of data.segments)
-    segmentCounts.set(segment.placeId, (segmentCounts.get(segment.placeId) ?? 0) + 1);
-  add(
-    'place_visited_without_segment',
-    data.places
-      .filter((place) => place.status === 'Visited' && !segmentCounts.has(place.id))
-      .map((place) => ref(place, 'Stored status is Visited but no journey segment references it.')),
   );
   add(
     'segment_place_missing',
@@ -430,8 +532,8 @@ export async function travelValidate(owner: string) {
       if (overlaps(journey.startDate, journey.endDate, other.startDate, other.endDate)) {
         journeyOverlapCount++;
         journeyOverlapOffenders.push(
-          ref(journey, `Date range overlaps journey ${other.legacyId}.`),
-          ref(other, `Date range overlaps journey ${journey.legacyId}.`),
+          ref(journey, `Date range overlaps journey ${other.id}.`),
+          ref(other, `Date range overlaps journey ${journey.id}.`),
         );
       }
     }
@@ -461,10 +563,10 @@ export async function travelValidate(owner: string) {
       ) {
         segmentOverlapCount++;
         segmentOverlapOffenders.push(
-          ref(segment, `Overlaps or is out of date order with ${other.legacyId}.`),
+          ref(segment, `Overlaps or is out of date order with ${other.id}.`),
         );
         segmentOverlapOffenders.push(
-          ref(other, `Overlaps or is out of date order with ${segment.legacyId}.`),
+          ref(other, `Overlaps or is out of date order with ${segment.id}.`),
         );
       }
     }
@@ -484,8 +586,8 @@ export async function travelValidate(owner: string) {
       ) {
         nearDuplicateLegCount++;
         nearDuplicateLegOffenders.push(
-          ref(leg, `Matches leg ${other.legacyId} by date, route, and flight number.`),
-          ref(other, `Matches leg ${leg.legacyId} by date, route, and flight number.`),
+          ref(leg, `Matches leg ${other.id} by date, route, and flight number.`),
+          ref(other, `Matches leg ${leg.id} by date, route, and flight number.`),
         );
       }
     }
@@ -508,17 +610,15 @@ export async function travelValidate(owner: string) {
       ) {
         nearDuplicateJourneyCount++;
         nearDuplicateJourneyOffenders.push(
-          ref(journey, `Shares start date and first place with ${other.legacyId}.`),
-          ref(other, `Shares start date and first place with ${journey.legacyId}.`),
+          ref(journey, `Shares start date and first place with ${other.id}.`),
+          ref(other, `Shares start date and first place with ${journey.id}.`),
         );
       }
     }
   }
   add('near_duplicate_journey', nearDuplicateJourneyOffenders, nearDuplicateJourneyCount);
   for (const check of Object.values(checks))
-    check.offenders.sort(
-      (a, b) => a.legacyId.localeCompare(b.legacyId) || a.id.localeCompare(b.id),
-    );
+    check.offenders.sort((a, b) => a.id.localeCompare(b.id));
   return { checks };
 }
 
@@ -526,10 +626,10 @@ export async function travelUnresolved(owner: string) {
   const [data, validation] = await Promise.all([loadTravelData(owner), travelValidate(owner)]);
   const stays = data.stays
     .filter((stay) => stay.evidence === 'thin')
-    .sort((a, b) => a.legacyId.localeCompare(b.legacyId));
+    .sort((a, b) => a.id.localeCompare(b.id));
   const ideas = data.ideas
     .filter((idea) => idea.type === 'admin' && idea.status === 'open')
-    .sort((a, b) => a.legacyId.localeCompare(b.legacyId));
+    .sort((a, b) => a.id.localeCompare(b.id));
   return {
     stays: makePage(stays, 100),
     ideas: makePage(ideas, 100),
@@ -544,10 +644,10 @@ export async function travelSearch(owner: string, input: { query: string; limit:
   const results = {
     journeys: data.journeys
       .filter((row) => contains(row.name, input.query) || contains(row.notes, input.query))
-      .sort((a, b) => a.legacyId.localeCompare(b.legacyId) || a.id.localeCompare(b.id)),
+      .sort((a, b) => a.id.localeCompare(b.id)),
     places: data.places
       .filter((row) => contains(row.place, input.query))
-      .sort((a, b) => a.legacyId.localeCompare(b.legacyId) || a.id.localeCompare(b.id)),
+      .sort((a, b) => a.id.localeCompare(b.id)),
     stays: data.stays
       .filter(
         (row) =>
@@ -555,13 +655,13 @@ export async function travelSearch(owner: string, input: { query: string; limit:
           contains(row.city, input.query) ||
           contains(row.bookingRef, input.query),
       )
-      .sort((a, b) => a.legacyId.localeCompare(b.legacyId) || a.id.localeCompare(b.id)),
+      .sort((a, b) => a.id.localeCompare(b.id)),
     transport: data.transport
       .filter((row) => contains(row.carrier, input.query) || contains(row.bookingRef, input.query))
-      .sort((a, b) => a.legacyId.localeCompare(b.legacyId) || a.id.localeCompare(b.id)),
+      .sort((a, b) => a.id.localeCompare(b.id)),
     ideas: data.ideas
       .filter((row) => contains(row.idea, input.query))
-      .sort((a, b) => a.legacyId.localeCompare(b.legacyId) || a.id.localeCompare(b.id)),
+      .sort((a, b) => a.id.localeCompare(b.id)),
   };
   const pages = {
     journeys: makePage(results.journeys, input.limit),
@@ -590,7 +690,7 @@ export async function travelStats(owner: string, input: { year?: number } = {}) 
   const journeys = data.journeys.filter((journey) => !year || journey.startDate?.startsWith(year));
   const journeyIds = new Set(journeys.map((journey) => journey.id));
   const segments = data.segments.filter((segment) => journeyIds.has(segment.journeyId));
-  const placesById = new Map<string, (typeof data.places)[number]>();
+  const placesById = new Map<string, { id: string; place: string; country: string | null }>();
   for (const segment of segments) {
     const place = data.placeById.get(segment.placeId);
     if (place) placesById.set(place.id, place);
@@ -606,9 +706,8 @@ export async function travelStats(owner: string, input: { year?: number } = {}) 
   const longestLeg =
     [...transport]
       .filter((leg) => leg.distanceKm !== null)
-      .sort(
-        (a, b) => (b.distanceKm ?? 0) - (a.distanceKm ?? 0) || a.legacyId.localeCompare(b.legacyId),
-      )[0] ?? null;
+      .sort((a, b) => (b.distanceKm ?? 0) - (a.distanceKm ?? 0) || a.id.localeCompare(b.id))[0] ??
+    null;
   const distanceByJourney = new Map<string, number>();
   for (const leg of transport)
     if (leg.distanceKm !== null)
@@ -619,10 +718,8 @@ export async function travelStats(owner: string, input: { year?: number } = {}) 
   const longestJourney =
     journeys
       .map((journey) => ({ journey, distanceKm: distanceByJourney.get(journey.id) ?? 0 }))
-      .sort(
-        (a, b) =>
-          b.distanceKm - a.distanceKm || a.journey.legacyId.localeCompare(b.journey.legacyId),
-      )[0] ?? null;
+      .sort((a, b) => b.distanceKm - a.distanceKm || a.journey.id.localeCompare(b.journey.id))[0] ??
+    null;
   const allTrips = [...journeys]
     .filter((journey) => journey.startDate)
     .sort((a, b) => compareDate(a.startDate, b.startDate));
@@ -654,19 +751,19 @@ export async function travelStats(owner: string, input: { year?: number } = {}) 
       'Recorded transport legs only; this is a floor because many journeys have no recorded legs.',
     longestLeg: longestLeg
       ? {
-          legacyId: longestLeg.legacyId,
+          entityId: longestLeg.id,
           originCode: longestLeg.originCode,
           destinationCode: longestLeg.destinationCode,
           originPlace: longestLeg.originPlace,
           destinationPlace: longestLeg.destinationPlace,
           distanceKm: longestLeg.distanceKm,
           date: longestLeg.date,
-          journeyLegacyId: data.journeyById.get(longestLeg.journeyId)?.legacyId ?? null,
+          journeyRefId: data.journeyById.get(longestLeg.journeyId)?.id ?? null,
         }
       : null,
     longestJourneyByDistance: longestJourney
       ? {
-          legacyId: longestJourney.journey.legacyId,
+          entityId: longestJourney.journey.id,
           name: longestJourney.journey.name,
           distanceKm: longestJourney.distanceKm,
         }
@@ -674,14 +771,14 @@ export async function travelStats(owner: string, input: { year?: number } = {}) 
     countsByYear,
     firstTrip: firstTrip
       ? {
-          legacyId: firstTrip.legacyId,
+          entityId: firstTrip.id,
           startDate: firstTrip.startDate,
           endDate: firstTrip.endDate,
         }
       : null,
     latestTrip: latestTrip
       ? {
-          legacyId: latestTrip.legacyId,
+          entityId: latestTrip.id,
           startDate: latestTrip.startDate,
           endDate: latestTrip.endDate,
         }
@@ -697,14 +794,14 @@ export async function travelTimeline(
   const events: Record<string, unknown>[] = data.segments.map((segment) => ({
     type: 'segment',
     id: segment.id,
-    legacyId: segment.legacyId,
+    entityId: segment.id,
     place: data.placeById.get(segment.placeId)?.place ?? null,
     country: data.placeById.get(segment.placeId)?.country ?? null,
     arrivalDate: segment.arrivalDate,
     departureDate: segment.departureDate,
     nights: daysBetween(segment.arrivalDate, segment.departureDate),
     journeyId: segment.journeyId,
-    journeyLegacyId: data.journeyById.get(segment.journeyId)?.legacyId ?? null,
+    journeyRefId: data.journeyById.get(segment.journeyId)?.id ?? null,
     seq: segment.seq,
   }));
   const journeys = [...data.journeys]
@@ -734,8 +831,8 @@ export async function travelTimeline(
         startDate: cursor,
         endDate: sliceEnd,
         days: daysBetween(cursor, boundary),
-        fromJourneyLegacyId: previous.legacyId,
-        toJourneyLegacyId: next.legacyId,
+        fromJourneyId: previous.id,
+        toJourneyId: next.id,
         home: labelHomeGap(cursor, sliceEnd, data.residences),
       });
       cursor = boundary;
@@ -761,9 +858,7 @@ export async function travelTimeline(
       return (
         startA.localeCompare(startB) ||
         String(a.type).localeCompare(String(b.type)) ||
-        String(a.legacyId ?? a.fromJourneyLegacyId ?? '').localeCompare(
-          String(b.legacyId ?? b.fromJourneyLegacyId ?? ''),
-        )
+        String(a.id ?? a.fromJourneyId ?? '').localeCompare(String(b.id ?? b.fromJourneyId ?? ''))
       );
     });
   const limit = input.limit ?? 100;
@@ -787,7 +882,7 @@ export async function travelInsights(owner: string, input: { year?: number } = {
   );
   const placeStats = new Map<
     string,
-    { place: string; country: string; segmentCount: number; days: number; nights: number }
+    { place: string; country: string | null; segmentCount: number; days: number; nights: number }
   >();
   const countryStats = new Map<string, { country: string; days: number; nights: number }>();
   const yearStats = new Map<string, number>();
@@ -807,14 +902,16 @@ export async function travelInsights(owner: string, input: { year?: number } = {
     placeStat.days += days;
     placeStat.nights += nights;
     placeStats.set(place.id, placeStat);
-    const countryStat = countryStats.get(place.country) ?? {
-      country: place.country,
-      days: 0,
-      nights: 0,
-    };
-    countryStat.days += days;
-    countryStat.nights += nights;
-    countryStats.set(place.country, countryStat);
+    if (place.country) {
+      const countryStat = countryStats.get(place.country) ?? {
+        country: place.country,
+        days: 0,
+        nights: 0,
+      };
+      countryStat.days += days;
+      countryStat.nights += nights;
+      countryStats.set(place.country, countryStat);
+    }
     if (segment.arrivalDate)
       yearStats.set(
         segment.arrivalDate.slice(0, 4),
@@ -857,7 +954,7 @@ export async function travelInsights(owner: string, input: { year?: number } = {
     residence.periods.some((period) => period.ongoing),
   );
   const homeRows = data.residences.map((residence) => ({
-    legacyId: residence.legacyId,
+    entityId: residence.id,
     placeId: residence.placeId,
     place: residence.place,
     periods: residence.periods,
@@ -893,7 +990,7 @@ export async function travelInsights(owner: string, input: { year?: number } = {
   const topN = 20;
   const nextTrip = future
     ? {
-        legacyId: future.legacyId,
+        entityId: future.id,
         name: future.name,
         startDate: future.startDate,
         daysUntilStart: daysBetween(new Date().toISOString().slice(0, 10), future.startDate),
@@ -943,9 +1040,7 @@ export async function travelInsights(owner: string, input: { year?: number } = {
           place: data.placeById.get(segment.placeId)?.place ?? null,
           nights: daysBetween(segment.arrivalDate, segment.departureDate),
         }))
-        .sort(
-          (a, b) => (b.nights ?? -1) - (a.nights ?? -1) || a.legacyId.localeCompare(b.legacyId),
-        )[0] ?? null,
+        .sort((a, b) => (b.nights ?? -1) - (a.nights ?? -1) || a.id.localeCompare(b.id))[0] ?? null,
     longestHomeGap,
     nextTrip,
     homes: {
@@ -953,7 +1048,7 @@ export async function travelInsights(owner: string, input: { year?: number } = {
       currentHome: currentHome
         ? {
             place: currentHome.place,
-            legacyId: currentHome.legacyId,
+            entityId: currentHome.id,
             period: currentHome.periods.find((period) => period.ongoing),
           }
         : null,

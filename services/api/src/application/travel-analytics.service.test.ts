@@ -58,7 +58,6 @@ describe('travel analytics calculations', () => {
       {
         id: 'residence-la',
         place: 'Los Angeles',
-        legacyId: 'PLC-047',
         placeId: 'place-la',
         periods: [
           {
@@ -73,7 +72,6 @@ describe('travel analytics calculations', () => {
       {
         id: 'residence-london',
         place: 'London',
-        legacyId: 'PLC-048',
         placeId: 'place-london',
         periods: [
           {
@@ -96,7 +94,6 @@ describe('travel analytics calculations', () => {
     expect(labelHomeGap('2014-01-01', '2014-01-10', residences)).toBeNull();
     expect(labelHomeGap('2017-01-05', '2017-01-10', residences)).toMatchObject({
       place: 'London',
-      legacyId: 'PLC-048',
       inferred: false,
       rule: 'precision_period',
     });
@@ -116,18 +113,16 @@ describe('travel analytics calculations', () => {
     const ownerId = await owner();
     const [journey] = await db
       .insertInto('app.travelJourneys')
-      .values({ ownerUserid: ownerId, legacyId: 'JRN-HUGE-SEQ', name: 'Huge sequence' })
+      .values({ ownerUserid: ownerId, name: 'Huge sequence' })
       .returning('id')
       .execute();
     const [place] = await db
-      .insertInto('app.travelPlaces')
+      .insertInto('app.places')
       .values({
         ownerUserid: ownerId,
-        legacyId: 'PLC-HUGE-SEQ',
-        place: 'Bounded',
+        name: 'Bounded',
         country: 'Testland',
-        type: 'city',
-        status: 'Want to go',
+        placeType: 'city',
       })
       .returning('id')
       .execute();
@@ -135,7 +130,6 @@ describe('travel analytics calculations', () => {
       .insertInto('app.travelJourneySegments')
       .values({
         ownerUserid: ownerId,
-        legacyId: 'SEG-HUGE-SEQ',
         journeyId: journey!.id,
         placeId: place!.id,
         seq: 2_147_483_647,
@@ -145,7 +139,7 @@ describe('travel analytics calculations', () => {
     const result = await travelValidate(ownerId);
     expect(result.checks.segment_seq_gap_or_dupe).toMatchObject({
       count: 1,
-      offenders: [{ legacyId: 'SEG-HUGE-SEQ', detail: 'Missing sequence range 1..2147483646.' }],
+      offenders: [{ detail: 'Missing sequence range 1..2147483646.' }],
     });
   });
 
@@ -161,14 +155,12 @@ describe('travel analytics calculations', () => {
   it('merges overlapping journey intervals and paginates timeline events', async () => {
     const ownerId = await owner();
     const [place] = await db
-      .insertInto('app.travelPlaces')
+      .insertInto('app.places')
       .values({
         ownerUserid: ownerId,
-        legacyId: 'PLC-TIMELINE',
-        place: 'Timeline City',
+        name: 'Timeline City',
         country: 'Testland',
-        type: 'city',
-        status: 'Visited',
+        placeType: 'city',
       })
       .returning('id')
       .execute();
@@ -177,41 +169,36 @@ describe('travel analytics calculations', () => {
       .values([
         {
           ownerUserid: ownerId,
-          legacyId: 'JRN-TIMELINE-1',
           name: 'Outer journey',
           startDate: '2020-01-01',
           endDate: '2020-01-20',
         },
         {
           ownerUserid: ownerId,
-          legacyId: 'JRN-TIMELINE-2',
           name: 'Nested journey',
           startDate: '2020-01-05',
           endDate: '2020-01-06',
         },
         {
           ownerUserid: ownerId,
-          legacyId: 'JRN-TIMELINE-3',
           name: 'Overlapping journey',
           startDate: '2020-01-10',
           endDate: '2020-01-12',
         },
         {
           ownerUserid: ownerId,
-          legacyId: 'JRN-TIMELINE-4',
           name: 'Next journey',
           startDate: '2020-01-25',
           endDate: '2020-01-28',
         },
       ])
-      .returning(['id', 'legacyId'])
+      .returning('id')
       .execute();
     await db
       .insertInto('app.travelJourneySegments')
       .values(
         journeys.map((journey, index) => ({
           ownerUserid: ownerId,
-          legacyId: `SEG-TIMELINE-${index + 1}`,
           journeyId: journey.id,
           placeId: place!.id,
           seq: 1,
@@ -237,8 +224,8 @@ describe('travel analytics calculations', () => {
     expect(gaps[0]).toMatchObject({
       startDate: '2020-01-20',
       endDate: '2020-01-25',
-      fromJourneyLegacyId: 'JRN-TIMELINE-1',
-      toJourneyLegacyId: 'JRN-TIMELINE-4',
+      fromJourneyId: expect.any(String),
+      toJourneyId: expect.any(String),
     });
   });
 });

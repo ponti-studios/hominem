@@ -6,8 +6,8 @@ import type { TransactionHandle } from '@hominem/db/core';
 import { ValidationError } from '@hominem/db/errors';
 import type { z } from 'zod';
 
+import { placeResidenceImportedPeriodsSchema } from '../schemas/place-residences.schema';
 import { nativeTravelRows, travelImportInputSchema } from '../schemas/travel-import.schema';
-import { travelResidenceImportedPeriodsSchema } from '../schemas/travel-residences.schema';
 
 type Entity = keyof z.infer<typeof travelImportInputSchema>['rows'];
 type Row = Record<string, unknown>;
@@ -15,7 +15,8 @@ type StoredRow = Row & { id: string };
 type Table =
   | 'travel_airports'
   | 'travel_places'
-  | 'travel_residences'
+  | 'places'
+  | 'place_residences'
   | 'travel_journeys'
   | 'travel_journey_segments'
   | 'travel_transport'
@@ -25,7 +26,7 @@ type Counter = {
   created: number;
   updated: number;
   unchanged: number;
-  rejected: { legacyId: string; reason: string }[];
+  rejected: { sourceId: string; reason: string }[];
 };
 
 const ORDER: Entity[] = [
@@ -41,7 +42,7 @@ const ORDER: Entity[] = [
 const TABLE: Record<Entity, Table> = {
   airports: 'travel_airports',
   places: 'travel_places',
-  residences: 'travel_residences',
+  residences: 'place_residences',
   journeys: 'travel_journeys',
   segments: 'travel_journey_segments',
   transport: 'travel_transport',
@@ -100,18 +101,18 @@ function number(row: Row, key: string): number | null {
   return parsed;
 }
 
-function legacyId(entity: Entity, row: Row): string {
+function sourceId(entity: Entity, row: Row): string {
   const field = {
     airports: 'airport_id',
     places: 'place_id',
-    residences: 'legacyId',
+    residences: 'residence_id',
     journeys: 'journey_id',
     segments: 'segment_id',
     transport: 'transport_id',
     stays: 'stay_id',
     ideas: 'idea_id',
   }[entity];
-  return value(row, field) || '(missing)';
+  return value(row, 'id') || value(row, field) || '(missing)';
 }
 
 function payload(
@@ -127,39 +128,66 @@ function payload(
   switch (entity) {
     case 'airports':
       return {
-        legacy_id: required(row, 'airport_id'),
         code: required(row, 'code').toUpperCase(),
-        name: required(row, 'name'),
-        serves_place: required(row, 'serves_place'),
-        city: required(row, 'city'),
-        country: required(row, 'country'),
+        reference_airport_id: optional(row, 'reference_airport_id'),
+        name: optional(row, 'name'),
+        serves_place: optional(row, 'serves_place'),
+        city: optional(row, 'city'),
+        country: optional(row, 'country'),
         notes: optional(row, 'notes'),
         latitude: number(row, 'latitude'),
         longitude: number(row, 'longitude'),
       };
-    case 'places':
+    case 'places': {
+      const rawMetadata = row.metadata;
+      let metadata: unknown = {};
+      if (typeof rawMetadata === 'string') {
+        try {
+          metadata = JSON.parse(rawMetadata);
+        } catch {
+          throw new Error('invalid_metadata');
+        }
+      } else if (rawMetadata !== undefined && rawMetadata !== null) {
+        metadata = rawMetadata;
+      }
+      if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata))
+        throw new Error('invalid_metadata');
       return {
-        legacy_id: required(row, 'place_id'),
-        place: required(row, 'place'),
-        country: required(row, 'country'),
-        type: required(row, 'type'),
-        status: required(row, 'status'),
+        name: value(row, 'name') || required(row, 'place'),
+        place_type: row.place_type !== undefined ? row.place_type : (row.type ?? null),
+        formatted_address: row.formatted_address ?? null,
+        city: row.city ?? null,
+        state: row.state ?? null,
+        postal_code: row.postal_code ?? null,
+        country: row.country ?? null,
+        country_code: row.country_code ?? null,
+        latitude: row.latitude ?? null,
+        longitude: row.longitude ?? null,
+        url: row.url ?? null,
+        geocoded_at: row.geocoded_at ?? null,
+        metadata,
+        want_to_go: row.want_to_go === true || value(row, 'status').toLowerCase() === 'want to go',
         first_visited: date(row, 'first_visited'),
         last_visited: date(row, 'last_visited'),
         notes: optional(row, 'notes'),
+        archived: row.archived === true || value(row, 'archived').toLowerCase() === 'true',
+        lived_in_source:
+          row.travel_relationship === false || value(row, 'status').toLowerCase() === 'lived in',
       };
+    }
     case 'residences': {
-      const place = refs.places.get(required(row, 'placeLegacyId'));
+      const placeAlias = optional(row, 'place_id') ?? required(row, 'placeLegacyId');
+      const place = refs.places.get(placeAlias);
       if (!place) throw new Error('unknown_place');
       if (
         (value(row, 'place') &&
-          String(place.place).toLowerCase() !== value(row, 'place').toLowerCase()) ||
+          String(place.name ?? place.place).toLowerCase() !== value(row, 'place').toLowerCase()) ||
         (value(row, 'country') &&
           String(place.country).toLowerCase() !== value(row, 'country').toLowerCase())
       ) {
         throw new Error('residence_place_mismatch');
       }
-      const parsedPeriods = travelResidenceImportedPeriodsSchema.safeParse(row.periods);
+      const parsedPeriods = placeResidenceImportedPeriodsSchema.safeParse(row.periods);
       if (!parsedPeriods.success) {
         const multipleOngoing = parsedPeriods.error.issues.some(
           (issue) => issue.message === 'multiple_current_homes',
@@ -168,17 +196,13 @@ function payload(
       }
       const periods = parsedPeriods.data;
       return {
-        legacy_id: required(row, 'legacyId'),
         place_id: place.id,
-        periods: JSON.stringify(periods),
-        source_first_visited: optional(row, 'sourceFirstVisited'),
-        source_last_visited: optional(row, 'sourceLastVisited'),
+        periods,
         notes: optional(row, 'notes'),
       };
     }
     case 'journeys':
       return {
-        legacy_id: required(row, 'journey_id'),
         name: required(row, 'name'),
         start_date: date(row, 'start_date'),
         end_date: date(row, 'end_date'),
@@ -188,19 +212,18 @@ function payload(
     case 'segments': {
       const journey = refs.journeys.get(required(row, 'journey_id'));
       if (!journey) throw new Error('unknown_journey');
-      const placeLegacyId = optional(row, 'place_legacy_id');
+      const placeLegacyId = optional(row, 'place_legacy_id') ?? optional(row, 'place_id');
       const placeName = value(row, 'place').toLowerCase();
       const matches = placeLegacyId
         ? [refs.places.get(placeLegacyId)].filter((place): place is StoredRow => Boolean(place))
         : [...new Map([...refs.places.values()].map((place) => [place.id, place])).values()].filter(
-            (place) => String(place.place).toLowerCase() === placeName,
+            (place) => String(place.name ?? place.place).toLowerCase() === placeName,
           );
       if (matches.length !== 1)
         throw new Error(matches.length ? 'ambiguous_place' : 'unknown_place');
       const seq = Number(required(row, 'seq'));
       if (!Number.isInteger(seq) || seq < 1) throw new Error('invalid_seq');
       return {
-        legacy_id: required(row, 'segment_id'),
         journey_id: journey.id,
         seq,
         place_id: matches[0]!.id,
@@ -216,6 +239,7 @@ function payload(
       const destination = required(row, 'destination').toUpperCase();
       if (!refs.airports.has(origin)) throw new Error('unknown_origin_airport');
       if (!refs.airports.has(destination)) throw new Error('unknown_destination_airport');
+      const mode = required(row, 'mode').toLowerCase();
       const depLegacyId = optional(row, 'dep_segment');
       const arrLegacyId = optional(row, 'arr_segment');
       const dep = depLegacyId ? refs.segments.get(depLegacyId) : null;
@@ -226,11 +250,22 @@ function payload(
         throw new Error('segment_journey_mismatch');
       }
       return {
-        legacy_id: required(row, 'transport_id'),
         date: date(row, 'date'),
-        mode: required(row, 'mode').toLowerCase(),
+        mode,
         origin,
         destination,
+        ...(mode === 'air'
+          ? {
+              origin_reference_id:
+                optional(row, 'origin_reference_id') ??
+                refs.airports.get(origin)?.reference_airport_id ??
+                null,
+              destination_reference_id:
+                optional(row, 'destination_reference_id') ??
+                refs.airports.get(destination)?.reference_airport_id ??
+                null,
+            }
+          : { origin_reference_id: null, destination_reference_id: null }),
         carrier: optional(row, 'carrier'),
         number: optional(row, 'number'),
         booking_ref: optional(row, 'booking_ref'),
@@ -257,7 +292,6 @@ function payload(
         throw new Error('segment_journey_mismatch');
       }
       return {
-        legacy_id: required(row, 'stay_id'),
         segment_id: segment?.id ?? null,
         journey_id: journey?.id ?? null,
         check_in: date(row, 'check_in'),
@@ -272,7 +306,6 @@ function payload(
     }
     case 'ideas':
       return {
-        legacy_id: required(row, 'idea_id'),
         idea: required(row, 'idea'),
         type: required(row, 'type'),
         status: required(row, 'status'),
@@ -282,10 +315,31 @@ function payload(
 }
 
 function keyFor(entity: Entity, row: Row): string {
-  if (entity !== 'transport') return String(row.legacy_id);
-  return [row.legacy_id, row.journey_id, row.date ?? '', row.origin, row.destination].join(
-    '\u001f',
-  );
+  const norm = (value: unknown) =>
+    String(value ?? '')
+      .trim()
+      .toLocaleLowerCase();
+  const parts: Record<Entity, unknown[]> = {
+    airports: [norm(row.code)],
+    places: [row.id ?? ''],
+    residences: [row.place_id],
+    journeys: [norm(row.name), row.start_date ?? '', row.end_date ?? ''],
+    segments: [row.journey_id, row.seq],
+    transport: [
+      row.journey_id,
+      row.date ?? '',
+      norm(row.origin),
+      norm(row.destination),
+      norm(row.carrier),
+      norm(row.number),
+    ],
+    stays:
+      row.evidence === 'want'
+        ? [norm(row.property), norm(row.city)]
+        : [row.segment_id, norm(row.property), row.check_in ?? ''],
+    ideas: [norm(row.idea)],
+  };
+  return parts[entity].map((part) => String(part ?? '')).join('\u001f');
 }
 
 function hasOngoingPeriod(value: unknown): boolean {
@@ -308,10 +362,36 @@ function rejectionReason(error: unknown): string {
 
 async function loadRows(trx: TransactionHandle, entity: Entity, owner: string, replacing: boolean) {
   if (replacing) return new Map<string, StoredRow>();
-  const result =
-    await sql<StoredRow>`SELECT * FROM ${quotedTable(TABLE[entity])} WHERE owner_userid = ${owner}`.execute(
-      trx,
+  if (entity === 'places') {
+    const result = await sql<StoredRow>`SELECT p.*, t.want_to_go, t.archived,
+      (t.place_id IS NOT NULL) AS has_travel_relationship
+      FROM app.places p LEFT JOIN app.travel_places t
+        ON p.id=t.place_id AND p.owner_userid=t.owner_userid
+      WHERE p.owner_userid=${owner}`.execute(trx);
+    return new Map(
+      result.rows.map((row) => {
+        const normalized = snakeCaseRow(row);
+        return [String(normalized.id), normalized];
+      }),
     );
+  }
+  if (entity === 'residences') {
+    const result = await sql<StoredRow>`SELECT r.id, r.owner_userid, r.place_id, r.notes,
+      coalesce(jsonb_agg(jsonb_build_object('id', rp.id, 'startDate', rp.start_date, 'endDate', rp.end_date,
+        'ongoing', rp.ongoing, 'precision', rp.precision, 'note', rp.note)
+        ORDER BY rp.start_date, rp.id) FILTER (WHERE rp.id IS NOT NULL), '[]'::jsonb) AS periods
+      FROM app.place_residences r LEFT JOIN app.place_residence_periods rp
+        ON rp.residence_id=r.id AND rp.owner_userid=r.owner_userid
+      WHERE r.owner_userid=${owner} GROUP BY r.id`.execute(trx);
+    return new Map(
+      result.rows.map((row) => {
+        const normalized = snakeCaseRow(row);
+        return [String(normalized.id), normalized];
+      }),
+    );
+  }
+  const result = await sql<StoredRow>`SELECT * FROM ${quotedTable(TABLE[entity])}
+    WHERE owner_userid = ${owner}`.execute(trx);
   return new Map(
     result.rows.map((row) => {
       const normalized = snakeCaseRow(row);
@@ -321,6 +401,12 @@ async function loadRows(trx: TransactionHandle, entity: Entity, owner: string, r
 }
 
 async function countRows(trx: TransactionHandle, entity: Entity, owner: string) {
+  if (entity === 'places') {
+    const result = await sql<{
+      count: string;
+    }>`SELECT count(*)::text AS count FROM app.places WHERE owner_userid=${owner}`.execute(trx);
+    return Number(result.rows[0]?.count ?? 0);
+  }
   const result = await sql<{ count: string }>`
     SELECT count(*)::text AS count FROM ${quotedTable(TABLE[entity])} WHERE owner_userid = ${owner}
   `.execute(trx);
@@ -334,7 +420,121 @@ async function writeRow(
   fields: Row,
   current: StoredRow | undefined,
   dryRun: boolean,
+  identityId?: string,
 ): Promise<{ row: StoredRow; action: 'created' | 'updated' | 'unchanged' }> {
+  if (entity === 'places') {
+    const { want_to_go, archived, lived_in_source, ...placeFields } = fields;
+    const isTravel = lived_in_source !== true;
+    const hasTravelRelationship = current?.has_travel_relationship === true;
+    const relationshipChanged =
+      !current ||
+      isTravel !== hasTravelRelationship ||
+      (isTravel && (current.want_to_go !== want_to_go || current.archived !== archived));
+    const changed =
+      !current ||
+      Object.entries(placeFields).some(
+        ([key, next]) => !isDeepStrictEqual(current[key] ?? null, next ?? null),
+      ) ||
+      relationshipChanged;
+    if (current && !changed) return { row: current, action: 'unchanged' };
+    const id = current?.id ?? identityId ?? randomUUID();
+    const row: StoredRow = {
+      ...current,
+      id,
+      owner_userid: owner,
+      ...placeFields,
+      want_to_go,
+      archived,
+    };
+    if (!dryRun) {
+      if (current) {
+        const assignments = Object.entries(placeFields).map(
+          ([key, val]) => sql`${sql.ref(key)}=${sql.val(val)}`,
+        );
+        if (assignments.length)
+          await sql`UPDATE app.places SET ${sql.join(assignments)} WHERE id=${id} AND owner_userid=${owner}`.execute(
+            trx,
+          );
+      } else {
+        const columns = ['id', 'owner_userid', ...Object.keys(placeFields)];
+        const values = [id, owner, ...Object.values(placeFields)];
+        await sql`INSERT INTO app.places (${sql.join(columns.map((column) => sql.ref(column)))} ) VALUES (${sql.join(values.map((val) => sql.val(val)))})`.execute(
+          trx,
+        );
+      }
+      if (isTravel)
+        await sql`INSERT INTO app.travel_places (place_id, owner_userid, want_to_go, archived)
+        VALUES (${id}, ${owner}, ${Boolean(want_to_go)}, ${Boolean(archived)})
+        ON CONFLICT (place_id) DO UPDATE SET want_to_go=EXCLUDED.want_to_go, archived=EXCLUDED.archived`.execute(
+          trx,
+        );
+      else if (hasTravelRelationship)
+        await sql`DELETE FROM app.travel_places WHERE place_id=${id} AND owner_userid=${owner}`.execute(
+          trx,
+        );
+    }
+    return { row, action: current ? 'updated' : 'created' };
+  }
+  if (entity === 'residences') {
+    const { periods: rawPeriods, ...parentFields } = fields;
+    const periods = placeResidenceImportedPeriodsSchema.parse(rawPeriods ?? []);
+    const storedPeriods = current?.periods;
+    const comparablePeriods = (values: unknown) =>
+      Array.isArray(values)
+        ? values.map((period) => ({
+            startDate: period.startDate,
+            endDate: period.endDate ?? null,
+            ongoing: period.ongoing,
+            precision: period.precision,
+            note: period.note ?? null,
+          }))
+        : values;
+    const storedPeriodValues = Array.isArray(storedPeriods)
+      ? comparablePeriods(storedPeriods)
+      : storedPeriods;
+    const incomingPeriodValues = comparablePeriods(periods);
+    const idsChanged =
+      Array.isArray(storedPeriods) &&
+      periods.some((period, index) => period.id && period.id !== storedPeriods[index]?.id);
+    const periodsChanged =
+      !current || idsChanged || !isDeepStrictEqual(storedPeriodValues, incomingPeriodValues);
+    const fieldsChanged =
+      !current ||
+      Object.entries(parentFields).some(
+        ([key, next]) => !isDeepStrictEqual(current[key] ?? null, next ?? null),
+      );
+    if (current && !periodsChanged && !fieldsChanged) return { row: current, action: 'unchanged' };
+    const id = current?.id ?? identityId ?? randomUUID();
+    const row: StoredRow = { ...current, id, owner_userid: owner, ...parentFields, periods };
+    if (!dryRun) {
+      if (current) {
+        const assignments = Object.entries(parentFields).map(
+          ([key, val]) => sql`${sql.ref(key)}=${sql.val(val)}`,
+        );
+        if (assignments.length)
+          await sql`UPDATE app.place_residences SET ${sql.join(assignments)} WHERE id=${id} AND owner_userid=${owner}`.execute(
+            trx,
+          );
+        if (periodsChanged)
+          await sql`DELETE FROM app.place_residence_periods WHERE residence_id=${id} AND owner_userid=${owner}`.execute(
+            trx,
+          );
+      } else {
+        await sql`INSERT INTO app.place_residences (id, owner_userid, place_id, notes)
+          VALUES (${id}, ${owner}, ${parentFields.place_id}, ${parentFields.notes ?? null})`.execute(
+          trx,
+        );
+      }
+      if (periodsChanged)
+        for (const period of periods) {
+          await sql`INSERT INTO app.place_residence_periods
+          (id, owner_userid, residence_id, start_date, end_date, ongoing, precision, note)
+          VALUES (${period.id ?? randomUUID()}, ${owner}, ${id}, ${period.startDate}, ${period.endDate ?? null},
+            ${period.ongoing}, ${period.precision}, ${period.note ?? null})`.execute(trx);
+        }
+    }
+    return { row, action: current ? 'updated' : 'created' };
+  }
   const equalValue = (left: unknown, right: unknown) => {
     if (typeof right === 'string' && (right.startsWith('{') || right.startsWith('['))) {
       try {
@@ -365,7 +565,7 @@ async function writeRow(
     const row: StoredRow = { ...current, ...fields };
     return { row, action: 'updated' };
   }
-  const id = randomUUID();
+  const id = identityId ?? randomUUID();
   const row: StoredRow = { id, owner_userid: owner, ...fields };
   if (!dryRun) {
     const columns = ['id', 'owner_userid', ...Object.keys(fields)];
@@ -401,6 +601,19 @@ export async function importTravelRows(
     for (const entity of ORDER) {
       preDeleteCounts[entity] = await countRows(trx, entity, ownerUserId);
     }
+    const existingPlaceIdentities = await sql<{ name: string; country: string | null }>`
+      SELECT name, country FROM app.places WHERE owner_userid=${ownerUserId}
+    `.execute(trx);
+    const existingPlaceNames = new Set(
+      existingPlaceIdentities.rows.map(({ name, country }) =>
+        [
+          name.trim().toLocaleLowerCase(),
+          String(country ?? '')
+            .trim()
+            .toLocaleLowerCase(),
+        ].join('\u001f'),
+      ),
+    );
     if (input.mode === 'replace') {
       const deleteOrder: Entity[] = [
         'transport',
@@ -437,13 +650,32 @@ export async function importTravelRows(
       journeys: new Map<string, StoredRow>(),
       segments: new Map<string, StoredRow>(),
     };
-    for (const row of existing.airports.values()) refs.airports.set(String(row.code), row);
+    const referenceRows =
+      await sql<StoredRow>`SELECT id, source_id, code, name, city, country, latitude, longitude,
+      id AS reference_airport_id FROM app.travel_airport_reference WHERE code IS NOT NULL
+      ORDER BY scheduled_service DESC, active DESC, source_id`.execute(trx);
+    for (const raw of referenceRows.rows) {
+      const row = snakeCaseRow(raw);
+      if (!refs.airports.has(String(row.code).toUpperCase()))
+        refs.airports.set(String(row.code).toUpperCase(), row);
+    }
+    for (const row of existing.airports.values())
+      refs.airports.set(String(row.code).toUpperCase(), row);
+    const referencedLegCodes = await sql<{
+      code: string;
+    }>`SELECT origin AS code FROM app.travel_transport WHERE owner_userid=${ownerUserId}
+      UNION SELECT destination AS code FROM app.travel_transport WHERE owner_userid=${ownerUserId}`.execute(
+      trx,
+    );
+    for (const { code } of referencedLegCodes.rows) {
+      if (!refs.airports.has(code.toUpperCase()))
+        refs.airports.set(code.toUpperCase(), { id: code, code: code.toUpperCase() });
+    }
     for (const row of existing.places.values()) {
       refs.places.set(String(row.id), row);
-      refs.places.set(String(row.legacy_id), row);
     }
-    for (const row of existing.journeys.values()) refs.journeys.set(String(row.legacy_id), row);
-    for (const row of existing.segments.values()) refs.segments.set(String(row.legacy_id), row);
+    for (const row of existing.journeys.values()) refs.journeys.set(String(row.id), row);
+    for (const row of existing.segments.values()) refs.segments.set(String(row.id), row);
     const entities: Record<Entity, Counter> = {
       airports: { created: 0, updated: 0, unchanged: 0, rejected: [] },
       places: { created: 0, updated: 0, unchanged: 0, rejected: [] },
@@ -457,73 +689,114 @@ export async function importTravelRows(
 
     for (const entity of ORDER) {
       for (const sourceRow of rows[entity] ?? []) {
-        const id = legacyId(entity, sourceRow);
+        const id = sourceId(entity, sourceRow);
         await sql`SAVEPOINT travel_import_row`.execute(trx);
         try {
           if (entity === 'places' && value(sourceRow, 'status').toLowerCase() === 'lived in') {
-            if (!rows.residences.some((residence) => value(residence, 'legacyId') === id)) {
-              entities.places.rejected.push({ legacyId: id, reason: 'missing_residence_record' });
+            if (
+              !rows.residences.some(
+                (residence) =>
+                  value(residence, 'place_id') === value(sourceRow, 'place_id') ||
+                  value(residence, 'placeLegacyId') === id,
+              )
+            ) {
+              entities.places.rejected.push({ sourceId: id, reason: 'missing_residence_record' });
               await sql`RELEASE SAVEPOINT travel_import_row`.execute(trx);
               continue;
             }
-            const key = `${value(sourceRow, 'place').toLowerCase()}\u001f${value(sourceRow, 'country').toLowerCase()}`;
-            const hasCanonical = rows.places.some(
-              (candidate) =>
-                value(candidate, 'status').toLowerCase() !== 'lived in' &&
-                `${value(candidate, 'place').toLowerCase()}\u001f${value(candidate, 'country').toLowerCase()}` ===
-                  key,
-            );
-            if (!hasCanonical) {
-              const fields = payload(entity, sourceRow, refs);
-              const current = [...existing.places.values()].find(
-                (candidate) => String(candidate.legacy_id) === value(sourceRow, 'place_id'),
-              );
-              const result = await writeRow(trx, ownerUserId, entity, fields, current, false);
-              existing.places.set(result.row.id, result.row);
-              refs.places.set(result.row.id, result.row);
-              refs.places.set(String(fields.legacy_id), result.row);
-              entities.places[result.action] += 1;
-              residenceOnlyPlaces += 1;
-            }
-            await sql`RELEASE SAVEPOINT travel_import_row`.execute(trx);
-            continue;
           }
-          if (entity === 'places' && value(sourceRow, 'status').toLowerCase() !== 'lived in') {
-            const naturalKey = `${value(sourceRow, 'place').toLowerCase()}\u001f${value(sourceRow, 'country').toLowerCase()}`;
-            const duplicate = [...existing.places.values()].some(
-              (candidate) =>
-                `${String(candidate.place).toLowerCase()}\u001f${String(candidate.country).toLowerCase()}` ===
-                  naturalKey && String(candidate.legacy_id) !== id,
-            );
-            if (duplicate) throw new Error('duplicate_place');
+          if (entity === 'places') {
+            const alias = value(sourceRow, 'id') || value(sourceRow, 'place_id');
+            const hasUuid =
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+                alias,
+              );
+            const identity = [
+              value(sourceRow, 'place') || value(sourceRow, 'name'),
+              value(sourceRow, 'country'),
+            ]
+              .map((part) => part.toLocaleLowerCase())
+              .join('\u001f');
+            if (!hasUuid && existingPlaceNames.has(identity))
+              throw new Error('place_identity_required');
           }
           const fields = payload(entity, sourceRow, refs);
+          if (entity === 'airports') {
+            const ref = refs.airports.get(String(fields.code));
+            if (ref?.reference_airport_id) {
+              fields.reference_airport_id = ref.reference_airport_id;
+              fields.standalone = false;
+            } else {
+              if (
+                !fields.name ||
+                !fields.city ||
+                !fields.country ||
+                fields.latitude == null ||
+                fields.longitude == null
+              )
+                throw new Error('unknown_airport_request_operator_curation');
+              fields.reference_airport_id = null;
+              fields.standalone = true;
+            }
+          }
           if (
             entity === 'residences' &&
             hasOngoingPeriod(fields.periods) &&
-            [...existing.residences.values()].some(
-              (candidate) =>
-                String(candidate.legacy_id) !== String(fields.legacy_id) &&
-                hasOngoingPeriod(candidate.periods),
+            [...existing.residences.values()].some((candidate) =>
+              hasOngoingPeriod(candidate.periods),
             )
           ) {
             throw new Error('multiple_current_homes');
           }
-          const composite = keyFor(entity, fields);
-          const current = [...existing[entity].values()].find(
-            (candidate) => keyFor(entity, candidate) === composite,
+          const identityId = value(sourceRow, 'id');
+          const isUuid =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+              identityId,
+            );
+          let current = isUuid
+            ? [...existing[entity].values()].find((candidate) => candidate.id === identityId)
+            : undefined;
+          if (!current && entity === 'places' && isUuid) {
+            const found = await sql<StoredRow>`SELECT p.id, p.owner_userid, p.name, p.country,
+              p.place_type, p.first_visited, p.last_visited, p.notes,
+              coalesce(t.want_to_go, false) AS want_to_go, coalesce(t.archived, false) AS archived,
+              (t.place_id IS NOT NULL) AS has_travel_relationship
+              FROM app.places p LEFT JOIN app.travel_places t
+                ON t.place_id=p.id AND t.owner_userid=p.owner_userid
+              WHERE p.id=${identityId} AND p.owner_userid=${ownerUserId}`.execute(trx);
+            if (found.rows[0]) current = snakeCaseRow(found.rows[0]);
+          }
+          if (!current && entity !== 'places') {
+            const composite = keyFor(entity, fields);
+            current = [...existing[entity].values()].find(
+              (candidate) => keyFor(entity, candidate) === composite,
+            );
+          }
+          const result = await writeRow(
+            trx,
+            ownerUserId,
+            entity,
+            fields,
+            current,
+            false,
+            isUuid ? identityId : undefined,
           );
-          const result = await writeRow(trx, ownerUserId, entity, fields, current, false);
           const stored = result.row;
+          if (
+            entity === 'places' &&
+            value(sourceRow, 'status').toLowerCase() === 'lived in' &&
+            result.action === 'created'
+          )
+            residenceOnlyPlaces += 1;
           existing[entity].set(stored.id, stored);
           entities[entity][result.action] += 1;
           if (entity === 'airports') refs.airports.set(String(fields.code), stored);
           if (entity === 'places') {
             refs.places.set(stored.id, stored);
-            refs.places.set(String(fields.legacy_id), stored);
+            refs.places.set(id, stored);
           }
-          if (entity === 'journeys') refs.journeys.set(String(fields.legacy_id), stored);
-          if (entity === 'segments') refs.segments.set(String(fields.legacy_id), stored);
+          if (entity === 'journeys') refs.journeys.set(id, stored);
+          if (entity === 'segments') refs.segments.set(id, stored);
           await sql`RELEASE SAVEPOINT travel_import_row`.execute(trx);
         } catch (error) {
           await sql`ROLLBACK TO SAVEPOINT travel_import_row`.execute(trx);
@@ -532,7 +805,7 @@ export async function importTravelRows(
             entity === 'places' && rejectionReason(error) === 'duplicate_key'
               ? 'duplicate_place'
               : rejectionReason(error);
-          entities[entity].rejected.push({ legacyId: id, reason });
+          entities[entity].rejected.push({ sourceId: id, reason });
         }
       }
     }

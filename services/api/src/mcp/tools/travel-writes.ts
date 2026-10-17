@@ -1,13 +1,12 @@
 import { z } from 'zod';
 
+import { updateTravelAirportCuration } from '../../application/airport-catalogue.service';
 import {
   deleteTravelEntity,
   getTravelWriteEntity,
   writeTravelEntity,
 } from '../../application/travel-write.service';
 import {
-  travelAirportCreateInputSchema,
-  travelAirportUpdateInputSchema,
   travelDeleteInputSchema,
   travelEntityWriteOutputSchema,
   travelIdeaCreateInputSchema,
@@ -22,6 +21,7 @@ import {
   travelStayUpdateInputSchema,
   travelTransportCreateInputSchema,
   travelTransportUpdateInputSchema,
+  travelAirportCurationUpdateInputSchema,
 } from '../../schemas/travel-write.schema';
 import { registerTool } from '../tool-registry';
 
@@ -39,22 +39,24 @@ const names = {
   transport: ['transport', 'Transport'],
   stay: ['stay', 'Stay'],
   place: ['place', 'Place'],
-  airport: ['airport', 'Airport'],
   idea: ['idea', 'Idea'],
 } as const;
 
 function registerCreate(entity: keyof typeof names, schema: z.ZodType) {
   const [singular, title] = names[entity];
+  const placeCreate = entity === 'place';
   registerTool(
     {
       ...write,
       name: `travel_${singular}_create`,
       title: `Create travel ${title.toLowerCase()}`,
-      description: `Creates or returns an existing travel ${title.toLowerCase()}. Mode: write. Use when: a resolved travel ${title.toLowerCase()} needs to be recorded. Do not use when: the entity already exists and needs correction; use its update tool. Prerequisites: resolve referenced ids first. Produces: the ${title.toLowerCase()} id and legacyId.`,
+      description: placeCreate
+        ? 'Creates a new canonical Place and its travel relationship. Mode: write. Use when: this location is not already saved as a Place. Do not use when: an existing Place should be marked for travel; use travel_place_update with its UUID. Prerequisites: check place search first. Produces: the Place UUID.'
+        : `Creates or returns an existing travel ${title.toLowerCase()} by its natural key. Mode: write. Use when: a resolved travel ${title.toLowerCase()} needs to be recorded. Do not use when: the entity already exists and needs correction; use its update tool. Prerequisites: resolve referenced UUIDs first. Produces: the ${title.toLowerCase()} UUID.`,
       inputSchema: schema,
       outputSchema: rowOut,
       destructive: false,
-      idempotent: false,
+      idempotent: !placeCreate,
       standaloneWrite: true,
     },
     (owner, input) => writeTravelEntity(owner, entity, 'create', asInput(input)),
@@ -109,24 +111,35 @@ registerUpdate('stay', travelStayUpdateInputSchema);
 registerDelete('stay');
 registerCreate('place', travelPlaceCreateInputSchema);
 registerUpdate('place', travelPlaceUpdateInputSchema);
-registerCreate('airport', travelAirportCreateInputSchema);
-registerUpdate('airport', travelAirportUpdateInputSchema);
 registerCreate('idea', travelIdeaCreateInputSchema);
 registerUpdate('idea', travelIdeaUpdateInputSchema);
 
-const getInput = z
-  .object({ id: z.string().uuid().optional(), legacyId: z.string().optional() })
-  .refine((v) => Boolean(v.id) !== Boolean(v.legacyId));
+const getInput = z.object({ id: z.string().uuid() });
 for (const entity of ['transport', 'stay'] as const) {
   registerTool(
     {
       ...read,
       name: `travel_${entity}_get`,
       title: `Get travel ${entity}`,
-      description: `Gets one travel ${entity} by id or legacyId. Mode: read-only. Use when: one resolved ${entity} is needed. Do not use when: a collection is requested. Prerequisites: exactly one id or legacyId. Produces: the ${entity} snapshot.`,
+      description: `Gets one travel ${entity} by UUID. Mode: read-only. Use when: one resolved ${entity} is needed. Do not use when: a collection is requested. Prerequisites: stable entity UUID. Produces: the ${entity} snapshot.`,
       inputSchema: getInput,
       outputSchema: rowOut,
     },
     (owner, input) => getTravelWriteEntity(owner, entity, input),
   );
 }
+
+registerTool(
+  {
+    ...write,
+    name: 'travel_airport_update',
+    title: 'Curate travel airport or station',
+    description:
+      'Sets travel-specific airport curation by code. Reference data stays read-only. For codes outside the reference dataset, provide the full station fields to add a standalone endpoint. Mode: write. Prerequisites: use an existing Place UUID target by name in servesPlace. Produces: the merged airport view.',
+    inputSchema: travelAirportCurationUpdateInputSchema,
+    outputSchema: rowOut,
+    destructive: false,
+    idempotent: true,
+  },
+  async (owner, input) => ({ airport: await updateTravelAirportCuration(owner, input) }),
+);

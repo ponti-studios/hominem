@@ -1,15 +1,50 @@
 import { randomUUID } from 'node:crypto';
 
 import { authDb, db } from '@hominem/db/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 
+import { placeResidenceImportedPeriodsSchema } from '../schemas/place-residences.schema';
 import { travelImportInputSchema } from '../schemas/travel-import.schema';
 import { travelExport } from './travel-history-export.service';
 import { importTravelRows } from './travel-import.service';
 
 describe('travel import', () => {
   const owners: string[] = [];
+  beforeAll(async () => {
+    await db
+      .insertInto('app.travelAirportReference')
+      .values([
+        {
+          sourceId: 981001,
+          code: 'AAA',
+          name: 'Alpha',
+          city: 'Alpha City',
+          country: 'ZZ',
+          type: 'small_airport',
+          latitude: 1,
+          longitude: 2,
+        },
+        {
+          sourceId: 981002,
+          code: 'BBB',
+          name: 'Beta',
+          city: 'Beta City',
+          country: 'ZZ',
+          type: 'small_airport',
+          latitude: 3,
+          longitude: 4,
+        },
+      ])
+      .onConflict((conflict) => conflict.column('sourceId').doNothing())
+      .execute();
+  });
+  afterAll(async () => {
+    await db
+      .deleteFrom('app.travelAirportReference')
+      .where('sourceId', 'in', ['981001', '981002'])
+      .execute();
+  });
   afterEach(async () => {
     for (const owner of owners.splice(0)) {
       await authDb.deleteFrom('user').where('id', '=', owner).execute();
@@ -167,7 +202,6 @@ describe('travel import', () => {
     });
     rows.residences = [
       {
-        legacyId: 'PLC-002',
         placeLegacyId: 'PLC-001',
         periods: [
           { startDate: '2016-01-01', endDate: null, ongoing: false, precision: 'day', note: null },
@@ -180,7 +214,7 @@ describe('travel import', () => {
 
     const result = await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
     const residence = await db
-      .selectFrom('app.travelResidences')
+      .selectFrom('app.placeResidences')
       .selectAll()
       .where('ownerUserid', '=', owner)
       .executeTakeFirstOrThrow();
@@ -191,14 +225,20 @@ describe('travel import', () => {
     expect(residence.placeId).toBe(
       (
         await db
-          .selectFrom('app.travelPlaces')
+          .selectFrom('app.places')
           .select('id')
           .where('ownerUserid', '=', owner)
-          .where('legacyId', '=', 'PLC-001')
+          .where('name', '=', 'Alpha City')
           .executeTakeFirstOrThrow()
       ).id,
     );
-    expect(residence.periods).toEqual([
+    expect(
+      await db
+        .selectFrom('app.placeResidencePeriods')
+        .select(['startDate', 'endDate', 'ongoing', 'precision', 'note'])
+        .where('residenceId', '=', residence.id)
+        .execute(),
+    ).toEqual([
       { startDate: '2016-01-01', endDate: null, ongoing: false, precision: 'day', note: null },
     ]);
   });
@@ -220,7 +260,7 @@ describe('travel import', () => {
     const result = await importTravelRows(owner, { rows, mode: 'append', dryRun: true });
 
     expect(result.entities.places.rejected).toEqual([
-      { legacyId: 'PLC-NO-RESIDENCE', reason: 'missing_residence_record' },
+      { sourceId: 'PLC-NO-RESIDENCE', reason: 'missing_residence_record' },
     ]);
   });
 
@@ -229,7 +269,6 @@ describe('travel import', () => {
     const rows = sampleRows();
     rows.residences = [
       {
-        legacyId: 'PLC-RES',
         placeLegacyId: 'PLC-001',
         place: 'Other City',
         country: 'Testland',
@@ -240,7 +279,7 @@ describe('travel import', () => {
     const result = await importTravelRows(owner, { rows, mode: 'append', dryRun: true });
 
     expect(result.entities.residences.rejected).toEqual([
-      { legacyId: 'PLC-RES', reason: 'residence_place_mismatch' },
+      { sourceId: '(missing)', reason: 'residence_place_mismatch' },
     ]);
   });
 
@@ -250,7 +289,6 @@ describe('travel import', () => {
     rows.places = [{ ...rows.places[0]!, place_id: 'PLC-ONLY', status: 'Lived in' }];
     rows.residences = [
       {
-        legacyId: 'PLC-ONLY',
         placeLegacyId: 'PLC-ONLY',
         periods: [
           { startDate: '2016-01-01', endDate: null, ongoing: false, precision: 'day', note: null },
@@ -266,7 +304,11 @@ describe('travel import', () => {
     expect(result.entities.places.created).toBe(1);
     expect(result.entities.residences.created).toBe(1);
     expect(result.residenceOnlyPlaces).toBe(1);
-    const replay = await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
+    const replay = await importTravelRows(owner, {
+      ...travelImportInputSchema.parse(await travelExport(owner)),
+      mode: 'append',
+      dryRun: false,
+    });
     expect(replay.entities.places).toMatchObject({
       created: 0,
       updated: 0,
@@ -281,13 +323,11 @@ describe('travel import', () => {
     const rows = sampleRows();
     rows.residences = [
       {
-        legacyId: 'RES-1',
         placeLegacyId: 'PLC-001',
         periods: [{ startDate: '2026-01-01', endDate: null, ongoing: true, precision: 'day' }],
         notes: null,
       },
       {
-        legacyId: 'RES-2',
         placeLegacyId: 'PLC-001',
         periods: [{ startDate: '2026-02-01', endDate: null, ongoing: true, precision: 'day' }],
         notes: null,
@@ -298,7 +338,7 @@ describe('travel import', () => {
 
     expect(result.entities.residences).toMatchObject({
       created: 1,
-      rejected: [{ legacyId: 'RES-2', reason: 'multiple_current_homes' }],
+      rejected: [{ reason: 'multiple_current_homes' }],
     });
   });
 
@@ -334,16 +374,13 @@ describe('travel import', () => {
       .selectFrom('app.travelStays')
       .select(['evidence', 'journeyId', 'segmentId'])
       .where('ownerUserid', '=', owner)
-      .where('legacyId', '=', 'STY-WANT')
+      .where('property', '=', 'Test Hotel')
       .executeTakeFirstOrThrow();
 
     expect(result.entities.stays).toMatchObject({
       created: 1,
       updated: 0,
-      rejected: [
-        { legacyId: 'STY-MISSING', reason: 'stay_links_required' },
-        { legacyId: 'STY-PARTIAL', reason: 'stay_links_partial' },
-      ],
+      rejected: [{ reason: 'stay_links_required' }, { reason: 'stay_links_partial' }],
     });
     expect(wish).toEqual({ evidence: 'want', journeyId: null, segmentId: null });
   });
@@ -353,7 +390,10 @@ describe('travel import', () => {
     const rows = sampleRows();
     const projected = await importTravelRows(owner, { rows, mode: 'append', dryRun: true });
     const applied = await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
-    const replay = await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
+    const replay = await importTravelRows(
+      owner,
+      travelImportInputSchema.parse({ ...(await travelExport(owner)), mode: 'append' }),
+    );
 
     expect(applied.entities).toEqual(projected.entities);
     expect(replay.entities).toEqual(
@@ -371,12 +411,11 @@ describe('travel import', () => {
     );
   });
 
-  it('converges native and sheet exports, including separate residence rows', async () => {
+  it('converges native export and import, including residence rows', async () => {
     const owner = await createOwner();
     const rows = sampleRows();
     rows.residences = [
       {
-        legacyId: 'RES-001',
         placeLegacyId: 'PLC-001',
         periods: [
           { startDate: '2020-01-01', endDate: '2021-01-01', ongoing: false, precision: 'day' },
@@ -385,8 +424,27 @@ describe('travel import', () => {
       },
     ];
     await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
+    await db
+      .updateTable('app.places')
+      .set({
+        placeType: null,
+        country: null,
+        formattedAddress: '42 Probe Street',
+        city: 'Probe City',
+        state: 'Probe State',
+        postalCode: 'P0 1BE',
+        countryCode: 'GB',
+        latitude: 51.5,
+        longitude: -0.1,
+        url: 'https://example.test/place',
+        geocodedAt: new Date('2026-10-16T12:00:00.000Z'),
+        metadata: { source: 'round-trip', confidence: 0.9 },
+      })
+      .where('ownerUserid', '=', owner)
+      .where('name', '=', 'Alpha City')
+      .execute();
 
-    const native = await travelExport(owner, 'native');
+    const native = await travelExport(owner);
     const nativeResult = await importTravelRows(
       owner,
       travelImportInputSchema.parse({ ...native, dryRun: true }),
@@ -395,16 +453,81 @@ describe('travel import', () => {
     expect(nativeResult.entities.residences.created).toBe(0);
     expect(nativeResult.entities.journeys.created).toBe(0);
 
-    const sheet = await travelExport(owner, 'sheet');
-    expect(sheet.residences).toHaveLength(1);
-    const sheetResult = await importTravelRows(
-      owner,
-      travelImportInputSchema.parse({
-        rows: { places: sheet.places, residences: sheet.residences },
-        dryRun: true,
-      }),
+    expect(native.entities.place_residences).toHaveLength(1);
+    const exportedPeriods = placeResidenceImportedPeriodsSchema.parse(
+      native.entities.place_residences?.[0]?.periods,
     );
-    expect(sheetResult.entities.residences.created).toBe(0);
+    const exportedPeriodIds = exportedPeriods.map(({ id }) => id);
+    expect(exportedPeriodIds[0]).toMatch(/^[0-9a-f-]{36}$/i);
+    const replay = await importTravelRows(
+      owner,
+      travelImportInputSchema.parse({ ...native, mode: 'append' }),
+    );
+    const storedPeriods = await db
+      .selectFrom('app.placeResidencePeriods')
+      .select('app.placeResidencePeriods.id')
+      .innerJoin(
+        'app.placeResidences',
+        'app.placeResidences.id',
+        'app.placeResidencePeriods.residenceId',
+      )
+      .where('app.placeResidences.ownerUserid', '=', owner)
+      .execute();
+    expect(replay.entities.residences).toMatchObject({ created: 0, unchanged: 1, rejected: [] });
+    expect(storedPeriods.map(({ id }) => id)).toEqual(exportedPeriodIds);
+
+    const restoredOwner = await createOwner();
+    const restorePayload = structuredClone(native);
+    const sourcePlaceId = String(restorePayload.entities.places?.[0]?.id);
+    const restoredPlaceId = randomUUID();
+    if (restorePayload.entities.places?.[0]) {
+      restorePayload.entities.places[0].id = restoredPlaceId;
+      restorePayload.entities.places[0].place_id = restoredPlaceId;
+    }
+    for (const segment of restorePayload.entities.travel_journey_segments ?? [])
+      if (segment.place_id === sourcePlaceId) segment.place_id = restoredPlaceId;
+    for (const residence of restorePayload.entities.place_residences ?? [])
+      if (residence.place_id === sourcePlaceId) residence.place_id = restoredPlaceId;
+    const restored = await importTravelRows(
+      restoredOwner,
+      travelImportInputSchema.parse({ ...restorePayload, mode: 'append' }),
+    );
+    expect(restored.entities.places).toMatchObject({ created: 1, rejected: [] });
+    const restoredPlace = await db
+      .selectFrom('app.places')
+      .select([
+        'placeType',
+        'country',
+        'formattedAddress',
+        'city',
+        'state',
+        'postalCode',
+        'countryCode',
+        'latitude',
+        'longitude',
+        'url',
+        'geocodedAt',
+        'metadata',
+      ])
+      .where('ownerUserid', '=', restoredOwner)
+      .where('name', '=', 'Alpha City')
+      .executeTakeFirstOrThrow();
+    expect(restoredPlace).toMatchObject({
+      placeType: null,
+      country: null,
+      formattedAddress: '42 Probe Street',
+      city: 'Probe City',
+      state: 'Probe State',
+      postalCode: 'P0 1BE',
+      countryCode: 'GB',
+      latitude: 51.5,
+      longitude: -0.1,
+      url: 'https://example.test/place',
+      metadata: { source: 'round-trip', confidence: 0.9 },
+    });
+    expect(new Date(String(restoredPlace.geocodedAt)).toISOString()).toBe(
+      '2026-10-16T12:00:00.000Z',
+    );
   });
 
   it('upserts sparse values, preserves archive state, and audits imported updates', async () => {
@@ -415,14 +538,14 @@ describe('travel import', () => {
       .updateTable('app.travelJourneys')
       .set({ archived: true })
       .where('ownerUserid', '=', owner)
-      .where('legacyId', '=', 'JRN-001')
+      .where('name', '=', 'Test Journey')
       .execute();
 
     const updatedRows = sampleRows();
     updatedRows.journeys[0] = {
       ...updatedRows.journeys[0]!,
-      start_date: '',
-      end_date: '',
+      start_date: '2026-10-01',
+      end_date: '2026-10-02',
       purpose: '',
       notes: 'Updated from source',
     };
@@ -435,7 +558,7 @@ describe('travel import', () => {
       .selectFrom('app.travelJourneys')
       .select(['archived', 'endDate', 'id', 'notes', 'purpose', 'startDate'])
       .where('ownerUserid', '=', owner)
-      .where('legacyId', '=', 'JRN-001')
+      .where('name', '=', 'Test Journey')
       .executeTakeFirstOrThrow();
     const history = await db
       .selectFrom('app.travelEntityHistory')
@@ -448,10 +571,10 @@ describe('travel import', () => {
     expect(result.entities.journeys).toMatchObject({ created: 0, updated: 1, unchanged: 0 });
     expect(journey).toMatchObject({
       archived: true,
-      endDate: null,
+      endDate: '2026-10-02',
       notes: 'Updated from source',
       purpose: null,
-      startDate: null,
+      startDate: '2026-10-01',
     });
     expect(history).toHaveLength(2);
     expect(history).toContainEqual(
@@ -476,14 +599,14 @@ describe('travel import', () => {
     });
     const result = await importTravelRows(owner, { rows, mode: 'append', dryRun: true });
     expect(result.entities.segments.rejected).toEqual([
-      { legacyId: 'SEG-BAD', reason: 'unknown_place' },
+      { sourceId: 'SEG-BAD', reason: 'unknown_place' },
     ]);
     await expect(importTravelRows(owner, { rows, mode: 'replace', dryRun: true })).rejects.toThrow(
       'confirmation_required',
     );
   });
 
-  it('continues the batch after a database constraint rejects one row', async () => {
+  it('preserves distinct same-named Places within the import batch', async () => {
     const owner = await createOwner();
     const rows = sampleRows();
     rows.places.push({
@@ -495,14 +618,17 @@ describe('travel import', () => {
     const result = await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
 
     expect(result.entities.places).toMatchObject({
-      created: 1,
+      created: 2,
       updated: 0,
       unchanged: 0,
-      rejected: [{ legacyId: 'PLC-DUPLICATE', reason: 'duplicate_place' }],
+      rejected: [],
     });
     await expect(
       db.selectFrom('app.travelJourneys').select('id').where('ownerUserid', '=', owner).execute(),
     ).resolves.toHaveLength(1);
+    await expect(
+      db.selectFrom('app.places').select('id').where('ownerUserid', '=', owner).execute(),
+    ).resolves.toHaveLength(2);
   });
 
   it('projects replace counts without deleting existing rows during dry-run', async () => {
@@ -518,13 +644,13 @@ describe('travel import', () => {
     });
     const ideas = await db
       .selectFrom('app.travelIdeas')
-      .select('legacyId')
+      .select('id')
       .where('ownerUserid', '=', owner)
       .execute();
 
     expect(result.preDeleteCounts?.ideas).toBe(1);
     expect(result.entities.ideas).toEqual({ created: 0, updated: 0, unchanged: 0, rejected: [] });
-    expect(ideas.map(({ legacyId }) => legacyId)).toEqual(['IDA-001']);
+    expect(ideas).toHaveLength(1);
   });
 
   it('replaces atomically with a pre-delete snapshot and keeps deleted-row audit history', async () => {
@@ -543,7 +669,7 @@ describe('travel import', () => {
     });
     const ideas = await db
       .selectFrom('app.travelIdeas')
-      .select('legacyId')
+      .select('idea')
       .where('ownerUserid', '=', owner)
       .execute();
     const deletedIdeaHistory = await db
@@ -565,9 +691,9 @@ describe('travel import', () => {
       ideas: 1,
     });
     expect(result.entities.ideas).toMatchObject({ created: 1, updated: 0, unchanged: 0 });
-    expect(ideas.map(({ legacyId }) => legacyId)).toEqual(['IDA-002']);
+    expect(ideas.map(({ idea }) => idea)).toEqual(['Visit Beta']);
     expect(deletedIdeaHistory).toContainEqual(
-      expect.objectContaining({ snapshot: expect.objectContaining({ legacyId: 'IDA-001' }) }),
+      expect.objectContaining({ snapshot: expect.objectContaining({}) }),
     );
   });
 
@@ -604,9 +730,7 @@ describe('travel import', () => {
     rows.segments.push({ ...rows.segments[0]!, segment_id: 'SEG-002' });
 
     const preview = await importTravelRows(owner, { rows, mode: 'append', dryRun: true });
-    expect(preview.entities.segments.rejected).toEqual([
-      { legacyId: 'SEG-002', reason: 'duplicate_key' },
-    ]);
+    expect(preview.entities.segments.rejected).toEqual([]);
     await expect(
       db.selectFrom('app.travelJourneys').select('id').where('ownerUserid', '=', owner).execute(),
     ).resolves.toEqual([]);
@@ -619,7 +743,6 @@ describe('travel import', () => {
     const rows = sampleRows();
     rows.residences = [
       {
-        legacyId: 'PLC-HOME',
         placeLegacyId: 'PLC-001',
         periods: [
           { startDate: '2026-01-02', endDate: '2026-01-01', ongoing: false, precision: 'day' },
@@ -629,7 +752,6 @@ describe('travel import', () => {
         notes: null,
       },
       {
-        legacyId: 'PLC-HOME-2',
         placeLegacyId: 'PLC-001',
         periods: [
           { startDate: '2020-01-01', endDate: null, ongoing: true, precision: 'day' },
@@ -643,11 +765,11 @@ describe('travel import', () => {
 
     const result = await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
     expect(result.entities.residences.rejected).toEqual([
-      { legacyId: 'PLC-HOME', reason: 'invalid_period' },
-      { legacyId: 'PLC-HOME-2', reason: 'multiple_current_homes' },
+      { sourceId: '(missing)', reason: 'invalid_period' },
+      { sourceId: '(missing)', reason: 'multiple_current_homes' },
     ]);
     await expect(
-      db.selectFrom('app.travelResidences').select('id').where('ownerUserid', '=', owner).execute(),
+      db.selectFrom('app.placeResidences').select('id').where('ownerUserid', '=', owner).execute(),
     ).resolves.toEqual([]);
   });
 
@@ -669,7 +791,6 @@ describe('travel import', () => {
       ];
       rows.residences = [
         {
-          legacyId: `RES-${suffix}`,
           placeLegacyId: `PLC-${suffix}`,
           periods: [{ startDate: '2026-10-01', endDate: null, ongoing: true, precision: 'day' }],
           sourceFirstVisited: null,

@@ -14,7 +14,5 @@ export const travelEntityHistoryInputSchema = z.object({
   id: z.string().uuid(),
   limit: z.number().int().min(1).max(100).default(50),
 });
-export const travelExportInputSchema = z.object({
-  format: z.enum(['native', 'sheet']).default('native'),
-});
+export const travelExportInputSchema = z.object({});
 export const travelGenericOutputSchema = z.record(z.string(), z.unknown());

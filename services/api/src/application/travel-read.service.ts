@@ -1,6 +1,10 @@
-import { db } from '@hominem/db/core';
+import { db, sql } from '@hominem/db/core';
 
-import { travelResidencePeriodsSchema } from '../schemas/travel-residences.schema';
+import {
+  getTravelAirport as getCuratedAirport,
+  listTravelAirports as listAirportWorkingSet,
+} from './airport-catalogue.service';
+import { listPlaceResidences } from './place-residences.service';
 
 type Page = { limit: number; offset: number };
 
@@ -44,24 +48,46 @@ const distanceKm = (
 };
 
 async function allTransport(owner: string) {
-  const [rows, airports] = await Promise.all([
-    db.selectFrom('app.travelTransport').selectAll().where('ownerUserid', '=', owner).execute(),
-    db.selectFrom('app.travelAirports').selectAll().where('ownerUserid', '=', owner).execute(),
+  const rows = await db
+    .selectFrom('app.travelTransport')
+    .selectAll()
+    .where('ownerUserid', '=', owner)
+    .execute();
+  const selections = rows.flatMap((leg) => [
+    { code: leg.origin, referenceId: leg.originReferenceId },
+    { code: leg.destination, referenceId: leg.destinationReferenceId },
   ]);
-  const byCode = new Map(airports.map((airport) => [airport.code.toUpperCase(), airport]));
+  const resolved = await Promise.all(
+    selections.map(({ code, referenceId }) => getCuratedAirport(owner, code, referenceId)),
+  );
+  const byCode = new Map(
+    resolved.flatMap((airport) =>
+      airport ? [[`${airport.code}:${airport.referenceId}`, airport] as const] : [],
+    ),
+  );
   return rows.map((leg) => {
-    const origin = byCode.get(leg.origin.toUpperCase());
-    const destination = byCode.get(leg.destination.toUpperCase());
+    const origin =
+      byCode.get(`${leg.origin.toUpperCase()}:${leg.originReferenceId ?? ''}`) ??
+      [...byCode.values()].find((airport) => airport.code === leg.origin.toUpperCase());
+    const destination =
+      byCode.get(`${leg.destination.toUpperCase()}:${leg.destinationReferenceId ?? ''}`) ??
+      [...byCode.values()].find((airport) => airport.code === leg.destination.toUpperCase());
     return {
       ...leg,
       originCode: leg.origin,
       originName: origin?.name ?? null,
       originPlace: origin?.servesPlace ?? null,
       originCity: origin?.city ?? null,
+      originCountry: origin?.country ?? null,
+      originLatitude: origin?.latitude ?? null,
+      originLongitude: origin?.longitude ?? null,
       destinationCode: leg.destination,
       destinationName: destination?.name ?? null,
       destinationPlace: destination?.servesPlace ?? null,
       destinationCity: destination?.city ?? null,
+      destinationCountry: destination?.country ?? null,
+      destinationLatitude: destination?.latitude ?? null,
+      destinationLongitude: destination?.longitude ?? null,
       distanceKm: origin && destination ? distanceKm(origin, destination) : null,
     };
   });
@@ -69,16 +95,15 @@ async function allTransport(owner: string) {
 
 async function placeRelationships(owner: string) {
   const [segments, residences] = await Promise.all([
-    db
-      .selectFrom('app.travelJourneySegments')
-      .select(['placeId'])
-      .where('ownerUserid', '=', owner)
-      .execute(),
-    db
-      .selectFrom('app.travelResidences')
-      .select(['placeId', 'periods'])
-      .where('ownerUserid', '=', owner)
-      .execute(),
+    sql<{
+      placeId: string;
+    }>`SELECT place_id FROM app.travel_journey_segments WHERE owner_userid=${owner}`.execute(db),
+    sql<{
+      placeId: string;
+      ongoing: boolean;
+    }>`SELECT r.place_id, rp.ongoing FROM app.place_residences r JOIN app.place_residence_periods rp ON rp.residence_id=r.id AND rp.owner_userid=r.owner_userid WHERE r.owner_userid=${owner}`.execute(
+      db,
+    ),
   ]);
   const result = new Map<
     string,
@@ -91,39 +116,58 @@ async function placeRelationships(owner: string) {
     }
   >();
   const counts = new Map<string, number>();
-  for (const segment of segments)
+  for (const segment of segments.rows)
     counts.set(segment.placeId, (counts.get(segment.placeId) ?? 0) + 1);
   const homeCounts = new Map<string, { livedIn: boolean; currentlyHome: boolean }>();
-  for (const residence of residences) {
-    const periods = travelResidencePeriodsSchema.parse(
-      typeof residence.periods === 'string' ? JSON.parse(residence.periods) : residence.periods,
-    );
+  for (const residence of residences.rows) {
     const current = homeCounts.get(residence.placeId) ?? { livedIn: false, currentlyHome: false };
     current.livedIn = true;
-    current.currentlyHome ||= periods.some((period) => period.ongoing === true);
+    current.currentlyHome ||= residence.ongoing;
     homeCounts.set(residence.placeId, current);
   }
   return { counts, homeCounts, result };
 }
 
 async function decoratedPlaces(owner: string) {
-  const places = await db
-    .selectFrom('app.travelPlaces')
-    .selectAll()
-    .where('ownerUserid', '=', owner)
-    .execute();
+  const placeRows = await sql<{
+    id: string;
+    placeId: string;
+    ownerUserid: string;
+    place: string;
+    country: string | null;
+    type: string | null;
+    wantToGo: boolean;
+    firstVisited: string | null;
+    lastVisited: string | null;
+    notes: string | null;
+    archived: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }>`SELECT p.id, t.place_id, t.owner_userid, p.name AS place,
+    p.country, p.place_type AS type, t.want_to_go, p.first_visited, p.last_visited,
+    p.notes, t.archived, t.created_at, t.updated_at FROM app.travel_places t
+    JOIN app.places p ON p.id=t.place_id AND p.owner_userid=t.owner_userid
+    WHERE t.owner_userid=${owner}`.execute(db);
+  const places = placeRows.rows;
   const { counts, homeCounts } = await placeRelationships(owner);
   return places.map((place) => {
     const segmentCount = counts.get(place.id) ?? 0;
     const home = homeCounts.get(place.id);
+    const status = place.wantToGo
+      ? 'Want to go'
+      : segmentCount > 0 || home?.livedIn
+        ? 'Visited'
+        : 'Saved';
     return {
       ...place,
+      status,
       relationships: {
         visited: segmentCount > 0,
         segmentCount,
         livedIn: home?.livedIn ?? false,
         currentlyHome: home?.currentlyHome ?? false,
-        wantToGo: place.status === 'Want to go',
+        wantToGo: place.wantToGo,
+        status,
       },
     };
   });
@@ -139,8 +183,8 @@ async function journeySummaries(owner: string) {
       .orderBy('seq')
       .execute(),
     db
-      .selectFrom('app.travelPlaces')
-      .select(['id', 'place', 'country'])
+      .selectFrom('app.places')
+      .select(['id', 'name as place', 'country'])
       .where('ownerUserid', '=', owner)
       .execute(),
   ]);
@@ -154,7 +198,7 @@ async function journeySummaries(owner: string) {
       ...journey,
       segmentCount: tripSegments.length,
       places: segmentPlaces.map(({ place }) => place),
-      countries: [...new Set(segmentPlaces.map(({ country }) => country))],
+      countries: [...new Set(segmentPlaces.flatMap(({ country }) => (country ? [country] : [])))],
     };
   });
 }
@@ -189,8 +233,7 @@ export async function listTravelJourneys(
     )
     .sort(
       (a, b) =>
-        (b.startDate ?? '').localeCompare(a.startDate ?? '') ||
-        a.legacyId.localeCompare(b.legacyId),
+        (b.startDate ?? '').localeCompare(a.startDate ?? '') || a.name.localeCompare(b.name),
     );
   return {
     journeys: paginate(filtered, input).items,
@@ -201,24 +244,24 @@ export async function listTravelJourneys(
   };
 }
 
-async function selectedJourney(owner: string, input: { id?: string; legacyId?: string }) {
-  let query = db.selectFrom('app.travelJourneys').selectAll().where('ownerUserid', '=', owner);
-  query = input.id
-    ? query.where('id', '=', input.id)
-    : query.where('legacyId', '=', input.legacyId!);
-  return query.executeTakeFirst();
+async function selectedJourney(owner: string, id: string) {
+  return db
+    .selectFrom('app.travelJourneys')
+    .selectAll()
+    .where('ownerUserid', '=', owner)
+    .where('id', '=', id)
+    .executeTakeFirst();
 }
 
-export async function getTravelJourney(owner: string, input: { id?: string; legacyId?: string }) {
-  const journey = await selectedJourney(owner, input);
+export async function getTravelJourney(owner: string, input: { id: string }) {
+  const journey = await selectedJourney(owner, input.id);
   if (!journey) return null;
   const [segments, legs, stays, places] = await Promise.all([
     db
       .selectFrom('app.travelJourneySegments as s')
-      .innerJoin('app.travelPlaces as p', 'p.id', 's.placeId')
+      .innerJoin('app.places as p', 'p.id', 's.placeId')
       .select([
         's.id',
-        's.legacyId',
         's.seq',
         's.journeyId',
         's.placeId',
@@ -227,7 +270,7 @@ export async function getTravelJourney(owner: string, input: { id?: string; lega
         's.notes',
         's.createdAt',
         's.updatedAt',
-        'p.place',
+        'p.name as place',
         'p.country',
       ])
       .where('s.ownerUserid', '=', owner)
@@ -237,10 +280,7 @@ export async function getTravelJourney(owner: string, input: { id?: string; lega
     allTransport(owner).then((rows) =>
       rows
         .filter((leg) => leg.journeyId === journey.id)
-        .sort(
-          (a, b) =>
-            (a.date ?? '').localeCompare(b.date ?? '') || a.legacyId.localeCompare(b.legacyId),
-        ),
+        .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '') || a.id.localeCompare(b.id)),
     ),
     db
       .selectFrom('app.travelStays')
@@ -268,7 +308,6 @@ export async function listTravelSegments(
     limit: number;
     offset: number;
     journeyId?: string;
-    journeyLegacyId?: string;
     place?: string;
     from?: string;
     to?: string;
@@ -282,12 +321,12 @@ export async function listTravelSegments(
       .execute(),
     db
       .selectFrom('app.travelJourneys')
-      .select(['id', 'legacyId', 'name', 'startDate'])
+      .select(['id', 'name', 'startDate'])
       .where('ownerUserid', '=', owner)
       .execute(),
     db
-      .selectFrom('app.travelPlaces')
-      .select(['id', 'place', 'country'])
+      .selectFrom('app.places')
+      .select(['id', 'name as place', 'country'])
       .where('ownerUserid', '=', owner)
       .execute(),
   ]);
@@ -295,11 +334,9 @@ export async function listTravelSegments(
   const placeById = new Map(places.map((place) => [place.id, place]));
   const filtered = rows
     .filter((segment) => {
-      const journey = journeyById.get(segment.journeyId);
       const place = placeById.get(segment.placeId);
       return (
         (!input.journeyId || segment.journeyId === input.journeyId) &&
-        (!input.journeyLegacyId || journey?.legacyId === input.journeyLegacyId) &&
         (!input.place || norm(place?.place) === norm(input.place)) &&
         inRange(segment.arrivalDate, segment.departureDate, input.from, input.to)
       );
@@ -314,7 +351,6 @@ export async function listTravelSegments(
     ...segment,
     place: placeById.get(segment.placeId)?.place ?? null,
     country: placeById.get(segment.placeId)?.country ?? null,
-    journeyLegacyId: journeyById.get(segment.journeyId)?.legacyId ?? null,
     journeyName: journeyById.get(segment.journeyId)?.name ?? null,
     nights: daysBetween(segment.arrivalDate, segment.departureDate),
   }));
@@ -328,14 +364,13 @@ export async function listTravelSegments(
   };
 }
 
-export async function getTravelSegment(owner: string, input: { id?: string; legacyId?: string }) {
+export async function getTravelSegment(owner: string, input: { id: string }) {
   let query = db
     .selectFrom('app.travelJourneySegments as s')
-    .innerJoin('app.travelPlaces as p', 'p.id', 's.placeId')
+    .innerJoin('app.places as p', 'p.id', 's.placeId')
     .innerJoin('app.travelJourneys as j', 'j.id', 's.journeyId')
     .select([
       's.id',
-      's.legacyId',
       's.journeyId',
       's.seq',
       's.placeId',
@@ -344,24 +379,19 @@ export async function getTravelSegment(owner: string, input: { id?: string; lega
       's.notes',
       's.createdAt',
       's.updatedAt',
-      'p.place',
+      'p.name as place',
       'p.country',
-      'j.legacyId as journeyLegacyId',
       'j.name as journeyName',
     ])
     .where('s.ownerUserid', '=', owner);
-  query = input.id
-    ? query.where('s.id', '=', input.id)
-    : query.where('s.legacyId', '=', input.legacyId!);
+  query = query.where('s.id', '=', input.id);
   const segment = await query.executeTakeFirst();
   if (!segment) return null;
   const [legs, stays] = await Promise.all([
     allTransport(owner).then((rows) =>
       rows
         .filter((leg) => leg.depSegmentId === segment.id || leg.arrSegmentId === segment.id)
-        .sort(
-          (a, b) => compareNullableDate(a.date, b.date) || a.legacyId.localeCompare(b.legacyId),
-        ),
+        .sort((a, b) => compareNullableDate(a.date, b.date) || a.id.localeCompare(b.id)),
     ),
     db
       .selectFrom('app.travelStays')
@@ -408,7 +438,9 @@ export async function listTravelPlaces(
         (input.currentlyHome === undefined ||
           place.relationships.currentlyHome === input.currentlyHome),
     )
-    .sort((a, b) => a.country.localeCompare(b.country) || a.place.localeCompare(b.place));
+    .sort(
+      (a, b) => (a.country ?? '').localeCompare(b.country ?? '') || a.place.localeCompare(b.place),
+    );
   const page = paginate(rows, input);
   return {
     places: page.items,
@@ -419,10 +451,8 @@ export async function listTravelPlaces(
   };
 }
 
-export async function getTravelPlace(owner: string, input: { id?: string; legacyId?: string }) {
-  const place = (await decoratedPlaces(owner)).find((row) =>
-    input.id ? row.id === input.id : row.legacyId === input.legacyId,
-  );
+export async function getTravelPlace(owner: string, input: { id: string }) {
+  const place = (await decoratedPlaces(owner)).find((row) => row.id === input.id);
   if (!place) return null;
   const [segments, residences] = await Promise.all([
     db
@@ -430,25 +460,19 @@ export async function getTravelPlace(owner: string, input: { id?: string; legacy
       .innerJoin('app.travelJourneys as j', 'j.id', 's.journeyId')
       .select([
         's.id',
-        's.legacyId',
         's.arrivalDate',
         's.departureDate',
         's.seq',
         'j.id as journeyId',
-        'j.legacyId as journeyLegacyId',
         'j.name as journeyName',
       ])
       .where('s.ownerUserid', '=', owner)
       .where('s.placeId', '=', place.id)
       .orderBy('s.arrivalDate')
       .execute(),
-    db
-      .selectFrom('app.travelResidences')
-      .selectAll()
-      .where('ownerUserid', '=', owner)
-      .where('placeId', '=', place.id)
-      .orderBy('sourceFirstVisited')
-      .execute(),
+    listPlaceResidences(owner, { limit: 200, offset: 0, placeId: place.id }).then(
+      (result) => result.residences,
+    ),
   ]);
   return {
     ...place,
@@ -459,40 +483,36 @@ export async function getTravelPlace(owner: string, input: { id?: string; legacy
 }
 
 export async function listTravelCountries(owner: string) {
-  const [segments, places] = await Promise.all([
-    db
-      .selectFrom('app.travelJourneySegments as s')
-      .innerJoin('app.travelPlaces as p', 'p.id', 's.placeId')
-      .select(['p.country', 'p.place'])
-      .where('s.ownerUserid', '=', owner)
-      .execute(),
-    db
-      .selectFrom('app.travelPlaces')
-      .select(['country', 'status', 'id'])
-      .where('ownerUserid', '=', owner)
-      .execute(),
-  ]);
+  const segments = await db
+    .selectFrom('app.travelJourneySegments as s')
+    .innerJoin('app.places as p', 'p.id', 's.placeId')
+    .select(['p.country', 'p.name as place'])
+    .where('s.ownerUserid', '=', owner)
+    .execute();
   const countryMap = new Map<string, Set<string>>();
   for (const segment of segments) {
+    if (!segment.country) continue;
     const current = countryMap.get(segment.country) ?? new Set<string>();
     current.add(segment.place);
     countryMap.set(segment.country, current);
   }
   const residencePlaces = await db
-    .selectFrom('app.travelResidences')
-    .select('placeId')
-    .where('ownerUserid', '=', owner)
+    .selectFrom('app.placeResidences as r')
+    .innerJoin('app.places as p', 'p.id', 'r.placeId')
+    .select('p.country')
+    .where('r.ownerUserid', '=', owner)
     .execute();
-  const placeById = new Map(places.map((place) => [place.id, place]));
+  const placeIdsWithVisits = await db
+    .selectFrom('app.placeVisits as v')
+    .innerJoin('app.places as p', 'p.id', 'v.placeId')
+    .select('p.country')
+    .where('v.ownerUserid', '=', owner)
+    .execute();
   const placesStatus = new Set(
-    places
-      .filter((place) => ['Visited', 'Lived in'].includes(place.status))
-      .map((place) => place.country),
+    placeIdsWithVisits.flatMap((place) => (place.country ? [place.country] : [])),
   );
-  for (const residence of residencePlaces) {
-    const place = placeById.get(residence.placeId);
-    if (place) placesStatus.add(place.country);
-  }
+  for (const residence of residencePlaces)
+    if (residence.country) placesStatus.add(residence.country);
   const countries = [...countryMap]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([country, names]) => ({ country, places: [...names].sort() }));
@@ -506,7 +526,7 @@ export async function listTravelCountries(owner: string) {
     placesStatusCountryCount: placesStatus.size,
     excludedByMethod,
     method:
-      'Countries and place names are derived from travel segments; placesStatusCountryCount is the separate count of countries with a canonical Place marked Visited or Lived in, or with a Residence record.',
+      'Countries and place names are derived from journey stops; placesStatusCountryCount counts countries with a recorded Visit or Residence.',
   };
 }
 
@@ -520,21 +540,12 @@ export async function listTravelTransport(
     from?: string;
     to?: string;
     journeyId?: string;
-    journeyLegacyId?: string;
     bookingRef?: string;
     fromDate?: string;
     toDate?: string;
   },
 ) {
-  const [rows, journeys] = await Promise.all([
-    allTransport(owner),
-    db
-      .selectFrom('app.travelJourneys')
-      .select(['id', 'legacyId'])
-      .where('ownerUserid', '=', owner)
-      .execute(),
-  ]);
-  const journeyById = new Map(journeys.map((journey) => [journey.id, journey]));
+  const rows = await allTransport(owner);
   const airportMatch = (
     leg: (typeof rows)[number],
     endpoint: 'origin' | 'destination',
@@ -551,15 +562,11 @@ export async function listTravelTransport(
       airportMatch(leg, 'origin', input.from) &&
       airportMatch(leg, 'destination', input.to) &&
       (!input.journeyId || leg.journeyId === input.journeyId) &&
-      (!input.journeyLegacyId ||
-        journeyById.get(leg.journeyId)?.legacyId === input.journeyLegacyId) &&
       (!input.bookingRef || norm(leg.bookingRef) === norm(input.bookingRef)) &&
       (!input.fromDate || (leg.date ?? '') >= input.fromDate) &&
       (!input.toDate || (leg.date ?? '9999') <= input.toDate),
   );
-  filtered.sort(
-    (a, b) => (a.date ?? '').localeCompare(b.date ?? '') || a.legacyId.localeCompare(b.legacyId),
-  );
+  filtered.sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '') || a.id.localeCompare(b.id));
   const page = paginate(filtered, input);
   return {
     transport: page.items,
@@ -572,59 +579,13 @@ export async function listTravelTransport(
 
 export async function listTravelAirports(
   owner: string,
-  input: { limit: number; offset: number; place?: string; country?: string },
+  input: { limit: number; offset: number; query?: string; country?: string },
 ) {
-  const [airports, legs] = await Promise.all([
-    db.selectFrom('app.travelAirports').selectAll().where('ownerUserid', '=', owner).execute(),
-    db
-      .selectFrom('app.travelTransport')
-      .select(['origin', 'destination'])
-      .where('ownerUserid', '=', owner)
-      .execute(),
-  ]);
-  const rows = airports
-    .filter(
-      (airport) =>
-        (!input.place ||
-          includes(airport.servesPlace, input.place) ||
-          includes(airport.city, input.place)) &&
-        (!input.country || norm(airport.country) === norm(input.country)),
-    )
-    .map((airport) => ({
-      ...airport,
-      legCount: legs.filter(
-        (leg) =>
-          leg.origin.toUpperCase() === airport.code.toUpperCase() ||
-          leg.destination.toUpperCase() === airport.code.toUpperCase(),
-      ).length,
-    }))
-    .sort((a, b) => a.code.localeCompare(b.code));
-  const page = paginate(rows, input);
-  return {
-    airports: page.items,
-    total: page.total,
-    limit: page.limit,
-    offset: page.offset,
-    truncated: page.truncated,
-  };
+  return listAirportWorkingSet(owner, input);
 }
 
-export async function getTravelAirport(owner: string, input: { id?: string; code?: string }) {
-  let query = db.selectFrom('app.travelAirports').selectAll().where('ownerUserid', '=', owner);
-  query = input.id
-    ? query.where('id', '=', input.id)
-    : query.where('code', '=', input.code!.toUpperCase());
-  const airport = await query.executeTakeFirst();
-  if (!airport) return null;
-
-  const legs = await db
-    .selectFrom('app.travelTransport')
-    .select((eb) => eb.fn.countAll<number>().as('count'))
-    .where('ownerUserid', '=', owner)
-    .where((eb) => eb.or([eb('origin', '=', airport.code), eb('destination', '=', airport.code)]))
-    .executeTakeFirstOrThrow();
-
-  return { ...airport, legCount: Number(legs.count) };
+export async function getTravelAirport(_owner: string, input: { code: string }) {
+  return getCuratedAirport(_owner, input.code);
 }
 
 export async function listTravelStays(
@@ -634,42 +595,24 @@ export async function listTravelStays(
     offset: number;
     city?: string;
     segmentId?: string;
-    segmentLegacyId?: string;
     journeyId?: string;
-    journeyLegacyId?: string;
     evidence?: string;
   },
 ) {
-  const [stays, segments, journeys] = await Promise.all([
-    db.selectFrom('app.travelStays').selectAll().where('ownerUserid', '=', owner).execute(),
-    db
-      .selectFrom('app.travelJourneySegments')
-      .select(['id', 'legacyId', 'journeyId'])
-      .where('ownerUserid', '=', owner)
-      .execute(),
-    db
-      .selectFrom('app.travelJourneys')
-      .select(['id', 'legacyId'])
-      .where('ownerUserid', '=', owner)
-      .execute(),
-  ]);
-  const segmentById = new Map(segments.map((segment) => [segment.id, segment]));
-  const journeyById = new Map(journeys.map((journey) => [journey.id, journey]));
+  const stays = await db
+    .selectFrom('app.travelStays')
+    .selectAll()
+    .where('ownerUserid', '=', owner)
+    .execute();
   const rows = stays
     .filter(
       (stay) =>
         includes(stay.city, input.city) &&
         (!input.segmentId || stay.segmentId === input.segmentId) &&
-        (!input.segmentLegacyId ||
-          segmentById.get(stay.segmentId ?? '')?.legacyId === input.segmentLegacyId) &&
         (!input.journeyId || stay.journeyId === input.journeyId) &&
-        (!input.journeyLegacyId ||
-          journeyById.get(stay.journeyId ?? '')?.legacyId === input.journeyLegacyId) &&
         (!input.evidence || stay.evidence === input.evidence),
     )
-    .sort(
-      (a, b) => compareNullableDate(a.checkIn, b.checkIn) || a.legacyId.localeCompare(b.legacyId),
-    );
+    .sort((a, b) => compareNullableDate(a.checkIn, b.checkIn) || a.id.localeCompare(b.id));
   const page = paginate(rows, input);
   return {
     stays: page.items,
@@ -699,7 +642,7 @@ export async function lookupTravelBooking(
   ].sort(
     (a, b) =>
       String(a.bookingRef).localeCompare(String(b.bookingRef)) ||
-      String(a.legacyId).localeCompare(String(b.legacyId)),
+      String(a.id).localeCompare(String(b.id)),
   );
   const page = paginate(combined, input);
   const items = page.items;
@@ -714,15 +657,27 @@ export async function lookupTravelBooking(
 }
 
 export async function getTravelWishlist(owner: string, input: Page) {
-  const [places, stays, ideas] = await Promise.all([
-    db
-      .selectFrom('app.travelPlaces')
-      .selectAll()
-      .where('ownerUserid', '=', owner)
-      .where('status', '=', 'Want to go')
-      .orderBy('country')
-      .orderBy('place')
-      .execute(),
+  const [placeRows, stays, ideas] = await Promise.all([
+    sql<{
+      id: string;
+      placeId: string;
+      ownerUserid: string;
+      place: string;
+      country: string | null;
+      type: string | null;
+      wantToGo: boolean;
+      firstVisited: string | null;
+      lastVisited: string | null;
+      notes: string | null;
+      archived: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+    }>`SELECT p.id, t.place_id AS "placeId", t.owner_userid AS "ownerUserid", p.name AS place, p.country,
+      p.place_type AS type, t.want_to_go AS "wantToGo", p.first_visited AS "firstVisited",
+      p.last_visited AS "lastVisited", p.notes, t.archived, t.created_at AS "createdAt",
+      t.updated_at AS "updatedAt" FROM app.travel_places t
+      JOIN app.places p ON p.id=t.place_id AND p.owner_userid=t.owner_userid
+      WHERE t.owner_userid=${owner} AND t.want_to_go ORDER BY p.country, p.name`.execute(db),
     db
       .selectFrom('app.travelStays')
       .selectAll()
@@ -736,10 +691,11 @@ export async function getTravelWishlist(owner: string, input: Page) {
       .where('ownerUserid', '=', owner)
       .where('type', '=', 'experience')
       .where('status', '=', 'open')
-      .orderBy('legacyId')
+      .orderBy('idea')
       .execute(),
   ]);
-  const groups = [...new Set(places.map((place) => place.country))].map((country) => ({
+  const places = placeRows.rows;
+  const groups = [...new Set(places.map((place) => place.country ?? ''))].map((country) => ({
     country,
     count: places.filter((place) => place.country === country).length,
     places: places.filter((place) => place.country === country),
@@ -787,7 +743,7 @@ export async function listTravelIdeas(
         (!input.status || idea.status === input.status) &&
         (!input.type || idea.type === input.type),
     )
-    .sort((a, b) => a.legacyId.localeCompare(b.legacyId));
+    .sort((a, b) => a.idea.localeCompare(b.idea));
   const page = paginate(filtered, input);
   return {
     ideas: page.items,

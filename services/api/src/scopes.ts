@@ -17,6 +17,7 @@ export const MCP_SCOPES = [
   'people:read',
   'people:write',
   'places:read',
+  'places:write',
   'possessions:read',
   'possessions:write',
   'social:read',

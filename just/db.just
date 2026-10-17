@@ -14,7 +14,8 @@ migrate profile='':
     if [[ "{{ profile }}" == test ]]; then export DATABASE_URL='{{ test_db_url }}'; fi
     [[ -n "${DATABASE_URL:-}" ]] || { echo 'error: DATABASE_URL must be set' >&2; exit 1; }
     goose_bin="$("{{ justfile_directory() }}/just/goose-install.sh")"
-    "$goose_bin" -dir "{{ justfile_directory() }}/packages/db/migrations" postgres "$DATABASE_URL" up
+    # Allow locally applied draft versions that are absent from the checked-in migration sequence.
+    "$goose_bin" -allow-missing -dir "{{ justfile_directory() }}/packages/db/migrations" postgres "$DATABASE_URL" up
 
 rollback profile='':
     #!/usr/bin/env bash
