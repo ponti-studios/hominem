@@ -1,12 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   type CredentialDeps,
   type CredentialRow,
   type CredentialStore,
   type KeysClient,
+  BUDGET_DEADLINE_MS,
+  BudgetUnavailableError,
   budgetFor,
   DEVICE_LIMIT,
+  USAGE_CONCURRENCY,
   MINTS_PER_HOUR,
   mintCredential,
   reapCredentials,
@@ -164,7 +167,17 @@ describe('mintCredential', () => {
     await mint(f, 'device-aaaa');
     f.usage.set('hash-1', CAP);
     f.setClock(new Date('2026-11-01T00:00:01Z'));
+    // The provider's monthly usage starts again at zero on the first.
+    f.usage.set('hash-1', 0);
     expect(await mint(f, 'device-aaaa')).toMatchObject({ kind: 'minted' });
+  });
+
+  it('counts what an older live key spends after the month turns over', async () => {
+    const f = fakes();
+    await mint(f, 'device-aaaa');
+    f.setClock(new Date('2026-11-01T00:00:01Z'));
+    f.usage.set('hash-1', CAP);
+    expect(await mint(f, 'device-bbbb')).toEqual({ kind: 'capped' });
   });
 
   it('rate limits minting', async () => {
@@ -263,14 +276,85 @@ describe('budgetFor', () => {
     expect(budget.remainingUsd).toBe(0);
   });
 
-  it('starts again on the first of the month, ignoring last month’s keys', async () => {
+  it('starts the month from what the provider reports now, and says when it resets', async () => {
     const { deps, usage, advance } = fakes();
     await mintCredential(deps, { userId: USER, email: EMAIL, deviceId: 'phone-0001' });
     usage.set('hash-1', 2);
     advance(20 * 24 * 60 * 60 * 1000);
+    // The provider's monthly usage starts again at zero; the key is still live, so it still counts.
+    usage.set('hash-1', 0.7);
     const budget = await budgetFor(deps, USER);
-    expect(budget.spentUsd).toBe(0);
-    expect(budget.remainingUsd).toBe(CAP);
+    expect(budget.spentUsd).toBe(0.7);
+    expect(budget.remainingUsd).toBe(4.3);
     expect(budget.resetsAt).toBe('2026-12-01T00:00:00.000Z');
+  });
+
+  const oldRow = (over: Partial<CredentialRow>): CredentialRow => ({
+    id: 'old',
+    userId: USER,
+    deviceId: 'phone-0002',
+    keyHash: 'old-hash',
+    period: '2026-09',
+    limitUsd: 1.6,
+    createdAt: new Date('2026-09-20T12:00:00Z'),
+    revokedAt: null,
+    disabledAt: null,
+    ...over,
+  });
+
+  it('counts a key made last month that is still live', async () => {
+    const { deps, rows, usage } = fakes();
+    rows.push(oldRow({}));
+    usage.set('old-hash', 1.5);
+    expect((await budgetFor(deps, USER)).spentUsd).toBe(1.5);
+  });
+
+  it('counts a key revoked this month, but does not even ask about one revoked before it', async () => {
+    const { deps, rows, usage } = fakes();
+    rows.push(oldRow({ keyHash: 'revoked-now', revokedAt: new Date('2026-10-05T00:00:00Z') }));
+    rows.push(oldRow({ keyHash: 'revoked-then', revokedAt: new Date('2026-09-25T00:00:00Z') }));
+    usage.set('revoked-now', 0.4);
+    usage.set('revoked-then', 9);
+    const asked: string[] = [];
+    const original = deps.keys.usageMonthly;
+    deps.keys.usageMonthly = async (hash) => {
+      asked.push(hash);
+      return original(hash);
+    };
+    expect((await budgetFor(deps, USER)).spentUsd).toBe(0.4);
+    expect(asked).toEqual(['revoked-now']);
+  });
+
+  it('reads usage a few keys at a time, not one by one and not all at once', async () => {
+    const { deps, rows } = fakes();
+    for (let i = 0; i < 12; i++) {
+      rows.push(oldRow({ keyHash: `k${i}`, period: '2026-10', deviceId: `d${i}` }));
+    }
+    let inFlight = 0;
+    let most = 0;
+    deps.keys.usageMonthly = async () => {
+      inFlight += 1;
+      most = Math.max(most, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      inFlight -= 1;
+      return 0.1;
+    };
+    expect((await budgetFor(deps, USER)).spentUsd).toBe(1.2);
+    expect(most).toBeGreaterThan(1);
+    expect(most).toBeLessThanOrEqual(USAGE_CONCURRENCY);
+  });
+
+  it('gives up after a deadline instead of returning a partial total', async () => {
+    vi.useFakeTimers();
+    try {
+      const { deps, rows } = fakes();
+      rows.push(oldRow({ keyHash: 'slow', period: '2026-10' }));
+      deps.keys.usageMonthly = () => new Promise<number>(() => undefined);
+      const outcome = expect(budgetFor(deps, USER)).rejects.toBeInstanceOf(BudgetUnavailableError);
+      await vi.advanceTimersByTimeAsync(BUDGET_DEADLINE_MS + 1);
+      await outcome;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -106,7 +106,7 @@ export async function mintCredential(
 
   // Spend counts every key of this month, revoked or not. Unspent allowance on the keys that
   // stay is already promised, so it comes off what is left.
-  const thisMonth = rows.filter((row) => row.period === period);
+  const thisMonth = keysCountingThisMonth(rows, now);
   const usage = new Map<string, number>();
   for (const row of thisMonth) usage.set(row.keyHash, await keys.usageMonthly(row.keyHash));
   const spent = [...usage.values()].reduce((sum, value) => sum + value, 0);
@@ -147,6 +147,67 @@ export async function mintCredential(
   return { kind: 'minted', key: created.key, hash: created.hash, limitUsd: grant };
 }
 
+/** Reading the budget took too long or the provider could not answer: no partial total is given. */
+export class BudgetUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BudgetUnavailableError';
+  }
+}
+
+/** How many usage reads run at once, and how long the whole calculation may take. */
+export const USAGE_CONCURRENCY = 5;
+export const BUDGET_DEADLINE_MS = 8_000;
+
+/**
+ * The keys whose usage counts toward this month: those granted this month, those still live
+ * (a key made last month can keep spending after the month turns over, and the provider's
+ * monthly usage is this month's), and those revoked since the month began.
+ */
+export function keysCountingThisMonth(rows: CredentialRow[], now: Date): CredentialRow[] {
+  const period = periodOf(now);
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  return rows.filter(
+    (row) =>
+      row.period === period ||
+      row.revokedAt === null ||
+      row.revokedAt.getTime() >= monthStart.getTime(),
+  );
+}
+
+/** Reads each key's usage, a few at a time, and gives up as a whole after the deadline. */
+async function usageOf(deps: CredentialDeps, hashes: string[]): Promise<number> {
+  let expired = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      expired = true;
+      reject(new BudgetUnavailableError('Reading usage took too long'));
+    }, BUDGET_DEADLINE_MS);
+  });
+  let next = 0;
+  let total = 0;
+  const worker = async () => {
+    while (!expired && next < hashes.length) {
+      const hash = hashes[next++]!;
+      // Read the answer first: `total += await …` would use a total from before other workers added theirs.
+      const used = await deps.keys.usageMonthly(hash);
+      total += used;
+    }
+  };
+  const work = Promise.all(
+    Array.from({ length: Math.min(USAGE_CONCURRENCY, hashes.length) }, worker),
+  );
+  try {
+    await Promise.race([work, deadline]);
+    return total;
+  } finally {
+    clearTimeout(timer);
+    // A read still running after the deadline finishes on its own; its result is not used.
+    work.catch(() => undefined);
+  }
+}
+
 export interface Budget {
   /** The person's whole monthly budget. */
   capUsd: number;
@@ -170,10 +231,11 @@ function round4(value: number): number {
  */
 export async function budgetFor(deps: CredentialDeps, userId: string): Promise<Budget> {
   const now = (deps.now ?? (() => new Date()))();
-  const period = periodOf(now);
-  const rows = (await deps.store.rows(userId)).filter((row) => row.period === period);
-  let spent = 0;
-  for (const row of rows) spent += await deps.keys.usageMonthly(row.keyHash);
+  const rows = keysCountingThisMonth(await deps.store.rows(userId), now);
+  const spent = await usageOf(
+    deps,
+    rows.map((row) => row.keyHash),
+  );
   return {
     capUsd: deps.capUsd,
     spentUsd: round4(spent),

@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RpcUser } from '../middleware/auth';
 
 const mocks = vi.hoisted(() => ({
+  BudgetUnavailableError: class BudgetUnavailableError extends Error {},
+  OpenRouterKeysError: class OpenRouterKeysError extends Error {},
   mintCredential: vi.fn(),
   revokeCredential: vi.fn(),
   budgetFor: vi.fn(),
@@ -15,11 +17,15 @@ vi.mock('../../application/provider-credentials', () => ({
   mintCredential: mocks.mintCredential,
   revokeCredential: mocks.revokeCredential,
   budgetFor: mocks.budgetFor,
+  BudgetUnavailableError: mocks.BudgetUnavailableError,
 }));
 vi.mock('../../application/provider-credentials.store', () => ({
   dbCredentialStore: { isBlocked: mocks.isBlocked, isAllowed: mocks.isAllowed },
 }));
-vi.mock('../../application/openrouter-keys', () => ({ createOpenRouterKeys: () => ({}) }));
+vi.mock('../../application/openrouter-keys', () => ({
+  createOpenRouterKeys: () => ({}),
+  OpenRouterKeysError: mocks.OpenRouterKeysError,
+}));
 vi.mock('../../env', () => ({
   env: {
     get OPENROUTER_MANAGEMENT_KEY() {
@@ -156,8 +162,16 @@ describe('GET /api/credentials/budget', () => {
     mocks.managementKey.value = undefined;
     expect((await app.request('/api/credentials/budget')).status).toBe(503);
     mocks.managementKey.value = 'mgmt-key';
-    mocks.budgetFor.mockRejectedValue(new Error('OpenRouter usage failed (502)'));
+    mocks.budgetFor.mockRejectedValue(new mocks.OpenRouterKeysError('usage failed'));
     expect((await app.request('/api/credentials/budget')).status).toBe(503);
+    mocks.budgetFor.mockRejectedValue(new mocks.BudgetUnavailableError('too slow'));
+    expect((await app.request('/api/credentials/budget')).status).toBe(503);
+  });
+
+  it('lets an unexpected failure reach the global handler instead of calling it an outage', async () => {
+    mocks.budgetFor.mockRejectedValue(new Error('rows is not iterable'));
+    const response = await app.request('/api/credentials/budget');
+    expect(response.status).toBe(500);
   });
 
   it('requires a signed-in person', async () => {

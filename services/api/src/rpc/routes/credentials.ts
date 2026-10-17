@@ -3,8 +3,9 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
-import { createOpenRouterKeys } from '../../application/openrouter-keys';
+import { createOpenRouterKeys, OpenRouterKeysError } from '../../application/openrouter-keys';
 import {
+  BudgetUnavailableError,
   budgetFor,
   type CredentialDeps,
   mintCredential,
@@ -69,10 +70,13 @@ export const credentialsRoutes = new Hono<AppContext>()
     try {
       return c.json(await budgetFor(deps, auth.userId));
     } catch (error) {
-      logger.error('credential_budget_failed', {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return c.json({ error: 'unavailable' as const }, 503);
+      // Only the provider being slow or down is "unavailable"; anything else is a bug and goes to
+      // the global error handler.
+      if (error instanceof OpenRouterKeysError || error instanceof BudgetUnavailableError) {
+        logger.error('credential_budget_failed', { error: error.message });
+        return c.json({ error: 'unavailable' as const }, 503);
+      }
+      throw error;
     }
   })
   .delete('/:deviceId', zValidator('param', z.object({ deviceId: deviceIdSchema })), async (c) => {
