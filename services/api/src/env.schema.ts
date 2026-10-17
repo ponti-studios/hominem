@@ -41,7 +41,10 @@ export const apiSchema = runtimeSchema.extend({
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_EXPORTER_OTLP_PROTOCOL: z.string().optional(),
   OTEL_EXPORTER_OTLP_HEADERS: z.string().optional(),
-  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: z.url().optional(),
+  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.url().optional(),
+  ),
   OTEL_EXPORTER_OTLP_LOGS_HEADERS: z.string().optional(),
   OTEL_TRACES_SAMPLER_ARG: z.coerce.number().default(1.0),
   PLAID_CLIENT_ID: z.string().default(''),

@@ -26,7 +26,9 @@ function findServiceError(value: unknown, depth = 0): ServiceError | null {
 
 export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
   const requestId = c.get('requestId') || crypto.randomUUID().slice(0, 8);
-  const path = c.req.path;
+  // Prefer Hono's registered route template so dynamic path parameters never
+  // enter logs. Unmatched routes use a static value instead of the raw path.
+  const path = c.req.routePath || 'unmatched';
   const method = c.req.method;
   const serviceError = findServiceError(err);
 
@@ -76,6 +78,7 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
     status: 500,
     requestId,
     error_name: err instanceof Error ? err.name : 'unknown',
+    error: err,
   });
 
   const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
