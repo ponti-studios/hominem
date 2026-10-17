@@ -47,7 +47,7 @@ describe('chat assistant personality', () => {
   it('keeps the Ori chat prompt snapshot aligned with production', () => {
     const messages: Array<{ role: string; content: string }> = JSON.parse(
       readFileSync(
-        resolve(import.meta.dirname, '../../../ori/data/chat-assistant/prompt.json'),
+        resolve(import.meta.dirname, '../../../ori/evals/chat/assistant/system-prompt.json'),
         'utf8',
       ),
     );
@@ -64,7 +64,7 @@ describe('time-block extraction prompt', () => {
   it('keeps the Ori time-block snapshot aligned with production', () => {
     const messages: Array<{ role: string; content: string }> = JSON.parse(
       readFileSync(
-        resolve(import.meta.dirname, '../../../ori/data/time-block-extraction/prompt.json'),
+        resolve(import.meta.dirname, '../../../ori/evals/scheduling/time-block/system-prompt.json'),
         'utf8',
       ),
     );

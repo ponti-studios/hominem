@@ -162,12 +162,59 @@ export const travelIdeaListOutputSchema = z.object({
   truncated: z.boolean(),
 });
 export const travelEntityOutputSchema = row.nullable();
+const travelPresenceEvidence = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('stop'),
+    id: z.string().uuid(),
+    journeyId: z.string().uuid(),
+    journeyName: z.string(),
+    arrivalDate: z.string().nullable(),
+    departureDate: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal('visit'),
+    id: z.string().uuid(),
+    visitedAt: z.string().nullable(),
+    purpose: z.string().nullable(),
+    source: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal('residence'),
+    residenceId: z.string().uuid(),
+    periodId: z.string().uuid(),
+    startDate: z.string(),
+    endDate: z.string().nullable(),
+    ongoing: z.boolean(),
+    precision: z.string(),
+  }),
+  z.object({
+    type: z.literal('layover'),
+    airportCode: z.string(),
+    airportName: z.string().nullable(),
+    journeyId: z.string().uuid(),
+    journeyName: z.string(),
+    arrivalTransportId: z.string().uuid(),
+    departureTransportId: z.string().uuid(),
+    date: z.string().nullable(),
+  }),
+]);
 export const travelCountriesOutputSchema = z.object({
-  countries: z.array(row),
-  countryCount: z.number().int(),
-  placesStatusCountryCount: z.number().int(),
-  excludedByMethod: z.array(z.string()),
-  method: z.string(),
+  countries: z.array(
+    z.object({
+      country: z.string(),
+      countryCode: z.string().nullable(),
+      places: z.array(
+        z.object({
+          placeId: z.string().uuid().nullable(),
+          name: z.string(),
+          locationType: z.enum(['place', 'airport']),
+          evidence: z.array(travelPresenceEvidence),
+        }),
+      ),
+      evidenceTypes: z.array(z.enum(['stop', 'visit', 'residence', 'layover'])),
+    }),
+  ),
+  evidenceTypes: z.array(z.enum(['stop', 'visit', 'residence', 'layover'])),
 });
 export const travelBookingLookupOutputSchema = z.object({
   transport: z.array(row),

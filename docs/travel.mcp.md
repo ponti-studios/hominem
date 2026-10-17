@@ -160,6 +160,22 @@ relationships, ideas, airport curation, and Travel aggregates. Reads require
 Residence operations belong to the Place domain and use `place_residence_*`.
 No tool mutates the OurAirports reference dataset.
 
+`travel_countries` returns countries grouped by canonical country code when
+available, with places and their independent presence evidence: Journey stops,
+connected-airport layovers, Visits, and Residence periods. Multiple evidence
+types may apply to one Place. It does not choose one universal definition of
+“visited” or return a method-difference field; callers interpret the evidence
+for the wording of the question. It does not expose a single country count,
+because a count for “visited” depends on which evidence types the question
+includes. A layover requires consecutive air legs in a Journey, ordered by
+travel date, whose arrival and onward departure airport codes match; neither
+leg endpoint may link to a Journey stop. Undated legs do not establish a
+layover. Same-day legs use creation time and stable ID as deterministic tie
+breakers. The response includes both transport IDs so the classification can
+be explained. Country labels use canonical codes to group spelling variants;
+recognized country names are resolved to canonical codes, while unresolvable
+country identities are omitted until they can be reconciled.
+
 Every mutation is owner-scoped, validated, and recorded in audit history.
 Multi-row operations are atomic. Dry-run returns the same projected counters
 and validation result as a real operation without persisting rows or audit

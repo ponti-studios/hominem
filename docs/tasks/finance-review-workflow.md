@@ -26,7 +26,7 @@ the requested month is missing.
 
 ## Evidence
 
-`just evals run mcp-finance-review` passed all three scenarios on 2026-10-15 with
+`just evals run mcp-monthly-review` passed all three scenarios on 2026-10-15 with
 `openai/gpt-5-mini` and judge `openai/gpt-oss-20b` (minimum score 0.7). The eval verified
 September 2026 report calls and dates, clarification without calls when the month is missing,
 and a mixed GBP/USD report with currency boundaries preserved. MCP integration coverage verifies

@@ -32,6 +32,7 @@ export const dbCredentialStore: CredentialStore = {
       .selectAll()
       .where('userId', '=', userId)
       .orderBy('createdAt', 'asc')
+      .orderBy('id', 'asc')
       .execute();
     return rows.map((row): CredentialRow => ({
       id: row.id,

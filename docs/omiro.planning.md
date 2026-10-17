@@ -68,7 +68,7 @@ Calendar-only requests explain when Calendar permission is needed, and tasks
 stay available without it.
 
 The extraction prompt and its evals live in `services/api/src/rpc/prompts.ts`
-(`TIME_BLOCK_EXTRACTION_PROMPT`) and `services/ori/data/time-block-extraction/`;
+(`TIME_BLOCK_EXTRACTION_PROMPT`) and `services/ori/evals/scheduling/time-block/`;
 a test keeps the two aligned.
 
 ## Verification

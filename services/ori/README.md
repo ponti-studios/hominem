@@ -1,61 +1,40 @@
 # Ori evaluations
 
-This service is Hominem's single evaluation harness, covering the assistant,
-extraction, and MCP tool-selection suites. It replaced the earlier DeepEval
-service, which has been removed.
+Ori is Hominem's evaluation harness for assistant behavior, extraction, and MCP.
 
-The datasets under `data/` are versioned snapshots. The chat-assistant prompt is
-a snapshot of `services/api/src/rpc/prompts.ts`; the API parity test makes drift
-fail loudly. Keep regression and holdout fixtures separate, and add confirmed
-production failures to regression data without moving holdout cases.
+Each eval suite is a directory under `evals/`. Its `*.eval.ts` entry point
+lives beside the cases, prompt snapshots, and fixtures it uses. Shared runner
+code lives in `evals/lib/`. MCP suites are organized by what they evaluate:
+agent behavior, domain answers, or protocol behavior.
 
-Run the discovery check without spending model credits:
+The chat-assistant and time-block prompt snapshots mirror production prompts;
+API tests fail if those snapshots drift. Keep time-block regression and holdout
+cases separate. Add confirmed production failures to regression cases without
+moving holdout cases.
+
+List discoverable suites without spending model credits:
 
 ```bash
 pnpm --filter @hominem/ori eval:list
 ```
 
-Run one suite with the incumbent target model:
+Run one suite:
 
 ```bash
 pnpm --filter @hominem/ori eval:time-block-regression
+pnpm --filter @hominem/ori eval:mcp-tool-routing
+pnpm --filter @hominem/ori eval:mcp-workflow-planning
+pnpm --filter @hominem/ori eval:mcp-monthly-review
 ```
 
-Run all suites:
+Run every suite:
 
 ```bash
 pnpm --filter @hominem/ori eval:all
 ```
 
-Set `ORI_TARGET_MODEL` to compare another target and `ORI_JUDGE_MODEL` to
-override the pinned judge. They default to `openai/gpt-5-mini` and the low-cost
-GPT-OSS judge `openai/gpt-oss-20b`, respectively.
-
-Run the comparison through OpenRouter:
-
-```bash
-pnpm --filter @hominem/ori eval:chat-assistant
-```
-
-The chat-baseline suite uses the same tool-free everyday prompts without
-requiring exact judge agreement. It records the OpenRouter usage payload,
-served model, request latency, and end-to-end latency on the Ori runtime
-events. Run it through the public recipe when comparing model cost and speed:
-
-```bash
-just evals chat-baseline
-```
-
-Read this baseline alongside the hard MCP suite: it measures ordinary response
-UX, while MCP measures planning and tool safety.
-
-Use the pilot command before a full run to measure expected spend. Eval runs
-make real model calls and can spend credits:
-
-```bash
-pnpm --filter @hominem/ori eval:pilot
-```
-
-The MCP suite uses a dedicated Ori harness that preserves the five Hominem
-tool definitions, simulated results, multi-turn limit, tool ordering, and
-completion checks.
+Eval runs make real model calls and can spend credits. Set `ORI_TARGET_MODEL`
+to compare another target and `ORI_JUDGE_MODEL` to override the pinned judge.
+They default to `openai/gpt-5-mini` and `openai/gpt-oss-20b`, respectively.
+Use `just evals chat-baseline` to compare ordinary response quality, usage,
+request latency, and end-to-end latency without exact judge agreement.

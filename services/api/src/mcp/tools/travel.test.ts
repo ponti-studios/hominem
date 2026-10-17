@@ -6,11 +6,13 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import './travel';
 import './travel-analytics';
 import './places';
+import './travel-writes';
 import { placeResidenceCreateInputSchema } from '../../schemas/place-residences.schema';
 import { travelImportOutputSchema } from '../../schemas/travel-import.schema';
 import {
   travelAirportListOutputSchema,
   travelBookingLookupOutputSchema,
+  travelCountriesOutputSchema,
   travelJourneyListOutputSchema,
   travelPlaceListOutputSchema,
   travelWishlistOutputSchema,
@@ -36,6 +38,14 @@ const readStayId = 'e1000035-0000-4000-8000-000000000001';
 const wishlistStayId = 'e1000035-0000-4000-8000-000000000002';
 const readIdeaId = 'e1000036-0000-4000-8000-000000000001';
 const wishlistPlaceId = 'e1000037-0000-4000-8000-000000000001';
+const reykjavikPlaceId = 'e1000038-0000-4000-8000-000000000001';
+const reykjavikVisitId = 'e1000039-0000-4000-8000-000000000001';
+const reykjavikResidenceId = 'e100003a-0000-4000-8000-000000000001';
+const reykjavikPeriodId = 'e100003b-0000-4000-8000-000000000001';
+const inboundTransportId = 'e100003c-0000-4000-8000-000000000001';
+const outboundTransportId = 'e100003c-0000-4000-8000-000000000002';
+const londonArrivalTransportId = 'e100003c-0000-4000-8000-000000000003';
+const layoverJourneyId = 'e100003e-0000-4000-8000-000000000001';
 
 beforeAll(async () => {
   await pool.query(`DELETE FROM "user" WHERE id = $1`, [ownerId]);
@@ -77,6 +87,17 @@ beforeAll(async () => {
         type: 'large_airport',
         latitude: 51.885,
         longitude: 0.235,
+        scheduledService: true,
+      },
+      {
+        sourceId: 983004,
+        code: 'SFO',
+        name: 'San Francisco International Airport',
+        city: 'San Francisco',
+        country: 'US',
+        type: 'large_airport',
+        latitude: 37.6213,
+        longitude: -122.379,
         scheduledService: true,
       },
       {
@@ -144,6 +165,7 @@ beforeAll(async () => {
       ownerUserid: ownerId,
       name: 'London',
       country: 'UK',
+      countryCode: 'GB',
       placeType: 'city',
     })
     .execute();
@@ -646,7 +668,7 @@ describe('travel Tier 1 reads', () => {
     expect(stays.structuredContent).toMatchObject({ stays: [{ id: readStayId }], total: 1 });
   });
 
-  it('lists airports and ideas, reports segment-derived countries, and keeps wishlist sections separate', async () => {
+  it('lists airports and ideas, reports country presence evidence, and keeps wishlist sections separate', async () => {
     const airports = await callTool(ownerId, 'travel_airport_list', {
       query: 'London Probe',
       limit: 1,
@@ -667,17 +689,305 @@ describe('travel Tier 1 reads', () => {
       status: 'open',
     });
     expect(openIdeas.structuredContent).toMatchObject({ total: 1 });
-    const countries = await callTool(ownerId, 'travel_countries', {});
-    expect(countries.structuredContent).toMatchObject({
-      countryCount: 1,
-      countries: [{ country: 'UK', places: ['London'] }],
+    await db
+      .insertInto('app.places')
+      .values({
+        id: reykjavikPlaceId,
+        ownerUserid: ownerId,
+        name: 'Reykjavik',
+        country: 'Iceland',
+        countryCode: 'IS',
+        placeType: 'city',
+      })
+      .execute();
+    await db
+      .insertInto('app.placeVisits')
+      .values({
+        id: reykjavikVisitId,
+        ownerUserid: ownerId,
+        placeId: reykjavikPlaceId,
+        visitedAt: '2018-06-01',
+        source: 'operator-eval-fixture',
+      })
+      .execute();
+    await pool.query(
+      'INSERT INTO app.place_residences (id, owner_userid, place_id) VALUES ($1, $2, $3)',
+      [reykjavikResidenceId, ownerId, reykjavikPlaceId],
+    );
+    await pool.query(
+      "INSERT INTO app.place_residence_periods (id, owner_userid, residence_id, start_date, end_date, ongoing, precision) VALUES ($1, $2, $3, '2011-01-01', '2012-01-01', false, 'year')",
+      [reykjavikPeriodId, ownerId, reykjavikResidenceId],
+    );
+    await db
+      .insertInto('app.travelJourneys')
+      .values({
+        id: layoverJourneyId,
+        ownerUserid: ownerId,
+        name: 'Reykjavik connection probe',
+        purpose: 'leisure',
+        startDate: '2018-06-01',
+        endDate: '2018-06-01',
+      })
+      .execute();
+    await db
+      .insertInto('app.travelAirportReference')
+      .values({
+        sourceId: 983003,
+        code: 'KEF',
+        name: 'Keflavik International Airport',
+        city: 'Reykjavik',
+        country: 'IS',
+        type: 'large_airport',
+        latitude: 63.985,
+        longitude: -22.605,
+        scheduledService: true,
+      })
+      .onConflict((conflict) => conflict.column('sourceId').doNothing())
+      .execute();
+    await db
+      .insertInto('app.travelAirports')
+      .values({
+        id: 'e100003d-0000-4000-8000-000000000001',
+        ownerUserid: ownerId,
+        code: 'KEF',
+        name: 'Keflavik International Airport',
+        servesPlace: 'Reykjavik',
+        city: 'Reykjavik',
+        country: 'IS',
+      })
+      .execute();
+    await db
+      .insertInto('app.travelTransport')
+      .values([
+        {
+          id: londonArrivalTransportId,
+          ownerUserid: ownerId,
+          date: '2018-05-31',
+          mode: 'air',
+          origin: 'SFO',
+          destination: 'LHR',
+          journeyId: layoverJourneyId,
+          carrier: 'Probe Air',
+        },
+        {
+          id: inboundTransportId,
+          ownerUserid: ownerId,
+          date: '2018-06-01',
+          mode: 'air',
+          origin: 'LHR',
+          destination: 'KEF',
+          journeyId: layoverJourneyId,
+          carrier: 'Probe Air',
+        },
+        {
+          id: outboundTransportId,
+          ownerUserid: ownerId,
+          date: '2018-06-01',
+          mode: 'air',
+          origin: 'KEF',
+          destination: 'SFO',
+          journeyId: layoverJourneyId,
+          carrier: 'Probe Air',
+        },
+      ])
+      .execute();
+    const countries = travelCountriesOutputSchema.parse(
+      (await callTool(ownerId, 'travel_countries', {})).structuredContent,
+    );
+    expect(countries).toMatchObject({
+      countries: [
+        {
+          country: 'Iceland',
+          countryCode: 'IS',
+          evidenceTypes: ['layover', 'visit', 'residence'],
+          places: [
+            {
+              name: 'Reykjavik',
+              placeId: reykjavikPlaceId,
+              locationType: 'place',
+              evidence: [
+                {
+                  type: 'layover',
+                  airportCode: 'KEF',
+                  journeyName: 'Reykjavik connection probe',
+                  arrivalTransportId: inboundTransportId,
+                  departureTransportId: outboundTransportId,
+                },
+                { type: 'visit', id: reykjavikVisitId },
+                {
+                  type: 'residence',
+                  residenceId: reykjavikResidenceId,
+                  periodId: reykjavikPeriodId,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          country: 'United Kingdom',
+          countryCode: 'GB',
+          evidenceTypes: ['stop', 'layover', 'residence'],
+          places: [
+            {
+              name: 'London',
+              placeId: readPlaceId,
+              evidence: [
+                { type: 'stop', id: readSegmentId },
+                { type: 'layover', airportCode: 'LHR' },
+                { type: 'residence', residenceId: readResidenceId },
+              ],
+            },
+          ],
+        },
+      ],
+      evidenceTypes: ['stop', 'layover', 'visit', 'residence'],
     });
+    expect(countries).not.toHaveProperty('excludedByMethod');
+    expect(countries.countries.some((country) => country.countryCode === 'US')).toBe(false);
+    expect(
+      countries.countries
+        .flatMap((country) => country.places)
+        .some((place) => place.name === 'Stansted'),
+    ).toBe(false);
     const wishlist = await callTool(ownerId, 'travel_wishlist', {});
     expect(travelWishlistOutputSchema.parse(wishlist.structuredContent)).toMatchObject({
       places: { total: 1, groups: [{ country: 'France', count: 1 }] },
       stays: { total: 1, items: [{ id: wishlistStayId }] },
       ideas: { total: 1, items: [{ id: readIdeaId }] },
     });
+  });
+
+  it('includes country-only places and stops when there are no air transports', async () => {
+    const placeName = 'France country-only probe';
+    const journeyName = 'France country-only journey';
+    await callTool(otherUserId, 'travel_place_create', {
+      place: placeName,
+      country: 'France',
+      type: 'city',
+    });
+    const place = await db
+      .selectFrom('app.places')
+      .select('id')
+      .where('ownerUserid', '=', otherUserId)
+      .where('name', '=', placeName)
+      .executeTakeFirstOrThrow();
+    await callTool(otherUserId, 'travel_journey_create', {
+      name: journeyName,
+      startDate: '2026-01-01',
+      endDate: '2026-01-01',
+    });
+    const journey = await db
+      .selectFrom('app.travelJourneys')
+      .select('id')
+      .where('ownerUserid', '=', otherUserId)
+      .where('name', '=', journeyName)
+      .executeTakeFirstOrThrow();
+    await callTool(otherUserId, 'travel_segment_create', {
+      journeyId: journey.id,
+      seq: 1,
+      placeId: place.id,
+      arrivalDate: '2026-01-01',
+    });
+
+    const countries = travelCountriesOutputSchema.parse(
+      (await callTool(otherUserId, 'travel_countries', {})).structuredContent,
+    );
+    expect(countries.countries).toMatchObject([
+      {
+        country: 'France',
+        countryCode: 'FR',
+        evidenceTypes: ['stop'],
+        places: [{ placeId: place.id, name: placeName, evidence: [{ type: 'stop' }] }],
+      },
+    ]);
+  });
+
+  it('preserves each chronological connection through the same airport', async () => {
+    const journeyId = randomUUID();
+    const journeyName = 'Repeated KEF connection probe';
+    await db
+      .insertInto('app.travelJourneys')
+      .values({
+        id: journeyId,
+        ownerUserid: ownerId,
+        name: journeyName,
+        purpose: 'leisure',
+        startDate: '2020-01-01',
+        endDate: '2020-02-02',
+      })
+      .execute();
+    await db
+      .insertInto('app.travelTransport')
+      .values([
+        {
+          ownerUserid: ownerId,
+          journeyId,
+          date: '2020-01-01',
+          mode: 'air',
+          origin: 'LHR',
+          destination: 'KEF',
+        },
+        {
+          ownerUserid: ownerId,
+          journeyId,
+          date: '2020-01-02',
+          mode: 'air',
+          origin: 'KEF',
+          destination: 'LHR',
+        },
+        {
+          ownerUserid: ownerId,
+          journeyId,
+          date: '2020-02-01',
+          mode: 'air',
+          origin: 'LHR',
+          destination: 'KEF',
+        },
+        {
+          ownerUserid: ownerId,
+          journeyId,
+          date: '2020-02-02',
+          mode: 'air',
+          origin: 'KEF',
+          destination: 'LHR',
+        },
+      ])
+      .execute();
+
+    const countries = travelCountriesOutputSchema.parse(
+      (await callTool(ownerId, 'travel_countries', {})).structuredContent,
+    );
+    const reykjavik = countries.countries
+      .find((country) => country.countryCode === 'IS')
+      ?.places.find((place) => place.name === 'Reykjavik');
+    const evidence = reykjavik?.evidence.filter(
+      (item) => item.type === 'layover' && item.journeyId === journeyId,
+    );
+    expect(evidence).toHaveLength(2);
+    expect(
+      evidence?.map((item) => item.type === 'layover' && item.arrivalTransportId),
+    ).toHaveLength(2);
+    expect(
+      evidence?.every((item) => item.type === 'layover' && item.journeyName === journeyName),
+    ).toBe(true);
+  });
+
+  it('retains reference airport geography when curation fields are null', async () => {
+    await db
+      .updateTable('app.travelAirports')
+      .set({ name: null, city: null, country: null })
+      .where('ownerUserid', '=', ownerId)
+      .where('code', '=', 'KEF')
+      .execute();
+
+    const countries = travelCountriesOutputSchema.parse(
+      (await callTool(ownerId, 'travel_countries', {})).structuredContent,
+    );
+    const evidence = countries.countries
+      .find((country) => country.countryCode === 'IS')
+      ?.places.find((place) => place.name === 'Reykjavik')
+      ?.evidence.find((item) => item.type === 'layover' && item.journeyId === layoverJourneyId);
+    expect(evidence).toMatchObject({ type: 'layover', airportName: expect.any(String) });
   });
 
   it('finds a shared catalogue airport by code independently of owner airport rows', async () => {
