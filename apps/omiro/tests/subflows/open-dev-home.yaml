@@ -1,6 +1,6 @@
 appId: com.pontistudios.hakumi.dev
 ---
-- openLink: 'exp+hakumi://expo-development-client/?url={{METRO_URL}}&disableOnboarding=1'
+- openLink: 'exp+hakumi://expo-development-client/?url=${METRO_URL}&disableOnboarding=1'
 - waitForAnimationToEnd:
     timeout: 10000
 - runFlow: reset-to-home.yaml

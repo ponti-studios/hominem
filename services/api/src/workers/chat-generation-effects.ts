@@ -17,7 +17,13 @@ export async function startChatGenerationEffectsWorker() {
   await chatGenerationEffectsQueue.upsertJobScheduler(
     'pending-effects',
     { every: 15_000 },
-    { name: 'dispatch' },
+    {
+      name: 'dispatch',
+      opts: {
+        removeOnComplete: true,
+        removeOnFail: { age: 86_400, count: 1_000 },
+      },
+    },
   );
   await chatGenerationEffectsQueue.add(
     'dispatch',

@@ -53,8 +53,9 @@ export function useChatGeneration({
     handoff: PendingGenerationHandoff | null;
   }>(() => {
     const available = peekGenerationHandoff(chatId) ?? null;
+    const restored = restoreGenerationCheckpoint(chatId);
     if (!available) {
-      return { initialGeneration: restoreGenerationCheckpoint(chatId), handoff: null };
+      return { initialGeneration: restored, handoff: null };
     }
     const state = available.controller.state;
     // Already finished by the time this screen mounted -- the message is
@@ -64,6 +65,7 @@ export function useChatGeneration({
     }
     return {
       initialGeneration: {
+        ...(restored?.id === state.generationId ? restored : {}),
         id: state.generationId,
         chatId,
         stage: toGenerationStage(state.phase),
@@ -91,16 +93,27 @@ export function useChatGeneration({
   );
 
   const bindController = useCallback(
-    (controller: ChatGenerationController, initial: ChatGenerationState) => {
+    (
+      controller: ChatGenerationController,
+      initial: ChatGenerationState,
+      adoptServerGenerationId = false,
+    ) => {
       controllerRef.current = controller;
       setGeneration(initial);
+      let canAdoptServerGenerationId = adoptServerGenerationId;
       const unsubscribe = controller.subscribe((state, event) => {
         const current = generationRef.current;
-        if (!current || current.id !== state.generationId) {
+        if (!current || (current.id !== state.generationId && !canAdoptServerGenerationId)) {
           return;
         }
+        const currentGeneration =
+          current.id === state.generationId ? current : { ...current, id: state.generationId };
+        if (currentGeneration !== current) {
+          canAdoptServerGenerationId = false;
+          setGeneration(currentGeneration);
+        }
         if (state.phase === 'committed' || state.phase === 'cancelled') {
-          onGenerationEvent?.(event, current);
+          onGenerationEvent?.(event, currentGeneration);
           queueMicrotask(() => {
             if (generationRef.current?.id !== state.generationId) {
               return;
@@ -110,7 +123,7 @@ export function useChatGeneration({
           });
           return;
         }
-        const currentState = { ...current };
+        const currentState = { ...currentGeneration };
         if (state.lastDurableSequence > 0) {
           delete currentState.retryInput;
         }
@@ -126,7 +139,7 @@ export function useChatGeneration({
           lastDurableSequence: state.lastDurableSequence,
           ...(error ? { error } : {}),
         });
-        onGenerationEvent?.(event, current);
+        onGenerationEvent?.(event, currentGeneration);
       });
       registerGenerationHandoff(chatId, {
         controller,
@@ -175,9 +188,6 @@ export function useChatGeneration({
   const respondToToolCall = useCallback(
     (input: { messageId: string; toolCallId: string; approved: boolean }) => {
       const current = generationRef.current;
-      if (!current) {
-        throw new Error('No active chat generation to continue.');
-      }
       // A restored awaiting-confirmation generation may still own a replay
       // stream. Close that client stream before opening the continuation so
       // one generation cannot publish duplicate client events.
@@ -186,10 +196,20 @@ export function useChatGeneration({
         chatId,
         messageId: input.messageId,
         toolCallId: input.toolCallId,
-        generationId: current.id,
+        ...(current ? { generationId: current.id } : {}),
         body: { approved: input.approved },
       });
-      bindController(controller, current);
+      bindController(
+        controller,
+        current ?? {
+          id: controller.state.generationId,
+          chatId,
+          stage: 'running',
+          lastDurableSequence: 0,
+          targetMessageId: input.messageId,
+        },
+        !current,
+      );
       return controller;
     },
     [bindController, chatId, client],

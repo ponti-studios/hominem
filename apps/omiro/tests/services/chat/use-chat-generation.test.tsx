@@ -226,7 +226,6 @@ describe('useChatGeneration', () => {
       lastDurableSequence: 0,
       userMessageId: 'user-message-1',
     });
-
     const { result } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
 
     expect(result.current.generation).toEqual({
@@ -282,7 +281,56 @@ describe('useChatGeneration', () => {
     expect(JSON.parse(storage.getString(key)!)).toMatchObject({ userMessageId: 'user-message-1' });
   });
 
+  it('continues a tool call without a local checkpoint using the server generation id', async () => {
+    consumeGenerationSseXhr.mockImplementationOnce(
+      async ({ onEvent }: { onEvent: (event: unknown) => void }) => {
+        onEvent({
+          version: 1,
+          generationId: 'server-generation-1',
+          sequence: 1,
+          type: 'generation.committed',
+          payload: {
+            type: 'generation.committed',
+            message: {
+              id: 'assistant-2',
+              chatId: 'chat-1',
+              userId: 'user-1',
+              role: 'assistant',
+              content: 'Done',
+              files: null,
+              toolCalls: null,
+              reasoning: null,
+              parentMessageId: 'assistant-1',
+              createdAt: '2026-01-01',
+              updatedAt: '2026-01-01',
+            },
+          },
+        });
+      },
+    );
+    const { result } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
+
+    act(() => {
+      result.current.respondToToolCall({
+        messageId: 'assistant-1',
+        toolCallId: 'tool-call-1',
+        approved: true,
+      });
+    });
+
+    await waitFor(() => expect(consumeGenerationSseXhr).toHaveBeenCalledOnce());
+    await waitFor(() => expect(result.current.generation).toBeNull());
+    expect(storage.getString(key)).toBeUndefined();
+  });
+
   it('adopts a handed-off controller without opening a new SSE connection', async () => {
+    persistGenerationCheckpoint('chat-1', {
+      id: 'generation-1',
+      stage: 'running',
+      lastDurableSequence: 2,
+      targetMessageId: 'assistant-target',
+      retryInput: { message: 'retry', fileIds: ['file-1'] },
+    });
     const { controller, emit } = createFakeController({
       generationId: 'generation-1',
       phase: 'preparing',
@@ -303,7 +351,13 @@ describe('useChatGeneration', () => {
       chatId: 'chat-1',
       stage: 'preparing',
       lastDurableSequence: 0,
+      targetMessageId: 'assistant-target',
+      retryInput: { message: 'retry', fileIds: ['file-1'] },
       userMessageId: 'user-message-1',
+    });
+    expect(result.current.generation).toMatchObject({
+      targetMessageId: 'assistant-target',
+      retryInput: { message: 'retry', fileIds: ['file-1'] },
     });
     expect(consumeGenerationSseXhr).not.toHaveBeenCalled();
     await waitFor(() => expect(releasePreviousSubscription).toHaveBeenCalledOnce());
@@ -318,6 +372,7 @@ describe('useChatGeneration', () => {
       generationId: 'generation-1',
       phase: 'running',
       lastDurableSequence: 3,
+      targetMessageId: 'assistant-target',
       userMessageId: 'user-message-1',
     });
   });

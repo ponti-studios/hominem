@@ -106,8 +106,8 @@ export const ChatGenerationEffectsRepository = {
       .selectFrom('app.chatGenerationEffects')
       .select('id')
       .where(
-        sql<boolean>`(status = 'pending' AND next_attempt_at <= now()) OR
-          (status = 'processing' AND locked_at < now() - interval '5 minutes')`,
+        sql<boolean>`((status = 'pending' AND next_attempt_at <= now()) OR
+          (status = 'processing' AND locked_at < now() - interval '5 minutes'))`,
       )
       .orderBy('nextAttemptAt', 'asc')
       .orderBy('createdAt', 'asc')
@@ -127,8 +127,8 @@ export const ChatGenerationEffectsRepository = {
       .where('id', '=', id);
     const row = await query
       .where(
-        sql<boolean>`(status = 'pending' AND next_attempt_at <= now()) OR
-          (status = 'processing' AND locked_at < now() - interval '5 minutes')`,
+        sql<boolean>`((status = 'pending' AND next_attempt_at <= now()) OR
+          (status = 'processing' AND locked_at < now() - interval '5 minutes'))`,
       )
       .returningAll()
       .executeTakeFirst();
