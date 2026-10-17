@@ -12,6 +12,9 @@ type TrustedOriginEnv = Pick<
   | 'WHAT_URL'
   | 'NEWSBOY_URL'
   | 'STILL_URL'
+  | 'ENV'
+  | 'NODE_ENV'
+  | 'MAESTRO_API_ORIGIN'
 >;
 
 export function getTrustedOrigins(inputEnv: TrustedOriginEnv = env) {
@@ -25,6 +28,11 @@ export function getTrustedOrigins(inputEnv: TrustedOriginEnv = env) {
     inputEnv.WHAT_URL,
     inputEnv.NEWSBOY_URL,
     inputEnv.STILL_URL,
+    ...(inputEnv.ENV === 'scripted' &&
+    inputEnv.NODE_ENV !== 'production' &&
+    inputEnv.MAESTRO_API_ORIGIN
+      ? [inputEnv.MAESTRO_API_ORIGIN]
+      : []),
     'hakumi://',
     'hakumi-dev://',
     'hakumi-e2e://',

@@ -8,14 +8,19 @@ import type {
   GenerationStartContext,
 } from '@hominem/chat';
 import { chatMessageJsonObjectSchema } from '@hominem/chat';
-import type { ChatGenerationEventRecord } from '@hominem/db/chats';
-import { ChatGenerationRepository, ChatRepository } from '@hominem/db/chats';
+import type { ChatGenerationEffectRecord, ChatGenerationEventRecord } from '@hominem/db/chats';
+import {
+  ChatGenerationEffectsRepository,
+  ChatGenerationRepository,
+  ChatRepository,
+} from '@hominem/db/chats';
 import { db } from '@hominem/db/core';
 import { runInTransaction } from '@hominem/db/transaction';
 import { embeddingQueue } from '@hominem/queues';
 import { logger } from '@hominem/telemetry';
 
 import { recordAIUsageEvent, startAIUsageTimer } from '../application/ai-usage.service';
+import { processChatGenerationEffect } from '../application/chat-generation-effects.service';
 import { AsyncEventQueue } from './async-event-queue';
 import { executeGenerationTurn } from './chat-generation-engine';
 import { toGenerationFailureMessage } from './chat-generation-errors';
@@ -26,14 +31,18 @@ import {
   toLiveEvent,
   toMessageSnapshot,
 } from './chat-generation-snapshot';
-import { recordGenerationEventDelivery } from './chat-generation-telemetry';
+import {
+  recordGenerationEventDelivery,
+  withChatGenerationSpan,
+  type ChatGenerationMetrics,
+} from './chat-generation-telemetry';
 import type {
   ChatGenerationDependencies,
   GenerationStartInput,
   SendGenerationInput,
   StartGenerationInput,
 } from './chat-generation-types';
-import { persistSpeechRun, synthesizeReplyAudioFile } from './chat-speech.service';
+import { synthesizeReplyAudioFile } from './chat-speech.service';
 
 export function send(
   dependencies: ChatGenerationDependencies,
@@ -62,6 +71,17 @@ async function executeGeneration(
   dependencies: ChatGenerationDependencies,
   input: GenerationStartInput,
   queue: AsyncEventQueue<GenerationEvent>,
+): Promise<void> {
+  await withChatGenerationSpan(input.kind, (metrics) =>
+    executeGenerationRun(dependencies, input, queue, metrics),
+  );
+}
+
+async function executeGenerationRun(
+  dependencies: ChatGenerationDependencies,
+  input: GenerationStartInput,
+  queue: AsyncEventQueue<GenerationEvent>,
+  metrics: ChatGenerationMetrics,
 ): Promise<void> {
   const eventId = randomUUID();
   const getDurationMs = startAIUsageTimer();
@@ -95,9 +115,7 @@ async function executeGeneration(
   // (started/accepted/phase_changed:running); a lone event just becomes a
   // batch of 1.
   const appendMany = async (events: GenerationHistoryEventPayload[]): Promise<void> => {
-    for (const event of events) {
-      await dependencies.failureHooks?.beforeEventAppend?.(event);
-    }
+    await Promise.all(events.map((event) => dependencies.failureHooks?.beforeEventAppend?.(event)));
     const records = await runInTransaction((trx) =>
       ChatGenerationRepository.appendEvents(trx, {
         generationId: input.generationId,
@@ -163,6 +181,7 @@ async function executeGeneration(
       eventStore: {
         append: ({ event, idempotencyKey }) =>
           (async () => {
+            if (event.type === 'tool.requested') metrics.firstToolCall();
             await dependencies.failureHooks?.beforeEventAppend?.(event);
             return runInTransaction(async (trx) => {
               const record = await ChatGenerationRepository.appendEvent(trx, {
@@ -215,6 +234,7 @@ async function executeGeneration(
       },
       liveEvents: {
         accept: (event) => {
+          if (event.type === 'text-delta') metrics.firstToken();
           queue.push(toLiveEvent(input.generationId, event));
         },
       },
@@ -227,7 +247,10 @@ async function executeGeneration(
       input.generationId,
       input.userId,
     );
-    if (currentRun?.status === 'cancelled') return;
+    if (currentRun?.status === 'cancelled') {
+      metrics.outcome('cancelled');
+      return;
+    }
 
     if (!result.assistantText.trim() && !result.pendingToolCall) {
       throw new Error('No reply was generated');
@@ -245,7 +268,12 @@ async function executeGeneration(
     // appended inside commitGeneration's own transaction — see there for
     // why. This just delivers them live.
     deliver(committed.events);
+    await runPostCommitEffects(dependencies, {
+      effects: committed.effects,
+    });
+    metrics.outcome('committed');
   } catch (error) {
+    metrics.outcome('failed');
     streamError = error;
     logger.error('chat_generation_failed', {
       generationId: input.generationId,
@@ -281,6 +309,14 @@ async function executeGeneration(
       }
     }
   } finally {
+    metrics.toolCount(toolCallCount);
+    if (usage) {
+      metrics.usage({
+        promptTokens: usage.promptTokens,
+        outputTokens: usage.outputTokens,
+        totalTokens: usage.totalTokens,
+      });
+    }
     await recordAIUsageEvent({
       eventId,
       userId: input.userId,
@@ -312,6 +348,7 @@ async function commitGeneration(
   message: ChatMessageSnapshot;
   awaitingConfirmation: boolean;
   events: ChatGenerationEventRecord[];
+  effects: ChatGenerationEffectRecord[];
 }> {
   const content = result.assistantText.trim()
     ? result.assistantText
@@ -330,7 +367,7 @@ async function commitGeneration(
       : result.toolCallRecords;
   await dependencies.failureHooks?.beforeSnapshotCommit?.();
   const awaitingConfirmation = result.pendingToolCall !== null;
-  const { message, events } = await runInTransaction(async (trx) => {
+  const { message, events, effects } = await runInTransaction(async (trx) => {
     const updated =
       input.targetAssistantMessageId && input.confirmation
         ? await ChatRepository.replaceAssistantMessageContent(
@@ -404,6 +441,8 @@ async function commitGeneration(
         }
       : { type: 'generation.committed', message: toMessageSnapshot(updated) };
     const pendingEvents: GenerationHistoryEventPayload[] = [commitEvent];
+    const commitKey =
+      input.confirmation?.toolCallId ?? result.pendingToolCall?.toolCallId ?? 'terminal';
     if (awaitingConfirmation && result.pendingToolCall) {
       pendingEvents.push({
         type: 'confirmation.required',
@@ -425,24 +464,56 @@ async function commitGeneration(
       ownerUserId: input.userId,
       events: pendingEvents.map((event, index) => ({
         event,
-        idempotencyKey: `${input.generationId}:service:commit:${index}:${event.type}`,
+        idempotencyKey: `${input.generationId}:service:commit:${commitKey}:${index}:${event.type}`,
       })),
     });
 
-    return { message: updated, events: appended };
+    const pendingEffects = [
+      {
+        generationId: input.generationId,
+        ownerUserId: input.userId,
+        effectType: 'chat_embedding' as const,
+        effectKey: String(appended[0]!.sequence),
+        payload: { chatId: input.chatId },
+      },
+      ...(audio
+        ? [
+            {
+              generationId: input.generationId,
+              ownerUserId: input.userId,
+              effectType: 'speech_run_persist' as const,
+              effectKey: String(appended[0]!.sequence),
+              payload: {
+                messageId: updated.id,
+                speechRunId: audio.speechRunId,
+                eventId: audio.eventId,
+                generationId: audio.generationId,
+                characterCount: result.assistantText.length,
+                status: audio.status,
+                usageAvailable: audio.usageAvailable,
+              },
+            },
+          ]
+        : []),
+    ];
+    const effects = await ChatGenerationEffectsRepository.createPending(trx, pendingEffects);
+
+    return { message: updated, events: appended, effects };
   });
-  await (dependencies.embeddingQueue ?? embeddingQueue).add(
-    'generate-embedding',
-    {
-      jobId: `chat-${input.chatId}`,
-      userId: input.userId,
-      entityType: 'chat',
-      entityId: input.chatId,
-    },
-    { jobId: `chat-${input.chatId}`, removeOnComplete: true, removeOnFail: false },
+  return { message, awaitingConfirmation, events, effects };
+}
+
+async function runPostCommitEffects(
+  dependencies: ChatGenerationDependencies,
+  result: {
+    effects: ChatGenerationEffectRecord[];
+  },
+): Promise<void> {
+  await Promise.all(
+    result.effects.map((effect) =>
+      processChatGenerationEffect(effect.id, {
+        embeddingQueue: dependencies.embeddingQueue ?? embeddingQueue,
+      }),
+    ),
   );
-  if (audio) {
-    await persistSpeechRun(message.id, input.userId, result.assistantText, audio);
-  }
-  return { message, awaitingConfirmation, events };
 }

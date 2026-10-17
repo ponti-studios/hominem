@@ -1,5 +1,5 @@
 import type { RefObject } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
@@ -12,6 +12,7 @@ interface ChatSearchBarProps {
   onClose: () => void;
   query: string;
   resultCount: number;
+  isSearching: boolean;
 }
 
 // Search, as the composer flattened into one line. It takes the composer's
@@ -23,6 +24,7 @@ export function ChatSearchBar({
   onClose,
   query,
   resultCount,
+  isSearching,
 }: ChatSearchBarProps) {
   const { bar, barForeground } = useAppTheme().colors;
   const hasQuery = query.trim().length > 0;
@@ -80,7 +82,11 @@ export function ChatSearchBar({
           testID="chat-search-input"
           value={query}
         />
-        {hasQuery ? <Text style={styles.count}>{t.chat.search.results(resultCount)}</Text> : null}
+        {isSearching ? (
+          <ActivityIndicator color={barForeground} size="small" />
+        ) : hasQuery ? (
+          <Text style={styles.count}>{t.chat.search.results(resultCount)}</Text>
+        ) : null}
         <Pressable
           accessibilityLabel={t.chat.search.close}
           accessibilityRole="button"

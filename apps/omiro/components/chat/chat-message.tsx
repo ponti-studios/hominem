@@ -1,19 +1,15 @@
 import type { ChatMessageItem } from '@hominem/chat';
-import { memo, useCallback, useMemo } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { memo } from 'react';
 import Animated from 'react-native-reanimated';
 
-import { useAppTheme, useStyles } from '~/components/theme';
-import AppIcon from '~/components/ui/icon';
+import { useStyles } from '~/components/theme';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { nativeMotionAnimations } from '~/services/motion/native-motion';
-import t from '~/translations';
 
 import { ActiveMessageActions } from './chat-message-actions';
-import { MessageContent } from './chat-message-content';
-import { MessageDebug } from './chat-message-debug';
+import { ChatMessageBubble } from './chat-message-bubble';
 import { MessageToolCalls } from './chat-message-tool-calls';
-import { ChatThinkingIndicator } from './chat-thinking-indicator';
+import { createChatMessageStyles } from './chat-message.styles';
 
 type ChatMessageProps = {
   message: ChatMessageItem;
@@ -26,14 +22,14 @@ type ChatMessageProps = {
   onRegenerate?: (messageId: string) => void;
   onDelete?: (messageId: string) => void;
   onRetry?: (messageId: string) => void;
-  isActive?: boolean;
+  activity?: 'active' | 'idle';
   onActivate?: (messageId: string) => void;
   formatTimestamp: (value: string) => string;
   // True only for a row just added this session (a freshly sent user
   // message), not a historical row that was already there when the screen
   // or a page of history loaded. Gates the entrance animation so opening a
   // chat doesn't replay it for every existing message.
-  isNewMessage?: boolean;
+  entrance?: 'new-message' | 'none';
   // True only for the render where this message's `failed` flag just
   // flipped from false to true (a live retry failure or stream
   // interruption), not a historical failure that was already there when
@@ -41,7 +37,7 @@ type ChatMessageProps = {
   // message-id-keyed state, not derived locally here -- FlashList recycles
   // this component across different messages, so this component's own
   // mount timing doesn't correspond to any one message's lifetime.
-  isNewlyFailed?: boolean;
+  failure?: 'new' | 'none';
 };
 
 export const ChatMessage = memo(function ChatMessage({
@@ -51,104 +47,32 @@ export const ChatMessage = memo(function ChatMessage({
   onRegenerate,
   onDelete,
   onRetry,
-  isActive = false,
+  activity = 'idle',
   onActivate,
   formatTimestamp,
-  isNewMessage = false,
-  isNewlyFailed = false,
+  entrance = 'none',
+  failure = 'none',
 }: ChatMessageProps) {
-  const {
-    foreground: textPrimary,
-    primaryForeground,
-    destructive,
-    tertiary,
-  } = useAppTheme().colors;
-  const styles = useStyles((theme) => ({
-    content: { gap: 8 },
-    reasoningPanel: {
-      backgroundColor: theme.colors.background,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: theme.borderRadii.lg,
-      gap: 4,
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-    },
-    reasoningText: { ...theme.textVariants.mono, color: theme.colors.foreground, opacity: 0.8 },
-    retryRow: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-end' },
-    interruptedRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    message: { width: '100%' },
-    messageUser: { alignItems: 'flex-end' },
-    messageAssistant: { alignItems: 'flex-start' },
-    userBubble: {
-      backgroundColor: theme.colors.primary,
-      borderRadius: theme.borderRadii.xl,
-      borderBottomRightRadius: 6,
-      maxWidth: '82%',
-      paddingHorizontal: 16,
-      paddingVertical: 11,
-    },
-    assistantBubble: {
-      backgroundColor: theme.colors.card,
-      borderRadius: theme.borderRadii.xl,
-      borderBottomLeftRadius: 6,
-      maxWidth: '94%',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-    },
-    continuous: { borderCurve: 'continuous' },
-  }));
+  const styles = useStyles(createChatMessageStyles);
 
-  const { role, message: content, isStreaming, failed } = message;
+  const { role, isStreaming, failed } = message;
   const isUser = role.toLowerCase() === 'user';
-  const handleActivate = useCallback(() => onActivate?.(message.id), [onActivate, message.id]);
   const reducedMotion = useReducedMotion();
   // A just-sent user message lifts and fades in; historical rows (chat open,
   // pagination) just mount with no entrance animation.
   const rowEntering =
-    isUser && isNewMessage
+    isUser && entrance === 'new-message'
       ? reducedMotion
         ? nativeMotionAnimations.fadeInQuick
         : nativeMotionAnimations.fadeInDownQuick
       : undefined;
-  // Lets the message's height settle smoothly when the typing indicator
-  // goes away, Markdown reflows, or a failure/retry banner shows or clears
-  // -- no-op for rows whose height never changes. Applied to the inner
-  // content View, not this row's own root: FlashList recycles and
-  // repositions row roots as you scroll, and a layout animation on the row
-  // root animates *that* reposition too, so a recycled row's text visibly
-  // slides in from its previous occupant's position (ghosting) instead of
-  // just appearing. Scoping it to the subtree that actually reflows avoids
-  // that while keeping the smooth height transition.
-  const contentLayout = reducedMotion ? undefined : nativeMotionAnimations.layoutQuick;
-  // Only animate the retry/interrupted banner in when the failure is new
-  // this session (see isNewlyFailed prop doc) -- a historical failure just
-  // appears static instead of replaying its entrance every time the row
-  // loads or gets recycled into view.
-  const bannerEntering = isNewlyFailed
-    ? reducedMotion
-      ? nativeMotionAnimations.fadeInQuick
-      : nativeMotionAnimations.fadeInDownQuick
-    : undefined;
-  const bannerExiting = reducedMotion
-    ? nativeMotionAnimations.fadeOutQuick
-    : nativeMotionAnimations.fadeOutUpQuick;
-
   const timestamp = message.createdAt ? formatTimestamp(message.createdAt) : '';
-  const canRegenerate = !isUser && !isStreaming && !failed && onRegenerate !== undefined;
-  const canEdit = isUser && !isStreaming && onRequestEdit !== undefined;
-  const canDelete = !isStreaming && onDelete !== undefined;
-  const hasReasoning = Boolean(message.reasoning && message.reasoning.trim().length > 0);
+  const actions = {
+    canRegenerate: !isUser && !isStreaming && !failed && onRegenerate !== undefined,
+    canEdit: isUser && !isStreaming && onRequestEdit !== undefined,
+    canDelete: !isStreaming && onDelete !== undefined,
+  };
   const renderedToolCalls = message.toolCalls ?? [];
-
-  const textStyle = useMemo(
-    () => ({
-      color: isUser ? primaryForeground : textPrimary,
-      fontSize: 16,
-      lineHeight: isUser ? 24 : 25.6,
-    }),
-    [isUser, primaryForeground, textPrimary],
-  );
 
   return (
     <Animated.View
@@ -156,62 +80,19 @@ export const ChatMessage = memo(function ChatMessage({
       style={[styles.message, isUser ? styles.messageUser : styles.messageAssistant]}
     >
       <MessageToolCalls toolCalls={renderedToolCalls} />
-
-      <Pressable
-        onPress={isStreaming ? undefined : handleActivate}
-        style={[isUser ? styles.userBubble : styles.assistantBubble, isUser && styles.continuous]}
-        testID={`chat-message-${message.id}`}
-      >
-        {!isUser && hasReasoning ? (
-          <View style={styles.reasoningPanel}>
-            <Text style={styles.reasoningText}>{message.reasoning}</Text>
-          </View>
-        ) : null}
-
-        <Animated.View layout={contentLayout} style={styles.content}>
-          {/* The user's own text is shown verbatim: underscores or asterisks they
-              typed must not turn into emphasis. */}
-          <MessageContent
-            content={content}
-            enableMarkdown={!isUser && !isStreaming}
-            textStyle={textStyle}
-          >
-            {!isUser && isStreaming ? <ChatThinkingIndicator /> : null}
-          </MessageContent>
-
-          {failed && isUser ? (
-            <Animated.View entering={bannerEntering} exiting={bannerExiting}>
-              <Pressable
-                accessibilityLabel={t.chat.retryMessageA11y}
-                accessibilityRole="button"
-                style={styles.retryRow}
-                onPress={() => onRetry?.(message.id)}
-              >
-                <AppIcon name="exclamationmark.circle.fill" size={13} tintColor={destructive} />
-                <Text style={{ color: destructive, fontSize: 12 }}>
-                  {message.error || t.chat.failedToSend} · {t.chat.tapToRetry}
-                </Text>
-              </Pressable>
-            </Animated.View>
-          ) : null}
-
-          {failed && !isUser ? (
-            <Animated.View entering={bannerEntering} exiting={bannerExiting}>
-              <View style={styles.interruptedRow}>
-                <AppIcon name="exclamationmark.circle" size={13} tintColor={tertiary} />
-                <Text style={{ color: tertiary, fontSize: 12 }}>{t.chat.responseInterrupted}</Text>
-              </View>
-            </Animated.View>
-          ) : null}
-
-          {showDebug && !isStreaming ? (
-            <MessageDebug hasReasoning={hasReasoning} message={message} />
-          ) : null}
-        </Animated.View>
-      </Pressable>
+      <ChatMessageBubble
+        isNewlyFailed={failure === 'new'}
+        isUser={isUser}
+        message={message}
+        styles={styles}
+        onActivate={onActivate}
+        onRetry={onRetry}
+        reducedMotion={reducedMotion}
+        showDebug={showDebug}
+      />
       <ActiveMessageActions
-        actions={{ canDelete, canEdit, canRegenerate }}
-        isActive={isActive}
+        actions={actions}
+        isActive={activity === 'active'}
         isUser={isUser}
         message={message}
         onDelete={onDelete}

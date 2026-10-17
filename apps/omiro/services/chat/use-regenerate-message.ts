@@ -2,39 +2,22 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { randomUUID } from 'expo-crypto';
 import { useCallback, useRef } from 'react';
 
-import type { ChatMessageItem } from '~/components/chat';
 import { getChatResponseLength } from '~/hooks/use-chat-response-length';
-import { useAuth } from '~/services/auth/auth-provider';
-import { chatKeys } from '~/services/notes/query-keys';
 
 import { invalidateChatQueries } from './chat-cache';
-import { toGenerationStage } from './chat-generation';
-import { useChatGeneration } from './use-chat-generation';
-import { toMessageOutput } from './use-chat-messages';
+import type { useChatGeneration } from './use-chat-generation';
 
 type RegenerateInput = { messageId: string; generationId: string };
 
-export function useRegenerateMessage(chatId: string) {
-  const { getAuthHeaders } = useAuth();
-  const queryClient = useQueryClient();
+export function useRegenerateMessage(
+  chatId: string,
+  generationRuntime: ReturnType<typeof useChatGeneration>,
+) {
   const lastMessageIdRef = useRef<string | null>(null);
-  const handleGenerationTerminal = useCallback(async () => {
-    await invalidateChatQueries(queryClient, chatId);
-  }, [chatId, queryClient]);
-  const {
-    cancelGeneration,
-    dismissGeneration,
-    generation,
-    generationRef,
-    regenerateGeneration,
-    setGeneration,
-  } = useChatGeneration({
-    chatId,
-    getAuthHeaders,
-    onGenerationTerminal: handleGenerationTerminal,
-  });
+  const queryClient = useQueryClient();
+  const { generationRef, regenerateGeneration, setGeneration } = generationRuntime;
 
-  const mutation = useMutation<void, Error, RegenerateInput>({
+  const { mutateAsync } = useMutation<void, Error, RegenerateInput>({
     retry: false,
     mutationFn: async ({ messageId, generationId }) => {
       const controller = regenerateGeneration(
@@ -51,57 +34,21 @@ export function useRegenerateMessage(chatId: string) {
           targetMessageId: messageId,
         },
       );
-      const unsubscribe = controller.subscribe((state, event) => {
-        const current = generationRef.current;
-        if (!current || event.generationId !== current.id) {
-          return;
-        }
-        setGeneration({
-          ...current,
-          stage: toGenerationStage(state.phase),
-          lastDurableSequence: state.lastDurableSequence,
-        });
-        if ('event' in event) {
-          setGeneration({ ...current, stage: 'failed', error: event.event.message });
-          return;
-        }
-        if (event.type === 'generation.failed') {
-          setGeneration({ ...current, stage: 'failed', error: event.payload.message });
-          return;
-        }
-        if (event.type === 'generation.cancelled') {
-          setGeneration({ ...current, stage: 'cancelled' });
-          return;
-        }
-        if (event.type === 'generation.committed') {
-          const message = toMessageOutput(event.payload.message);
-          if (message) {
-            queryClient.setQueryData<ChatMessageItem[]>(
-              chatKeys.messages(chatId),
-              (messages = []) =>
-                messages.map((item) => (item.id === current.targetMessageId ? message : item)),
-            );
-          }
-          void invalidateChatQueries(queryClient, chatId);
-          setGeneration(null);
-        }
-      });
       const completed = await controller.done;
       if (completed.phase === 'failed') {
         throw new Error(completed.error ?? 'Generation failed.');
       }
-      unsubscribe();
     },
-    onError: (error) => {
+    onError: (error, { generationId }) => {
       if (error.name === 'AbortError') {
         return;
       }
+      void invalidateChatQueries(queryClient, chatId);
       const current = generationRef.current;
-      if (current) {
+      if (current?.id === generationId) {
         setGeneration({ ...current, stage: 'failed', error: error.message });
       }
     },
-    onSettled: () => {},
   });
 
   const regenerateMessage = useCallback(
@@ -115,16 +62,17 @@ export function useRegenerateMessage(chatId: string) {
         lastDurableSequence: 0,
         targetMessageId: messageId,
       });
-      void mutation.mutateAsync({ messageId, generationId }).catch(() => undefined);
+      void mutateAsync({ messageId, generationId }).catch(() => undefined);
     },
-    [chatId, mutation, setGeneration],
+    [chatId, mutateAsync, setGeneration],
   );
 
   const retryGeneration = useCallback(() => {
-    if (lastMessageIdRef.current) {
-      regenerateMessage(lastMessageIdRef.current);
+    const messageId = lastMessageIdRef.current ?? generationRef.current?.targetMessageId;
+    if (messageId) {
+      regenerateMessage(messageId);
     }
-  }, [regenerateMessage]);
+  }, [generationRef, regenerateMessage]);
 
-  return { cancelGeneration, dismissGeneration, generation, regenerateMessage, retryGeneration };
+  return { regenerateMessage, retryGeneration };
 }

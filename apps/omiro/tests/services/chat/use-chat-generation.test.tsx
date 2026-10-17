@@ -5,6 +5,7 @@ import type {
   GenerationClientState,
 } from '@hominem/chat/client';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { StrictMode, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { mockMmkvModule } from '../../mocks/mmkv';
@@ -13,9 +14,11 @@ vi.mock('~/services/storage/mmkv', () => mockMmkvModule());
 vi.mock('~/constants', () => ({ API_BASE_URL: 'http://localhost:4040' }));
 
 const { storage } = await import('~/services/storage/mmkv');
-const { useChatGeneration, persistGenerationCheckpoint } =
-  await import('~/services/chat/use-chat-generation');
-const { registerGenerationHandoff } = await import('~/services/chat/generation-handoff');
+const { useChatGeneration } = await import('~/services/chat/use-chat-generation');
+const { persistGenerationCheckpoint, restoreGenerationCheckpoint } =
+  await import('~/services/chat/chat-generation-checkpoint');
+const { registerGenerationHandoff, takeGenerationHandoff } =
+  await import('~/services/chat/generation-handoff');
 
 // Minimal ChatGenerationController test double: enough surface for
 // useChatGeneration's adoption path (state getter, subscribe, done), not a
@@ -56,6 +59,7 @@ function createFakeController(
   };
   return {
     controller,
+    listenerCount: () => listeners.size,
     emit: (next: Partial<GenerationClientState>) => {
       state = { ...state, ...next };
       // The hook under test only reads the state; the event is just a required argument.
@@ -76,12 +80,15 @@ function createFakeController(
 }
 
 const getAuthHeaders = vi.fn().mockResolvedValue({});
-const { consumeGenerationSseXhr } = vi.hoisted(() => ({ consumeGenerationSseXhr: vi.fn() }));
+const { consumeGenerationSseXhr, mockCancelRequest } = vi.hoisted(() => ({
+  consumeGenerationSseXhr: vi.fn(),
+  mockCancelRequest: vi.fn(),
+}));
 const key = 'chat-generation:chat-1';
 
 vi.mock('@hominem/chat/transport/xhr', () => ({
   xhrChatTransport: () => ({
-    request: async () => new Response('{}', { status: 200 }),
+    request: () => mockCancelRequest(),
     stream: async ({
       url,
       init,
@@ -108,8 +115,10 @@ vi.mock('@hominem/chat/transport/xhr', () => ({
 describe('useChatGeneration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    takeGenerationHandoff('chat-1')?.releasePreviousSubscription?.();
     storage.remove(key);
     consumeGenerationSseXhr.mockResolvedValue(undefined);
+    mockCancelRequest.mockResolvedValue(new Response('{}', { status: 200 }));
   });
 
   it('restores an active generation checkpoint from MMKV', () => {
@@ -162,6 +171,54 @@ describe('useChatGeneration', () => {
     expect(storage.getString(key)).toBeUndefined();
   });
 
+  it('restores the target message needed to retry a failed regeneration', () => {
+    persistGenerationCheckpoint('chat-1', {
+      id: 'generation-1',
+      stage: 'failed',
+      lastDurableSequence: 12,
+      targetMessageId: 'assistant-1',
+    });
+
+    expect(restoreGenerationCheckpoint('chat-1')).toEqual({
+      id: 'generation-1',
+      chatId: 'chat-1',
+      stage: 'failed',
+      lastDurableSequence: 12,
+      targetMessageId: 'assistant-1',
+    });
+  });
+
+  it('keeps a failed cancellation visible and recoverable', async () => {
+    storage.set(
+      key,
+      JSON.stringify({
+        generationId: 'generation-1',
+        phase: 'running',
+        lastDurableSequence: 12,
+      }),
+    );
+    let finishStream: (() => void) | undefined;
+    consumeGenerationSseXhr.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishStream = resolve;
+        }),
+    );
+    mockCancelRequest.mockRejectedValueOnce(new Error('network down'));
+    const { result } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
+
+    await waitFor(() => expect(consumeGenerationSseXhr).toHaveBeenCalledOnce());
+    await act(async () => result.current.cancelGeneration());
+
+    expect(result.current.generation).toMatchObject({
+      id: 'generation-1',
+      stage: 'running',
+      error: 'network down',
+    });
+    expect(mockCancelRequest).toHaveBeenCalledOnce();
+    finishStream?.();
+  });
+
   it('round-trips userMessageId seeded by a caller outside this hook', () => {
     persistGenerationCheckpoint('chat-1', {
       id: 'generation-1',
@@ -178,6 +235,24 @@ describe('useChatGeneration', () => {
       stage: 'preparing',
       lastDurableSequence: 0,
       userMessageId: 'user-message-1',
+    });
+  });
+
+  it('round-trips a local retry input until the generation reaches the server', () => {
+    persistGenerationCheckpoint('chat-1', {
+      id: 'generation-1',
+      stage: 'failed',
+      lastDurableSequence: 0,
+      userMessageId: 'user-message-1',
+      retryInput: { message: 'Retry this', fileIds: ['file-1'] },
+    });
+
+    const { result } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
+
+    expect(result.current.generation).toMatchObject({
+      stage: 'failed',
+      userMessageId: 'user-message-1',
+      retryInput: { message: 'Retry this', fileIds: ['file-1'] },
     });
   });
 
@@ -213,7 +288,12 @@ describe('useChatGeneration', () => {
       phase: 'preparing',
       lastDurableSequence: 0,
     });
-    registerGenerationHandoff('chat-1', { controller, userMessageId: 'user-message-1' });
+    const releasePreviousSubscription = vi.fn();
+    registerGenerationHandoff('chat-1', {
+      controller,
+      releasePreviousSubscription,
+      userMessageId: 'user-message-1',
+    });
 
     const { result } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
 
@@ -226,6 +306,7 @@ describe('useChatGeneration', () => {
       userMessageId: 'user-message-1',
     });
     expect(consumeGenerationSseXhr).not.toHaveBeenCalled();
+    await waitFor(() => expect(releasePreviousSubscription).toHaveBeenCalledOnce());
 
     act(() => emit({ phase: 'running', lastDurableSequence: 3 }));
 
@@ -241,18 +322,72 @@ describe('useChatGeneration', () => {
     });
   });
 
-  it('treats an already-finished handoff as nothing in flight', () => {
+  it('releases the previous listener for an already-finished handoff', async () => {
     const { controller } = createFakeController({
       generationId: 'generation-1',
       phase: 'committed',
       lastDurableSequence: 9,
     });
-    registerGenerationHandoff('chat-1', { controller, userMessageId: 'user-message-1' });
+    const releasePreviousSubscription = vi.fn();
+    registerGenerationHandoff('chat-1', {
+      controller,
+      releasePreviousSubscription,
+      userMessageId: 'user-message-1',
+    });
 
     const { result } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
 
     expect(result.current.generation).toBeNull();
     expect(storage.getString(key)).toBeUndefined();
+    await waitFor(() => expect(releasePreviousSubscription).toHaveBeenCalledOnce());
+  });
+
+  it('transfers the active controller listener when a chat screen remounts', async () => {
+    const { controller, listenerCount } = createFakeController({
+      generationId: 'generation-1',
+      phase: 'running',
+      lastDurableSequence: 3,
+    });
+    const releasePreviousSubscription = vi.fn();
+    registerGenerationHandoff('chat-1', { controller, releasePreviousSubscription });
+
+    const first = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
+    await waitFor(() => expect(listenerCount()).toBe(1));
+    first.unmount();
+
+    const second = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }));
+    await waitFor(() => expect(listenerCount()).toBe(1));
+
+    expect(second.result.current.generation).toMatchObject({
+      id: 'generation-1',
+      stage: 'running',
+      lastDurableSequence: 3,
+    });
+    expect(releasePreviousSubscription).toHaveBeenCalledOnce();
+    expect(consumeGenerationSseXhr).not.toHaveBeenCalled();
+    second.unmount();
+    takeGenerationHandoff('chat-1', controller)?.releasePreviousSubscription?.();
+  });
+
+  it('does not consume the active controller during StrictMode render replay', async () => {
+    const { controller, listenerCount } = createFakeController({
+      generationId: 'generation-1',
+      phase: 'running',
+      lastDurableSequence: 3,
+    });
+    const releasePreviousSubscription = vi.fn();
+    registerGenerationHandoff('chat-1', { controller, releasePreviousSubscription });
+    const wrapper = ({ children }: { children: ReactNode }) => <StrictMode>{children}</StrictMode>;
+
+    const { unmount } = renderHook(() => useChatGeneration({ chatId: 'chat-1', getAuthHeaders }), {
+      wrapper,
+    });
+
+    await waitFor(() => expect(listenerCount()).toBe(1));
+    expect(releasePreviousSubscription).toHaveBeenCalledOnce();
+    expect(consumeGenerationSseXhr).not.toHaveBeenCalled();
+    unmount();
+    takeGenerationHandoff('chat-1', controller)?.releasePreviousSubscription?.();
   });
 
   it('reattaches an active checkpoint through durable GET replay', async () => {

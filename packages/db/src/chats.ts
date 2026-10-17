@@ -8,6 +8,13 @@ export type {
   ChatGenerationEventRecord,
   ChatGenerationToolEffectRecord,
 } from './services/chats/chat-generation.repository';
+export { ChatGenerationEffectsRepository } from './services/chats/chat-generation-effects.repository';
+export type {
+  ChatGenerationEffectRecord,
+  ChatGenerationEffectStatus,
+  ChatGenerationEffectType,
+  CreateChatGenerationEffectInput,
+} from './services/chats/chat-generation-effects.repository';
 export { ChatSpeechRunRepository } from './services/chats/chat-speech-run.repository';
 export type {
   ChatSpeechReconciliationStatus,

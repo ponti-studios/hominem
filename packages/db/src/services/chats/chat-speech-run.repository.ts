@@ -88,6 +88,43 @@ export const ChatSpeechRunRepository = {
     return toRecord(row);
   },
 
+  async createIfAbsent(
+    handle: DbHandle,
+    input: CreateChatSpeechRunInput,
+  ): Promise<ChatSpeechRunRecord> {
+    const inserted = await handle
+      .insertInto('app.chatSpeechRuns')
+      .values({
+        id: input.id,
+        messageId: input.messageId,
+        ownerUserId: input.ownerUserId,
+        usageEventId: input.usageEventId,
+        provider: input.provider,
+        characterCount: input.characterCount,
+      })
+      .onConflict((conflict) => conflict.column('id').doNothing())
+      .returningAll()
+      .executeTakeFirst();
+    if (inserted) return toRecord(inserted);
+
+    const existing = await handle
+      .selectFrom('app.chatSpeechRuns')
+      .selectAll()
+      .where('id', '=', input.id)
+      .executeTakeFirst();
+    if (!existing) throw new Error('Chat speech run idempotency record disappeared');
+    if (
+      existing.messageId !== input.messageId ||
+      existing.ownerUserId !== input.ownerUserId ||
+      existing.usageEventId !== input.usageEventId ||
+      existing.provider !== input.provider ||
+      existing.characterCount !== input.characterCount
+    ) {
+      throw new Error('Chat speech run idempotency key was reused with different input');
+    }
+    return toRecord(existing);
+  },
+
   async getById(
     handle: DbHandle,
     id: string,
@@ -143,6 +180,28 @@ export const ChatSpeechRunRepository = {
         lastReconciliationError: input.error ?? null,
       }))
       .where('id', '=', input.id)
+      .returningAll()
+      .executeTakeFirst();
+    return row ? toRecord(row) : null;
+  },
+
+  async markInitialReconciliation(
+    handle: DbHandle,
+    input: {
+      id: string;
+      status: ChatSpeechReconciliationStatus;
+      error?: string | null;
+    },
+  ): Promise<ChatSpeechRunRecord | null> {
+    const row = await handle
+      .updateTable('app.chatSpeechRuns')
+      .set({
+        reconciliationStatus: input.status,
+        lastReconciliationError: input.error ?? null,
+      })
+      .where('id', '=', input.id)
+      .where('reconciliationStatus', '=', 'pending')
+      .where('reconciliationAttempts', '=', 0)
       .returningAll()
       .executeTakeFirst();
     return row ? toRecord(row) : null;

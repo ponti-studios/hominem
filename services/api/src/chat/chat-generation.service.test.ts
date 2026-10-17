@@ -17,9 +17,12 @@ const mocks = vi.hoisted(() => ({
   touchLastMessage: vi.fn(),
   appendEvent: vi.fn(),
   appendEvents: vi.fn(),
+  createGenerationEffects: vi.fn(),
+  claimGenerationEffect: vi.fn(),
+  completeGenerationEffect: vi.fn(),
+  retryGenerationEffect: vi.fn(),
   forceFail: vi.fn(),
   listEvents: vi.fn(),
-  rebuildProjection: vi.fn(),
   getToolEffect: vi.fn(),
   saveToolEffect: vi.fn(),
   deleteRun: vi.fn(),
@@ -54,10 +57,15 @@ vi.mock('@hominem/db/chats', () => ({
     appendEvents: mocks.appendEvents,
     forceFail: mocks.forceFail,
     listEvents: mocks.listEvents,
-    rebuildProjection: mocks.rebuildProjection,
     getToolEffect: mocks.getToolEffect,
     saveToolEffect: mocks.saveToolEffect,
     deleteRun: mocks.deleteRun,
+  },
+  ChatGenerationEffectsRepository: {
+    createPending: mocks.createGenerationEffects,
+    claim: mocks.claimGenerationEffect,
+    complete: mocks.completeGenerationEffect,
+    retry: mocks.retryGenerationEffect,
   },
   runInTransaction: mocks.runInTransaction,
 }));
@@ -185,7 +193,6 @@ describe('ChatGenerationService.cancel', () => {
       pendingToolCall: null,
     });
     mocks.listEvents.mockResolvedValue([]);
-    mocks.rebuildProjection.mockResolvedValue(undefined);
     mocks.runInTransaction.mockImplementation((callback: (trx: unknown) => unknown) =>
       callback({}),
     );
@@ -193,6 +200,25 @@ describe('ChatGenerationService.cancel', () => {
       event(args.event.type, mocks.appendEvent.mock.calls.length),
     );
     mocks.appendEvents.mockImplementation(defaultAppendEventsImpl({ current: 0 }));
+    mocks.createGenerationEffects.mockImplementation(
+      async (_trx: unknown, effects: Array<Record<string, unknown>>) =>
+        effects.map((effect, index) => ({
+          id: `effect-${index}`,
+          ...effect,
+          generationId: input.generationId,
+          status: 'pending',
+          attempts: 0,
+        })),
+    );
+    mocks.claimGenerationEffect.mockImplementation(async (_trx: unknown, id: string) => ({
+      id,
+      generationId: input.generationId,
+      ownerUserId: input.ownerUserId,
+      effectType: 'chat_embedding',
+      payload: { chatId: input.chatId },
+      status: 'processing',
+      attempts: 1,
+    }));
   });
 
   it('durably records cancellation from a preparing run in order', async () => {
@@ -219,22 +245,6 @@ describe('ChatGenerationService.cancel', () => {
     expect(result).toEqual(committed);
     expect(mocks.appendEvent).not.toHaveBeenCalled();
     expect(mocks.generationPubSubPublish).not.toHaveBeenCalled();
-  });
-
-  it('recovers phase and cursor from the owner-scoped durable event log', async () => {
-    mocks.getGenerationRun.mockResolvedValue(preparingRun);
-    mocks.listEvents.mockResolvedValue([{ sequence: 1 }, { sequence: 2 }, { sequence: 3 }]);
-    mocks.rebuildProjection.mockResolvedValue({ status: 'awaiting_confirmation' });
-
-    await expect(createChatGenerationService().recover(input)).resolves.toEqual({
-      generationId: input.generationId,
-      chatId: input.chatId,
-      phase: 'awaiting_confirmation',
-      lastDurableSequence: 3,
-      disposition: 'awaiting_confirmation',
-      mayExecuteEffect: false,
-    });
-    expect(mocks.rebuildProjection).toHaveBeenCalledWith({}, input.generationId, input.ownerUserId);
   });
 
   it('does not expose tool exceptions when resuming confirmation', async () => {
@@ -489,6 +499,72 @@ describe('ChatGenerationService.cancel', () => {
     mocks.executeGenerationTurn.mockReset();
     mocks.appendEvent.mockReset();
     mocks.appendEvents.mockReset();
+  });
+
+  it('keeps a committed generation successful when embedding enqueue fails afterward', async () => {
+    mocks.getOwnedOrThrow.mockResolvedValue({
+      id: input.chatId,
+      userId: input.ownerUserId,
+      title: 'Chat',
+      archivedAt: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    mocks.getGenerationRunById.mockResolvedValue(null);
+    mocks.executeGenerationTurn.mockResolvedValue({
+      assistantText: 'The answer is durable.',
+      reasoningText: null,
+      toolCallRecords: [],
+      usage: null,
+      pendingToolCall: null,
+    });
+    mocks.insertMessage.mockResolvedValue({
+      id: 'assistant-1',
+      chatId: input.chatId,
+      userId: input.ownerUserId,
+      role: 'assistant',
+      content: 'The answer is durable.',
+      files: null,
+      toolCalls: null,
+      reasoning: null,
+      parentMessageId: 'message-1',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+    mocks.appendEvents.mockImplementation(defaultAppendEventsImpl({ current: 0 }));
+    const embeddingQueue = { add: vi.fn().mockRejectedValue(new Error('queue unavailable')) };
+
+    const stream = await createChatGenerationService({ embeddingQueue }).send({
+      userId: input.ownerUserId,
+      generationId: input.generationId,
+      chatId: input.chatId,
+      model: 'test-model',
+      messages: [{ role: 'user', content: 'hello' }],
+      tools: [],
+      userMessageId: 'message-1',
+    });
+    const events = [];
+    for await (const value of stream) events.push(value);
+
+    expect(events.map((value) => value.type)).toEqual([
+      'generation.started',
+      'generation.accepted',
+      'generation.phase_changed',
+      'generation.phase_changed',
+      'generation.committed',
+    ]);
+    expect(mocks.forceFail).not.toHaveBeenCalled();
+    expect(mocks.createGenerationEffects).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.arrayContaining([
+        expect.objectContaining({
+          effectType: 'chat_embedding',
+          effectKey: expect.any(String),
+          payload: { chatId: input.chatId },
+        }),
+      ]),
+    );
+    expect(mocks.retryGenerationEffect).toHaveBeenCalledWith({}, 'effect-0', 'Error');
   });
 
   it('does not commit provider output after cancellation wins during execution', async () => {

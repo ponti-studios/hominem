@@ -5,14 +5,10 @@ import { useCallback, useRef } from 'react';
 
 import type { ChatMessageItem } from '~/components/chat';
 import { getChatResponseLength } from '~/hooks/use-chat-response-length';
-import { useAuth } from '~/services/auth/auth-provider';
 import { chatKeys } from '~/services/notes/query-keys';
 
-import { applyGenerationCommitted, invalidateChatQueries } from './chat-cache';
 import { OFFLINE_UNAVAILABLE_ERROR } from './chat-errors';
-import { toGenerationStage } from './chat-generation';
-import { useChatGeneration } from './use-chat-generation';
-import { toMessageOutput } from './use-chat-messages';
+import type { useChatGeneration } from './use-chat-generation';
 
 function fallbackId() {
   if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
@@ -48,88 +44,25 @@ export interface SendInput {
 type MutationInput = SendInput & { generationId: string };
 type SendContext = { userMessageId: string };
 
-export function useSendMessage({ chatId }: { chatId: string }) {
-  const { getAuthHeaders } = useAuth();
+export function useSendMessage({
+  chatId,
+  generation: generationRuntime,
+}: {
+  chatId: string;
+  generation: ReturnType<typeof useChatGeneration>;
+}) {
   const queryClient = useQueryClient();
   const lastInputRef = useRef<SendInput | null>(null);
-  const handleGenerationTerminal = useCallback(async () => {
-    await invalidateChatQueries(queryClient, chatId);
-  }, [chatId, queryClient]);
   const {
-    cancelGeneration,
     dismissGeneration,
     generation,
     generationRef,
     regenerateGeneration,
     sendGeneration,
     setGeneration,
-  } = useChatGeneration({
-    chatId,
-    getAuthHeaders,
-    onGenerationTerminal: handleGenerationTerminal,
-  });
+  } = generationRuntime;
 
-  // Sends and Retries of failed generations —
-  // Drives a controller to completion and react to the same event stream.
-  // `targetGenerationId` — not the controller's own internal state.generationId,
-  // which for a fresh send is an unrelated id ChatClient mints locally — is
-  // what identifies which generationRef update this subscription owns.
-  const driveGeneration = useCallback(
-    async (controller: ReturnType<typeof sendGeneration>, targetGenerationId: string) => {
-      const unsubscribe = controller.subscribe((state, event) => {
-        const current = generationRef.current;
-        if (!current || current.id !== targetGenerationId) {
-          return;
-        }
-        if ('event' in event) {
-          setGeneration({ ...current, stage: 'failed', error: event.event.message });
-          return;
-        }
-        const stage =
-          event.type === 'generation.phase_changed'
-            ? toGenerationStage(event.payload.phase)
-            : toGenerationStage(state.phase);
-        setGeneration({ ...current, stage, lastDurableSequence: state.lastDurableSequence });
-        if (event.type === 'generation.failed') {
-          setGeneration({ ...current, stage: 'failed', error: event.payload.message });
-          return;
-        }
-        if (event.type === 'generation.accepted' && event.payload.userMessage) {
-          const userMessage = toMessageOutput(event.payload.userMessage);
-          if (userMessage) {
-            queryClient.setQueryData<ChatMessageItem[]>(
-              chatKeys.messages(chatId),
-              (currentMessages = []) =>
-                currentMessages.map((item) =>
-                  item.id === generationRef.current?.userMessageId ? userMessage : item,
-                ),
-            );
-          }
-          return;
-        }
-        if (event.type === 'confirmation.required') {
-          void invalidateChatQueries(queryClient, chatId);
-          return;
-        }
-        if (event.type === 'generation.cancelled') {
-          setGeneration({ ...current, stage: 'cancelled' });
-          return;
-        }
-        if (event.type === 'generation.committed') {
-          applyGenerationCommitted({ queryClient, chatId, message: event.payload.message });
-          setGeneration(null);
-        }
-      });
-      const completed = await controller.done;
-      if (completed.phase === 'failed') {
-        throw new Error(completed.error ?? 'Generation failed.');
-      }
-      unsubscribe();
-    },
-    [chatId, generationRef, queryClient, setGeneration],
-  );
-
-  const mutation = useMutation<void, Error, MutationInput, SendContext>({
+  const { mutateAsync, isPending } = useMutation<void, Error, MutationInput, SendContext>({
     mutationKey: ['chat-generation', chatId],
     retry: false,
     onMutate: async ({ message, generationId }) => {
@@ -151,6 +84,17 @@ export function useSendMessage({ chatId }: { chatId: string }) {
     mutationFn: async ({ generationId, message, fileIds, responseModality }) => {
       const net = await NetInfo.fetch();
       if (net.isConnected === false) {
+        const current = generationRef.current;
+        if (current?.id === generationId) {
+          setGeneration({
+            ...current,
+            retryInput: {
+              message,
+              ...(fileIds ? { fileIds } : {}),
+              ...(responseModality ? { responseModality } : {}),
+            },
+          });
+        }
         throw new Error(OFFLINE_UNAVAILABLE_ERROR);
       }
 
@@ -171,15 +115,32 @@ export function useSendMessage({ chatId }: { chatId: string }) {
           userMessageId: generationRef.current?.userMessageId,
         },
       );
-      await driveGeneration(controller, generationId);
-    },
-    onError: (error, _input, context) => {
-      if (generationRef.current?.stage === 'stopping' || error.name === 'AbortError') {
-        return;
+      const completed = await controller.done;
+      if (completed.phase === 'failed') {
+        throw new Error(completed.error ?? 'Generation failed.');
       }
+    },
+    onError: (error, input, context) => {
       const current = generationRef.current;
-      if (current) {
-        setGeneration({ ...current, stage: 'failed', error: error.message });
+      if (
+        current?.id === input.generationId &&
+        current.stage !== 'stopping' &&
+        error.name !== 'AbortError'
+      ) {
+        setGeneration({
+          ...current,
+          stage: 'failed',
+          error: error.message,
+          ...(current.lastDurableSequence === 0
+            ? {
+                retryInput: {
+                  message: input.message,
+                  ...(input.fileIds ? { fileIds: input.fileIds } : {}),
+                  ...(input.responseModality ? { responseModality: input.responseModality } : {}),
+                },
+              }
+            : {}),
+        });
       }
       if (!context) {
         return;
@@ -190,19 +151,27 @@ export function useSendMessage({ chatId }: { chatId: string }) {
         ),
       );
     },
-    onSettled: () => {},
   });
 
   const sendChatMessage = useCallback(
     (input: SendInput) => {
       lastInputRef.current = input;
-      return mutation.mutateAsync({ ...input, generationId: randomUUID() });
+      return mutateAsync({ ...input, generationId: randomUUID() });
     },
-    [mutation],
+    [mutateAsync],
   );
 
   const retryLastGeneration = useCallback(() => {
     const failed = generationRef.current;
+    if (failed?.stage === 'failed' && failed.retryInput) {
+      const retryInput = failed.retryInput;
+      queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (messages = []) =>
+        messages.filter((item) => item.id !== failed.userMessageId),
+      );
+      setGeneration(null);
+      void sendChatMessage(retryInput).catch(() => undefined);
+      return;
+    }
     // A failed attempt already has its user message persisted server-side —
     // redo it in place via regenerate rather than resending, which would
     // insert a duplicate user message.
@@ -229,27 +198,19 @@ export function useSendMessage({ chatId }: { chatId: string }) {
           userMessageId: failed.userMessageId,
         },
       );
-      void driveGeneration(controller, generationId).catch(() => undefined);
+      void controller.done.catch(() => undefined);
       return;
     }
     if (lastInputRef.current) {
       void sendChatMessage(lastInputRef.current).catch(() => undefined);
     }
-  }, [
-    chatId,
-    driveGeneration,
-    generationRef,
-    regenerateGeneration,
-    sendChatMessage,
-    setGeneration,
-  ]);
+  }, [chatId, generationRef, queryClient, regenerateGeneration, sendChatMessage, setGeneration]);
 
   return {
-    cancelGeneration,
+    cancelGeneration: generationRuntime.cancelGeneration,
     dismissGeneration,
     generation,
-    isChatSending: mutation.isPending,
-    retryFailedMessage: retryLastGeneration,
+    isChatSending: isPending,
     retryLastGeneration,
     sendChatMessage,
   };

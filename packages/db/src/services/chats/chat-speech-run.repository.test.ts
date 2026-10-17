@@ -90,6 +90,34 @@ describe('ChatSpeechRunRepository', () => {
     });
   });
 
+  it('recovers speech persistence idempotently without counting the first reconciliation as a retry', async () => {
+    const fixture = await createFixture();
+    const input = {
+      id: randomUUID(),
+      messageId: fixture.messageId,
+      ownerUserId: fixture.userId,
+      usageEventId: randomUUID(),
+      provider: 'openrouter',
+      characterCount: 18,
+    };
+
+    const created = await ChatSpeechRunRepository.createIfAbsent(db, input);
+    const recovered = await ChatSpeechRunRepository.createIfAbsent(db, input);
+    await ChatSpeechRunRepository.markInitialReconciliation(db, {
+      id: recovered.id,
+      status: 'succeeded',
+    });
+
+    expect(recovered.id).toBe(created.id);
+    expect(await ChatSpeechRunRepository.getById(db, created.id)).toMatchObject({
+      reconciliationStatus: 'succeeded',
+      reconciliationAttempts: 0,
+    });
+    await expect(
+      ChatSpeechRunRepository.createIfAbsent(db, { ...input, characterCount: 19 }),
+    ).rejects.toThrow('Chat speech run idempotency key was reused with different input');
+  });
+
   it('enforces owner filtering and message deletion cascade', async () => {
     const fixture = await createFixture();
     const otherUserId = randomUUID();

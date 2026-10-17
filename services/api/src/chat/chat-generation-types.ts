@@ -11,7 +11,7 @@ import type {
   GenerationInput,
   GenerationState,
 } from '@hominem/chat';
-import type { ChatGenerationRunRecord, ChatMessageToolCallRecord } from '@hominem/db/chats';
+import type { ChatMessageToolCallRecord } from '@hominem/db/chats';
 import type { embeddingQueue } from '@hominem/queues';
 
 import type { ChatToolPlan, planChatTools } from '../mcp/chat-tool-adapter';
@@ -127,15 +127,6 @@ export type CancelInput = {
   chatId: string;
   generationId: string;
   ownerUserId: string;
-};
-
-export type GenerationRecoveryResult = {
-  generationId: string;
-  chatId: string;
-  phase: ChatGenerationRunRecord['status'];
-  lastDurableSequence: number;
-  disposition: 'terminal' | 'awaiting_confirmation' | 'resume_required';
-  mayExecuteEffect: boolean;
 };
 
 export type GenerationLookupInput = {

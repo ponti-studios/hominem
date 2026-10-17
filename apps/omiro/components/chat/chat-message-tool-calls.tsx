@@ -6,27 +6,14 @@ import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
 import { ShimmerText } from './chat-thinking-indicator';
-import { describeToolArgs, formatToolName, getToolIcon } from './chat-tool-call.helpers';
+import {
+  describeToolArgs,
+  formatToolName,
+  getToolCallPhase,
+  getToolIcon,
+} from './chat-tool-call.helpers';
 
 type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
-
-type ToolCallPhase = 'asking' | 'rejected' | 'running' | 'done' | 'failed';
-
-export function getToolCallPhase(toolCall: ToolCall): ToolCallPhase {
-  if (toolCall.confirmationStatus === 'pending') {
-    return 'asking';
-  }
-  if (toolCall.confirmationStatus === 'rejected') {
-    return 'rejected';
-  }
-  if (toolCall.executionStatus === 'failed') {
-    return 'failed';
-  }
-  if (toolCall.executionStatus === 'completed') {
-    return 'done';
-  }
-  return 'running';
-}
 
 // What the person is being asked to approve, shown as the thing it will make:
 // the approval itself lives in the composer bar (ChatToolApprovalBar), so the

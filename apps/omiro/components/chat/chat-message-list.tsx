@@ -6,13 +6,11 @@ import {
   forwardRef,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import {
-  AccessibilityInfo,
   Pressable,
   type RefreshControlProps,
   type ScrollViewProps,
@@ -25,9 +23,11 @@ import type Animated from 'react-native-reanimated';
 import { fontFamilies, useStyles } from '~/components/theme';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
 
-import { ChatMessage } from './chat-message';
 import { MessageEditModal } from './chat-message-edit-modal';
+import { ChatMessageListRow } from './chat-message-list-row';
 import { ChatShimmerMessage } from './chat-shimmer-message';
+import { useChatMessageListEditing } from './use-chat-message-list-editing';
+import { useChatMessageListLifecycle } from './use-chat-message-list-lifecycle';
 
 const AUTO_SCROLL_TO_BOTTOM_THRESHOLD = 0.25;
 
@@ -48,36 +48,11 @@ const ChatScrollView = forwardRef<Animated.ScrollView, ScrollViewProps>(
   },
 );
 const keyExtractor = (item: ChatMessageItem) => item.renderKey ?? item.id;
-function announceMessage(message: ChatMessageItem, previous?: ChatMessageItem) {
-  const failed = Boolean(message.failed || message.error);
-  const wasFailed = Boolean(previous?.failed || previous?.error);
-
-  if (failed && !wasFailed) {
-    AccessibilityInfo.announceForAccessibility('Message failed to send. Tap retry.');
-    return;
-  }
-
-  if (!previous) {
-    if (message.role === 'user') {
-      AccessibilityInfo.announceForAccessibility('Message sent.');
-    } else if (message.isStreaming) {
-      AccessibilityInfo.announceForAccessibility('Assistant is responding.');
-    } else {
-      AccessibilityInfo.announceForAccessibility('New assistant message.');
-    }
-    return;
-  }
-
-  if (previous.isStreaming && !message.isStreaming && !failed) {
-    AccessibilityInfo.announceForAccessibility('Assistant reply complete.');
-  }
-}
 
 interface ChatMessageListProps {
   isMessagesLoading: boolean;
   displayMessages: ChatMessageItem[];
-  showSearch: boolean;
-  searchQuery: string;
+  search: { isOpen: boolean; query: string; isLoading: boolean };
   showDebug: boolean;
   onEdit?: (messageId: string, content: string) => void;
   onRegenerate?: (messageId: string) => void;
@@ -93,11 +68,42 @@ interface ChatMessageListProps {
   generation?: ChatGenerationState | null;
 }
 
+function getEmptyListState({
+  isLoading,
+  hasSearchQuery,
+  renderedMessages,
+  emptyState,
+  bottomInset,
+  styles,
+}: {
+  isLoading: boolean;
+  hasSearchQuery: boolean;
+  renderedMessages: ChatMessageItem[];
+  emptyState: React.ReactElement | null | undefined;
+  bottomInset: number;
+  styles: ReturnType<typeof useStyles>;
+}): React.ReactElement | null {
+  if (isLoading && renderedMessages.length === 0) {
+    return (
+      <View style={styles.loadingState}>
+        <ChatShimmerMessage />
+        <ChatShimmerMessage variant="user" />
+        <ChatShimmerMessage />
+      </View>
+    );
+  }
+
+  if (!hasSearchQuery && renderedMessages.length === 0 && emptyState) {
+    return <View style={[styles.emptyState, { paddingBottom: bottomInset }]}>{emptyState}</View>;
+  }
+
+  return null;
+}
+
 export function ChatMessageList({
   isMessagesLoading,
   displayMessages,
-  showSearch,
-  searchQuery,
+  search,
   showDebug,
   onEdit,
   onRegenerate,
@@ -127,70 +133,23 @@ export function ChatMessageList({
         : displayMessages,
     [displayMessages, targetMessageId],
   );
-  const hasSearchQuery = showSearch && searchQuery.length > 0;
+  const hasSearchQuery = search.isOpen && search.query.length > 0;
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
   // A single shared edit modal + its draft state, instead of every row
   // carrying its own -- at most one message is ever being edited at a time,
   // and RN's Modal already no-ops when never opened, so this only saves the
   // per-row useStyles/useState overhead, but it's one source of truth
   // either way (same reasoning as activeActionMessageId above).
-  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-  const [draftMessage, setDraftMessage] = useState('');
   const listRef = useRef<FlashListRef<ChatMessageItem> | null>(null);
-  const prevCountRef = useRef(renderedMessages.length);
-  const prevLastMessageIdRef = useRef(renderedMessages.at(-1)?.id ?? null);
-  const announcedMessagesRef = useRef(new Map<string, ChatMessageItem>());
-  const didInitializeAnnouncementsRef = useRef(false);
-
-  useEffect(() => {
-    const previousMessages = announcedMessagesRef.current;
-    if (
-      !didInitializeAnnouncementsRef.current &&
-      isMessagesLoading &&
-      displayMessages.length === 0
-    ) {
-      return;
-    }
-
-    if (!didInitializeAnnouncementsRef.current) {
-      for (const message of renderedMessages) {
-        previousMessages.set(message.id, message);
-      }
-      didInitializeAnnouncementsRef.current = true;
-      return;
-    }
-
-    for (const message of renderedMessages) {
-      const previous = previousMessages.get(message.id);
-      announceMessage(message, previous);
-      previousMessages.set(message.id, message);
-    }
-  }, [displayMessages.length, isMessagesLoading, renderedMessages]);
-
-  // Force-scroll to the bottom when the user sends a new message, even if
-  // they'd scrolled up. Staying near the bottom otherwise (including while a
-  // reply streams in) is handled by FlashList's maintainVisibleContentPosition
-  // below, which avoids the flash-then-jump you'd get from imperative scrollToEnd.
-  useEffect(() => {
-    const lastMessage = renderedMessages.at(-1) ?? null;
-    const countChanged = renderedMessages.length !== prevCountRef.current;
-    const lastMessageIdChanged = lastMessage?.id !== prevLastMessageIdRef.current;
-    const shouldScrollForNewUserMessage =
-      countChanged && lastMessageIdChanged && lastMessage?.role === 'user';
-
-    prevCountRef.current = renderedMessages.length;
-    prevLastMessageIdRef.current = lastMessage?.id ?? null;
-
-    if (showSearch || !shouldScrollForNewUserMessage) {
-      return;
-    }
-
-    const frame = requestAnimationFrame(() => {
-      listRef.current?.scrollToEnd({ animated: true });
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [renderedMessages, showSearch]);
+  const { announcedMessagesRef, didInitializeAnnouncementsRef } = useChatMessageListLifecycle({
+    displayMessages,
+    renderedMessages,
+    isMessagesLoading,
+    showSearch: search.isOpen,
+    hasSearchQuery,
+    listRef,
+  });
+  const editing = useChatMessageListEditing({ messages: renderedMessages, onEdit });
 
   const onActivate = useCallback(
     (messageId: string) =>
@@ -200,73 +159,22 @@ export function ChatMessageList({
     [],
   );
 
-  const editingMessage = editingMessageId
-    ? (renderedMessages.find((candidate) => candidate.id === editingMessageId) ?? null)
-    : null;
-
-  const onRequestEdit = useCallback(
-    (messageId: string) => {
-      const message = renderedMessages.find((candidate) => candidate.id === messageId);
-      if (!message) {
-        return;
-      }
-      setEditingMessageId(messageId);
-      setDraftMessage(message.message);
-    },
-    [renderedMessages],
-  );
-
-  const closeEditModal = useCallback(() => {
-    setEditingMessageId(null);
-  }, []);
-
-  const saveEditModal = useCallback(() => {
-    const trimmedContent = draftMessage.trim();
-    if (!editingMessageId || !trimmedContent) {
-      return;
-    }
-    onEdit?.(editingMessageId, trimmedContent);
-    setEditingMessageId(null);
-  }, [draftMessage, editingMessageId, onEdit]);
-
   const renderItem = useCallback<ListRenderItem<ChatMessageItem>>(
     ({ item }) => {
-      // A row only counts as "new" if the announcement tracking above hasn't
-      // seen its id -- that tracking gets seeded on the first non-loading
-      // render, so historical rows (chat open, pagination) never qualify,
-      // only messages added after that.
-      const isNewMessage =
-        didInitializeAnnouncementsRef.current && !announcedMessagesRef.current.has(item.id);
-      // Same "haven't we already seen this id" tracking as isNewMessage above,
-      // but for the failed-state transition specifically: a message that was
-      // already failed the first time we saw it (chat open, pagination, or a
-      // row recycled by FlashList into a message we haven't tracked yet)
-      // shouldn't replay its retry-banner entrance; one that just flipped
-      // from not-failed to failed while we were watching (live retry
-      // failure, stream interrupted) should. Can't derive this from a
-      // mount-scoped ref inside ChatMessage itself -- FlashList recycles the
-      // same component instance across different messages, so "just
-      // mounted" doesn't mean "just became this message."
       const previousMessage = announcedMessagesRef.current.get(item.id);
-      const isNewlyFailed =
-        didInitializeAnnouncementsRef.current &&
-        Boolean(item.failed || item.error) &&
-        !(previousMessage?.failed || previousMessage?.error);
       return (
-        <ChatMessage
-          formatTimestamp={formatTimestamp}
-          isNewMessage={isNewMessage}
-          isNewlyFailed={isNewlyFailed}
+        <ChatMessageListRow
           message={item}
-          {...{
-            isActive: !item.isStreaming && activeActionMessageId === item.id,
-            onActivate: item.isStreaming ? undefined : onActivate,
-            onRequestEdit: item.isStreaming || !onEdit ? undefined : onRequestEdit,
-            onRegenerate: item.isStreaming ? undefined : onRegenerate,
-            onDelete: item.isStreaming ? undefined : onDelete,
-            onRetry,
-            showDebug,
-          }}
+          wasInitialized={didInitializeAnnouncementsRef.current && !hasSearchQuery}
+          previousMessage={previousMessage}
+          isActive={activeActionMessageId === item.id}
+          onActivate={onActivate}
+          onRequestEdit={onEdit ? editing.requestEdit : undefined}
+          onRegenerate={onRegenerate}
+          onDelete={onDelete}
+          onRetry={onRetry}
+          formatTimestamp={formatTimestamp}
+          showDebug={showDebug}
         />
       );
     },
@@ -276,43 +184,44 @@ export function ChatMessageList({
       formatTimestamp,
       onDelete,
       onEdit,
-      onRequestEdit,
       onRegenerate,
       onRetry,
       showDebug,
+      editing.requestEdit,
+      didInitializeAnnouncementsRef,
+      announcedMessagesRef,
+      hasSearchQuery,
     ],
   );
 
   const emptySearch = hasSearchQuery ? (
     <View style={styles.emptySearch}>
-      <Text style={styles.emptySearchText}>No messages matching &ldquo;{searchQuery}&rdquo;</Text>
+      <Text style={styles.emptySearchText}>No messages matching &ldquo;{search.query}&rdquo;</Text>
     </View>
   ) : null;
 
   const listEmptyComponent = hasSearchQuery ? emptySearch : (emptyState ?? null);
-  if (isMessagesLoading && renderedMessages.length === 0) {
-    return (
-      <View style={styles.loadingState}>
-        <ChatShimmerMessage />
-        <ChatShimmerMessage variant="user" />
-        <ChatShimmerMessage />
-      </View>
-    );
-  }
-
-  if (!hasSearchQuery && renderedMessages.length === 0 && emptyState) {
-    return <View style={[styles.emptyState, { paddingBottom: bottomInset }]}>{emptyState}</View>;
+  const emptyListState = getEmptyListState({
+    isLoading: isMessagesLoading || (hasSearchQuery && search.isLoading),
+    hasSearchQuery,
+    renderedMessages,
+    emptyState,
+    bottomInset,
+    styles,
+  });
+  if (emptyListState) {
+    return emptyListState;
   }
 
   return (
     <>
       <MessageEditModal
-        content={editingMessage?.message ?? ''}
-        draftMessage={draftMessage}
-        onCancel={closeEditModal}
-        onChangeDraft={setDraftMessage}
-        onSave={saveEditModal}
-        visible={editingMessageId !== null}
+        content={editing.message?.message ?? ''}
+        draftMessage={editing.draft}
+        onCancel={editing.close}
+        onChangeDraft={editing.setDraft}
+        onSave={editing.save}
+        visible={editing.messageId !== null}
       />
       <KeyboardOffsetContext.Provider value={keyboardOffset}>
         <FlashList

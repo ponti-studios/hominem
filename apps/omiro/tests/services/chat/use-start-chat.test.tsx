@@ -139,16 +139,32 @@ describe('useStartChat', () => {
     ]);
   });
 
-  it('hands off the live controller with the accepted userMessageId', async () => {
+  it('hands off the live controller when the accepted callback navigates to its chat', async () => {
+    const { result } = renderHookWithQueryClient(() => useStartChat());
+    let handoff: ReturnType<typeof takeGenerationHandoff>;
+
+    await act(async () => {
+      await result.current.startChat({
+        title: 'Test',
+        message: 'Hello',
+        onAccepted: () => {
+          handoff = takeGenerationHandoff('chat-1');
+        },
+      });
+    });
+
+    expect(handoff?.userMessageId).toBe('user-1');
+    expect(handoff?.controller.state.generationId).toBe('generation-1');
+  });
+
+  it('does not retain a controller when starting a chat without navigating to it', async () => {
     const { result } = renderHookWithQueryClient(() => useStartChat());
 
     await act(async () => {
       await result.current.startChat({ title: 'Test', message: 'Hello' });
     });
 
-    const handoff = takeGenerationHandoff('chat-1');
-    expect(handoff?.userMessageId).toBe('user-1');
-    expect(handoff?.controller.state.generationId).toBe('generation-1');
+    expect(takeGenerationHandoff('chat-1')).toBeUndefined();
   });
 
   it('gives the first assistant reply in a new chat the same haptic + audio treatment as any other reply', async () => {

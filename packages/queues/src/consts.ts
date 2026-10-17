@@ -9,6 +9,7 @@ export const QUEUE_NAMES = {
   CAREER_JOB_IMPORT: 'career-job-import',
   SPEECH_USAGE_RECONCILIATION: 'speech-usage-reconciliation',
   CHAT_FILE_CLEANUP: 'chat-file-cleanup',
+  CHAT_GENERATION_EFFECTS: 'chat-generation-effects',
 } as const;
 
 export const REDIS_CHANNELS = {

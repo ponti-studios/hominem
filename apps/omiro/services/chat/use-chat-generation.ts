@@ -1,146 +1,39 @@
-import {
-  ChatClient,
-  parseGenerationClientCheckpoint,
-  toGenerationClientCheckpoint,
-} from '@hominem/chat/client';
-import type { ChatGenerationController, GenerationClientState } from '@hominem/chat/client';
+import { ChatClient } from '@hominem/chat/client';
+import type { ChatGenerationController, GenerationClientInputEvent } from '@hominem/chat/client';
 import { xhrChatTransport } from '@hominem/chat/transport/xhr';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { z } from 'zod';
 
 import { API_BASE_URL } from '~/constants';
-import { storage } from '~/services/storage/mmkv';
 
 import { toGenerationStage, type ChatGenerationState } from './chat-generation';
-import { takeGenerationHandoff, type PendingGenerationHandoff } from './generation-handoff';
+import {
+  clearGenerationCheckpoint,
+  createGenerationCheckpointStore,
+  persistGenerationCheckpoint,
+  restoreGenerationCheckpoint,
+} from './chat-generation-checkpoint';
+import {
+  clearGenerationHandoff,
+  peekGenerationHandoff,
+  registerGenerationHandoff,
+  takeGenerationHandoff,
+  type PendingGenerationHandoff,
+} from './generation-handoff';
 
 const resumingGenerationIds = new Set<string>();
-
-function generationStorageKey(id: string) {
-  return `chat-generation:${id}`;
-}
-
-// userMessageId rides alongside the shared, strictly-typed checkpoint —
-// it's an Omiro-only concern (Retry needs it; the wire checkpoint schema
-// doesn't carry it), so it's stripped before validating the rest and
-// re-attached after, rather than widening the shared schema for one field.
-function readStoredCheckpoint(chatId: string): {
-  checkpoint: ReturnType<typeof parseGenerationClientCheckpoint>;
-  userMessageId?: string;
-} | null {
-  const raw = storage.getString(generationStorageKey(chatId));
-  if (!raw) {
-    return null;
-  }
-  const { userMessageId, ...rest } = z
-    .looseObject({ userMessageId: z.unknown().optional() })
-    .parse(JSON.parse(raw));
-  const checkpoint = parseGenerationClientCheckpoint(rest);
-  return {
-    checkpoint,
-    ...(typeof userMessageId === 'string' ? { userMessageId } : {}),
-  };
-}
-
-function restoreGeneration(chatId: string): ChatGenerationState | null {
-  try {
-    const stored = readStoredCheckpoint(chatId);
-    if (!stored) {
-      return null;
-    }
-    const { checkpoint, userMessageId } = stored;
-    // A finished or stopped run has nothing to resume or show.
-    if (checkpoint.phase === 'committed' || checkpoint.phase === 'cancelled') {
-      storage.remove(generationStorageKey(chatId));
-      return null;
-    }
-    return {
-      id: checkpoint.generationId,
-      chatId,
-      stage: toGenerationStage(checkpoint.phase),
-      lastDurableSequence: checkpoint.lastDurableSequence,
-      ...(userMessageId ? { userMessageId } : {}),
-    };
-  } catch {
-    storage.remove(generationStorageKey(chatId));
-    return null;
-  }
-}
-
-// Writes the same MMKV checkpoint shape `restoreGeneration` reads, under the
-// same chatId-scoped key. Exported so a generation started from outside this
-// hook (e.g. the new-chat creation flow, which owns its own ChatClient) can
-// seed this hook's initial state before the consuming screen ever mounts.
-export function persistGenerationCheckpoint(
-  chatId: string,
-  state: Pick<ChatGenerationState, 'id' | 'stage' | 'lastDurableSequence' | 'userMessageId'>,
-) {
-  const checkpoint = parseGenerationClientCheckpoint({
-    generationId: state.id,
-    phase: state.stage === 'stopping' ? 'cancel_requested' : state.stage,
-    lastDurableSequence: state.lastDurableSequence,
-  });
-  storage.set(
-    generationStorageKey(chatId),
-    JSON.stringify({
-      ...checkpoint,
-      ...(state.userMessageId ? { userMessageId: state.userMessageId } : {}),
-    }),
-  );
-}
-
-// Backs the ChatClient's own internal resume bookkeeping (`get`/`set` keyed
-// by generationId, used by its start/resume mid-stream logic) — sharing the
-// same MMKV slot `persistGenerationCheckpoint` seeds and `restoreGeneration`
-// reads. `set` used to write the full `GenerationClientState` verbatim,
-// which the strict wire checkpoint schema then rejected on the next read
-// (extra fields), silently deleting the checkpoint after the first streamed
-// update. Normalizing through `toGenerationClientCheckpoint` here keeps
-// every writer to this key on the one schema `restoreGeneration` expects,
-// and preserves any `userMessageId` already seeded rather than clobbering it —
-// ChatClient itself never knows about that field.
-function checkpointStore(chatId: string) {
-  return {
-    get: (_id: string) => {
-      try {
-        const stored = readStoredCheckpoint(chatId);
-        if (!stored) {
-          return null;
-        }
-        return stored.checkpoint;
-      } catch {
-        return null;
-      }
-    },
-    set: (state: GenerationClientState) => {
-      let userMessageId: string | undefined;
-      try {
-        userMessageId = readStoredCheckpoint(chatId)?.userMessageId;
-      } catch {
-        // Malformed existing value — drop it rather than propagate it forward.
-      }
-      const checkpoint = toGenerationClientCheckpoint(state);
-      storage.set(
-        generationStorageKey(chatId),
-        JSON.stringify({ ...checkpoint, ...(userMessageId ? { userMessageId } : {}) }),
-      );
-    },
-    remove: (_id: string) => {
-      storage.remove(generationStorageKey(chatId));
-    },
-  };
-}
 
 interface UseChatGenerationOptions {
   chatId: string;
   getAuthHeaders: () => Promise<Record<string, string>>;
-  onGenerationTerminal?: () => void | Promise<void>;
+  onGenerationTerminal?: (event?: GenerationClientInputEvent) => void | Promise<void>;
+  onGenerationEvent?: (event: GenerationClientInputEvent, generation: ChatGenerationState) => void;
 }
 
 export function useChatGeneration({
   chatId,
   getAuthHeaders,
   onGenerationTerminal,
+  onGenerationEvent,
 }: UseChatGenerationOptions) {
   const [client] = useState(
     () =>
@@ -148,30 +41,26 @@ export function useChatGeneration({
         baseUrl: API_BASE_URL,
         headers: getAuthHeaders,
         transport: xhrChatTransport(),
-        checkpointStore: checkpointStore(chatId),
+        checkpointStore: createGenerationCheckpointStore(chatId),
       }),
   );
   const controllerRef = useRef<ChatGenerationController | null>(null);
 
-  // One-time take, done inside useState's lazy initializer rather than by
-  // mutating a ref during render: React may invoke this initializer twice
-  // under StrictMode in dev, but only the first call actually consumes the
-  // handoff -- a second call (or a real second mount) finds it already gone
-  // and falls back to the normal MMKV restore below, which is correct, just
-  // not the fast path.
+  // Read during render; consume after commit so StrictMode's repeated
+  // initializer calls do not discard a live controller.
   const [{ initialGeneration, handoff }] = useState<{
     initialGeneration: ChatGenerationState | null;
     handoff: PendingGenerationHandoff | null;
   }>(() => {
-    const taken = takeGenerationHandoff(chatId) ?? null;
-    if (!taken) {
-      return { initialGeneration: restoreGeneration(chatId), handoff: null };
+    const available = peekGenerationHandoff(chatId) ?? null;
+    if (!available) {
+      return { initialGeneration: restoreGenerationCheckpoint(chatId), handoff: null };
     }
-    const state = taken.controller.state;
+    const state = available.controller.state;
     // Already finished by the time this screen mounted -- the message is
     // already in the query cache from the handoff site; nothing to stream.
     if (state.phase === 'committed' || state.phase === 'cancelled') {
-      return { initialGeneration: null, handoff: null };
+      return { initialGeneration: null, handoff: available };
     }
     return {
       initialGeneration: {
@@ -179,11 +68,12 @@ export function useChatGeneration({
         chatId,
         stage: toGenerationStage(state.phase),
         lastDurableSequence: state.lastDurableSequence,
-        ...(taken.userMessageId ? { userMessageId: taken.userMessageId } : {}),
+        ...(available.userMessageId ? { userMessageId: available.userMessageId } : {}),
       },
-      handoff: taken,
+      handoff: available,
     };
   });
+  const adoptedHandoffRef = useRef<ChatGenerationController | null>(null);
   const generationRef = useRef<ChatGenerationState | null>(initialGeneration);
   const [generation, setGenerationState] = useState(initialGeneration);
 
@@ -192,7 +82,7 @@ export function useChatGeneration({
       generationRef.current = next;
       setGenerationState(next);
       if (!next) {
-        storage.remove(generationStorageKey(chatId));
+        clearGenerationCheckpoint(chatId);
         return;
       }
       persistGenerationCheckpoint(chatId, next);
@@ -204,29 +94,64 @@ export function useChatGeneration({
     (controller: ChatGenerationController, initial: ChatGenerationState) => {
       controllerRef.current = controller;
       setGeneration(initial);
-      return controller.subscribe((state) => {
+      const unsubscribe = controller.subscribe((state, event) => {
         const current = generationRef.current;
         if (!current || current.id !== state.generationId) {
           return;
         }
         if (state.phase === 'committed' || state.phase === 'cancelled') {
+          onGenerationEvent?.(event, current);
           queueMicrotask(() => {
             if (generationRef.current?.id !== state.generationId) {
               return;
             }
             setGeneration(null);
-            void onGenerationTerminal?.();
+            void onGenerationTerminal?.(event);
           });
           return;
         }
+        const currentState = { ...current };
+        if (state.lastDurableSequence > 0) {
+          delete currentState.retryInput;
+        }
+        const error =
+          'event' in event
+            ? event.event.message
+            : event.type === 'generation.failed'
+              ? event.payload.message
+              : undefined;
         setGeneration({
-          ...current,
+          ...currentState,
           stage: toGenerationStage(state.phase),
           lastDurableSequence: state.lastDurableSequence,
+          ...(error ? { error } : {}),
         });
+        onGenerationEvent?.(event, current);
       });
+      registerGenerationHandoff(chatId, {
+        controller,
+        releasePreviousSubscription: unsubscribe,
+        ...(initial.userMessageId ? { userMessageId: initial.userMessageId } : {}),
+      });
+      void controller.done.then(
+        () => {
+          unsubscribe();
+          clearGenerationHandoff(chatId, controller);
+          if (controllerRef.current === controller) {
+            controllerRef.current = null;
+          }
+        },
+        () => {
+          unsubscribe();
+          clearGenerationHandoff(chatId, controller);
+          if (controllerRef.current === controller) {
+            controllerRef.current = null;
+          }
+        },
+      );
+      return unsubscribe;
     },
-    [onGenerationTerminal, setGeneration],
+    [chatId, onGenerationEvent, onGenerationTerminal, setGeneration],
   );
 
   const sendGeneration = useCallback(
@@ -245,6 +170,29 @@ export function useChatGeneration({
       return controller;
     },
     [bindController, client],
+  );
+
+  const respondToToolCall = useCallback(
+    (input: { messageId: string; toolCallId: string; approved: boolean }) => {
+      const current = generationRef.current;
+      if (!current) {
+        throw new Error('No active chat generation to continue.');
+      }
+      // A restored awaiting-confirmation generation may still own a replay
+      // stream. Close that client stream before opening the continuation so
+      // one generation cannot publish duplicate client events.
+      controllerRef.current?.cancel();
+      const controller = client.respondToToolCall({
+        chatId,
+        messageId: input.messageId,
+        toolCallId: input.toolCallId,
+        generationId: current.id,
+        body: { approved: input.approved },
+      });
+      bindController(controller, current);
+      return controller;
+    },
+    [bindController, chatId, client],
   );
 
   const resumeGeneration = useCallback(async () => {
@@ -281,6 +229,10 @@ export function useChatGeneration({
   const adoptHandoff = useCallback(
     async (handoff: PendingGenerationHandoff, initial: ChatGenerationState) => {
       const unsubscribe = bindController(handoff.controller, initial);
+      // The start screen owned a listener while the chat route mounted. Once
+      // this screen has subscribed, transfer event handling so commit side
+      // effects (audio, haptics, task sync) run exactly once.
+      handoff.releasePreviousSubscription?.();
       try {
         await handoff.controller.done;
       } finally {
@@ -294,14 +246,51 @@ export function useChatGeneration({
   );
 
   useEffect(() => {
-    if (handoff && generationRef.current) {
-      void adoptHandoff(handoff, generationRef.current).catch(() => undefined);
+    if (handoff) {
+      if (adoptedHandoffRef.current === handoff.controller) {
+        return;
+      }
+      const taken = takeGenerationHandoff(chatId, handoff.controller);
+      if (!taken) {
+        const current = handoff.controller.state;
+        if (current.phase === 'committed' || current.phase === 'cancelled') {
+          void handoff.controller.done.then(() => {
+            if (generationRef.current?.id === current.generationId) {
+              setGeneration(null);
+            }
+          });
+        }
+        return;
+      }
+      adoptedHandoffRef.current = handoff.controller;
+      if (!generationRef.current) {
+        taken.releasePreviousSubscription?.();
+        return;
+      }
+      const current = handoff.controller.state;
+      if (current.phase === 'committed' || current.phase === 'cancelled') {
+        taken.releasePreviousSubscription?.();
+        void handoff.controller.done.then(() => {
+          if (generationRef.current?.id === current.generationId) {
+            setGeneration(null);
+          }
+        });
+        return;
+      }
+      const initial = {
+        ...generationRef.current,
+        stage: toGenerationStage(current.phase),
+        lastDurableSequence: current.lastDurableSequence,
+      };
+      void Promise.resolve()
+        .then(() => adoptHandoff(taken, initial))
+        .catch(() => undefined);
       return;
     }
     if (generationRef.current) {
       void resumeGeneration().catch(() => undefined);
     }
-  }, [adoptHandoff, handoff, resumeGeneration]);
+  }, [adoptHandoff, chatId, handoff, resumeGeneration, setGeneration]);
 
   const cancelGeneration = useCallback(async () => {
     const current = generationRef.current;
@@ -310,16 +299,35 @@ export function useChatGeneration({
       return;
     }
     setGeneration({ ...current, stage: 'stopping' });
-    const response = await client.cancel({ chatId, generationId: current.id });
+    let response: Response;
+    try {
+      response = await client.cancel({ chatId, generationId: current.id });
+    } catch (error) {
+      const latest = generationRef.current;
+      if (latest?.id === current.id && latest.stage === 'stopping') {
+        setGeneration({
+          ...latest,
+          stage: current.stage,
+          error: error instanceof Error ? error.message : 'Unable to stop reply.',
+        });
+      }
+      return;
+    }
+    if (generationRef.current?.id !== current.id || controllerRef.current !== controller) {
+      return;
+    }
     if (!response.ok) {
-      setGeneration({ ...current, stage: 'failed', error: 'Unable to stop reply.' });
+      const latest = generationRef.current;
+      if (latest?.id === current.id && latest.stage === 'stopping') {
+        setGeneration({ ...latest, stage: current.stage, error: 'Unable to stop reply.' });
+      }
       return;
     }
     controller.cancel();
     // Nothing is left to show once a stop lands -- clear the generation so the
     // composer comes back, and refresh to drop the partial reply.
     setGeneration(null);
-    void onGenerationTerminal?.();
+    void Promise.resolve(onGenerationTerminal?.()).catch(() => undefined);
   }, [chatId, client, onGenerationTerminal, setGeneration]);
 
   const dismissGeneration = useCallback(() => setGeneration(null), [setGeneration]);
@@ -328,6 +336,7 @@ export function useChatGeneration({
     cancelGeneration,
     dismissGeneration,
     regenerateGeneration,
+    respondToToolCall,
     sendGeneration,
     generation,
     generationRef,

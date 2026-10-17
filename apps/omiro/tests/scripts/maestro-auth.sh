@@ -36,6 +36,16 @@ export MAESTRO_DISABLE_UPDATE_CHECK=true
 EMAIL="${1:-${E2E_USER_EMAIL:-e2e@test.hakumi.io}}"
 MAILBOX="${HOMINEM_SCRIPTED_MAILBOX:-$HOME/.hominem/scripted-mailbox.jsonl}"
 APP_ID="${APP_ID:-com.pontistudios.hakumi.dev}"
+METRO_URL_ENCODED="${OMIRO_MAESTRO_METRO_URL_ENCODED:-}"
+if [ -z "$METRO_URL_ENCODED" ]; then
+  SIMULATOR_INTERFACE="$(route -n get default 2>/dev/null | awk '$1 == "interface:" { print $2; exit }')"
+  SIMULATOR_HOST="${OMIRO_MAESTRO_SIMULATOR_HOST:-}"
+  if [ -z "$SIMULATOR_HOST" ] && [ -n "$SIMULATOR_INTERFACE" ]; then
+    SIMULATOR_HOST="$(ipconfig getifaddr "$SIMULATOR_INTERFACE" 2>/dev/null || true)"
+  fi
+  [ -n "$SIMULATOR_HOST" ] || { echo "Could not determine the Mac LAN address for the iOS simulator" >&2; exit 1; }
+  METRO_URL_ENCODED="http%3A%2F%2F${SIMULATOR_HOST}%3A8082"
+fi
 
 command -v maestro >/dev/null || { echo "maestro not found (expected at ~/.maestro/bin/maestro)" >&2; exit 1; }
 command -v jq >/dev/null || { echo "jq not found" >&2; exit 1; }
@@ -60,7 +70,7 @@ APP_DATA="$(xcrun simctl get_app_container booted "$APP_ID" data 2>/dev/null || 
 if [ -n "$APP_DATA" ] && [ -d "$APP_DATA/Documents/mmkv" ]; then
   rm -rf "$APP_DATA/Documents/mmkv"
 fi
-maestro test --config "$TESTS_DIR/config.yaml" "$SUBFLOWS_DIR/reset-app-state.yaml"
+maestro test --config "$TESTS_DIR/config.yaml" -e "METRO_URL=$METRO_URL_ENCODED" "$SUBFLOWS_DIR/reset-app-state.yaml"
 
 echo "== phase 1: requesting OTP for $EMAIL (fresh signed-out state) =="
 # Snapshot the mailbox BEFORE the send: the capture is near-instant, so

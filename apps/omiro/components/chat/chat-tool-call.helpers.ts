@@ -1,4 +1,25 @@
+import type { ChatMessageItem } from '@hominem/chat';
+
 const MAX_VALUE_LENGTH = 140;
+
+type ToolCall = NonNullable<ChatMessageItem['toolCalls']>[number];
+export type ToolCallPhase = 'asking' | 'rejected' | 'running' | 'done' | 'failed';
+
+export function getToolCallPhase(toolCall: ToolCall): ToolCallPhase {
+  if (toolCall.confirmationStatus === 'pending') {
+    return 'asking';
+  }
+  if (toolCall.confirmationStatus === 'rejected') {
+    return 'rejected';
+  }
+  if (toolCall.executionStatus === 'failed') {
+    return 'failed';
+  }
+  if (toolCall.executionStatus === 'completed') {
+    return 'done';
+  }
+  return 'running';
+}
 
 // A symbol that says what the tool does, so a card reads at a glance.
 export function getToolIcon(toolName: string): 'brain' | 'sparkles' {

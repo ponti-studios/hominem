@@ -10,13 +10,11 @@ import { ChatGenerationStore } from './chat-generation-store';
 import {
   recordGenerationEventDeduplicated,
   recordGenerationEventDelivery,
-  recordGenerationRecovery,
 } from './chat-generation-telemetry';
 import type {
   CancelInput,
   ChatGenerationDependencies,
   GenerationLookupInput,
-  GenerationRecoveryResult,
   ReplayInput,
 } from './chat-generation-types';
 
@@ -63,42 +61,6 @@ export async function getGeneration(
     input.ownerUserId,
   );
   return run;
-}
-
-export async function recover(
-  input: GenerationLookupInput,
-): Promise<GenerationRecoveryResult | null> {
-  const run = await getGeneration(input);
-  if (!run) return null;
-
-  const events = await ChatGenerationRepository.listEvents(
-    db,
-    input.generationId,
-    input.ownerUserId,
-    0,
-  );
-  const projection =
-    events.length > 0
-      ? await ChatGenerationRepository.rebuildProjection(db, input.generationId, input.ownerUserId)
-      : null;
-  const phase = projection?.status ?? run.status;
-  const terminal = ['committed', 'cancelled', 'failed'].includes(phase);
-  const awaitingConfirmation = phase === 'awaiting_confirmation';
-
-  const result: GenerationRecoveryResult = {
-    generationId: run.id,
-    chatId: run.chatId,
-    phase,
-    lastDurableSequence: events.at(-1)?.sequence ?? 0,
-    disposition: terminal
-      ? 'terminal'
-      : awaitingConfirmation
-        ? 'awaiting_confirmation'
-        : 'resume_required',
-    mayExecuteEffect: false,
-  };
-  recordGenerationRecovery(result);
-  return result;
 }
 
 export async function cancel(

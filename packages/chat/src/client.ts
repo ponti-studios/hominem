@@ -158,12 +158,14 @@ export class ChatClient {
     messageId: string;
     toolCallId: string;
     body: Record<string, unknown>;
+    generationId?: string;
   }): ChatGenerationController {
     // The server derives the generation to continue from messageId/toolCallId
     // alone and rejects a client-supplied generationId in the body
     // (ChatsToolCallRespondSchema is `.strict()` with no such field) — unlike
     // send/start/regenerate, there's no valid client-known id to send here.
     return this.createGenerationWith({
+      generationId: input.generationId,
       path: `/api/chats/${input.chatId}/messages/${input.messageId}/tool-calls/${input.toolCallId}/respond`,
       body: input.body,
       replayPath: (generationId, afterSequence) =>

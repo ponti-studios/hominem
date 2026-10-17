@@ -1,4 +1,4 @@
-import { createChatHttpHandler } from '@hominem/chat/server';
+import { ChatHttpClientError, createGenerationSseResponse } from '@hominem/chat/server';
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono, type Context } from 'hono';
@@ -17,10 +17,6 @@ import {
 } from '../../schemas/chats.schema';
 import type { AppContext } from '../middleware/auth';
 
-function parseBody<T>(schema: { parse: (input: unknown) => T }, body: unknown): T {
-  return schema.parse(body);
-}
-
 function chatErrorMetadata(error: unknown) {
   const errorName = error instanceof Error ? error.name : 'UnknownError';
   const errorCategory =
@@ -36,176 +32,177 @@ function chatErrorMetadata(error: unknown) {
   return { errorCategory, errorName };
 }
 
-function requestWithJsonBody(c: Context<AppContext>, body: unknown): Request {
-  const headers = new Headers(c.req.raw.headers);
-  headers.delete('content-length');
-  headers.set('content-type', 'application/json');
-  return new Request(c.req.url, {
-    method: c.req.method,
-    headers,
-    body: JSON.stringify(body),
-  });
+function failedResponse(error: unknown): Response {
+  if (error instanceof Response) return error;
+  if (error instanceof ChatHttpClientError) {
+    return Response.json(
+      { error: error.clientMessage, code: error.code },
+      { status: error.statusCode },
+    );
+  }
+  const statusCode =
+    typeof error === 'object' && error !== null && 'statusCode' in error
+      ? error.statusCode
+      : undefined;
+  return Response.json(
+    { error: 'Chat request failed', code: 'CHAT_REQUEST_FAILED' },
+    { status: typeof statusCode === 'number' ? statusCode : 500 },
+  );
 }
 
-function createHandler(service: ChatGenerationService, userId: string, requestId?: string) {
-  return createChatHttpHandler({
-    onError: ({ error, request }) => {
-      logger.error('chat_http_handler_error', {
-        method: request.method,
-        path: new URL(request.url).pathname,
-        requestId,
-        ...chatErrorMetadata(error),
-      });
-    },
-    authenticate: () => ({ userId }),
-    startChat: async ({ userId: ownerUserId, body }) => {
-      const input = parseBody(ChatsStartStreamSchema, body);
-      return service.startMessage({ userId: ownerUserId, ...input, fileIds: input.fileIds ?? [] });
-    },
-    sendMessage: async ({ userId: ownerUserId, chatId, body }) => {
-      const input = parseBody(ChatsSendSchema, body);
-      return service.sendMessage({
-        userId: ownerUserId,
-        chatId,
-        ...input,
-        fileIds: input.fileIds ?? [],
-      });
-    },
-    regenerate: async ({ userId: ownerUserId, chatId, target, body }) => {
-      if ('messageId' in target) {
-        const input = parseBody(ChatsRegenerateMessageSchema, body);
-        return service.regenerate({
-          userId: ownerUserId,
-          chatId,
-          messageId: target.messageId,
-          ...input,
-        });
-      }
-      const input = parseBody(ChatsRetryGenerationSchema, body);
-      return service.regenerate({
-        userId: ownerUserId,
-        chatId,
-        failedGenerationId: target.generationId,
-        ...input,
-      });
-    },
-    respondToToolCall: async ({ userId: ownerUserId, chatId, messageId, toolCallId, body }) => {
-      const input = parseBody(ChatsToolCallRespondSchema, body);
-      return service.respondToConfirmation({
-        userId: ownerUserId,
-        chatId,
-        messageId,
-        toolCallId,
-        ...input,
-      });
-    },
-    cancel: ({ userId: ownerUserId, chatId, generationId }) =>
-      service.cancel({ ownerUserId, chatId, generationId }),
-    getGeneration: async ({ userId: ownerUserId, chatId, generationId }) => {
-      const run = await service.getGeneration({
-        chatId,
-        generationId,
-        ownerUserId: ownerUserId,
-      });
-      if (!run) throw new Response('Generation run not found', { status: 404 });
-      return run;
-    },
-    replay: async ({ userId: ownerUserId, chatId, generationId, afterSequence }) => {
-      const run = await service.getGeneration({
-        chatId,
-        generationId,
-        ownerUserId: ownerUserId,
-      });
-      if (!run) throw new Response('Generation run not found', { status: 404 });
-      return service.replay({
-        generationId,
-        ownerUserId: ownerUserId,
-        afterSequence,
-        terminal: ['committed', 'cancelled', 'failed'].includes(run.status),
-      });
-    },
-  });
-}
-
-function delegateToHandler(
-  service: ChatGenerationService,
+function handleRoute(
   c: Context<AppContext>,
-  request: Request = c.req.raw,
-) {
-  const userId = c.get('auth')!.userId;
-  return createHandler(
-    service,
-    userId,
-    c.get('requestId'),
-  )(request)
-    .then((response) => {
-      if (response.status === 400 || response.status >= 500) {
-        logger.warn('chat_http_request_failed', {
-          method: request.method,
-          path: new URL(request.url).pathname,
-          requestId: c.get('requestId'),
-          statusCode: response.status,
-        });
-      }
-      return response;
-    })
-    .catch((error: unknown) => {
-      if (error instanceof ChatGenerationInputError) {
-        logger.warn('chat_http_request_failed', {
-          method: request.method,
-          path: new URL(request.url).pathname,
-          requestId: c.get('requestId'),
-          statusCode: 400,
-          errorType: error.name,
-        });
-        return Response.json({ error: error.message }, { status: 400 });
-      }
-      logger.error('chat_http_request_unhandled_error', {
-        method: request.method,
-        path: new URL(request.url).pathname,
-        requestId: c.get('requestId'),
-        ...chatErrorMetadata(error),
-      });
-      throw error;
+  operation: () => Promise<Response>,
+): Promise<Response> {
+  const request = c.req.raw;
+  const requestId = c.get('requestId');
+  return operation().catch((error: unknown) => {
+    logger.error('chat_http_handler_error', {
+      method: request.method,
+      path: new URL(request.url).pathname,
+      requestId,
+      ...chatErrorMetadata(error),
     });
+    if (error instanceof ChatGenerationInputError) {
+      return Response.json({ error: error.message }, { status: 400 });
+    }
+    return failedResponse(error);
+  });
 }
 
-function createRouteHandler(service: ChatGenerationService) {
-  const delegate = (c: Context<AppContext>, request?: Request) =>
-    delegateToHandler(service, c, request);
+function readCursor(c: Context<AppContext>): number {
+  const value = c.req.header('Last-Event-ID') ?? c.req.query('afterSequence') ?? '0';
+  if (!/^\d+$/.test(value)) throw new ChatGenerationInputError('Invalid generation event cursor');
+  const cursor = Number(value);
+  if (!Number.isSafeInteger(cursor)) {
+    throw new ChatGenerationInputError('Invalid generation event cursor');
+  }
+  return cursor;
+}
+
+function createGenerationRoutes(service: ChatGenerationService) {
   return new Hono<AppContext>()
-    .get('/generations/:generationId', (c) => delegate(c))
-    .get('/generations/:generationId/stream', (c) => delegate(c))
-    .post('/generations/:generationId/cancel', (c) => delegate(c))
+    .get('/generations/:generationId', (c) =>
+      handleRoute(c, async () => {
+        const run = await service.getGeneration({
+          chatId: c.req.param('id')!,
+          generationId: c.req.param('generationId'),
+          ownerUserId: c.get('auth')!.userId,
+        });
+        if (!run) return new Response('Generation run not found', { status: 404 });
+        return Response.json(run);
+      }),
+    )
+    .get('/generations/:generationId/stream', (c) =>
+      handleRoute(c, async () => {
+        const generationId = c.req.param('generationId');
+        const ownerUserId = c.get('auth')!.userId;
+        const run = await service.getGeneration({
+          chatId: c.req.param('id')!,
+          generationId,
+          ownerUserId,
+        });
+        if (!run) return new Response('Generation run not found', { status: 404 });
+        return createGenerationSseResponse(
+          await service.replay({
+            generationId,
+            ownerUserId,
+            afterSequence: readCursor(c),
+            terminal: ['committed', 'cancelled', 'failed'].includes(run.status),
+          }),
+        );
+      }),
+    )
+    .post('/generations/:generationId/cancel', (c) =>
+      handleRoute(c, async () =>
+        Response.json(
+          await service.cancel({
+            ownerUserId: c.get('auth')!.userId,
+            chatId: c.req.param('id')!,
+            generationId: c.req.param('generationId'),
+          }),
+        ),
+      ),
+    )
     .post(
       '/generations/:generationId/regenerate',
       zValidator('json', ChatsRetryGenerationSchema),
-      (c) => delegate(c, requestWithJsonBody(c, c.req.valid('json'))),
+      (c) =>
+        handleRoute(c, async () =>
+          createGenerationSseResponse(
+            await service.regenerate({
+              userId: c.get('auth')!.userId,
+              chatId: c.req.param('id')!,
+              failedGenerationId: c.req.param('generationId'),
+              ...c.req.valid('json'),
+            }),
+          ),
+        ),
     )
     .post(
       '/messages/:messageId/regenerate',
       zValidator('json', ChatsRegenerateMessageSchema),
-      (c) => delegate(c, requestWithJsonBody(c, c.req.valid('json'))),
+      (c) =>
+        handleRoute(c, async () =>
+          createGenerationSseResponse(
+            await service.regenerate({
+              userId: c.get('auth')!.userId,
+              chatId: c.req.param('id')!,
+              messageId: c.req.param('messageId'),
+              ...c.req.valid('json'),
+            }),
+          ),
+        ),
     )
     .post(
       '/messages/:messageId/tool-calls/:toolCallId/respond',
       zValidator('json', ChatsToolCallRespondSchema),
-      (c) => delegate(c, requestWithJsonBody(c, c.req.valid('json'))),
+      (c) =>
+        handleRoute(c, async () =>
+          createGenerationSseResponse(
+            await service.respondToConfirmation({
+              userId: c.get('auth')!.userId,
+              chatId: c.req.param('id')!,
+              messageId: c.req.param('messageId'),
+              toolCallId: c.req.param('toolCallId'),
+              ...c.req.valid('json'),
+            }),
+          ),
+        ),
     )
     .post('/stream', zValidator('json', ChatsSendSchema), (c) =>
-      delegate(c, requestWithJsonBody(c, c.req.valid('json'))),
+      handleRoute(c, async () => {
+        const input = c.req.valid('json');
+        return createGenerationSseResponse(
+          await service.sendMessage({
+            userId: c.get('auth')!.userId,
+            chatId: c.req.param('id')!,
+            ...input,
+            fileIds: input.fileIds ?? [],
+          }),
+        );
+      }),
     );
 }
 
 export function createChatGenerationRoutes(service: ChatGenerationService = chatGenerationService) {
-  return createRouteHandler(service);
+  return createGenerationRoutes(service);
 }
 
 export function createChatStartGenerationRoute(
   service: ChatGenerationService = chatGenerationService,
 ) {
   return new Hono<AppContext>().post('/', zValidator('json', ChatsStartStreamSchema), (c) =>
-    delegateToHandler(service, c, requestWithJsonBody(c, c.req.valid('json'))),
+    handleRoute(c, async () => {
+      const input = c.req.valid('json');
+      return createGenerationSseResponse(
+        await service.startMessage({
+          userId: c.get('auth')!.userId,
+          ...input,
+          fileIds: input.fileIds ?? [],
+        }),
+      );
+    }),
   );
 }
 

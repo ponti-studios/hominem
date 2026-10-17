@@ -47,7 +47,7 @@ const generationRunner = createGenerationRunner<ChatGenerationEventRecord>();
  * - generation.cancelled: written elsewhere in chat-generation-lifecycle.ts,
  *   alongside cancel_requested
  */
-export const EXECUTE_OWNED_EVENT_TYPES = [
+const EXECUTE_OWNED_EVENT_TYPES = [
   'generation.started',
   'generation.committed',
   'generation.cancelled',
@@ -150,11 +150,10 @@ export async function executeGenerationTurn(
   let usage: AIUsageMetrics | null = null;
   const runtime = input.toolRuntime ?? { callTool, getToolDefinition };
   const plannedSteps = input.toolPlan ?? null;
-  const completedPlannedTools = new Set(
-    input.initialState?.completedToolResults
-      .filter((result) => !result.error)
-      .map((result) => result.toolName),
-  );
+  const completedPlannedTools = new Set<string>();
+  for (const result of input.initialState?.completedToolResults ?? []) {
+    if (!result.error) completedPlannedTools.add(result.toolName);
+  }
   const validatePlannedToolCall = (toolName: string): string | null => {
     if (!plannedSteps) return null;
     const step = plannedSteps.find((candidate) => candidate.tool === toolName);

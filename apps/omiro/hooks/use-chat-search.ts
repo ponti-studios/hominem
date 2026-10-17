@@ -71,8 +71,13 @@ export function useChatSearch(messages: ChatMessageItem[], chatId: string) {
   });
 
   const displayMessages = useMemo(
-    () => (searchQuery ? (searchResults.data ?? []) : messages),
-    [messages, searchQuery, searchResults.data],
+    () =>
+      searchQuery
+        ? searchQuery === debouncedSearchQuery
+          ? (searchResults.data ?? [])
+          : []
+        : messages,
+    [debouncedSearchQuery, messages, searchQuery, searchResults.data],
   );
 
   const handleOpenSearch = useCallback(() => {
@@ -102,6 +107,6 @@ export function useChatSearch(messages: ChatMessageItem[], chatId: string) {
     handleOpenSearch,
     handleCloseSearch,
     handleSearchQueryChange,
-    isSearching: searchResults.isFetching,
+    isSearching: searchQuery !== debouncedSearchQuery || searchResults.isFetching,
   };
 }
