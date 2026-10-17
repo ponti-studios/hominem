@@ -2,9 +2,11 @@ import { db, pool } from '@hominem/db/core';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  allowDomain,
   allowEmail,
   blockUser,
   dbCredentialStore,
+  disallowDomain,
   disallowEmail,
   unblockUser,
 } from './provider-credentials.store';
@@ -16,6 +18,7 @@ async function clean() {
   await pool.query(`DELETE FROM app.provider_credentials WHERE user_id = $1`, [userId]);
   await pool.query(`DELETE FROM app.credential_blocks WHERE user_id = $1`, [userId]);
   await pool.query(`DELETE FROM app.credential_allowed_emails WHERE email = $1`, [email]);
+  await pool.query(`DELETE FROM app.credential_allowed_domains WHERE domain = 'work.hominem.dev'`);
   await pool.query(`DELETE FROM "user" WHERE id = $1`, [userId]);
 }
 
@@ -38,6 +41,16 @@ describe('dbCredentialStore', () => {
     await allowEmail(email.toUpperCase());
     expect(await dbCredentialStore.isAllowed(email)).toBe(true);
     await disallowEmail(email);
+    expect(await dbCredentialStore.isAllowed(email)).toBe(false);
+  });
+
+  it('allows a whole domain, and removing it closes the door again', async () => {
+    const domain = 'work.hominem.dev';
+    expect(await dbCredentialStore.isAllowed(email)).toBe(false);
+    await allowDomain(`@${domain.toUpperCase()}`);
+    expect(await dbCredentialStore.isAllowed(email)).toBe(true);
+    expect(await dbCredentialStore.isAllowed('someone@notwork.hominem.dev')).toBe(false);
+    await disallowDomain(domain);
     expect(await dbCredentialStore.isAllowed(email)).toBe(false);
   });
 
