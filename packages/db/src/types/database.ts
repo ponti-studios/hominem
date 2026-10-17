@@ -448,14 +448,14 @@ export interface AppCollections {
   visibility: Generated<string>;
 }
 
-export interface AppCredentialAllowedEmails {
-  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  email: string;
-}
-
 export interface AppCredentialAllowedDomains {
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   domain: string;
+}
+
+export interface AppCredentialAllowedEmails {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  email: string;
 }
 
 export interface AppCredentialBlocks {
