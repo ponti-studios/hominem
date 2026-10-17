@@ -45,7 +45,7 @@ registerTool(
     name: 'travel_stats',
     title: 'Summarize travel statistics',
     description:
-      'Summarizes segment-derived places, countries, journeys, legs, and distances. Mode: read-only. Use when: the user asks for travel totals or records by year. Do not use when: they ask for a detailed timeline. Prerequisites: none. Produces: journey and place legacyIds for the returned trip summaries.',
+      'Summarizes segment-derived places, countries, journeys, legs, and distances. Mode: read-only. Use when: the user asks for travel totals or records by year. Do not use when: they ask for a detailed timeline. Prerequisites: none. Produces: journey and place UUIDs for the returned trip summaries.',
     inputSchema: travelStatsInputSchema,
     outputSchema: travelStatsOutputSchema,
   },
@@ -57,7 +57,7 @@ registerTool(
     name: 'travel_search',
     title: 'Search travel records',
     description:
-      'Searches journey names and notes, places, stays, carriers, booking references, and ideas. Mode: read-only. Use when: the user gives a text query across travel records. Do not use when: a precise entity filter is available. Prerequisites: a search query. Produces: matching ids and legacyIds grouped by entity type.',
+      'Searches journey names and notes, places, stays, carriers, booking references, and ideas. Mode: read-only. Use when: the user gives a text query across travel records. Do not use when: a precise entity filter is available. Prerequisites: a search query. Produces: matching UUIDs grouped by entity type.',
     inputSchema: travelSearchInputSchema,
     outputSchema: travelSearchOutputSchema,
   },
@@ -69,7 +69,7 @@ registerTool(
     name: 'travel_validate',
     title: 'Validate travel data',
     description:
-      'Reports travel data integrity checks and offending entity references without changing records. Mode: read-only. Use when: the operator asks about consistency, import quality, or unresolved discrepancies. Do not use when: they ask to repair data. Prerequisites: none. Produces: entity ids and legacyIds for findings.',
+      'Reports travel data integrity checks and offending entity references without changing records. Mode: read-only. Use when: the operator asks about consistency, import quality, or unresolved discrepancies. Do not use when: they ask to repair data. Prerequisites: none. Produces: entity UUIDs for findings.',
     inputSchema: travelValidateInputSchema,
     outputSchema: travelValidateOutputSchema,
   },

@@ -44,14 +44,12 @@ describe('travel write service', () => {
     ).toHaveLength(0);
 
     const created = await writeTravelEntity(userId, 'journey', 'create', {
-      legacyId: 'JRN-999',
       name: 'ZZZ Probe journey',
     });
     expect(created).toMatchObject({ action: 'created', created: 1 });
     const id = entityId(created.entity);
     const retry = await writeTravelEntity(userId, 'journey', 'create', {
-      legacyId: 'JRN-999',
-      name: 'Different retry payload',
+      name: 'ZZZ Probe journey',
     });
     expect(retry).toMatchObject({ action: 'unchanged', unchanged: 1 });
 
@@ -79,7 +77,6 @@ describe('travel write service', () => {
     const userId = await owner();
     const otherId = await owner();
     const created = await writeTravelEntity(userId, 'idea', 'create', {
-      legacyId: 'IDA-999',
       idea: 'ZZZ Probe idea',
       type: 'experience',
       status: 'open',

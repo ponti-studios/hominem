@@ -10,7 +10,6 @@ const date = z
   .nullable()
   .optional();
 const optionalText = z.string().nullable().optional();
-const legacyId = z.string().trim().min(1).optional();
 
 export const travelEntityDeleteInputSchema = z.object({
   id: z.string().uuid(),
@@ -49,7 +48,7 @@ export const travelJourneyCloneInputSchema = z.object({
 
 const dossierJourneySchema = z
   .object({
-    legacyId,
+    id: z.string().uuid().optional(),
     name: z.string().trim().min(1),
     startDate: date,
     endDate: date,
@@ -68,7 +67,7 @@ const dossierJourneySchema = z
 
 const dossierSegmentSchema = z
   .object({
-    legacyId,
+    id: z.string().uuid().optional(),
     key: z.string().trim().min(1).optional(),
     seq: z.number().int().min(1),
     placeId: z.string().uuid(),
@@ -86,16 +85,18 @@ const dossierSegmentSchema = z
   });
 
 const dossierTransportSchema = z.object({
-  legacyId,
+  id: z.string().uuid().optional(),
   date,
   mode: z.enum(['air', 'rail']),
   origin: z.string().trim().min(1),
   destination: z.string().trim().min(1),
+  originReferenceId: z.string().uuid().optional(),
+  destinationReferenceId: z.string().uuid().optional(),
   carrier: optionalText,
   number: optionalText,
   bookingRef: optionalText,
-  depSegmentLegacyId: z.string().trim().min(1).optional(),
-  arrSegmentLegacyId: z.string().trim().min(1).optional(),
+  depSegmentId: z.string().uuid().optional(),
+  arrSegmentId: z.string().uuid().optional(),
   depSegmentKey: z.string().trim().min(1).optional(),
   arrSegmentKey: z.string().trim().min(1).optional(),
   legacyTrip: optionalText,
@@ -104,8 +105,8 @@ const dossierTransportSchema = z.object({
 
 const dossierStaySchema = z
   .object({
-    legacyId,
-    segmentLegacyId: z.string().trim().min(1).optional(),
+    id: z.string().uuid().optional(),
+    segmentId: z.string().uuid().optional(),
     segmentKey: z.string().trim().min(1).optional(),
     checkIn: date,
     checkOut: date,
@@ -117,8 +118,6 @@ const dossierStaySchema = z
     notes: optionalText,
   })
   .superRefine((value, context) => {
-    if (!value.segmentLegacyId && !value.segmentKey)
-      context.addIssue({ code: 'custom', path: ['segmentKey'], message: 'unknown_segment' });
     if (value.checkIn && value.checkOut && value.checkOut < value.checkIn)
       context.addIssue({
         code: 'custom',

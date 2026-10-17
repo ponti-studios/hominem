@@ -1,4 +1,21 @@
+import {
+  createPlaceResidence,
+  deletePlaceResidence,
+  getPlaceResidence,
+  listPlaceResidences,
+  updatePlaceResidence,
+} from '../../application/place-residences.service';
 import { getPlaceVisitHistory } from '../../application/places.service';
+import {
+  placeResidenceCreateInputSchema,
+  placeResidenceDeleteInputSchema,
+  placeResidenceGetInputSchema,
+  placeResidenceListInputSchema,
+  placeResidenceListOutputSchema,
+  placeResidenceMutationOutputSchema,
+  placeResidenceOutputSchema,
+  placeResidenceUpdateInputSchema,
+} from '../../schemas/place-residences.schema';
 import {
   placeVisitHistoryInputSchema,
   placeVisitHistoryOutputSchema,
@@ -23,4 +40,76 @@ registerTool(
     },
   },
   async (ownerUserId, input) => getPlaceVisitHistory(ownerUserId, input),
+);
+
+registerTool(
+  {
+    name: 'place_residence_list',
+    title: 'List residences',
+    description: 'Lists places the person has lived and their recorded periods.',
+    inputSchema: placeResidenceListInputSchema,
+    outputSchema: placeResidenceListOutputSchema,
+    readOnly: true,
+    scopes: ['places:read'],
+    resultCap: 200,
+  },
+  (owner, input) => listPlaceResidences(owner, input),
+);
+registerTool(
+  {
+    name: 'place_residence_get',
+    title: 'Get residence history for a place',
+    description: 'Gets a lived-in history record by UUID.',
+    inputSchema: placeResidenceGetInputSchema,
+    outputSchema: placeResidenceOutputSchema.nullable(),
+    readOnly: true,
+    scopes: ['places:read'],
+    resultCap: 1,
+  },
+  (owner, input) => getPlaceResidence(owner, input),
+);
+registerTool(
+  {
+    name: 'place_residence_create',
+    title: 'Record a residence',
+    description: 'Records a place the person has lived and its lived-in periods.',
+    inputSchema: placeResidenceCreateInputSchema,
+    outputSchema: placeResidenceMutationOutputSchema,
+    readOnly: false,
+    scopes: ['places:write'],
+    idempotent: false,
+    resultCap: 1,
+  },
+  (owner, input) => createPlaceResidence(owner, input),
+);
+registerTool(
+  {
+    name: 'place_residence_update',
+    title: 'Update residence history',
+    description: 'Replaces recorded lived-in periods and/or notes.',
+    inputSchema: placeResidenceUpdateInputSchema,
+    outputSchema: placeResidenceMutationOutputSchema,
+    readOnly: false,
+    scopes: ['places:write'],
+    idempotent: true,
+    resultCap: 1,
+  },
+  (owner, input) => updatePlaceResidence(owner, input),
+);
+registerTool(
+  {
+    name: 'place_residence_delete',
+    title: 'Delete residence history',
+    description: 'Deletes a residence history record after explicit confirmation.',
+    inputSchema: placeResidenceDeleteInputSchema,
+    outputSchema: placeResidenceMutationOutputSchema,
+    readOnly: false,
+    scopes: ['places:write'],
+    destructive: true,
+    idempotent: true,
+    requiresConfirmation: true,
+    resultCap: 1,
+    preview: async () => null,
+  },
+  (owner, input) => deletePlaceResidence(owner, input),
 );

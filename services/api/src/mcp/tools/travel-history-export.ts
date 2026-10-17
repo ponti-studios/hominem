@@ -26,12 +26,12 @@ registerTool(
     name: 'travel_export',
     title: 'Export travel data',
     description:
-      'Exports all travel entities in native or source-sheet column format, including residences. Mode: read-only. Use when: the caller needs a backup or parity diff. Do not use when: records need to be imported or changed. Prerequisites: none. Produces: the complete travel dataset.',
+      'Exports all travel entities in native format, including residences and airport curation. Mode: read-only. Use when: the caller needs a backup or parity diff. Do not use when: records need to be imported or changed. Prerequisites: none. Produces: the complete travel dataset.',
     inputSchema: travelExportInputSchema,
     outputSchema: travelGenericOutputSchema,
     readOnly: true,
     scopes: ['travel:read'],
     resultCap: 1000,
   },
-  (owner, input) => travelExport(owner, input.format),
+  (owner) => travelExport(owner),
 );

@@ -822,18 +822,55 @@ export interface AppPersonServices {
   profile: Generated<Json>;
 }
 
+export interface AppPlaceEntityHistory {
+  changedFields: Generated<Json>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  entityId: string;
+  entityTable: string;
+  id: Generated<string>;
+  operation: string;
+  ownerUserid: string;
+  snapshot: Json;
+}
+
+export interface AppPlaceResidencePeriods {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  endDate: ColumnType<string, Date | string, Date | string> | null;
+  id: Generated<string>;
+  note: string | null;
+  ongoing: Generated<boolean>;
+  ownerUserid: string;
+  precision: Generated<string>;
+  residenceId: string;
+  startDate: ColumnType<string, Date | string, Date | string>;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppPlaceResidences {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  notes: string | null;
+  ownerUserid: string;
+  placeId: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
 export interface AppPlaces {
+  archived: Generated<boolean>;
   city: string | null;
   country: string | null;
   countryCode: string | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
+  firstVisited: ColumnType<string, Date | string, Date | string> | null;
   formattedAddress: string | null;
   geocodedAt: ColumnType<string, Date | string, Date | string> | null;
   id: Generated<string>;
+  lastVisited: ColumnType<string, Date | string, Date | string> | null;
   latitude: Numeric | null;
   longitude: Numeric | null;
   metadata: Generated<Json>;
   name: string;
+  notes: string | null;
   ownerUserid: string;
   placeType: string | null;
   postalCode: string | null;
@@ -841,6 +878,7 @@ export interface AppPlaces {
   state: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
   url: string | null;
+  wantToGo: Generated<boolean>;
 }
 
 export interface AppPlaceVisits {
@@ -1103,19 +1141,62 @@ export interface AppTasks {
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
-export interface AppTravelAirports {
-  city: string;
-  code: string;
-  country: string;
+export interface AppTravelAirportReference {
+  active: Generated<boolean>;
+  city: string | null;
+  code: string | null;
+  country: string | null;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   id: Generated<string>;
   latitude: number | null;
-  legacyId: string;
   longitude: number | null;
+  missingFromSource: Generated<boolean>;
   name: string;
+  scheduledService: Generated<boolean>;
+  sourceId: Int8;
+  sourceUpdatedAt: ColumnType<string, Date | string, Date | string> | null;
+  syncedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  type: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppTravelAirportReferenceRefreshLog {
+  completedAt: ColumnType<string, Date | string, Date | string> | null;
+  deactivatedCount: Generated<number>;
+  driftEntries: Generated<Json>;
+  driftFlaggedCount: Generated<number>;
+  error: string | null;
+  id: Generated<string>;
+  insertedCount: Generated<number>;
+  missingCodes: Generated<Json>;
+  missingFlaggedCount: Generated<number>;
+  retrievedAt: ColumnType<string, Date | string, Date | string> | null;
+  rowCount: Generated<number>;
+  seenCount: Generated<number>;
+  sourceChecksum: string;
+  sourceName: Generated<string>;
+  sourceUrl: string | null;
+  sourceVersion: string;
+  startedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  status: string;
+  unchangedCount: Generated<number>;
+  updatedCount: Generated<number>;
+}
+
+export interface AppTravelAirports {
+  city: string | null;
+  code: string;
+  country: string | null;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  latitude: number | null;
+  longitude: number | null;
+  name: string | null;
   notes: string | null;
   ownerUserid: string;
-  servesPlace: string;
+  referenceAirportId: string | null;
+  servesPlace: string | null;
+  standalone: Generated<boolean>;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
@@ -1134,7 +1215,6 @@ export interface AppTravelIdeas {
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   id: Generated<string>;
   idea: string;
-  legacyId: string;
   notes: string | null;
   ownerUserid: string;
   status: string;
@@ -1147,7 +1227,6 @@ export interface AppTravelJourneys {
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   endDate: ColumnType<string, Date | string, Date | string> | null;
   id: Generated<string>;
-  legacyId: string;
   name: string;
   notes: string | null;
   ownerUserid: string;
@@ -1162,7 +1241,6 @@ export interface AppTravelJourneySegments {
   departureDate: ColumnType<string, Date | string, Date | string> | null;
   id: Generated<string>;
   journeyId: string;
-  legacyId: string;
   notes: string | null;
   ownerUserid: string;
   placeId: string;
@@ -1172,31 +1250,11 @@ export interface AppTravelJourneySegments {
 
 export interface AppTravelPlaces {
   archived: Generated<boolean>;
-  country: string;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  firstVisited: ColumnType<string, Date | string, Date | string> | null;
-  id: Generated<string>;
-  lastVisited: ColumnType<string, Date | string, Date | string> | null;
-  legacyId: string;
-  notes: string | null;
   ownerUserid: string;
-  place: string;
-  status: string;
-  type: string;
-  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
-}
-
-export interface AppTravelResidences {
-  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  id: Generated<string>;
-  legacyId: string;
-  notes: string | null;
-  ownerUserid: string;
-  periods: Json;
   placeId: string;
-  sourceFirstVisited: ColumnType<string, Date | string, Date | string> | null;
-  sourceLastVisited: ColumnType<string, Date | string, Date | string> | null;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  wantToGo: Generated<boolean>;
 }
 
 export interface AppTravelSegments {
@@ -1229,7 +1287,6 @@ export interface AppTravelStays {
   evidence: string;
   id: Generated<string>;
   journeyId: string | null;
-  legacyId: string;
   notes: string | null;
   ownerUserid: string;
   property: string | null;
@@ -1245,14 +1302,15 @@ export interface AppTravelTransport {
   date: ColumnType<string, Date | string, Date | string> | null;
   depSegmentId: string | null;
   destination: string;
+  destinationReferenceId: string | null;
   id: Generated<string>;
   journeyId: string;
-  legacyId: string;
   legacyTrip: string | null;
   mode: string;
   notes: string | null;
   number: string | null;
   origin: string;
+  originReferenceId: string | null;
   ownerUserid: string;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
 }
@@ -1589,6 +1647,9 @@ export interface DB {
   'app.personContactMethods': AppPersonContactMethods;
   'app.personRelationships': AppPersonRelationships;
   'app.personServices': AppPersonServices;
+  'app.placeEntityHistory': AppPlaceEntityHistory;
+  'app.placeResidencePeriods': AppPlaceResidencePeriods;
+  'app.placeResidences': AppPlaceResidences;
   'app.places': AppPlaces;
   'app.placeVisits': AppPlaceVisits;
   'app.plaidItems': AppPlaidItems;
@@ -1608,13 +1669,14 @@ export interface DB {
   'app.tags': AppTags;
   'app.taskParticipants': AppTaskParticipants;
   'app.tasks': AppTasks;
+  'app.travelAirportReference': AppTravelAirportReference;
+  'app.travelAirportReferenceRefreshLog': AppTravelAirportReferenceRefreshLog;
   'app.travelAirports': AppTravelAirports;
   'app.travelEntityHistory': AppTravelEntityHistory;
   'app.travelIdeas': AppTravelIdeas;
   'app.travelJourneys': AppTravelJourneys;
   'app.travelJourneySegments': AppTravelJourneySegments;
   'app.travelPlaces': AppTravelPlaces;
-  'app.travelResidences': AppTravelResidences;
   'app.travelSegments': AppTravelSegments;
   'app.travelStays': AppTravelStays;
   'app.travelTransport': AppTravelTransport;

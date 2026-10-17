@@ -16,7 +16,6 @@ export const entityTypeSchema = z.enum([
   'travel_transport',
   'travel_stays',
   'travel_airports',
-  'travel_places',
   'travel_ideas',
   'residence',
 ]);

@@ -4,12 +4,7 @@ const pagination = {
   limit: z.number().int().min(1).max(200).default(100),
   offset: z.number().int().min(0).default(0),
 };
-const selector = z
-  .object({ id: z.string().uuid().optional(), legacyId: z.string().optional() })
-  .refine(
-    (value) => Boolean(value.id) !== Boolean(value.legacyId),
-    'Provide exactly one of id or legacyId.',
-  );
+const selector = z.object({ id: z.string().uuid() });
 const date = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).')
@@ -45,7 +40,6 @@ export const travelSegmentListInputSchema = orderedRange(
   z.object({
     ...pagination,
     journeyId: z.string().uuid().optional(),
-    journeyLegacyId: z.string().optional(),
     place: z.string().optional(),
     from: date.optional(),
     to: date.optional(),
@@ -72,7 +66,6 @@ export const travelTransportListInputSchema = z
     from: z.string().optional(),
     to: z.string().optional(),
     journeyId: z.string().uuid().optional(),
-    journeyLegacyId: z.string().optional(),
     bookingRef: z.string().optional(),
     fromDate: date.optional(),
     toDate: date.optional(),
@@ -88,19 +81,16 @@ export const travelTransportListInputSchema = z
   });
 export const travelAirportListInputSchema = z.object({
   ...pagination,
-  place: z.string().optional(),
+  query: z.string().optional(),
   country: z.string().optional(),
 });
-export const travelAirportGetInputSchema = z
-  .object({ id: z.string().uuid().optional(), code: z.string().optional() })
-  .refine((value) => Boolean(value.id) !== Boolean(value.code));
+export const travelAirportGetInputSchema = z.object({ code: z.string().trim().min(1).max(20) });
+const row = z.record(z.string(), z.unknown());
 export const travelStayListInputSchema = z.object({
   ...pagination,
   city: z.string().optional(),
   segmentId: z.string().uuid().optional(),
-  segmentLegacyId: z.string().optional(),
   journeyId: z.string().uuid().optional(),
-  journeyLegacyId: z.string().optional(),
   evidence: z.string().optional(),
 });
 export const travelBookingLookupInputSchema = z.object({
@@ -115,7 +105,6 @@ export const travelIdeaListInputSchema = z.object({
   type: z.string().optional(),
 });
 
-const row = z.record(z.string(), z.unknown());
 export const pageSchema = z.object({
   items: z.array(row),
   total: z.number().int(),

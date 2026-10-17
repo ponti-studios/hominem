@@ -5,6 +5,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import './travel';
 import './travel-analytics';
+import './places';
+import { placeResidenceCreateInputSchema } from '../../schemas/place-residences.schema';
 import { travelImportOutputSchema } from '../../schemas/travel-import.schema';
 import {
   travelAirportListOutputSchema,
@@ -13,7 +15,6 @@ import {
   travelPlaceListOutputSchema,
   travelWishlistOutputSchema,
 } from '../../schemas/travel-read.schema';
-import { travelResidenceCreateInputSchema } from '../../schemas/travel-residences.schema';
 import { tripHistoryOutputSchema } from '../../schemas/travel.schema';
 import { toolOutput } from '../../testkit/tool-result';
 import { callTool, getToolDefinition } from '../tool-registry';
@@ -52,12 +53,39 @@ beforeAll(async () => {
     ],
   );
   await db
+    .insertInto('app.travelAirportReference')
+    .values([
+      {
+        sourceId: 983001,
+        code: 'LHR',
+        name: 'Heathrow',
+        city: 'London Probe City',
+        country: 'GB',
+        type: 'large_airport',
+        latitude: 51.47,
+        longitude: -0.4543,
+        scheduledService: true,
+      },
+      {
+        sourceId: 983002,
+        code: 'STN',
+        name: 'Stansted',
+        city: 'London Probe City',
+        country: 'GB',
+        type: 'large_airport',
+        latitude: 51.885,
+        longitude: 0.235,
+        scheduledService: true,
+      },
+    ])
+    .onConflict((conflict) => conflict.column('sourceId').doNothing())
+    .execute();
+  await db
     .insertInto('app.travelAirports')
     .values([
       {
         id: readAirportId,
         ownerUserid: ownerId,
-        legacyId: 'ARP-READ-1',
         code: 'LHR',
         name: 'Heathrow',
         servesPlace: 'London',
@@ -69,7 +97,6 @@ beforeAll(async () => {
       {
         id: readAirport2Id,
         ownerUserid: ownerId,
-        legacyId: 'ARP-READ-2',
         code: 'STN',
         name: 'Stansted',
         servesPlace: 'London',
@@ -92,7 +119,6 @@ beforeAll(async () => {
     .values({
       id: readJourneyId,
       ownerUserid: ownerId,
-      legacyId: 'JRN-READ',
       name: 'Read fixture',
       purpose: 'leisure',
       startDate: '2026-01-01',
@@ -100,23 +126,24 @@ beforeAll(async () => {
     })
     .execute();
   await db
-    .insertInto('app.travelPlaces')
+    .insertInto('app.places')
     .values({
       id: readPlaceId,
       ownerUserid: ownerId,
-      legacyId: 'PLC-READ',
-      place: 'London',
+      name: 'London',
       country: 'UK',
-      type: 'city',
-      status: 'Visited',
+      placeType: 'city',
     })
+    .execute();
+  await db
+    .insertInto('app.travelPlaces')
+    .values({ placeId: readPlaceId, ownerUserid: ownerId })
     .execute();
   await db
     .insertInto('app.travelJourneySegments')
     .values({
       id: readSegmentId,
       ownerUserid: ownerId,
-      legacyId: 'SEG-READ',
       journeyId: readJourneyId,
       seq: 1,
       placeId: readPlaceId,
@@ -125,21 +152,18 @@ beforeAll(async () => {
     })
     .execute();
   await pool.query(
-    'INSERT INTO app.travel_residences (id, owner_userid, legacy_id, place_id, periods) VALUES ($1, $2, $3, $4, $5::jsonb)',
-    [
-      readResidenceId,
-      ownerId,
-      'PLC-READ-RES',
-      readPlaceId,
-      JSON.stringify([{ startDate: '2026-01-01', endDate: null, ongoing: true, precision: 'day' }]),
-    ],
+    'INSERT INTO app.place_residences (id, owner_userid, place_id) VALUES ($1, $2, $3)',
+    [readResidenceId, ownerId, readPlaceId],
+  );
+  await pool.query(
+    "INSERT INTO app.place_residence_periods (owner_userid, residence_id, start_date, ongoing, precision) VALUES ($1, $2, '2026-01-01', true, 'day')",
+    [ownerId, readResidenceId],
   );
   await db
     .insertInto('app.travelTransport')
     .values({
       id: readTransportId,
       ownerUserid: ownerId,
-      legacyId: 'T-READ',
       date: '2026-01-01',
       mode: 'air',
       origin: 'LHR',
@@ -155,7 +179,6 @@ beforeAll(async () => {
     .values({
       id: readStayId,
       ownerUserid: ownerId,
-      legacyId: 'STY-READ',
       journeyId: readJourneyId,
       segmentId: readSegmentId,
       city: 'London',
@@ -171,30 +194,30 @@ beforeAll(async () => {
     .values({
       id: readIdeaId,
       ownerUserid: ownerId,
-      legacyId: 'IDA-READ',
       idea: 'Visit London',
       type: 'experience',
       status: 'open',
     })
     .execute();
   await db
-    .insertInto('app.travelPlaces')
+    .insertInto('app.places')
     .values({
       id: wishlistPlaceId,
       ownerUserid: ownerId,
-      legacyId: 'PLC-WISHLIST',
-      place: 'Paris',
+      name: 'Paris',
       country: 'France',
-      type: 'city',
-      status: 'Want to go',
+      placeType: 'city',
     })
+    .execute();
+  await db
+    .insertInto('app.travelPlaces')
+    .values({ placeId: wishlistPlaceId, ownerUserid: ownerId, wantToGo: true })
     .execute();
   await db
     .insertInto('app.travelStays')
     .values({
       id: wishlistStayId,
       ownerUserid: ownerId,
-      legacyId: 'STY-WISHLIST',
       city: 'Paris',
       country: 'France',
       evidence: 'want',
@@ -289,7 +312,7 @@ describe('travel_import', () => {
         .selectFrom('app.travelIdeas')
         .select('id')
         .where('ownerUserid', '=', ownerId)
-        .where('legacyId', '=', 'IDA-TEST')
+        .where('idea', '=', 'See Boston')
         .execute(),
     ).resolves.toEqual([]);
   });
@@ -313,14 +336,14 @@ describe('travel_import', () => {
 
 describe('travel residence tools', () => {
   it('validates residence dates and defaults omitted precision to day', () => {
-    const parsed = travelResidenceCreateInputSchema.safeParse({
+    const parsed = placeResidenceCreateInputSchema.safeParse({
       placeId: 'e1000000-0000-4000-8000-000000000001',
       periods: [{ startDate: '2017-01-01', endDate: null, ongoing: false }],
     });
     expect(parsed.success).toBe(true);
     if (parsed.success) expect(parsed.data.periods[0]?.precision).toBe('day');
     expect(
-      travelResidenceCreateInputSchema.safeParse({
+      placeResidenceCreateInputSchema.safeParse({
         placeId: 'e1000000-0000-4000-8000-000000000001',
         periods: [{ startDate: '2026-99-99', endDate: null, ongoing: false }],
       }).success,
@@ -328,30 +351,30 @@ describe('travel residence tools', () => {
   });
 
   it('registers residence reads and writes with their required scopes', () => {
-    for (const name of ['travel_residence_list', 'travel_residence_get']) {
-      expect(getToolDefinition(name)).toMatchObject({ readOnly: true, scopes: ['travel:read'] });
+    for (const name of ['place_residence_list', 'place_residence_get']) {
+      expect(getToolDefinition(name)).toMatchObject({ readOnly: true, scopes: ['places:read'] });
     }
     for (const name of [
-      'travel_residence_create',
-      'travel_residence_update',
-      'travel_residence_delete',
+      'place_residence_create',
+      'place_residence_update',
+      'place_residence_delete',
     ]) {
-      expect(getToolDefinition(name)).toMatchObject({ readOnly: false, scopes: ['travel:write'] });
+      expect(getToolDefinition(name)).toMatchObject({ readOnly: false, scopes: ['places:write'] });
     }
-    expect(getToolDefinition('travel_residence_delete')).toMatchObject({
+    expect(getToolDefinition('place_residence_delete')).toMatchObject({
       destructive: true,
       requiresConfirmation: true,
     });
   });
 
   it('returns an object from residence list, including when no residences exist', async () => {
-    const listed = await callTool(ownerId, 'travel_residence_list', {});
+    const listed = await callTool(ownerId, 'place_residence_list', {});
     expect(listed.isError).not.toBe(true);
     expect(listed.structuredContent).toMatchObject({
       residences: [{ id: readResidenceId, place: 'London', country: 'UK' }],
     });
 
-    const empty = await callTool(otherUserId, 'travel_residence_list', {});
+    const empty = await callTool(otherUserId, 'place_residence_list', {});
     expect(empty.isError).not.toBe(true);
     expect(empty.structuredContent).toMatchObject({
       residences: [],
@@ -419,12 +442,12 @@ describe('travel Tier 1 reads', () => {
     const search = await callTool(ownerId, 'travel_search', { query: 'read' });
     expect(search.structuredContent).toMatchObject({
       total: 3,
-      journeys: { items: [{ legacyId: 'JRN-READ' }], total: 1 },
-      stays: { items: [{ legacyId: 'STY-READ' }], total: 1 },
+      journeys: { items: [{}], total: 1 },
+      stays: { items: [{}], total: 1 },
     });
     const bookingSearch = await callTool(ownerId, 'travel_search', { query: 'BOOK-READ' });
     expect(bookingSearch.structuredContent).toMatchObject({
-      stays: { items: [{ legacyId: 'STY-READ' }], total: 1 },
+      stays: { items: [{}], total: 1 },
     });
     const validation = await callTool(ownerId, 'travel_validate', {});
     expect(validation.structuredContent).toMatchObject({
@@ -433,8 +456,6 @@ describe('travel Tier 1 reads', () => {
         orphan_stay: { count: 0 },
         orphan_leg: { count: 0 },
         unknown_airport_code: { count: 0 },
-        duplicate_legacy_id: { count: 0 },
-        place_visited_without_segment: { count: 0 },
         stay_partially_linked: { count: 0 },
         thin_evidence_stays: { count: 0 },
       },
@@ -450,12 +471,12 @@ describe('travel Tier 1 reads', () => {
     const timeline = await callTool(ownerId, 'travel_timeline', {});
     expect(timeline.structuredContent).toMatchObject({
       total: 1,
-      events: [{ type: 'segment', legacyId: 'SEG-READ', place: 'London', nights: 2 }],
+      events: [{ type: 'segment', place: 'London', nights: 2 }],
     });
     const insights = await callTool(ownerId, 'travel_insights', {});
     expect(insights.structuredContent).toMatchObject({
       daysPerCountry: { items: [{ country: 'UK' }] },
-      homes: { currentHome: { place: 'London', legacyId: 'PLC-READ-RES' } },
+      homes: { currentHome: { place: 'London' } },
       nextTrip: null,
     });
     const distance = await callTool(ownerId, 'travel_distance', {
@@ -475,10 +496,9 @@ describe('travel Tier 1 reads', () => {
   });
 
   it('returns a place with segment and Residence relationships and visit history', async () => {
-    const result = await callTool(ownerId, 'travel_place_get', { legacyId: 'PLC-READ' });
+    const result = await callTool(ownerId, 'travel_place_get', { id: readPlaceId });
     expect(result.structuredContent).toMatchObject({
       id: readPlaceId,
-      legacyId: 'PLC-READ',
       relationships: {
         visited: true,
         segmentCount: 1,
@@ -486,7 +506,7 @@ describe('travel Tier 1 reads', () => {
         currentlyHome: true,
         wantToGo: false,
       },
-      visitHistory: [{ journeyLegacyId: 'JRN-READ', arrivalDate: '2026-01-01' }],
+      visitHistory: [{ journeyId: readJourneyId, arrivalDate: '2026-01-01' }],
       residences: [{ id: readResidenceId }],
     });
     const homeFilter = await callTool(ownerId, 'travel_place_list', {
@@ -516,30 +536,27 @@ describe('travel Tier 1 reads', () => {
       journeys: [
         {
           id: readJourneyId,
-          legacyId: 'JRN-READ',
           segmentCount: 1,
           places: ['London'],
           countries: ['UK'],
         },
       ],
     });
-    const dossier = await callTool(ownerId, 'travel_journey_get', { legacyId: 'JRN-READ' });
+    const dossier = await callTool(ownerId, 'travel_journey_get', { id: readJourneyId });
     expect(dossier.structuredContent).toMatchObject({
       id: readJourneyId,
-      legacyId: 'JRN-READ',
       name: 'Read fixture',
       startDate: '2026-01-01',
-      segments: [{ legacyId: 'SEG-READ', nights: 2 }],
+      segments: [{ nights: 2 }],
       legs: [
         {
-          legacyId: 'T-READ',
           originName: 'Heathrow',
           originPlace: 'London',
           destinationName: 'Stansted',
           distanceKm: expect.any(Number),
         },
       ],
-      stays: [{ legacyId: 'STY-READ' }],
+      stays: [{}],
     });
     const filtered = await callTool(ownerId, 'travel_journey_list', {
       year: 2026,
@@ -562,9 +579,9 @@ describe('travel Tier 1 reads', () => {
     });
     const partialPlace = await callTool(ownerId, 'travel_segment_list', { place: 'ondo' });
     expect(partialPlace.structuredContent).toMatchObject({ segments: [], total: 0 });
-    const segment = await callTool(ownerId, 'travel_segment_get', { legacyId: 'SEG-READ' });
+    const segment = await callTool(ownerId, 'travel_segment_get', { id: readSegmentId });
     expect(segment.structuredContent).toMatchObject({
-      arrivingLegs: [{ legacyId: 'T-READ' }],
+      arrivingLegs: [{}],
       stays: [{ id: readStayId }],
     });
     const route = await callTool(ownerId, 'travel_transport_list', { from: 'London', to: 'STN' });
@@ -579,7 +596,7 @@ describe('travel Tier 1 reads', () => {
       to: 'london',
       fromDate: '2026-01-01',
       toDate: '2026-01-01',
-      journeyLegacyId: 'JRN-READ',
+      journeyId: readJourneyId,
     });
     expect(filteredRoute.structuredContent).toMatchObject({ transport: [{ id: readTransportId }] });
     const lookup = await callTool(ownerId, 'travel_booking_lookup', { bookingRef: 'book-read' });
@@ -595,24 +612,25 @@ describe('travel Tier 1 reads', () => {
     expect(partialLookup.structuredContent).toMatchObject({ total: 2 });
     const stays = await callTool(ownerId, 'travel_stay_list', {
       city: 'london',
-      journeyLegacyId: 'JRN-READ',
+      journeyId: readJourneyId,
       evidence: 'email',
     });
     expect(stays.structuredContent).toMatchObject({ stays: [{ id: readStayId }], total: 1 });
   });
 
   it('lists airports and ideas, reports segment-derived countries, and keeps wishlist sections separate', async () => {
-    const airports = await callTool(ownerId, 'travel_airport_list', { place: 'London', limit: 1 });
+    const airports = await callTool(ownerId, 'travel_airport_list', {
+      query: 'London Probe',
+      limit: 1,
+    });
     expect(travelAirportListOutputSchema.parse(airports.structuredContent)).toMatchObject({
       total: 2,
-      airports: [{ legCount: 1 }],
+      airports: [{ code: 'LHR' }],
       truncated: true,
     });
     const airport = await callTool(ownerId, 'travel_airport_get', { code: 'lhr' });
     expect(airport.structuredContent).toMatchObject({
-      id: readAirportId,
       code: 'LHR',
-      legCount: 1,
     });
     const ideas = await callTool(ownerId, 'travel_idea_list', { type: 'experience' });
     expect(ideas.structuredContent).toMatchObject({ ideas: [{ id: readIdeaId }], total: 1 });
@@ -634,8 +652,9 @@ describe('travel Tier 1 reads', () => {
     });
   });
 
-  it('finds an owned airport outside the first airport-list page', async () => {
+  it('finds a shared catalogue airport by code independently of owner airport rows', async () => {
     const airportOwner = randomUUID();
+    const sourceId = 1_700_000_000 + Math.floor(Math.random() * 100_000_000);
     await authDb
       .insertInto('user')
       .values({
@@ -647,26 +666,25 @@ describe('travel Tier 1 reads', () => {
 
     try {
       await db
-        .insertInto('app.travelAirports')
-        .values(
-          Array.from({ length: 201 }, (_, index) => {
-            const suffix = String(index).padStart(3, '0');
-            return {
-              ownerUserid: airportOwner,
-              legacyId: `ARP-PAGE-${suffix}`,
-              code: `A${suffix}`,
-              name: `Airport ${suffix}`,
-              servesPlace: 'Test City',
-              city: 'Test City',
-              country: 'Testland',
-            };
-          }),
-        )
+        .insertInto('app.travelAirportReference')
+        .values({
+          sourceId,
+          code: 'A200',
+          name: 'Airport 200',
+          city: 'Test City',
+          country: 'ZZ',
+          type: 'small_airport',
+        })
         .execute();
 
       const result = await callTool(airportOwner, 'travel_airport_get', { code: 'A200' });
       expect(result.structuredContent).toMatchObject({ code: 'A200', name: 'Airport 200' });
     } finally {
+      await db
+        .updateTable('app.travelAirportReference')
+        .set({ missingFromSource: true, active: false })
+        .where('sourceId', '=', String(sourceId))
+        .execute();
       await authDb.deleteFrom('user').where('id', '=', airportOwner).execute();
     }
   });
@@ -680,18 +698,16 @@ describe('travel Tier 1 reads', () => {
     try {
       const journey = await db
         .insertInto('app.travelJourneys')
-        .values({ ownerUserid: userId, legacyId: 'JRN-ENDPOINT', name: 'Endpoint journey' })
+        .values({ ownerUserid: userId, name: 'Endpoint journey' })
         .returning('id')
         .executeTakeFirstOrThrow();
       const place = await db
-        .insertInto('app.travelPlaces')
+        .insertInto('app.places')
         .values({
           ownerUserid: userId,
-          legacyId: 'PLC-ENDPOINT',
-          place: 'Byron Bay',
+          name: 'Byron Bay',
           country: 'Australia',
-          type: 'city',
-          status: 'Visited',
+          placeType: 'city',
         })
         .returning('id')
         .executeTakeFirstOrThrow();
@@ -700,7 +716,6 @@ describe('travel Tier 1 reads', () => {
         .values([
           {
             ownerUserid: userId,
-            legacyId: 'ARP-ENDPOINT-1',
             code: 'BNK',
             name: 'Ballina Byron Gateway Airport',
             servesPlace: 'Byron Bay',
@@ -709,7 +724,6 @@ describe('travel Tier 1 reads', () => {
           },
           {
             ownerUserid: userId,
-            legacyId: 'ARP-ENDPOINT-2',
             code: 'SYD',
             name: 'Sydney Airport',
             servesPlace: 'Sydney',
@@ -722,7 +736,6 @@ describe('travel Tier 1 reads', () => {
         .insertInto('app.travelTransport')
         .values({
           ownerUserid: userId,
-          legacyId: 'T-ENDPOINT',
           mode: 'air',
           origin: 'BNK',
           destination: 'SYD',
@@ -734,14 +747,12 @@ describe('travel Tier 1 reads', () => {
         .values([
           {
             ownerUserid: userId,
-            legacyId: 'SEG-ENDPOINT-1',
             journeyId: journey.id,
             placeId: place.id,
             seq: 1,
           },
           {
             ownerUserid: userId,
-            legacyId: 'SEG-ENDPOINT-2',
             journeyId: journey.id,
             placeId: place.id,
             seq: 2,
@@ -751,7 +762,7 @@ describe('travel Tier 1 reads', () => {
 
       const byCity = await callTool(userId, 'travel_transport_list', { from: 'Ballina' });
       expect(byCity.structuredContent).toMatchObject({
-        transport: [{ legacyId: 'T-ENDPOINT', origin: 'BNK' }],
+        transport: [{ origin: 'BNK' }],
         total: 1,
       });
       const first = await callTool(userId, 'travel_timeline', { limit: 1 });

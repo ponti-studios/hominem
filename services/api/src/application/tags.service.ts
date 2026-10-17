@@ -18,9 +18,8 @@ export const ENTITY_TABLE_MAP: Record<EntityType, string> = {
   travel_transport: 'app.travel_transport',
   travel_stays: 'app.travel_stays',
   travel_airports: 'app.travel_airports',
-  travel_places: 'app.travel_places',
   travel_ideas: 'app.travel_ideas',
-  residence: 'app.travel_residences',
+  residence: 'app.place_residences',
 };
 
 async function ensureOwnedEntity(ownerUserId: string, entityType: EntityType, entityId: string) {
@@ -181,9 +180,9 @@ export async function getEntityDisplayName(
 
   if (entityType === 'residence') {
     const result = await sql<{ displayName: string }>`
-      SELECT p.place AS "displayName"
-      FROM app.travel_residences r
-      JOIN app.travel_places p
+      SELECT p.name AS "displayName"
+      FROM app.place_residences r
+      JOIN app.places p
         ON p.id = r.place_id AND p.owner_userid = r.owner_userid
       WHERE r.id = ${entityId} AND r.owner_userid = ${ownerUserId}
     `.execute(db);
@@ -197,11 +196,11 @@ export async function getEntityDisplayName(
       possessions: 'name',
       notes: 'title',
       travel_journeys: 'name',
-      travel_journey_segments: 'legacy_id',
-      travel_transport: 'legacy_id',
+      travel_journey_segments:
+        '(SELECT name FROM app.places WHERE id = app.travel_journey_segments.place_id)',
+      travel_transport: "concat(origin, ' → ', destination)",
       travel_stays: 'property',
-      travel_airports: 'name',
-      travel_places: 'place',
+      travel_airports: 'coalesce(name, code)',
       travel_ideas: 'idea',
       residence: 'place_id',
     };

@@ -4,64 +4,62 @@ const sheetRows = z.array(z.record(z.string(), z.unknown())).max(1000);
 
 export function nativeTravelRows(entities: Record<string, Record<string, unknown>[]>) {
   const list = (name: string) => entities[name] ?? [];
-  const places = list('travel_places');
-  const journeys = list('travel_journeys');
-  const segments = list('travel_journey_segments');
-  const byId = (rows: Record<string, unknown>[]) =>
-    new Map(rows.map((row) => [String(row.id), row]));
-  const placeById = byId(places);
-  const journeyById = byId(journeys);
-  const segmentById = byId(segments);
+  const snake = (row: Record<string, unknown>) =>
+    Object.fromEntries(
+      Object.entries(row).map(([key, value]) => [
+        key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`),
+        value,
+      ]),
+    );
+  const rows = (name: string) => list(name).map(snake);
+  const places = list('places').length ? list('places') : list('travel_places');
+  const residences = list('place_residences').length
+    ? list('place_residences')
+    : list('travel_residences');
   return {
-    places: places.map((row) => ({
+    places: places.map((source, index) => {
+      const row = snake(source);
+      return {
+        ...row,
+        place_id: places[index]?.id ?? row.id,
+      };
+    }),
+    residences: residences.map((source, index) => {
+      const row = snake(source);
+      return {
+        ...row,
+        residence_id: residences[index]?.id ?? row.id,
+      };
+    }),
+    journeys: rows('travel_journeys').map((row, index) => ({
       ...row,
-      place_id: row.legacyId,
-      first_visited: row.firstVisited,
-      last_visited: row.lastVisited,
+      journey_id: list('travel_journeys')[index]?.id,
     })),
-    residences: list('travel_residences').map((row) => ({
+    segments: rows('travel_journey_segments').map((row, index) => ({
       ...row,
-      placeLegacyId: placeById.get(String(row.placeId))?.legacyId,
+      segment_id: list('travel_journey_segments')[index]?.id,
+      place_legacy_id: row.place_id,
     })),
-    journeys: journeys.map((row) => ({
+    transport: rows('travel_transport').map((row, index) => ({
       ...row,
-      journey_id: row.legacyId,
-      start_date: row.startDate,
-      end_date: row.endDate,
+      transport_id: list('travel_transport')[index]?.id,
+      dep_segment: row.dep_segment_id,
+      arr_segment: row.arr_segment_id,
     })),
-    segments: segments.map((row) => ({
+    stays: rows('travel_stays').map((row, index) => ({
       ...row,
-      segment_id: row.legacyId,
-      journey_id: journeyById.get(String(row.journeyId))?.legacyId,
-      place: placeById.get(String(row.placeId))?.place,
-      place_legacy_id: placeById.get(String(row.placeId))?.legacyId,
-      arrival_date: row.arrivalDate,
-      departure_date: row.departureDate,
+      stay_id: list('travel_stays')[index]?.id,
+      segment_id: row.segment_id,
     })),
-    transport: list('travel_transport').map((row) => ({
+    airports: rows('travel_airports').map((row, index) => ({
       ...row,
-      transport_id: row.legacyId,
-      booking_ref: row.bookingRef,
-      dep_segment: segmentById.get(String(row.depSegmentId))?.legacyId,
-      arr_segment: segmentById.get(String(row.arrSegmentId))?.legacyId,
-      journey_id: journeyById.get(String(row.journeyId))?.legacyId,
-      legacy_trip: row.legacyTrip,
+      airport_id: list('travel_airports')[index]?.id,
+      serves_place: row.serves_place,
     })),
-    stays: list('travel_stays').map((row) => ({
+    ideas: rows('travel_ideas').map((row, index) => ({
       ...row,
-      stay_id: row.legacyId,
-      segment_id: segmentById.get(String(row.segmentId))?.legacyId,
-      journey_id: journeyById.get(String(row.journeyId))?.legacyId,
-      check_in: row.checkIn,
-      check_out: row.checkOut,
-      booking_ref: row.bookingRef,
+      idea_id: list('travel_ideas')[index]?.id,
     })),
-    airports: list('travel_airports').map((row) => ({
-      ...row,
-      airport_id: row.legacyId,
-      serves_place: row.servesPlace,
-    })),
-    ideas: list('travel_ideas').map((row) => ({ ...row, idea_id: row.legacyId })),
   };
 }
 
@@ -98,7 +96,7 @@ const entityResult = z.object({
   created: z.number().int().nonnegative(),
   updated: z.number().int().nonnegative(),
   unchanged: z.number().int().nonnegative(),
-  rejected: z.array(z.object({ legacyId: z.string(), reason: z.string() })),
+  rejected: z.array(z.object({ sourceId: z.string(), reason: z.string() })),
 });
 
 export const travelImportOutputSchema = z.object({

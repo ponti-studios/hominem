@@ -30,7 +30,7 @@ async function registerAll(): Promise<void> {
   if (isEnabled('memory:read', 'memory:write')) imports.push(import('./tools/memory'));
   if (isEnabled('notes:read', 'notes:write')) imports.push(import('./tools/notes'));
   if (isEnabled('people:read', 'people:write')) imports.push(import('./tools/people'));
-  if (isEnabled('places:read')) imports.push(import('./tools/places'));
+  if (isEnabled('places:read', 'places:write')) imports.push(import('./tools/places'));
   if (isEnabled('possessions:read', 'possessions:write')) {
     imports.push(import('./tools/possessions'));
   }

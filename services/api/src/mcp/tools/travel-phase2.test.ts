@@ -4,7 +4,8 @@ import './travel';
 import './travel-writes';
 import './travel-maintenance';
 import './travel-history-export';
-import { getToolDefinition } from '../tool-registry';
+import './travel-analytics';
+import { getToolDefinition, listTools } from '../tool-registry';
 
 const phaseTwoTools = [
   'travel_entity_history',
@@ -28,10 +29,7 @@ const phaseTwoTools = [
   'travel_place_delete',
   'travel_place_refresh',
   'travel_place_merge',
-  'travel_airport_create',
   'travel_airport_update',
-  'travel_airport_delete',
-  'travel_airport_merge',
   'travel_idea_create',
   'travel_idea_update',
   'travel_idea_delete',
@@ -39,14 +37,11 @@ const phaseTwoTools = [
   'travel_journey_clone',
   'travel_segment_reorder',
   'travel_segment_merge',
-  'travel_residence_create',
-  'travel_residence_update',
-  'travel_residence_delete',
 ];
 
 describe('travel MCP phase 2 registration', () => {
-  it('registers the complete 35-tool phase 2 surface with write scopes on mutations', () => {
-    expect(phaseTwoTools).toHaveLength(35);
+  it('registers the complete travel write surface with write scopes on mutations', () => {
+    expect(phaseTwoTools).toHaveLength(29);
     for (const name of phaseTwoTools) expect(getToolDefinition(name), name).toBeDefined();
     for (const name of phaseTwoTools.filter(
       (name) =>
@@ -73,6 +68,23 @@ describe('travel MCP phase 2 registration', () => {
         scopes: ['travel:read'],
       });
     }
+  });
+
+  it('exposes 51 travel tools and removes airport create, merge, delete, and request tools', () => {
+    expect(listTools().filter(({ name }) => name.startsWith('travel_'))).toHaveLength(51);
+    for (const name of [
+      'travel_airport_create',
+      'travel_airport_merge',
+      'travel_airport_delete',
+      'travel_airport_request',
+      'travel_airport_request_list',
+    ]) {
+      expect(getToolDefinition(name), name).toBeUndefined();
+    }
+    expect(getToolDefinition('travel_airport_update')).toMatchObject({
+      readOnly: false,
+      scopes: ['travel:write'],
+    });
   });
 
   it('does not request a second confirmation after iUnderstand on deletes', async () => {

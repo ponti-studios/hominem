@@ -10,7 +10,7 @@ const date = z
   .nullable()
   .optional();
 const nullableText = z.string().nullable().optional();
-const common = { dryRun: z.boolean().default(false), legacyId: z.string().optional() };
+const common = { dryRun: z.boolean().default(false) };
 const selector = z.object({ id: z.string().uuid(), ifUpdatedAt: z.string().datetime().optional() });
 
 export const travelJourneyCreateInputSchema = z
@@ -78,6 +78,8 @@ export const travelTransportCreateInputSchema = z.object({
   mode: z.enum(['air', 'rail']),
   origin: z.string().min(1),
   destination: z.string().min(1),
+  originReferenceId: z.string().uuid().optional(),
+  destinationReferenceId: z.string().uuid().optional(),
   carrier: nullableText,
   number: nullableText,
   bookingRef: nullableText,
@@ -93,6 +95,8 @@ export const travelTransportUpdateInputSchema = selector
     mode: z.enum(['air', 'rail']).optional(),
     origin: z.string().optional(),
     destination: z.string().optional(),
+    originReferenceId: z.string().uuid().optional(),
+    destinationReferenceId: z.string().uuid().optional(),
     carrier: nullableText,
     number: nullableText,
     bookingRef: nullableText,
@@ -173,7 +177,7 @@ export const travelPlaceCreateInputSchema = z.object({
   place: z.string().min(1),
   country: z.string().min(1),
   type: z.string().min(1),
-  status: z.enum(['Visited', 'Want to go', 'Lived in']),
+  wantToGo: z.boolean().default(false),
   firstVisited: date,
   lastVisited: date,
   notes: nullableText,
@@ -184,7 +188,7 @@ export const travelPlaceUpdateInputSchema = selector
     place: z.string().optional(),
     country: z.string().optional(),
     type: z.string().optional(),
-    status: z.enum(['Visited', 'Want to go', 'Lived in']).optional(),
+    wantToGo: z.boolean().optional(),
     firstVisited: date,
     lastVisited: date,
     notes: nullableText,
@@ -194,31 +198,28 @@ export const travelPlaceUpdateInputSchema = selector
   .refine((value) =>
     Object.keys(value).some((key) => !['id', 'ifUpdatedAt', 'dryRun'].includes(key)),
   );
-export const travelAirportCreateInputSchema = z.object({
-  ...common,
-  code: z.string().min(3).max(4),
-  name: z.string().min(1),
-  servesPlace: z.string().min(1),
-  city: z.string().min(1),
-  country: z.string().min(1),
-  notes: nullableText,
-  latitude: z.number().min(-90).max(90).nullable().optional(),
-  longitude: z.number().min(-180).max(180).nullable().optional(),
-});
-export const travelAirportUpdateInputSchema = selector
-  .extend({
-    code: z.string().min(3).max(4).optional(),
-    name: z.string().optional(),
-    servesPlace: z.string().optional(),
-    city: z.string().optional(),
-    country: z.string().optional(),
+export const travelAirportCurationUpdateInputSchema = z
+  .object({
+    code: z.string().trim().min(1).max(20),
+    servesPlace: z.string().trim().min(1).nullable().optional(),
     notes: nullableText,
     latitude: z.number().min(-90).max(90).nullable().optional(),
     longitude: z.number().min(-180).max(180).nullable().optional(),
-    dryRun: z.boolean().default(false),
+    unpin: z.array(z.enum(['latitude', 'longitude'])).default([]),
+    name: z.string().trim().min(1).optional(),
+    city: z.string().trim().min(1).optional(),
+    country: z.string().trim().min(1).optional(),
   })
-  .refine((value) =>
-    Object.keys(value).some((key) => !['id', 'ifUpdatedAt', 'dryRun'].includes(key)),
+  .refine(
+    (value) =>
+      value.servesPlace !== undefined ||
+      value.notes !== undefined ||
+      value.latitude !== undefined ||
+      value.longitude !== undefined ||
+      value.unpin.length > 0 ||
+      value.name !== undefined ||
+      value.city !== undefined ||
+      value.country !== undefined,
   );
 export const travelIdeaCreateInputSchema = z.object({
   ...common,

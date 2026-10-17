@@ -5,116 +5,70 @@ import { db, runInTransaction, sql } from '@hominem/db/core';
 import type { TransactionHandle } from '@hominem/db/core';
 import { ValidationError } from '@hominem/db/errors';
 
-type Entity = 'journey' | 'segment' | 'transport' | 'stay' | 'place' | 'airport' | 'idea';
+import { resolveAirportSelection } from './airport-catalogue.service';
+
+type Entity = 'journey' | 'segment' | 'transport' | 'stay' | 'place' | 'idea';
 type Row = Record<string, unknown>;
-type Config = { table: string; prefix: string; keys: string[]; fields: Record<string, string> };
-const CONFIG: Record<Entity, Config> = {
+const TABLE: Record<Entity, string> = {
+  journey: 'travel_journeys',
+  segment: 'travel_journey_segments',
+  transport: 'travel_transport',
+  stay: 'travel_stays',
+  place: 'places',
+  idea: 'travel_ideas',
+};
+const FIELDS: Record<Entity, Record<string, string>> = {
   journey: {
-    table: 'travel_journeys',
-    prefix: 'JRN',
-    keys: ['legacyId'],
-    fields: {
-      legacyId: 'legacy_id',
-      name: 'name',
-      startDate: 'start_date',
-      endDate: 'end_date',
-      purpose: 'purpose',
-      notes: 'notes',
-      archived: 'archived',
-    },
+    name: 'name',
+    startDate: 'start_date',
+    endDate: 'end_date',
+    purpose: 'purpose',
+    notes: 'notes',
+    archived: 'archived',
   },
   segment: {
-    table: 'travel_journey_segments',
-    prefix: 'SEG',
-    keys: ['legacyId'],
-    fields: {
-      legacyId: 'legacy_id',
-      journeyId: 'journey_id',
-      seq: 'seq',
-      placeId: 'place_id',
-      arrivalDate: 'arrival_date',
-      departureDate: 'departure_date',
-      notes: 'notes',
-    },
+    journeyId: 'journey_id',
+    seq: 'seq',
+    placeId: 'place_id',
+    arrivalDate: 'arrival_date',
+    departureDate: 'departure_date',
+    notes: 'notes',
   },
   transport: {
-    table: 'travel_transport',
-    prefix: 'T',
-    keys: ['legacyId', 'journeyId', 'date', 'origin', 'destination'],
-    fields: {
-      legacyId: 'legacy_id',
-      date: 'date',
-      mode: 'mode',
-      origin: 'origin',
-      destination: 'destination',
-      carrier: 'carrier',
-      number: 'number',
-      bookingRef: 'booking_ref',
-      depSegmentId: 'dep_segment_id',
-      arrSegmentId: 'arr_segment_id',
-      journeyId: 'journey_id',
-      legacyTrip: 'legacy_trip',
-      notes: 'notes',
-    },
+    date: 'date',
+    mode: 'mode',
+    origin: 'origin',
+    destination: 'destination',
+    originReferenceId: 'origin_reference_id',
+    destinationReferenceId: 'destination_reference_id',
+    carrier: 'carrier',
+    number: 'number',
+    bookingRef: 'booking_ref',
+    depSegmentId: 'dep_segment_id',
+    arrSegmentId: 'arr_segment_id',
+    journeyId: 'journey_id',
+    legacyTrip: 'legacy_trip',
+    notes: 'notes',
   },
   stay: {
-    table: 'travel_stays',
-    prefix: 'STY',
-    keys: ['legacyId'],
-    fields: {
-      legacyId: 'legacy_id',
-      segmentId: 'segment_id',
-      journeyId: 'journey_id',
-      checkIn: 'check_in',
-      checkOut: 'check_out',
-      city: 'city',
-      country: 'country',
-      property: 'property',
-      bookingRef: 'booking_ref',
-      evidence: 'evidence',
-      notes: 'notes',
-    },
+    segmentId: 'segment_id',
+    journeyId: 'journey_id',
+    checkIn: 'check_in',
+    checkOut: 'check_out',
+    city: 'city',
+    country: 'country',
+    property: 'property',
+    bookingRef: 'booking_ref',
+    evidence: 'evidence',
+    notes: 'notes',
   },
   place: {
-    table: 'travel_places',
-    prefix: 'PLC',
-    keys: ['place', 'country'],
-    fields: {
-      legacyId: 'legacy_id',
-      place: 'place',
-      country: 'country',
-      type: 'type',
-      status: 'status',
-      firstVisited: 'first_visited',
-      lastVisited: 'last_visited',
-      notes: 'notes',
-      archived: 'archived',
-    },
+    wantToGo: 'want_to_go',
+    archived: 'archived',
   },
-  airport: {
-    table: 'travel_airports',
-    prefix: 'ARP',
-    keys: ['code'],
-    fields: {
-      legacyId: 'legacy_id',
-      code: 'code',
-      name: 'name',
-      servesPlace: 'serves_place',
-      city: 'city',
-      country: 'country',
-      notes: 'notes',
-      latitude: 'latitude',
-      longitude: 'longitude',
-    },
-  },
-  idea: {
-    table: 'travel_ideas',
-    prefix: 'IDA',
-    keys: ['legacyId'],
-    fields: { legacyId: 'legacy_id', idea: 'idea', type: 'type', status: 'status', notes: 'notes' },
-  },
+  idea: { idea: 'idea', type: 'type', status: 'status', notes: 'notes' },
 };
-const table = (entity: Entity) => sql.raw(`app.${CONFIG[entity].table}`);
+const table = (entity: Entity) => sql.raw(`app.${TABLE[entity]}`);
 const snake = (value: Row): Row =>
   Object.fromEntries(
     Object.entries(value).map(([key, val]) => [
@@ -134,34 +88,62 @@ const matchesVersion = (stored: unknown, requested: unknown) =>
   requested !== undefined &&
   Date.parse(String(stored)) === Date.parse(String(requested));
 
-async function allocateLegacyId(trx: TransactionHandle, owner: string, entity: Entity) {
-  const { prefix, table: tableName } = CONFIG[entity];
-  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${owner}:${tableName}:legacy_id`}, 0))`.execute(
-    trx,
-  );
-  const result = await sql<{
-    next: number;
-  }>`SELECT coalesce(max(substring(legacy_id from '[0-9]+$')::int), 0) + 1 AS next FROM ${sql.raw(`app.${tableName}`)} WHERE owner_userid = ${owner} AND legacy_id ~ ${`^${prefix}-[0-9]+$`}`.execute(
-    trx,
-  );
-  let next = Number(result.rows[0]?.next ?? 1);
-  for (;;) {
-    const legacyId = `${prefix}-${String(next).padStart(3, '0')}`;
-    const found =
-      await sql`SELECT 1 FROM ${table(entity)} WHERE owner_userid = ${owner} AND legacy_id = ${legacyId}`.execute(
-        trx,
-      );
-    if (!found.rows.length) return legacyId;
-    next += 1;
-  }
+function decodeEntity(entity: Entity, row: Row): Row {
+  const decoded = camel(row);
+  if (entity !== 'place') return decoded;
+  return {
+    ...decoded,
+    place: decoded.place ?? decoded.name,
+    type: decoded.type ?? decoded.placeType,
+    status: decoded.wantToGo ? 'Want to go' : 'Visited',
+  };
 }
 
 async function readById(trx: TransactionHandle, entity: Entity, owner: string, id: string) {
+  if (entity === 'place') {
+    const result = await sql<Row>`
+      SELECT p.id, p.owner_userid, p.name AS place, p.country, p.place_type AS type,
+        p.first_visited, p.last_visited, p.notes, t.want_to_go, t.archived,
+        greatest(p.updatedat, t.updated_at) AS updated_at, p.createdat AS created_at
+      FROM app.travel_places t
+      JOIN app.places p ON p.id = t.place_id AND p.owner_userid = t.owner_userid
+      WHERE t.owner_userid = ${owner} AND t.place_id = ${id} LIMIT 1
+    `.execute(trx);
+    return result.rows[0] ? decodeEntity(entity, result.rows[0]) : null;
+  }
   const result =
-    await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid = ${owner} AND id = ${id} LIMIT 1`.execute(
+    await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid=${owner} AND id=${id} LIMIT 1`.execute(
       trx,
     );
-  return result.rows[0] ? camel(result.rows[0]) : null;
+  return result.rows[0] ? decodeEntity(entity, result.rows[0]) : null;
+}
+
+async function findNaturalRow(trx: TransactionHandle, owner: string, entity: Entity, input: Row) {
+  if (entity === 'place') return { rows: [] };
+  if (entity === 'journey')
+    return sql<Row>`SELECT * FROM app.travel_journeys WHERE owner_userid=${owner} AND lower(name)=lower(${String(input.name)}) AND start_date IS NOT DISTINCT FROM ${input.startDate ?? null} AND end_date IS NOT DISTINCT FROM ${input.endDate ?? null} LIMIT 1`.execute(
+      trx,
+    );
+  if (entity === 'segment')
+    return sql<Row>`SELECT * FROM app.travel_journey_segments WHERE owner_userid=${owner} AND journey_id=${String(input.journeyId)} AND seq=${Number(input.seq)} LIMIT 1`.execute(
+      trx,
+    );
+  if (entity === 'transport')
+    return sql<Row>`SELECT * FROM app.travel_transport WHERE owner_userid=${owner} AND journey_id=${String(input.journeyId)} AND date IS NOT DISTINCT FROM ${input.date ?? null} AND upper(origin)=upper(${String(input.origin)}) AND upper(destination)=upper(${String(input.destination)}) AND lower(coalesce(carrier,''))=lower(coalesce(${input.carrier ?? null},'')) AND lower(coalesce(number,''))=lower(coalesce(${input.number ?? null},'')) LIMIT 1`.execute(
+      trx,
+    );
+  if (entity === 'stay') {
+    if (input.evidence === 'want' && input.segmentId == null)
+      return sql<Row>`SELECT * FROM app.travel_stays WHERE owner_userid=${owner} AND evidence='want' AND segment_id IS NULL AND lower(coalesce(property,''))=lower(coalesce(${input.property ?? null},'')) AND lower(city)=lower(${String(input.city)}) AND check_in IS NULL LIMIT 1`.execute(
+        trx,
+      );
+    return sql<Row>`SELECT * FROM app.travel_stays WHERE owner_userid=${owner} AND segment_id=${String(input.segmentId)} AND lower(coalesce(property,''))=lower(coalesce(${input.property ?? null},'')) AND check_in IS NOT DISTINCT FROM ${input.checkIn ?? null} LIMIT 1`.execute(
+      trx,
+    );
+  }
+  return sql<Row>`SELECT * FROM app.travel_ideas WHERE owner_userid=${owner} AND lower(idea)=lower(${String(input.idea)}) LIMIT 1`.execute(
+    trx,
+  );
 }
 
 export async function writeTravelEntity(
@@ -170,56 +152,28 @@ export async function writeTravelEntity(
   operation: 'create' | 'update',
   input: Row,
 ) {
-  const config = CONFIG[entity];
+  if (entity === 'place') return writeTravelPlace(owner, input);
   const dryRun = input.dryRun === true;
   const id = typeof input.id === 'string' ? input.id : undefined;
   return runInTransaction(async (trx) => {
-    let current: Row | null = null;
-    if (id) current = await readById(trx, entity, owner, id);
-    else if (operation === 'create') {
-      if (entity === 'place') {
-        const found =
-          await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid = ${owner} AND lower(place) = lower(${String(input.place)}) AND lower(country) = lower(${String(input.country)}) LIMIT 1`.execute(
-            trx,
-          );
-        current = found.rows[0] ? camel(found.rows[0]) : null;
-      } else if (entity === 'airport') {
-        const found =
-          await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid = ${owner} AND lower(code) = lower(${String(input.code)}) LIMIT 1`.execute(
-            trx,
-          );
-        current = found.rows[0] ? camel(found.rows[0]) : null;
-      } else if (entity === 'transport') {
-        const found = input.legacyId
-          ? await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid = ${owner} AND legacy_id = ${String(input.legacyId)} AND journey_id = ${String(input.journeyId ?? '')} AND date IS NOT DISTINCT FROM ${input.date ?? null} AND origin = ${String(input.origin ?? '')} AND destination = ${String(input.destination ?? '')} LIMIT 1`.execute(
-              trx,
-            )
-          : await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid = ${owner} AND journey_id = ${String(input.journeyId ?? '')} AND date IS NOT DISTINCT FROM ${input.date ?? null} AND origin = ${String(input.origin ?? '')} AND destination = ${String(input.destination ?? '')} LIMIT 1`.execute(
-              trx,
-            );
-        current = found.rows[0] ? camel(found.rows[0]) : null;
-      } else if (input.legacyId) {
-        const found =
-          await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid = ${owner} AND legacy_id = ${String(input.legacyId)} LIMIT 1`.execute(
-            trx,
-          );
-        current = found.rows[0] ? camel(found.rows[0]) : null;
-      }
+    let current: Row | null = id ? await readById(trx, entity, owner, id) : null;
+    if (!id && operation === 'create') {
+      const found = await findNaturalRow(trx, owner, entity, input);
+      current = found.rows[0] ? decodeEntity(entity, found.rows[0]) : null;
+      if (current)
+        return { entity: current, action: 'unchanged', created: 0, updated: 0, unchanged: 1 };
     }
     if (id && !current) return { entity: null, action: 'notFound' };
-    if (operation === 'create' && current)
-      return { entity: current, action: 'unchanged', created: 0, updated: 0, unchanged: 1 };
-    if (id && input.ifUpdatedAt && !matchesVersion(current?.updatedAt, input.ifUpdatedAt)) {
+    if (id && input.ifUpdatedAt && !matchesVersion(current?.updatedAt, input.ifUpdatedAt))
       return { entity: current, action: 'version_conflict', reason: 'version_conflict' };
-    }
     const payload: Row = {};
-    for (const [key, column] of Object.entries(config.fields)) {
+    for (const [key, column] of Object.entries(FIELDS[entity]))
       if (input[key] !== undefined) payload[column] = input[key];
-    }
-    if (entity === 'stay' && input.segmentId !== undefined && input.segmentId !== null) {
+
+    if (entity === 'stay' && input.segmentId != null) {
       const segment = await sql<{
         journey_id: string;
-      }>`SELECT journey_id FROM app.travel_journey_segments WHERE owner_userid = ${owner} AND id = ${String(input.segmentId)} LIMIT 1`.execute(
+      }>`SELECT journey_id FROM app.travel_journey_segments WHERE owner_userid=${owner} AND id=${String(input.segmentId)} LIMIT 1`.execute(
         trx,
       );
       if (!segment.rows[0]) return { entity: null, reason: 'unknown_segment' };
@@ -227,21 +181,27 @@ export async function writeTravelEntity(
         return { entity: null, reason: 'segment_journey_mismatch' };
       payload.journey_id = segment.rows[0].journey_id;
     }
-    if (operation === 'create') {
-      const resolvedLegacyId =
-        typeof input.legacyId === 'string'
-          ? input.legacyId
-          : await allocateLegacyId(trx, owner, entity);
-      payload.legacy_id = resolvedLegacyId;
-      if (entity === 'airport') payload.code = String(payload.code ?? '').toUpperCase();
-      if (
-        entity === 'transport' &&
-        typeof payload.legacy_id === 'string' &&
-        !/^T-[0-9]+$/.test(payload.legacy_id)
-      ) {
-        throw new ValidationError('invalid_legacy_id');
-      }
+    if (entity === 'transport') {
+      const mode = String(input.mode ?? current?.mode ?? '');
+      const originCode = String(input.origin ?? current?.origin ?? '');
+      const destinationCode = String(input.destination ?? current?.destination ?? '');
+      const origin = await resolveAirportSelection(trx, owner, {
+        code: originCode,
+        referenceId: String(input.originReferenceId ?? current?.originReferenceId ?? '') || null,
+      });
+      const destination = await resolveAirportSelection(trx, owner, {
+        code: destinationCode,
+        referenceId:
+          String(input.destinationReferenceId ?? current?.destinationReferenceId ?? '') || null,
+      });
+      if (!origin || !destination) throw new ValidationError('unknown_airport');
+      payload.origin = origin.code;
+      payload.destination = destination.code;
+      payload.origin_reference_id = origin.referenceId;
+      payload.destination_reference_id = destination.referenceId;
+      if (mode !== 'air' && mode !== 'rail') throw new ValidationError('invalid_transport_mode');
     }
+
     const normalizedCurrent = current ? snake(current) : null;
     const changed =
       !normalizedCurrent ||
@@ -253,8 +213,8 @@ export async function writeTravelEntity(
     if (dryRun)
       return {
         entity: current
-          ? camel({ ...normalizedCurrent, ...payload })
-          : { id: randomUUID(), ownerUserid: owner, ...camel(payload) },
+          ? decodeEntity(entity, { ...normalizedCurrent, ...payload })
+          : decodeEntity(entity, { id: randomUUID(), owner_userid: owner, ...payload }),
         action: current ? 'updated' : 'created',
         created: current ? 0 : 1,
         updated: current ? 1 : 0,
@@ -262,18 +222,23 @@ export async function writeTravelEntity(
       };
     if (current) {
       const assignments = Object.entries(payload).map(
-        ([key, value]) => sql`${sql.ref(key)} = ${value}`,
+        ([key, value]) => sql`${sql.ref(key)}=${value}`,
       );
-      await sql`UPDATE ${table(entity)} SET ${sql.join(assignments)} WHERE owner_userid = ${owner} AND id = ${String(current.id)}`.execute(
+      await sql`UPDATE ${table(entity)} SET ${sql.join(assignments)} WHERE owner_userid=${owner} AND id=${String(current.id)}`.execute(
         trx,
       );
-      const updated = await readById(trx, entity, owner, String(current.id));
-      return { entity: updated, action: 'updated', created: 0, updated: 1, unchanged: 0 };
+      return {
+        entity: await readById(trx, entity, owner, String(current.id)),
+        action: 'updated',
+        created: 0,
+        updated: 1,
+        unchanged: 0,
+      };
     }
     const newId = randomUUID();
     const columns = ['id', 'owner_userid', ...Object.keys(payload)];
     const values = [newId, owner, ...Object.values(payload)];
-    await sql`INSERT INTO ${table(entity)} (${sql.join(columns.map((column) => sql.ref(column)))}) VALUES (${sql.join(values.map((value) => sql.val(value)))})`.execute(
+    await sql`INSERT INTO ${table(entity)} (${sql.join(columns.map((column) => sql.ref(column)))} ) VALUES (${sql.join(values.map((value) => sql.val(value)))})`.execute(
       trx,
     );
     return {
@@ -293,19 +258,120 @@ export async function writeTravelEntity(
         ? 'unknown_place'
         : constraint.includes('journey_segments_journey_id')
           ? 'unknown_journey'
-          : constraint.includes('transport_origin') || constraint.includes('transport_destination')
-            ? 'unknown_airport'
-            : constraint.includes('transport_dep_segment') ||
-                constraint.includes('transport_arr_segment')
-              ? 'segment_journey_mismatch'
-              : constraint.includes('stays_segment')
-                ? 'unknown_segment'
-                : constraint.includes('date') || constraint.includes('range')
-                  ? 'invalid_date_range'
-                  : constraint.includes('legacy') || constraint.includes('import_key')
-                    ? 'duplicate_legacy_id'
-                    : 'travel_write_failed';
+          : constraint.includes('transport_dep_segment') ||
+              constraint.includes('transport_arr_segment')
+            ? 'segment_journey_mismatch'
+            : constraint.includes('stays_segment')
+              ? 'unknown_segment'
+              : constraint.includes('date') || constraint.includes('range')
+                ? 'invalid_date_range'
+                : 'travel_write_failed';
     throw new ValidationError(reason);
+  });
+}
+
+async function writeTravelPlace(owner: string, input: Row) {
+  const dryRun = input.dryRun === true;
+  const id = typeof input.id === 'string' ? input.id : undefined;
+  return runInTransaction(async (trx) => {
+    const current = id ? await readById(trx, 'place', owner, id) : null;
+    if (id && !current) return { entity: null, action: 'notFound' };
+    if (id && input.ifUpdatedAt && !matchesVersion(current?.updatedAt, input.ifUpdatedAt))
+      return { entity: current, action: 'version_conflict', reason: 'version_conflict' };
+    const placePayload: Row = {};
+    for (const [key, column] of Object.entries({
+      place: 'name',
+      country: 'country',
+      type: 'place_type',
+      firstVisited: 'first_visited',
+      lastVisited: 'last_visited',
+      notes: 'notes',
+    }))
+      if (input[key] !== undefined) placePayload[column] = input[key];
+    const relationshipPayload: Row = {};
+    for (const [key, column] of Object.entries(FIELDS.place))
+      if (input[key] !== undefined) relationshipPayload[column] = input[key];
+    const changed =
+      !current ||
+      Object.entries({
+        place: input.place,
+        country: input.country,
+        type: input.type,
+        firstVisited: input.firstVisited,
+        lastVisited: input.lastVisited,
+        notes: input.notes,
+        wantToGo: input.wantToGo,
+        archived: input.archived,
+      }).some(
+        ([key, value]) =>
+          value !== undefined && !isDeepStrictEqual(current[key] ?? null, value ?? null),
+      );
+    if (!changed)
+      return { entity: current, action: 'unchanged', created: 0, updated: 0, unchanged: 1 };
+    const entityId = id ?? randomUUID();
+    if (dryRun) {
+      const projected = {
+        ...current,
+        id: entityId,
+        ownerUserid: owner,
+        ...Object.fromEntries(
+          Object.entries(input).filter(([key]) =>
+            [
+              'place',
+              'country',
+              'type',
+              'firstVisited',
+              'lastVisited',
+              'notes',
+              'wantToGo',
+              'archived',
+            ].includes(key),
+          ),
+        ),
+      };
+      return {
+        entity: projected,
+        action: current ? 'updated' : 'created',
+        created: current ? 0 : 1,
+        updated: current ? 1 : 0,
+        unchanged: 0,
+      };
+    }
+    if (current) {
+      if (Object.keys(placePayload).length) {
+        const assignments = Object.entries(placePayload).map(
+          ([key, value]) => sql`${sql.ref(key)} = ${value}`,
+        );
+        await sql`UPDATE app.places SET ${sql.join(assignments)} WHERE id = ${entityId} AND owner_userid = ${owner}`.execute(
+          trx,
+        );
+      }
+      if (Object.keys(relationshipPayload).length) {
+        const assignments = Object.entries(relationshipPayload).map(
+          ([key, value]) => sql`${sql.ref(key)} = ${value}`,
+        );
+        await sql`UPDATE app.travel_places SET ${sql.join(assignments)} WHERE place_id = ${entityId} AND owner_userid = ${owner}`.execute(
+          trx,
+        );
+      }
+    } else {
+      const columns = ['id', 'owner_userid', ...Object.keys(placePayload)];
+      const values = [entityId, owner, ...Object.values(placePayload)];
+      await sql`INSERT INTO app.places (${sql.join(columns.map((column) => sql.ref(column)))} ) VALUES (${sql.join(values.map((value) => sql.val(value)))})`.execute(
+        trx,
+      );
+      await sql`INSERT INTO app.travel_places (place_id, owner_userid, want_to_go, archived)
+        VALUES (${entityId}, ${owner}, ${relationshipPayload.want_to_go ?? false}, ${relationshipPayload.archived ?? false})`.execute(
+        trx,
+      );
+    }
+    return {
+      entity: await readById(trx, 'place', owner, entityId),
+      action: current ? 'updated' : 'created',
+      created: current ? 0 : 1,
+      updated: current ? 1 : 0,
+      unchanged: 0,
+    };
   });
 }
 
@@ -320,7 +386,7 @@ export async function deleteTravelEntity(owner: string, entity: Entity, input: R
     if (entity === 'journey') {
       const refs = await sql<{
         count: number;
-      }>`SELECT (SELECT count(*) FROM app.travel_journey_segments WHERE owner_userid = ${owner} AND journey_id = ${id}) + (SELECT count(*) FROM app.travel_transport WHERE owner_userid = ${owner} AND journey_id = ${id}) + (SELECT count(*) FROM app.travel_stays WHERE owner_userid = ${owner} AND journey_id = ${id}) AS count`.execute(
+      }>`SELECT (SELECT count(*) FROM app.travel_journey_segments WHERE owner_userid=${owner} AND journey_id=${id}) + (SELECT count(*) FROM app.travel_transport WHERE owner_userid=${owner} AND journey_id=${id}) + (SELECT count(*) FROM app.travel_stays WHERE owner_userid=${owner} AND journey_id=${id}) AS count`.execute(
         trx,
       );
       if (Number(refs.rows[0]?.count ?? 0) > 0 && input.cascade !== true)
@@ -331,13 +397,13 @@ export async function deleteTravelEntity(owner: string, entity: Entity, input: R
         };
       if (input.cascade === true) {
         const [segments, transport, stays] = await Promise.all([
-          sql<Row>`SELECT * FROM app.travel_journey_segments WHERE owner_userid = ${owner} AND journey_id = ${id} ORDER BY seq`.execute(
+          sql<Row>`SELECT * FROM app.travel_journey_segments WHERE owner_userid=${owner} AND journey_id=${id} ORDER BY seq`.execute(
             trx,
           ),
-          sql<Row>`SELECT * FROM app.travel_transport WHERE owner_userid = ${owner} AND journey_id = ${id}`.execute(
+          sql<Row>`SELECT * FROM app.travel_transport WHERE owner_userid=${owner} AND journey_id=${id}`.execute(
             trx,
           ),
-          sql<Row>`SELECT * FROM app.travel_stays WHERE owner_userid = ${owner} AND journey_id = ${id}`.execute(
+          sql<Row>`SELECT * FROM app.travel_stays WHERE owner_userid=${owner} AND journey_id=${id}`.execute(
             trx,
           ),
         ]);
@@ -348,38 +414,15 @@ export async function deleteTravelEntity(owner: string, entity: Entity, input: R
         };
       }
     }
-    if (entity === 'place') {
-      const refs = await sql<{
-        count: number;
-      }>`SELECT (SELECT count(*) FROM app.travel_journey_segments WHERE owner_userid = ${owner} AND place_id = ${id}) + (SELECT count(*) FROM app.travel_residences WHERE owner_userid = ${owner} AND place_id = ${id}) AS count`.execute(
-        trx,
-      );
-      if (Number(refs.rows[0]?.count ?? 0) > 0)
-        return {
-          deleted: null,
-          reason: 'place_in_use',
-          referencingCount: Number(refs.rows[0]?.count ?? 0),
-        };
-    }
-    if (entity === 'airport') {
-      const code = String(current.code);
-      const refs = await sql<{
-        count: number;
-      }>`SELECT count(*) AS count FROM app.travel_transport WHERE owner_userid = ${owner} AND (origin = ${code} OR destination = ${code})`.execute(
-        trx,
-      );
-      if (Number(refs.rows[0]?.count ?? 0) > 0)
-        return {
-          deleted: null,
-          reason: 'airport_in_use',
-          referencingCount: Number(refs.rows[0]?.count ?? 0),
-        };
-    }
     const deleted = cascadeSnapshot ? { ...current, cascaded: cascadeSnapshot } : current;
     if (input.dryRun === true) return { deleted, notFound: [], dryRun: true };
-    await sql`DELETE FROM ${table(entity)} WHERE owner_userid = ${owner} AND id = ${id}`.execute(
-      trx,
-    );
+    if (entity === 'place') {
+      await sql`DELETE FROM app.travel_places WHERE owner_userid = ${owner} AND place_id = ${id}`.execute(
+        trx,
+      );
+      return { deleted, notFound: [] };
+    }
+    await sql`DELETE FROM ${table(entity)} WHERE owner_userid=${owner} AND id=${id}`.execute(trx);
     return { deleted, notFound: [] };
   });
 }
@@ -387,19 +430,11 @@ export async function deleteTravelEntity(owner: string, entity: Entity, input: R
 export async function getTravelWriteEntity(
   owner: string,
   entity: 'transport' | 'stay',
-  input: { id?: string; legacyId?: string },
+  input: { id: string },
 ) {
-  const result = input.id
-    ? await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid = ${owner} AND id = ${input.id} LIMIT 1`.execute(
-        db,
-      )
-    : entity === 'transport'
-      ? await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid = ${owner} AND legacy_id = ${String(input.legacyId)} ORDER BY date NULLS LAST LIMIT 2`.execute(
-          db,
-        )
-      : await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid = ${owner} AND legacy_id = ${String(input.legacyId)} LIMIT 2`.execute(
-          db,
-        );
-  if (result.rows.length > 1) return { entity: null, reason: 'ambiguous_legacy_id' };
+  const result =
+    await sql<Row>`SELECT * FROM ${table(entity)} WHERE owner_userid=${owner} AND id=${input.id} LIMIT 1`.execute(
+      db,
+    );
   return { entity: result.rows[0] ? camel(result.rows[0]) : null, reason: null };
 }

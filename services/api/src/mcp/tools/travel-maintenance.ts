@@ -1,6 +1,5 @@
 import {
   cloneTravelJourney,
-  mergeTravelAirports,
   mergeTravelPlace,
   mergeTravelSegments,
   refreshTravelPlaces,
@@ -22,7 +21,7 @@ import { registerTool } from '../tool-registry';
 
 const write = { readOnly: false, scopes: ['travel:write'], resultCap: 100 } as const;
 
-for (const entity of ['place', 'airport', 'idea'] as const) {
+for (const entity of ['place', 'idea'] as const) {
   registerTool(
     {
       ...write,
@@ -105,23 +104,6 @@ registerTool(
     preview: async (_owner, input) => ({ fromId: input.fromId, intoId: input.intoId }),
   },
   (owner, input) => mergeTravelPlace(owner, input),
-);
-
-registerTool(
-  {
-    ...write,
-    name: 'travel_airport_merge',
-    title: 'Merge travel airports',
-    description:
-      'Repoints transport legs to a canonical airport code and removes the source airport. Mode: write. Use when: an operator confirms duplicate or replaced airport identity. Do not use when: codes are distinct. Prerequisites: source and destination ids and iUnderstand=true. Produces: deleted snapshot and leg count.',
-    inputSchema: travelMergeInputSchema,
-    outputSchema: travelMaintenanceOutputSchema,
-    destructive: true,
-    idempotent: true,
-    requiresConfirmation: true,
-    preview: async (_owner, input) => ({ fromId: input.fromId, intoId: input.intoId }),
-  },
-  (owner, input) => mergeTravelAirports(owner, input),
 );
 
 registerTool(

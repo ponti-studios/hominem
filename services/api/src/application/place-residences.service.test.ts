@@ -4,10 +4,10 @@ import { authDb, db } from '@hominem/db/core';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import {
-  createTravelResidence,
-  deleteTravelResidence,
-  updateTravelResidence,
-} from './travel-residences.service';
+  createPlaceResidence,
+  deletePlaceResidence,
+  updatePlaceResidence,
+} from './place-residences.service';
 
 describe('travel residence writes', () => {
   const owners: string[] = [];
@@ -29,18 +29,26 @@ describe('travel residence writes', () => {
       })
       .execute();
     const [place] = await db
-      .insertInto('app.travelPlaces')
+      .insertInto('app.places')
       .values({
         ownerUserid: owner,
-        legacyId: `PLC-${owner}`,
-        place: 'ZZZ Residence probe',
+        name: 'ZZZ Residence probe',
         country: 'ZZZ Probe',
-        type: 'city',
-        status: 'Visited',
+        placeType: 'city',
       })
       .returning('id')
       .execute();
-    return { owner, placeId: place!.id };
+    const [otherPlace] = await db
+      .insertInto('app.places')
+      .values({
+        ownerUserid: owner,
+        name: 'ZZZ Other residence probe',
+        country: 'ZZZ Probe',
+        placeType: 'city',
+      })
+      .returning('id')
+      .execute();
+    return { owner, placeId: place!.id, otherPlaceId: otherPlace!.id };
   }
 
   const period = {
@@ -51,17 +59,17 @@ describe('travel residence writes', () => {
   };
 
   it('returns timestamps, serializes current-home writes, and rejects multiple ongoing periods', async () => {
-    const { owner, placeId } = await fixture();
+    const { owner, placeId, otherPlaceId } = await fixture();
     await expect(
-      createTravelResidence(owner, {
+      createPlaceResidence(owner, {
         placeId,
         periods: [period, { ...period, startDate: '2021-01-01' }],
         dryRun: true,
       }),
     ).rejects.toThrow('multiple_current_periods');
     const results = await Promise.allSettled([
-      createTravelResidence(owner, { placeId, legacyId: 'RES-PROBE-1', periods: [period] }),
-      createTravelResidence(owner, { placeId, legacyId: 'RES-PROBE-2', periods: [period] }),
+      createPlaceResidence(owner, { placeId, periods: [period] }),
+      createPlaceResidence(owner, { placeId: otherPlaceId, periods: [period] }),
     ]);
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
     expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
@@ -77,9 +85,8 @@ describe('travel residence writes', () => {
 
   it('uses version predicates for update/delete and reports projected dry-run creates', async () => {
     const { owner, placeId } = await fixture();
-    const preview = await createTravelResidence(owner, {
+    const preview = await createPlaceResidence(owner, {
       placeId,
-      legacyId: 'RES-DRY',
       periods: [{ ...period, ongoing: false, endDate: '2020-02-01' }],
       dryRun: true,
     });
@@ -89,49 +96,47 @@ describe('travel residence writes', () => {
       unchanged: 0,
       residence: { createdAt: expect.any(String), updatedAt: expect.any(String) },
     });
-    const residence = await createTravelResidence(owner, {
+    const residence = await createPlaceResidence(owner, {
       placeId,
-      legacyId: 'RES-STALE',
       periods: [{ ...period, ongoing: false, endDate: '2020-02-01' }],
     });
     if (!residence.residence) throw new Error('Expected residence');
-    const duplicate = await createTravelResidence(owner, {
+    const duplicate = await createPlaceResidence(owner, {
       placeId,
-      legacyId: 'RES-STALE',
       periods: [{ ...period, ongoing: false, endDate: '2020-02-01' }],
     });
     expect(duplicate).toMatchObject({ created: 0, updated: 0, unchanged: 1 });
-    const projectedUpdate = await updateTravelResidence(owner, {
+    const projectedUpdate = await updatePlaceResidence(owner, {
       id: residence.residence.id,
       notes: 'projected',
       dryRun: true,
     });
     expect(projectedUpdate).toMatchObject({ created: 0, updated: 1, unchanged: 0 });
-    const updated = await updateTravelResidence(owner, {
+    const updated = await updatePlaceResidence(owner, {
       id: residence.residence.id,
       notes: 'saved',
     });
     expect(updated).toMatchObject({ created: 0, updated: 1, unchanged: 0 });
-    const unchanged = await updateTravelResidence(owner, {
+    const unchanged = await updatePlaceResidence(owner, {
       id: residence.residence.id,
       notes: 'saved',
     });
     expect(unchanged).toMatchObject({ created: 0, updated: 0, unchanged: 1 });
     await expect(
-      updateTravelResidence(owner, {
+      updatePlaceResidence(owner, {
         id: residence.residence.id,
         notes: 'stale',
         ifUpdatedAt: '2000-01-01T00:00:00.000Z',
       }),
     ).rejects.toThrow('version_conflict');
     await expect(
-      deleteTravelResidence(owner, {
+      deletePlaceResidence(owner, {
         id: residence.residence.id,
         ifUpdatedAt: '2000-01-01T00:00:00.000Z',
       }),
     ).rejects.toThrow('version_conflict');
     const stillThere = await db
-      .selectFrom('app.travelResidences')
+      .selectFrom('app.placeResidences')
       .select('id')
       .where('id', '=', residence.residence.id)
       .executeTakeFirst();

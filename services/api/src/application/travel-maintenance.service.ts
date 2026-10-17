@@ -6,20 +6,10 @@ import { ValidationError } from '@hominem/db/errors';
 import type * as z from 'zod';
 
 import { travelJourneySaveInputSchema } from '../schemas/travel-maintenance.schema';
+import { resolveAirportSelection } from './airport-catalogue.service';
 
 type Row = Record<string, unknown>;
 type WriteAction = 'created' | 'updated' | 'unchanged';
-const legacy = async (trx: TransactionHandle, owner: string, table: string, prefix: string) => {
-  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${owner}:${table}:legacy_id`}, 0))`.execute(
-    trx,
-  );
-  const result = await sql<{
-    next: number;
-  }>`SELECT coalesce(max(substring(legacy_id from '[0-9]+$')::int), 0) + 1 AS next FROM ${sql.raw(`app.${table}`)} WHERE owner_userid = ${owner}`.execute(
-    trx,
-  );
-  return `${prefix}-${String(result.rows[0]?.next ?? 1).padStart(3, '0')}`;
-};
 const shiftDate = (value: unknown, delta: number) => {
   if (typeof value !== 'string') return value;
   const date = new Date(`${value.slice(0, 10)}T00:00:00Z`);
@@ -34,12 +24,13 @@ async function upsertDossierRow(
   fields: Row,
   key: string[],
   dryRun = false,
+  id?: string,
 ): Promise<{ action: WriteAction; row: Row }> {
   const where = key.map(
     (column) => sql`${sql.ref(column)} IS NOT DISTINCT FROM ${fields[column] ?? null}`,
   );
   const existing =
-    await sql<Row>`SELECT * FROM ${sql.raw(`app.${tableName}`)} WHERE owner_userid = ${owner} AND ${sql.join(where, sql` AND `)} LIMIT 1`.execute(
+    await sql<Row>`SELECT * FROM ${sql.raw(`app.${tableName}`)} WHERE owner_userid = ${owner} AND ${id ? sql`id=${id}` : sql.join(where, sql` AND `)} LIMIT 1`.execute(
       trx,
     );
   const current = existing.rows[0];
@@ -47,7 +38,10 @@ async function upsertDossierRow(
     !current ||
     Object.entries(fields).some(
       ([column, value]) =>
-        JSON.stringify(current[column] ?? null) !== JSON.stringify(value ?? null),
+        JSON.stringify(
+          current[column.replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase())] ??
+            null,
+        ) !== JSON.stringify(value ?? null),
     );
   if (!changed) return { action: 'unchanged', row: current };
   if (dryRun)
@@ -91,9 +85,6 @@ export async function saveTravelJourney(
       stays: { created: 0, updated: 0, unchanged: 0 },
     };
     const journeyFields = {
-      legacy_id: String(
-        input.journey.legacyId ?? (await legacy(trx, owner, 'travel_journeys', 'JRN')),
-      ),
       name: input.journey.name,
       start_date: input.journey.startDate ?? null,
       end_date: input.journey.endDate ?? null,
@@ -106,29 +97,15 @@ export async function saveTravelJourney(
       owner,
       'travel_journeys',
       journeyFields,
-      ['legacy_id'],
+      ['name', 'start_date', 'end_date'],
       input.dryRun,
+      input.journey.id,
     );
     counters.journeys[journey.action] += 1;
     const journeyId = String(journey.row?.id ?? '');
     const localSegments = new Map<string, string>();
-    const segmentIdByLegacy = new Map<string, string>();
-    const suppliedSegmentIds = new Set(
-      input.segments.flatMap((segment) => (segment.legacyId ? [segment.legacyId] : [])),
-    );
-    const duplicateSequence = await sql<{ seq: number; legacy_id: string }>`
-      SELECT seq, legacy_id FROM app.travel_journey_segments
-      WHERE owner_userid = ${owner} AND journey_id = ${journeyId}
-        AND seq = ANY(${input.segments.map((segment) => segment.seq)})
-    `.execute(trx);
-    if (duplicateSequence.rows.some((row) => !suppliedSegmentIds.has(row.legacy_id)))
-      throw new ValidationError('segments_invalid:duplicate_seq');
     for (const source of input.segments) {
-      const legacyId = String(
-        source.legacyId ?? (await legacy(trx, owner, 'travel_journey_segments', 'SEG')),
-      );
-      const fields = {
-        legacy_id: legacyId,
+      const fields: Row = {
         journey_id: journeyId,
         seq: Number(source.seq),
         place_id: String(source.placeId),
@@ -137,50 +114,36 @@ export async function saveTravelJourney(
         notes: source.notes ?? null,
       };
       const place = await sql<{ id: string }>`
-        SELECT id FROM app.travel_places WHERE owner_userid = ${owner} AND id = ${fields.place_id}
+        SELECT id FROM app.places WHERE owner_userid = ${owner} AND id = ${fields.place_id}
       `.execute(trx);
-      if (!place.rows.length)
-        throw new ValidationError(`segments_invalid:unknown_place:${legacyId}`);
-      const priorSegment = await sql<{ journey_id: string; journeyId?: string }>`
-        SELECT journey_id FROM app.travel_journey_segments
-        WHERE owner_userid = ${owner} AND legacy_id = ${legacyId}
-      `.execute(trx);
-      if (
-        priorSegment.rows[0] &&
-        String(priorSegment.rows[0].journey_id ?? priorSegment.rows[0].journeyId) !== journeyId
-      )
-        throw new ValidationError(`segments_invalid:journey_mismatch:${legacyId}`);
+      if (!place.rows.length) throw new ValidationError('segments_invalid:unknown_place');
       const saved = await upsertDossierRow(
         trx,
         owner,
         'travel_journey_segments',
         fields,
-        ['legacy_id'],
+        ['journey_id', 'seq'],
         input.dryRun,
+        source.id,
       );
-      if (String(saved.row?.journey_id ?? saved.row?.journeyId) !== journeyId && !input.dryRun)
-        throw new ValidationError(`segments_invalid:journey_mismatch:${legacyId}`);
+      if (String(saved.row?.journey_id ?? journeyId) !== journeyId)
+        throw new ValidationError('segments_invalid:journey_mismatch');
       counters.segments[saved.action] += 1;
-      segmentIdByLegacy.set(legacyId, String(saved.row?.id ?? randomUUID()));
       if (typeof source.key === 'string')
-        localSegments.set(source.key, segmentIdByLegacy.get(legacyId)!);
+        localSegments.set(source.key, String(saved.row?.id ?? randomUUID()));
     }
     for (const source of input.transport) {
-      const legacyId = String(
-        source.legacyId ?? (await legacy(trx, owner, 'travel_transport', 'T')),
-      );
-      const depSegmentId = String(source.depSegmentLegacyId ?? source.depSegmentKey ?? '')
-        ? (segmentIdByLegacy.get(String(source.depSegmentLegacyId)) ??
-          localSegments.get(String(source.depSegmentKey)) ??
-          null)
-        : null;
-      const arrSegmentId = String(source.arrSegmentLegacyId ?? source.arrSegmentKey ?? '')
-        ? (segmentIdByLegacy.get(String(source.arrSegmentLegacyId)) ??
-          localSegments.get(String(source.arrSegmentKey)) ??
-          null)
-        : null;
-      const fields = {
-        legacy_id: legacyId,
+      const depSegmentId = source.depSegmentId
+        ? String(source.depSegmentId)
+        : source.depSegmentKey
+          ? (localSegments.get(source.depSegmentKey) ?? null)
+          : null;
+      const arrSegmentId = source.arrSegmentId
+        ? String(source.arrSegmentId)
+        : source.arrSegmentKey
+          ? (localSegments.get(source.arrSegmentKey) ?? null)
+          : null;
+      const fields: Row = {
         date: source.date ?? null,
         mode: source.mode,
         origin: String(source.origin),
@@ -195,38 +158,44 @@ export async function saveTravelJourney(
         notes: source.notes ?? null,
       };
       if (
-        ((source.depSegmentLegacyId || source.depSegmentKey) && !depSegmentId) ||
-        ((source.arrSegmentLegacyId || source.arrSegmentKey) && !arrSegmentId)
+        ((source.depSegmentId || source.depSegmentKey) && !depSegmentId) ||
+        ((source.arrSegmentId || source.arrSegmentKey) && !arrSegmentId)
       )
-        throw new ValidationError(`unknown_segment:${legacyId}`);
-      const airports = await sql<{
-        originExists: boolean;
-        destinationExists: boolean;
-      }>`SELECT EXISTS (SELECT 1 FROM app.travel_airports WHERE owner_userid = ${owner} AND code = ${fields.origin}) AS "originExists", EXISTS (SELECT 1 FROM app.travel_airports WHERE owner_userid = ${owner} AND code = ${fields.destination}) AS "destinationExists"`.execute(
-        trx,
-      );
-      if (!airports.rows[0]?.originExists || !airports.rows[0]?.destinationExists)
-        throw new ValidationError(`transport_invalid:unknown_airport:${legacyId}`);
+        throw new ValidationError('unknown_segment');
+      const origin = await resolveAirportSelection(trx, owner, {
+        code: source.origin,
+        referenceId: source.originReferenceId,
+      });
+      const destination = await resolveAirportSelection(trx, owner, {
+        code: source.destination,
+        referenceId: source.destinationReferenceId,
+      });
+      if (!origin || !destination) throw new ValidationError('unknown_airport');
+      fields.origin = origin.code;
+      fields.destination = destination.code;
+      fields.origin_reference_id = origin.referenceId;
+      fields.destination_reference_id = destination.referenceId;
       const saved = await upsertDossierRow(
         trx,
         owner,
         'travel_transport',
         fields,
-        ['legacy_id', 'journey_id', 'date', 'origin', 'destination'],
+        ['journey_id', 'date', 'origin', 'destination', 'carrier', 'number'],
         input.dryRun,
+        source.id,
       );
       counters.transport[saved.action] += 1;
     }
     for (const source of input.stays) {
-      const legacyId = String(source.legacyId ?? (await legacy(trx, owner, 'travel_stays', 'STY')));
-      const segmentId =
-        segmentIdByLegacy.get(String(source.segmentLegacyId ?? '')) ??
-        localSegments.get(String(source.segmentKey ?? ''));
-      if (!segmentId) throw new ValidationError(`unknown_segment:${legacyId}`);
+      const segmentId = source.segmentId
+        ? String(source.segmentId)
+        : source.segmentKey
+          ? (localSegments.get(source.segmentKey) ?? null)
+          : null;
+      if (!segmentId && source.evidence !== 'want') throw new ValidationError('unknown_segment');
       const fields = {
-        legacy_id: legacyId,
         segment_id: segmentId,
-        journey_id: journeyId,
+        journey_id: segmentId ? journeyId : null,
         check_in: source.checkIn ?? null,
         check_out: source.checkOut ?? null,
         city: source.city,
@@ -241,8 +210,9 @@ export async function saveTravelJourney(
         owner,
         'travel_stays',
         fields,
-        ['legacy_id'],
+        segmentId ? ['segment_id', 'property', 'check_in'] : ['property', 'city'],
         input.dryRun,
+        source.id,
       );
       counters.stays[saved.action] += 1;
     }
@@ -335,34 +305,69 @@ export async function mergeTravelPlace(
 ) {
   return runInTransaction(async (trx) => {
     const found =
-      await sql<Row>`SELECT * FROM app.travel_places WHERE owner_userid = ${owner} AND id = ANY(${[input.fromId, input.intoId]})`.execute(
+      await sql<Row>`SELECT p.* FROM app.places p JOIN app.travel_places t ON t.place_id = p.id AND t.owner_userid = p.owner_userid WHERE p.owner_userid = ${owner} AND p.id = ANY(${[input.fromId, input.intoId]})`.execute(
         trx,
       );
     const from = found.rows.find((row) => row.id === input.fromId);
     const into = found.rows.find((row) => row.id === input.intoId);
     if (!from || !into) return { merged: false, reason: 'notFound' };
-    const count = await sql<{
-      count: number;
-    }>`SELECT count(*) AS count FROM app.travel_journey_segments WHERE owner_userid = ${owner} AND place_id = ${input.fromId}`.execute(
+    const counts = await sql<{
+      segments: number;
+      residences: number;
+      visits: number;
+    }>`SELECT
+      (SELECT count(*) FROM app.travel_journey_segments WHERE owner_userid = ${owner} AND place_id = ${input.fromId}) AS segments,
+      (SELECT count(*) FROM app.place_residences WHERE owner_userid = ${owner} AND place_id = ${input.fromId}) AS residences,
+      (SELECT count(*) FROM app.place_visits WHERE owner_userid = ${owner} AND place_id = ${input.fromId}) AS visits`.execute(
       trx,
     );
     if (input.dryRun)
       return {
         merged: true,
         dryRun: true,
-        segmentsRepointed: Number(count.rows[0]?.count ?? 0),
+        segmentsRepointed: Number(counts.rows[0]?.segments ?? 0),
+        residencesRepointed: Number(counts.rows[0]?.residences ?? 0),
+        visitsRepointed: Number(counts.rows[0]?.visits ?? 0),
         deleted: from,
       };
+    await sql`INSERT INTO app.travel_places (owner_userid, place_id, want_to_go, archived)
+      SELECT owner_userid, ${input.intoId}, want_to_go, archived FROM app.travel_places
+      WHERE owner_userid = ${owner} AND place_id = ${input.fromId}
+      ON CONFLICT (place_id) DO UPDATE SET
+        want_to_go = app.travel_places.want_to_go OR EXCLUDED.want_to_go,
+        archived = app.travel_places.archived AND EXCLUDED.archived`.execute(trx);
+    await sql`DELETE FROM app.travel_places WHERE owner_userid = ${owner} AND place_id = ${input.fromId}`.execute(
+      trx,
+    );
     await sql`UPDATE app.travel_journey_segments SET place_id = ${input.intoId} WHERE owner_userid = ${owner} AND place_id = ${input.fromId}`.execute(
       trx,
     );
-    await sql`UPDATE app.travel_residences SET place_id = ${input.intoId} WHERE owner_userid = ${owner} AND place_id = ${input.fromId}`.execute(
+    await sql`UPDATE app.place_residences SET place_id = ${input.intoId} WHERE owner_userid = ${owner} AND place_id = ${input.fromId}`.execute(
       trx,
     );
-    await sql`DELETE FROM app.travel_places WHERE owner_userid = ${owner} AND id = ${input.fromId}`.execute(
+    await sql`UPDATE app.place_visits SET place_id = ${input.intoId} WHERE owner_userid = ${owner} AND place_id = ${input.fromId}`.execute(
       trx,
     );
-    return { merged: true, deleted: from, segmentsRepointed: Number(count.rows[0]?.count ?? 0) };
+    await sql`DELETE FROM app.tag_assignments duplicate
+      USING app.tag_assignments canonical
+      WHERE duplicate.entity_table = 'app.places'::regclass
+        AND duplicate.entity_id = ${input.fromId}
+        AND canonical.entity_table = duplicate.entity_table
+        AND canonical.entity_id = ${input.intoId}
+        AND canonical.tag_id = duplicate.tag_id
+        AND canonical.removed_at IS NULL AND duplicate.removed_at IS NULL`.execute(trx);
+    await sql`UPDATE app.tag_assignments SET entity_id = ${input.intoId}
+      WHERE entity_table = 'app.places'::regclass AND entity_id = ${input.fromId}`.execute(trx);
+    await sql`DELETE FROM app.places WHERE owner_userid = ${owner} AND id = ${input.fromId}`.execute(
+      trx,
+    );
+    return {
+      merged: true,
+      deleted: from,
+      segmentsRepointed: Number(counts.rows[0]?.segments ?? 0),
+      residencesRepointed: Number(counts.rows[0]?.residences ?? 0),
+      visitsRepointed: Number(counts.rows[0]?.visits ?? 0),
+    };
   });
 }
 
@@ -405,24 +410,25 @@ export async function mergeTravelAirports(
 
 export async function refreshTravelPlaces(owner: string, dryRun: boolean) {
   return runInTransaction(async (trx) => {
-    const result =
-      await sql<Row>`SELECT p.id, p.place, p.status, p.first_visited, p.last_visited, min(s.arrival_date) AS derived_first, max(s.departure_date) AS derived_last, count(s.id) AS visits FROM app.travel_places p LEFT JOIN app.travel_journey_segments s ON s.owner_userid = p.owner_userid AND s.place_id = p.id WHERE p.owner_userid = ${owner} GROUP BY p.id ORDER BY p.place`.execute(
-        trx,
-      );
+    const result = await sql<Row>`SELECT p.id, p.name, p.first_visited, p.last_visited,
+        min(s.arrival_date) AS derived_first, max(s.departure_date) AS derived_last
+        FROM app.places p JOIN app.travel_places t ON t.place_id = p.id AND t.owner_userid = p.owner_userid
+        LEFT JOIN app.travel_journey_segments s
+          ON s.owner_userid = p.owner_userid AND s.place_id = p.id
+        WHERE p.owner_userid = ${owner}
+        GROUP BY p.id ORDER BY p.name`.execute(trx);
     const diff: Row[] = [];
     for (const row of result.rows) {
-      const status = Number(row.visits) > 0 ? 'Visited' : 'Want to go';
       for (const [field, stored, derived] of [
-        ['status', row.status, status],
         ['firstVisited', row.first_visited, row.derived_first],
         ['lastVisited', row.last_visited, row.derived_last],
       ] as const) {
         const a = stored == null ? null : String(stored).slice(0, 10);
         const b = derived == null ? null : String(derived).slice(0, 10);
-        if (a !== b) diff.push({ id: row.id, place: row.place, field, stored: a, derived: b });
+        if (a !== b) diff.push({ id: row.id, place: row.name, field, stored: a, derived: b });
       }
       if (!dryRun)
-        await sql`UPDATE app.travel_places SET status = ${status}, first_visited = ${row.derived_first}, last_visited = ${row.derived_last} WHERE owner_userid = ${owner} AND id = ${String(row.id)}`.execute(
+        await sql`UPDATE app.places SET first_visited = ${row.derived_first}, last_visited = ${row.derived_last} WHERE owner_userid = ${owner} AND id = ${String(row.id)}`.execute(
           trx,
         );
     }
@@ -471,30 +477,28 @@ export async function cloneTravelJourney(
         dateShiftDays: delta,
       };
     const newJourneyId = randomUUID();
-    const newJourneyLegacy = await legacy(trx, owner, 'travel_journeys', 'JRN');
-    await sql`INSERT INTO app.travel_journeys (id, owner_userid, legacy_id, name, start_date, end_date, purpose, notes, archived) VALUES (${newJourneyId}, ${owner}, ${newJourneyLegacy}, ${input.name ?? `${String(journey.name)} (copy)`}, ${shiftDate(journey.start_date, delta)}, ${shiftDate(journey.end_date, delta)}, ${journey.purpose}, ${journey.notes}, false)`.execute(
+    await sql`INSERT INTO app.travel_journeys (id, owner_userid, name, start_date, end_date, purpose, notes, archived) VALUES (${newJourneyId}, ${owner}, ${input.name ?? `${String(journey.name)} (copy)`}, ${shiftDate(journey.start_date, delta)}, ${shiftDate(journey.end_date, delta)}, ${journey.purpose}, ${journey.notes}, false)`.execute(
       trx,
     );
     const segmentIds = new Map<string, string>();
     for (const segment of segments.rows) {
       const id = randomUUID();
       segmentIds.set(String(segment.id), id);
-      await sql`INSERT INTO app.travel_journey_segments (id, owner_userid, legacy_id, journey_id, seq, place_id, arrival_date, departure_date, notes) VALUES (${id}, ${owner}, ${await legacy(trx, owner, 'travel_journey_segments', 'SEG')}, ${newJourneyId}, ${segment.seq}, ${segment.place_id}, ${shiftDate(segment.arrival_date, delta)}, ${shiftDate(segment.departure_date, delta)}, ${segment.notes})`.execute(
+      await sql`INSERT INTO app.travel_journey_segments (id, owner_userid, journey_id, seq, place_id, arrival_date, departure_date, notes) VALUES (${id}, ${owner}, ${newJourneyId}, ${segment.seq}, ${segment.place_id}, ${shiftDate(segment.arrival_date, delta)}, ${shiftDate(segment.departure_date, delta)}, ${segment.notes})`.execute(
         trx,
       );
     }
     for (const leg of transports.rows)
-      await sql`INSERT INTO app.travel_transport (id, owner_userid, legacy_id, date, mode, origin, destination, carrier, number, booking_ref, dep_segment_id, arr_segment_id, journey_id, legacy_trip, notes) VALUES (${randomUUID()}, ${owner}, ${await legacy(trx, owner, 'travel_transport', 'T')}, ${shiftDate(leg.date, delta)}, ${leg.mode}, ${leg.origin}, ${leg.destination}, ${leg.carrier}, ${leg.number}, NULL, ${segmentIds.get(String(leg.dep_segment_id)) ?? null}, ${segmentIds.get(String(leg.arr_segment_id)) ?? null}, ${newJourneyId}, ${leg.legacy_trip}, ${leg.notes})`.execute(
+      await sql`INSERT INTO app.travel_transport (id, owner_userid, date, mode, origin, destination, origin_reference_id, destination_reference_id, carrier, number, booking_ref, dep_segment_id, arr_segment_id, journey_id, legacy_trip, notes) VALUES (${randomUUID()}, ${owner}, ${shiftDate(leg.date, delta)}, ${leg.mode}, ${leg.origin}, ${leg.destination}, ${leg.origin_reference_id}, ${leg.destination_reference_id}, ${leg.carrier}, ${leg.number}, NULL, ${segmentIds.get(String(leg.dep_segment_id)) ?? null}, ${segmentIds.get(String(leg.arr_segment_id)) ?? null}, ${newJourneyId}, ${leg.legacy_trip}, ${leg.notes})`.execute(
         trx,
       );
     for (const stay of stays.rows)
-      await sql`INSERT INTO app.travel_stays (id, owner_userid, legacy_id, segment_id, journey_id, check_in, check_out, city, country, property, booking_ref, evidence, notes) VALUES (${randomUUID()}, ${owner}, ${await legacy(trx, owner, 'travel_stays', 'STY')}, ${segmentIds.get(String(stay.segment_id)) ?? null}, ${newJourneyId}, ${shiftDate(stay.check_in, delta)}, ${shiftDate(stay.check_out, delta)}, ${stay.city}, ${stay.country}, ${stay.property}, NULL, ${stay.evidence}, ${stay.notes})`.execute(
+      await sql`INSERT INTO app.travel_stays (id, owner_userid, segment_id, journey_id, check_in, check_out, city, country, property, booking_ref, evidence, notes) VALUES (${randomUUID()}, ${owner}, ${segmentIds.get(String(stay.segment_id)) ?? null}, ${newJourneyId}, ${shiftDate(stay.check_in, delta)}, ${shiftDate(stay.check_out, delta)}, ${stay.city}, ${stay.country}, ${stay.property}, NULL, ${stay.evidence}, ${stay.notes})`.execute(
         trx,
       );
     return {
       journey: {
         id: newJourneyId,
-        legacyId: newJourneyLegacy,
         name: input.name ?? `${String(journey.name)} (copy)`,
       },
       counts: {

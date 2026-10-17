@@ -15,13 +15,6 @@ import {
   listTravelTransport,
   lookupTravelBooking,
 } from '../../application/travel-read.service';
-import {
-  createTravelResidence,
-  deleteTravelResidence,
-  getTravelResidence,
-  listTravelResidences,
-  updateTravelResidence,
-} from '../../application/travel-residences.service';
 import { listTripHistory } from '../../application/travel.service';
 import {
   travelImportInputSchema,
@@ -55,16 +48,6 @@ import {
   travelWishlistInputSchema,
   travelWishlistOutputSchema,
 } from '../../schemas/travel-read.schema';
-import {
-  travelResidenceCreateInputSchema,
-  travelResidenceDeleteInputSchema,
-  travelResidenceGetInputSchema,
-  travelResidenceListInputSchema,
-  travelResidenceListOutputSchema,
-  travelResidenceMutationOutputSchema,
-  travelResidenceOutputSchema,
-  travelResidenceUpdateInputSchema,
-} from '../../schemas/travel-residences.schema';
 import { tripHistoryInputSchema, tripHistoryOutputSchema } from '../../schemas/travel.schema';
 import { registerTool } from '../tool-registry';
 
@@ -86,7 +69,6 @@ registerTool(
   },
   (ownerUserId, input) => listTripHistory(ownerUserId, input),
 );
-
 const readTool = {
   readOnly: true,
   scopes: ['travel:read'],
@@ -99,7 +81,7 @@ registerTool(
     name: 'travel_journey_list',
     title: 'List travel journeys',
     description:
-      'Lists journeys with derived stop summaries and filters. Mode: read-only. Use when: the user asks for trips, journeys, or a date range. Do not use when: the user asks only for legacy calendar trips; use trip_history. Prerequisites: none. Produces: journey ids and legacyIds.',
+      'Lists journeys with derived stop summaries and filters. Mode: read-only. Use when: the user asks for trips, journeys, or a date range. Do not use when: the user asks only for legacy calendar trips; use trip_history. Prerequisites: none. Produces: journey UUIDs.',
     inputSchema: travelJourneyListInputSchema,
     outputSchema: travelJourneyListOutputSchema,
   },
@@ -111,7 +93,7 @@ registerTool(
     name: 'travel_journey_get',
     title: 'Get travel journey',
     description:
-      'Returns a complete journey dossier with stops, legs, resolved airports, distances, and stays. Mode: read-only. Use when: the user asks about one journey. Do not use when: a list or aggregate answers the question. Prerequisites: identify by id or legacyId. Produces: journey, segment, transport, airport, and stay ids.',
+      'Returns a complete journey dossier with stops, legs, resolved airports, distances, and stays. Mode: read-only. Use when: the user asks about one journey. Do not use when: a list or aggregate answers the question. Prerequisites: identify by UUID. Produces: journey, segment, transport, airport, and stay ids.',
     inputSchema: travelJourneyGetInputSchema,
     outputSchema: travelEntityOutputSchema,
   },
@@ -135,7 +117,7 @@ registerTool(
     name: 'travel_segment_get',
     title: 'Get travel segment',
     description:
-      'Returns one stop with its journey, arrival and departure legs, and stays. Mode: read-only. Use when: the user asks about a particular stop. Do not use when: they mean a restaurant or venue visit. Prerequisites: identify by id or legacyId. Produces: segment, journey, leg, and stay ids.',
+      'Returns one stop with its journey, arrival and departure legs, and stays. Mode: read-only. Use when: the user asks about a particular stop. Do not use when: they mean a restaurant or venue visit. Prerequisites: identify by UUID. Produces: segment, journey, leg, and stay ids.',
     inputSchema: travelSegmentGetInputSchema,
     outputSchema: travelEntityOutputSchema,
   },
@@ -147,7 +129,7 @@ registerTool(
     name: 'travel_place_list',
     title: 'List travel places',
     description:
-      'Lists canonical travel places with derived visit and residence relationships. Mode: read-only. Use when: the user asks about destinations, countries, or visited and wanted places. Do not use when: they ask about venues or restaurants; use place_visit_history. Prerequisites: none. Produces: travel place ids and legacyIds.',
+      'Lists canonical travel places with derived visit and residence relationships. Mode: read-only. Use when: the user asks about destinations, countries, or visited and wanted places. Do not use when: they ask about venues or restaurants; use place_visit_history. Prerequisites: none. Produces: travel place UUIDs.',
     inputSchema: travelPlaceListInputSchema,
     outputSchema: travelPlaceListOutputSchema,
   },
@@ -159,7 +141,7 @@ registerTool(
     name: 'travel_place_get',
     title: 'Get travel place',
     description:
-      'Returns one travel place with visit history, residence periods, and derived relationships. Mode: read-only. Use when: the user asks if or when they visited or lived in a destination. Do not use when: they ask about a restaurant, venue, or address visit. Prerequisites: identify by id or legacyId. Produces: place, journey, segment, and residence ids.',
+      'Returns one travel place with visit history, residence periods, and derived relationships. Mode: read-only. Use when: the user asks if or when they visited or lived in a destination. Do not use when: they ask about a restaurant, venue, or address visit. Prerequisites: identify by UUID. Produces: place, journey, segment, and residence ids.',
     inputSchema: travelPlaceGetInputSchema,
     outputSchema: travelEntityOutputSchema,
   },
@@ -193,9 +175,9 @@ registerTool(
   {
     ...readTool,
     name: 'travel_airport_list',
-    title: 'List travel airports',
+    title: 'Search airport catalogue',
     description:
-      'Lists airports with served places and leg counts. Mode: read-only. Use when: the user asks about airports, codes, or destinations served. Do not use when: they ask about venue locations. Prerequisites: none. Produces: airport ids and codes.',
+      'Searches the working set by default, or the shared OurAirports reference data by code, name, city, or country when a query is supplied. Scheduled-service airports rank first, with smaller fields searchable. Mode: read-only. Use when: the user needs to select an airport or inspect a used endpoint. Prerequisites: none. Produces: reference provenance, curation, and endpoint codes.',
     inputSchema: travelAirportListInputSchema,
     outputSchema: travelAirportListOutputSchema,
   },
@@ -207,7 +189,7 @@ registerTool(
     name: 'travel_airport_get',
     title: 'Get travel airport',
     description:
-      'Gets an airport and its served place by code or id. Mode: read-only. Use when: the user asks what an airport code serves. Do not use when: they ask about venues. Prerequisites: provide an airport code or id. Produces: airport id and code.',
+      'Gets the resolved airport or station by code, including OurAirports and travel curation provenance. Mode: read-only. Use when: the user asks what an endpoint code resolves to. Do not use when: they ask about venues. Prerequisites: provide a code. Produces: reference and curation state for that code.',
     inputSchema: travelAirportGetInputSchema,
     outputSchema: travelEntityOutputSchema,
   },
@@ -255,83 +237,11 @@ registerTool(
     name: 'travel_idea_list',
     title: 'List travel ideas',
     description:
-      'Lists travel ideas by status and type. Mode: read-only. Use when: the user asks about recorded travel ideas. Do not use when: they ask for the full travel wish list. Prerequisites: none. Produces: idea ids and legacyIds.',
+      'Lists travel ideas by status and type. Mode: read-only. Use when: the user asks about recorded travel ideas. Do not use when: they ask for the full travel wish list. Prerequisites: none. Produces: idea UUIDs.',
     inputSchema: travelIdeaListInputSchema,
     outputSchema: travelIdeaListOutputSchema,
   },
   (owner, input) => listTravelIdeas(owner, input),
-);
-
-registerTool(
-  {
-    name: 'travel_residence_list',
-    title: 'List residences',
-    description: 'Lists residences and their canonical travel places.',
-    inputSchema: travelResidenceListInputSchema,
-    outputSchema: travelResidenceListOutputSchema,
-    readOnly: true,
-    scopes: ['travel:read'],
-    resultCap: 200,
-  },
-  (owner, input) => listTravelResidences(owner, input),
-);
-registerTool(
-  {
-    name: 'travel_residence_get',
-    title: 'Get residence',
-    description: 'Gets a residence by id or legacy id.',
-    inputSchema: travelResidenceGetInputSchema,
-    outputSchema: travelResidenceOutputSchema.nullable(),
-    readOnly: true,
-    scopes: ['travel:read'],
-    resultCap: 1,
-  },
-  (owner, input) => getTravelResidence(owner, input),
-);
-registerTool(
-  {
-    name: 'travel_residence_create',
-    title: 'Create residence',
-    description: 'Creates a residence for an owned travel place.',
-    inputSchema: travelResidenceCreateInputSchema,
-    outputSchema: travelResidenceMutationOutputSchema,
-    readOnly: false,
-    scopes: ['travel:write'],
-    idempotent: false,
-    resultCap: 1,
-  },
-  (owner, input) => createTravelResidence(owner, input),
-);
-registerTool(
-  {
-    name: 'travel_residence_update',
-    title: 'Update residence',
-    description: 'Replaces residence periods and/or notes.',
-    inputSchema: travelResidenceUpdateInputSchema,
-    outputSchema: travelResidenceMutationOutputSchema,
-    readOnly: false,
-    scopes: ['travel:write'],
-    idempotent: true,
-    resultCap: 1,
-  },
-  (owner, input) => updateTravelResidence(owner, input),
-);
-registerTool(
-  {
-    name: 'travel_residence_delete',
-    title: 'Delete residence',
-    description: 'Deletes a residence after explicit confirmation; its place remains.',
-    inputSchema: travelResidenceDeleteInputSchema,
-    outputSchema: travelResidenceMutationOutputSchema,
-    readOnly: false,
-    scopes: ['travel:write'],
-    destructive: true,
-    idempotent: true,
-    requiresConfirmation: true,
-    resultCap: 1,
-    preview: async () => null,
-  },
-  (owner, input) => deleteTravelResidence(owner, input),
 );
 
 registerTool(

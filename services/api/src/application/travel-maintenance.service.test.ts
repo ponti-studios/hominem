@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { authDb, db } from '@hominem/db/core';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { travelSegmentMergeInputSchema } from '../schemas/travel-maintenance.schema';
 import {
@@ -12,6 +12,34 @@ import {
 
 describe('travel atomic maintenance', () => {
   const owners: string[] = [];
+  beforeAll(async () => {
+    await db
+      .insertInto('app.travelAirportReference')
+      .values([
+        {
+          sourceId: 982001,
+          code: 'LHR',
+          name: 'Heathrow',
+          city: 'London',
+          country: 'GB',
+          type: 'large_airport',
+          latitude: 51.47,
+          longitude: -0.4543,
+        },
+        {
+          sourceId: 982002,
+          code: 'KEF',
+          name: 'Keflavik',
+          city: 'Reykjavik',
+          country: 'IS',
+          type: 'large_airport',
+          latitude: 63.985,
+          longitude: -22.6056,
+        },
+      ])
+      .onConflict((conflict) => conflict.column('sourceId').doNothing())
+      .execute();
+  });
   afterEach(async () => {
     for (const owner of owners.splice(0))
       await authDb.deleteFrom('user').where('id', '=', owner).execute();
@@ -30,14 +58,12 @@ describe('travel atomic maintenance', () => {
       })
       .execute();
     const [place] = await db
-      .insertInto('app.travelPlaces')
+      .insertInto('app.places')
       .values({
         ownerUserid: owner,
-        legacyId: `PLC-${owner}`,
-        place: 'ZZZ Probe City',
+        name: 'ZZZ Probe City',
         country: 'ZZZ Probe Country',
-        type: 'city',
-        status: 'Want to go',
+        placeType: 'city',
       })
       .returning('id')
       .execute();
@@ -47,8 +73,8 @@ describe('travel atomic maintenance', () => {
   it('keeps a dossier dry run side-effect free and saves it atomically', async () => {
     const { owner, placeId } = await fixture();
     const payload = {
-      journey: { legacyId: 'JRN-PHASE2', name: 'ZZZ Probe dossier' },
-      segments: [{ legacyId: 'SEG-PHASE2', seq: 1, placeId }],
+      journey: { name: 'ZZZ Probe dossier' },
+      segments: [{ seq: 1, placeId }],
       transport: [],
       stays: [],
       dryRun: true,
@@ -64,8 +90,16 @@ describe('travel atomic maintenance', () => {
         .where('ownerUserid', '=', owner)
         .execute(),
     ).toHaveLength(0);
-    expect(await saveTravelJourney(owner, { ...payload, dryRun: false })).toMatchObject({
+    const actual = await saveTravelJourney(owner, { ...payload, dryRun: false });
+    expect(actual).toMatchObject({
       counters: { journeys: { created: 1 }, segments: { created: 1 } },
+    });
+    const replay = await saveTravelJourney(owner, { ...payload, dryRun: false });
+    expect(replay).toMatchObject({
+      counters: {
+        journeys: { created: 0, unchanged: 1 },
+        segments: { created: 0, unchanged: 1 },
+      },
     });
     expect(
       await db
@@ -83,7 +117,6 @@ describe('travel atomic maintenance', () => {
       .values([
         {
           ownerUserid: owner,
-          legacyId: 'ARP-LHR-PROBE',
           code: 'LHR',
           name: 'Heathrow',
           servesPlace: 'London',
@@ -92,7 +125,6 @@ describe('travel atomic maintenance', () => {
         },
         {
           ownerUserid: owner,
-          legacyId: 'ARP-KEF-PROBE',
           code: 'KEF',
           name: 'Keflavik',
           servesPlace: 'Reykjavik',
@@ -103,9 +135,9 @@ describe('travel atomic maintenance', () => {
       .execute();
 
     const result = await saveTravelJourney(owner, {
-      journey: { legacyId: 'JRN-AIRPORT-PROBE', name: 'ZZZ LHR to KEF probe' },
+      journey: { name: 'ZZZ LHR to KEF probe' },
       segments: [],
-      transport: [{ legacyId: 'T-9901', mode: 'air', origin: 'LHR', destination: 'KEF' }],
+      transport: [{ mode: 'air', origin: 'LHR', destination: 'KEF' }],
       stays: [],
       dryRun: false,
     });
@@ -124,14 +156,14 @@ describe('travel atomic maintenance', () => {
     const { owner, placeId } = await fixture();
     const [journey] = await db
       .insertInto('app.travelJourneys')
-      .values({ ownerUserid: owner, legacyId: 'JRN-ORDER', name: 'ZZZ Probe order' })
+      .values({ ownerUserid: owner, name: 'ZZZ Probe order' })
       .returning('id')
       .execute();
     const segments = await db
       .insertInto('app.travelJourneySegments')
       .values([
-        { ownerUserid: owner, legacyId: 'SEG-ORDER-1', journeyId: journey!.id, seq: 1, placeId },
-        { ownerUserid: owner, legacyId: 'SEG-ORDER-2', journeyId: journey!.id, seq: 2, placeId },
+        { ownerUserid: owner, journeyId: journey!.id, seq: 1, placeId },
+        { ownerUserid: owner, journeyId: journey!.id, seq: 2, placeId },
       ])
       .returning(['id', 'seq'])
       .execute();
@@ -159,7 +191,7 @@ describe('travel atomic maintenance', () => {
     const { owner, placeId } = await fixture();
     const [journey] = await db
       .insertInto('app.travelJourneys')
-      .values({ ownerUserid: owner, legacyId: 'JRN-MERGE', name: 'ZZZ Probe merge' })
+      .values({ ownerUserid: owner, name: 'ZZZ Probe merge' })
       .returning('id')
       .execute();
     const segments = await db
@@ -167,7 +199,6 @@ describe('travel atomic maintenance', () => {
       .values([
         {
           ownerUserid: owner,
-          legacyId: 'SEG-MERGE-1',
           journeyId: journey!.id,
           seq: 1,
           placeId,
@@ -176,7 +207,6 @@ describe('travel atomic maintenance', () => {
         },
         {
           ownerUserid: owner,
-          legacyId: 'SEG-MERGE-2',
           journeyId: journey!.id,
           seq: 2,
           placeId,
