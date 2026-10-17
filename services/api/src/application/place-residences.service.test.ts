@@ -69,11 +69,14 @@ describe('travel residence writes', () => {
     ).rejects.toThrow('multiple_current_periods');
     const results = await Promise.allSettled([
       createPlaceResidence(owner, { placeId, periods: [period] }),
+      createPlaceResidence(owner, { placeId, periods: [period] }),
       createPlaceResidence(owner, { placeId: otherPlaceId, periods: [period] }),
     ]);
-    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(2);
     expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
-    const created = results.find((result) => result.status === 'fulfilled');
+    const created = results.find(
+      (result) => result.status === 'fulfilled' && result.value.created === 1,
+    );
     if (!created || created.status !== 'fulfilled') throw new Error('Expected one residence');
     expect(created.value).toMatchObject({
       created: 1,
@@ -115,6 +118,7 @@ describe('travel residence writes', () => {
     const updated = await updatePlaceResidence(owner, {
       id: residence.residence.id,
       notes: 'saved',
+      ifUpdatedAt: residence.residence.updatedAt,
     });
     expect(updated).toMatchObject({ created: 0, updated: 1, unchanged: 0 });
     const unchanged = await updatePlaceResidence(owner, {
@@ -141,5 +145,11 @@ describe('travel residence writes', () => {
       .where('id', '=', residence.residence.id)
       .executeTakeFirst();
     expect(stillThere?.id).toBe(residence.residence.id);
+    await expect(
+      deletePlaceResidence(owner, {
+        id: residence.residence.id,
+        ifUpdatedAt: updated.residence?.updatedAt,
+      }),
+    ).resolves.toMatchObject({ deleted: true });
   });
 });

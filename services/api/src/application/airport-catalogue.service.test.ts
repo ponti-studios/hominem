@@ -121,6 +121,17 @@ describe('OurAirports reference refresh', () => {
           standalone: false,
         })
         .execute();
+      const preview = await updateTravelAirportCuration(owner, {
+        code,
+        servesPlace: 'Pinned place',
+        latitude: 1,
+        dryRun: true,
+      });
+      expect(preview).toMatchObject({ servesPlace: 'Pinned place', latitude: 1 });
+      await expect(getTravelAirport(owner, code)).resolves.toMatchObject({
+        servesPlace: 'Pinned city',
+        latitude: null,
+      });
       await updateTravelAirportCuration(owner, { code, servesPlace: 'Pinned place', latitude: 1 });
       await expect(
         updateTravelAirportCuration(owner, { code, servesPlace: 'Unknown place' }),

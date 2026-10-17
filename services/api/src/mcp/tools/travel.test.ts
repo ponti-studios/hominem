@@ -493,9 +493,9 @@ describe('travel Tier 1 reads', () => {
       legCountByMode: { air: 1 },
       totalDistanceKm: expect.any(Number),
     });
-    expect(
-      (stats.structuredContent as { totalDistanceKm: number }).totalDistanceKm,
-    ).toBeGreaterThan(1000);
+    const totalDistanceKm = stats.structuredContent?.totalDistanceKm;
+    expect(typeof totalDistanceKm).toBe('number');
+    if (typeof totalDistanceKm === 'number') expect(totalDistanceKm).toBeGreaterThan(1000);
     const timeline = await callTool(ownerId, 'travel_timeline', {});
     expect(timeline.structuredContent).toMatchObject({
       total: 1,

@@ -91,6 +91,7 @@ SET place_type = coalesce(p.place_type, t.type),
     first_visited = coalesce(p.first_visited, t.first_visited),
     last_visited = coalesce(p.last_visited, t.last_visited),
     want_to_go = t.status = 'Want to go',
+    archived = t.archived,
     is_travel_place = true
 FROM app.travel_places t
 WHERE p.id = t.id AND p.owner_userid = t.owner_userid;
@@ -327,6 +328,9 @@ CREATE POLICY app_place_entity_history_owner_policy ON app.place_entity_history
   FOR SELECT USING (auth.is_service_role() OR owner_userid = auth.current_user_id());
 CREATE POLICY app_place_entity_history_insert_policy ON app.place_entity_history
   FOR INSERT WITH CHECK (auth.is_service_role() OR owner_userid = auth.current_user_id());
+CREATE TRIGGER app_place_entity_history_append_only
+  BEFORE UPDATE OR DELETE ON app.place_entity_history
+  FOR EACH ROW EXECUTE FUNCTION app.prevent_travel_history_mutation();
 
 ALTER TABLE app.travel_entity_history
   DROP CONSTRAINT travel_entity_history_entity_table_check;

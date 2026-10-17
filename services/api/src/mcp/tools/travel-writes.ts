@@ -44,16 +44,19 @@ const names = {
 
 function registerCreate(entity: keyof typeof names, schema: z.ZodType) {
   const [singular, title] = names[entity];
+  const placeCreate = entity === 'place';
   registerTool(
     {
       ...write,
       name: `travel_${singular}_create`,
       title: `Create travel ${title.toLowerCase()}`,
-      description: `Creates or returns an existing travel ${title.toLowerCase()} by its natural key. Mode: write. Use when: a resolved travel ${title.toLowerCase()} needs to be recorded. Do not use when: the entity already exists and needs correction; use its update tool. Prerequisites: resolve referenced UUIDs first. Produces: the ${title.toLowerCase()} UUID.`,
+      description: placeCreate
+        ? 'Creates a new canonical Place and its travel relationship. Mode: write. Use when: this location is not already saved as a Place. Do not use when: an existing Place should be marked for travel; use travel_place_update with its UUID. Prerequisites: check place search first. Produces: the Place UUID.'
+        : `Creates or returns an existing travel ${title.toLowerCase()} by its natural key. Mode: write. Use when: a resolved travel ${title.toLowerCase()} needs to be recorded. Do not use when: the entity already exists and needs correction; use its update tool. Prerequisites: resolve referenced UUIDs first. Produces: the ${title.toLowerCase()} UUID.`,
       inputSchema: schema,
       outputSchema: rowOut,
       destructive: false,
-      idempotent: true,
+      idempotent: !placeCreate,
       standaloneWrite: true,
     },
     (owner, input) => writeTravelEntity(owner, entity, 'create', asInput(input)),

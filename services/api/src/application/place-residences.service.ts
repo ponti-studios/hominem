@@ -80,15 +80,19 @@ function validatePeriods(periods: Period[]) {
     throw new ValidationError('multiple_current_periods');
 }
 
+async function lockCurrentHome(trx: TransactionHandle, owner: string) {
+  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${owner}:place_residence_periods:current_home`}, 0))`.execute(
+    trx,
+  );
+}
+
 async function ensureSingleCurrent(
   trx: TransactionHandle,
   owner: string,
   periods: Period[],
   exceptId?: string,
 ) {
-  await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${owner}:place_residence_periods:current_home`}, 0))`.execute(
-    trx,
-  );
+  await lockCurrentHome(trx, owner);
   if (!periods.some((period) => period.ongoing)) return;
   const other = await sql<{ id: string }>`
     SELECT rp.id FROM app.place_residence_periods rp
@@ -142,6 +146,7 @@ export async function createPlaceResidence(
 ) {
   validatePeriods(input.periods);
   return runInTransaction(async (trx) => {
+    await lockCurrentHome(trx, owner);
     const place = await sql<{ id: string; name: string; country: string | null }>`
       SELECT id, name, country FROM app.places WHERE id = ${input.placeId} AND owner_userid = ${owner}
     `.execute(trx);
@@ -154,7 +159,6 @@ export async function createPlaceResidence(
       const current = await selectResidence(trx, owner, { id: existing.rows[0]!.id });
       return result(current[0] ?? null, { created: 0, updated: 0, unchanged: 1 });
     }
-    await ensureSingleCurrent(trx, owner, input.periods);
     const id = randomUUID();
     if (input.dryRun) {
       const now = new Date().toISOString();
@@ -220,23 +224,14 @@ export async function updatePlaceResidence(
           unchanged: unchanged ? 1 : 0,
         },
       );
-    if (input.notes !== undefined)
-      await sql`UPDATE app.place_residences SET notes = ${notes}, updated_at = now()
-        WHERE id = ${input.id} AND owner_userid = ${owner}
-          AND (${input.ifUpdatedAt ?? null}::timestamptz IS NULL OR updated_at = ${input.ifUpdatedAt ?? null}::timestamptz)`.execute(
-        trx,
-      );
     if (input.periods) {
       await sql`DELETE FROM app.place_residence_periods WHERE residence_id = ${input.id} AND owner_userid = ${owner}`.execute(
         trx,
       );
       await insertPeriods(trx, owner, input.id, input.periods);
-      await sql`UPDATE app.place_residences SET updated_at = now()
-        WHERE id = ${input.id} AND owner_userid = ${owner}
-          AND (${input.ifUpdatedAt ?? null}::timestamptz IS NULL OR updated_at = ${input.ifUpdatedAt ?? null}::timestamptz)`.execute(
-        trx,
-      );
     }
+    await sql`UPDATE app.place_residences SET notes = ${notes}, updated_at = now()
+      WHERE id = ${input.id} AND owner_userid = ${owner}`.execute(trx);
     return result((await selectResidence(trx, owner, { id: input.id }))[0] ?? null, {
       created: 0,
       updated: 1,
@@ -265,8 +260,7 @@ export async function deletePlaceResidence(
     if (typeof input !== 'string' && input.dryRun)
       return result(residence, { created: 0, updated: 0, unchanged: 0 }, false);
     const deleted =
-      await sql`DELETE FROM app.place_residences WHERE id = ${id} AND owner_userid = ${owner}
-      AND (${typeof input === 'string' ? null : (input.ifUpdatedAt ?? null)}::timestamptz IS NULL OR updated_at = ${typeof input === 'string' ? null : (input.ifUpdatedAt ?? null)}::timestamptz)`.execute(
+      await sql`DELETE FROM app.place_residences WHERE id = ${id} AND owner_userid = ${owner}`.execute(
         trx,
       );
     if (!Number(deleted.numAffectedRows)) throw new ValidationError('version_conflict');

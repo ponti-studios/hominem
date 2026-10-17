@@ -206,6 +206,7 @@ export const travelAirportCurationUpdateInputSchema = z
     latitude: z.number().min(-90).max(90).nullable().optional(),
     longitude: z.number().min(-180).max(180).nullable().optional(),
     unpin: z.array(z.enum(['latitude', 'longitude'])).default([]),
+    dryRun: z.boolean().default(false),
     name: z.string().trim().min(1).optional(),
     city: z.string().trim().min(1).optional(),
     country: z.string().trim().min(1).optional(),

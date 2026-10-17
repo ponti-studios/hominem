@@ -70,6 +70,11 @@ describe('travel MCP phase 2 registration', () => {
     }
   });
 
+  it('does not advertise Place creation as retry-idempotent', () => {
+    expect(getToolDefinition('travel_place_create')).toMatchObject({ idempotent: false });
+    expect(getToolDefinition('travel_journey_create')).toMatchObject({ idempotent: true });
+  });
+
   it('exposes 51 travel tools and removes airport create, merge, delete, and request tools', () => {
     expect(listTools().filter(({ name }) => name.startsWith('travel_'))).toHaveLength(51);
     for (const name of [

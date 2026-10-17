@@ -349,6 +349,7 @@ export async function updateTravelAirportCuration(
     name?: string;
     city?: string;
     country?: string;
+    dryRun?: boolean;
   },
 ) {
   return runInTransaction(async (trx) => {
@@ -414,6 +415,26 @@ export async function updateTravelAirportCuration(
     };
     if (input.unpin?.includes('latitude')) patch.latitude = null;
     if (input.unpin?.includes('longitude')) patch.longitude = null;
+    if (input.dryRun) {
+      const selected = await selectAirport(trx, owner, code);
+      return {
+        ...selected,
+        code,
+        name: patch.standalone ? patch.name : selected?.name,
+        city: patch.standalone ? patch.city : selected?.city,
+        country: patch.standalone ? patch.country : selected?.country,
+        servesPlace: patch.serves_place !== undefined ? patch.serves_place : selected?.servesPlace,
+        notes: patch.notes !== undefined ? patch.notes : selected?.notes,
+        latitude: patch.latitude !== undefined ? patch.latitude : selected?.latitude,
+        longitude: patch.longitude !== undefined ? patch.longitude : selected?.longitude,
+        curated: true,
+        standalone: Boolean(patch.standalone ?? existing?.standalone),
+        referenceId:
+          patch.reference_airport_id != null
+            ? String(patch.reference_airport_id)
+            : (selected?.referenceId ?? null),
+      };
+    }
     if (existing) {
       const assignments = Object.entries(patch)
         .filter(([key]) => key !== 'owner_userid' && key !== 'code')

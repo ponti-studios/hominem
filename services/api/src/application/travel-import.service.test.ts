@@ -4,6 +4,7 @@ import { authDb, db } from '@hominem/db/core';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 
+import { placeResidenceImportedPeriodsSchema } from '../schemas/place-residences.schema';
 import { travelImportInputSchema } from '../schemas/travel-import.schema';
 import { travelExport } from './travel-history-export.service';
 import { importTravelRows } from './travel-import.service';
@@ -423,6 +424,25 @@ describe('travel import', () => {
       },
     ];
     await importTravelRows(owner, { rows, mode: 'append', dryRun: false });
+    await db
+      .updateTable('app.places')
+      .set({
+        placeType: null,
+        country: null,
+        formattedAddress: '42 Probe Street',
+        city: 'Probe City',
+        state: 'Probe State',
+        postalCode: 'P0 1BE',
+        countryCode: 'GB',
+        latitude: 51.5,
+        longitude: -0.1,
+        url: 'https://example.test/place',
+        geocodedAt: new Date('2026-10-16T12:00:00.000Z'),
+        metadata: { source: 'round-trip', confidence: 0.9 },
+      })
+      .where('ownerUserid', '=', owner)
+      .where('name', '=', 'Alpha City')
+      .execute();
 
     const native = await travelExport(owner);
     const nativeResult = await importTravelRows(
@@ -434,10 +454,11 @@ describe('travel import', () => {
     expect(nativeResult.entities.journeys.created).toBe(0);
 
     expect(native.entities.place_residences).toHaveLength(1);
-    const exportedPeriods = native.entities.place_residences?.[0]?.periods as {
-      id: string;
-    }[];
-    expect(exportedPeriods[0]?.id).toMatch(/^[0-9a-f-]{36}$/i);
+    const exportedPeriods = placeResidenceImportedPeriodsSchema.parse(
+      native.entities.place_residences?.[0]?.periods,
+    );
+    const exportedPeriodIds = exportedPeriods.map(({ id }) => id);
+    expect(exportedPeriodIds[0]).toMatch(/^[0-9a-f-]{36}$/i);
     const replay = await importTravelRows(
       owner,
       travelImportInputSchema.parse({ ...native, mode: 'append' }),
@@ -453,7 +474,60 @@ describe('travel import', () => {
       .where('app.placeResidences.ownerUserid', '=', owner)
       .execute();
     expect(replay.entities.residences).toMatchObject({ created: 0, unchanged: 1, rejected: [] });
-    expect(storedPeriods.map(({ id }) => id)).toEqual(exportedPeriods.map(({ id }) => id));
+    expect(storedPeriods.map(({ id }) => id)).toEqual(exportedPeriodIds);
+
+    const restoredOwner = await createOwner();
+    const restorePayload = structuredClone(native);
+    const sourcePlaceId = String(restorePayload.entities.places?.[0]?.id);
+    const restoredPlaceId = randomUUID();
+    if (restorePayload.entities.places?.[0]) {
+      restorePayload.entities.places[0].id = restoredPlaceId;
+      restorePayload.entities.places[0].place_id = restoredPlaceId;
+    }
+    for (const segment of restorePayload.entities.travel_journey_segments ?? [])
+      if (segment.place_id === sourcePlaceId) segment.place_id = restoredPlaceId;
+    for (const residence of restorePayload.entities.place_residences ?? [])
+      if (residence.place_id === sourcePlaceId) residence.place_id = restoredPlaceId;
+    const restored = await importTravelRows(
+      restoredOwner,
+      travelImportInputSchema.parse({ ...restorePayload, mode: 'append' }),
+    );
+    expect(restored.entities.places).toMatchObject({ created: 1, rejected: [] });
+    const restoredPlace = await db
+      .selectFrom('app.places')
+      .select([
+        'placeType',
+        'country',
+        'formattedAddress',
+        'city',
+        'state',
+        'postalCode',
+        'countryCode',
+        'latitude',
+        'longitude',
+        'url',
+        'geocodedAt',
+        'metadata',
+      ])
+      .where('ownerUserid', '=', restoredOwner)
+      .where('name', '=', 'Alpha City')
+      .executeTakeFirstOrThrow();
+    expect(restoredPlace).toMatchObject({
+      placeType: null,
+      country: null,
+      formattedAddress: '42 Probe Street',
+      city: 'Probe City',
+      state: 'Probe State',
+      postalCode: 'P0 1BE',
+      countryCode: 'GB',
+      latitude: 51.5,
+      longitude: -0.1,
+      url: 'https://example.test/place',
+      metadata: { source: 'round-trip', confidence: 0.9 },
+    });
+    expect(new Date(String(restoredPlace.geocodedAt)).toISOString()).toBe(
+      '2026-10-16T12:00:00.000Z',
+    );
   });
 
   it('upserts sparse values, preserves archive state, and audits imported updates', async () => {

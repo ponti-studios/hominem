@@ -138,11 +138,34 @@ function payload(
         latitude: number(row, 'latitude'),
         longitude: number(row, 'longitude'),
       };
-    case 'places':
+    case 'places': {
+      const rawMetadata = row.metadata;
+      let metadata: unknown = {};
+      if (typeof rawMetadata === 'string') {
+        try {
+          metadata = JSON.parse(rawMetadata);
+        } catch {
+          throw new Error('invalid_metadata');
+        }
+      } else if (rawMetadata !== undefined && rawMetadata !== null) {
+        metadata = rawMetadata;
+      }
+      if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata))
+        throw new Error('invalid_metadata');
       return {
-        name: required(row, 'place'),
-        country: required(row, 'country'),
-        place_type: required(row, 'type'),
+        name: value(row, 'name') || required(row, 'place'),
+        place_type: row.place_type !== undefined ? row.place_type : (row.type ?? null),
+        formatted_address: row.formatted_address ?? null,
+        city: row.city ?? null,
+        state: row.state ?? null,
+        postal_code: row.postal_code ?? null,
+        country: row.country ?? null,
+        country_code: row.country_code ?? null,
+        latitude: row.latitude ?? null,
+        longitude: row.longitude ?? null,
+        url: row.url ?? null,
+        geocoded_at: row.geocoded_at ?? null,
+        metadata,
         want_to_go: row.want_to_go === true || value(row, 'status').toLowerCase() === 'want to go',
         first_visited: date(row, 'first_visited'),
         last_visited: date(row, 'last_visited'),
@@ -151,6 +174,7 @@ function payload(
         lived_in_source:
           row.travel_relationship === false || value(row, 'status').toLowerCase() === 'lived in',
       };
+    }
     case 'residences': {
       const placeAlias = optional(row, 'place_id') ?? required(row, 'placeLegacyId');
       const place = refs.places.get(placeAlias);
@@ -339,11 +363,11 @@ function rejectionReason(error: unknown): string {
 async function loadRows(trx: TransactionHandle, entity: Entity, owner: string, replacing: boolean) {
   if (replacing) return new Map<string, StoredRow>();
   if (entity === 'places') {
-    const result = await sql<StoredRow>`SELECT p.id, p.owner_userid, p.name, p.country,
-      p.place_type, p.first_visited, p.last_visited, p.notes, t.want_to_go, t.archived,
-      true AS has_travel_relationship
-      FROM app.travel_places t JOIN app.places p ON p.id=t.place_id AND p.owner_userid=t.owner_userid
-      WHERE t.owner_userid=${owner}`.execute(trx);
+    const result = await sql<StoredRow>`SELECT p.*, t.want_to_go, t.archived,
+      (t.place_id IS NOT NULL) AS has_travel_relationship
+      FROM app.places p LEFT JOIN app.travel_places t
+        ON p.id=t.place_id AND p.owner_userid=t.owner_userid
+      WHERE p.owner_userid=${owner}`.execute(trx);
     return new Map(
       result.rows.map((row) => {
         const normalized = snakeCaseRow(row);
@@ -380,9 +404,7 @@ async function countRows(trx: TransactionHandle, entity: Entity, owner: string) 
   if (entity === 'places') {
     const result = await sql<{
       count: string;
-    }>`SELECT count(*)::text AS count FROM app.travel_places WHERE owner_userid=${owner}`.execute(
-      trx,
-    );
+    }>`SELECT count(*)::text AS count FROM app.places WHERE owner_userid=${owner}`.execute(trx);
     return Number(result.rows[0]?.count ?? 0);
   }
   const result = await sql<{ count: string }>`
@@ -403,15 +425,15 @@ async function writeRow(
   if (entity === 'places') {
     const { want_to_go, archived, lived_in_source, ...placeFields } = fields;
     const isTravel = lived_in_source !== true;
+    const hasTravelRelationship = current?.has_travel_relationship === true;
     const relationshipChanged =
       !current ||
-      (isTravel && current.has_travel_relationship !== true) ||
-      current.want_to_go !== want_to_go ||
-      current.archived !== archived;
+      isTravel !== hasTravelRelationship ||
+      (isTravel && (current.want_to_go !== want_to_go || current.archived !== archived));
     const changed =
       !current ||
       Object.entries(placeFields).some(
-        ([key, next]) => (current[key] ?? null) !== (next ?? null),
+        ([key, next]) => !isDeepStrictEqual(current[key] ?? null, next ?? null),
       ) ||
       relationshipChanged;
     if (current && !changed) return { row: current, action: 'unchanged' };
@@ -444,6 +466,10 @@ async function writeRow(
         await sql`INSERT INTO app.travel_places (place_id, owner_userid, want_to_go, archived)
         VALUES (${id}, ${owner}, ${Boolean(want_to_go)}, ${Boolean(archived)})
         ON CONFLICT (place_id) DO UPDATE SET want_to_go=EXCLUDED.want_to_go, archived=EXCLUDED.archived`.execute(
+          trx,
+        );
+      else if (hasTravelRelationship)
+        await sql`DELETE FROM app.travel_places WHERE place_id=${id} AND owner_userid=${owner}`.execute(
           trx,
         );
     }

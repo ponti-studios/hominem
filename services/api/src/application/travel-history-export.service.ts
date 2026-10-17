@@ -36,8 +36,33 @@ export async function travelEntityHistory(
   if (!entityTable) throw new ValidationError('invalid_entity_type');
   if (input.entityType === 'residence') {
     const rows = await sql<Record<string, unknown>>`
-      SELECT * FROM app.place_entity_history
-      WHERE owner_userid = ${owner} AND entity_table = 'place_residences' AND entity_id = ${input.id}
+      SELECT history.* FROM (
+        SELECT id, owner_userid, entity_table, entity_id, operation, changed_fields, snapshot, created_at
+        FROM app.place_entity_history
+        WHERE owner_userid = ${owner} AND (
+          (entity_table = 'place_residences' AND entity_id = ${input.id}) OR
+          (entity_table = 'place_residence_periods' AND snapshot ->> 'residence_id' = ${input.id})
+        )
+        UNION ALL
+        SELECT id, owner_userid, entity_table, entity_id, operation, changed_fields, snapshot, created_at
+        FROM app.travel_entity_history
+        WHERE owner_userid = ${owner} AND entity_table = 'travel_residences' AND entity_id = ${input.id}
+      ) history
+      ORDER BY created_at DESC LIMIT ${input.limit}
+    `.execute(db);
+    return { history: rows.rows.map(camel), count: rows.rows.length };
+  }
+  if (input.entityType === 'place') {
+    const rows = await sql<Record<string, unknown>>`
+      SELECT history.* FROM (
+        SELECT id, owner_userid, entity_table, entity_id, operation, changed_fields, snapshot, created_at
+        FROM app.place_entity_history
+        WHERE owner_userid = ${owner} AND entity_table = 'places' AND entity_id = ${input.id}
+        UNION ALL
+        SELECT id, owner_userid, entity_table, entity_id, operation, changed_fields, snapshot, created_at
+        FROM app.travel_entity_history
+        WHERE owner_userid = ${owner} AND entity_table = 'travel_places' AND entity_id = ${input.id}
+      ) history
       ORDER BY created_at DESC LIMIT ${input.limit}
     `.execute(db);
     return { history: rows.rows.map(camel), count: rows.rows.length };
@@ -62,8 +87,11 @@ export async function travelExport(owner: string) {
     }),
   );
   const canonicalPlaces = await sql<Row>`
-    SELECT p.id, p.name AS place, p.country, p.place_type AS type, p.first_visited,
-      p.last_visited, p.notes, coalesce(t.want_to_go, false) AS want_to_go,
+    SELECT p.id, p.name, p.name AS place, p.place_type, p.place_type AS type,
+      p.formatted_address, p.city, p.state, p.postal_code, p.country, p.country_code,
+      p.latitude, p.longitude, p.url, p.geocoded_at, p.metadata, p.first_visited,
+      p.last_visited, p.notes, p.createdat, p.updatedat,
+      coalesce(t.want_to_go, false) AS want_to_go,
       coalesce(t.archived, false) AS archived, (t.place_id IS NOT NULL) AS travel_relationship
     FROM app.places p
     LEFT JOIN app.travel_places t ON t.place_id=p.id AND t.owner_userid=p.owner_userid
