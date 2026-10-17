@@ -9,6 +9,7 @@
     "eval:chat-baseline": "ori eval evals/chat-baseline.eval.ts",
     "eval:career-job-import": "ori eval evals/career-job-import.eval.ts",
     "eval:mcp-tool-selection": "ori eval evals/mcp-tool-selection.eval.ts",
+    "eval:mcp-travel-presence": "ori eval evals/mcp-travel-presence.eval.ts",
     "eval:mcp-agent-protocol": "bun test ./evals/mcp-agent-protocol.eval.ts",
     "eval:mcp-planning": "ori eval evals/mcp-planning.eval.ts",
     "eval:mcp-finance-review": "ori eval evals/mcp-finance-review.eval.ts",

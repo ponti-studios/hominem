@@ -15,6 +15,11 @@ type ToolOutcome = { output: unknown; confirmationRequired?: boolean };
 
 const tools = [
   [
+    'travel_countries',
+    'Returns places grouped by country with independent stop, layover, visit, and residence evidence. A place may have multiple evidence types. Use for questions about countries or where the user has been, lived, stopped, or had a layover.',
+    {},
+  ],
+  [
     'place_visit_history',
     'Lists visits to places (restaurants, venues, addresses), newest first, with the visited place name and address. Use when the user asks which restaurants, venues, or addresses they visited. Do not use for trip-history questions, destinations, flights, or travel history unless they also ask about place visits.',
     { limit: { type: 'integer' } },
@@ -122,7 +127,7 @@ const tools = [
 const toolsByDomain: Record<string, readonly unknown[]> = {
   career: tools.filter((tool) => tool.function.name.startsWith('career_')),
   travel: tools.filter((tool) =>
-    ['place_visit_history', 'trip_history'].includes(tool.function.name),
+    ['place_visit_history', 'trip_history', 'travel_countries'].includes(tool.function.name),
   ),
   finance: tools.filter((tool) => tool.function.name.startsWith('finance_')),
   people: tools.filter((tool) => ['people_lookup', 'person_timeline'].includes(tool.function.name)),
@@ -152,6 +157,11 @@ const parseDomain = (content: string): string => {
 };
 
 const routePrompt = async (prompt: string, model: string, apiKey: string): Promise<string> => {
+  if (
+    /\b(countr(?:y|ies)|been to|lived in|layover|travel(?:led|ed)|trip|journey)\b/i.test(prompt) ||
+    /\b(last time|when was i)\b.*\b(in|at)\b/i.test(prompt)
+  )
+    return 'travel';
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
@@ -185,6 +195,208 @@ function executeToolInternal(name: string, input: ToolInput, state: HarnessState
   if (state.calls.includes(name)) return { output: { error: 'duplicate_tool_call', name } };
   state.calls.push(name);
   switch (name) {
+    case 'travel_countries':
+      return {
+        output: {
+          evidenceTypes: ['stop', 'layover', 'visit', 'residence'],
+          countries: [
+            {
+              country: 'Iceland',
+              countryCode: 'IS',
+              evidenceTypes: ['layover', 'visit'],
+              places: [
+                {
+                  placeId: 'place-reykjavik',
+                  name: 'Reykjavik',
+                  locationType: 'place',
+                  evidence: [
+                    {
+                      type: 'layover',
+                      airportCode: 'KEF',
+                      journeyId: 'journey-2018',
+                      arrivalTransportId: 'leg-into-kef',
+                      departureTransportId: 'leg-out-of-kef',
+                      date: '2018-06-01',
+                    },
+                    { type: 'visit', id: 'visit-reykjavik', visitedAt: '2018-06-01' },
+                  ],
+                },
+              ],
+            },
+            {
+              country: 'France',
+              countryCode: 'FR',
+              evidenceTypes: ['visit'],
+              places: [
+                {
+                  placeId: 'place-paris',
+                  name: 'Paris',
+                  locationType: 'place',
+                  evidence: [{ type: 'visit', id: 'visit-paris', visitedAt: '2022-04-01' }],
+                },
+              ],
+            },
+            {
+              country: 'Ireland',
+              countryCode: 'IE',
+              evidenceTypes: ['residence'],
+              places: [
+                {
+                  placeId: 'place-dublin',
+                  name: 'Dublin',
+                  locationType: 'place',
+                  evidence: [
+                    {
+                      type: 'residence',
+                      residenceId: 'res-dublin',
+                      periodId: 'period-dublin',
+                      startDate: '2019-01-01',
+                      endDate: '2019-12-31',
+                      ongoing: false,
+                      precision: 'day',
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              country: 'Japan',
+              countryCode: 'JP',
+              evidenceTypes: ['stop'],
+              places: [
+                {
+                  placeId: 'place-tokyo',
+                  name: 'Tokyo',
+                  locationType: 'place',
+                  evidence: [
+                    {
+                      type: 'stop',
+                      id: 'stop-tokyo-1',
+                      journeyId: 'journey-japan-1',
+                      journeyName: 'Japan 1',
+                      arrivalDate: '2023-03-01',
+                      departureDate: '2023-03-04',
+                    },
+                    {
+                      type: 'stop',
+                      id: 'stop-tokyo-2',
+                      journeyId: 'journey-japan-2',
+                      journeyName: 'Japan 2',
+                      arrivalDate: '2025-04-10',
+                      departureDate: '2025-04-18',
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              country: 'New Zealand',
+              countryCode: 'NZ',
+              evidenceTypes: ['visit'],
+              places: [
+                {
+                  placeId: 'place-auckland',
+                  name: 'Auckland',
+                  locationType: 'place',
+                  evidence: [{ type: 'visit', id: 'visit-auckland', visitedAt: '2020-02-01' }],
+                },
+              ],
+            },
+            {
+              country: 'Sweden',
+              countryCode: 'SE',
+              evidenceTypes: ['visit'],
+              places: [
+                {
+                  placeId: 'place-stockholm',
+                  name: 'Stockholm',
+                  locationType: 'place',
+                  evidence: [
+                    { type: 'visit', id: 'visit-stockholm-old', visitedAt: '2017-05-01' },
+                    { type: 'visit', id: 'visit-stockholm-recent', visitedAt: '2024-08-12' },
+                  ],
+                },
+              ],
+            },
+            {
+              country: 'United Arab Emirates',
+              countryCode: 'AE',
+              evidenceTypes: ['layover'],
+              places: [
+                {
+                  placeId: null,
+                  name: 'Dubai',
+                  locationType: 'airport',
+                  evidence: [
+                    {
+                      type: 'layover',
+                      airportCode: 'DXB',
+                      journeyId: 'journey-dubai',
+                      journeyName: 'Dubai connection',
+                      arrivalTransportId: 'leg-into-dxb',
+                      departureTransportId: 'leg-out-of-dxb',
+                      date: '2021-09-01',
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              country: 'United Kingdom',
+              countryCode: 'GB',
+              evidenceTypes: ['stop', 'residence'],
+              places: [
+                {
+                  placeId: 'place-london',
+                  name: 'London',
+                  locationType: 'place',
+                  evidence: [
+                    {
+                      type: 'stop',
+                      id: 'stop-london',
+                      journeyId: 'journey-london',
+                      journeyName: 'London',
+                      arrivalDate: '2024-09-02',
+                      departureDate: '2024-09-08',
+                    },
+                    {
+                      type: 'residence',
+                      residenceId: 'res-london',
+                      periodId: 'period-london',
+                      startDate: '2020-01-01',
+                      endDate: null,
+                      ongoing: true,
+                      precision: 'day',
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              country: 'United States',
+              countryCode: 'US',
+              evidenceTypes: ['stop'],
+              places: [
+                {
+                  placeId: 'place-new-york',
+                  name: 'New York',
+                  locationType: 'place',
+                  evidence: [
+                    {
+                      type: 'stop',
+                      id: 'stop-new-york',
+                      journeyId: 'journey-us',
+                      journeyName: 'US',
+                      arrivalDate: '2022-10-01',
+                      departureDate: '2022-10-05',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      };
     case 'place_visit_history':
       return {
         output: { visits: [{ id: 'visit-1', place: 'Sushi Dai', city: 'Tokyo' }], count: 1 },
