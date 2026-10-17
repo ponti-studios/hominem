@@ -247,7 +247,7 @@ function Stripes() {
       path.lineTo(x + STRIPE_WIDTH, BAR_HEIGHT);
       path.lineTo(x, BAR_HEIGHT);
       path.close();
-      return path;
+      return { id: x, path };
     });
   }, [width]);
   const transform = useDerivedValue(
@@ -263,8 +263,8 @@ function Stripes() {
       {width > 0 ? (
         <Canvas style={{ height: BAR_HEIGHT, width }}>
           <Group transform={transform}>
-            {paths.map((path, index) => (
-              <Path color={withAlpha(limeForeground, 0.07)} key={index} path={path} />
+            {paths.map(({ id, path }) => (
+              <Path color={withAlpha(limeForeground, 0.07)} key={id} path={path} />
             ))}
           </Group>
         </Canvas>

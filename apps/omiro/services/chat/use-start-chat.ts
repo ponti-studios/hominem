@@ -1,6 +1,5 @@
 import type { GenerationHistoryEvent as GenerationDomainEvent } from '@hominem/chat';
 import { ChatClient } from '@hominem/chat/client';
-import type { ChatGenerationController } from '@hominem/chat/client';
 import { xhrChatTransport } from '@hominem/chat/transport/xhr';
 import NetInfo from '@react-native-community/netinfo';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,7 +11,10 @@ import { API_BASE_URL } from '~/constants';
 import { getChatResponseLength } from '~/hooks/use-chat-response-length';
 import { useAuth } from '~/services/auth/auth-provider';
 import { OFFLINE_UNAVAILABLE_ERROR } from '~/services/chat/chat-errors';
-import { registerGenerationHandoff } from '~/services/chat/generation-handoff';
+import {
+  clearGenerationHandoff,
+  registerGenerationHandoff,
+} from '~/services/chat/generation-handoff';
 import { toMessageOutput } from '~/services/chat/use-chat-messages';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import { chatKeys } from '~/services/notes/query-keys';
@@ -40,7 +42,6 @@ export function useStartChat() {
         transport: xhrChatTransport(),
       }),
   );
-  const generationRef = useRef<ChatGenerationController | null>(null);
   const startedChatIdRef = useRef<string | null>(null);
 
   const reconcileStartedChat = useCallback(
@@ -52,7 +53,11 @@ export function useStartChat() {
     [queryClient],
   );
 
-  const mutation = useMutation<string, Error, StartChatInput & StartChatOptions>({
+  const { mutateAsync: startChat, isPending: isStartingChat } = useMutation<
+    string,
+    Error,
+    StartChatInput & StartChatOptions
+  >({
     mutationFn: async ({ onAccepted, ...input }) => {
       const net = await NetInfo.fetch();
       if (net.isConnected === false) {
@@ -65,8 +70,8 @@ export function useStartChat() {
         generationId: randomUUID(),
         responseLength: getChatResponseLength(),
       });
-      generationRef.current = generation;
-      generation.subscribe((_state, event) => {
+      let unsubscribe: () => void = () => {};
+      unsubscribe = generation.subscribe((_state, event) => {
         if (!('payload' in event)) {
           return;
         }
@@ -90,10 +95,13 @@ export function useStartChat() {
           // storage -- means one SSE connection total, and userMessageId
           // travels as a plain object property instead of needing to
           // survive a round trip through MMKV.
-          registerGenerationHandoff(event.payload.chatId, {
-            controller: generation,
-            ...(event.payload.userMessage ? { userMessageId: event.payload.userMessage.id } : {}),
-          });
+          if (onAccepted) {
+            registerGenerationHandoff(event.payload.chatId, {
+              controller: generation,
+              releasePreviousSubscription: unsubscribe,
+              ...(event.payload.userMessage ? { userMessageId: event.payload.userMessage.id } : {}),
+            });
+          }
           onAccepted?.(event);
         }
         if (event.type === 'generation.committed' && startedChatIdRef.current) {
@@ -116,7 +124,10 @@ export function useStartChat() {
         }
         throw error;
       } finally {
-        generationRef.current = null;
+        unsubscribe();
+        if (startedChatIdRef.current) {
+          clearGenerationHandoff(startedChatIdRef.current, generation);
+        }
       }
       if (!startedChatIdRef.current) {
         throw new Error('Chat was not created');
@@ -126,18 +137,8 @@ export function useStartChat() {
     },
   });
 
-  const startChat = useCallback(
-    (input: StartChatInput & StartChatOptions): Promise<string> => mutation.mutateAsync(input),
-    [mutation],
-  );
-
-  const cancel = useCallback(() => {
-    generationRef.current?.cancel();
-  }, []);
-
   return {
-    cancel,
-    isStartingChat: mutation.isPending,
+    isStartingChat,
     startChat,
   };
 }

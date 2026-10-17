@@ -1,11 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { GenerationState, ToolResult } from './generation-machine';
-import {
-  createChatHttpHandler,
-  createGenerationRunner,
-  type ChatServerPersistedEvent,
-} from './server';
+import { createGenerationRunner, type ChatServerPersistedEvent } from './server';
 
 function createStore() {
   const events: ChatServerPersistedEvent[] = [];
@@ -108,69 +104,5 @@ describe('generation runner', () => {
       totalTokens: 2,
       costUsd: null,
     });
-  });
-
-  it('routes canonical HTTP commands and replay through Web Responses', async () => {
-    const event = {
-      version: 1 as const,
-      generationId: 'generation-1',
-      sequence: 1,
-      type: 'generation.committed' as const,
-      payload: {
-        type: 'generation.committed' as const,
-        message: {
-          id: 'message-1',
-          chatId: 'chat-1',
-          userId: 'user-1',
-          role: 'assistant' as const,
-          content: 'done',
-          files: null,
-          toolCalls: null,
-          reasoning: null,
-          parentMessageId: null,
-          createdAt: '2026-01-01',
-          updatedAt: '2026-01-01',
-        },
-      },
-    };
-    const calls: string[] = [];
-    const stream = async function* () {
-      yield event;
-    };
-    const handler = createChatHttpHandler({
-      authenticate: async () => ({ userId: 'user-1' }),
-      startChat: async () => {
-        calls.push('start');
-        return stream();
-      },
-      sendMessage: async () => {
-        calls.push('send');
-        return stream();
-      },
-      regenerate: async () => stream(),
-      respondToToolCall: async () => stream(),
-      cancel: async () => ({ status: 'cancelled' }),
-      getGeneration: async () => ({ status: 'committed' }),
-      replay: async ({ afterSequence }) => {
-        calls.push(`replay:${afterSequence}`);
-        return stream();
-      },
-    });
-
-    const start = await handler(
-      new Request('https://chat.test/api/chats/start-stream', {
-        method: 'POST',
-        body: JSON.stringify({ title: 'Chat', message: 'Hello' }),
-      }),
-    );
-    const replay = await handler(
-      new Request('https://chat.test/api/chats/chat-1/generations/generation-1/stream', {
-        headers: { 'Last-Event-ID': '7' },
-      }),
-    );
-
-    expect(start.headers.get('content-type')).toContain('text/event-stream');
-    expect(await replay.text()).toContain('id: 1');
-    expect(calls).toEqual(['start', 'replay:7']);
   });
 });

@@ -46,6 +46,7 @@ const MAX_CHARS = 2_000;
 export type SynthesizedChatAudio = {
   file: ChatMessageFileRecord | null;
   eventId: string;
+  speechRunId: string;
   generationId: string | null;
   usageAvailable: boolean;
   status: 'succeeded' | 'failed';
@@ -236,6 +237,7 @@ export async function synthesizeReplyAudioFile(
   assistantText: string,
 ): Promise<SynthesizedChatAudio> {
   const eventId = randomUUID();
+  const speechRunId = randomUUID();
   const duration = startAIUsageTimer();
   const span = tracer.startSpan('chat.speech', {
     attributes: {
@@ -288,6 +290,7 @@ export async function synthesizeReplyAudioFile(
         size: result.buffer.byteLength,
       },
       eventId,
+      speechRunId,
       generationId: result.generationId ?? null,
       usageAvailable: usage !== null,
       status: 'succeeded',
@@ -307,34 +310,41 @@ export async function synthesizeReplyAudioFile(
       durationMs: duration(),
       metadata: {},
     });
-    return { file: null, eventId, generationId: null, usageAvailable: false, status: 'failed' };
+    return {
+      file: null,
+      eventId,
+      speechRunId,
+      generationId: null,
+      usageAvailable: false,
+      status: 'failed',
+    };
   }
 }
 
 export async function persistSpeechRun(
   messageId: string,
   ownerUserId: string,
-  text: string,
+  characterCount: number,
   audio: SynthesizedChatAudio,
+  speechRunId: string,
 ): Promise<void> {
-  const id = randomUUID();
-  await ChatSpeechRunRepository.create(db, {
-    id,
+  await ChatSpeechRunRepository.createIfAbsent(db, {
+    id: speechRunId,
     messageId,
     ownerUserId,
     usageEventId: audio.eventId,
     provider: 'openrouter',
-    characterCount: text.length,
+    characterCount,
   });
   if (audio.generationId) {
     await ChatSpeechRunRepository.setProviderGenerationId(db, {
-      id,
+      id: speechRunId,
       providerGenerationId: audio.generationId,
     });
   }
-  await ChatSpeechRunRepository.markComplete(db, { id, status: audio.status });
-  await ChatSpeechRunRepository.markReconciliation(db, {
-    id,
+  await ChatSpeechRunRepository.markComplete(db, { id: speechRunId, status: audio.status });
+  await ChatSpeechRunRepository.markInitialReconciliation(db, {
+    id: speechRunId,
     status: audio.usageAvailable ? 'succeeded' : 'failed',
     ...(audio.usageAvailable ? {} : { error: 'Speech pricing was unavailable' }),
   });

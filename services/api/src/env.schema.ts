@@ -15,6 +15,7 @@ export const apiSchema = runtimeSchema.extend({
   PORT: z.coerce.number().int().positive().optional(),
   WORKER_PORT: z.coerce.number().int().positive().optional(),
   API_URL: z.url().default('https://api.lvh.me'),
+  MAESTRO_API_ORIGIN: z.url().optional(),
   CAREER_URL: z.url().default('https://career.lvh.me'),
   WEB_URL: z.url().default('https://web.lvh.me'),
   FINANCE_URL: z.url().default('https://finance.lvh.me'),

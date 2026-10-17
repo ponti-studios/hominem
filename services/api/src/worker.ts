@@ -3,7 +3,7 @@
 import 'dotenv/config';
 import { createServer } from 'node:http';
 
-import { QUEUE_NAMES } from '@hominem/queues';
+import { QUEUE_NAMES, chatGenerationEffectsQueue } from '@hominem/queues';
 import { logger } from '@hominem/telemetry';
 
 import { env } from './env';
@@ -11,6 +11,7 @@ import { initRuntime } from './runtime';
 import { startAirportCatalogueSyncWorker } from './workers/airport-catalogue-sync';
 import { startCareerJobImportWorker } from './workers/career-job-import';
 import { startChatFileCleanupWorker } from './workers/chat-file-cleanup';
+import { startChatGenerationEffectsWorker } from './workers/chat-generation-effects';
 import { startEmbeddingGenerationWorker } from './workers/embedding-generation';
 import { startFileProcessingWorker } from './workers/file-processing';
 import { startImportTransactionsWorker } from './workers/import-transactions';
@@ -25,6 +26,7 @@ const speechUsageReconciliationWorker = startSpeechUsageReconciliationWorker();
 // Started here (not elsewhere) so dev watchers actually reload the queue handlers.
 const careerJobImportWorker = startCareerJobImportWorker();
 const chatFileCleanupWorker = startChatFileCleanupWorker();
+const chatGenerationEffectsWorker = await startChatGenerationEffectsWorker();
 const airportCatalogueSyncWorker = await startAirportCatalogueSyncWorker();
 const workerVersion = 'career-import-v2';
 
@@ -50,6 +52,8 @@ initRuntime('worker').installSignalHandlers(
       speechUsageReconciliationWorker.close(),
       careerJobImportWorker.close(),
       chatFileCleanupWorker.close(),
+      chatGenerationEffectsWorker.close(),
+      chatGenerationEffectsQueue.close(),
       airportCatalogueSyncWorker.close(),
     ]);
   },
@@ -63,4 +67,5 @@ logger.info('worker_started', { queue: QUEUE_NAMES.RESUME_ANALYSIS });
 logger.info('worker_started', { queue: QUEUE_NAMES.CAREER_JOB_IMPORT });
 logger.info('worker_started', { queue: QUEUE_NAMES.SPEECH_USAGE_RECONCILIATION });
 logger.info('worker_started', { queue: QUEUE_NAMES.CHAT_FILE_CLEANUP });
+logger.info('worker_started', { queue: QUEUE_NAMES.CHAT_GENERATION_EFFECTS });
 logger.info('worker_started', { queue: 'airport-catalogue-sync' });

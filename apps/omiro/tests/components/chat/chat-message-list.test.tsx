@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render } from '@testing-library/react';
-import type React from 'react';
+import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@shopify/flash-list', () => ({
@@ -42,41 +42,70 @@ vi.mock('~/components/chat/chat-message-edit-modal', () => ({
   MessageEditModal: () => <div />,
 }));
 vi.mock('~/components/chat/chat-shimmer-message', () => ({
-  ChatShimmerMessage: () => <div />,
+  ChatShimmerMessage: ({ variant }: { variant?: string }) => (
+    <div data-testid={`chat-shimmer-${variant ?? 'assistant'}`} />
+  ),
 }));
 
 const { ChatMessageList } = await import('~/components/chat/chat-message-list');
+type ChatMessageListProps = ComponentProps<typeof ChatMessageList>;
+
+function renderChatMessageList(overrides: Partial<ChatMessageListProps> = {}) {
+  return render(
+    <ChatMessageList
+      displayMessages={[]}
+      formatTimestamp={() => ''}
+      isMessagesLoading={false}
+      search={{ isOpen: false, query: '', isLoading: false }}
+      showDebug={false}
+      {...overrides}
+    />,
+  );
+}
 
 describe('ChatMessageList', () => {
+  it('shows the loading placeholders before an empty message list', () => {
+    const { getAllByTestId, getByTestId, queryByTestId } = renderChatMessageList({
+      isMessagesLoading: true,
+    });
+
+    expect(getAllByTestId('chat-shimmer-assistant')).toHaveLength(2);
+    expect(getByTestId('chat-shimmer-user')).toBeTruthy();
+    expect(queryByTestId('chat-message-list')).toBeNull();
+  });
+
+  it('shows the empty state after message loading finishes', () => {
+    const { getByTestId, queryByTestId } = renderChatMessageList({
+      emptyState: <div data-testid="chat-empty-state" />,
+    });
+
+    expect(getByTestId('chat-empty-state')).toBeTruthy();
+    expect(queryByTestId('chat-shimmer-assistant')).toBeNull();
+    expect(queryByTestId('chat-message-list')).toBeNull();
+  });
+
   it('does not own the generation activity card', () => {
-    const { getByTestId, queryByTestId } = render(
-      <ChatMessageList
-        displayMessages={[
-          {
-            id: 'user-1',
-            renderKey: 'user-1',
-            role: 'user',
-            message: 'Trigger failure',
-            createdAt: new Date().toISOString(),
-            chatId: 'chat-1',
-            reasoning: null,
-            toolCalls: null,
-            isStreaming: false,
-          },
-        ]}
-        formatTimestamp={() => ''}
-        generation={{
-          id: 'generation-1',
+    const { getByTestId, queryByTestId } = renderChatMessageList({
+      displayMessages: [
+        {
+          id: 'user-1',
+          renderKey: 'user-1',
+          role: 'user',
+          message: 'Trigger failure',
+          createdAt: new Date().toISOString(),
           chatId: 'chat-1',
-          stage: 'failed',
-          lastDurableSequence: 3,
-        }}
-        isMessagesLoading={false}
-        showDebug={false}
-        showSearch={false}
-        searchQuery=""
-      />,
-    );
+          reasoning: null,
+          toolCalls: null,
+          isStreaming: false,
+        },
+      ],
+      generation: {
+        id: 'generation-1',
+        chatId: 'chat-1',
+        stage: 'failed',
+        lastDurableSequence: 3,
+      },
+    });
 
     expect(getByTestId('list-footer').querySelector('[data-testid="chat-activity"]')).toBeNull();
     expect(getByTestId('list-header').querySelector('[data-testid="chat-activity"]')).toBeNull();

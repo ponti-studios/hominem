@@ -1,11 +1,14 @@
 // @vitest-environment jsdom
 import type { GenerationEvent } from '@hominem/chat';
+import type { GenerationClientInputEvent } from '@hominem/chat/client';
 import type { ChatMessageDto } from '@hominem/rpc/types';
+import { useQueryClient } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
-import { act } from 'react';
+import { act, useCallback } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ChatMessageItem } from '~/components/chat';
+import type { ChatGenerationState } from '~/services/chat/chat-generation';
 import { chatKeys } from '~/services/notes/query-keys';
 
 import { mockMmkvModule } from '../../mocks/mmkv';
@@ -35,13 +38,19 @@ vi.mock('@hominem/chat/transport/xhr', () => ({
   xhrChatTransport: () => ({
     request: async () => new Response('{}', { status: 200 }),
     stream: async ({
+      url,
+      init,
       signal,
       onChunk,
     }: {
+      url: string;
+      init: RequestInit;
       signal?: AbortSignal;
       onChunk: (chunk: string) => void;
     }) => {
       await mockConsumeSseXhr({
+        url,
+        init,
         onEvent: (event: GenerationEvent) => onChunk(`data: ${JSON.stringify(event)}\n\n`),
         signal,
       });
@@ -64,9 +73,29 @@ vi.mock('~/services/chat/use-chat-messages', () => ({
 }));
 vi.mock('~/constants', () => ({ API_BASE_URL: 'http://localhost:4040' }));
 
-const { useSendMessage } = await import('~/services/chat/use-send-message');
+const [{ useSendMessage }, { useChatGeneration }, { handleChatGenerationEvent }] =
+  await Promise.all([
+    import('~/services/chat/use-send-message'),
+    import('~/services/chat/use-chat-generation'),
+    import('~/services/chat/chat-cache'),
+  ]);
 
 const CHAT_ID = 'chat-1';
+
+function useSendMessageWithRuntime() {
+  const queryClient = useQueryClient();
+  const onGenerationEvent = useCallback(
+    (event: GenerationClientInputEvent, current: ChatGenerationState) =>
+      handleChatGenerationEvent({ queryClient, chatId: CHAT_ID, generation: current, event }),
+    [queryClient],
+  );
+  const generation = useChatGeneration({
+    chatId: CHAT_ID,
+    getAuthHeaders: mockGetAuthHeaders,
+    onGenerationEvent,
+  });
+  return useSendMessage({ chatId: CHAT_ID, generation });
+}
 
 const committedMessage = {
   id: 'assistant-1',
@@ -114,9 +143,7 @@ describe('useSendMessage', () => {
   });
 
   it('keeps generated prose out of the cache until the server commits it', async () => {
-    const { result, queryClient } = renderHookWithQueryClient(() =>
-      useSendMessage({ chatId: CHAT_ID }),
-    );
+    const { result, queryClient } = renderHookWithQueryClient(() => useSendMessageWithRuntime());
 
     act(() => {
       void result.current.sendChatMessage({ message: 'Hello there' });
@@ -162,9 +189,7 @@ describe('useSendMessage', () => {
   });
 
   it('keeps the user message and exposes a retry state when generation fails', async () => {
-    const { result, queryClient } = renderHookWithQueryClient(() =>
-      useSendMessage({ chatId: CHAT_ID }),
-    );
+    const { result, queryClient } = renderHookWithQueryClient(() => useSendMessageWithRuntime());
     mockConsumeSseXhr.mockRejectedValue(new Error('generation failed'));
 
     await act(async () => {
@@ -177,12 +202,51 @@ describe('useSendMessage', () => {
     expect(result.current.generation).toMatchObject({
       stage: 'failed',
       error: 'generation failed',
+      retryInput: { message: 'Hello there' },
     });
     expect(mockImpactAsync).not.toHaveBeenCalled();
   });
 
+  it('resends an offline message instead of retrying a generation the server never received', async () => {
+    const { result, queryClient } = renderHookWithQueryClient(() => useSendMessageWithRuntime());
+    mockNetInfoFetch.mockResolvedValueOnce({ isConnected: false });
+
+    await act(async () => {
+      await result.current
+        .sendChatMessage({ message: 'Send me when online' })
+        .catch(() => undefined);
+    });
+
+    expect(result.current.generation).toMatchObject({
+      stage: 'failed',
+      retryInput: { message: 'Send me when online' },
+    });
+    expect(mockConsumeSseXhr).not.toHaveBeenCalled();
+
+    mockNetInfoFetch.mockResolvedValueOnce({ isConnected: true });
+    act(() => result.current.retryLastGeneration());
+    await waitFor(() => expect(mockConsumeSseXhr).toHaveBeenCalledOnce());
+    expect(mockConsumeSseXhr.mock.calls[0]?.[0]).toMatchObject({
+      url: `http://localhost:4040/api/chats/${CHAT_ID}/stream`,
+    });
+    expect(queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(CHAT_ID))).toEqual([
+      expect.objectContaining({ role: 'user', message: 'Send me when online' }),
+    ]);
+
+    await act(async () => {
+      pending?.onEvent({
+        version: 1,
+        generationId: 'uuid-1',
+        sequence: 1,
+        type: 'generation.failed',
+        payload: { type: 'generation.failed', message: 'test cleanup' },
+      });
+      pending?.resolve();
+    });
+  });
+
   it('turns a durable generation failure into the failed generation state', async () => {
-    const { result } = renderHookWithQueryClient(() => useSendMessage({ chatId: CHAT_ID }));
+    const { result } = renderHookWithQueryClient(useSendMessageWithRuntime);
     let sendPromise: Promise<void> | undefined;
 
     act(() => {
@@ -211,7 +275,7 @@ describe('useSendMessage', () => {
   });
 
   it('reduces phase and cancellation events through the shared client reducer', async () => {
-    const { result } = renderHookWithQueryClient(() => useSendMessage({ chatId: CHAT_ID }));
+    const { result } = renderHookWithQueryClient(useSendMessageWithRuntime);
 
     act(() => {
       void result.current.sendChatMessage({ message: 'Stop this reply' });
@@ -251,9 +315,7 @@ describe('useSendMessage', () => {
   });
 
   it('refetches persisted messages when a tool requires confirmation', async () => {
-    const { result, queryClient } = renderHookWithQueryClient(() =>
-      useSendMessage({ chatId: CHAT_ID }),
-    );
+    const { result, queryClient } = renderHookWithQueryClient(() => useSendMessageWithRuntime());
     queryClient.setQueryData(chatKeys.messages(CHAT_ID), []);
 
     act(() => {

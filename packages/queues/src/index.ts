@@ -45,3 +45,10 @@ export const speechUsageReconciliationQueue: Queue = new BullQueue(
 export const chatFileCleanupQueue: Queue = new BullQueue(QUEUE_NAMES.CHAT_FILE_CLEANUP, {
   connection: redis,
 });
+
+export const chatGenerationEffectsQueue: Queue = new BullQueue(
+  QUEUE_NAMES.CHAT_GENERATION_EFFECTS,
+  {
+    connection: redis,
+  },
+);

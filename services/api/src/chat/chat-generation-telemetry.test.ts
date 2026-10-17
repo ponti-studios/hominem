@@ -1,19 +1,98 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ info: vi.fn() }));
+const mocks = vi.hoisted(() => ({ info: vi.fn(), startActiveSpan: vi.fn() }));
 
-vi.mock('@hominem/telemetry', () => ({ logger: { info: mocks.info } }));
+vi.mock('@hominem/telemetry', () => ({
+  getTelemetryTracer: () => ({ startActiveSpan: mocks.startActiveSpan }),
+  logger: { info: mocks.info },
+}));
 
 import {
   recordGenerationDiagnostic,
   recordGenerationEventDeduplicated,
   recordGenerationEventDelivery,
-  recordGenerationRecovery,
   recordGenerationToolEffect,
+  withChatGenerationSpan,
 } from './chat-generation-telemetry';
 
 describe('chat generation telemetry', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.startActiveSpan.mockImplementation(async (_name, _options, callback) =>
+      callback({
+        setAttribute: vi.fn(),
+        setAttributes: vi.fn(),
+        setStatus: vi.fn(),
+        end: vi.fn(),
+      }),
+    );
+  });
+
+  it('records bounded generation timings and outcomes in an active span', async () => {
+    const span = {
+      setAttribute: vi.fn(),
+      setAttributes: vi.fn(),
+      setStatus: vi.fn(),
+      end: vi.fn(),
+    };
+    mocks.startActiveSpan.mockImplementation(async (_name, _options, callback) => callback(span));
+
+    await withChatGenerationSpan('send', async (metrics) => {
+      metrics.firstToken();
+      metrics.firstToken();
+      metrics.firstToolCall();
+      metrics.toolCount(2);
+      metrics.usage({ promptTokens: 10, outputTokens: 4, totalTokens: 14 });
+      metrics.outcome('committed');
+    });
+
+    expect(mocks.startActiveSpan).toHaveBeenCalledWith(
+      'chat.generation',
+      { attributes: { 'chat.generation.kind': 'send' } },
+      expect.any(Function),
+    );
+    expect(span.setAttribute).toHaveBeenCalledWith('chat.generation.outcome', 'committed');
+    expect(span.setAttribute).toHaveBeenCalledWith(
+      'chat.generation.time_to_first_token_ms',
+      expect.any(Number),
+    );
+    expect(span.setAttribute).toHaveBeenCalledWith(
+      'chat.generation.time_to_first_tool_call_ms',
+      expect.any(Number),
+    );
+    expect(span.setAttribute).toHaveBeenCalledWith(
+      'chat.generation.duration_ms',
+      expect.any(Number),
+    );
+    expect(span.setAttributes).toHaveBeenCalledWith({
+      'chat.generation.prompt_tokens': 10,
+      'chat.generation.output_tokens': 4,
+      'chat.generation.total_tokens': 14,
+    });
+    expect(span.setAttribute).toHaveBeenCalledWith('chat.generation.tool_count', 2);
+    expect(span.end).toHaveBeenCalledOnce();
+    expect(JSON.stringify(span)).not.toContain('generation-1');
+  });
+
+  it('marks generation failures and still ends the span', async () => {
+    const span = {
+      setAttribute: vi.fn(),
+      setAttributes: vi.fn(),
+      setStatus: vi.fn(),
+      end: vi.fn(),
+    };
+    mocks.startActiveSpan.mockImplementation(async (_name, _options, callback) => callback(span));
+
+    await expect(
+      withChatGenerationSpan('start', async () => {
+        throw new Error('private provider details');
+      }),
+    ).rejects.toThrow('private provider details');
+
+    expect(span.setAttribute).toHaveBeenCalledWith('chat.generation.outcome', 'failed');
+    expect(span.end).toHaveBeenCalledOnce();
+    expect(JSON.stringify(span.setAttribute.mock.calls)).not.toContain('private provider details');
+  });
 
   it('records correlation fields without accepting payload fields', () => {
     recordGenerationEventDelivery({ generationId: 'generation-1', sequence: 3, delivery: 'live' });
@@ -23,13 +102,6 @@ describe('chat generation telemetry', () => {
       toolName: 'write_memory',
       outcome: 'reused',
     });
-    recordGenerationRecovery({
-      generationId: 'generation-1',
-      phase: 'awaiting_confirmation',
-      disposition: 'awaiting_confirmation',
-      lastDurableSequence: 3,
-    });
-
     expect(mocks.info).toHaveBeenCalledWith('chat_generation_event_delivered', {
       generationId: 'generation-1',
       sequence: 3,
@@ -54,7 +126,6 @@ describe('chat generation telemetry', () => {
       durableSequence: 8,
       replayCursor: 7,
       deliveryMode: 'replayed',
-      recoveryDecision: 'resume_required',
       terminalOutcome: 'failed',
       errorCategory: 'provider',
       effectOutcome: 'failed',
@@ -67,7 +138,6 @@ describe('chat generation telemetry', () => {
       durableSequence: 8,
       replayCursor: 7,
       deliveryMode: 'replayed',
-      recoveryDecision: 'resume_required',
       terminalOutcome: 'failed',
       errorCategory: 'provider',
       effectOutcome: 'failed',

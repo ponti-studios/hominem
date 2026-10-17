@@ -5,7 +5,7 @@ import {
   startMessage,
 } from './chat-generation-commands';
 import { send, start } from './chat-generation-execute';
-import { cancel, getGeneration, recover, replay } from './chat-generation-lifecycle';
+import { cancel, getGeneration, replay } from './chat-generation-lifecycle';
 import type { ChatGenerationDependencies } from './chat-generation-types';
 
 export function createChatGenerationService(dependencies: ChatGenerationDependencies = {}) {
@@ -19,7 +19,6 @@ export function createChatGenerationService(dependencies: ChatGenerationDependen
       respondToConfirmation(dependencies, input),
     replay,
     getGeneration,
-    recover,
     cancel: (input: Parameters<typeof cancel>[1]) => cancel(dependencies, input),
   };
 }

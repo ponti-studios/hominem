@@ -76,7 +76,11 @@ class SpeechAwareSampler implements Sampler {
 
   shouldSample(...args: Parameters<Sampler['shouldSample']>): SamplingResult {
     const spanName = args[2];
-    if (spanName.startsWith('chat.speech') || spanName.startsWith('speech.')) {
+    if (
+      spanName.startsWith('chat.speech') ||
+      spanName.startsWith('chat.generation') ||
+      spanName.startsWith('speech.')
+    ) {
       return { decision: SamplingDecision.RECORD_AND_SAMPLED };
     }
 

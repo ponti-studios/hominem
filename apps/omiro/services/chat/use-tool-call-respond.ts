@@ -1,60 +1,45 @@
-import { ChatClient } from '@hominem/chat/client';
-import type { GenerationClientState } from '@hominem/chat/client';
-import { xhrChatTransport } from '@hominem/chat/transport/xhr';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
-import type { ChatMessageItem } from '~/components/chat';
-import { API_BASE_URL } from '~/constants';
-import { useAuth } from '~/services/auth/auth-provider';
-import { syncAfterChatTasks } from '~/services/tasks/sync-chat-tasks';
+import { invalidateChatQueries } from './chat-cache';
+import type { useChatGeneration } from './use-chat-generation';
 
-import { chatKeys } from '../notes/query-keys';
-
-export function useToolCallRespond({ chatId }: { chatId: string }) {
-  const { getAuthHeaders } = useAuth();
+export function useToolCallRespond({
+  chatId,
+  generation,
+}: {
+  chatId: string;
+  generation: ReturnType<typeof useChatGeneration>;
+}) {
   const queryClient = useQueryClient();
   const [isResponding, setIsResponding] = useState(false);
-  const [client] = useState(() => {
-    const checkpoints = new Map<string, GenerationClientState>();
-    return new ChatClient({
-      baseUrl: API_BASE_URL,
-      headers: getAuthHeaders,
-      transport: xhrChatTransport(),
-      checkpointStore: {
-        get: (generationId) => checkpoints.get(generationId) ?? null,
-        set: (state) => {
-          checkpoints.set(state.generationId, state);
-        },
-        remove: (generationId) => {
-          checkpoints.delete(generationId);
-        },
-      },
-    });
-  });
 
+  const { respondToToolCall } = generation;
   const respond = useCallback(
     async (input: { messageId: string; toolCallId: string; approved: boolean }) => {
       setIsResponding(true);
+      let receivedCompletion = false;
       try {
-        const generation = client.respondToToolCall({
-          chatId,
+        const controller = respondToToolCall({
           messageId: input.messageId,
           toolCallId: input.toolCallId,
-          body: { approved: input.approved },
+          approved: input.approved,
         });
-        await generation.done;
+        const completed = await controller.done;
+        receivedCompletion = true;
+        if (completed.phase === 'failed') {
+          throw new Error(completed.error ?? 'Unable to respond to the tool call.');
+        }
+      } catch (error) {
+        if (!receivedCompletion) {
+          await invalidateChatQueries(queryClient, chatId);
+        }
+        throw error;
       } finally {
         setIsResponding(false);
-        await queryClient.invalidateQueries({ queryKey: chatKeys.messages(chatId) });
-        await queryClient.invalidateQueries({ queryKey: chatKeys.activeChat(chatId) });
-        const answered = queryClient
-          .getQueryData<ChatMessageItem[]>(chatKeys.messages(chatId))
-          ?.find((message) => message.id === input.messageId);
-        syncAfterChatTasks(answered?.toolCalls);
       }
     },
-    [chatId, client, queryClient],
+    [chatId, queryClient, respondToToolCall],
   );
 
   return { isResponding, respond };

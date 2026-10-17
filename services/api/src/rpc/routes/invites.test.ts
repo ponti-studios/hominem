@@ -14,7 +14,16 @@ import { invitesRoutes } from './invites';
 const app = createRpcTestApp(invitesRoutes, {
   authenticated: false,
   path: '/api/invites',
-  user: {} as never,
+  user: {
+    id: 'anonymous',
+    email: 'anonymous@example.com',
+    emailVerified: false,
+    name: 'Anonymous',
+    image: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    isAdmin: false,
+  },
 });
 
 beforeEach(() => vi.clearAllMocks());

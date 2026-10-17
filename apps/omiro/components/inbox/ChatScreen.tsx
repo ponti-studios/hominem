@@ -3,22 +3,16 @@ import { isObject } from '@hominem/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
-import {
-  ChatGenerationBar,
-  ChatMessageList,
-  ChatReviewOverlay,
-  ChatSearchBar,
-  ChatToolApprovalBar,
-  getToolCallPhase,
-} from '~/components/chat';
+import { getToolCallPhase } from '~/components/chat';
 import { useChatActionsMenu } from '~/components/chat/chat-actions-menu';
 import { ChatSettingsSheet } from '~/components/chat/chat-settings-sheet';
 import { ChatSourcesSheet } from '~/components/chat/chat-sources-sheet';
-import { Composer } from '~/components/composer/Composer';
-import { ComposerDock, useComposerDockMetrics } from '~/components/composer/ComposerDock';
+import { useComposerDockMetrics } from '~/components/composer/ComposerDock';
 import { getDockKeyboardOffset } from '~/components/composer/composerDock.helpers';
+import { ChatScreenDock } from '~/components/inbox/ChatScreenDock';
+import { ChatScreenMessageList } from '~/components/inbox/ChatScreenMessageList';
 import {
   FloatingActionPill,
   FloatingCircleButton,
@@ -26,7 +20,6 @@ import {
   FloatingPillButton,
 } from '~/components/navigation/floating-header';
 import { useStyles } from '~/components/theme';
-import { EmptyState } from '~/components/ui';
 import { ActionMenu } from '~/components/ui/action-menu';
 import { useChatData } from '~/hooks/use-chat-data';
 import { useChatSearch } from '~/hooks/use-chat-search';
@@ -37,11 +30,8 @@ import {
   updateChatTitleCaches,
   useActiveChat,
   useEditChatMessage,
-  useRegenerateMessage,
-  useSendMessage,
-  useToolCallRespond,
 } from '~/services/chat';
-import { formatRelativeAge } from '~/services/date/format-relative-age';
+import { useChatScreenGeneration } from '~/services/chat/use-chat-screen-generation';
 import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import {
   clearResumeTarget,
@@ -79,10 +69,10 @@ export function ChatScreen({ id }: { id: string }) {
       textAlign: 'center',
       color: theme.colors.mutedForeground,
     },
-    overlayContainer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
   }));
 
   const source = NEW_SESSION_SOURCE;
+  const chatGeneration = useChatScreenGeneration(chatId);
 
   const handleContentCreated = useCallback(
     async (content: ExtractedTasksCreated) => {
@@ -121,13 +111,15 @@ export function ChatScreen({ id }: { id: string }) {
     sendChatMessage,
     isChatSending,
     retryFailedMessage,
-    retryLastGeneration,
-  } = useSendMessage({ chatId });
+    retryActiveGeneration,
+    regenerateMessage,
+    respondToolCall,
+    isRespondingToToolCall,
+  } = chatGeneration;
   const chatSend = useMemo(
     () => ({ sendChatMessage, isChatSending }),
     [sendChatMessage, isChatSending],
   );
-  const toolCallRespond = useToolCallRespond({ chatId });
   const editMessage = useEditChatMessage(chatId);
   const handleEditMessage = useCallback(
     (messageId: string, content: string) => {
@@ -136,34 +128,9 @@ export function ChatScreen({ id }: { id: string }) {
     [editMessage],
   );
 
-  const {
-    cancelGeneration: cancelRegeneration,
-    dismissGeneration: dismissRegeneration,
-    generation: regeneration,
-    regenerateMessage,
-    retryGeneration,
-  } = useRegenerateMessage(chatId);
-  const activeGeneration = generation ?? regeneration;
-  const cancelActiveGeneration = generation ? cancelGeneration : cancelRegeneration;
-  const retryActiveGeneration = generation ? retryLastGeneration : retryGeneration;
-  const dismissActiveGeneration = generation ? dismissGeneration : dismissRegeneration;
-  // The approval's continuation streams through its own client, so once it
-  // finishes the paused generation that was waiting on it is done too.
-  const respondToToolCall = async (approved: boolean) => {
-    if (!pendingToolCall) {
-      return;
-    }
-    try {
-      await toolCallRespond.respond({
-        messageId: pendingToolCall.messageId,
-        toolCallId: pendingToolCall.toolCall.toolCallId,
-        approved,
-      });
-    } finally {
-      dismissGeneration();
-      dismissRegeneration();
-    }
-  };
+  const activeGeneration = generation;
+  const cancelActiveGeneration = cancelGeneration;
+  const dismissActiveGeneration = dismissGeneration;
   // The assistant is waiting on a yes/no for a tool call: that decision takes
   // over the composer until it is answered.
   const pendingToolCall = messages
@@ -171,6 +138,16 @@ export function ChatScreen({ id }: { id: string }) {
       (message.toolCalls ?? []).map((toolCall) => ({ messageId: message.id, toolCall })),
     )
     .find(({ toolCall }) => getToolCallPhase(toolCall) === 'asking');
+  const respondToToolCall = async (approved: boolean) => {
+    if (!pendingToolCall) {
+      return;
+    }
+    await respondToolCall({
+      messageId: pendingToolCall.messageId,
+      toolCallId: pendingToolCall.toolCall.toolCallId,
+      approved,
+    });
+  };
   const failedMessageText =
     activeGeneration?.stage === 'failed' && activeGeneration.userMessageId
       ? messages.find((message) => message.id === activeGeneration.userMessageId)?.message
@@ -224,34 +201,6 @@ export function ChatScreen({ id }: { id: string }) {
     showDebug,
   });
 
-  const emptyState = (
-    <EmptyState
-      description={t.chat.emptyState.description}
-      sfSymbol="bubble.left"
-      title={t.chat.emptyState.title}
-    />
-  );
-  const errorState = (
-    <EmptyState
-      action={{
-        label: t.chat.loadErrorRetry,
-        onPress: () => {
-          void refetchMessages();
-        },
-      }}
-      sfSymbol="arrow.clockwise.circle"
-      title={t.chat.loadErrorTitle}
-    />
-  );
-  const missingConversationState = (
-    <EmptyState
-      action={{ label: t.chat.goBack, onPress: () => router.dismissTo(CHAT_ROUTE) }}
-      description={t.chat.missingMessage}
-      sfSymbol="bubble.left.and.exclamationmark.bubble.right"
-      title={t.chat.missingTitle}
-    />
-  );
-
   return (
     <>
       <FloatingHeader
@@ -302,80 +251,42 @@ export function ChatScreen({ id }: { id: string }) {
             <Text style={styles.offlineText}>{t.chat.offlineIndicator}</Text>
           </View>
         ) : null}
-        <ChatMessageList
-          bottomInset={composerInset}
-          keyboardOffset={getDockKeyboardOffset(restingInset)}
-          isMessagesLoading={isMessagesLoading}
-          displayMessages={search.displayMessages}
-          showSearch={search.showSearch}
-          searchQuery={search.searchQuery}
+        <ChatScreenMessageList
+          status={{
+            phase: isMessagesLoading ? 'loading' : isMessagesRefreshing ? 'refreshing' : 'ready',
+            error: isConversationGone ? 'missing' : messagesError ? 'load' : null,
+          }}
+          refetchMessages={refetchMessages}
+          onGoBack={() => router.dismissTo(CHAT_ROUTE)}
+          search={search}
           showDebug={showDebug}
           onEdit={handleEditMessage}
           onRegenerate={regenerateMessage}
           onRetry={retryFailedMessage}
           generation={activeGeneration}
-          formatTimestamp={formatRelativeAge}
-          emptyState={
-            isConversationGone ? missingConversationState : messagesError ? errorState : emptyState
-          }
-          refreshControl=<RefreshControl
-            refreshing={isMessagesRefreshing}
-            onRefresh={() => {
-              void refetchMessages();
-            }}
-          />
+          bottomInset={composerInset}
+          keyboardOffset={getDockKeyboardOffset(restingInset)}
         />
-        {!isConversationGone ? (
-          <>
-            <ComposerDock restingInset={restingInset} testID="chat-composer-dock">
-              {/* While a reply generates the composer flattens to one line
-                  (the bar), then springs back when it ends. */}
-              {pendingToolCall ? (
-                <ChatToolApprovalBar
-                  disabled={toolCallRespond.isResponding}
-                  onApprove={() => {
-                    void respondToToolCall(true);
-                  }}
-                  onReject={() => {
-                    void respondToToolCall(false);
-                  }}
-                  toolName={pendingToolCall.toolCall.toolName}
-                />
-              ) : activeGeneration ? (
-                <ChatGenerationBar
-                  generation={activeGeneration}
-                  onCancel={() => {
-                    void cancelActiveGeneration();
-                  }}
-                  onEdit={failedMessageText ? editFailedMessage : undefined}
-                  onRetry={retryActiveGeneration}
-                />
-              ) : search.showSearch ? (
-                <ChatSearchBar
-                  inputRef={search.searchInputRef}
-                  onChangeQuery={search.handleSearchQueryChange}
-                  onClose={search.handleCloseSearch}
-                  query={search.searchQuery}
-                  resultCount={search.displayMessages.length}
-                />
-              ) : (
-                <Composer mode="chat" chatId={chatId} chatSend={chatSend} />
-              )}
-            </ComposerDock>
-            <View style={styles.overlayContainer} pointerEvents="box-none">
-              <ChatReviewOverlay
-                pendingReview={extraction.pendingReview}
-                isVisible={extraction.isReviewVisible}
-                onAccept={() => {
-                  void extraction.handleAcceptReview();
-                }}
-                onReject={() => {
-                  void extraction.handleRejectReview();
-                }}
-              />
-            </View>
-          </>
-        ) : null}
+        <ChatScreenDock
+          chatId={chatId}
+          restingInset={restingInset}
+          isConversationGone={isConversationGone}
+          pendingToolCall={pendingToolCall}
+          isRespondingToToolCall={isRespondingToToolCall}
+          onRespondToToolCall={(approved) => {
+            void respondToToolCall(approved);
+          }}
+          generation={activeGeneration}
+          failedMessageText={failedMessageText}
+          onEditFailedMessage={editFailedMessage}
+          onCancelGeneration={() => {
+            void cancelActiveGeneration();
+          }}
+          onRetryGeneration={retryActiveGeneration}
+          search={search}
+          chatSend={chatSend}
+          extraction={extraction}
+        />
       </View>
     </>
   );

@@ -1,32 +1,37 @@
 import type { ChatGenerationController } from '@hominem/chat/client';
 
-// Same-process handoff for a generation whose ChatClient was created on the
-// screen that started it (the new-chat flow) to the screen that finishes
-// showing it (the chat screen, mounted fresh after router.replace swaps in
-// the real chatId and unmounts the new-chat screen). This only needs to
-// survive the moment between those two mounts within one running app
-// instance -- never an app restart, which is what MMKV checkpoint
-// persistence is for and is unaffected by this. Handing over the live
-// controller means the destination screen adopts the generation already in
-// flight instead of opening a second SSE connection and reconstructing
-// state from storage.
+// Keeps an active controller discoverable when a chat screen remounts, so it
+// can adopt the existing stream. MMKV checkpoints handle app restarts.
 export interface PendingGenerationHandoff {
   controller: ChatGenerationController;
+  releasePreviousSubscription?: () => void;
   userMessageId?: string;
 }
 
-const pending = new Map<string, PendingGenerationHandoff>();
+const active = new Map<string, PendingGenerationHandoff>();
 
 export function registerGenerationHandoff(chatId: string, handoff: PendingGenerationHandoff): void {
-  pending.set(chatId, handoff);
+  active.set(chatId, handoff);
 }
 
-// One-shot: the first screen to ask for a chatId's handoff gets it, and
-// it's gone for anyone asking again -- including a React StrictMode dev
-// double-mount, which just falls back to the normal MMKV-restore path for
-// that one extra mount rather than adopting the live controller twice.
-export function takeGenerationHandoff(chatId: string): PendingGenerationHandoff | undefined {
-  const handoff = pending.get(chatId);
-  pending.delete(chatId);
+export function peekGenerationHandoff(chatId: string): PendingGenerationHandoff | undefined {
+  return active.get(chatId);
+}
+
+export function takeGenerationHandoff(
+  chatId: string,
+  expectedController?: ChatGenerationController,
+): PendingGenerationHandoff | undefined {
+  const handoff = active.get(chatId);
+  if (expectedController && handoff?.controller !== expectedController) {
+    return undefined;
+  }
+  active.delete(chatId);
   return handoff;
+}
+
+export function clearGenerationHandoff(chatId: string, controller: ChatGenerationController): void {
+  if (active.get(chatId)?.controller === controller) {
+    active.delete(chatId);
+  }
 }

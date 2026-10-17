@@ -40,6 +40,10 @@ const mocks = vi.hoisted(() => ({
   updateGenerationRun: vi.fn(),
   cancelGenerationRun: vi.fn(),
   deleteGenerationRun: vi.fn(),
+  createGenerationEffects: vi.fn(),
+  claimGenerationEffect: vi.fn(),
+  completeGenerationEffect: vi.fn(),
+  retryGenerationEffect: vi.fn(),
   createSpeechRun: vi.fn(),
   getSpeechRun: vi.fn(),
   setSpeechGenerationId: vi.fn(),
@@ -126,6 +130,12 @@ vi.mock('@hominem/db/chats', async () => {
       listEvents: mocks.listGenerationEvents,
       deleteRun: mocks.deleteGenerationRun,
     },
+    ChatGenerationEffectsRepository: {
+      createPending: mocks.createGenerationEffects,
+      claim: mocks.claimGenerationEffect,
+      complete: mocks.completeGenerationEffect,
+      retry: mocks.retryGenerationEffect,
+    },
     ChatSpeechRunRepository: {
       create: mocks.createSpeechRun,
       getById: mocks.getSpeechRun,
@@ -155,6 +165,22 @@ vi.mock('@hominem/storage', () => ({
 
 vi.mock('@hominem/telemetry', () => ({
   getTelemetryTracer: () => ({
+    startActiveSpan: (
+      _name: string,
+      _options: unknown,
+      callback: (span: {
+        end: () => void;
+        setAttribute: (name: string, value: string | number | boolean) => void;
+        setAttributes: (attributes: Record<string, string | number | boolean>) => void;
+        setStatus: (status: { code: number }) => void;
+      }) => unknown,
+    ) =>
+      callback({
+        end: vi.fn(),
+        setAttribute: vi.fn(),
+        setAttributes: vi.fn(),
+        setStatus: vi.fn(),
+      }),
     startSpan: () => ({
       end: vi.fn(),
       recordException: vi.fn(),
@@ -352,6 +378,23 @@ describe('chat stream accounting', () => {
           };
         }),
     );
+    mocks.createGenerationEffects.mockImplementation(
+      async (_trx: unknown, effects: Array<Record<string, unknown>>) =>
+        effects.map((effect, index) => ({
+          id: `generation-effect-${index}`,
+          ...effect,
+          generationId: '11111111-1111-4111-8111-111111111119',
+          status: 'pending',
+          attempts: 0,
+        })),
+    );
+    mocks.claimGenerationEffect.mockImplementation(async (_trx: unknown, id: string) => {
+      const created = mocks.createGenerationEffects.mock.results.at(-1)?.value;
+      const effects = await Promise.resolve(created);
+      return effects.find((effect: { id: string }) => effect.id === id) ?? null;
+    });
+    mocks.completeGenerationEffect.mockResolvedValue(undefined);
+    mocks.retryGenerationEffect.mockResolvedValue(undefined);
     mocks.getToolEffect.mockResolvedValue(null);
     mocks.listGenerationEvents.mockResolvedValue([]);
     mocks.saveToolEffect.mockImplementation(async (input: { result: unknown }) => ({
@@ -1212,6 +1255,7 @@ describe('chat stream walkie-talkie audio leg', () => {
             size: result.buffer.byteLength,
           },
           eventId: 'speech-event-id',
+          speechRunId: 'speech-run-id',
           generationId: result.generationId ?? null,
           usageAvailable: true,
           status: 'succeeded',
@@ -1220,6 +1264,7 @@ describe('chat stream walkie-talkie audio leg', () => {
         return {
           file: null,
           eventId: 'speech-event-id',
+          speechRunId: 'speech-run-id',
           generationId: null,
           usageAvailable: false,
           status: 'failed',

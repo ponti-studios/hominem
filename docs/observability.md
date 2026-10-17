@@ -70,6 +70,32 @@ reconciliation outcome.
 The browser sends one terminal playback event through the authenticated API
 proxy. The API converts it into a `speech.playback` span.
 
+### Chat generation lifecycle
+
+Each API generation emits a `chat.generation` span to Sentry. The span covers
+generation execution through persistence and post-commit effects, with bounded
+attributes for `chat.generation.kind`, `chat.generation.outcome`,
+`chat.generation.duration_ms`, `chat.generation.time_to_first_token_ms`,
+`chat.generation.time_to_first_tool_call_ms`, `chat.generation.tool_count`, and
+prompt/output/total token counts when the provider reports usage. Chat
+generation spans are sampled at 100% so low-volume latency and failure
+investigation does not depend on the general 10% trace sample. They contain no
+chat, user, message, or generation identifiers and no prompt or response text.
+
+Use Sentry trace search and dashboards, filtered to
+`deployment.environment.name:production`, for:
+
+- p50/p95/p99 `chat.generation.duration_ms` and
+  `chat.generation.time_to_first_token_ms`, grouped by kind and outcome.
+- p50/p95 `chat.generation.time_to_first_tool_call_ms` for tool-using turns.
+- Generation volume and committed, failed, and cancelled rates.
+- Tool-call counts and provider-reported prompt, output, and total tokens.
+
+Generation spans are sampled at 100%, so their counts and latency percentiles
+do not inherit the general trace sampling ratio. The `http.server` span measures
+request latency separately; a stream request can complete before its
+generation finishes.
+
 ### Application logs exported to New Relic
 
 Every event emitted through the shared Hominem logger is sent to New Relic.

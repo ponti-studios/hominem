@@ -135,7 +135,7 @@ describe('ChatClient', () => {
     expect(generation.state.generationId).toBe('caller-supplied-id');
   });
 
-  it('respondToToolCall() never sends a generationId in the body — the server derives the generation from messageId/toolCallId and rejects a client-supplied one', async () => {
+  it('respondToToolCall() keeps the existing generation identity without sending it in the body', async () => {
     const sentBodies: unknown[] = [];
     const request = async ({ init }: ChatClientTransportRequest) => {
       if (typeof init.body !== 'string') throw new Error('expected a string request body');
@@ -172,11 +172,56 @@ describe('ChatClient', () => {
       chatId: 'chat-1',
       messageId: 'message-1',
       toolCallId: 'tool-call-1',
+      generationId: 'server-generation-id',
       body: { approved: true },
     });
     await generation.done;
 
     expect(sentBodies).toEqual([{ approved: true }]);
+    expect(generation.state.generationId).toBe('server-generation-id');
+    expect(generation.state.phase).toBe('committed');
+  });
+
+  it('respondToToolCall() adopts the generation identity returned by the server', async () => {
+    const request = async () =>
+      streamResponse({
+        version: 1,
+        generationId: 'server-generation-id',
+        sequence: 1,
+        type: 'generation.committed',
+        payload: {
+          type: 'generation.committed',
+          message: {
+            id: 'message-1',
+            chatId: 'chat-1',
+            userId: 'user-1',
+            role: 'assistant',
+            content: 'done',
+            files: null,
+            toolCalls: null,
+            reasoning: null,
+            parentMessageId: null,
+            createdAt: '2026-01-01',
+            updatedAt: '2026-01-01',
+          },
+        },
+      });
+    const client = new ChatClient({
+      baseUrl: 'https://chat.test',
+      transport: { request, stream: streamFromRequest(request) },
+      createId: () => 'temporary-client-id',
+    });
+
+    const generation = client.respondToToolCall({
+      chatId: 'chat-1',
+      messageId: 'message-1',
+      toolCallId: 'tool-call-1',
+      body: { approved: true },
+    });
+    await generation.done;
+
+    expect(generation.state.generationId).toBe('server-generation-id');
+    expect(generation.state.phase).toBe('committed');
   });
 
   it('streams events, checkpoints each state, and removes terminal checkpoints', async () => {

@@ -9,6 +9,7 @@ APP_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 TESTS_DIR="$APP_DIR/tests"
 APP_ID="${APP_ID:-com.pontistudios.hakumi.dev}"
 API_URL="${EXPO_PUBLIC_API_BASE_URL:-http://localhost:4040}"
+METRO_URL_ENCODED="${OMIRO_MAESTRO_METRO_URL_ENCODED:-}"
 
 export PATH="$HOME/.maestro/bin:/opt/homebrew/opt/openjdk@17/bin:$PATH"
 export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
@@ -43,6 +44,16 @@ if [[ "$ai_provider" != 'scripted' || "$email_provider" != 'scripted' ]]; then
   fail "API at $API_URL is not running with ENV=scripted (ai=${ai_provider:-unknown}, email=${email_provider:-unknown}). Restart it with ENV=scripted before running this suite."
 fi
 
+if [[ -z "$METRO_URL_ENCODED" ]]; then
+  simulator_interface="$(route -n get default 2>/dev/null | awk '$1 == "interface:" { print $2; exit }')"
+  simulator_host="${OMIRO_MAESTRO_SIMULATOR_HOST:-}"
+  if [[ -z "$simulator_host" && -n "$simulator_interface" ]]; then
+    simulator_host="$(ipconfig getifaddr "$simulator_interface" 2>/dev/null || true)"
+  fi
+  [[ -n "$simulator_host" ]] || fail 'Could not determine the Mac LAN address for the iOS simulator'
+  METRO_URL_ENCODED="http%3A%2F%2F${simulator_host}%3A8082"
+fi
+
 # A cancelled Maestro run can leave its XCTest bridge holding port 7001. Do
 # this for every run, not just auth, before a new bridge is created.
 pkill -f '\.maestro/lib' 2>/dev/null || true
@@ -60,4 +71,4 @@ if [[ $# -eq 0 ]]; then
   set -- "$TESTS_DIR"
 fi
 
-exec maestro test --config "$TESTS_DIR/config.yaml" "$@"
+exec maestro test --config "$TESTS_DIR/config.yaml" -e "METRO_URL=$METRO_URL_ENCODED" "$@"

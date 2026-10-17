@@ -3,6 +3,8 @@ import { waitFor } from '@testing-library/react';
 import { act } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { chatKeys } from '~/services/notes/query-keys';
+
 import { makeChatMessage } from '../fixtures';
 import { renderHookWithQueryClient } from '../utils/render-hook';
 
@@ -86,6 +88,34 @@ describe('useChatSearch', () => {
     expect(result.current.displayMessages).toEqual([
       expect.objectContaining({ id: 'm2', message: 'found it' }),
     ]);
+  });
+
+  it('hides previous-query results until the new debounced search is ready', () => {
+    vi.useFakeTimers();
+    mockMessagesSearchGet.mockResolvedValue({ json: async () => [] });
+    const oldResult = makeChatMessage({ id: 'old-result', message: 'old match' });
+    const newResult = makeChatMessage({ id: 'new-result', message: 'new match' });
+    const { result, queryClient } = renderHookWithQueryClient(() => useChatSearch([], CHAT_ID));
+    queryClient.setQueryData(chatKeys.messageSearch(CHAT_ID, 'old'), [oldResult]);
+    queryClient.setQueryData(chatKeys.messageSearch(CHAT_ID, 'new'), [newResult]);
+
+    act(() => {
+      result.current.handleOpenSearch();
+      result.current.handleSearchQueryChange('old');
+    });
+    act(() => vi.advanceTimersByTime(200));
+    expect(result.current.displayMessages).toEqual([oldResult]);
+
+    act(() => result.current.handleSearchQueryChange('new'));
+
+    expect(result.current.displayMessages).toEqual([]);
+    expect(result.current.isSearching).toBe(true);
+
+    act(() => vi.advanceTimersByTime(200));
+
+    expect(result.current.displayMessages).toEqual([newResult]);
+    expect(result.current.isSearching).toBe(true);
+    vi.useRealTimers();
   });
 
   it('clears the query and closes search on close', () => {

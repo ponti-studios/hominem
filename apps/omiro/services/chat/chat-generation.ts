@@ -16,6 +16,11 @@ export interface ChatGenerationState {
   lastDurableSequence: number;
   targetMessageId?: string;
   userMessageId?: string;
+  retryInput?: {
+    message: string;
+    fileIds?: string[];
+    responseModality?: 'text' | 'audio';
+  };
   error?: string;
 }
 

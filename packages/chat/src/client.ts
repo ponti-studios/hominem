@@ -158,17 +158,20 @@ export class ChatClient {
     messageId: string;
     toolCallId: string;
     body: Record<string, unknown>;
+    generationId?: string;
   }): ChatGenerationController {
     // The server derives the generation to continue from messageId/toolCallId
     // alone and rejects a client-supplied generationId in the body
     // (ChatsToolCallRespondSchema is `.strict()` with no such field) — unlike
     // send/start/regenerate, there's no valid client-known id to send here.
     return this.createGenerationWith({
+      generationId: input.generationId,
       path: `/api/chats/${input.chatId}/messages/${input.messageId}/tool-calls/${input.toolCallId}/respond`,
       body: input.body,
       replayPath: (generationId, afterSequence) =>
         `/api/chats/${input.chatId}/generations/${generationId}/stream?afterSequence=${afterSequence}`,
       includeGenerationIdInBody: false,
+      adoptServerGenerationId: input.generationId === undefined,
     });
   }
 
@@ -210,6 +213,7 @@ export class ChatClient {
     body: unknown;
     replayPath?: (generationId: string, afterSequence: number) => string;
     includeGenerationIdInBody?: boolean;
+    adoptServerGenerationId?: boolean;
   }): ChatGenerationController {
     const generation = this.createGeneration(input.generationId);
     queueMicrotask(() => {
@@ -232,10 +236,12 @@ export class ChatClient {
       body?: unknown,
       replayPath?: (generationId: string, afterSequence: number) => string,
       reconnect = true,
+      adoptServerGenerationId = false,
     ): Promise<GenerationClientState> => {
       const idleMs = GENERATION_TIMING.clientIdleMs;
       const idleController = new AbortController();
       let idleTimer: ReturnType<typeof setTimeout> | undefined;
+      let shouldAdoptServerGenerationId = adoptServerGenerationId;
       const armIdleTimer = () => {
         clearTimeout(idleTimer);
         idleTimer = setTimeout(() => idleController.abort(), idleMs);
@@ -253,6 +259,10 @@ export class ChatClient {
             if (output.kind !== 'event') continue;
             const event = deduplicate(output.event);
             if (!event) continue;
+            if (shouldAdoptServerGenerationId && current.generationId !== event.generationId) {
+              current = createGenerationClientState(event.generationId);
+            }
+            shouldAdoptServerGenerationId = false;
             current = reduceGenerationClientEvent(current, event);
             for (const listener of listeners) listener(current, event);
             const snapshot = current;
@@ -327,6 +337,7 @@ export class ChatClient {
             undefined,
             undefined,
             false,
+            false,
           );
         }
         if (!isAbortError(error)) {
@@ -360,12 +371,14 @@ export class ChatClient {
       generationId,
       replayPath,
       includeGenerationIdInBody = true,
+      adoptServerGenerationId,
     }: {
       path: string;
       body: unknown;
       generationId?: string;
       replayPath?: (generationId: string, afterSequence: number) => string;
       includeGenerationIdInBody?: boolean;
+      adoptServerGenerationId?: boolean;
     }) => {
       const result = (async () => {
         const id = generationId ?? current.generationId;
@@ -373,7 +386,7 @@ export class ChatClient {
         const requestBody = includeGenerationIdInBody
           ? { ...(typeof body === 'object' ? body : {}), generationId: id }
           : body;
-        return consume(path, requestBody, replayPath);
+        return consume(path, requestBody, replayPath, true, adoptServerGenerationId);
       })();
       result.then(resolveDone, rejectDone);
       return result;
