@@ -15,8 +15,89 @@ permissions:
   contents: read
 
 jobs:
+  wait-for-database-migration:
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Wait for the matching production migration when database files changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          node --input-type=module <<'NODE'
+          const repository = process.env.REPOSITORY;
+          const targetSha = process.env.TARGET_SHA;
+          const token = process.env.GH_TOKEN;
+          const api = async (path) => {
+            const response = await fetch(`https://api.github.com/repos/${repository}${path}`, {
+              headers: {
+                Accept: 'application/vnd.github+json',
+                Authorization: `Bearer ${token}`,
+                'X-GitHub-Api-Version': '2022-11-28',
+              },
+            });
+            if (!response.ok) throw new Error(`GitHub API ${response.status}: ${path}`);
+            return response.json();
+          };
+          const commit = await api(`/commits/${targetSha}`);
+          const parent = commit.parents?.[0]?.sha;
+          if (!parent) throw new Error(`Cannot determine parent of ${targetSha}`);
+          const comparison = await api(`/compare/${parent}...${targetSha}`);
+          const paths = comparison.files?.map(({ filename }) => filename) ?? [];
+          const databasePathsChanged = paths.length >= 300 || paths.some((path) =>
+            path.startsWith('packages/db/') ||
+            path.startsWith('just/') ||
+            path.startsWith('scripts/') ||
+            path.startsWith('.github/actions/setup-pnpm-workspace/') ||
+            path.startsWith('.github/actions/setup-goose/') ||
+            path === 'package.json' ||
+            path === 'pnpm-lock.yaml' ||
+            path === 'pnpm-workspace.yaml' ||
+            path === 'turbo.json' ||
+            path === 'justfile' ||
+            path === '.github/workflows/validate-db.yml' ||
+            /^tsconfig[^/]*\.json$/.test(path) ||
+            path.startsWith('tsconfig.profiles/'),
+          );
+          if (!databasePathsChanged) {
+            console.log(`No database validation paths changed in ${targetSha}; API deployment can proceed.`);
+            process.exit(0);
+          }
+
+          const deadline = Date.now() + 35 * 60 * 1000;
+          const pause = () => new Promise((resolve) => setTimeout(resolve, 15000));
+          const runs = async (workflow) => {
+            const result = await api(`/actions/workflows/${workflow}/runs?head_sha=${targetSha}&per_page=100`);
+            return result.workflow_runs.filter((run) => run.head_branch === 'main' && run.head_sha === targetSha);
+          };
+
+          let validation;
+          while (Date.now() < deadline) {
+            validation = (await runs('validate-db.yml')).find((run) => run.event === 'push');
+            if (validation?.status === 'completed') break;
+            await pause();
+          }
+          if (!validation || validation.status !== 'completed' || validation.conclusion !== 'success')
+            throw new Error(`Matching validate-db run did not succeed for ${targetSha}`);
+
+          let migration;
+          while (Date.now() < deadline) {
+            migration = (await runs('deploy-db.yml')).find((run) => run.event === 'workflow_run');
+            if (migration?.status === 'completed') break;
+            await pause();
+          }
+          if (!migration || migration.status !== 'completed' || migration.conclusion !== 'success')
+            throw new Error(`Matching production database migration did not succeed for ${targetSha}`);
+          console.log(`Production migration ${migration.id} succeeded for ${targetSha}; API deployment can proceed.`);
+          NODE
+
   deploy-api:
     if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
+    needs: wait-for-database-migration
     uses: ./.github/workflows/railway-deploy-service.yml
     secrets:
       service_target: ${{ secrets.RAILWAY_SERVICE_API }}
