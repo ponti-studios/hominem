@@ -81,7 +81,11 @@ describe('dbCredentialStore', () => {
       ['hash-store-2', false, 1.6666],
     ]);
     await dbCredentialStore.markDisabled('hash-store-1', at);
-    expect((await dbCredentialStore.rows(userId))[0]?.disabledAt).not.toBeNull();
+    const disabled = (await dbCredentialStore.rows(userId)).find(
+      (row) => row.keyHash === 'hash-store-1',
+    );
+    expect(disabled).toBeDefined();
+    expect(disabled?.disabledAt).toEqual(at);
     await db.deleteFrom('app.providerCredentials').where('userId', '=', userId).execute();
   });
 });
