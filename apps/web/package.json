@@ -52,7 +52,7 @@
     "i18next": "^25.7.3",
     "isbot": "^5",
     "lucide-react": "catalog:",
-    "motion": "^13.1.1",
+    "motion": "^14.0.0",
     "nanoid": "^6.0.1",
     "posthog-js": "^1.363.3",
     "radix-ui": "^1.6.7",
