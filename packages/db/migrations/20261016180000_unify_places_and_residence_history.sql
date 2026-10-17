@@ -160,6 +160,72 @@ UPDATE app.tag_assignments assignment
 SET entity_table = 'app.places'::regclass
 WHERE assignment.entity_table = 'app.travel_places'::regclass;
 
+-- Preserve generic collection and space references before replacing the
+-- travel_places table. These relations point at Places after the migration.
+CREATE TEMP TABLE place_entity_reference_map ON COMMIT DROP AS
+SELECT 'app.places'::regclass AS source_table, old_place_id AS source_id, travel_place_id AS target_id
+FROM place_identity_migration_map
+UNION ALL
+SELECT 'app.travel_places'::regclass, id, id
+FROM app.travel_places;
+
+CREATE TEMP TABLE place_collection_item_map ON COMMIT DROP AS
+SELECT DISTINCT item.id, item.collection_id, map.target_id
+FROM app.collection_items item
+JOIN place_entity_reference_map map
+  ON item.entity_table = map.source_table AND item.entity_id = map.source_id
+UNION
+SELECT DISTINCT item.id, item.collection_id, map.target_id
+FROM app.collection_items item
+JOIN (SELECT DISTINCT target_id FROM place_entity_reference_map) map
+  ON item.entity_table = 'app.places'::regclass AND item.entity_id = map.target_id;
+
+WITH ranked AS (
+  SELECT mapped.id, mapped.collection_id, mapped.target_id,
+    first_value(mapped.id) OVER (
+      PARTITION BY mapped.collection_id, mapped.target_id
+      ORDER BY (item.entity_table = 'app.places'::regclass AND item.entity_id = mapped.target_id) DESC,
+        item.createdat, item.id
+    ) AS survivor_id
+  FROM place_collection_item_map mapped
+  JOIN app.collection_items item ON item.id = mapped.id
+), merged AS (
+  SELECT ranked.survivor_id,
+    array_to_string(array_agg(DISTINCT item.note) FILTER (WHERE item.note IS NOT NULL), E'\n') AS notes,
+    min(item.sort_order) FILTER (WHERE item.sort_order IS NOT NULL) AS sort_order,
+    min(item.createdat) AS createdat
+  FROM ranked
+  JOIN app.collection_items item ON item.id = ranked.id
+  GROUP BY ranked.survivor_id
+)
+UPDATE app.collection_items item
+SET note = coalesce(merged.notes, item.note),
+    sort_order = coalesce(item.sort_order, merged.sort_order),
+    createdat = merged.createdat
+FROM ranked, merged
+WHERE item.id = ranked.survivor_id
+  AND merged.survivor_id = ranked.survivor_id;
+
+WITH ranked AS (
+  SELECT mapped.id,
+    first_value(mapped.id) OVER (
+      PARTITION BY mapped.collection_id, mapped.target_id
+      ORDER BY (item.entity_table = 'app.places'::regclass AND item.entity_id = mapped.target_id) DESC,
+        item.createdat, item.id
+    ) AS survivor_id
+  FROM place_collection_item_map mapped
+  JOIN app.collection_items item ON item.id = mapped.id
+)
+DELETE FROM app.collection_items item
+USING ranked
+WHERE item.id = ranked.id AND ranked.id <> ranked.survivor_id;
+
+UPDATE app.collection_items item
+SET entity_table = 'app.places'::regclass,
+    entity_id = mapped.target_id
+FROM place_collection_item_map mapped
+WHERE item.id = mapped.id;
+
 DO $$
 BEGIN
   IF to_regclass('app.entities') IS NOT NULL THEN

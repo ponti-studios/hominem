@@ -317,12 +317,35 @@ async function loadTravelData(owner: string) {
         });
     }
   const airports = [...airportByCode.values()];
+  const endpointKey = (code: string, referenceId: string | null) =>
+    `${code.toUpperCase()}:${referenceId ?? ''}`;
+  const endpointSelections = new Map<string, { code: string; referenceId: string | null }>();
+  for (const leg of transport) {
+    for (const endpoint of [
+      { code: leg.origin, referenceId: leg.originReferenceId },
+      { code: leg.destination, referenceId: leg.destinationReferenceId },
+    ]) {
+      endpointSelections.set(endpointKey(endpoint.code, endpoint.referenceId), endpoint);
+    }
+  }
+  const selectedEndpoints = new Map(
+    await Promise.all(
+      [...endpointSelections].map(
+        async ([key, endpoint]) =>
+          [key, await getTravelAirport(owner, endpoint.code, endpoint.referenceId)] as const,
+      ),
+    ),
+  );
   const placeById = new Map(canonicalPlaces.map((place) => [place.id, place]));
   const journeyById = new Map(journeys.map((journey) => [journey.id, journey]));
   const segmentById = new Map(segments.map((segment) => [segment.id, segment]));
   const resolveLeg = (leg: (typeof transport)[number]) => {
-    const origin = airportByCode.get(leg.origin.toUpperCase());
-    const destination = airportByCode.get(leg.destination.toUpperCase());
+    const origin =
+      selectedEndpoints.get(endpointKey(leg.origin, leg.originReferenceId)) ??
+      airportByCode.get(leg.origin.toUpperCase());
+    const destination =
+      selectedEndpoints.get(endpointKey(leg.destination, leg.destinationReferenceId)) ??
+      airportByCode.get(leg.destination.toUpperCase());
     return {
       ...leg,
       originCode: leg.origin,
@@ -595,7 +618,7 @@ export async function travelValidate(owner: string) {
   }
   add('near_duplicate_journey', nearDuplicateJourneyOffenders, nearDuplicateJourneyCount);
   for (const check of Object.values(checks))
-    check.offenders.sort((a, b) => a.id.localeCompare(b.id) || a.id.localeCompare(b.id));
+    check.offenders.sort((a, b) => a.id.localeCompare(b.id));
   return { checks };
 }
 
@@ -621,10 +644,10 @@ export async function travelSearch(owner: string, input: { query: string; limit:
   const results = {
     journeys: data.journeys
       .filter((row) => contains(row.name, input.query) || contains(row.notes, input.query))
-      .sort((a, b) => a.id.localeCompare(b.id) || a.id.localeCompare(b.id)),
+      .sort((a, b) => a.id.localeCompare(b.id)),
     places: data.places
       .filter((row) => contains(row.place, input.query))
-      .sort((a, b) => a.id.localeCompare(b.id) || a.id.localeCompare(b.id)),
+      .sort((a, b) => a.id.localeCompare(b.id)),
     stays: data.stays
       .filter(
         (row) =>
@@ -632,13 +655,13 @@ export async function travelSearch(owner: string, input: { query: string; limit:
           contains(row.city, input.query) ||
           contains(row.bookingRef, input.query),
       )
-      .sort((a, b) => a.id.localeCompare(b.id) || a.id.localeCompare(b.id)),
+      .sort((a, b) => a.id.localeCompare(b.id)),
     transport: data.transport
       .filter((row) => contains(row.carrier, input.query) || contains(row.bookingRef, input.query))
-      .sort((a, b) => a.id.localeCompare(b.id) || a.id.localeCompare(b.id)),
+      .sort((a, b) => a.id.localeCompare(b.id)),
     ideas: data.ideas
       .filter((row) => contains(row.idea, input.query))
-      .sort((a, b) => a.id.localeCompare(b.id) || a.id.localeCompare(b.id)),
+      .sort((a, b) => a.id.localeCompare(b.id)),
   };
   const pages = {
     journeys: makePage(results.journeys, input.limit),

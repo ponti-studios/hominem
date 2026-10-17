@@ -109,7 +109,19 @@ registerTool(
     idempotent: true,
     requiresConfirmation: true,
     resultCap: 1,
-    preview: async () => null,
+    preview: async (owner, input) => {
+      const parsed = placeResidenceDeleteInputSchema.safeParse(input);
+      if (!parsed.success) return null;
+      const residence = await getPlaceResidence(owner, { id: parsed.data.id });
+      return residence
+        ? {
+            residenceId: residence.id,
+            place: residence.place,
+            periodCount: residence.periods.length,
+            periods: residence.periods,
+          }
+        : null;
+    },
   },
   (owner, input) => deletePlaceResidence(owner, input),
 );

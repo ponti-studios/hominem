@@ -22,8 +22,9 @@ const period = z
       ctx.addIssue({ code: 'custom', message: 'invalid_period' });
   });
 export const placeResidencePeriodsSchema = z.array(period);
+const importedPeriod = period.extend({ id: z.string().uuid().optional() });
 export const placeResidenceImportedPeriodsSchema = z
-  .array(period)
+  .array(importedPeriod)
   .min(1)
   .superRefine((periods, context) => {
     if (periods.filter((item) => item.ongoing).length > 1) {

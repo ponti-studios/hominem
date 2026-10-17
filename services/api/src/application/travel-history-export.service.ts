@@ -74,7 +74,7 @@ export async function travelExport(owner: string) {
   `.execute(db);
   const residences = await sql<Row>`
     SELECT r.id, r.owner_userid, r.place_id, r.notes, r.created_at, r.updated_at,
-      coalesce(jsonb_agg(jsonb_build_object('startDate', rp.start_date, 'endDate', rp.end_date,
+      coalesce(jsonb_agg(jsonb_build_object('id', rp.id, 'startDate', rp.start_date, 'endDate', rp.end_date,
         'ongoing', rp.ongoing, 'precision', rp.precision, 'note', rp.note)
         ORDER BY rp.start_date, rp.id) FILTER (WHERE rp.id IS NOT NULL), '[]'::jsonb) AS periods
     FROM app.place_residences r LEFT JOIN app.place_residence_periods rp

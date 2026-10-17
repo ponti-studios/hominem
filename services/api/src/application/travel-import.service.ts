@@ -353,7 +353,7 @@ async function loadRows(trx: TransactionHandle, entity: Entity, owner: string, r
   }
   if (entity === 'residences') {
     const result = await sql<StoredRow>`SELECT r.id, r.owner_userid, r.place_id, r.notes,
-      coalesce(jsonb_agg(jsonb_build_object('startDate', rp.start_date, 'endDate', rp.end_date,
+      coalesce(jsonb_agg(jsonb_build_object('id', rp.id, 'startDate', rp.start_date, 'endDate', rp.end_date,
         'ongoing', rp.ongoing, 'precision', rp.precision, 'note', rp.note)
         ORDER BY rp.start_date, rp.id) FILTER (WHERE rp.id IS NOT NULL), '[]'::jsonb) AS periods
       FROM app.place_residences r LEFT JOIN app.place_residence_periods rp
@@ -440,20 +440,38 @@ async function writeRow(
           trx,
         );
       }
-    }
-    if (!dryRun && isTravel)
-      await sql`INSERT INTO app.travel_places (place_id, owner_userid, want_to_go, archived)
+      if (isTravel)
+        await sql`INSERT INTO app.travel_places (place_id, owner_userid, want_to_go, archived)
         VALUES (${id}, ${owner}, ${Boolean(want_to_go)}, ${Boolean(archived)})
         ON CONFLICT (place_id) DO UPDATE SET want_to_go=EXCLUDED.want_to_go, archived=EXCLUDED.archived`.execute(
-        trx,
-      );
+          trx,
+        );
+    }
     return { row, action: current ? 'updated' : 'created' };
   }
   if (entity === 'residences') {
     const { periods: rawPeriods, ...parentFields } = fields;
     const periods = placeResidenceImportedPeriodsSchema.parse(rawPeriods ?? []);
     const storedPeriods = current?.periods;
-    const periodsChanged = !current || !isDeepStrictEqual(storedPeriods, periods);
+    const comparablePeriods = (values: unknown) =>
+      Array.isArray(values)
+        ? values.map((period) => ({
+            startDate: period.startDate,
+            endDate: period.endDate ?? null,
+            ongoing: period.ongoing,
+            precision: period.precision,
+            note: period.note ?? null,
+          }))
+        : values;
+    const storedPeriodValues = Array.isArray(storedPeriods)
+      ? comparablePeriods(storedPeriods)
+      : storedPeriods;
+    const incomingPeriodValues = comparablePeriods(periods);
+    const idsChanged =
+      Array.isArray(storedPeriods) &&
+      periods.some((period, index) => period.id && period.id !== storedPeriods[index]?.id);
+    const periodsChanged =
+      !current || idsChanged || !isDeepStrictEqual(storedPeriodValues, incomingPeriodValues);
     const fieldsChanged =
       !current ||
       Object.entries(parentFields).some(
@@ -484,8 +502,8 @@ async function writeRow(
       if (periodsChanged)
         for (const period of periods) {
           await sql`INSERT INTO app.place_residence_periods
-          (owner_userid, residence_id, start_date, end_date, ongoing, precision, note)
-          VALUES (${owner}, ${id}, ${period.startDate}, ${period.endDate ?? null},
+          (id, owner_userid, residence_id, start_date, end_date, ongoing, precision, note)
+          VALUES (${period.id ?? randomUUID()}, ${owner}, ${id}, ${period.startDate}, ${period.endDate ?? null},
             ${period.ongoing}, ${period.precision}, ${period.note ?? null})`.execute(trx);
         }
     }

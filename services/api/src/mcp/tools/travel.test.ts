@@ -30,6 +30,7 @@ const readResidenceId = 'e1000031-0000-4000-8000-000000000001';
 const readSegmentId = 'e1000032-0000-4000-8000-000000000001';
 const readAirportId = 'e1000033-0000-4000-8000-000000000001';
 const readAirport2Id = 'e1000033-0000-4000-8000-000000000002';
+const readPinnedReferenceId = 'e1000033-0000-4000-8000-000000000003';
 const readTransportId = 'e1000034-0000-4000-8000-000000000001';
 const readStayId = 'e1000035-0000-4000-8000-000000000001';
 const wishlistStayId = 'e1000035-0000-4000-8000-000000000002';
@@ -52,6 +53,7 @@ beforeAll(async () => {
       true,
     ],
   );
+  await db.deleteFrom('app.travelAirportReference').where('sourceId', '=', '989003').execute();
   await db
     .insertInto('app.travelAirportReference')
     .values([
@@ -77,6 +79,18 @@ beforeAll(async () => {
         longitude: 0.235,
         scheduledService: true,
       },
+      {
+        id: readPinnedReferenceId,
+        sourceId: 989003,
+        code: 'LHR',
+        name: 'Duplicate code probe airport',
+        city: 'Pinned Probe City',
+        country: 'GB',
+        type: 'large_airport',
+        latitude: 40,
+        longitude: -70,
+        scheduledService: true,
+      },
     ])
     .onConflict((conflict) => conflict.column('sourceId').doNothing())
     .execute();
@@ -91,8 +105,6 @@ beforeAll(async () => {
         servesPlace: 'London',
         city: 'London',
         country: 'UK',
-        latitude: 51.47,
-        longitude: -0.4543,
       },
       {
         id: readAirport2Id,
@@ -167,6 +179,7 @@ beforeAll(async () => {
       date: '2026-01-01',
       mode: 'air',
       origin: 'LHR',
+      originReferenceId: readPinnedReferenceId,
       destination: 'STN',
       journeyId: readJourneyId,
       arrSegmentId: readSegmentId,
@@ -383,6 +396,17 @@ describe('travel residence tools', () => {
       offset: 0,
     });
   });
+
+  it('previews an owned residence deletion and skips confirmation for missing records', async () => {
+    const preview = getToolDefinition('place_residence_delete')?.preview;
+    expect(preview).toBeTypeOf('function');
+    await expect(
+      preview?.(ownerId, { id: readResidenceId, iUnderstand: true, dryRun: false }),
+    ).resolves.toMatchObject({ residenceId: readResidenceId, place: 'London', periodCount: 1 });
+    await expect(
+      preview?.(otherUserId, { id: readResidenceId, iUnderstand: true, dryRun: false }),
+    ).resolves.toBeNull();
+  });
 });
 
 describe('travel Tier 1 reads', () => {
@@ -467,7 +491,11 @@ describe('travel Tier 1 reads', () => {
       placeCount: 1,
       countryCount: 1,
       legCountByMode: { air: 1 },
+      totalDistanceKm: expect.any(Number),
     });
+    expect(
+      (stats.structuredContent as { totalDistanceKm: number }).totalDistanceKm,
+    ).toBeGreaterThan(1000);
     const timeline = await callTool(ownerId, 'travel_timeline', {});
     expect(timeline.structuredContent).toMatchObject({
       total: 1,
@@ -550,7 +578,7 @@ describe('travel Tier 1 reads', () => {
       segments: [{ nights: 2 }],
       legs: [
         {
-          originName: 'Heathrow',
+          originName: 'Duplicate code probe airport',
           originPlace: 'London',
           destinationName: 'Stansted',
           distanceKm: expect.any(Number),

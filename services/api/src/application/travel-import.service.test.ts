@@ -434,6 +434,26 @@ describe('travel import', () => {
     expect(nativeResult.entities.journeys.created).toBe(0);
 
     expect(native.entities.place_residences).toHaveLength(1);
+    const exportedPeriods = native.entities.place_residences?.[0]?.periods as {
+      id: string;
+    }[];
+    expect(exportedPeriods[0]?.id).toMatch(/^[0-9a-f-]{36}$/i);
+    const replay = await importTravelRows(
+      owner,
+      travelImportInputSchema.parse({ ...native, mode: 'append' }),
+    );
+    const storedPeriods = await db
+      .selectFrom('app.placeResidencePeriods')
+      .select('app.placeResidencePeriods.id')
+      .innerJoin(
+        'app.placeResidences',
+        'app.placeResidences.id',
+        'app.placeResidencePeriods.residenceId',
+      )
+      .where('app.placeResidences.ownerUserid', '=', owner)
+      .execute();
+    expect(replay.entities.residences).toMatchObject({ created: 0, unchanged: 1, rejected: [] });
+    expect(storedPeriods.map(({ id }) => id)).toEqual(exportedPeriods.map(({ id }) => id));
   });
 
   it('upserts sparse values, preserves archive state, and audits imported updates', async () => {
