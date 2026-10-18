@@ -479,6 +479,28 @@ export interface AppCredentialBlocks {
   userId: string;
 }
 
+export interface AppCreditLedger {
+  amountPence: number;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  kind: string;
+  userId: string;
+}
+
+export interface AppCreditPayments {
+  amountPence: number;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  creditPence: number;
+  status: string;
+  stripeSessionId: string;
+  userId: string;
+}
+
+export interface AppCreditState {
+  lowNotifiedAt: ColumnType<string, Date | string, Date | string> | null;
+  userId: string;
+}
+
 export interface AppFiles {
   content: string | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1642,6 +1664,9 @@ export interface DB {
   'app.credentialAllowedDomains': AppCredentialAllowedDomains;
   'app.credentialAllowedEmails': AppCredentialAllowedEmails;
   'app.credentialBlocks': AppCredentialBlocks;
+  'app.creditLedger': AppCreditLedger;
+  'app.creditPayments': AppCreditPayments;
+  'app.creditState': AppCreditState;
   'app.files': AppFiles;
   'app.financeAccounts': AppFinanceAccounts;
   'app.financeCategories': AppFinanceCategories;

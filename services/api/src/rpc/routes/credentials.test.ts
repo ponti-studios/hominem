@@ -13,6 +13,9 @@ const mocks = vi.hoisted(() => {
     isBlocked: vi.fn(),
     isAllowed: vi.fn(),
     managementKey,
+    inCreditMode: { value: false },
+    creditFor: vi.fn(),
+    sendLowCreditEmail: vi.fn(),
   };
 });
 
@@ -28,6 +31,14 @@ vi.mock('../../application/provider-credentials.store', () => ({
 vi.mock('../../application/openrouter-keys', () => ({
   createOpenRouterKeys: () => ({}),
   OpenRouterKeysError: mocks.OpenRouterKeysError,
+}));
+vi.mock('../../application/credit.runtime', () => ({
+  personInCreditMode: () => mocks.inCreditMode.value,
+  creditDeps: () => ({ store: 'credit-store' }),
+}));
+vi.mock('../../application/credit', () => ({ creditFor: mocks.creditFor }));
+vi.mock('../../application/credit-email', () => ({
+  sendLowCreditEmail: mocks.sendLowCreditEmail,
 }));
 vi.mock('../../env', () => ({
   env: {
@@ -57,6 +68,7 @@ const DEVICE = 'device-12345678';
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.managementKey.value = 'mgmt-key';
+  mocks.inCreditMode.value = false;
   mocks.isBlocked.mockResolvedValue(false);
   mocks.isAllowed.mockResolvedValue(true);
 });
@@ -97,6 +109,15 @@ describe('POST /api/credentials', () => {
     const response = await postJson(app, '/api/credentials', { deviceId: DEVICE });
     expect(response.status).toBe(503);
     expect(mocks.mintCredential).not.toHaveBeenCalled();
+  });
+
+  it('gives the balance rules only to a person in credit mode', async () => {
+    mocks.mintCredential.mockResolvedValue({ kind: 'minted', key: 'k', hash: 'h', limitUsd: 1.25 });
+    await postJson(app, '/api/credentials', { deviceId: DEVICE });
+    expect(mocks.mintCredential.mock.calls[0]?.[0]).not.toHaveProperty('credit');
+    mocks.inCreditMode.value = true;
+    await postJson(app, '/api/credentials', { deviceId: DEVICE });
+    expect(mocks.mintCredential.mock.calls[1]?.[0]).toHaveProperty('credit');
   });
 
   it('rejects a missing or short device id', async () => {
@@ -148,6 +169,29 @@ describe('GET /api/credentials/budget', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(await response.json()).toEqual(budget);
     expect(mocks.budgetFor).toHaveBeenCalledWith(expect.anything(), user.id);
+  });
+
+  it('gives a person in credit mode their balance instead of the monthly numbers', async () => {
+    mocks.inCreditMode.value = true;
+    const credit = {
+      balancePence: 819,
+      lastAddedPence: 819,
+      usdPerPound: 1.28,
+      asOf: '2026-10-18T10:00:00.000Z',
+    };
+    mocks.creditFor.mockResolvedValue(credit);
+    const response = await app.request('/api/credentials/budget');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({ credit });
+    expect(mocks.budgetFor).not.toHaveBeenCalled();
+    expect(mocks.creditFor).toHaveBeenCalledWith(expect.anything(), user.id, expect.anything());
+  });
+
+  it('keeps everyone else on the monthly budget', async () => {
+    mocks.budgetFor.mockResolvedValue(budget);
+    await app.request('/api/credentials/budget');
+    expect(mocks.creditFor).not.toHaveBeenCalled();
   });
 
   it.each([

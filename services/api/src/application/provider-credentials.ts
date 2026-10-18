@@ -14,10 +14,20 @@
  * without a database or OpenRouter.
  */
 
+import {
+  creditSnapshot,
+  ensureGrant,
+  newKeyLimitUsd,
+  reconcileLimits,
+  type CreditDeps,
+} from './credit';
+
 export const DEVICE_LIMIT = 3;
 export const MINTS_PER_HOUR = 5;
 /** A grant smaller than this is not worth a key; the person is treated as out of budget. */
 export const MIN_GRANT_USD = 0.05;
+/** The same floor in credit mode, where the balance is in pence and can be small but real. */
+export const MIN_CREDIT_GRANT_USD = 0.01;
 
 export interface CredentialRow {
   id: string;
@@ -60,6 +70,8 @@ export interface CredentialDeps {
   capUsd: number;
   now?: () => Date;
   log?: (event: string, fields: Record<string, unknown>) => void;
+  /** Present only for a person in credit mode: the balance then replaces the monthly budget. */
+  credit?: CreditDeps;
 }
 
 export type MintOutcome =
@@ -104,18 +116,27 @@ export async function mintCredential(
     others.length >= DEVICE_LIMIT ? others.slice(0, others.length - DEVICE_LIMIT + 1) : [];
   const kept = others.filter((row) => !evicted.includes(row));
 
-  // Spend counts every key of this month, revoked or not. Unspent allowance on the keys that
-  // stay is already promised, so it comes off what is left.
-  const thisMonth = keysCountingThisMonth(rows, now);
-  const usage = new Map<string, number>();
-  for (const row of thisMonth) usage.set(row.keyHash, await keys.usageMonthly(row.keyHash));
-  const spent = [...usage.values()].reduce((sum, value) => sum + value, 0);
-  const promised = kept
-    .filter((row) => row.period === period)
-    .reduce((sum, row) => sum + Math.max(0, row.limitUsd - (usage.get(row.keyHash) ?? 0)), 0);
-  const remaining = deps.capUsd - spent - promised;
-  const grant = floor4(Math.min(deps.capUsd / DEVICE_LIMIT, remaining));
-  if (grant < MIN_GRANT_USD) return { kind: 'capped' };
+  let grant: number;
+  if (deps.credit) {
+    // Credit mode: the balance, not the month, decides. The free credit is given on first use.
+    await ensureGrant(deps.credit, input.userId);
+    const snapshot = await creditSnapshot(deps.credit, input.userId);
+    grant = newKeyLimitUsd(snapshot.balancePence, deps.credit.config.usdPerPound, kept.length + 1);
+    if (snapshot.balancePence <= 0 || grant < MIN_CREDIT_GRANT_USD) return { kind: 'capped' };
+  } else {
+    // Spend counts every key of this month, revoked or not. Unspent allowance on the keys that
+    // stay is already promised, so it comes off what is left.
+    const thisMonth = keysCountingThisMonth(rows, now);
+    const usage = new Map<string, number>();
+    for (const row of thisMonth) usage.set(row.keyHash, await keys.usageMonthly(row.keyHash));
+    const spent = [...usage.values()].reduce((sum, value) => sum + value, 0);
+    const promised = kept
+      .filter((row) => row.period === period)
+      .reduce((sum, row) => sum + Math.max(0, row.limitUsd - (usage.get(row.keyHash) ?? 0)), 0);
+    const remaining = deps.capUsd - spent - promised;
+    grant = floor4(Math.min(deps.capUsd / DEVICE_LIMIT, remaining));
+    if (grant < MIN_GRANT_USD) return { kind: 'capped' };
+  }
 
   const created = await keys.create({
     name: `thames:${input.userId}:${input.deviceId}`,
@@ -144,6 +165,16 @@ export async function mintCredential(
     deps,
     ended.map((row) => row.keyHash),
   );
+  if (deps.credit) {
+    // Keep the live keys' limits adding up to the balance now that the set of keys changed.
+    try {
+      await reconcileLimits(deps.credit, await creditSnapshot(deps.credit, input.userId));
+    } catch (error) {
+      deps.log?.('credit_reconcile_failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
   return { kind: 'minted', key: created.key, hash: created.hash, limitUsd: grant };
 }
 

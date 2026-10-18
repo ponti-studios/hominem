@@ -3,6 +3,9 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { creditFor } from '../../application/credit';
+import { sendLowCreditEmail } from '../../application/credit-email';
+import { creditDeps, personInCreditMode } from '../../application/credit.runtime';
 import { createOpenRouterKeys, OpenRouterKeysError } from '../../application/openrouter-keys';
 import {
   BudgetUnavailableError,
@@ -17,13 +20,15 @@ import { authMiddleware, type AppContext } from '../middleware/auth';
 
 const deviceIdSchema = z.string().min(8).max(128);
 
-function credentialDeps(): CredentialDeps | null {
+function credentialDeps(email?: string): CredentialDeps | null {
   if (!env.OPENROUTER_MANAGEMENT_KEY) return null;
   return {
     store: dbCredentialStore,
     keys: createOpenRouterKeys(env.OPENROUTER_MANAGEMENT_KEY),
     capUsd: env.THAMES_MONTHLY_CAP_USD,
     log: (event, fields) => logger.error(event, fields),
+    // Only a person the credit flag lets in is given the balance rules.
+    ...(email && personInCreditMode(email) ? { credit: creditDeps() ?? undefined } : {}),
   };
 }
 
@@ -35,7 +40,7 @@ export const credentialsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .post('/', zValidator('json', z.object({ deviceId: deviceIdSchema })), async (c) => {
     const auth = c.get('auth')!;
-    const deps = credentialDeps();
+    const deps = credentialDeps(auth.user.email);
     c.header('Cache-Control', 'no-store');
     if (!deps) return c.json({ error: 'unavailable' as const }, 503);
 
@@ -60,7 +65,7 @@ export const credentialsRoutes = new Hono<AppContext>()
   // cannot hold a key gets the same refusal as minting, so the app shows one calm reason.
   .get('/budget', async (c) => {
     const auth = c.get('auth')!;
-    const deps = credentialDeps();
+    const deps = credentialDeps(auth.user.email);
     c.header('Cache-Control', 'no-store');
     if (!deps) return c.json({ error: 'unavailable' as const }, 503);
     if (await deps.store.isBlocked(auth.userId)) return c.json({ error: 'blocked' as const }, 403);
@@ -68,6 +73,13 @@ export const credentialsRoutes = new Hono<AppContext>()
       return c.json({ error: 'not_listed' as const }, 403);
     }
     try {
+      // A person in credit mode gets their balance instead of the monthly numbers.
+      if (deps.credit) {
+        const credit = await creditFor(deps.credit, auth.userId, {
+          send: ({ userId }) => sendLowCreditEmail(userId),
+        });
+        return c.json({ credit });
+      }
       return c.json(await budgetFor(deps, auth.userId));
     } catch (error) {
       // Only the provider being slow or down is "unavailable"; anything else is a bug and goes to
