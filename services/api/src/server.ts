@@ -18,6 +18,7 @@ import { blockMaliciousProbes } from './middleware/block-probes';
 import { requestLogger } from './middleware/request-logger';
 import { securityHeadersMiddleware } from './middleware/security-headers';
 import { createAuthRoutes } from './routes/auth';
+import { creditRoutes } from './routes/credit';
 import { imagesRoutes } from './routes/images';
 import { legalRoutes } from './routes/legal';
 import { createLoginRoutes } from './routes/login';
@@ -114,6 +115,7 @@ function registerApiRoutes(app: Hono<AppEnv>, dependencies: ServerDependencies) 
   // Has to be mounted at root - RFC 8414 / RFC 9728 require it there.
   app.route('/', oauthDiscoveryRoutes);
   app.route('/', loginRoutes);
+  app.route('/', creditRoutes);
   app.route('/', legalRoutes);
   // Our own auth extras go first (session/logout reshape for apps/finance, e2e helpers).
   // Anything under /api/auth/* that doesn't match falls through to Better Auth's catch-all.

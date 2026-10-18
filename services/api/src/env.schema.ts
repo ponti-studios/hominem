@@ -40,6 +40,22 @@ export const apiSchema = runtimeSchema.extend({
   // Origin of the Thames website, allowed to call the invite endpoint from the browser.
   THAMES_SITE_URL: z.url().optional(),
   THAMES_MONTHLY_CAP_USD: z.coerce.number().positive().default(5),
+  // Thames credit (docs/prd/top-up.md in the Thames repo). `off` changes nothing for anyone; `test`
+  // turns it on for CREDIT_TESTERS only and needs Stripe test keys; `live` needs live keys.
+  CREDIT_MODE: z.enum(['off', 'test', 'live']).default('off'),
+  // Comma-separated emails, or whole domains (work.com or @work.com), who are in credit mode in `test`.
+  CREDIT_TESTERS: z.string().default(''),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  // Dollars per pound, already lowered by a small buffer so a falling pound does not cost Thames.
+  CREDIT_USD_PER_POUND: z.coerce.number().positive().default(1.28),
+  // The free credit on joining, in pence, and the most that may be given in a UTC day.
+  CREDIT_GRANT_PENCE: z.coerce.number().int().nonnegative().default(100),
+  CREDIT_GRANTS_PER_DAY: z.coerce.number().int().nonnegative().default(50),
+  // Local fakes for development only (ignored in production): where to reach OpenRouter's key
+  // API and Stripe's API instead of the real ones. See scripts/dev-fakes.ts.
+  OPENROUTER_KEYS_BASE_URL: z.url().optional(),
+  STRIPE_API_BASE_URL: z.url().optional(),
   SENTRY_DSN: z.string().optional(),
   OPENAI_APPS_CHALLENGE: z.string().optional(),
   SAVE_VOICE_AUDIO: z.stringbool().default(false),

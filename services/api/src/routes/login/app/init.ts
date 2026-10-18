@@ -35,6 +35,12 @@ export type ErrorInit = z.infer<typeof errorInitSchema>;
 export const settingsInitSchema = z.object({
   user: z.object({ id: z.string(), name: z.string().nullable(), email: z.string().nullable() }),
   loginNextUrl: z.string(),
+  /** The credit top-up page for a person in credit mode (docs/prd/top-up.md in Thames), else null. */
+  creditUrl: z.string().nullable().default(null),
+  /** What is left of their credit, in pence, or null when it could not be read. */
+  creditPence: z.number().nullable().default(null),
+  /** Opened inside the Thames app, which shares this session: no sign out here. */
+  embedded: z.boolean().default(false),
 });
 export type SettingsInit = z.infer<typeof settingsInitSchema>;
 

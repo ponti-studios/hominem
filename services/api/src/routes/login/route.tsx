@@ -4,6 +4,9 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { etag } from 'hono/etag';
 
+import { creditHistory, deleteAccount, exportAccount } from '../../application/account';
+import { deleteAccountDeps } from '../../application/account.runtime';
+import { inCreditMode, parseTesters, signLinkToken } from '../../application/credit';
 import {
   createMcpToken,
   listMcpTokens,
@@ -86,6 +89,32 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
     resolveResume(query, inputEnv, origin);
   const resolvePostAuthResumeWithEnv = (query: string, origin?: string) =>
     resolvePostAuthResume(query, inputEnv, origin);
+  // The top-up page link for a person the credit flag lets in; null for everyone else.
+  const creditUrlFor = (user: { id: string; email: string | null }, origin: string) => {
+    const mode = inputEnv.CREDIT_MODE ?? 'off';
+    if (mode === 'off' || !user.email) return null;
+    const config = {
+      mode,
+      testers: parseTesters(inputEnv.CREDIT_TESTERS ?? ''),
+      usdPerPound: 0,
+      grantPence: 0,
+      grantsPerDay: 0,
+    };
+    if (!inCreditMode(config, user.email)) return null;
+    const token = signLinkToken(inputEnv.BETTER_AUTH_SECRET, user.id, new Date());
+    return new URL(`/credit?t=${token}`, origin).toString();
+  };
+  // What a person in credit mode has left, in pence; null when it cannot be read just now.
+  const creditBalanceFor = async (userId: string): Promise<number | null> => {
+    try {
+      const { creditDeps } = await import('../../application/credit.runtime');
+      const { creditFor } = await import('../../application/credit');
+      const deps = creditDeps();
+      return deps ? (await creditFor(deps, userId)).balancePence : null;
+    } catch {
+      return null;
+    }
+  };
   const loginUrlWithEnv = (value: Parameters<typeof loginUrl>[0], origin?: string) =>
     loginUrl({ ...value, origin }, inputEnv);
   // Redirects are followed by the browser, so they must point at the host
@@ -149,10 +178,39 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         }),
       );
     })
+    // The Thames app opens this in a web view with a one-time token from
+    // /api/auth/one-time-token/generate. It signs the browser in, then lands on the account page.
+    .get('/auth/open', async (c) => {
+      const origin = requestOrigin(c);
+      const token = c.req.query('token') ?? '';
+      const landing = new URL('/auth/settings?app=1', origin).toString();
+      c.header('Cache-Control', 'no-store');
+      c.header('Referrer-Policy', 'no-referrer');
+      if (!token) return c.redirect(landing, 303);
+      const verified = await callBetterAuth({
+        auth,
+        env: inputEnv,
+        path: '/one-time-token/verify',
+        body: { token },
+        request: c.req.raw,
+      });
+      const headers = new Headers({ location: landing });
+      if (verified.ok) {
+        for (const setCookie of verified.headers.getSetCookie()) {
+          headers.append('set-cookie', setCookie);
+        }
+      }
+      // A bad or used token still lands on the account page, which sends signed-out people to log in.
+      headers.set('cache-control', 'no-store');
+      headers.set('referrer-policy', 'no-referrer');
+      return new Response(null, { status: 303, headers });
+    })
     .get('/auth/settings', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       const origin = requestOrigin(c);
       if (session?.user) {
+        const creditUrl = creditUrlFor(session.user, origin);
+        const creditPence = creditUrl ? await creditBalanceFor(session.user.id) : null;
         return c.html(
           renderAuthShell({
             entry: 'settings',
@@ -163,6 +221,9 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
                 email: session.user.email,
               },
               loginNextUrl: new URL('/auth/settings', origin).toString(),
+              creditUrl,
+              creditPence,
+              embedded: c.req.query('app') === '1',
             },
             title: 'Settings | Hominem',
           }),
@@ -209,6 +270,40 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         ),
         303,
       );
+    })
+    .get('/auth/settings/credit-history', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      return c.json({ entries: await creditHistory(session.user.id) });
+    })
+    .get('/auth/settings/export', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      const data = await exportAccount(session.user.id);
+      return new Response(JSON.stringify(data, null, 2), {
+        headers: {
+          'content-type': 'application/json',
+          'content-disposition': 'attachment; filename="hominem-data.json"',
+          'cache-control': 'no-store',
+        },
+      });
+    })
+    // Deleting needs the person's own email typed back, so a stray request cannot end an account.
+    .post('/auth/settings/delete', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      const body: unknown = await c.req.json().catch(() => null);
+      const typed =
+        body && typeof body === 'object' && 'email' in body ? String(body.email).trim() : '';
+      if (!session.user.email || typed.toLowerCase() !== session.user.email.toLowerCase()) {
+        return c.json({ error: 'Type your email to confirm.' }, 400);
+      }
+      await deleteAccount(session.user.id, deleteAccountDeps());
+      const headers = new Headers({
+        'content-type': 'application/json',
+        'cache-control': 'no-store',
+      });
+      return new Response(JSON.stringify({ deleted: true }), { headers });
     })
     .get('/auth/settings/mcp-tokens', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });

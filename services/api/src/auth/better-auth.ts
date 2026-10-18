@@ -10,6 +10,7 @@ import { logger } from '@hominem/telemetry';
 import type { BetterAuthOptions, BetterAuthPlugin } from 'better-auth';
 import { betterAuth } from 'better-auth';
 import { emailOTP, jwt, multiSession, openAPI } from 'better-auth/plugins';
+import { oneTimeToken } from 'better-auth/plugins/one-time-token';
 
 import { activatePendingInvitesForUser } from '../application/collections.service';
 import { API_BRAND } from '../brand';
@@ -177,6 +178,8 @@ function getAuthPlugins(inputEnv: ApiEnv) {
       },
     }),
     jwt(),
+    // A one-minute link that signs the Thames app's web view in to the account page.
+    oneTimeToken({ expiresIn: 1 }),
     mcp({
       loginPage: new URL('/login', inputEnv.API_URL).toString(),
       consentPage: new URL('/consent', inputEnv.API_URL).toString(),

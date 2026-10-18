@@ -23,12 +23,12 @@
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  background: var(--auth-panel);
-  color: var(--auth-text);
-  font-size: 19px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--acc, var(--auth-primary)) 18%, transparent);
+  color: var(--acc, var(--auth-text));
+  font-size: 17px;
   font-weight: 700;
 }
 .nameInput {
@@ -182,9 +182,7 @@
 .tokenMeta {
   color: var(--auth-muted);
   font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .tokenRevoke {
   flex-shrink: 0;
@@ -291,4 +289,327 @@
   font-size: 12px;
   word-break: break-all;
   user-select: all;
+}
+
+.linkButton {
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* One column, sections divided by a hairline (account settings, option A). */
+.divided {
+  padding-top: 18px;
+  border-top: 1px solid var(--auth-border);
+}
+.bigAmount {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -1.2px;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.primaryButton {
+  border-color: var(--auth-primary);
+  background: var(--auth-primary);
+  color: var(--auth-primary-text, #fff);
+}
+.payments summary {
+  color: var(--auth-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.payments table {
+  width: 100%;
+  margin: 8px 0;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.payments th,
+.payments td {
+  padding: 6px 8px 6px 0;
+  border-top: 1px solid var(--auth-border);
+  text-align: left;
+}
+.payments th {
+  border-top: 0;
+  color: var(--auth-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dangerText {
+  border-color: color-mix(in srgb, var(--auth-danger) 35%, transparent);
+  color: var(--auth-danger);
+}
+.deleteBox {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--auth-danger) 35%, transparent);
+  border-radius: 8px;
+}
+
+/* The account home mirrors the Thames settings screen: a hero card, one
+   rounded list of rows, and a sheet that rises over it for each row. */
+.page {
+  --acc: #0f9e84;
+  --acc-ink: #fff;
+  display: grid;
+  gap: 18px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .page {
+    --acc: #8ff0dc;
+    --acc-ink: #06241d;
+  }
+}
+:root[data-theme='dark'] .page {
+  --acc: #8ff0dc;
+  --acc-ink: #06241d;
+}
+.pageTitle {
+  margin: 4px 0 0;
+  color: var(--auth-text);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+}
+.hero {
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--acc) 28%, var(--auth-border));
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      120% 90% at 0% 0%,
+      color-mix(in srgb, var(--acc) 18%, transparent),
+      transparent 70%
+    ),
+    var(--auth-card);
+  text-align: left;
+}
+.who {
+  display: grid;
+  min-width: 0;
+}
+.whoName {
+  overflow: hidden;
+  color: var(--auth-text);
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.whoEmail {
+  overflow: hidden;
+  color: var(--auth-muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.heroLabel {
+  margin: 0 0 4px;
+  color: var(--auth-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.heroNote {
+  margin: 6px 0 0;
+  color: var(--auth-muted);
+  font-size: 13px;
+}
+.addButton {
+  display: block;
+  padding: 14px;
+  border-radius: 999px;
+  background: var(--acc);
+  color: var(--acc-ink);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+.addButton:hover {
+  opacity: 0.92;
+}
+.addButton:active {
+  transform: scale(0.98);
+}
+.card {
+  overflow: hidden;
+  border: 1px solid var(--auth-border);
+  border-radius: 24px;
+  background: var(--auth-card);
+}
+.navRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 60px;
+  margin: 0;
+  padding: 10px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--auth-border);
+  background: transparent;
+  color: var(--auth-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.navRow[data-last] {
+  border-bottom: 0;
+}
+.navRow:hover,
+.navRow:active {
+  background: var(--auth-panel);
+}
+.iconTile {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--acc) 16%, transparent);
+  color: var(--acc);
+}
+.navLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+.navValue {
+  max-width: 42%;
+  overflow: hidden;
+  color: var(--auth-muted);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chevron {
+  color: var(--auth-muted);
+  font-size: 22px;
+  line-height: 1;
+  opacity: 0.7;
+}
+.signOut {
+  display: block;
+  margin: 0 auto;
+  padding: 10px 18px;
+  border: 0;
+  background: transparent;
+  color: var(--auth-danger);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sheetLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.scrim {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgb(0 0 0 / 0.53);
+  animation: fade 0.22s ease both;
+  cursor: default;
+}
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: 86%;
+  border: 1px solid var(--auth-border);
+  border-bottom: 0;
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -12px 40px rgb(0 0 0 / 0.25);
+  background: var(--auth-background);
+  animation: rise 0.28s ease-out both;
+}
+.grab {
+  align-self: center;
+  width: 38px;
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: var(--auth-border);
+}
+.sheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px 8px;
+}
+.sheetTitle {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.doneButton {
+  margin: 0;
+  padding: 6px 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 999px;
+  background: var(--auth-panel);
+  color: var(--auth-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sheetBody {
+  display: grid;
+  gap: 14px;
+  padding: 8px 24px max(32px, env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(80px);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .scrim {
+    animation: none;
+  }
 }

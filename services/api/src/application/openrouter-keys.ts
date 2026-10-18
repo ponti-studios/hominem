@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import type { KeysClient } from './provider-credentials';
+import type { CreditKeys } from './credit';
 
-const BASE = 'https://openrouter.ai/api/v1';
+const DEFAULT_BASE = 'https://openrouter.ai/api/v1';
 
 // OpenRouter's key management API: create a key (the key string is returned once),
 // read its usage, disable it. Parsed defensively; anything unexpected is an error,
@@ -13,6 +13,9 @@ const createdSchema = z.object({
 });
 const usageSchema = z.object({
   data: z.object({ usage_monthly: z.number().nonnegative() }),
+});
+const lifetimeUsageSchema = z.object({
+  data: z.object({ usage: z.number().nonnegative() }),
 });
 
 export class OpenRouterKeysError extends Error {
@@ -28,9 +31,10 @@ export class OpenRouterKeysError extends Error {
 export function createOpenRouterKeys(
   managementKey: string,
   fetchImpl: typeof fetch = fetch,
-): KeysClient {
+  base: string = DEFAULT_BASE,
+): CreditKeys {
   async function call(what: string, path: string, init: { method: string; body?: unknown }) {
-    const response = await fetchImpl(`${BASE}${path}`, {
+    const response = await fetchImpl(`${base}${path}`, {
       method: init.method,
       headers: {
         Authorization: `Bearer ${managementKey}`,
@@ -56,6 +60,18 @@ export function createOpenRouterKeys(
       await call('disable key', `/keys/${encodeURIComponent(hash)}`, {
         method: 'PATCH',
         body: { disabled: true },
+      });
+    },
+    async usage(hash) {
+      const parsed = lifetimeUsageSchema.parse(
+        await call('read key usage', `/keys/${encodeURIComponent(hash)}`, { method: 'GET' }),
+      );
+      return parsed.data.usage;
+    },
+    async setLimit(hash, limitUsd) {
+      await call('set key limit', `/keys/${encodeURIComponent(hash)}`, {
+        method: 'PATCH',
+        body: { limit: limitUsd },
       });
     },
     async usageMonthly(hash) {

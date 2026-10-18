@@ -7,7 +7,17 @@ function toDate(value: string | Date | null): Date | null {
 }
 
 /** The database side of the credential rules. Server-only tables: no owner policy. */
-export const dbCredentialStore: CredentialStore = {
+export const dbCredentialStore: CredentialStore & {
+  setLimit(keyHash: string, limitUsd: number): Promise<void>;
+} = {
+  async setLimit(keyHash, limitUsd) {
+    await db
+      .updateTable('app.providerCredentials')
+      .set({ limitUsd })
+      .where('keyHash', '=', keyHash)
+      .execute();
+  },
+
   async isBlocked(userId) {
     const row = await db
       .selectFrom('app.credentialBlocks')
