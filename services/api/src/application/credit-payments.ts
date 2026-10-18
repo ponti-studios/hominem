@@ -69,7 +69,7 @@ const completedSchema = z.object({
 export type WebhookOutcome =
   | { kind: 'ignored' }
   | { kind: 'duplicate' }
-  | { kind: 'credited'; userId: string; creditPence: number }
+  | { kind: 'credited'; userId: string; amountPence: number; creditPence: number }
   | { kind: 'refunded_not_uk'; userId: string }
   | { kind: 'rejected'; reason: string };
 
@@ -137,5 +137,5 @@ export async function handleStripeEvent(
       error: error instanceof Error ? error.message : String(error),
     });
   }
-  return { kind: 'credited', userId, creditPence };
+  return { kind: 'credited', userId, amountPence, creditPence };
 }

@@ -127,7 +127,7 @@ describe('the webhook', () => {
   it('credits a paid UK payment once', async () => {
     const { credit, stripe, state } = world();
     const first = await handleStripeEvent({ credit, stripe }, completed());
-    expect(first).toEqual({ kind: 'credited', userId: 'u1', creditPence: 819 });
+    expect(first).toEqual({ kind: 'credited', userId: 'u1', amountPence: 1000, creditPence: 819 });
     expect(state.ledger).toBe(819);
     expect(state.lowCleared).toBe(true);
     const again = await handleStripeEvent({ credit, stripe }, completed());

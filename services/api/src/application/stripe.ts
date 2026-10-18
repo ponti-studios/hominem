@@ -87,6 +87,8 @@ export function createStripeClient(
         'line_items[0][price_data][unit_amount]': String(input.amountPence),
         'line_items[0][price_data][product_data][name]': 'Thames credit',
         billing_address_collection: 'required',
+        'custom_text[submit][message]':
+          'You asked for your credit to be added as soon as you pay. Once it is added, you lose your 14-day right to cancel.',
         customer_email: input.email,
         client_reference_id: input.userId,
         'metadata[user_id]': input.userId,

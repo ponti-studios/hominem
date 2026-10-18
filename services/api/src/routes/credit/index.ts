@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { creditFor, verifyLinkToken } from '../../application/credit';
+import { sendTopUpConfirmationEmail } from '../../application/credit-email';
 import {
   cancelledPage,
   creditCsp,
@@ -143,6 +144,12 @@ creditRoutes.post('/webhooks/stripe', async (c) => {
   try {
     const outcome = await handleStripeEvent({ credit: deps, stripe }, event);
     logger.info('credit_webhook', { outcome: outcome.kind });
+    if (outcome.kind === 'credited') {
+      // A failed email must not fail the webhook: Stripe would retry a payment already recorded.
+      await sendTopUpConfirmationEmail(outcome).catch((error: unknown) => {
+        logger.error('credit_confirmation_email_failed', { error });
+      });
+    }
     return c.json({ received: true });
   } catch (error) {
     // A 5xx makes Stripe retry, which the ledger's idempotency makes safe.

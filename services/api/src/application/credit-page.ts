@@ -91,7 +91,7 @@ export function topUpPage(input: {
 ${input.testMode ? '<p class="sub">Test mode: use a Stripe test card, no money moves.</p>' : ''}
 <div class="tiers" role="group" aria-label="Amount">${rows}</div>
 <details><summary>How is this worked out?</summary><dl id="how"></dl></details>
-<label class="consent"><input type="checkbox" id="consent"><span>Use my credit straight away. I know I can't cancel it afterwards.</span></label>
+<label class="consent"><input type="checkbox" id="consent"><span>Add my credit as soon as I've paid. I understand that once it's added, I lose my 14-day right to cancel.</span></label>
 <p class="err" id="err" role="status"></p>
 <button type="button" class="pay" id="pay" disabled>Pay £20</button>
 <a class="back quiet" href="/auth/settings?app=1">Back to account</a>

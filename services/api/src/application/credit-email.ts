@@ -26,3 +26,36 @@ export async function sendLowCreditEmail(userId: string): Promise<void> {
     html: `<p>Your Thames credit is running low.</p><p><a href="${link}">Add more credit</a></p><p>The link works for 7 days.</p>`,
   });
 }
+
+const poundsText = (pence: number) => `£${(pence / 100).toFixed(2)}`;
+
+/**
+ * The confirmation of a top-up, kept by the person. It repeats what they agreed to before paying:
+ * the credit was added as soon as they paid, and the 14-day right to cancel ended when it was
+ * (Consumer Contracts Regulations 2013), so the consent is confirmed on a durable medium.
+ */
+export async function sendTopUpConfirmationEmail(input: {
+  userId: string;
+  amountPence: number;
+  creditPence: number;
+}): Promise<void> {
+  const user = await db
+    .selectFrom('user')
+    .select('email')
+    .where('id', '=', input.userId)
+    .executeTakeFirstOrThrow();
+  const paid = poundsText(input.amountPence);
+  const credit = poundsText(input.creditPence);
+  const lines = [
+    `You paid ${paid} and ${credit} of Thames credit has been added to your account.`,
+    'Before you paid, you asked for your credit to be added as soon as you paid, and you agreed that once it was added you would lose your 14-day right to cancel.',
+    'Credit works only in Thames and does not expire. It is not refundable except where the law requires. Stripe emails your payment receipt separately.',
+  ];
+  const { sendEmail } = await import('../auth/better-auth');
+  await sendEmail(env, {
+    to: user.email,
+    subject: `Your Thames credit: ${credit} added`,
+    text: lines.join('\n\n'),
+    html: lines.map((line) => `<p>${line}</p>`).join(''),
+  });
+}
