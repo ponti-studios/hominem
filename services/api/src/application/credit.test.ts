@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   creditFor,
@@ -236,6 +236,12 @@ describe('reading credit for the app', () => {
     const capped = fakeWorld({ grantsToday: 2 });
     expect((await creditFor(capped.deps, 'u2')).balancePence).toBe(0);
   });
+  it('gives no free credit when the grant is set to zero', async () => {
+    const { state, deps } = fakeWorld();
+    const none = { ...deps, config: { ...deps.config, grantPence: 0 } };
+    expect((await creditFor(none, 'u1')).balancePence).toBe(0);
+    expect(state.ledger).toBe(0);
+  });
   it('sends one low-credit email per low spell', async () => {
     const { state, deps } = fakeWorld({ ledger: 100, usage: { a: 1.1 } });
     state.rows = [row('a', 1.25)];
@@ -297,5 +303,19 @@ describe('minting in credit mode', () => {
     expect(outcome.kind).toBe('minted');
     // 100p - 60p spent = 40p = $0.50 left, however many keys there are.
     expect(state.created[0]?.limitUsd).toBeCloseTo(0.5, 3);
+  });
+  it('does not release a new key when a retained key cannot be lowered', async () => {
+    const { state, deps } = fakeWorld({ ledger: 100 });
+    state.rows = [row('a', 1.25, 'device-other001')];
+    deps.keys.setLimit = async () => {
+      throw new Error('provider down');
+    };
+    const disable = vi.spyOn(deps.keys, 'disable');
+    const outcome = await mintCredential(
+      { store: deps.credentials, keys: deps.keys, capUsd: 5, now: () => now, credit: deps },
+      input,
+    );
+    expect(outcome.kind).toBe('capped');
+    expect(disable).toHaveBeenCalledTimes(1);
   });
 });

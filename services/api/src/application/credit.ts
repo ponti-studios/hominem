@@ -189,6 +189,7 @@ function floor4(value: number): number {
 
 /** Gives a person their free credit, once, unless today's grant limit is used up. */
 export async function ensureGrant(deps: CreditDeps, userId: string): Promise<void> {
+  if (deps.config.grantPence <= 0) return;
   if (await deps.store.hasLedger(userId)) return;
   const now = clock(deps);
   const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -255,7 +256,11 @@ export function balanceUsd(balancePence: number, usdPerPound: number): number {
  * a top-up, after a mint, and when a read finds a limit out of line (a failed earlier attempt).
  * Returns how many keys it changed.
  */
-export async function reconcileLimits(deps: CreditDeps, snapshot: CreditSnapshot): Promise<number> {
+export async function reconcileLimits(
+  deps: CreditDeps,
+  snapshot: CreditSnapshot,
+  options: { strict?: boolean } = {},
+): Promise<number> {
   const live = snapshot.rows.filter((row) => row.revokedAt === null);
   if (live.length === 0) return 0;
   const share = floor4(balanceUsd(snapshot.balancePence, deps.config.usdPerPound) / live.length);
@@ -274,6 +279,8 @@ export async function reconcileLimits(deps: CreditDeps, snapshot: CreditSnapshot
         hash: row.keyHash,
         error: error instanceof Error ? error.message : String(error),
       });
+      // Minting needs every limit lowered before the new key is released; elsewhere the next read repairs it.
+      if (options.strict) throw error;
     }
   }
   return changed;

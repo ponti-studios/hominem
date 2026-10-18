@@ -166,13 +166,21 @@ export async function mintCredential(
     ended.map((row) => row.keyHash),
   );
   if (deps.credit) {
-    // Keep the live keys' limits adding up to the balance now that the set of keys changed.
+    // Keep the live keys' limits adding up to the balance now that the set of keys changed. If a
+    // retained key's limit cannot be lowered, the new key would make the limits add up to more
+    // than the balance, so it is ended and not released.
     try {
-      await reconcileLimits(deps.credit, await creditSnapshot(deps.credit, input.userId));
+      await reconcileLimits(deps.credit, await creditSnapshot(deps.credit, input.userId), {
+        strict: true,
+      });
     } catch (error) {
       deps.log?.('credit_reconcile_failed', {
         error: error instanceof Error ? error.message : String(error),
       });
+      await keys.disable(created.hash).catch(() => undefined);
+      await store.markRevoked(created.hash, now);
+      await store.markDisabled(created.hash, now).catch(() => undefined);
+      return { kind: 'capped' };
     }
   }
   return { kind: 'minted', key: created.key, hash: created.hash, limitUsd: grant };

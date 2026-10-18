@@ -35,7 +35,12 @@ export function deleteAccountDeps(): DeleteAccountDeps {
       }
     },
     async removeStoredFile(fileId, userId) {
-      await fileStorageService.deleteFile(fileId, userId);
+      if (await fileStorageService.deleteFile(fileId, userId)) return;
+      // False means "already gone" or "failed": only a file still in storage stops the deletion.
+      const left = await fileStorageService.listUserFiles(userId);
+      if (left.some((file) => file.name.startsWith(fileId))) {
+        throw new Error('Could not remove a stored file. Try again in a moment.');
+      }
     },
   };
 }

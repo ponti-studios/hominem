@@ -152,7 +152,9 @@ createServer(async (req, res) => {
         session.country = choice === 'non-uk' ? 'US' : 'GB';
         intents.set(session.intent, session.id);
         await webhook(session);
-        res.writeHead(303, { location: session.success });
+        res.writeHead(303, {
+          location: session.success.replace('{CHECKOUT_SESSION_ID}', session.id),
+        });
         return res.end();
       }
       res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });

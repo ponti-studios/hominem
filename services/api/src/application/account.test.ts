@@ -66,6 +66,22 @@ describe('account download and delete', () => {
     }
   });
 
+  it('leaves credentials out and includes rows kept by a plain user_id column', async () => {
+    await pool.query(
+      `CREATE TABLE public.zz_items (id int PRIMARY KEY, user_id text, access_token text)`,
+    );
+    try {
+      await pool.query(`INSERT INTO public.zz_items VALUES (1, $1, 'secret'), (2, $2, 'other')`, [
+        userId,
+        otherId,
+      ]);
+      const result = await exportAccount(userId);
+      expect(result.data['zz_items']).toEqual([{ id: 1, user_id: userId }]);
+    } finally {
+      await pool.query(`DROP TABLE public.zz_items`);
+    }
+  });
+
   it('does not delete anything when the provider keys cannot be ended', async () => {
     const endKeys = vi.fn(async () => {
       throw new Error('still live');

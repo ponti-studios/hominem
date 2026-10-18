@@ -22,6 +22,18 @@ const EXPORT_SKIP = new Set([
   'app.vector_documents',
 ]);
 
+/** Columns that hold a credential even in a table that is otherwise the person's own data. */
+const SECRET_COLUMNS = [
+  'access_token',
+  'accessToken',
+  'refresh_token',
+  'refreshToken',
+  'id_token',
+  'idToken',
+  'password',
+  'api_key',
+];
+
 const LEGACY_SUFFIX = /_legacy_\d+$/;
 
 type Edge = {
@@ -51,6 +63,26 @@ async function foreignKeys(): Promise<Edge[]> {
     order by 1, 2
   `.execute(authDb);
   return rows;
+}
+
+/**
+ * Tables with a `user_id` column that is not a foreign key (finance categories, for one), so no
+ * cascade or foreign-key walk reaches them. They are the person's rows all the same.
+ */
+async function unlinkedOwnerTables(): Promise<string[]> {
+  const { rows } = await sql<{ table: string }>`
+    select c.oid::regclass::text as "table"
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    join pg_attribute a on a.attrelid = c.oid and a.attname = 'user_id' and a.attnum > 0 and not a.attisdropped
+    where c.relkind = 'r' and n.nspname in ('app', 'public')
+      and not exists (
+        select 1 from pg_constraint k
+        where k.conrelid = c.oid and k.contype = 'f' and a.attnum = any (k.conkey)
+      )
+    order by 1
+  `.execute(authDb);
+  return rows.map((row) => row.table).filter((table) => !skipped(table));
 }
 
 /** A condition on a table, written for a given alias, that selects the rows this person owns. */
@@ -94,6 +126,9 @@ async function ownedTables(userId: string): Promise<{ table: string; owned: Owne
     }
     level = next;
   }
+  for (const table of await unlinkedOwnerTables()) {
+    found.push({ table, owned: (alias) => sql`${sql.ref(`${alias}.user_id`)}::text = ${userId}` });
+  }
   return found;
 }
 
@@ -118,7 +153,7 @@ export async function exportAccount(userId: string, now = new Date()): Promise<A
   for (const { table, owned } of await ownedTables(userId)) {
     // Table and column names come from the catalogue above, never from the request.
     const found = await sql<{ row: Record<string, unknown> }>`
-      select to_jsonb(t) as row from ${sql.raw(table)} t where ${owned('t')}
+      select to_jsonb(t) - ${SECRET_COLUMNS}::text[] as row from ${sql.raw(table)} t where ${owned('t')}
     `.execute(authDb);
     const name = table.replaceAll('"', '');
     // A table can be reached twice (a collection's owner and a member): keep both sets.
@@ -148,9 +183,17 @@ export async function deleteAccount(userId: string, deps: DeleteAccountDeps): Pr
     .execute();
   for (const file of files) await deps.removeStoredFile(file.id, userId);
   await authDb.transaction().execute(async (trx) => {
-    // This foreign key does not cascade, so it would block the delete.
+    // These foreign keys do not cascade, so they would block the delete: the refresh token, and any
+    // access token that was issued from it.
+    await sql`delete from "oauthAccessToken" where "refreshId" in (
+      select id from "oauthRefreshToken" where "userId" = ${userId})`.execute(trx);
     await sql`delete from "oauthRefreshToken" where "userId" = ${userId}`.execute(trx);
     await sql`delete from public."user" where id = ${userId}`.execute(trx);
+    // Rows keyed by a plain user id column have no foreign key to cascade through. They go after
+    // the user, so anything that referenced them has already gone with it.
+    for (const table of await unlinkedOwnerTables()) {
+      await sql`delete from ${sql.raw(table)} where user_id::text = ${userId}`.execute(trx);
+    }
   });
 }
 
