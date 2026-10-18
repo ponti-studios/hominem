@@ -178,6 +178,6 @@ createServer(async (req, res) => {
     return send(res, 404, { error: 'not found', path });
   } catch (error) {
     console.error(error);
-    return send(res, 500, { error: String(error) });
+    return send(res, 500, { error: 'internal error' });
   }
 }).listen(PORT, () => console.log(`dev fakes on :${PORT}, API at ${API}`));

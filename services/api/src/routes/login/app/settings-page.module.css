@@ -394,7 +394,11 @@
   border: 1px solid color-mix(in srgb, var(--acc) 28%, var(--auth-border));
   border-radius: 24px;
   background:
-    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--acc) 18%, transparent), transparent 70%),
+    radial-gradient(
+      120% 90% at 0% 0%,
+      color-mix(in srgb, var(--acc) 18%, transparent),
+      transparent 70%
+    ),
     var(--auth-card);
   text-align: left;
 }
@@ -440,7 +444,9 @@
   font-weight: 700;
   text-align: center;
   text-decoration: none;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 .addButton:hover {
   opacity: 0.92;
