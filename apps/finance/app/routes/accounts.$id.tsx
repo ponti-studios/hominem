@@ -1,4 +1,3 @@
-import type { AccountGetOutput } from '@hominem/rpc/finance';
 import { Alert, AlertDescription, AlertTitle } from '@ponti-studios/ui/feedback';
 import { Badge } from '@ponti-studios/ui/primitives';
 import { RefreshCcw } from 'lucide-react';
@@ -13,37 +12,6 @@ import { useAccountById, useFinanceTransactions } from '~/lib/hooks/use-finance-
 import { requireAuth } from '~/lib/require-auth.server';
 
 import type { Route } from './+types/accounts.$id';
-
-function normalizeInitialAccount(account: {
-  id: string;
-  userId: string;
-  name: string;
-  accountType: AccountGetOutput['accountType'];
-  currentBalance: number | null;
-  transactions: AccountGetOutput['transactions'];
-  institutionName?: string | null | undefined;
-  plaidAccountId?: string | null | undefined;
-  plaidItemId?: string | null | undefined;
-}): AccountGetOutput {
-  const normalized: AccountGetOutput = {
-    id: account.id,
-    userId: account.userId,
-    name: account.name,
-    accountType: account.accountType,
-    currentBalance: account.currentBalance,
-    transactions: account.transactions,
-  };
-  if (account.institutionName !== undefined) {
-    normalized.institutionName = account.institutionName;
-  }
-  if (account.plaidAccountId !== undefined) {
-    normalized.plaidAccountId = account.plaidAccountId;
-  }
-  if (account.plaidItemId !== undefined) {
-    normalized.plaidItemId = account.plaidItemId;
-  }
-  return normalized;
-}
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { id } = params;
@@ -76,10 +44,7 @@ export default function AccountDetailsPage({ loaderData }: Route.ComponentProps)
     isLoading: accountLoading,
     error: accountError,
     refetch: refetchAccount,
-  } = useAccountById(
-    accountId,
-    initialAccount ? { initialData: normalizeInitialAccount(initialAccount) } : undefined,
-  );
+  } = useAccountById(accountId, initialAccount ? { initialData: initialAccount } : undefined);
 
   // TransactionsList expects a Map of accounts, even though we only have this one
   const accountsMap = useMemo(() => {

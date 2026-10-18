@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@ponti-studios/ui/overlays';
-import { Button, buttonVariants } from '@ponti-studios/ui/primitives';
+import { Button } from '@ponti-studios/ui/primitives';
 import {
   Card,
   CardContent,
@@ -19,13 +19,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
 import { ExportTransactions } from '~/components/finance/export-transactions';
-import { RouteLink } from '~/components/route-link';
 import { useFinanceApiClient } from '~/lib/api/provider';
 import { authClient } from '~/lib/auth-client';
+import { useUser } from '~/lib/hooks/use-user';
 import { toast } from '~/lib/toast';
 
 export default function AccountPage() {
   const logout = () => authClient.signOut();
+  const user = useUser();
   useFinanceApiClient(); // unused, but throws if we're not inside FinanceHonoProvider - cheap sanity check
   const queryClient = useQueryClient();
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
@@ -67,27 +68,34 @@ export default function AccountPage() {
       <div className="space-y-8">
         <Card>
           <CardHeader>
+            <CardTitle>Your account</CardTitle>
+            <CardDescription>Your Hominem sign-in information.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid gap-5 sm:grid-cols-2">
+              <div className="min-w-0">
+                <dt className="text-sm text-muted-foreground">Name</dt>
+                <dd className="mt-1 truncate font-medium text-foreground">
+                  {user?.name || 'Name not provided'}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="text-sm text-muted-foreground">Email</dt>
+                <dd className="mt-1 truncate font-medium text-foreground">
+                  {user?.email || 'Email unavailable'}
+                </dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Data Management</CardTitle>
-            <CardDescription>
-              Export your transaction data or import new transactions.
-            </CardDescription>
+            <CardDescription>Export your transaction data.</CardDescription>
           </CardHeader>
           <CardContent>
             <ExportTransactions />
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border">
-              <div>
-                <h3 className="text-md font-semibold">Import Transactions</h3>
-                <p className="text-sm text-muted-foreground">
-                  Upload new transactions from a CSV file.
-                </p>
-              </div>
-              <RouteLink
-                to="/import"
-                className={buttonVariants({ variant: 'outline', className: 'mt-2 sm:mt-0' })}
-              >
-                Go to Import Page
-              </RouteLink>
-            </div>
           </CardContent>
         </Card>
 

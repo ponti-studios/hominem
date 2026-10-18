@@ -273,6 +273,8 @@ export interface TransactionSearchInput {
   tagNames?: string[] | undefined;
   categoryName?: string | undefined;
   transactionType?: string | undefined;
+  amountMin?: number | undefined;
+  amountMax?: number | undefined;
   limit: number;
   offset: number;
 }
@@ -298,11 +300,24 @@ export async function searchTransactions(userId: string, input: TransactionSearc
       filtered = filtered.where(sql`lower(c.name)`, '=', input.categoryName.toLowerCase());
     if (input.transactionType)
       filtered = filtered.where('t.transactionType', '=', input.transactionType);
+    if (input.amountMin !== undefined) {
+      filtered = filtered.where(sql<boolean>`abs(t.amount) >= ${input.amountMin}`);
+    }
+    if (input.amountMax !== undefined) {
+      filtered = filtered.where(sql<boolean>`abs(t.amount) <= ${input.amountMax}`);
+    }
     if (input.text) {
       const term = `%${input.text}%`;
-      filtered = filtered.where((eb) =>
-        eb.or([eb('t.description', 'ilike', term), eb('t.merchantName', 'ilike', term)]),
-      );
+      filtered = filtered.where(sql<boolean>`(
+        lower(t.description) like lower(${term})
+        or lower(t.merchant_name) like lower(${term})
+        or lower(c.name) like lower(${term})
+        or lower(a.name) like lower(${term})
+        or lower(t.description) % lower(${input.text})
+        or lower(t.merchant_name) % lower(${input.text})
+        or lower(c.name) % lower(${input.text})
+        or lower(a.name) % lower(${input.text})
+      )`);
     }
     // A correlated EXISTS subquery (rather than materializing every matching transaction id
     // in memory and passing it through a WHERE id IN (...) clause) so tag filtering stays a
@@ -333,31 +348,45 @@ export async function searchTransactions(userId: string, input: TransactionSearc
     return filtered;
   };
 
+  const transactionRowsQuery = applyFilters(filterableBase()).select([
+    't.id',
+    't.userId',
+    't.accountId',
+    'a.name as accountName',
+    't.amount',
+    't.description',
+    't.merchantName',
+    't.postedOn',
+    't.currencyCode',
+    't.transactionType',
+    't.categoryId',
+    'c.name as categoryName',
+    't.notes',
+    't.orderNumber',
+    't.counterpartId',
+    't.source',
+    't.externalId',
+    't.recurring',
+    't.pending',
+    't.excluded',
+  ]);
+
+  const orderedTransactionRowsQuery = input.text
+    ? transactionRowsQuery
+        .orderBy(
+          sql<number>`greatest(
+            similarity(lower(coalesce(t.description, '')), lower(${input.text})),
+            similarity(lower(coalesce(t.merchant_name, '')), lower(${input.text})),
+            similarity(lower(coalesce(c.name, '')), lower(${input.text})),
+            similarity(lower(coalesce(a.name, '')), lower(${input.text}))
+          )`,
+          'desc',
+        )
+        .orderBy('t.postedOn', 'desc')
+    : transactionRowsQuery.orderBy('t.postedOn', 'desc');
+
   const [rows, filteredRow, totalRow] = await Promise.all([
-    applyFilters(filterableBase())
-      .select([
-        't.id',
-        't.userId',
-        't.accountId',
-        'a.name as accountName',
-        't.amount',
-        't.description',
-        't.merchantName',
-        't.postedOn',
-        't.currencyCode',
-        't.transactionType',
-        't.categoryId',
-        'c.name as categoryName',
-        't.notes',
-        't.orderNumber',
-        't.counterpartId',
-        't.source',
-        't.externalId',
-        't.recurring',
-        't.pending',
-        't.excluded',
-      ])
-      .orderBy('t.postedOn', 'desc')
+    orderedTransactionRowsQuery
       .orderBy('t.id', 'desc')
       .limit(input.limit)
       .offset(input.offset)

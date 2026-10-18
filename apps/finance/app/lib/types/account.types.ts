@@ -1,3 +1,3 @@
-import type { AccountWithPlaidInfo } from '@hominem/rpc/finance';
+import type { AccountData } from '@hominem/rpc/finance';
 
-export type Account = AccountWithPlaidInfo;
+export type Account = AccountData;

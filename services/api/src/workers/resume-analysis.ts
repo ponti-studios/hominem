@@ -35,7 +35,6 @@ async function publish(jobId: string, patch: Partial<ResumeAnalysisJob>): Promis
   if (!existing) return;
   const job: ResumeAnalysisJob = { ...existing, ...patch };
   await updateImportJob(jobId, job);
-  // publishImportProgress always wants an array of jobs, even for one (see finance.import.ts)
   await publishImportProgress([job]);
 }
 

@@ -1,6 +1,5 @@
 import { UpdateGuard } from '@ponti-studios/ui/feedback';
 import { Button, buttonVariants, Card, CardContent } from '@ponti-studios/ui/primitives';
-import { colorThemes } from '@ponti-studios/ui/tokens';
 import type React from 'react';
 import {
   data,
@@ -35,9 +34,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export const meta: Route.MetaFunction = () => {
   return [
-    { title: 'Florin' },
-    { name: 'description', content: 'Manage your personal finances with Florin' },
-    { name: 'theme-color', content: colorThemes.light.background },
+    { title: 'Hominem Finance' },
+    { name: 'description', content: 'See and manage your finances with Hominem.' },
+    { name: 'theme-color', content: '#080807' },
   ];
 };
 

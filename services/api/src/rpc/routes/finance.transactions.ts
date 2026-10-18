@@ -117,6 +117,13 @@ export const transactionsRoutes = new Hono<AppContext>()
       dateFrom: input.dateFrom,
       dateTo: input.dateTo,
       text: input.description,
+      ...(input.search && !input.description ? { text: input.search } : {}),
+      ...(input.min !== undefined && Number.isFinite(Number(input.min))
+        ? { amountMin: Number(input.min) }
+        : {}),
+      ...(input.max !== undefined && Number.isFinite(Number(input.max))
+        ? { amountMax: Number(input.max) }
+        : {}),
       tagIds: input.tagIds,
       tagNames: input.tagNames,
       limit: input.limit,

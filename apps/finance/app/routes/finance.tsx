@@ -1,12 +1,11 @@
 import { EmptyState } from '@ponti-studios/ui/feedback';
 import { Skeleton } from '@ponti-studios/ui/feedback';
-import { SectionIntro } from '@ponti-studios/ui/layout';
 import { PaginationControls } from '@ponti-studios/ui/navigation';
-import { buttonVariants } from '@ponti-studios/ui/primitives';
-import { Receipt, UploadCloud } from 'lucide-react';
+import { Receipt } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { useSearchParams } from 'react-router';
 
+import { FinanceOverview } from '~/components/finance/finance-overview';
 import { TransactionFilters } from '~/components/finance/transaction-filters';
 import { TransactionsList } from '~/components/transactions/transactions-list';
 import { createServerHonoClient } from '~/lib/api.server';
@@ -48,9 +47,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
   const { accounts: initialAccounts, transactions: initialTransactions } = loaderData;
+  const [searchParams] = useSearchParams();
   const { selectedAccounts } = useSelectedAccount();
   const [currentFilters, setCurrentFilters] = useState<FilterArgs>({});
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState(() => searchParams.get('search') ?? '');
   const [page, setPage] = useState(0);
   const [limit] = useState(25);
 
@@ -61,11 +61,8 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
   );
 
   useEffect(() => {
-    setCurrentFilters((prev: FilterArgs) => ({
-      ...prev,
-      description: searchValue || undefined,
-    }));
-  }, [searchValue]);
+    setSearchValue(searchParams.get('search') ?? '');
+  }, [searchParams]);
 
   const {
     accountsMap,
@@ -78,6 +75,7 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
 
   const filters = {
     ...currentFilters,
+    description: searchValue || undefined,
     accountIds: selectedAccounts.length > 0 ? selectedAccounts : undefined,
   };
 
@@ -98,6 +96,14 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
   const loading = accountsLoading || transactionsLoading;
   const error = accountsError || transactionsError;
 
+  useEffect(() => {
+    if (searchParams.has('search') && !transactionsLoading) {
+      document
+        .getElementById('transaction-filters')
+        ?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    }
+  }, [searchParams, searchValue, transactionsLoading]);
+
   const refreshData = () => {
     refetchAccounts();
     refetchTransactions();
@@ -115,32 +121,26 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <SectionIntro
-        title="Transactions"
-        description="Search, filter, and review activity across your accounts."
-        actions={
-          <Link to="/import" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-            <UploadCloud className="size-4" aria-hidden />
-            Import
-          </Link>
-        }
-      />
+      <h1 className="sr-only">Finance</h1>
+      <FinanceOverview accounts={[...accountsMap.values()]} />
 
-      <TransactionFilters
-        accountsMap={accountsMap}
-        accountsLoading={accountsLoading}
-        filters={currentFilters}
-        onFiltersChange={setCurrentFilters}
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
-        sortOptions={sortOptions || []}
-        isDefaultSort={isDefaultSort}
-        addSortOption={addSortOption}
-        updateSortOption={updateSortOption}
-        removeSortOption={removeSortOption}
-        onRefresh={refreshData}
-        loading={loading}
-      />
+      <div id="transaction-filters" className="scroll-mt-20">
+        <TransactionFilters
+          accountsMap={accountsMap}
+          accountsLoading={accountsLoading}
+          filters={currentFilters}
+          onFiltersChange={setCurrentFilters}
+          searchValue={searchValue}
+          onSearchChange={setSearchValue}
+          sortOptions={sortOptions || []}
+          isDefaultSort={isDefaultSort}
+          addSortOption={addSortOption}
+          updateSortOption={updateSortOption}
+          removeSortOption={removeSortOption}
+          onRefresh={refreshData}
+          loading={loading}
+        />
+      </div>
 
       {loading ? (
         <div className="space-y-2">
@@ -159,18 +159,8 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
         <EmptyState
           variant="search"
           title="No transactions found"
-          description="Connect an account or import a CSV to get started. You can also clear filters if results look empty."
+          description="Try adjusting your filters or search terms."
           icon={<Receipt className="size-5" aria-hidden />}
-          action={
-            <div className="flex flex-wrap justify-center gap-2">
-              <Link to="/accounts" className={buttonVariants({ size: 'sm' })}>
-                Connect accounts
-              </Link>
-              <Link to="/import" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                Import CSV
-              </Link>
-            </div>
-          }
         />
       ) : (
         <>
