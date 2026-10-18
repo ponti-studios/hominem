@@ -52,7 +52,7 @@ creditRoutes.get('/credit', async (c) => {
   }
   const user = await userById(userId);
   const deps = creditDeps();
-  if (!user || !personInCreditMode(user.email) || !deps) return c.notFound();
+  if (!user || !(await personInCreditMode(user)) || !deps) return c.notFound();
   try {
     const reading = await creditFor(deps, userId);
     return html(c, (n) =>
@@ -83,7 +83,7 @@ creditRoutes.post('/credit/checkout', async (c) => {
   const userId = verifyLinkToken(env.BETTER_AUTH_SECRET, body.data.t, new Date());
   if (!userId) return c.json({ error: 'expired' }, 400);
   const user = await userById(userId);
-  if (!user || !personInCreditMode(user.email)) return c.json({ error: 'not_found' }, 404);
+  if (!user || !(await personInCreditMode(user))) return c.json({ error: 'not_found' }, 404);
   const stripe = stripeClient();
   if (!stripe) return c.json({ error: 'unavailable' }, 503);
 

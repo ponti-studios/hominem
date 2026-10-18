@@ -33,6 +33,8 @@ const keys = new Map<string, Key>();
 const sessions = new Map<string, Session>();
 const intents = new Map<string, string>();
 const refunds: string[] = [];
+// Emails the fake PostHog reports the `thames-top-up` flag as on for.
+const flagged = new Set<string>();
 
 const id = (prefix: string) => `${prefix}_${randomBytes(8).toString('hex')}`;
 const send = (res: ServerResponse, status: number, body: unknown) => {
@@ -169,6 +171,34 @@ createServer(async (req, res) => {
       if (!found) return send(res, 404, { error: 'no such key' });
       found.usage = body.usd;
       return send(res, 200, found);
+    }
+    // ---- The fake PostHog flag endpoint
+    if (path === '/flags' || path === '/flags/') {
+      const body = JSON.parse((await read(req)) || '{}') as {
+        person_properties?: { email?: string };
+      };
+      const enabled = flagged.has(String(body.person_properties?.email ?? '').toLowerCase());
+      return send(res, 200, {
+        featureFlags: { 'thames-top-up': enabled },
+        featureFlagPayloads: {},
+        flags: {
+          'thames-top-up': {
+            key: 'thames-top-up',
+            enabled,
+            variant: null,
+            reason: { code: 'condition_match', description: 'fake', condition_index: 0 },
+            metadata: { id: 1, version: 1, payload: null, description: 'fake' },
+          },
+        },
+        errorsWhileComputingFlags: false,
+        requestId: 'fake',
+      });
+    }
+    if (path === '/control/flag' && req.method === 'POST') {
+      const body = JSON.parse(await read(req)) as { email: string; on: boolean };
+      if (body.on) flagged.add(body.email.toLowerCase());
+      else flagged.delete(body.email.toLowerCase());
+      return send(res, 200, { flagged: [...flagged] });
     }
     if (path === '/control/state') {
       return send(res, 200, {

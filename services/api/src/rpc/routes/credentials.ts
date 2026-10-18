@@ -21,7 +21,10 @@ import { authMiddleware, type AppContext } from '../middleware/auth';
 
 const deviceIdSchema = z.string().min(8).max(128);
 
-function credentialDeps(email?: string): CredentialDeps | null {
+async function credentialDeps(user?: {
+  id: string;
+  email: string;
+}): Promise<CredentialDeps | null> {
   if (!env.OPENROUTER_MANAGEMENT_KEY) return null;
   return {
     store: dbCredentialStore,
@@ -33,7 +36,7 @@ function credentialDeps(email?: string): CredentialDeps | null {
     capUsd: env.THAMES_MONTHLY_CAP_USD,
     log: (event, fields) => logger.error(event, fields),
     // Only a person the credit flag lets in is given the balance rules.
-    ...(email && personInCreditMode(email) ? { credit: creditDeps() ?? undefined } : {}),
+    ...(user && (await personInCreditMode(user)) ? { credit: creditDeps() ?? undefined } : {}),
   };
 }
 
@@ -45,7 +48,7 @@ export const credentialsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .post('/', zValidator('json', z.object({ deviceId: deviceIdSchema })), async (c) => {
     const auth = c.get('auth')!;
-    const deps = credentialDeps(auth.user.email);
+    const deps = await credentialDeps(auth.user);
     c.header('Cache-Control', 'no-store');
     if (!deps) return c.json({ error: 'unavailable' as const }, 503);
 
@@ -70,7 +73,7 @@ export const credentialsRoutes = new Hono<AppContext>()
   // cannot hold a key gets the same refusal as minting, so the app shows one calm reason.
   .get('/budget', async (c) => {
     const auth = c.get('auth')!;
-    const deps = credentialDeps(auth.user.email);
+    const deps = await credentialDeps(auth.user);
     c.header('Cache-Control', 'no-store');
     if (!deps) return c.json({ error: 'unavailable' as const }, 503);
     if (await deps.store.isBlocked(auth.userId)) return c.json({ error: 'blocked' as const }, 403);
@@ -97,7 +100,7 @@ export const credentialsRoutes = new Hono<AppContext>()
     }
   })
   .delete('/:deviceId', zValidator('param', z.object({ deviceId: deviceIdSchema })), async (c) => {
-    const deps = credentialDeps();
+    const deps = await credentialDeps();
     if (!deps) return c.json({ error: 'unavailable' as const }, 503);
     const ended = await revokeCredential(deps, {
       userId: c.get('auth')!.userId,
