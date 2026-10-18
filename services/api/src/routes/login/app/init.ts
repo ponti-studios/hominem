@@ -35,6 +35,8 @@ export type ErrorInit = z.infer<typeof errorInitSchema>;
 export const settingsInitSchema = z.object({
   user: z.object({ id: z.string(), name: z.string().nullable(), email: z.string().nullable() }),
   loginNextUrl: z.string(),
+  /** The credit top-up page for a person in credit mode (docs/prd/top-up.md in Thames), else null. */
+  creditUrl: z.string().nullable().default(null),
 });
 export type SettingsInit = z.infer<typeof settingsInitSchema>;
 

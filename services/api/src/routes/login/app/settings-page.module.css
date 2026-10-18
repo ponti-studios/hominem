@@ -292,3 +292,8 @@
   word-break: break-all;
   user-select: all;
 }
+
+.linkButton {
+  display: inline-block;
+  text-decoration: none;
+}

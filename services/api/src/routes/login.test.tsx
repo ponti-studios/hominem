@@ -262,6 +262,30 @@ describe('API login route', () => {
     expect(html).toContain('/src/routes/login/app/entries/settings.tsx');
   });
 
+  it('signs the app web view in with a one-time token, then lands on the account page', async () => {
+    const reply = new Response('{}', { status: 200 });
+    reply.headers.append('set-cookie', 'better-auth.session_token=abc; Path=/; HttpOnly');
+    mocks.handler.mockResolvedValue(reply);
+
+    const response = await createApp().request('http://localhost/auth/open?token=one-time');
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe('http://localhost/auth/settings');
+    expect(response.headers.get('set-cookie')).toContain('better-auth.session_token=abc');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    const request = mocks.handler.mock.calls[0]?.[0];
+    expect(new URL(request?.url ?? '').pathname).toBe('/api/auth/one-time-token/verify');
+    expect(await request?.json()).toEqual({ token: 'one-time' });
+  });
+
+  it('sets no cookie for a bad one-time token and still lands on the account page', async () => {
+    mocks.handler.mockResolvedValue(new Response('{}', { status: 400 }));
+    const response = await createApp().request('http://localhost/auth/open?token=nope');
+    expect(response.status).toBe(303);
+    expect(response.headers.get('set-cookie')).toBeNull();
+    expect(response.headers.get('location')).toBe('http://localhost/auth/settings');
+  });
+
   it('redirects signed-out visitors to hosted login with an AI-settings resume', async () => {
     const response = await createApp().request('http://localhost/auth/settings/ai');
 

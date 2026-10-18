@@ -4,6 +4,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { etag } from 'hono/etag';
 
+import { inCreditMode, parseTesters, signLinkToken } from '../../application/credit';
 import {
   createMcpToken,
   listMcpTokens,
@@ -86,6 +87,21 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
     resolveResume(query, inputEnv, origin);
   const resolvePostAuthResumeWithEnv = (query: string, origin?: string) =>
     resolvePostAuthResume(query, inputEnv, origin);
+  // The top-up page link for a person the credit flag lets in; null for everyone else.
+  const creditUrlFor = (user: { id: string; email: string | null }, origin: string) => {
+    const mode = inputEnv.CREDIT_MODE ?? 'off';
+    if (mode === 'off' || !user.email) return null;
+    const config = {
+      mode,
+      testers: parseTesters(inputEnv.CREDIT_TESTERS ?? ''),
+      usdPerPound: 0,
+      grantPence: 0,
+      grantsPerDay: 0,
+    };
+    if (!inCreditMode(config, user.email)) return null;
+    const token = signLinkToken(inputEnv.BETTER_AUTH_SECRET, user.id, new Date());
+    return new URL(`/credit?t=${token}`, origin).toString();
+  };
   const loginUrlWithEnv = (value: Parameters<typeof loginUrl>[0], origin?: string) =>
     loginUrl({ ...value, origin }, inputEnv);
   // Redirects are followed by the browser, so they must point at the host
@@ -149,6 +165,33 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         }),
       );
     })
+    // The Thames app opens this in a web view with a one-time token from
+    // /api/auth/one-time-token/generate. It signs the browser in, then lands on the account page.
+    .get('/auth/open', async (c) => {
+      const origin = requestOrigin(c);
+      const token = c.req.query('token') ?? '';
+      const landing = new URL('/auth/settings', origin).toString();
+      c.header('Cache-Control', 'no-store');
+      c.header('Referrer-Policy', 'no-referrer');
+      if (!token) return c.redirect(landing, 303);
+      const verified = await callBetterAuth({
+        auth,
+        env: inputEnv,
+        path: '/one-time-token/verify',
+        body: { token },
+        request: c.req.raw,
+      });
+      const headers = new Headers({ location: landing });
+      if (verified.ok) {
+        for (const setCookie of verified.headers.getSetCookie()) {
+          headers.append('set-cookie', setCookie);
+        }
+      }
+      // A bad or used token still lands on the account page, which sends signed-out people to log in.
+      headers.set('cache-control', 'no-store');
+      headers.set('referrer-policy', 'no-referrer');
+      return new Response(null, { status: 303, headers });
+    })
     .get('/auth/settings', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       const origin = requestOrigin(c);
@@ -163,6 +206,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
                 email: session.user.email,
               },
               loginNextUrl: new URL('/auth/settings', origin).toString(),
+              creditUrl: creditUrlFor(session.user, origin),
             },
             title: 'Settings | Hominem',
           }),

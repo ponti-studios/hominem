@@ -69,7 +69,7 @@ function copyTextLegacy(text: string): boolean {
   return copied;
 }
 
-export function SettingsPage({ user, loginNextUrl }: SettingsInit) {
+export function SettingsPage({ user, loginNextUrl, creditUrl }: SettingsInit) {
   const queryClient = useQueryClient();
   const name = user.name ?? '';
   const email = user.email ?? '';
@@ -354,6 +354,16 @@ export function SettingsPage({ user, loginNextUrl }: SettingsInit) {
             </div>
           </div>
         </section>
+
+        {creditUrl ? (
+          <section className={`${styles.section} w-full`}>
+            <p className={styles.sectionLabel}>Credit</p>
+            <p className={styles.mcpCopy}>Add credit to use Thames. It doesn't expire.</p>
+            <a className={`${styles.saveButton} ${styles.linkButton}`} href={creditUrl}>
+              Add credit
+            </a>
+          </section>
+        ) : null}
 
         <section className={`${styles.section} w-full`}>
           <form action="/logout" method="post">
