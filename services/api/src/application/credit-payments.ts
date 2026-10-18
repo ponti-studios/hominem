@@ -16,6 +16,7 @@ import {
   reconcileLimits,
   TOP_UP_POUNDS,
   type CreditDeps,
+  type CreditStore,
 } from './credit';
 import { StripeError, type StripeClient } from './stripe';
 
@@ -66,14 +67,28 @@ const completedSchema = z.object({
   }),
 });
 
+/** What the confirmation email says: which payment, whose, and what it paid for. */
+export interface Confirmation {
+  sessionId: string;
+  userId: string;
+  amountPence: number;
+  creditPence: number;
+}
+
 export type WebhookOutcome =
   | { kind: 'ignored' }
   | {
       kind: 'duplicate';
       /** Set when the earlier delivery credited this payment, so a lost confirmation can be sent. */
-      confirm?: { userId: string; amountPence: number; creditPence: number };
+      confirm?: Confirmation;
     }
-  | { kind: 'credited'; userId: string; amountPence: number; creditPence: number }
+  | {
+      kind: 'credited';
+      sessionId: string;
+      userId: string;
+      amountPence: number;
+      creditPence: number;
+    }
   | { kind: 'refunded_not_uk'; userId: string }
   | { kind: 'rejected'; reason: string };
 
@@ -134,7 +149,7 @@ export async function handleStripeEvent(
   if (recorded === 'duplicate') {
     const earlier = await deps.credit.store.paymentFor(userId, session.id);
     return earlier?.status === 'credited'
-      ? { kind: 'duplicate', confirm: { userId, amountPence, creditPence } }
+      ? { kind: 'duplicate', confirm: { sessionId: session.id, userId, amountPence, creditPence } }
       : { kind: 'duplicate' };
   }
   await deps.credit.store.setLowNotified(userId, null);
@@ -146,5 +161,35 @@ export async function handleStripeEvent(
       error: error instanceof Error ? error.message : String(error),
     });
   }
-  return { kind: 'credited', userId, amountPence, creditPence };
+  return { kind: 'credited', sessionId: session.id, userId, amountPence, creditPence };
+}
+
+/** A claim that never finished (the process died mid-send) can be taken again after this long. */
+const CLAIM_STALE_MS = 10 * 60 * 1000;
+
+/**
+ * Sends a payment's confirmation email at most once. The claim is taken before sending, so two
+ * deliveries at the same time cannot both send; a failed send gives the claim back and rethrows,
+ * so the webhook fails and Stripe delivers it again.
+ * Returns whether this call sent it.
+ */
+export async function confirmOnce(
+  deps: { store: CreditStore; now?: () => Date },
+  confirmation: Confirmation,
+  send: (confirmation: Confirmation) => Promise<void>,
+): Promise<boolean> {
+  const now = (deps.now ?? (() => new Date()))();
+  const claimed = await deps.store.claimConfirmation(
+    confirmation.sessionId,
+    new Date(now.getTime() - CLAIM_STALE_MS),
+  );
+  if (!claimed) return false;
+  try {
+    await send(confirmation);
+  } catch (error) {
+    await deps.store.releaseConfirmation(confirmation.sessionId);
+    throw error;
+  }
+  await deps.store.markConfirmationSent(confirmation.sessionId);
+  return true;
 }

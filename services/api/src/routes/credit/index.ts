@@ -14,7 +14,7 @@ import {
   problemPage,
   topUpPage,
 } from '../../application/credit-page';
-import { handleStripeEvent, startCheckout } from '../../application/credit-payments';
+import { confirmOnce, handleStripeEvent, startCheckout } from '../../application/credit-payments';
 import {
   creditDeps,
   personInCreditMode,
@@ -191,11 +191,8 @@ creditRoutes.post('/webhooks/stripe', async (c) => {
         : outcome.kind === 'duplicate'
           ? outcome.confirm
           : undefined;
-    if (confirm) {
-      // A failed email makes the webhook fail, so Stripe retries. The retry arrives as a duplicate
-      // of a credited payment, which sends the confirmation again (a replay may email twice).
-      await sendTopUpConfirmationEmail(confirm);
-    }
+    // Sent once per payment: a retry after a failed send tries again, a repeat never sends twice.
+    if (confirm) await confirmOnce({ store: deps.store }, confirm, sendTopUpConfirmationEmail);
     return c.json({ received: true });
   } catch (error) {
     // A 5xx makes Stripe retry, which the ledger's idempotency makes safe.

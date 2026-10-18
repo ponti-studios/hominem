@@ -96,6 +96,41 @@ export const dbCreditStore: CreditStore = {
     };
   },
 
+  async claimConfirmation(sessionId, staleBefore) {
+    const claimed = await db
+      .updateTable('app.creditPayments')
+      .set({ confirmationClaimedAt: new Date() })
+      .where('stripeSessionId', '=', sessionId)
+      .where('status', '=', 'credited')
+      .where('confirmationSentAt', 'is', null)
+      .where((eb) =>
+        eb.or([
+          eb('confirmationClaimedAt', 'is', null),
+          eb('confirmationClaimedAt', '<', staleBefore.toISOString()),
+        ]),
+      )
+      .returning('stripeSessionId')
+      .executeTakeFirst();
+    return claimed !== undefined;
+  },
+
+  async markConfirmationSent(sessionId) {
+    await db
+      .updateTable('app.creditPayments')
+      .set({ confirmationSentAt: new Date() })
+      .where('stripeSessionId', '=', sessionId)
+      .execute();
+  },
+
+  async releaseConfirmation(sessionId) {
+    await db
+      .updateTable('app.creditPayments')
+      .set({ confirmationClaimedAt: null })
+      .where('stripeSessionId', '=', sessionId)
+      .where('confirmationSentAt', 'is', null)
+      .execute();
+  },
+
   async lowNotifiedAt(userId) {
     const row = await db
       .selectFrom('app.creditState')

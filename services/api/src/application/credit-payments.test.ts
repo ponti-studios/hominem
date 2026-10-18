@@ -1,9 +1,9 @@
 import { createHmac } from 'node:crypto';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { type CreditConfig, type CreditDeps, type CreditStore, type PaymentStatus } from './credit';
-import { handleStripeEvent, startCheckout } from './credit-payments';
+import { confirmOnce, handleStripeEvent, startCheckout } from './credit-payments';
 import {
   StripeError,
   verifyStripeSignature,
@@ -39,6 +39,9 @@ function world(countries: PaymentCountries = { cardCountry: 'GB', billingCountry
       return 'new';
     },
     paymentFor: async (_user, sessionId) => payments.get(sessionId) ?? null,
+    claimConfirmation: async () => true,
+    markConfirmationSent: async () => undefined,
+    releaseConfirmation: async () => undefined,
     lowNotifiedAt: async () => null,
     setLowNotified: async (_user, at) => {
       if (at === null) state.lowCleared = true;
@@ -127,13 +130,19 @@ describe('the webhook', () => {
   it('credits a paid UK payment once', async () => {
     const { credit, stripe, state } = world();
     const first = await handleStripeEvent({ credit, stripe }, completed());
-    expect(first).toEqual({ kind: 'credited', userId: 'u1', amountPence: 1000, creditPence: 819 });
+    expect(first).toEqual({
+      kind: 'credited',
+      sessionId: expect.any(String),
+      userId: 'u1',
+      amountPence: 1000,
+      creditPence: 819,
+    });
     expect(state.ledger).toBe(819);
     expect(state.lowCleared).toBe(true);
     const again = await handleStripeEvent({ credit, stripe }, completed());
     expect(again).toEqual({
       kind: 'duplicate',
-      confirm: { userId: 'u1', amountPence: 1000, creditPence: 819 },
+      confirm: { sessionId: expect.any(String), userId: 'u1', amountPence: 1000, creditPence: 819 },
     });
     expect(state.ledger).toBe(819);
   });
@@ -223,5 +232,56 @@ describe('the webhook signature', () => {
       false,
     );
     expect(verifyStripeSignature(body, `t=${t}`, secret, now)).toBe(false);
+  });
+});
+
+describe('confirmOnce', () => {
+  const confirmation = { sessionId: 'cs_1', userId: 'u1', amountPence: 1000, creditPence: 819 };
+  function claims() {
+    let claimed = false;
+    let sent = false;
+    const store = {
+      claimConfirmation: async () => {
+        if (claimed || sent) return false;
+        claimed = true;
+        return true;
+      },
+      markConfirmationSent: async () => {
+        sent = true;
+      },
+      releaseConfirmation: async () => {
+        claimed = false;
+      },
+    } as unknown as CreditStore;
+    return store;
+  }
+
+  it('sends once however many times the payment is delivered', async () => {
+    const store = claims();
+    const send = vi.fn(async () => undefined);
+    expect(await confirmOnce({ store }, confirmation, send)).toBe(true);
+    expect(await confirmOnce({ store }, confirmation, send)).toBe(false);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends once when two deliveries arrive at the same moment', async () => {
+    const store = claims();
+    const send = vi.fn(async () => undefined);
+    await Promise.all([
+      confirmOnce({ store }, confirmation, send),
+      confirmOnce({ store }, confirmation, send),
+    ]);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives the claim back when sending fails, so the next delivery sends it', async () => {
+    const store = claims();
+    const failing = vi.fn(async () => {
+      throw new Error('mail down');
+    });
+    await expect(confirmOnce({ store }, confirmation, failing)).rejects.toThrow('mail down');
+    const send = vi.fn(async () => undefined);
+    expect(await confirmOnce({ store }, confirmation, send)).toBe(true);
+    expect(send).toHaveBeenCalledTimes(1);
   });
 });

@@ -20,6 +20,9 @@ const more = vi.hoisted(() => ({
   },
   recordPayment: vi.fn(),
   confirmation: vi.fn(),
+  claim: vi.fn(),
+  markSent: vi.fn(),
+  release: vi.fn(),
   paymentFor: vi.fn(),
   creditFor: vi.fn(),
 }));
@@ -55,6 +58,9 @@ vi.mock('../../application/credit.runtime', () => ({
     store: {
       recordPayment: more.recordPayment,
       paymentFor: more.paymentFor,
+      claimConfirmation: more.claim,
+      markConfirmationSent: more.markSent,
+      releaseConfirmation: more.release,
       setLowNotified: async () => undefined,
     },
     credentials: { rows: async () => [] },
@@ -92,6 +98,7 @@ beforeEach(() => {
   mocks.mode.value = 'test';
   mocks.user.value = { id: 'u1', email: 'dana@work.com' };
   more.inCreditMode.value = true;
+  more.claim.mockResolvedValue(true);
   more.creditFor.mockResolvedValue({ balancePence: 15, lastAddedPence: 100 });
   more.stripe.createCheckoutSession.mockResolvedValue({
     id: 'cs_1',

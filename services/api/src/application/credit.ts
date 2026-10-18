@@ -155,6 +155,14 @@ export interface CreditStore {
     userId: string,
     sessionId: string,
   ): Promise<{ status: PaymentStatus; creditPence: number } | null>;
+  /**
+   * Takes the right to send this payment's confirmation email: true for exactly one caller until
+   * it is marked sent. A claim older than `staleBefore` that never finished can be taken again.
+   */
+  claimConfirmation(sessionId: string, staleBefore: Date): Promise<boolean>;
+  markConfirmationSent(sessionId: string): Promise<void>;
+  /** Gives the claim back after a failed send, so the next delivery tries again. */
+  releaseConfirmation(sessionId: string): Promise<void>;
   lowNotifiedAt(userId: string): Promise<Date | null>;
   setLowNotified(userId: string, at: Date | null): Promise<void>;
 }

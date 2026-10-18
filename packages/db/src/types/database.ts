@@ -489,6 +489,8 @@ export interface AppCreditLedger {
 
 export interface AppCreditPayments {
   amountPence: number;
+  confirmationClaimedAt: ColumnType<string, Date | string, Date | string> | null;
+  confirmationSentAt: ColumnType<string, Date | string, Date | string> | null;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   creditPence: number;
   status: string;
