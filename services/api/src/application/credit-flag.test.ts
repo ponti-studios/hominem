@@ -26,9 +26,28 @@ describe('the credit flag', () => {
     });
   });
 
-  it('is off when PostHog says off or has no answer', async () => {
+  it('is off when PostHog says off', async () => {
     expect(await createCreditFlag({ client: client(false) })(dana)).toBe(false);
-    expect(await createCreditFlag({ client: client(undefined) })(dana)).toBe(false);
+  });
+
+  it('treats no answer as a failed lookup: logged, and remembered only briefly', async () => {
+    let clock = 0;
+    const log = vi.fn();
+    const posthog = client(undefined);
+    const flag = createCreditFlag({
+      client: posthog,
+      now: () => clock,
+      ttlMs: 60_000,
+      failureTtlMs: 15_000,
+      log,
+    });
+    expect(await flag(dana)).toBe(false);
+    expect(log).toHaveBeenCalledWith('credit_flag_lookup_failed', {
+      error: 'flag could not be evaluated',
+    });
+    clock = 16_000;
+    await flag(dana);
+    expect(posthog.isFeatureEnabled).toHaveBeenCalledTimes(2);
   });
 
   it('is off when PostHog is not configured', async () => {

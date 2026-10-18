@@ -59,6 +59,9 @@ export function createCreditFlag(
           );
         }),
       ]);
+      // The SDK resolves to undefined, not an error, when it could not evaluate (a network error or a
+      // non-success reply). That is a failed lookup, not a conclusive "off".
+      if (answer === undefined) throw new Error('flag could not be evaluated');
       const on = answer === true;
       kept.set(user.id, { on, until: now() + (deps.ttlMs ?? DEFAULT_TTL_MS) });
       return on;
