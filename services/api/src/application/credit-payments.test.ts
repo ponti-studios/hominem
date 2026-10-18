@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 
 import { describe, expect, it } from 'vitest';
 
-import { type CreditConfig, type CreditDeps, type CreditStore } from './credit';
+import { type CreditConfig, type CreditDeps, type CreditStore, type PaymentStatus } from './credit';
 import { handleStripeEvent, startCheckout } from './credit-payments';
 import {
   StripeError,
@@ -20,7 +20,7 @@ const config: CreditConfig = {
 };
 
 function world(countries: PaymentCountries = { cardCountry: 'GB', billingCountry: 'GB' }) {
-  const payments = new Map<string, { status: string; creditPence: number }>();
+  const payments = new Map<string, { status: PaymentStatus; creditPence: number }>();
   const state: { ledger: number; refunds: string[]; lowCleared: boolean; sessions: unknown[] } = {
     ledger: 0,
     refunds: [],
@@ -39,6 +39,7 @@ function world(countries: PaymentCountries = { cardCountry: 'GB', billingCountry
       if (status === 'credited') state.ledger += creditPence;
       return 'new';
     },
+    paymentFor: async (_user, sessionId) => payments.get(sessionId) ?? null,
     lowNotifiedAt: async () => null,
     setLowNotified: async (_user, at) => {
       if (at === null) state.lowCleared = true;

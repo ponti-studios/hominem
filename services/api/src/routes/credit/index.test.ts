@@ -19,6 +19,7 @@ const more = vi.hoisted(() => ({
     refund: vi.fn(),
   },
   recordPayment: vi.fn(),
+  paymentFor: vi.fn(),
   creditFor: vi.fn(),
 }));
 
@@ -50,7 +51,11 @@ vi.mock('../../application/credit.runtime', () => ({
   stripeProblem: () => null,
   stripeClient: () => more.stripe,
   creditDeps: () => ({
-    store: { recordPayment: more.recordPayment, setLowNotified: async () => undefined },
+    store: {
+      recordPayment: more.recordPayment,
+      paymentFor: more.paymentFor,
+      setLowNotified: async () => undefined,
+    },
     credentials: { rows: async () => [] },
     keys: {},
     config: { usdPerPound: 1.25 },
@@ -59,7 +64,12 @@ vi.mock('../../application/credit.runtime', () => ({
 vi.mock('../../application/credit', async () => ({
   ...(await vi.importActual<object>('../../application/credit')),
   creditFor: more.creditFor,
-  creditSnapshot: async () => ({ balancePence: 0, lastAddedPence: 0, rows: [], usage: new Map() }),
+  creditSnapshot: async () => ({
+    balancePence: 2672,
+    lastAddedPence: 0,
+    rows: [],
+    usage: new Map(),
+  }),
   reconcileLimits: async () => 0,
 }));
 
@@ -211,5 +221,54 @@ describe('POST /webhooks/stripe', () => {
     mocks.mode.value = 'off';
     const response = await creditRoutes.request('/webhooks/stripe', { method: 'POST', body: '{}' });
     expect(response.status).toBe(404);
+  });
+});
+
+describe('the pages after Stripe', () => {
+  it('sends the signed link and the session id through the checkout return addresses', async () => {
+    await creditRoutes.request(
+      '/credit/checkout',
+      json({ t: token(), amountPounds: 10, consent: true }),
+    );
+    const input = more.stripe.createCheckoutSession.mock.calls[0]![0];
+    expect(input.successUrl).toContain('/credit/done?t=');
+    expect(input.successUrl).toContain('&s={CHECKOUT_SESSION_ID}');
+    expect(input.cancelUrl).toContain('/credit/cancelled?t=');
+  });
+
+  it('done: polls for the credit when the link and session are valid, else just reassures', async () => {
+    const live = await (
+      await creditRoutes.request(`/credit/done?t=${token()}&s=cs_test_abc123`)
+    ).text();
+    expect(live).toContain('/credit/status');
+    const bare = await (await creditRoutes.request('/credit/done')).text();
+    expect(bare).not.toContain('/credit/status');
+    expect(bare).toContain('within a minute');
+  });
+
+  it('status: pending, then credited with the balance, or refunded', async () => {
+    const url = `/credit/status?t=${token()}&s=cs_test_abc123`;
+    more.paymentFor.mockResolvedValueOnce(null);
+    expect(await (await creditRoutes.request(url)).json()).toEqual({ state: 'pending' });
+    more.paymentFor.mockResolvedValueOnce({ status: 'credited', creditPence: 819 });
+    expect(await (await creditRoutes.request(url)).json()).toEqual({
+      state: 'credited',
+      creditPence: 819,
+      balancePence: 2672,
+    });
+    more.paymentFor.mockResolvedValueOnce({ status: 'refunded_not_uk', creditPence: 819 });
+    expect(await (await creditRoutes.request(url)).json()).toEqual({ state: 'refunded' });
+  });
+
+  it('status: refuses a bad link or a malformed session id', async () => {
+    expect((await creditRoutes.request('/credit/status?t=nope&s=cs_test_abc123')).status).toBe(400);
+    expect((await creditRoutes.request(`/credit/status?t=${token()}&s=x`)).status).toBe(400);
+  });
+
+  it('cancelled: shows the unchanged balance and a way to try again', async () => {
+    const page = await (await creditRoutes.request(`/credit/cancelled?t=${token()}`)).text();
+    expect(page).toContain('£26.72');
+    expect(page).toContain('Try again');
+    expect(page).toContain('Back to account');
   });
 });

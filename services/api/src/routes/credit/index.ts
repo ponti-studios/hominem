@@ -5,7 +5,7 @@ import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
-import { creditFor, verifyLinkToken } from '../../application/credit';
+import { creditFor, creditSnapshot, verifyLinkToken } from '../../application/credit';
 import { sendTopUpConfirmationEmail } from '../../application/credit-email';
 import {
   cancelledPage,
@@ -92,8 +92,9 @@ creditRoutes.post('/credit/checkout', async (c) => {
     const outcome = await startCheckout(
       {
         stripe,
-        successUrl: `${origin}/credit/done`,
-        cancelUrl: `${origin}/credit/cancelled`,
+        // The signed link rides along so the next page can show who paid; the session id is Stripe's own placeholder.
+        successUrl: `${origin}/credit/done?t=${encodeURIComponent(body.data.t)}&s={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${origin}/credit/cancelled?t=${encodeURIComponent(body.data.t)}`,
       },
       {
         userId,
@@ -110,14 +111,54 @@ creditRoutes.post('/credit/checkout', async (c) => {
   }
 });
 
+const sessionIdSchema = z.string().regex(/^cs_[A-Za-z0-9_]{6,200}$/);
+
 creditRoutes.get('/credit/done', (c) => {
   if (env.CREDIT_MODE === 'off') return c.notFound();
-  return html(c, donePage);
+  const t = c.req.query('t') ?? '';
+  const sessionId = sessionIdSchema.safeParse(c.req.query('s'));
+  const live = verifyLinkToken(env.BETTER_AUTH_SECRET, t, new Date()) && sessionId.success;
+  return html(c, (n) =>
+    donePage(n, live && sessionId.success ? { token: t, sessionId: sessionId.data } : null),
+  );
 });
 
-creditRoutes.get('/credit/cancelled', (c) => {
+/** What the done page asks until the webhook has credited the payment. Needs the signed link. */
+creditRoutes.get('/credit/status', async (c) => {
+  c.header('Cache-Control', 'no-store');
+  if (env.CREDIT_MODE === 'off') return c.json({ error: 'not_found' }, 404);
+  const userId = verifyLinkToken(env.BETTER_AUTH_SECRET, c.req.query('t') ?? '', new Date());
+  const sessionId = sessionIdSchema.safeParse(c.req.query('s'));
+  const deps = creditDeps();
+  if (!userId || !sessionId.success || !deps) return c.json({ error: 'bad_request' }, 400);
+  try {
+    const payment = await deps.store.paymentFor(userId, sessionId.data);
+    if (!payment) return c.json({ state: 'pending' });
+    if (payment.status !== 'credited') return c.json({ state: 'refunded' });
+    const snapshot = await creditSnapshot(deps, userId);
+    return c.json({
+      state: 'credited',
+      creditPence: payment.creditPence,
+      balancePence: snapshot.balancePence,
+    });
+  } catch (error) {
+    logger.error('credit_status_failed', { error });
+    return c.json({ state: 'pending' });
+  }
+});
+
+creditRoutes.get('/credit/cancelled', async (c) => {
   if (env.CREDIT_MODE === 'off') return c.notFound();
-  return html(c, cancelledPage);
+  const t = c.req.query('t') ?? '';
+  const userId = verifyLinkToken(env.BETTER_AUTH_SECRET, t, new Date());
+  const deps = creditDeps();
+  let balancePence: number | null = null;
+  if (userId && deps) {
+    balancePence = await creditSnapshot(deps, userId)
+      .then((snapshot) => snapshot.balancePence)
+      .catch(() => null);
+  }
+  return html(c, (n) => cancelledPage(n, userId ? { token: t, balancePence } : null));
 });
 
 // Stripe calls this after a payment. The raw body is what the signature covers, so read it as text.

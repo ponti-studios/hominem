@@ -75,6 +75,20 @@ export const dbCreditStore: CreditStore = {
     });
   },
 
+  async paymentFor(userId, sessionId) {
+    const row = await db
+      .selectFrom('app.creditPayments')
+      .select(['status', 'creditPence'])
+      .where('stripeSessionId', '=', sessionId)
+      .where('userId', '=', userId)
+      .executeTakeFirst();
+    if (!row) return null;
+    return {
+      status: row.status === 'credited' ? 'credited' : 'refunded_not_uk',
+      creditPence: row.creditPence,
+    };
+  },
+
   async lowNotifiedAt(userId) {
     const row = await db
       .selectFrom('app.creditState')

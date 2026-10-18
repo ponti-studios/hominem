@@ -142,6 +142,11 @@ export interface CreditStore {
     creditPence: number;
     status: PaymentStatus;
   }): Promise<'new' | 'duplicate'>;
+  /** One Checkout session's recorded payment for this person, or null before the webhook has run. */
+  paymentFor(
+    userId: string,
+    sessionId: string,
+  ): Promise<{ status: PaymentStatus; creditPence: number } | null>;
   lowNotifiedAt(userId: string): Promise<Date | null>;
   setLowNotified(userId: string, at: Date | null): Promise<void>;
 }

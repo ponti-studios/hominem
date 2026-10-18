@@ -16,8 +16,8 @@ function escapeHtml(text: string): string {
 }
 
 const STYLE = `
-:root{--bg:#fcfcfd;--card:#f9f9fb;--panel:#f0f0f3;--ink:#1c2024;--ink2:#70747c;--ink3:#8b8d98;--line:#cdced6;--acc:#0f9e84;--acc-ink:#fff;--warn:#a05a00;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#111113;--card:#18191b;--panel:#212225;--ink:#edeef0;--ink2:#b0b4ba;--ink3:#80858c;--line:#43484e;--acc:#8ff0dc;--acc-ink:#06241d;--warn:#f2c668;color-scheme:dark}}
+:root{--bg:#fcfcfd;--card:#f9f9fb;--panel:#f0f0f3;--ink:#1c2024;--ink2:#70747c;--ink3:#8b8d98;--line:#cdced6;--acc:#0f9e84;--acc-ink:#fff;--warn:#a05a00;--ok:#1a9a58;--bad:#c13a45;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#111113;--card:#18191b;--panel:#212225;--ink:#edeef0;--ink2:#b0b4ba;--ink3:#80858c;--line:#43484e;--acc:#8ff0dc;--acc-ink:#06241d;--warn:#f2c668;--ok:#34c77b;--bad:#d14b55;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"SF Pro Text",sans-serif;padding:max(28px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-left)) max(40px,env(safe-area-inset-bottom))}
 main{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
@@ -41,6 +41,25 @@ button.pay:disabled{opacity:.4;cursor:default}
 .badge{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acc)}
 .badge svg{width:28px;height:28px}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.stage{display:grid;place-items:center;padding:8px 0 0}.stage svg{width:208px;height:208px;overflow:visible}
+.center{text-align:center;display:grid;gap:6px;justify-items:center}
+.tag{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+.num{font-size:44px;font-weight:700;letter-spacing:-1px;line-height:1.05;font-variant-numeric:tabular-nums;display:inline-block;min-width:6.4ch;text-align:center}
+.num.pending{color:var(--ink3)}
+.plus{font-size:14px;font-weight:600;color:var(--ok)}
+.track{fill:none;stroke:var(--ink);stroke-opacity:.1;stroke-width:2.4}
+.ring{fill:none;stroke-width:2.4;stroke-linecap:round;transform:rotate(-90deg);transform-origin:66px 66px}
+.ring.sweep{animation:sweep 1.3s .15s cubic-bezier(.3,.7,.2,1) both}
+@keyframes sweep{from{stroke-dasharray:0 100}to{stroke-dasharray:100 100}}
+.breathe{transform-origin:66px 66px;animation:breathe 2.4s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(.95);opacity:.8}}
+.orbit{transform-origin:66px 66px;animation:orbit 2.4s linear infinite}
+@keyframes orbit{to{transform:rotate(360deg)}}
+.dot{animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.settle{transform-origin:66px 66px;animation:settle .6s ease-out both}
+@keyframes settle{from{transform:scale(1.06);opacity:.5}to{transform:scale(1);opacity:1}}
+.stop *{animation:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 `;
 
@@ -49,6 +68,36 @@ function shell(title: string, nonce: string, body: string, script = ''): string 
     script ? `<script nonce="${nonce}">${script}</script>` : ''
   }</body></html>`;
 }
+
+/** The orb on the 132-unit grid the app uses: glow, thin credit ring, core and glyph. */
+type OrbKind = 'wait' | 'added' | 'failed';
+
+function orb(kind: OrbKind, label: string): string {
+  const glyph = {
+    wait: '<g fill="#fff"><circle class="dot" cx="54" cy="66" r="3.4"/><circle class="dot" style="animation-delay:.2s" cx="66" cy="66" r="3.4"/><circle class="dot" style="animation-delay:.4s" cx="78" cy="66" r="3.4"/></g>',
+    added:
+      '<path d="m50 67 11 11 22-23" fill="none" stroke="#fff" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>',
+    failed:
+      '<path d="m54 54 24 24M78 54 54 78" stroke="#fff" stroke-width="4.2" stroke-linecap="round"/>',
+  }[kind];
+  const mint = '#8ff0dc';
+  const colours = {
+    wait: { glow: mint, core: '#17947f' },
+    added: { glow: 'var(--ok)', core: '#17947f' },
+    failed: { glow: 'var(--bad)', core: '#d14b55' },
+  }[kind];
+  const ring =
+    kind === 'added'
+      ? '<circle class="ring sweep" cx="66" cy="66" r="61" pathLength="100" stroke="var(--ok)" stroke-opacity=".55" stroke-dasharray="100 100"/>'
+      : kind === 'failed'
+        ? '<circle class="ring" cx="66" cy="66" r="61" pathLength="100" stroke="var(--bad)" stroke-opacity=".55" stroke-dasharray="100 100"/>'
+        : '<g class="orbit"><circle cx="66" cy="5" r="3.4" fill="#8ff0dc"/></g>';
+  const core = `<circle cx="66" cy="66" r="42" fill="${colours.core}"/>`;
+  const body = kind === 'wait' ? `<g class="breathe">${core}</g>` : `<g class="settle">${core}</g>`;
+  return `<div class="stage"><svg viewBox="0 0 132 132" role="img" aria-label="${escapeHtml(label)}"><circle cx="66" cy="66" r="64" fill="${colours.glow}" opacity=".08"/><circle class="track" cx="66" cy="66" r="61"/>${ring}${body}${glyph}</svg></div>`;
+}
+
+const BACK = '<a class="back quiet" href="/auth/settings?app=1">Back to account</a>';
 
 export function creditCsp(nonce: string): string {
   return `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`;
@@ -119,19 +168,70 @@ draw();`;
   return shell('Add Thames credit', input.nonce, body, script);
 }
 
-export function donePage(nonce: string): string {
-  return shell(
-    'Credit added',
-    nonce,
-    `<span class="badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><h1>Thank you</h1><p class="sub">We're checking your payment. For a UK card, your credit shows in Thames within a minute and a receipt is emailed to you. A card or address outside the UK is refunded in full.</p><a class="back quiet" href="/auth/settings?app=1">Back to account</a>`,
-  );
+/**
+ * Where Stripe sends a person after paying. With a signed link and the Checkout session id the page
+ * asks /credit/status until the webhook has credited the payment, then shows the new balance;
+ * without them it says the credit will show in Thames.
+ */
+export function donePage(nonce: string, live: { token: string; sessionId: string } | null): string {
+  const waiting = `<div data-state="wait">${orb('wait', 'Adding your credit')}<div class="center"><span class="tag">Payment received</span><span class="num pending" id="scram">£00.00</span><p class="sub">Adding your credit.</p></div></div>`;
+  const added = `<div data-state="added" hidden>${orb('added', 'Credit added')}<div class="center"><span class="tag">You have</span><span class="num" id="bal">£0.00</span><span class="plus" id="plus"></span><p class="sub">A receipt is on its way to your email.</p></div></div>`;
+  const refunded = `<div data-state="refunded" hidden>${orb('failed', 'Payment refunded')}<div class="center"><span class="tag">Refunded in full</span><p class="sub">Thames credit is for UK cards and addresses only. Your money is on its way back.</p></div></div>`;
+  const slow = `<div data-state="slow"${live ? ' hidden' : ''}>${orb('wait', 'Payment received')}<div class="center"><span class="tag">Payment received</span><p class="sub">Your credit shows in Thames within a minute and a receipt is emailed to you. A card or address outside the UK is refunded in full.</p></div></div>`;
+  const body = live ? `${waiting}${added}${refunded}${slow}${BACK}` : `${slow}${BACK}`;
+  const script = live
+    ? `
+var T=${JSON.stringify(live.token)},S=${JSON.stringify(live.sessionId)};
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function show(n){document.querySelectorAll('[data-state]').forEach(function(e){e.hidden=e.dataset.state!==n})}
+function gbp(p){return '£'+(p/100).toFixed(2)}
+function d(){return Math.floor(Math.random()*10)}
+var sc=document.getElementById('scram'),spin=null;
+if(reduce){sc.textContent='£––.––'}else{spin=setInterval(function(){sc.textContent='£'+d()+d()+'.'+d()+d()},70)}
+function count(el,from,to){
+  if(reduce){el.textContent=gbp(to);return}
+  var t0=performance.now();
+  (function f(now){var k=Math.min(1,(now-t0)/900),e=1-Math.pow(1-k,3);el.textContent=gbp(from+(to-from)*e);if(k<1)requestAnimationFrame(f)})(t0);
+}
+var started=Date.now(),timer=null;
+function stop(){clearInterval(spin);clearTimeout(timer)}
+function poll(){
+  fetch('/credit/status?t='+encodeURIComponent(T)+'&s='+encodeURIComponent(S),{cache:'no-store'})
+    .then(function(r){return r.ok?r.json():null})
+    .then(function(j){
+      if(j&&j.state==='credited'){
+        stop();show('added');
+        document.getElementById('plus').textContent='+ '+gbp(j.creditPence)+' added';
+        count(document.getElementById('bal'),Math.max(0,j.balancePence-j.creditPence),j.balancePence);
+        return}
+      if(j&&j.state==='refunded'){stop();show('refunded');return}
+      next();
+    }).catch(next);
+}
+function next(){
+  if(Date.now()-started>60000){stop();show('slow');document.querySelector('[data-state=slow] svg').parentNode.classList.add('stop');return}
+  timer=setTimeout(poll,1500);
+}
+poll();`
+    : '';
+  return shell('Credit added', nonce, body, script);
 }
 
-export function cancelledPage(nonce: string): string {
+export function cancelledPage(
+  nonce: string,
+  link: { token: string; balancePence: number | null } | null,
+): string {
+  const again = link
+    ? `<a class="back" href="/credit?t=${escapeHtml(encodeURIComponent(link.token))}">Try again</a>`
+    : '';
+  const balance =
+    link && link.balancePence !== null
+      ? `<span class="num">${pounds(link.balancePence)}</span>`
+      : '';
   return shell(
     'Nothing charged',
     nonce,
-    `<span class="badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12"/></svg></span><h1>No payment made</h1><p class="sub">You were not charged.</p><a class="back quiet" href="/auth/settings?app=1">Back to account</a>`,
+    `${orb('failed', 'No payment made')}<div class="center"><span class="tag">No payment made</span>${balance}<p class="sub">You were not charged.</p></div>${again}${BACK}`,
   );
 }
 

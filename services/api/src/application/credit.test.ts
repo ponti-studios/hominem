@@ -121,6 +121,7 @@ function fakeWorld(
       return true;
     },
     recordPayment: async () => 'new',
+    paymentFor: async () => null,
     lowNotifiedAt: async () => state.lowNotified,
     setLowNotified: async (_user, at) => {
       state.lowNotified = at;
