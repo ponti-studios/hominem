@@ -48,6 +48,35 @@ describe('account download and delete', () => {
     expect(JSON.stringify(result)).not.toContain('account-other');
   });
 
+  it('includes rows that belong to the person only through a parent row', async () => {
+    await pool.query(
+      `CREATE TABLE public.zz_parent (id int PRIMARY KEY, owner text REFERENCES "user"(id) ON DELETE CASCADE)`,
+    );
+    await pool.query(
+      `CREATE TABLE public.zz_child (id int PRIMARY KEY, parent_id int REFERENCES public.zz_parent(id) ON DELETE CASCADE, note text)`,
+    );
+    try {
+      await pool.query(`INSERT INTO public.zz_parent VALUES (1, $1), (2, $2)`, [userId, otherId]);
+      await pool.query(`INSERT INTO public.zz_child VALUES (10, 1, 'mine'), (20, 2, 'theirs')`);
+      const result = await exportAccount(userId);
+      expect(result.data['zz_child']).toEqual([{ id: 10, parent_id: 1, note: 'mine' }]);
+    } finally {
+      await pool.query(`DROP TABLE public.zz_child`);
+      await pool.query(`DROP TABLE public.zz_parent`);
+    }
+  });
+
+  it('does not delete anything when the provider keys cannot be ended', async () => {
+    const endKeys = vi.fn(async () => {
+      throw new Error('still live');
+    });
+    await expect(deleteAccount(userId, { endKeys, removeStoredFile: vi.fn() })).rejects.toThrow(
+      'still live',
+    );
+    const kept = await pool.query(`SELECT 1 FROM "user" WHERE id = $1`, [userId]);
+    expect(kept.rowCount).toBe(1);
+  });
+
   it('lists credit entries newest first', async () => {
     expect(await creditHistory(userId)).toMatchObject([{ kind: 'grant', amountPence: 100 }]);
   });

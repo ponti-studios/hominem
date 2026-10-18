@@ -19,6 +19,7 @@ const more = vi.hoisted(() => ({
     refund: vi.fn(),
   },
   recordPayment: vi.fn(),
+  confirmation: vi.fn(),
   paymentFor: vi.fn(),
   creditFor: vi.fn(),
 }));
@@ -60,6 +61,9 @@ vi.mock('../../application/credit.runtime', () => ({
     keys: {},
     config: { usdPerPound: 1.25 },
   }),
+}));
+vi.mock('../../application/credit-email', () => ({
+  sendTopUpConfirmationEmail: more.confirmation,
 }));
 vi.mock('../../application/credit', async () => ({
   ...(await vi.importActual<object>('../../application/credit')),

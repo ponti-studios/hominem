@@ -68,7 +68,11 @@ const completedSchema = z.object({
 
 export type WebhookOutcome =
   | { kind: 'ignored' }
-  | { kind: 'duplicate' }
+  | {
+      kind: 'duplicate';
+      /** Set when the earlier delivery credited this payment, so a lost confirmation can be sent. */
+      confirm?: { userId: string; amountPence: number; creditPence: number };
+    }
   | { kind: 'credited'; userId: string; amountPence: number; creditPence: number }
   | { kind: 'refunded_not_uk'; userId: string }
   | { kind: 'rejected'; reason: string };
@@ -127,7 +131,12 @@ export async function handleStripeEvent(
     creditPence,
     status: 'credited',
   });
-  if (recorded === 'duplicate') return { kind: 'duplicate' };
+  if (recorded === 'duplicate') {
+    const earlier = await deps.credit.store.paymentFor(userId, session.id);
+    return earlier?.status === 'credited'
+      ? { kind: 'duplicate', confirm: { userId, amountPence, creditPence } }
+      : { kind: 'duplicate' };
+  }
   await deps.credit.store.setLowNotified(userId, null);
   // Raise the live keys' limits now. If this fails, the next budget read repairs them.
   try {

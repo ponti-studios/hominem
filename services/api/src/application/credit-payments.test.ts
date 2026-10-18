@@ -31,8 +31,7 @@ function world(countries: PaymentCountries = { cardCountry: 'GB', billingCountry
     ledgerPence: async () => state.ledger,
     lastAddedPence: async () => 0,
     hasLedger: async () => true,
-    grantsSince: async () => 0,
-    addGrant: async () => false,
+    grantIfRoom: async () => 'has',
     recordPayment: async ({ sessionId, creditPence, status }) => {
       if (payments.has(sessionId)) return 'duplicate';
       payments.set(sessionId, { status, creditPence });
@@ -132,7 +131,10 @@ describe('the webhook', () => {
     expect(state.ledger).toBe(819);
     expect(state.lowCleared).toBe(true);
     const again = await handleStripeEvent({ credit, stripe }, completed());
-    expect(again).toEqual({ kind: 'duplicate' });
+    expect(again).toEqual({
+      kind: 'duplicate',
+      confirm: { userId: 'u1', amountPence: 1000, creditPence: 819 },
+    });
     expect(state.ledger).toBe(819);
   });
   it('refunds a payment from outside the UK and credits nothing', async () => {

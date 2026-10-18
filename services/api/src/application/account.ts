@@ -1,7 +1,8 @@
 /**
- * Download and delete a person's whole account. Both find the person's rows by asking the database
- * which columns point at the user table, so a table added later is covered without an edit here.
- * Deleting relies on those foreign keys cascading; the one that does not is cleared by hand.
+ * Download and delete a person's whole account. The download finds the person's rows by asking the
+ * database which columns point at the user table, and which tables point at those rows in turn, so a
+ * table added later is covered without an edit here. Deleting relies on the foreign keys cascading;
+ * the one that does not is cleared by hand.
  */
 import { authDb, db, sql } from '@hominem/db/core';
 
@@ -23,18 +24,77 @@ const EXPORT_SKIP = new Set([
 
 const LEGACY_SUFFIX = /_legacy_\d+$/;
 
-type Reference = { table: string; column: string };
+type Edge = {
+  child: string;
+  childColumn: string;
+  parent: string;
+  parentColumn: string;
+  toUser: boolean;
+};
 
-/** Every table.column that holds a user id, from the database's own foreign keys. */
-async function userReferences(): Promise<Reference[]> {
-  const { rows } = await sql<{ table: string; column: string }>`
-    select c.conrelid::regclass::text as "table", a.attname as "column"
+/** Every single-column foreign key in the database: which table points at which. */
+async function foreignKeys(): Promise<Edge[]> {
+  const { rows } = await sql<{
+    child: string;
+    childColumn: string;
+    parent: string;
+    parentColumn: string;
+    toUser: boolean;
+  }>`
+    select c.conrelid::regclass::text as "child", ca.attname as "childColumn",
+           c.confrelid::regclass::text as "parent", pa.attname as "parentColumn",
+           c.confrelid = 'public."user"'::regclass as "toUser"
     from pg_constraint c
-    join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
-    where c.contype = 'f' and c.confrelid = 'public."user"'::regclass
+    join pg_attribute ca on ca.attrelid = c.conrelid and ca.attnum = c.conkey[1]
+    join pg_attribute pa on pa.attrelid = c.confrelid and pa.attnum = c.confkey[1]
+    where c.contype = 'f' and array_length(c.conkey, 1) = 1
     order by 1, 2
   `.execute(authDb);
-  return rows.map(({ table, column }) => ({ table, column }));
+  return rows;
+}
+
+/** A condition on a table, written for a given alias, that selects the rows this person owns. */
+type Owned = (alias: string) => ReturnType<typeof sql>;
+
+/** How far to follow "belongs to a row that belongs to ..." chains below the user table. */
+const MAX_DEPTH = 4;
+
+/**
+ * Every table that holds this person's rows, directly (a user id column) or through a chain of
+ * parents (a stage that belongs to an application that belongs to the person), each with the
+ * condition that picks the person's rows.
+ */
+async function ownedTables(userId: string): Promise<{ table: string; owned: Owned }[]> {
+  const edges = await foreignKeys();
+  const found: { table: string; owned: Owned }[] = [];
+  const seen = new Set<string>();
+  let level: { table: string; owned: Owned }[] = [];
+  for (const edge of edges.filter((e) => e.toUser && !skipped(e.child))) {
+    const owned: Owned = (alias) => sql`${sql.ref(`${alias}.${edge.childColumn}`)} = ${userId}`;
+    found.push({ table: edge.child, owned });
+    level.push({ table: edge.child, owned });
+    seen.add(`${edge.child}.${edge.childColumn}`);
+  }
+  for (let depth = 1; depth <= MAX_DEPTH && level.length > 0; depth++) {
+    const next: typeof level = [];
+    for (const parent of level) {
+      for (const edge of edges.filter((e) => !e.toUser && e.parent === parent.table)) {
+        const key = `${edge.child}.${edge.childColumn}`;
+        if (skipped(edge.child) || seen.has(key) || edge.child === parent.table) continue;
+        seen.add(key);
+        // The parent's condition is written for its own alias, one level deeper each time.
+        const parentAlias = `p${depth}`;
+        const owned: Owned = (alias) => sql`${sql.ref(`${alias}.${edge.childColumn}`)} in (
+          select ${sql.ref(`${parentAlias}.${edge.parentColumn}`)}
+          from ${sql.raw(edge.parent)} ${sql.raw(parentAlias)}
+          where ${parent.owned(parentAlias)})`;
+        found.push({ table: edge.child, owned });
+        next.push({ table: edge.child, owned });
+      }
+    }
+    level = next;
+  }
+  return found;
 }
 
 function skipped(table: string): boolean {
@@ -55,14 +115,13 @@ export async function exportAccount(userId: string, now = new Date()): Promise<A
     select to_jsonb(u) - 'image' as row from public."user" u where id = ${userId}
   `.execute(authDb);
   const data: AccountExport['data'] = {};
-  for (const { table, column } of await userReferences()) {
-    if (skipped(table)) continue;
+  for (const { table, owned } of await ownedTables(userId)) {
     // Table and column names come from the catalogue above, never from the request.
     const found = await sql<{ row: Record<string, unknown> }>`
-      select to_jsonb(t) as row from ${sql.raw(table)} t where t.${sql.ref(column)} = ${userId}
+      select to_jsonb(t) as row from ${sql.raw(table)} t where ${owned('t')}
     `.execute(authDb);
     const name = table.replaceAll('"', '');
-    // A table can point at the user twice (a collection's owner and a member): keep both sets.
+    // A table can be reached twice (a collection's owner and a member): keep both sets.
     if (found.rows.length > 0)
       data[name] = [...(data[name] ?? []), ...found.rows.map((r) => r.row)];
   }

@@ -111,14 +111,14 @@ function fakeWorld(
     ledgerPence: async () => state.ledger,
     lastAddedPence: async () => state.lastAdded,
     hasLedger: async () => state.hasLedger,
-    grantsSince: async () => state.grantsToday,
-    addGrant: async (_user, pence) => {
-      if (state.hasLedger) return false;
+    grantIfRoom: async ({ pence, max }) => {
+      if (state.hasLedger) return 'has';
+      if (state.grantsToday >= max) return 'full';
       state.hasLedger = true;
       state.ledger += pence;
       state.lastAdded = pence;
       state.grantsToday += 1;
-      return true;
+      return 'added';
     },
     recordPayment: async () => 'new',
     paymentFor: async () => null,

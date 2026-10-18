@@ -36,24 +36,31 @@ export const dbCreditStore: CreditStore = {
     return row !== undefined;
   },
 
-  async grantsSince(since) {
-    const row = await db
-      .selectFrom('app.creditLedger')
-      .select(sql<string>`count(*)`.as('total'))
-      .where('kind', '=', 'grant')
-      .where('createdAt', '>=', since.toISOString())
-      .executeTakeFirstOrThrow();
-    return Number(row.total);
-  },
-
-  async addGrant(userId, pence) {
-    const inserted = await db
-      .insertInto('app.creditLedger')
-      .values({ userId, kind: 'grant', amountPence: pence })
-      .onConflict((conflict) => conflict.doNothing())
-      .returning('id')
-      .executeTakeFirst();
-    return inserted !== undefined;
+  async grantIfRoom({ userId, pence, since, max }) {
+    return runInTransaction(async (trx) => {
+      // One lock for all first-time grants, held to the end of the transaction, so the count
+      // below cannot be stale when the insert happens.
+      await sql`select pg_advisory_xact_lock(hashtext('credit_grants'))`.execute(trx);
+      const has = await trx
+        .selectFrom('app.creditLedger')
+        .select('id')
+        .where('userId', '=', userId)
+        .limit(1)
+        .executeTakeFirst();
+      if (has !== undefined) return 'has' as const;
+      const given = await trx
+        .selectFrom('app.creditLedger')
+        .select(sql<string>`count(*)`.as('total'))
+        .where('kind', '=', 'grant')
+        .where('createdAt', '>=', since.toISOString())
+        .executeTakeFirstOrThrow();
+      if (Number(given.total) >= max) return 'full' as const;
+      await trx
+        .insertInto('app.creditLedger')
+        .values({ userId, kind: 'grant', amountPence: pence })
+        .execute();
+      return 'added' as const;
+    });
   },
 
   async recordPayment({ sessionId, userId, amountPence, creditPence, status }) {

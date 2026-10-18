@@ -185,11 +185,16 @@ creditRoutes.post('/webhooks/stripe', async (c) => {
   try {
     const outcome = await handleStripeEvent({ credit: deps, stripe }, event);
     logger.info('credit_webhook', { outcome: outcome.kind });
-    if (outcome.kind === 'credited') {
-      // A failed email must not fail the webhook: Stripe would retry a payment already recorded.
-      await sendTopUpConfirmationEmail(outcome).catch((error: unknown) => {
-        logger.error('credit_confirmation_email_failed', { error });
-      });
+    const confirm =
+      outcome.kind === 'credited'
+        ? outcome
+        : outcome.kind === 'duplicate'
+          ? outcome.confirm
+          : undefined;
+    if (confirm) {
+      // A failed email makes the webhook fail, so Stripe retries. The retry arrives as a duplicate
+      // of a credited payment, which sends the confirmation again (a replay may email twice).
+      await sendTopUpConfirmationEmail(confirm);
     }
     return c.json({ received: true });
   } catch (error) {

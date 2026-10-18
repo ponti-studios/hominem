@@ -5,9 +5,10 @@ import { dbCreditStore } from './credit.store';
 
 const userId = 'd4000000-0000-4000-8000-000000000031';
 const otherId = 'd4000000-0000-4000-8000-000000000032';
+const thirdId = 'd4000000-0000-4000-8000-000000000033';
 
 async function clean() {
-  for (const id of [userId, otherId]) {
+  for (const id of [userId, otherId, thirdId]) {
     await pool.query(`DELETE FROM app.credit_state WHERE user_id = $1`, [id]);
     await pool.query(`DELETE FROM app.credit_payments WHERE user_id = $1`, [id]);
     await pool.query(`DELETE FROM app.credit_ledger WHERE user_id = $1`, [id]);
@@ -20,6 +21,7 @@ beforeAll(async () => {
   for (const [id, email] of [
     [userId, 'credit-store-test@work.hominem.dev'],
     [otherId, 'credit-store-other@work.hominem.dev'],
+    [thirdId, 'credit-store-third@work.hominem.dev'],
   ] as const) {
     await pool.query(
       `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4)`,
@@ -41,19 +43,28 @@ describe('dbCreditStore', () => {
   });
 
   it('gives one grant per person', async () => {
-    expect(await dbCreditStore.addGrant(userId, 100)).toBe(true);
-    expect(await dbCreditStore.addGrant(userId, 100)).toBe(false);
+    const since = new Date(Date.now() - 60_000);
+    expect(await dbCreditStore.grantIfRoom({ userId, pence: 100, since, max: 100 })).toBe('added');
+    expect(await dbCreditStore.grantIfRoom({ userId, pence: 100, since, max: 100 })).toBe('has');
     expect(await dbCreditStore.ledgerPence(userId)).toBe(100);
     expect(await dbCreditStore.lastAddedPence(userId)).toBe(100);
     expect(await dbCreditStore.hasLedger(userId)).toBe(true);
   });
 
-  it('counts the grants given since a time', async () => {
-    await dbCreditStore.addGrant(otherId, 100);
-    expect(await dbCreditStore.grantsSince(new Date(Date.now() - 60_000))).toBeGreaterThanOrEqual(
-      2,
+  it('stops giving grants once the day is full, even when asked at the same moment', async () => {
+    const since = new Date(Date.now() - 60_000);
+    const { rows } = await pool.query(
+      `SELECT count(*)::int AS n FROM app.credit_ledger WHERE kind = 'grant' AND created_at >= $1`,
+      [since],
     );
-    expect(await dbCreditStore.grantsSince(new Date(Date.now() + 60_000))).toBe(0);
+    const max = rows[0].n + 1;
+    const results = await Promise.all(
+      [otherId, thirdId].map((id) =>
+        dbCreditStore.grantIfRoom({ userId: id, pence: 100, since, max }),
+      ),
+    );
+    expect(results.filter((result) => result === 'added')).toHaveLength(1);
+    expect(results.filter((result) => result === 'full')).toHaveLength(1);
   });
 
   it('credits a payment once, whatever the retries', async () => {

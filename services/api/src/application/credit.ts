@@ -128,9 +128,17 @@ export interface CreditStore {
   /** The latest grant or top-up, in pence (0 when there is none). */
   lastAddedPence(userId: string): Promise<number>;
   hasLedger(userId: string): Promise<boolean>;
-  grantsSince(since: Date): Promise<number>;
-  /** False when the person already has their grant. */
-  addGrant(userId: string, pence: number): Promise<boolean>;
+  /**
+   * Gives the person their free credit unless they already have it ('has') or `max` grants have
+   * been given since `since` ('full'). The count and the insert are one atomic step, so
+   * simultaneous first uses cannot exceed `max`.
+   */
+  grantIfRoom(input: {
+    userId: string;
+    pence: number;
+    since: Date;
+    max: number;
+  }): Promise<'added' | 'has' | 'full'>;
   /**
    * In one transaction: record the payment, and for a credited one add the top-up to the ledger.
    * 'duplicate' when this Checkout session was already handled.
@@ -184,20 +192,30 @@ export async function ensureGrant(deps: CreditDeps, userId: string): Promise<voi
   if (await deps.store.hasLedger(userId)) return;
   const now = clock(deps);
   const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  if ((await deps.store.grantsSince(dayStart)) >= deps.config.grantsPerDay) {
-    deps.log?.('credit_grant_limit_reached', { userId });
-    return;
-  }
-  await deps.store.addGrant(userId, deps.config.grantPence);
+  const result = await deps.store.grantIfRoom({
+    userId,
+    pence: deps.config.grantPence,
+    since: dayStart,
+    max: deps.config.grantsPerDay,
+  });
+  if (result === 'full') deps.log?.('credit_grant_limit_reached', { userId });
 }
 
-/** Runs the reads one after another in small groups, so a person with a few keys is quick. */
+/** How many provider reads run at once; a person with many rotated keys must not burst the provider. */
+const USAGE_READS_AT_ONCE = 5;
+
+/** Reads each key's lifetime spend, a few at a time. */
 async function usageOfKeys(deps: CreditDeps, rows: CredentialRow[]): Promise<Map<string, number>> {
   const usage = new Map<string, number>();
-  await Promise.all(
-    rows.map(async (row) => {
+  let next = 0;
+  const worker = async () => {
+    while (next < rows.length) {
+      const row = rows[next++]!;
       usage.set(row.keyHash, await deps.keys.usage(row.keyHash));
-    }),
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(USAGE_READS_AT_ONCE, rows.length) }, () => worker()),
   );
   return usage;
 }
