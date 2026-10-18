@@ -32,7 +32,8 @@ const readResidenceId = 'e1000031-0000-4000-8000-000000000001';
 const readSegmentId = 'e1000032-0000-4000-8000-000000000001';
 const readAirportId = 'e1000033-0000-4000-8000-000000000001';
 const readAirport2Id = 'e1000033-0000-4000-8000-000000000002';
-const readPinnedReferenceId = 'e1000033-0000-4000-8000-000000000003';
+const readPinnedReferenceId = randomUUID();
+const readKefReferenceId = randomUUID();
 const readTransportId = 'e1000034-0000-4000-8000-000000000001';
 const readStayId = 'e1000035-0000-4000-8000-000000000001';
 const wishlistStayId = 'e1000035-0000-4000-8000-000000000002';
@@ -46,6 +47,16 @@ const inboundTransportId = 'e100003c-0000-4000-8000-000000000001';
 const outboundTransportId = 'e100003c-0000-4000-8000-000000000002';
 const londonArrivalTransportId = 'e100003c-0000-4000-8000-000000000003';
 const layoverJourneyId = 'e100003e-0000-4000-8000-000000000001';
+const referenceSourceIds = [1, 2, 3, 4, 5].map(
+  () => 2_000_000_000 + Math.floor(Math.random() * 1_000_000_000),
+);
+const referenceIds = [
+  randomUUID(),
+  randomUUID(),
+  randomUUID(),
+  readPinnedReferenceId,
+  readKefReferenceId,
+];
 
 beforeAll(async () => {
   await pool.query(`DELETE FROM "user" WHERE id = $1`, [ownerId]);
@@ -63,12 +74,12 @@ beforeAll(async () => {
       true,
     ],
   );
-  await db.deleteFrom('app.travelAirportReference').where('sourceId', '=', '989003').execute();
   await db
     .insertInto('app.travelAirportReference')
     .values([
       {
-        sourceId: 983001,
+        id: referenceIds[0]!,
+        sourceId: referenceSourceIds[0]!,
         code: 'LHR',
         name: 'Heathrow',
         city: 'London Probe City',
@@ -79,7 +90,8 @@ beforeAll(async () => {
         scheduledService: true,
       },
       {
-        sourceId: 983002,
+        id: referenceIds[1]!,
+        sourceId: referenceSourceIds[1]!,
         code: 'STN',
         name: 'Stansted',
         city: 'London Probe City',
@@ -90,7 +102,8 @@ beforeAll(async () => {
         scheduledService: true,
       },
       {
-        sourceId: 983004,
+        id: referenceIds[2]!,
+        sourceId: referenceSourceIds[2]!,
         code: 'SFO',
         name: 'San Francisco International Airport',
         city: 'San Francisco',
@@ -101,15 +114,27 @@ beforeAll(async () => {
         scheduledService: true,
       },
       {
-        id: readPinnedReferenceId,
-        sourceId: 989003,
+        id: referenceIds[3]!,
+        sourceId: referenceSourceIds[3]!,
         code: 'LHR',
         name: 'Duplicate code probe airport',
-        city: 'Pinned Probe City',
+        city: 'London Probe City',
         country: 'GB',
         type: 'large_airport',
         latitude: 40,
         longitude: -70,
+        scheduledService: true,
+      },
+      {
+        id: referenceIds[4]!,
+        sourceId: referenceSourceIds[4]!,
+        code: 'KEF',
+        name: 'Keflavik International Airport',
+        city: 'Reykjavik',
+        country: 'IS',
+        type: 'large_airport',
+        latitude: 63.985,
+        longitude: -22.6056,
         scheduledService: true,
       },
     ])
@@ -126,6 +151,7 @@ beforeAll(async () => {
         servesPlace: 'London',
         city: 'London',
         country: 'UK',
+        referenceAirportId: referenceIds[3]!,
       },
       {
         id: readAirport2Id,
@@ -137,6 +163,7 @@ beforeAll(async () => {
         country: 'UK',
         latitude: 51.885,
         longitude: 0.235,
+        referenceAirportId: referenceIds[1]!,
       },
     ])
     .execute();
@@ -730,21 +757,6 @@ describe('travel Tier 1 reads', () => {
       })
       .execute();
     await db
-      .insertInto('app.travelAirportReference')
-      .values({
-        sourceId: 983003,
-        code: 'KEF',
-        name: 'Keflavik International Airport',
-        city: 'Reykjavik',
-        country: 'IS',
-        type: 'large_airport',
-        latitude: 63.985,
-        longitude: -22.605,
-        scheduledService: true,
-      })
-      .onConflict((conflict) => conflict.column('sourceId').doNothing())
-      .execute();
-    await db
       .insertInto('app.travelAirports')
       .values({
         id: 'e100003d-0000-4000-8000-000000000001',
@@ -754,6 +766,7 @@ describe('travel Tier 1 reads', () => {
         servesPlace: 'Reykjavik',
         city: 'Reykjavik',
         country: 'IS',
+        referenceAirportId: readKefReferenceId,
       })
       .execute();
     await db

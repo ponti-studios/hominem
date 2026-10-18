@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const state = vi.hoisted(() => ({
-  mode: 'test' as 'off' | 'test' | 'live',
+const state: {
+  mode: 'off' | 'test' | 'live';
+  testers: string;
+  flag: ReturnType<typeof vi.fn>;
+} = vi.hoisted(() => ({
+  mode: 'test',
   testers: 'listed@work.com',
   flag: vi.fn(async (): Promise<boolean | undefined> => false),
 }));

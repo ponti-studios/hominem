@@ -12,12 +12,15 @@ import {
 
 describe('travel atomic maintenance', () => {
   const owners: string[] = [];
+  const referenceSourceIds = [1, 2].map(
+    () => 2_000_000_000 + Math.floor(Math.random() * 1_000_000_000),
+  );
   beforeAll(async () => {
     await db
       .insertInto('app.travelAirportReference')
       .values([
         {
-          sourceId: 982001,
+          sourceId: referenceSourceIds[0]!,
           code: 'LHR',
           name: 'Heathrow',
           city: 'London',
@@ -27,7 +30,7 @@ describe('travel atomic maintenance', () => {
           longitude: -0.4543,
         },
         {
-          sourceId: 982002,
+          sourceId: referenceSourceIds[1]!,
           code: 'KEF',
           name: 'Keflavik',
           city: 'Reykjavik',
