@@ -29,6 +29,12 @@ export const apiSchema = runtimeSchema.extend({
   AUTH_COOKIE_DOMAIN: z.string().default(''),
   HOMINEM_SCRIPTED_MAILBOX: z.string().default(''),
   AUTH_EMAIL_OTP_EXPIRES_SECONDS: z.coerce.number().int().positive().default(300),
+  // App Review sign-in: one address and a long fixed code, both empty when off (src/auth/review-account.ts).
+  APP_REVIEW_EMAIL: z.string().default(''),
+  APP_REVIEW_CODE: z
+    .string()
+    .default('')
+    .refine((code) => code === '' || code.length >= 20, 'APP_REVIEW_CODE must be 20+ characters'),
   RESEND_API_KEY: z.string(),
   RESEND_FROM_EMAIL: z.string(),
   RESEND_FROM_NAME: z.string(),
