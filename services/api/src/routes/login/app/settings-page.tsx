@@ -1,6 +1,6 @@
 // @jsxImportSource react
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { apiFetch } from './api';
 import { AuthContent, AuthDangerButton, AuthShell } from './auth-shell';
@@ -90,6 +90,90 @@ function copyTextLegacy(text: string): boolean {
   return copied;
 }
 
+type SheetName = 'profile' | 'credit' | 'tokens' | 'data';
+
+const ICONS: Record<SheetName, string> = {
+  profile: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0',
+  credit: 'M3 7h18v10H3zM3 11h18M7 15h3',
+  tokens: 'M15 7a4 4 0 1 1-3.5 6L4 20.5V17h3v-3h3l1.5-1.5A4 4 0 0 1 15 7Z',
+  data: 'M12 4v10m0 0-4-4m4 4 4-4M5 19h14',
+};
+
+function NavRow({
+  icon,
+  label,
+  value,
+  last,
+  onOpen,
+}: {
+  icon: SheetName;
+  label: string;
+  value: string;
+  last?: boolean;
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      aria-label={value ? `${label}: ${value}` : label}
+      className={styles.navRow}
+      data-last={last ? true : undefined}
+      onClick={onOpen}
+      type="button"
+    >
+      <span aria-hidden="true" className={styles.iconTile}>
+        <svg fill="none" height="18" viewBox="0 0 24 24" width="18">
+          <path
+            d={ICONS[icon]}
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.8"
+          />
+        </svg>
+      </span>
+      <span className={styles.navLabel}>{label}</span>
+      <span className={styles.navValue}>{value}</span>
+      <span aria-hidden="true" className={styles.chevron}>
+        ›
+      </span>
+    </button>
+  );
+}
+
+/** A panel that rises over the account home, like a Thames settings sheet. */
+function Sheet({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className={styles.sheetLayer}>
+      <button aria-label="Close" className={styles.scrim} onClick={onClose} type="button" />
+      <div aria-label={title} aria-modal="true" className={styles.sheet} role="dialog">
+        <div className={styles.grab} />
+        <div className={styles.sheetHead}>
+          <h3 className={styles.sheetTitle}>{title}</h3>
+          <button className={styles.doneButton} onClick={onClose} type="button">
+            Done
+          </button>
+        </div>
+        <div className={styles.sheetBody}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
 export function SettingsPage({
   user,
   loginNextUrl,
@@ -114,6 +198,7 @@ export function SettingsPage({
   const [deleteEmail, setDeleteEmail] = useState('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleted, setDeleted] = useState(false);
+  const [sheet, setSheet] = useState<SheetName | null>(null);
   const tokenInputRef = useRef<HTMLInputElement | null>(null);
   const tokenValueRef = useRef<HTMLElement | null>(null);
 
@@ -253,15 +338,31 @@ export function SettingsPage({
     );
   }
 
-  return (
-    <AuthShell>
-      <AuthContent wide>
-        <div className="w-full text-left">
-          <h2 id="settings-title" className="m-0 text-3xl font-semibold text-auth-text">
-            Account
-          </h2>
-        </div>
-
+  const tokenCount = tokensQuery.data?.tokens.filter((token) => !token.revokedAt).length ?? 0;
+  const creditValue = creditPence === null ? '' : formatPounds(creditPence);
+  const rows: { icon: SheetName; label: string; value: string }[] = [
+    { icon: 'profile', label: 'Profile', value: name || email },
+    {
+      icon: 'credit',
+      label: creditUrl ? 'Credit' : 'AI usage',
+      value: creditUrl ? creditValue : usage ? formatUsd(usage.totalCostUsd) : '',
+    },
+    {
+      icon: 'tokens',
+      label: 'Connected assistants',
+      value: tokenCount ? String(tokenCount) : 'None',
+    },
+    { icon: 'data', label: 'Your data', value: '' },
+  ];
+  const sheetTitles: Record<SheetName, string> = {
+    profile: 'Profile',
+    credit: creditUrl ? 'Credit' : 'AI usage',
+    tokens: 'Connected assistants',
+    data: 'Your data',
+  };
+  const sheetBody: Record<SheetName, ReactNode> = {
+    profile: (
+      <>
         <section className={`${styles.section} w-full`}>
           <div className={styles.identityRow}>
             <span aria-hidden="true" className={styles.avatar}>
@@ -299,10 +400,12 @@ export function SettingsPage({
             </p>
           </div>
         </section>
-
+      </>
+    ),
+    credit: (
+      <>
         {creditUrl ? (
-          <section className={`${styles.section} ${styles.divided} w-full`}>
-            <p className={styles.sectionLabel}>Credit</p>
+          <section className={`${styles.section} w-full`}>
             <p className={styles.bigAmount}>
               {creditPence === null ? '—' : formatPounds(creditPence)}
             </p>
@@ -344,7 +447,7 @@ export function SettingsPage({
             ) : null}
           </section>
         ) : (
-          <section className={`${styles.section} ${styles.divided} w-full`} data-settings-usage>
+          <section className={`${styles.section} w-full`} data-settings-usage>
             <p className={styles.sectionLabel}>AI usage · {formatUsagePeriod()}</p>
             <div className={styles.usageSummary}>
               <p className={styles.usageAmount}>{usage ? formatUsd(usage.totalCostUsd) : '—'}</p>
@@ -371,9 +474,11 @@ export function SettingsPage({
             </a>
           </section>
         )}
-
-        <section className={`${styles.section} ${styles.divided} w-full`}>
-          <p className={styles.sectionLabel}>Connected assistants</p>
+      </>
+    ),
+    tokens: (
+      <>
+        <section className={`${styles.section} w-full`}>
           <p className={styles.mcpCopy}>
             Let Muse, Claude or ChatGPT reach your data with a personal token. A token is shown
             once, when you make it.
@@ -475,9 +580,11 @@ export function SettingsPage({
             </div>
           </div>
         </section>
-
-        <section className={`${styles.section} ${styles.divided} w-full`}>
-          <p className={styles.sectionLabel}>Your data</p>
+      </>
+    ),
+    data: (
+      <>
+        <section className={`${styles.section} w-full`}>
           {creditUrl ? (
             <p className={styles.mcpCopy}>
               Memory and saved conversations are managed in the Thames app, under Settings.
@@ -534,15 +641,65 @@ export function SettingsPage({
             </div>
           ) : null}
         </section>
+      </>
+    ),
+  };
+
+  return (
+    <AuthShell>
+      <AuthContent wide>
+        <div className="w-full text-left">
+          <h2 id="settings-title" className="m-0 text-3xl font-semibold text-auth-text">
+            Account
+          </h2>
+        </div>
+
+        <section className={`${styles.summary} w-full`}>
+          <div className={styles.identityRow}>
+            <span aria-hidden="true" className={styles.avatar}>
+              {initials}
+            </span>
+            <span className={styles.summaryWho}>{email || 'Not available'}</span>
+          </div>
+          {creditUrl ? (
+            <>
+              <p className={styles.bigAmount}>
+                {creditPence === null ? '—' : formatPounds(creditPence)}
+              </p>
+              <a
+                className={`${styles.saveButton} ${styles.primaryButton} ${styles.linkButton}`}
+                href={creditUrl}
+              >
+                Add credit
+              </a>
+            </>
+          ) : null}
+        </section>
+
+        <div className={`${styles.card} w-full`}>
+          {rows.map((row, index) => (
+            <NavRow
+              key={row.icon}
+              icon={row.icon}
+              label={row.label}
+              last={index === rows.length - 1}
+              onOpen={() => setSheet(row.icon)}
+              value={row.value}
+            />
+          ))}
+        </div>
 
         {embedded ? null : (
-          <section className={`${styles.section} ${styles.divided} w-full`}>
-            <form action="/logout" method="post">
-              <input name="next" type="hidden" value={loginNextUrl} />
-              <AuthDangerButton type="submit">Sign out</AuthDangerButton>
-            </form>
-          </section>
+          <form action="/logout" className="w-full" method="post">
+            <input name="next" type="hidden" value={loginNextUrl} />
+            <AuthDangerButton type="submit">Sign out</AuthDangerButton>
+          </form>
         )}
+        {sheet ? (
+          <Sheet title={sheetTitles[sheet]} onClose={() => setSheet(null)}>
+            {sheetBody[sheet]}
+          </Sheet>
+        ) : null}
       </AuthContent>
     </AuthShell>
   );

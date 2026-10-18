@@ -358,3 +358,169 @@
   border: 1px solid color-mix(in srgb, var(--auth-danger) 35%, transparent);
   border-radius: 8px;
 }
+
+/* The account home mirrors the Thames settings screen: a summary card, one
+   rounded list of rows, and a sheet that rises over it for each row. */
+.summary {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--auth-border);
+  border-radius: 20px;
+  background: var(--auth-panel);
+  text-align: left;
+}
+.summaryWho {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--auth-text);
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card {
+  overflow: hidden;
+  border: 1px solid var(--auth-border);
+  border-radius: 20px;
+  background: var(--auth-panel);
+}
+.navRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  margin: 0;
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--auth-border);
+  background: transparent;
+  color: var(--auth-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.navRow[data-last] {
+  border-bottom: 0;
+}
+.navRow:hover {
+  background: var(--auth-card);
+}
+.iconTile {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid color-mix(in srgb, var(--auth-primary) 30%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--auth-primary) 12%, transparent);
+  color: var(--auth-primary);
+}
+.navLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+.navValue {
+  max-width: 46%;
+  overflow: hidden;
+  color: var(--auth-muted);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chevron {
+  color: var(--auth-muted);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.sheetLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.scrim {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgb(0 0 0 / 0.53);
+  animation: fade 0.22s ease both;
+  cursor: default;
+}
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: 86%;
+  border: 1px solid var(--auth-border);
+  border-bottom: 0;
+  border-radius: 28px 28px 0 0;
+  background: var(--auth-card);
+  animation: rise 0.28s ease-out both;
+}
+.grab {
+  align-self: center;
+  width: 38px;
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: var(--auth-border);
+}
+.sheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px 8px;
+}
+.sheetTitle {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.doneButton {
+  margin: 0;
+  padding: 6px 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 999px;
+  background: var(--auth-panel);
+  color: var(--auth-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sheetBody {
+  display: grid;
+  gap: 14px;
+  padding: 8px 24px max(32px, env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(80px);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .scrim {
+    animation: none;
+  }
+}
