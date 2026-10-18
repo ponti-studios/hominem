@@ -97,7 +97,7 @@ describe('GET /credit', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.get('content-security-policy')).toMatch(/script-src 'nonce-/);
     const page = await response.text();
-    expect(page).toContain('You have <b>£0.15</b>');
+    expect(page).toContain('<span class="n">£0.15</span>');
     expect(page).toContain('£8.19 of credit');
     expect(page).toContain('£17.53 of credit');
     expect(page).toContain('£45.54 of credit');
