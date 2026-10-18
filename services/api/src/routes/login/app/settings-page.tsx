@@ -44,6 +44,10 @@ function formatUsagePeriod(): string {
   return `${month} '${year}`;
 }
 
+function formatPounds(pence: number): string {
+  return `£${(Math.max(0, pence) / 100).toFixed(2)}`;
+}
+
 function getInitials(name: string, fallback: string): string {
   const source = name.trim() || fallback;
   const parts = source.split(/\s+/).filter(Boolean);
@@ -69,7 +73,13 @@ function copyTextLegacy(text: string): boolean {
   return copied;
 }
 
-export function SettingsPage({ user, loginNextUrl, creditUrl, embedded }: SettingsInit) {
+export function SettingsPage({
+  user,
+  loginNextUrl,
+  creditUrl,
+  creditPence,
+  embedded,
+}: SettingsInit) {
   const queryClient = useQueryClient();
   const name = user.name ?? '';
   const email = user.email ?? '';
@@ -236,30 +246,37 @@ export function SettingsPage({ user, loginNextUrl, creditUrl, embedded }: Settin
           </div>
         </section>
 
-        <section className={`${styles.section} w-full`} data-settings-usage>
-          <p className={styles.sectionLabel}>AI usage · {formatUsagePeriod()}</p>
-          <div className={styles.usageSummary}>
-            <p className={styles.usageAmount}>{usage ? formatUsd(usage.totalCostUsd) : '—'}</p>
-            <p className={styles.usageLimit}>
-              {usage ? `of ${formatUsd(usage.limitUsd)} · ${percent.toFixed(0)}%` : '&nbsp;'}
+        {creditUrl ? null : (
+          <section className={`${styles.section} w-full`} data-settings-usage>
+            <p className={styles.sectionLabel}>AI usage · {formatUsagePeriod()}</p>
+            <div className={styles.usageSummary}>
+              <p className={styles.usageAmount}>{usage ? formatUsd(usage.totalCostUsd) : '—'}</p>
+              <p className={styles.usageLimit}>
+                {usage ? `of ${formatUsd(usage.limitUsd)} · ${percent.toFixed(0)}%` : '&nbsp;'}
+              </p>
+            </div>
+            <div aria-hidden="true" className={styles.usageBar}>
+              <div className={styles.usageBarFill} style={{ width: `${percent}%` }} />
+            </div>
+            <p
+              className={styles.usageReset}
+              data-over-limit={usage?.isOverLimit ? true : undefined}
+            >
+              {usage?.isOverLimit
+                ? "You've reached this month's free AI usage limit. It resets at the start of next month."
+                : 'Resets at the start of next month.'}
             </p>
-          </div>
-          <div aria-hidden="true" className={styles.usageBar}>
-            <div className={styles.usageBarFill} style={{ width: `${percent}%` }} />
-          </div>
-          <p className={styles.usageReset} data-over-limit={usage?.isOverLimit ? true : undefined}>
-            {usage?.isOverLimit
-              ? "You've reached this month's free AI usage limit. It resets at the start of next month."
-              : 'Resets at the start of next month.'}
-          </p>
-        </section>
+          </section>
+        )}
 
-        <a
-          className="w-full text-left text-sm font-medium text-auth-primary no-underline hover:underline hover:underline-offset-3"
-          href="/auth/settings/ai"
-        >
-          AI usage details →
-        </a>
+        {creditUrl ? null : (
+          <a
+            className="w-full text-left text-sm font-medium text-auth-primary no-underline hover:underline hover:underline-offset-3"
+            href="/auth/settings/ai"
+          >
+            AI usage details →
+          </a>
+        )}
 
         <section className={`${styles.section} w-full`}>
           <p className={styles.sectionLabel}>MCP access</p>
@@ -358,6 +375,12 @@ export function SettingsPage({ user, loginNextUrl, creditUrl, embedded }: Settin
         {creditUrl ? (
           <section className={`${styles.section} w-full`}>
             <p className={styles.sectionLabel}>Credit</p>
+            {creditPence === null ? null : (
+              <div className={styles.usageSummary}>
+                <p className={styles.usageAmount}>{formatPounds(creditPence)}</p>
+                <p className={styles.usageLimit}>of credit</p>
+              </div>
+            )}
             <p className={styles.mcpCopy}>Add credit to use Thames. It doesn't expire.</p>
             <a className={`${styles.saveButton} ${styles.linkButton}`} href={creditUrl}>
               Add credit

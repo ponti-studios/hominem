@@ -102,6 +102,17 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
     const token = signLinkToken(inputEnv.BETTER_AUTH_SECRET, user.id, new Date());
     return new URL(`/credit?t=${token}`, origin).toString();
   };
+  // What a person in credit mode has left, in pence; null when it cannot be read just now.
+  const creditBalanceFor = async (userId: string): Promise<number | null> => {
+    try {
+      const { creditDeps } = await import('../../application/credit.runtime');
+      const { creditFor } = await import('../../application/credit');
+      const deps = creditDeps();
+      return deps ? (await creditFor(deps, userId)).balancePence : null;
+    } catch {
+      return null;
+    }
+  };
   const loginUrlWithEnv = (value: Parameters<typeof loginUrl>[0], origin?: string) =>
     loginUrl({ ...value, origin }, inputEnv);
   // Redirects are followed by the browser, so they must point at the host
@@ -196,6 +207,8 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       const origin = requestOrigin(c);
       if (session?.user) {
+        const creditUrl = creditUrlFor(session.user, origin);
+        const creditPence = creditUrl ? await creditBalanceFor(session.user.id) : null;
         return c.html(
           renderAuthShell({
             entry: 'settings',
@@ -206,7 +219,8 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
                 email: session.user.email,
               },
               loginNextUrl: new URL('/auth/settings', origin).toString(),
-              creditUrl: creditUrlFor(session.user, origin),
+              creditUrl,
+              creditPence,
               embedded: c.req.query('app') === '1',
             },
             title: 'Settings | Hominem',
