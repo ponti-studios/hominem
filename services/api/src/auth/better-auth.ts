@@ -17,6 +17,7 @@ import { API_BRAND } from '../brand';
 import { env } from '../env';
 import type { ApiEnv } from '../env.schema';
 import { MCP_SCOPES } from '../scopes';
+import { reviewSignInCode } from './review-account';
 import { getTrustedOrigins } from './trusted-origins';
 
 function getAdvancedOptions(inputEnv: ApiEnv) {
@@ -160,11 +161,14 @@ function getAuthPlugins(inputEnv: ApiEnv) {
     emailOTP({
       expiresIn: inputEnv.AUTH_EMAIL_OTP_EXPIRES_SECONDS,
       resendStrategy: 'reuse',
-      generateOTP: () =>
+      generateOTP: ({ email, type }) =>
+        reviewSignInCode(inputEnv, { email, type }) ??
         randomInt(0, 10 ** OTP_LENGTH)
           .toString()
           .padStart(OTP_LENGTH, '0'),
       sendVerificationOTP: async ({ email, otp, type }) => {
+        // The review code is fixed, so it must never be put in an email.
+        if (reviewSignInCode(inputEnv, { email, type }) !== undefined) return;
         try {
           await sendEmail(inputEnv, buildVerificationOtpEmail({ to: email, otp, type }));
         } catch (error) {

@@ -29,6 +29,14 @@ export const apiSchema = runtimeSchema.extend({
   AUTH_COOKIE_DOMAIN: z.string().default(''),
   HOMINEM_SCRIPTED_MAILBOX: z.string().default(''),
   AUTH_EMAIL_OTP_EXPIRES_SECONDS: z.coerce.number().int().positive().default(300),
+  // App Review sign-in: one address, a 6-digit fixed code and an expiry, all empty when off (src/auth/review-account.ts).
+  APP_REVIEW_EMAIL: z.string().default(''),
+  APP_REVIEW_CODE: z
+    .string()
+    .default('')
+    .refine((code) => code === '' || /^\d{6}$/.test(code), 'APP_REVIEW_CODE must be 6 digits'),
+  // The fixed code stops working at this instant (ISO 8601), so it cannot be left on by mistake.
+  APP_REVIEW_UNTIL: z.string().default(''),
   RESEND_API_KEY: z.string(),
   RESEND_FROM_EMAIL: z.string(),
   RESEND_FROM_NAME: z.string(),
