@@ -23,12 +23,12 @@
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  background: var(--auth-panel);
-  color: var(--auth-text);
-  font-size: 19px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--acc, var(--auth-primary)) 18%, transparent);
+  color: var(--acc, var(--auth-text));
+  font-size: 17px;
   font-weight: 700;
 }
 .nameInput {
@@ -305,9 +305,9 @@
 .bigAmount {
   margin: 0;
   color: var(--auth-text);
-  font-size: 40px;
+  font-size: 52px;
   font-weight: 700;
-  letter-spacing: -0.6px;
+  letter-spacing: -1.2px;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
 }
@@ -359,19 +359,50 @@
   border-radius: 8px;
 }
 
-/* The account home mirrors the Thames settings screen: a summary card, one
+/* The account home mirrors the Thames settings screen: a hero card, one
    rounded list of rows, and a sheet that rises over it for each row. */
-.summary {
+.page {
+  --acc: #0f9e84;
+  --acc-ink: #fff;
   display: grid;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--auth-border);
-  border-radius: 20px;
-  background: var(--auth-panel);
+  gap: 18px;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .page {
+    --acc: #8ff0dc;
+    --acc-ink: #06241d;
+  }
+}
+:root[data-theme='dark'] .page {
+  --acc: #8ff0dc;
+  --acc-ink: #06241d;
+}
+.pageTitle {
+  margin: 4px 0 0;
+  color: var(--auth-text);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+}
+.hero {
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--acc) 28%, var(--auth-border));
+  border-radius: 24px;
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--acc) 18%, transparent), transparent 70%),
+    var(--auth-card);
   text-align: left;
 }
-.summaryWho {
+.who {
+  display: grid;
   min-width: 0;
+}
+.whoName {
   overflow: hidden;
   color: var(--auth-text);
   font-size: 16px;
@@ -379,20 +410,58 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.whoEmail {
+  overflow: hidden;
+  color: var(--auth-muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.heroLabel {
+  margin: 0 0 4px;
+  color: var(--auth-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.heroNote {
+  margin: 6px 0 0;
+  color: var(--auth-muted);
+  font-size: 13px;
+}
+.addButton {
+  display: block;
+  padding: 14px;
+  border-radius: 999px;
+  background: var(--acc);
+  color: var(--acc-ink);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.addButton:hover {
+  opacity: 0.92;
+}
+.addButton:active {
+  transform: scale(0.98);
+}
 .card {
   overflow: hidden;
   border: 1px solid var(--auth-border);
-  border-radius: 20px;
-  background: var(--auth-panel);
+  border-radius: 24px;
+  background: var(--auth-card);
 }
 .navRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  min-height: 52px;
+  min-height: 60px;
   margin: 0;
-  padding: 10px 16px;
+  padding: 10px 18px;
   border: 0;
   border-bottom: 1px solid var(--auth-border);
   background: transparent;
@@ -400,32 +469,33 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 .navRow[data-last] {
   border-bottom: 0;
 }
-.navRow:hover {
-  background: var(--auth-card);
+.navRow:hover,
+.navRow:active {
+  background: var(--auth-panel);
 }
 .iconTile {
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid color-mix(in srgb, var(--auth-primary) 30%, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--auth-primary) 12%, transparent);
-  color: var(--auth-primary);
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--acc) 16%, transparent);
+  color: var(--acc);
 }
 .navLabel {
   flex: 1;
   min-width: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
 }
 .navValue {
-  max-width: 46%;
+  max-width: 42%;
   overflow: hidden;
   color: var(--auth-muted);
   font-size: 14px;
@@ -434,8 +504,20 @@
 }
 .chevron {
   color: var(--auth-muted);
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
+  opacity: 0.7;
+}
+.signOut {
+  display: block;
+  margin: 0 auto;
+  padding: 10px 18px;
+  border: 0;
+  background: transparent;
+  color: var(--auth-danger);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .sheetLayer {
@@ -466,7 +548,8 @@
   border: 1px solid var(--auth-border);
   border-bottom: 0;
   border-radius: 28px 28px 0 0;
-  background: var(--auth-card);
+  box-shadow: 0 -12px 40px rgb(0 0 0 / 0.25);
+  background: var(--auth-background);
   animation: rise 0.28s ease-out both;
 }
 .grab {

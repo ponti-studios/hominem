@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { apiFetch } from './api';
-import { AuthContent, AuthDangerButton, AuthShell } from './auth-shell';
+import { AuthContent, AuthShell } from './auth-shell';
 import type { SettingsInit } from './init';
 
 import styles from './settings-page.module.css';
@@ -646,37 +646,52 @@ export function SettingsPage({
   };
 
   return (
-    <AuthShell>
-      <AuthContent wide>
-        <div className="w-full text-left">
-          <h2 id="settings-title" className="m-0 text-3xl font-semibold text-auth-text">
-            Account
-          </h2>
-        </div>
+    <AuthShell bare>
+      <div className={styles.page}>
+        <h1 className={styles.pageTitle} id="settings-title">
+          Account
+        </h1>
 
-        <section className={`${styles.summary} w-full`}>
+        <section className={styles.hero}>
           <div className={styles.identityRow}>
             <span aria-hidden="true" className={styles.avatar}>
               {initials}
             </span>
-            <span className={styles.summaryWho}>{email || 'Not available'}</span>
+            <span className={styles.who}>
+              <span className={styles.whoName}>{name || email}</span>
+              {name ? <span className={styles.whoEmail}>{email}</span> : null}
+            </span>
           </div>
           {creditUrl ? (
             <>
-              <p className={styles.bigAmount}>
-                {creditPence === null ? '—' : formatPounds(creditPence)}
-              </p>
-              <a
-                className={`${styles.saveButton} ${styles.primaryButton} ${styles.linkButton}`}
-                href={creditUrl}
-              >
+              <div>
+                <p className={styles.heroLabel}>Credit</p>
+                <p className={styles.bigAmount}>
+                  {creditPence === null ? '—' : formatPounds(creditPence)}
+                </p>
+                <p className={styles.heroNote}>Doesn’t expire. Works in Thames.</p>
+              </div>
+              <a className={styles.addButton} href={creditUrl}>
                 Add credit
               </a>
             </>
-          ) : null}
+          ) : (
+            <>
+              <div>
+                <p className={styles.heroLabel}>AI usage · {formatUsagePeriod()}</p>
+                <p className={styles.bigAmount}>{usage ? formatUsd(usage.totalCostUsd) : '—'}</p>
+                <p className={styles.heroNote}>
+                  {usage ? `of ${formatUsd(usage.limitUsd)} free this month` : '\u00a0'}
+                </p>
+              </div>
+              <div aria-hidden="true" className={styles.usageBar}>
+                <div className={styles.usageBarFill} style={{ width: `${percent}%` }} />
+              </div>
+            </>
+          )}
         </section>
 
-        <div className={`${styles.card} w-full`}>
+        <div className={styles.card}>
           {rows.map((row, index) => (
             <NavRow
               key={row.icon}
@@ -690,9 +705,11 @@ export function SettingsPage({
         </div>
 
         {embedded ? null : (
-          <form action="/logout" className="w-full" method="post">
+          <form action="/logout" method="post">
             <input name="next" type="hidden" value={loginNextUrl} />
-            <AuthDangerButton type="submit">Sign out</AuthDangerButton>
+            <button className={styles.signOut} type="submit">
+              Sign out
+            </button>
           </form>
         )}
         {sheet ? (
@@ -700,7 +717,7 @@ export function SettingsPage({
             {sheetBody[sheet]}
           </Sheet>
         ) : null}
-      </AuthContent>
+      </div>
     </AuthShell>
   );
 }

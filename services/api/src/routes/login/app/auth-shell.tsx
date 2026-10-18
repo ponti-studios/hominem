@@ -6,9 +6,18 @@ import styles from './auth-shell.module.css';
 type AuthShellProps = {
   children: ReactNode;
   wide?: boolean;
+  /** No card, logo or grid: the page draws its own surface (the account page). */
+  bare?: boolean;
 };
 
-export function AuthShell({ children, wide = false }: AuthShellProps) {
+export function AuthShell({ children, wide = false, bare = false }: AuthShellProps) {
+  if (bare) {
+    return (
+      <div className="relative min-h-dvh bg-auth-background px-4 py-10 text-auth-text max-sm:py-6">
+        {children}
+      </div>
+    );
+  }
   return (
     <div className="relative grid min-h-dvh place-items-center overflow-clip bg-auth-background px-4 py-16 text-auth-text">
       <div aria-hidden="true" className={styles.authGrid} />
