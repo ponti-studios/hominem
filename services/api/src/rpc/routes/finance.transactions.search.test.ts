@@ -54,6 +54,7 @@ describe('finance transaction search route', () => {
           description: 'Parking Garage',
           merchantName: 'Parking Garage',
           postedOn: '2026-10-12',
+          currencyCode: 'GBP',
         },
       ],
       filteredCount: 1,
@@ -76,6 +77,7 @@ describe('finance transaction search route', () => {
       offset: 0,
     });
     await expect(response.json()).resolves.toMatchObject({
+      data: [{ currencyCode: 'GBP' }],
       filteredCount: 1,
       totalUserCount: 1000,
     });

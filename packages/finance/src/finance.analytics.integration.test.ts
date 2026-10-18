@@ -186,4 +186,31 @@ describeIntegration('finance analytics integration', () => {
     expect(series.stats?.totalIncome).toBe(3000);
     expect(series.stats?.totalExpenses).toBe(120);
   });
+
+  it('aggregates every matching transaction before limiting chart buckets', async () => {
+    for (let index = 0; index < 201; index += 1) {
+      await createTransaction({
+        userId: ownerId,
+        accountId,
+        amount: -1,
+        description: `Daily purchase ${index}`,
+        postedOn: '2026-03-15',
+        merchantName: 'Daily Merchant',
+      });
+    }
+
+    const result = await getSpendingTimeSeriesByContract({
+      userId: ownerId,
+      dateFrom: '2026-03-01',
+      dateTo: '2026-03-31',
+      groupBy: 'day',
+      limit: 30,
+      includeStats: true,
+    });
+
+    expect(result.data).toEqual([
+      expect.objectContaining({ date: '2026-03-15', expenses: 201, count: 201 }),
+    ]);
+    expect(result.stats?.totalExpenses).toBe(201);
+  });
 });

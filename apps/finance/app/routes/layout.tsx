@@ -47,20 +47,24 @@ function Header() {
         </Link>
       </Navigation.Brand>
 
-      <div className="ml-auto hidden min-w-0 items-center gap-5 sm:flex">
-        <Navigation.List>
-          {links.map((link) => (
-            <Navigation.Item
-              key={link.href}
-              asChild
-              active={isActive(location.pathname, link.href)}
-            >
-              <Link to={link.href}>{link.label}</Link>
-            </Navigation.Item>
-          ))}
-        </Navigation.List>
+      <div className="ml-auto flex min-w-0 max-w-[calc(100%-3rem)] flex-1 items-center justify-end gap-2 sm:max-w-none sm:flex-initial sm:gap-5">
+        <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-initial sm:overflow-visible">
+          <Navigation.List>
+            {links.map((link) => (
+              <Navigation.Item
+                key={link.href}
+                asChild
+                active={isActive(location.pathname, link.href)}
+              >
+                <Link to={link.href} className="whitespace-nowrap">
+                  {link.label}
+                </Link>
+              </Navigation.Item>
+            ))}
+          </Navigation.List>
+        </div>
         {isAuthenticated && (
-          <div className="absolute left-1/2 -translate-x-1/2">
+          <div className="shrink-0 sm:absolute sm:left-1/2 sm:-translate-x-1/2">
             <FinanceSearch className="border-border bg-card text-primary hover:bg-muted" />
           </div>
         )}
@@ -70,11 +74,6 @@ function Header() {
           </Button>
         )}
       </div>
-      {isAuthenticated && (
-        <div className="ml-auto sm:hidden">
-          <FinanceSearch className="border-border bg-card text-primary" />
-        </div>
-      )}
     </Navigation>
   );
 }

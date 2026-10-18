@@ -139,6 +139,7 @@ export const transactionsRoutes = new Hono<AppContext>()
           description: row.description,
           postedOn: row.postedOn,
           merchantName: row.merchantName,
+          currencyCode: row.currencyCode,
         })),
         filteredCount: result.filteredCount,
         totalUserCount: result.totalUserCount,
@@ -187,6 +188,7 @@ export const transactionsRoutes = new Hono<AppContext>()
         description: created.description ?? null,
         postedOn: created.postedOn ? String(created.postedOn) : '',
         merchantName: created.merchantName ?? null,
+        currencyCode: created.currencyCode,
       },
       201,
     );
@@ -245,6 +247,7 @@ export const transactionsRoutes = new Hono<AppContext>()
       description: updated!.description ?? null,
       postedOn: updated!.postedOn ? String(updated!.postedOn) : '',
       merchantName: updated!.merchantName ?? null,
+      currencyCode: updated!.currencyCode,
     });
   })
   .post('/delete', authMiddleware, zValidator('json', transactionDeleteSchema), async (c) => {

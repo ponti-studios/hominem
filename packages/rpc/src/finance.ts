@@ -45,6 +45,7 @@ export type TransactionData = {
   description: string | null;
   postedOn: string;
   merchantName: string | null;
+  currencyCode?: string;
 };
 
 export type TimeSeriesTrend = {

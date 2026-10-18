@@ -62,6 +62,7 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
 
   useEffect(() => {
     setSearchValue(searchParams.get('search') ?? '');
+    setPage(0);
   }, [searchParams]);
 
   const {

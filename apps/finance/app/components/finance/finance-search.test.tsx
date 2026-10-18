@@ -15,14 +15,16 @@ vi.mock('../../lib/api/client', () => ({
               name: 'Everyday Checking',
               institutionName: 'Chase',
               accountType: 'checking',
-              currentBalance: 1200,
+              balanceCents: 120000,
+              currencyCode: 'GBP',
             },
             {
               id: 'account-2',
               name: 'Travel Card',
               institutionName: 'American Express',
               accountType: 'credit',
-              currentBalance: -80,
+              balanceCents: -8000,
+              currencyCode: 'EUR',
             },
           ],
         },
@@ -41,6 +43,7 @@ vi.mock('../../lib/api/client', () => ({
                   merchantName: 'Blue Bottle',
                   postedOn: '2026-10-12',
                   amount: -6.5,
+                  currencyCode: 'EUR',
                 },
               ],
             }
@@ -65,6 +68,7 @@ describe('FinanceSearch', () => {
     await waitFor(() =>
       expect(screen.getByRole('option', { name: /Everyday Checking/ })).toBeTruthy(),
     );
+    expect(screen.getByRole('option', { name: /£1,200/ })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Accounts' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Transactions' })).toBeTruthy();
     expect(
@@ -78,6 +82,18 @@ describe('FinanceSearch', () => {
     expect(navigate).toHaveBeenCalledWith('/accounts/account-1');
   });
 
+  it('does not activate hidden account matches before the minimum query length', async () => {
+    render(<FinanceSearch />);
+    fireEvent.click(screen.getByRole('button', { name: 'Search transactions and accounts' }));
+    const input = screen.getByRole('textbox', { name: 'Search transactions and accounts' });
+    await waitFor(() => expect(input).toHaveValue(''));
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(screen.queryAllByRole('option')).toHaveLength(0);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('does not show an account section when no account matches and supports keyboard opening', async () => {
     render(<FinanceSearch />);
     fireEvent.keyDown(window, { key: 'k', metaKey: true });
@@ -86,6 +102,7 @@ describe('FinanceSearch', () => {
     });
 
     await waitFor(() => expect(screen.getByRole('option', { name: /Blue Bottle/ })).toBeTruthy());
+    expect(screen.getByRole('option', { name: /€7/ })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Accounts' })).toBeNull();
     fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
     expect(navigate).toHaveBeenCalledWith('/finance?search=Coffee%20shop');

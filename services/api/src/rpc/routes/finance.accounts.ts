@@ -118,6 +118,7 @@ function normalizeTransactionRow(transaction: TransactionRow) {
     description: transaction.description ?? null,
     postedOn: String(transaction.postedOn),
     merchantName: transaction.merchantName ?? null,
+    currencyCode: transaction.currencyCode,
   };
 }
 

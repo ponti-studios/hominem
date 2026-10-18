@@ -104,15 +104,17 @@ export function FinanceSearch({ className }: FinanceSearchProps) {
 
   const accounts = useMemo(
     () =>
-      amountSearch
+      !readyToSearch || amountSearch
         ? []
         : (accountsQuery.data?.accounts ?? []).filter((account) =>
             accountMatches(account, normalizedQuery),
           ),
-    [accountsQuery.data?.accounts, amountSearch, normalizedQuery],
+    [accountsQuery.data?.accounts, amountSearch, normalizedQuery, readyToSearch],
   );
   const transactions =
-    normalizedSearch === normalizedQuery ? (transactionsQuery.data?.data ?? []) : [];
+    readyToSearch && normalizedSearch === normalizedQuery
+      ? (transactionsQuery.data?.data ?? [])
+      : [];
   const resultsCount = accounts.length + transactions.length;
 
   useEffect(() => {
@@ -266,7 +268,7 @@ export function FinanceSearch({ className }: FinanceSearchProps) {
                               </span>
                             </span>
                             <span className="shrink-0 tabular-nums text-sm text-foreground">
-                              {formatCurrency(account.balanceCents / 100)}
+                              {formatCurrency(account.balanceCents / 100, account.currencyCode)}
                             </span>
                             <ArrowUpRight
                               className="size-4 shrink-0 text-muted-foreground"
@@ -316,7 +318,7 @@ export function FinanceSearch({ className }: FinanceSearchProps) {
                                 </span>
                               </span>
                               <span className="shrink-0 tabular-nums text-sm text-foreground">
-                                {formatCurrency(transaction.amount)}
+                                {formatCurrency(transaction.amount, transaction.currencyCode)}
                               </span>
                               <ArrowUpRight
                                 className="size-4 shrink-0 text-muted-foreground"
