@@ -37,6 +37,8 @@ export const settingsInitSchema = z.object({
   loginNextUrl: z.string(),
   /** The credit top-up page for a person in credit mode (docs/prd/top-up.md in Thames), else null. */
   creditUrl: z.string().nullable().default(null),
+  /** Opened inside the Thames app, which shares this session: no sign out here. */
+  embedded: z.boolean().default(false),
 });
 export type SettingsInit = z.infer<typeof settingsInitSchema>;
 

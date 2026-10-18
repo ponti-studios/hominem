@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import { z } from 'zod';
 
-const BASE = 'https://api.stripe.com/v1';
+const DEFAULT_BASE = 'https://api.stripe.com/v1';
 
 export class StripeError extends Error {
   constructor(
@@ -56,9 +56,10 @@ const intentSchema = z.object({
 export function createStripeClient(
   secretKey: string,
   fetchImpl: typeof fetch = fetch,
+  base: string = DEFAULT_BASE,
 ): StripeClient {
   async function call(what: string, method: 'GET' | 'POST', path: string, form?: URLSearchParams) {
-    const response = await fetchImpl(`${BASE}${path}`, {
+    const response = await fetchImpl(`${base}${path}`, {
       method,
       headers: {
         Authorization: `Bearer ${secretKey}`,

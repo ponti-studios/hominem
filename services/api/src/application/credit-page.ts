@@ -114,7 +114,7 @@ export function donePage(nonce: string): string {
   return shell(
     'Credit added',
     nonce,
-    `<h1>Thank you</h1><p class="sub">Your credit is on its way and shows in Thames within a minute. A receipt is on its way to your email.</p>`,
+    `<h1>Thank you</h1><p class="sub">We're checking your payment. For a UK card, your credit shows in Thames within a minute and a receipt is emailed to you. A card or address outside the UK is refunded in full.</p>`,
   );
 }
 

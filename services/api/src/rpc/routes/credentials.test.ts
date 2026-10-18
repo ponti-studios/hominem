@@ -34,6 +34,7 @@ vi.mock('../../application/openrouter-keys', () => ({
 }));
 vi.mock('../../application/credit.runtime', () => ({
   personInCreditMode: () => mocks.inCreditMode.value,
+  devBase: () => undefined,
   creditDeps: () => ({ store: 'credit-store' }),
 }));
 vi.mock('../../application/credit', () => ({ creditFor: mocks.creditFor }));

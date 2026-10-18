@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { creditFor } from '../../application/credit';
 import { sendLowCreditEmail } from '../../application/credit-email';
 import { creditDeps, personInCreditMode } from '../../application/credit.runtime';
+import { devBase } from '../../application/credit.runtime';
 import { createOpenRouterKeys, OpenRouterKeysError } from '../../application/openrouter-keys';
 import {
   BudgetUnavailableError,
@@ -24,7 +25,11 @@ function credentialDeps(email?: string): CredentialDeps | null {
   if (!env.OPENROUTER_MANAGEMENT_KEY) return null;
   return {
     store: dbCredentialStore,
-    keys: createOpenRouterKeys(env.OPENROUTER_MANAGEMENT_KEY),
+    keys: createOpenRouterKeys(
+      env.OPENROUTER_MANAGEMENT_KEY,
+      fetch,
+      devBase(env.OPENROUTER_KEYS_BASE_URL),
+    ),
     capUsd: env.THAMES_MONTHLY_CAP_USD,
     log: (event, fields) => logger.error(event, fields),
     // Only a person the credit flag lets in is given the balance rules.

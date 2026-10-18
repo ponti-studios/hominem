@@ -170,7 +170,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
     .get('/auth/open', async (c) => {
       const origin = requestOrigin(c);
       const token = c.req.query('token') ?? '';
-      const landing = new URL('/auth/settings', origin).toString();
+      const landing = new URL('/auth/settings?app=1', origin).toString();
       c.header('Cache-Control', 'no-store');
       c.header('Referrer-Policy', 'no-referrer');
       if (!token) return c.redirect(landing, 303);
@@ -207,6 +207,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
               },
               loginNextUrl: new URL('/auth/settings', origin).toString(),
               creditUrl: creditUrlFor(session.user, origin),
+              embedded: c.req.query('app') === '1',
             },
             title: 'Settings | Hominem',
           }),

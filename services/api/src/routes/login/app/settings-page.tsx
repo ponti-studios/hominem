@@ -69,7 +69,7 @@ function copyTextLegacy(text: string): boolean {
   return copied;
 }
 
-export function SettingsPage({ user, loginNextUrl, creditUrl }: SettingsInit) {
+export function SettingsPage({ user, loginNextUrl, creditUrl, embedded }: SettingsInit) {
   const queryClient = useQueryClient();
   const name = user.name ?? '';
   const email = user.email ?? '';
@@ -365,12 +365,14 @@ export function SettingsPage({ user, loginNextUrl, creditUrl }: SettingsInit) {
           </section>
         ) : null}
 
-        <section className={`${styles.section} w-full`}>
-          <form action="/logout" method="post">
-            <input name="next" type="hidden" value={loginNextUrl} />
-            <AuthDangerButton type="submit">Sign out</AuthDangerButton>
-          </form>
-        </section>
+        {embedded ? null : (
+          <section className={`${styles.section} w-full`}>
+            <form action="/logout" method="post">
+              <input name="next" type="hidden" value={loginNextUrl} />
+              <AuthDangerButton type="submit">Sign out</AuthDangerButton>
+            </form>
+          </section>
+        )}
       </AuthContent>
     </AuthShell>
   );

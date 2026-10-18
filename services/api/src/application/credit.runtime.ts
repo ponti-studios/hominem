@@ -17,6 +17,11 @@ import { createOpenRouterKeys } from './openrouter-keys';
 import { dbCredentialStore } from './provider-credentials.store';
 import { createStripeClient, type StripeClient } from './stripe';
 
+/** A local fake's address in development; always the real service in production. */
+export function devBase(url: string | undefined): string | undefined {
+  return env.NODE_ENV === 'production' ? undefined : url;
+}
+
 export function creditConfig(): CreditConfig {
   return {
     mode: env.CREDIT_MODE,
@@ -37,7 +42,11 @@ export function creditDeps(): CreditDeps | null {
   return {
     store: dbCreditStore,
     credentials: dbCredentialStore,
-    keys: createOpenRouterKeys(env.OPENROUTER_MANAGEMENT_KEY),
+    keys: createOpenRouterKeys(
+      env.OPENROUTER_MANAGEMENT_KEY,
+      fetch,
+      devBase(env.OPENROUTER_KEYS_BASE_URL),
+    ),
     config: creditConfig(),
     log: (event, fields) => logger.error(event, fields),
   };
@@ -66,5 +75,5 @@ export function stripeClient(): StripeClient | null {
     logger.error('credit_stripe_unavailable', { problem });
     return null;
   }
-  return createStripeClient(env.STRIPE_SECRET_KEY);
+  return createStripeClient(env.STRIPE_SECRET_KEY, fetch, devBase(env.STRIPE_API_BASE_URL));
 }

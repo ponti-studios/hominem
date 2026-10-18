@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import type { CreditKeys } from './credit';
 
-const BASE = 'https://openrouter.ai/api/v1';
+const DEFAULT_BASE = 'https://openrouter.ai/api/v1';
 
 // OpenRouter's key management API: create a key (the key string is returned once),
 // read its usage, disable it. Parsed defensively; anything unexpected is an error,
@@ -31,9 +31,10 @@ export class OpenRouterKeysError extends Error {
 export function createOpenRouterKeys(
   managementKey: string,
   fetchImpl: typeof fetch = fetch,
+  base: string = DEFAULT_BASE,
 ): CreditKeys {
   async function call(what: string, path: string, init: { method: string; body?: unknown }) {
-    const response = await fetchImpl(`${BASE}${path}`, {
+    const response = await fetchImpl(`${base}${path}`, {
       method: init.method,
       headers: {
         Authorization: `Bearer ${managementKey}`,

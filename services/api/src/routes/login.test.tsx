@@ -270,7 +270,7 @@ describe('API login route', () => {
     const response = await createApp().request('http://localhost/auth/open?token=one-time');
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('http://localhost/auth/settings');
+    expect(response.headers.get('location')).toBe('http://localhost/auth/settings?app=1');
     expect(response.headers.get('set-cookie')).toContain('better-auth.session_token=abc');
     expect(response.headers.get('cache-control')).toBe('no-store');
     const request = mocks.handler.mock.calls[0]?.[0];
@@ -283,7 +283,7 @@ describe('API login route', () => {
     const response = await createApp().request('http://localhost/auth/open?token=nope');
     expect(response.status).toBe(303);
     expect(response.headers.get('set-cookie')).toBeNull();
-    expect(response.headers.get('location')).toBe('http://localhost/auth/settings');
+    expect(response.headers.get('location')).toBe('http://localhost/auth/settings?app=1');
   });
 
   it('redirects signed-out visitors to hosted login with an AI-settings resume', async () => {
