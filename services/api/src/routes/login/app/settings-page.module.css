@@ -182,9 +182,7 @@
 .tokenMeta {
   color: var(--auth-muted);
   font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .tokenRevoke {
   flex-shrink: 0;
@@ -295,5 +293,68 @@
 
 .linkButton {
   display: inline-block;
+  text-align: center;
   text-decoration: none;
+}
+
+/* One column, sections divided by a hairline (account settings, option A). */
+.divided {
+  padding-top: 18px;
+  border-top: 1px solid var(--auth-border);
+}
+.bigAmount {
+  margin: 0;
+  color: var(--auth-text);
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.primaryButton {
+  border-color: var(--auth-primary);
+  background: var(--auth-primary);
+  color: var(--auth-primary-text, #fff);
+}
+.payments summary {
+  color: var(--auth-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.payments table {
+  width: 100%;
+  margin: 8px 0;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.payments th,
+.payments td {
+  padding: 6px 8px 6px 0;
+  border-top: 1px solid var(--auth-border);
+  text-align: left;
+}
+.payments th {
+  border-top: 0;
+  color: var(--auth-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dangerText {
+  border-color: color-mix(in srgb, var(--auth-danger) 35%, transparent);
+  color: var(--auth-danger);
+}
+.deleteBox {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--auth-danger) 35%, transparent);
+  border-radius: 8px;
 }

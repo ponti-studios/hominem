@@ -4,6 +4,8 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { etag } from 'hono/etag';
 
+import { creditHistory, deleteAccount, exportAccount } from '../../application/account';
+import { deleteAccountDeps } from '../../application/account.runtime';
 import { inCreditMode, parseTesters, signLinkToken } from '../../application/credit';
 import {
   createMcpToken,
@@ -268,6 +270,40 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         ),
         303,
       );
+    })
+    .get('/auth/settings/credit-history', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      return c.json({ entries: await creditHistory(session.user.id) });
+    })
+    .get('/auth/settings/export', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      const data = await exportAccount(session.user.id);
+      return new Response(JSON.stringify(data, null, 2), {
+        headers: {
+          'content-type': 'application/json',
+          'content-disposition': 'attachment; filename="hominem-data.json"',
+          'cache-control': 'no-store',
+        },
+      });
+    })
+    // Deleting needs the person's own email typed back, so a stray request cannot end an account.
+    .post('/auth/settings/delete', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      const body: unknown = await c.req.json().catch(() => null);
+      const typed =
+        body && typeof body === 'object' && 'email' in body ? String(body.email).trim() : '';
+      if (!session.user.email || typed.toLowerCase() !== session.user.email.toLowerCase()) {
+        return c.json({ error: 'Type your email to confirm.' }, 400);
+      }
+      await deleteAccount(session.user.id, deleteAccountDeps());
+      const headers = new Headers({
+        'content-type': 'application/json',
+        'cache-control': 'no-store',
+      });
+      return new Response(JSON.stringify({ deleted: true }), { headers });
     })
     .get('/auth/settings/mcp-tokens', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
