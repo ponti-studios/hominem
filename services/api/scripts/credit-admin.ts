@@ -59,7 +59,7 @@ async function main() {
     if (command === 'balance') {
       const { creditDeps, personInCreditMode } = await import('../src/application/credit.runtime');
       const { creditSnapshot } = await import('../src/application/credit');
-      console.log(`in credit mode: ${personInCreditMode(email)}`);
+      console.log(`in credit mode: ${await personInCreditMode({ id: user.id, email })}`);
       const deps = creditDeps();
       if (!deps) die('OPENROUTER_MANAGEMENT_KEY is required for balance.');
       const snapshot = await creditSnapshot(deps, user.id);

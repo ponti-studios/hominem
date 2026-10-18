@@ -51,7 +51,7 @@ vi.mock('../../env', () => ({
   },
 }));
 vi.mock('../../application/credit.runtime', () => ({
-  personInCreditMode: () => more.inCreditMode.value,
+  personInCreditMode: async () => more.inCreditMode.value,
   stripeProblem: () => null,
   stripeClient: () => more.stripe,
   creditDeps: () => ({

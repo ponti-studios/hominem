@@ -90,7 +90,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
   const resolvePostAuthResumeWithEnv = (query: string, origin?: string) =>
     resolvePostAuthResume(query, inputEnv, origin);
   // The top-up page link for a person the credit flag lets in; null for everyone else.
-  const creditUrlFor = (user: { id: string; email: string | null }, origin: string) => {
+  const creditUrlFor = async (user: { id: string; email: string | null }, origin: string) => {
     const mode = inputEnv.CREDIT_MODE ?? 'off';
     if (mode === 'off' || !user.email) return null;
     const config = {
@@ -100,7 +100,12 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       grantPence: 0,
       grantsPerDay: 0,
     };
-    if (!inCreditMode(config, user.email)) return null;
+    if (!inCreditMode(config, user.email)) {
+      if (mode !== 'test') return null;
+      // Loaded here, not at the top: importing the runtime builds the PostHog client, which a route test cannot do.
+      const { creditFlagFor } = await import('../../application/credit.runtime');
+      if (!(await creditFlagFor({ id: user.id, email: user.email }))) return null;
+    }
     const token = signLinkToken(inputEnv.BETTER_AUTH_SECRET, user.id, new Date());
     return new URL(`/credit?t=${token}`, origin).toString();
   };
@@ -209,7 +214,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       const origin = requestOrigin(c);
       if (session?.user) {
-        const creditUrl = creditUrlFor(session.user, origin);
+        const creditUrl = await creditUrlFor(session.user, origin);
         const creditPence = creditUrl ? await creditBalanceFor(session.user.id) : null;
         return c.html(
           renderAuthShell({

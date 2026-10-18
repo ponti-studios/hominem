@@ -1,8 +1,9 @@
 /**
  * Builds the real credit dependencies from the environment, in one place for the routes and the
- * admin script. The flag lives here: `CREDIT_MODE` and `CREDIT_TESTERS`.
+ * admin script. The flag lives here: `CREDIT_MODE`, `CREDIT_TESTERS` and the PostHog flag.
  */
 import { logger } from '@hominem/telemetry';
+import { PostHog } from 'posthog-node';
 
 import { env } from '../env';
 import {
@@ -12,6 +13,7 @@ import {
   type CreditDeps,
   type CreditMode,
 } from './credit';
+import { createCreditFlag } from './credit-flag';
 import { dbCreditStore } from './credit.store';
 import { createOpenRouterKeys } from './openrouter-keys';
 import { dbCredentialStore } from './provider-credentials.store';
@@ -32,8 +34,22 @@ export function creditConfig(): CreditConfig {
   };
 }
 
-export function personInCreditMode(email: string): boolean {
-  return inCreditMode(creditConfig(), email);
+/** The PostHog flag alone: is top-up switched on for this person there? */
+export const creditFlagFor = createCreditFlag({
+  client: env.POSTHOG_API_KEY ? new PostHog(env.POSTHOG_API_KEY, { host: env.POSTHOG_HOST }) : null,
+  log: (event, fields) => logger.error(event, fields),
+});
+
+/**
+ * Whether top-up is on for this person. `off` is nobody and `live` is everybody. In `test` the
+ * CREDIT_TESTERS list lets people in, and so does the PostHog flag, which is asked only for
+ * someone the list does not already cover.
+ */
+export async function personInCreditMode(user: { id: string; email: string }): Promise<boolean> {
+  const config = creditConfig();
+  if (inCreditMode(config, user.email)) return true;
+  if (config.mode !== 'test') return false;
+  return creditFlagFor(user);
 }
 
 /** The credit dependencies, or null when the provider management key is not set. */

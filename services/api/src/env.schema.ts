@@ -45,6 +45,13 @@ export const apiSchema = runtimeSchema.extend({
   CREDIT_MODE: z.enum(['off', 'test', 'live']).default('off'),
   // Comma-separated emails, or whole domains (work.com or @work.com), who are in credit mode in `test`.
   CREDIT_TESTERS: z.string().default(''),
+  // PostHog project key and host, read only to ask whether the `thames-top-up` flag is on for a
+  // person in `test`. Unset means the flag is never consulted and CREDIT_TESTERS alone decides.
+  POSTHOG_API_KEY: z.string().optional(),
+  POSTHOG_HOST: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.url().default('https://us.i.posthog.com'),
+  ),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   // Dollars per pound, already lowered by a small buffer so a falling pound does not cost Thames.
