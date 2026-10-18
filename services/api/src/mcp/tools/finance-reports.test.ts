@@ -265,9 +265,9 @@ describe('finance_top_merchants', () => {
   it('ranks merchants by spend and skips excluded transactions', async () => {
     const data = content(await callTool(userId, 'finance_top_merchants', JULY));
     expect(data.merchants).toEqual([
-      { name: 'Unknown', totalSpent: 1000, transactionCount: 1 },
-      { name: 'Whole Foods', totalSpent: 80, transactionCount: 2 },
-      { name: 'Shell', totalSpent: 25, transactionCount: 1 },
+      { name: 'Unknown', currencyCode: 'USD', totalSpent: 1000, transactionCount: 1 },
+      { name: 'Whole Foods', currencyCode: 'USD', totalSpent: 80, transactionCount: 2 },
+      { name: 'Shell', currencyCode: 'USD', totalSpent: 25, transactionCount: 1 },
     ]);
   });
 
@@ -290,6 +290,7 @@ describe('finance_top_merchants', () => {
     );
     expect(data.merchants).toContainEqual({
       name: 'Paged Merchant',
+      currencyCode: 'USD',
       totalSpent: 201,
       transactionCount: 201,
     });
@@ -300,7 +301,7 @@ describe('finance_top_merchants', () => {
       await callTool(userId, 'finance_top_merchants', { ...JULY, accountId: cardId }),
     );
     expect(byAccount.merchants).toEqual([
-      { name: 'Whole Foods', totalSpent: 30, transactionCount: 1 },
+      { name: 'Whole Foods', currencyCode: 'USD', totalSpent: 30, transactionCount: 1 },
     ]);
 
     const byDate = content(
@@ -310,7 +311,7 @@ describe('finance_top_merchants', () => {
 
     const byTagName = content(await callTool(userId, 'finance_top_merchants', { tag: 'Food' }));
     expect(byTagName.merchants).toEqual([
-      { name: 'Whole Foods', totalSpent: 80, transactionCount: 2 },
+      { name: 'Whole Foods', currencyCode: 'USD', totalSpent: 80, transactionCount: 2 },
     ]);
 
     const byTagId = content(await callTool(userId, 'finance_top_merchants', { tag: foodTagId }));
@@ -319,7 +320,9 @@ describe('finance_top_merchants', () => {
 
   it("does not include another user's spending, even given their account id", async () => {
     const own = content(await callTool(otherUserId, 'finance_top_merchants', JULY));
-    expect(own.merchants).toEqual([{ name: 'Whole Foods', totalSpent: 999, transactionCount: 1 }]);
+    expect(own.merchants).toEqual([
+      { name: 'Whole Foods', currencyCode: 'USD', totalSpent: 999, transactionCount: 1 },
+    ]);
 
     const crossAccount = content(
       await callTool(otherUserId, 'finance_top_merchants', { ...JULY, accountId: checkingId }),

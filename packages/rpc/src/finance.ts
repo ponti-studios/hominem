@@ -163,12 +163,6 @@ export type CategoriesListOutput = CategoriesListItem[];
 // Analytics
 // ---------------------------------------------------------------------------
 
-export type Merchant = {
-  name: string;
-  totalSpent: number;
-  transactionCount: number;
-};
-
 export type TransactionStats = {
   min: number;
   max: number;
@@ -182,9 +176,10 @@ export type SpendingTimeSeriesOutput = {
   stats?: TimeSeriesStats | null;
 };
 
-export type TopMerchantsOutput = {
-  merchants: Merchant[];
-};
+type _FinanceTopMerchantsEndpoint =
+  HonoClient['api']['finance']['analyze']['top-merchants']['$get'];
+export type TopMerchantsOutput = InferResponseType<_FinanceTopMerchantsEndpoint, 200>;
+export type Merchant = TopMerchantsOutput['merchants'][number];
 
 type _FinanceTagBreakdownEndpoint =
   HonoClient['api']['finance']['analyze']['tag-breakdown']['$get'];

@@ -98,11 +98,48 @@ describeIntegration('finance analytics integration', () => {
       limit: 2,
     });
     expect(merchantsResult.merchants).toEqual([
-      { name: 'Rail Co', totalSpent: 70, transactionCount: 1 },
-      { name: 'Cafe One', totalSpent: 45, transactionCount: 1 },
+      { name: 'Rail Co', totalSpent: 70, transactionCount: 1, currencyCode: 'USD' },
+      { name: 'Cafe One', totalSpent: 45, transactionCount: 1, currencyCode: 'USD' },
     ]);
     expect(merchantsResult.currencyCode).toBe('USD');
     expect(merchantsResult.warnings).toEqual([]);
+  });
+
+  it('keeps merchant totals separate when transactions use different currencies', async () => {
+    const euroTransaction = await createTransaction({
+      userId: ownerId,
+      accountId,
+      amount: -140.25,
+      description: 'Euro purchase',
+      postedOn: '2026-02-12',
+      merchantName: 'Cafe One',
+    });
+    await db
+      .updateTable('app.financeTransactions')
+      .set({ currencyCode: 'EUR' })
+      .where('id', '=', euroTransaction.id)
+      .execute();
+    await createTransaction({
+      userId: ownerId,
+      accountId,
+      amount: -40,
+      description: 'Dollar purchase',
+      postedOn: '2026-02-13',
+      merchantName: 'Cafe One',
+    });
+
+    const result = await getTopMerchantsByContract({
+      userId: ownerId,
+      dateFrom: '2026-02-01',
+      dateTo: '2026-02-28',
+      limit: 5,
+    });
+
+    expect(result.merchants).toEqual([
+      { name: 'Cafe One', totalSpent: 140.25, transactionCount: 1, currencyCode: 'EUR' },
+      { name: 'Cafe One', totalSpent: 40, transactionCount: 1, currencyCode: 'USD' },
+    ]);
+    expect(result.currencyCode).toBeNull();
   });
 
   it('returns monthly stats and time series from shared analytics dataset', async () => {

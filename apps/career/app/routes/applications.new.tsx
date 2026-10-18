@@ -18,7 +18,6 @@ import { useEffect, useState } from 'react';
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from 'react-router';
 import { Form, Link, redirect } from 'react-router';
 
-import { useApiBaseUrl } from '~/hooks/useAuth';
 import { logger } from '~/lib/logger';
 import { userContext } from '~/lib/middleware';
 import { formText } from '~/lib/route-utils';
@@ -197,7 +196,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function CreateJobApplication() {
-  const apiBaseUrl = useApiBaseUrl();
   const [inputMethod, setInputMethod] = useState<'manual' | 'url' | 'paste'>('url');
   const [scrapedData, setScrapedData] = useState<JobPosting | null>(null);
   const [pastedDescription, setPastedDescription] = useState('');
@@ -245,59 +243,6 @@ export default function CreateJobApplication() {
     const interval = window.setInterval(() => refreshImport(importId), 2500);
     return () => window.clearInterval(interval);
   }, [importId, importJob]);
-
-  useEffect(() => {
-    if (
-      !apiBaseUrl ||
-      !importJob ||
-      !importId ||
-      ['ready', 'failed', 'dismissed', 'resolved'].includes(importJob.status)
-    ) {
-      return;
-    }
-    const apiUrl = new URL('/api/finance/import/ws', apiBaseUrl);
-    apiUrl.protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(apiUrl);
-    socket.onopen = () => socket.send(JSON.stringify({ type: 'subscribe' }));
-    socket.onmessage = (event) => {
-      try {
-        const parsed: {
-          data?: Array<{
-            jobId: string;
-            status: CareerImportDto['status'];
-            stage: string;
-            progress?: number;
-            errorCode?: string;
-            error?: string;
-            draft?: CareerImportDraft;
-          }>;
-        } = JSON.parse(event.data);
-        const job = parsed.data?.find((entry) => entry.jobId === importJob.queueJobId);
-        if (!job) return;
-        setImportJob((current) =>
-          current
-            ? {
-                ...current,
-                status: job.status,
-                stage: job.stage,
-                progress: job.progress ?? current.progress,
-                errorCode: job.errorCode || current.errorCode,
-                errorMessage: job.error || current.errorMessage,
-                draft: job.draft,
-              }
-            : current,
-        );
-        if (job.status === 'ready' && job.draft) {
-          setScrapedData(toJobPosting(job.draft));
-          setInputMethod('manual');
-          setIsScraping(false);
-        }
-      } catch {
-        // The HTTP snapshot remains authoritative after a malformed event.
-      }
-    };
-    return () => socket.close();
-  }, [apiBaseUrl, importId, importJob]);
 
   const handleScrape = async () => {
     if (!url.trim()) return;

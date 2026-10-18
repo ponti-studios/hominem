@@ -157,7 +157,12 @@ export async function getTopMerchantsByContract(input: {
   tagNames?: string[];
   limit?: number;
 }): Promise<{
-  merchants: Array<{ name: string; totalSpent: number; transactionCount: number }>;
+  merchants: Array<{
+    name: string;
+    totalSpent: number;
+    transactionCount: number;
+    currencyCode: string;
+  }>;
   currencyCode: string | null;
   warnings: string[];
 }> {
@@ -174,26 +179,49 @@ export async function getTopMerchantsByContract(input: {
     .groupBy(['merchant', 't.currencyCode'])
     .execute();
 
-  const merchantTotals = new Map<string, { totalSpent: number; transactionCount: number }>();
+  const merchantTotals = new Map<
+    string,
+    Map<string, { totalSpent: number; transactionCount: number }>
+  >();
   for (const row of rows) {
     const merchantName = row.merchant;
-    const current = merchantTotals.get(merchantName) ?? { totalSpent: 0, transactionCount: 0 };
+    const currencyMerchants = merchantTotals.get(row.currencyCode) ?? new Map();
+    const current = currencyMerchants.get(merchantName) ?? { totalSpent: 0, transactionCount: 0 };
     current.totalSpent += toNumber(row.totalSpent);
     current.transactionCount += Number(row.transactionCount);
-    merchantTotals.set(merchantName, current);
+    currencyMerchants.set(merchantName, current);
+    merchantTotals.set(row.currencyCode, currencyMerchants);
   }
 
   const normalizedLimit = Math.max(1, Math.floor(input.limit ?? 5));
   const { currencyCode, warnings } = summarizeCurrencies(rows.map((row) => row.currencyCode));
+  const currencies = [...merchantTotals.keys()].sort((left, right) => left.localeCompare(right));
+  const merchantsByCurrency = new Map(
+    currencies.map((code) => [
+      code,
+      [...(merchantTotals.get(code)?.entries() ?? [])]
+        .map(([name, value]) => ({ name, ...value, currencyCode: code }))
+        .sort(
+          (left, right) =>
+            right.totalSpent - left.totalSpent || left.name.localeCompare(right.name),
+        ),
+    ]),
+  );
+  const merchants = [];
+  for (let rank = 0; merchants.length < normalizedLimit; rank += 1) {
+    let found = false;
+    for (const code of currencies) {
+      const merchant = merchantsByCurrency.get(code)?.[rank];
+      if (!merchant) continue;
+      found = true;
+      merchants.push(merchant);
+      if (merchants.length === normalizedLimit) break;
+    }
+    if (!found) break;
+  }
+
   return {
-    merchants: [...merchantTotals.entries()]
-      .map(([name, value]) => ({
-        name,
-        totalSpent: value.totalSpent,
-        transactionCount: value.transactionCount,
-      }))
-      .sort((a, b) => b.totalSpent - a.totalSpent || a.name.localeCompare(b.name))
-      .slice(0, normalizedLimit),
+    merchants,
     currencyCode,
     warnings,
   };

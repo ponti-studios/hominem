@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 
 import { useFinanceTopMerchants } from '~/lib/hooks/use-finance-top-merchants';
+import { useMonthlyStats } from '~/lib/hooks/use-monthly-stats';
 import { useTimeSeriesData } from '~/lib/hooks/use-time-series';
 import { formatCurrency } from '~/lib/number.utils';
 
@@ -31,6 +32,11 @@ function formatDay(value: string) {
 export function FinanceOverview({ accounts }: FinanceOverviewProps) {
   const [dateFrom] = useState(() => startOfMonth(new Date()));
   const [dateTo] = useState(() => new Date());
+  const {
+    stats: monthlyStats,
+    isLoading: monthlyStatsLoading,
+    error: monthlyStatsError,
+  } = useMonthlyStats(format(dateTo, 'yyyy-MM'));
   const { data, isLoading, error } = useTimeSeriesData({
     dateFrom,
     dateTo,
@@ -48,13 +54,17 @@ export function FinanceOverview({ accounts }: FinanceOverviewProps) {
     limit: 5,
   });
 
-  const stats = data?.stats;
-  const metricsReady = !isLoading && !error && stats != null;
-  const monthlySpending = stats?.totalExpenses ?? 0;
-  const monthlyIncome = stats?.totalIncome ?? 0;
-  const netCashFlow = monthlyIncome - monthlySpending;
+  const currencyRows = monthlyStats?.currencyBreakdown ?? [];
+  const metricsReady = !monthlyStatsLoading && !monthlyStatsError && monthlyStats != null;
+  const chartCurrency = currencyRows.length === 1 ? currencyRows[0]?.currencyCode : null;
   const merchantRows = merchants?.merchants ?? [];
-  const largestMerchant = Math.max(...merchantRows.map((merchant) => merchant.totalSpent), 0);
+  const largestMerchantByCurrency = new Map<string, number>();
+  for (const merchant of merchantRows) {
+    largestMerchantByCurrency.set(
+      merchant.currencyCode,
+      Math.max(largestMerchantByCurrency.get(merchant.currencyCode) ?? 0, merchant.totalSpent),
+    );
+  }
   const chartRows = useMemo(() => {
     const spendingByDay = new Map(
       (data?.data ?? []).map((point) => [point.date, Math.abs(point.expenses)]),
@@ -87,13 +97,17 @@ export function FinanceOverview({ accounts }: FinanceOverviewProps) {
             role="img"
             aria-label={`Cumulative spending for ${monthLabel}`}
           >
-            {error ? (
+            {error || monthlyStatsError ? (
               <p className="body-3 flex h-full items-center justify-center text-muted-foreground">
                 Spending is unavailable.
               </p>
-            ) : isLoading ? (
+            ) : isLoading || monthlyStatsLoading ? (
               <div className="h-full animate-pulse rounded-lg bg-muted" />
-            ) : chartRows.length === 0 || monthlySpending === 0 ? (
+            ) : currencyRows.length > 1 ? (
+              <p className="body-3 flex h-full items-center justify-center text-center text-muted-foreground">
+                Spending spans multiple currencies. See the currency totals for separate amounts.
+              </p>
+            ) : chartRows.length === 0 || (currencyRows[0]?.expenses ?? 0) === 0 ? (
               <p className="body-3 flex h-full items-center justify-center text-muted-foreground">
                 No spending recorded this month.
               </p>
@@ -120,7 +134,7 @@ export function FinanceOverview({ accounts }: FinanceOverviewProps) {
                   />
                   <YAxis hide domain={[0, 'auto']} />
                   <Tooltip
-                    formatter={(value) => formatCurrency(Number(value))}
+                    formatter={(value) => formatCurrency(Number(value), chartCurrency ?? 'USD')}
                     contentStyle={{
                       backgroundColor: 'var(--popover)',
                       borderColor: 'var(--border-default)',
@@ -149,30 +163,68 @@ export function FinanceOverview({ accounts }: FinanceOverviewProps) {
           className="flex flex-col rounded-xl border border-border bg-card p-5 sm:p-7"
           aria-label="Monthly totals"
         >
-          <p className="body-3 text-muted-foreground">Spent in {monthLabel}</p>
-          <p className="mt-1 text-4xl font-semibold tabular-nums tracking-tight text-foreground sm:text-5xl">
-            {metricsReady ? formatCurrency(monthlySpending) : '—'}
+          <p className="body-3 text-muted-foreground">
+            {currencyRows.length > 1 ? 'Monthly totals by currency' : `Spent in ${monthLabel}`}
           </p>
+          {currencyRows.length === 1 ? (
+            <p className="mt-1 text-4xl font-semibold tabular-nums tracking-tight text-foreground sm:text-5xl">
+              {metricsReady
+                ? formatCurrency(currencyRows[0]?.expenses ?? 0, currencyRows[0]?.currencyCode)
+                : '—'}
+            </p>
+          ) : null}
           <dl className="mt-6 flex flex-1 flex-col justify-between divide-y divide-border border-t border-border">
-            <div className="flex items-center justify-between gap-4 py-4">
-              <dt className="body-3 text-muted-foreground">Income</dt>
-              <dd className="text-right text-lg font-medium tabular-nums text-primary">
-                {metricsReady ? formatCurrency(monthlyIncome) : '—'}
-              </dd>
-            </div>
-            <div className="flex items-center justify-between gap-4 py-4">
-              <dt className="body-3 text-muted-foreground">Net cash flow</dt>
-              <dd className="flex items-center gap-1.5 text-right text-lg font-medium tabular-nums text-foreground">
-                {metricsReady ? (
-                  netCashFlow >= 0 ? (
-                    <ArrowUpRight className="size-4 text-success" aria-hidden />
-                  ) : (
-                    <ArrowDownRight className="size-4 text-destructive" aria-hidden />
-                  )
-                ) : null}
-                {metricsReady ? formatCurrency(netCashFlow) : '—'}
-              </dd>
-            </div>
+            {currencyRows.length > 1 ? (
+              currencyRows.map((currency) => (
+                <div key={currency.currencyCode} className="py-4">
+                  <dt className="body-3 mb-2 font-medium text-primary">{currency.currencyCode}</dt>
+                  <dd className="grid grid-cols-3 gap-2 text-right text-sm tabular-nums text-foreground">
+                    <span>
+                      <span className="block text-xs text-muted-foreground">Spent</span>
+                      {formatCurrency(currency.expenses, currency.currencyCode)}
+                    </span>
+                    <span>
+                      <span className="block text-xs text-muted-foreground">Income</span>
+                      {formatCurrency(currency.income, currency.currencyCode)}
+                    </span>
+                    <span>
+                      <span className="block text-xs text-muted-foreground">Net</span>
+                      {formatCurrency(currency.net, currency.currencyCode)}
+                    </span>
+                  </dd>
+                </div>
+              ))
+            ) : currencyRows.length === 1 ? (
+              <>
+                <div className="flex items-center justify-between gap-4 py-4">
+                  <dt className="body-3 text-muted-foreground">Income</dt>
+                  <dd className="text-right text-lg font-medium tabular-nums text-primary">
+                    {metricsReady
+                      ? formatCurrency(currencyRows[0]?.income ?? 0, currencyRows[0]?.currencyCode)
+                      : '—'}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4 py-4">
+                  <dt className="body-3 text-muted-foreground">Net cash flow</dt>
+                  <dd className="flex items-center gap-1.5 text-right text-lg font-medium tabular-nums text-foreground">
+                    {metricsReady ? (
+                      (currencyRows[0]?.net ?? 0) >= 0 ? (
+                        <ArrowUpRight className="size-4 text-success" aria-hidden />
+                      ) : (
+                        <ArrowDownRight className="size-4 text-destructive" aria-hidden />
+                      )
+                    ) : null}
+                    {metricsReady
+                      ? formatCurrency(currencyRows[0]?.net ?? 0, currencyRows[0]?.currencyCode)
+                      : '—'}
+                  </dd>
+                </div>
+              </>
+            ) : (
+              <p className="py-4 text-sm text-muted-foreground">
+                {monthlyStatsError ? 'Monthly totals are unavailable.' : 'No activity this month.'}
+              </p>
+            )}
             <div className="flex items-center justify-between gap-4 py-4">
               <dt className="body-3 inline-flex items-center gap-2 text-muted-foreground">
                 <Wallet className="size-4 text-primary" aria-hidden />
@@ -217,7 +269,7 @@ export function FinanceOverview({ accounts }: FinanceOverviewProps) {
                     {account.name} · {account.accountType}
                   </span>
                   <span className="w-28 shrink-0 text-right tabular-nums text-foreground">
-                    {formatCurrency(account.balanceCents / 100)}
+                    {formatCurrency(account.balanceCents / 100, account.currencyCode)}
                   </span>
                 </Link>
               </li>
@@ -250,14 +302,15 @@ export function FinanceOverview({ accounts }: FinanceOverviewProps) {
           ) : (
             <ul className="mt-5 space-y-4">
               {merchantRows.slice(0, 5).map((merchant) => {
+                const largestMerchant = largestMerchantByCurrency.get(merchant.currencyCode) ?? 0;
                 const ratio =
                   largestMerchant > 0 ? (merchant.totalSpent / largestMerchant) * 100 : 0;
                 return (
-                  <li key={merchant.name}>
+                  <li key={`${merchant.currencyCode}:${merchant.name}`}>
                     <div className="flex items-center justify-between gap-3">
                       <span className="body-3 truncate text-foreground">{merchant.name}</span>
                       <span className="body-3 shrink-0 tabular-nums text-muted-foreground">
-                        {formatCurrency(merchant.totalSpent)}
+                        {formatCurrency(merchant.totalSpent, merchant.currencyCode)}
                       </span>
                     </div>
                     <div

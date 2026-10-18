@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const { mockUseAllAccounts } = vi.hoisted(() => ({ mockUseAllAccounts: vi.fn() }));
 
 vi.mock('../lib/hooks/use-finance-data', () => ({ useAllAccounts: mockUseAllAccounts }));
+vi.mock('~/lib/api.server', () => ({ createServerHonoClient: vi.fn() }));
+vi.mock('~/lib/require-auth.server', () => ({ requireAuth: vi.fn() }));
 vi.mock('../components/route-link', () => ({
   RouteLink: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>

@@ -141,6 +141,7 @@ registerTool(
         name: m.name,
         totalSpent: m.totalSpent,
         transactionCount: m.transactionCount,
+        currencyCode: m.currencyCode,
       })),
       count: merchants.length,
       currencyCode,
