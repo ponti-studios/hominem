@@ -1,5 +1,9 @@
 import { db, pool, sql } from '@hominem/db/core';
-import { FINANCE_TRANSACTION_ENTITY_TYPE } from '@hominem/finance-services';
+import {
+  createOrGetFinanceCategory,
+  FINANCE_TRANSACTION_ENTITY_TYPE,
+  saveRunwayBudget,
+} from '@hominem/finance-services';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { callTool, type McpToolResult } from '../tool-registry';
@@ -913,6 +917,30 @@ describe('finance_runway', () => {
     expect(data.recurringTxnCount).toBe(1);
     expect(data.weeks).toHaveLength(4);
     expect(Number(data.weeklyRecurringOutflow)).toBeGreaterThan(0);
+  });
+
+  it('uses saved currency-matched category caps and allows ad-hoc overrides', async () => {
+    const category = await createOrGetFinanceCategory(userId, 'Saved runway cap');
+    await saveRunwayBudget({
+      userId,
+      categoryId: category.id!,
+      currencyCode: 'USD',
+      amount: 100,
+    });
+
+    const saved = content(
+      await callTool(userId, 'finance_runway', { asOf: '2026-07-31', projectionWeeks: 1 }),
+    );
+    expect(saved.weeklyVariableAllowance).toBe(23);
+
+    const overridden = content(
+      await callTool(userId, 'finance_runway', {
+        asOf: '2026-07-31',
+        projectionWeeks: 1,
+        monthlyBudgets: [{ category: 'Saved runway cap', amountCents: 50_000 }],
+      }),
+    );
+    expect(overridden.weeklyVariableAllowance).toBe(114.99);
   });
 
   it("does not see another user's accounts", async () => {

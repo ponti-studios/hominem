@@ -34,6 +34,20 @@ describe('runway scenario simulation', () => {
     expect(result.years).toBeNull();
     expect(result.isRunwayDangerous).toBe(false);
   });
+
+  it('ignores purchases dated before the actual as-of day in the current month', () => {
+    const result = simulateRunway(
+      runwayScenarioInputSchema.parse({
+        balance: 1000,
+        monthlyExpenses: 100,
+        asOf: '2026-10-19',
+        plannedPurchases: [{ description: 'Past purchase', amount: 400, date: '2026-10-05' }],
+      }),
+    );
+
+    expect(result.totalPlannedExpenses).toBe(0);
+    expect(result.projectionData[0]).toEqual({ month: '2026-11', balance: 900 });
+  });
 });
 
 describe('affordability', () => {

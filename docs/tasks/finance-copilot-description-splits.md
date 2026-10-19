@@ -1,6 +1,6 @@
 ---
 title: 'Per-user Copilot description-split rules'
-status: 'Proposed'
+status: 'Blocked'
 priority: 'low'
 labels: [finance, import]
 depends_on: []
@@ -12,6 +12,13 @@ estimated_size: 'S'
 A Copilot `account`-label collision between two real accounts can be recorded
 per user and applied during import preflight, instead of living in a
 hardcoded list or a checkout-local JSON file.
+
+## Blocker
+
+The Finance browser import destination and scoped import routes were removed
+by explicit product direction. This preflight and UI task stays blocked unless
+the user approves restoring that flow; the reusable parser code alone is not a
+reason to rebuild its browser destination.
 
 ## Scope
 

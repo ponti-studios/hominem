@@ -256,8 +256,9 @@ export const runwayScenarioInputSchema = z.object({
 });
 
 export function simulateRunway(input: z.infer<typeof runwayScenarioInputSchema>) {
-  const asOf = input.asOf ? new Date(`${input.asOf}T00:00:00.000Z`) : new Date();
-  asOf.setUTCDate(1);
+  const actualAsOf = input.asOf ? new Date(`${input.asOf}T00:00:00.000Z`) : new Date();
+  const asOfDate = actualAsOf.toISOString().slice(0, 10);
+  const asOf = new Date(Date.UTC(actualAsOf.getUTCFullYear(), actualAsOf.getUTCMonth(), 1));
   const purchases = new Map<number, number>();
   let totalPlannedExpenses = 0;
   for (const purchase of input.plannedPurchases) {
@@ -266,7 +267,7 @@ export function simulateRunway(input: z.infer<typeof runwayScenarioInputSchema>)
       (date.getUTCFullYear() - asOf.getUTCFullYear()) * 12 +
       date.getUTCMonth() -
       asOf.getUTCMonth();
-    if (purchase.date < asOf.toISOString().slice(0, 10)) continue;
+    if (purchase.date < asOfDate) continue;
     const index = Math.max(0, monthOffset - 1);
     purchases.set(index, (purchases.get(index) ?? 0) + purchase.amount);
     totalPlannedExpenses += purchase.amount;

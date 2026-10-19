@@ -65,8 +65,7 @@ export async function getRunwaySettings(userId: string) {
       .executeTakeFirst(),
     db
       .selectFrom('app.financeAccounts')
-      .select('currencyCode')
-      .distinct()
+      .select(['currencyCode', 'allowedCurrencies'])
       .where('userId', '=', userId)
       .where('accountType', 'in', DEFAULT_LIQUID_TYPES)
       .orderBy('currencyCode')
@@ -94,7 +93,14 @@ export async function getRunwaySettings(userId: string) {
   ]);
   return {
     currencyCode: preference?.currencyCode ?? null,
-    currencies: currencies.map(({ currencyCode }) => currencyCode),
+    currencies: [
+      ...new Set(
+        currencies.flatMap(({ currencyCode, allowedCurrencies }) => [
+          currencyCode,
+          ...(allowedCurrencies ?? []),
+        ]),
+      ),
+    ].sort(),
     categories,
     budgets: budgets.map((budget) => ({
       id: budget.id,
@@ -107,14 +113,18 @@ export async function getRunwaySettings(userId: string) {
 }
 
 export async function saveRunwayCurrency(userId: string, currencyCode: string) {
-  const account = await db
+  const accounts = await db
     .selectFrom('app.financeAccounts')
-    .select('id')
+    .select(['currencyCode', 'allowedCurrencies'])
     .where('userId', '=', userId)
-    .where('currencyCode', '=', currencyCode)
     .where('accountType', 'in', DEFAULT_LIQUID_TYPES)
-    .executeTakeFirst();
-  if (!account) throw new ValidationError('Choose a currency available in a liquid account.');
+    .execute();
+  const isAvailable = accounts.some(
+    (account) =>
+      account.currencyCode === currencyCode ||
+      (account.allowedCurrencies ?? []).includes(currencyCode),
+  );
+  if (!isAvailable) throw new ValidationError('Choose a currency available in a liquid account.');
   await db
     .insertInto('app.financeRunwayPreferences')
     .values({ userId, currencyCode })
@@ -211,40 +221,52 @@ export async function computeLedgerRunway(input: ComputeLedgerRunwayInput): Prom
     }
   }
 
-  const liquidRows = await db
-    .selectFrom('app.financeAccounts as account')
-    .leftJoin('app.financeTransactions as transaction', (join) =>
-      join
-        .onRef('transaction.accountId', '=', 'account.id')
-        .on('transaction.userId', '=', input.userId)
-        .onRef('transaction.currencyCode', '=', 'account.currencyCode')
-        .on('transaction.excluded', '=', false),
-    )
-    .select((eb) => [
-      'account.name as accountName',
-      'account.currencyCode as currencyCode',
-      eb.fn.sum<number>('transaction.amount').as('balance'),
-    ])
-    .where('account.userId', '=', input.userId)
-    .where('account.accountType', 'in', liquidTypes)
-    .groupBy(['account.id', 'account.name', 'account.currencyCode'])
-    .orderBy('account.name', 'asc')
+  const accountRows = await db
+    .selectFrom('app.financeAccounts')
+    .select(['id', 'name', 'currencyCode', 'allowedCurrencies'])
+    .where('userId', '=', input.userId)
+    .where('accountType', 'in', liquidTypes)
+    .orderBy('name', 'asc')
     .execute();
-
-  const allLiquidAccounts = liquidRows.map((entry) => ({
-    accountName: entry.accountName,
-    currencyCode: entry.currencyCode,
-    balance: roundMoney(toNumber(entry.balance)),
-  }));
 
   // Summing balances across currencies would produce a meaningless total. Use the
   // explicitly selected currency and disclose all other available currencies.
-  const distinctCurrencies = [...new Set(allLiquidAccounts.map((a) => a.currencyCode))];
+  const distinctCurrencies = [
+    ...new Set(
+      accountRows.flatMap(({ currencyCode, allowedCurrencies }) => [
+        currencyCode,
+        ...(allowedCurrencies ?? []),
+      ]),
+    ),
+  ];
   const warnings: string[] = [];
   const currencyCode = input.currencyCode ?? null;
-  const liquidAccounts = currencyCode
-    ? allLiquidAccounts.filter((a) => a.currencyCode === currencyCode)
+  const selectedAccounts = currencyCode
+    ? accountRows.filter(
+        (account) =>
+          account.currencyCode === currencyCode ||
+          (account.allowedCurrencies ?? []).includes(currencyCode),
+      )
     : [];
+  const selectedIds = selectedAccounts.map((account) => account.id);
+  const balanceRows = selectedIds.length
+    ? await db
+        .selectFrom('app.financeTransactions')
+        .select((eb) => ['accountId', eb.fn.sum<number>('amount').as('balance')])
+        .where('userId', '=', input.userId)
+        .where('currencyCode', '=', currencyCode!)
+        .where('accountId', 'in', selectedIds)
+        .where('excluded', '=', false)
+        .groupBy('accountId')
+        .execute()
+    : [];
+  const balanceByAccountId = new Map(
+    balanceRows.map(({ accountId, balance }) => [accountId, toNumber(balance)]),
+  );
+  const liquidAccounts = selectedAccounts.map((account) => ({
+    accountName: account.name,
+    balance: roundMoney(balanceByAccountId.get(account.id) ?? 0),
+  }));
   if (distinctCurrencies.length > 0 && !currencyCode) {
     warnings.push('Choose a forecast currency to include matching-currency balances and activity.');
   } else if (currencyCode) {

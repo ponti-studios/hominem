@@ -291,14 +291,29 @@ registerTool(
   },
   async (ownerUserId, input) => {
     const settings = await getRunwaySettings(ownerUserId);
+    const monthlyBudgets = new Map<
+      string,
+      { category: string; amount: number; currencyCode?: string; note?: string }
+    >(
+      settings.budgets
+        .filter((budget) => budget.currencyCode === settings.currencyCode)
+        .map(({ category, amount, currencyCode }) => [
+          category.toLowerCase(),
+          { category, amount, currencyCode },
+        ]),
+    );
+    for (const budget of input.monthlyBudgets) {
+      monthlyBudgets.set(budget.category.toLowerCase(), {
+        category: budget.category,
+        amount: budget.amountCents / 100,
+        ...(settings.currencyCode ? { currencyCode: settings.currencyCode } : {}),
+        ...(budget.note ? { note: budget.note } : {}),
+      });
+    }
     const runway = await computeLedgerRunway({
       userId: ownerUserId,
       currencyCode: settings.currencyCode,
-      monthlyBudgets: input.monthlyBudgets.map((b) => ({
-        category: b.category,
-        amount: b.amountCents / 100,
-        ...(b.note ? { note: b.note } : {}),
-      })),
+      monthlyBudgets: [...monthlyBudgets.values()],
       projectionWeeks: input.projectionWeeks,
       ...(input.asOf ? { asOf: input.asOf } : {}),
     });
@@ -420,7 +435,24 @@ registerTool(
     inputSchema: financeCategoryMergeInputSchema,
     outputSchema: financeCategoryMergeOutputSchema,
     destructive: true,
+    requiresConfirmation: true,
     resultCap: 1,
+    preview: async (ownerUserId, input) => {
+      const parsed = financeCategoryMergeInputSchema.safeParse(input);
+      if (!parsed.success) return null;
+      const result = await mergeFinanceCategories(
+        ownerUserId,
+        { from: parsed.data.from, into: parsed.data.into },
+        { dryRun: true },
+      );
+      return result.reason
+        ? null
+        : {
+            from: parsed.data.from,
+            into: result.category?.name ?? parsed.data.into,
+            transactionsToMove: result.transactionsReassigned,
+          };
+    },
   },
   async (ownerUserId, input) => ({
     ...(await mergeFinanceCategories(
@@ -438,7 +470,7 @@ registerTool(
     name: 'finance_category_delete',
     title: 'Finance Category Delete',
     description:
-      'Permanently delete an unused category by name or id. Categories referenced by transactions and Uncategorized cannot be deleted. Requires iUnderstand: true; the server never elicits confirmation.',
+      'Permanently delete an unused category by name or id. Categories referenced by transactions and Uncategorized cannot be deleted. The MCP server asks for confirmation before deletion.',
     inputSchema: financeCategoryDeleteInputSchema,
     outputSchema: financeCategoryDeleteOutputSchema,
     destructive: true,
@@ -456,11 +488,8 @@ registerTool(
         },
       ],
     },
-    preview: async (_ownerUserId, input) =>
-      financeCategoryDeleteInputSchema.safeParse(input).success ? null : null,
   },
   async (ownerUserId, input) => {
-    if (!input.iUnderstand) throw new ValidationError('confirmation_required');
     const result = await deleteUnusedFinanceCategory(ownerUserId, input.category);
     if (result.reason === 'category_in_use') {
       throw new ValidationError(

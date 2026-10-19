@@ -359,10 +359,6 @@ export const financeAccountSummaryOutputSchema = z.object({
 
 export const financeAccountDeleteInputSchema = z.object({
   accountId: z.string().uuid().describe('Stable account id returned by a Finance tool.'),
-  iUnderstand: z
-    .boolean()
-    .default(false)
-    .describe('Must be true. This flag is the confirmation contract; the server never elicits.'),
 });
 
 export const financeAccountDeleteOutputSchema = z.object({
@@ -856,10 +852,6 @@ export const financeCategoryMergeOutputSchema = z.object({
 
 export const financeCategoryDeleteInputSchema = z.object({
   category: z.string().trim().min(1).describe('Category name or id.'),
-  iUnderstand: z
-    .boolean()
-    .default(false)
-    .describe('Must be true. This flag is the confirmation contract; the server never elicits.'),
 });
 
 export const financeCategoryDeleteOutputSchema = z.object({

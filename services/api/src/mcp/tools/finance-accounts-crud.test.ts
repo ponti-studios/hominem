@@ -247,9 +247,7 @@ describe('finance_account_delete', () => {
     );
     const id = created.id!;
 
-    const deleted = content(
-      await callTool(userId, 'finance_account_delete', { accountId: id, iUnderstand: true }),
-    );
+    const deleted = content(await callTool(userId, 'finance_account_delete', { accountId: id }));
     expect(deleted.deleted).toEqual({ id, name: 'Empty Account To Delete' });
     expect(content(await callTool(userId, 'finance_accounts', {})).accounts).not.toContainEqual(
       expect.objectContaining({ id }),
@@ -288,9 +286,9 @@ describe('finance_account_delete', () => {
       ],
     });
 
-    await expect(
-      callTool(userId, 'finance_account_delete', { accountId: id, iUnderstand: true }),
-    ).rejects.toThrow('account_not_empty: 1 transaction(s)');
+    await expect(callTool(userId, 'finance_account_delete', { accountId: id })).rejects.toThrow(
+      'account_not_empty: 1 transaction(s)',
+    );
     await expect(
       db
         .selectFrom('app.financeAccounts')
@@ -311,7 +309,6 @@ describe('finance_account_delete', () => {
     await expect(
       callTool(otherUserId, 'finance_account_delete', {
         accountId: created.id,
-        iUnderstand: true,
       }),
     ).rejects.toThrow('Account not found');
   });

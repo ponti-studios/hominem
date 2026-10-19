@@ -12,7 +12,7 @@ export const financeAccountDeleteTool = defineMcpTool(
     name: 'finance_account_delete',
     title: 'Finance Account Delete',
     description:
-      'Permanently delete an empty account by id. Accounts with transactions cannot be deleted. Requires iUnderstand: true; the server never elicits confirmation.',
+      'Permanently delete an empty account by id. Accounts with transactions cannot be deleted. The MCP server asks for confirmation before deletion.',
     inputSchema: financeAccountDeleteInputSchema,
     outputSchema: financeAccountDeleteOutputSchema,
     readOnly: false,
@@ -32,14 +32,8 @@ export const financeAccountDeleteTool = defineMcpTool(
         },
       ],
     },
-    preview: async (_ownerUserId, input) => {
-      financeAccountDeleteInputSchema.safeParse(input);
-      return null;
-    },
   },
   async (ownerUserId, input) => {
-    if (!input.iUnderstand) throw new ValidationError('confirmation_required');
-
     const result = await deleteEmptyAccount(input.accountId, ownerUserId);
     if (!result.account) {
       if (result.transactionCount > 0) {

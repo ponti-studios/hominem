@@ -325,7 +325,6 @@ describe('finance_category_delete', () => {
     const result = content(
       await callTool(userId, 'finance_category_delete', {
         category: created.id!,
-        iUnderstand: true,
       }),
     );
     expect(result.deleted).toEqual({ id: created.id, name: 'Unused To Delete' });
@@ -382,7 +381,6 @@ describe('finance_category_delete', () => {
     await expect(
       callTool(userId, 'finance_category_delete', {
         category: 'Category In Use',
-        iUnderstand: true,
       }),
     ).rejects.toThrow('category_in_use: 2 transaction(s)');
     expect(await categoryByName(userId, 'Category In Use')).toBeDefined();
@@ -393,7 +391,6 @@ describe('finance_category_delete', () => {
     await expect(
       callTool(userId, 'finance_category_delete', {
         category: 'Uncategorized',
-        iUnderstand: true,
       }),
     ).rejects.toThrow('category_protected');
 
@@ -401,7 +398,7 @@ describe('finance_category_delete', () => {
       await callTool(otherUserId, 'finance_category_create', { name: 'Other Owner Category' }),
     );
     await expect(
-      callTool(userId, 'finance_category_delete', { category: other.id!, iUnderstand: true }),
+      callTool(userId, 'finance_category_delete', { category: other.id! }),
     ).rejects.toThrow('Category not found');
   });
 });

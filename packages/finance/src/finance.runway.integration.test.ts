@@ -329,4 +329,43 @@ describeIntegration('finance runway integration', () => {
     expect(result.weeklyVariableAllowance).toBeCloseTo(69, 0);
     expect(result.warnings).toContain('Only EUR is included. Other currencies excluded: USD.');
   });
+
+  it('includes currencies allowed on a liquid account even when they are not its primary currency', async () => {
+    await sql`update app.finance_accounts set allowed_currencies = array['USD', 'GBP'] where id = ${checkingId}`.execute(
+      db,
+    );
+    await seedTransaction({
+      accountId: checkingId,
+      amount: 300,
+      transactionType: 'credit',
+      description: 'GBP opening balance',
+      postedOn: '2026-03-01',
+      currencyCode: 'GBP',
+    });
+    await seedTransaction({
+      accountId: checkingId,
+      amount: -60,
+      transactionType: 'debit',
+      description: 'GBP recurring expense',
+      postedOn: '2026-03-05',
+      recurring: true,
+      currencyCode: 'GBP',
+    });
+
+    const settings = await getRunwaySettings(ownerId);
+    expect(settings.currencies).toContain('GBP');
+    await saveRunwayCurrency(ownerId, 'GBP');
+    const result = await computeLedgerRunway({
+      userId: ownerId,
+      currencyCode: 'GBP',
+      monthlyBudgets: [{ category: 'GBP cap', amount: 100, currencyCode: 'GBP' }],
+      asOf: '2026-04-01',
+      projectionWeeks: 1,
+    });
+
+    expect(result.liquidAccounts).toEqual([{ accountName: 'Checking', balance: 240 }]);
+    expect(result.startingCash).toBe(240);
+    expect(result.recurringTxnCount).toBe(1);
+    expect(result.weeklyVariableAllowance).toBe(23);
+  });
 });
