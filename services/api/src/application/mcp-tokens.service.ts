@@ -2,6 +2,8 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { db, sql } from '@hominem/db/core';
 import { NotFoundError } from '@hominem/db/errors';
+import { redis } from '@hominem/services/redis';
+import { logger } from '@hominem/telemetry';
 
 // Personal access tokens for the MCP server. The raw `hmt_` value is minted
 // once, stored only as a SHA-256 hash, and never recoverable afterwards — the
@@ -11,6 +13,10 @@ import { NotFoundError } from '@hominem/db/errors';
 export const MCP_TOKEN_PREFIX = 'hmt_';
 const TOKEN_HASH_ALGORITHM = 'sha256';
 const TOKEN_RANDOM_BYTES = 32;
+// Successful resolutions are cached briefly so a chatty MCP session doesn't
+// pay a database round-trip per call. Revocation deletes the entry; if that
+// delete fails the cache TTL is the worst-case revocation lag.
+const TOKEN_CACHE_TTL_SECONDS = 60;
 
 function hashToken(rawToken: string): string {
   return createHash(TOKEN_HASH_ALGORITHM).update(rawToken).digest('hex');
@@ -18,6 +24,46 @@ function hashToken(rawToken: string): string {
 
 function mintRawToken(): string {
   return `${MCP_TOKEN_PREFIX}${randomBytes(TOKEN_RANDOM_BYTES).toString('base64url')}`;
+}
+
+type ResolvedMcpToken = { ownerUserId: string; scopes: string[] };
+
+function tokenCacheKey(tokenHash: string): string {
+  return `mcp:token:${tokenHash}`;
+}
+
+async function readCachedToken(tokenHash: string): Promise<ResolvedMcpToken | null> {
+  try {
+    const cached = await redis.get(tokenCacheKey(tokenHash));
+    if (!cached) return null;
+    const parsed: ResolvedMcpToken = JSON.parse(cached);
+    return parsed;
+  } catch (error) {
+    logger.warn('mcp_token_cache_read_failed', {
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
+    return null;
+  }
+}
+
+async function writeCachedToken(tokenHash: string, token: ResolvedMcpToken): Promise<void> {
+  try {
+    await redis.set(tokenCacheKey(tokenHash), JSON.stringify(token), 'EX', TOKEN_CACHE_TTL_SECONDS);
+  } catch (error) {
+    logger.warn('mcp_token_cache_write_failed', {
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
+  }
+}
+
+async function invalidateCachedToken(tokenHash: string): Promise<void> {
+  try {
+    await redis.del(tokenCacheKey(tokenHash));
+  } catch (error) {
+    logger.warn('mcp_token_cache_invalidate_failed', {
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
+  }
 }
 
 function tokenPrefixFor(rawToken: string): string {
@@ -90,9 +136,11 @@ export async function revokeMcpToken(input: {
     .where('id', '=', input.id)
     .where('ownerUserid', '=', input.ownerUserId)
     .where('revokedAt', 'is', null)
+    .returning('tokenHash')
     .executeTakeFirst();
 
-  if (result.numUpdatedRows === 0n) throw new NotFoundError('MCP token not found');
+  if (!result) throw new NotFoundError('MCP token not found');
+  await invalidateCachedToken(result.tokenHash);
   return { revoked: true };
 }
 
@@ -108,20 +156,27 @@ export async function resolveMcpToken(rawToken: string): Promise<{
 } | null> {
   if (!rawToken.startsWith(MCP_TOKEN_PREFIX)) return null;
 
+  const tokenHash = hashToken(rawToken);
+  const cached = await readCachedToken(tokenHash);
+  if (cached) return cached;
+
   const row = await db
     .selectFrom('app.mcpTokens')
     .select(['ownerUserid', 'scopes'])
-    .where('tokenHash', '=', hashToken(rawToken))
+    .where('tokenHash', '=', tokenHash)
     .where('revokedAt', 'is', null)
     .executeTakeFirst();
 
   if (!row) return null;
 
+  const resolved = { ownerUserId: row.ownerUserid, scopes: row.scopes ?? [] };
+  await writeCachedToken(tokenHash, resolved);
+
   await db
     .updateTable('app.mcpTokens')
     .set({ lastUsedAt: sql`now()` })
-    .where('tokenHash', '=', hashToken(rawToken))
+    .where('tokenHash', '=', tokenHash)
     .execute();
 
-  return { ownerUserId: row.ownerUserid, scopes: row.scopes ?? [] };
+  return resolved;
 }
