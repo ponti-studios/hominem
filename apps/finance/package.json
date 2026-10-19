@@ -20,7 +20,6 @@
   "dependencies": {
     "@hominem/env": "workspace:*",
     "@hominem/finance-services": "workspace:*",
-    "@hominem/queues": "workspace:*",
     "@hominem/rpc": "workspace:*",
     "@hominem/utils": "workspace:*",
     "@ponti-studios/auth": "workspace:*",
@@ -36,7 +35,6 @@
     "lucide-react": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-plaid-link": "5.0.0",
     "react-router": "catalog:",
     "recharts": "3.10.1",
     "workbox-window": "^7.4.0",

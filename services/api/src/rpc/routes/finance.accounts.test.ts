@@ -7,8 +7,10 @@ import { apiErrorHandler } from '../middleware/error';
 import { validationErrorMiddleware } from '../middleware/validation';
 
 const accountService = vi.hoisted(() => ({ getFinanceAccountList: vi.fn() }));
+const database = vi.hoisted(() => ({ selectFrom: vi.fn() }));
 
 vi.mock('@hominem/finance-services', () => accountService);
+vi.mock('@hominem/db/core', () => ({ db: database }));
 
 import { accountsRoutes } from './finance.accounts';
 
@@ -43,6 +45,22 @@ function createApp() {
 
 describe('finance account routes', () => {
   beforeEach(() => accountService.getFinanceAccountList.mockReset());
+
+  it('returns account data without Plaid connection state', async () => {
+    const query = {
+      selectAll: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue([]),
+    };
+    database.selectFrom.mockReturnValue(query);
+
+    const response = await createApp().request('/api/finance/accounts/all');
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ accounts: [] });
+    expect(database.selectFrom).not.toHaveBeenCalledWith('app.plaidItems');
+  });
 
   it('returns the MCP account-list object for the authenticated owner', async () => {
     const result = {

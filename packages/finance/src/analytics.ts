@@ -2,10 +2,7 @@ import { db } from '@hominem/db/core';
 import { sql, type SqlBool } from 'kysely';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
-import {
-  financeTransactionQueryContractSchema,
-  queryAnalyticsTransactionsByContract,
-} from './transactions';
+import { financeTransactionQueryContractSchema } from './transactions';
 import { sqlValueList, summarizeCurrencies, toNumber } from './utils';
 
 type AnalyticsFilters = {
@@ -157,7 +154,12 @@ export async function getTopMerchantsByContract(input: {
   tagNames?: string[];
   limit?: number;
 }): Promise<{
-  merchants: Array<{ name: string; totalSpent: number; transactionCount: number }>;
+  merchants: Array<{
+    name: string;
+    totalSpent: number;
+    transactionCount: number;
+    currencyCode: string;
+  }>;
   currencyCode: string | null;
   warnings: string[];
 }> {
@@ -174,26 +176,49 @@ export async function getTopMerchantsByContract(input: {
     .groupBy(['merchant', 't.currencyCode'])
     .execute();
 
-  const merchantTotals = new Map<string, { totalSpent: number; transactionCount: number }>();
+  const merchantTotals = new Map<
+    string,
+    Map<string, { totalSpent: number; transactionCount: number }>
+  >();
   for (const row of rows) {
     const merchantName = row.merchant;
-    const current = merchantTotals.get(merchantName) ?? { totalSpent: 0, transactionCount: 0 };
+    const currencyMerchants = merchantTotals.get(row.currencyCode) ?? new Map();
+    const current = currencyMerchants.get(merchantName) ?? { totalSpent: 0, transactionCount: 0 };
     current.totalSpent += toNumber(row.totalSpent);
     current.transactionCount += Number(row.transactionCount);
-    merchantTotals.set(merchantName, current);
+    currencyMerchants.set(merchantName, current);
+    merchantTotals.set(row.currencyCode, currencyMerchants);
   }
 
   const normalizedLimit = Math.max(1, Math.floor(input.limit ?? 5));
   const { currencyCode, warnings } = summarizeCurrencies(rows.map((row) => row.currencyCode));
+  const currencies = [...merchantTotals.keys()].sort((left, right) => left.localeCompare(right));
+  const merchantsByCurrency = new Map(
+    currencies.map((code) => [
+      code,
+      [...(merchantTotals.get(code)?.entries() ?? [])]
+        .map(([name, value]) => ({ name, ...value, currencyCode: code }))
+        .sort(
+          (left, right) =>
+            right.totalSpent - left.totalSpent || left.name.localeCompare(right.name),
+        ),
+    ]),
+  );
+  const merchants = [];
+  for (let rank = 0; merchants.length < normalizedLimit; rank += 1) {
+    let found = false;
+    for (const code of currencies) {
+      const merchant = merchantsByCurrency.get(code)?.[rank];
+      if (!merchant) continue;
+      found = true;
+      merchants.push(merchant);
+      if (merchants.length === normalizedLimit) break;
+    }
+    if (!found) break;
+  }
+
   return {
-    merchants: [...merchantTotals.entries()]
-      .map(([name, value]) => ({
-        name,
-        totalSpent: value.totalSpent,
-        transactionCount: value.transactionCount,
-      }))
-      .sort((a, b) => b.totalSpent - a.totalSpent || a.name.localeCompare(b.name))
-      .slice(0, normalizedLimit),
+    merchants,
     currencyCode,
     warnings,
   };
@@ -381,54 +406,50 @@ export async function getSpendingTimeSeriesByContract(input: {
     periodCovered: string;
   };
 }> {
-  const transactions = await queryAnalyticsTransactionsByContract({
-    userId: input.userId,
-    ...(input.accountId ? { accountId: input.accountId } : {}),
-    ...(input.dateFrom ? { dateFrom: input.dateFrom } : {}),
-    ...(input.dateTo ? { dateTo: input.dateTo } : {}),
-    ...(input.tagIds ? { tagIds: input.tagIds } : {}),
-    ...(input.tagNames ? { tagNames: input.tagNames } : {}),
-    limit: 200,
-    offset: 0,
-  });
+  const bucketExpression =
+    input.groupBy === 'month'
+      ? sql<string>`to_char(t.posted_on, 'YYYY-MM')`
+      : input.groupBy === 'week'
+        ? sql<string>`to_char(date_trunc('week', t.posted_on::timestamp), 'YYYY-MM-DD')`
+        : sql<string>`to_char(t.posted_on, 'YYYY-MM-DD')`;
+  const rows = await db
+    .selectFrom('app.financeTransactions as t')
+    .select([
+      bucketExpression.as('date'),
+      sql<number>`coalesce(sum(case when t.amount >= 0 then t.amount else 0 end), 0)`.as('income'),
+      sql<number>`coalesce(sum(case when t.amount < 0 then abs(t.amount) else 0 end), 0)`.as(
+        'expenses',
+      ),
+      sql<number>`count(t.id)`.as('count'),
+    ])
+    .where(analyticsFilters(input))
+    .where('t.postedOn', 'is not', null)
+    .groupBy(bucketExpression)
+    .orderBy('date', 'asc')
+    .execute();
 
-  const bucketData = new Map<string, { income: number; expenses: number; count: number }>();
-  for (const tx of transactions) {
-    if (tx.postedOn === null) continue;
-    const postedOn = typeof tx.postedOn === 'string' ? tx.postedOn : tx.postedOn.toISOString();
-    const bucketKey = getTimeSeriesBucket(postedOn, input.groupBy);
-    const current = bucketData.get(bucketKey) ?? { income: 0, expenses: 0, count: 0 };
-    if (tx.amount >= 0) {
-      current.income += tx.amount;
-    } else {
-      current.expenses += Math.abs(tx.amount);
-    }
-    current.count += 1;
-    bucketData.set(bucketKey, current);
-  }
-
-  const normalizedLimit = Math.max(1, Math.floor(input.limit ?? 50));
-  const sortedDates = [...bucketData.keys()]
-    .sort((a, b) => a.localeCompare(b))
-    .slice(-normalizedLimit);
-  const data = sortedDates.map((date) => {
-    const values = bucketData.get(date) ?? { income: 0, expenses: 0, count: 0 };
-    const total = values.income + values.expenses;
+  const allData = rows.map((row) => {
+    const income = toNumber(row.income);
+    const expenses = toNumber(row.expenses);
+    const count = Number(row.count);
     return {
-      date,
-      amount: values.income - values.expenses,
-      expenses: values.expenses,
-      income: values.income,
-      count: values.count,
-      average: values.count === 0 ? 0 : total / values.count,
+      date: row.date,
+      amount: income - expenses,
+      expenses,
+      income,
+      count,
+      average: count === 0 ? 0 : (income + expenses) / count,
     };
   });
+
+  const normalizedLimit = Math.max(1, Math.floor(input.limit ?? 50));
+  const data = allData.slice(-normalizedLimit);
 
   if (!input.includeStats) {
     return { data };
   }
 
-  const totals = data.map((item) => item.income + item.expenses);
+  const totals = allData.map((item) => item.income + item.expenses);
   const total = totals.reduce((sum, value) => sum + value, 0);
   const first = totals[0] ?? 0;
   const last = totals[totals.length - 1] ?? 0;
@@ -442,13 +463,17 @@ export async function getSpendingTimeSeriesByContract(input: {
       max: totals.length === 0 ? 0 : Math.max(...totals),
       trend: last > first ? 'up' : last < first ? 'down' : 'stable',
       changePercentage: first === 0 ? 0 : ((last - first) / first) * 100,
-      totalIncome: data.reduce((sum, item) => sum + item.income, 0),
-      totalExpenses: data.reduce((sum, item) => sum + item.expenses, 0),
+      totalIncome: allData.reduce((sum, item) => sum + item.income, 0),
+      totalExpenses: allData.reduce((sum, item) => sum + item.expenses, 0),
       averageIncome:
-        data.length === 0 ? 0 : data.reduce((sum, item) => sum + item.income, 0) / data.length,
+        allData.length === 0
+          ? 0
+          : allData.reduce((sum, item) => sum + item.income, 0) / allData.length,
       averageExpenses:
-        data.length === 0 ? 0 : data.reduce((sum, item) => sum + item.expenses, 0) / data.length,
-      count: data.length,
+        allData.length === 0
+          ? 0
+          : allData.reduce((sum, item) => sum + item.expenses, 0) / allData.length,
+      count: allData.length,
       periodCovered: input.groupBy ?? 'day',
     },
   };
@@ -470,17 +495,4 @@ function parseMonthRange(month?: string): { from?: string; to?: string } {
     from: from.toISOString().slice(0, 10),
     to: to.toISOString().slice(0, 10),
   };
-}
-
-function getTimeSeriesBucket(date: string, groupBy?: 'month' | 'week' | 'day'): string {
-  if (groupBy === 'month') {
-    return date.slice(0, 7);
-  }
-  if (groupBy === 'week') {
-    const value = new Date(`${date}T00:00:00Z`);
-    const day = value.getUTCDay() || 7;
-    value.setUTCDate(value.getUTCDate() - day + 1);
-    return value.toISOString().slice(0, 10);
-  }
-  return date;
 }

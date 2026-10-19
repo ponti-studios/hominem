@@ -9,10 +9,6 @@ export * from './service';
 export * from './consts';
 export { redis } from './redis';
 
-export const importTransactionsQueue: Queue = new BullQueue(QUEUE_NAMES.IMPORT_TRANSACTIONS, {
-  connection: redis,
-});
-
 export const plaidSyncQueue: Queue = new BullQueue(QUEUE_NAMES.PLAID_SYNC, {
   connection: redis,
 });

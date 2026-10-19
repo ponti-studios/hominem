@@ -1,5 +1,4 @@
 export const QUEUE_NAMES = {
-  IMPORT_TRANSACTIONS: 'import-transaction',
   GOOGLE_CALENDAR_SYNC: 'google-calendar-sync',
   PLAID_SYNC: 'plaid-sync',
   PLACE_PHOTO_ENRICH: 'place-photo-enrich',

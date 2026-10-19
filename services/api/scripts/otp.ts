@@ -21,8 +21,10 @@ function die(message: string): never {
 }
 
 async function main(): Promise<void> {
-  const email = process.argv[2];
-  if (!email) die('Usage: pnpm --filter @hominem/api exec tsx scripts/otp.ts <email>');
+  const email = process.argv[2]?.trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    die('Usage: just otp <email>\nExample: just otp test@lvh.me');
+  }
 
   const mailboxFile = resolveScriptedMailboxPath();
   const existing = readLatestScriptedOtp(mailboxFile, email);

@@ -61,7 +61,6 @@
   "references": [
     { "path": "../../packages/auth" },
     { "path": "../../packages/env" },
-    { "path": "../../packages/queues" },
     { "path": "../../packages/utils" }
   ]
 }

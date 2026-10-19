@@ -1,6 +1,5 @@
 import type { TimeSeriesDataPoint } from '@hominem/rpc/finance';
 import { adjustDateRange, formatMonthYear } from '@hominem/utils/dates';
-import { CHART_COLORS } from '@ponti-studios/ui';
 import { Skeleton } from '@ponti-studios/ui/feedback';
 import { Button } from '@ponti-studios/ui/primitives';
 import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
@@ -162,28 +161,58 @@ export function AnalyticsChartDisplay({
                   data={incomeExpensesChartData}
                   margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
-                  <XAxis dataKey="name" className="text-xs" />
+                  <defs>
+                    <linearGradient id="analytics-income-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--success)" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="var(--success)" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="analytics-expenses-fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.24} />
+                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
+                  />
                   <YAxis
                     className="text-xs"
                     tickFormatter={(value) => formatCurrency(value)}
                     width={80}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
                   />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  <Legend />
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="var(--border-default)"
+                    strokeDasharray="3 5"
+                  />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(Number(value))}
+                    contentStyle={{
+                      backgroundColor: 'var(--popover)',
+                      borderColor: 'var(--border-default)',
+                      color: 'var(--text-primary)',
+                    }}
+                    labelStyle={{ color: 'var(--text-secondary)' }}
+                  />
+                  <Legend wrapperStyle={{ color: 'var(--text-secondary)' }} />
                   <Area
                     type="monotone"
                     dataKey="Income"
-                    stroke={CHART_COLORS.positive}
-                    fillOpacity={0.2}
-                    fill={CHART_COLORS.positive}
+                    stroke="var(--success)"
+                    strokeWidth={2}
+                    fill="url(#analytics-income-fill)"
                   />
                   <Area
                     type="monotone"
                     dataKey="Expenses"
-                    stroke={CHART_COLORS.negative}
-                    fillOpacity={0.2}
-                    fill={CHART_COLORS.negative}
+                    stroke="var(--primary)"
+                    strokeWidth={2}
+                    fill="url(#analytics-expenses-fill)"
                   />
                 </AreaChart>
               ) : (
@@ -191,13 +220,36 @@ export function AnalyticsChartDisplay({
                   data={incomeExpensesChartData}
                   margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
-                  <XAxis dataKey="name" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} width={80} />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                  <Legend />
-                  <Bar dataKey="Income" fill={CHART_COLORS.positive} />
-                  <Bar dataKey="Expenses" fill={CHART_COLORS.negative} />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: 'var(--text-secondary)', fontSize: 12 }}
+                  />
+                  <YAxis
+                    tickFormatter={(value) => formatCurrency(value)}
+                    width={80}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: 'var(--text-secondary)', fontSize: 11 }}
+                  />
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="var(--border-default)"
+                    strokeDasharray="3 5"
+                  />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(Number(value))}
+                    contentStyle={{
+                      backgroundColor: 'var(--popover)',
+                      borderColor: 'var(--border-default)',
+                      color: 'var(--text-primary)',
+                    }}
+                    labelStyle={{ color: 'var(--text-secondary)' }}
+                  />
+                  <Legend wrapperStyle={{ color: 'var(--text-secondary)' }} />
+                  <Bar dataKey="Income" fill="var(--success)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Expenses" fill="var(--primary)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               )}
             </ResponsiveContainer>

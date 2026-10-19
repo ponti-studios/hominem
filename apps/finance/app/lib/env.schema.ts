@@ -6,9 +6,6 @@ export const financeSchema = runtimeSchema.extend({
   HOMINEM_INTERNAL_API_URL: z.url(),
   PUBLIC_APP_URL: z.url(),
   VITE_R2_DOMAIN: z.string().optional(),
-  PLAID_CLIENT_ID: z.string().optional(),
-  PLAID_API_KEY: z.string().optional(),
-  PLAID_ENV: z.enum(['sandbox', 'development', 'production']).default('sandbox'),
 });
 
 export const financeClientSchema = financeSchema.pick({

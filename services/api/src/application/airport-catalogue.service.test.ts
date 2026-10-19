@@ -10,7 +10,7 @@ import {
 } from './airport-catalogue.service';
 
 describe('OurAirports reference refresh', () => {
-  const base = 8_000_000_000_000 + randomInt(1_000_000);
+  const base = 8_000_000_000_000 + randomInt(1_000_000_000);
   const runIds: string[] = [];
   const makeFeed = (changed = false) => {
     const records = Array.from({ length: 1000 }, (_, index) => {

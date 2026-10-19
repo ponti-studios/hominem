@@ -19,9 +19,6 @@ type RawAccountWithTransactions = {
   accountType: AccountWithTransactions['accountType'];
   currentBalance: number | null;
   transactions: AccountWithTransactions['transactions'];
-  institutionName?: string | null | undefined;
-  plaidAccountId?: string | null | undefined;
-  plaidItemId?: string | null | undefined;
 };
 
 function normalizeAccountWithTransactions(
@@ -35,16 +32,6 @@ function normalizeAccountWithTransactions(
     currentBalance: account.currentBalance,
     transactions: account.transactions,
   };
-
-  if (account.institutionName !== undefined) {
-    normalized.institutionName = account.institutionName;
-  }
-  if (account.plaidAccountId !== undefined) {
-    normalized.plaidAccountId = account.plaidAccountId;
-  }
-  if (account.plaidItemId !== undefined) {
-    normalized.plaidItemId = account.plaidItemId;
-  }
 
   return normalized;
 }
@@ -111,7 +98,6 @@ export function useAllAccounts(options?: { initialData?: AccountAllOutput }) {
     error: allAccountsQuery.error,
     refetch: allAccountsQuery.refetch,
     accounts: (result?.accounts ?? []).map(normalizeAccountWithTransactions),
-    connections: result?.connections ?? [],
   };
 }
 

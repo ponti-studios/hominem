@@ -40,10 +40,6 @@ const accountDeleteSchema = z.object({
   id: z.string().uuid(),
 });
 
-const institutionAccountsSchema = z.object({
-  institutionId: z.string(),
-});
-
 async function getAccountBalances(accountIds: string[]): Promise<Map<string, number>> {
   if (accountIds.length === 0) {
     return new Map();
@@ -101,9 +97,6 @@ function normalizeAccountRow(
     userId: string;
     name: string;
     accountType: string;
-    plaidAccountId?: string | null;
-    plaidItemId?: string | null;
-    institutionName?: string | null;
   },
   currentBalance: number,
 ) {
@@ -113,9 +106,6 @@ function normalizeAccountRow(
     name: account.name,
     accountType: account.accountType,
     currentBalance,
-    institutionName: account.institutionName ?? null,
-    plaidAccountId: account.plaidAccountId ? String(account.plaidAccountId) : null,
-    plaidItemId: account.plaidItemId ? String(account.plaidItemId) : null,
   };
 }
 
@@ -128,42 +118,7 @@ function normalizeTransactionRow(transaction: TransactionRow) {
     description: transaction.description ?? null,
     postedOn: String(transaction.postedOn),
     merchantName: transaction.merchantName ?? null,
-  };
-}
-
-function normalizePlaidConnection(
-  connection: {
-    id: string;
-    institutionId: string | null;
-    status: string;
-    createdAt: string | Date;
-    updatedAt: string | Date;
-    lastSyncedAt: string | Date | null;
-  },
-  institution: { name: string; logoUrl: string | null } | undefined,
-  accounts: number,
-): {
-  id: string;
-  institutionId: string;
-  institutionName: string;
-  institutionLogo: string | null;
-  status: 'active' | 'error' | 'disconnected';
-  lastSynced: string;
-  accounts: number;
-} {
-  return {
-    id: String(connection.id),
-    institutionId: connection.institutionId ?? '',
-    institutionName: institution?.name ?? 'Connected institution',
-    institutionLogo: institution?.logoUrl ?? null,
-    status:
-      connection.status === 'error'
-        ? 'error'
-        : connection.status === 'disconnected'
-          ? 'disconnected'
-          : 'active',
-    lastSynced: String(connection.lastSyncedAt ?? connection.updatedAt ?? connection.createdAt),
-    accounts,
+    currencyCode: transaction.currencyCode,
   };
 }
 
@@ -277,87 +232,15 @@ export const accountsRoutes = new Hono<AppContext>()
 
     return c.json({ success: true }, 200);
   })
-  .get('/with-plaid', authMiddleware, async (c) => {
+  .get('/all', authMiddleware, async (c) => {
     const userId = c.get('auth')!.userId;
+
     const accounts = await db
       .selectFrom('app.financeAccounts')
       .selectAll()
       .where('userId', '=', userId)
       .orderBy('createdAt', 'desc')
       .execute();
-
-    const balances = await getAccountBalances(accounts.map((account) => account.id));
-
-    return c.json(
-      accounts.map((account) => ({
-        ...normalizeAccountRow(account, balances.get(account.id) ?? 0),
-        institutionName: null,
-      })),
-      200,
-    );
-  })
-  .get('/connections', authMiddleware, async (c) => {
-    const userId = c.get('auth')!.userId;
-
-    const connections = await db
-      .selectFrom('app.plaidItems')
-      .selectAll()
-      .where('userId', '=', userId)
-      .execute();
-
-    return c.json(connections, 200);
-  })
-  .get(
-    '/institution-accounts',
-    authMiddleware,
-    zValidator('query', institutionAccountsSchema),
-    async (c) => {
-      const userId = c.get('auth')!.userId;
-      const input = c.req.valid('query');
-      const accounts = await db
-        .selectFrom('app.financeAccounts')
-        .selectAll()
-        .where((eb) =>
-          eb.and([eb('userId', '=', userId), eb('institutionId', '=', input.institutionId)]),
-        )
-        .execute();
-
-      const balances = await getAccountBalances(accounts.map((account) => account.id));
-
-      return c.json(
-        accounts.map((account) => ({
-          ...normalizeAccountRow(account, balances.get(account.id) ?? 0),
-          institutionName: null,
-        })),
-        200,
-      );
-    },
-  )
-  .get('/all', authMiddleware, async (c) => {
-    const userId = c.get('auth')!.userId;
-
-    const [accounts, connections, institutions] = await Promise.all([
-      db
-        .selectFrom('app.financeAccounts')
-        .selectAll()
-        .where('userId', '=', userId)
-        .orderBy('createdAt', 'desc')
-        .execute(),
-      db.selectFrom('app.plaidItems').selectAll().where('userId', '=', userId).execute(),
-      db.selectFrom('app.financeInstitutions').select(['id', 'name', 'logoUrl']).execute(),
-    ]);
-
-    const accountsByPlaidItem = new Map<string, number>();
-    for (const account of accounts) {
-      if (account.plaidItemId) {
-        const key = String(account.plaidItemId);
-        accountsByPlaidItem.set(key, (accountsByPlaidItem.get(key) ?? 0) + 1);
-      }
-    }
-
-    const institutionMap = new Map(
-      institutions.map((institution) => [institution.id, institution]),
-    );
     const balances = await getAccountBalances(accounts.map((account) => account.id));
 
     return c.json(
@@ -366,13 +249,6 @@ export const accountsRoutes = new Hono<AppContext>()
           ...normalizeAccountRow(account, balances.get(account.id) ?? 0),
           transactions: [],
         })),
-        connections: connections.map((connection) =>
-          normalizePlaidConnection(
-            connection,
-            connection.institutionId ? institutionMap.get(connection.institutionId) : undefined,
-            accountsByPlaidItem.get(String(connection.id)) ?? 0,
-          ),
-        ),
       },
       200,
     );

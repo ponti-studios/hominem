@@ -31,53 +31,6 @@ export interface ChatFileCleanupQueuePayload {
 
 export type ChatGenerationEffectsQueuePayload = Record<string, never>;
 
-export interface FileStatus {
-  jobId?: string;
-  file: File;
-  status: JobStatus;
-  error?: string;
-  stats?: JobStats;
-}
-
-export interface ImportTransactionsJob extends BaseJob {
-  type: 'import-transactions';
-  fileName: string;
-  planId: string;
-  error?: string;
-  stats: JobStats;
-  startTime: number;
-  endTime?: number;
-}
-
-// shape of the `data` field when we add an import-transactions job to BullMQ
-export interface ImportTransactionsQueuePayload {
-  planId: string;
-  fileName: string;
-  userId: string;
-  status: JobStatus;
-  createdAt: number;
-  type: 'import-transactions';
-}
-
-export interface ImportRequestResponse {
-  success: boolean;
-  jobId: string;
-  fileName: string;
-  status: JobStatus;
-}
-
-export type PreflightStatus = 'ready' | 'confirmed' | 'dismissed' | 'expired';
-
-export interface ImportPreflight {
-  preflightId: string;
-  userId: string;
-  fileName: string;
-  status: PreflightStatus;
-  planId: string;
-  createdAt: number;
-  expiresAt: number;
-}
-
 export interface FileProcessingJob {
   jobId: string;
   userId: string;

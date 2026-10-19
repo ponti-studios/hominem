@@ -45,12 +45,7 @@ export type TransactionData = {
   description: string | null;
   postedOn: string;
   merchantName: string | null;
-};
-
-export type AccountWithPlaidInfo = AccountData & {
-  institutionName?: string | null;
-  plaidAccountId?: string | null;
-  plaidItemId?: string | null;
+  currencyCode?: string;
 };
 
 export type TimeSeriesTrend = {
@@ -95,27 +90,16 @@ export type TimeSeriesStats = {
   count?: number;
 };
 
-export type PlaidConnection = {
-  id: string;
-  institutionId: string;
-  institutionName: string;
-  institutionLogo: string | null;
-  status: 'active' | 'error' | 'disconnected';
-  lastSynced: string;
-  accounts: number;
-};
-
 // ---------------------------------------------------------------------------
 // Accounts
 // ---------------------------------------------------------------------------
 
-export type AccountWithTransactions = AccountWithPlaidInfo & {
+export type AccountWithTransactions = AccountData & {
   transactions: TransactionData[];
 };
 
 export type AccountsAllData = {
   accounts: AccountWithTransactions[];
-  connections: PlaidConnection[];
 };
 
 type _AccountListEndpoint = HonoClient['api']['finance']['accounts']['list']['$get'];
@@ -125,9 +109,6 @@ export type AccountCreateOutput = AccountData;
 export type AccountUpdateOutput = AccountData;
 export type AccountDeleteOutput = { success: true };
 export type AccountAllOutput = AccountsAllData;
-export type AccountsWithPlaidOutput = AccountWithPlaidInfo[];
-export type AccountConnectionsOutput = PlaidConnection[];
-export type AccountInstitutionAccountsOutput = AccountWithPlaidInfo[];
 
 // ---------------------------------------------------------------------------
 // Transactions
@@ -183,12 +164,6 @@ export type CategoriesListOutput = CategoriesListItem[];
 // Analytics
 // ---------------------------------------------------------------------------
 
-export type Merchant = {
-  name: string;
-  totalSpent: number;
-  transactionCount: number;
-};
-
 export type TransactionStats = {
   min: number;
   max: number;
@@ -202,9 +177,10 @@ export type SpendingTimeSeriesOutput = {
   stats?: TimeSeriesStats | null;
 };
 
-export type TopMerchantsOutput = {
-  merchants: Merchant[];
-};
+type _FinanceTopMerchantsEndpoint =
+  HonoClient['api']['finance']['analyze']['top-merchants']['$get'];
+export type TopMerchantsOutput = InferResponseType<_FinanceTopMerchantsEndpoint, 200>;
+export type Merchant = TopMerchantsOutput['merchants'][number];
 
 type _FinanceTagBreakdownEndpoint =
   HonoClient['api']['finance']['analyze']['tag-breakdown']['$get'];
@@ -325,33 +301,6 @@ export type BudgetCalculateOutput = {
 };
 
 export type TransactionCategoryAnalysisOutput = TransactionCategoryAnalysis[];
-
-// ---------------------------------------------------------------------------
-// Plaid
-// ---------------------------------------------------------------------------
-
-export type PlaidCreateLinkTokenOutput = {
-  linkToken: string;
-  expiration: string;
-  requestId: string;
-};
-
-export type PlaidExchangeTokenOutput = {
-  accessToken: string;
-  itemId: string;
-  requestId: string;
-};
-
-export type PlaidSyncItemOutput = {
-  success: boolean;
-  added: number;
-  modified: number;
-  removed: number;
-};
-
-export type PlaidRemoveConnectionOutput = {
-  success: boolean;
-};
 
 // ---------------------------------------------------------------------------
 // Runway

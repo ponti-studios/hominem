@@ -17,46 +17,33 @@
   }
 }
 
-/* App theme overrides — light mode. */
+/* Hominem Finance's black and gold app theme. */
 :root {
-  --background: #fcfcfd;
-  --card: #f9f9fb;
-  --popover: #f0f0f3;
-  --muted: #f9f9fb;
-  --text-primary: #1c2024;
-  --text-secondary: #60646c;
-  --tertiary: #80838d;
-  --primary: #3e63dd;
+  color-scheme: dark;
+  --background: #080807;
+  --card: #11100d;
+  --popover: #191713;
+  --muted: #15130f;
+  --text-primary: #f5f0e5;
+  --text-secondary: #c4baa0;
+  --tertiary: #a3977b;
+  --text-accent: #e8cb81;
+  --primary: #dfc376;
   --destructive: #ce2c31;
   --success: #30a46c;
-  --warning: #ffc53d;
-  --primary-foreground: #ffffff;
+  --warning: #e6c36d;
+  --success-foreground: #11100d;
+  --warning-foreground: #11100d;
+  --primary-foreground: #11100d;
   --destructive-foreground: #ffffff;
-  --text-destructive: #c82c31;
-  --border-default: #cdced6;
-  --focus-ring: #3e63dd;
-}
-
-/* App theme overrides — dark mode. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #111113;
-    --card: #18191b;
-    --popover: #212225;
-    --muted: #18191b;
-    --text-primary: #edeef0;
-    --text-secondary: #b0b4ba;
-    --tertiary: #777b84;
-    --primary: #3e63dd;
-    --destructive: #ce2c31;
-    --success: #30a46c;
-    --warning: #ffc53d;
-    --primary-foreground: #ffffff;
-    --destructive-foreground: #ffffff;
-    --text-destructive: #ff9592;
-    --border-default: #43484e;
-    --focus-ring: #3e63dd;
-  }
+  --text-destructive: #ff9592;
+  --border-default: #403a2d;
+  --focus-ring: #e8cb81;
+  --chart-1: #e8cb81;
+  --chart-2: #b8954e;
+  --chart-3: #f2dda5;
+  --chart-4: #8a713d;
+  --chart-5: #6a604c;
 }
 
 @utility heading-1 {

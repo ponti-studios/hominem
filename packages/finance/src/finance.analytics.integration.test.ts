@@ -98,11 +98,48 @@ describeIntegration('finance analytics integration', () => {
       limit: 2,
     });
     expect(merchantsResult.merchants).toEqual([
-      { name: 'Rail Co', totalSpent: 70, transactionCount: 1 },
-      { name: 'Cafe One', totalSpent: 45, transactionCount: 1 },
+      { name: 'Rail Co', totalSpent: 70, transactionCount: 1, currencyCode: 'USD' },
+      { name: 'Cafe One', totalSpent: 45, transactionCount: 1, currencyCode: 'USD' },
     ]);
     expect(merchantsResult.currencyCode).toBe('USD');
     expect(merchantsResult.warnings).toEqual([]);
+  });
+
+  it('keeps merchant totals separate when transactions use different currencies', async () => {
+    const euroTransaction = await createTransaction({
+      userId: ownerId,
+      accountId,
+      amount: -140.25,
+      description: 'Euro purchase',
+      postedOn: '2026-02-12',
+      merchantName: 'Cafe One',
+    });
+    await db
+      .updateTable('app.financeTransactions')
+      .set({ currencyCode: 'EUR' })
+      .where('id', '=', euroTransaction.id)
+      .execute();
+    await createTransaction({
+      userId: ownerId,
+      accountId,
+      amount: -40,
+      description: 'Dollar purchase',
+      postedOn: '2026-02-13',
+      merchantName: 'Cafe One',
+    });
+
+    const result = await getTopMerchantsByContract({
+      userId: ownerId,
+      dateFrom: '2026-02-01',
+      dateTo: '2026-02-28',
+      limit: 5,
+    });
+
+    expect(result.merchants).toEqual([
+      { name: 'Cafe One', totalSpent: 140.25, transactionCount: 1, currencyCode: 'EUR' },
+      { name: 'Cafe One', totalSpent: 40, transactionCount: 1, currencyCode: 'USD' },
+    ]);
+    expect(result.currencyCode).toBeNull();
   });
 
   it('returns monthly stats and time series from shared analytics dataset', async () => {
@@ -148,5 +185,32 @@ describeIntegration('finance analytics integration', () => {
     expect(series.data[0]?.expenses).toBe(120);
     expect(series.stats?.totalIncome).toBe(3000);
     expect(series.stats?.totalExpenses).toBe(120);
+  });
+
+  it('aggregates every matching transaction before limiting chart buckets', async () => {
+    for (let index = 0; index < 201; index += 1) {
+      await createTransaction({
+        userId: ownerId,
+        accountId,
+        amount: -1,
+        description: `Daily purchase ${index}`,
+        postedOn: '2026-03-15',
+        merchantName: 'Daily Merchant',
+      });
+    }
+
+    const result = await getSpendingTimeSeriesByContract({
+      userId: ownerId,
+      dateFrom: '2026-03-01',
+      dateTo: '2026-03-31',
+      groupBy: 'day',
+      limit: 30,
+      includeStats: true,
+    });
+
+    expect(result.data).toEqual([
+      expect.objectContaining({ date: '2026-03-15', expenses: 201, count: 201 }),
+    ]);
+    expect(result.stats?.totalExpenses).toBe(201);
   });
 });

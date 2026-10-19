@@ -13,12 +13,9 @@ function collectPaths(entries: RouteConfigEntry[]): string[] {
 describe('finance app route config', () => {
   const paths = collectPaths(routes);
 
-  it('registers the scoped job-cancel route', () => {
-    expect(paths).toContain('api/finance/import/jobs/:jobId/cancel');
-  });
-
-  it('does not register an unscoped job-cancel alias', () => {
-    // Matches a 404 test on the old services/api route we replaced.
-    expect(paths).not.toContain('api/finance/import/:jobId/cancel');
+  it('does not register import pages or APIs', () => {
+    expect(paths.some((path) => path === 'import' || path.startsWith('api/finance/import'))).toBe(
+      false,
+    );
   });
 });

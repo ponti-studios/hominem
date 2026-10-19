@@ -240,7 +240,13 @@ describe('confirmOnce', () => {
   function claims() {
     let claimed = false;
     let sent = false;
-    const store = {
+    const store: CreditStore = {
+      ledgerPence: async () => 0,
+      lastAddedPence: async () => 0,
+      hasLedger: async () => false,
+      grantIfRoom: async () => 'has',
+      recordPayment: async () => 'new',
+      paymentFor: async () => null,
       claimConfirmation: async () => {
         if (claimed || sent) return false;
         claimed = true;
@@ -252,7 +258,9 @@ describe('confirmOnce', () => {
       releaseConfirmation: async () => {
         claimed = false;
       },
-    } as unknown as CreditStore;
+      lowNotifiedAt: async () => null,
+      setLowNotified: async () => undefined,
+    };
     return store;
   }
 

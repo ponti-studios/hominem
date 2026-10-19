@@ -117,6 +117,13 @@ export const transactionsRoutes = new Hono<AppContext>()
       dateFrom: input.dateFrom,
       dateTo: input.dateTo,
       text: input.description,
+      ...(input.search && !input.description ? { text: input.search } : {}),
+      ...(input.min !== undefined && Number.isFinite(Number(input.min))
+        ? { amountMin: Number(input.min) }
+        : {}),
+      ...(input.max !== undefined && Number.isFinite(Number(input.max))
+        ? { amountMax: Number(input.max) }
+        : {}),
       tagIds: input.tagIds,
       tagNames: input.tagNames,
       limit: input.limit,
@@ -132,6 +139,7 @@ export const transactionsRoutes = new Hono<AppContext>()
           description: row.description,
           postedOn: row.postedOn,
           merchantName: row.merchantName,
+          currencyCode: row.currencyCode,
         })),
         filteredCount: result.filteredCount,
         totalUserCount: result.totalUserCount,
@@ -180,6 +188,7 @@ export const transactionsRoutes = new Hono<AppContext>()
         description: created.description ?? null,
         postedOn: created.postedOn ? String(created.postedOn) : '',
         merchantName: created.merchantName ?? null,
+        currencyCode: created.currencyCode,
       },
       201,
     );
@@ -238,6 +247,7 @@ export const transactionsRoutes = new Hono<AppContext>()
       description: updated!.description ?? null,
       postedOn: updated!.postedOn ? String(updated!.postedOn) : '',
       merchantName: updated!.merchantName ?? null,
+      currencyCode: updated!.currencyCode,
     });
   })
   .post('/delete', authMiddleware, zValidator('json', transactionDeleteSchema), async (c) => {

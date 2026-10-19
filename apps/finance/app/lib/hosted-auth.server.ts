@@ -3,7 +3,7 @@ import { buildHostedLoginUrl } from '@ponti-studios/auth/shared/redirect-policy'
 import { serverEnv } from './env.server';
 
 const financeAuthConfig = {
-  allowedPrefixes: ['/finance', '/import', '/accounts', '/analytics', '/account', '/settings'],
+  allowedPrefixes: ['/finance', '/accounts', '/analytics', '/account', '/settings'],
   fallback: '/finance',
 } as const;
 

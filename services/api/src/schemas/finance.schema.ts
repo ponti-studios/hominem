@@ -377,6 +377,7 @@ export const financeTopMerchantsOutputSchema = z.object({
       name: z.string(),
       totalSpent: z.number(),
       transactionCount: z.number().int().min(0),
+      currencyCode: z.string(),
     }),
   ),
   count: z.number().int().min(0),

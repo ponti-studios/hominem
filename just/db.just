@@ -54,6 +54,11 @@ backup:
     PGPASSWORD=postgres pg_dump -h localhost -p 5434 -U postgres -d hominem -f ~/.hominem/hominem_dev_"${ts}".sql
     echo "Backup saved to ~/.hominem/hominem_dev_${ts}.sql"
 
+seed-finance:
+    #!/usr/bin/env bash
+    DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@127.0.0.1:5434/hominem}" \
+      pnpm --filter @hominem/api exec tsx scripts/seed-finance-demo.ts
+
 codegen:
     #!/usr/bin/env bash
     [[ -n "${DATABASE_URL:-}" ]] || { echo 'error: DATABASE_URL must be set' >&2; exit 1; }
