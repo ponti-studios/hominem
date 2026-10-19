@@ -13,10 +13,6 @@ function createQueue(name: string): Queue {
   return new BullQueue(name, { connection: redis, defaultJobOptions: DEFAULT_JOB_OPTIONS });
 }
 
-export const plaidSyncQueue = createQueue(QUEUE_NAMES.PLAID_SYNC);
-
-export const placePhotoEnrichQueue = createQueue(QUEUE_NAMES.PLACE_PHOTO_ENRICH);
-
 export const fileProcessingQueue = createQueue(QUEUE_NAMES.FILE_PROCESSING);
 
 export const embeddingQueue = createQueue(QUEUE_NAMES.EMBEDDING_GENERATION);

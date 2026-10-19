@@ -1,9 +1,6 @@
 import type { JobsOptions } from 'bullmq';
 
 export const QUEUE_NAMES = {
-  GOOGLE_CALENDAR_SYNC: 'google-calendar-sync',
-  PLAID_SYNC: 'plaid-sync',
-  PLACE_PHOTO_ENRICH: 'place-photo-enrich',
   FILE_PROCESSING: 'file-processing',
   EMBEDDING_GENERATION: 'embedding-generation',
   RESUME_ANALYSIS: 'resume-analysis',
