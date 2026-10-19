@@ -1,10 +1,12 @@
 import { logger } from '@hominem/telemetry';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
+import { streamSSE } from 'hono/streaming';
 import { z } from 'zod';
 
 import { creditFor } from '../../application/credit';
 import { sendLowCreditEmail } from '../../application/credit-email';
+import { subscribeCreditEvents } from '../../application/credit-events';
 import { creditDeps, personInCreditMode } from '../../application/credit.runtime';
 import { devBase } from '../../application/credit.runtime';
 import { createOpenRouterKeys, OpenRouterKeysError } from '../../application/openrouter-keys';
@@ -98,6 +100,43 @@ export const credentialsRoutes = new Hono<AppContext>()
       }
       throw error;
     }
+  })
+  // Tells the app, while it is open, that their credit changed (a top-up settled), so the balance
+  // updates without anyone opening a page. It sends the current credit first, so a reconnect catches
+  // up, then one event per change, and a comment every 25 seconds to keep the connection open. Only a
+  // person in credit mode has anything to hear.
+  .get('/events', async (c) => {
+    const auth = c.get('auth')!;
+    const deps = await credentialDeps(auth.user);
+    if (!deps?.credit) return c.json({ error: 'not_found' as const }, 404);
+    const credit = deps.credit;
+    c.header('X-Accel-Buffering', 'no');
+    return streamSSE(c, async (stream) => {
+      // One send at a time, in order, so two quick events cannot cross.
+      let sending: Promise<void> = Promise.resolve();
+      const send = (outcome: 'current' | 'credited' | 'not_charged') => {
+        sending = sending
+          .then(async () => {
+            const reading = await creditFor(credit, auth.userId);
+            await stream.writeSSE({
+              event: 'credit',
+              data: JSON.stringify({ outcome, credit: reading }),
+            });
+          })
+          .catch((error: unknown) => {
+            logger.error('credit_event_send_failed', {
+              error: error instanceof Error ? error.message : String(error),
+            });
+          });
+      };
+      const unsubscribe = subscribeCreditEvents(auth.userId, send);
+      stream.onAbort(unsubscribe);
+      send('current');
+      while (!stream.aborted) {
+        await stream.sleep(25_000);
+        if (!stream.aborted) await stream.write(': keep-alive\n\n');
+      }
+    });
   })
   .delete('/:deviceId', zValidator('param', z.object({ deviceId: deviceIdSchema })), async (c) => {
     const deps = await credentialDeps();

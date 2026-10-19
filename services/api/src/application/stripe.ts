@@ -28,19 +28,43 @@ export interface CheckoutInput {
   cancelUrl: string;
 }
 
-export interface PaymentCountries {
+/** What the top-up rules need to know about a payment: whether the money is only held, and where the card and address are. */
+export interface PaymentFacts {
+  /** `requires_capture` while the money is held, `succeeded` once taken, `canceled` once released. */
+  status: string;
   cardCountry: string | null;
   billingCountry: string | null;
 }
 
+/** A completed Checkout Session, as far as the top-up rules read it. */
+export const checkoutSessionSchema = z.object({
+  id: z.string().min(1),
+  payment_status: z.string(),
+  payment_intent: z.string().nullable(),
+  currency: z.string().nullable(),
+  amount_total: z.number().int().nullable(),
+  metadata: z.record(z.string(), z.string()).nullable(),
+  /** Unix seconds; present on Stripe's own objects. */
+  created: z.number().int().optional(),
+});
+export type CheckoutSession = z.infer<typeof checkoutSessionSchema>;
+
 export interface StripeClient {
   createCheckoutSession(input: CheckoutInput): Promise<{ id: string; url: string }>;
-  paymentCountries(paymentIntentId: string): Promise<PaymentCountries>;
+  paymentFacts(paymentIntentId: string): Promise<PaymentFacts>;
+  /** Takes the money from a held payment. */
+  capture(paymentIntentId: string): Promise<void>;
+  /** Releases a held payment: nothing is charged and Stripe takes no fee. */
+  cancel(paymentIntentId: string): Promise<void>;
+  /** Refunds a payment that was already taken. */
   refund(paymentIntentId: string): Promise<void>;
+  /** Checkouts completed since a time, newest first, for finding payments a webhook never settled. */
+  completedSessions(sinceUnix: number): Promise<CheckoutSession[]>;
 }
 
 const sessionSchema = z.object({ id: z.string().min(1), url: z.string().url() });
 const intentSchema = z.object({
+  status: z.string(),
   latest_charge: z
     .object({
       billing_details: z.object({
@@ -86,6 +110,9 @@ export function createStripeClient(
         'line_items[0][price_data][currency]': 'gbp',
         'line_items[0][price_data][unit_amount]': String(input.amountPence),
         'line_items[0][price_data][product_data][name]': 'Thames credit',
+        // Only a card can be held and then released or taken, which the UK-only rule relies on.
+        'payment_method_types[0]': 'card',
+        'payment_intent_data[capture_method]': 'manual',
         billing_address_collection: 'required',
         'custom_text[submit][message]':
           'You asked for your credit to be added as soon as you pay. Once it is added, you lose your 14-day right to cancel.',
@@ -103,7 +130,7 @@ export function createStripeClient(
       );
     },
 
-    async paymentCountries(paymentIntentId) {
+    async paymentFacts(paymentIntentId) {
       const intent = intentSchema.parse(
         await call(
           'read payment',
@@ -113,9 +140,41 @@ export function createStripeClient(
       );
       const charge = intent.latest_charge;
       return {
+        status: intent.status,
         cardCountry: charge?.payment_method_details.card?.country ?? null,
         billingCountry: charge?.billing_details.address?.country ?? null,
       };
+    },
+
+    async capture(paymentIntentId) {
+      await call(
+        'capture',
+        'POST',
+        `/payment_intents/${encodeURIComponent(paymentIntentId)}/capture`,
+        new URLSearchParams(),
+      );
+    },
+
+    async cancel(paymentIntentId) {
+      await call(
+        'cancel',
+        'POST',
+        `/payment_intents/${encodeURIComponent(paymentIntentId)}/cancel`,
+        new URLSearchParams(),
+      );
+    },
+
+    async completedSessions(sinceUnix) {
+      const list = z
+        .object({ data: z.array(checkoutSessionSchema) })
+        .parse(
+          await call(
+            'list checkouts',
+            'GET',
+            `/checkout/sessions?status=complete&limit=100&created[gte]=${Math.floor(sinceUnix)}`,
+          ),
+        );
+      return list.data;
     },
 
     async refund(paymentIntentId) {
