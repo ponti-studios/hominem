@@ -1,8 +1,8 @@
 import { logger, recordTelemetryException } from '@hominem/telemetry';
 import { Scalar } from '@scalar/hono-api-reference';
 import { Hono, type MiddlewareHandler } from 'hono';
+import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
-import { prettyJSON } from 'hono/pretty-json';
 import { routePath } from 'hono/route';
 
 import { betterAuthServer, createBetterAuthServer } from './auth/better-auth';
@@ -95,7 +95,7 @@ function registerBaseMiddleware(app: Hono<AppEnv>, dependencies: ServerDependenc
   app.use('*', requestIdMiddleware);
   app.use('*', blockMaliciousProbes());
   app.use('*', requestLogger());
-  app.use('*', prettyJSON());
+  app.use('*', compress());
   app.use('*', createCorsMiddleware(dependencies.env));
   app.use('*', securityHeadersMiddleware(dependencies.env));
   app.use('*', createAuthMiddleware(dependencies.auth));
