@@ -47,6 +47,7 @@ describe('speech usage reconciliation worker', () => {
 
     expect(mocks.Worker).toHaveBeenCalledWith('speech-usage-reconciliation', expect.any(Function), {
       connection: {},
+      concurrency: 2,
     });
     expect(mocks.add).toHaveBeenCalledWith(
       'reconcile-speech-usage',

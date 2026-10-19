@@ -4,6 +4,8 @@ import { fileStorageService } from '@hominem/storage';
 import { logger } from '@hominem/telemetry';
 import { Worker } from 'bullmq';
 
+import { getWorkerConcurrency } from './concurrency';
+
 let worker: Worker | null = null;
 
 export function startChatFileCleanupWorker() {
@@ -20,7 +22,7 @@ export function startChatFileCleanupWorker() {
         }),
       );
     },
-    { connection: cache },
+    { connection: cache, concurrency: getWorkerConcurrency(QUEUE_NAMES.CHAT_FILE_CLEANUP) },
   );
 
   worker.on('failed', (job, error) => {

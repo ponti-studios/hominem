@@ -4,6 +4,7 @@ import { logger } from '@hominem/telemetry';
 import { Queue, Worker } from 'bullmq';
 
 import { syncAirportCatalogue } from '../application/airport-catalogue.service';
+import { getWorkerConcurrency } from './concurrency';
 
 let worker: Worker | null = null;
 export async function startAirportCatalogueSyncWorker() {
@@ -16,7 +17,7 @@ export async function startAirportCatalogueSyncWorker() {
   await queue.add('sync', {}, { jobId: 'airport-catalogue-initial-sync' });
   worker = new Worker('airport-catalogue-sync', async () => syncAirportCatalogue(), {
     connection: redis,
-    concurrency: 1,
+    concurrency: getWorkerConcurrency('airport-catalogue-sync'),
   });
   worker.on('completed', (job, result) =>
     logger.info('airport_catalogue_sync_completed', { jobId: job.id, result }),
