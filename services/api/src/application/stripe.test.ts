@@ -77,6 +77,28 @@ describe('the Stripe client', () => {
     expect(calls[0]!.url).toContain('created[gte]=1759999999');
   });
 
+  it('follows pages until Stripe says there are no more', async () => {
+    const page = (id: string, more: boolean) => ({
+      has_more: more,
+      data: [
+        {
+          id,
+          payment_status: 'unpaid',
+          payment_intent: 'pi_1',
+          currency: 'gbp',
+          amount_total: 500,
+          metadata: null,
+        },
+      ],
+    });
+    const { stripe, calls } = client(() =>
+      calls.length === 1 ? page('cs_1', true) : page('cs_2', false),
+    );
+    const sessions = await stripe.completedSessions(1_759_999_999);
+    expect(sessions.map((session) => session.id)).toEqual(['cs_1', 'cs_2']);
+    expect(calls[1]!.url).toContain('starting_after=cs_1');
+  });
+
   it('keeps only Stripe’s short error code when a call fails', async () => {
     const { stripe } = client(
       () => ({ error: { code: 'payment_intent_unexpected_state', message: 'secret detail' } }),

@@ -62,6 +62,9 @@ export interface StripeClient {
   completedSessions(sinceUnix: number): Promise<CheckoutSession[]>;
 }
 
+/** A safety stop on pagination: 2,000 completed Checkouts in the sweep window. */
+const MAX_SESSION_PAGES = 20;
+
 const sessionSchema = z.object({ id: z.string().min(1), url: z.string().url() });
 const intentSchema = z.object({
   status: z.string(),
@@ -165,16 +168,26 @@ export function createStripeClient(
     },
 
     async completedSessions(sinceUnix) {
-      const list = z
-        .object({ data: z.array(checkoutSessionSchema) })
-        .parse(
-          await call(
-            'list checkouts',
-            'GET',
-            `/checkout/sessions?status=complete&limit=100&created[gte]=${Math.floor(sinceUnix)}`,
-          ),
-        );
-      return list.data;
+      const sessions: CheckoutSession[] = [];
+      let after: string | null = null;
+      // Stripe returns at most 100 a page; follow `has_more` so a busy week never hides an older hold.
+      for (let page = 0; page < MAX_SESSION_PAGES; page += 1) {
+        const cursor: string = after ? `&starting_after=${encodeURIComponent(after)}` : '';
+        const list = z
+          .object({ data: z.array(checkoutSessionSchema), has_more: z.boolean().optional() })
+          .parse(
+            await call(
+              'list checkouts',
+              'GET',
+              `/checkout/sessions?status=complete&limit=100&created[gte]=${Math.floor(sinceUnix)}${cursor}`,
+            ),
+          );
+        sessions.push(...list.data);
+        const last = list.data.at(-1);
+        if (!list.has_more || !last) break;
+        after = last.id;
+      }
+      return sessions;
     },
 
     async refund(paymentIntentId) {

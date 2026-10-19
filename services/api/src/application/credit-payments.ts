@@ -148,16 +148,25 @@ export async function settleSession(
   }
 
   let facts = await deps.stripe.paymentFacts(paymentIntent);
-  // Anything but a held or taken payment (still processing, expired and released) is not ours to settle.
-  if (facts.status !== 'requires_capture' && facts.status !== 'succeeded') {
+  // Still processing, or never paid: not ours to settle yet.
+  if (
+    facts.status !== 'requires_capture' &&
+    facts.status !== 'succeeded' &&
+    facts.status !== 'canceled'
+  ) {
     return { kind: 'ignored' };
   }
-  const inUk = facts.cardCountry === 'GB' && facts.billingCountry === 'GB';
+  // A canceled hold is one we released (or that expired): nothing was charged and nothing is credited,
+  // so it is recorded as not charged, which also finishes a release that crashed before it was recorded.
+  const inUk =
+    facts.status !== 'canceled' && facts.cardCountry === 'GB' && facts.billingCountry === 'GB';
 
   if (!inUk) {
     // Release or refund first, then record: a crash in between leaves the session unrecorded, so the
     // retry finds the payment already released (Stripe answers "wrong state") and the record is made.
-    if (facts.status === 'requires_capture') {
+    if (facts.status === 'canceled') {
+      // Already released; only the record is missing.
+    } else if (facts.status === 'requires_capture') {
       await deps.stripe.cancel(paymentIntent).catch((error: unknown) => {
         if (!isStripeCode(error, WRONG_STATE)) throw error;
       });

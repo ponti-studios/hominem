@@ -277,7 +277,7 @@ describe('the webhook', () => {
         completed({ payment_status: 'no_payment_required' }),
       ),
     ).toEqual({ kind: 'ignored' });
-    for (const status of ['processing', 'canceled', 'requires_payment_method']) {
+    for (const status of ['processing', 'requires_payment_method']) {
       const other = world(held({ status }));
       expect(
         await handleStripeEvent({ credit: other.credit, stripe: other.stripe }, completed()),
@@ -287,6 +287,16 @@ describe('the webhook', () => {
       expect(other.state.captures).toEqual([]);
     }
     expect(state.ledger).toBe(0);
+  });
+  it('records a hold that was already released as not charged, so a crash mid-release recovers', async () => {
+    const { credit, stripe, state, payments } = world(held({ status: 'canceled' }));
+    expect(await handleStripeEvent({ credit, stripe }, completed())).toEqual({
+      kind: 'not_charged',
+      userId: 'u1',
+    });
+    expect(state.captures).toEqual([]);
+    expect(state.ledger).toBe(0);
+    expect(payments.size).toBe(1);
   });
   it('rejects a payment that is not what the page asked for', async () => {
     const { credit, stripe, state } = world();
