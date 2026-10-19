@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { pool } from '@hominem/db/core';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -5,6 +7,10 @@ import { creditHistory, deleteAccount, exportAccount } from './account';
 
 const userId = 'd4000000-0000-4000-8000-000000000041';
 const otherId = 'd4000000-0000-4000-8000-000000000042';
+const testTableSuffix = randomUUID().replaceAll('-', '');
+const parentTable = `zz_parent_${testTableSuffix}`;
+const childTable = `zz_child_${testTableSuffix}`;
+const itemsTable = `zz_items_${testTableSuffix}`;
 
 async function clean() {
   for (const id of [userId, otherId]) {
@@ -49,36 +55,41 @@ describe('account download and delete', () => {
   });
 
   it('includes rows that belong to the person only through a parent row', async () => {
-    await pool.query(
-      `CREATE TABLE public.zz_parent (id int PRIMARY KEY, owner text REFERENCES "user"(id) ON DELETE CASCADE)`,
-    );
-    await pool.query(
-      `CREATE TABLE public.zz_child (id int PRIMARY KEY, parent_id int REFERENCES public.zz_parent(id) ON DELETE CASCADE, note text)`,
-    );
     try {
-      await pool.query(`INSERT INTO public.zz_parent VALUES (1, $1), (2, $2)`, [userId, otherId]);
-      await pool.query(`INSERT INTO public.zz_child VALUES (10, 1, 'mine'), (20, 2, 'theirs')`);
+      await pool.query(
+        `CREATE TABLE public.${parentTable} (id int PRIMARY KEY, owner text REFERENCES "user"(id) ON DELETE CASCADE)`,
+      );
+      await pool.query(
+        `CREATE TABLE public.${childTable} (id int PRIMARY KEY, parent_id int REFERENCES public.${parentTable}(id) ON DELETE CASCADE, note text)`,
+      );
+      await pool.query(`INSERT INTO public.${parentTable} VALUES (1, $1), (2, $2)`, [
+        userId,
+        otherId,
+      ]);
+      await pool.query(
+        `INSERT INTO public.${childTable} VALUES (10, 1, 'mine'), (20, 2, 'theirs')`,
+      );
       const result = await exportAccount(userId);
-      expect(result.data['zz_child']).toEqual([{ id: 10, parent_id: 1, note: 'mine' }]);
+      expect(result.data[childTable]).toEqual([{ id: 10, parent_id: 1, note: 'mine' }]);
     } finally {
-      await pool.query(`DROP TABLE public.zz_child`);
-      await pool.query(`DROP TABLE public.zz_parent`);
+      await pool.query(`DROP TABLE IF EXISTS public.${childTable}`);
+      await pool.query(`DROP TABLE IF EXISTS public.${parentTable}`);
     }
   });
 
   it('leaves credentials out and includes rows kept by a plain user_id column', async () => {
-    await pool.query(
-      `CREATE TABLE public.zz_items (id int PRIMARY KEY, user_id text, access_token text)`,
-    );
     try {
-      await pool.query(`INSERT INTO public.zz_items VALUES (1, $1, 'secret'), (2, $2, 'other')`, [
-        userId,
-        otherId,
-      ]);
+      await pool.query(
+        `CREATE TABLE public.${itemsTable} (id int PRIMARY KEY, user_id text, access_token text)`,
+      );
+      await pool.query(
+        `INSERT INTO public.${itemsTable} VALUES (1, $1, 'secret'), (2, $2, 'other')`,
+        [userId, otherId],
+      );
       const result = await exportAccount(userId);
-      expect(result.data['zz_items']).toEqual([{ id: 1, user_id: userId }]);
+      expect(result.data[itemsTable]).toEqual([{ id: 1, user_id: userId }]);
     } finally {
-      await pool.query(`DROP TABLE public.zz_items`);
+      await pool.query(`DROP TABLE IF EXISTS public.${itemsTable}`);
     }
   });
 

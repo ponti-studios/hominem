@@ -16,7 +16,7 @@ export const financeTransactionsImportTool = defineMcpTool(
     name: 'finance_transactions_import',
     title: 'Finance Transactions Import',
     description:
-      'Batch upsert for backfill and daily deltas (max 1000 per call). Mode append adds/updates; mode replace wipes the finance store first. dryRun validates without writing. Per-row rejections never fail the batch.',
+      'Batch upsert for backfills and daily deltas (max 1000 rows per call). Append adds or updates rows and returns row-level rejections. Replace deletes all of this user’s finance transactions before inserting, requires iUnderstand: true, and refuses the whole replace if any row is rejected. dryRun validates and reports the projected result without writing.',
     inputSchema: financeTransactionsImportInputSchema,
     outputSchema: financeTransactionsImportOutputSchema,
     resultCap: 1000,

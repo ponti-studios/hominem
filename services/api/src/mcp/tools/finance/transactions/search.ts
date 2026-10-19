@@ -10,8 +10,8 @@ export const financeTransactionSearchTool = defineMcpTool(
     name: 'finance_transaction_search',
     title: 'Finance Transaction Search',
     description:
-      'Search transactions by text in the description or merchant name, with optional date range, account and tag filters. ' +
-      'Includes pending and excluded transactions (flagged), newest first, and pages with offset.',
+      'Search transactions by text across description, merchant, category and account names, with optional date range, account, tag, category-name and transaction-type filters. ' +
+      'Text matching is case-insensitive and fuzzy. Includes pending and excluded transactions (flagged), newest posted date first, and pages with offset.',
     inputSchema: financeTransactionSearchInputSchema,
     outputSchema: financeTransactionSearchOutputSchema,
     readOnly: true,

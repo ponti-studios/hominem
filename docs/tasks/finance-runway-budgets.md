@@ -1,7 +1,7 @@
 ---
 title: 'Per-user runway budget caps'
 status: 'Proposed'
-priority: 'low'
+priority: 'high'
 labels: [finance]
 depends_on: []
 estimated_size: 'S'
@@ -9,33 +9,34 @@ estimated_size: 'S'
 
 ## Outcome
 
-The live ledger runway in Florin shows a real variable allowance
-instead of $0: users configure monthly category caps once, and
-`computeLedgerRunway` converts them to the weekly allowance every call.
+The live ledger runway uses saved, per-user monthly category caps and a
+user-selected forecast currency. Matching-currency balances, recurring
+debits, and caps feed the forecast; excluded currencies are disclosed.
 
 ## Scope
 
-In scope: a home for per-user runway assumptions (monthly category
-caps; optionally liquid types, lookback, and projection windows —
-mirrors the retired `runway-assumptions.json`), threading them into
-the runway page's loader call (the service already takes them as
-args), and a minimal edit UI.
-Out of scope: changing the projection math, touching the manual
-what-if calculator on the same page.
+In scope: persisted per-user monthly category caps and forecast currency,
+management controls on the Runway page, and Analytics budget totals based on
+saved caps. Also fix the separate manual scenario and affordability math/API
+contracts so all displayed outcomes follow their inputs.
 
 ## Work sequence
 
-| ID    | Work item                          | Owner boundary              | Depends on | Validation / artifact | Done when                                                    |
-| ----- | ---------------------------------- | --------------------------- | ---------- | --------------------- | ------------------------------------------------------------ |
-| W-001 | Choose the settings home           | Finance product             | —          | recorded decision     | The home is explicit and consistent with the splits decision |
-| W-002 | Thread caps into the runway loader | `apps/finance` runway route | W-001      | route tests           | A configured cap changes the displayed allowance             |
-| W-003 | Minimal edit UI                    | `apps/finance`              | W-002      | component tests       | Caps can be added, changed, and removed                      |
+| ID    | Work item                                         | Owner boundary                    | Depends on   | Validation / artifact  | Done when                                                    |
+| ----- | ------------------------------------------------- | --------------------------------- | ------------ | ---------------------- | ------------------------------------------------------------ |
+| W-001 | Persist user-scoped currency and caps             | `packages/db`, `packages/finance` | —            | migration and DB tests | Users can only read and mutate their own settings            |
+| W-002 | Filter live forecast by selected currency         | `packages/finance`                | W-001        | DB-backed tests        | Balances, recurring debits, and caps use one currency        |
+| W-003 | Add Runway settings controls and Analytics totals | `apps/finance`                    | W-001, W-002 | UI tests               | Currency and caps persist; budget summary uses saved caps    |
+| W-004 | Repair manual scenario calculation and JSON API   | finance packages/API/app          | —            | unit/API/UI tests      | Purchases affect projection, depletion, end date, and danger |
+| W-005 | Repair affordability JSON API and UI states       | finance packages/API/app          | —            | unit/API/UI tests      | Finite inputs and unbounded/depleted states render safely    |
 
 ## Acceptance criteria
 
-- [ ] AC-001: With no caps configured, the page keeps showing $0 allowance with its current note.
-- [ ] AC-002: A configured cap flows into the weekly allowance at the documented divisor.
-- [ ] AC-003: App gates for the touched areas stay green.
+- [ ] AC-001: Live forecast sums only the selected currency and warns about currencies excluded.
+- [ ] AC-002: User-owned monthly caps affect Runway and Analytics summaries.
+- [ ] AC-003: Manual purchases affect all scenario results using calendar-month buckets over 12 months.
+- [ ] AC-004: Affordability handles zero expenses, depleted balances, and unbounded runway safely.
+- [ ] AC-005: Full gates and authenticated browser verification pass.
 
 ## Exit gate
 

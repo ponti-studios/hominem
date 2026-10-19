@@ -142,10 +142,9 @@ describe('finance_account_summary', () => {
     expect(result.accounts?.[0]).toMatchObject({ accountId: savingsId, transactionCount: 1 });
   });
 
-  it("never reports another user's account", async () => {
-    const result = content(
-      await callTool(otherUserId, 'finance_account_summary', { accountId: checkingId }),
-    );
-    expect(result.accounts).toHaveLength(0);
+  it("returns not-found for another user's account", async () => {
+    await expect(
+      callTool(otherUserId, 'finance_account_summary', { accountId: checkingId }),
+    ).rejects.toThrow('Account not found');
   });
 });

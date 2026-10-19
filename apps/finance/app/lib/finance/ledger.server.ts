@@ -1,6 +1,10 @@
 import {
   computeLedgerRunway,
   findTransferPairs,
+  getRunwaySettings,
+  removeRunwayBudget,
+  saveRunwayBudget,
+  saveRunwayCurrency,
   getAccountLedgerBreakdown,
   getReconciliationStaleness,
   getValidationGates,
@@ -36,11 +40,20 @@ export function postLedgerTrueUp(input: {
   return postReconciliationAdjustment(input);
 }
 
-export function getLiveRunway(userId: string) {
-  // No per-user budget settings home yet (merge OPEN-002), so the variable
-  // allowance is zero until monthlyBudgets are configured somewhere.
-  return computeLedgerRunway({ userId, monthlyBudgets: [] });
+export async function getLiveRunway(userId: string) {
+  const settings = await getRunwaySettings(userId);
+  return computeLedgerRunway({
+    userId,
+    currencyCode: settings.currencyCode,
+    monthlyBudgets: settings.budgets.map(({ category, amount, currencyCode }) => ({
+      category,
+      amount,
+      currencyCode,
+    })),
+  });
 }
+
+export { getRunwaySettings, removeRunwayBudget, saveRunwayBudget, saveRunwayCurrency };
 
 export function getLedgerTransferPairs(
   userId: string,

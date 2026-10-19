@@ -554,6 +554,22 @@ export interface AppFinanceInstitutions {
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
+export interface AppFinanceMonthlyBudgets {
+  categoryId: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  currencyCode: string;
+  id: Generated<string>;
+  monthlyAmount: Numeric;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
+export interface AppFinanceRunwayPreferences {
+  currencyCode: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
 export interface AppFinanceTransactions {
   accountId: string;
   amount: Numeric;
@@ -1673,6 +1689,8 @@ export interface DB {
   'app.financeAccounts': AppFinanceAccounts;
   'app.financeCategories': AppFinanceCategories;
   'app.financeInstitutions': AppFinanceInstitutions;
+  'app.financeMonthlyBudgets': AppFinanceMonthlyBudgets;
+  'app.financeRunwayPreferences': AppFinanceRunwayPreferences;
   'app.financeTransactions': AppFinanceTransactions;
   'app.healthActivities': AppHealthActivities;
   'app.healthObservations': AppHealthObservations;

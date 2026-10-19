@@ -47,6 +47,8 @@ export default function AffordabilityPage() {
     });
   };
 
+  const clearResult = () => affordabilityMutation.reset();
+
   const result = affordabilityMutation.data;
   const verdict = useMemo(() => (result ? VERDICT_COPY[result.verdict] : null), [result]);
 
@@ -70,7 +72,10 @@ export default function AffordabilityPage() {
                 type="number"
                 id={purchaseAmountId}
                 value={purchaseAmount}
-                onChange={(e) => setPurchaseAmount(Number(e.target.value))}
+                onChange={(e) => {
+                  clearResult();
+                  setPurchaseAmount(Number(e.target.value));
+                }}
               />
             </div>
             <div>
@@ -79,7 +84,10 @@ export default function AffordabilityPage() {
                 type="number"
                 id={currentBalanceId}
                 value={currentBalance}
-                onChange={(e) => setCurrentBalance(Number(e.target.value))}
+                onChange={(e) => {
+                  clearResult();
+                  setCurrentBalance(Number(e.target.value));
+                }}
               />
             </div>
             <div>
@@ -88,7 +96,10 @@ export default function AffordabilityPage() {
                 type="number"
                 id={monthlyIncomeId}
                 value={monthlyIncome}
-                onChange={(e) => setMonthlyIncome(Number(e.target.value))}
+                onChange={(e) => {
+                  clearResult();
+                  setMonthlyIncome(Number(e.target.value));
+                }}
               />
             </div>
             <div>
@@ -97,7 +108,10 @@ export default function AffordabilityPage() {
                 type="number"
                 id={monthlyExpensesId}
                 value={monthlyExpenses}
-                onChange={(e) => setMonthlyExpenses(Number(e.target.value))}
+                onChange={(e) => {
+                  clearResult();
+                  setMonthlyExpenses(Number(e.target.value));
+                }}
               />
             </div>
             <div>
@@ -109,15 +123,22 @@ export default function AffordabilityPage() {
                 id={emergencyFundTargetId}
                 placeholder="Defaults to 3x monthly expenses"
                 value={emergencyFundTarget}
-                onChange={(e) =>
-                  setEmergencyFundTarget(e.target.value === '' ? '' : Number(e.target.value))
-                }
+                onChange={(e) => {
+                  clearResult();
+                  setEmergencyFundTarget(e.target.value === '' ? '' : Number(e.target.value));
+                }}
               />
             </div>
           </div>
           <Button onClick={handleCheck} disabled={!canCheck || affordabilityMutation.isPending}>
             {affordabilityMutation.isPending ? 'Checking...' : 'Check affordability'}
           </Button>
+          {affordabilityMutation.isError && (
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              {affordabilityMutation.error.message ||
+                'Unable to check affordability. Please try again.'}
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -143,16 +164,16 @@ export default function AffordabilityPage() {
               <div>
                 <p className="text-sm text-muted-foreground">% of monthly income</p>
                 <p className="text-xl font-bold">
-                  {result.percentOfMonthlyIncome === Number.POSITIVE_INFINITY
-                    ? '∞'
+                  {result.percentOfMonthlyIncome === null
+                    ? 'N/A'
                     : `${result.percentOfMonthlyIncome.toFixed(0)}%`}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Runway after purchase</p>
                 <p className="text-xl font-bold">
-                  {result.monthsOfRunwayAfterPurchase === Number.POSITIVE_INFINITY
-                    ? '∞'
+                  {result.monthsOfRunwayAfterPurchase === null
+                    ? 'Unbounded'
                     : `${result.monthsOfRunwayAfterPurchase.toFixed(1)} mo`}
                 </p>
               </div>

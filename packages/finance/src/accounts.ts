@@ -332,6 +332,39 @@ export async function deleteAccount(accountId: string, userId?: string): Promise
   return getAffectedRows(result) > 0;
 }
 
+export async function deleteEmptyAccount(
+  accountId: string,
+  userId: string,
+): Promise<{ account: { id: string; name: string } | null; transactionCount: number }> {
+  return db.transaction().execute(async (trx) => {
+    const account = await trx
+      .selectFrom('app.financeAccounts')
+      .select(['id', 'name'])
+      .where('id', '=', accountId)
+      .where('userId', '=', userId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!account) return { account: null, transactionCount: 0 };
+
+    const count = await trx
+      .selectFrom('app.financeTransactions')
+      .select((eb) => eb.fn.countAll<number>().as('count'))
+      .where('userId', '=', userId)
+      .where('accountId', '=', accountId)
+      .executeTakeFirst();
+    const transactionCount = Number(count?.count ?? 0);
+    if (transactionCount > 0) return { account: null, transactionCount };
+
+    const deleted = await trx
+      .deleteFrom('app.financeAccounts')
+      .where('id', '=', accountId)
+      .where('userId', '=', userId)
+      .returning(['id', 'name'])
+      .executeTakeFirst();
+    return { account: deleted ?? null, transactionCount: 0 };
+  });
+}
+
 export interface AccountImportSnapshot {
   id: string;
   name: string;

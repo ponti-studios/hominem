@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/prim
 import { Target } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { useBudgetCategories } from '~/lib/hooks/use-budget';
 import { useMonthlyStats } from '~/lib/hooks/use-monthly-stats';
+import { useRunwaySettings } from '~/lib/hooks/use-runway-settings';
 import { formatCurrency } from '~/lib/number.utils';
 
 interface BudgetOverviewProps {
@@ -13,10 +13,10 @@ interface BudgetOverviewProps {
 
 export function BudgetOverview({ selectedMonthYear }: BudgetOverviewProps) {
   const {
-    data: categoriesResult,
+    data: settings,
     isLoading: isLoadingCategories,
     error: errorCategories,
-  } = useBudgetCategories();
+  } = useRunwaySettings();
 
   const {
     stats: statsResult,
@@ -24,27 +24,29 @@ export function BudgetOverview({ selectedMonthYear }: BudgetOverviewProps) {
     error: errorStats,
   } = useMonthlyStats(selectedMonthYear || '');
 
-  const categories = categoriesResult || [];
   const stats = statsResult || null;
 
   const totalBudgeted = useMemo(() => {
-    if (categories.length === 0) {
-      return 0;
-    }
+    return (
+      settings?.budgets
+        .filter((budget) => budget.currencyCode === settings.currencyCode)
+        .reduce((sum, budget) => sum + budget.amount, 0) ?? 0
+    );
+  }, [settings]);
 
-    // skip income categories, we only want spending here
-    return categories
-      .filter((category) => category.type !== 'income')
-      .reduce((sum, category) => {
-        const num = Number(category.averageMonthlyExpense || 0);
-        return sum + (Number.isFinite(num) ? num : 0);
-      }, 0);
-  }, [categories]);
+  const totalActual = useMemo(() => {
+    if (!stats || !settings?.currencyCode) return null;
+    const currencyTotal = stats.currencyBreakdown.find(
+      (entry) => entry.currencyCode === settings.currencyCode,
+    );
+    return (
+      currencyTotal?.expenses ??
+      (stats.currencyCode === settings.currencyCode ? stats.expenses : null)
+    );
+  }, [settings, stats]);
 
-  const totalActual = useMemo(() => stats?.totalExpenses || 0, [stats]);
-
-  const variance = totalBudgeted - totalActual;
-  const isOverBudget = totalActual > totalBudgeted;
+  const variance = totalActual === null ? null : totalBudgeted - totalActual;
+  const isOverBudget = variance !== null && variance < 0;
 
   if (isLoadingCategories || isLoadingStats) {
     return (
@@ -74,12 +76,14 @@ export function BudgetOverview({ selectedMonthYear }: BudgetOverviewProps) {
     );
   }
 
-  if (!categories || categories.length === 0) {
+  if (!settings || settings.budgets.length === 0) {
     return (
       <Card>
         <CardContent className="text-center py-6">
           <h3 className="text-sm font-semibold text-foreground mb-1">No Budget Categories</h3>
-          <p className="text-xs text-muted-foreground">Add budget categories to view data.</p>
+          <p className="text-xs text-muted-foreground">
+            Set monthly category caps on the Runway page.
+          </p>
         </CardContent>
       </Card>
     );
@@ -103,7 +107,7 @@ export function BudgetOverview({ selectedMonthYear }: BudgetOverviewProps) {
       <CardHeader>
         <CardTitle>
           <Target className="size-4" />
-          Budget Performance
+          Budget Performance {settings?.currencyCode ? `· ${settings.currencyCode}` : ''}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -111,19 +115,27 @@ export function BudgetOverview({ selectedMonthYear }: BudgetOverviewProps) {
           <div className="flex items-center justify-between">
             <div className="text-xs text-muted-foreground">Budgeted</div>
             <div className="text-lg font-semibold text-foreground">
-              {formatCurrency(totalBudgeted)}
+              {formatCurrency(totalBudgeted, settings?.currencyCode ?? 'USD')}
             </div>
           </div>
           <div className="flex items-center justify-between">
             <div className="text-xs text-muted-foreground">Actual</div>
-            <div className="text-lg font-semibold">{formatCurrency(totalActual)}</div>
+            <div className="text-lg font-semibold">
+              {totalActual === null
+                ? 'No matching-currency activity'
+                : formatCurrency(totalActual, settings?.currencyCode ?? 'USD')}
+            </div>
           </div>
 
           <div className="flex items-center justify-between">
             <div className="text-xs text-muted-foreground">
-              {isOverBudget ? 'Over Budget' : 'Remaining'}
+              {variance === null ? 'Status' : isOverBudget ? 'Over Budget' : 'Remaining'}
             </div>
-            <div className="text-lg font-semibold">{formatCurrency(Math.abs(variance))}</div>
+            <div className="text-lg font-semibold">
+              {variance === null
+                ? '—'
+                : formatCurrency(Math.abs(variance), settings?.currencyCode ?? 'USD')}
+            </div>
           </div>
         </div>
       </CardContent>

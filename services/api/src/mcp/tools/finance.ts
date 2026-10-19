@@ -1,8 +1,11 @@
+import { NotFoundError, ValidationError } from '@hominem/db/errors';
 import {
   computeLedgerRunway,
   createOrGetFinanceCategory,
+  deleteUnusedFinanceCategory,
   getFinanceNetWorth,
   getFinanceSpendingByCategory,
+  getRunwaySettings,
   mergeFinanceCategories,
 } from '@hominem/finance-services';
 
@@ -21,6 +24,8 @@ import {
   financeCategoriesOutputSchema,
   financeCategoryCreateInputSchema,
   financeCategoryCreateOutputSchema,
+  financeCategoryDeleteInputSchema,
+  financeCategoryDeleteOutputSchema,
   financeCategoryMergeInputSchema,
   financeCategoryMergeOutputSchema,
   financeMonthlyStatsInputSchema,
@@ -90,7 +95,7 @@ registerTool(
     name: 'finance_spending_by_category',
     title: 'Finance Spending by Category',
     description:
-      'Sum posted, non-excluded, non-transfer spending grouped by category and currency over a date range. Each category row is reported in its own currency; mixed-currency values are never combined. Check truncated and warnings because results may omit categories beyond the requested limit.',
+      'Sum posted, non-excluded, non-transfer spending grouped by category and currency over a date range (defaults to the last 30 days through today). Each category row is reported in its own currency; mixed-currency values are never combined. Check truncated and warnings because results may omit categories beyond the requested limit.',
     inputSchema: financeSpendingByCategoryInputSchema,
     outputSchema: financeSpendingByCategoryOutputSchema,
     readOnly: true,
@@ -270,7 +275,8 @@ registerTool(
     title: 'Finance Runway',
     description:
       'Project weekly cash from liquid accounts (checking, savings, cash) using trailing recurring outflows plus an optional ' +
-      'monthly budget allowance. Uses posted, non-excluded ledger rows. Derived from current data on every call; nothing is stored.',
+      'monthly budget allowance. Uses the user-selected forecast currency and posted, non-excluded ledger rows. ' +
+      'Derived from current data on every call; nothing is stored.',
     inputSchema: financeRunwayInputSchema,
     outputSchema: financeRunwayOutputSchema,
     readOnly: true,
@@ -284,13 +290,30 @@ registerTool(
     },
   },
   async (ownerUserId, input) => {
+    const settings = await getRunwaySettings(ownerUserId);
+    const monthlyBudgets = new Map<
+      string,
+      { category: string; amount: number; currencyCode?: string; note?: string }
+    >(
+      settings.budgets
+        .filter((budget) => budget.currencyCode === settings.currencyCode)
+        .map(({ category, amount, currencyCode }) => [
+          category.toLowerCase(),
+          { category, amount, currencyCode },
+        ]),
+    );
+    for (const budget of input.monthlyBudgets) {
+      monthlyBudgets.set(budget.category.toLowerCase(), {
+        category: budget.category,
+        amount: budget.amountCents / 100,
+        ...(settings.currencyCode ? { currencyCode: settings.currencyCode } : {}),
+        ...(budget.note ? { note: budget.note } : {}),
+      });
+    }
     const runway = await computeLedgerRunway({
       userId: ownerUserId,
-      monthlyBudgets: input.monthlyBudgets.map((b) => ({
-        category: b.category,
-        amount: b.amountCents / 100,
-        ...(b.note ? { note: b.note } : {}),
-      })),
+      currencyCode: settings.currencyCode,
+      monthlyBudgets: [...monthlyBudgets.values()],
       projectionWeeks: input.projectionWeeks,
       ...(input.asOf ? { asOf: input.asOf } : {}),
     });
@@ -408,10 +431,28 @@ registerTool(
     name: 'finance_category_merge',
     title: 'Finance Category Merge',
     description:
-      'Reassign every transaction from one category to another. The emptied category stays in place (budgets reference categories) but unused. Uncategorized may be a target, never a source. dryRun counts what would move without writing.',
+      'Reassign every transaction from one category to another, then permanently remove the source. Uncategorized may be a target, never a source. dryRun counts what would move without writing.',
     inputSchema: financeCategoryMergeInputSchema,
     outputSchema: financeCategoryMergeOutputSchema,
+    destructive: true,
+    requiresConfirmation: true,
     resultCap: 1,
+    preview: async (ownerUserId, input) => {
+      const parsed = financeCategoryMergeInputSchema.safeParse(input);
+      if (!parsed.success) return null;
+      const result = await mergeFinanceCategories(
+        ownerUserId,
+        { from: parsed.data.from, into: parsed.data.into },
+        { dryRun: true },
+      );
+      return result.reason
+        ? null
+        : {
+            from: parsed.data.from,
+            into: result.category?.name ?? parsed.data.into,
+            transactionsToMove: result.transactionsReassigned,
+          };
+    },
   },
   async (ownerUserId, input) => ({
     ...(await mergeFinanceCategories(
@@ -421,6 +462,47 @@ registerTool(
     )),
     dryRun: input.dryRun,
   }),
+);
+
+registerTool(
+  {
+    ...financeWriteTool,
+    name: 'finance_category_delete',
+    title: 'Finance Category Delete',
+    description:
+      'Permanently delete an unused category by name or id. Categories referenced by transactions and Uncategorized cannot be deleted. The MCP server asks for confirmation before deletion.',
+    inputSchema: financeCategoryDeleteInputSchema,
+    outputSchema: financeCategoryDeleteOutputSchema,
+    destructive: true,
+    idempotent: true,
+    requiresConfirmation: true,
+    resultCap: 1,
+    guidance: {
+      whenToUse: 'Removing an unused test or duplicate category permanently.',
+      whenNotToUse: 'Merge a category first if its transactions should be kept.',
+      dependencies: [
+        {
+          tool: 'finance_categories',
+          reason: 'resolve the category by name or id',
+          provides: ['id'],
+        },
+      ],
+    },
+  },
+  async (ownerUserId, input) => {
+    const result = await deleteUnusedFinanceCategory(ownerUserId, input.category);
+    if (result.reason === 'category_in_use') {
+      throw new ValidationError(
+        `category_in_use: ${result.referencingCount} transaction(s) reference this category.`,
+        { reason: result.reason, referencingCount: result.referencingCount },
+      );
+    }
+    if (result.reason === 'category_protected') {
+      throw new ValidationError('category_protected', { reason: result.reason });
+    }
+    if (!result.category) throw new NotFoundError('Category', { reason: 'category_not_found' });
+    return { deleted: result.category };
+  },
 );
 
 // Tags are owner-wide, not finance-only, so these carry both scopes: a finance client must

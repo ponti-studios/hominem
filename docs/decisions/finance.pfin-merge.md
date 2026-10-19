@@ -48,14 +48,22 @@ Deliberately **not** restored, and not to be restored without a named reader:
 (hierarchy lives in `app.tags` instead), integer row IDs, the `UNLINKED`
 placeholder account (unresolvable rows go to the import plan's
 `unresolvedGroups`/`invalidRows` for user mapping instead), and a `pfin` CLI
-binary (functionality is exposed through `apps/finance` app routes, not a
+binary (the reusable pipeline remains in the finance package, not a
 package-level command-line tool).
 
+The Finance browser import destination and its scoped API/WebSocket routes
+were removed by explicit product direction. Shared import parsing and the
+finance MCP import tool remain available to their existing internal callers,
+but the Finance app does not expose an import flow. Restoring a browser import
+destination requires explicit product approval and a reviewed replacement
+flow.
+
 Deferred by design, not forgotten: a settings UI for per-user description-
-split rules (`docs/tasks/finance-copilot-description-splits.md`) and for
-runway budget caps (`docs/tasks/finance-runway-budgets.md`) — both ship only
-when a real collision or budget need appears, rather than pre-building UI
-around one user's data.
+split rules (`docs/tasks/finance-copilot-description-splits.md`). Runway
+budget caps are now an approved need: persist per-user monthly caps by
+category and currency, expose their controls on Runway, and use them in
+Analytics (`docs/tasks/finance-runway-budgets.md`). Forecasts remain
+single-currency and disclose excluded currencies; conversion is out of scope.
 
 ## Consequences
 
