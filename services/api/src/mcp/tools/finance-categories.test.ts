@@ -12,9 +12,11 @@ type CategoryResult = {
   id?: string | null;
   name?: string;
   created?: boolean;
+  deleted?: { id: string; name: string };
   dryRun?: boolean;
   transactionsReassigned?: number;
   category?: { id: string; name: string } | null;
+  removedCategory?: { id: string; name: string } | null;
   reason?: string | null;
 };
 
@@ -87,7 +89,7 @@ describe('finance_category_create', () => {
 });
 
 describe('finance_category_merge', () => {
-  it('reassigns transactions and leaves the emptied category in place', async () => {
+  it('reassigns transactions and removes the source category', async () => {
     const source = content(
       await callTool(userId, 'finance_category_create', { name: 'Merge Source' }),
     );
@@ -140,6 +142,7 @@ describe('finance_category_merge', () => {
     expect(result.reason).toBeNull();
     expect(result.transactionsReassigned).toBe(2);
     expect(result.category).toEqual({ id: target.id, name: 'Merge Target' });
+    expect(result.removedCategory).toEqual({ id: source.id, name: 'Merge Source' });
 
     const remaining = await db
       .selectFrom('app.financeTransactions')
@@ -152,8 +155,7 @@ describe('finance_category_merge', () => {
       .execute();
     expect(remaining.every((row) => row.categoryId === target.id)).toBe(true);
 
-    // The emptied category is kept (budgets reference categories), just unused.
-    expect(await categoryByName(userId, 'Merge Source')).toBeDefined();
+    expect(await categoryByName(userId, 'Merge Source')).toBeUndefined();
   });
 
   it('dryRun counts what would move without writing', async () => {
@@ -189,6 +191,7 @@ describe('finance_category_merge', () => {
     );
     expect(result.transactionsReassigned).toBe(1);
     expect(result.dryRun).toBe(true);
+    expect(result.removedCategory).toBeNull();
 
     const row = await db
       .selectFrom('app.financeTransactions')
@@ -196,6 +199,86 @@ describe('finance_category_merge', () => {
       .where('id', '=', 'f20000e2-0000-4000-8000-000000000003')
       .executeTakeFirstOrThrow();
     expect(row.categoryId).toBe(source.id);
+  });
+
+  it('moves both transactions to Uncategorized and removes the source', async () => {
+    const source = content(
+      await callTool(userId, 'finance_category_create', { name: 'Source For Uncategorized' }),
+    );
+    const target = content(
+      await callTool(userId, 'finance_category_create', { name: 'Uncategorized' }),
+    );
+    const before = await db
+      .selectFrom('app.financeCategories')
+      .select('id')
+      .where('userId', '=', userId)
+      .execute();
+    await db
+      .insertInto('app.financeTransactions')
+      .values([
+        {
+          id: 'f20000e2-0000-4000-8000-000000000013',
+          userId,
+          accountId: checkingId,
+          postedOn: '2026-06-13',
+          description: 'Uncategorized move one',
+          amount: -100,
+          currencyCode: 'USD',
+          transactionType: 'debit',
+          pending: false,
+          categoryId: source.id!,
+          excluded: false,
+          externalId: 'cat-uncategorized-ext-1',
+          providerPayload: {},
+        },
+        {
+          id: 'f20000e2-0000-4000-8000-000000000014',
+          userId,
+          accountId: checkingId,
+          postedOn: '2026-06-14',
+          description: 'Uncategorized move two',
+          amount: -200,
+          currencyCode: 'USD',
+          transactionType: 'debit',
+          pending: false,
+          categoryId: source.id!,
+          excluded: false,
+          externalId: 'cat-uncategorized-ext-2',
+          providerPayload: {},
+        },
+      ])
+      .execute();
+
+    const merged = content(
+      await callTool(userId, 'finance_category_merge', {
+        from: source.id!,
+        into: target.id!,
+      }),
+    );
+    expect(merged).toMatchObject({
+      transactionsReassigned: 2,
+      category: { id: target.id, name: 'Uncategorized' },
+      removedCategory: { id: source.id, name: 'Source For Uncategorized' },
+      reason: null,
+    });
+    const rows = await db
+      .selectFrom('app.financeTransactions')
+      .select('categoryId')
+      .where('userId', '=', userId)
+      .where('id', 'in', [
+        'f20000e2-0000-4000-8000-000000000013',
+        'f20000e2-0000-4000-8000-000000000014',
+      ])
+      .execute();
+    expect(rows).toHaveLength(2);
+    expect(rows.every((row) => row.categoryId === target.id)).toBe(true);
+    expect(await categoryByName(userId, 'Source For Uncategorized')).toBeUndefined();
+    const after = await db
+      .selectFrom('app.financeCategories')
+      .select('id')
+      .where('userId', '=', userId)
+      .execute();
+    expect(after).toHaveLength(before.length - 1);
   });
 
   it('may merge into Uncategorized but never out of it', async () => {
@@ -225,5 +308,100 @@ describe('finance_category_merge', () => {
       await callTool(userId, 'finance_category_merge', { from: 'nope', into: 'Uncategorized' }),
     );
     expect(result.reason).toBe('unknown_category');
+  });
+});
+
+describe('finance_category_delete', () => {
+  it('deletes an unused category addressed by id', async () => {
+    const created = content(
+      await callTool(userId, 'finance_category_create', { name: 'Unused To Delete' }),
+    );
+    const before = await db
+      .selectFrom('app.financeCategories')
+      .select('id')
+      .where('userId', '=', userId)
+      .execute();
+
+    const result = content(
+      await callTool(userId, 'finance_category_delete', {
+        category: created.id!,
+        iUnderstand: true,
+      }),
+    );
+    expect(result.deleted).toEqual({ id: created.id, name: 'Unused To Delete' });
+    expect(await categoryByName(userId, 'Unused To Delete')).toBeUndefined();
+
+    const after = await db
+      .selectFrom('app.financeCategories')
+      .select('id')
+      .where('userId', '=', userId)
+      .execute();
+    expect(after).toHaveLength(before.length - 1);
+  });
+
+  it('refuses an in-use category with the exact referencing transaction count', async () => {
+    const created = content(
+      await callTool(userId, 'finance_category_create', { name: 'Category In Use' }),
+    );
+    await db
+      .insertInto('app.financeTransactions')
+      .values([
+        {
+          id: 'f20000e2-0000-4000-8000-000000000011',
+          userId,
+          accountId: checkingId,
+          postedOn: '2026-06-10',
+          description: 'Referenced one',
+          amount: -100,
+          currencyCode: 'USD',
+          transactionType: 'debit',
+          pending: false,
+          categoryId: created.id!,
+          excluded: false,
+          externalId: 'cat-delete-ext-1',
+          providerPayload: {},
+        },
+        {
+          id: 'f20000e2-0000-4000-8000-000000000012',
+          userId,
+          accountId: checkingId,
+          postedOn: '2026-06-11',
+          description: 'Referenced two',
+          amount: -200,
+          currencyCode: 'USD',
+          transactionType: 'debit',
+          pending: false,
+          categoryId: created.id!,
+          excluded: false,
+          externalId: 'cat-delete-ext-2',
+          providerPayload: {},
+        },
+      ])
+      .execute();
+
+    await expect(
+      callTool(userId, 'finance_category_delete', {
+        category: 'Category In Use',
+        iUnderstand: true,
+      }),
+    ).rejects.toThrow('category_in_use: 2 transaction(s)');
+    expect(await categoryByName(userId, 'Category In Use')).toBeDefined();
+  });
+
+  it('protects Uncategorized and hides another owner category as not-found', async () => {
+    await callTool(userId, 'finance_category_create', { name: 'Uncategorized' });
+    await expect(
+      callTool(userId, 'finance_category_delete', {
+        category: 'Uncategorized',
+        iUnderstand: true,
+      }),
+    ).rejects.toThrow('category_protected');
+
+    const other = content(
+      await callTool(otherUserId, 'finance_category_create', { name: 'Other Owner Category' }),
+    );
+    await expect(
+      callTool(userId, 'finance_category_delete', { category: other.id!, iUnderstand: true }),
+    ).rejects.toThrow('Category not found');
   });
 });

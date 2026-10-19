@@ -17,6 +17,7 @@ type Content = {
   accounts?: Array<{ id: string; name: string; lifecycleStatus: string }>;
   received?: number;
   rejected?: unknown[];
+  deleted?: { id: string; name: string };
 };
 
 function content(res: McpToolResult<Content>): Content {
@@ -233,5 +234,85 @@ describe('finance_account_create', () => {
     await expect(
       callTool(userId, 'finance_account_create', { name: '   ', currencyCode: 'USD' }),
     ).rejects.toThrow(/invalid_name/);
+  });
+});
+
+describe('finance_account_delete', () => {
+  it('permanently deletes an empty account and account summary returns not-found', async () => {
+    const created = content(
+      await callTool(userId, 'finance_account_create', {
+        name: 'Empty Account To Delete',
+        currencyCode: 'USD',
+      }),
+    );
+    const id = created.id!;
+
+    const deleted = content(
+      await callTool(userId, 'finance_account_delete', { accountId: id, iUnderstand: true }),
+    );
+    expect(deleted.deleted).toEqual({ id, name: 'Empty Account To Delete' });
+    expect(content(await callTool(userId, 'finance_accounts', {})).accounts).not.toContainEqual(
+      expect.objectContaining({ id }),
+    );
+    await expect(callTool(userId, 'finance_account_summary', { accountId: id })).rejects.toThrow(
+      'Account not found',
+    );
+    await expect(
+      db
+        .selectFrom('app.financeAccounts')
+        .select('id')
+        .where('id', '=', id)
+        .where('userId', '=', userId)
+        .executeTakeFirst(),
+    ).resolves.toBeUndefined();
+  });
+
+  it('refuses non-empty accounts with the exact transaction count and preserves the row', async () => {
+    const created = content(
+      await callTool(userId, 'finance_account_create', {
+        name: 'Non-empty Account',
+        currencyCode: 'USD',
+      }),
+    );
+    const id = created.id!;
+    await callTool(userId, 'finance_transactions_import', {
+      transactions: [
+        {
+          postedOn: '2026-10-18',
+          account: 'Non-empty Account',
+          description: 'Account deletion guard',
+          amountCents: -500,
+          currencyCode: 'USD',
+          externalId: 'account-delete-guard-row',
+        },
+      ],
+    });
+
+    await expect(
+      callTool(userId, 'finance_account_delete', { accountId: id, iUnderstand: true }),
+    ).rejects.toThrow('account_not_empty: 1 transaction(s)');
+    await expect(
+      db
+        .selectFrom('app.financeAccounts')
+        .select('id')
+        .where('id', '=', id)
+        .where('userId', '=', userId)
+        .executeTakeFirst(),
+    ).resolves.toMatchObject({ id });
+  });
+
+  it("treats another user's account as not-found", async () => {
+    const created = content(
+      await callTool(userId, 'finance_account_create', {
+        name: 'Private Empty Account',
+        currencyCode: 'USD',
+      }),
+    );
+    await expect(
+      callTool(otherUserId, 'finance_account_delete', {
+        accountId: created.id,
+        iUnderstand: true,
+      }),
+    ).rejects.toThrow('Account not found');
   });
 });

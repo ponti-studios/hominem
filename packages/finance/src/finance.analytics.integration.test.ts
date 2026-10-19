@@ -27,6 +27,7 @@ async function _hasTaggingTables(): Promise<boolean> {
 
 const nextUserId = createDeterministicIdFactory('finance.analytics.integration');
 const nextTagId = createDeterministicIdFactory('finance.analytics.integration.tag');
+const nextTransactionId = createDeterministicIdFactory('finance.analytics.integration.transaction');
 const describeIntegration = (await isIntegrationDatabaseAvailable()) ? describe : describe.skip;
 
 describeIntegration('finance analytics integration', () => {
@@ -188,16 +189,21 @@ describeIntegration('finance analytics integration', () => {
   });
 
   it('aggregates every matching transaction before limiting chart buckets', async () => {
-    for (let index = 0; index < 201; index += 1) {
-      await createTransaction({
-        userId: ownerId,
-        accountId,
-        amount: -1,
-        description: `Daily purchase ${index}`,
-        postedOn: '2026-03-15',
-        merchantName: 'Daily Merchant',
-      });
-    }
+    await db
+      .insertInto('app.financeTransactions')
+      .values(
+        Array.from({ length: 201 }, (_, index) => ({
+          id: nextTransactionId(),
+          userId: ownerId,
+          accountId,
+          amount: -1,
+          transactionType: 'debit',
+          description: `Daily purchase ${index}`,
+          merchantName: 'Daily Merchant',
+          postedOn: '2026-03-15',
+        })),
+      )
+      .execute();
 
     const result = await getSpendingTimeSeriesByContract({
       userId: ownerId,

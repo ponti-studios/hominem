@@ -52,10 +52,11 @@ binary (functionality is exposed through `apps/finance` app routes, not a
 package-level command-line tool).
 
 Deferred by design, not forgotten: a settings UI for per-user description-
-split rules (`docs/tasks/finance-copilot-description-splits.md`) and for
-runway budget caps (`docs/tasks/finance-runway-budgets.md`) — both ship only
-when a real collision or budget need appears, rather than pre-building UI
-around one user's data.
+split rules (`docs/tasks/finance-copilot-description-splits.md`). Runway
+budget caps are now an approved need: persist per-user monthly caps by
+category and currency, expose their controls on Runway, and use them in
+Analytics (`docs/tasks/finance-runway-budgets.md`). Forecasts remain
+single-currency and disclose excluded currencies; conversion is out of scope.
 
 ## Consequences
 

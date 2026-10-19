@@ -1,3 +1,4 @@
+import { NotFoundError } from '@hominem/db/errors';
 import { getAccountSummaries } from '@hominem/finance-services';
 
 import {
@@ -31,6 +32,7 @@ export const financeAccountSummaryTool = defineMcpTool(
       ...(input.accountId ? { accountId: input.accountId } : {}),
       includeClosed: input.includeClosed,
     });
+    if (input.accountId && summaries.length === 0) throw new NotFoundError('Account');
     const limited = summaries.slice(0, MAX_SUMMARY_ACCOUNTS);
     return {
       accounts: limited.map((summary) => ({

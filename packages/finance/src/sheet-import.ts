@@ -397,6 +397,7 @@ export type FinanceCategoryMergeReason = 'protected_category' | 'unknown_categor
 export interface MergeFinanceCategoriesResult {
   transactionsReassigned: number;
   category: { id: string; name: string } | null;
+  removedCategory: { id: string; name: string } | null;
   reason: FinanceCategoryMergeReason | null;
 }
 
@@ -429,16 +430,33 @@ export async function mergeFinanceCategories(
   options?: { dryRun?: boolean },
 ): Promise<MergeFinanceCategoriesResult> {
   const source = await resolveFinanceCategory(userId, input.from);
-  if (!source) return { transactionsReassigned: 0, category: null, reason: 'unknown_category' };
+  if (!source)
+    return {
+      transactionsReassigned: 0,
+      category: null,
+      removedCategory: null,
+      reason: 'unknown_category',
+    };
   if (source.name.toLowerCase() === UNCATEGORIZED_NAME.toLowerCase()) {
-    return { transactionsReassigned: 0, category: null, reason: 'protected_category' };
+    return {
+      transactionsReassigned: 0,
+      category: null,
+      removedCategory: null,
+      reason: 'protected_category',
+    };
   }
 
   const target = await resolveFinanceCategory(userId, input.into);
-  if (!target) return { transactionsReassigned: 0, category: null, reason: 'unknown_category' };
+  if (!target)
+    return {
+      transactionsReassigned: 0,
+      category: null,
+      removedCategory: null,
+      reason: 'unknown_category',
+    };
 
   if (source.id === target.id) {
-    return { transactionsReassigned: 0, category: target, reason: null };
+    return { transactionsReassigned: 0, category: target, removedCategory: null, reason: null };
   }
 
   if (options?.dryRun) {
@@ -448,21 +466,80 @@ export async function mergeFinanceCategories(
       .where('userId', '=', userId)
       .where('categoryId', '=', source.id)
       .executeTakeFirst();
-    return { transactionsReassigned: Number(row?.count ?? 0), category: target, reason: null };
+    return {
+      transactionsReassigned: Number(row?.count ?? 0),
+      category: target,
+      removedCategory: null,
+      reason: null,
+    };
   }
 
-  const result = await db
-    .updateTable('app.financeTransactions')
-    .set({ categoryId: target.id })
-    .where('userId', '=', userId)
-    .where('categoryId', '=', source.id)
-    .executeTakeFirst();
+  return db.transaction().execute(async (trx) => {
+    const result = await trx
+      .updateTable('app.financeTransactions')
+      .set({ categoryId: target.id })
+      .where('userId', '=', userId)
+      .where('categoryId', '=', source.id)
+      .executeTakeFirst();
+    const deleted = await trx
+      .deleteFrom('app.financeCategories')
+      .where('id', '=', source.id)
+      .where('userId', '=', userId)
+      .returning(['id', 'name'])
+      .executeTakeFirst();
 
-  return {
-    transactionsReassigned: Number(result.numUpdatedRows),
-    category: target,
-    reason: null,
-  };
+    return {
+      transactionsReassigned: Number(result.numUpdatedRows),
+      category: target,
+      removedCategory: deleted ?? null,
+      reason: deleted ? null : 'unknown_category',
+    };
+  });
+}
+
+export async function deleteUnusedFinanceCategory(
+  userId: string,
+  nameOrId: string,
+): Promise<{
+  category: { id: string; name: string } | null;
+  referencingCount: number;
+  reason: 'category_in_use' | 'category_protected' | 'unknown_category' | null;
+}> {
+  const category = await resolveFinanceCategory(userId, nameOrId);
+  if (!category) return { category: null, referencingCount: 0, reason: 'unknown_category' };
+  if (category.name.toLowerCase() === UNCATEGORIZED_NAME.toLowerCase()) {
+    return { category: null, referencingCount: 0, reason: 'category_protected' };
+  }
+
+  return db.transaction().execute(async (trx) => {
+    const locked = await trx
+      .selectFrom('app.financeCategories')
+      .select(['id', 'name'])
+      .where('id', '=', category.id)
+      .where('userId', '=', userId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!locked) return { category: null, referencingCount: 0, reason: 'unknown_category' };
+
+    const references = await trx
+      .selectFrom('app.financeTransactions')
+      .select((eb) => eb.fn.countAll<number>().as('count'))
+      .where('userId', '=', userId)
+      .where('categoryId', '=', category.id)
+      .executeTakeFirst();
+    const referencingCount = Number(references?.count ?? 0);
+    if (referencingCount > 0) {
+      return { category: null, referencingCount, reason: 'category_in_use' };
+    }
+
+    const deleted = await trx
+      .deleteFrom('app.financeCategories')
+      .where('id', '=', category.id)
+      .where('userId', '=', userId)
+      .returning(['id', 'name'])
+      .executeTakeFirst();
+    return { category: deleted ?? null, referencingCount: 0, reason: null };
+  });
 }
 
 export async function listFinanceCategories(

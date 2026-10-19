@@ -267,7 +267,7 @@ export interface TransactionSearchInput {
   accountIds?: string[] | undefined;
   dateFrom?: string | undefined;
   dateTo?: string | undefined;
-  /** Case-insensitive match against description and merchant name. */
+  /** Case-insensitive, fuzzy match against description, merchant, category and account names. */
   text?: string | undefined;
   tagIds?: string[] | undefined;
   tagNames?: string[] | undefined;

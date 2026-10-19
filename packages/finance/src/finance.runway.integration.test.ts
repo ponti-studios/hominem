@@ -7,7 +7,12 @@ import { createDeterministicIdFactory } from '@hominem/db/test/utils';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { createAccount } from './index';
-import { computeLedgerRunway } from './runway';
+import {
+  computeLedgerRunway,
+  getRunwaySettings,
+  saveRunwayBudget,
+  saveRunwayCurrency,
+} from './runway';
 import { cleanupIntegrationFinanceUser } from './test-utils';
 
 const nextUserId = createDeterministicIdFactory('finance.runway.integration');
@@ -27,10 +32,11 @@ describeIntegration('finance runway integration', () => {
     postedOn: string;
     recurring?: boolean;
     excluded?: boolean;
+    currencyCode?: string;
   }): Promise<void> {
     await sql`
       insert into app.finance_transactions (
-        id, user_id, account_id, amount, transaction_type, description, posted_on, recurring, excluded
+        id, user_id, account_id, amount, transaction_type, description, posted_on, recurring, excluded, currency_code
       )
       values (
         ${crypto.randomUUID()},
@@ -41,7 +47,8 @@ describeIntegration('finance runway integration', () => {
         ${input.description},
         ${input.postedOn},
         ${input.recurring ?? false},
-        ${input.excluded ?? false}
+        ${input.excluded ?? false},
+        ${input.currencyCode ?? 'USD'}
       )
     `.execute(db);
   }
@@ -131,9 +138,10 @@ describeIntegration('finance runway integration', () => {
     const result = await computeLedgerRunway({
       userId: ownerId,
       monthlyBudgets: [
-        { category: 'Groceries', amount: 200 },
-        { category: 'Dining', amount: 100, note: 'cap' },
+        { category: 'Groceries', amount: 200, currencyCode: 'USD' },
+        { category: 'Dining', amount: 100, currencyCode: 'USD', note: 'cap' },
       ],
+      currencyCode: 'USD',
       projectionWeeks: 2,
       asOf: '2026-04-01',
     });
@@ -206,6 +214,7 @@ describeIntegration('finance runway integration', () => {
     const result = await computeLedgerRunway({
       userId: ownerId,
       monthlyBudgets: [],
+      currencyCode: 'USD',
       asOf: '2026-04-01',
     });
 
@@ -217,7 +226,8 @@ describeIntegration('finance runway integration', () => {
   it('scopes every input to the current user', async () => {
     const result = await computeLedgerRunway({
       userId: otherUserId,
-      monthlyBudgets: [{ category: 'Groceries', amount: 200 }],
+      monthlyBudgets: [{ category: 'Groceries', amount: 200, currencyCode: 'USD' }],
+      currencyCode: 'USD',
       projectionWeeks: 1,
       asOf: '2026-04-01',
     });
@@ -242,5 +252,81 @@ describeIntegration('finance runway integration', () => {
         monthlyBudgets: [{ category: 'Groceries', amount: -5 }],
       }),
     ).rejects.toThrow(/non-negative/);
+  });
+
+  it('keeps cash, recurring debits, and caps inside the selected currency and user', async () => {
+    const euro = await createAccount({
+      userId: ownerId,
+      name: 'Euro checking',
+      accountType: 'checking',
+      currencyCode: 'EUR',
+    });
+    await sql`update app.finance_accounts set currency_code = 'EUR' where id = ${euro.id}`.execute(
+      db,
+    );
+    await seedTransaction({
+      accountId: euro.id,
+      amount: 500,
+      transactionType: 'credit',
+      description: 'Opening',
+      postedOn: '2026-03-01',
+      currencyCode: 'EUR',
+    });
+    await seedTransaction({
+      accountId: euro.id,
+      amount: -90,
+      transactionType: 'debit',
+      description: 'Rent',
+      postedOn: '2026-02-01',
+      recurring: true,
+      currencyCode: 'EUR',
+    });
+    await seedTransaction({
+      accountId: euro.id,
+      amount: -90,
+      transactionType: 'debit',
+      description: 'Rent',
+      postedOn: '2026-03-01',
+      recurring: true,
+      currencyCode: 'EUR',
+    });
+    const categoryId = crypto.randomUUID();
+    const otherCategoryId = crypto.randomUUID();
+    await sql`insert into app.finance_categories (id, user_id, name) values (${categoryId}, ${ownerId}, 'Rent')`.execute(
+      db,
+    );
+    await sql`insert into app.finance_categories (id, user_id, name) values (${otherCategoryId}, ${otherUserId}, 'Other rent')`.execute(
+      db,
+    );
+    await saveRunwayBudget({ userId: ownerId, categoryId, currencyCode: 'EUR', amount: 300 });
+    await saveRunwayCurrency(ownerId, 'EUR');
+
+    const settings = await getRunwaySettings(ownerId);
+    expect(settings.currencyCode).toBe('EUR');
+    expect(settings.budgets).toHaveLength(1);
+    await expect(
+      saveRunwayBudget({
+        userId: ownerId,
+        categoryId: otherCategoryId,
+        currencyCode: 'EUR',
+        amount: 999,
+      }),
+    ).rejects.toThrow(/Category not found/);
+
+    const result = await computeLedgerRunway({
+      userId: ownerId,
+      currencyCode: 'EUR',
+      monthlyBudgets: settings.budgets.map(({ category, amount, currencyCode }) => ({
+        category,
+        amount,
+        currencyCode,
+      })),
+      asOf: '2026-04-01',
+    });
+    expect(result.startingCash).toBe(320);
+    expect(result.recurringTxnCount).toBe(2);
+    expect(result.weeklyRecurringOutflow).toBeCloseTo(13.8, 1);
+    expect(result.weeklyVariableAllowance).toBeCloseTo(69, 0);
+    expect(result.warnings).toContain('Only EUR is included. Other currencies excluded: USD.');
   });
 });

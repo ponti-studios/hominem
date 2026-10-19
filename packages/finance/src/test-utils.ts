@@ -5,6 +5,8 @@ import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
 
 export async function cleanupIntegrationFinanceUser(userId: string): Promise<void> {
   await db.transaction().execute(async (trx) => {
+    await trx.deleteFrom('app.financeMonthlyBudgets').where('userId', '=', userId).execute();
+    await trx.deleteFrom('app.financeRunwayPreferences').where('userId', '=', userId).execute();
     await trx
       .deleteFrom('app.tagAssignments')
       .where('entityTable', '=', sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)

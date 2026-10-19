@@ -142,6 +142,13 @@ beforeAll(async () => {
   await insertAccount(checkingId, userId, 'Checking', 'checking');
   await insertAccount(cardId, userId, 'Card', 'credit_card', false);
   await insertAccount(otherCheckingId, otherUserId, 'Other Checking', 'checking');
+  await db
+    .insertInto('app.financeRunwayPreferences')
+    .values([
+      { userId, currencyCode: 'USD' },
+      { userId: otherUserId, currencyCode: 'USD' },
+    ])
+    .execute();
 
   const groceries = await insertTransaction({
     owner: userId,

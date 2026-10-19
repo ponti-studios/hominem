@@ -2,10 +2,14 @@ import {
   calculateBudgetBreakdown,
   calculateBudgetBreakdownInputSchema,
   calculateLoanDetails,
-  calculateRunway,
+  simulateRunway,
   calculateSavingsGoal,
   calculateSavingsGoalInputSchema,
-  runwayCalculationSchema,
+  runwayScenarioInputSchema,
+  getRunwaySettings,
+  removeRunwayBudget,
+  saveRunwayBudget,
+  saveRunwayCurrency,
 } from '@hominem/finance-services';
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
@@ -15,19 +19,6 @@ import { authMiddleware } from '../middleware/auth';
 import type { AppContext } from '../middleware/auth';
 
 const numberFromQuery = z.coerce.number();
-
-const plannedPurchaseSchema = z.object({
-  description: z.string(),
-  amount: numberFromQuery,
-  date: z.string(),
-});
-
-const runwayInputSchema = z.object({
-  balance: numberFromQuery,
-  monthlyExpenses: numberFromQuery,
-  plannedPurchases: z.array(plannedPurchaseSchema).optional(),
-  projectionMonths: z.coerce.number().optional().default(24),
-});
 
 const budgetBreakdownInputSchema = z.object({
   monthlyIncome: numberFromQuery,
@@ -47,60 +38,43 @@ const loanDetailsInputSchema = z.object({
   months: z.coerce.number().int().positive(),
 });
 
+const runwayCurrencySchema = z.object({ currencyCode: z.string().regex(/^[A-Z]{3}$/) });
+const runwayBudgetSchema = z.object({
+  categoryId: z.string().uuid(),
+  currencyCode: z.string().regex(/^[A-Z]{3}$/),
+  amount: z.number().finite().nonnegative(),
+});
+const runwayBudgetDeleteSchema = z.object({ budgetId: z.string().uuid() });
+
 export const runwayRoutes = new Hono<AppContext>()
-  .get('/calculate', authMiddleware, zValidator('query', runwayInputSchema), async (c) => {
-    const input = c.req.valid('query');
-    const parsed = runwayCalculationSchema.parse({
-      monthlyIncome: 0,
-      monthlyExpenses: input.monthlyExpenses,
-      cashReserve: input.balance,
-    });
-    const result = calculateRunway(parsed);
-    const projectionMonths = Math.max(1, Math.min(120, input.projectionMonths ?? 24));
-    const monthlyPurchases = new Map<number, number>();
-    for (const purchase of input.plannedPurchases ?? []) {
-      const purchaseDate = new Date(`${purchase.date}T00:00:00Z`);
-      if (!Number.isNaN(purchaseDate.getTime())) {
-        const index = Math.max(
-          0,
-          Math.floor((purchaseDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30)),
-        );
-        monthlyPurchases.set(index, (monthlyPurchases.get(index) ?? 0) + purchase.amount);
-      }
-    }
-    const projectionData: Array<{ month: string; balance: number }> = [];
-    let runningBalance = input.balance;
-    for (let month = 0; month < projectionMonths; month++) {
-      runningBalance -= input.monthlyExpenses;
-      runningBalance -= monthlyPurchases.get(month) ?? 0;
-      const projectedDate = new Date();
-      projectedDate.setMonth(projectedDate.getMonth() + month + 1);
-      projectionData.push({
-        month: projectedDate.toISOString().slice(0, 7),
-        balance: runningBalance,
-      });
-    }
-
-    const totalPlannedExpenses = [...monthlyPurchases.values()].reduce(
-      (sum, value) => sum + value,
-      0,
-    );
-    const runwayEndDate = new Date();
-    if (result.months !== Number.POSITIVE_INFINITY) {
-      runwayEndDate.setMonth(runwayEndDate.getMonth() + result.months);
-    }
-
-    return c.json({
-      runwayMonths: result.months,
-      runwayEndDate: runwayEndDate.toISOString(),
-      isRunwayDangerous: result.months !== Number.POSITIVE_INFINITY && result.months <= 6,
-      totalPlannedExpenses,
-      projectionData,
-      months: result.months,
-      years:
-        result.months === Number.POSITIVE_INFINITY ? Number.POSITIVE_INFINITY : result.months / 12,
-    });
+  .get('/settings', authMiddleware, async (c) =>
+    c.json(await getRunwaySettings(c.get('auth')!.userId)),
+  )
+  .post(
+    '/settings/currency',
+    authMiddleware,
+    zValidator('json', runwayCurrencySchema),
+    async (c) => {
+      await saveRunwayCurrency(c.get('auth')!.userId, c.req.valid('json').currencyCode);
+      return c.json({ success: true });
+    },
+  )
+  .post('/settings/budget', authMiddleware, zValidator('json', runwayBudgetSchema), async (c) => {
+    await saveRunwayBudget({ userId: c.get('auth')!.userId, ...c.req.valid('json') });
+    return c.json({ success: true });
   })
+  .post(
+    '/settings/budget/delete',
+    authMiddleware,
+    zValidator('json', runwayBudgetDeleteSchema),
+    async (c) => {
+      await removeRunwayBudget(c.get('auth')!.userId, c.req.valid('json').budgetId);
+      return c.json({ success: true });
+    },
+  )
+  .post('/calculate', authMiddleware, zValidator('json', runwayScenarioInputSchema), (c) =>
+    c.json(simulateRunway(c.req.valid('json'))),
+  )
   .get(
     '/budget-breakdown',
     authMiddleware,

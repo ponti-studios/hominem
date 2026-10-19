@@ -159,11 +159,11 @@ export function calculateRunway(input: z.infer<typeof runwayCalculationSchema>):
 }
 
 export const affordabilityCheckInputSchema = z.object({
-  purchaseAmount: z.number().positive(),
-  currentBalance: z.number(),
-  monthlyIncome: z.number().nonnegative(),
-  monthlyExpenses: z.number().nonnegative(),
-  emergencyFundTarget: z.number().nonnegative().optional(),
+  purchaseAmount: z.number().finite().positive(),
+  currentBalance: z.number().finite(),
+  monthlyIncome: z.number().finite().nonnegative(),
+  monthlyExpenses: z.number().finite().nonnegative(),
+  emergencyFundTarget: z.number().finite().nonnegative().optional(),
 });
 
 export type AffordabilityVerdict = 'affordable' | 'caution' | 'not-affordable';
@@ -172,8 +172,8 @@ export function calculateAffordability(input: z.infer<typeof affordabilityCheckI
   verdict: AffordabilityVerdict;
   balanceAfterPurchase: number;
   monthlySurplus: number;
-  monthsOfRunwayAfterPurchase: number;
-  percentOfMonthlyIncome: number;
+  monthsOfRunwayAfterPurchase: number | null;
+  percentOfMonthlyIncome: number | null;
   emergencyFundTarget: number;
   emergencyFundShortfall: number;
   reasons: string[];
@@ -184,9 +184,12 @@ export function calculateAffordability(input: z.infer<typeof affordabilityCheckI
   const balanceAfterPurchase = currentBalance - purchaseAmount;
   const monthlySurplus = monthlyIncome - monthlyExpenses;
   const monthsOfRunwayAfterPurchase =
-    monthlySurplus >= 0 ? Number.POSITIVE_INFINITY : balanceAfterPurchase / -monthlySurplus;
-  const percentOfMonthlyIncome =
-    monthlyIncome > 0 ? (purchaseAmount / monthlyIncome) * 100 : Number.POSITIVE_INFINITY;
+    balanceAfterPurchase <= 0
+      ? 0
+      : monthlySurplus >= 0
+        ? null
+        : balanceAfterPurchase / -monthlySurplus;
+  const percentOfMonthlyIncome = monthlyIncome > 0 ? (purchaseAmount / monthlyIncome) * 100 : null;
   const emergencyFundShortfall = Math.max(0, emergencyFundTarget - balanceAfterPurchase);
 
   const reasons: string[] = [];
@@ -199,10 +202,10 @@ export function calculateAffordability(input: z.infer<typeof affordabilityCheckI
       `It would leave you ${emergencyFundShortfall.toFixed(2)} short of your emergency fund target.`,
     );
   }
-  if (monthsOfRunwayAfterPurchase !== Number.POSITIVE_INFINITY && monthsOfRunwayAfterPurchase < 6) {
+  if (monthsOfRunwayAfterPurchase !== null && monthsOfRunwayAfterPurchase < 6) {
     reasons.push('Your spending already outpaces income, and this shortens your runway further.');
   }
-  if (percentOfMonthlyIncome > 50) {
+  if (percentOfMonthlyIncome !== null && percentOfMonthlyIncome > 50) {
     reasons.push(
       `This purchase is ${percentOfMonthlyIncome.toFixed(0)}% of a month's income — a large single hit.`,
     );
@@ -212,8 +215,8 @@ export function calculateAffordability(input: z.infer<typeof affordabilityCheckI
   if (balanceAfterPurchase < 0 || emergencyFundShortfall > 0) {
     verdict = 'not-affordable';
   } else if (
-    percentOfMonthlyIncome > 50 ||
-    (monthsOfRunwayAfterPurchase !== Number.POSITIVE_INFINITY && monthsOfRunwayAfterPurchase < 6)
+    (percentOfMonthlyIncome !== null && percentOfMonthlyIncome > 50) ||
+    (monthsOfRunwayAfterPurchase !== null && monthsOfRunwayAfterPurchase < 6)
   ) {
     verdict = 'caution';
   } else {
@@ -233,5 +236,66 @@ export function calculateAffordability(input: z.infer<typeof affordabilityCheckI
     emergencyFundTarget,
     emergencyFundShortfall,
     reasons,
+  };
+}
+
+export const runwayScenarioInputSchema = z.object({
+  balance: z.number().finite().nonnegative(),
+  monthlyExpenses: z.number().finite().nonnegative(),
+  plannedPurchases: z
+    .array(
+      z.object({
+        description: z.string().trim().min(1),
+        amount: z.number().finite().positive(),
+        date: z.string().date(),
+      }),
+    )
+    .default([]),
+  projectionMonths: z.number().int().positive().max(12).default(12),
+  asOf: z.string().date().optional(),
+});
+
+export function simulateRunway(input: z.infer<typeof runwayScenarioInputSchema>) {
+  const asOf = input.asOf ? new Date(`${input.asOf}T00:00:00.000Z`) : new Date();
+  asOf.setUTCDate(1);
+  const purchases = new Map<number, number>();
+  let totalPlannedExpenses = 0;
+  for (const purchase of input.plannedPurchases) {
+    const date = new Date(`${purchase.date}T00:00:00.000Z`);
+    const monthOffset =
+      (date.getUTCFullYear() - asOf.getUTCFullYear()) * 12 +
+      date.getUTCMonth() -
+      asOf.getUTCMonth();
+    if (purchase.date < asOf.toISOString().slice(0, 10)) continue;
+    const index = Math.max(0, monthOffset - 1);
+    purchases.set(index, (purchases.get(index) ?? 0) + purchase.amount);
+    totalPlannedExpenses += purchase.amount;
+  }
+  const projectionData: Array<{ month: string; balance: number }> = [];
+  let balance = input.balance;
+  let monthsToZero: number | null = balance <= 0 ? 0 : null;
+  for (let index = 0; index < input.projectionMonths; index++) {
+    balance -= input.monthlyExpenses + (purchases.get(index) ?? 0);
+    balance = Math.round(balance * 100) / 100;
+    const projectedMonth = new Date(
+      Date.UTC(asOf.getUTCFullYear(), asOf.getUTCMonth() + index + 1, 1),
+    );
+    projectionData.push({ month: projectedMonth.toISOString().slice(0, 7), balance });
+    if (monthsToZero === null && balance <= 0) monthsToZero = index + 1;
+  }
+  const runwayEndDate =
+    monthsToZero === null
+      ? null
+      : new Date(
+          Date.UTC(asOf.getUTCFullYear(), asOf.getUTCMonth() + monthsToZero, 1),
+        ).toISOString();
+  return {
+    runwayMonths: monthsToZero,
+    runwayEndDate,
+    isRunwayDangerous: monthsToZero !== null && monthsToZero <= 6,
+    totalPlannedExpenses: Math.round(totalPlannedExpenses * 100) / 100,
+    projectionData,
+    months: monthsToZero,
+    years: monthsToZero === null ? null : monthsToZero / 12,
   };
 }

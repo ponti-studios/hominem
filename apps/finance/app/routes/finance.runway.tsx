@@ -5,7 +5,7 @@ import { Button } from '@ponti-studios/ui/primitives';
 import { Card, CardContent, CardHeader, CardTitle } from '@ponti-studios/ui/primitives';
 import { AlertTriangle, Calendar, DollarSign, TrendingDown } from 'lucide-react';
 import { useId, useMemo, useState } from 'react';
-import { data } from 'react-router';
+import { data, useFetcher } from 'react-router';
 import {
   CartesianGrid,
   Line,
@@ -18,7 +18,13 @@ import {
 } from 'recharts';
 
 import { getServerSession } from '~/lib/auth.server';
-import { getLiveRunway } from '~/lib/finance/ledger.server';
+import {
+  getLiveRunway,
+  getRunwaySettings,
+  removeRunwayBudget,
+  saveRunwayBudget,
+  saveRunwayCurrency,
+} from '~/lib/finance/ledger.server';
 import { useCalculateRunway } from '~/lib/hooks/use-runway';
 import { formatCurrency } from '~/lib/number.utils';
 
@@ -26,8 +32,33 @@ import type { Route } from './+types/finance.runway';
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { user, headers } = await getServerSession(request);
-  if (!user?.id) return data({ live: null }, { headers });
-  return data({ live: await getLiveRunway(user.id) }, { headers });
+  if (!user?.id) return data({ live: null, settings: null }, { headers });
+  const [live, settings] = await Promise.all([getLiveRunway(user.id), getRunwaySettings(user.id)]);
+  return data({ live, settings }, { headers });
+}
+
+export async function action({ request }: Route.ActionArgs) {
+  const { user, headers } = await getServerSession(request);
+  if (!user?.id) return data({ error: 'Unauthorized' }, { status: 401, headers });
+  const form = await request.formData();
+  const actionName = String(form.get('intent') ?? '');
+  if (actionName === 'currency') {
+    const currencyCode = String(form.get('currencyCode') ?? '');
+    if (!/^[A-Z]{3}$/.test(currencyCode))
+      return data({ error: 'Choose a valid currency.' }, { status: 400, headers });
+    await saveRunwayCurrency(user.id, currencyCode);
+  } else if (actionName === 'budget') {
+    const amount = Number(form.get('amount'));
+    const categoryId = String(form.get('categoryId') ?? '');
+    const currencyCode = String(form.get('currencyCode') ?? '');
+    if (!Number.isFinite(amount) || amount < 0 || !/^[A-Z]{3}$/.test(currencyCode)) {
+      return data({ error: 'Enter a valid amount and currency.' }, { status: 400, headers });
+    }
+    await saveRunwayBudget({ userId: user.id, categoryId, amount, currencyCode });
+  } else if (actionName === 'remove-budget') {
+    await removeRunwayBudget(user.id, String(form.get('budgetId') ?? ''));
+  }
+  return data({ ok: true }, { headers });
 }
 
 interface PlannedPurchase {
@@ -37,7 +68,8 @@ interface PlannedPurchase {
 }
 
 export default function RunwayPage({ loaderData }: Route.ComponentProps) {
-  const { live } = loaderData;
+  const { live, settings } = loaderData;
+  const settingsFetcher = useFetcher();
   const initialBalanceId = useId();
   const monthlyExpensesId = useId();
   const descriptionId = useId();
@@ -84,7 +116,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
         isRunwayDangerous: false,
         totalPlannedExpenses: 0,
       };
-    const zeroDate = new Date(data.runwayEndDate);
+    const zeroDate = data.runwayEndDate ? new Date(data.runwayEndDate) : null;
     const minimumBalance = Math.min(...chartData.map((d: { balance: number }) => d.balance));
 
     return {
@@ -102,7 +134,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
       setPlannedPurchases(updatedPurchases);
       setNewPurchase({ description: '', amount: 0, date: '' });
 
-      if (initialBalance > 0 && monthlyExpenses > 0) {
+      if (initialBalance >= 0 && monthlyExpenses >= 0) {
         runwayMutation.mutate({
           balance: initialBalance,
           monthlyExpenses,
@@ -116,7 +148,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
     const updatedPurchases = plannedPurchases.filter((_, i) => i !== index);
     setPlannedPurchases(updatedPurchases);
 
-    if (initialBalance > 0 && monthlyExpenses > 0) {
+    if (initialBalance >= 0 && monthlyExpenses >= 0) {
       runwayMutation.mutate({
         balance: initialBalance,
         monthlyExpenses,
@@ -126,7 +158,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
   };
 
   const handleCalculateRunway = () => {
-    if (initialBalance > 0 && monthlyExpenses > 0) {
+    if (initialBalance >= 0 && monthlyExpenses >= 0) {
       runwayMutation.mutate({
         balance: initialBalance,
         monthlyExpenses,
@@ -136,6 +168,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
   };
 
   const handleInputChange = (field: 'initialBalance' | 'monthlyExpenses', value: number) => {
+    runwayMutation.reset();
     if (field === 'initialBalance') {
       setInitialBalance(value);
     } else {
@@ -145,7 +178,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
     const newBalance = field === 'initialBalance' ? value : initialBalance;
     const newMonthlyExpenses = field === 'monthlyExpenses' ? value : monthlyExpenses;
 
-    if (newBalance > 0 && newMonthlyExpenses > 0) {
+    if (newBalance >= 0 && newMonthlyExpenses >= 0) {
       runwayMutation.mutate({
         balance: newBalance,
         monthlyExpenses: newMonthlyExpenses,
@@ -168,6 +201,9 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
 
       {live ? (
         <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Forecast currency: {live.currencyCode ?? 'Not selected'}
+          </p>
           <div className="grid gap-6 md:grid-cols-4">
             <Card>
               <CardHeader>
@@ -175,7 +211,9 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                 <DollarSign className="size-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(live.startingCash)}</div>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(live.startingCash, live.currencyCode ?? 'USD')}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Across {live.liquidAccounts.length} liquid accounts, as of {live.asOfDate}
                 </p>
@@ -188,11 +226,16 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(live.weeklyRecurringOutflow + live.weeklyVariableAllowance)}
+                  {formatCurrency(
+                    live.weeklyRecurringOutflow + live.weeklyVariableAllowance,
+                    live.currencyCode ?? 'USD',
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {formatCurrency(live.weeklyRecurringOutflow)} recurring ·{' '}
-                  {formatCurrency(live.weeklyVariableAllowance)} allowance
+                  {formatCurrency(live.weeklyRecurringOutflow, live.currencyCode ?? 'USD')}{' '}
+                  recurring ·{' '}
+                  {formatCurrency(live.weeklyVariableAllowance, live.currencyCode ?? 'USD')}{' '}
+                  allowance
                 </p>
               </CardContent>
             </Card>
@@ -205,6 +248,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                 <div className="text-2xl font-bold">
                   {formatCurrency(
                     live.weeks[live.weeks.length - 1]?.endingCash ?? live.startingCash,
+                    live.currencyCode ?? 'USD',
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -245,12 +289,14 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
                       <td className="py-2 tabular-nums">
                         {week.week} · {week.weekStart}
                       </td>
-                      <td className="py-2 tabular-nums">{formatCurrency(week.beginningCash)}</td>
-                      <td className="py-2 text-right tabular-nums">
-                        {formatCurrency(week.netChange)}
+                      <td className="py-2 tabular-nums">
+                        {formatCurrency(week.beginningCash, live.currencyCode ?? 'USD')}
                       </td>
                       <td className="py-2 text-right tabular-nums">
-                        {formatCurrency(week.endingCash)}
+                        {formatCurrency(week.netChange, live.currencyCode ?? 'USD')}
+                      </td>
+                      <td className="py-2 text-right tabular-nums">
+                        {formatCurrency(week.endingCash, live.currencyCode ?? 'USD')}
                       </td>
                     </tr>
                   ))}
@@ -258,14 +304,136 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
               </table>
               {live.weeklyVariableAllowance === 0 ? (
                 <p className="pt-2 text-xs text-muted-foreground">
-                  No monthly budgets configured yet, so the variable allowance is $0 — this shows
-                  recurring burn only.
+                  No monthly budgets configured yet, so the variable allowance is{' '}
+                  {formatCurrency(0, live.currencyCode ?? 'USD')} — this shows recurring burn only.
                 </p>
               ) : null}
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Forecast settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <settingsFetcher.Form method="post" className="flex flex-wrap items-end gap-3">
+                <input type="hidden" name="intent" value="currency" />
+                <label className="grid gap-1 text-sm">
+                  Forecast currency
+                  <select
+                    name="currencyCode"
+                    required
+                    defaultValue={settings?.currencyCode ?? ''}
+                    className="h-10 rounded-md border border-input bg-background px-3"
+                    aria-label="Forecast currency"
+                  >
+                    <option value="" disabled>
+                      Choose currency
+                    </option>
+                    {settings?.currencies.map((currency) => (
+                      <option key={currency} value={currency}>
+                        {currency}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Button type="submit" disabled={settingsFetcher.state !== 'idle'}>
+                  Save currency
+                </Button>
+              </settingsFetcher.Form>
+              {live.warnings.map((warning) => (
+                <p key={warning} className="text-sm text-amber-600">
+                  {warning}
+                </p>
+              ))}
+              <div className="space-y-2">
+                <h3 className="font-medium">Monthly category caps</h3>
+                {settings?.budgets
+                  .filter((budget) => budget.currencyCode === settings.currencyCode)
+                  .map((budget) => (
+                    <div
+                      key={budget.id}
+                      className="flex items-center justify-between gap-3 border-t border-border py-2 text-sm"
+                    >
+                      <span>
+                        {budget.category} · {budget.currencyCode}
+                      </span>
+                      <settingsFetcher.Form method="post" className="flex items-center gap-2">
+                        <input type="hidden" name="intent" value="budget" />
+                        <input type="hidden" name="categoryId" value={budget.categoryId} />
+                        <input type="hidden" name="currencyCode" value={budget.currencyCode} />
+                        <Input
+                          className="max-w-32"
+                          aria-label={`${budget.category} monthly cap`}
+                          name="amount"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          defaultValue={budget.amount}
+                          required
+                        />
+                        <Button type="submit" variant="outline" size="sm">
+                          Save
+                        </Button>
+                      </settingsFetcher.Form>
+                      <settingsFetcher.Form method="post">
+                        <input type="hidden" name="intent" value="remove-budget" />
+                        <input type="hidden" name="budgetId" value={budget.id} />
+                        <Button type="submit" variant="outline" size="sm">
+                          Remove
+                        </Button>
+                      </settingsFetcher.Form>
+                    </div>
+                  ))}
+                <settingsFetcher.Form
+                  method="post"
+                  className="flex flex-wrap items-end gap-3 border-t border-border pt-3"
+                >
+                  <input type="hidden" name="intent" value="budget" />
+                  <label className="grid gap-1 text-sm">
+                    Category
+                    <select
+                      name="categoryId"
+                      required
+                      className="h-10 rounded-md border border-input bg-background px-3"
+                    >
+                      <option value="" disabled selected>
+                        Choose category
+                      </option>
+                      {settings?.categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    Monthly cap
+                    <Input name="amount" type="number" min="0" step="0.01" required />
+                  </label>
+                  <input type="hidden" name="currencyCode" value={settings?.currencyCode ?? ''} />
+                  <Button
+                    type="submit"
+                    disabled={!settings?.currencyCode || settingsFetcher.state !== 'idle'}
+                  >
+                    Save cap
+                  </Button>
+                </settingsFetcher.Form>
+                {settingsFetcher.data && 'error' in settingsFetcher.data && (
+                  <p role="alert" className="text-sm text-destructive">
+                    {settingsFetcher.data.error}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       ) : null}
+
+      {runwayMutation.isError && (
+        <p role="alert" className="text-sm text-destructive">
+          {runwayMutation.error.message || 'Unable to calculate the scenario. Please try again.'}
+        </p>
+      )}
 
       {chartData.length > 0 && (
         <div className="grid gap-6 md:grid-cols-4">
@@ -298,11 +466,11 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
               <div
                 className={`text-2xl font-bold ${runwayMetrics.isRunwayDangerous ? 'text-destructive' : 'text-foreground'}`}
               >
-                {runwayMetrics.monthsUntilZero === Number.POSITIVE_INFINITY
-                  ? '∞'
+                {runwayMetrics.monthsUntilZero === null
+                  ? 'No depletion in 12 months'
                   : runwayMetrics.monthsUntilZero}
               </div>
-              {runwayMetrics.monthsUntilZero !== Number.POSITIVE_INFINITY && (
+              {runwayMetrics.zeroDate !== null && (
                 <p className="text-xs text-muted-foreground">
                   Until {runwayMetrics.zeroDate.toLocaleDateString()}
                 </p>
@@ -329,11 +497,14 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Financial Parameters</CardTitle>
+            <CardTitle>Manual Scenario</CardTitle>
           </CardHeader>
           <CardContent>
+            <p className="mb-4 text-sm text-muted-foreground">
+              These inputs are independent of your ledger forecast.
+            </p>
             <div>
-              <label htmlFor={initialBalanceId}>Initial Balance ($)</label>
+              <label htmlFor={initialBalanceId}>Manually entered starting balance ($)</label>
               <Input
                 type="number"
                 id={initialBalanceId}
@@ -342,7 +513,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
               />
             </div>
             <div>
-              <label htmlFor={monthlyExpensesId}>Monthly Expenses ($)</label>
+              <label htmlFor={monthlyExpensesId}>Manually entered monthly expenses ($)</label>
               <Input
                 type="number"
                 id={monthlyExpensesId}
@@ -352,7 +523,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
             </div>
             <Button
               onClick={handleCalculateRunway}
-              disabled={initialBalance <= 0 || monthlyExpenses <= 0 || runwayMutation.isPending}
+              disabled={initialBalance < 0 || monthlyExpenses < 0 || runwayMutation.isPending}
             >
               {runwayMutation.isPending ? 'Calculating...' : 'Calculate Runway'}
             </Button>
@@ -448,7 +619,7 @@ export default function RunwayPage({ loaderData }: Route.ComponentProps) {
       {chartData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>12-Month Runway Projection</CardTitle>
+            <CardTitle>12-Month Scenario Projection</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-100">

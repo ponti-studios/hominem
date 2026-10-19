@@ -317,18 +317,10 @@ export type RunwayCalculateInput = {
   projectionMonths?: number;
 };
 
-export type RunwayCalculateOutput = {
-  runwayMonths: number;
-  runwayEndDate: string;
-  isRunwayDangerous: boolean;
-  totalPlannedExpenses: number;
-  projectionData: Array<{
-    month: string;
-    balance: number;
-  }>;
-  months: number;
-  years: number;
-};
+type _RunwayCalculateEndpoint = HonoClient['api']['finance']['runway']['calculate']['$post'];
+export type RunwayCalculateOutput = InferResponseType<_RunwayCalculateEndpoint, 200>;
+type _RunwaySettingsEndpoint = HonoClient['api']['finance']['runway']['settings']['$get'];
+export type RunwaySettingsOutput = InferResponseType<_RunwaySettingsEndpoint, 200>;
 
 // ---------------------------------------------------------------------------
 // Affordability
@@ -344,16 +336,8 @@ export type AffordabilityCheckInput = {
 
 export type AffordabilityVerdict = 'affordable' | 'caution' | 'not-affordable';
 
-export type AffordabilityCheckOutput = {
-  verdict: AffordabilityVerdict;
-  balanceAfterPurchase: number;
-  monthlySurplus: number;
-  monthsOfRunwayAfterPurchase: number;
-  percentOfMonthlyIncome: number;
-  emergencyFundTarget: number;
-  emergencyFundShortfall: number;
-  reasons: string[];
-};
+type _AffordabilityCheckEndpoint = HonoClient['api']['finance']['affordability']['check']['$post'];
+export type AffordabilityCheckOutput = InferResponseType<_AffordabilityCheckEndpoint, 200>;
 
 // ---------------------------------------------------------------------------
 // Client

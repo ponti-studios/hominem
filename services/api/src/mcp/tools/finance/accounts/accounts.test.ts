@@ -9,6 +9,7 @@ describe('finance account tool modules', () => {
 
     expect(registry.listTools().map((tool) => tool.name)).toEqual([
       'finance_account_create',
+      'finance_account_delete',
       'finance_account_summary',
       'finance_account_update',
       'finance_accounts',
@@ -19,6 +20,7 @@ describe('finance account tool modules', () => {
     ]);
     expect(registry.listToolsForScopes(['finance:write']).map((tool) => tool.name)).toEqual([
       'finance_account_create',
+      'finance_account_delete',
       'finance_account_update',
     ]);
   });
@@ -27,6 +29,7 @@ describe('finance account tool modules', () => {
     const registry = createToolRegistry([financeAccountsSlice]);
 
     await expect(registry.callTool('test-user', 'finance_account_create', {})).rejects.toThrow();
+    await expect(registry.callTool('test-user', 'finance_account_delete', {})).rejects.toThrow();
     await expect(registry.callTool('test-user', 'finance_account_update', {})).rejects.toThrow();
   });
 

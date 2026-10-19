@@ -15,7 +15,7 @@ export const financeTransactionUpsertTool = defineMcpTool(
     name: 'finance_transaction_upsert',
     title: 'Finance Transaction Upsert',
     description:
-      'Upsert a single finance transaction. Idempotent on the natural key (postedOn, account, description, amountCents, currencyCode). Unknown accounts are rejected, never auto-created. A rejected row returns reason and null id instead of failing the call.',
+      'Upsert a single finance transaction. Without externalId, identity is derived from postedOn, account, description, amountCents and currencyCode; when externalId is supplied, that provider identity is used. Unknown accounts are rejected, never auto-created. A rejected row returns reason and null id instead of failing the call.',
     inputSchema: financeTransactionUpsertInputSchema,
     outputSchema: financeTransactionUpsertOutputSchema,
     resultCap: 1,

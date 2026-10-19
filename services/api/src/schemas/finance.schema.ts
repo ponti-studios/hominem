@@ -357,6 +357,18 @@ export const financeAccountSummaryOutputSchema = z.object({
     .describe('Total accounts before the result cap, so truncation is visible.'),
 });
 
+export const financeAccountDeleteInputSchema = z.object({
+  accountId: z.string().uuid().describe('Stable account id returned by a Finance tool.'),
+  iUnderstand: z
+    .boolean()
+    .default(false)
+    .describe('Must be true. This flag is the confirmation contract; the server never elicits.'),
+});
+
+export const financeAccountDeleteOutputSchema = z.object({
+  deleted: z.object({ id: z.string(), name: z.string() }),
+});
+
 // -- finance_top_merchants --
 
 const financeTopMerchantsFieldsSchema = z
@@ -526,12 +538,21 @@ export const financeTransactionSearchInputSchema = z
       .string()
       .min(1)
       .optional()
-      .describe('Case-insensitive text matched against descriptions and merchant names.'),
+      .describe(
+        'Case-insensitive, fuzzy text matched against transaction descriptions, merchant names, category names and account names.',
+      ),
     ...dateRangeFields,
     accountId: accountIdField,
     tag: tagField,
-    categoryName: z.string().min(1).optional(),
-    transactionType: z.enum(['adjustment', 'debit', 'credit', 'transfer']).optional(),
+    categoryName: z
+      .string()
+      .min(1)
+      .optional()
+      .describe('Exact category name, matched case-insensitively.'),
+    transactionType: z
+      .enum(['adjustment', 'debit', 'credit', 'transfer'])
+      .optional()
+      .describe('Restrict results to this transaction type.'),
     limit: mcpLimitSchema.default(20).describe('Maximum transactions to return, from 1 to 50.'),
     offset: z.number().int().min(0).default(0).describe('Number of matches to skip, for paging.'),
   })
@@ -582,7 +603,7 @@ export const financeRunwayOutputSchema = z.object({
     .nullable()
     .describe(
       'Currency of startingCash and the weekly projection. When liquid accounts span ' +
-        'multiple currencies, only the dominant-currency accounts are included; see warnings.',
+        'multiple currencies, the user-selected forecast currency is included; see warnings.',
     ),
   warnings: z.array(z.string()),
   startingCash: z.number(),
@@ -828,8 +849,21 @@ export const financeCategoryMergeInputSchema = z.object({
 export const financeCategoryMergeOutputSchema = z.object({
   transactionsReassigned: z.number().int().min(0),
   category: z.object({ id: z.string(), name: z.string() }).nullable(),
+  removedCategory: z.object({ id: z.string(), name: z.string() }).nullable(),
   reason: categoryMergeReasonSchema.nullable(),
   dryRun: z.boolean(),
+});
+
+export const financeCategoryDeleteInputSchema = z.object({
+  category: z.string().trim().min(1).describe('Category name or id.'),
+  iUnderstand: z
+    .boolean()
+    .default(false)
+    .describe('Must be true. This flag is the confirmation contract; the server never elicits.'),
+});
+
+export const financeCategoryDeleteOutputSchema = z.object({
+  deleted: z.object({ id: z.string(), name: z.string() }),
 });
 
 // -- finance_account_update --

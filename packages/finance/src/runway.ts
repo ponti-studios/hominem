@@ -17,12 +17,14 @@ const DEFAULT_PROJECTION_WEEKS = 16;
 export interface RunwayBudget {
   category: string;
   amount: number;
+  currencyCode?: string;
   note?: string;
 }
 
 export interface ComputeLedgerRunwayInput {
   userId: string;
   monthlyBudgets: RunwayBudget[];
+  currencyCode?: string | null;
   liquidAccountTypes?: string[];
   recurringLookbackMonths?: number;
   projectionWeeks?: number;
@@ -52,6 +54,111 @@ export interface LedgerRunway {
   weeks: RunwayWeek[];
   currencyCode: string | null;
   warnings: string[];
+}
+
+export async function getRunwaySettings(userId: string) {
+  const [preference, currencies, budgets, categories] = await Promise.all([
+    db
+      .selectFrom('app.financeRunwayPreferences')
+      .select('currencyCode')
+      .where('userId', '=', userId)
+      .executeTakeFirst(),
+    db
+      .selectFrom('app.financeAccounts')
+      .select('currencyCode')
+      .distinct()
+      .where('userId', '=', userId)
+      .where('accountType', 'in', DEFAULT_LIQUID_TYPES)
+      .orderBy('currencyCode')
+      .execute(),
+    db
+      .selectFrom('app.financeMonthlyBudgets as budget')
+      .innerJoin('app.financeCategories as category', 'category.id', 'budget.categoryId')
+      .select([
+        'budget.id',
+        'budget.categoryId',
+        'budget.currencyCode',
+        'budget.monthlyAmount',
+        'category.name',
+      ])
+      .where('budget.userId', '=', userId)
+      .where('category.userId', '=', userId)
+      .orderBy('category.name')
+      .execute(),
+    db
+      .selectFrom('app.financeCategories')
+      .select(['id', 'name'])
+      .where('userId', '=', userId)
+      .orderBy('name')
+      .execute(),
+  ]);
+  return {
+    currencyCode: preference?.currencyCode ?? null,
+    currencies: currencies.map(({ currencyCode }) => currencyCode),
+    categories,
+    budgets: budgets.map((budget) => ({
+      id: budget.id,
+      categoryId: budget.categoryId,
+      category: budget.name,
+      currencyCode: budget.currencyCode,
+      amount: toNumber(budget.monthlyAmount),
+    })),
+  };
+}
+
+export async function saveRunwayCurrency(userId: string, currencyCode: string) {
+  const account = await db
+    .selectFrom('app.financeAccounts')
+    .select('id')
+    .where('userId', '=', userId)
+    .where('currencyCode', '=', currencyCode)
+    .where('accountType', 'in', DEFAULT_LIQUID_TYPES)
+    .executeTakeFirst();
+  if (!account) throw new ValidationError('Choose a currency available in a liquid account.');
+  await db
+    .insertInto('app.financeRunwayPreferences')
+    .values({ userId, currencyCode })
+    .onConflict((conflict) =>
+      conflict.column('userId').doUpdateSet({ currencyCode, updatedAt: new Date().toISOString() }),
+    )
+    .execute();
+}
+
+export async function saveRunwayBudget(input: {
+  userId: string;
+  categoryId: string;
+  currencyCode: string;
+  amount: number;
+}) {
+  const category = await db
+    .selectFrom('app.financeCategories')
+    .select('id')
+    .where('id', '=', input.categoryId)
+    .where('userId', '=', input.userId)
+    .executeTakeFirst();
+  if (!category) throw new ValidationError('Category not found.');
+  await db
+    .insertInto('app.financeMonthlyBudgets')
+    .values({
+      userId: input.userId,
+      categoryId: input.categoryId,
+      currencyCode: input.currencyCode,
+      monthlyAmount: input.amount,
+    })
+    .onConflict((conflict) =>
+      conflict
+        .columns(['userId', 'categoryId', 'currencyCode'])
+        .doUpdateSet({ monthlyAmount: input.amount, updatedAt: new Date().toISOString() }),
+    )
+    .execute();
+}
+
+export async function removeRunwayBudget(userId: string, budgetId: string) {
+  await db
+    .deleteFrom('app.financeMonthlyBudgets')
+    .where('id', '=', budgetId)
+    .where('userId', '=', userId)
+    .execute();
 }
 
 function roundMoney(value: number): number {
@@ -110,6 +217,7 @@ export async function computeLedgerRunway(input: ComputeLedgerRunwayInput): Prom
       join
         .onRef('transaction.accountId', '=', 'account.id')
         .on('transaction.userId', '=', input.userId)
+        .onRef('transaction.currencyCode', '=', 'account.currencyCode')
         .on('transaction.excluded', '=', false),
     )
     .select((eb) => [
@@ -129,29 +237,28 @@ export async function computeLedgerRunway(input: ComputeLedgerRunwayInput): Prom
     balance: roundMoney(toNumber(entry.balance)),
   }));
 
-  // Summing balances across currencies would produce a meaningless total, so when liquid
-  // accounts span more than one currency, restrict the projection to whichever currency
-  // holds the most cash (the user's de facto primary currency) and say so, rather than
-  // silently combining incompatible balances.
+  // Summing balances across currencies would produce a meaningless total. Use the
+  // explicitly selected currency and disclose all other available currencies.
   const distinctCurrencies = [...new Set(allLiquidAccounts.map((a) => a.currencyCode))];
   const warnings: string[] = [];
-  let currencyCode: string | null = null;
-  let liquidAccounts = allLiquidAccounts;
-  if (distinctCurrencies.length > 1) {
-    const totalsByCurrency = new Map<string, number>();
-    for (const account of allLiquidAccounts) {
-      totalsByCurrency.set(
-        account.currencyCode,
-        (totalsByCurrency.get(account.currencyCode) ?? 0) + Math.abs(account.balance),
+  const currencyCode = input.currencyCode ?? null;
+  const liquidAccounts = currencyCode
+    ? allLiquidAccounts.filter((a) => a.currencyCode === currencyCode)
+    : [];
+  if (distinctCurrencies.length > 0 && !currencyCode) {
+    warnings.push('Choose a forecast currency to include matching-currency balances and activity.');
+  } else if (currencyCode) {
+    if (!distinctCurrencies.includes(currencyCode)) {
+      warnings.push(
+        `No liquid accounts are available in ${currencyCode}; other currencies are excluded.`,
       );
     }
-    currencyCode = [...totalsByCurrency.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-    liquidAccounts = allLiquidAccounts.filter((a) => a.currencyCode === currencyCode);
-    warnings.push(
-      `Liquid accounts span multiple currencies (${distinctCurrencies.join(', ')}); only ${currencyCode} accounts are included in this projection.`,
-    );
-  } else if (distinctCurrencies.length === 1) {
-    currencyCode = distinctCurrencies[0] ?? null;
+    const excludedCurrencies = distinctCurrencies.filter((value) => value !== currencyCode);
+    if (excludedCurrencies.length > 0) {
+      warnings.push(
+        `Only ${currencyCode} is included. Other currencies excluded: ${excludedCurrencies.join(', ')}.`,
+      );
+    }
   }
 
   const startingCash = roundMoney(liquidAccounts.reduce((sum, entry) => sum + entry.balance, 0));
@@ -161,6 +268,7 @@ export async function computeLedgerRunway(input: ComputeLedgerRunwayInput): Prom
     .selectFrom('app.financeTransactions')
     .select((eb) => [eb.fn.countAll<number>().as('count'), eb.fn.sum<number>('amount').as('total')])
     .where('userId', '=', input.userId)
+    .where('currencyCode', '=', currencyCode ?? '')
     .where('excluded', '=', false)
     .where('transactionType', '!=', 'adjustment')
     .where(sql<boolean>`amount < 0`)
@@ -174,7 +282,9 @@ export async function computeLedgerRunway(input: ComputeLedgerRunwayInput): Prom
   );
 
   const weeklyVariableAllowance = roundMoney(
-    input.monthlyBudgets.reduce((sum, budget) => sum + budget.amount, 0) / WEEKS_PER_MONTH,
+    input.monthlyBudgets
+      .filter((budget) => budget.currencyCode === currencyCode)
+      .reduce((sum, budget) => sum + budget.amount, 0) / WEEKS_PER_MONTH,
   );
 
   const weeks: RunwayWeek[] = [];
