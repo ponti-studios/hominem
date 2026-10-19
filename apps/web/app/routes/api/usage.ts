@@ -1,5 +1,4 @@
-import { createApiClient } from '@hominem/rpc';
-
+import { createApiClient } from '~/lib/api.server';
 import { serverEnv } from '~/lib/env.server';
 import { userContext } from '~/lib/middleware';
 

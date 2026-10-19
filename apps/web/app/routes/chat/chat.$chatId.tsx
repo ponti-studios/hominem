@@ -1,4 +1,3 @@
-import { createApiClient } from '@hominem/rpc';
 import type { ChatsGetMessagesOutput } from '@hominem/rpc/types/chat.types';
 import type { NotesGetOutput } from '@hominem/rpc/types/notes.types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@ponti-studios/ui/overlays';
@@ -14,6 +13,7 @@ import { ChatResponseSettings } from '~/components/chat/chat-response-settings';
 import { preloadPersona } from '~/components/chat/persona';
 import { RouteHeader } from '~/components/route-header';
 import { useChatsList, useUpdateChatTitle } from '~/hooks/use-chats';
+import { createApiClient } from '~/lib/api.server';
 import { computeChatLoadState } from '~/lib/chat/compute-chat-load-state';
 import { serverEnv } from '~/lib/env.server';
 import { useChatDisplayMessages } from '~/lib/hooks/use-chat-display-messages';
