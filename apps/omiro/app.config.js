@@ -95,7 +95,10 @@ function createConfig({ config }) {
     ],
     'expo-sqlite',
     'expo-notifications',
-    '@sentry/react-native',
+    [
+      'newrelic-react-native-agent',
+      { ios: { appTokenEnvName: 'EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN' } },
+    ],
     withPrivacyManifest,
     withSceneLifecycle,
     withHominemAuthSPM,

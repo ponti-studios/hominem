@@ -29,9 +29,8 @@ builds.
 .agents/skills/run-omiro/driver.sh env
 ```
 
-Copies `.env.example` → `.env.development.local` if missing, and strips
-the placeholder `EXPO_PUBLIC_SENTRY_DSN` line (see Gotchas — a
-placeholder or empty value there crashes every route).
+Copies `.env.example` → `.env.development.local` if missing. New Relic is
+disabled locally unless a production app token is configured.
 
 ## Run (agent path)
 
@@ -95,13 +94,6 @@ not supported by this device.` — devicectl refuses to install onto a
   non-booted device. `driver.sh build` boots a simulator by name
   _first_ and installs manually via `simctl install` + `simctl launch`
   as a fallback if `expo run:ios`'s own install step fails.
-- **Empty/placeholder `EXPO_PUBLIC_SENTRY_DSN` crashes every route.**
-  The env schema (`env.ts`) declares it `z.url().optional()` —
-  `.optional()` only tolerates an _absent_ key, not `""` or the
-  `.env.example` placeholder string. Either fails Zod validation and
-  every route throws `Cannot read property 'ErrorBoundary' of
-undefined` before rendering anything. Delete the line outright
-  rather than blanking its value.
 - **Missing `EXPO_PUBLIC_API_BASE_URL` fails the same way** — the app
   never gets past the splash screen, with a `ZodError: Missing
 EXPO_PUBLIC_API_BASE_URL` repeated once per route in the Metro log.
@@ -122,5 +114,3 @@ supported by this device.`**: target simulator wasn't booted. Run
   Metro (`pkill -f "expo start"` then `driver.sh metro`) and
   `driver.sh launch` again — Metro caches env at startup, so an env
   fix requires a Metro restart, not just an app relaunch.
-- **`[ZodError: ... "EXPO_PUBLIC_SENTRY_DSN" ... Invalid URL]`**: same
-  fix — the var is present but invalid; `driver.sh env` deletes it.

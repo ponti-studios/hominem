@@ -164,6 +164,7 @@ vi.mock('@hominem/storage', () => ({
 }));
 
 vi.mock('@hominem/telemetry', () => ({
+  recordTelemetryException: vi.fn(),
   getTelemetryTracer: () => ({
     startActiveSpan: (
       _name: string,

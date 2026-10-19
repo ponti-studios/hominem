@@ -21,9 +21,8 @@ if [[ -f .eas-prod.local ]]; then
 fi
 
 export APP_ENV=production
-export SENTRY_ORG="${SENTRY_ORG:-ponti-studios}"
-export SENTRY_PROJECT="${SENTRY_PROJECT:-omiro}"
-: "${SENTRY_AUTH_TOKEN:?Set SENTRY_AUTH_TOKEN in .eas-prod.local or export it before building. Run 'pnpm eas:pull:prod' to fetch it.}"
+: "${EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN:?Set EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN in .eas-prod.local or export it before building.}"
+: "${NEWRELIC_USER_API_KEY:?Set NEWRELIC_USER_API_KEY in .eas-prod.local or export it before building for source-map uploads.}"
 
 node scripts/verify-release-identity.mjs
 mkdir -p build

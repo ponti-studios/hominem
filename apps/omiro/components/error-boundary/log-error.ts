@@ -1,9 +1,8 @@
 import { logger } from '@hominem/telemetry';
-import * as Sentry from '@sentry/react-native';
+import NewRelic from 'newrelic-react-native-agent';
 import type { ErrorInfo } from 'react';
 
-import { isSentryEnabled } from '~/services/observability';
-import { posthog } from '~/services/posthog';
+import { isNewRelicEnabled } from '~/services/observability';
 
 export function logError(
   error: Error,
@@ -11,29 +10,17 @@ export function logError(
   context?: {
     feature?: string;
     route?: string;
-    userId?: string;
   },
 ) {
   logger.error('[ErrorBoundary]', error);
-  if (isSentryEnabled) {
-    Sentry.captureException(error, {
-      contexts: {
-        react: {
-          componentStack: errorInfo?.componentStack ?? undefined,
-        },
-      },
-      tags: {
-        feature: context?.feature ?? 'unknown',
-        route: context?.route ?? 'unknown',
-      },
-    });
-  }
-
-  if (typeof posthog.captureException === 'function') {
-    posthog.captureException(error, {
-      feature: context?.feature ?? null,
-      route: context?.route ?? null,
-      userId: context?.userId ?? null,
+  if (isNewRelicEnabled) {
+    const safeError = new Error('Application error');
+    safeError.name = 'ApplicationError';
+    safeError.stack = error.stack?.split('\n').slice(1, 21).join('\n');
+    NewRelic.recordError(safeError, false, {
+      feature: context?.feature ?? 'unknown',
+      routeAvailable: Boolean(context?.route),
+      componentStackAvailable: Boolean(errorInfo?.componentStack),
     });
   }
 }

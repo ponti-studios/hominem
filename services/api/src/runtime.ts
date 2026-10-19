@@ -1,25 +1,11 @@
 import { LOG_MESSAGES, logger } from '@hominem/telemetry';
 import { initTelemetry } from '@hominem/telemetry/node';
-import * as Sentry from '@sentry/node';
 
 import { env } from './env';
 
 type ShutdownTask = () => Promise<void> | void;
 
-export function initSentry() {
-  if (env.SENTRY_DSN && env.NODE_ENV !== 'development') {
-    Sentry.init({
-      dsn: env.SENTRY_DSN,
-      environment: env.NODE_ENV,
-      tracesSampleRate: 0,
-      skipOpenTelemetrySetup: true,
-    });
-  }
-}
-
 export function initRuntime(serviceName: string) {
-  initSentry();
-
   const telemetry = initTelemetry({
     serviceName,
     serviceVersion: process.env.npm_package_version || '0.0.0',

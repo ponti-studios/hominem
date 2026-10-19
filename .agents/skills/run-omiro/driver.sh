@@ -33,14 +33,6 @@ cmd_env() {
     cp .env.example .env.development.local
     log "wrote .env.development.local from .env.example"
   fi
-  # The zod schema uses z.url().optional() for EXPO_PUBLIC_SENTRY_DSN — an
-  # empty string still fails .url(), only an ABSENT var satisfies .optional().
-  # The .example placeholder value is also not a valid URL, so it must be
-  # blanked out entirely (not set to ""), or Metro throws ZodError on every route.
-  if grep -q '^EXPO_PUBLIC_SENTRY_DSN=' .env.development.local; then
-    sed -i '' '/^EXPO_PUBLIC_SENTRY_DSN=/d' .env.development.local
-    log "removed placeholder EXPO_PUBLIC_SENTRY_DSN (invalid URL fails schema)"
-  fi
   # Print the keys only: the file can hold secrets.
   sed -E 's/=.*/=<set>/' .env.development.local
 }

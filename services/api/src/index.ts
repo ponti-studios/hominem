@@ -47,6 +47,8 @@ if (aiProvider === 'scripted' || emailProvider === 'scripted') {
   });
 }
 
+initRuntime('api').installSignalHandlers(() => ChatGenerationStore.stop());
+
 const app = createServer();
 const port = env.PORT ?? 4040;
 const host = '0.0.0.0';
@@ -128,4 +130,3 @@ async function startServer() {
 }
 
 await startServer();
-initRuntime('api').installSignalHandlers(() => ChatGenerationStore.stop());

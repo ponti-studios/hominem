@@ -1,45 +1,43 @@
 # Observability
 
-Hominem uses three production observability surfaces with different jobs:
+Hominem uses two production observability surfaces with different jobs:
 
-- New Relic is the searchable home for privacy-filtered API and worker
-  application logs.
+- New Relic is the primary home for API and worker traces, metrics, and
+  privacy-filtered application logs, plus Omiro mobile errors and performance.
 - Railway is the source of truth for complete container stdout/stderr, build,
   HTTP edge, Redis, and database logs.
-- Sentry is the source of truth for application errors, OpenTelemetry traces,
-  trace-derived dashboards, and alerts.
 
-Do not use Sentry as a live stdout log tail. Do not put OTLP credentials in the
-Web bundle.
+Do not put OTLP or New Relic user API credentials in a Web or mobile bundle.
 
-## Production logs and Sentry navigation
+## Production logs and New Relic navigation
 
-Pulling live logs, navigating Sentry, and the incident response procedure are
+Pulling live logs, navigating New Relic, and the incident response procedure are
 runbook steps — see the `hominem-observability` skill
 (`.agents/skills/hominem-observability/`) for the exact commands and
 navigation path.
 
-The API and worker send traces to Sentry and searchable application logs to
-New Relic. Configure these Railway variables on both services:
+The API and worker send OTLP traces, metrics, and searchable application logs
+to New Relic. Configure these Railway variables on both services:
 
 - `OTEL_EXPORTER_OTLP_ENDPOINT`
-- `OTEL_EXPORTER_OTLP_HEADERS` (Sentry OTLP headers)
+- `OTEL_EXPORTER_OTLP_HEADERS` (`api-key` header with the New Relic license key;
+  store it as a write-only Railway secret)
 - `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` (New Relic EU OTLP logs endpoint)
 - `OTEL_EXPORTER_OTLP_LOGS_HEADERS` (`api-key` header with the New Relic license
   key; store it as a write-only Railway secret)
 - `OTEL_TRACES_SAMPLER_ARG`
-- `SENTRY_DSN`
 
-New Relic's EU endpoint is
+Set `OTEL_EXPORTER_OTLP_ENDPOINT` to `https://otlp.eu01.nr-data.net:4318`.
+The SDK appends `/v1/traces` and `/v1/metrics`; the log-specific endpoint is
 `https://otlp.eu01.nr-data.net:4318/v1/logs`. The log-specific variables keep
-the log destination independent from the trace exporter. When a log-specific
-endpoint is absent, the generic endpoint and header variables remain the
-fallback for local development.
+the log destination configurable independently. When a log-specific endpoint
+is absent, the generic endpoint and headers are the fallback for local
+development.
 
-General root traces should normally use a 10% ratio. Speech traces are sampled
-at 100% because the speech funnel is latency-sensitive and currently small.
-Check the `telemetry_initialized` log after every deployment; it reports the
-effective ratio.
+Use a 10% parent-based trace sample by default. Child spans inherit the root
+decision so traces remain intact; do not force-sample selected child spans.
+Metrics and structured error logs remain unsampled. Check the
+`telemetry_initialized` log after every deployment for the effective ratio.
 
 ## Instrumentation contract
 
@@ -47,6 +45,14 @@ Telemetry must remain bounded and privacy-safe. Never record prompts, model
 outputs, message contents, email addresses, user IDs, message IDs, generation
 IDs, provider URLs, authorization data, or provider error bodies in OTEL
 attributes or exported log bodies.
+
+Omiro's New Relic mobile agent captures native crashes and unhandled JavaScript
+errors. Unhandled JavaScript error events can include the original error
+message, type, and stack; keep user data and provider response bodies out of
+error messages. The React error boundary reports a generic message with a
+bounded stack. Network request and response capture are disabled because
+request URLs may contain record IDs; API server traces use registered route
+templates instead.
 
 ### Speech lifecycle
 
@@ -72,17 +78,16 @@ proxy. The API converts it into a `speech.playback` span.
 
 ### Chat generation lifecycle
 
-Each API generation emits a `chat.generation` span to Sentry. The span covers
+Each sampled API generation emits a `chat.generation` span to New Relic. The span covers
 generation execution through persistence and post-commit effects, with bounded
 attributes for `chat.generation.kind`, `chat.generation.outcome`,
 `chat.generation.duration_ms`, `chat.generation.time_to_first_token_ms`,
 `chat.generation.time_to_first_tool_call_ms`, `chat.generation.tool_count`, and
-prompt/output/total token counts when the provider reports usage. Chat
-generation spans are sampled at 100% so low-volume latency and failure
-investigation does not depend on the general 10% trace sample. They contain no
+prompt/output/total token counts when the provider reports usage. Generation
+spans inherit the request trace sampling decision. They contain no
 chat, user, message, or generation identifiers and no prompt or response text.
 
-Use Sentry trace search and dashboards, filtered to
+Use New Relic trace search and dashboards, filtered to
 `deployment.environment.name:production`, for:
 
 - p50/p95/p99 `chat.generation.duration_ms` and
@@ -91,10 +96,10 @@ Use Sentry trace search and dashboards, filtered to
 - Generation volume and committed, failed, and cancelled rates.
 - Tool-call counts and provider-reported prompt, output, and total tokens.
 
-Generation spans are sampled at 100%, so their counts and latency percentiles
-do not inherit the general trace sampling ratio. The `http.server` span measures
-request latency separately; a stream request can complete before its
-generation finishes.
+Generation trace counts are sampled, so use metrics and the usage database for
+complete volume and billing aggregates. The `http.server` span measures request
+latency separately; a stream request can complete before its generation
+finishes.
 
 ### Application logs exported to New Relic
 
@@ -118,9 +123,11 @@ stdout remain searchable in Railway.
 
 ## Operational error logging contract
 
-Every request-level failure must be diagnosable from one bounded record and one
-correlation key. API request middleware assigns an `x-request-id`, includes it
-in request start/completion logs, and attaches it to the HTTP span. Route or
+Every request-level failure must be diagnosable from one bounded error record
+and a correlated trace. API request middleware assigns an `x-request-id`,
+returns it to the caller, and attaches it to the HTTP span. Routine requests
+are tracked through spans and metrics rather than start/completion log pairs.
+Route or
 shared-handler code must log the original error before converting it into a
 client response; otherwise a generic 4xx response can bypass the global Hono
 error handler, which is what happened for chat planning failures.
@@ -128,7 +135,9 @@ error handler, which is what happened for chat planning failures.
 Error records should include:
 
 - a stable event name and bounded failure category;
-- HTTP method, route/path, status, and request ID;
+- HTTP method, route template, status, and trace context. Request IDs are
+  available in Railway stdout and the response header, but are not exported to
+  New Relic.
 - service/component and operation stage (for example `chat_tool_planning`);
 - model/provider metadata when relevant, without provider request URLs or raw
   response bodies;
@@ -137,7 +146,7 @@ Error records should include:
 Do not use the final HTTP status as the failure category. Distinguish client
 input, unsupported capability, planner validation, provider, runtime/tool,
 storage, and cancellation failures. Preserve the user-facing message in the
-API response, but keep diagnostic context in the server log and Sentry event.
+API response, but keep diagnostic context in bounded New Relic error events.
 
 The current audit found three recurring sources of poor diagnosis: some shared
 HTTP handlers catch errors internally, request IDs were not present on the
@@ -177,7 +186,7 @@ skill (`.agents/skills/hominem-observability/`).
 - Add a chat funnel from message submitted → model stream started → first token
   → stream completed/failed → optional speech requested → playback completed.
 - Add cost-per-successful-action and cost-per-user-session aggregates from the
-  existing usage tables; keep raw billing data in PostgreSQL rather than Sentry.
+  existing usage tables; keep raw billing data in PostgreSQL rather than telemetry.
 - Add daily retention and repeat-use cohorts for chat speech and other AI
   features using the product analytics warehouse.
 - Add a provider comparison dimension once more than one provider/model is

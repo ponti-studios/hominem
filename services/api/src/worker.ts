@@ -17,6 +17,8 @@ import { startFileProcessingWorker } from './workers/file-processing';
 import { startResumeAnalysisWorker } from './workers/resume-analysis';
 import { startSpeechUsageReconciliationWorker } from './workers/speech-usage-reconciliation';
 
+const runtime = initRuntime('worker');
+
 const fileProcessingWorker = startFileProcessingWorker();
 const embeddingGenerationWorker = startEmbeddingGenerationWorker();
 const resumeAnalysisWorker = startResumeAnalysisWorker();
@@ -40,7 +42,7 @@ const healthServer = createServer((req, res) => {
 });
 healthServer.listen(env.PORT ?? env.WORKER_PORT ?? 4041);
 
-initRuntime('worker').installSignalHandlers(
+runtime.installSignalHandlers(
   async () => {
     await Promise.all([
       fileProcessingWorker.close(),

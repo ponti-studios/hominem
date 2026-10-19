@@ -1,4 +1,4 @@
-import { logger } from '@hominem/telemetry';
+import { logger, recordTelemetryException } from '@hominem/telemetry';
 import type { Context } from 'hono';
 
 import { isContentfulStatusCode } from '../../utils/http-status';
@@ -44,7 +44,15 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
     };
 
     if (serviceError.statusCode >= 500) {
-      logger.error('[API Error]', { ...logData, error: serviceError });
+      recordTelemetryException(serviceError);
+      logger.error('api_request_failed', {
+        method,
+        path,
+        requestId,
+        statusCode: serviceError.statusCode,
+        error_name: serviceError.name,
+        failureCategory: serviceError.code.toLowerCase(),
+      });
     } else if (process.env.NODE_ENV !== 'test') {
       logger.warn('[API Client Error]', logData);
     }
@@ -72,13 +80,15 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
     );
   }
 
+  recordTelemetryException(err);
   logger.error('http_request_failed', {
     method,
     path,
-    status: 500,
+    statusCode: 500,
     requestId,
-    error_name: err instanceof Error ? err.name : 'unknown',
     error: err,
+    error_name: err instanceof Error ? err.name : 'unknown',
+    failureCategory: 'unhandled',
   });
 
   const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';

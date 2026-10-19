@@ -12,7 +12,7 @@ const omiroEnvironmentSchema = z.object({
     .url('EXPO_PUBLIC_API_BASE_URL must be a valid URL.'),
   EXPO_PUBLIC_POSTHOG_API_KEY: z.string().default(''),
   EXPO_PUBLIC_POSTHOG_HOST: z.url().default('https://us.i.posthog.com'),
-  EXPO_PUBLIC_SENTRY_DSN: z.url().optional(),
+  EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN: z.string().default(''),
 });
 
 export function parseAppEnvironment(value: string | undefined) {
@@ -28,5 +28,5 @@ export const env = parseOmiroEnvironment({
   EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
   EXPO_PUBLIC_POSTHOG_API_KEY: process.env.EXPO_PUBLIC_POSTHOG_API_KEY,
   EXPO_PUBLIC_POSTHOG_HOST: process.env.EXPO_PUBLIC_POSTHOG_HOST,
-  EXPO_PUBLIC_SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN: process.env.EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN,
 });

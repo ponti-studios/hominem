@@ -1,21 +1,19 @@
 # Omiro release operations
 
-## Sentry native build integration
+## New Relic native build integration
 
-The `@sentry/react-native` Expo config plugin adds two Xcode Run Script phases: one uploads JavaScript sourcemaps during Metro bundling and one uploads native dSYMs after linking. With `@sentry/react-native@8.x`, both scripts resolve the nested `@sentry/cli` correctly under pnpm isolation and warn instead of aborting if resolution fails.
+The `newrelic-react-native-agent` Expo config plugin adds an Xcode Run Script phase that uploads JavaScript source maps and native dSYMs for symbolicated mobile error reports.
 
-Set `SENTRY_ORG` and `SENTRY_PROJECT` in `eas.json`'s `build.base.env`,
-`SENTRY_AUTH_TOKEN` as an EAS secret in the production environment, and
-`EXPO_PUBLIC_SENTRY_DSN` as an EAS production variable. The DSN is read
-directly by `services/observability.ts`. `SENTRY_DISABLE_AUTO_UPLOAD` is not
-part of the current build environment.
+Set `EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN` and `NEWRELIC_USER_API_KEY` in the
+production EAS environment. The public app token starts the mobile agent and
+uploads dSYMs; the sensitive user API key uploads source maps. The app token is
+read by `services/observability.ts` and is not an ingest credential.
 
-EAS Secret variables never leave EAS servers, so a local EAS build cannot
-retrieve `SENTRY_AUTH_TOKEN` from EAS. Store it only in the gitignored
-`apps/omiro/.eas-prod.local`; `pnpm build:prod:local` loads and exports that
-file for Xcode, then verifies the production identity before building. Do not
-set `SENTRY_DISABLE_AUTO_UPLOAD` or `SENTRY_ALLOW_FAILURE` for a TestFlight
-candidate: its source maps and dSYMs must upload.
+Use a sensitive EAS variable or local secret manager for the user API key so
+the local build can upload source maps. `pnpm build:prod:local` loads and
+exports `.eas-prod.local`, then verifies the production identity before
+building. Confirm source maps and dSYMs appear in New Relic before relying on
+production stack traces.
 
 The root `ios/` entries in both `.gitignore` and `.easignore` must stay anchored (`/ios`). An unanchored `ios` entry also excludes `modules/*/ios` local Expo module source from EAS archives.
 

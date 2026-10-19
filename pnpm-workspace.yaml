@@ -73,7 +73,6 @@ blockExoticSubdeps: true
 strictDepBuilds: true
 allowBuilds:
   '@openrouter/sdk': true
-  '@sentry/cli': true
   '@shopify/react-native-skia': true
   '@swc/core': true
   core-js: false
@@ -120,8 +119,6 @@ minimumReleaseAgeExclude:
   - expo-splash-screen@57.0.5 || 57.0.6 || 57.0.9
   - expo-updates@57.0.9 || 57.0.10 || 57.0.22
   - expo@57.0.8 || 57.0.12 || 57.0.21 || 57.0.22 || 57.0.23
-  - '@sentry/expo-upload-sourcemaps@8.20.0'
-  - '@sentry/react-native@8.20.0'
   - '@expo/ui@57.0.8 || 57.0.10 || 57.0.17 || 57.0.18'
   - bullmq@6.0.8
   - '@expo/inline-modules@0.1.5'
