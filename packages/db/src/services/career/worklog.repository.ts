@@ -65,6 +65,7 @@ export type CareerWorklogUpdateInput = Partial<Omit<CareerWorklogCreateInput, 'r
 export type CareerWorklogListFilters = {
   engagementId?: string;
   projectId?: string;
+  skillId?: string;
   impactStatus?: AppCareerWorklogImpactStatus;
   tag?: string;
   occurredAfter?: string;
@@ -146,6 +147,17 @@ export const WorklogRepository = {
     }
     if (filters.projectId) {
       query = query.where('projectId', '=', filters.projectId);
+    }
+    if (filters.skillId) {
+      // The link lives on the skill: an entry matches when the caller's skill
+      // lists its id.
+      query = query.where(sql<boolean>`EXISTS (
+        SELECT 1
+        FROM app.career_skills AS skill
+        WHERE skill.id = ${filters.skillId}::uuid
+          AND skill.owner_userid = ${ownerUserId}
+          AND skill.worklog_entry_ids @> to_jsonb("career_worklog_entries"."id"::text)
+      )`);
     }
     if (filters.impactStatus) {
       query = query.where('impactStatus', '=', filters.impactStatus);
@@ -246,6 +258,30 @@ export const WorklogRepository = {
     return row !== undefined;
   },
 
+  /**
+   * Every id must exist on the owner's own entries; a duplicate id is still one entry.
+   * The rows are share-locked until the caller's transaction ends, so a concurrent
+   * worklog delete either waits for the skill write (and then scrubs the new link)
+   * or wins first (and validation then fails) — it can never leave a dangling id.
+   */
+  async entriesBelongToOwner(
+    handle: DbHandle,
+    ownerUserId: string,
+    ids: string[],
+  ): Promise<boolean> {
+    const unique = [...new Set(ids)];
+    if (unique.length === 0) return true;
+
+    const rows = await handle
+      .selectFrom('app.careerWorklogEntries')
+      .select('id')
+      .where('ownerUserid', '=', ownerUserId)
+      .where('id', 'in', unique)
+      .forShare()
+      .execute();
+    return rows.length === unique.length;
+  },
+
   async projectBelongsToOwner(
     handle: DbHandle,
     ownerUserId: string,
@@ -261,27 +297,14 @@ export const WorklogRepository = {
   },
 
   /**
-   * Drops a deleted entry's id from every skill that points at it.
-   *
-   * `app.career_skills.worklog_entry_ids` lands with issue #476, so no skill can
-   * reference an entry yet. The guard keeps the hook real instead of aspirational:
-   * the column appears, this starts scrubbing without another edit here.
+   * Drops a deleted entry's id from every skill that points at it, in the same
+   * transaction as the delete so a failure rolls both back.
    */
   async scrubSkillLinks(
     handle: DbHandle,
     ownerUserId: string,
     worklogEntryId: string,
   ): Promise<number> {
-    const column = await sql<{ present: boolean }>`
-      SELECT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_schema = 'app'
-          AND table_name = 'career_skills'
-          AND column_name = 'worklog_entry_ids'
-      ) AS present
-    `.execute(handle);
-    if (!column.rows[0]?.present) return 0;
-
     const scrubbed = await sql`
       UPDATE app.career_skills
       SET worklog_entry_ids = (

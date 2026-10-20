@@ -20,7 +20,7 @@ import {
   type CareerWorklogEntry,
   type CareerWorklogListFilters,
 } from '@hominem/db/career';
-import { db, runInTransaction } from '@hominem/db/core';
+import { db, runInTransaction, type DbHandle } from '@hominem/db/core';
 import { NotFoundError, ValidationError } from '@hominem/db/errors';
 import { z } from 'zod';
 
@@ -320,7 +320,14 @@ export async function listCareerSkills(ownerUserId: string) {
 }
 
 export async function createCareerSkill(ownerUserId: string, input: CareerSkillInput) {
-  return toSkillDto(await SkillRepository.create(db, ownerUserId, input));
+  // Validation and the write share a transaction: the validation share-locks the
+  // entries, so a concurrent delete can't land between the check and the insert.
+  return runInTransaction(async (trx) => {
+    if (input.worklogEntryIds) {
+      await assertWorklogEntries(trx, ownerUserId, input.worklogEntryIds);
+    }
+    return toSkillDto(await SkillRepository.create(trx, ownerUserId, input));
+  });
 }
 
 export async function updateCareerSkill(
@@ -328,8 +335,13 @@ export async function updateCareerSkill(
   id: string,
   data: Partial<CareerSkillInput>,
 ) {
-  const updated = await SkillRepository.update(db, ownerUserId, id, data);
-  return updated ? toSkillDto(updated) : null;
+  return runInTransaction(async (trx) => {
+    if (data.worklogEntryIds) {
+      await assertWorklogEntries(trx, ownerUserId, data.worklogEntryIds);
+    }
+    const updated = await SkillRepository.update(trx, ownerUserId, id, data);
+    return updated ? toSkillDto(updated) : null;
+  });
 }
 
 export async function removeCareerSkill(ownerUserId: string, id: string) {
@@ -439,6 +451,13 @@ async function assertWorklogProject(ownerUserId: string, projectId: string) {
   }
 }
 
+/** A skill may only point at worklog entries the caller owns; the rows stay locked to commit. */
+async function assertWorklogEntries(handle: DbHandle, ownerUserId: string, ids: string[]) {
+  if (!(await WorklogRepository.entriesBelongToOwner(handle, ownerUserId, ids))) {
+    throw new NotFoundError('Career worklog entry', { ids });
+  }
+}
+
 function toWorklogDto(entry: CareerWorklogEntry) {
   return careerWorklogEntrySchema.parse(entry);
 }
@@ -452,10 +471,10 @@ export async function listCareerWorklogEntries(
 }
 
 export async function getCareerWorklogEntry(ownerUserId: string, id: string) {
-  const entry = await WorklogRepository.get(db, ownerUserId, id);
-  // Nothing points at an entry until the skill-proofing issue lands, so no skill
-  // can be linked yet.
-  const linkedSkillIds: string[] = [];
+  const [entry, linkedSkillIds] = await Promise.all([
+    WorklogRepository.get(db, ownerUserId, id),
+    SkillRepository.listIdsByWorklogEntryId(db, ownerUserId, id),
+  ]);
   return { entry: entry ? toWorklogDto(entry) : null, linkedSkillIds };
 }
 
@@ -623,6 +642,7 @@ function toSkillDto(skill: {
   yearsOfExperience: number | null;
   description: string | null;
   proof: string | null;
+  worklogEntryIds: unknown;
   aiDerived: boolean;
   isVisible: boolean;
   sortOrder: number;
@@ -635,6 +655,9 @@ function toSkillDto(skill: {
     yearsOfExperience: skill.yearsOfExperience,
     description: skill.description,
     proof: skill.proof,
+    worklogEntryIds: Array.isArray(skill.worklogEntryIds)
+      ? skill.worklogEntryIds.filter((id): id is string => typeof id === 'string')
+      : [],
     aiDerived: skill.aiDerived,
     isVisible: skill.isVisible,
     sortOrder: skill.sortOrder,

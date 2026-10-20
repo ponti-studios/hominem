@@ -2,6 +2,7 @@ import { db, pool } from '@hominem/db/core';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import './career';
+import './career-worklog';
 import {
   careerApplicationCreateOutputSchema,
   careerApplicationNoteAddOutputSchema,
@@ -28,6 +29,7 @@ import {
   careerTestimonialCreateOutputSchema,
   careerTestimonialUpdateOutputSchema,
   careerTestimonialsSchema,
+  careerWorklogCreateOutputSchema,
 } from '../../schemas/career.schema';
 import { removedResultSchema } from '../../schemas/common.schema';
 import { toolOutput } from '../../testkit/tool-result';
@@ -317,6 +319,115 @@ describe('career skill MCP tools', () => {
       removedResultSchema,
     );
     expect(removed.removed).toBe(true);
+  });
+
+  it('round-trips worklogEntryIds through create, list and update', async () => {
+    const engagement = toolOutput(
+      await callTool(userId, 'career_engagement_create', {
+        company: 'Linked Skill Co',
+        title: 'Engineer',
+      }),
+      careerEngagementCreateOutputSchema,
+    );
+    const entry = toolOutput(
+      await callTool(userId, 'career_worklog_create', {
+        engagementId: engagement.engagement.id,
+        rawNote: 'This entry proves the skill.',
+      }),
+      careerWorklogCreateOutputSchema,
+    );
+
+    const created = toolOutput(
+      await callTool(userId, 'career_skill_create', {
+        name: 'Linked Skill',
+        worklogEntryIds: [entry.entry.id],
+      }),
+      careerSkillCreateOutputSchema,
+    );
+    expect(created.skill.worklogEntryIds).toEqual([entry.entry.id]);
+
+    const listed = toolOutput(await callTool(userId, 'career_skills', {}), careerSkillsSchema);
+    expect(listed.skills.find((skill) => skill.id === created.skill.id)?.worklogEntryIds).toEqual([
+      entry.entry.id,
+    ]);
+
+    const cleared = toolOutput(
+      await callTool(userId, 'career_skill_update', {
+        id: created.skill.id,
+        data: { worklogEntryIds: [] },
+      }),
+      careerSkillUpdateOutputSchema,
+    );
+    expect(cleared.skill?.worklogEntryIds).toEqual([]);
+
+    await db.deleteFrom('app.careerSkills').where('id', '=', created.skill.id).execute();
+    await db.deleteFrom('app.careerWorklogEntries').where('id', '=', entry.entry.id).execute();
+    await db
+      .deleteFrom('app.careerEngagements')
+      .where('id', '=', engagement.engagement.id)
+      .execute();
+  });
+
+  it('rejects a worklogEntryIds list with a missing or cross-owner id', async () => {
+    const engagement = toolOutput(
+      await callTool(userId, 'career_engagement_create', {
+        company: 'Proof Owner Co',
+        title: 'Engineer',
+      }),
+      careerEngagementCreateOutputSchema,
+    );
+    const foreignEngagement = toolOutput(
+      await callTool(otherUserId, 'career_engagement_create', {
+        company: 'Foreign Proof Co',
+        title: 'Engineer',
+      }),
+      careerEngagementCreateOutputSchema,
+    );
+    const foreignEntry = toolOutput(
+      await callTool(otherUserId, 'career_worklog_create', {
+        engagementId: foreignEngagement.engagement.id,
+        rawNote: 'Not the caller’s proof.',
+      }),
+      careerWorklogCreateOutputSchema,
+    );
+
+    await expect(
+      callTool(userId, 'career_skill_create', {
+        name: 'Missing Proof Skill',
+        worklogEntryIds: ['a3000001-0000-4000-8000-0000000000ff'],
+      }),
+    ).rejects.toThrow('Career worklog entry not found');
+
+    await expect(
+      callTool(userId, 'career_skill_create', {
+        name: 'Foreign Proof Skill',
+        worklogEntryIds: [foreignEntry.entry.id],
+      }),
+    ).rejects.toThrow('Career worklog entry not found');
+
+    const skill = toolOutput(
+      await callTool(userId, 'career_skill_create', {
+        name: 'Unlinked Proof Skill',
+        worklogEntryIds: [],
+      }),
+      careerSkillCreateOutputSchema,
+    );
+    await expect(
+      callTool(userId, 'career_skill_update', {
+        id: skill.skill.id,
+        data: { worklogEntryIds: [foreignEntry.entry.id] },
+      }),
+    ).rejects.toThrow('Career worklog entry not found');
+
+    await db.deleteFrom('app.careerSkills').where('id', '=', skill.skill.id).execute();
+    await db
+      .deleteFrom('app.careerWorklogEntries')
+      .where('id', '=', foreignEntry.entry.id)
+      .execute();
+    await db
+      .deleteFrom('app.careerEngagements')
+      .where('id', 'in', [engagement.engagement.id, foreignEngagement.engagement.id])
+      .execute();
   });
 
   it('does not update or delete another user’s skill', async () => {

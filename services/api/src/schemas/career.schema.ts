@@ -278,6 +278,7 @@ export const careerSkillSchema = z.object({
   yearsOfExperience: z.number().nullable(),
   description: z.string().nullable(),
   proof: z.string().nullable(),
+  worklogEntryIds: z.array(z.string().uuid()),
   aiDerived: z.boolean(),
   isVisible: z.boolean(),
   sortOrder: z.number(),
@@ -292,6 +293,12 @@ export const careerSkillCreateSchema = z.object({
   yearsOfExperience: z.number().int().nullable().optional(),
   description: z.string().nullable().optional(),
   proof: z.string().nullable().optional(),
+  worklogEntryIds: z
+    .array(z.string().uuid())
+    .optional()
+    .describe(
+      'Worklog entries that prove this skill. Every id must be the caller’s own; sending a list replaces the current links.',
+    ),
   isVisible: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
 });
@@ -509,8 +516,6 @@ export const careerWorklogEntriesSchema = z.object({
 
 export const careerWorklogEntryDetailSchema = z.object({
   entry: careerWorklogEntrySchema.nullable(),
-  // Skills that point at this entry. The link arrives with the skill-proofing issue;
-  // until then nothing points at an entry, so this stays empty.
   linkedSkillIds: z.array(z.string().uuid()),
 });
 
@@ -518,6 +523,11 @@ export const careerWorklogEntriesQuerySchema = z
   .object({
     engagementId: z.string().uuid().optional().describe('Only entries under this engagement.'),
     projectId: z.string().uuid().optional().describe('Only entries linked to this project.'),
+    skillId: z
+      .string()
+      .uuid()
+      .optional()
+      .describe('Only entries that prove this skill, as linked from the skill’s worklogEntryIds.'),
     impactStatus: careerWorklogImpactStatusSchema
       .optional()
       .describe('`open` is the follow-up queue: the outcome is still unknown.'),

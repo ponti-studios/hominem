@@ -7,6 +7,7 @@ import { z } from 'zod';
 import './career';
 import './career-worklog';
 import {
+  careerSkillCreateOutputSchema,
   careerWorklogCreateOutputSchema,
   careerWorklogEntriesSchema,
   careerWorklogEntryDetailSchema,
@@ -681,6 +682,60 @@ describe('career_worklog_entries', () => {
     await db.deleteFrom('app.careerWorklogEntries').where('id', 'in', ids).execute();
   });
 
+  it('filters to exactly the entries linked from a skill', async () => {
+    const engagementId = await createEngagement(userId, 'Skill Filter Co');
+    const linked = toolOutput(
+      await callTool(userId, 'career_worklog_create', {
+        engagementId,
+        rawNote: 'Proves the skill.',
+      }),
+      careerWorklogCreateOutputSchema,
+    );
+    const unlinked = toolOutput(
+      await callTool(userId, 'career_worklog_create', {
+        engagementId,
+        rawNote: 'Does not prove it.',
+      }),
+      careerWorklogCreateOutputSchema,
+    );
+    const skill = toolOutput(
+      await callTool(userId, 'career_skill_create', {
+        name: 'Offline sync',
+        worklogEntryIds: [linked.entry.id],
+      }),
+      careerSkillCreateOutputSchema,
+    );
+
+    const filtered = toolOutput(
+      await callTool(userId, 'career_worklog_entries', { skillId: skill.skill.id }),
+      careerWorklogEntriesSchema,
+    );
+    expect(filtered.entries.map((entry) => entry.id)).toEqual([linked.entry.id]);
+
+    // Another owner's skill id never widens the caller's results.
+    const foreignSkill = await db
+      .insertInto('app.careerSkills')
+      .values({
+        ownerUserid: otherUserId,
+        name: 'Foreign Skill',
+        worklogEntryIds: sql`${JSON.stringify([linked.entry.id])}::jsonb`,
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    const foreign = toolOutput(
+      await callTool(userId, 'career_worklog_entries', { skillId: foreignSkill.id }),
+      careerWorklogEntriesSchema,
+    );
+    expect(foreign.entries).toEqual([]);
+
+    await db.deleteFrom('app.careerSkills').where('id', '=', foreignSkill.id).execute();
+    await db.deleteFrom('app.careerSkills').where('id', '=', skill.skill.id).execute();
+    await db
+      .deleteFrom('app.careerWorklogEntries')
+      .where('id', 'in', [linked.entry.id, unlinked.entry.id])
+      .execute();
+  });
+
   it('breaks occurredStart ties on loggedAt, newest first', async () => {
     const engagementId = await createEngagement(userId, 'Tie Break Co');
 
@@ -738,11 +793,25 @@ describe('career_worklog_entries', () => {
 });
 
 describe('career_worklog_entry', () => {
-  it('returns the entry and its linked skill ids', async () => {
+  it('returns the entry and the skills that link to it', async () => {
     const engagementId = await createEngagement(userId, 'Detail Co');
     const created = toolOutput(
       await callTool(userId, 'career_worklog_create', { engagementId, rawNote: 'Detail entry.' }),
       careerWorklogCreateOutputSchema,
+    );
+    const unlinked = toolOutput(
+      await callTool(userId, 'career_worklog_create', {
+        engagementId,
+        rawNote: 'Unlinked entry.',
+      }),
+      careerWorklogCreateOutputSchema,
+    );
+    const skill = toolOutput(
+      await callTool(userId, 'career_skill_create', {
+        name: 'Detail Skill',
+        worklogEntryIds: [created.entry.id],
+      }),
+      careerSkillCreateOutputSchema,
     );
 
     const detail = toolOutput(
@@ -750,9 +819,20 @@ describe('career_worklog_entry', () => {
       careerWorklogEntryDetailSchema,
     );
     expect(detail.entry?.id).toBe(created.entry.id);
-    expect(detail.linkedSkillIds).toEqual([]);
+    expect(detail.linkedSkillIds).toEqual([skill.skill.id]);
 
-    await db.deleteFrom('app.careerWorklogEntries').where('id', '=', created.entry.id).execute();
+    // A different entry has no link.
+    const otherDetail = toolOutput(
+      await callTool(userId, 'career_worklog_entry', { id: unlinked.entry.id }),
+      careerWorklogEntryDetailSchema,
+    );
+    expect(otherDetail.linkedSkillIds).toEqual([]);
+
+    await db.deleteFrom('app.careerSkills').where('id', '=', skill.skill.id).execute();
+    await db
+      .deleteFrom('app.careerWorklogEntries')
+      .where('id', 'in', [created.entry.id, unlinked.entry.id])
+      .execute();
   });
 
   it('does not expose another user’s entry', async () => {
@@ -794,55 +874,33 @@ describe('career_worklog_delete', () => {
     expect(gone).toBeUndefined();
   });
 
-  it('scrubs a deleted id from skill links once that column lands', async () => {
-    // `app.career_skills.worklog_entry_ids` arrives with the follow-up issue, so
-    // the scrub's active branch cannot run against today's schema. Add the column
-    // inside a transaction that is rolled back, which proves the hook works the
-    // day the column lands without changing the shipped schema.
+  it('scrubs a deleted id from a skill’s worklogEntryIds on the real schema', async () => {
     const engagementId = await createEngagement(userId, 'Scrub Co');
     const created = toolOutput(
       await callTool(userId, 'career_worklog_create', { engagementId, rawNote: 'Scrub me.' }),
       careerWorklogCreateOutputSchema,
     );
-    const untouchedId = 'a3500001-0000-4000-8000-0000000000aa';
+    const skill = toolOutput(
+      await callTool(userId, 'career_skill_create', {
+        name: 'Scrub Skill',
+        worklogEntryIds: [created.entry.id],
+      }),
+      careerSkillCreateOutputSchema,
+    );
 
-    class Rollback extends Error {}
+    const removed = toolOutput(
+      await callTool(userId, 'career_worklog_delete', { id: created.entry.id }),
+      removedResultSchema,
+    );
+    expect(removed.removed).toBe(true);
 
-    try {
-      await db.transaction().execute(async (trx) => {
-        await sql`ALTER TABLE app.career_skills
-          ADD COLUMN worklog_entry_ids jsonb NOT NULL DEFAULT '[]'::jsonb`.execute(trx);
-        const skill = await trx
-          .insertInto('app.careerSkills')
-          .values({ ownerUserid: userId, name: 'Scrub Skill' })
-          .returning('id')
-          .executeTakeFirstOrThrow();
-        await sql`UPDATE app.career_skills
-          SET worklog_entry_ids = ${JSON.stringify([created.entry.id, untouchedId])}::jsonb
-          WHERE id = ${skill.id}`.execute(trx);
+    const persisted = await sql<{ worklogEntryIds: string[] }>`
+      SELECT worklog_entry_ids AS "worklogEntryIds"
+      FROM app.career_skills WHERE id = ${skill.skill.id}
+    `.execute(db);
+    expect(persisted.rows[0]?.worklogEntryIds).toEqual([]);
 
-        const scrubbed = await WorklogRepository.scrubSkillLinks(trx, userId, created.entry.id);
-        expect(scrubbed).toBe(1);
-
-        const row = await sql<{
-          worklogEntryIds: string[];
-        }>`SELECT worklog_entry_ids AS "worklogEntryIds"
-          FROM app.career_skills WHERE id = ${skill.id}`.execute(trx);
-        expect(row.rows[0]?.worklogEntryIds).toEqual([untouchedId]);
-
-        throw new Rollback();
-      });
-    } catch (error) {
-      if (!(error instanceof Rollback)) throw error;
-    }
-
-    // The rollback restored the shipped schema.
-    const columns = await sql<{ columnName: string }>`SELECT column_name AS "columnName"
-      FROM information_schema.columns
-      WHERE table_schema = 'app' AND table_name = 'career_skills'`.execute(db);
-    expect(columns.rows.map((column) => column.columnName)).not.toContain('worklog_entry_ids');
-
-    await db.deleteFrom('app.careerWorklogEntries').where('id', '=', created.entry.id).execute();
+    await db.deleteFrom('app.careerSkills').where('id', '=', skill.skill.id).execute();
   });
 
   it('rolls the deletion back when the skill-link scrub fails', async () => {
@@ -1013,6 +1071,7 @@ describe('career worklog tool surface', () => {
       'occurredAfter',
       'occurredBefore',
       'projectId',
+      'skillId',
       'tag',
     ]);
     expect(properties('career_worklog_entry')).toEqual(['id']);
