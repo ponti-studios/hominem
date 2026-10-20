@@ -9,7 +9,7 @@ describe('getReasoningConfig', () => {
   });
 
   it('keeps reasoning disabled for models without that requirement', () => {
-    expect(getReasoningConfig('openai/gpt-4o-mini')).toEqual({ effort: 'none' });
+    expect(getReasoningConfig('openai/gpt-6-luna')).toEqual({ effort: 'none' });
   });
 
   it('uses minimal reasoning for GPT-5 mini', () => {
@@ -18,6 +18,6 @@ describe('getReasoningConfig', () => {
 
   it('caps Muse generations to a provider-compatible completion budget', () => {
     expect(getMaxTokens('meta/muse-spark-1.3-contributor', 'long')).toBe(1600);
-    expect(getMaxTokens('openai/gpt-4o-mini', 'long')).toBe(6000);
+    expect(getMaxTokens('openai/gpt-6-luna', 'long')).toBe(6000);
   });
 });

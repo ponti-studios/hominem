@@ -81,7 +81,7 @@ machine: "packages/chat/src/generation-machine — server FSM" {
 
 provider: "Provider" {
   model: "OpenRouterChatModel\nstreamTurn(): token-by-token\nidle-timeout per chunk"
-  ai_pkg: "@hominem/ai\nstreamChatCompletion()\nOpenRouter SDK client\nCHAT_MODEL (default: openai/gpt-5-mini)"
+  ai_pkg: "@hominem/ai\nstreamChatCompletion()\nOpenRouter SDK client\nCHAT_MODEL (default: openai/gpt-6-luna)"
 
   model -> ai_pkg
 }

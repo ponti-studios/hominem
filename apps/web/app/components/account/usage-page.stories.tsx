@@ -39,7 +39,7 @@ const report = {
   ],
   byModel: [
     {
-      model: 'openai/gpt-4o-mini',
+      model: 'openai/gpt-6-luna',
       requestCount: 42,
       succeededCount: 40,
       failedCount: 2,
@@ -55,14 +55,14 @@ const report = {
 const points = [
   {
     bucketStart: '2026-08-20T00:00:00.000Z',
-    model: 'openai/gpt-4o-mini',
+    model: 'openai/gpt-6-luna',
     requestCount: 12,
     usageAvailableCount: 12,
     totalCostUsd: 0.42,
   },
   {
     bucketStart: '2026-08-21T00:00:00.000Z',
-    model: 'openai/gpt-4o-mini',
+    model: 'openai/gpt-6-luna',
     requestCount: 18,
     usageAvailableCount: 17,
     totalCostUsd: 0.51,

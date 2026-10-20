@@ -4,7 +4,7 @@ export const aiSchema = z.object({
   OPENROUTER_API_KEY: z.string().optional(),
   AUDIO_TTS_MODEL: z.string().default('microsoft/mai-voice-2-flash'),
   AUDIO_TTS_VOICE: z.string().default('en-US-Harper:MAI-Voice-2'),
-  CHAT_MODEL: z.string().default('openai/gpt-5-mini'),
+  CHAT_MODEL: z.string().default('openai/gpt-6-luna'),
   EMBEDDING_MODEL: z.string().default('google/gemini-embedding-2'),
   ENHANCE_MODEL: z.string().default('openai/gpt-5-mini'),
   FILE_ANALYSIS_MODEL: z.string().default('openai/gpt-5-mini'),
