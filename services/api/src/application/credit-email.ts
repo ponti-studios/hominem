@@ -59,3 +59,23 @@ export async function sendTopUpConfirmationEmail(input: {
     html: lines.map((line) => `<p>${line}</p>`).join(''),
   });
 }
+
+/** Sent when a payment is not from a UK card and address: it says nothing was charged. */
+export async function sendTopUpNotChargedEmail(userId: string): Promise<void> {
+  const user = await db
+    .selectFrom('user')
+    .select('email')
+    .where('id', '=', userId)
+    .executeTakeFirstOrThrow();
+  const lines = [
+    'Thames credit is for UK cards and UK billing addresses only for now, so we could not add credit for your payment.',
+    'You have not been charged. If your bank shows a pending amount, it is released by your bank, usually within a few days.',
+  ];
+  const { sendEmail } = await import('../auth/better-auth');
+  await sendEmail(env, {
+    to: user.email,
+    subject: 'Your Thames payment was not taken',
+    text: lines.join('\n\n'),
+    html: lines.map((line) => `<p>${line}</p>`).join(''),
+  });
+}

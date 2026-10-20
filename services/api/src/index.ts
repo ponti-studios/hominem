@@ -11,6 +11,7 @@ import { logger, LOG_MESSAGES } from '@hominem/telemetry';
 import { createAdaptorServer, serve } from '@hono/node-server';
 import { WebSocketServer } from 'ws';
 
+import { startCreditEvents, stopCreditEvents } from './application/credit-events';
 import { ChatGenerationStore } from './chat/chat-generation-store';
 import { env } from './env';
 import { resolveAiProvider, resolveEmailProvider } from './provider-mode';
@@ -47,7 +48,9 @@ if (aiProvider === 'scripted' || emailProvider === 'scripted') {
   });
 }
 
-initRuntime('api').installSignalHandlers(() => ChatGenerationStore.stop());
+initRuntime('api').installSignalHandlers(async () => {
+  await Promise.all([ChatGenerationStore.stop(), stopCreditEvents()]);
+});
 
 const app = createServer();
 const port = env.PORT ?? 4040;
@@ -56,6 +59,7 @@ const websocketServer = new WebSocketServer({ noServer: true });
 
 async function startServer() {
   ChatGenerationStore.start();
+  startCreditEvents();
   logger.info(LOG_MESSAGES.SERVER_STARTED, { host, port });
 
   if (env.NODE_ENV !== 'development') {

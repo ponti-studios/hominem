@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { QUEUE_NAMES, chatGenerationEffectsQueue } from '@hominem/queues';
 import { logger } from '@hominem/telemetry';
 
+import { startHoldSweeper } from './application/credit-settle.runtime';
 import { env } from './env';
 import { initRuntime } from './runtime';
 import { startAirportCatalogueSyncWorker } from './workers/airport-catalogue-sync';
@@ -28,6 +29,7 @@ const careerJobImportWorker = startCareerJobImportWorker();
 const chatFileCleanupWorker = startChatFileCleanupWorker();
 const chatGenerationEffectsWorker = await startChatGenerationEffectsWorker();
 const airportCatalogueSyncWorker = await startAirportCatalogueSyncWorker();
+const stopHoldSweeper = startHoldSweeper();
 const workerVersion = 'career-import-v2';
 
 const healthServer = createServer((req, res) => {
@@ -44,6 +46,7 @@ healthServer.listen(env.PORT ?? env.WORKER_PORT ?? 4041);
 
 runtime.installSignalHandlers(
   async () => {
+    stopHoldSweeper();
     await Promise.all([
       fileProcessingWorker.close(),
       embeddingGenerationWorker.close(),

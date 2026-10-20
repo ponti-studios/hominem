@@ -6,7 +6,6 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { creditFor, creditSnapshot, verifyLinkToken } from '../../application/credit';
-import { sendTopUpConfirmationEmail } from '../../application/credit-email';
 import {
   cancelledPage,
   creditCsp,
@@ -14,7 +13,8 @@ import {
   problemPage,
   topUpPage,
 } from '../../application/credit-page';
-import { confirmOnce, handleStripeEvent, startCheckout } from '../../application/credit-payments';
+import { handleStripeEvent, startCheckout } from '../../application/credit-payments';
+import { deliverSettled } from '../../application/credit-settle.runtime';
 import {
   creditDeps,
   personInCreditMode,
@@ -185,14 +185,8 @@ creditRoutes.post('/webhooks/stripe', async (c) => {
   try {
     const outcome = await handleStripeEvent({ credit: deps, stripe }, event);
     logger.info('credit_webhook', { outcome: outcome.kind });
-    const confirm =
-      outcome.kind === 'credited'
-        ? outcome
-        : outcome.kind === 'duplicate'
-          ? outcome.confirm
-          : undefined;
     // Sent once per payment: a retry after a failed send tries again, a repeat never sends twice.
-    if (confirm) await confirmOnce({ store: deps.store }, confirm, sendTopUpConfirmationEmail);
+    await deliverSettled(deps.store, outcome);
     return c.json({ received: true });
   } catch (error) {
     // A 5xx makes Stripe retry, which the ledger's idempotency makes safe.
