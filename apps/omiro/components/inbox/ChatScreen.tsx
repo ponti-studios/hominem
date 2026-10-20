@@ -1,4 +1,4 @@
-import { deriveSessionSource } from '@hominem/chat/session-artifacts';
+import { deriveSessionSource } from '@hominem/chat/ui';
 import { isObject } from '@hominem/utils';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -23,11 +23,7 @@ import { ActionMenu } from '~/components/ui/action-menu';
 import { useChatData } from '~/hooks/use-chat-data';
 import { useChatSearch } from '~/hooks/use-chat-search';
 import { useNetworkStatus } from '~/hooks/use-network-status';
-import {
-  getChatTitle,
-  useActiveChat,
-  useEditChatMessage,
-} from '~/services/chat';
+import { getChatTitle, useActiveChat, useEditChatMessage } from '~/services/chat';
 import { useChatScreenGeneration } from '~/services/chat/use-chat-screen-generation';
 import {
   clearResumeTarget,
@@ -135,7 +131,15 @@ export function ChatScreen({ id }: { id: string }) {
     dismissActiveGeneration();
   }, [chatId, dismissActiveGeneration, failedMessageText]);
 
-  const displayTitle = getChatTitle(activeChat?.title, deriveSessionSource({ messages }));
+  // A chat still on the default title is named from its first user message.
+  const derivedSource = useMemo(
+    () =>
+      deriveSessionSource({
+        messages: messages.map((message) => ({ role: message.role, content: message.message })),
+      }),
+    [messages],
+  );
+  const displayTitle = getChatTitle(activeChat?.title, derivedSource);
 
   useEffect(() => {
     writeResumeTarget({

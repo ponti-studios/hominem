@@ -1,10 +1,6 @@
 import type { ChatMessageItem } from '@hominem/chat';
 
-import {
-  ChatGenerationBar,
-  ChatSearchBar,
-  ChatToolApprovalBar,
-} from '~/components/chat';
+import { ChatGenerationBar, ChatSearchBar, ChatToolApprovalBar } from '~/components/chat';
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock } from '~/components/composer/ComposerDock';
 import type { useChatSearch } from '~/hooks/use-chat-search';
