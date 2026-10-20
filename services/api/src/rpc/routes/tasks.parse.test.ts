@@ -136,7 +136,10 @@ describe('tasks parse route', () => {
     });
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ error: 'Time block extraction failed' });
+    expect(await response.json()).toEqual({
+      error: 'Time block extraction failed',
+      failureType: 'ai.time_block_extract.failed',
+    });
     expect(mocks.recordAIUsageEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: TIME_BLOCK_TEST_USER_ID,
