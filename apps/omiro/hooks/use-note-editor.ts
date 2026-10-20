@@ -147,11 +147,13 @@ export function useNoteEditor(noteId: string) {
     async (fileId: string, currentFiles: Note['files'], title: string | null, content: string) => {
       const nextFiles = currentFiles.filter((f) => f.id !== fileId);
       updateCache({ files: nextFiles });
-      await saver.persistNow({
-        title: title || null,
-        content,
-        fileIds: nextFiles.map((f) => f.id),
-      });
+      await saver
+        .persistNow({
+          title: title || null,
+          content,
+          fileIds: nextFiles.map((f) => f.id),
+        })
+        .catch(() => undefined);
     },
     [saver, updateCache],
   );

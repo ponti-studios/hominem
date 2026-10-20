@@ -277,4 +277,13 @@ describe('useNoteEditor', () => {
       fileIds: ['file-2'],
     });
   });
+
+  it('consumes detach persistence failures after reporting them through the saver', async () => {
+    mockPersistNow.mockRejectedValueOnce(new Error('offline'));
+    const { result } = renderHookWithQueryClient(() => useNoteEditor(NOTE_ID));
+
+    await expect(
+      result.current.detachFile('file-1', [], 'Title', 'Content'),
+    ).resolves.toBeUndefined();
+  });
 });
