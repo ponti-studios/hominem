@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 
+import { resendMock } from '@hominem/services/email';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createBetterAuthServer } from '../auth/better-auth';
@@ -70,17 +71,23 @@ describe('MCP OAuth integration', () => {
     });
     const auth = createBetterAuthServer(testEnv);
     app = createServer({ env: testEnv, auth });
-    // Route only requests aimed at this test's own API back into the local
-    // app; anything else (e.g. the Better Auth OTP flow's outbound call to
-    // Resend) must keep going through the real global fetch, which the
-    // suite-wide scripted-providers dispatcher (testkit/setup.ts) is already
-    // intercepting, so the real Better Auth OTP flow runs end-to-end and this
-    // test reads back the real, randomly generated OTP a user would have
-    // received by email.
+    // Route this test's API requests back into the local app and resolve its
+    // Resend request directly through the scripted responder. This keeps the
+    // OAuth flow end-to-end without depending on a nested global fetch through
+    // the suite-wide Undici dispatcher.
     const realFetch = globalThis.fetch;
-    vi.stubGlobal('fetch', (input: string | URL | Request, init?: RequestInit) => {
+    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
       const url = input instanceof Request ? input.url : input.toString();
       if (url.startsWith(apiUrl)) return app.request(new Request(input, init));
+      if (url === `${resendMock.route.origin}${resendMock.route.path}`) {
+        const request =
+          input instanceof Request ? new Request(input, init) : new Request(url, init);
+        const response = await resendMock.route.responder(await request.text());
+        return new Response(response.frames.map((frame) => frame.data).join(''), {
+          status: response.status,
+          headers: response.headers,
+        });
+      }
       return realFetch(input, init);
     });
   });

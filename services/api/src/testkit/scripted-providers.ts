@@ -1,5 +1,5 @@
 import { resendMock } from '@hominem/services/email';
-import { Dispatcher, getGlobalDispatcher, setGlobalDispatcher } from 'undici';
+import { Dispatcher, getGlobalDispatcher, MockAgent, setGlobalDispatcher } from 'undici';
 import { z } from 'zod';
 
 import { scriptedFlowStep } from './scripted-flows';
@@ -75,10 +75,6 @@ const CONTROLLED_DELAY_MS = 750;
 
 function hasControl(userText: string, control: string) {
   return new RegExp(`\\b${control}\\b`, 'i').test(userText);
-}
-
-function wait(milliseconds: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function sse(value: unknown) {
@@ -473,11 +469,6 @@ const OPENROUTER_ROUTE: Route = {
   responder: openRouterResponder,
 };
 
-const STATUS_TEXT: Record<number, string> = {
-  200: 'OK',
-  400: 'Bad Request',
-};
-
 function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
   return value != null && typeof value === 'object' && Symbol.asyncIterator in value;
 }
@@ -495,13 +486,6 @@ async function readDispatchBody(body: unknown): Promise<string> {
     return Buffer.concat(chunks).toString('utf8');
   }
   return '';
-}
-
-function rawHeaderPairs(headers: Record<string, string>): Buffer[] {
-  return Object.entries(headers).flatMap(([name, value]) => [
-    Buffer.from(name),
-    Buffer.from(value),
-  ]);
 }
 
 class ScriptedProvidersDispatcher extends Dispatcher {
@@ -532,23 +516,40 @@ class ScriptedProvidersDispatcher extends Dispatcher {
     options: Dispatcher.DispatchOptions,
     handler: Dispatcher.DispatchHandler,
   ): Promise<void> {
+    const mockAgent = new MockAgent();
+    mockAgent.disableNetConnect();
+
     try {
-      handler.onConnect?.(() => undefined);
       const rawBody = await readDispatchBody(options.body);
       const { status, headers, frames } = await route.responder(rawBody);
-      handler.onHeaders?.(
-        status,
-        rawHeaderPairs(headers),
-        () => undefined,
-        STATUS_TEXT[status] ?? '',
-      );
-      for (const frame of frames) {
-        if (frame.delayMsBefore) await wait(frame.delayMsBefore);
-        handler.onData?.(Buffer.from(frame.data));
-      }
-      handler.onComplete?.(null);
+      const responseBody = frames.map((frame) => frame.data).join('');
+      const responseDelay = frames.reduce((total, frame) => total + (frame.delayMsBefore ?? 0), 0);
+      const response = mockAgent
+        .get(route.origin)
+        .intercept({ path: options.path, method: options.method })
+        .reply(status, responseBody, { headers });
+      if (responseDelay > 0) response.delay(responseDelay);
+
+      const mockHandler = new Proxy(handler, {
+        get(target, property) {
+          const callback = Reflect.get(target, property, target);
+          if (typeof callback !== 'function') return callback;
+          if (property === 'onComplete' || property === 'onError') {
+            return (...args: unknown[]) => {
+              try {
+                return callback.apply(target, args);
+              } finally {
+                void mockAgent.close();
+              }
+            };
+          }
+          return callback.bind(target);
+        },
+      });
+      mockAgent.dispatch({ ...options, body: null }, mockHandler);
     } catch (error) {
       handler.onError?.(error instanceof Error ? error : new Error(String(error)));
+      void mockAgent.close();
     }
   }
 
