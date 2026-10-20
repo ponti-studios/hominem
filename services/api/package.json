@@ -86,7 +86,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@modelcontextprotocol/client": "2.2.0",
+    "@modelcontextprotocol/client": "2.3.0",
     "@tailwindcss/vite": "^4.1.8",
     "@types/node": "catalog:",
     "@types/qrcode": "^1.5.6",
