@@ -57,9 +57,33 @@ CONSECUTIVE_FAILURE_LIMIT=10
 cd "$SCRIPT_DIR"
 STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
+# Best effort: is Railway itself having an incident? Used only to explain a failure, never to decide
+# one, and it never fails the script. Prints a one-line headline, or nothing.
+railway_incident_headline() {
+  curl -fsS -m 10 "${RAILWAY_STATUS_URL:-https://status.railway.com}" 2>/dev/null \
+    | grep -oiE 'new builds are temporarily paused|builds? (are )?(paused|delayed|degraded)|major outage|partial outage|degraded performance' \
+    | head -1 || true
+}
+
 echo "Uploading $service_name (detached)..."
-"$RAILWAY_BIN" up --detach --json --service "$SERVICE" 2>&1 | tee /tmp/railway-up.log >/dev/null
-up_output="$(cat /tmp/railway-up.log)"
+up_log="$(mktemp)"
+up_status=0
+"$RAILWAY_BIN" up --detach --json --service "$SERVICE" >"$up_log" 2>&1 || up_status=$?
+up_output="$(cat "$up_log")"
+rm -f "$up_log"
+if (( up_status != 0 )); then
+  # The upload itself failed, so no deployment exists to poll. Say why instead of a bare exit code.
+  echo "error: 'railway up' for $service_name failed with exit code $up_status. Its output:" >&2
+  printf '%s\n' "${up_output:-<no output>}" | sed 's/^/  | /' >&2
+  incident="$(railway_incident_headline)"
+  if [[ -n "$incident" ]]; then
+    echo "::error::Railway reports a platform incident (\"$incident\", https://status.railway.com). Deploying $service_name failed at upload; rerun the job once it clears." >&2
+    echo "note: nothing is wrong with this commit's build; Railway said: $incident" >&2
+  else
+    echo "::error::Uploading $service_name to Railway failed with exit code $up_status (see the output above)." >&2
+  fi
+  exit 1
+fi
 
 # The detached upload returns the deployment ID — poll exactly that
 # deployment so a concurrent/manual deploy for the same service can never
