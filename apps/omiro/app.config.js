@@ -2,6 +2,7 @@ const { z } = require('zod');
 const withPrivacyManifest = require('./plugins/withPrivacyManifest');
 const withSceneLifecycle = require('./plugins/withSceneLifecycle');
 const withHominemAuthSPM = require('./plugins/withHominemAuthSPM');
+const withLocalNotificationsOnly = require('./plugins/withLocalNotificationsOnly');
 
 // Keeping this schema local (instead of importing env.ts's) because Expo
 // evaluates this config during native builds, before that module is usable.
@@ -94,6 +95,7 @@ function createConfig({ config }) {
       },
     ],
     'expo-sqlite',
+    withLocalNotificationsOnly,
     'expo-notifications',
     [
       'newrelic-react-native-agent',
