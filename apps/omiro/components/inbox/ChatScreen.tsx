@@ -1,6 +1,5 @@
-import type { SessionSource } from '@hominem/rpc/types';
+import { deriveSessionSource } from '@hominem/chat/ui';
 import { isObject } from '@hominem/utils';
-import { useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
@@ -24,15 +23,8 @@ import { ActionMenu } from '~/components/ui/action-menu';
 import { useChatData } from '~/hooks/use-chat-data';
 import { useChatSearch } from '~/hooks/use-chat-search';
 import { useNetworkStatus } from '~/hooks/use-network-status';
-import { useTaskExtraction, type ExtractedTasksCreated } from '~/hooks/use-task-extraction';
-import {
-  getChatTitle,
-  updateChatTitleCaches,
-  useActiveChat,
-  useEditChatMessage,
-} from '~/services/chat';
+import { getChatTitle, useActiveChat, useEditChatMessage } from '~/services/chat';
 import { useChatScreenGeneration } from '~/services/chat/use-chat-screen-generation';
-import { invalidateInboxQueries } from '~/services/inbox/inbox-refresh';
 import {
   clearResumeTarget,
   writeChatDraft,
@@ -45,11 +37,8 @@ function isNotFoundError(error: unknown): boolean {
   return isObject(error) && 'status' in error && error.status === 404;
 }
 
-const NEW_SESSION_SOURCE: SessionSource = { kind: 'new' };
-
 export function ChatScreen({ id }: { id: string }) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { data: activeChat, error: activeChatError } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
   const { inset: composerInset, restingInset } = useComposerDockMetrics();
@@ -71,20 +60,7 @@ export function ChatScreen({ id }: { id: string }) {
     },
   }));
 
-  const source = NEW_SESSION_SOURCE;
   const chatGeneration = useChatScreenGeneration(chatId);
-
-  const handleContentCreated = useCallback(
-    async (content: ExtractedTasksCreated) => {
-      updateChatTitleCaches(queryClient, {
-        chatId,
-        title: content.source.title,
-        updatedAt: content.updatedAt,
-      });
-      await invalidateInboxQueries(queryClient);
-    },
-    [chatId, queryClient],
-  );
 
   const handleChatArchive = useCallback(() => {
     router.dismissTo(CHAT_ROUTE);
@@ -94,12 +70,6 @@ export function ChatScreen({ id }: { id: string }) {
     useChatData({ chatId });
   const isConversationGone = isNotFoundError(activeChatError) || isNotFoundError(messagesError);
   const search = useChatSearch(messages, chatId);
-  const extraction = useTaskExtraction({
-    chatId,
-    source,
-    messages,
-    onContentCreated: handleContentCreated,
-  });
   const handleToggleDebug = useCallback(() => setShowDebug((value) => !value), []);
   // Owned here rather than inside Composer, so the composer's send and the
   // message list's retry action share one mutation instead of racing two
@@ -161,7 +131,15 @@ export function ChatScreen({ id }: { id: string }) {
     dismissActiveGeneration();
   }, [chatId, dismissActiveGeneration, failedMessageText]);
 
-  const displayTitle = getChatTitle(activeChat?.title, extraction.resolvedSource);
+  // A chat still on the default title is named from its first user message.
+  const derivedSource = useMemo(
+    () =>
+      deriveSessionSource({
+        messages: messages.map((message) => ({ role: message.role, content: message.message })),
+      }),
+    [messages],
+  );
+  const displayTitle = getChatTitle(activeChat?.title, derivedSource);
 
   useEffect(() => {
     writeResumeTarget({
@@ -187,7 +165,7 @@ export function ChatScreen({ id }: { id: string }) {
 
   const chatMenuSections = useChatActionsMenu({
     chatId,
-    canTransform: extraction.canTransform,
+    canTransform: messages.length > 0,
     isConversationGone,
     messages,
     onChatArchive: handleChatArchive,
@@ -195,9 +173,6 @@ export function ChatScreen({ id }: { id: string }) {
     onOpenSettings: () => setShowChatSettings(true),
     onOpenSources: () => setShowChatSources(true),
     onToggleDebug: handleToggleDebug,
-    onTransform: (type) => {
-      void extraction.handleTransform(type);
-    },
     showDebug,
   });
 
@@ -285,7 +260,6 @@ export function ChatScreen({ id }: { id: string }) {
           onRetryGeneration={retryActiveGeneration}
           search={search}
           chatSend={chatSend}
-          extraction={extraction}
         />
       </View>
     </>

@@ -1,17 +1,9 @@
 import type { ChatMessageItem } from '@hominem/chat';
-import { View } from 'react-native';
 
-import {
-  ChatGenerationBar,
-  ChatReviewOverlay,
-  ChatSearchBar,
-  ChatToolApprovalBar,
-} from '~/components/chat';
+import { ChatGenerationBar, ChatSearchBar, ChatToolApprovalBar } from '~/components/chat';
 import { Composer } from '~/components/composer/Composer';
 import { ComposerDock } from '~/components/composer/ComposerDock';
-import { useStyles } from '~/components/theme';
 import type { useChatSearch } from '~/hooks/use-chat-search';
-import type { useTaskExtraction } from '~/hooks/use-task-extraction';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
 import type { useSendMessage } from '~/services/chat/use-send-message';
 
@@ -34,10 +26,6 @@ type ChatScreenDockProps = {
   onRetryGeneration: () => void;
   search: ReturnType<typeof useChatSearch>;
   chatSend: Pick<ReturnType<typeof useSendMessage>, 'sendChatMessage' | 'isChatSending'>;
-  extraction: Pick<
-    ReturnType<typeof useTaskExtraction>,
-    'pendingReview' | 'isReviewVisible' | 'handleAcceptReview' | 'handleRejectReview'
-  >;
 };
 
 export function ChatScreenDock({
@@ -54,12 +42,7 @@ export function ChatScreenDock({
   onRetryGeneration,
   search,
   chatSend,
-  extraction,
 }: ChatScreenDockProps) {
-  const styles = useStyles(() => ({
-    overlayContainer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
-  }));
-
   if (isConversationGone) {
     return null;
   }
@@ -94,18 +77,6 @@ export function ChatScreenDock({
           <Composer mode="chat" chatId={chatId} chatSend={chatSend} />
         )}
       </ComposerDock>
-      <View pointerEvents="box-none" style={styles.overlayContainer}>
-        <ChatReviewOverlay
-          pendingReview={extraction.pendingReview}
-          isVisible={extraction.isReviewVisible}
-          onAccept={() => {
-            void extraction.handleAcceptReview();
-          }}
-          onReject={() => {
-            void extraction.handleRejectReview();
-          }}
-        />
-      </View>
     </>
   );
 }

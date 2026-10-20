@@ -18,10 +18,6 @@
       "types": "./build/session-artifacts.d.ts",
       "default": "./src/session-artifacts.ts"
     },
-    "./react": {
-      "types": "./build/react.d.ts",
-      "default": "./src/react.ts"
-    },
     "./constants": {
       "types": "./build/constants.d.ts",
       "default": "./src/constants.ts"

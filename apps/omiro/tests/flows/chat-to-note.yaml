@@ -56,18 +56,22 @@ tags:
     timeout: 2000
 - takeScreenshot: omiro_flow_5_menu_open
 
-# Tap "Create note" in the native menu, then wait for the review screen itself
+# Tap "Create note" in the native menu to open the note-draft sheet, then tap
+# "Create note" again to generate the preview, and wait for the preview itself
 # rather than a fixed pause.
+- tapOn: 'Create note'
+- waitForAnimationToEnd:
+    timeout: 2000
+- takeScreenshot: omiro_flow_6_draft_sheet
 - tapOn: 'Create note'
 - extendedWaitUntil:
     visible:
-      id: 'classification-review-accept'
-    timeout: 15000
-- takeScreenshot: omiro_flow_6_review_shown
+      id: 'note-draft-accept'
+    timeout: 30000
 
-# Accept the classification review.
+# Save the generated note.
 - tapOn:
-    id: 'classification-review-accept'
+    id: 'note-draft-accept'
 - waitForAnimationToEnd:
     timeout: 6000
 - takeScreenshot: omiro_flow_7_accepted
