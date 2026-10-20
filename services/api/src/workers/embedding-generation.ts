@@ -72,7 +72,9 @@ async function processEmbeddingJob(data: EmbeddingGenerationJob) {
   }
   const embedding = embeddingResult.embedding;
   if (embedding.length === 0) {
-    logger.error('[embeddings] generation returned empty vector', {
+    logger.error('embedding_generation_empty_result', {
+      operation: 'embedding.generation',
+      failureType: 'embedding.generation.empty_result',
       entityType: data.entityType,
       entityId: data.entityId,
     });
@@ -114,7 +116,10 @@ export function startEmbeddingGenerationWorker() {
   );
 
   worker.on('failed', (job, error) => {
-    logger.error('[embeddings] generation job failed', {
+    logger.error('embedding_generation_failed', {
+      operation: 'embedding.generation',
+      failureType: 'embedding.generation.failed',
+      retryable: Boolean(job && job.attemptsMade < (job.opts.attempts ?? 1)),
       jobId: job?.id,
       error,
     });

@@ -295,7 +295,7 @@ export const NoteRepository = {
   async getOwnedOrThrow(handle: DbHandle, noteId: string, userId: string): Promise<NoteRow> {
     const note = await NoteRepository.getOwned(handle, noteId, userId);
     if (!note) {
-      throw new NotFoundError('Note', { noteId });
+      throw new NotFoundError('Note', { noteId }, 'note.not_found');
     }
     return note;
   },
@@ -571,7 +571,7 @@ export const NoteRepository = {
       .executeTakeFirst();
 
     if (!updated) {
-      throw new NotFoundError('Note', { noteId: command.noteId });
+      throw new NotFoundError('Note', { noteId: command.noteId }, 'note.not_found');
     }
   },
 
@@ -583,7 +583,7 @@ export const NoteRepository = {
       .returning('id')
       .executeTakeFirst();
 
-    if (!deleted) throw new NotFoundError('Note', { noteId: command.noteId });
+    if (!deleted) throw new NotFoundError('Note', { noteId: command.noteId }, 'note.not_found');
   },
 
   // Needs to run inside a transaction — it validates file ownership then replaces the whole set
@@ -604,7 +604,11 @@ export const NoteRepository = {
       .execute();
 
     if (ownedFiles.length !== uniqueFileIds.length) {
-      throw new ValidationError('One or more files are unavailable for this note');
+      throw new ValidationError(
+        'One or more files are unavailable for this note',
+        undefined,
+        'note.files_unavailable',
+      );
     }
 
     await handle.deleteFrom('app.noteFiles').where('noteId', '=', command.noteId).execute();

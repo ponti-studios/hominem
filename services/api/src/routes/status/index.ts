@@ -26,13 +26,21 @@ statusRoutes.get('/', async (c) => {
         : {}),
     });
   } catch (err) {
-    logger.error('Health check failed', { error: err });
-    throw new UnavailableError('Health check failed', {
-      status: 'error',
-      serverTime: new Date().toISOString(),
-      uptime: process.uptime(),
-      database: 'disconnected',
-      message: err instanceof Error ? err.message : 'Unknown error',
+    logger.error('health_check_failed', {
+      operation: 'health_check',
+      failureType: 'health_check.failed',
+      error_name: err instanceof Error ? err.name : 'unknown',
     });
+    throw new UnavailableError(
+      'Health check failed',
+      {
+        status: 'error',
+        serverTime: new Date().toISOString(),
+        uptime: process.uptime(),
+        database: 'disconnected',
+        message: err instanceof Error ? err.message : 'Unknown error',
+      },
+      'health_check.failed',
+    );
   }
 });

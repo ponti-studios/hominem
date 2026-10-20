@@ -145,13 +145,17 @@ async function processCareerImport(job: Job<CareerImportQueuePayload>): Promise<
       errorMessage: importError.message,
       completedAt: isRetrying ? null : new Date().toISOString(),
     });
-    logger.error('[career-import] failed', {
+    logger.error('career_import_failed', {
+      operation: 'career.import',
+      failureType: 'career.import.failed',
+      failureStage: importError.code,
       error: importError,
       jobId,
       importId: record.id,
       userId,
       sourceHost: record.sourceHost,
       errorCode: importError.code,
+      retryable: importError.retryable,
       retrying: isRetrying,
       attempt: job.attemptsMade + 1,
     });
@@ -169,14 +173,21 @@ export function startCareerJobImportWorker() {
   );
 
   worker.on('failed', (job, error) => {
-    logger.error('[career-import] bullmq_job_failed', {
-      error,
+    logger.error('career_import_worker_failed', {
+      operation: 'career.import.worker',
+      failureType: 'career.import.worker_failed',
+      retryable: Boolean(job && job.attemptsMade < (job.opts.attempts ?? 1)),
+      error_name: error instanceof Error ? error.name : 'unknown',
       jobId: job?.id,
       queue: QUEUE_NAMES.CAREER_JOB_IMPORT,
     });
   });
   worker.on('stalled', (jobId) => {
-    logger.warn('[career-import] bullmq_job_stalled', { jobId });
+    logger.warn('career_import_stalled', {
+      operation: 'career.import.worker',
+      failureType: 'career.import.stalled',
+      jobId,
+    });
   });
 
   logger.info('[career-import] worker_started', { version: 'db-url-fallback-v1' });

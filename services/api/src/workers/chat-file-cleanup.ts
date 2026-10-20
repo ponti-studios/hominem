@@ -24,7 +24,13 @@ export function startChatFileCleanupWorker() {
   );
 
   worker.on('failed', (job, error) => {
-    logger.error('chat_file_cleanup_failed', { jobId: job?.id, error });
+    logger.error('chat_file_cleanup_failed', {
+      operation: 'chat.file_cleanup',
+      failureType: 'chat.file_cleanup.failed',
+      retryable: Boolean(job && job.attemptsMade < (job.opts.attempts ?? 1)),
+      jobId: job?.id,
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
   });
 
   return worker;

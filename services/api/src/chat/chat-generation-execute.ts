@@ -276,6 +276,8 @@ async function executeGenerationRun(
     metrics.outcome('failed');
     streamError = error;
     logger.error('chat_generation_failed', {
+      operation: 'chat.generation',
+      failureType: 'chat.generation.failed',
       generationId: input.generationId,
       chatId: input.chatId,
       userId: input.userId,

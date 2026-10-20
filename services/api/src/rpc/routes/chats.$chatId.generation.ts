@@ -29,14 +29,30 @@ function chatErrorMetadata(error: unknown) {
           : /validation|zod/i.test(errorName)
             ? 'validation'
             : 'internal';
-  return { errorCategory, errorName };
+  const failureType =
+    error instanceof ChatHttpClientError && error.code === 'UNSUPPORTED_CAPABILITY'
+      ? 'chat.request.unsupported_capability'
+      : errorCategory === 'client_input'
+        ? 'chat.request.invalid_input'
+        : errorCategory === 'provider'
+          ? 'chat.request.provider_failed'
+          : errorCategory === 'validation'
+            ? 'chat.request.validation_failed'
+            : errorCategory === 'client_safe'
+              ? 'chat.request.rejected'
+              : 'chat.request.failed';
+  return { errorCategory, errorName, failureType };
 }
 
 function failedResponse(error: unknown): Response {
   if (error instanceof Response) return error;
   if (error instanceof ChatHttpClientError) {
     return Response.json(
-      { error: error.clientMessage, code: error.code },
+      {
+        error: error.clientMessage,
+        code: error.code,
+        failureType: chatErrorMetadata(error).failureType,
+      },
       { status: error.statusCode },
     );
   }
@@ -45,7 +61,11 @@ function failedResponse(error: unknown): Response {
       ? error.statusCode
       : undefined;
   return Response.json(
-    { error: 'Chat request failed', code: 'CHAT_REQUEST_FAILED' },
+    {
+      error: 'Chat request failed',
+      code: 'CHAT_REQUEST_FAILED',
+      failureType: chatErrorMetadata(error).failureType,
+    },
     { status: typeof statusCode === 'number' ? statusCode : 500 },
   );
 }
@@ -58,13 +78,22 @@ function handleRoute(
   const requestId = c.get('requestId');
   return operation().catch((error: unknown) => {
     logger.error('chat_http_handler_error', {
+      operation: 'chat.request',
       method: request.method,
       path: new URL(request.url).pathname,
       requestId,
       ...chatErrorMetadata(error),
     });
     if (error instanceof ChatGenerationInputError) {
-      return Response.json({ error: error.message }, { status: 400 });
+      return Response.json(
+        {
+          error: 'validation_error',
+          code: 'VALIDATION_ERROR',
+          failureType: 'chat.request.invalid_input',
+          message: error.message,
+        },
+        { status: 400 },
+      );
     }
     return failedResponse(error);
   });
@@ -89,7 +118,17 @@ function createGenerationRoutes(service: ChatGenerationService) {
           generationId: c.req.param('generationId'),
           ownerUserId: c.get('auth')!.userId,
         });
-        if (!run) return new Response('Generation run not found', { status: 404 });
+        if (!run) {
+          return Response.json(
+            {
+              error: 'not_found',
+              code: 'NOT_FOUND',
+              failureType: 'chat.generation.not_found',
+              message: 'Generation run not found',
+            },
+            { status: 404 },
+          );
+        }
         return Response.json(run);
       }),
     )
@@ -102,7 +141,17 @@ function createGenerationRoutes(service: ChatGenerationService) {
           generationId,
           ownerUserId,
         });
-        if (!run) return new Response('Generation run not found', { status: 404 });
+        if (!run) {
+          return Response.json(
+            {
+              error: 'not_found',
+              code: 'NOT_FOUND',
+              failureType: 'chat.generation.not_found',
+              message: 'Generation run not found',
+            },
+            { status: 404 },
+          );
+        }
         return createGenerationSseResponse(
           await service.replay({
             generationId,

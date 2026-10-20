@@ -62,6 +62,40 @@ Open Logs in the `hominem` account and filter by `service.name` (`api` or
 bounded attributes emitted by the shared logger. Use Railway for raw dependency
 stdout/stderr and Railway edge/build logs, which are not forwarded to New Relic.
 
+For error triage, start with production plus `failureType`; use
+`failureCategory` for the broad HTTP class, `operation`/`failureStage` to locate
+the failing step, and `retryable` to separate transient worker failures from
+terminal ones. `api_request_failed` is the stable API failure event. Follow
+`trace.id` into Distributed Tracing when it is present. Error messages and
+record identifiers are intentionally omitted from New Relic log attributes.
+
+In NRQL mode, these queries give a quick starting point:
+
+```sql
+FROM Log
+SELECT count(*)
+WHERE service.name = 'api'
+  AND deployment.environment.name = 'production'
+  AND log.event = 'api_request_failed'
+FACET failureType
+SINCE 24 hours ago
+```
+
+```sql
+FROM Log
+SELECT count(*)
+WHERE service.name = 'worker'
+  AND deployment.environment.name = 'production'
+  AND failureType IS NOT NULL
+FACET log.event, failureType
+SINCE 24 hours ago
+```
+
+To inspect recent occurrences of one type, replace the aggregate with
+`SELECT *` and add `AND failureType = 'note.not_found'`; set the time picker to
+the incident window. New Relic documents the `FROM`, `FACET`, and time-window
+query syntax in its [NRQL documentation](https://docs.newrelic.com/docs/nrql/get-started/introduction-nrql-how-nrql-works/).
+
 Response procedure for an incident: New Relic Errors/trace waterfall → Railway
 logs → database usage/reconciliation rows → local reproduction. Do not change
 provider or deployment configuration based on a dashboard aggregate alone.

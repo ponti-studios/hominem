@@ -16,7 +16,7 @@ import { ZodError } from 'zod';
 
 import type { CapabilityDefinition } from '../application/capability';
 import type { AuthContext } from '../auth/types';
-import { isServiceError, UnauthorizedError } from '../errors';
+import { getServiceErrorFailureType, isServiceError, UnauthorizedError } from '../errors';
 import { confirmationCodec, type ConfirmationState } from './confirmation';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
@@ -118,10 +118,21 @@ async function invokeTool(
   try {
     return await callTool(ownerUserId, toolName, args);
   } catch (error) {
-    logger.warn('[mcp] tool invocation failed', {
+    logger.warn('mcp_tool_invocation_failed', {
+      operation: 'mcp.tool.invoke',
+      failureType: isServiceError(error)
+        ? getServiceErrorFailureType(error)
+        : error instanceof ZodError
+          ? 'mcp.tool.invalid_input'
+          : 'mcp.tool.invocation_failed',
+      failureCategory:
+        error instanceof ZodError
+          ? 'validation'
+          : isServiceError(error)
+            ? error.code.toLowerCase()
+            : 'unhandled',
+      error_name: error instanceof Error ? error.name : 'unknown',
       tool: toolName,
-      userId: ownerUserId,
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
     // A known service error (e.g. a validation failure the caller can act on) carries a
     // client-safe message — surface it instead of the opaque generic text, which gave the

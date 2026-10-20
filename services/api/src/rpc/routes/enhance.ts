@@ -72,9 +72,11 @@ export const enhanceRoutes = new Hono<AppContext>()
         error,
         durationMs: getDurationMs(),
       });
-      logger.error('[ai/enhance] OpenRouter error', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+      logger.error('ai_text_enhance_failed', {
+        operation: 'ai.text_enhance',
+        failureType: 'ai.text_enhance.failed',
+        error_name: error instanceof Error ? error.name : 'unknown',
       });
-      return c.json({ error: 'Enhancement failed' }, 500);
+      return c.json({ error: 'Enhancement failed', failureType: 'ai.text_enhance.failed' }, 500);
     }
   });

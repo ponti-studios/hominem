@@ -142,6 +142,27 @@ Error records should include:
 - model/provider metadata when relevant, without provider request URLs or raw
   response bodies;
 - retryability and whether any side effect was committed.
+- `failureType`, a bounded, stable identifier for the specific failure reason.
+  `code` remains the broad HTTP/service category (`NOT_FOUND`,
+  `VALIDATION_ERROR`, etc.); use `failureType` to distinguish cases such as
+  `note.not_found`, `note.reference_unavailable`, and `chat.message.not_found`.
+  Every `ServiceError` gets a category default; known resource-not-found and
+  operation failures use specific values. `operation`, `failureStage`,
+  `retryable`, and `sideEffectCommitted` are optional bounded dimensions that
+  make failures actionable. Exported values must be added to the shared
+  failure type schema and OTEL log allowlist; never derive them from error
+  messages or arbitrary details.
+
+### New Relic error triage
+
+Start with `service.name` and `deployment.environment.name`, then narrow by
+`failureType` or `log.event`. `failureCategory` groups the broad HTTP/service
+class; `failureType` identifies the domain cause; `operation` and
+`failureStage` identify where to investigate. `retryable` distinguishes
+transient worker failures from terminal ones. Use `trace.id` to open the
+correlated request waterfall when available. For API request failures, the
+stable event name is `api_request_failed`; worker events use operation event
+names such as `file_processing_failed` and `embedding_generation_failed`.
 
 Do not use the final HTTP status as the failure category. Distinguish client
 input, unsupported capability, planner validation, provider, runtime/tool,

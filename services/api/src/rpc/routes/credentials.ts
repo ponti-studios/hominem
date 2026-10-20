@@ -95,7 +95,11 @@ export const credentialsRoutes = new Hono<AppContext>()
       // Only the provider being slow or down is "unavailable"; anything else is a bug and goes to
       // the global error handler.
       if (error instanceof OpenRouterKeysError || error instanceof BudgetUnavailableError) {
-        logger.error('credential_budget_failed', { error: error.message });
+        logger.error('credential_budget_failed', {
+          operation: 'credential.budget',
+          failureType: 'credential.budget.failed',
+          error_name: error.name,
+        });
         return c.json({ error: 'unavailable' as const }, 503);
       }
       throw error;

@@ -14,6 +14,7 @@ export const validationErrorMiddleware = createMiddleware<AppContext>(async (c, 
         {
           error: 'validation_error',
           code: 'VALIDATION_ERROR',
+          failureType: 'validation.invalid_input',
           message: 'Request validation failed',
           details: parseValidationError(err),
         },

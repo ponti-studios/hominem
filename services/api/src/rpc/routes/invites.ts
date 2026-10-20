@@ -50,7 +50,11 @@ export const invitesRoutes = new Hono<AppContext>().post(
       });
       logger.info('thames_invite', { outcome });
     } catch (error) {
-      logger.error('thames_invite_failed', { error });
+      logger.error('thames_invite_failed', {
+        operation: 'thames.invite',
+        failureType: 'thames.invite.failed',
+        error_name: error instanceof Error ? error.name : 'unknown',
+      });
     }
     return c.json({ ok: true as const }, 202);
   },

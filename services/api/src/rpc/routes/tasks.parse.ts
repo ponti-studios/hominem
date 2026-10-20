@@ -60,9 +60,14 @@ export const timeBlockRoutes = new Hono<AppContext>()
         error,
         durationMs: getDurationMs(),
       });
-      logger.error('[ai/tasks/parse] OpenRouter error', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+      logger.error('ai_time_block_extract_failed', {
+        operation: 'ai.time_block_extract',
+        failureType: 'ai.time_block_extract.failed',
+        error_name: error instanceof Error ? error.name : 'unknown',
       });
-      return c.json({ error: 'Time block extraction failed' }, 500);
+      return c.json(
+        { error: 'Time block extraction failed', failureType: 'ai.time_block_extract.failed' },
+        500,
+      );
     }
   });

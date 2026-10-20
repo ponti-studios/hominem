@@ -1,4 +1,4 @@
-import { LOG_MESSAGES, logger, recordTelemetryException } from '@hominem/telemetry';
+import { logger, recordTelemetryException } from '@hominem/telemetry';
 import { Scalar } from '@scalar/hono-api-reference';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { cors } from 'hono/cors';
@@ -10,7 +10,7 @@ import type { AuthContext } from './auth/types';
 import { API_BRAND } from './brand';
 import { env } from './env';
 import type { ApiEnv } from './env.schema';
-import { isServiceError } from './errors';
+import { getServiceErrorFailureType, isServiceError } from './errors';
 import { createMcpRoutes } from './mcp/routes';
 import { createAuthMiddleware } from './middleware/auth';
 import { blockMaliciousProbes } from './middleware/block-probes';
@@ -155,6 +155,9 @@ function registerErrorHandlers(app: Hono<AppEnv>) {
       error: err,
       error_name: err instanceof Error ? err.name : 'unknown',
       failureCategory: isServiceError(err) ? err.code.toLowerCase() : 'unhandled',
+      failureType: isServiceError(err)
+        ? getServiceErrorFailureType(err)
+        : 'request.unhandled_exception',
     });
 
     if (isServiceError(err)) {
@@ -162,6 +165,7 @@ function registerErrorHandlers(app: Hono<AppEnv>) {
         {
           error: err.code.toLowerCase(),
           code: err.code,
+          failureType: getServiceErrorFailureType(err),
           message: err.message,
           ...(err.details && { details: err.details }),
         },
@@ -174,6 +178,7 @@ function registerErrorHandlers(app: Hono<AppEnv>) {
       {
         error: 'internal_error',
         code: 'INTERNAL_ERROR',
+        failureType: 'request.unhandled_exception',
         message: 'An unexpected error occurred',
       },
       500,
@@ -181,10 +186,12 @@ function registerErrorHandlers(app: Hono<AppEnv>) {
   });
 
   app.notFound((c) => {
-    logger.warn(LOG_MESSAGES.ROUTE_NOT_FOUND, {
+    logger.warn('api_request_failed', {
       path: 'unmatched',
       method: c.req.method,
-      userAgent: c.req.header('user-agent'),
+      statusCode: 404,
+      failureCategory: 'not_found',
+      failureType: 'request.route_not_found',
     });
     return c.text('Not Found', 404);
   });

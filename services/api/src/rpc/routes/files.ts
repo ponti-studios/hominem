@@ -7,7 +7,13 @@ import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
 import { UploadMetadataSchema } from '../../schemas/files.schema';
-import { InternalError, NotFoundError, UnavailableError, ValidationError } from '../errors';
+import {
+  getServiceErrorFailureType,
+  InternalError,
+  NotFoundError,
+  UnavailableError,
+  ValidationError,
+} from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
 function toFilePayload(file: FileRecord) {
@@ -32,36 +38,73 @@ function toUploadServiceError(error: unknown): Error | null {
       case 'storage.config.missing':
         return new UnavailableError(
           'File uploads are unavailable because storage is not configured.',
+          undefined,
+          'file.storage.config_missing',
         );
       case 'storage.credentials.invalid':
       case 'storage.bucket.access_denied':
         return new UnavailableError(
           'File uploads are unavailable because storage authentication failed.',
+          undefined,
+          'file.storage.credentials_invalid',
         );
       case 'storage.network.unreachable':
         return new UnavailableError(
           'File uploads are temporarily unavailable because storage is unreachable.',
+          undefined,
+          'file.storage.network_unreachable',
         );
       case 'storage.bucket.missing':
         return new UnavailableError(
           'File uploads are unavailable because the storage bucket is missing.',
+          undefined,
+          'file.storage.bucket_missing',
         );
       default:
-        return new UnavailableError('File uploads are unavailable because storage failed.');
+        return new UnavailableError(
+          'File uploads are unavailable because storage failed.',
+          undefined,
+          'file.storage.failed',
+        );
     }
   }
 
   return null;
 }
 
-function logAndThrow(error: unknown, message: string): never {
-  logger.error('[files] request failed', { error, message });
+function logAndThrow(
+  error: unknown,
+  message: string,
+  operation: 'file.upload' | 'file.delete',
+): never {
+  const serviceError =
+    error instanceof ValidationError || error instanceof NotFoundError
+      ? error
+      : toUploadServiceError(error);
+  logger.error('file_request_failed', {
+    operation,
+    failureType:
+      serviceError instanceof ValidationError
+        ? 'file.upload.invalid_input'
+        : serviceError instanceof UnavailableError
+          ? getServiceErrorFailureType(serviceError)
+          : serviceError instanceof NotFoundError
+            ? getServiceErrorFailureType(serviceError)
+            : operation === 'file.upload'
+              ? 'file.upload.failed'
+              : 'file.delete.failed',
+    ...(serviceError instanceof ValidationError ||
+    serviceError instanceof NotFoundError ||
+    serviceError instanceof UnavailableError
+      ? { failureCategory: serviceError.code.toLowerCase() }
+      : {}),
+    error_name: error instanceof Error ? error.name : 'unknown',
+  });
   if (error instanceof ValidationError || error instanceof NotFoundError) {
     throw error;
   }
-  const uploadServiceError = toUploadServiceError(error);
-  if (uploadServiceError) {
-    throw uploadServiceError;
+  if (serviceError) {
+    throw serviceError;
   }
   // Anything else with a `code` (e.g. DB errors) gets re-thrown as-is
   if (error instanceof Error && 'code' in error) {
@@ -86,7 +129,7 @@ export const filesRoutes = new Hono<AppContext>()
 
       return c.json({ success: true, message: 'File deleted successfully' });
     } catch (error) {
-      logAndThrow(error, 'Failed to delete file');
+      logAndThrow(error, 'Failed to delete file', 'file.delete');
     }
   })
   .post('/', async (c) => {
@@ -96,7 +139,7 @@ export const filesRoutes = new Hono<AppContext>()
       const file = body.file;
 
       if (!(file instanceof File)) {
-        throw new ValidationError('File is required');
+        throw new ValidationError('File is required', undefined, 'file.upload.invalid_input');
       }
 
       const parsed = UploadMetadataSchema.safeParse({
@@ -105,12 +148,20 @@ export const filesRoutes = new Hono<AppContext>()
       });
 
       if (!parsed.success) {
-        throw new ValidationError(parsed.error.issues[0]?.message ?? 'Invalid upload metadata');
+        throw new ValidationError(
+          parsed.error.issues[0]?.message ?? 'Invalid upload metadata',
+          undefined,
+          'file.upload.invalid_input',
+        );
       }
 
       const fileBuffer = Buffer.from(await file.arrayBuffer());
       if (fileBuffer.byteLength === 0) {
-        throw new ValidationError('Uploaded file cannot be empty');
+        throw new ValidationError(
+          'Uploaded file cannot be empty',
+          undefined,
+          'file.upload.invalid_input',
+        );
       }
 
       const storedFile = await fileStorageService.storeFile(
@@ -157,6 +208,6 @@ export const filesRoutes = new Hono<AppContext>()
         message: 'File uploaded successfully',
       });
     } catch (error) {
-      logAndThrow(error, 'Failed to upload file');
+      logAndThrow(error, 'Failed to upload file', 'file.upload');
     }
   });

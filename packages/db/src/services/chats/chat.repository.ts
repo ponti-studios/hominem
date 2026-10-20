@@ -903,7 +903,11 @@ export const ChatRepository = {
       .executeTakeFirst();
 
     if (!note) {
-      throw new ValidationError('Referenced note is unavailable');
+      throw new ValidationError(
+        'Referenced note is unavailable',
+        undefined,
+        'note.reference_unavailable',
+      );
     }
 
     await handle

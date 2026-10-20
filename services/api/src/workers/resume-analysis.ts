@@ -126,7 +126,10 @@ async function processResumeAnalysisJob(data: ResumeAnalysisQueuePayload): Promi
       endTime: Date.now(),
     });
   } catch (error) {
-    logger.error('[resume-analysis] job failed', {
+    logger.error('resume_analysis_failed', {
+      operation: 'resume.analysis',
+      failureType: 'resume.analysis.failed',
+      failureStage: mapErrorToStage(error),
       jobId: data.jobId,
       userId: data.userId,
       error,
@@ -152,7 +155,10 @@ export function startResumeAnalysisWorker() {
   );
 
   worker.on('failed', (job, error) => {
-    logger.error('[resume-analysis] worker job failed', {
+    logger.error('resume_analysis_worker_failed', {
+      operation: 'resume.analysis',
+      failureType: 'resume.analysis.failed',
+      retryable: Boolean(job && job.attemptsMade < (job.opts.attempts ?? 1)),
       jobId: job?.id,
       error,
     });

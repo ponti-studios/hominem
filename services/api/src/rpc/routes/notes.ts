@@ -113,10 +113,15 @@ export const notesRoutes = new Hono<AppContext>()
         error,
         durationMs: getDurationMs(),
       });
-      logger.error('[ai/notes/generate] OpenRouter error', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+      logger.error('ai_note_generate_failed', {
+        operation: 'ai.note_generate',
+        failureType: 'ai.note_generate.failed',
+        error_name: error instanceof Error ? error.name : 'unknown',
       });
-      return c.json({ error: 'Note generation failed' }, 500);
+      return c.json(
+        { error: 'Note generation failed', failureType: 'ai.note_generate.failed' },
+        500,
+      );
     }
   })
   .get('/:id', zValidator('param', NoteParamSchema), async (c) => {

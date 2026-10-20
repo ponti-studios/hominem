@@ -282,6 +282,9 @@ export async function planChatTools(input: {
       typeof latestUserMessage?.content === 'string' ? latestUserMessage.content.toLowerCase() : '';
     const calendarRequest = /\b(calendar|event|schedule)\b/.test(latestContent);
     logger.warn('chat_tool_plan_unavailable', {
+      operation: 'chat.tool_plan',
+      failureType: 'chat.tool_plan.unavailable',
+      errorCategory: 'unsupported_capability',
       model: input.model,
       capabilities,
       requiresLookup: true,
@@ -332,6 +335,8 @@ export async function planChatTools(input: {
   } catch (error) {
     logger.warn('chat_tool_plan_validation_failed', {
       model: input.model,
+      operation: 'chat.tool_plan',
+      failureType: 'chat.tool_plan.validation_failed',
       failureCategory: 'tool_planning',
       fallbackUsed: true,
       // Which of "the request failed", "the JSON was invalid" and "the plan broke a rule" it was;

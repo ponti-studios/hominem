@@ -25,7 +25,11 @@ interface FileProcessingJobData {
 async function processFileUploadJob(data: FileProcessingJobData) {
   const storedBuffer = await fileStorageService.getFileByPath(data.storageKey);
   if (!storedBuffer) {
-    logger.error('[files] processing skipped, file buffer missing', { fileId: data.fileId });
+    logger.error('file_storage_object_missing', {
+      operation: 'file.processing',
+      failureType: 'file.storage.object_missing',
+      fileId: data.fileId,
+    });
     return;
   }
 
@@ -82,7 +86,11 @@ export function startFileProcessingWorker() {
   });
 
   worker.on('failed', (job, error) => {
-    logger.error('[files] processing job failed', {
+    logger.error('file_processing_failed', {
+      operation: 'file.processing',
+      failureType: 'file.processing.failed',
+      failureStage: 'processing',
+      retryable: Boolean(job && job.attemptsMade < (job.opts.attempts ?? 1)),
       jobId: job?.id,
       error,
     });

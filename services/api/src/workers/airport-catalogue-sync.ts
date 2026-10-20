@@ -18,7 +18,13 @@ export async function startAirportCatalogueSyncWorker() {
     logger.info('airport_catalogue_sync_completed', { jobId: job.id, result }),
   );
   worker.on('failed', (job, error) =>
-    logger.error('airport_catalogue_sync_failed', { jobId: job?.id, error }),
+    logger.error('airport_catalogue_sync_failed', {
+      operation: 'airport.catalogue_sync',
+      failureType: 'airport.catalogue_sync.failed',
+      retryable: Boolean(job && job.attemptsMade < (job.opts.attempts ?? 1)),
+      jobId: job?.id,
+      error_name: error instanceof Error ? error.name : 'unknown',
+    }),
   );
   return worker;
 }

@@ -213,7 +213,12 @@ export async function streamMessageSpeech(input: {
         audioBytes += next.value.byteLength;
         controller.enqueue(next.value);
       } catch (error) {
-        logger.error('chat_speech_failed', { speechRunId, audioBytes, error });
+        logger.error('chat_speech_failed', {
+          operation: 'chat.speech.stream',
+          failureType: 'chat.speech.stream_failed',
+          audioBytes,
+          error_name: error instanceof Error ? error.name : 'unknown',
+        });
         span.recordException(new Error('Speech stream failed'));
         span.setStatus({ code: SpanStatusCode.ERROR });
         span.end();

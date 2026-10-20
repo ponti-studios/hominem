@@ -64,7 +64,11 @@ creditRoutes.get('/credit', async (c) => {
       }),
     );
   } catch (error) {
-    logger.error('credit_page_failed', { error });
+    logger.error('credit_page_failed', {
+      operation: 'credit.page',
+      failureType: 'credit.page.failed',
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
     return html(c, (n) => problemPage(n, 'Something went wrong. Try again in a moment.'), 503);
   }
 });
@@ -106,7 +110,11 @@ creditRoutes.post('/credit/checkout', async (c) => {
     if (outcome.kind === 'started') return c.json({ url: outcome.url });
     return c.json({ error: outcome.kind }, 400);
   } catch (error) {
-    logger.error('credit_checkout_failed', { error });
+    logger.error('credit_checkout_failed', {
+      operation: 'credit.checkout',
+      failureType: 'credit.checkout.failed',
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
     return c.json({ error: 'unavailable' }, 503);
   }
 });
@@ -142,7 +150,11 @@ creditRoutes.get('/credit/status', async (c) => {
       balancePence: snapshot.balancePence,
     });
   } catch (error) {
-    logger.error('credit_status_failed', { error });
+    logger.error('credit_status_failed', {
+      operation: 'credit.status',
+      failureType: 'credit.status.failed',
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
     return c.json({ state: 'pending' });
   }
 });
@@ -190,7 +202,12 @@ creditRoutes.post('/webhooks/stripe', async (c) => {
     return c.json({ received: true });
   } catch (error) {
     // A 5xx makes Stripe retry, which the ledger's idempotency makes safe.
-    logger.error('credit_webhook_failed', { error });
+    logger.error('credit_webhook_failed', {
+      operation: 'credit.webhook',
+      failureType: 'credit.webhook.failed',
+      retryable: true,
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
     return c.json({ error: 'failed' }, 500);
   }
 });

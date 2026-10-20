@@ -2,12 +2,19 @@ import { logger, recordTelemetryException } from '@hominem/telemetry';
 import type { Context } from 'hono';
 
 import { isContentfulStatusCode } from '../../utils/http-status';
-import { isServiceError, type ErrorCode, type ServiceError } from '../errors';
+import {
+  getServiceErrorFailureType,
+  isServiceError,
+  type ErrorCode,
+  type FailureType,
+  type ServiceError,
+} from '../errors';
 import type { AppContext } from './auth';
 
 export interface ApiErrorResponse {
   error: string;
   code: ErrorCode;
+  failureType: FailureType;
   message: string;
   details?: Record<string, unknown> | undefined;
 }
@@ -31,18 +38,9 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
   const path = c.req.routePath || 'unmatched';
   const method = c.req.method;
   const serviceError = findServiceError(err);
+  const failureType = serviceError ? getServiceErrorFailureType(serviceError) : undefined;
 
   if (serviceError) {
-    const logData = {
-      code: serviceError.code,
-      message: serviceError.message,
-      method,
-      path,
-      requestId,
-      statusCode: serviceError.statusCode,
-      ...(serviceError.details ? { details: serviceError.details } : {}),
-    };
-
     if (serviceError.statusCode >= 500) {
       recordTelemetryException(serviceError);
       logger.error('api_request_failed', {
@@ -52,9 +50,17 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
         statusCode: serviceError.statusCode,
         error_name: serviceError.name,
         failureCategory: serviceError.code.toLowerCase(),
+        failureType,
       });
     } else if (process.env.NODE_ENV !== 'test') {
-      logger.warn('[API Client Error]', logData);
+      logger.warn('api_request_failed', {
+        method,
+        path,
+        statusCode: serviceError.statusCode,
+        error_name: serviceError.name,
+        failureCategory: serviceError.code.toLowerCase(),
+        failureType,
+      });
     }
 
     if (!isContentfulStatusCode(serviceError.statusCode)) {
@@ -62,6 +68,7 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
         {
           error: 'internal_error',
           code: 'INTERNAL_ERROR',
+          failureType: 'request.unhandled_exception',
           message: 'An unexpected error occurred',
         },
         500,
@@ -72,6 +79,7 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
       {
         error: serviceError.code.toLowerCase(),
         code: serviceError.code,
+        failureType: getServiceErrorFailureType(serviceError),
         message: serviceError.message,
         details: serviceError.details,
       },
@@ -89,6 +97,7 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
     error: err,
     error_name: err instanceof Error ? err.name : 'unknown',
     failureCategory: 'unhandled',
+    failureType: 'request.unhandled_exception',
   });
 
   const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
@@ -96,6 +105,7 @@ export function apiErrorHandler(err: unknown, c: Context<AppContext>) {
     {
       error: 'internal_error',
       code: 'INTERNAL_ERROR',
+      failureType: 'request.unhandled_exception',
       message: errorMessage,
     },
     500,

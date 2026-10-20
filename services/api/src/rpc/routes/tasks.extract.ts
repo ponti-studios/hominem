@@ -55,10 +55,15 @@ export const taskExtractRoutes = new Hono<AppContext>()
         durationMs: getDurationMs(),
       });
 
-      logger.error('[ai/tasks/extract] OpenRouter error', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+      logger.error('ai_task_extract_failed', {
+        operation: 'ai.task_extract',
+        failureType: 'ai.task_extract.failed',
+        error_name: error instanceof Error ? error.name : 'unknown',
       });
-      return c.json({ error: 'Task extraction failed' }, 500);
+      return c.json(
+        { error: 'Task extraction failed', failureType: 'ai.task_extract.failed' },
+        500,
+      );
     }
   })
   .use('/voice', rateLimitMiddleware({ bucket: 'ai-task-voice', windowSec: 60, max: 20 }))
@@ -106,10 +111,15 @@ export const taskExtractRoutes = new Hono<AppContext>()
         },
       });
 
-      logger.error('[ai/tasks/voice] OpenRouter error', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+      logger.error('ai_voice_task_extract_failed', {
+        operation: 'ai.voice_task_extract',
+        failureType: 'ai.voice_task_extract.failed',
+        error_name: error instanceof Error ? error.name : 'unknown',
       });
-      return c.json({ error: 'Voice task extraction failed' }, 500);
+      return c.json(
+        { error: 'Voice task extraction failed', failureType: 'ai.voice_task_extract.failed' },
+        500,
+      );
     }
 
     const result = await persistExtractedTasks(userId, { tasks });

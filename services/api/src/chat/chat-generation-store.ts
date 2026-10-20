@@ -97,7 +97,10 @@ function parseNotifyPointer(payload: string | undefined): NotifyPointer | null {
   } catch {
     // fall through to null below
   }
-  logger.warn('generation_notify_payload_malformed', { payload });
+  logger.warn('generation_notify_payload_malformed', {
+    operation: 'generation.notification.parse',
+    failureType: 'generation.notification.malformed',
+  });
   return null;
 }
 
@@ -113,8 +116,8 @@ async function handleNotification(payload: string | undefined): Promise<void> {
     if (record) publish(record);
   } catch (error) {
     logger.warn('generation_notify_resolve_failed', {
-      generationId: pointer.generationId,
-      sequence: pointer.sequence,
+      operation: 'generation.notification.resolve',
+      failureType: 'generation.notification.resolve_failed',
       error: error instanceof Error ? error.message : String(error),
     });
   }
@@ -143,7 +146,11 @@ async function connect(): Promise<void> {
     notificationQueue = notificationQueue.then(() => handleNotification(msg.payload));
   });
   next.on('error', (error) => {
-    logger.warn('generation_notify_connection_error', { error: error.message });
+    logger.warn('generation_notify_connection_error', {
+      operation: 'generation.notification.connection',
+      failureType: 'generation.notification.connection_failed',
+      error: error.message,
+    });
   });
   next.on('end', () => {
     if (closed || client !== next) return;
@@ -157,6 +164,8 @@ async function connect(): Promise<void> {
     logger.info('generation_notify_listener_connected');
   } catch (error) {
     logger.warn('generation_notify_listener_connect_failed', {
+      operation: 'generation.notification.listen',
+      failureType: 'generation.notification.listener_failed',
       error: error instanceof Error ? error.message : String(error),
     });
     if (client === next) scheduleReconnect();

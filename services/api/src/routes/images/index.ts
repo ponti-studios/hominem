@@ -5,7 +5,13 @@ import { logger } from '@hominem/telemetry';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 
-import { ForbiddenError, InternalError, UnavailableError, ValidationError } from '../../errors';
+import {
+  ForbiddenError,
+  InternalError,
+  isServiceError,
+  UnavailableError,
+  ValidationError,
+} from '../../errors';
 import type { AppEnv } from '../../server';
 
 function isValidGoogleHost(input: string): boolean {
@@ -69,14 +75,14 @@ imagesRoutes.get('/proxy', async (c) => {
   const imageUrl = c.req.query('url');
 
   if (!imageUrl) {
-    throw new ValidationError('URL parameter is required');
+    throw new ValidationError('URL parameter is required', undefined, 'image.url_required');
   }
 
   try {
     const decodedUrl = decodeURIComponent(imageUrl);
 
     if (!isValidGoogleHost(decodedUrl)) {
-      throw new ForbiddenError('Domain not allowed');
+      throw new ForbiddenError('Domain not allowed', undefined, 'image.domain_not_allowed');
     }
 
     const cacheKey = getCacheKey(decodedUrl);
@@ -144,7 +150,11 @@ imagesRoutes.get('/proxy', async (c) => {
     });
 
     if (!response.ok) {
-      throw new UnavailableError(`Failed to fetch image: ${response.statusText}`);
+      throw new UnavailableError(
+        `Failed to fetch image: ${response.statusText}`,
+        undefined,
+        'image.upstream_failed',
+      );
     }
 
     const contentType = response.headers.get('content-type') || 'image/jpeg';
@@ -153,7 +163,7 @@ imagesRoutes.get('/proxy', async (c) => {
     const etag = `"${createHash('sha256').update(imageBuffer).digest('hex')}"`;
 
     if (imageBuffer.length > 5 * 1024 * 1024) {
-      throw new UnavailableError('Image exceeds 5MB limit');
+      throw new UnavailableError('Image exceeds 5MB limit', undefined, 'image.size_limit_exceeded');
     }
 
     try {
@@ -163,26 +173,34 @@ imagesRoutes.get('/proxy', async (c) => {
         cache.set(cacheEtagKey, etag, 'EX', CACHE_TTL_SECONDS),
       ]);
     } catch (cacheError) {
-      logger.warn('Failed to cache proxied image', { error: cacheError });
+      logger.warn('image_cache_write_failed', {
+        operation: 'image.cache.write',
+        failureType: 'image.cache_write_failed',
+        error_name: cacheError instanceof Error ? cacheError.name : 'unknown',
+      });
     } finally {
       try {
         if (lockResult) {
           await cache.del(lockKey);
         }
       } catch (releaseError) {
-        logger.warn('Failed to release cache lock', { error: releaseError });
+        logger.warn('image_cache_lock_release_failed', {
+          operation: 'image.cache.lock_release',
+          failureType: 'image.cache_lock_release_failed',
+          error_name: releaseError instanceof Error ? releaseError.name : 'unknown',
+        });
       }
     }
 
     setResponseHeaders(c, { contentType, etag, cacheStatus: 'miss' });
     return c.body(new Uint8Array(imageBuffer));
   } catch (err) {
-    logger.error('Error proxying image', {
-      error: err,
-      imageUrl: imageUrl ? createHash('sha256').update(imageUrl).digest('hex') : 'N/A',
+    if (isServiceError(err)) throw err;
+    logger.error('image_proxy_failed', {
+      operation: 'image.proxy',
+      failureType: 'image.proxy_failed',
+      error_name: err instanceof Error ? err.name : 'unknown',
     });
-    throw new InternalError('Failed to proxy image', {
-      message: err instanceof Error ? err.message : 'Unknown error',
-    });
+    throw new InternalError('Failed to proxy image', undefined, 'image.proxy_failed');
   }
 });

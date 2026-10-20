@@ -16,6 +16,14 @@ export type ChatGenerationMetrics = {
 
 const generationTracer = getTelemetryTracer('hominem.chat');
 
+const generationFailureTypes = {
+  provider: 'chat.generation.provider_failed',
+  tool: 'chat.generation.tool_failed',
+  transport: 'chat.generation.transport_failed',
+  persistence: 'chat.generation.persistence_failed',
+  unknown: 'chat.generation.unknown_failed',
+} as const;
+
 export function withChatGenerationSpan<T>(
   kind: 'send' | 'start',
   run: (metrics: ChatGenerationMetrics) => Promise<T>,
@@ -56,6 +64,7 @@ export function withChatGenerationSpan<T>(
         return await run(metrics);
       } catch (error) {
         metrics.outcome('failed');
+        span.setAttribute('failureType', 'chat.generation.failed');
         throw error;
       } finally {
         span.setAttribute('chat.generation.duration_ms', elapsedMs(startedAt));
@@ -82,7 +91,9 @@ export type GenerationDiagnosticRecord = {
 };
 
 export function recordGenerationDiagnostic(input: GenerationDiagnosticRecord): void {
+  const failureType = input.errorCategory ? generationFailureTypes[input.errorCategory] : undefined;
   logger.info('chat_generation_diagnostic', {
+    operation: 'chat.generation',
     generationId: input.generationId,
     ...(input.attempt === undefined ? {} : { attempt: input.attempt }),
     ...(input.turnId === undefined ? {} : { turnId: input.turnId }),
@@ -91,6 +102,7 @@ export function recordGenerationDiagnostic(input: GenerationDiagnosticRecord): v
     ...(input.deliveryMode === undefined ? {} : { deliveryMode: input.deliveryMode }),
     ...(input.terminalOutcome === undefined ? {} : { terminalOutcome: input.terminalOutcome }),
     ...(input.errorCategory === undefined ? {} : { errorCategory: input.errorCategory }),
+    ...(failureType === undefined ? {} : { failureType }),
     ...(input.effectOutcome === undefined ? {} : { effectOutcome: input.effectOutcome }),
   });
 }

@@ -10,7 +10,7 @@ import {
 } from '@hominem/ai';
 import { createServerEnv } from '@hominem/env';
 import { aiSchema } from '@hominem/env/ai';
-import { LOG_MESSAGES, logger } from '@hominem/telemetry';
+import { logger } from '@hominem/telemetry';
 
 const FILE_ANALYSIS_MODEL = createServerEnv(aiSchema, 'ai').FILE_ANALYSIS_MODEL;
 
@@ -74,7 +74,11 @@ export async function describeImageForChat(
       durationMs: getDurationMs(),
       metadata: { fileId, mimeType: mimetype, sizeBytes: buffer.byteLength },
     });
-    logger.warn(LOG_MESSAGES.IMAGE_ANALYZE_ERROR, { error });
+    logger.warn('file_image_analysis_failed', {
+      operation: 'file.analysis.image',
+      failureType: 'file.analysis.image_failed',
+      error,
+    });
     return '';
   }
 }
@@ -140,7 +144,11 @@ export async function summarizeDocumentForChat(
         extractedCharacterCount: textContent.length,
       },
     });
-    logger.warn(LOG_MESSAGES.DOCUMENT_SUMMARIZE_ERROR, { error });
+    logger.warn('file_document_analysis_failed', {
+      operation: 'file.analysis.document',
+      failureType: 'file.analysis.document_failed',
+      error,
+    });
     return '';
   }
 }
