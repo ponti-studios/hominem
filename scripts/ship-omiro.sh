@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034  # SHIP_* are read by the sourced ship-ios.sh
 # Ship Omiro to TestFlight, the studio's way (.studio/ship-ios.sh): a local IPA, then App Store Connect,
 # with no EAS cloud build. Usage: scripts/ship-omiro.sh [--skip-checks] [--no-upload] [--allow-branch]
 set -euo pipefail
