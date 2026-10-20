@@ -36,7 +36,8 @@ expect() { # name, condition exit code, message
   if [[ "$2" == 0 ]]; then echo "ok   $1"; else echo "FAIL $1: $3"; failures=$((failures + 1)); fi
 }
 
-echo '<html><h1>New builds are temporarily paused</h1> Major Outage</html>' >"$WORK/incident.html"
+# The real page is not clean text (grep calls it a binary file), so the fixture holds a NUL byte too.
+printf '<html>\0<h1>New builds are temporarily paused</h1> Major Outage</html>\n' >"$WORK/incident.html"
 echo '<html><h1>All systems operational</h1></html>' >"$WORK/calm.html"
 
 # 1. Upload fails during a Railway incident: exits 1, shows Railway's own error, names the incident.

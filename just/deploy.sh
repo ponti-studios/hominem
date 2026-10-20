@@ -61,7 +61,7 @@ STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 # one, and it never fails the script. Prints a one-line headline, or nothing.
 railway_incident_headline() {
   curl -fsS -m 10 "${RAILWAY_STATUS_URL:-https://status.railway.com}" 2>/dev/null \
-    | grep -oiE 'new builds are temporarily paused|builds? (are )?(paused|delayed|degraded)|major outage|partial outage|degraded performance' \
+    | grep -aoiE 'new builds are temporarily paused|builds? (are )?(paused|delayed|degraded)|major outage|partial outage|degraded performance' \
     | head -1 || true
 }
 
