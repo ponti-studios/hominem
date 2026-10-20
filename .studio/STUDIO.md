@@ -11,7 +11,7 @@ Every studio repo answers to the same `just` verbs. Run `just --list` to see wha
 | `just device` | Build, install and launch on the paired physical devices. |
 | `just check` | Everything to pass before pushing: lint, types, tests (and Swift checks). |
 | `just e2e` | End-to-end flows on the simulator, where the repo has them. |
-| `just testflight` | Release archive. Only when asked. |
+| `just testflight` | Ship to TestFlight, the same way in every app (see Shipping). Only when asked. |
 
 A verb a repo does not support prints "not applicable here" and exits 0.
 
@@ -32,3 +32,37 @@ Never use 8081 for a studio app.
 
 `.studio/` is copied from the `studio-dev` repo. Do not edit it here: change `studio-dev`, then run
 `just studio-update` in each repo. `just studio-check` fails when a copy has drifted.
+
+## Shipping
+
+Every Apple app ships to TestFlight with `just testflight`, which runs `.studio/ship-ios.sh`. The
+stages and rules are the same for every repo; each repo's `scripts/` file supplies only how its app
+is built and uploaded.
+
+1. **Preflight.** No uncommitted changes to tracked files, and HEAD is `origin/main` (build from a
+   merged commit, in a worktree if your checkout has other work). `--allow-branch` overrides, and the
+   PR says why.
+2. **Checks.** The repo's `just check` (or its own `ship_check`). `--skip-checks` skips them.
+3. **Build.** The release artifact, with a build number that always goes up.
+4. **Audit.** The repo's own "must not contain" checks (Thames: no provider key; Omiro: the release identity).
+5. **Symbols and source maps.** So crashes read as code. A failure here warns; the build still ships.
+6. **Upload.** To App Store Connect. It never stops to ask: asking for a release is the confirmation.
+   `--no-upload` is the dry run.
+7. **Report.** Name, version, build number, commit, artifact path, and the plain fact that Apple is
+   still processing it, so it is not in TestFlight until App Store Connect shows it.
+
+### New Relic keys
+
+- The app token (`NEWRELIC_IOS_APP_TOKEN`, ends `NRMA`) is embedded in the app and uploads its dSYMs.
+- Source maps need a New Relic **User** API key, `NRAK-...`. Keep it as `NEW_RELIC_USER_API_KEY` in
+  `~/.localrc` (or `NEWRELIC_USER_API_KEY` in the repo's env file). An ingest license key (ends
+  `NRAL`) is rejected: the endpoint redirects to the login page and the tool reports a misleading
+  "413 too large". `ship_newrelic_user_key` checks the prefix for you.
+- Never print a key, and never build one into an app. Mobile tokens are not secrets; the User key is.
+
+### Adding a new Apple app
+
+Copy `.studio/` (`just studio-update`), write a `scripts/ship.sh` that sources `.studio/lib.sh` and
+`.studio/ship-ios.sh`, sets `SHIP_NAME` and `SHIP_ROOT`, defines `ship_build` and `ship_upload`
+(`ship_audit`, `ship_symbols` and `ship_check` if it needs them), and ends with `ship_ios "$@"`. Point
+the repo's `testflight` recipe at it. `scripts/archive-testflight.sh` in Thames is the worked example.
