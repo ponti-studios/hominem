@@ -11,6 +11,8 @@
  * Control endpoints (for the test plan):
  *   POST /control/spend  {"hash":"…","usd":0.5}   sets a key's lifetime spend
  *   GET  /control/state                           keys, sessions and refunds
+ *
+ * Checkout only holds the card: the API captures a UK payment and releases the rest, as Stripe does.
  */
 import { createHmac, randomBytes } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
@@ -28,6 +30,9 @@ type Session = {
   success: string;
   cancel: string;
   country: string;
+  /** The card hold, as Stripe's PaymentIntent reports it. */
+  status: 'requires_payment_method' | 'requires_capture' | 'succeeded' | 'canceled';
+  created: number;
 };
 const keys = new Map<string, Key>();
 const sessions = new Map<string, Session>();
@@ -54,7 +59,7 @@ async function webhook(session: Session) {
     data: {
       object: {
         id: session.id,
-        payment_status: 'paid',
+        payment_status: 'unpaid',
         payment_intent: session.intent,
         currency: 'gbp',
         amount_total: session.amount,
@@ -121,6 +126,8 @@ createServer(async (req, res) => {
         success: form.get('success_url') ?? '',
         cancel: form.get('cancel_url') ?? '',
         country: 'GB',
+        status: 'requires_payment_method',
+        created: Math.floor(Date.now() / 1000),
       };
       sessions.set(session.id, session);
       return send(res, 200, { id: session.id, url: `http://localhost:${PORT}/pay/${session.id}` });
@@ -129,11 +136,40 @@ createServer(async (req, res) => {
     if (intentMatch) {
       const sessionId = intents.get(decodeURIComponent(intentMatch[1] ?? ''));
       const country = sessionId ? (sessions.get(sessionId)?.country ?? 'GB') : 'GB';
+      const held = sessionId ? sessions.get(sessionId) : undefined;
       return send(res, 200, {
+        status: held?.status ?? 'requires_payment_method',
         latest_charge: {
           billing_details: { address: { country } },
           payment_method_details: { card: { country } },
         },
+      });
+    }
+    const actionMatch = path.match(/^\/stripe\/v1\/payment_intents\/([^/]+)\/(capture|cancel)$/);
+    if (actionMatch && req.method === 'POST') {
+      const held = sessions.get(intents.get(decodeURIComponent(actionMatch[1] ?? '')) ?? '');
+      if (!held) return send(res, 404, { error: { code: 'resource_missing' } });
+      if (held.status !== 'requires_capture') {
+        return send(res, 400, { error: { code: 'payment_intent_unexpected_state' } });
+      }
+      held.status = actionMatch[2] === 'capture' ? 'succeeded' : 'canceled';
+      return send(res, 200, { id: held.intent, status: held.status });
+    }
+    if (path === '/stripe/v1/checkout/sessions' && req.method === 'GET') {
+      const since = Number(url.searchParams.get('created[gte]') ?? 0);
+      const done = [...sessions.values()].filter(
+        (s) => s.status !== 'requires_payment_method' && s.created >= since,
+      );
+      return send(res, 200, {
+        data: done.map((s) => ({
+          id: s.id,
+          payment_status: 'unpaid',
+          payment_intent: s.intent,
+          currency: 'gbp',
+          amount_total: s.amount,
+          metadata: s.metadata,
+          created: s.created,
+        })),
       });
     }
     if (path === '/stripe/v1/refunds' && req.method === 'POST') {
@@ -152,8 +188,10 @@ createServer(async (req, res) => {
       }
       if (choice) {
         session.country = choice === 'non-uk' ? 'US' : 'GB';
+        session.status = 'requires_capture';
         intents.set(session.intent, session.id);
-        await webhook(session);
+        // `?hook=skip` leaves the webhook unsent, to try the sweeper.
+        if (url.searchParams.get('hook') !== 'skip') await webhook(session);
         res.writeHead(303, {
           location: session.success.replace('{CHECKOUT_SESSION_ID}', session.id),
         });

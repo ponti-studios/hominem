@@ -15,11 +15,16 @@ const more = vi.hoisted(() => ({
   inCreditMode: { value: true },
   stripe: {
     createCheckoutSession: vi.fn(),
-    paymentCountries: vi.fn(),
+    paymentFacts: vi.fn(),
+    capture: vi.fn(),
+    cancel: vi.fn(),
     refund: vi.fn(),
+    completedSessions: vi.fn(),
   },
   recordPayment: vi.fn(),
   confirmation: vi.fn(),
+  notCharged: vi.fn(),
+  publish: vi.fn(),
   claim: vi.fn(),
   markSent: vi.fn(),
   release: vi.fn(),
@@ -70,7 +75,9 @@ vi.mock('../../application/credit.runtime', () => ({
 }));
 vi.mock('../../application/credit-email', () => ({
   sendTopUpConfirmationEmail: more.confirmation,
+  sendTopUpNotChargedEmail: more.notCharged,
 }));
+vi.mock('../../application/credit-events', () => ({ publishCreditEvent: more.publish }));
 vi.mock('../../application/credit', async () => ({
   ...(await vi.importActual<object>('../../application/credit')),
   creditFor: more.creditFor,
@@ -99,6 +106,11 @@ beforeEach(() => {
   mocks.user.value = { id: 'u1', email: 'dana@work.com' };
   more.inCreditMode.value = true;
   more.claim.mockResolvedValue(true);
+  more.confirmation.mockResolvedValue(undefined);
+  more.notCharged.mockResolvedValue(undefined);
+  more.publish.mockResolvedValue(undefined);
+  more.stripe.capture.mockResolvedValue(undefined);
+  more.stripe.cancel.mockResolvedValue(undefined);
   more.creditFor.mockResolvedValue({ balancePence: 15, lastAddedPence: 100 });
   more.stripe.createCheckoutSession.mockResolvedValue({
     id: 'cs_1',
@@ -203,7 +215,11 @@ describe('POST /webhooks/stripe', () => {
   });
 
   it('credits a verified UK payment', async () => {
-    more.stripe.paymentCountries.mockResolvedValue({ cardCountry: 'GB', billingCountry: 'GB' });
+    more.stripe.paymentFacts.mockResolvedValue({
+      status: 'requires_capture',
+      cardCountry: 'GB',
+      billingCountry: 'GB',
+    });
     more.recordPayment.mockResolvedValue('new');
     const body = JSON.stringify(event);
     const response = await creditRoutes.request('/webhooks/stripe', {
@@ -215,10 +231,37 @@ describe('POST /webhooks/stripe', () => {
     expect(more.recordPayment).toHaveBeenCalledWith(
       expect.objectContaining({ sessionId: 'cs_1', creditPence: 819, status: 'credited' }),
     );
+    expect(more.stripe.capture).toHaveBeenCalledWith('pi_1');
+    expect(more.confirmation).toHaveBeenCalledTimes(1);
+    expect(more.publish).toHaveBeenCalledWith('u1', 'credited');
+  });
+
+  it('releases a held payment from outside the UK, tells the person and the app', async () => {
+    more.stripe.paymentFacts.mockResolvedValue({
+      status: 'requires_capture',
+      cardCountry: 'US',
+      billingCountry: 'GB',
+    });
+    more.recordPayment.mockResolvedValue('new');
+    const body = JSON.stringify({
+      ...event,
+      data: { object: { ...event.data.object, payment_status: 'unpaid' } },
+    });
+    const response = await creditRoutes.request('/webhooks/stripe', {
+      method: 'POST',
+      headers: signed(body),
+      body,
+    });
+    expect(response.status).toBe(200);
+    expect(more.stripe.cancel).toHaveBeenCalledWith('pi_1');
+    expect(more.stripe.capture).not.toHaveBeenCalled();
+    expect(more.confirmation).not.toHaveBeenCalled();
+    expect(more.notCharged).toHaveBeenCalledWith('u1');
+    expect(more.publish).toHaveBeenCalledWith('u1', 'not_charged');
   });
 
   it('answers 500 when handling fails, so Stripe retries', async () => {
-    more.stripe.paymentCountries.mockRejectedValue(new Error('stripe down'));
+    more.stripe.paymentFacts.mockRejectedValue(new Error('stripe down'));
     const body = JSON.stringify(event);
     const response = await creditRoutes.request('/webhooks/stripe', {
       method: 'POST',
@@ -254,7 +297,7 @@ describe('the pages after Stripe', () => {
     expect(live).toContain('/credit/status');
     const bare = await (await creditRoutes.request('/credit/done')).text();
     expect(bare).not.toContain('/credit/status');
-    expect(bare).toContain('within a minute');
+    expect(bare).toContain('has not been charged yet');
   });
 
   it('status: pending, then credited with the balance, or refunded', async () => {

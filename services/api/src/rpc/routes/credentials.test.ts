@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => {
     inCreditMode: { value: false },
     creditFor: vi.fn(),
     sendLowCreditEmail: vi.fn(),
+    subscribe: vi.fn(),
+    unsubscribe: vi.fn(),
   };
 });
 
@@ -38,6 +40,9 @@ vi.mock('../../application/credit.runtime', () => ({
   creditDeps: () => ({ store: 'credit-store' }),
 }));
 vi.mock('../../application/credit', () => ({ creditFor: mocks.creditFor }));
+vi.mock('../../application/credit-events', () => ({
+  subscribeCreditEvents: mocks.subscribe,
+}));
 vi.mock('../../application/credit-email', () => ({
   sendLowCreditEmail: mocks.sendLowCreditEmail,
 }));
@@ -229,5 +234,42 @@ describe('GET /api/credentials/budget', () => {
       authenticated: false,
     });
     expect((await anonymous.request('/api/credentials/budget')).status).toBe(401);
+  });
+});
+
+describe('GET /api/credentials/events', () => {
+  it('is not there for a person outside credit mode', async () => {
+    const response = await app.request('/api/credentials/events');
+    expect(response.status).toBe(404);
+  });
+
+  it('sends the current credit, then one event per change, and stops listening when closed', async () => {
+    mocks.inCreditMode.value = true;
+    mocks.creditFor.mockResolvedValue({ balancePence: 100, lastAddedPence: 100 });
+    let listener: ((outcome: 'credited' | 'not_charged') => void) | undefined;
+    mocks.subscribe.mockImplementation((_user: string, next: typeof listener) => {
+      listener = next;
+      return mocks.unsubscribe;
+    });
+    const response = await app.request('/api/credentials/events');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/event-stream');
+    expect(response.headers.get('cache-control')).toBe('no-cache');
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    const first = decoder.decode((await reader.read()).value);
+    expect(first).toContain('event: credit');
+    expect(first).toContain('"outcome":"current"');
+    expect(first).toContain('"balancePence":100');
+    expect(mocks.subscribe).toHaveBeenCalledWith(user.id, expect.any(Function));
+
+    mocks.creditFor.mockResolvedValue({ balancePence: 919, lastAddedPence: 819 });
+    listener?.('credited');
+    const second = decoder.decode((await reader.read()).value);
+    expect(second).toContain('"outcome":"credited"');
+    expect(second).toContain('"balancePence":919');
+
+    await reader.cancel();
+    await vi.waitFor(() => expect(mocks.unsubscribe).toHaveBeenCalled());
   });
 });

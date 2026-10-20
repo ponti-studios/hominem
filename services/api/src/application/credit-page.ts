@@ -174,10 +174,10 @@ draw();`;
  * without them it says the credit will show in Thames.
  */
 export function donePage(nonce: string, live: { token: string; sessionId: string } | null): string {
-  const waiting = `<div data-state="wait">${orb('wait', 'Adding your credit')}<div class="center"><span class="tag">Payment received</span><span class="num pending" id="scram">£00.00</span><p class="sub">Adding your credit.</p></div></div>`;
+  const waiting = `<div data-state="wait">${orb('wait', 'Confirming your payment')}<div class="center"><span class="tag">Confirming</span><span class="num pending" id="scram">£00.00</span><p class="sub">You can close this page. Your credit appears in Thames and we email you.</p></div></div>`;
   const added = `<div data-state="added" hidden>${orb('added', 'Credit added')}<div class="center"><span class="tag">You have</span><span class="num" id="bal">£0.00</span><span class="plus" id="plus"></span><p class="sub">A receipt is on its way to your email.</p></div></div>`;
-  const refunded = `<div data-state="refunded" hidden>${orb('failed', 'Payment refunded')}<div class="center"><span class="tag">Refunded in full</span><p class="sub">Thames credit is for UK cards and addresses only. Your money is on its way back.</p></div></div>`;
-  const slow = `<div data-state="slow"${live ? ' hidden' : ''}>${orb('wait', 'Payment received')}<div class="center"><span class="tag">Payment received</span><p class="sub">Your credit shows in Thames within a minute and a receipt is emailed to you. A card or address outside the UK is refunded in full.</p></div></div>`;
+  const refunded = `<div data-state="refunded" hidden>${orb('failed', 'Payment not taken')}<div class="center"><span class="tag">Not charged</span><p class="sub">Thames credit is for UK cards and addresses only. If your bank shows a pending amount, it is released within a few days.</p></div></div>`;
+  const slow = `<div data-state="slow"${live ? ' hidden' : ''}>${orb('wait', 'Still confirming')}<div class="center"><span class="tag">Still confirming</span><p class="sub">Your card has not been charged yet. Once confirmed, your credit appears in Thames and we email you. If it cannot be confirmed, the hold on your card is released.</p></div></div>`;
   const body = live ? `${waiting}${added}${refunded}${slow}${BACK}` : `${slow}${BACK}`;
   const script = live
     ? `
