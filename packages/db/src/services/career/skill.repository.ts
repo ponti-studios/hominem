@@ -1,4 +1,4 @@
-import type { Selectable } from 'kysely';
+import { sql, type Selectable } from 'kysely';
 
 import type { DbHandle } from '../../transaction';
 import type { AppCareerSkills } from '../../types/database';
@@ -15,6 +15,7 @@ export type CareerSkillInput = {
   aiDerived?: boolean;
   isVisible?: boolean;
   sortOrder?: number;
+  worklogEntryIds?: string[];
 };
 
 export const SkillRepository = {
@@ -27,14 +28,37 @@ export const SkillRepository = {
       .execute();
   },
 
+  /** The skills that point at one worklog entry — the detail tool's `linkedSkillIds`. */
+  async listIdsByWorklogEntryId(
+    handle: DbHandle,
+    ownerUserId: string,
+    worklogEntryId: string,
+  ): Promise<string[]> {
+    const rows = await handle
+      .selectFrom('app.careerSkills')
+      .select('id')
+      .where('ownerUserid', '=', ownerUserId)
+      .where(sql<boolean>`"worklog_entry_ids" @> ${JSON.stringify([worklogEntryId])}::jsonb`)
+      .orderBy('sortOrder', 'asc')
+      .execute();
+    return rows.map((row) => row.id);
+  },
+
   async create(
     handle: DbHandle,
     ownerUserId: string,
     input: CareerSkillInput,
   ): Promise<CareerSkillRecord> {
+    const { worklogEntryIds, ...rest } = input;
     return handle
       .insertInto('app.careerSkills')
-      .values({ ownerUserid: ownerUserId, ...input })
+      .values({
+        ownerUserid: ownerUserId,
+        ...rest,
+        ...(worklogEntryIds === undefined
+          ? {}
+          : { worklogEntryIds: sql`${JSON.stringify(worklogEntryIds)}::jsonb` }),
+      })
       .returningAll()
       .executeTakeFirstOrThrow();
   },
@@ -45,9 +69,15 @@ export const SkillRepository = {
     id: string,
     input: Partial<CareerSkillInput>,
   ): Promise<CareerSkillRecord | null> {
+    const { worklogEntryIds, ...rest } = input;
     const result = await handle
       .updateTable('app.careerSkills')
-      .set(input)
+      .set({
+        ...rest,
+        ...(worklogEntryIds === undefined
+          ? {}
+          : { worklogEntryIds: sql`${JSON.stringify(worklogEntryIds)}::jsonb` }),
+      })
       .where('id', '=', id)
       .where('ownerUserid', '=', ownerUserId)
       .returningAll()

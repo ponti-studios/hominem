@@ -320,6 +320,9 @@ export async function listCareerSkills(ownerUserId: string) {
 }
 
 export async function createCareerSkill(ownerUserId: string, input: CareerSkillInput) {
+  if (input.worklogEntryIds) {
+    await assertWorklogEntries(ownerUserId, input.worklogEntryIds);
+  }
   return toSkillDto(await SkillRepository.create(db, ownerUserId, input));
 }
 
@@ -328,6 +331,9 @@ export async function updateCareerSkill(
   id: string,
   data: Partial<CareerSkillInput>,
 ) {
+  if (data.worklogEntryIds) {
+    await assertWorklogEntries(ownerUserId, data.worklogEntryIds);
+  }
   const updated = await SkillRepository.update(db, ownerUserId, id, data);
   return updated ? toSkillDto(updated) : null;
 }
@@ -439,6 +445,13 @@ async function assertWorklogProject(ownerUserId: string, projectId: string) {
   }
 }
 
+/** A skill may only point at worklog entries the caller owns. */
+async function assertWorklogEntries(ownerUserId: string, ids: string[]) {
+  if (!(await WorklogRepository.entriesBelongToOwner(db, ownerUserId, ids))) {
+    throw new NotFoundError('Career worklog entry', { ids });
+  }
+}
+
 function toWorklogDto(entry: CareerWorklogEntry) {
   return careerWorklogEntrySchema.parse(entry);
 }
@@ -452,10 +465,10 @@ export async function listCareerWorklogEntries(
 }
 
 export async function getCareerWorklogEntry(ownerUserId: string, id: string) {
-  const entry = await WorklogRepository.get(db, ownerUserId, id);
-  // Nothing points at an entry until the skill-proofing issue lands, so no skill
-  // can be linked yet.
-  const linkedSkillIds: string[] = [];
+  const [entry, linkedSkillIds] = await Promise.all([
+    WorklogRepository.get(db, ownerUserId, id),
+    SkillRepository.listIdsByWorklogEntryId(db, ownerUserId, id),
+  ]);
   return { entry: entry ? toWorklogDto(entry) : null, linkedSkillIds };
 }
 
@@ -623,6 +636,7 @@ function toSkillDto(skill: {
   yearsOfExperience: number | null;
   description: string | null;
   proof: string | null;
+  worklogEntryIds: unknown;
   aiDerived: boolean;
   isVisible: boolean;
   sortOrder: number;
@@ -635,6 +649,9 @@ function toSkillDto(skill: {
     yearsOfExperience: skill.yearsOfExperience,
     description: skill.description,
     proof: skill.proof,
+    worklogEntryIds: Array.isArray(skill.worklogEntryIds)
+      ? skill.worklogEntryIds.filter((id): id is string => typeof id === 'string')
+      : [],
     aiDerived: skill.aiDerived,
     isVisible: skill.isVisible,
     sortOrder: skill.sortOrder,

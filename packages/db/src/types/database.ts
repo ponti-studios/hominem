@@ -303,6 +303,7 @@ export interface AppCareerSkills {
   proof: string | null;
   sortOrder: Generated<number>;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  worklogEntryIds: Generated<Json>;
   yearsOfExperience: number | null;
 }
 

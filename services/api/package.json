@@ -45,7 +45,8 @@
     "test-user": "tsx scripts/test-user-admin.ts",
     "merge-user-data": "tsx scripts/merge-user-data.ts",
     "mcp:smoke": "tsx scripts/mcp-smoke-test.ts",
-    "mcp:perf": "tsx --tsconfig tsconfig.dev.json scripts/mcp-perf-baseline.ts"
+    "mcp:perf": "tsx --tsconfig tsconfig.dev.json scripts/mcp-perf-baseline.ts",
+    "migrate:career-ledger": "tsx scripts/migrate-career-ledger.ts"
   },
   "dependencies": {
     "@better-auth/cimd": "1.7.1",

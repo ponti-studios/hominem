@@ -10,6 +10,7 @@ import { requestIdMiddleware } from '../rpc/middleware/auth';
 import { apiErrorHandler } from '../rpc/middleware/error';
 import { validationErrorMiddleware } from '../rpc/middleware/validation';
 import {
+  careerSkillCreateOutputSchema,
   careerWorklogCreateOutputSchema,
   careerWishlistAddOutputSchema,
 } from '../schemas/career.schema';
@@ -340,6 +341,7 @@ describe('mcp server transport', () => {
         'occurredAfter',
         'occurredBefore',
         'projectId',
+        'skillId',
         'tag',
       ]);
       expect(properties('career_worklog_entry')).toEqual(['id']);
@@ -705,6 +707,86 @@ describe('mcp server transport', () => {
         await accepting.close();
       }
 
+      await db.deleteFrom('app.careerEngagements').where('id', '=', engagementId).execute();
+    });
+
+    it('scrubs a skill link only when the confirmed worklog delete runs', async () => {
+      const engagement = await db
+        .insertInto('app.careerEngagements')
+        .values({ ownerUserid: testUser.id, company: 'MRTR Worklog Co', title: 'Engineer' })
+        .returning('id')
+        .executeTakeFirstOrThrow();
+      const engagementId = engagement.id;
+
+      const writer = await createClient(createApp(mcpAuthContext), writeScopes);
+      let entryId: string;
+      let skillId: string;
+      try {
+        const created = await writer.callTool({
+          name: 'career_worklog_create',
+          arguments: { engagementId, rawNote: 'Linked entry awaiting confirmed delete.' },
+        });
+        entryId = toolOutput(created, careerWorklogCreateOutputSchema).entry.id;
+
+        const skill = await writer.callTool({
+          name: 'career_skill_create',
+          arguments: { name: 'MRTR Scrub Skill', worklogEntryIds: [entryId] },
+        });
+        skillId = toolOutput(skill, careerSkillCreateOutputSchema).skill.id;
+      } finally {
+        await writer.close();
+      }
+
+      // A plain client cannot answer the embedded elicitation, so the delete
+      // (and therefore the scrub) must not run.
+      const plain = await createClient(createApp(mcpAuthContext), writeScopes);
+      try {
+        const result = await plain.callTool({
+          name: 'career_worklog_delete',
+          arguments: { id: entryId },
+        });
+        expect(result.isError).toBe(true);
+      } finally {
+        await plain.close();
+      }
+
+      const survivor = await db
+        .selectFrom('app.careerWorklogEntries')
+        .select('id')
+        .where('id', '=', entryId)
+        .executeTakeFirst();
+      expect(survivor).toBeDefined();
+      const stillLinked = await db
+        .selectFrom('app.careerSkills')
+        .select('worklogEntryIds')
+        .where('id', '=', skillId)
+        .executeTakeFirstOrThrow();
+      expect(stillLinked.worklogEntryIds).toEqual([entryId]);
+
+      const accepting = await createElicitingClient(
+        createApp(mcpAuthContext),
+        'accept',
+        writeScopes,
+      );
+      try {
+        const result = await accepting.callTool({
+          name: 'career_worklog_delete',
+          arguments: { id: entryId },
+        });
+        expect(result.isError).not.toBe(true);
+        expect(result.structuredContent).toMatchObject({ removed: true });
+      } finally {
+        await accepting.close();
+      }
+
+      const scrubbed = await db
+        .selectFrom('app.careerSkills')
+        .select('worklogEntryIds')
+        .where('id', '=', skillId)
+        .executeTakeFirstOrThrow();
+      expect(scrubbed.worklogEntryIds).toEqual([]);
+
+      await db.deleteFrom('app.careerSkills').where('id', '=', skillId).execute();
       await db.deleteFrom('app.careerEngagements').where('id', '=', engagementId).execute();
     });
 
