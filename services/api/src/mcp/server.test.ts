@@ -1,4 +1,4 @@
-import { pool } from '@hominem/db/core';
+import { db, pool } from '@hominem/db/core';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -9,7 +9,10 @@ import type { AppContext, RpcUser } from '../rpc/middleware/auth';
 import { requestIdMiddleware } from '../rpc/middleware/auth';
 import { apiErrorHandler } from '../rpc/middleware/error';
 import { validationErrorMiddleware } from '../rpc/middleware/validation';
-import { careerWishlistAddOutputSchema } from '../schemas/career.schema';
+import {
+  careerWorklogCreateOutputSchema,
+  careerWishlistAddOutputSchema,
+} from '../schemas/career.schema';
 import { createCollectionOutputSchema } from '../schemas/collections.schema';
 import {
   financeTransactionMoveOutputSchema,
@@ -155,6 +158,16 @@ async function createElicitingClient(
   return client;
 }
 
+beforeAll(async () => {
+  // The worklog confirmation test below needs an engagement for the test user.
+  // Clear any leftover first so a crashed earlier run can't leak one into the
+  // other tests' expectations.
+  await pool.query('DELETE FROM app.career_engagements WHERE owner_userid = $1 AND company = $2', [
+    testUser.id,
+    'MRTR Worklog Co',
+  ]);
+});
+
 describe('mcp server transport', () => {
   it('advertises career:read in protected resource metadata', async () => {
     const app = new Hono().route('/', oauthDiscoveryRoutes);
@@ -287,6 +300,78 @@ describe('mcp server transport', () => {
       expect(toolNames).toContain('career_engagements');
       expect(toolNames).toContain('finance_net_worth');
       expect(toolNames).not.toContain('career_wishlist_add');
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('lists the five career worklog tools with house-style mode annotations', async () => {
+    const client = await createClient(createApp(mcpAuthContext), 'career:read career:write');
+    try {
+      const tools = await client.listTools();
+      const byName = new Map(tools.tools.map((tool) => [tool.name, tool]));
+
+      const expectedModes: Record<string, string> = {
+        career_worklog_entries: 'Mode: read-only.',
+        career_worklog_entry: 'Mode: read-only.',
+        career_worklog_create: 'Mode: write.',
+        career_worklog_update: 'Mode: write.',
+        career_worklog_delete: 'Mode: write, confirmation required.',
+      };
+
+      for (const [name, mode] of Object.entries(expectedModes)) {
+        const tool = byName.get(name);
+        expect(tool, name).toBeDefined();
+        expect(tool?.description, name).toContain(mode);
+      }
+
+      // Parameter names are read off the live inputSchema, not the source schema.
+      const properties = (name: string) =>
+        Object.keys(
+          z
+            .object({ properties: z.record(z.string(), z.unknown()) })
+            .parse(byName.get(name)?.inputSchema).properties,
+        ).sort();
+
+      expect(properties('career_worklog_entries')).toEqual([
+        'engagementId',
+        'impactStatus',
+        'limit',
+        'occurredAfter',
+        'occurredBefore',
+        'projectId',
+        'tag',
+      ]);
+      expect(properties('career_worklog_entry')).toEqual(['id']);
+      expect(properties('career_worklog_create')).toEqual([
+        'action',
+        'area',
+        'engagementId',
+        'evidence',
+        'impact',
+        'impactStatus',
+        'knownLimits',
+        'occurredEnd',
+        'occurredStart',
+        'problem',
+        'projectId',
+        'publicBullet',
+        'rawNote',
+        'sensitivity',
+        'tags',
+      ]);
+      expect(properties('career_worklog_update')).toEqual(['data', 'id']);
+      expect(properties('career_worklog_delete')).toEqual(['id']);
+
+      expect(byName.get('career_worklog_delete')?.annotations).toMatchObject({
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+      });
+      expect(byName.get('career_worklog_entries')?.annotations).toMatchObject({
+        readOnlyHint: true,
+        destructiveHint: false,
+      });
     } finally {
       await client.close();
     }
@@ -569,6 +654,58 @@ describe('mcp server transport', () => {
       } finally {
         await cleanup.close();
       }
+    });
+
+    it('deletes a career worklog entry only after the client accepts the elicitation', async () => {
+      const engagement = await db
+        .insertInto('app.careerEngagements')
+        .values({ ownerUserid: testUser.id, company: 'MRTR Worklog Co', title: 'Engineer' })
+        .returning('id')
+        .executeTakeFirstOrThrow();
+      const engagementId = engagement.id;
+
+      const writer = await createClient(createApp(mcpAuthContext), writeScopes);
+      let entryId: string;
+      try {
+        const created = await writer.callTool({
+          name: 'career_worklog_create',
+          arguments: { engagementId, rawNote: 'Worklog entry awaiting confirmation.' },
+        });
+        entryId = toolOutput(created, careerWorklogCreateOutputSchema).entry.id;
+      } finally {
+        await writer.close();
+      }
+
+      // A plain client cannot answer the embedded elicitation, so the delete
+      // must not run.
+      const plain = await createClient(createApp(mcpAuthContext), writeScopes);
+      try {
+        const result = await plain.callTool({
+          name: 'career_worklog_delete',
+          arguments: { id: entryId },
+        });
+        expect(result.isError).toBe(true);
+      } finally {
+        await plain.close();
+      }
+
+      const accepting = await createElicitingClient(
+        createApp(mcpAuthContext),
+        'accept',
+        writeScopes,
+      );
+      try {
+        const result = await accepting.callTool({
+          name: 'career_worklog_delete',
+          arguments: { id: entryId },
+        });
+        expect(result.isError).not.toBe(true);
+        expect(result.structuredContent).toMatchObject({ removed: true });
+      } finally {
+        await accepting.close();
+      }
+
+      await db.deleteFrom('app.careerEngagements').where('id', '=', engagementId).execute();
     });
 
     it('completes in one round trip with no elicitation when there is nothing to confirm', async () => {

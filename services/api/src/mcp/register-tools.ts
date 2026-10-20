@@ -20,7 +20,9 @@ async function registerAll(): Promise<void> {
     if (isEnabled('travel:write')) imports.push(import('./tools/travel-writes'));
     if (isEnabled('travel:write')) imports.push(import('./tools/travel-maintenance'));
   }
-  if (isEnabled('career:read', 'career:write')) imports.push(import('./tools/career'));
+  if (isEnabled('career:read', 'career:write')) {
+    imports.push(import('./tools/career'), import('./tools/career-worklog'));
+  }
   if (isEnabled('collections:read', 'collections:write')) {
     imports.push(import('./tools/collections'));
   }

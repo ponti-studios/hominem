@@ -27,6 +27,10 @@ export type AppCareerOfferDecision = 'ACCEPTED' | 'DECLINED' | 'NEGOTIATING' | '
 
 export type AppCareerProjectStatus = 'BACKLOG' | 'CANCELED' | 'DONE' | 'IN_PROGRESS';
 
+export type AppCareerWorklogImpactStatus = 'closed' | 'open';
+
+export type AppCareerWorklogSensitivity = 'internal' | 'mixed' | 'public_safe';
+
 export type Generated<T> =
   T extends ColumnType<infer S, infer I, infer U>
     ? ColumnType<S, I | undefined, U>
@@ -327,6 +331,29 @@ export interface AppCareerTestimonials {
   rating: number | null;
   sortOrder: Generated<number>;
   title: string | null;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppCareerWorklogEntries {
+  action: string | null;
+  area: string | null;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  engagementId: string;
+  evidence: Generated<Json>;
+  id: Generated<string>;
+  impact: string | null;
+  impactStatus: Generated<AppCareerWorklogImpactStatus>;
+  knownLimits: string | null;
+  loggedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  occurredEnd: ColumnType<string, Date | string, Date | string> | null;
+  occurredStart: Generated<ColumnType<string, Date | string, Date | string>>;
+  ownerUserid: string;
+  problem: string | null;
+  projectId: string | null;
+  publicBullet: string | null;
+  rawNote: string;
+  sensitivity: Generated<AppCareerWorklogSensitivity>;
+  tags: Generated<Json>;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
@@ -1668,6 +1695,7 @@ export interface DB {
   'app.careerSkills': AppCareerSkills;
   'app.careerSocialLinks': AppCareerSocialLinks;
   'app.careerTestimonials': AppCareerTestimonials;
+  'app.careerWorklogEntries': AppCareerWorklogEntries;
   'app.chatGenerationEffects': AppChatGenerationEffects;
   'app.chatGenerationEvents': AppChatGenerationEvents;
   'app.chatGenerationRuns': AppChatGenerationRuns;

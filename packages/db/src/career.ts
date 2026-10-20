@@ -41,3 +41,12 @@ export type {
   CareerTestimonialInput,
   CareerTestimonialRecord,
 } from './services/career/testimonial.repository';
+export { WorklogRepository } from './services/career/worklog.repository';
+export type {
+  CareerWorklogCreateInput,
+  CareerWorklogEntry,
+  CareerWorklogEvidence,
+  CareerWorklogEvidenceKind,
+  CareerWorklogListFilters,
+  CareerWorklogUpdateInput,
+} from './services/career/worklog.repository';

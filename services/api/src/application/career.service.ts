@@ -7,6 +7,7 @@ import {
   SkillRepository,
   SocialLinksRepository,
   TestimonialRepository,
+  WorklogRepository,
   type CareerApplicationRecord,
   type CareerCertificationInput,
   type CareerEducationRecord,
@@ -16,8 +17,11 @@ import {
   type CareerSkillInput,
   type CareerSocialLinksInput,
   type CareerTestimonialInput,
+  type CareerWorklogEntry,
+  type CareerWorklogListFilters,
 } from '@hominem/db/career';
 import { db } from '@hominem/db/core';
+import { NotFoundError, ValidationError } from '@hominem/db/errors';
 import { z } from 'zod';
 
 import {
@@ -36,6 +40,9 @@ import {
   careerProjectStatusSchema,
   careerProjectsSchema,
   careerWishlistCompanySchema,
+  careerWorklogCreateSchema,
+  careerWorklogEntrySchema,
+  careerWorklogUpdateDataSchema,
 } from '../schemas/career.schema';
 
 export async function getCareerProfile(ownerUserId: string) {
@@ -402,6 +409,110 @@ export async function updateCareerCertification(
 
 export async function removeCareerCertification(ownerUserId: string, id: string) {
   return CertificationRepository.remove(db, ownerUserId, id);
+}
+
+// -- Worklog --
+
+/** The worklog's "today" — the same UTC calendar day the API writes elsewhere. */
+function utcToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function assertWorklogWindow(occurredStart: string, occurredEnd: string | null) {
+  if (occurredEnd && occurredEnd < occurredStart) {
+    throw new ValidationError('occurredEnd must be on or after occurredStart.', {
+      occurredStart,
+      occurredEnd,
+    });
+  }
+}
+
+async function assertWorklogEngagement(ownerUserId: string, engagementId: string) {
+  if (!(await WorklogRepository.engagementBelongsToOwner(db, ownerUserId, engagementId))) {
+    throw new NotFoundError('Career engagement', { id: engagementId });
+  }
+}
+
+async function assertWorklogProject(ownerUserId: string, projectId: string) {
+  if (!(await WorklogRepository.projectBelongsToOwner(db, ownerUserId, projectId))) {
+    throw new NotFoundError('Career project', { id: projectId });
+  }
+}
+
+function toWorklogDto(entry: CareerWorklogEntry) {
+  return careerWorklogEntrySchema.parse(entry);
+}
+
+export async function listCareerWorklogEntries(
+  ownerUserId: string,
+  filters: CareerWorklogListFilters = {},
+) {
+  const entries = await WorklogRepository.list(db, ownerUserId, filters);
+  return { entries: entries.map(toWorklogDto) };
+}
+
+export async function getCareerWorklogEntry(ownerUserId: string, id: string) {
+  const entry = await WorklogRepository.get(db, ownerUserId, id);
+  // Nothing points at an entry until the skill-proofing issue lands, so no skill
+  // can be linked yet.
+  const linkedSkillIds: string[] = [];
+  return { entry: entry ? toWorklogDto(entry) : null, linkedSkillIds };
+}
+
+export async function createCareerWorklogEntry(
+  ownerUserId: string,
+  input: z.infer<typeof careerWorklogCreateSchema>,
+) {
+  const occurredStart = input.occurredStart ?? utcToday();
+  const occurredEnd = input.occurredEnd ?? null;
+  assertWorklogWindow(occurredStart, occurredEnd);
+  await assertWorklogEngagement(ownerUserId, input.engagementId);
+  if (input.projectId) await assertWorklogProject(ownerUserId, input.projectId);
+
+  const created = await WorklogRepository.create(db, ownerUserId, {
+    ...input,
+    occurredStart,
+    occurredEnd,
+    impactStatus: input.impactStatus ?? 'open',
+    sensitivity: input.sensitivity ?? 'internal',
+    tags: input.tags ?? [],
+    evidence: input.evidence ?? [],
+  });
+  return toWorklogDto(created);
+}
+
+export async function updateCareerWorklogEntry(
+  ownerUserId: string,
+  id: string,
+  data: z.infer<typeof careerWorklogUpdateDataSchema>,
+) {
+  if (data.engagementId !== undefined) {
+    await assertWorklogEngagement(ownerUserId, data.engagementId);
+  }
+  if (data.projectId) {
+    await assertWorklogProject(ownerUserId, data.projectId);
+  }
+
+  // The window only makes sense against the entry's own dates, so the current
+  // values are read back — and only when the update touches the window at all.
+  if (data.occurredStart !== undefined || data.occurredEnd !== undefined) {
+    const existing = await WorklogRepository.get(db, ownerUserId, id);
+    if (!existing) return null;
+    assertWorklogWindow(
+      data.occurredStart ?? existing.occurredStart,
+      data.occurredEnd === undefined ? existing.occurredEnd : data.occurredEnd,
+    );
+  }
+
+  const updated = await WorklogRepository.update(db, ownerUserId, id, data);
+  return updated ? toWorklogDto(updated) : null;
+}
+
+export async function removeCareerWorklogEntry(ownerUserId: string, id: string) {
+  const removed = await WorklogRepository.remove(db, ownerUserId, id);
+  if (!removed) return false;
+  await WorklogRepository.scrubSkillLinks(db, ownerUserId, id);
+  return true;
 }
 
 // -- Social links --
