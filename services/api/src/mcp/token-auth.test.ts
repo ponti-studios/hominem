@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveMcpToken } from '../application/mcp-tokens.service';
 import type { AuthContext } from '../auth/types';
+import { env } from '../env';
 import type { AppContext, RpcUser } from '../rpc/middleware/auth';
 import { requestIdMiddleware } from '../rpc/middleware/auth';
 import { apiErrorHandler } from '../rpc/middleware/error';
@@ -147,7 +148,7 @@ describe('mcp bearer token auth', () => {
             },
           },
         }),
-      ).rejects.toThrow('insufficient_scope');
+      ).rejects.toThrow('Insufficient scope');
       expect(await countTravelIdeas()).toBe(before);
     } finally {
       await client.close();
@@ -221,11 +222,46 @@ describe('mcp bearer token auth', () => {
       expect(names).toContain('career_profile');
       expect(names).not.toContain('finance_net_worth');
       await expect(client.callTool({ name: 'finance_net_worth', arguments: {} })).rejects.toThrow(
-        'insufficient_scope',
+        'Insufficient scope',
       );
     } finally {
       await client.close();
     }
+  });
+
+  it('answers a missing scope with a Bearer challenge that names the scope to request', async () => {
+    vi.mocked(resolveMcpToken).mockResolvedValue({
+      ownerUserId: testUser.id,
+      scopes: ['career:read'],
+    });
+
+    const response = await createApp().request('/api/mcp', {
+      method: 'POST',
+      headers: {
+        authorization: 'Bearer hmt_career_only_token',
+        'content-type': 'application/json',
+        accept: 'application/json, text/event-stream',
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'finance_net_worth', arguments: {} },
+      }),
+    });
+
+    const financeNetWorth = listTools().find((tool) => tool.name === 'finance_net_worth');
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'insufficient_scope',
+      required_scopes: financeNetWorth?.scopes,
+    });
+    const challenge = response.headers.get('www-authenticate') ?? '';
+    expect(challenge).toContain('Bearer error="insufficient_scope"');
+    expect(challenge).toContain(`scope="${(financeNetWorth?.scopes ?? []).join(' ')}"`);
+    expect(challenge).toContain(
+      `resource_metadata="${new URL('/.well-known/oauth-protected-resource/api/mcp', env.API_URL)}"`,
+    );
   });
 
   it('enforces finance tool scopes for personal tokens at discovery and call time', async () => {
@@ -251,7 +287,7 @@ describe('mcp bearer token auth', () => {
       expect(readerTools.filter((name) => name.startsWith('finance_'))).toEqual(readToolNames);
       for (const toolName of writeToolNames) {
         await expect(financeReader.callTool({ name: toolName, arguments: {} })).rejects.toThrow(
-          'insufficient_scope',
+          'Insufficient scope',
         );
       }
 
@@ -264,7 +300,7 @@ describe('mcp bearer token auth', () => {
       );
       for (const toolName of readToolNames) {
         await expect(financeWriter.callTool({ name: toolName, arguments: {} })).rejects.toThrow(
-          'insufficient_scope',
+          'Insufficient scope',
         );
       }
 
@@ -304,7 +340,7 @@ describe('mcp bearer token auth', () => {
       await reader.callTool({ name: 'travel_validate', arguments: {} });
       for (const name of writeNames) {
         await expect(reader.callTool({ name, arguments: {} })).rejects.toThrow(
-          'insufficient_scope',
+          'Insufficient scope',
         );
       }
 
@@ -312,7 +348,7 @@ describe('mcp bearer token auth', () => {
       expect(discoveredWrite.filter((name) => name.startsWith('travel_'))).toEqual(writeNames);
       for (const name of readNames) {
         await expect(writer.callTool({ name, arguments: {} })).rejects.toThrow(
-          'insufficient_scope',
+          'Insufficient scope',
         );
       }
     } finally {

@@ -165,7 +165,7 @@ function VerifyScreen() {
               autoCorrect={false}
               autoFocus
               maxLength={6}
-              editable={!isSubmitting}
+              editable={!isSubmitting && !isResending}
               hasError={Boolean(error)}
               cursorColor={foreground}
               selectionColor={foreground}
@@ -196,7 +196,7 @@ function VerifyScreen() {
                 posthog.capture('auth_verify_pressed');
                 void handleVerifyOtp(resolvedEmail, normalizedOtp);
               }}
-              disabled={isSubmitting || normalizedOtp.length !== 6}
+              disabled={isSubmitting || isResending || normalizedOtp.length !== 6}
               loading={isSubmitting}
               variant="ink"
               style={{ borderRadius: 4 }}

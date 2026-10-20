@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import { normalizeEmail, normalizeOtp } from '~/services/auth/validation';
 import t from '~/translations';
@@ -13,11 +13,19 @@ export function useEmailAuth(ops: EmailAuthOperations) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  // Verifying and resending must not overlap: a code submitted while a new one is on its way is
+  // already stale, and the resend would clear whatever was typed meanwhile. State lags a render, so
+  // a ref is what makes the second call a no-op even when it fires in the same tick.
+  const inFlightRef = useRef(false);
   const run = useCallback(
     async (
       action: () => Promise<void>,
       opts: { resending?: boolean; clearOtpOnError?: boolean; clearOtpOnSuccess?: boolean } = {},
     ) => {
+      if (inFlightRef.current) {
+        return;
+      }
+      inFlightRef.current = true;
       const setBusy = opts.resending ? setIsResending : setIsSubmitting;
       try {
         setBusy(true);
@@ -32,6 +40,7 @@ export function useEmailAuth(ops: EmailAuthOperations) {
           setOtp('');
         }
       } finally {
+        inFlightRef.current = false;
         setBusy(false);
       }
     },

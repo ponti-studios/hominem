@@ -114,4 +114,65 @@ describe('useEmailAuth', () => {
     expect(ops.resendOtp).not.toHaveBeenCalled();
     expect(result.current.error).toBe('Email is required');
   });
+
+  it('ignores a verify that starts while a resend is in flight', async () => {
+    let finishResend: () => void = () => undefined;
+    const { ops, result } = setup({
+      resendOtp: vi.fn().mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            finishResend = resolve;
+          }),
+      ),
+    });
+
+    let resend: Promise<void> = Promise.resolve();
+    act(() => {
+      resend = result.current.handleResendOtp('user@example.com');
+    });
+    expect(result.current.isResending).toBe(true);
+
+    await act(async () => {
+      await result.current.handleVerifyOtp('user@example.com', '123456');
+    });
+    expect(ops.verifyOtp).not.toHaveBeenCalled();
+
+    await act(async () => {
+      finishResend();
+      await resend;
+    });
+    expect(result.current.isResending).toBe(false);
+
+    await act(async () => {
+      await result.current.handleVerifyOtp('user@example.com', '123456');
+    });
+    expect(ops.verifyOtp).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a resend that starts while a verify is in flight', async () => {
+    let finishVerify: () => void = () => undefined;
+    const { ops, result } = setup({
+      verifyOtp: vi.fn().mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            finishVerify = resolve;
+          }),
+      ),
+    });
+
+    let verify: Promise<void> = Promise.resolve();
+    act(() => {
+      verify = result.current.handleVerifyOtp('user@example.com', '123456');
+    });
+
+    await act(async () => {
+      await result.current.handleResendOtp('user@example.com');
+    });
+    expect(ops.resendOtp).not.toHaveBeenCalled();
+
+    await act(async () => {
+      finishVerify();
+      await verify;
+    });
+  });
 });
