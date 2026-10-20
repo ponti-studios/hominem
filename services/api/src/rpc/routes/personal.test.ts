@@ -41,13 +41,20 @@ const errorClasses = vi.hoisted(() => {
 
 vi.mock('@hominem/db/errors', () => ({
   ForbiddenError: errorClasses.MockServiceError,
-  getServiceErrorFailureType: () => 'auth.unauthenticated',
   InternalError: errorClasses.MockServiceError,
   NotFoundError: errorClasses.MockServiceError,
   ServiceError: errorClasses.MockServiceError,
   UnauthorizedError: errorClasses.MockUnauthorizedError,
   UnavailableError: errorClasses.MockServiceError,
   ValidationError: errorClasses.MockServiceError,
+  getServiceErrorFailureType: (error: { code: string }) =>
+    error.code === 'UNAUTHORIZED'
+      ? 'auth.unauthenticated'
+      : error.code === 'NOT_FOUND'
+        ? 'resource.not_found'
+        : error.code === 'VALIDATION_ERROR'
+          ? 'validation.invalid_input'
+          : 'service.internal_error',
   isServiceError: (value: unknown) =>
     value instanceof errorClasses.MockServiceError ||
     (isObject(value) && 'code' in value && 'statusCode' in value && 'message' in value),

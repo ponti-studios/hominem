@@ -133,6 +133,16 @@ describe('useNoteEditor', () => {
     });
   });
 
+  it('rejects flushSave when the note save fails', async () => {
+    const error = Object.assign(new Error('Note not found'), { status: 404 });
+    mockPersistNow.mockRejectedValueOnce(error);
+    const { result } = renderHookWithQueryClient(() => useNoteEditor(NOTE_ID));
+
+    await act(async () => {
+      await expect(result.current.flushSave('Title', 'Content', [])).rejects.toBe(error);
+    });
+  });
+
   it('flushes the pending save on unmount', () => {
     const { unmount } = renderHookWithQueryClient(() => useNoteEditor(NOTE_ID));
     mockFlush.mockClear();
@@ -266,5 +276,14 @@ describe('useNoteEditor', () => {
       content: 'Content',
       fileIds: ['file-2'],
     });
+  });
+
+  it('consumes detach persistence failures after reporting them through the saver', async () => {
+    mockPersistNow.mockRejectedValueOnce(new Error('offline'));
+    const { result } = renderHookWithQueryClient(() => useNoteEditor(NOTE_ID));
+
+    await expect(
+      result.current.detachFile('file-1', [], 'Title', 'Content'),
+    ).resolves.toBeUndefined();
   });
 });

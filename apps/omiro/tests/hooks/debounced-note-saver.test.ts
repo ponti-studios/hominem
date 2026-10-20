@@ -11,11 +11,13 @@ function createNote(content: string): Note {
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((nextResolve) => {
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => {
     resolve = nextResolve;
+    reject = nextReject;
   });
 
-  return { promise, resolve };
+  return { promise, reject, resolve };
 }
 
 describe('createDebouncedNoteSaver', () => {
@@ -138,5 +140,43 @@ describe('createDebouncedNoteSaver', () => {
 
     expect(persist).toHaveBeenCalledTimes(2);
     expect(persist).toHaveBeenLastCalledWith({ title: null, content: 'b', fileIds: [] });
+  });
+
+  it('rejects an explicit save when persistence fails', async () => {
+    const error = Object.assign(new Error('Note not found'), { status: 404 });
+    const persist = vi.fn().mockRejectedValue(error);
+    const onError = vi.fn();
+    const saver = createDebouncedNoteSaver({
+      commit: vi.fn(),
+      delayMs: 600,
+      onError,
+      persist,
+    });
+
+    await expect(saver.persistNow({ title: null, content: 'note', fileIds: [] })).rejects.toBe(
+      error,
+    );
+    expect(onError).toHaveBeenCalledWith(error);
+  });
+
+  it('continues draining pending explicit saves after a failure', async () => {
+    const first = createDeferred<Note>();
+    const second = createDeferred<Note>();
+    const persist = vi.fn((_payload: NoteSavePayload) => Promise.resolve(createNote('unused')));
+    persist.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+    const saver = createDebouncedNoteSaver({ commit: vi.fn(), delayMs: 600, persist });
+
+    const firstSave = saver.persistNow({ title: null, content: 'first', fileIds: [] });
+    const secondSave = saver.persistNow({ title: null, content: 'second', fileIds: [] });
+    const firstError = new Error('first failed');
+    const secondError = new Error('second failed');
+    first.reject(firstError);
+
+    await expect(firstSave).rejects.toBe(firstError);
+    expect(persist).toHaveBeenCalledTimes(2);
+    expect(persist).toHaveBeenLastCalledWith({ title: null, content: 'second', fileIds: [] });
+
+    second.reject(secondError);
+    await expect(secondSave).rejects.toBe(secondError);
   });
 });

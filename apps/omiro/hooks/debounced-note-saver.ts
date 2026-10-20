@@ -8,6 +8,7 @@ export interface NoteSavePayload {
 
 interface PendingNoteSave {
   payload: NoteSavePayload;
+  waiters: Array<{ reject: (error: unknown) => void; resolve: () => void }>;
   version: number;
 }
 
@@ -39,21 +40,24 @@ export function createDebouncedNoteSaver({
   };
 
   const persistPending = async (next: PendingNoteSave) => {
-    if (next.payload.content.trim().length === 0) {
-      if (next.version === version) {
-        onSkip?.();
-      }
-      return;
-    }
     try {
+      if (next.payload.content.trim().length === 0) {
+        if (next.version === version) {
+          onSkip?.();
+        }
+        next.waiters.forEach((waiter) => waiter.resolve());
+        return;
+      }
       const note = await persist(next.payload);
       if (next.version === version) {
         commit(note);
       }
+      next.waiters.forEach((waiter) => waiter.resolve());
     } catch (error) {
       if (next.version === version) {
         onError?.(error);
       }
+      next.waiters.forEach((waiter) => waiter.reject(error));
     }
   };
 
@@ -88,13 +92,18 @@ export function createDebouncedNoteSaver({
     flush,
     persistNow: async (payload: NoteSavePayload) => {
       version += 1;
-      pending = { payload, version };
+      const completion = new Promise<void>((resolve, reject) => {
+        const waiters = [...(pending?.waiters ?? [])];
+        waiters.push({ resolve, reject });
+        pending = { payload, version, waiters };
+      });
       clearTimer();
-      await drain();
+      void drain();
+      return completion;
     },
     schedule: (payload: NoteSavePayload) => {
       version += 1;
-      pending = { payload, version };
+      pending = { payload, version, waiters: pending?.waiters ?? [] };
       clearTimer();
       timer = setTimeout(flush, delayMs);
     },
