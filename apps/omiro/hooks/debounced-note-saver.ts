@@ -8,6 +8,7 @@ export interface NoteSavePayload {
 
 interface PendingNoteSave {
   payload: NoteSavePayload;
+  rejectOnError?: boolean;
   version: number;
 }
 
@@ -54,6 +55,9 @@ export function createDebouncedNoteSaver({
       if (next.version === version) {
         onError?.(error);
       }
+      if (next.rejectOnError) {
+        throw error;
+      }
     }
   };
 
@@ -88,7 +92,7 @@ export function createDebouncedNoteSaver({
     flush,
     persistNow: async (payload: NoteSavePayload) => {
       version += 1;
-      pending = { payload, version };
+      pending = { payload, rejectOnError: true, version };
       clearTimer();
       await drain();
     },

@@ -139,4 +139,21 @@ describe('createDebouncedNoteSaver', () => {
     expect(persist).toHaveBeenCalledTimes(2);
     expect(persist).toHaveBeenLastCalledWith({ title: null, content: 'b', fileIds: [] });
   });
+
+  it('rejects an explicit save when persistence fails', async () => {
+    const error = Object.assign(new Error('Note not found'), { status: 404 });
+    const persist = vi.fn().mockRejectedValue(error);
+    const onError = vi.fn();
+    const saver = createDebouncedNoteSaver({
+      commit: vi.fn(),
+      delayMs: 600,
+      onError,
+      persist,
+    });
+
+    await expect(saver.persistNow({ title: null, content: 'note', fileIds: [] })).rejects.toBe(
+      error,
+    );
+    expect(onError).toHaveBeenCalledWith(error);
+  });
 });
