@@ -253,6 +253,20 @@ automatically and a scoped token only needs a non-empty array. When scoped
 tokens are introduced, the create endpoint accepts a scope list and the same
 resolution path applies unchanged.
 
+### Testing MCP tools against production
+
+Use the production test user, never a real person's token, so exercising tools can't read or change real
+data. It is `cj+mcp-test@ponti.io` (empty data, already verified). `services/api/scripts/test-user-admin.ts`
+(`pnpm test-user`) creates it and mints or revokes its tokens, and refuses any address that doesn't contain
+`test` or `e2e`. The token goes straight into a file and is never printed. The current one is in
+`~/.localrc` as `HOMINEM_MCP_TEST_TOKEN`:
+
+```bash
+MCP_TOKEN="$HOMINEM_MCP_TEST_TOKEN" pnpm --filter @hominem/api mcp:smoke
+```
+
+The smoke test makes many calls at once, so the per-user rate limit may answer 429 near the end.
+
 ## Production incident investigation
 
 - A successful OTP request does not prove that the email was delivered. Check
