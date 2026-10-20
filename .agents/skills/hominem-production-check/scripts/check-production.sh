@@ -45,9 +45,9 @@ while IFS=$'\t' read -r service deployment deployment_status instance_status; do
     continue
   fi
   printf '%-14s %-38s %-10s %-10s\n' "$service" "$deployment" "$deployment_status" "$instance_status"
-  # A REMOVED instance on a successful deployment is a stopped or sleeping service,
-  # not an outage; the public-domain probes below carry the health signal for it.
-  if [[ "$deployment_status" != SUCCESS ]]; then failed=1
+  # Railway reports idle services as SLEEPING and may remove their instances.
+  # The public-domain probes below confirm that sleeping services still wake and respond.
+  if [[ "$deployment_status" != SUCCESS && "$deployment_status" != SLEEPING ]]; then failed=1
   elif [[ "$instance_status" != RUNNING && "$instance_status" != REMOVED ]]; then failed=1; fi
 done <<<"$service_rows"
 
@@ -75,7 +75,7 @@ check_domain career.ponti.io 200 ''
 check_domain labs.ponti.io 200 ''
 check_domain ponti.io 200 ''
 check_domain omiro.ponti.io 302 'prefix:https://api.ponti.io/login?'
-check_domain what.ponti.io 302 'exact:/reality'
+check_domain newsboy.ponti.io 302 'exact:/reality'
 
 echo
 if ((failed)); then
