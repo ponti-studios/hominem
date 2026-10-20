@@ -14,7 +14,7 @@
  * a real person. Needs DATABASE_URL, BETTER_AUTH_SECRET and the rest of the API environment.
  */
 import 'dotenv/config';
-import { appendFileSync, chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { parseArgs } from 'node:util';
@@ -28,23 +28,21 @@ function expandHome(path: string): string {
   return path.startsWith('~/') ? resolve(homedir(), path.slice(2)) : resolve(path);
 }
 
-// Replaces VAR=... when the file already has it, otherwise appends, always on its own line.
+// Replaces VAR=... when the file already has it, otherwise appends, always on its own line. Reads
+// once and writes once, with no existence check in between.
 function writeEnvVar(file: string, name: string, value: string): void {
+  let text = '';
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
   const line = `${name}=${value}`;
-  if (!existsSync(file)) {
-    writeFileSync(file, `${line}\n`, { mode: 0o600 });
-    return;
-  }
-  const text = readFileSync(file, 'utf8');
   const pattern = new RegExp(`^(export\\s+)?${name}=.*$`, 'm');
-  if (pattern.test(text)) {
-    writeFileSync(
-      file,
-      text.replace(pattern, (_, exported: string | undefined) => `${exported ?? ''}${line}`),
-    );
-    return;
-  }
-  appendFileSync(file, `${text.endsWith('\n') || text === '' ? '' : '\n'}${line}\n`);
+  const next = pattern.test(text)
+    ? text.replace(pattern, (_, exported: string | undefined) => `${exported ?? ''}${line}`)
+    : `${text}${text === '' || text.endsWith('\n') ? '' : '\n'}${line}\n`;
+  writeFileSync(file, next, { mode: 0o600 });
   chmodSync(file, 0o600);
 }
 
