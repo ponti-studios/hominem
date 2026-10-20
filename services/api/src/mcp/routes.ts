@@ -22,15 +22,27 @@ type McpDependencies = {
 function createMcpAuthorizationMiddleware(dependencies: McpDependencies) {
   const { env: inputEnv, auth } = dependencies;
 
+  // RFC 6750 section 3.1 plus the RFC 9728 pointer, so a client that lacks a scope knows which to
+  // ask for. Applies to OAuth tokens and personal tokens alike.
+  const insufficientScope = (scopes: readonly string[]) =>
+    new Response(JSON.stringify({ error: 'insufficient_scope', required_scopes: scopes }), {
+      status: 403,
+      headers: {
+        'content-type': 'application/json',
+        'www-authenticate': [
+          'Bearer error="insufficient_scope"',
+          `scope="${scopes.join(' ')}"`,
+          `resource_metadata="${new URL('/.well-known/oauth-protected-resource/api/mcp', inputEnv.API_URL)}"`,
+        ].join(', '),
+      },
+    });
+
   // Shared by both auth paths: once a caller identity is resolved, authorize
   // scopes, rate-limit in production, then run the route.
   const runAuthorizedRequest = async (c: Context<McpHonoEnv>, next: Next) => {
     const auth = c.get('auth');
     if (!auth || !MCP_SCOPES.some((scope) => auth.scopes.includes(scope))) {
-      return new Response(JSON.stringify({ error: 'insufficient_scope' }), {
-        status: 403,
-        headers: { 'content-type': 'application/json' },
-      });
+      return insufficientScope(MCP_SCOPES);
     }
 
     if (c.req.method === 'POST') {
@@ -54,7 +66,7 @@ function createMcpAuthorizationMiddleware(dependencies: McpDependencies) {
           if (!tool) continue;
           const missingScopes = tool.scopes.filter((scope) => !auth.scopes.includes(scope));
           if (missingScopes.length > 0) {
-            return c.json({ error: 'insufficient_scope', required_scopes: missingScopes }, 403);
+            return insufficientScope(missingScopes);
           }
         }
       } catch {

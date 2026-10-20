@@ -476,7 +476,7 @@ describe('mcp server transport', () => {
     try {
       await expect(
         client.callTool({ name: 'career_wishlist_add', arguments: { company: 'Acme' } }),
-      ).rejects.toThrow('insufficient_scope');
+      ).rejects.toThrow('Insufficient scope');
     } finally {
       await client.close();
     }

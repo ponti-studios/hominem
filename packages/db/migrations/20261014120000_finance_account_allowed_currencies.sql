@@ -78,6 +78,7 @@ WHERE id = 'f1000003-0000-4000-8000-000000000003'
 
 -- +goose Down
 
+-- +goose StatementBegin
 DO $$
 BEGIN
   IF to_regclass('app.finance_account_allowed_currencies_migration_state') IS NOT NULL THEN
@@ -93,6 +94,7 @@ BEGIN
     DROP TABLE app.finance_account_allowed_currencies_migration_state;
   END IF;
 END $$;
+-- +goose StatementEnd
 
 ALTER TABLE app.finance_accounts
   DROP COLUMN IF EXISTS allowed_currencies;
