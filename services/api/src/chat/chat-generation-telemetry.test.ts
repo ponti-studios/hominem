@@ -109,6 +109,7 @@ describe('chat generation telemetry', () => {
     });
     expect(mocks.info).toHaveBeenCalledWith('chat_generation_diagnostic', {
       generationId: 'generation-1',
+      operation: 'chat.generation',
       durableSequence: 3,
       replayCursor: 3,
       deliveryMode: 'live',
@@ -141,6 +142,8 @@ describe('chat generation telemetry', () => {
       terminalOutcome: 'failed',
       errorCategory: 'provider',
       effectOutcome: 'failed',
+      operation: 'chat.generation',
+      failureType: 'chat.generation.provider_failed',
     });
     expect(JSON.stringify(mocks.info.mock.calls)).not.toContain('secret');
     expect(JSON.stringify(mocks.info.mock.calls)).not.toContain('arguments');

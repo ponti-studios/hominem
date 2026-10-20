@@ -464,7 +464,7 @@ describe('mcp server transport', () => {
       ]);
       expect(JSON.stringify(result)).not.toContain('secret database detail');
       expect(warningSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[mcp] tool invocation failed'),
+        expect.stringContaining('mcp_tool_invocation_failed'),
       );
     } finally {
       await client.close();
