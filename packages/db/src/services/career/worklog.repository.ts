@@ -258,7 +258,12 @@ export const WorklogRepository = {
     return row !== undefined;
   },
 
-  /** Every id must exist on the owner's own entries; a duplicate id is still one entry. */
+  /**
+   * Every id must exist on the owner's own entries; a duplicate id is still one entry.
+   * The rows are share-locked until the caller's transaction ends, so a concurrent
+   * worklog delete either waits for the skill write (and then scrubs the new link)
+   * or wins first (and validation then fails) — it can never leave a dangling id.
+   */
   async entriesBelongToOwner(
     handle: DbHandle,
     ownerUserId: string,
@@ -272,6 +277,7 @@ export const WorklogRepository = {
       .select('id')
       .where('ownerUserid', '=', ownerUserId)
       .where('id', 'in', unique)
+      .forShare()
       .execute();
     return rows.length === unique.length;
   },
