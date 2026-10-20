@@ -152,6 +152,7 @@ function registerErrorHandlers(app: Hono<AppEnv>) {
       path: routePath(c) || 'unmatched',
       statusCode,
       requestId: c.get('requestId'),
+      error: err,
       error_name: err instanceof Error ? err.name : 'unknown',
       failureCategory: isServiceError(err) ? err.code.toLowerCase() : 'unhandled',
     });
