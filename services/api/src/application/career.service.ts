@@ -20,7 +20,7 @@ import {
   type CareerWorklogEntry,
   type CareerWorklogListFilters,
 } from '@hominem/db/career';
-import { db } from '@hominem/db/core';
+import { db, runInTransaction } from '@hominem/db/core';
 import { NotFoundError, ValidationError } from '@hominem/db/errors';
 import { z } from 'zod';
 
@@ -509,10 +509,14 @@ export async function updateCareerWorklogEntry(
 }
 
 export async function removeCareerWorklogEntry(ownerUserId: string, id: string) {
-  const removed = await WorklogRepository.remove(db, ownerUserId, id);
-  if (!removed) return false;
-  await WorklogRepository.scrubSkillLinks(db, ownerUserId, id);
-  return true;
+  // One transaction so a failed skill-link scrub rolls the deletion back instead
+  // of leaving the entry gone with stale references behind.
+  return runInTransaction(async (trx) => {
+    const removed = await WorklogRepository.remove(trx, ownerUserId, id);
+    if (!removed) return false;
+    await WorklogRepository.scrubSkillLinks(trx, ownerUserId, id);
+    return true;
+  });
 }
 
 // -- Social links --

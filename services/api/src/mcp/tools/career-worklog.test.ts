@@ -1,7 +1,7 @@
 import { convertSchemaToJsonSchema } from '@hominem/ai';
 import { WorklogRepository } from '@hominem/db/career';
 import { db, pool, sql } from '@hominem/db/core';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import './career';
@@ -845,6 +845,36 @@ describe('career_worklog_delete', () => {
     await db.deleteFrom('app.careerWorklogEntries').where('id', '=', created.entry.id).execute();
   });
 
+  it('rolls the deletion back when the skill-link scrub fails', async () => {
+    const engagementId = await createEngagement(userId, 'Atomic Delete Co');
+    const created = toolOutput(
+      await callTool(userId, 'career_worklog_create', { engagementId, rawNote: 'Atomic.' }),
+      careerWorklogCreateOutputSchema,
+    );
+
+    const scrub = vi
+      .spyOn(WorklogRepository, 'scrubSkillLinks')
+      .mockRejectedValueOnce(new Error('scrub failed'));
+    try {
+      await expect(
+        callTool(userId, 'career_worklog_delete', { id: created.entry.id }),
+      ).rejects.toThrow('scrub failed');
+    } finally {
+      scrub.mockRestore();
+    }
+
+    // The entry survives only because the delete and the scrub share one
+    // transaction; without it the delete would already have committed.
+    const stillThere = await db
+      .selectFrom('app.careerWorklogEntries')
+      .select('id')
+      .where('id', '=', created.entry.id)
+      .executeTakeFirst();
+    expect(stillThere).toBeDefined();
+
+    await db.deleteFrom('app.careerWorklogEntries').where('id', '=', created.entry.id).execute();
+  });
+
   it('does not delete another user’s entry', async () => {
     const engagementId = await createEngagement(userId, 'Guarded Delete Co');
     const created = toolOutput(
@@ -1005,5 +1035,19 @@ describe('career worklog tool surface', () => {
     ]);
     expect(properties('career_worklog_update')).toEqual(['data', 'id']);
     expect(properties('career_worklog_delete')).toEqual(['id']);
+  });
+});
+
+describe('career worklog schema', () => {
+  it('forces row-level security, not just enables it', async () => {
+    // The table owner bypasses a policy that is only ENABLEd, so the owner check
+    // would be no defence if a query ever dropped its owner predicate.
+    const row = await sql<{ forced: boolean; enabled: boolean }>`
+      SELECT relforcerowsecurity AS forced, relrowsecurity AS enabled
+      FROM pg_class
+      WHERE oid = 'app.career_worklog_entries'::regclass
+    `.execute(db);
+
+    expect(row.rows[0]).toEqual({ forced: true, enabled: true });
   });
 });

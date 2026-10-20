@@ -66,6 +66,11 @@ CREATE TRIGGER set_updated_at_career_worklog_entries
   FOR EACH ROW EXECUTE FUNCTION set_updated_at_snake();
 
 ALTER TABLE app.career_worklog_entries ENABLE ROW LEVEL SECURITY;
+-- FORCE as well as ENABLE: without it the table owner bypasses the policy, so the
+-- owner check would give no defense if a future query ever dropped its owner
+-- predicate. Every newer app.* table (finance, people, travel, notes, tasks) does
+-- the same.
+ALTER TABLE app.career_worklog_entries FORCE ROW LEVEL SECURITY;
 CREATE POLICY career_worklog_entries_owner ON app.career_worklog_entries
   FOR ALL
   USING (auth.is_service_role() OR owner_userid = auth.current_user_id())
