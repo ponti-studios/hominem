@@ -9,6 +9,10 @@ ROOT_DIR := justfile_directory()
 
 import '.studio/studio.just'
 
+# Ship Omiro to TestFlight, the studio's way (see .studio/STUDIO.md). Only when asked.
+testflight *flags:
+    scripts/ship-omiro.sh {{ flags }}
+
 otp email:
     pnpm --filter @hominem/api exec tsx scripts/otp.ts "{{ email }}"
 
