@@ -20,8 +20,10 @@ Restyle theme -> React Navigation theme -> PersistQueryClientProvider
 -> AuthProvider -> BottomSheetModalProvider -> protected shell / API provider
 ```
 
-PostHog wraps this tree only when enabled. Sentry wraps the root layout when
-enabled. Query state is persisted through MMKV and restored before the splash
+PostHog wraps this tree only when enabled. The New Relic mobile agent starts in
+production for crash, JavaScript error, and distributed trace monitoring.
+Network request and response capture are disabled to avoid collecting URLs or
+response bodies that may contain private data. Query state is persisted through MMKV and restored before the splash
 screen is dismissed. The protected shell applies the app lock after
 authentication and before exposing protected content.
 
@@ -34,17 +36,17 @@ query restoration have settled.
 
 The implemented protected routes are:
 
-| Route                           | Responsibility                                                 |
-| ------------------------------- | -------------------------------------------------------------- |
-| `/(protected)`                  | Compatibility/home route; redirects to `/(protected)/stream`.  |
-| `/(protected)/(tabs)/stream`    | Stream tab: mixed content with `All`, `Chats`, `Notes` chips.  |
-| `/(protected)/new-chat`         | Empty chat-start surface with an optional `seed` parameter.    |
-| `/(protected)/chats/[id]`       | Chat detail and message generation.                            |
-| `/(protected)/chats/archived`   | Archived chat list.                                            |
-| `/(protected)/notes/[id]`       | Note detail and editing.                                       |
-| `/(protected)/(tabs)/tasks`     | Tasks tab (open tasks, in-app detail sheet).                   |
-| `/(protected)/time/event/[id]`  | Calendar-event deep link (opens Apple's native editor).        |
-| `/(protected)/settings`         | Protected form-sheet settings surface.                         |
+| Route                          | Responsibility                                                |
+| ------------------------------ | ------------------------------------------------------------- |
+| `/(protected)`                 | Compatibility/home route; redirects to `/(protected)/stream`. |
+| `/(protected)/(tabs)/stream`   | Stream tab: mixed content with `All`, `Chats`, `Notes` chips. |
+| `/(protected)/new-chat`        | Empty chat-start surface with an optional `seed` parameter.   |
+| `/(protected)/chats/[id]`      | Chat detail and message generation.                           |
+| `/(protected)/chats/archived`  | Archived chat list.                                           |
+| `/(protected)/notes/[id]`      | Note detail and editing.                                      |
+| `/(protected)/(tabs)/tasks`    | Tasks tab (open tasks, in-app detail sheet).                  |
+| `/(protected)/time/event/[id]` | Calendar-event deep link (opens Apple's native editor).       |
+| `/(protected)/settings`        | Protected form-sheet settings surface.                        |
 
 Navigation is two native bottom tabs (Stream, Tasks) with native
 headers; pushed detail screens (chat, note) hide the tab bar, and Settings

@@ -41,7 +41,7 @@ For PostgreSQL connection details, see [Database access](./docs/database.md).
 
 ### App-specific facts
 
-Each app documents its own architecture, navigation, and behavior in its own README, not in `docs/`. Omiro's navigation, Time, Voice, native build (Sentry), and release verification facts live in [apps/omiro/README.md](./apps/omiro/README.md).
+Each app documents its own architecture, navigation, and behavior in its own README, not in `docs/`. Omiro's navigation, Time, Voice, native build (New Relic), and release verification facts live in [apps/omiro/README.md](./apps/omiro/README.md).
 
 ## Philosophy
 

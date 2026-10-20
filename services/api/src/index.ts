@@ -48,6 +48,10 @@ if (aiProvider === 'scripted' || emailProvider === 'scripted') {
   });
 }
 
+initRuntime('api').installSignalHandlers(async () => {
+  await Promise.all([ChatGenerationStore.stop(), stopCreditEvents()]);
+});
+
 const app = createServer();
 const port = env.PORT ?? 4040;
 const host = '0.0.0.0';
@@ -130,6 +134,3 @@ async function startServer() {
 }
 
 await startServer();
-initRuntime('api').installSignalHandlers(async () => {
-  await Promise.all([ChatGenerationStore.stop(), stopCreditEvents()]);
-});

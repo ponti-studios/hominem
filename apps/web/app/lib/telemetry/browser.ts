@@ -4,7 +4,7 @@ export interface BrowserTelemetry {
 }
 
 // browser events go through the authenticated API proxy, so this stays a
-// no-op — that way we don't need an OTLP or Sentry credential in the web bundle
+// no-op — that way we don't need an OTLP or New Relic credential in the Web bundle
 export function initTelemetry(_config?: unknown): BrowserTelemetry {
   return {
     shutdown: async () => {},

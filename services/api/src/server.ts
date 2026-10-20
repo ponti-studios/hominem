@@ -1,6 +1,5 @@
-import { LOG_MESSAGES, logger } from '@hominem/telemetry';
+import { LOG_MESSAGES, logger, recordTelemetryException } from '@hominem/telemetry';
 import { Scalar } from '@scalar/hono-api-reference';
-import * as Sentry from '@sentry/node';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { cors } from 'hono/cors';
 import { prettyJSON } from 'hono/pretty-json';
@@ -144,16 +143,18 @@ function registerDocumentationRoutes(app: Hono<AppEnv>) {
   );
 }
 
-function registerErrorHandlers(app: Hono<AppEnv>, inputEnv: ApiEnv) {
+function registerErrorHandlers(app: Hono<AppEnv>) {
   app.onError((err, c) => {
-    if (inputEnv.SENTRY_DSN && inputEnv.NODE_ENV !== 'development') {
-      Sentry.captureException(err);
-    }
-    logger.error('[services/api] Error', {
-      error: err,
+    const statusCode = isServiceError(err) ? err.statusCode : 500;
+    if (statusCode >= 500) recordTelemetryException(err);
+    logger.error('http_request_failed', {
       method: c.req.method,
       path: routePath(c) || 'unmatched',
+      statusCode,
       requestId: c.get('requestId'),
+      error: err,
+      error_name: err instanceof Error ? err.name : 'unknown',
+      failureCategory: isServiceError(err) ? err.code.toLowerCase() : 'unhandled',
     });
 
     if (isServiceError(err)) {
@@ -201,7 +202,7 @@ export function createServer(overrides: Partial<ServerDependencies> = {}) {
   registerApiRoutes(app, dependencies);
   app.get('/', (c) => c.json(createRootStatusPayload()));
   registerDocumentationRoutes(app);
-  registerErrorHandlers(app, dependencies.env);
+  registerErrorHandlers(app);
 
   return app;
 }

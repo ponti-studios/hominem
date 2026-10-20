@@ -35,7 +35,7 @@ The cloud release workflow is
 `apps/omiro/.eas/workflows/production-release.yml`; the OTA workflow is
 `apps/omiro/.eas/workflows/ota-update.yml`. Both run on EAS.
 
-For the detailed Sentry, production verification, local IPA, TestFlight, and
+For the detailed New Relic, production verification, local IPA, TestFlight, and
 OTA operational reference, read
 [references/production-operations.md](references/production-operations.md)
 when the selected release path requires it.
@@ -120,8 +120,9 @@ pnpm submit:local       # re-check identity, upload to App Store Connect
 ```
 
 `eas:pull:prod` copies the production environment's plain and sensitive
-variables into `.eas-prod.local`. An EAS Secret cannot be pulled, so
-`SENTRY_AUTH_TOKEN` must already be in that file if it is stored as a secret.
+variables into `.eas-prod.local`. Keep `EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN`
+and `NEWRELIC_USER_API_KEY` available to the local build so New Relic receives
+symbolicated mobile errors.
 Run the build and submit as separate steps and pause before the submit.
 Afterwards report the IPA path and the submission URL, and say that Apple is
 still processing the build; do not claim it is in TestFlight until it is.
@@ -130,12 +131,10 @@ still processing the build; do not claim it is in TestFlight until it is.
 loads and exports gitignored `.eas-prod.local`, forces `APP_ENV=production`, checks
 the production identity, and invokes `eas build --local`.
 
-EAS Secret variables cannot be retrieved by a local build. Keep
-`SENTRY_AUTH_TOKEN` only in `.eas-prod.local` or another local secret manager; do
-not print, commit, or downgrade its EAS Secret visibility. The wrapper supplies
-the `ponti-studios`/`omiro` Sentry org/project defaults. Do not use
-`SENTRY_DISABLE_AUTO_UPLOAD` or `SENTRY_ALLOW_FAILURE` for a TestFlight IPA:
-source maps and dSYMs must upload.
+Keep `NEWRELIC_USER_API_KEY` in a sensitive EAS variable or a local secret
+manager and never print or commit it. `EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN` is a
+mobile application token embedded in the app; the build plugin also uses it to
+upload dSYMs. The local build wrapper checks both values before building.
 
 `pnpm submit:local` runs `apps/omiro/scripts/submit-prod-local.sh`. It selects
 the expected local IPA, re-checks the production identity, prints the selected
@@ -160,7 +159,7 @@ for the pushed commit, so only use it when the user asks for it.
    without the user asking for that specifically.
 3. **Build.** Run `pnpm --filter=@hominem/omiro build:prod:local` from the
    repo root (or `pnpm build:prod:local` from `apps/omiro`). This sources
-   `.eas-prod.local` for `SENTRY_AUTH_TOKEN`, forces `APP_ENV=production`,
+   `.eas-prod.local` for New Relic upload credentials, forces `APP_ENV=production`,
    runs `scripts/verify-release-identity.mjs` as a preflight guard, and
    invokes `eas build --local` to produce `apps/omiro/build/prod-local.ipa`.
    Treat a failed identity guard as a hard stop — never bypass it.
@@ -193,9 +192,9 @@ or other native changes require a new store binary.
 - **Wrong app identity / `-19000`**: an ambient `.env.*.local` value likely
   selected the dev app. Export `APP_ENV=production` before local EAS commands
   and trust the identity guard.
-- **Sentry auth token missing locally**: sourcing `.env.local` alone does not
-  export shell variables to Xcode. Use `pnpm build:prod:local`, which exports
-  the file before starting EAS.
+- **New Relic token missing locally**: use `pnpm eas:pull:prod` to refresh the
+  production variables, then `pnpm build:prod:local`, which exports the file
+  before starting EAS.
 - **Expo Doctor says local module iOS/Android directories are ignored**: check
   `.easignore` as well as `.gitignore`; top-level generated directories need
   anchored `/ios` and `/android` rules so `modules/*/[ios|android]` is included.

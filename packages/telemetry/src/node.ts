@@ -1,16 +1,16 @@
+import { metrics } from '@opentelemetry/api';
 import { logs, type LogAttributes } from '@opentelemetry/api-logs';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
+import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { BatchLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs';
+import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import {
   BatchSpanProcessor,
   ParentBasedSampler,
-  SamplingDecision,
   TraceIdRatioBasedSampler,
-  type SamplingResult,
-  type Sampler,
 } from '@opentelemetry/sdk-trace-base';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 
@@ -33,6 +33,7 @@ const OTEL_LOG_PREFIXES = [
   'speech_',
   '[speech-usage]',
   'http_request_',
+  'api_request_',
   'worker_',
   'queue_',
   'ai_usage_',
@@ -44,6 +45,7 @@ const OTEL_LOG_ATTRIBUTES = new Set([
   'characterCount',
   'durationMs',
   'error_name',
+  'error.type',
   'failureCategory',
   'httpStatus',
   'httpRoute',
@@ -64,33 +66,6 @@ const OTEL_LOG_ATTRIBUTES = new Set([
   'totalTokens',
   'usageAvailable',
 ]);
-
-class SpeechAwareSampler implements Sampler {
-  private readonly delegate: Sampler;
-
-  constructor(ratio: number) {
-    this.delegate = new ParentBasedSampler({
-      root: new TraceIdRatioBasedSampler(ratio),
-    });
-  }
-
-  shouldSample(...args: Parameters<Sampler['shouldSample']>): SamplingResult {
-    const spanName = args[2];
-    if (
-      spanName.startsWith('chat.speech') ||
-      spanName.startsWith('chat.generation') ||
-      spanName.startsWith('speech.')
-    ) {
-      return { decision: SamplingDecision.RECORD_AND_SAMPLED };
-    }
-
-    return this.delegate.shouldSample(...args);
-  }
-
-  toString() {
-    return 'SpeechAwareSampler{speech=always_on,default=parent_based_ratio}';
-  }
-}
 
 function withPath(endpoint: string, path: string) {
   return endpoint.endsWith(path) ? endpoint : `${endpoint.replace(/\/$/, '')}${path}`;
@@ -142,7 +117,9 @@ export function initTelemetry(config: TelemetryConfig) {
   const tracerProvider = config.otlpEndpoint
     ? new NodeTracerProvider({
         resource,
-        sampler: new SpeechAwareSampler(Math.min(1, Math.max(0, config.samplingRatio ?? 0.1))),
+        sampler: new ParentBasedSampler({
+          root: new TraceIdRatioBasedSampler(Math.min(1, Math.max(0, config.samplingRatio ?? 0.1))),
+        }),
         spanProcessors: [
           new BatchSpanProcessor(
             new OTLPTraceExporter({
@@ -154,6 +131,21 @@ export function initTelemetry(config: TelemetryConfig) {
       })
     : null;
   tracerProvider?.register({ propagator: new W3CTraceContextPropagator() });
+
+  const meterProvider = config.otlpEndpoint
+    ? new MeterProvider({
+        resource,
+        readers: [
+          new PeriodicExportingMetricReader({
+            exporter: new OTLPMetricExporter({
+              url: withPath(config.otlpEndpoint, '/v1/metrics'),
+              headers,
+            }),
+          }),
+        ],
+      })
+    : null;
+  if (meterProvider) metrics.setGlobalMeterProvider(meterProvider);
 
   const loggerProvider = logsEndpoint
     ? new LoggerProvider({
@@ -169,7 +161,9 @@ export function initTelemetry(config: TelemetryConfig) {
       })
     : null;
   if (loggerProvider) logs.setGlobalLoggerProvider(loggerProvider);
-  const otelLogger = loggerProvider?.getLogger(config.serviceName, config.serviceVersion);
+  const otelLogger = loggerProvider?.getLogger(config.serviceName, config.serviceVersion, {
+    includeTraceContext: true,
+  });
   setTelemetryLogSink((level, message, data) => {
     if (!otelLogger || (!exportAllLogs && !isExportableLog(message))) return;
 
@@ -206,6 +200,7 @@ export function initTelemetry(config: TelemetryConfig) {
       setTelemetryLogSink(null);
       await Promise.all([
         ...(tracerProvider ? [tracerProvider.shutdown()] : []),
+        ...(meterProvider ? [meterProvider.shutdown()] : []),
         ...(loggerProvider ? [loggerProvider.shutdown()] : []),
       ]);
     },

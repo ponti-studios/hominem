@@ -71,7 +71,6 @@ export const apiSchema = runtimeSchema.extend({
   // API and Stripe's API instead of the real ones. See scripts/dev-fakes.ts.
   OPENROUTER_KEYS_BASE_URL: z.url().optional(),
   STRIPE_API_BASE_URL: z.url().optional(),
-  SENTRY_DSN: z.string().optional(),
   OPENAI_APPS_CHALLENGE: z.string().optional(),
   SAVE_VOICE_AUDIO: z.stringbool().default(false),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
@@ -82,7 +81,7 @@ export const apiSchema = runtimeSchema.extend({
     z.url().optional(),
   ),
   OTEL_EXPORTER_OTLP_LOGS_HEADERS: z.string().optional(),
-  OTEL_TRACES_SAMPLER_ARG: z.coerce.number().default(1.0),
+  OTEL_TRACES_SAMPLER_ARG: z.coerce.number().default(0.1),
   PLAID_CLIENT_ID: z.string().default(''),
   PLAID_API_KEY: z.string().default(''),
   PLAID_ENV: z.enum(['sandbox', 'development', 'production']).default('sandbox'),

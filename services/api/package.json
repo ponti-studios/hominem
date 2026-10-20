@@ -69,7 +69,6 @@
     "@opentelemetry/api": "1.9.1",
     "@ponti-studios/auth": "workspace:*",
     "@scalar/hono-api-reference": "^0.12.0",
-    "@sentry/node": "^10.70.0",
     "@tanstack/react-query": "catalog:",
     "better-auth": "catalog:",
     "bullmq": "catalog:",

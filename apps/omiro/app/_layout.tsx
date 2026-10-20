@@ -1,6 +1,5 @@
 import { BottomSheetModalProvider } from '@expo/ui/community/bottom-sheet';
 import { logger } from '@hominem/telemetry';
-import * as Sentry from '@sentry/react-native';
 import { ThemeProvider as RestyleThemeProvider } from '@shopify/restyle';
 import { useIsRestoring } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -33,7 +32,7 @@ import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
 import { resolveAuthRedirect } from '~/services/navigation/auth-route-guard';
 import { consumeRestoreAttempt, consumeResumeTarget } from '~/services/navigation/launch-state';
 import { getContentRoute } from '~/services/navigation/routes';
-import { initObservability, isSentryEnabled } from '~/services/observability';
+import { initObservability } from '~/services/observability';
 import { posthog, posthogClient } from '~/services/posthog';
 import queryClient from '~/services/query-client';
 import { mobilePersistOptions } from '~/services/query-persistence';
@@ -224,7 +223,7 @@ function RootLayout() {
   );
 }
 
-export default isSentryEnabled ? Sentry.wrap(RootLayout) : RootLayout;
+export default RootLayout;
 
 const styles = StyleSheet.create({
   e2eIndicator: { position: 'absolute', top: 8, left: 8, width: 2, height: 2, opacity: 0.02 },

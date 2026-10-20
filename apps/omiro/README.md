@@ -75,16 +75,17 @@ pnpm submit:local       # re-checks the identity, uploads that IPA to App Store 
 ```
 
 - The build needs Xcode, a signed-in `eas-cli`, and `.eas-prod.local` with
-  `SENTRY_AUTH_TOKEN` (an EAS Secret cannot be pulled, so keep it in that file). It runs
-  `verify:release` first and stops unless the app resolves to `Omiro` with
+  `EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN` and `NEWRELIC_USER_API_KEY`. The first is the
+  New Relic iOS application token; the second is used only to upload source maps
+  and dSYMs. It runs `verify:release` first and stops unless the app resolves to `Omiro` with
   `com.pontistudios.hakumi` in production.
-- `eas build --local` compiles on this machine. EAS only assigns the build
-  number (`autoIncrement`) and hands the IPA to App Store Connect.
+- `eas build --local` compiles the IPA on this machine. `eas submit --path`
+  uploads it to App Store Connect; EAS assigns the build number (`autoIncrement`).
 - Apple processes the upload for 5-10 minutes and emails when it is ready in
   [TestFlight](https://appstoreconnect.apple.com/apps/6760221796/testflight/ios).
   Install it and exercise a Time request on a real device before announcing it.
-- Do not set `SENTRY_DISABLE_AUTO_UPLOAD` or `SENTRY_ALLOW_FAILURE` for a
-  TestFlight candidate: source maps and dSYMs must upload.
+- New Relic source maps and dSYMs must upload for a TestFlight candidate so
+  mobile error stacks are readable.
 - `expo doctor` runs during the build and may warn about patch-level package
   mismatches. That does not stop the build.
 
