@@ -1,3 +1,4 @@
+import { isObject } from '@hominem/utils';
 import { z } from 'zod';
 
 export const careerApplicationStatusSchema = z.enum([
@@ -457,6 +458,179 @@ export const careerSocialLinksSaveSchema = z.object({
   linkedin: z.string().nullable().optional(),
   twitter: z.string().nullable().optional(),
   website: z.string().nullable().optional(),
+});
+
+// -- Worklog --
+
+export const careerWorklogImpactStatusSchema = z.enum(['open', 'closed']);
+export const careerWorklogSensitivitySchema = z.enum(['public_safe', 'internal', 'mixed']);
+
+function isIsoCalendarDate(value: string) {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+const careerWorklogDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).')
+  .refine(isIsoCalendarDate, 'Invalid ISO date.');
+
+/** A light pointer to the artifact that backs an entry; the URL may be absent for private systems. */
+export const careerWorklogEvidenceSchema = z.object({
+  kind: z.enum(['ticket', 'pr', 'doc', 'link', 'other']),
+  label: z.string().trim().min(1),
+  url: z.string().min(1).nullable().default(null),
+});
+
+export const careerWorklogEntrySchema = z.object({
+  id: z.string().uuid(),
+  engagementId: z.string().uuid(),
+  projectId: z.string().uuid().nullable(),
+  occurredStart: z.string(),
+  occurredEnd: z.string().nullable(),
+  loggedAt: z.string(),
+  updatedAt: z.string(),
+  area: z.string().nullable(),
+  problem: z.string().nullable(),
+  action: z.string().nullable(),
+  impact: z.string().nullable(),
+  impactStatus: careerWorklogImpactStatusSchema,
+  tags: z.array(z.string()),
+  sensitivity: careerWorklogSensitivitySchema,
+  publicBullet: z.string().nullable(),
+  knownLimits: z.string().nullable(),
+  evidence: z.array(careerWorklogEvidenceSchema),
+  rawNote: z.string(),
+});
+
+export const careerWorklogEntriesSchema = z.object({
+  entries: z.array(careerWorklogEntrySchema),
+});
+
+export const careerWorklogEntryDetailSchema = z.object({
+  entry: careerWorklogEntrySchema.nullable(),
+  // Skills that point at this entry. The link arrives with the skill-proofing issue;
+  // until then nothing points at an entry, so this stays empty.
+  linkedSkillIds: z.array(z.string().uuid()),
+});
+
+export const careerWorklogEntriesQuerySchema = z
+  .object({
+    engagementId: z.string().uuid().optional().describe('Only entries under this engagement.'),
+    projectId: z.string().uuid().optional().describe('Only entries linked to this project.'),
+    impactStatus: careerWorklogImpactStatusSchema
+      .optional()
+      .describe('`open` is the follow-up queue: the outcome is still unknown.'),
+    tag: z.string().min(1).optional().describe('Only entries carrying exactly this tag.'),
+    occurredAfter: careerWorklogDateSchema
+      .optional()
+      .describe('Inclusive lower bound on the entry’s start date (YYYY-MM-DD).'),
+    occurredBefore: careerWorklogDateSchema
+      .optional()
+      .describe('Inclusive upper bound on the entry’s start date (YYYY-MM-DD).'),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .optional()
+      .default(20)
+      .describe('Maximum number of entries to return, from 1 to 100.'),
+  })
+  .strict();
+
+export const careerWorklogCreateSchema = z
+  .object({
+    engagementId: z
+      .string()
+      .uuid()
+      .describe('The engagement this work belongs to; it must be the caller’s own.'),
+    rawNote: z
+      .string()
+      .min(1)
+      .describe('The user’s words, verbatim. Captured once and never rewritten.'),
+    projectId: z.string().uuid().nullable().optional().describe('Optional project; must be owned.'),
+    occurredStart: careerWorklogDateSchema
+      .optional()
+      .describe('Start of the work window (YYYY-MM-DD). Defaults to the create date.'),
+    occurredEnd: careerWorklogDateSchema
+      .nullable()
+      .optional()
+      .describe(
+        'End of the work window (YYYY-MM-DD). Must be on or after occurredStart; null is a single day or an ongoing window.',
+      ),
+    area: z.string().nullable().optional().describe('System or surface the work touched.'),
+    problem: z.string().nullable().optional().describe('What was broken, risky, or missing.'),
+    action: z.string().nullable().optional().describe('What the user did — the mechanism.'),
+    impact: z.string().nullable().optional().describe('The outcome, with a metric when known.'),
+    impactStatus: careerWorklogImpactStatusSchema
+      .optional()
+      .describe('`open` (default) while the outcome is unknown; `closed` once it is known.'),
+    tags: z.array(z.string()).optional().describe('Free-form labels. Defaults to an empty list.'),
+    sensitivity: careerWorklogSensitivitySchema
+      .optional()
+      .describe('Guidance for downstream consumers, not access control. Defaults to `internal`.'),
+    publicBullet: z.string().nullable().optional().describe('The resume-safe one-liner.'),
+    knownLimits: z.string().nullable().optional().describe('Honest caveats.'),
+    evidence: z
+      .array(careerWorklogEvidenceSchema)
+      .optional()
+      .describe('Light pointers to backing artifacts. Replaced wholesale on update.'),
+  })
+  .strict();
+
+/** `rawNote` is the user's words, captured once; `loggedAt`, `id` and `updatedAt` are server-owned. */
+const careerWorklogImmutableFields = ['rawNote', 'loggedAt', 'id', 'updatedAt'] as const;
+
+export const careerWorklogUpdateDataSchema = z.preprocess(
+  (value, ctx) => {
+    if (isObject(value)) {
+      const offending = careerWorklogImmutableFields.find((field) => field in value);
+      if (offending) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [offending],
+          message: `RAW_NOTE_IMMUTABLE: ${offending} cannot be changed after the entry is created.`,
+        });
+        return z.NEVER;
+      }
+    }
+    return value;
+  },
+  z
+    .object({
+      engagementId: z.string().uuid().optional(),
+      projectId: z.string().uuid().nullable().optional(),
+      occurredStart: careerWorklogDateSchema.optional(),
+      occurredEnd: careerWorklogDateSchema.nullable().optional(),
+      area: z.string().nullable().optional(),
+      problem: z.string().nullable().optional(),
+      action: z.string().nullable().optional(),
+      impact: z.string().nullable().optional(),
+      impactStatus: careerWorklogImpactStatusSchema.optional(),
+      tags: z.array(z.string()).optional(),
+      sensitivity: careerWorklogSensitivitySchema.optional(),
+      publicBullet: z.string().nullable().optional(),
+      knownLimits: z.string().nullable().optional(),
+      evidence: z.array(careerWorklogEvidenceSchema).optional(),
+    })
+    .strict()
+    .refine((data) => Object.keys(data).length > 0, {
+      message: 'At least one field must be provided',
+    }),
+);
+
+export const careerWorklogUpdateSchema = z.object({
+  id: z.string().uuid(),
+  data: careerWorklogUpdateDataSchema,
+});
+
+export const careerWorklogDeleteSchema = z.object({ id: z.string().uuid() });
+
+export const careerWorklogCreateOutputSchema = z.object({ entry: careerWorklogEntrySchema });
+
+export const careerWorklogUpdateOutputSchema = z.object({
+  entry: careerWorklogEntrySchema.nullable(),
 });
 
 // -- Application notes --
