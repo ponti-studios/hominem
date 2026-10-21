@@ -29,6 +29,18 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
     (code >= 97 && code <= 122) ||
     code > 127;
 
+  // A marker preceded by an odd number of backslashes is escaped (`\\_` is a literal underscore); an even
+  // number means the backslashes escaped each other. Linear overall: runs of backslashes are disjoint.
+  const isEscaped = (index: number) => {
+    let backslashes = 0;
+    let k = index - 1;
+    while (k >= 0 && input.charCodeAt(k) === 92) {
+      backslashes++;
+      k--;
+    }
+    return backslashes % 2 === 1;
+  };
+
   // Inline spans between `from` and `to` (one line). Markers become `syntax`, the text between them gets
   // the span's type, and the text between is scanned again so `**bold _and italic_**` works.
   const inline = (from: number, to: number): void => {
@@ -38,6 +50,11 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
     let i = from;
     while (i < to) {
       const code = input.charCodeAt(i);
+
+      if ((code === 96 || code === 42 || code === 126 || code === 95) && isEscaped(i)) {
+        i++;
+        continue;
+      }
 
       if (code === 96) {
         // `code`: nothing inside is parsed
@@ -55,7 +72,10 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
       } else if ((code === 42 || code === 126) && i + 1 < to && input.charCodeAt(i + 1) === code) {
         // **bold** and ~~strikethrough~~
         let j = i + 2;
-        while (j + 1 < to && !(input.charCodeAt(j) === code && input.charCodeAt(j + 1) === code)) {
+        while (
+          j + 1 < to &&
+          !(input.charCodeAt(j) === code && input.charCodeAt(j + 1) === code && !isEscaped(j))
+        ) {
           j++;
         }
         // like markdown, the text may not start or end with a space
@@ -81,7 +101,7 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
           while (j < to) {
             if (input.charCodeAt(j) === 95) {
               const after = j + 1 < to ? input.charCodeAt(j + 1) : 0;
-              if (input.charCodeAt(j - 1) !== 32 && !isWordChar(after)) {
+              if (input.charCodeAt(j - 1) !== 32 && !isWordChar(after) && !isEscaped(j)) {
                 break;
               }
             }

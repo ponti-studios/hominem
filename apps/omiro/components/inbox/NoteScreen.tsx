@@ -29,6 +29,7 @@ import { useNetworkStatus } from '~/hooks/use-network-status';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteFormatting } from '~/hooks/use-note-formatting';
 import { useSaveIndicator } from '~/hooks/use-save-indicator';
+import { useRetrySaveOnReconnect } from '~/hooks/use-save-retry';
 import { useInlineEnhance } from '~/services/ai';
 import { normalizeChatTitle, useAddChatSource, useStartChat } from '~/services/chat';
 import { isOfflineUnavailable } from '~/services/chat/chat-errors';
@@ -529,14 +530,8 @@ function NoteEditorBody({
     void flushSave(draft.title, draft.content, fileIds).catch(() => undefined);
   }, [draft.content, draft.title, fileIds, flushSave]);
 
-  // Edits that failed while offline go out on their own once the connection is back.
-  const wasOnline = useRef(isOnline);
-  useEffect(() => {
-    if (isOnline && !wasOnline.current && saveStatus === 'error') {
-      retrySave();
-    }
-    wasOnline.current = isOnline;
-  }, [isOnline, retrySave, saveStatus]);
+  // Edits left waiting while offline go out on their own once the connection is back.
+  useRetrySaveOnReconnect(saveStatus, isOnline, retrySave);
 
   return (
     <>

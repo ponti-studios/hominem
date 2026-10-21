@@ -133,4 +133,29 @@ describe('parseNoteMarkdown', () => {
       expect(performance.now() - start).toBeLessThan(500);
     },
   );
+
+  it('does not style escaped markers, matching the preview', () => {
+    expect(parseNoteMarkdown('\\_literal\\_')).toEqual([]);
+    expect(parseNoteMarkdown('\\`not code\\`')).toEqual([]);
+    expect(parseNoteMarkdown('a \\*\\*not bold\\*\\*')).toEqual([]);
+    expect(parseNoteMarkdown('\\~~not struck\\~~')).toEqual([]);
+  });
+
+  it('still styles a marker whose backslashes escape each other, and spans with an escaped marker inside', () => {
+    expect(slices('\\\\_italic_')).toEqual([
+      ['syntax', '_'],
+      ['italic', 'italic'],
+      ['syntax', '_'],
+    ]);
+    expect(slices('_a\\_b_')).toEqual([
+      ['syntax', '_'],
+      ['italic', 'a\\_b'],
+      ['syntax', '_'],
+    ]);
+    expect(slices('**a\\**b**')).toEqual([
+      ['syntax', '**'],
+      ['bold', 'a\\**b'],
+      ['syntax', '**'],
+    ]);
+  });
 });
