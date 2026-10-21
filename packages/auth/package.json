@@ -63,11 +63,11 @@
     "@hominem/utils": "workspace:*"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.64.1",
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "@playwright/test": "^1.62.1"
+    "@playwright/test": "^1.64.1"
   },
   "peerDependenciesMeta": {
     "@playwright/test": {
