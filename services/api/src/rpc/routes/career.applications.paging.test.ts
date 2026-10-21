@@ -251,6 +251,11 @@ describe('GET /career/applications paging', () => {
     expect((await app.request('/career/applications?before=not-a-cursor')).status).toBe(400);
 
     const cursor = (fields: object) => Buffer.from(JSON.stringify(fields)).toString('base64url');
+    const rawCursor = (value: string) => Buffer.from(value).toString('base64url');
+    expect((await app.request(`/career/applications?before=${rawCursor('null')}`)).status).toBe(
+      400,
+    );
+    expect((await app.request(`/career/applications?before=${rawCursor('[]')}`)).status).toBe(400);
     expect(
       (
         await app.request(
@@ -268,7 +273,28 @@ describe('GET /career/applications paging', () => {
     expect(
       (
         await app.request(
+          `/career/applications?before=${cursor({ appliedAt: '2026-02-29', id: seeded[1].id })}`,
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await app.request(
+          `/career/applications?before=${cursor({ appliedAt: '2026-02-31', id: seeded[1].id })}`,
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await app.request(
           `/career/applications?before=${cursor({ appliedAt: '2026-02-01', id: seeded[1].id })}`,
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await app.request(
+          `/career/applications?before=${cursor({ appliedAt: '2028-02-29', id: seeded[1].id })}`,
         )
       ).status,
     ).toBe(200);

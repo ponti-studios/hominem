@@ -57,22 +57,21 @@ function encodeCareerApplicationsCursor(cursor: CareerApplicationsCursor): strin
 
 function decodeCareerApplicationsCursor(cursor: string): CareerApplicationsCursor {
   const bad = () => new ValidationError('Invalid cursor', { cursor });
-  let parsed: { appliedAt?: unknown; id?: unknown };
+  let parsed: unknown;
   try {
     parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
   } catch {
     throw bad();
   }
-  const { appliedAt, id } = parsed;
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw bad();
+  const { appliedAt, id } = parsed as { appliedAt?: unknown; id?: unknown };
   if (typeof id !== 'string' || !APPLICATION_CURSOR_UUID.test(id)) throw bad();
   if (appliedAt === null) return { appliedAt, id };
-  if (
-    typeof appliedAt !== 'string' ||
-    !APPLICATION_CURSOR_DATE.test(appliedAt) ||
-    Number.isNaN(Date.parse(`${appliedAt}T00:00:00Z`))
-  ) {
-    throw bad();
-  }
+  if (typeof appliedAt !== 'string' || !APPLICATION_CURSOR_DATE.test(appliedAt)) throw bad();
+  // A real calendar date, not just the shape: PG's ::date cast rejects 2026-02-29, so reject it
+  // here as a 400 rather than letting it surface as a database error.
+  const date = new Date(`${appliedAt}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== appliedAt) throw bad();
   return { appliedAt, id };
 }
 
