@@ -8,7 +8,7 @@ export interface NoteSavePayload {
 
 interface PendingNoteSave {
   payload: NoteSavePayload;
-  waiters: Array<{ reject: (error: unknown) => void; resolve: () => void }>;
+  waiters: { reject: (error: unknown) => void; resolve: () => void }[];
   version: number;
 }
 
