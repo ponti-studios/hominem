@@ -19,13 +19,16 @@ import {
   type NoteMarkdownInputHandle,
 } from '~/components/notes/NoteMarkdownInput';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
+import { SaveStatusDot } from '~/components/notes/SaveStatusDot';
 import { fontFamilies, useAppTheme, useStyles, withAlpha } from '~/components/theme';
 import { TextField } from '~/components/ui';
 import { ActionMenu } from '~/components/ui/action-menu';
 import { EmptyState } from '~/components/ui/EmptyState';
 import AppIcon from '~/components/ui/icon';
+import { useNetworkStatus } from '~/hooks/use-network-status';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteFormatting } from '~/hooks/use-note-formatting';
+import { useSaveIndicator } from '~/hooks/use-save-indicator';
 import { useInlineEnhance } from '~/services/ai';
 import { normalizeChatTitle, useAddChatSource, useStartChat } from '~/services/chat';
 import { isOfflineUnavailable } from '~/services/chat/chat-errors';
@@ -86,16 +89,23 @@ function useNoteScreenStyles() {
     placeholderLines: { gap: 14, paddingTop: 4 },
     errorContainer: { flex: 1 },
     editorContainer: { flex: 1 },
-    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
+    metaRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 14,
+    },
     metaText: { ...theme.textVariants.overline, color: theme.colors.tertiary },
     metaSeparator: { ...theme.textVariants.overline, color: theme.colors.border },
     divider: { height: 1, backgroundColor: theme.colors.border, marginBottom: 20 },
     undoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
     undoText: { ...theme.textVariants.caption1, color: theme.colors.primary },
     previewEmptyText: { color: theme.colors.tertiary, fontStyle: 'italic', minHeight: 240 },
-    savePill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 4 },
-    saveDot: { width: 6, height: 6, borderRadius: 3 },
-    saveText: { ...theme.textVariants.caption1, color: theme.colors.mutedForeground },
+    saveMessage: { ...theme.textVariants.overline, color: theme.colors.tertiary },
+    saveMessageOffline: { color: theme.colors.warning },
+    saveMessageError: { color: theme.colors.destructive },
+    saveMessageUnderline: { textDecorationLine: 'underline' },
     attachmentsSection: { marginTop: 24, gap: 8 },
     attachmentsHeader: {
       fontWeight: '500',
@@ -322,7 +332,12 @@ function NoteEditorBody({
   const [seenServerText, setSeenServerText] = useState(serverText);
   if (seenServerText !== serverText) {
     setSeenServerText(serverText);
-    if (saveStatus === 'saved') {
+    // The server trims trailing whitespace, so a note we just saved comes back without the newline
+    // being typed at its end; that is the same text, not a newer version, and must not eat it.
+    const isOurOwnSave =
+      note.content.trimEnd() === draft.content.trimEnd() &&
+      (note.title ?? '').trimEnd() === draft.title.trimEnd();
+    if (saveStatus === 'saved' && !isOurOwnSave) {
       setDraft({ title: note.title ?? '', content: note.content });
     }
   }
@@ -357,8 +372,6 @@ function NoteEditorBody({
     border: borderDefault,
     popover,
     scrimForeground,
-    success: successColor,
-    destructive: destructiveColor,
   } = useAppTheme().colors;
   const { borderRadii } = useAppTheme();
 
@@ -499,13 +512,31 @@ function NoteEditorBody({
 
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const dateline = formatNoteDateline(note);
-  const saveStatusLabel =
-    saveStatus === 'saving'
+  const { isOnline } = useNetworkStatus();
+  const saveIndicator = useSaveIndicator(saveStatus, isOnline);
+  const saveIndicatorLabel =
+    saveIndicator === 'saving'
       ? t.notes.editor.statusSaving
-      : saveStatus === 'error'
-        ? t.notes.editor.statusError
-        : t.notes.editor.statusSaved;
-  const saveStatusColor = saveStatus === 'error' ? destructiveColor : successColor;
+      : saveIndicator === 'saved'
+        ? t.notes.editor.statusSaved
+        : saveIndicator === 'offline'
+          ? t.notes.editor.statusOffline
+          : saveIndicator === 'error'
+            ? t.notes.editor.statusNotSaved
+            : undefined;
+
+  const retrySave = useCallback(() => {
+    void flushSave(draft.title, draft.content, fileIds).catch(() => undefined);
+  }, [draft.content, draft.title, fileIds, flushSave]);
+
+  // Edits that failed while offline go out on their own once the connection is back.
+  const wasOnline = useRef(isOnline);
+  useEffect(() => {
+    if (isOnline && !wasOnline.current && saveStatus === 'error') {
+      retrySave();
+    }
+    wasOnline.current = isOnline;
+  }, [isOnline, retrySave, saveStatus]);
 
   return (
     <>
@@ -513,16 +544,7 @@ function NoteEditorBody({
         left=<NoteBackButton />
         right={
           <FloatingActionPill>
-            <View
-              accessibilityLabel={saveStatusLabel}
-              accessibilityLiveRegion="polite"
-              accessible
-              style={styles.savePill}
-              testID="note-save-status"
-            >
-              <View style={[styles.saveDot, { backgroundColor: saveStatusColor }]} />
-              <Text style={styles.saveText}>{saveStatusLabel}</Text>
-            </View>
+            <SaveStatusDot accessibilityLabel={saveIndicatorLabel} indicator={saveIndicator} />
             <FloatingPillButton
               accessibilityLabel={
                 isPreviewing ? t.notes.editor.editMode : t.notes.editor.previewMode
@@ -624,6 +646,29 @@ function NoteEditorBody({
               <Text style={styles.metaText}>{t.notes.editor.wordCount(wordCount)}</Text>
               <Text style={styles.metaSeparator}>·</Text>
               <Text style={styles.metaText}>{t.notes.editor.readTime(readMinutes)}</Text>
+            </>
+          ) : null}
+          {saveIndicator === 'offline' ? (
+            <Text style={[styles.saveMessage, styles.saveMessageOffline]}>
+              {t.notes.editor.statusOffline}
+            </Text>
+          ) : null}
+          {saveIndicator === 'error' ? (
+            <>
+              <Text style={[styles.saveMessage, styles.saveMessageError]}>
+                {t.notes.editor.statusNotSaved}
+              </Text>
+              <Pressable
+                accessibilityLabel={t.notes.editor.statusRetry}
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={retrySave}
+                testID="note-save-retry"
+              >
+                <Text style={[styles.saveMessage, styles.saveMessageUnderline]}>
+                  {t.notes.editor.statusRetry}
+                </Text>
+              </Pressable>
             </>
           ) : null}
         </View>
