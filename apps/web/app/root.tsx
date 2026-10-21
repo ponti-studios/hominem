@@ -20,7 +20,6 @@ import { ErrorState } from './components/error-state';
 import './app.css';
 import { HonoProvider } from './lib/api';
 import { serverEnv } from './lib/env.server';
-import './lib/i18n';
 import { sessionMiddleware } from './lib/middleware';
 
 const ICON_VERSION = '20260407';

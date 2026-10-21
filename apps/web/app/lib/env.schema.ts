@@ -40,6 +40,3 @@ export const webClientSchema = webSchema.pick({
   VITE_OTEL_EXPORTER_OTLP_ENDPOINT: true,
   VITE_OTEL_TRACES_SAMPLER_ARG: true,
 });
-
-export type WebEnv = z.infer<typeof webSchema>;
-export type WebClientEnv = z.infer<typeof webClientSchema>;

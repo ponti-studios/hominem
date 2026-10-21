@@ -2,14 +2,14 @@ import { Archive, Bug, MoreHorizontal, Search, Settings2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
+import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from '~/components/dropdown-menu';
-import { Button } from '~/components/ui/button';
+} from '~/components/ui/dropdown-menu';
 import { useArchiveChat } from '~/hooks/use-chats';
 
 export interface ChatConversationActionsProps {

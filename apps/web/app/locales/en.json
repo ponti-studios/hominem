@@ -1,6 +1,0 @@
-{
-  "event_count_one": "{{count}} event",
-  "event_count_other": "{{count}} events",
-  "platform_one": "platform",
-  "platform_other": "platforms"
-}

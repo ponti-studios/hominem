@@ -29,7 +29,7 @@ export function toLocalInputValue(iso: string | null | undefined) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function fromLocalInputValue(value: string) {
+function fromLocalInputValue(value: string) {
   return value ? new Date(value).toISOString() : null;
 }
 

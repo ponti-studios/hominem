@@ -1,7 +1,7 @@
 import { Home } from 'lucide-react';
 import { Link } from 'react-router';
 
-import { Button } from '~/components/button';
+import { Button } from '~/components/ui/button';
 
 export default function NotFoundPage() {
   return (
