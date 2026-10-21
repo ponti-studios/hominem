@@ -6,30 +6,7 @@
 // the app, so read the numbers as a floor and as a check that cost grows linearly with note length.
 // For the real figure, time the same input on a device (see the spike notes).
 import { parseNoteMarkdown } from '../components/notes/note-markdown-parser.ts';
-
-const BLOCK = [
-  '# Weekend in Lisbon',
-  '',
-  'Land Friday evening, **keep Saturday open** and see what feels right. _No fixed itinerary._',
-  '',
-  '- [x] Book the flights',
-  '- [ ] Dinner on Friday',
-  '## Food to try',
-  '- Pastéis de nata at the old bakery',
-  '  - ask about ~~the tourist place~~ the small one',
-  '1. First stop',
-  '> The best meal is usually the one nobody recommended.',
-  'Bring `charger`, passport, and the **good camera** (snake_case_name stays plain).',
-  '',
-].join('\n');
-
-function note(chars: number) {
-  let text = '';
-  while (text.length < chars) {
-    text += `${BLOCK}\n`;
-  }
-  return text.slice(0, chars);
-}
+import { longNote } from './long-note.ts';
 
 function time(input: string, runs: number) {
   for (let i = 0; i < 20; i++) {
@@ -47,7 +24,7 @@ function time(input: string, runs: number) {
 
 console.log('chars    ranges   median ms   p95 ms   ms per 1k chars');
 for (const chars of [1_000, 4_000, 10_000, 25_000, 50_000]) {
-  const input = note(chars);
+  const input = longNote(chars);
   const { median, p95 } = time(input, 300);
   const ranges = parseNoteMarkdown(input).length;
   console.log(
