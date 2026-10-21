@@ -36,14 +36,19 @@ const held = (countries: Partial<PaymentFacts> = {}): PaymentFacts => ({
 
 function world(facts: PaymentFacts = held()) {
   const payments = new Map<string, { status: PaymentStatus; creditPence: number }>();
+  const refunds: string[] = [];
+  const captures: string[] = [];
+  const cancels: string[] = [];
+  const sessions: unknown[] = [];
+  const listed: CheckoutSession[] = [];
   const state = {
     ledger: 0,
-    refunds: [] as string[],
-    captures: [] as string[],
-    cancels: [] as string[],
+    refunds,
+    captures,
+    cancels,
     lowCleared: false,
-    sessions: [] as unknown[],
-    listed: [] as CheckoutSession[],
+    sessions,
+    listed,
   };
   const store: CreditStore = {
     ledgerPence: async () => state.ledger,

@@ -58,6 +58,6 @@ export function startHoldSweeper(): () => void {
       running = false;
     }
   };
-  const timer = setInterval(() => void tick(), SWEEP_EVERY_MS);
+  const timer = setInterval(tick, SWEEP_EVERY_MS);
   return () => clearInterval(timer);
 }
