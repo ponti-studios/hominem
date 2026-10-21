@@ -18,6 +18,13 @@
       "expo-symbols": ["./node_modules/expo-symbols/build/index"],
       "@shopify/flash-list": ["./node_modules/@shopify/flash-list/dist/index"],
       "~/*": ["./*"],
+      // react-native-live-markdown's main entry re-exports its default parser, which imports expensify-common
+      // (a peer Omiro does not install, see pnpm-workspace.yaml), so the input is imported from its own source
+      // file. Metro needs the source (React Native codegen reads the native component spec from it); tsc reads
+      // the matching declarations rather than type-checking that source.
+      "@expensify/react-native-live-markdown/src/MarkdownTextInput": [
+        "./node_modules/@expensify/react-native-live-markdown/lib/typescript/src/MarkdownTextInput"
+      ],
       // @hominem/api/types is type-only (see packages/rpc/src/core/api-client.ts)
       // and not a real dependency of this app or @hominem/rpc — see that
       // package's tsconfig.json for the same alias. Keep in sync with

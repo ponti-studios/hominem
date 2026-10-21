@@ -2,17 +2,8 @@ import { parseInboxTimestamp } from '@hominem/chat';
 import type { Note } from '@hominem/rpc/types';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Alert,
-  Keyboard,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Keyboard, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import Markdown from 'react-native-markdown-display';
 
@@ -23,6 +14,10 @@ import {
   FloatingHeader,
   FloatingPillButton,
 } from '~/components/navigation/floating-header';
+import {
+  NoteMarkdownInput,
+  type NoteMarkdownInputHandle,
+} from '~/components/notes/NoteMarkdownInput';
 import { NOTE_TOOLBAR_ID, NoteToolbar } from '~/components/notes/NoteToolbar';
 import { fontFamilies, useAppTheme, useStyles, withAlpha } from '~/components/theme';
 import { TextField } from '~/components/ui';
@@ -311,7 +306,7 @@ function NoteEditorBody({
   onDeleteNote,
 }: NoteEditorBodyProps) {
   const styles = useNoteScreenStyles();
-  const contentInputRef = useRef<TextInput>(null);
+  const contentInputRef = useRef<NoteMarkdownInputHandle>(null);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [draft, setDraft] = useState<NoteDraft>(() => ({
     title: note.title ?? '',
@@ -369,6 +364,27 @@ function NoteEditorBody({
 
   const wordCount = draft.content.trim().length > 0 ? draft.content.trim().split(/\s+/).length : 0;
   const readMinutes = Math.round(wordCount / 200);
+
+  // What the live-markdown input can draw is fixed by the library: one colour for every marker, a heading
+  // size, a code look and a quote bar. See note-markdown-parser.ts.
+  const liveMarkdownStyle = useMemo(
+    () => ({
+      syntax: { color: textSecondary },
+      h1: { fontSize: 24 },
+      code: {
+        fontFamily: fontFamilies.mono,
+        fontSize: 15,
+        color: textPrimary,
+        backgroundColor: popover,
+        borderColor: 'transparent',
+        borderWidth: 0,
+        borderRadius: 4,
+        padding: 0,
+      },
+      blockquote: { borderColor: borderDefault, borderWidth: 3, marginLeft: 0, paddingLeft: 10 },
+    }),
+    [borderDefault, popover, textPrimary, textSecondary],
+  );
 
   const mdColors: Record<string, string> = {
     primary: primaryColor,
@@ -641,10 +657,10 @@ function NoteEditorBody({
             <Text style={styles.previewEmptyText}>{t.notes.editor.previewEmpty}</Text>
           )
         ) : (
-          <TextField
+          <NoteMarkdownInput
             ref={contentInputRef}
+            markdownStyle={liveMarkdownStyle}
             multiline
-            focusBorder={false}
             value={draft.content}
             maxLength={NOTE_CONTENT_LIMIT}
             selection={formatting.controlledSelection}
@@ -655,6 +671,7 @@ function NoteEditorBody({
             cursorColor={primaryColor}
             selectionColor={primaryColor}
             style={{
+              fontFamily: fontFamilies.sans,
               fontSize: 16.5,
               lineHeight: 27,
               letterSpacing: -0.1,

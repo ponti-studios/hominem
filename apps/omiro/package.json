@@ -27,6 +27,7 @@
     "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
+    "@expensify/react-native-live-markdown": "0.1.343",
     "@expo/ui": "~57.0.21",
     "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
