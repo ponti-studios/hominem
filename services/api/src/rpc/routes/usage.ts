@@ -1,8 +1,6 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
 
 import {
-  getAIUsageTimeseries,
   getMonthlyAIUsageReport,
   getMonthlyUsageStatus,
   getAIUsagePageReport,
@@ -10,18 +8,6 @@ import {
 import { getSpeechUsageHealth } from '../../application/speech-usage.service';
 import { ForbiddenError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
-import { zValidator } from '../validator';
-
-const usageTimeseriesSchema = z
-  .object({
-    from: z.string().datetime({ offset: true }),
-    to: z.string().datetime({ offset: true }),
-    granularity: z.enum(['day', 'month']),
-  })
-  .refine(({ from, to }) => new Date(from).getTime() < new Date(to).getTime(), {
-    message: '`from` must be before `to`',
-    path: ['to'],
-  });
 
 export const usageRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
@@ -33,10 +19,6 @@ export const usageRoutes = new Hono<AppContext>()
   .get('/ai', async (c) => {
     const userId = c.get('auth')!.userId;
     return c.json(await getAIUsagePageReport(userId));
-  })
-  .get('/timeseries', zValidator('query', usageTimeseriesSchema), async (c) => {
-    const userId = c.get('auth')!.userId;
-    return c.json(await getAIUsageTimeseries({ userId, ...c.req.valid('query') }));
   })
   .get('/health', async (c) => {
     if (!c.get('auth')!.user.isAdmin) {

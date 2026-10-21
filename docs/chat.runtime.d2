@@ -16,7 +16,7 @@ chat_pkg: "@hominem/chat" {
   client: "client.ts\nChatClient" {
     methods: "send / start / regenerate\nresumeGeneration / cancel\nrespondToToolCall / getGeneration"
   }
-  transport: "client-transport-fetch.ts /\nclient-transport-xhr.ts"
+  transport: "client-transport-fetch.ts (types)\nclient-transport-xhr.ts"
   sse: "sse.ts\nSSE encode/decode + replay via\nafterSequence / Last-Event-ID"
   generation_client: "generation-client.ts\nreduceGenerationClientEvent\n(client-side projection)"
 
