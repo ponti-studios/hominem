@@ -1,9 +1,9 @@
 import { db, sql } from '@hominem/db/core';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import { InboxQuerySchema } from '../../schemas/inbox.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 type InboxCursor = {
   updatedAt: string;

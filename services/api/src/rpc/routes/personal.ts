@@ -1,5 +1,4 @@
 import { getMonthlySummary } from '@hominem/finance-services';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import {
@@ -8,6 +7,7 @@ import {
 } from '../../schemas/finance.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { parseDataEnvelope } from '../response';
+import { zValidator } from '../validator';
 
 const routes = new Hono<AppContext>();
 

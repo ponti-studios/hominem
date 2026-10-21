@@ -71,7 +71,7 @@
   },
   "devDependencies": {
     "@hominem/utils": "workspace:*",
-    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/coverage-v8": "5.0.5",
     "react": "catalog:"
   },
   "peerDependencies": {

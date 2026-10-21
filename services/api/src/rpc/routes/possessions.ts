@@ -1,4 +1,3 @@
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import {
@@ -31,6 +30,7 @@ import {
   possessionValidateQuerySchema,
 } from '../../schemas/possessions.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 // Thin adapter: validate, call the application service, return its DTOs.
 export const possessionsRoutes = new Hono<AppContext>()

@@ -1,6 +1,5 @@
 import { ChatHttpClientError, createGenerationSseResponse } from '@hominem/chat/server';
 import { logger } from '@hominem/telemetry';
-import { zValidator } from '@hono/zod-validator';
 import { Hono, type Context } from 'hono';
 
 import {
@@ -16,6 +15,7 @@ import {
   ChatsToolCallRespondSchema,
 } from '../../schemas/chats.schema';
 import type { AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 function chatErrorMetadata(error: unknown) {
   const errorName = error instanceof Error ? error.name : 'UnknownError';

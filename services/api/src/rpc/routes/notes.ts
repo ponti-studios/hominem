@@ -7,7 +7,6 @@ import {
   getChatCompletionUsage,
 } from '@hominem/ai';
 import { logger } from '@hominem/telemetry';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import {
@@ -27,6 +26,7 @@ import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
 import { CHAT_TO_NOTE_PROMPT } from '../prompts';
+import { zValidator } from '../validator';
 import { toNoteDto } from './notes.mapper';
 const noteService = new NoteService();
 

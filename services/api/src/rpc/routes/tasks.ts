@@ -1,5 +1,4 @@
 import { NotFoundError } from '@hominem/db/errors';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import {
@@ -21,6 +20,7 @@ import {
   UpdateTaskStatusSchema,
 } from '../../schemas/tasks.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 import { taskExtractRoutes } from './tasks.extract';
 import { timeBlockRoutes } from './tasks.parse';
 

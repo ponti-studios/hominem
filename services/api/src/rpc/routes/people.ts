@@ -1,4 +1,3 @@
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import { createPerson, searchPeople } from '../../application/people.service';
@@ -9,6 +8,7 @@ import {
   personPickerSchema,
 } from '../../schemas/people.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 export const peopleRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)

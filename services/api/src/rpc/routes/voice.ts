@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import {
@@ -15,6 +14,7 @@ import {
 import { VoiceCleanupInputSchema } from '../../schemas/voice.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
+import { zValidator } from '../validator';
 
 const authenticatedVoiceRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)

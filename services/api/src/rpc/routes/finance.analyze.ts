@@ -1,5 +1,4 @@
 import { getSpendingTimeSeriesByContract } from '@hominem/finance-services';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -16,6 +15,7 @@ import {
   financeTopMerchantsQuerySchema,
 } from '../../schemas/finance.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 const spendingTimeSeriesSchema = z.object({
   from: z.string().optional(),

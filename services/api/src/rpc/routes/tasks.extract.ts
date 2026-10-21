@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 
 import { getStructuredOutputUsage } from '@hominem/ai';
 import { logger } from '@hominem/telemetry';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import {
@@ -16,6 +15,7 @@ import { VoiceTasksInputSchema } from '../../schemas/tasks.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
 import { VOICE_TASK_EXTRACTION_PROMPT } from '../prompts';
+import { zValidator } from '../validator';
 
 // AI task-extraction endpoints. Mounted under /tasks by tasks.ts.
 export const taskExtractRoutes = new Hono<AppContext>()
