@@ -1,5 +1,12 @@
 import { sql } from '../../db';
 import type { DbHandle } from '../../transaction';
+import {
+  CAREER_PAGE_DEFAULT_LIMIT,
+  decodeCareerCursor,
+  encodeCareerCursor,
+  toCareerPage,
+  type CareerPage,
+} from './pagination';
 
 export type CareerImportStatus =
   | 'queued'
@@ -35,44 +42,12 @@ export interface CareerImportRecord {
   resolvedAt: string | null;
 }
 
-type CareerImportRow = {
-  id: string;
-  owner_userid: string;
-  source_url: string;
-  source_host: string;
-  queue_job_id: string;
-  status: CareerImportStatus;
-  stage: CareerImportStage;
-  progress: number;
-  draft: unknown;
-  error_code: string | null;
-  error_message: string | null;
-  attempts: number;
-  created_at: string;
-  updated_at: string;
-  completed_at: string | null;
-  resolved_at: string | null;
-};
+// Kysely's CamelCasePlugin rewrites the result keys of raw SQL too, so rows arrive in the same
+// shape as `CareerImportRecord`; reading snake_case here silently dropped every multi-word field.
+type CareerImportRow = CareerImportRecord;
 
 function toRecord(row: CareerImportRow): CareerImportRecord {
-  return {
-    id: row.id,
-    ownerUserId: row.owner_userid,
-    sourceUrl: row.source_url,
-    sourceHost: row.source_host,
-    queueJobId: row.queue_job_id,
-    status: row.status,
-    stage: row.stage,
-    progress: row.progress,
-    draft: row.draft,
-    errorCode: row.error_code,
-    errorMessage: row.error_message,
-    attempts: row.attempts,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    completedAt: row.completed_at,
-    resolvedAt: row.resolved_at,
-  };
+  return row;
 }
 
 const columns = sql`
@@ -122,16 +97,37 @@ export const CareerImportRepository = {
     return result.rows[0] ? toRecord(result.rows[0]) : null;
   },
 
-  async listOpen(handle: DbHandle, ownerUserId: string): Promise<CareerImportRecord[]> {
+  // Open imports are listed by last update, newest first; `id` breaks ties. The cursor carries
+  // PostgreSQL's own microsecond timestamp text, so same-millisecond updates are not skipped.
+  async listOpenPage(
+    handle: DbHandle,
+    ownerUserId: string,
+    opts?: { limit?: number; cursor?: string },
+  ): Promise<CareerPage<CareerImportRecord>> {
+    const limit = opts?.limit ?? CAREER_PAGE_DEFAULT_LIMIT;
+    const filter = 'open';
+    const cursor = opts?.cursor
+      ? decodeCareerCursor(opts.cursor, {
+          route: 'career.imports',
+          filter,
+          keys: ['timestamp', 'uuid'],
+        })
+      : null;
+    const [updatedAt, id] = cursor ?? [null, null];
+
     const result = await sql<CareerImportRow>`
       SELECT ${columns}
       FROM app.career_import_jobs
       WHERE owner_userid = ${ownerUserId}
         AND status NOT IN ('dismissed', 'resolved')
-      ORDER BY updated_at DESC
-      LIMIT 50
+        ${cursor ? sql`AND (updated_at, id) < (${updatedAt}::timestamptz, ${id}::uuid)` : sql``}
+      ORDER BY updated_at DESC, id DESC
+      LIMIT ${limit + 1}
     `.execute(handle);
-    return result.rows.map(toRecord);
+
+    return toCareerPage(result.rows.map(toRecord), limit, (last) =>
+      encodeCareerCursor('career.imports', filter, [last.updatedAt, last.id]),
+    );
   },
 
   async update(

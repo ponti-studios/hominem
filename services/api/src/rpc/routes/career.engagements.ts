@@ -20,8 +20,8 @@ export const careerEngagementsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', zValidator('query', careerEngagementsQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    const { type, limit } = c.req.valid('query');
-    const result = await listCareerEngagements(userId, { type, limit });
+    const { type, limit, cursor } = c.req.valid('query');
+    const result = await listCareerEngagements(userId, { type, limit, cursor });
     return c.json(result);
   })
   .post('/create', zValidator('json', careerEngagementCreateSchema), async (c) => {

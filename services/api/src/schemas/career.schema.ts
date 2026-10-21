@@ -47,9 +47,19 @@ const careerEngagementKindSchema = z.enum([
   'OTHER',
 ]);
 
+const careerPageLimitSchema = z.coerce.number().int().min(1).max(50).optional().default(20);
+
+const careerCursorSchema = z
+  .string()
+  .min(1)
+  .max(512)
+  .optional()
+  .describe('The `nextCursor` from the previous page.');
+
 export const careerEngagementsQuerySchema = z.object({
   type: z.enum(['all', 'employment']).optional().default('all'),
-  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+  limit: careerPageLimitSchema,
+  cursor: careerCursorSchema,
 });
 
 export const careerEngagementSchema = z.object({
@@ -123,6 +133,7 @@ export const careerEngagementsSchema = z.object({
       url: z.string().nullable(),
     }),
   ),
+  nextCursor: z.string().nullable(),
 });
 
 export const careerApplicationsQuerySchema = z.object({
@@ -182,11 +193,13 @@ export const careerWishlistCompanySchema = z.object({
 });
 
 export const careerWishlistCompaniesQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+  limit: careerPageLimitSchema,
+  cursor: careerCursorSchema,
 });
 
 export const careerWishlistCompaniesSchema = z.object({
   companies: z.array(careerWishlistCompanySchema),
+  nextCursor: z.string().nullable(),
 });
 
 export const careerWishlistCompanyCreateSchema = z.object({
@@ -246,6 +259,11 @@ export const careerApplicationDetailSchema = z.object({
     .nullable(),
 });
 
+export const careerEducationQuerySchema = z.object({
+  limit: careerPageLimitSchema,
+  cursor: careerCursorSchema,
+});
+
 export const careerEducationSchema = z.object({
   education: z.array(
     z.object({
@@ -259,6 +277,7 @@ export const careerEducationSchema = z.object({
       notes: z.string().nullable(),
     }),
   ),
+  nextCursor: z.string().nullable(),
 });
 export const careerEducationCreateSchema = z.object({
   school: z.string().trim().min(1),
@@ -291,7 +310,15 @@ export const careerSkillSchema = z.object({
   sortOrder: z.number(),
 });
 
-export const careerSkillsSchema = z.object({ skills: z.array(careerSkillSchema) });
+export const careerSkillsQuerySchema = z.object({
+  limit: careerPageLimitSchema,
+  cursor: careerCursorSchema,
+});
+
+export const careerSkillsSchema = z.object({
+  skills: z.array(careerSkillSchema),
+  nextCursor: z.string().nullable(),
+});
 
 export const careerSkillCreateSchema = z.object({
   name: z.string().min(1),
@@ -346,7 +373,15 @@ export const careerProjectSchema = z.object({
   ),
 });
 
-export const careerProjectsSchema = z.object({ projects: z.array(careerProjectSchema) });
+export const careerProjectsQuerySchema = z.object({
+  limit: careerPageLimitSchema,
+  cursor: careerCursorSchema,
+});
+
+export const careerProjectsSchema = z.object({
+  projects: z.array(careerProjectSchema),
+  nextCursor: z.string().nullable(),
+});
 
 export const careerProjectCreateSchema = z.object({
   organization: z.string().trim().nullable().optional(),
@@ -430,8 +465,14 @@ export const careerCertificationSchema = z.object({
   sortOrder: z.number(),
 });
 
+export const careerCertificationsQuerySchema = z.object({
+  limit: careerPageLimitSchema,
+  cursor: careerCursorSchema,
+});
+
 export const careerCertificationsSchema = z.object({
   certifications: z.array(careerCertificationSchema),
+  nextCursor: z.string().nullable(),
 });
 
 export const careerCertificationCreateSchema = z.object({
@@ -761,6 +802,40 @@ export const careerProjectUpdateOutputSchema = z.object({
 
 export const careerProfileOutputSchema = z.object({
   profile: careerMcpProfileSchema.nullable(),
+});
+
+export const careerImportsQuerySchema = z.object({
+  limit: careerPageLimitSchema,
+  cursor: careerCursorSchema,
+});
+
+export const careerImportsSchema = z.object({
+  imports: z.array(
+    z.object({
+      id: z.string().uuid(),
+      queueJobId: z.string(),
+      status: z.enum(['queued', 'processing', 'ready', 'failed', 'dismissed', 'resolved']),
+      stage: z.enum([
+        'queued',
+        'validating-url',
+        'fetching-posting',
+        'extracting-fields',
+        'validating-result',
+        'draft-ready',
+      ]),
+      progress: z.number(),
+      sourceUrl: z.string(),
+      draft: z.unknown(),
+      errorCode: z.string().nullable(),
+      errorMessage: z.string().nullable(),
+      attempts: z.number(),
+      createdAt: z.string(),
+      updatedAt: z.string(),
+      completedAt: z.string().nullable(),
+      resolvedAt: z.string().nullable(),
+    }),
+  ),
+  nextCursor: z.string().nullable(),
 });
 
 export const careerImportDraftSchema = z.object({

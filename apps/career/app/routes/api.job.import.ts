@@ -7,7 +7,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const importId = new URL(request.url).searchParams.get('importId');
   const response = importId
     ? await career.imports[':id'].$get({ param: { id: importId } })
-    : await career.imports.$get({});
+    : await career.imports.$get({ query: {} });
   return data(await response.json(), { status: response.status });
 }
 

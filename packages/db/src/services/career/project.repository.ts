@@ -7,6 +7,13 @@ import type {
   AppCareerProjectStatus,
   JsonArray,
 } from '../../types/database';
+import {
+  CAREER_PAGE_DEFAULT_LIMIT,
+  decodeCareerCursor,
+  encodeCareerCursor,
+  toCareerPage,
+  type CareerPage,
+} from './pagination';
 
 export type CareerEngagementSummary = Pick<
   Selectable<AppCareerEngagements>,
@@ -128,6 +135,60 @@ export const ProjectRepository = {
       .orderBy('sortOrder', 'asc')
       .execute();
     return withEngagements(handle, ownerUserId, projects);
+  },
+
+  // Sorted by sort order, with `id` as the tiebreaker that gives the keyset walk a total order.
+  // Only the page's rows are enriched with their engagement links.
+  async listPage(
+    handle: DbHandle,
+    ownerUserId: string,
+    opts?: { limit?: number; cursor?: string },
+  ): Promise<CareerPage<CareerProjectRecord>> {
+    const limit = opts?.limit ?? CAREER_PAGE_DEFAULT_LIMIT;
+    const filter = '';
+    const cursor = opts?.cursor
+      ? decodeCareerCursor(opts.cursor, {
+          route: 'career.projects',
+          filter,
+          keys: ['int', 'uuid'],
+        })
+      : null;
+
+    let query = handle
+      .selectFrom('app.careerProjects')
+      .selectAll()
+      .where('ownerUserid', '=', ownerUserId);
+
+    if (cursor) {
+      const [sortOrder, id] = cursor;
+      query = query.where(sql<boolean>`("sort_order", "id") > (${sortOrder}::int, ${id}::uuid)`);
+    }
+
+    const rows = await query
+      .orderBy('sortOrder', 'asc')
+      .orderBy('id', 'asc')
+      .limit(limit + 1)
+      .execute();
+
+    const page = toCareerPage(rows, limit, (last) =>
+      encodeCareerCursor('career.projects', filter, [last.sortOrder, last.id]),
+    );
+    return { items: await withEngagements(handle, ownerUserId, page.items), next: page.next };
+  },
+
+  async get(
+    handle: DbHandle,
+    ownerUserId: string,
+    id: string,
+  ): Promise<CareerProjectRecord | null> {
+    const row = await handle
+      .selectFrom('app.careerProjects')
+      .selectAll()
+      .where('id', '=', id)
+      .where('ownerUserid', '=', ownerUserId)
+      .executeTakeFirst();
+    if (!row) return null;
+    return (await withEngagements(handle, ownerUserId, [row]))[0];
   },
 
   async create(
