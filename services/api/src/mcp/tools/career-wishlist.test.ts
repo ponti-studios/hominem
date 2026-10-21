@@ -9,7 +9,7 @@ import {
 } from '../../schemas/career.schema';
 import { removedResultSchema } from '../../schemas/common.schema';
 import { toolOutput } from '../../testkit/tool-result';
-import { callTool } from '../tool-registry';
+import { callTool, listTools } from '../tool-registry';
 
 const userId = 'a2000001-0000-4000-8000-000000000001';
 
@@ -76,5 +76,43 @@ describe('career wishlist MCP tools', () => {
     expect(result.removed).toBe(false);
 
     await db.deleteFrom('app.careerApplications').where('id', '=', entry.id).execute();
+  });
+
+  it('previews a company past the first 20 wishlist rows', async () => {
+    const filler = await db
+      .insertInto('app.careerApplications')
+      .values(
+        Array.from({ length: 25 }, (_, index) => ({
+          ownerUserid: userId,
+          company: `Filler ${index}`,
+          title: `Filler ${index}`,
+          status: 'WISHLIST' as const,
+          appliedAt: '2026-05-01',
+        })),
+      )
+      .returning('id')
+      .execute();
+
+    const target = await db
+      .insertInto('app.careerApplications')
+      .values({
+        ownerUserid: userId,
+        company: 'Late Wishlist Co',
+        title: 'Late Wishlist Co',
+        status: 'WISHLIST',
+        appliedAt: '2026-01-01',
+      })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+
+    const tool = listTools().find((candidate) => candidate.name === 'career_wishlist_remove');
+    expect(await tool?.preview?.(userId, { id: target.id })).toEqual({
+      company: 'Late Wishlist Co',
+    });
+
+    await db
+      .deleteFrom('app.careerApplications')
+      .where('id', 'in', [target.id, ...filler.map((row) => row.id)])
+      .execute();
   });
 });

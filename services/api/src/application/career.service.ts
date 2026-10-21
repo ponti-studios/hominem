@@ -197,10 +197,12 @@ function toWishlistCompany(application: CareerApplicationRecord) {
   });
 }
 
+// The list tool caps at 100; the delete preview calls this without a limit and must still find a
+// company anywhere in that surface, not just the first page of the applications list.
 export async function listCareerWishlistCompanies(ownerUserId: string, limit?: number) {
   const { items } = await CareerRepository.listApplications(db, ownerUserId, {
     status: 'WISHLIST',
-    limit,
+    limit: limit ?? 100,
   });
   return { companies: items.map(toWishlistCompany) };
 }
