@@ -15,6 +15,7 @@ export const financeAccountCreateTool = defineMcpTool(
     description:
       'Create a finance account, or return the existing one when the name matches case-insensitively (created: false). ' +
       'Accounts created here are what sheet imports resolve against; the import never auto-creates an unknown account. ' +
+      'includeInNetWorth defaults to true; an existing account keeps its stored value. ' +
       'dryRun reports the outcome without writing.',
     inputSchema: financeAccountCreateInputSchema,
     outputSchema: financeAccountCreateOutputSchema,
@@ -40,6 +41,7 @@ export const financeAccountCreateTool = defineMcpTool(
       ...(input.accountNumber ? { mask: input.accountNumber } : {}),
       status: input.status,
       accountType: input.accountType,
+      includeInNetWorth: input.includeInNetWorth,
       dryRun: input.dryRun,
     })),
     dryRun: input.dryRun,

@@ -306,6 +306,10 @@ export const financeAccountCreateInputSchema = z.object({
     .describe(
       'Account type; cash/checking/savings count as liquid in finance_runway, so pick it deliberately.',
     ),
+  includeInNetWorth: z
+    .boolean()
+    .default(true)
+    .describe('Whether the account counts toward finance_net_worth totals. Defaults to true.'),
   dryRun: z.boolean().default(false).describe('Report the outcome without writing.'),
 });
 
@@ -315,6 +319,7 @@ export const financeAccountCreateOutputSchema = z.object({
   currencyCode: z.string(),
   allowedCurrencies: z.array(z.string()).max(500),
   status: z.string(),
+  includeInNetWorth: z.boolean().describe('Stored flag, not the requested one.'),
   created: z.boolean(),
   dryRun: z.boolean(),
 });
@@ -894,6 +899,12 @@ export const financeAccountUpdateInputSchema = z.object({
     .array(accountCurrencySchema)
     .optional()
     .describe('Full set of currencies this account may hold; currencyCode is always included.'),
+  includeInNetWorth: z
+    .boolean()
+    .optional()
+    .describe(
+      'Whether the account counts toward finance_net_worth totals. Omit to leave it unchanged; independent of status.',
+    ),
   dryRun: z.boolean().default(false).describe('Project the change set without applying it.'),
 });
 
@@ -903,6 +914,7 @@ export const financeAccountUpdateOutputSchema = z.object({
   currencyCode: z.string().nullable(),
   allowedCurrencies: z.array(z.string()).max(500).nullable(),
   status: z.string().nullable(),
+  includeInNetWorth: z.boolean().nullable().describe('Stored flag after the update.'),
   updated: z
     .boolean()
     .describe(

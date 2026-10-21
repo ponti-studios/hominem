@@ -118,6 +118,7 @@ export interface CreateOrGetAccountInput {
   mask?: string | null;
   status?: 'open' | 'closed';
   accountType?: string;
+  includeInNetWorth?: boolean;
   dryRun?: boolean;
 }
 
@@ -127,6 +128,7 @@ export interface CreateOrGetAccountResult {
   currencyCode: string;
   allowedCurrencies: string[];
   status: string;
+  includeInNetWorth: boolean;
   created: boolean;
 }
 
@@ -142,7 +144,14 @@ export async function createOrGetAccount(
   const name = input.name.trim();
   const existing = await db
     .selectFrom('app.financeAccounts')
-    .select(['id', 'name', 'allowedCurrencies', 'currencyCode', 'lifecycleStatus'])
+    .select([
+      'id',
+      'name',
+      'allowedCurrencies',
+      'currencyCode',
+      'lifecycleStatus',
+      'includeInNetWorth',
+    ])
     .where('userId', '=', input.userId)
     .where(sql<boolean>`lower(name) = lower(${name})`)
     .orderBy('id', 'asc')
@@ -159,11 +168,13 @@ export async function createOrGetAccount(
         existing.allowedCurrencies ?? [],
       ),
       status: existing.lifecycleStatus,
+      includeInNetWorth: existing.includeInNetWorth,
       created: false,
     };
   }
 
   const status = input.status ?? 'open';
+  const includeInNetWorth = input.includeInNetWorth ?? true;
   if (input.dryRun) {
     return {
       id: null,
@@ -171,6 +182,7 @@ export async function createOrGetAccount(
       currencyCode: input.currencyCode.toUpperCase(),
       allowedCurrencies: normalizeAllowedCurrencies(input.currencyCode, input.allowedCurrencies),
       status,
+      includeInNetWorth,
       created: true,
     };
   }
@@ -190,6 +202,7 @@ export async function createOrGetAccount(
       currencyCode,
       allowedCurrencies,
       lifecycleStatus: status,
+      includeInNetWorth,
       accountType: input.accountType ?? 'checking',
       metadata: {},
       ...(institutionId ? { institutionId } : {}),
@@ -197,7 +210,7 @@ export async function createOrGetAccount(
     })
     .execute();
 
-  return { id, name, currencyCode, allowedCurrencies, status, created: true };
+  return { id, name, currencyCode, allowedCurrencies, status, includeInNetWorth, created: true };
 }
 
 function accountsForUser(userId: string) {
@@ -627,6 +640,7 @@ export interface AccountUpdateInput {
   status?: string;
   currencyCode?: string;
   allowedCurrencies?: string[];
+  includeInNetWorth?: boolean;
 }
 
 export interface AccountUpdateResult {
@@ -635,6 +649,7 @@ export interface AccountUpdateResult {
   currencyCode: string | null;
   allowedCurrencies: string[] | null;
   status: string | null;
+  includeInNetWorth: boolean | null;
   updated: boolean;
   changes: Record<string, [string | null, string | null]>;
   reason: AccountUpdateReason | null;
@@ -647,6 +662,7 @@ function accountRefusal(reason: AccountUpdateReason): AccountUpdateResult {
     currencyCode: null,
     allowedCurrencies: null,
     status: null,
+    includeInNetWorth: null,
     updated: false,
     changes: {},
     reason,
@@ -680,6 +696,7 @@ export async function applyAccountUpdate(
       'a.lifecycleStatus',
       'a.accountType',
       'a.mask',
+      'a.includeInNetWorth',
       'a.institutionId',
       'i.name as institutionName',
     ])
@@ -705,6 +722,7 @@ export async function applyAccountUpdate(
 
   const nextStatus = input.status ?? existing.lifecycleStatus;
   const nextAccountType = input.accountType ?? existing.accountType;
+  const nextIncludeInNetWorth = input.includeInNetWorth ?? existing.includeInNetWorth;
   const nextMask = input.mask === undefined ? existing.mask : input.mask;
   const existingAllowedCurrencies = normalizeAllowedCurrencies(
     existing.currencyCode,
@@ -757,6 +775,9 @@ export async function applyAccountUpdate(
   if (nextStatus !== existing.lifecycleStatus) {
     changes.status = [existing.lifecycleStatus, nextStatus];
   }
+  if (nextIncludeInNetWorth !== existing.includeInNetWorth) {
+    changes.includeInNetWorth = [String(existing.includeInNetWorth), String(nextIncludeInNetWorth)];
+  }
   if ((nextMask ?? null) !== (existing.mask ?? null)) {
     changes.accountNumber = [existing.mask, nextMask ?? null];
   }
@@ -770,6 +791,7 @@ export async function applyAccountUpdate(
     currencyCode: existing.currencyCode,
     allowedCurrencies: nextAllowedCurrencies,
     status: nextStatus,
+    includeInNetWorth: nextIncludeInNetWorth,
     updated: Object.keys(changes).length > 0,
     changes,
     reason: null,
@@ -783,6 +805,7 @@ export async function applyAccountUpdate(
       allowedCurrencies: nextAllowedCurrencies,
       accountType: nextAccountType,
       lifecycleStatus: nextStatus,
+      includeInNetWorth: nextIncludeInNetWorth,
       mask: nextMask,
       institutionId: nextInstitutionId,
     })

@@ -13,7 +13,7 @@ export const financeAccountUpdateTool = defineMcpTool(
     name: 'finance_account_update',
     title: 'Finance Account Update',
     description:
-      'Partially update an account addressed by id: name, institution, accountNumber (mask), accountType, status and allowedCurrencies. Omitted fields are unchanged; null clears institution/accountNumber. Identity — id, transactions, links — never changes, and currencyCode is immutable here. dryRun projects the change set without applying it.',
+      'Partially update an account addressed by id: name, institution, accountNumber (mask), accountType, status, allowedCurrencies and includeInNetWorth. Omitted fields are unchanged; null clears institution/accountNumber. Identity — id, transactions, links — never changes, and currencyCode is immutable here. includeInNetWorth is independent of status. dryRun projects the change set without applying it.',
     inputSchema: financeAccountUpdateInputSchema,
     outputSchema: financeAccountUpdateOutputSchema,
     readOnly: false,
@@ -45,6 +45,9 @@ export const financeAccountUpdateTool = defineMcpTool(
         ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
         ...(input.allowedCurrencies !== undefined
           ? { allowedCurrencies: input.allowedCurrencies }
+          : {}),
+        ...(input.includeInNetWorth !== undefined
+          ? { includeInNetWorth: input.includeInNetWorth }
           : {}),
       },
       { dryRun: input.dryRun },

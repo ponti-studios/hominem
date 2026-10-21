@@ -88,9 +88,10 @@ accounts; the daily provider sync will keep surfacing new accounts
 | `institution`       | string                |     | e.g. "Acme Bank"                                                                |
 | `accountNumber`     | string                |     | mask/last digits as displayed elsewhere                                         |
 | `status`            | enum `open`\|`closed` |     | default `open`                                                                  |
+| `includeInNetWorth` | boolean               |     | counts toward net worth; default `true`; an existing account keeps its stored value |
 
 **Behavior.** §1.2 applies (open and closed accounts both match). Returns
-`{ id, name, currencyCode, allowedCurrencies, status, created }`.
+`{ id, name, currencyCode, allowedCurrencies, status, includeInNetWorth, created }`.
 
 **Errors.** `invalid_currency`, `invalid_name` — named, per §1.1.
 
