@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { getAppEnvironment } from '~/app.config';
+import createConfig, { getAppEnvironment } from '~/app.config';
 
 const ENV_KEYS = ['APP_ENV', 'EAS_BUILD', 'EAS_BUILD_PROFILE', 'CI'] as const;
 const originalEnv: Record<(typeof ENV_KEYS)[number], string | undefined> = {
@@ -90,5 +90,21 @@ describe('getAppEnvironment', () => {
     process.env.APP_ENV = 'staging';
 
     expect(() => getAppEnvironment()).toThrow();
+  });
+});
+
+describe('launch splash', () => {
+  // The in-app launch overlay continues the native splash, so both must draw the mascot at the same
+  // size; otherwise it visibly jumps when the native splash goes away.
+  it('draws the mascot at the width the launch overlay expects', async () => {
+    const { LAUNCH_MASCOT_WIDTH } = await import('~/components/auth/brand-layout');
+    process.env.APP_ENV = 'development';
+    const config = createConfig({ config: {} });
+    const splash = config.plugins.find(
+      (plugin: unknown) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen',
+    );
+
+    expect(splash[1].imageWidth).toBe(LAUNCH_MASCOT_WIDTH);
+    expect(splash[1].image).toBe('./assets/images/omiro-auth-mascot.png');
   });
 });

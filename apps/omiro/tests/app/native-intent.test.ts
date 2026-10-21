@@ -26,4 +26,10 @@ describe('native Time intents', () => {
       '/(protected)/time/event/event-1',
     );
   });
+
+  it('rewrites an emailed code link to the login screen, keeping its query', () => {
+    expect(redirectSystemPath({ initial: false, path: 'verify?email=a%40b.co&token=123456' })).toBe(
+      '/(auth)?email=a%40b.co&token=123456',
+    );
+  });
 });

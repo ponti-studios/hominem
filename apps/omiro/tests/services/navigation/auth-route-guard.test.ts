@@ -44,4 +44,26 @@ describe('resolveAuthRedirect', () => {
       }),
     ).toBeNull();
   });
+
+  it('holds the redirect while the login screen finishes its success moment', () => {
+    expect(
+      resolveAuthRedirect({
+        isPending: false,
+        isSignedIn: true,
+        isSigningOut: false,
+        isHoldingSignIn: true,
+        segments: ['(auth)'],
+      }),
+    ).toBeNull();
+
+    expect(
+      resolveAuthRedirect({
+        isPending: false,
+        isSignedIn: true,
+        isSigningOut: false,
+        isHoldingSignIn: false,
+        segments: ['(auth)'],
+      }),
+    ).toBe('/(protected)');
+  });
 });

@@ -22,9 +22,9 @@ export function redirectSystemPath({
     return NOTES_ROUTE;
   }
 
-  // OTP link: verify?token=xxx -> the auth verify screen
+  // OTP link: verify?email=...&token=xxx -> the login screen, opened on the code step
   if (normalized.startsWith('verify')) {
-    return `/(auth)/${normalized}`;
+    return `/(auth)${normalized.slice('verify'.length)}`;
   }
 
   // The Tasks list moved from /time/unscheduled to its own tab.
