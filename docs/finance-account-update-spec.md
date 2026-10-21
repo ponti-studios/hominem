@@ -37,6 +37,7 @@ Input:
 | `accountType` | string | | matches `finance_account_create`'s field |
 | `status` | enum | | see status semantics below |
 | `allowedCurrencies` | string[] | | complete set accepted for transaction rows; primary `currencyCode` is always included |
+| `includeInNetWorth` | boolean | | whether the account counts toward `finance_net_worth`; omitted leaves the stored value |
 | `dryRun` | boolean | | projects the change set, applies nothing |
 
 Partial-update semantics: an omitted field is unchanged; an explicit
@@ -69,9 +70,12 @@ no way to null `name`, `accountType`, or `status` — omitting is the only
   unchanged; when supplied it replaces the account's additional allowances.
   `currencyCode` remains allowed automatically. Transaction writes on accounts
   without additional allowances must match `currencyCode` exactly.
+- **`includeInNetWorth` is independent of status.** Omission leaves the
+  stored value; an explicit `true`/`false` changes only this flag. A status
+  change never moves the flag, and a flag change never moves status.
 - **Idempotence / no-op:** an update whose values equal the current state
   succeeds with `updated: false` and an empty change set.
-- **Result:** `{ id, name, currencyCode, allowedCurrencies, status, updated, changes }`
+- **Result:** `{ id, name, currencyCode, allowedCurrencies, status, includeInNetWorth, updated, changes }`
   where `changes` maps each altered field to `[from, to]` — the
   operator's audit record, mirroring `finance_transaction_delete`'s
   snapshot philosophy.
