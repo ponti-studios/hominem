@@ -719,7 +719,7 @@ registerTool(
     outputSchema: careerEducationSchema,
     readOnly: true,
     scopes: ['career:read'],
-    resultCap: 20,
+    resultCap: 50,
   },
   async (ownerUserId, input) => {
     const result = await listCareerEducation(ownerUserId, input);

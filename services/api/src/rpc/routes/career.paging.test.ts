@@ -22,14 +22,14 @@ import { careerProjectsRoutes } from './career.projects';
 import { careerSkillsRoutes } from './career.skills';
 import { careerWishlistRoutes } from './career.wishlist';
 
-const userId = 'a3000001-0000-4000-8000-000000000001';
-const otherId = 'a3000001-0000-4000-8000-000000000002';
-const emptyId = 'a3000001-0000-4000-8000-000000000003';
-const bulkId = 'a3000001-0000-4000-8000-000000000004';
+const userId = 'a9000001-0000-4000-8000-000000000001';
+const otherId = 'a9000001-0000-4000-8000-000000000002';
+const emptyId = 'a9000001-0000-4000-8000-000000000003';
+const bulkId = 'a9000001-0000-4000-8000-000000000004';
 
 const owns = [userId, otherId, emptyId, bulkId];
 
-const rowId = (n: number) => `a3000004-0000-4000-8000-${String(n).padStart(12, '0')}`;
+const rowId = (n: number) => `a9000004-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
 function makeUser(id: string): RpcUser {
   return {
@@ -313,7 +313,7 @@ beforeAll(async () => {
   // Enough skills for the bulk user to exceed one page at the default and maximum limits.
   await pool.query(
     `INSERT INTO app.career_skills (id, owner_userid, name, sort_order)
-     SELECT ('a3000005-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid, $1, 'bulk-' || n, n
+     SELECT ('a9000005-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid, $1, 'bulk-' || n, n
      FROM generate_series(1, 55) AS n`,
     [bulkId],
   );
@@ -512,7 +512,7 @@ describe('career list routes paging', () => {
   it('defaults to 20 rows and caps a page at 50', async () => {
     const defaults = await readPage('/career/skills', skillsPage, bulkApp);
     expect(defaults.ids).toHaveLength(20);
-    expect(defaults.ids[0]).toBe('a3000005-0000-4000-8000-000000000001');
+    expect(defaults.ids[0]).toBe('a9000005-0000-4000-8000-000000000001');
     expect(defaults.nextCursor).not.toBeNull();
 
     const capped = await readPage('/career/skills?limit=50', skillsPage, bulkApp);
@@ -535,5 +535,5 @@ describe('career list routes paging', () => {
 });
 
 function bulkSkillId(n: number): string {
-  return `a3000005-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  return `a9000005-0000-4000-8000-${String(n).padStart(12, '0')}`;
 }

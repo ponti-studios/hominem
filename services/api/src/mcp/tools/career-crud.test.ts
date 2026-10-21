@@ -292,6 +292,42 @@ describe('career education MCP tools', () => {
 
     await db.deleteFrom('app.careerEducation').where('id', '=', education.id).execute();
   });
+
+  it('lists a full 50-row page without tripping the tool result cap', async () => {
+    const pagingUserId = 'a9000001-0000-4000-8000-000000000009';
+    await pool.query(
+      'INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING',
+      [pagingUserId, 'Career Paging Cap User', 'career-paging-cap@test.hominem.dev', true],
+    );
+    await db
+      .insertInto('app.careerEducation')
+      .values(
+        Array.from({ length: 51 }, (_, index) => ({
+          ownerUserid: pagingUserId,
+          school: `School ${String(index).padStart(2, '0')}`,
+        })),
+      )
+      .execute();
+
+    try {
+      const firstPage = toolOutput(
+        await callTool(pagingUserId, 'career_education', { limit: 50 }),
+        careerEducationSchema,
+      );
+      expect(firstPage.education).toHaveLength(50);
+      expect(firstPage.nextCursor).not.toBeNull();
+
+      const finalPage = toolOutput(
+        await callTool(pagingUserId, 'career_education', { cursor: firstPage.nextCursor }),
+        careerEducationSchema,
+      );
+      expect(finalPage.education).toHaveLength(1);
+      expect(finalPage.nextCursor).toBeNull();
+    } finally {
+      await db.deleteFrom('app.careerEducation').where('ownerUserid', '=', pagingUserId).execute();
+      await pool.query('DELETE FROM "user" WHERE id = $1', [pagingUserId]);
+    }
+  });
 });
 
 describe('career skill MCP tools', () => {
