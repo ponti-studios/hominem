@@ -6,10 +6,10 @@ import { expect, test } from '@playwright/test';
 
 const authPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '../.auth/chat-user.json',
+  '../.auth/web-user.json',
 );
 
-test('prepare the authenticated chat browser state', async ({ page, context }) => {
+test('prepare the authenticated web browser state', async ({ page, context }) => {
   const sessionCookie = process.env.E2E_SESSION_COOKIE;
   if (!sessionCookie) {
     throw new Error(
@@ -35,8 +35,8 @@ test('prepare the authenticated chat browser state', async ({ page, context }) =
       sameSite: 'Lax',
     },
   ]);
-  await page.goto('/chats');
-  await expect(page.getByRole('heading', { name: 'Chats' })).toBeVisible();
+  await page.goto('/collections');
+  await expect(page.getByRole('heading', { name: 'Collections' })).toBeVisible();
   await mkdir(path.dirname(authPath), { recursive: true });
   await context.storageState({ path: authPath });
 });

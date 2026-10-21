@@ -1,4 +1,4 @@
-import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
@@ -26,11 +26,6 @@ export function TasksPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
       <div className="mb-8 flex items-center gap-3">
-        <Button aria-label="Back to chat" asChild size="icon-sm" variant="ghost">
-          <Link to="/" viewTransition>
-            <ArrowLeft />
-          </Link>
-        </Button>
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
           <p className="text-sm text-muted-foreground">Things to do, scheduled or not.</p>

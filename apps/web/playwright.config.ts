@@ -25,10 +25,10 @@ export default defineConfig({
     { name: 'auth', testMatch: /auth\.setup\.ts/ },
     { name: 'auth-collaborator', testMatch: /auth-collaborator\.setup\.ts/ },
     {
-      name: 'chat',
+      name: 'web',
       dependencies: ['auth', 'auth-collaborator'],
       testIgnore: /\.setup\.ts$/,
-      use: { storageState: path.join(appDir, 'tests/.auth/chat-user.json') },
+      use: { storageState: path.join(appDir, 'tests/.auth/web-user.json') },
     },
   ],
 });

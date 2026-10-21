@@ -5,7 +5,7 @@ import type { Route } from './+types/tasks';
 
 export const meta = () => [{ title: 'Tasks' }];
 
-// eslint-disable-next-line no-unused-vars -- route module signature requires the typed props param, matches routes/usage.tsx
+// eslint-disable-next-line no-unused-vars -- route module signature requires the typed props param
 export default function TasksRoute(_: Route.ComponentProps) {
   return (
     <div className="h-full overflow-auto">

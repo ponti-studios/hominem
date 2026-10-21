@@ -98,7 +98,6 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         '@radix-ui/react-alert-dialog',
         '@radix-ui/react-dropdown-menu',
         '@radix-ui/react-slot',
-        'shiki',
       ],
     },
 
@@ -154,9 +153,6 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
                 id.includes('/rehype-')
               ) {
                 return 'vendor-markdown';
-              }
-              if (id.includes('/@uppy/')) {
-                return 'vendor-uppy';
               }
               if (id.includes('/gsap/')) {
                 return 'vendor-gsap';

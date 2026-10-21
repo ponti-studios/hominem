@@ -15,6 +15,6 @@ export const WEB_BRAND = {
   manifest: {
     name: BRAND.appName,
     shortName: BRAND.appName,
-    description: `${BRAND.appName} brings notes, voice capture, and chat into one workspace.`,
+    description: `${BRAND.appName} brings tasks and collections in one workspace.`,
   },
 } as const;

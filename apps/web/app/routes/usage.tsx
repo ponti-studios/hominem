@@ -1,13 +1,8 @@
-import { UsagePage } from '~/components/account/usage-page';
-import { RouteHeader } from '~/components/route-header';
+import { redirect } from 'react-router';
 
-export const meta = () => [{ title: 'AI usage' }];
+import { serverEnv } from '~/lib/env.server';
 
-export default function UsageRoute() {
-  return (
-    <div className="h-full overflow-auto">
-      <RouteHeader />
-      <UsagePage />
-    </div>
-  );
-}
+// AI usage lives on the API-hosted page; this keeps old /usage links working.
+const usageUrl = new URL('/auth/settings/ai', serverEnv.VITE_PUBLIC_API_URL).toString();
+
+export const loader = () => redirect(usageUrl);

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Shimmer } from './shimmer';
 
 const meta = {
-  title: 'Chat/Primitives/Shimmer',
+  title: 'Primitives/Shimmer',
   component: Shimmer,
   parameters: { layout: 'centered' },
   args: { children: 'Thinking...' },
