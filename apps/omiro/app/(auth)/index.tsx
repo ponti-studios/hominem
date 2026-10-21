@@ -54,6 +54,7 @@ function AuthScreen() {
     onLinkOpened: useCallback(() => posthog.capture('auth_verify_link_opened'), []),
   });
   const emailInputRef = useRef<TextInput>(null);
+  const isCodeRef = useRef(flow.step === 'code');
   const [nod, setNod] = useState(0);
   const [greeted, setGreeted] = useState(false);
   const stepProgress = useSharedValue(flow.step === 'code' ? 1 : 0);
@@ -99,6 +100,10 @@ function AuthScreen() {
   }));
 
   useEffect(() => {
+    isCodeRef.current = isCode;
+  }, [isCode]);
+
+  useEffect(() => {
     posthog.capture('auth_screen_viewed');
   }, []);
 
@@ -118,7 +123,12 @@ function AuthScreen() {
     }
     const greetingId = setTimeout(() => setGreeted(true), reducedMotion ? 0 : GREETING_DELAY_MS);
     const focusId = setTimeout(
-      () => emailInputRef.current?.focus(),
+      () => {
+        // A link that opens on the code step focuses the code field itself.
+        if (!isCodeRef.current) {
+          emailInputRef.current?.focus();
+        }
+      },
       reducedMotion ? 200 : FOCUS_DELAY_MS,
     );
     return () => {
