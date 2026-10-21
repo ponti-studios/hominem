@@ -11,7 +11,9 @@ import {
   type SortDirection,
 } from './job-applications';
 
-type ApplicationRow = Awaited<ReturnType<typeof CareerRepository.listApplications>>[number];
+type ApplicationRow = Awaited<
+  ReturnType<typeof CareerRepository.listApplications>
+>['items'][number];
 
 function toCard(
   app: ApplicationRow,

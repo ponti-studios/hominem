@@ -127,7 +127,13 @@ export const careerEngagementsSchema = z.object({
 
 export const careerApplicationsQuerySchema = z.object({
   status: careerApplicationStatusSchema.optional(),
-  limit: z.number().int().min(1).max(50).optional().default(20),
+  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+  before: z
+    .string()
+    .min(1)
+    .max(512)
+    .optional()
+    .describe('The `next` cursor from the previous page.'),
 });
 
 export const careerApplicationsSchema = z.object({
@@ -148,6 +154,7 @@ export const careerApplicationsSchema = z.object({
       hasOffer: z.boolean(),
     }),
   ),
+  next: z.string().nullable(),
 });
 
 export const careerApplicationCreateSchema = z.object({
