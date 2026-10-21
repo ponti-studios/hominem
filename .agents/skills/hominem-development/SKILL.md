@@ -126,12 +126,12 @@ Smoke-test the actual origins selected for the run:
 
 ```bash
 curl -k -o /dev/null -w '%{http_code}\n' https://api.lvh.me/
-curl -k -o /dev/null -w '%{http_code}\n' https://web.lvh.me/chats
+curl -k -o /dev/null -w '%{http_code}\n' https://web.lvh.me/tasks
 curl -k -o /dev/null -w '%{http_code}\n' https://career.lvh.me/
 curl -k -o /dev/null -w '%{http_code}\n' https://finance.lvh.me/
 ```
 
-The Web `/chats` endpoint returning `302` is expected when the browser is not
+The Web `/tasks` endpoint returning `302` is expected when the browser is not
 authenticated; it proves the Web server and auth redirect are reachable.
 When using the fixed-port Browser harness, use `http://localhost:4040` and
 `http://localhost:4445` instead and do not mix the two origin sets in one run.
@@ -141,7 +141,7 @@ the same shell that starts Playwright:
 
 ```bash
 eval "$(pnpm --filter @hominem/api --silent e2e:setup 2>/dev/null | grep 'export ')"
-pnpm --filter @hominem/web test:e2e --project=chat
+pnpm --filter @hominem/web test:e2e --project=web
 ```
 
 The Playwright auth setup requires `E2E_SESSION_COOKIE`; skipped scenarios must

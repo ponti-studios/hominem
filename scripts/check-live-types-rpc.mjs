@@ -26,12 +26,6 @@ const PROBES = [
     line: 6,
     offset: 3,
   },
-  {
-    label: 'apps/web (imports canonical chat types directly)',
-    file: p('apps/web/app/lib/hooks/use-start-chat.ts'),
-    line: 2,
-    offset: 15,
-  },
 ];
 
 async function probeOne({ label, file, line, offset }) {
