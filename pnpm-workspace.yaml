@@ -82,6 +82,13 @@ allowBuilds:
   msw: false
   protobufjs: false
   unrs-resolver: true
+# live-markdown only needs expensify-common for its built-in ExpensiMark parser, which Omiro replaces with its
+# own. expensify-common drags in a git-hosted subdependency that blockExoticSubdeps (rightly) refuses.
+packageExtensions:
+  '@expensify/react-native-live-markdown':
+    peerDependenciesMeta:
+      expensify-common:
+        optional: true
 peerDependencyRules:
   allowedVersions:
     vite: '^8.0.0'

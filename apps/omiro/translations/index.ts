@@ -51,6 +51,9 @@ const t = {
       statusSaving: 'Saving…',
       statusSaved: 'Saved',
       statusError: "Couldn't save",
+      statusOffline: "Offline · will save when you're back",
+      statusNotSaved: 'Not saved',
+      statusRetry: 'Tap to retry',
       undoEnhance: 'Undo enhance',
       charactersLeft: (count: number) =>
         `${count.toLocaleString()} character${count === 1 ? '' : 's'} left`,
