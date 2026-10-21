@@ -72,6 +72,13 @@ export async function revokeOAuthClient(input: {
   clientId: string;
 }): Promise<{ revoked: boolean }> {
   const touched = await authDb.transaction().execute(async (trx) => {
+    // Lock the live refresh tokens first: a rotation already in flight finishes (and its new token
+    // exists) before the updates below run, so they revoke it too instead of racing past it.
+    // Better Auth owns rotation, so a redeem that starts after this commits is its revoked check's job.
+    await sql`
+      select id from "oauthRefreshToken"
+      where "userId" = ${input.userId} and "clientId" = ${input.clientId} and revoked is null
+      for update`.execute(trx);
     const consent = await sql`
       delete from "oauthConsent"
       where "userId" = ${input.userId} and "clientId" = ${input.clientId}`.execute(trx);
