@@ -18,33 +18,3 @@ export type ChatClientTransport = {
   // a Response after the request fully completes.
   stream: (input: ChatClientStreamRequest) => Promise<ChatClientStreamResult>;
 };
-
-export const fetchChatTransport = (fetchImpl: typeof fetch = fetch): ChatClientTransport => ({
-  request: ({ url, init, signal }) => fetchImpl(url, { ...init, signal }),
-  stream: async ({ url, init, signal, onChunk }) => {
-    const response = await fetchImpl(url, { ...init, signal });
-    const errorMessage = response.ok
-      ? undefined
-      : await response
-          .clone()
-          .text()
-          .then(parseClientSafeChatError)
-          .catch(() => undefined);
-    const reader = response.body?.getReader();
-    if (!reader) {
-      const text = await response.text();
-      if (text) onChunk(text);
-      return { ok: response.ok, status: response.status, errorMessage };
-    }
-    const decoder = new TextDecoder();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      onChunk(decoder.decode(value, { stream: true }));
-    }
-    const tail = decoder.decode();
-    if (tail) onChunk(tail);
-    return { ok: response.ok, status: response.status, errorMessage };
-  },
-});
-import { parseClientSafeChatError } from './client-errors';

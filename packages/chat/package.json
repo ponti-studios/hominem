@@ -42,10 +42,6 @@
       "types": "./build/client.d.ts",
       "default": "./src/client.ts"
     },
-    "./transport/fetch": {
-      "types": "./build/client-transport-fetch.d.ts",
-      "default": "./src/client-transport-fetch.ts"
-    },
     "./transport/xhr": {
       "types": "./build/client-transport-xhr.d.ts",
       "default": "./src/client-transport-xhr.ts"
