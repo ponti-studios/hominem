@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { useCreateChat } from '~/hooks/use-chats';
 
-export function useChatStart() {
+function useChatStart() {
   const navigate = useNavigate();
   const createChat = useCreateChat();
 

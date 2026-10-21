@@ -4,7 +4,6 @@ export default [
   route('health', 'routes/health.ts'),
 
   // API Routes (specific handlers)
-  route('api/auth/google', 'routes/api/auth/google.ts'),
   route('api/usage', 'routes/api/usage.ts'),
   route('api/usage-timeseries', 'routes/api/usage-timeseries.ts'),
 

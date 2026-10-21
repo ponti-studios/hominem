@@ -7,6 +7,11 @@
       "project": ["**/*.{ts,tsx}"]
     },
 
+    "apps/web": {
+      "entry": ["app/routes/**/*.{ts,tsx}", "tests/e2e/*.{ts,tsx}"],
+      "project": ["app/**/*.{ts,tsx}", "tests/**/*.ts"]
+    },
+
     "apps/career": {
       "project": ["app/**/*.{ts,tsx}"]
     },

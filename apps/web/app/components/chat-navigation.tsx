@@ -2,6 +2,7 @@ import { History } from 'lucide-react';
 import { Link, useLocation } from 'react-router';
 
 import { ChatStartButton } from '~/components/chat/chat-start-button';
+import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,8 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '~/components/dropdown-menu';
-import { Button } from '~/components/ui/button';
+} from '~/components/ui/dropdown-menu';
 import { useChatLastMessages, useChatsList } from '~/hooks/use-chats';
 
 const chatDateFormatter = new Intl.DateTimeFormat(undefined, {

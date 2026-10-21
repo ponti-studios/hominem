@@ -1,6 +1,7 @@
 import { Library, ListTodo, LogOut, Settings } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
 
+import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '~/components/dropdown-menu';
-import { Button } from '~/components/ui/button';
+} from '~/components/ui/dropdown-menu';
 import { useCollaborationInvites } from '~/hooks/use-collaboration-invites';
 import type { User } from '~/lib/auth.server';
 

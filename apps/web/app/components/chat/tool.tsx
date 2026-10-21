@@ -54,7 +54,7 @@ const statusIcons: Record<ToolCallStatus, ReactNode> = {
   failed: <XCircleIcon className="size-4 text-red-600" />,
 };
 
-export const getStatusBadge = (status?: ToolCallStatus) => {
+const getStatusBadge = (status?: ToolCallStatus) => {
   const resolved = status ?? 'completed';
   return (
     <span

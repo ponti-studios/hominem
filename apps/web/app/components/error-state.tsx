@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
-import { Button } from '~/components/button';
 import { StatePanel } from '~/components/surfaces/state-panel';
+import { Button } from '~/components/ui/button';
 
 interface ErrorStateProps {
   title: string;
@@ -16,7 +16,7 @@ export function ErrorState({ title, message, actionLabel, onAction, stack }: Err
     <StatePanel
       title={title}
       description={message}
-      actions={<Button onClick={onAction} title={actionLabel} />}
+      actions={<Button onClick={onAction}>{actionLabel}</Button>}
       layout="centered"
     >
       {stack}
