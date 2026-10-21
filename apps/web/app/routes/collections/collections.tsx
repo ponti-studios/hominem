@@ -5,7 +5,7 @@ import type { Route } from './+types/collections';
 
 export const meta = () => [{ title: 'Collections' }];
 
-// eslint-disable-next-line no-unused-vars -- route module signature requires the typed props param, matches routes/usage.tsx
+// eslint-disable-next-line no-unused-vars -- route module signature requires the typed props param
 export default function CollectionsRoute(_: Route.ComponentProps) {
   return (
     <div className="h-full overflow-auto">

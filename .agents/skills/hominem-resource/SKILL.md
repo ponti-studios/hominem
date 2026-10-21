@@ -213,7 +213,7 @@ DB (packages/db)  →  schemas/  ←  application/*.service.ts  →  mcp/tools  
    c. **Write the hook**, in whichever app(s) actually consume the resource — this is not always
    `apps/web`:
 
-   - `apps/web` → `apps/web/app/hooks/use-<domain>.ts`. Mirror `use-chats.ts` or
+   - `apps/web` → `apps/web/app/hooks/use-<domain>.ts`. Mirror `use-tasks.ts` or
      `use-collections.ts`.
    - `apps/omiro` → `apps/omiro/hooks/use-<domain>.ts` (or `apps/omiro/services/<domain>/`
      for a larger feature area). Same `@hominem/rpc/react` client, same pattern — mirror

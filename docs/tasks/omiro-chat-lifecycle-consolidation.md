@@ -3,7 +3,7 @@ title: 'Shrink Omiro chat lifecycle hooks to shared ChatClient reducer (F5-omiro
 status: 'Proposed'
 priority: 'medium'
 labels: [chat, cleanup, omiro, refactor]
-depends_on: [web-chat-lifecycle-consolidation.md]
+depends_on: [chat-generation-effect-store.md]
 blocks: []
 estimated_size: 'L'
 ---
@@ -12,7 +12,7 @@ estimated_size: 'L'
 
 Omiro `services/chat/use-chat-generation.ts` (199 lines) +
 `use-send-message.ts` (275 lines, `driveGeneration` subscription +
-optimistic cache) follow the web-proven F5 pattern: terminal handling +
+optimistic cache) follow the F5 pattern: terminal handling +
 `invalidateChatQueries` only, over the shared `ChatClient` reducer. MMKV
 checkpoint survives solely as the `ChatCheckpointStore` implementation.
 Apple-only; no Android fallbacks.
@@ -23,8 +23,9 @@ In scope: `apps/omiro/services/chat/` cluster (`use-chat-generation`,
 `use-send-message`, regenerate/respond/start where they duplicate
 lifecycle ownership).
 
-Out of scope: server changes; web changes; new product behavior (file
-separately if found). Copy the web task's pattern — do not re-derive it.
+Out of scope: server changes; new product behavior (file separately if
+found). Build on the shared lifecycle contract from
+`chat-generation-effect-store.md` — do not re-derive it.
 
 ## Work sequence
 
@@ -43,7 +44,7 @@ separately if found). Copy the web task's pattern — do not re-derive it.
 
 ## Exit gate
 
-Close when AC-001–AC-004 hold. Depends on the web consolidation task
-(pattern proven first) — treat as locked until it is `Implemented`. If
+Close when AC-001–AC-004 hold. Depends on `chat-generation-effect-store.md`
+— treat as locked until it is `Implemented`. If
 this surfaces the known generation-cancellation delivery issue (see
 `omiro-generation-cancellation.md`), link it; do not absorb it.

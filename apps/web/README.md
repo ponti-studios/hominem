@@ -42,27 +42,15 @@ process itself still binds plain `http://localhost:4040` underneath.
 ### Browser E2E
 
 With the API running in scripted mode and the Web app running, prepare the
-disposable authenticated session and run the recovery flows:
+disposable authenticated sessions and run the Playwright suite:
 
 ```sh
 eval "$(pnpm --filter @hominem/api --silent e2e:setup 2>/dev/null | grep 'export ')"
 pnpm --filter @hominem/web test:e2e
 ```
 
-The Playwright suite runs SEND-01 through UI-09 in playbook order (see
-`docs/chat.browser-playbook.md` for the full scenario matrix and the
-`SEND`/`TOOL`/`RECOVER`/`LAUNCH`/`UI` scenario-ID scheme) using the running
-services; it does not start or stop them. Set `WEB_URL` to target another
-local Web URL. To rerun one scenario while debugging, use for example:
-
-```sh
-pnpm --filter @hominem/web test:e2e --project=chat -g 'RECOVER-04'
-```
-
-The suite attaches one JSON evidence record and a full-page DOM/screenshot
-artifact for every scenario. Traces and videos are retained for failures.
-UI-01 and UI-02 are reported as skipped when the server-side chat loader cannot
-be intercepted by Playwright; the skip includes that exact harness limitation.
+The suite uses the running services; it does not start or stop them. Set
+`WEB_URL` to target another local Web URL.
 
 ### Builds
 

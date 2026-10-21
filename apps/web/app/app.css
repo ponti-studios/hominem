@@ -2,7 +2,6 @@
 @import 'tw-animate-css';
 @import '@ponti-studios/ui/styles.css';
 
-@source '../node_modules/streamdown/dist/*.js';
 @source '../../node_modules/@ponti-studios/ui/src/**/*.{ts,tsx}';
 @source './';
 

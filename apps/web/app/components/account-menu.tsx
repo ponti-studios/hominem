@@ -56,10 +56,10 @@ export function AccountMenu({ user }: { user: User }) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/settings" viewTransition>
+          <a href={`${import.meta.env.VITE_PUBLIC_API_URL}/auth/settings`}>
             <Settings />
             Settings
-          </Link>
+          </a>
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={(event) => {

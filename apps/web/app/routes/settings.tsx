@@ -1,22 +1,8 @@
-import { AccountSettingsPage } from '~/components/account/settings-page';
-import { RouteHeader } from '~/components/route-header';
-import { userContext } from '~/lib/middleware';
+import { redirect } from 'react-router';
 
-import type { Route } from './+types/settings';
+import { serverEnv } from '~/lib/env.server';
 
-export const meta = () => [{ title: 'Account settings' }];
+// Account settings live on the API-hosted page; this keeps old /settings links working.
+const settingsUrl = new URL('/auth/settings', serverEnv.VITE_PUBLIC_API_URL).toString();
 
-export async function loader({ context }: Route.LoaderArgs) {
-  const user = context.get(userContext);
-  if (!user) throw new Response('Unauthorized', { status: 401 });
-  return { user };
-}
-
-export default function SettingsRoute({ loaderData }: Route.ComponentProps) {
-  return (
-    <div className="h-full overflow-auto">
-      <RouteHeader />
-      <AccountSettingsPage user={loaderData.user} />
-    </div>
-  );
-}
+export const loader = () => redirect(settingsUrl);

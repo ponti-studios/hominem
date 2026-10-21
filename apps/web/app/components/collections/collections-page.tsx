@@ -2,6 +2,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
+import { CollaborationNotifications } from '~/components/collaboration-notifications';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { useCollectionsList } from '~/hooks/use-collections';
@@ -31,8 +32,8 @@ export function CollectionsPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
       <div className="mb-8 flex items-center gap-3">
-        <Button aria-label="Back to chat" asChild size="icon-sm" variant="ghost">
-          <Link to="/" viewTransition>
+        <Button aria-label="Back to tasks" asChild size="icon-sm" variant="ghost">
+          <Link to="/tasks" viewTransition>
             <ArrowLeft />
           </Link>
         </Button>
@@ -44,6 +45,10 @@ export function CollectionsPage() {
         </div>
         <CreateCollectionDialog />
       </div>
+
+      <section className="mb-6 rounded-xl border border-border bg-card p-5">
+        <CollaborationNotifications />
+      </section>
 
       <section className="overflow-hidden rounded-xl border border-border bg-card">
         {isPending ? (
