@@ -29,6 +29,7 @@ import { useNetworkStatus } from '~/hooks/use-network-status';
 import { useNoteEditor } from '~/hooks/use-note-editor';
 import { useNoteFormatting } from '~/hooks/use-note-formatting';
 import { useSaveIndicator } from '~/hooks/use-save-indicator';
+import { useRetrySaveOnReconnect } from '~/hooks/use-save-retry';
 import { useInlineEnhance } from '~/services/ai';
 import { normalizeChatTitle, useAddChatSource, useStartChat } from '~/services/chat';
 import { isOfflineUnavailable } from '~/services/chat/chat-errors';
@@ -529,20 +530,8 @@ function NoteEditorBody({
     void flushSave(draft.title, draft.content, fileIds).catch(() => undefined);
   }, [draft.content, draft.title, fileIds, flushSave]);
 
-  // Edits that failed while offline go out on their own once the connection is back. The failure can
-  // land after the reconnect (the request was still in flight), so remember we dropped offline and
-  // retry whenever we're online with an error; an error while always online is left to the user.
-  const wentOffline = useRef(!isOnline);
-  useEffect(() => {
-    if (!isOnline) {
-      wentOffline.current = true;
-    } else if (wentOffline.current && saveStatus === 'error') {
-      wentOffline.current = false;
-      retrySave();
-    } else if (saveStatus === 'saved') {
-      wentOffline.current = false;
-    }
-  }, [isOnline, retrySave, saveStatus]);
+  // Edits left waiting while offline go out on their own once the connection is back.
+  useRetrySaveOnReconnect(saveStatus, isOnline, retrySave);
 
   return (
     <>

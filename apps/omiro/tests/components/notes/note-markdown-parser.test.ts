@@ -116,16 +116,6 @@ describe('parseNoteMarkdown', () => {
     expect(ranges.at(-1)).toEqual({ type: 'syntax', start: note.indexOf('- item'), length: 2 });
   });
 
-  it('leaves escaped delimiters literal', () => {
-    expect(parseNoteMarkdown('\\_not italic\\_')).toEqual([]);
-    expect(parseNoteMarkdown('\\`not code\\`')).toEqual([]);
-    expect(parseNoteMarkdown('\\**not bold**')).toEqual([]);
-  });
-
-  it('still styles a delimiter after an escaped backslash', () => {
-    expect(slices('\\\\_it_')).toContainEqual(['italic', 'it']);
-  });
-
   it('ignores a trailing line break', () => {
     expect(slices('a\n**b**\n')).toEqual(slices('**b**'));
   });
@@ -143,4 +133,29 @@ describe('parseNoteMarkdown', () => {
       expect(performance.now() - start).toBeLessThan(500);
     },
   );
+
+  it('does not style escaped markers, matching the preview', () => {
+    expect(parseNoteMarkdown('\\_literal\\_')).toEqual([]);
+    expect(parseNoteMarkdown('\\`not code\\`')).toEqual([]);
+    expect(parseNoteMarkdown('a \\*\\*not bold\\*\\*')).toEqual([]);
+    expect(parseNoteMarkdown('\\~~not struck\\~~')).toEqual([]);
+  });
+
+  it('still styles a marker whose backslashes escape each other, and spans with an escaped marker inside', () => {
+    expect(slices('\\\\_italic_')).toEqual([
+      ['syntax', '_'],
+      ['italic', 'italic'],
+      ['syntax', '_'],
+    ]);
+    expect(slices('_a\\_b_')).toEqual([
+      ['syntax', '_'],
+      ['italic', 'a\\_b'],
+      ['syntax', '_'],
+    ]);
+    expect(slices('**a\\**b**')).toEqual([
+      ['syntax', '**'],
+      ['bold', 'a\\**b'],
+      ['syntax', '**'],
+    ]);
+  });
 });

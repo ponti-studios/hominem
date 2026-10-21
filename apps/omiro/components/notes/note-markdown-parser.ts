@@ -29,13 +29,16 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
     (code >= 97 && code <= 122) ||
     code > 127;
 
-  // A delimiter after an odd run of backslashes is escaped (`\_`) and stays literal, like the preview.
-  const escaped = (index: number, from: number): boolean => {
-    let slashes = 0;
-    while (index - 1 - slashes >= from && input.charCodeAt(index - 1 - slashes) === 92) {
-      slashes++;
+  // A marker preceded by an odd number of backslashes is escaped (`\\_` is a literal underscore); an even
+  // number means the backslashes escaped each other. Linear overall: runs of backslashes are disjoint.
+  const isEscaped = (index: number) => {
+    let backslashes = 0;
+    let k = index - 1;
+    while (k >= 0 && input.charCodeAt(k) === 92) {
+      backslashes++;
+      k--;
     }
-    return slashes % 2 === 1;
+    return backslashes % 2 === 1;
   };
 
   // Inline spans between `from` and `to` (one line). Markers become `syntax`, the text between them gets
@@ -48,10 +51,15 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
     while (i < to) {
       const code = input.charCodeAt(i);
 
-      if (code === 96 && !escaped(i, from)) {
+      if ((code === 96 || code === 42 || code === 126 || code === 95) && isEscaped(i)) {
+        i++;
+        continue;
+      }
+
+      if (code === 96) {
         // `code`: nothing inside is parsed
         let j = i + 1;
-        while (j < to && (input.charCodeAt(j) !== 96 || escaped(j, from))) {
+        while (j < to && input.charCodeAt(j) !== 96) {
           j++;
         }
         if (j < to && j > i + 1) {
@@ -61,17 +69,12 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
           i = j + 1;
           continue;
         }
-      } else if (
-        (code === 42 || code === 126) &&
-        i + 1 < to &&
-        input.charCodeAt(i + 1) === code &&
-        !escaped(i, from)
-      ) {
+      } else if ((code === 42 || code === 126) && i + 1 < to && input.charCodeAt(i + 1) === code) {
         // **bold** and ~~strikethrough~~
         let j = i + 2;
         while (
           j + 1 < to &&
-          !(input.charCodeAt(j) === code && input.charCodeAt(j + 1) === code && !escaped(j, from))
+          !(input.charCodeAt(j) === code && input.charCodeAt(j + 1) === code && !isEscaped(j))
         ) {
           j++;
         }
@@ -89,16 +92,16 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
           i = j + 2;
           continue;
         }
-      } else if (code === 95 && !escaped(i, from)) {
+      } else if (code === 95) {
         // _italic_, but not the underscores inside snake_case words
         const before = i > from ? input.charCodeAt(i - 1) : 0;
         const next = i + 1 < to ? input.charCodeAt(i + 1) : 0;
         if (!italicDead && !isWordChar(before) && next !== 0 && next !== 32 && next !== 95) {
           let j = i + 1;
           while (j < to) {
-            if (input.charCodeAt(j) === 95 && !escaped(j, from)) {
+            if (input.charCodeAt(j) === 95) {
               const after = j + 1 < to ? input.charCodeAt(j + 1) : 0;
-              if (input.charCodeAt(j - 1) !== 32 && !isWordChar(after)) {
+              if (input.charCodeAt(j - 1) !== 32 && !isWordChar(after) && !isEscaped(j)) {
                 break;
               }
             }
