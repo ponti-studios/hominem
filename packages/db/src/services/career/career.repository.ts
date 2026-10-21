@@ -1,5 +1,6 @@
 import { sql, type Insertable, type Selectable } from 'kysely';
 
+import { ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type {
   AppCareerApplications,
@@ -32,6 +33,47 @@ export type CareerApplicationWithRelations = CareerApplicationWithCurrentStage &
   stages: CareerApplicationStageRecord[];
   offers: CareerOfferRecord[];
 };
+
+export interface CareerApplicationsPage {
+  items: CareerApplicationWithCurrentStage[];
+  next: string | null;
+}
+
+// Applications are listed by applied date, newest first, with applications that have no applied
+// date last. `applied_at` is a DATE, so applications made on the same day tie constantly; `id` is
+// the tiebreaker that gives a keyset walk a total order. The cursor is opaque to clients, the same
+// shape `NoteRepository` uses for memory pages.
+const APPLICATION_CURSOR_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const APPLICATION_CURSOR_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+interface CareerApplicationsCursor {
+  appliedAt: string | null;
+  id: string;
+}
+
+function encodeCareerApplicationsCursor(cursor: CareerApplicationsCursor): string {
+  return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
+}
+
+function decodeCareerApplicationsCursor(cursor: string): CareerApplicationsCursor {
+  const bad = () => new ValidationError('Invalid cursor', { cursor });
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
+  } catch {
+    throw bad();
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw bad();
+  const { appliedAt, id } = parsed as { appliedAt?: unknown; id?: unknown };
+  if (typeof id !== 'string' || !APPLICATION_CURSOR_UUID.test(id)) throw bad();
+  if (appliedAt === null) return { appliedAt, id };
+  if (typeof appliedAt !== 'string' || !APPLICATION_CURSOR_DATE.test(appliedAt)) throw bad();
+  // A real calendar date, not just the shape: PG's ::date cast rejects 2026-02-29, so reject it
+  // here as a 400 rather than letting it surface as a database error.
+  const date = new Date(`${appliedAt}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== appliedAt) throw bad();
+  return { appliedAt, id };
+}
 
 export type CareerTimelineRecord = {
   id: string;
@@ -274,8 +316,11 @@ export const CareerRepository = {
   async listApplications(
     handle: DbHandle,
     ownerUserId: string,
-    opts?: { status?: AppCareerApplications['status']; limit?: number },
-  ): Promise<CareerApplicationWithCurrentStage[]> {
+    opts?: { status?: AppCareerApplications['status']; limit?: number; before?: string },
+  ): Promise<CareerApplicationsPage> {
+    const limit = opts?.limit ?? 20;
+    const cursor = opts?.before ? decodeCareerApplicationsCursor(opts.before) : null;
+
     let query = handle
       .selectFrom('app.careerApplications as application')
       .leftJoin('app.careerApplicationStages as stage', 'stage.id', 'application.currentStageId')
@@ -287,12 +332,42 @@ export const CareerRepository = {
       query = query.where('application.status', '=', opts.status);
     }
 
-    let limitedQuery = query.orderBy(sql`"applied_at" desc nulls last`);
-    if (opts?.limit) {
-      limitedQuery = limitedQuery.limit(opts.limit);
+    if (cursor) {
+      query = query.where((eb) => {
+        if (cursor.appliedAt === null) {
+          return eb.and([
+            eb('application.appliedAt', 'is', null),
+            eb('application.id', '<', cursor.id),
+          ]);
+        }
+        const appliedAt = sql<string>`${cursor.appliedAt}::date`;
+        return eb.or([
+          eb('application.appliedAt', '<', appliedAt),
+          eb('application.appliedAt', 'is', null),
+          eb.and([
+            eb('application.appliedAt', '=', appliedAt),
+            eb('application.id', '<', cursor.id),
+          ]),
+        ]);
+      });
     }
 
-    return limitedQuery.execute();
+    const rows = await query
+      .orderBy(sql`"applied_at" desc nulls last`)
+      .orderBy('application.id', 'desc')
+      .limit(limit + 1)
+      .execute();
+
+    const page = rows.slice(0, limit);
+    const last = page.at(-1);
+
+    return {
+      items: page,
+      next:
+        rows.length > limit && last
+          ? encodeCareerApplicationsCursor({ appliedAt: last.appliedAt ?? null, id: last.id })
+          : null,
+    };
   },
 
   async listApplicationsPage(

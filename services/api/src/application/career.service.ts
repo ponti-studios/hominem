@@ -122,18 +122,22 @@ export async function createCareerEngagement(
 
 export async function listCareerApplications(
   ownerUserId: string,
-  opts?: { status?: z.output<typeof careerApplicationStatusSchema>; limit?: number },
+  opts?: {
+    status?: z.output<typeof careerApplicationStatusSchema>;
+    limit?: number;
+    before?: string;
+  },
 ) {
-  const applications = await CareerRepository.listApplications(db, ownerUserId, opts);
+  const page = await CareerRepository.listApplications(db, ownerUserId, opts);
 
   const enriched = await Promise.all(
-    applications.map(async (a) => {
+    page.items.map(async (a) => {
       const detail = await CareerRepository.getApplicationWithRelations(db, ownerUserId, a.id);
       return toApplicationDto(a, detail);
     }),
   );
 
-  return { applications: enriched };
+  return { applications: enriched, next: page.next };
 }
 
 function toApplicationDto(
@@ -193,21 +197,23 @@ function toWishlistCompany(application: CareerApplicationRecord) {
   });
 }
 
+// The list tool caps at 100; the delete preview calls this without a limit and must still find a
+// company anywhere in that surface, not just the first page of the applications list.
 export async function listCareerWishlistCompanies(ownerUserId: string, limit?: number) {
-  const applications = await CareerRepository.listApplications(db, ownerUserId, {
+  const { items } = await CareerRepository.listApplications(db, ownerUserId, {
     status: 'WISHLIST',
-    limit,
+    limit: limit ?? 100,
   });
-  return { companies: applications.map(toWishlistCompany) };
+  return { companies: items.map(toWishlistCompany) };
 }
 
 export async function addCareerWishlistCompany(ownerUserId: string, company: string) {
-  const existing = await CareerRepository.listApplications(db, ownerUserId, {
+  const { items } = await CareerRepository.listApplications(db, ownerUserId, {
     status: 'WISHLIST',
     limit: 100,
   });
   const normalizedCompany = company.toLowerCase();
-  const duplicate = existing.find(
+  const duplicate = items.find(
     (application) => application.company.toLowerCase() === normalizedCompany,
   );
   if (duplicate) return toWishlistCompany(duplicate);
