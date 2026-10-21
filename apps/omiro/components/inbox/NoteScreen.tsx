@@ -529,13 +529,19 @@ function NoteEditorBody({
     void flushSave(draft.title, draft.content, fileIds).catch(() => undefined);
   }, [draft.content, draft.title, fileIds, flushSave]);
 
-  // Edits that failed while offline go out on their own once the connection is back.
-  const wasOnline = useRef(isOnline);
+  // Edits that failed while offline go out on their own once the connection is back. The failure can
+  // land after the reconnect (the request was still in flight), so remember we dropped offline and
+  // retry whenever we're online with an error; an error while always online is left to the user.
+  const wentOffline = useRef(!isOnline);
   useEffect(() => {
-    if (isOnline && !wasOnline.current && saveStatus === 'error') {
+    if (!isOnline) {
+      wentOffline.current = true;
+    } else if (wentOffline.current && saveStatus === 'error') {
+      wentOffline.current = false;
       retrySave();
+    } else if (saveStatus === 'saved') {
+      wentOffline.current = false;
     }
-    wasOnline.current = isOnline;
   }, [isOnline, retrySave, saveStatus]);
 
   return (

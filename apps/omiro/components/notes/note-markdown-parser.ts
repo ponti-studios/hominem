@@ -29,6 +29,15 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
     (code >= 97 && code <= 122) ||
     code > 127;
 
+  // A delimiter after an odd run of backslashes is escaped (`\_`) and stays literal, like the preview.
+  const escaped = (index: number, from: number): boolean => {
+    let slashes = 0;
+    while (index - 1 - slashes >= from && input.charCodeAt(index - 1 - slashes) === 92) {
+      slashes++;
+    }
+    return slashes % 2 === 1;
+  };
+
   // Inline spans between `from` and `to` (one line). Markers become `syntax`, the text between them gets
   // the span's type, and the text between is scanned again so `**bold _and italic_**` works.
   const inline = (from: number, to: number): void => {
@@ -39,10 +48,10 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
     while (i < to) {
       const code = input.charCodeAt(i);
 
-      if (code === 96) {
+      if (code === 96 && !escaped(i, from)) {
         // `code`: nothing inside is parsed
         let j = i + 1;
-        while (j < to && input.charCodeAt(j) !== 96) {
+        while (j < to && (input.charCodeAt(j) !== 96 || escaped(j, from))) {
           j++;
         }
         if (j < to && j > i + 1) {
@@ -52,10 +61,18 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
           i = j + 1;
           continue;
         }
-      } else if ((code === 42 || code === 126) && i + 1 < to && input.charCodeAt(i + 1) === code) {
+      } else if (
+        (code === 42 || code === 126) &&
+        i + 1 < to &&
+        input.charCodeAt(i + 1) === code &&
+        !escaped(i, from)
+      ) {
         // **bold** and ~~strikethrough~~
         let j = i + 2;
-        while (j + 1 < to && !(input.charCodeAt(j) === code && input.charCodeAt(j + 1) === code)) {
+        while (
+          j + 1 < to &&
+          !(input.charCodeAt(j) === code && input.charCodeAt(j + 1) === code && !escaped(j, from))
+        ) {
           j++;
         }
         // like markdown, the text may not start or end with a space
@@ -72,14 +89,14 @@ export function parseNoteMarkdown(input: string): MarkdownRange[] {
           i = j + 2;
           continue;
         }
-      } else if (code === 95) {
+      } else if (code === 95 && !escaped(i, from)) {
         // _italic_, but not the underscores inside snake_case words
         const before = i > from ? input.charCodeAt(i - 1) : 0;
         const next = i + 1 < to ? input.charCodeAt(i + 1) : 0;
         if (!italicDead && !isWordChar(before) && next !== 0 && next !== 32 && next !== 95) {
           let j = i + 1;
           while (j < to) {
-            if (input.charCodeAt(j) === 95) {
+            if (input.charCodeAt(j) === 95 && !escaped(j, from)) {
               const after = j + 1 < to ? input.charCodeAt(j + 1) : 0;
               if (input.charCodeAt(j - 1) !== 32 && !isWordChar(after)) {
                 break;

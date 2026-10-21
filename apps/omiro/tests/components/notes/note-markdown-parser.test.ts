@@ -116,6 +116,16 @@ describe('parseNoteMarkdown', () => {
     expect(ranges.at(-1)).toEqual({ type: 'syntax', start: note.indexOf('- item'), length: 2 });
   });
 
+  it('leaves escaped delimiters literal', () => {
+    expect(parseNoteMarkdown('\\_not italic\\_')).toEqual([]);
+    expect(parseNoteMarkdown('\\`not code\\`')).toEqual([]);
+    expect(parseNoteMarkdown('\\**not bold**')).toEqual([]);
+  });
+
+  it('still styles a delimiter after an escaped backslash', () => {
+    expect(slices('\\\\_it_')).toContainEqual(['italic', 'it']);
+  });
+
   it('ignores a trailing line break', () => {
     expect(slices('a\n**b**\n')).toEqual(slices('**b**'));
   });
