@@ -12,7 +12,12 @@ import {
   createCareerSkill,
   createCareerTestimonial,
   getCareerApplicationDetail,
+  getCareerCertification,
+  getCareerEducationEntry,
+  getCareerEngagement,
   getCareerProfile,
+  getCareerProject,
+  getCareerSkill,
   getCareerSocialLinks,
   listCareerApplications,
   listCareerApplicationFiles,
@@ -63,12 +68,14 @@ import {
   careerCertificationCreateOutputSchema,
   careerCertificationCreateSchema,
   careerCertificationDeleteSchema,
+  careerCertificationsQuerySchema,
   careerCertificationsSchema,
   careerCertificationUpdateOutputSchema,
   careerCertificationUpdateSchema,
   careerEducationCreateOutputSchema,
   careerEducationCreateSchema,
   careerEducationDeleteSchema,
+  careerEducationQuerySchema,
   careerEducationSchema,
   careerEducationUpdateOutputSchema,
   careerEducationUpdateSchema,
@@ -86,12 +93,14 @@ import {
   careerProjectCreateOutputSchema,
   careerProjectCreateSchema,
   careerProjectDeleteSchema,
+  careerProjectsQuerySchema,
   careerProjectsSchema,
   careerProjectUpdateOutputSchema,
   careerProjectUpdateSchema,
   careerSkillCreateOutputSchema,
   careerSkillCreateSchema,
   careerSkillDeleteSchema,
+  careerSkillsQuerySchema,
   careerSkillsSchema,
   careerSkillUpdateOutputSchema,
   careerSkillUpdateSchema,
@@ -357,8 +366,7 @@ registerTool(
     preview: async (ownerUserId, input) => {
       const parsed = careerEducationDeleteSchema.safeParse(input);
       if (!parsed.success) return null;
-      const { education } = await listCareerEducation(ownerUserId);
-      const entry = education.find((e) => e.id === parsed.data.id);
+      const entry = await getCareerEducationEntry(ownerUserId, parsed.data.id);
       return entry ? { school: entry.school, degree: entry.degree } : null;
     },
   },
@@ -403,8 +411,7 @@ registerTool(
     preview: async (ownerUserId, input) => {
       const parsed = careerSkillDeleteSchema.safeParse(input);
       if (!parsed.success) return null;
-      const { skills } = await listCareerSkills(ownerUserId);
-      const skill = skills.find((s) => s.id === parsed.data.id);
+      const skill = await getCareerSkill(ownerUserId, parsed.data.id);
       return skill ? { name: skill.name, category: skill.category } : null;
     },
   },
@@ -510,8 +517,7 @@ registerTool(
     preview: async (ownerUserId, input) => {
       const parsed = careerCertificationDeleteSchema.safeParse(input);
       if (!parsed.success) return null;
-      const { certifications } = await listCareerCertifications(ownerUserId);
-      const cert = certifications.find((c) => c.id === parsed.data.id);
+      const cert = await getCareerCertification(ownerUserId, parsed.data.id);
       return cert ? { name: cert.name, issuer: cert.issuingOrganization } : null;
     },
   },
@@ -560,7 +566,7 @@ registerTool(
     scopes: ['career:read'],
     resultCap: 100,
   },
-  (ownerUserId, input) => listCareerWishlistCompanies(ownerUserId, input.limit),
+  (ownerUserId, input) => listCareerWishlistCompanies(ownerUserId, input),
 );
 
 registerTool(
@@ -660,8 +666,7 @@ registerTool(
     preview: async (ownerUserId, input) => {
       const parsed = careerEngagementDeleteSchema.safeParse(input);
       if (!parsed.success) return null;
-      const { engagements } = await listCareerEngagements(ownerUserId);
-      const engagement = engagements.find((e) => e.id === parsed.data.id);
+      const engagement = await getCareerEngagement(ownerUserId, parsed.data.id);
       return engagement ? { company: engagement.company, title: engagement.title } : null;
     },
   },
@@ -710,16 +715,14 @@ registerTool(
     name: 'career_education',
     title: 'List education history',
     description: 'Returns education entries (schools, degrees, fields of study, dates).',
-    inputSchema: z.object({
-      limit: z.number().int().min(1).max(20).optional().default(10),
-    }),
+    inputSchema: careerEducationQuerySchema,
     outputSchema: careerEducationSchema,
     readOnly: true,
     scopes: ['career:read'],
     resultCap: 20,
   },
   async (ownerUserId, input) => {
-    const result = await listCareerEducation(ownerUserId, input.limit);
+    const result = await listCareerEducation(ownerUserId, input);
     return result;
   },
 );
@@ -729,14 +732,14 @@ registerTool(
     name: 'career_skills',
     title: 'List career skills',
     description: 'Returns the authenticated user skills with category, level, and proof.',
-    inputSchema: noInputSchema,
+    inputSchema: careerSkillsQuerySchema,
     outputSchema: careerSkillsSchema,
     readOnly: true,
     scopes: ['career:read'],
     resultCap: 100,
   },
-  async (ownerUserId, _input) => {
-    const result = await listCareerSkills(ownerUserId);
+  async (ownerUserId, input) => {
+    const result = await listCareerSkills(ownerUserId, input);
     return result;
   },
 );
@@ -746,14 +749,14 @@ registerTool(
     name: 'career_projects',
     title: 'List career projects',
     description: 'Returns the authenticated user side/work projects.',
-    inputSchema: noInputSchema,
+    inputSchema: careerProjectsQuerySchema,
     outputSchema: careerProjectsSchema,
     readOnly: true,
     scopes: ['career:read'],
     resultCap: 100,
   },
-  async (ownerUserId, _input) => {
-    const result = await listCareerProjects(ownerUserId);
+  async (ownerUserId, input) => {
+    const result = await listCareerProjects(ownerUserId, input);
     return careerProjectsSchema.parse(result);
   },
 );
@@ -793,8 +796,7 @@ registerTool(
     preview: async (ownerUserId, input) => {
       const parsed = careerProjectDeleteSchema.safeParse(input);
       if (!parsed.success) return null;
-      const { projects } = await listCareerProjects(ownerUserId);
-      const project = projects.find((p) => p.id === parsed.data.id);
+      const project = await getCareerProject(ownerUserId, parsed.data.id);
       return project ? { title: project.title, organization: project.organization } : null;
     },
   },
@@ -825,14 +827,14 @@ registerTool(
     name: 'career_certifications',
     title: 'List career certifications',
     description: 'Returns professional certifications with issuer and dates.',
-    inputSchema: noInputSchema,
+    inputSchema: careerCertificationsQuerySchema,
     outputSchema: careerCertificationsSchema,
     readOnly: true,
     scopes: ['career:read'],
     resultCap: 100,
   },
-  async (ownerUserId, _input) => {
-    const result = await listCareerCertifications(ownerUserId);
+  async (ownerUserId, input) => {
+    const result = await listCareerCertifications(ownerUserId, input);
     return result;
   },
 );

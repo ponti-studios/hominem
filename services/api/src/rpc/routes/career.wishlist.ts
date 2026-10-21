@@ -18,7 +18,8 @@ export const careerWishlistRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', zValidator('query', careerWishlistCompaniesQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    return c.json(await listCareerWishlistCompanies(userId, c.req.valid('query').limit));
+    const { limit, cursor } = c.req.valid('query');
+    return c.json(await listCareerWishlistCompanies(userId, { limit, cursor }));
   })
   .post('/', zValidator('json', careerWishlistCompanyCreateSchema), async (c) => {
     const userId = c.get('auth')!.userId;

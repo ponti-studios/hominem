@@ -10,6 +10,7 @@ import {
 import {
   careerCertificationCreateSchema,
   careerCertificationDeleteSchema,
+  careerCertificationsQuerySchema,
   careerCertificationUpdateSchema,
 } from '../../schemas/career.schema';
 import { NotFoundError } from '../errors';
@@ -17,9 +18,9 @@ import { authMiddleware, type AppContext } from '../middleware/auth';
 
 export const careerCertificationsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  .get('/', async (c) => {
+  .get('/', zValidator('query', careerCertificationsQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    return c.json(await listCareerCertifications(userId));
+    return c.json(await listCareerCertifications(userId, c.req.valid('query')));
   })
   .post('/create', zValidator('json', careerCertificationCreateSchema), async (c) => {
     const userId = c.get('auth')!.userId;

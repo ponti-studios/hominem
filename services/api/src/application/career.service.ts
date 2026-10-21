@@ -87,13 +87,19 @@ export async function updateCareerProfile(
 
 export async function listCareerEngagements(
   ownerUserId: string,
-  opts?: { type?: 'all' | 'employment'; limit?: number },
+  opts?: { type?: 'all' | 'employment'; limit?: number; cursor?: string },
 ) {
-  const engagements = await CareerRepository.listEngagements(db, ownerUserId, opts);
+  const page = await CareerRepository.listEngagementsPage(db, ownerUserId, opts);
 
   return {
-    engagements: engagements.map(toEngagementDto),
+    engagements: page.items.map(toEngagementDto),
+    nextCursor: page.next,
   };
+}
+
+export async function getCareerEngagement(ownerUserId: string, id: string) {
+  const engagement = await CareerRepository.getEngagementById(db, ownerUserId, id);
+  return engagement ? toEngagementDto(engagement) : null;
 }
 
 export async function updateCareerEngagement(
@@ -197,14 +203,19 @@ function toWishlistCompany(application: CareerApplicationRecord) {
   });
 }
 
-// The list tool caps at 100; the delete preview calls this without a limit and must still find a
-// company anywhere in that surface, not just the first page of the applications list.
-export async function listCareerWishlistCompanies(ownerUserId: string, limit?: number) {
-  const { items } = await CareerRepository.listApplications(db, ownerUserId, {
+// The route pages 20 at a time, but the delete preview calls this with no limit and must still
+// find a company anywhere in the wishlist, not just on the first page.
+export async function listCareerWishlistCompanies(
+  ownerUserId: string,
+  opts?: { limit?: number; cursor?: string },
+) {
+  const { items, next } = await CareerRepository.listApplications(db, ownerUserId, {
     status: 'WISHLIST',
-    limit: limit ?? 100,
+    limit: opts?.limit ?? 100,
+    before: opts?.cursor,
+    route: 'career.wishlist',
   });
-  return { companies: items.map(toWishlistCompany) };
+  return { companies: items.map(toWishlistCompany), nextCursor: next };
 }
 
 export async function addCareerWishlistCompany(ownerUserId: string, company: string) {
@@ -286,12 +297,21 @@ export async function getCareerApplicationDetail(ownerUserId: string, id: string
   };
 }
 
-export async function listCareerEducation(ownerUserId: string, limit?: number) {
-  const education = await CareerRepository.listEducation(db, ownerUserId, limit);
+export async function listCareerEducation(
+  ownerUserId: string,
+  opts?: { limit?: number; cursor?: string },
+) {
+  const page = await CareerRepository.listEducationPage(db, ownerUserId, opts);
 
   return {
-    education: education.map(toEducationDto),
+    education: page.items.map(toEducationDto),
+    nextCursor: page.next,
   };
+}
+
+export async function getCareerEducationEntry(ownerUserId: string, id: string) {
+  const education = await CareerRepository.getEducationById(db, ownerUserId, id);
+  return education ? toEducationDto(education) : null;
 }
 
 function toEducationDto(education: CareerEducationRecord) {
@@ -320,9 +340,17 @@ export async function removeCareerEducation(ownerUserId: string, id: string) {
 
 // -- Skills --
 
-export async function listCareerSkills(ownerUserId: string) {
-  const skills = await SkillRepository.list(db, ownerUserId);
-  return { skills: skills.map(toSkillDto) };
+export async function listCareerSkills(
+  ownerUserId: string,
+  opts?: { limit?: number; cursor?: string },
+) {
+  const page = await SkillRepository.listPage(db, ownerUserId, opts);
+  return { skills: page.items.map(toSkillDto), nextCursor: page.next };
+}
+
+export async function getCareerSkill(ownerUserId: string, id: string) {
+  const skill = await SkillRepository.get(db, ownerUserId, id);
+  return skill ? toSkillDto(skill) : null;
 }
 
 export async function createCareerSkill(ownerUserId: string, input: CareerSkillInput) {
@@ -356,9 +384,20 @@ export async function removeCareerSkill(ownerUserId: string, id: string) {
 
 // -- Projects --
 
-export async function listCareerProjects(ownerUserId: string) {
-  const projects = await ProjectRepository.list(db, ownerUserId);
-  return careerProjectsSchema.parse({ projects: projects.map(toProjectDto) });
+export async function listCareerProjects(
+  ownerUserId: string,
+  opts?: { limit?: number; cursor?: string },
+) {
+  const page = await ProjectRepository.listPage(db, ownerUserId, opts);
+  return careerProjectsSchema.parse({
+    projects: page.items.map(toProjectDto),
+    nextCursor: page.next,
+  });
+}
+
+export async function getCareerProject(ownerUserId: string, id: string) {
+  const project = await ProjectRepository.get(db, ownerUserId, id);
+  return project ? toProjectDto(project) : null;
 }
 
 export async function createCareerProject(ownerUserId: string, input: CareerProjectInput) {
@@ -404,9 +443,20 @@ export async function removeCareerTestimonial(ownerUserId: string, id: string) {
 
 // -- Certifications --
 
-export async function listCareerCertifications(ownerUserId: string) {
-  const certifications = await CertificationRepository.list(db, ownerUserId);
-  return { certifications: certifications.map(toCertificationDto) };
+export async function listCareerCertifications(
+  ownerUserId: string,
+  opts?: { limit?: number; cursor?: string },
+) {
+  const page = await CertificationRepository.listPage(db, ownerUserId, opts);
+  return {
+    certifications: page.items.map(toCertificationDto),
+    nextCursor: page.next,
+  };
+}
+
+export async function getCareerCertification(ownerUserId: string, id: string) {
+  const certification = await CertificationRepository.get(db, ownerUserId, id);
+  return certification ? toCertificationDto(certification) : null;
 }
 
 export async function createCareerCertification(

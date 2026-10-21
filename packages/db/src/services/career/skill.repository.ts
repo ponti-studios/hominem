@@ -2,6 +2,13 @@ import { sql, type Selectable } from 'kysely';
 
 import type { DbHandle } from '../../transaction';
 import type { AppCareerSkills } from '../../types/database';
+import {
+  CAREER_PAGE_DEFAULT_LIMIT,
+  decodeCareerCursor,
+  encodeCareerCursor,
+  toCareerPage,
+  type CareerPage,
+} from './pagination';
 
 export type CareerSkillRecord = Selectable<AppCareerSkills>;
 
@@ -26,6 +33,54 @@ export const SkillRepository = {
       .where('ownerUserid', '=', ownerUserId)
       .orderBy('sortOrder', 'asc')
       .execute();
+  },
+
+  // Skills are listed by sort order; `id` breaks the ties that sort order alone leaves, so a
+  // keyset walk sees every row exactly once.
+  async listPage(
+    handle: DbHandle,
+    ownerUserId: string,
+    opts?: { limit?: number; cursor?: string },
+  ): Promise<CareerPage<CareerSkillRecord>> {
+    const limit = opts?.limit ?? CAREER_PAGE_DEFAULT_LIMIT;
+    const filter = '';
+    const cursor = opts?.cursor
+      ? decodeCareerCursor(opts.cursor, {
+          route: 'career.skills',
+          filter,
+          keys: ['int', 'uuid'],
+        })
+      : null;
+
+    let query = handle
+      .selectFrom('app.careerSkills')
+      .selectAll()
+      .where('ownerUserid', '=', ownerUserId);
+
+    if (cursor) {
+      const [sortOrder, id] = cursor;
+      query = query.where(sql<boolean>`("sort_order", "id") > (${sortOrder}::int, ${id}::uuid)`);
+    }
+
+    const rows = await query
+      .orderBy('sortOrder', 'asc')
+      .orderBy('id', 'asc')
+      .limit(limit + 1)
+      .execute();
+
+    return toCareerPage(rows, limit, (last) =>
+      encodeCareerCursor('career.skills', filter, [last.sortOrder, last.id]),
+    );
+  },
+
+  async get(handle: DbHandle, ownerUserId: string, id: string): Promise<CareerSkillRecord | null> {
+    const row = await handle
+      .selectFrom('app.careerSkills')
+      .selectAll()
+      .where('id', '=', id)
+      .where('ownerUserid', '=', ownerUserId)
+      .executeTakeFirst();
+    return row ?? null;
   },
 
   /** The skills that point at one worklog entry — the detail tool's `linkedSkillIds`. */

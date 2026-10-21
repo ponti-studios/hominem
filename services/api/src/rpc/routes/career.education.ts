@@ -10,6 +10,7 @@ import {
 import {
   careerEducationCreateSchema,
   careerEducationDeleteSchema,
+  careerEducationQuerySchema,
   careerEducationUpdateSchema,
 } from '../../schemas/career.schema';
 import { NotFoundError } from '../errors';
@@ -17,10 +18,10 @@ import { authMiddleware, type AppContext } from '../middleware/auth';
 
 export const careerEducationRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  .get('/', async (c) => {
+  .get('/', zValidator('query', careerEducationQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
-    const limit = c.req.query('limit') ? parseInt(c.req.query('limit')!, 10) : undefined;
-    const result = await listCareerEducation(userId, limit);
+    const { limit, cursor } = c.req.valid('query');
+    const result = await listCareerEducation(userId, { limit, cursor });
     return c.json(result);
   })
   .post('/create', zValidator('json', careerEducationCreateSchema), async (c) => {

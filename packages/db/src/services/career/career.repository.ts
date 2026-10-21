@@ -10,6 +10,14 @@ import type {
   AppCareerEngagements,
   AppCareerProfile,
 } from '../../types/database';
+import {
+  CAREER_PAGE_DEFAULT_LIMIT,
+  decodeCareerCursor,
+  encodeCareerCursor,
+  isRecord,
+  toCareerPage,
+  type CareerPage,
+} from './pagination';
 
 export type CareerProfileRecord = Selectable<AppCareerProfile>;
 export type CareerEngagementRecord = Selectable<AppCareerEngagements>;
@@ -51,11 +59,13 @@ interface CareerApplicationsCursor {
   id: string;
 }
 
-function encodeCareerApplicationsCursor(cursor: CareerApplicationsCursor): string {
-  return Buffer.from(JSON.stringify(cursor), 'utf8').toString('base64url');
+function encodeCareerApplicationsCursor(cursor: CareerApplicationsCursor, route?: string): string {
+  return Buffer.from(JSON.stringify(route ? { ...cursor, r: route } : cursor), 'utf8').toString(
+    'base64url',
+  );
 }
 
-function decodeCareerApplicationsCursor(cursor: string): CareerApplicationsCursor {
+function decodeCareerApplicationsCursor(cursor: string, route?: string): CareerApplicationsCursor {
   const bad = () => new ValidationError('Invalid cursor', { cursor });
   let parsed: unknown;
   try {
@@ -63,8 +73,11 @@ function decodeCareerApplicationsCursor(cursor: string): CareerApplicationsCurso
   } catch {
     throw bad();
   }
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw bad();
-  const { appliedAt, id } = parsed as { appliedAt?: unknown; id?: unknown };
+  if (!isRecord(parsed)) throw bad();
+  const { appliedAt, id, r } = parsed;
+  // A cursor is only valid on the surface that issued it: the wishlist list tags its cursors so
+  // the applications list (whose cursor has never been tagged) rejects them.
+  if (r !== route) throw bad();
   if (typeof id !== 'string' || !APPLICATION_CURSOR_UUID.test(id)) throw bad();
   if (appliedAt === null) return { appliedAt, id };
   if (typeof appliedAt !== 'string' || !APPLICATION_CURSOR_DATE.test(appliedAt)) throw bad();
@@ -73,6 +86,18 @@ function decodeCareerApplicationsCursor(cursor: string): CareerApplicationsCurso
   const date = new Date(`${appliedAt}T00:00:00.000Z`);
   if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== appliedAt) throw bad();
   return { appliedAt, id };
+}
+
+// Engagements and education are listed by end date, then start date, newest first. PostgreSQL's
+// `desc` puts NULLs first, which is the established order for both routes, so the keyset compares
+// the tuple with NULL folded to `infinity` (where `desc` sorts it) and `id` breaks remaining ties.
+function dateDescNullsFirstKeyset(cursor: {
+  endDate: string | null;
+  startDate: string | null;
+  id: string;
+}) {
+  return sql<boolean>`(coalesce("end_date", 'infinity'::date), coalesce("start_date", 'infinity'::date), "id")
+    < (coalesce(${cursor.endDate}::date, 'infinity'::date), coalesce(${cursor.startDate}::date, 'infinity'::date), ${cursor.id}::uuid)`;
 }
 
 export type CareerTimelineRecord = {
@@ -183,11 +208,32 @@ export const CareerRepository = {
     return deleted !== undefined;
   },
 
+  /** The unpaged list used by the career app's server loaders and the MCP delete previews. */
   async listEngagements(
     handle: DbHandle,
     ownerUserId: string,
     opts?: { type?: 'all' | 'employment'; limit?: number },
   ): Promise<CareerEngagementRecord[]> {
+    const page = await this.listEngagementsPage(handle, ownerUserId, opts);
+    return page.items;
+  },
+
+  // Ordered by end date then start date, newest first, with `id` as the unique tiebreaker.
+  async listEngagementsPage(
+    handle: DbHandle,
+    ownerUserId: string,
+    opts?: { type?: 'all' | 'employment'; limit?: number; cursor?: string },
+  ): Promise<CareerPage<CareerEngagementRecord>> {
+    const limit = opts?.limit ?? CAREER_PAGE_DEFAULT_LIMIT;
+    const filter = `type=${opts?.type ?? 'all'}`;
+    const cursor = opts?.cursor
+      ? decodeCareerCursor(opts.cursor, {
+          route: 'career.engagements',
+          filter,
+          keys: ['nullableDate', 'nullableDate', 'uuid'],
+        })
+      : null;
+
     let query = handle
       .selectFrom('app.careerEngagements')
       .selectAll()
@@ -197,11 +243,21 @@ export const CareerRepository = {
       query = query.where('kind', '=', 'EMPLOYMENT');
     }
 
-    return query
+    if (cursor) {
+      const [endDate, startDate, id] = cursor;
+      query = query.where(dateDescNullsFirstKeyset({ endDate, startDate, id }));
+    }
+
+    const rows = await query
       .orderBy('endDate', 'desc')
       .orderBy('startDate', 'desc')
-      .limit(opts?.limit ?? 20)
+      .orderBy('id', 'desc')
+      .limit(limit + 1)
       .execute();
+
+    return toCareerPage(rows, limit, (last) =>
+      encodeCareerCursor('career.engagements', filter, [last.endDate, last.startDate, last.id]),
+    );
   },
 
   async getEngagementById(
@@ -259,19 +315,66 @@ export const CareerRepository = {
     return deleted !== undefined;
   },
 
+  /** The unpaged list used by the career app's server loaders. */
   async listEducation(
     handle: DbHandle,
     ownerUserId: string,
     limit?: number,
   ): Promise<CareerEducationRecord[]> {
-    return handle
+    const page = await this.listEducationPage(handle, ownerUserId, { limit: limit ?? 10 });
+    return page.items;
+  },
+
+  // Ordered by end date then start date, newest first, with `id` as the unique tiebreaker.
+  async listEducationPage(
+    handle: DbHandle,
+    ownerUserId: string,
+    opts?: { limit?: number; cursor?: string },
+  ): Promise<CareerPage<CareerEducationRecord>> {
+    const limit = opts?.limit ?? CAREER_PAGE_DEFAULT_LIMIT;
+    const filter = '';
+    const cursor = opts?.cursor
+      ? decodeCareerCursor(opts.cursor, {
+          route: 'career.education',
+          filter,
+          keys: ['nullableDate', 'nullableDate', 'uuid'],
+        })
+      : null;
+
+    let query = handle
       .selectFrom('app.careerEducation')
       .selectAll()
-      .where('ownerUserid', '=', ownerUserId)
+      .where('ownerUserid', '=', ownerUserId);
+
+    if (cursor) {
+      const [endDate, startDate, id] = cursor;
+      query = query.where(dateDescNullsFirstKeyset({ endDate, startDate, id }));
+    }
+
+    const rows = await query
       .orderBy('endDate', 'desc')
       .orderBy('startDate', 'desc')
-      .limit(limit ?? 10)
+      .orderBy('id', 'desc')
+      .limit(limit + 1)
       .execute();
+
+    return toCareerPage(rows, limit, (last) =>
+      encodeCareerCursor('career.education', filter, [last.endDate, last.startDate, last.id]),
+    );
+  },
+
+  async getEducationById(
+    handle: DbHandle,
+    ownerUserId: string,
+    id: string,
+  ): Promise<CareerEducationRecord | null> {
+    const row = await handle
+      .selectFrom('app.careerEducation')
+      .selectAll()
+      .where('id', '=', id)
+      .where('ownerUserid', '=', ownerUserId)
+      .executeTakeFirst();
+    return row ?? null;
   },
 
   async createEducation(
@@ -316,10 +419,16 @@ export const CareerRepository = {
   async listApplications(
     handle: DbHandle,
     ownerUserId: string,
-    opts?: { status?: AppCareerApplications['status']; limit?: number; before?: string },
+    opts?: {
+      status?: AppCareerApplications['status'];
+      limit?: number;
+      before?: string;
+      /** Tags cursors for a surface other than the applications list itself (the wishlist). */
+      route?: string;
+    },
   ): Promise<CareerApplicationsPage> {
     const limit = opts?.limit ?? 20;
-    const cursor = opts?.before ? decodeCareerApplicationsCursor(opts.before) : null;
+    const cursor = opts?.before ? decodeCareerApplicationsCursor(opts.before, opts.route) : null;
 
     let query = handle
       .selectFrom('app.careerApplications as application')
@@ -365,7 +474,10 @@ export const CareerRepository = {
       items: page,
       next:
         rows.length > limit && last
-          ? encodeCareerApplicationsCursor({ appliedAt: last.appliedAt ?? null, id: last.id })
+          ? encodeCareerApplicationsCursor(
+              { appliedAt: last.appliedAt ?? null, id: last.id },
+              opts?.route,
+            )
           : null,
     };
   },

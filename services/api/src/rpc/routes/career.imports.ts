@@ -15,6 +15,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { careerImportsQuerySchema } from '../../schemas/career.schema';
 import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 
@@ -47,9 +48,11 @@ function toCareerImportDto(record: Awaited<ReturnType<typeof CareerImportReposit
 
 export const careerImportsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
-  .get('/', async (c) => {
-    const imports = await CareerImportRepository.listOpen(db, c.get('auth')!.userId);
-    return c.json({ imports: imports.map(toCareerImportDto) });
+  .get('/', zValidator('query', careerImportsQuerySchema), async (c) => {
+    const userId = c.get('auth')!.userId;
+    const { limit, cursor } = c.req.valid('query');
+    const page = await CareerImportRepository.listOpenPage(db, userId, { limit, cursor });
+    return c.json({ imports: page.items.map(toCareerImportDto), nextCursor: page.next });
   })
   .get('/:id', async (c) => {
     const record = await CareerImportRepository.getById(
