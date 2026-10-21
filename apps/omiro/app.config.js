@@ -28,7 +28,9 @@ const PRODUCTION_APP_CONFIG = Object.freeze({
   icon: './assets/icon.png',
 });
 
-const SPLASH_IMAGE = './assets/omiro-splash.png';
+// The mascot on its own. `imageWidth` must match LAUNCH_MASCOT_WIDTH in components/auth/brand-layout.ts
+// so the in-app launch overlay continues the native splash without a visible jump.
+const SPLASH_IMAGE = './assets/images/omiro-auth-mascot.png';
 
 // EAS sets EAS_BUILD_PROFILE on the builder, and unlike APP_ENV it can't get
 // shadowed by a stray local .env file (we got bit once by a "production"
@@ -123,7 +125,7 @@ function createConfig({ config }) {
       {
         image: SPLASH_IMAGE,
         enableFullScreenImage_legacy: false,
-        imageWidth: 260,
+        imageWidth: 150,
         backgroundColor: '#F5F3FF',
         resizeMode: 'contain',
         dark: { backgroundColor: '#0E0C1A' },

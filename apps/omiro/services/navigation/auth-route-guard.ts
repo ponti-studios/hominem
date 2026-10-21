@@ -4,13 +4,15 @@ interface ResolveAuthRedirectInput {
   isPending: boolean;
   isSignedIn: boolean;
   isSigningOut: boolean;
+  // True while the login screen is finishing its success animation.
+  isHoldingSignIn?: boolean;
   segments: string[];
 }
 
 type AuthRedirectTarget = '/(auth)' | typeof HOME_ROUTE;
 
 export function resolveAuthRedirect(input: ResolveAuthRedirectInput): AuthRedirectTarget | null {
-  if (input.isPending || input.isSigningOut) {
+  if (input.isPending || input.isSigningOut || input.isHoldingSignIn) {
     return null;
   }
 

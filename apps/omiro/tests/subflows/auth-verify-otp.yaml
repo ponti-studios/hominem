@@ -1,7 +1,8 @@
 appId: com.pontistudios.hakumi.dev
 ---
 # Phase 2 of the two-phase E2E login (see maestro-auth.sh wrapper).
-# Types the OTP captured from the scripted mailbox and completes sign-in.
+# Types the OTP captured from the scripted mailbox and completes sign-in (the login screen's code
+# step submits on the sixth digit).
 # Expects the app to already be on the OTP screen (phase 1 ran first and the
 # app was NOT relaunched since — relaunching is fine, re-sending is not: a
 # fresh send invalidates the code phase 1 captured).
@@ -16,10 +17,13 @@ appId: com.pontistudios.hakumi.dev
 - inputText:
     text: ${OTP}
     label: Enter the one-time code from the scripted mailbox
-- tapOn:
-    id: auth-verify-otp
-- waitForAnimationToEnd:
-    timeout: 5000
+# The sixth digit submits the code by itself (there is no verify button), then the screen plays a
+# ~1.2s success moment before the inbox appears.
+- extendedWaitUntil:
+    visible:
+      id: inbox-composer-input
+    optional: true
+    timeout: 10000
 # The simulator's iCloud account can re-prompt its "Apple Account
 # Verification" alert during/after sign-in (a keychain write on session
 # creation triggers it). Dismiss before the inbox assertion so it can't

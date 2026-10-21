@@ -13,7 +13,7 @@ import {
   useSegments,
 } from 'expo-router';
 import { PostHogProvider } from 'posthog-react-native';
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -25,10 +25,12 @@ import {
 
 import { logError } from '~/components/error-boundary/log-error';
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
+import { LaunchOverlay } from '~/components/launch/LaunchOverlay';
 import { darkTheme, lightTheme, useAppTheme } from '~/components/theme';
 import { E2E_TESTING } from '~/constants';
 import { useScreenCapture } from '~/hooks/use-screen-capture';
 import { AuthProvider, useAuth } from '~/services/auth/auth-provider';
+import { useSignInHold } from '~/services/auth/sign-in-hold';
 import { resolveAuthRedirect } from '~/services/navigation/auth-route-guard';
 import { consumeRestoreAttempt, consumeResumeTarget } from '~/services/navigation/launch-state';
 import { getContentRoute } from '~/services/navigation/routes';
@@ -53,29 +55,32 @@ function InnerRootLayout() {
   const { isPending, isSignedIn, isSigningOut, currentUser, resetAuthForE2E, signOut } = useAuth();
   const isRestoring = useIsRestoring();
   const lastRedirectSignatureRef = React.useRef<string | null>(null);
-  useEffect(() => {
-    let hasHidden = false;
-    const hide = () => {
-      if (hasHidden) {
-        return;
-      }
-      hasHidden = true;
-      SplashScreen.hideAsync().catch((error) =>
-        logger.warn('[RootLayout] hideAsync failed', { error }),
-      );
-    };
-
-    // Wait for boot to resolve (auth) vs (protected) before hiding the splash,
-    // or we'll flash the wrong screen. Timeout is just a safety net in case
-    // boot never settles.
-    if (!isPending && !isRestoring) {
-      hide();
+  const isHoldingSignIn = useSignInHold();
+  const hasHiddenSplashRef = useRef(false);
+  const hideSplash = useCallback(() => {
+    if (hasHiddenSplashRef.current) {
       return;
     }
+    hasHiddenSplashRef.current = true;
+    SplashScreen.hideAsync().catch((error) =>
+      logger.warn('[RootLayout] hideAsync failed', { error }),
+    );
+  }, []);
+  const isSettled = !isPending && !isRestoring;
 
-    const timeout = setTimeout(hide, 3000);
+  // The launch overlay hides the native splash once its mascot is on screen (it shows the same frame).
+  // This timeout is only a safety net in case that never happens; E2E runs have no overlay, so they
+  // hide the splash as soon as boot settles.
+  useEffect(() => {
+    const timeout = setTimeout(hideSplash, 3000);
     return () => clearTimeout(timeout);
-  }, [isPending, isRestoring]);
+  }, [hideSplash]);
+
+  useEffect(() => {
+    if (E2E_TESTING && isSettled) {
+      hideSplash();
+    }
+  }, [hideSplash, isSettled]);
 
   useEffect(() => {
     if (isSignedIn && currentUser?.id) {
@@ -90,6 +95,7 @@ function InnerRootLayout() {
       isPending: isPending || isRestoring,
       isSignedIn,
       isSigningOut,
+      isHoldingSignIn,
       segments,
     });
     if (!target) {
@@ -104,7 +110,16 @@ function InnerRootLayout() {
 
     lastRedirectSignatureRef.current = redirectSignature;
     router.replace(target);
-  }, [isPending, isRestoring, isSignedIn, isSigningOut, router, segmentKey, segments]);
+  }, [
+    isHoldingSignIn,
+    isPending,
+    isRestoring,
+    isSignedIn,
+    isSigningOut,
+    router,
+    segmentKey,
+    segments,
+  ]);
 
   useEffect(() => {
     if (isPending || isRestoring || !isSignedIn || !currentUser?.id) {
@@ -136,6 +151,13 @@ function InnerRootLayout() {
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         </Stack>
       </SafeAreaView>
+      {E2E_TESTING ? null : (
+        <LaunchOverlay
+          destination={isSignedIn ? 'app' : 'login'}
+          onShown={hideSplash}
+          settled={isSettled}
+        />
+      )}
       {E2E_TESTING ? (
         <>
           {isPending ? <View testID="auth-state-booting" style={styles.e2eIndicator} /> : null}
