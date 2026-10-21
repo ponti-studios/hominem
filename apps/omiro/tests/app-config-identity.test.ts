@@ -98,6 +98,7 @@ describe('launch splash', () => {
   // size; otherwise it visibly jumps when the native splash goes away.
   it('draws the mascot at the width the launch overlay expects', async () => {
     const { LAUNCH_MASCOT_WIDTH } = await import('~/components/auth/brand-layout');
+    process.env.APP_ENV = 'development';
     const config = createConfig({ config: {} });
     const splash = config.plugins.find(
       (plugin: unknown) => Array.isArray(plugin) && plugin[0] === 'expo-splash-screen',
