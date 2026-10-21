@@ -3,7 +3,7 @@ title: 'Shrink Omiro chat lifecycle hooks to shared ChatClient reducer (F5-omiro
 status: 'Proposed'
 priority: 'medium'
 labels: [chat, cleanup, omiro, refactor]
-depends_on: [web-chat-lifecycle-consolidation.md]
+depends_on: []
 blocks: []
 estimated_size: 'L'
 ---

@@ -10,7 +10,6 @@ depends_on:
     chat-generation-tool-args.md,
     chat-generation-effect-store.md,
     chat-generation-commit-extraction.md,
-    web-chat-lifecycle-consolidation.md,
     omiro-chat-lifecycle-consolidation.md,
   ]
 blocks: []
