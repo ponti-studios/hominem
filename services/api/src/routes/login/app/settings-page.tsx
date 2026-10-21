@@ -18,6 +18,15 @@ type McpToken = {
   revokedAt: string | null;
 };
 
+type OAuthClient = {
+  clientId: string;
+  name: string | null;
+  uri: string | null;
+  icon: string | null;
+  scopes: string[];
+  authorizedAt: string;
+};
+
 type MonthlyUsage = {
   isOverLimit: boolean;
   limitUsd: number;
@@ -63,6 +72,15 @@ function usedLabel(lastUsedAt: string | null, now = Date.now()): string {
   const days = Math.floor((now - new Date(lastUsedAt).getTime()) / 86_400_000);
   if (days <= 0) return 'used today';
   return days === 1 ? 'used yesterday' : `used ${days} days ago`;
+}
+
+function clientLabel(client: OAuthClient): string {
+  if (client.name) return client.name;
+  try {
+    return new URL(client.clientId).host;
+  } catch {
+    return client.clientId;
+  }
 }
 
 function getInitials(name: string, fallback: string): string {
@@ -194,6 +212,7 @@ export function SettingsPage({
   const [copyLabel, setCopyLabel] = useState('Copy');
   const [createOpen, setCreateOpen] = useState(false);
   const [revokeAsk, setRevokeAsk] = useState<string | null>(null);
+  const [clientRevokeAsk, setClientRevokeAsk] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -216,6 +235,11 @@ export function SettingsPage({
   const tokensQuery = useQuery({
     queryKey: ['mcp-tokens'],
     queryFn: () => apiFetch<{ tokens: McpToken[] }>('/auth/settings/mcp-tokens'),
+  });
+
+  const clientsQuery = useQuery({
+    queryKey: ['oauth-clients'],
+    queryFn: () => apiFetch<{ clients: OAuthClient[] }>('/auth/settings/oauth-clients'),
   });
 
   // A raw token value must never survive navigation — clear the reveal on
@@ -296,6 +320,23 @@ export function SettingsPage({
     },
   });
 
+  const revokeClient = useMutation({
+    mutationFn: (clientId: string) =>
+      apiFetch<{ revoked: boolean }>('/auth/settings/oauth-clients/revoke', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ clientId }),
+      }),
+    onSuccess: () => {
+      setClientRevokeAsk(null);
+      void queryClient.invalidateQueries({ queryKey: ['oauth-clients'] });
+    },
+    onError: (error: Error) => {
+      setClientRevokeAsk(null);
+      setTokenStatus({ message: error.message, error: true });
+    },
+  });
+
   const handleCopy = async () => {
     if (!revealedToken) return;
     let copied = false;
@@ -338,7 +379,9 @@ export function SettingsPage({
     );
   }
 
-  const tokenCount = tokensQuery.data?.tokens.filter((token) => !token.revokedAt).length ?? 0;
+  const tokenCount =
+    (tokensQuery.data?.tokens.filter((token) => !token.revokedAt).length ?? 0) +
+    (clientsQuery.data?.clients.length ?? 0);
   const creditValue = creditPence === null ? '' : formatPounds(creditPence);
   const rows: { icon: SheetName; label: string; value: string }[] = [
     { icon: 'profile', label: 'Profile', value: name || email },
@@ -478,6 +521,46 @@ export function SettingsPage({
     ),
     tokens: (
       <>
+        {clientsQuery.data?.clients.length ? (
+          <section className={`${styles.section} w-full`}>
+            <p className={styles.sectionLabel}>Connected apps</p>
+            <p className={styles.mcpCopy}>
+              Apps you signed in to with Hominem. Revoking cuts off access right away; an app may
+              keep working for up to an hour on what it already has.
+            </p>
+            <ul className={styles.tokenList}>
+              {clientsQuery.data.clients.map((client) => (
+                <li className={styles.tokenItem} key={client.clientId}>
+                  <div className={styles.tokenIdentity}>
+                    <span className={styles.tokenName}>{clientLabel(client)}</span>
+                    <span className={styles.tokenMeta}>
+                      {client.scopes.length ? client.scopes.join(', ') : 'No scopes'} · connected{' '}
+                      {formatDay(client.authorizedAt)}
+                    </span>
+                  </div>
+                  {clientRevokeAsk === client.clientId ? (
+                    <button
+                      className={styles.tokenRevoke}
+                      disabled={revokeClient.isPending}
+                      onClick={() => revokeClient.mutate(client.clientId)}
+                      type="button"
+                    >
+                      Confirm
+                    </button>
+                  ) : (
+                    <button
+                      className={styles.tokenRevoke}
+                      onClick={() => setClientRevokeAsk(client.clientId)}
+                      type="button"
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         <section className={`${styles.section} w-full`}>
           <p className={styles.mcpCopy}>
             Let Muse, Claude or ChatGPT reach your data with a personal token. A token is shown

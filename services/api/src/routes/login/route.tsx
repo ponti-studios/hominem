@@ -12,6 +12,7 @@ import {
   listMcpTokens,
   revokeMcpToken,
 } from '../../application/mcp-tokens.service';
+import { listOAuthClients, revokeOAuthClient } from '../../application/oauth-clients.service';
 import { betterAuthServer } from '../../auth/better-auth';
 import { env } from '../../env';
 import {
@@ -21,6 +22,11 @@ import {
   revokeMcpTokenInputSchema,
   revokeMcpTokenOutputSchema,
 } from '../../schemas/mcp-tokens.schema';
+import {
+  listOAuthClientsOutputSchema,
+  revokeOAuthClientInputSchema,
+  revokeOAuthClientOutputSchema,
+} from '../../schemas/oauth-clients.schema';
 import type { AuthDependencies } from '../auth/shared';
 import { renderAuthShell } from './app-shell';
 import {
@@ -335,6 +341,24 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         id: parsed.data.id,
       });
       return c.json(revokeMcpTokenOutputSchema.parse(result));
+    })
+    .get('/auth/settings/oauth-clients', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      const clients = await listOAuthClients({ userId: session.user.id });
+      return c.json(listOAuthClientsOutputSchema.parse({ clients }));
+    })
+    // POST body, not a path param: client ids can be URLs (CIMD), which don't survive a path segment.
+    .post('/auth/settings/oauth-clients/revoke', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      if (!session?.user) return c.json({ error: 'unauthorized' }, 401);
+      const parsed = revokeOAuthClientInputSchema.safeParse(await c.req.json().catch(() => null));
+      if (!parsed.success) return c.json({ error: 'Invalid client id.' }, 400);
+      const result = await revokeOAuthClient({
+        userId: session.user.id,
+        clientId: parsed.data.clientId,
+      });
+      return c.json(revokeOAuthClientOutputSchema.parse(result));
     })
     .post('/auth/settings/profile', async (c) => {
       const form = await c.req.parseBody();
