@@ -14,6 +14,7 @@ import { logger } from '@hominem/telemetry';
 import { Worker, type Job } from 'bullmq';
 
 import { careerImportDraftSchema } from '../schemas/career.schema';
+import { getWorkerConcurrency } from './concurrency';
 
 let worker: Worker | null = null;
 const IMPORT_TIMEOUT_MS = 60_000;
@@ -169,7 +170,7 @@ export function startCareerJobImportWorker() {
   worker = new Worker<CareerImportQueuePayload>(
     QUEUE_NAMES.CAREER_JOB_IMPORT,
     (job) => processCareerImport(job),
-    { connection: redis },
+    { connection: redis, concurrency: getWorkerConcurrency(QUEUE_NAMES.CAREER_JOB_IMPORT) },
   );
 
   worker.on('failed', (job, error) => {

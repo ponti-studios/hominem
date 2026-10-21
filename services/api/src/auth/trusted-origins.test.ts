@@ -11,16 +11,13 @@ describe('getTrustedOrigins', () => {
       WEB_URL: 'https://web.example.test',
       LABS_URL: 'https://labs.example.test',
       LABS_APEX_URL: undefined,
-      WHAT_URL: 'https://what.example.test',
       NEWSBOY_URL: 'https://newsboy.example.test',
-      STILL_URL: 'https://still.example.test',
       ENV: undefined,
       NODE_ENV: 'test',
       MAESTRO_API_ORIGIN: undefined,
     });
 
     expect(origins).toContain('https://newsboy.example.test');
-    expect(origins).toContain('https://still.example.test');
   });
 
   it('deduplicates origins when multiple apps share an origin', () => {
@@ -31,9 +28,7 @@ describe('getTrustedOrigins', () => {
       WEB_URL: 'https://web.example.test',
       LABS_URL: 'https://labs.example.test',
       LABS_APEX_URL: undefined,
-      WHAT_URL: 'https://what.example.test',
       NEWSBOY_URL: 'https://career.example.test',
-      STILL_URL: 'https://still.example.test',
       ENV: undefined,
       NODE_ENV: 'test',
       MAESTRO_API_ORIGIN: undefined,
@@ -51,9 +46,7 @@ describe('getTrustedOrigins', () => {
       WEB_URL: 'https://web.example.test',
       LABS_URL: 'https://labs.example.test',
       LABS_APEX_URL: undefined,
-      WHAT_URL: 'https://what.example.test',
       NEWSBOY_URL: 'https://newsboy.example.test',
-      STILL_URL: 'https://still.example.test',
       MAESTRO_API_ORIGIN: origin,
     };
 

@@ -11,6 +11,7 @@ import { logger } from '@hominem/telemetry';
 import { Worker } from 'bullmq';
 
 import { recordAIUsageEvent, startAIUsageTimer } from '../application/ai-usage.service';
+import { getWorkerConcurrency } from './concurrency';
 
 const EMBEDDING_DIMENSIONS = 1536;
 
@@ -112,7 +113,10 @@ export function startEmbeddingGenerationWorker() {
   worker = new Worker<EmbeddingGenerationJob>(
     QUEUE_NAMES.EMBEDDING_GENERATION,
     async (job) => processEmbeddingJob(job.data),
-    { connection: cache },
+    {
+      connection: cache,
+      concurrency: getWorkerConcurrency(QUEUE_NAMES.EMBEDDING_GENERATION),
+    },
   );
 
   worker.on('failed', (job, error) => {

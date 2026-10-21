@@ -27,9 +27,21 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is required to initialize the database pool');
 }
 
+// Defaults match pg's own pool defaults (max 10, 10s idle timeout, no lifetime
+// cap), so leaving the env vars unset changes nothing. DB_MAX_LIFETIME is
+// expressed in milliseconds like DB_IDLE_TIMEOUT; pg expects seconds.
+const poolConfig = {
+  max: env.DB_MAX_CONNECTIONS ?? 10,
+  idleTimeoutMillis: env.DB_IDLE_TIMEOUT ?? 10_000,
+  maxLifetimeSeconds: env.DB_MAX_LIFETIME ? Math.max(1, Math.floor(env.DB_MAX_LIFETIME / 1000)) : 0,
+};
+
 export const pool = new Pool({
   connectionString,
+  ...poolConfig,
 });
+
+console.info(`[db] pool configured ${JSON.stringify(poolConfig)}`);
 
 export const db = new Kysely<Database>({
   dialect: new PostgresDialect({

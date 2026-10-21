@@ -9,9 +9,7 @@ type TrustedOriginEnv = Pick<
   | 'WEB_URL'
   | 'LABS_URL'
   | 'LABS_APEX_URL'
-  | 'WHAT_URL'
   | 'NEWSBOY_URL'
-  | 'STILL_URL'
   | 'ENV'
   | 'NODE_ENV'
   | 'MAESTRO_API_ORIGIN'
@@ -25,9 +23,7 @@ export function getTrustedOrigins(inputEnv: TrustedOriginEnv = env) {
     inputEnv.WEB_URL,
     inputEnv.LABS_URL,
     ...(inputEnv.LABS_APEX_URL ? [inputEnv.LABS_APEX_URL] : []),
-    inputEnv.WHAT_URL,
     inputEnv.NEWSBOY_URL,
-    inputEnv.STILL_URL,
     ...(inputEnv.ENV === 'scripted' &&
     inputEnv.NODE_ENV !== 'production' &&
     inputEnv.MAESTRO_API_ORIGIN

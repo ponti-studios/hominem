@@ -7,6 +7,7 @@ import { fileStorageService } from '@hominem/storage';
 import { logger } from '@hominem/telemetry';
 import { Worker } from 'bullmq';
 
+import { getWorkerConcurrency } from './concurrency';
 import { describeImageForChat, summarizeDocumentForChat } from './file-analysis';
 
 let worker: Worker | null = null;
@@ -83,6 +84,7 @@ export function startFileProcessingWorker() {
 
   worker = new Worker(QUEUE_NAMES.FILE_PROCESSING, async (job) => processFileUploadJob(job.data), {
     connection: cache,
+    concurrency: getWorkerConcurrency(QUEUE_NAMES.FILE_PROCESSING),
   });
 
   worker.on('failed', (job, error) => {

@@ -19,6 +19,10 @@
       "types": "./build/react/index.d.ts",
       "default": "./src/react/index.ts"
     },
+    "./server": {
+      "types": "./build/server.d.ts",
+      "default": "./src/server.ts"
+    },
     "./types": {
       "types": "./build/types/index.d.ts",
       "default": "./src/types/index.ts"
@@ -45,6 +49,7 @@
     "@hominem/chat": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "hono": "catalog:",
+    "undici": "^7.29.0",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -66,6 +66,23 @@ describe('customFetch (shared error-wrapping behavior)', () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it('aborts and rejects when a request exceeds its timeout', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (_input, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
+      });
+
+    try {
+      const wrappedFetch = customFetch({ baseUrl: 'http://test.local' });
+      await expect(wrappedFetch('http://test.local/anything', { timeoutMs: 10 })).rejects.toThrow(
+        'Request timed out after 10ms',
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
 
 describe('FinanceClient type', () => {

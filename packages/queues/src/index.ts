@@ -1,7 +1,7 @@
 import type { Queue } from 'bullmq';
 import { Queue as BullQueue } from 'bullmq';
 
-import { QUEUE_NAMES } from './consts';
+import { DEFAULT_JOB_OPTIONS, QUEUE_NAMES } from './consts';
 import { redis } from './redis';
 
 export * from './types';
@@ -9,42 +9,20 @@ export * from './service';
 export * from './consts';
 export { redis } from './redis';
 
-export const plaidSyncQueue: Queue = new BullQueue(QUEUE_NAMES.PLAID_SYNC, {
-  connection: redis,
-});
+function createQueue(name: string): Queue {
+  return new BullQueue(name, { connection: redis, defaultJobOptions: DEFAULT_JOB_OPTIONS });
+}
 
-export const placePhotoEnrichQueue: Queue = new BullQueue(QUEUE_NAMES.PLACE_PHOTO_ENRICH, {
-  connection: redis,
-});
+export const fileProcessingQueue = createQueue(QUEUE_NAMES.FILE_PROCESSING);
 
-export const fileProcessingQueue: Queue = new BullQueue(QUEUE_NAMES.FILE_PROCESSING, {
-  connection: redis,
-});
+export const embeddingQueue = createQueue(QUEUE_NAMES.EMBEDDING_GENERATION);
 
-export const embeddingQueue: Queue = new BullQueue(QUEUE_NAMES.EMBEDDING_GENERATION, {
-  connection: redis,
-});
+export const resumeAnalysisQueue = createQueue(QUEUE_NAMES.RESUME_ANALYSIS);
 
-export const resumeAnalysisQueue: Queue = new BullQueue(QUEUE_NAMES.RESUME_ANALYSIS, {
-  connection: redis,
-});
+export const careerJobImportQueue = createQueue(QUEUE_NAMES.CAREER_JOB_IMPORT);
 
-export const careerJobImportQueue: Queue = new BullQueue(QUEUE_NAMES.CAREER_JOB_IMPORT, {
-  connection: redis,
-});
+export const speechUsageReconciliationQueue = createQueue(QUEUE_NAMES.SPEECH_USAGE_RECONCILIATION);
 
-export const speechUsageReconciliationQueue: Queue = new BullQueue(
-  QUEUE_NAMES.SPEECH_USAGE_RECONCILIATION,
-  { connection: redis },
-);
+export const chatFileCleanupQueue = createQueue(QUEUE_NAMES.CHAT_FILE_CLEANUP);
 
-export const chatFileCleanupQueue: Queue = new BullQueue(QUEUE_NAMES.CHAT_FILE_CLEANUP, {
-  connection: redis,
-});
-
-export const chatGenerationEffectsQueue: Queue = new BullQueue(
-  QUEUE_NAMES.CHAT_GENERATION_EFFECTS,
-  {
-    connection: redis,
-  },
-);
+export const chatGenerationEffectsQueue = createQueue(QUEUE_NAMES.CHAT_GENERATION_EFFECTS);
