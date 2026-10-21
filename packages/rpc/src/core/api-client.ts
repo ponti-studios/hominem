@@ -1,15 +1,13 @@
 import type { AppType } from '@hominem/api/types';
 import { hc } from 'hono/client';
 
-const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;
-
 export interface ClientConfig {
   baseUrl: string;
   request?: Request;
   getHeaders?: () => HeadersInit | Promise<HeadersInit>;
   onError?: (error: Error) => void;
   throwOnError?: boolean;
-  /** Overall request timeout. Defaults to 10s; override per call with `init.timeoutMs`. */
+  /** Overall request timeout. Off by default (client calls like AI generation can run long); the server client sets one. Override per call with `init.timeoutMs`. */
   timeoutMs?: number;
 }
 
@@ -17,7 +15,7 @@ export type ApiFetchInit = RequestInit & { timeoutMs?: number };
 export type ApiFetch = (input: RequestInfo | URL, init?: ApiFetchInit) => Promise<Response>;
 type FetchImplementation = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
-function createRequestSignal(existing: AbortSignal | null | undefined, timeoutMs: number) {
+function createRequestSignal(existing: AbortSignal | null | undefined, timeoutMs?: number) {
   const controller = new AbortController();
   let timedOut = false;
 
@@ -28,16 +26,19 @@ function createRequestSignal(existing: AbortSignal | null | undefined, timeoutMs
     existing?.addEventListener('abort', onAbort, { once: true });
   }
 
-  const timer = setTimeout(() => {
-    timedOut = true;
-    controller.abort(new Error(`Request timed out after ${timeoutMs}ms`));
-  }, timeoutMs);
+  const timer =
+    timeoutMs === undefined
+      ? undefined
+      : setTimeout(() => {
+          timedOut = true;
+          controller.abort(new Error(`Request timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
 
   return {
     signal: controller.signal,
     didTimeOut: () => timedOut,
     cleanup: () => {
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       existing?.removeEventListener('abort', onAbort);
     },
   };
@@ -48,7 +49,7 @@ export function createCustomFetch(
   fetchImpl: FetchImplementation = fetch,
   dispatcher?: unknown,
 ): ApiFetch {
-  const defaultTimeoutMs = config.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+  const defaultTimeoutMs = config.timeoutMs;
 
   return async (input, init) => {
     const headers = new Headers(init?.headers);

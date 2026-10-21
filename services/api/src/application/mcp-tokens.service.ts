@@ -172,11 +172,20 @@ export async function resolveMcpToken(rawToken: string): Promise<{
   const resolved = { ownerUserId: row.ownerUserid, scopes: row.scopes ?? [] };
   await writeCachedToken(tokenHash, resolved);
 
-  await db
+  const touched = await db
     .updateTable('app.mcpTokens')
     .set({ lastUsedAt: sql`now()` })
     .where('tokenHash', '=', tokenHash)
-    .execute();
+    .where('revokedAt', 'is', null)
+    .returning('id')
+    .executeTakeFirst();
+
+  // Revocation can land between the lookup above and the cache write. This
+  // post-write check sees it and clears the entry we just wrote.
+  if (!touched) {
+    await invalidateCachedToken(tokenHash);
+    return null;
+  }
 
   return resolved;
 }

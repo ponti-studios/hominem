@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { db, pool } from '@hominem/db/core';
 import { NotFoundError } from '@hominem/db/errors';
 import { redis } from '@hominem/services/redis';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
   MCP_TOKEN_PREFIX,
@@ -135,5 +135,27 @@ describe('mcp-tokens service', () => {
     await revokeMcpToken({ ownerUserId: ownerId, id: created.id });
 
     await expect(resolveMcpToken(created.token)).resolves.toBeNull();
+  });
+
+  it('does not leave a revoked token cached when revocation races the cache write', async () => {
+    const created = await createMcpToken({ ownerUserId: ownerId, name: 'Racer' });
+    const cacheKey = `mcp:token:${createHash('sha256').update(created.token).digest('hex')}`;
+    const realSet = redis.set.bind(redis);
+    const spy = vi.spyOn(redis, 'set').mockImplementationOnce(async (...args) => {
+      // Revocation lands after the DB lookup but before the cache write.
+      await db
+        .updateTable('app.mcpTokens')
+        .set({ revokedAt: new Date() })
+        .where('id', '=', created.id)
+        .execute();
+      return realSet(...args);
+    });
+
+    try {
+      await expect(resolveMcpToken(created.token)).resolves.toBeNull();
+      expect(await redis.get(cacheKey)).toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
