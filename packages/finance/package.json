@@ -27,7 +27,7 @@
   "dependencies": {
     "@hominem/db": "workspace:*",
     "@hominem/utils": "workspace:*",
-    "csv-parse": "^7.0.2",
+    "csv-parse": "^7.0.3",
     "kysely": "catalog:",
     "zod": "catalog:"
   },

@@ -1,5 +1,4 @@
 import { logger } from '@hominem/telemetry';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import QRCode from 'qrcode';
 import { z } from 'zod';
@@ -11,6 +10,7 @@ import { env } from '../../env';
 import { getClientIp } from '../../middleware/client-ip';
 import { getRedis } from '../../redis';
 import type { AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 async function withinLimit(key: string, max: number, windowSec: number) {
   try {

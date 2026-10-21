@@ -1,9 +1,9 @@
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import { getCareerSocialLinks, saveCareerSocialLinks } from '../../application/career.service';
 import { careerSocialLinksSaveSchema } from '../../schemas/career.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 export const careerSocialLinksRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)

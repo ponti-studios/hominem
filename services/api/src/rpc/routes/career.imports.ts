@@ -11,13 +11,13 @@ import {
   type CareerImportQueuePayload,
 } from '@hominem/queues';
 import { logger } from '@hominem/telemetry';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { careerImportsQuerySchema } from '../../schemas/career.schema';
 import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 const retryableImportErrors = new Set([
   'SOURCE_UNAVAILABLE',

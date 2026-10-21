@@ -1,12 +1,12 @@
 import { randomUUID } from 'crypto';
 
 import { db } from '@hominem/db/core';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { authMiddleware } from '../middleware/auth';
 import type { AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 const createInstitutionSchema = z.object({
   id: z.string().optional(),

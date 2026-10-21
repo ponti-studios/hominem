@@ -1,12 +1,12 @@
 import { ChatRepository } from '@hominem/db/chats';
 import { db } from '@hominem/db/core';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import { ChatsCreateSchema, ChatsListQuerySchema } from '../../schemas/chats.schema';
 import type { AppContext } from '../middleware/auth';
 import { authMiddleware } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
+import { zValidator } from '../validator';
 import { chatResourceRoutes } from './chats.$chatId';
 import { chatGenerationRoutes, chatStartGenerationRoute } from './chats.$chatId.generation';
 import { chatMessageRoutes } from './chats.$chatId.message';

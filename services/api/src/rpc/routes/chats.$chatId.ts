@@ -1,11 +1,11 @@
 import { ChatRepository } from '@hominem/db/chats';
 import { db } from '@hominem/db/core';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import { ChatsUpdateSchema } from '../../schemas/chats.schema';
 import { NotFoundError } from '../errors';
 import type { AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 import { toChatDto, toChatMessageDto } from './chats.mapper';
 import { getChatId } from './chats.route-helpers';
 

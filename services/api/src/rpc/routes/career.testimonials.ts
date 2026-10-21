@@ -1,4 +1,3 @@
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import {
@@ -14,6 +13,7 @@ import {
 } from '../../schemas/career.schema';
 import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 export const careerTestimonialsRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)

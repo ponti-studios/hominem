@@ -2,7 +2,6 @@ import { ChatRepository } from '@hominem/db/chats';
 import { db } from '@hominem/db/core';
 import { runInTransaction } from '@hominem/db/transaction';
 import { chatFileCleanupQueue } from '@hominem/queues';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import {
@@ -18,6 +17,7 @@ import {
 import { NotFoundError, UnavailableError } from '../errors';
 import type { AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
+import { zValidator } from '../validator';
 import { toChatMessageDto } from './chats.mapper';
 import { getChatId, getMessageId } from './chats.route-helpers';
 

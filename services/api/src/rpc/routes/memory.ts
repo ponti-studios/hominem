@@ -2,7 +2,6 @@ import { db } from '@hominem/db/core';
 import { NotFoundError } from '@hominem/db/errors';
 import { NoteRepository } from '@hominem/db/notes';
 import { VectorDocumentRepository } from '@hominem/db/vector';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import {
@@ -18,6 +17,7 @@ import {
   UpdateMemoryInputSchema,
 } from '../../schemas/memory.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 // Memories are just notes with kind = 'memory' — see mcp/tools/memory.ts
 // for the AI-facing surface over these same rows.

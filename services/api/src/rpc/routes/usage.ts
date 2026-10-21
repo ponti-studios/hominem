@@ -1,4 +1,3 @@
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -11,6 +10,7 @@ import {
 import { getSpeechUsageHealth } from '../../application/speech-usage.service';
 import { ForbiddenError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 const usageTimeseriesSchema = z
   .object({

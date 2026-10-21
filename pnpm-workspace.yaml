@@ -4,39 +4,39 @@ packages:
   - 'packages/*'
 
 catalog:
-  '@base-ui/react': 1.6.0
-  '@tanstack/react-query': 5.101.4
-  '@testing-library/jest-dom': 7.0.0
+  '@base-ui/react': 1.9.0
+  '@tanstack/react-query': 5.104.5
+  '@testing-library/jest-dom': 7.0.1
   '@types/node': 25.4.0
   dotenv: 17.4.2
-  '@react-router/dev': 8.3.0
-  '@react-router/node': 8.3.0
-  '@react-router/serve': 8.3.0
-  better-auth: 1.7.1
-  bullmq: 6.0.8
+  '@react-router/dev': 8.5.0
+  '@react-router/node': 8.5.0
+  '@react-router/serve': 8.5.0
+  better-auth: 1.7.12
+  bullmq: 6.3.19
   clsx: 2.1.1
-  hono: 4.13.12
+  hono: 4.13.13
   ioredis: 6.0.0
   jiti: 2.7.0
-  kysely: 0.29.5
-  lucide-react: 1.28.0
-  pdf2json: 4.0.3
-  pg: 8.23.0
+  kysely: 0.29.7
+  lucide-react: 1.60.0
+  pdf2json: 4.1.0
+  pg: 8.23.1
   react: 19.2.8
   react-dom: 19.2.8
-  react-router: 8.3.0
-  resend: 6.12.4
+  react-router: 8.5.0
+  resend: 6.34.1
   '@types/react': 19.2.18
   '@types/react-dom': 19.2.4
-  '@ponti-studios/ui': 1.7.0
+  '@ponti-studios/ui': 1.8.0
   typescript: 6.0.3
-  vite: 8.3.1
-  vitest: 4.1.11
-  zod: 4.4.3
+  vite: 8.3.4
+  vitest: 5.0.5
+  zod: 4.6.7
 
 overrides:
-  '@better-auth/core': 1.7.1
-  '@hono/zod-validator': 0.7.6
+  '@better-auth/core': 1.7.12
+  '@hono/zod-validator': 0.9.1
   '@opentelemetry/api': 1.8.0
   fast-uri: '>=3.1.5'
   ua-parser-js: 1.0.39
@@ -59,7 +59,7 @@ overrides:
   '@types/react-dom': 'catalog:'
   react-markdown: '^10.1.0'
   react-syntax-highlighter: '^16.1.0'
-  tailwind-merge: '^3.2.0'
+  tailwind-merge: '^3.7.0'
 
 engineStrict: true
 pmOnFail: error

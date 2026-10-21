@@ -47,7 +47,7 @@
     "@hominem/utils": "workspace:*",
     "dotenv": "catalog:",
     "ioredis": "catalog:",
-    "mammoth": "^1.9.1",
+    "mammoth": "^1.13.0",
     "pdf2json": "catalog:",
     "resend": "catalog:",
     "zod": "catalog:"

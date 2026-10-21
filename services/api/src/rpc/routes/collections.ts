@@ -1,4 +1,3 @@
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -45,6 +44,7 @@ import {
 } from '../../schemas/collections.schema';
 import { entityTypeSchema } from '../../schemas/tags.schema';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 const collectionParamSchema = z.object({ collectionId: z.string().uuid() });
 const memberParamSchema = collectionParamSchema.extend({ memberId: z.string().uuid() });

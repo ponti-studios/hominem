@@ -2,7 +2,6 @@ import { randomUUID } from 'crypto';
 
 import { db } from '@hominem/db/core';
 import { getFinanceAccountList } from '@hominem/finance-services';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
@@ -10,6 +9,7 @@ import { financeAccountsOutputSchema } from '../../schemas/finance.schema';
 import { NotFoundError } from '../errors';
 import type { AppContext } from '../middleware/auth';
 import { authMiddleware } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 const accountListSchema = z.object({
   includeInactive: z.coerce.boolean().optional().default(false),

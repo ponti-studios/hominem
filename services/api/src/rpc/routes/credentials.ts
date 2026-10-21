@@ -1,5 +1,4 @@
 import { logger } from '@hominem/telemetry';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { z } from 'zod';
@@ -20,6 +19,7 @@ import {
 import { dbCredentialStore } from '../../application/provider-credentials.store';
 import { env } from '../../env';
 import { authMiddleware, type AppContext } from '../middleware/auth';
+import { zValidator } from '../validator';
 
 const deviceIdSchema = z.string().min(8).max(128);
 
