@@ -26,6 +26,8 @@ import { documentStorageService } from '@hominem/storage';
 import { logger } from '@hominem/telemetry';
 import { Worker } from 'bullmq';
 
+import { getWorkerConcurrency } from './concurrency';
+
 const MAX_EXTRACTED_RESUME_TEXT_LENGTH = 80_000;
 
 let worker: Worker | null = null;
@@ -151,7 +153,7 @@ export function startResumeAnalysisWorker() {
   worker = new Worker<ResumeAnalysisQueuePayload>(
     QUEUE_NAMES.RESUME_ANALYSIS,
     async (job) => processResumeAnalysisJob(job.data),
-    { connection: cache },
+    { connection: cache, concurrency: getWorkerConcurrency(QUEUE_NAMES.RESUME_ANALYSIS) },
   );
 
   worker.on('failed', (job, error) => {

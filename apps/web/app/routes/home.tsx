@@ -1,9 +1,9 @@
-import { createApiClient } from '@hominem/rpc';
 import type { ChatsListOutput } from '@hominem/rpc/types/chat.types';
 import { useState } from 'react';
 import { data, redirect, useNavigate } from 'react-router';
 
 import { ChatHomePage } from '~/components/chat/chat-home-page';
+import { createApiClient } from '~/lib/api.server';
 import { normalizeChatTitle } from '~/lib/chat/chat-title';
 import { serverEnv } from '~/lib/env.server';
 import { useOnlineStatus } from '~/lib/hooks/use-online-status';

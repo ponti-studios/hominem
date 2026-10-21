@@ -8,6 +8,7 @@ import { logger } from '@hominem/telemetry';
 import { Worker } from 'bullmq';
 
 import { processReadyChatGenerationEffects } from '../application/chat-generation-effects.service';
+import { getWorkerConcurrency } from './concurrency';
 
 let worker: Worker<ChatGenerationEffectsQueuePayload> | null = null;
 
@@ -39,7 +40,10 @@ export async function startChatGenerationEffectsWorker() {
         logger.info('chat_generation_effect_batch_completed', result);
       }
     },
-    { connection: redis, concurrency: 1 },
+    {
+      connection: redis,
+      concurrency: getWorkerConcurrency(QUEUE_NAMES.CHAT_GENERATION_EFFECTS),
+    },
   );
 
   worker.on('failed', (_job, error) => {

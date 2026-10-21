@@ -18,6 +18,9 @@ export async function checkRateLimit(key: string): Promise<boolean> {
 
   await redis.zadd(key, now, now.toString());
   await redis.zremrangebyscore(key, 0, windowStart);
+  // Keep the key alive only for the window it represents; without this the
+  // sorted set (and its key) survives forever even after it stops pruning.
+  await redis.pexpire(key, TIME_UNITS.MINUTE + TIME_UNITS.SECOND);
 
   const requestCount = await redis.zcard(key);
   return requestCount <= MAX_REQUESTS;

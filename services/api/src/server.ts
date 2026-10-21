@@ -1,8 +1,8 @@
 import { logger, recordTelemetryException } from '@hominem/telemetry';
 import { Scalar } from '@scalar/hono-api-reference';
 import { Hono, type MiddlewareHandler } from 'hono';
+import { compress } from 'hono/compress';
 import { cors } from 'hono/cors';
-import { prettyJSON } from 'hono/pretty-json';
 import { routePath } from 'hono/route';
 
 import { betterAuthServer, createBetterAuthServer } from './auth/better-auth';
@@ -40,8 +40,6 @@ function createAllowedOrigins(inputEnv = env) {
     inputEnv.WEB_URL,
     inputEnv.FINANCE_URL,
     inputEnv.CAREER_URL,
-    inputEnv.WHAT_URL,
-    inputEnv.STILL_URL,
     ...(inputEnv.THAMES_SITE_URL ? [new URL(inputEnv.THAMES_SITE_URL).origin] : []),
     ...CHATGPT_ORIGINS,
   ]);
@@ -95,7 +93,7 @@ function registerBaseMiddleware(app: Hono<AppEnv>, dependencies: ServerDependenc
   app.use('*', requestIdMiddleware);
   app.use('*', blockMaliciousProbes());
   app.use('*', requestLogger());
-  app.use('*', prettyJSON());
+  app.use('*', compress());
   app.use('*', createCorsMiddleware(dependencies.env));
   app.use('*', securityHeadersMiddleware(dependencies.env));
   app.use('*', createAuthMiddleware(dependencies.auth));

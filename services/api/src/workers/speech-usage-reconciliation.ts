@@ -11,6 +11,7 @@ import { SpanStatusCode } from '@opentelemetry/api';
 import { Worker } from 'bullmq';
 
 import { reconcileSpeechUsage } from '../application/speech-usage.service';
+import { getWorkerConcurrency } from './concurrency';
 
 let worker: Worker | null = null;
 const reconciliationTracer = getTelemetryTracer('hominem.worker');
@@ -60,7 +61,10 @@ export function startSpeechUsageReconciliationWorker() {
         span.end();
       }
     },
-    { connection: cache },
+    {
+      connection: cache,
+      concurrency: getWorkerConcurrency(QUEUE_NAMES.SPEECH_USAGE_RECONCILIATION),
+    },
   );
 
   worker.on('failed', (_job, error) => {

@@ -52,12 +52,10 @@ describe('dbCreditStore', () => {
   });
 
   it('stops giving grants once the day is full, even when asked at the same moment', async () => {
-    const since = new Date(Date.now() - 60_000);
-    const { rows } = await pool.query(
-      `SELECT count(*)::int AS n FROM app.credit_ledger WHERE kind = 'grant' AND created_at >= $1`,
-      [since],
-    );
-    const max = rows[0].n + 1;
+    // Start the window right now so grants other test files made (or cleaned up) a moment ago
+    // can't shift the count between reading it and granting. Room for exactly one.
+    const since = new Date();
+    const max = 1;
     const results = await Promise.all(
       [otherId, thirdId].map((id) =>
         dbCreditStore.grantIfRoom({ userId: id, pence: 100, since, max }),
