@@ -7,6 +7,7 @@ import type { SaveIndicator } from '~/hooks/use-save-indicator';
 
 const SLOT_WIDTH = 16;
 const DOT_SIZE = 7;
+const APPEAR_MS = 150;
 const FADE_MS = 600;
 const PULSE_MS = 1100;
 
@@ -63,8 +64,15 @@ export function SaveStatusDot({ indicator, accessibilityLabel }: SaveStatusDotPr
       pulse.start();
       return () => pulse.stop();
     }
-    opacity.setValue(1);
-    return undefined;
+    // A timing, not setValue: with the native driver a value set before the view's native node
+    // exists (the dot mounting straight into offline) never reaches the screen.
+    const appear = Animated.timing(opacity, {
+      toValue: 1,
+      duration: reduceMotion ? 0 : APPEAR_MS,
+      useNativeDriver: true,
+    });
+    appear.start();
+    return () => appear.stop();
   }, [indicator, opacity, reduceMotion]);
 
   const color = {
