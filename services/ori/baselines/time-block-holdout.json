@@ -3,7 +3,7 @@
   "tier": "holdout",
   "datasetHash": "8bb448e431aa",
   "promptHash": "c6796822ab40",
-  "graderHash": "9a8264b1e7d2",
+  "graderHash": "924c12765f16",
   "targetModel": "openai/gpt-5-mini",
   "judgeModel": "openai/gpt-6-luna",
   "trialsPerCase": 3,

@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
+const oriRoot = new URL('../../', import.meta.url).pathname;
+
 export type Golden = {
   name?: string;
   category?: string;
@@ -31,7 +33,9 @@ export const fingerprint = async (urls: readonly URL[]): Promise<string> => {
 export const fingerprintGrading = async (files: readonly URL[], spec: unknown): Promise<string> => {
   const hash = createHash('sha256');
   for (const url of files) hash.update(await readFile(url));
-  hash.update(JSON.stringify(spec));
+  // Assertion specs embed absolute file:// paths; strip the checkout location so the hash
+  // is the same on every machine.
+  hash.update(JSON.stringify(spec).replaceAll(oriRoot, ''));
   return hash.digest('hex').slice(0, 12);
 };
 

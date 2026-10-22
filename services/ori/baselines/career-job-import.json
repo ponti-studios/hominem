@@ -3,7 +3,7 @@
   "tier": "capability",
   "datasetHash": "8a747e2e7803",
   "promptHash": "504bbeaf51b8",
-  "graderHash": "5186a5bc9c34",
+  "graderHash": "cdf795ca72af",
   "targetModel": "openai/gpt-5-mini",
   "judgeModel": "openai/gpt-6-luna",
   "trialsPerCase": 3,
