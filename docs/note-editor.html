@@ -1,0 +1,466 @@
+<title>Omiro Note Editor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: phone on the left, controls and notes on the right. Phone tokens are Omiro's real light/dark tokens. */
+  :root {
+    --page: #DCD7EE; --page-fg: #14121F; --page-muted: #5B5873; --panel: #EDEAF7; --panel-line: #C9C3E2;
+    --bg: #F5F3FF; --card: #FFFFFF; --fg: #14121F; --muted-fg: #625F78; --muted: #EDE9FE; --border: #E6E1FA;
+    --primary: #6C4DFF; --violet: #6C4DFF; --coral: #D9442F; --sky: #1B7FB0; --good: #0F8A5F;
+    --lime: #C9F36B; --lime-fg: #14121F; --bar: #14121F; --bar-fg: #FFFFFF; --bar-control: rgba(127,127,160,.3);
+    --kbd: #D1D3D9; --key: #FFFFFF; --key-fg: #14121F; --key-alt: #ABB0BC;
+    --font: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --ease-out: cubic-bezier(0.22, 0.9, 0.24, 1); --spring: cubic-bezier(0.34, 1.45, 0.5, 1);
+    --h: 780px; --kb: 0px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #07060F; --page-fg: #F4F2FF; --page-muted: #A29FBA; --panel: #14112A; --panel-line: #2B2745;
+      --bg: #0E0C1A; --card: #1B1830; --fg: #F4F2FF; --muted-fg: #A29FBA; --muted: #241F3D; --border: #2B2745;
+      --violet: #9A86FF; --coral: #FF7D6B; --sky: #5BC8FF; --good: #34D399;
+      --kbd: #2B2B30; --key: #4A4A52; --key-fg: #F4F2FF; --key-alt: #36363C; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #07060F; --page-fg: #F4F2FF; --page-muted: #A29FBA; --panel: #14112A; --panel-line: #2B2745;
+    --bg: #0E0C1A; --card: #1B1830; --fg: #F4F2FF; --muted-fg: #A29FBA; --muted: #241F3D; --border: #2B2745;
+    --violet: #9A86FF; --coral: #FF7D6B; --sky: #5BC8FF; --good: #34D399;
+    --kbd: #2B2B30; --key: #4A4A52; --key-fg: #F4F2FF; --key-alt: #36363C; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--page); color: var(--page-fg); font-family: var(--font); font-size: 15px; line-height: 1.5; padding-block: 28px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  .wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 28px; }
+  header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 4px; }
+  header p { margin: 0; color: var(--page-muted); max-width: 66ch; }
+  .grid { display: grid; grid-template-columns: minmax(0, 390px) minmax(0, 1fr); gap: 40px; align-items: start; }
+  @media (max-width: 840px) { .grid { grid-template-columns: minmax(0, 1fr); justify-items: center; } .side { width: 100%; } :root { --h: 720px; } }
+
+  /* ---------- phone ---------- */
+  .phone { width: 100%; max-width: 390px; border-radius: 48px; padding: 10px; background: #0a0912; box-shadow: 0 0 0 1.5px #2b2745, 0 30px 60px -24px rgba(20,18,31,.45); }
+  .screen { position: relative; overflow: hidden; height: var(--h); border-radius: 38px; background: var(--bg); color: var(--fg); isolation: isolate; }
+  .status { position: absolute; inset: 0 0 auto 0; height: 44px; z-index: 30; display: flex; justify-content: space-between; align-items: center; padding: 6px 30px 0; font-size: 14px; font-weight: 600; direction: ltr; pointer-events: none; }
+  .island { position: absolute; top: 10px; left: 50%; width: 96px; height: 26px; margin-left: -48px; border-radius: 20px; background: #0a0912; z-index: 31; }
+
+  .fhead { position: absolute; top: 50px; left: 14px; right: 14px; z-index: 25; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+  .fhead > * { pointer-events: auto; }
+  .fhead::before { content: ""; position: absolute; left: -14px; right: -14px; top: -50px; height: 112px; background: linear-gradient(var(--bg) 62%, transparent); pointer-events: none; z-index: -1; }
+  .circle { width: 44px; height: 44px; border-radius: 22px; border: 0; background: var(--card); display: grid; place-items: center; cursor: pointer; box-shadow: 0 4px 14px -6px rgba(20,18,31,.3); }
+  .pill { display: flex; align-items: center; gap: 4px; background: var(--card); border-radius: 22px; padding: 0 6px; height: 44px; box-shadow: 0 4px 14px -6px rgba(20,18,31,.3); }
+  .pill .circle { box-shadow: none; background: none; width: 38px; height: 38px; }
+  .pill .circle[aria-pressed="true"] { background: var(--muted); }
+  .save { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-fg); padding: 0 10px; }
+  .save i { width: 6px; height: 6px; border-radius: 3px; background: var(--good); transition: background 200ms; }
+  .save.busy i { background: #F59E0B; }
+  svg.i { width: 20px; height: 20px; display: block; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  .scroll { position: absolute; left: 0; right: 0; top: 0; height: calc(100% - var(--kb)); overflow-y: auto; padding: 104px 24px 130px; transition: height 300ms var(--ease-out); scrollbar-width: none; }
+  .scroll::-webkit-scrollbar { display: none; }
+  .title { display: block; width: 100%; border: 0; outline: 0; background: none; color: var(--fg); resize: none; overflow: hidden; padding: 0; margin: 0 0 6px; font-family: inherit; font-weight: 700; letter-spacing: -0.4px; font-size: var(--t-size); line-height: var(--t-lh); caret-color: var(--primary); }
+  .title::placeholder { color: var(--muted-fg); opacity: .6; }
+  .meta { display: flex; gap: 6px; align-items: center; margin: 4px 0 14px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-fg); }
+  .meta s { text-decoration: none; opacity: .45; }
+  .rule { height: 1px; background: var(--border); margin-bottom: 20px; }
+
+  .editor { min-height: 160px; outline: none; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--b-size); line-height: var(--b-lh); letter-spacing: -0.1px; color: var(--fg); caret-color: var(--primary); }
+  .editor:empty::before { content: attr(data-placeholder); color: var(--muted-fg); opacity: .6; }
+  .screen { --t-size: 30px; --t-lh: 37px; --b-size: 17px; --b-lh: 28px; }
+  .screen[data-text="current"] { --t-size: 27px; --t-lh: 34px; --b-size: 16.5px; --b-lh: 27px; }
+
+  /* syntax styling: "color" changes colours only (character widths stay the same), "rich" also changes weight and size */
+  .editor .mk { transition: color 120ms; }
+  .screen[data-style="color"] .mk, .screen[data-style="rich"] .mk { color: var(--muted-fg); opacity: .65; }
+  .screen[data-style="color"] .ln-h .mk, .screen[data-style="rich"] .ln-h .mk { color: var(--violet); opacity: .6; }
+  .screen[data-style="color"] .ln-h, .screen[data-style="rich"] .ln-h { color: var(--violet); }
+  .screen[data-style="color"] .ln-q, .screen[data-style="rich"] .ln-q { color: var(--muted-fg); }
+  .screen[data-style="color"] .ln-q .mk, .screen[data-style="rich"] .ln-q .mk { color: var(--violet); opacity: .8; }
+  .screen[data-style="color"] .ln-li .mk, .screen[data-style="rich"] .ln-li .mk { color: var(--violet); opacity: 1; }
+  .screen[data-style="color"] .ln-done, .screen[data-style="rich"] .ln-done { color: var(--muted-fg); text-decoration: line-through; }
+  .screen[data-style="color"] .ln-done .mk, .screen[data-style="rich"] .ln-done .mk { color: var(--good); opacity: 1; text-decoration: none; }
+  .screen[data-style="color"] .b, .screen[data-style="rich"] .b { color: var(--violet); }
+  .screen[data-style="color"] .it, .screen[data-style="rich"] .it { color: var(--sky); }
+  .screen[data-style="color"] .st, .screen[data-style="rich"] .st { color: var(--muted-fg); text-decoration: line-through; }
+  .screen[data-style="color"] .cd, .screen[data-style="rich"] .cd { color: var(--coral); background: var(--muted); border-radius: 4px; }
+  .screen[data-style="rich"] .b { font-weight: 700; }
+  .screen[data-style="rich"] .it { font-style: italic; }
+  .screen[data-style="rich"] .cd { font-family: var(--mono); font-size: .92em; }
+  .screen[data-style="rich"] .ln-h1 { font-size: 24px; line-height: 32px; font-weight: 700; }
+  .screen[data-style="rich"] .ln-h2 { font-size: 20px; line-height: 30px; font-weight: 700; }
+  .screen[data-style="rich"] .ln-h3 { font-size: 18px; line-height: 28px; font-weight: 600; }
+  .screen[data-style="rich"] .ln-q { font-style: italic; }
+
+  .preview { font-size: var(--b-size); line-height: var(--b-lh); }
+  .preview h1 { font-size: 24px; line-height: 30px; margin: 12px 0 4px; } .preview h2 { font-size: 20px; line-height: 28px; margin: 10px 0 4px; } .preview h3 { font-size: 18px; margin: 8px 0 4px; }
+  .preview p { margin: 0 0 6px; } .preview ul, .preview ol { margin: 6px 0; padding-left: 22px; } .preview li.todo { list-style: none; margin-left: -22px; }
+  .preview li.todo::before { content: ""; display: inline-block; width: 15px; height: 15px; border: 1.5px solid var(--muted-fg); border-radius: 4px; margin-right: 8px; vertical-align: -2px; }
+  .preview li.todo.done { color: var(--muted-fg); text-decoration: line-through; } .preview li.todo.done::before { background: var(--lime); border-color: var(--lime); }
+  .preview blockquote { margin: 6px 0; padding-left: 12px; border-left: 3px solid var(--border); color: var(--muted-fg); }
+  .preview code { font-family: var(--mono); background: var(--card); border-radius: 4px; padding: 0 4px; }
+
+  /* dock: formatting bar above the keyboard */
+  .dock { position: absolute; left: 0; right: 0; bottom: 0; z-index: 20; transform: translateY(calc(100% + 20px)); transition: transform 320ms var(--ease-out); pointer-events: none; }
+  .screen[data-kb="1"] .dock { transform: none; } .dock > * { pointer-events: auto; }
+  .bar-wrap { position: relative; padding: 0 14px 8px; }
+  .screen[data-kb="0"] .bar-wrap { display: none; }
+
+  .bar { display: flex; align-items: center; gap: 2px; height: 52px; padding: 0 8px; border-radius: 26px; background: var(--bar); color: var(--bar-fg); box-shadow: 0 10px 26px -10px rgba(20,18,31,.55); }
+  .bar .sp { flex: 1; }
+  .bar button { width: 44px; height: 44px; border-radius: 22px; border: 0; background: none; display: grid; place-items: center; cursor: pointer; position: relative; transition: background 160ms, color 160ms, transform 120ms var(--ease-out); }
+  .bar button:active { transform: scale(.92); }
+  .bar button[aria-pressed="true"] { background: var(--lime); color: var(--lime-fg); }
+  .bar .aa { width: 52px; display: flex; align-items: baseline; justify-content: center; gap: 0; padding-top: 12px; font-weight: 600; font-size: 19px; letter-spacing: -.3px; line-height: 1; }
+  .bar .aa small { font-size: 14px; }
+  .bar .sep { width: 1px; height: 20px; background: rgba(255,255,255,.18); margin: 0 4px; }
+
+  .sheet { position: absolute; left: 14px; right: 14px; bottom: 68px; background: var(--card); border: 1px solid var(--border); border-radius: 26px; padding: 14px; display: grid; gap: 12px; box-shadow: 0 24px 50px -18px rgba(20,18,31,.5);
+    transform-origin: 8% 100%; opacity: 0; transform: translateY(12px) scale(.94); visibility: hidden; transition: opacity 200ms var(--ease-out), transform 360ms var(--spring), visibility 0s linear 360ms; }
+  .sheet.open { opacity: 1; transform: none; visibility: visible; transition-delay: 0s; }
+  .group { display: grid; gap: 6px; } .group h4 { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-fg); padding-inline: 4px; }
+  .tiles { display: grid; gap: 6px; }
+  .tiles.c4 { grid-template-columns: repeat(4, 1fr); } .tiles.c3 { grid-template-columns: repeat(3, 1fr); } .tiles.c2 { grid-template-columns: repeat(2, 1fr); }
+  .tile { min-height: 52px; border-radius: 14px; border: 0; background: var(--muted); color: var(--fg); display: grid; place-items: center; gap: 2px; padding: 6px 4px; cursor: pointer; font-size: 11px; line-height: 1.15; text-align: center; overflow-wrap: anywhere; transition: background 150ms, color 150ms, transform 120ms var(--ease-out); }
+  .tile:active { transform: scale(.95); } .tile .g { font-size: 17px; line-height: 20px; height: 20px; display: grid; place-items: center; }
+  .tile[aria-pressed="true"] { background: var(--primary); color: #fff; }
+
+  .old { position: relative; display: flex; align-items: center; height: 48px; margin: 0 14px 8px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 6px 18px -8px rgba(20,18,31,.35); }
+  .old .scrl { flex: 1; display: flex; align-items: center; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 0 4px; } .old .scrl::-webkit-scrollbar { display: none; }
+  .old button { flex: none; width: 36px; height: 36px; border: 0; background: none; border-radius: 10px; display: grid; place-items: center; cursor: pointer; }
+  .old .sep { flex: none; width: 1px; height: 20px; background: var(--border); margin: 0 8px; }
+  .screen[data-toolbar="new"] .old, .screen[data-toolbar="current"] .bar, .screen[data-toolbar="current"] .sheet { display: none; }
+  .screen[data-toolbar="new"] .old { display: none; }
+  .screen[data-toolbar="current"] .bar-wrap { padding: 0; }
+
+  .kbd { height: 291px; background: var(--kbd); padding: 10px 4px 0; display: grid; grid-template-rows: repeat(4, 1fr); gap: 11px; padding-bottom: 36px; }
+  .krow { display: flex; justify-content: center; gap: 6px; }
+  .k { flex: 1; max-width: 34px; border: 0; border-radius: 6px; background: var(--key); color: var(--key-fg); font-size: 22px; display: grid; place-items: center; box-shadow: 0 1px 0 rgba(0,0,0,.3); cursor: pointer; font-family: system-ui, sans-serif; padding: 0; }
+  .k.alt { background: var(--key-alt); max-width: 46px; font-size: 14px; } .k.space { max-width: none; flex: 5; font-size: 14px; } .k.wide { max-width: 90px; font-size: 14px; }
+  @media (pointer: coarse) { .kbd { display: none; } .screen { --kb: 0px !important; } }
+  .home { position: absolute; left: 50%; bottom: 8px; width: 120px; height: 4px; margin-left: -60px; border-radius: 2px; background: var(--fg); opacity: .35; z-index: 40; pointer-events: none; }
+
+  /* ---------- side panel ---------- */
+  .side { display: grid; gap: 22px; min-width: 0; }
+  .panel { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 14px; padding: 18px; display: grid; gap: 14px; }
+  .panel h3 { margin: 0; font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--page-muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .lbl { font-size: 13px; color: var(--page-muted); min-width: 74px; }
+  .seg { display: inline-flex; border: 1px solid var(--panel-line); border-radius: 10px; overflow: hidden; }
+  .seg button { background: none; border: 0; padding: 9px 14px; min-height: 40px; cursor: pointer; font-size: 14px; color: var(--page-muted); }
+  .seg button[aria-pressed="true"] { background: var(--page-fg); color: var(--page); }
+  .btn { border: 1px solid var(--panel-line); background: none; color: var(--page-fg); border-radius: 10px; padding: 9px 16px; min-height: 40px; font-weight: 600; cursor: pointer; }
+  .hint { margin: 0; font-size: 13px; color: var(--page-muted); }
+  ul.notes { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; } ul.notes b { font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Omiro note editor</h1>
+    <p>A redesigned edit-note screen. Tap into the note and type on your keyboard, or use the on-screen one. Select text, then try the bar and the Aa panel. Switch the controls on the right to compare with today's toolbar and text size.</p>
+  </header>
+
+  <div class="grid">
+    <div class="phone">
+      <div class="screen" id="screen" data-kb="0" data-toolbar="new" data-text="new" data-style="color">
+        <div class="status" aria-hidden="true"><span>9:41</span><span>5G ▮▮▮</span></div>
+        <div class="island" aria-hidden="true"></div>
+
+        <div class="fhead">
+          <button class="circle" type="button" aria-label="Back"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <div class="save" id="save"><i></i><span id="saveText">Saved</span></div>
+          <div class="pill">
+            <button class="circle" id="previewBtn" type="button" aria-pressed="false" aria-label="Preview"><svg class="i" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button class="circle" type="button" aria-label="More"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg></button>
+          </div>
+        </div>
+
+        <div class="scroll" id="scroll">
+          <textarea class="title" id="title" rows="1" placeholder="Title" spellcheck="false"></textarea>
+          <div class="meta"><span>October 21, 2026</span><s>·</s><span id="wc">0 words</span><s>·</s><span id="rt">1 min read</span></div>
+          <div class="rule"></div>
+          <div class="editor" id="editor" contenteditable="plaintext-only" spellcheck="false" data-placeholder="Start writing…" role="textbox" aria-multiline="true" aria-label="Note body"></div>
+          <div class="preview" id="preview" hidden></div>
+        </div>
+
+        <div class="dock" id="dock">
+          <div class="bar-wrap">
+            <div class="sheet" id="sheet" role="dialog" aria-label="Text formatting"></div>
+            <div class="bar" id="bar" role="toolbar" aria-label="Formatting"></div>
+            <div class="old" id="old" role="toolbar" aria-label="Formatting (current)"></div>
+          </div>
+          <div class="kbd" id="kbd" aria-hidden="true"></div>
+        </div>
+        <div class="home" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div class="side">
+      <section class="panel" aria-labelledby="c1">
+        <h3 id="c1">Compare</h3>
+        <div class="row"><span class="lbl">Toolbar</span><div class="seg" role="group" aria-label="Toolbar"><button type="button" data-set="toolbar" data-v="new" aria-pressed="true">New</button><button type="button" data-set="toolbar" data-v="current" aria-pressed="false">Current</button></div></div>
+        <div class="row"><span class="lbl">Text size</span><div class="seg" role="group" aria-label="Text size"><button type="button" data-set="text" data-v="new" aria-pressed="true">30 / 17</button><button type="button" data-set="text" data-v="current" aria-pressed="false">27 / 16.5</button></div></div>
+        <div class="row"><span class="lbl">Markdown</span><div class="seg" role="group" aria-label="Syntax styling"><button type="button" data-set="style" data-v="off" aria-pressed="false">Plain</button><button type="button" data-set="style" data-v="color" aria-pressed="true">Colors</button><button type="button" data-set="style" data-v="rich" aria-pressed="false">Rich</button></div></div>
+        <div class="row"><span class="lbl">Theme</span><div class="seg" role="group" aria-label="Theme"><button type="button" id="th-sys" aria-pressed="true">Auto</button><button type="button" id="th-l" aria-pressed="false">Light</button><button type="button" id="th-d" aria-pressed="false">Dark</button></div></div>
+        <div class="row"><button class="btn" id="reset" type="button">Reset sample note</button></div>
+        <p class="hint"><b>Plain</b> is today. <b>Colors</b> tints markdown without changing any character width, so the cursor and selection behave exactly as they do now. <b>Rich</b> also changes weight and size (headings grow, bold is bold); it looks best but is the riskiest to build in a React Native text input, so I would want your call before going there.</p>
+      </section>
+      <section class="panel" aria-labelledby="c2">
+        <h3 id="c2">What changed</h3>
+        <ul class="notes">
+          <li><b>Bar:</b> five actions you reach for most (Aa, checklist, bullet list, indent, outdent) plus dismiss, in the same ink pill as the capture bar. Every tap target is 44pt. Nothing scrolls sideways.</li>
+          <li><b>Aa panel:</b> everything else, labelled and grouped. It shows what the cursor is already in (bold, a heading, a list) so a tap on the same button removes it. A new command is one more tile; the bar never gets longer.</li>
+          <li><b>Text:</b> title 30 / bold, body 17 on a 28 line. The rendered preview already used 17/28, so editing and previewing now match.</li>
+          <li><b>Why a floating panel:</b> iOS does not let an app swap the keyboard for its own panel, so the panel opens above the bar and the keyboard and cursor stay put.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var screen = $('screen'), root = document.documentElement, ed = $('editor'), title = $('title'), sheet = $('sheet'), bar = $('bar'), old = $('old');
+  var coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  if (coarse) { ed.setAttribute('inputmode', 'none'); title.setAttribute('inputmode', 'none'); }
+
+  var SAMPLE_TITLE = 'Weekend in Lisbon';
+  var SAMPLE = [
+    '# Plan', '', 'Land Friday evening, **keep Saturday open** and see what feels right. _No fixed itinerary._', '',
+    '- [x] Book the flights', '- [x] Reserve the apartment in Alfama', '- [ ] Dinner on Friday', '- [ ] Day trip to Sintra?', '',
+    '## Food to try', '', '- Pastéis de nata at the old bakery', '- Grilled sardines near the river', '  - ask about ~~the tourist place~~ the small one', '',
+    '> The best meal is usually the one nobody recommended.', '', 'Bring `charger`, passport, and the **good camera**.'
+  ].join('\n');
+
+  /* ---------- formatting commands (ported from components/notes/note-formatting.ts) ---------- */
+  function lineStart(t, p) { if (p <= 0) return 0; var i = t.lastIndexOf('\n', p - 1); return i === -1 ? 0 : i + 1; }
+  function mapLines(t, s, fn) {
+    var st = lineStart(t, s.start), last = (s.end > s.start && t[s.end - 1] === '\n') ? s.end - 1 : s.end;
+    var nb = t.indexOf('\n', last), en = nb === -1 ? t.length : nb, lines = t.slice(st, en).split('\n'), ch = lines.map(fn);
+    var fd = ch[0].length - lines[0].length, td = ch.join('\n').length - (en - st);
+    return { text: t.slice(0, st) + ch.join('\n') + t.slice(en), sel: { start: Math.max(s.start + fd, st), end: Math.max(s.end + td, st) } };
+  }
+  function reEsc(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function wrap(t, s, pre, suf) {
+    if (s.start === s.end) {
+      // the caret is inside an existing span: take its markers off instead of adding another pair
+      var ln = lineAt(t, s.start), re = new RegExp(reEsc(pre) + '[^\\n]+?' + reEsc(suf), 'g'), m;
+      while ((m = re.exec(ln.text))) {
+        var a = ln.start + m.index, b2 = a + m[0].length;
+        if (s.start >= a && s.start <= b2) { var inner = m[0].slice(pre.length, m[0].length - suf.length); var c0 = Math.max(a, Math.min(a + inner.length, s.start - pre.length)); return { text: t.slice(0, a) + inner + t.slice(b2), sel: { start: c0, end: c0 } }; }
+      } var c = s.start + pre.length; return { text: t.slice(0, s.start) + pre + suf + t.slice(s.start), sel: { start: c, end: c } }; }
+    var b = t.slice(0, s.start), m = t.slice(s.start, s.end), a = t.slice(s.end);
+    if (m.startsWith(pre) && m.endsWith(suf) && m.length >= pre.length + suf.length) { var inner = m.slice(pre.length, m.length - suf.length); return { text: b + inner + a, sel: { start: s.start, end: s.start + inner.length } }; }
+    var e = s.end + pre.length + suf.length; return { text: b + pre + m + suf + a, sel: { start: e, end: e } };
+  }
+  function toggle(t, s, pre) {
+    var st = lineStart(t, s.start), nb = t.indexOf('\n', s.end > s.start ? s.end - 1 : s.end), block = t.slice(st, nb === -1 ? t.length : nb).split('\n');
+    var skip = block.length > 1, filled = block.filter(function (l) { return l.length > 0; }), all = filled.length > 0 && filled.every(function (l) { return l.startsWith(pre); });
+    return mapLines(t, s, function (l) { if (all) return l.startsWith(pre) ? l.slice(pre.length) : l; return (skip && l.length === 0) || l.startsWith(pre) ? l : pre + l; });
+  }
+  var CMD = {
+    bold: function (t, s) { return wrap(t, s, '**', '**'); }, italic: function (t, s) { return wrap(t, s, '_', '_'); },
+    strikethrough: function (t, s) { return wrap(t, s, '~~', '~~'); }, code: function (t, s) { return wrap(t, s, '`', '`'); },
+    heading: function (t, s) { return toggle(t, s, '# '); }, blockquote: function (t, s) { return toggle(t, s, '> '); },
+    checklist: function (t, s) { return toggle(t, s, '- [ ] '); }, bullet: function (t, s) { return toggle(t, s, '- '); }, numbered: function (t, s) { return toggle(t, s, '1. '); },
+    indent: function (t, s) { return mapLines(t, s, function (l) { return '  ' + l; }); }, outdent: function (t, s) { return mapLines(t, s, function (l) { return l.replace(/^ {1,2}/, ''); }); }
+  };
+
+  /* ---------- what the cursor is in (drives the pressed state) ---------- */
+  function lineAt(t, p) { var st = lineStart(t, p), nb = t.indexOf('\n', p); return { text: t.slice(st, nb === -1 ? t.length : nb), start: st }; }
+  function inlineActive(t, s, re) {
+    var ln = lineAt(t, s.start), m; re.lastIndex = 0;
+    while ((m = re.exec(ln.text))) { var a = ln.start + m.index, b = a + m[0].length; if (s.start >= a && s.end <= b) return true; }
+    return false;
+  }
+  function activeStates(t, s) {
+    var l = lineAt(t, s.start).text;
+    return {
+      bold: inlineActive(t, s, /\*\*[^*\n]+\*\*/g), italic: inlineActive(t, s, /(^|[^_])_[^_\n]+_/g), strikethrough: inlineActive(t, s, /~~[^~\n]+~~/g), code: inlineActive(t, s, /`[^`\n]+`/g),
+      heading: /^#{1,6} /.test(l), blockquote: /^> /.test(l), checklist: /^\s*- \[[ x]\] /.test(l), bullet: /^\s*- (?!\[[ x]\] )/.test(l), numbered: /^\s*\d+\. /.test(l)
+    };
+  }
+
+  /* ---------- editor model: plain text with live styling spans ---------- */
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function inl(s) {
+    var re = /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(~~[^~\n]+~~)|(_[^_\n]+_)/g, out = '', last = 0, m;
+    while ((m = re.exec(s))) {
+      out += esc(s.slice(last, m.index)); var t = m[0], mk = function (x) { return '<span class="mk">' + x + '</span>'; };
+      if (m[1]) out += '<span class="cd">' + mk('`') + esc(t.slice(1, -1)) + mk('`') + '</span>';
+      else if (m[2]) out += '<span class="b">' + mk('**') + esc(t.slice(2, -2)) + mk('**') + '</span>';
+      else if (m[3]) out += '<span class="st">' + mk('~~') + esc(t.slice(2, -2)) + mk('~~') + '</span>';
+      else out += '<span class="it">' + mk('_') + esc(t.slice(1, -1)) + mk('_') + '</span>';
+      last = m.index + t.length;
+    }
+    return out + esc(s.slice(last));
+  }
+  function line(l) {
+    var m;
+    if ((m = /^(#{1,6}) /.exec(l))) return '<span class="ln ln-h ln-h' + Math.min(m[1].length, 3) + '"><span class="mk">' + m[0] + '</span>' + inl(l.slice(m[0].length)) + '</span>';
+    if ((m = /^> /.exec(l))) return '<span class="ln ln-q"><span class="mk">&gt; </span>' + inl(l.slice(2)) + '</span>';
+    if ((m = /^(\s*)- \[(x)\] /.exec(l))) return '<span class="ln ln-li ln-done">' + esc(m[1]) + '<span class="mk">- [x] </span>' + inl(l.slice(m[0].length)) + '</span>';
+    if ((m = /^(\s*)- \[ \] /.exec(l)) || (m = /^(\s*)- /.exec(l)) || (m = /^(\s*)\d+\. /.exec(l))) return '<span class="ln ln-li">' + esc(m[1]) + '<span class="mk">' + esc(m[0].slice(m[1].length)) + '</span>' + inl(l.slice(m[0].length)) + '</span>';
+    return inl(l);
+  }
+  function html(t) { return t.split('\n').map(line).join('\n') + (t.endsWith('\n') ? '<br>' : ''); }
+  function offsetOf(node, off) { var r = document.createRange(); r.selectNodeContents(ed); r.setEnd(node, off); return r.toString().length; }
+  function getSel() {
+    var s = getSelection(); if (!s.rangeCount) return null; var r = s.getRangeAt(0); if (!ed.contains(r.startContainer)) return null;
+    return { start: offsetOf(r.startContainer, r.startOffset), end: offsetOf(r.endContainer, r.endOffset) };
+  }
+  function setSel(a, b) {
+    var w = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT), pos = 0, n, sn, so, en, eo;
+    while ((n = w.nextNode())) {
+      var len = n.nodeValue.length;
+      if (!sn && a <= pos + len) { sn = n; so = a - pos; } if (!en && b <= pos + len) { en = n; eo = b - pos; break; } pos += len;
+    }
+    var r = document.createRange();
+    if (sn && en) { r.setStart(sn, so); r.setEnd(en, eo); } else { r.selectNodeContents(ed); r.collapse(false); }
+    var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  function text() { return ed.textContent; }
+  function paint(sel) { var t = text(); ed.innerHTML = html(t); if (sel) setSel(sel.start, sel.end); }
+  var lastSel = { start: 0, end: 0 }, saveTimer;
+  function stats() {
+    var words = (text().trim().match(/\S+/g) || []).length; $('wc').textContent = words + (words === 1 ? ' word' : ' words'); $('rt').textContent = Math.max(1, Math.round(words / 200)) + ' min read';
+  }
+  function touched() {
+    $('save').classList.add('busy'); $('saveText').textContent = 'Saving…'; clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () { $('save').classList.remove('busy'); $('saveText').textContent = 'Saved'; }, 700);
+  }
+  ed.addEventListener('input', function () {
+    var s = getSel(), t = text();
+    // Chrome appends a spare newline when Enter is pressed at the very end; it is not part of the note
+    if (s && t.endsWith('\n') && s.end < t.length) { ed.textContent = t.slice(0, -1); }
+    paint(s); stats(); touched(); refresh();
+  });
+  function fit() { title.style.height = 'auto'; title.style.height = title.scrollHeight + 'px'; }
+  title.addEventListener('input', function () { fit(); touched(); });
+  title.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); ed.focus(); } });
+
+  /* ---------- keyboard + focus ---------- */
+  function setKb(on) { screen.dataset.kb = on ? '1' : '0'; root.style.setProperty('--kb', on && !coarse ? '291px' : '0px'); screen.style.setProperty('--kb', on && !coarse ? '291px' : '0px'); }
+  function focusState() {
+    var a = document.activeElement;
+    if (a === ed || a === title) { setKb(true); screen.dataset.field = a === ed ? 'body' : 'title'; }
+    else if (!sheet.classList.contains('open') && !$('dock').contains(a)) { setKb(false); closeSheet(); }
+    $('dock').querySelector('.bar-wrap').style.visibility = (screen.dataset.field === 'body' || sheet.classList.contains('open')) ? '' : 'hidden';
+  }
+  ed.addEventListener('focus', function () { screen.dataset.field = 'body'; focusState(); });
+  title.addEventListener('focus', function () { screen.dataset.field = 'title'; closeSheet(); focusState(); });
+  [ed, title].forEach(function (el) { el.addEventListener('blur', function () { setTimeout(focusState, 0); }); });
+  document.addEventListener('selectionchange', function () { var s = getSel(); if (s) { lastSel = s; refresh(); } });
+
+  /* ---------- bar, panel, current toolbar ---------- */
+  var IC = {
+    checklist: '<svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="5" height="5" rx="1.2"/><path d="M4.6 7l1.2 1.2L8 5.8M12 7h8.5M3.5 15.5h5v5h-5zM12 18h8.5"/></svg>',
+    bullet: '<svg class="i" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" stroke-width="2.4"/></svg>',
+    numbered: '<svg class="i" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 5l1.4-.8V9M3.6 14.2c.6-.9 2.2-.8 2.2.4 0 .8-1.2 1.2-2.2 2.5H6M3.8 18.6h1.6l-.9 1.2c1 0 1.5.5 1.5 1.1 0 .7-.7 1.1-1.7.9" stroke-width="1.3"/></svg>',
+    indent: '<svg class="i" viewBox="0 0 24 24"><path d="M3 5h18M12 10h9M12 15h9M3 20h18M3 9l3.5 3L3 15z"/></svg>',
+    outdent: '<svg class="i" viewBox="0 0 24 24"><path d="M3 5h18M12 10h9M12 15h9M3 20h18M7 9l-3.5 3L7 15z"/></svg>',
+    quote: '<svg class="i" viewBox="0 0 24 24"><path d="M5 17.5c-1.2-.4-2-1.5-2-3 0-3 2-5.200 4.500-6M13 17.5c-1.200-.4-2-1.500-2-3 0-3 2-5.200 4.500-6"/></svg>',
+    down: '<svg class="i" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="11" rx="2.5"/><path d="M8 19.500l4 2.500 4-2.500"/></svg>',
+    h: '<span style="font-weight:700;font-size:16px">H</span>', b: '<span style="font-weight:800">B</span>', i: '<span style="font-style:italic;font-family:Georgia,serif;font-weight:600">I</span>',
+    s: '<span style="text-decoration:line-through;font-weight:600">S</span>', c: '<span style="font-family:var(--mono);font-weight:500;font-size:14px">&lt;/&gt;</span>'
+  };
+  var BAR = [['aa'], ['checklist', IC.checklist, 'Checklist'], ['bullet', IC.bullet, 'Bulleted list'], ['indent', IC.indent, 'Indent'], ['outdent', IC.outdent, 'Outdent'], ['sp'], ['down', IC.down, 'Hide keyboard']];
+  bar.innerHTML = BAR.map(function (b) {
+    if (b[0] === 'aa') return '<button class="aa" type="button" data-aa aria-haspopup="dialog" aria-expanded="false" aria-label="Text formatting">A<small>a</small></button><span class="sep"></span>';
+    if (b[0] === 'sp') return '<span class="sp"></span>';
+    return '<button type="button" data-cmd="' + b[0] + '" aria-pressed="false" aria-label="' + b[2] + '">' + b[1] + '</button>';
+  }).join('');
+  var GROUPS = [
+    ['Text', 'c4', [['bold', IC.b, 'Bold'], ['italic', IC.i, 'Italic'], ['strikethrough', IC.s, 'Strike'], ['code', IC.c, 'Code']]],
+    ['Style', 'c2', [['heading', IC.h, 'Heading'], ['blockquote', IC.quote, 'Quote']]],
+    ['Lists', 'c3', [['checklist', IC.checklist, 'Checklist'], ['bullet', IC.bullet, 'Bulleted'], ['numbered', IC.numbered, 'Numbered']]],
+    ['Indent', 'c2', [['outdent', IC.outdent, 'Outdent'], ['indent', IC.indent, 'Indent']]]
+  ];
+  sheet.innerHTML = GROUPS.map(function (g) {
+    return '<div class="group"><h4>' + g[0] + '</h4><div class="tiles ' + g[1] + '">' + g[2].map(function (t) { return '<button class="tile" type="button" data-cmd="' + t[0] + '" aria-pressed="false"><span class="g">' + t[1] + '</span>' + t[2] + '</button>'; }).join('') + '</div></div>';
+  }).join('');
+  var OLD = [['bold', IC.b], ['italic', IC.i], ['strikethrough', IC.s], ['code', IC.c], '|', ['heading', IC.h], ['blockquote', IC.quote], '|', ['checklist', IC.checklist], ['bullet', IC.bullet], ['numbered', IC.numbered], '|', ['indent', IC.indent], ['outdent', IC.outdent]];
+  old.innerHTML = '<div class="scrl">' + OLD.map(function (o) { return o === '|' ? '<span class="sep"></span>' : '<button type="button" data-cmd="' + o[0] + '" aria-label="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div><span class="sep"></span><button type="button" data-cmd="__down" aria-label="Hide keyboard">' + IC.down + '</button>';
+
+  function refresh() {
+    var st = activeStates(text(), lastSel);
+    document.querySelectorAll('[data-cmd]').forEach(function (b) { var k = b.dataset.cmd; if (b.closest('.old')) return; b.setAttribute('aria-pressed', st[k] ? 'true' : 'false'); });
+  }
+  function run(cmd) {
+    if (cmd === 'down' || cmd === '__down') { ed.blur(); title.blur(); closeSheet(); setKb(false); return; }
+    if (!CMD[cmd]) return;
+    ed.focus({ preventScroll: true });
+    var s = getSel() || lastSel, r = CMD[cmd](text(), s);
+    ed.textContent = r.text; paint(r.sel); lastSel = r.sel; stats(); touched(); refresh();
+  }
+  function closeSheet() { sheet.classList.remove('open'); var a = bar.querySelector('[data-aa]'); if (a) { a.setAttribute('aria-pressed', 'false'); a.setAttribute('aria-expanded', 'false'); } }
+  function toggleSheet() { var o = !sheet.classList.contains('open'); sheet.classList.toggle('open', o); var a = bar.querySelector('[data-aa]'); a.setAttribute('aria-pressed', o ? 'true' : 'false'); a.setAttribute('aria-expanded', o ? 'true' : 'false'); }
+  // keep the editor focused (and the keyboard up) while the bar and panel are used, as the iOS accessory bar does
+  $('dock').addEventListener('pointerdown', function (e) { if (e.target.closest('button')) e.preventDefault(); });
+  $('dock').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.hasAttribute('data-aa')) { toggleSheet(); return; }
+    if (b.dataset.cmd) run(b.dataset.cmd);
+  });
+  document.addEventListener('pointerdown', function (e) { if (sheet.classList.contains('open') && !e.target.closest('.sheet') && !e.target.closest('[data-aa]')) closeSheet(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
+  ed.addEventListener('keydown', function (e) {
+    if (!(e.metaKey || e.ctrlKey)) return; var k = e.key.toLowerCase();
+    if (k === 'b') { e.preventDefault(); run('bold'); } else if (k === 'i') { e.preventDefault(); run('italic'); }
+  });
+
+  /* ---------- on-screen keyboard (insert into the focused field) ---------- */
+  var ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+  $('kbd').innerHTML = ROWS.map(function (r, i) { return '<div class="krow">' + (i === 2 ? '<button class="k alt" data-k="shift" type="button">⇧</button>' : '') + r.split('').map(function (c) { return '<button class="k" data-k="' + c + '" type="button">' + c + '</button>'; }).join('') + (i === 2 ? '<button class="k alt" data-k="del" type="button">⌫</button>' : '') + '</div>'; }).join('') +
+    '<div class="krow"><button class="k alt wide" type="button">123</button><button class="k space" data-k=" " type="button">space</button><button class="k alt wide" data-k="ret" type="button">return</button></div>';
+  $('kbd').addEventListener('pointerdown', function (e) { if (e.target.closest('button')) e.preventDefault(); });
+  $('kbd').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-k]'); if (!b) return; var k = b.dataset.k, a = document.activeElement;
+    if (a !== ed && a !== title) return;
+    if (k === 'del') document.execCommand('delete'); else if (k === 'ret') { if (a === title) ed.focus(); else document.execCommand('insertText', false, '\n'); } else if (k !== 'shift') document.execCommand('insertText', false, k);
+  });
+
+  /* ---------- preview ---------- */
+  function pInline(s) { return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/~~([^~]+)~~/g, '<s>$1</s>').replace(/(^|[^_\w])_([^_]+)_/g, '$1<i>$2</i>'); }
+  function renderPreview() {
+    var out = '', list = null; var close = function () { if (list) { out += '</' + list + '>'; list = null; } };
+    text().split('\n').forEach(function (l) {
+      var m;
+      if ((m = /^(#{1,3}) (.*)/.exec(l))) { close(); out += '<h' + m[1].length + '>' + pInline(m[2]) + '</h' + m[1].length + '>'; }
+      else if ((m = /^\s*- \[( |x)\] (.*)/.exec(l))) { if (list !== 'ul') { close(); out += '<ul>'; list = 'ul'; } out += '<li class="todo' + (m[1] === 'x' ? ' done' : '') + '">' + pInline(m[2]) + '</li>'; }
+      else if ((m = /^\s*- (.*)/.exec(l))) { if (list !== 'ul') { close(); out += '<ul>'; list = 'ul'; } out += '<li>' + pInline(m[1]) + '</li>'; }
+      else if ((m = /^\s*\d+\. (.*)/.exec(l))) { if (list !== 'ol') { close(); out += '<ol>'; list = 'ol'; } out += '<li>' + pInline(m[1]) + '</li>'; }
+      else if ((m = /^> (.*)/.exec(l))) { close(); out += '<blockquote>' + pInline(m[1]) + '</blockquote>'; }
+      else if (l.trim() === '') { close(); } else { close(); out += '<p>' + pInline(l) + '</p>'; }
+    });
+    close(); $('preview').innerHTML = out || '<p style="color:var(--muted-fg);font-style:italic">Nothing to preview yet.</p>';
+  }
+  $('previewBtn').addEventListener('click', function () {
+    var on = $('previewBtn').getAttribute('aria-pressed') !== 'true'; $('previewBtn').setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (on) { ed.blur(); title.blur(); closeSheet(); setKb(false); renderPreview(); }
+    ed.hidden = on; $('preview').hidden = !on;
+  });
+
+  /* ---------- controls ---------- */
+  document.querySelectorAll('[data-set]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var k = b.dataset.set; screen.dataset[k] = b.dataset.v;
+      document.querySelectorAll('[data-set="' + k + '"]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      if (k === 'toolbar') { closeSheet(); $('old').style.display = b.dataset.v === 'current' ? 'flex' : 'none'; bar.style.display = b.dataset.v === 'current' ? 'none' : 'flex'; }
+      fit();
+    });
+  });
+  old.style.display = 'none';
+  function theme(t) {
+    ['th-sys', 'th-l', 'th-d'].forEach(function (id) { $(id).setAttribute('aria-pressed', 'false'); });
+    if (t === 'auto') { root.removeAttribute('data-theme'); $('th-sys').setAttribute('aria-pressed', 'true'); } else { root.setAttribute('data-theme', t); $(t === 'light' ? 'th-l' : 'th-d').setAttribute('aria-pressed', 'true'); }
+  }
+  $('th-sys').onclick = function () { theme('auto'); }; $('th-l').onclick = function () { theme('light'); }; $('th-d').onclick = function () { theme('dark'); };
+  function load() { title.value = SAMPLE_TITLE; ed.textContent = SAMPLE; paint(null); stats(); fit(); lastSel = { start: SAMPLE.length, end: SAMPLE.length }; refresh(); }
+  $('reset').onclick = function () { closeSheet(); load(); };
+  load();
+})();
+</script>

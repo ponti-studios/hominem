@@ -1,0 +1,627 @@
+<title>Omiro Entry Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&family=Noto+Sans+Hebrew:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout: a phone on the left, controls and the beat timeline on the right; stacked on narrow screens.
+     Phone tokens are Omiro's real light/dark tokens (components/theme/tokens.ts). */
+  :root {
+    --page: #DCD7EE;
+    --page-fg: #14121F;
+    --page-muted: #5B5873;
+    --panel: #EDEAF7;
+    --panel-line: #C9C3E2;
+
+    --bg: #F5F3FF;
+    --card: #FFFFFF;
+    --fg: #14121F;
+    --muted-fg: #625F78;
+    --muted: #EDE9FE;
+    --border: #E6E1FA;
+    --primary: #6C4DFF;
+    --destructive: #D93B2B;
+    --lime: #C9F36B;
+    --lime-fg: #14121F;
+    --violet-tile: #E2D9FF;
+    --bar: #14121F;
+    --ink: #14121F;
+    --ink-fg: #FFFFFF;
+    --shadow-mascot: rgba(108, 77, 255, 0.28);
+
+    --font: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+    --ease-out: cubic-bezier(0.22, 0.9, 0.24, 1);
+    --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+    --spring: cubic-bezier(0.34, 1.45, 0.5, 1);
+    --h: 760px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #07060F;
+      --page-fg: #F4F2FF;
+      --page-muted: #A29FBA;
+      --panel: #14112A;
+      --panel-line: #2B2745;
+      --bg: #0E0C1A;
+      --card: #1B1830;
+      --fg: #F4F2FF;
+      --muted-fg: #A29FBA;
+      --muted: #241F3D;
+      --border: #2B2745;
+      --destructive: #FF7D6B;
+      --violet-tile: #3B2F7E;
+      --ink: #F4F2FF;
+      --ink-fg: #14121F;
+      --shadow-mascot: rgba(154, 134, 255, 0.22);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #07060F;
+    --page-fg: #F4F2FF;
+    --page-muted: #A29FBA;
+    --panel: #14112A;
+    --panel-line: #2B2745;
+    --bg: #0E0C1A;
+    --card: #1B1830;
+    --fg: #F4F2FF;
+    --muted-fg: #A29FBA;
+    --muted: #241F3D;
+    --border: #2B2745;
+    --destructive: #FF7D6B;
+    --violet-tile: #3B2F7E;
+    --ink: #F4F2FF;
+    --ink-fg: #14121F;
+    --shadow-mascot: rgba(154, 134, 255, 0.22);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--page);
+    color: var(--page-fg);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.5;
+    padding-block: 28px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+  .wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 28px; }
+  header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 4px; text-wrap: balance; }
+  header p { margin: 0; color: var(--page-muted); max-width: 62ch; }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 390px) minmax(0, 1fr); gap: 40px; align-items: start; }
+  @media (max-width: 820px) {
+    .grid { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+    .side { width: 100%; }
+    :root { --h: 700px; }
+  }
+
+  /* ---------- phone ---------- */
+  .phone {
+    width: 100%; max-width: 390px;
+    border-radius: 48px;
+    padding: 10px;
+    background: #0a0912;
+    box-shadow: 0 0 0 1.5px #2b2745, 0 30px 60px -24px rgba(20, 18, 31, 0.45);
+  }
+  .screen {
+    position: relative; overflow: hidden;
+    height: var(--h);
+    border-radius: 38px;
+    background: var(--bg);
+    color: var(--fg);
+    isolation: isolate;
+  }
+  .status {
+    direction: ltr; position: absolute; inset: 0 0 auto 0; height: 44px; z-index: 20;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 30px 0; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+  .island { position: absolute; top: 10px; left: 50%; width: 96px; height: 26px; margin-left: -48px; border-radius: 20px; background: #0a0912; z-index: 21; }
+
+  .layer { position: absolute; inset: 0; }
+
+  /* brand group: mascot + wordmark. One element travels from splash centre to login position. */
+  .brand {
+    position: absolute; left: 0; right: 0; top: 76px;
+    display: grid; justify-items: center; gap: 6px;
+    transform-origin: 50% 50%;
+    transform: translateY(var(--dy)) scale(1.35);
+    transition: transform 900ms var(--ease-out), opacity 500ms var(--ease-io);
+    z-index: 5;
+  }
+  .screen { --dy: calc(var(--h) / 2 - 156px + 22px); }
+  [data-phase="login"] .brand { transform: translateY(0) scale(1); }
+  [data-phase="inbox"] .brand { transform: translateY(-36px) scale(0.6); opacity: 0; transition-duration: 600ms; }
+  .screen.leave .brand { transform: translateY(var(--dy)) scale(1.5); opacity: 0; transition: transform 500ms var(--ease-io), opacity 400ms var(--ease-io); }
+
+  .mascot { position: relative; width: 112px; height: 119px; }
+  .mascot::before { /* ground shadow so the white mascot reads on lavender */
+    content: ""; position: absolute; left: 12%; right: 12%; bottom: -4px; height: 18px; border-radius: 50%;
+    background: radial-gradient(closest-side, var(--shadow-mascot), transparent);
+  }
+  .mascot .float { position: relative; width: 100%; height: 100%; animation: float 1800ms var(--ease-io) infinite alternate; }
+  .mascot img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  @keyframes float { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+  .mascot .hello { position: absolute; inset: 0; }
+  [data-phase="splash"] .mascot .hello { animation: hello 700ms var(--spring) both; }
+  @keyframes hello { 0% { transform: scale(0.96); } 45% { transform: scale(1.07) translateY(-6px); } 100% { transform: scale(1); } }
+  .mascot .hop { position: absolute; inset: 0; }
+  .screen.ok .mascot .hop { animation: hop 650ms var(--spring) both; }
+  @keyframes hop { 0% { transform: translateY(0) scale(1, 1); } 25% { transform: translateY(2px) scale(1.06, 0.94); } 55% { transform: translateY(-18px) scale(0.97, 1.04); } 100% { transform: translateY(0) scale(1, 1); } }
+
+  .word { direction: ltr; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; display: flex; line-height: 1.1; }
+  .word span { display: inline-block; opacity: 0; transform: translateY(10px); transition: opacity 400ms var(--ease-out), transform 500ms var(--ease-out); transition-delay: calc(var(--i) * 45ms); }
+  [data-phase="splash"] .word span, [data-phase="login"] .word span, [data-phase="inbox"] .word span { opacity: 1; transform: none; }
+
+  /* form */
+  .form {
+    position: absolute; left: 0; right: 0; top: 316px;
+    padding: 0 28px; display: grid; gap: 22px;
+  }
+  .rise { opacity: 0; transform: translateY(18px); transition: opacity 450ms var(--ease-out), transform 600ms var(--ease-out); transition-delay: calc(var(--i) * 80ms); }
+  [data-phase="login"] .rise { opacity: 1; transform: none; }
+  [data-phase="inbox"] .rise { opacity: 0; transform: translateY(-10px); transition-delay: 0ms; transition-duration: 300ms; }
+  .tag { margin: 0; text-align: center; color: var(--muted-fg); font-size: 15px; line-height: 1.4; }
+
+  .steps { position: relative; height: 184px; }
+  .blk { position: absolute; left: 0; right: 0; top: 0; transition: opacity 260ms var(--ease-io), transform 420ms var(--ease-out), visibility 0s; }
+  .b-code { opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 260ms var(--ease-io), transform 420ms var(--ease-out), visibility 0s linear 260ms; }
+  [data-step="code"] .b-email { opacity: 0; visibility: hidden; transform: translateY(-12px) scale(0.96); transition: opacity 260ms var(--ease-io), transform 420ms var(--ease-out), visibility 0s linear 260ms; }
+  [data-step="code"] .b-code { opacity: 1; visibility: visible; transform: none; transition: opacity 260ms var(--ease-io) 120ms, transform 420ms var(--ease-out) 120ms, visibility 0s; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* composer-style email field: the same ink pill and violet send circle as the capture bar */
+  .composer { display: flex; align-items: center; gap: 8px; height: 68px; padding-block: 0; padding-inline: 24px 8px; border-radius: 34px; background: var(--bar); color: #fff; transition: box-shadow 200ms var(--ease-out); }
+  .composer:focus-within { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--primary); }
+  .composer.shake { animation: shake 420ms var(--ease-io); }
+  .composer.err { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--destructive); }
+  .cfield { flex: 1; min-width: 0; direction: ltr; text-align: start; background: none; border: 0; outline: none; color: #fff; font: inherit; font-size: 18px; caret-color: var(--lime); padding: 0; }
+  .cfield::placeholder { color: rgba(255, 255, 255, 0.45); }
+  .send { position: relative; flex: none; width: 52px; height: 52px; border-radius: 26px; border: 0; background: rgba(127, 127, 160, 0.3); color: #fff; display: grid; place-items: center; cursor: pointer; transition: background 260ms var(--ease-io), transform 160ms var(--ease-out); }
+  .send[data-ready="1"] { background: #6C4DFF; }
+  .send:active { transform: scale(0.93); }
+  .send svg { width: 22px; height: 22px; transition: opacity 160ms, transform 320ms var(--spring); }
+  .send[data-ready="1"] svg { transform: translateY(-1px); }
+  .send.pulse { animation: ready 520ms var(--spring); }
+  @keyframes ready { 0% { transform: scale(1); } 40% { transform: scale(1.16); } 100% { transform: scale(1); } }
+  .send .dots { position: absolute; inset: 0; display: flex; justify-content: center; align-items: center; gap: 4px; opacity: 0; transition: opacity 160ms; }
+  .send .dots i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; animation: dot 900ms var(--ease-io) infinite; }
+  .send .dots i:nth-child(2) { animation-delay: 120ms; } .send .dots i:nth-child(3) { animation-delay: 240ms; }
+  @keyframes dot { 0%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-4px); opacity: 1; } }
+  .send.busy svg { opacity: 0; transform: translateY(-8px); } .send.busy .dots { opacity: 1; }
+
+  .msg { margin: 8px 4px 0; min-height: 20px; font-size: 13px; line-height: var(--lh, 1.3); overflow-wrap: anywhere; color: var(--destructive); }
+  .sentto { display: grid; gap: 2px; font-size: 13px; color: var(--muted-fg); }
+  .row2 { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .row2 .linkbtn { flex: none; max-width: 45%; }
+  .chip { flex: 0 1 auto; min-width: 0; background: var(--lime); color: var(--lime-fg); border-radius: 999px; padding: 5px 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sentto .left { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; max-width: 100%; }
+  .chip { direction: ltr; unicode-bidi: isolate; }
+  .linkbtn { background: none; border: 0; padding: 6px 0; min-height: 32px; color: var(--primary); font-size: 13px; font-weight: 500; cursor: pointer; text-align: start; line-height: var(--lh, 1.3); }
+  :root[data-theme="dark"] .linkbtn { color: #9A86FF; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .linkbtn { color: #9A86FF; } }
+  .linkbtn[disabled] { color: var(--muted-fg); cursor: default; }
+
+  /* one-time code: six ink pebbles dealt out from the send button's position */
+  .otp { direction: ltr; position: relative; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 12px; }
+  .otp input { position: absolute; inset: 0; width: 100%; opacity: 0; font-size: 16px; }
+  .cell { aspect-ratio: 1; border-radius: 50%; background: var(--bar); color: #fff; border: 1px solid var(--border); display: grid; place-items: center; font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; position: relative;
+    opacity: 0; transform: translateX(calc(var(--r) * var(--sgn, 1) * (100% + 6px))) scale(0.4);
+    transition: opacity 240ms var(--ease-out), transform 620ms var(--spring), background 260ms var(--ease-io), box-shadow 160ms; }
+  [data-step="code"] .cell { opacity: 1; transform: none; transition-delay: calc(160ms + var(--r) * 45ms), calc(160ms + var(--r) * 45ms), 0ms, 0ms; }
+  .cell:empty::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.28); }
+  .cell.on { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--lime); }
+  .cell.on:empty::before { width: 2px; height: 22px; border-radius: 1px; background: var(--lime); animation: blink 1s steps(1) infinite; }
+  .cell.pop { transform: scale(1.14) !important; transition-delay: 0ms !important; }
+  .cell.good { background: var(--lime); border-color: var(--lime); color: var(--lime-fg); transition-delay: 0ms, 0ms, calc(var(--n) * 60ms), 0ms; }
+  .cell.bad { background: var(--destructive); border-color: var(--destructive); color: var(--destructive-fg, #14121F); }
+  .otp.checking .cell { animation: wave 700ms var(--ease-io) infinite; animation-delay: calc(var(--n) * 70ms); }
+  @keyframes wave { 50% { transform: translateY(-7px); } }
+  @keyframes blink { 50% { opacity: 0; } }
+  .otp.shake { animation: shake 420ms var(--ease-io); }
+  @keyframes shake { 15% { transform: translateX(-9px); } 35% { transform: translateX(8px); } 55% { transform: translateX(-5px); } 75% { transform: translateX(3px); } }
+
+  /* mascot reactions */
+  .hello { transition: transform 520ms var(--spring); }
+  [data-phase="login"][data-step="code"] .hello { transform: rotate(var(--lean, -7deg)) translateY(3px); }
+  .mascot.nod { animation: nod 260ms var(--ease-out); }
+  @keyframes nod { 40% { transform: translateY(3px) scale(1.03, 0.97); } }
+  /* centred under the wordmark and sized by its text (up to the form width), so longer translations wrap instead of colliding with the mascot */
+  .bubble { position: absolute; inset-inline: 28px; top: 244px; width: fit-content; margin-inline: auto; text-align: center; z-index: 6; padding: 9px 16px; border-radius: 16px; background: var(--card); color: var(--fg); font-size: 14px; font-weight: 500; line-height: var(--lh, 1.3); overflow-wrap: anywhere; text-wrap: balance; opacity: 0; transform: translateY(8px) scale(0.85); transform-origin: 50% 0; transition: opacity 240ms var(--ease-out), transform 520ms var(--spring); pointer-events: none; box-shadow: 0 6px 18px -8px rgba(20, 18, 31, 0.35); }
+  .bubble::before { content: ""; position: absolute; top: -5px; left: 50%; width: 12px; height: 12px; margin-left: -6px; background: var(--card); border-radius: 3px; transform: rotate(45deg); }
+  .bubble.show { opacity: 1; transform: none; }
+  [data-phase="inbox"] .bubble, [data-phase="native"] .bubble, [data-phase="splash"] .bubble { opacity: 0; transform: translateY(-6px) scale(0.8); }
+  .screen.ok .hello { transform: none; }
+
+  /* inbox placeholder */
+  .inbox { padding: 64px 22px 0; opacity: 0; visibility: hidden; transition: visibility 0s linear 400ms; }
+  [data-phase="inbox"] .inbox { opacity: 1; visibility: visible; transition-delay: 0s; }
+  .inbox h2 { margin: 18px 0 4px; font-size: 30px; font-weight: 700; letter-spacing: -0.03em; }
+  .inbox .sub { margin: 0 0 22px; color: var(--muted-fg); font-size: 14px; }
+  .tiles { display: grid; gap: 12px; }
+  .tile { border-radius: 26px; padding: 18px 20px; min-height: 104px; display: grid; align-content: space-between; gap: 14px; opacity: 0; transform: translateY(28px) scale(0.97); transition: opacity 420ms var(--ease-out), transform 640ms var(--ease-out); transition-delay: 0ms; }
+  [data-phase="inbox"] .tile { opacity: 1; transform: none; transition-delay: calc(240ms + var(--i) * 90ms); }
+  .tile b { font-size: 17px; font-weight: 600; }
+  .tile small { font-size: 13px; opacity: 0.7; line-height: var(--lh, 1.3); }
+  .t-chat { background: var(--card); color: var(--fg); }
+  .t-notes { background: var(--violet-tile); color: var(--fg); }
+  .t-tasks { background: var(--lime); color: var(--lime-fg); }
+  .bar { position: absolute; left: 14px; right: 14px; bottom: 28px; height: 74px; border-radius: 37px; background: var(--bar); color: #fff; display: flex; align-items: center; justify-content: space-between; padding-block: 0; padding-inline: 26px 12px; opacity: 0; transform: translateY(40px); transition: opacity 420ms var(--ease-out), transform 640ms var(--ease-out); }
+  [data-phase="inbox"] .bar { opacity: 1; transform: none; transition-delay: 520ms; }
+  .bar span { color: #A29FBA; font-size: 16px; }
+  .bar i { width: 52px; height: 52px; border-radius: 26px; background: #6C4DFF; display: grid; place-items: center; }
+  .bar svg { width: 22px; height: 22px; }
+
+  .home { position: absolute; left: 50%; bottom: 8px; width: 120px; height: 4px; margin-left: -60px; border-radius: 2px; background: var(--fg); opacity: 0.35; z-index: 20; }
+
+  /* reduced motion: opacity only, no travel, no loops */
+  .rm .brand, .rm [data-phase="login"] .brand, .rm .screen.leave .brand { transition: opacity 200ms linear; transform: none !important; }
+  .rm .screen { --dy: 0px; }
+  .rm .mascot.nod, .rm .otp.checking .cell, .rm .composer.shake, .rm .send.pulse, .rm .mascot .float, .rm .mascot .hello, .rm .mascot .hop, .rm .otp.shake, .rm .cell.pop { animation: none !important; transform: none !important; }
+  .rm .cell, .rm .bubble, .rm .blk, .rm .hello, .rm .rise, .rm .tile, .rm .bar, .rm .word span, .rm .step { transform: none !important; transition-duration: 200ms !important; transition-delay: 0ms !important; }
+  .rm .screen:not([data-phase="login"]):not([data-phase="inbox"]) .brand { opacity: 1; }
+  .rm .brand { top: 150px; }
+  .rm [data-phase="native"] .brand { top: calc(var(--h) / 2 - 80px); }
+  .rm [data-phase="splash"] .brand { top: calc(var(--h) / 2 - 80px); }
+  @media (prefers-reduced-motion: reduce) { .float { animation: none !important; } }
+
+  /* ---------- side panel ---------- */
+  .side { display: grid; gap: 22px; min-width: 0; }
+  .panel { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 14px; padding: 18px; display: grid; gap: 14px; }
+  .panel h3 { margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--page-muted); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid var(--panel-line); border-radius: 10px; overflow: hidden; }
+  .seg button { background: none; border: 0; padding: 9px 14px; min-height: 40px; cursor: pointer; font-size: 14px; color: var(--page-muted); }
+  .seg button[aria-pressed="true"] { background: var(--page-fg); color: var(--page); }
+  .btn { border: 1px solid var(--panel-line); background: var(--page-fg); color: var(--page); border-radius: 10px; padding: 9px 16px; min-height: 40px; font-weight: 600; cursor: pointer; }
+  .btn.ghost { background: none; color: var(--page-fg); }
+  .check { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; min-height: 40px; cursor: pointer; }
+  .check input { width: 18px; height: 18px; accent-color: #6C4DFF; }
+  .sel { background: var(--panel); color: var(--page-fg); border: 1px solid var(--panel-line); border-radius: 10px; padding: 9px 12px; min-height: 40px; font: inherit; max-width: 100%; }
+  .hint { margin: 0; font-size: 13px; color: var(--page-muted); }
+
+  .beats { list-style: none; margin: 0; padding: 0; display: grid; }
+  .beats li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-top: 1px solid var(--panel-line); opacity: 0.55; transition: opacity 200ms; }
+  .beats li:first-child { border-top: 0; }
+  .beats li.now { opacity: 1; }
+  .beats li.done { opacity: 0.85; }
+  .beats time { font-family: var(--mono); font-size: 12px; color: var(--page-muted); padding-top: 2px; font-variant-numeric: tabular-nums; }
+  .beats b { font-weight: 600; font-size: 14px; }
+  .beats p { margin: 2px 0 0; font-size: 13px; color: var(--page-muted); }
+  .beats .tag2 { font-family: var(--mono); font-size: 11px; color: var(--page-muted); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Omiro entry prototype</h1>
+    <p>Splash, entry animation and one-screen login, built from Omiro's real tokens. Tap through it: any email works, any 6-digit code works, and 000000 shows the error state.</p>
+  </header>
+
+  <div class="grid">
+    <div class="phone" aria-label="Omiro phone prototype">
+      <div class="screen" id="screen" data-phase="native" data-step="email">
+        <div class="status" aria-hidden="true"><span>9:41</span><span>5G ▮▮▮</span></div>
+        <div class="island" aria-hidden="true"></div>
+
+        <div class="layer login">
+          <div class="brand" id="brand">
+            <div class="mascot" aria-hidden="true"><div class="hop"><div class="float"><div class="hello"><img alt="" src="data:image/webp;base64,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"></div></div></div></div>
+            <div class="word" aria-label="omiro"><span style="--i:0">o</span><span style="--i:1">m</span><span style="--i:2">i</span><span style="--i:3">r</span><span style="--i:4">o</span></div>
+          </div>
+
+          <div class="form">
+            <div class="steps rise" style="--i:1" id="steps">
+              <div class="blk b-email">
+                <div class="composer" id="composer">
+                  <label class="sr" for="email">Email address</label>
+                  <input class="cfield" id="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="you@example.com">
+                  <button class="send" id="send" type="button" data-ready="0" aria-label="Send a code"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 4l7 8h-4.5v8h-5v-8H5z"/></svg><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></button>
+                </div>
+                <p class="msg" id="emailMsg" role="status" aria-live="polite"></p>
+              </div>
+              <div class="blk b-code">
+                <div class="sentto"><span class="l" data-i18n="sentTo">Sent to</span><div class="row2"><span class="chip" id="sentTo">you@example.com</span><button class="linkbtn" id="change" type="button" data-i18n="change">Change</button></div></div>
+                <div class="otp" id="otp">
+                  <input id="otpInput" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-label="6-digit verification code">
+                </div>
+                <p class="msg" id="codeMsg" role="status" aria-live="polite"></p>
+                <button class="linkbtn" id="resend" type="button" hidden></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bubble" id="bubble" aria-hidden="true"></div>
+        <div class="layer inbox" aria-hidden="true">
+          <h2 data-i18n="today">Today</h2>
+          <p class="sub" data-i18n="note">Placeholder inbox, only here to show the handoff.</p>
+          <div class="tiles">
+            <div class="tile t-chat" style="--i:0"><b data-i18n="chat">Chat</b><small data-i18n="chatSub">Ask anything you've saved</small></div>
+            <div class="tile t-notes" style="--i:1"><b data-i18n="notes">Notes</b><small data-i18n="notesSub">12 this week</small></div>
+            <div class="tile t-tasks" style="--i:2"><b data-i18n="tasks">Tasks</b><small data-i18n="tasksSub">3 due today</small></div>
+          </div>
+          <div class="bar"><span data-i18n="capture">Capture anything…</span><i><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 4l7 8h-4.5v8h-5v-8H5z"/></svg></i></div>
+        </div>
+        <div class="home" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div class="side">
+      <section class="panel" aria-labelledby="ctl">
+        <h3 id="ctl">Run it</h3>
+        <div class="row">
+          <button class="btn" id="replay" type="button">Replay</button>
+          <div class="seg" role="group" aria-label="Who is launching the app">
+            <button type="button" id="sc-new" aria-pressed="true">New visitor</button>
+            <button type="button" id="sc-ret" aria-pressed="false">Signed in</button>
+          </div>
+        </div>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="rm"> Reduce motion</label>
+          <label class="check"><input type="checkbox" id="slow"> Slow 3×</label>
+          <div class="seg" role="group" aria-label="Theme">
+            <button type="button" id="th-sys" aria-pressed="true">Auto</button>
+            <button type="button" id="th-l" aria-pressed="false">Light</button>
+            <button type="button" id="th-d" aria-pressed="false">Dark</button>
+          </div>
+        </div>
+        <div class="row"><label class="check" for="lang">Language</label><select class="sel" id="lang"><option value="en">English</option><option value="de">Deutsch · German (long words)</option><option value="fi">Suomi · Finnish (longest words)</option><option value="ru">Русский · Russian (wide Cyrillic)</option><option value="ar">العربية · Arabic (RTL)</option><option value="he">עברית · Hebrew (RTL)</option><option value="ja">日本語 · Japanese (no spaces)</option><option value="zh">简体中文 · Chinese (no spaces)</option><option value="ko">한국어 · Korean</option><option value="th">ไทย · Thai (tall marks, no spaces)</option><option value="hi">हिन्दी · Hindi (conjuncts, tall marks)</option></select></div>
+        <div class="row"><button class="btn ghost" id="auto" type="button">Auto-play login</button><button class="btn ghost" id="jump" type="button">Jump to code step</button></div>
+        <p class="hint">Language swaps every string in the phone and mirrors the layout for Arabic and Hebrew, so you can check wrapping at each step. Slow 3× stretches every timing so you can see the handoff. Reduce motion swaps all travel for 200ms fades and stops the mascot floating.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="bt">
+        <h3 id="bt">Beats</h3>
+        <ol class="beats" id="beats">
+          <li data-b="native"><time>0 ms</time><div><b>Native splash</b><p>Static image from <code>expo-splash-screen</code>: the mascot alone, centred, on the app ground. Same ground in dark mode.</p></div></li>
+          <li data-b="splash"><time>500 ms</time><div><b>In-app splash takes over</b><p>Identical frame, so there is no visible swap. Mascot hellos (700ms spring) and the wordmark types in letter by letter.</p><span class="tag2">hides native splash only after auth + cache restore</span></div></li>
+          <li data-b="login"><time>1,300 ms</time><div><b>Mascot travels up</b><p>One transform (translate + scale) over 900ms. The email field is the same ink pill and violet send circle as the capture bar, so the first thing you touch already looks like the app. Omiro greets you in a speech bubble and nods on every keystroke.</p></div></li>
+          <li data-b="code"><time>on send</time><div><b>Email slides to code</b><p>Both steps share one slot, so the screen never changes route. The send circle pulses when the address is valid, then shows dots. The pill fades and six ink pebbles are dealt out from where the send circle was; the mascot leans in. Auto-submits on the sixth digit, pebbles wave while checking.</p><span class="tag2">haptic: light on send, error on mismatch</span></div></li>
+          <li data-b="ok"><time>on verify</time><div><b>Success</b><p>Pebbles turn lime left to right, the mascot straightens and hops, bubble says welcome. A wrong code turns them coral and shakes the row.</p><span class="tag2">haptic: success</span></div></li>
+          <li data-b="inbox"><time>+900 ms</time><div><b>Handoff to the inbox</b><p>Mascot lifts away, tiles rise 90ms apart, composer bar settles last. Returning users skip login and go straight here after a 600ms hold.</p></div></li>
+        </ol>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var screen = $('screen'), root = document.documentElement;
+  var email = $('email'), emailMsg = $('emailMsg'), codeMsg = $('codeMsg'), composer = $('composer');
+  var send = $('send'), otpEl = $('otp'), otpInput = $('otpInput'), bubble = $('bubble');
+  var resend = $('resend'), sentTo = $('sentTo'), mascot = document.querySelector('.mascot');
+  var timers = [], scenario = 'new', step = 'email', busy = false, resendTimer = null, cells = [];
+  for (var i = 0; i < 6; i++) {
+    var c = document.createElement('div'); c.className = 'cell';
+    c.style.setProperty('--n', i); c.style.setProperty('--r', 5 - i);
+    otpEl.appendChild(c); cells.push(c);
+  }
+
+    var L = {
+    en: { hi: "Hi! Who's this?", check: 'Check your email', welcome: 'Welcome in!', retry: 'Hmm, try again', recheck: 'Hmm, check that', sent: 'Sent again', sentTo: 'Sent to', change: 'Change', resendIn: 'Resend code in {n}s', resend: 'Resend code', needEmail: 'Email is required.', badEmail: 'Enter a valid email address.', needCode: 'Enter the 6-digit code.', wrongCode: "That code didn't match. Try again.", today: 'Today', note: 'Placeholder inbox, only here to show the handoff.', chat: 'Chat', chatSub: "Ask anything you've saved", notes: 'Notes', notesSub: '12 this week', tasks: 'Tasks', tasksSub: '3 due today', capture: 'Capture anything…' },
+    de: { hi: 'Hallo! Wer bist du?', check: 'Prüfe dein E-Mail-Postfach und gib den Code ein', welcome: 'Willkommen zurück! Schön, dass du wieder da bist', retry: 'Hm, versuch es noch einmal', recheck: 'Hm, bitte Adresse prüfen', sent: 'Erneut gesendet', sentTo: 'Gesendet an', change: 'Ändern', resendIn: 'Code in {n} Sek. erneut senden', resend: 'Code erneut senden', needEmail: 'E-Mail-Adresse erforderlich.', badEmail: 'Gib eine gültige E-Mail-Adresse ein.', needCode: 'Gib den 6-stelligen Code ein.', wrongCode: 'Der Code stimmt nicht überein. Versuch es noch einmal.', today: 'Heute', note: 'Platzhalter-Posteingang, nur zur Veranschaulichung des Übergangs.', chat: 'Chat', chatSub: 'Frag nach allem, was du gespeichert hast', notes: 'Notizen', notesSub: '12 diese Woche', tasks: 'Aufgaben', tasksSub: '3 heute fällig', capture: 'Alles festhalten…' },
+    fi: { hi: 'Hei! Kuka siellä?', check: 'Tarkista sähköpostisi ja syötä vahvistuskoodi', welcome: 'Tervetuloa takaisin! Kiva nähdä sinut taas', retry: 'Hmm, yritä uudelleen', recheck: 'Hmm, tarkista sähköpostiosoite', sent: 'Lähetetty uudelleen', sentTo: 'Lähetetty osoitteeseen', change: 'Vaihda', resendIn: 'Lähetä koodi uudelleen {n} s kuluttua', resend: 'Lähetä koodi uudelleen', needEmail: 'Sähköpostiosoite vaaditaan.', badEmail: 'Anna kelvollinen sähköpostiosoite.', needCode: 'Anna 6-numeroinen koodi.', wrongCode: 'Koodi ei täsmännyt. Yritä uudelleen.', today: 'Tänään', note: 'Paikkamerkkipostilaatikko, vain siirtymän esittelyyn.', chat: 'Keskustelu', chatSub: 'Kysy mitä tahansa tallentamastasi', notes: 'Muistiinpanot', notesSub: '12 tällä viikolla', tasks: 'Tehtävät', tasksSub: '3 erääntyy tänään', capture: 'Tallenna mitä tahansa…' },
+    ru: { hi: 'Привет! Кто это?', check: 'Проверьте свою электронную почту и введите код', welcome: 'С возвращением! Рады вас снова видеть', retry: 'Хм, попробуйте ещё раз', recheck: 'Хм, проверьте адрес', sent: 'Отправлено повторно', sentTo: 'Отправлено на', change: 'Изменить', resendIn: 'Отправить код повторно через {n} с', resend: 'Отправить код повторно', needEmail: 'Укажите адрес электронной почты.', badEmail: 'Введите действительный адрес электронной почты.', needCode: 'Введите 6-значный код.', wrongCode: 'Код не подошёл. Попробуйте ещё раз.', today: 'Сегодня', note: 'Заглушка входящих, только для показа перехода.', chat: 'Чат', chatSub: 'Спросите о чём угодно из сохранённого', notes: 'Заметки', notesSub: '12 на этой неделе', tasks: 'Задачи', tasksSub: '3 на сегодня', capture: 'Запишите что угодно…' },
+    ar: { hi: 'مرحبًا! من هناك؟', check: 'تحقق من بريدك الإلكتروني وأدخل الرمز', welcome: 'أهلًا بعودتك! سعداء برؤيتك مجددًا', retry: 'همم، حاول مرة أخرى', recheck: 'همم، تحقق من العنوان', sent: 'أُرسل مرة أخرى', sentTo: 'أُرسل إلى', change: 'تغيير', resendIn: 'إعادة إرسال الرمز بعد {n} ث', resend: 'إعادة إرسال الرمز', needEmail: 'البريد الإلكتروني مطلوب.', badEmail: 'أدخل عنوان بريد إلكتروني صالحًا.', needCode: 'أدخل الرمز المكوّن من 6 أرقام.', wrongCode: 'الرمز غير مطابق. حاول مرة أخرى.', today: 'اليوم', note: 'صندوق وارد تجريبي لعرض الانتقال فقط.', chat: 'المحادثة', chatSub: 'اسأل عن أي شيء حفظته', notes: 'الملاحظات', notesSub: '12 هذا الأسبوع', tasks: 'المهام', tasksSub: '3 مستحقة اليوم', capture: 'دوّن أي شيء…' },
+    he: { hi: 'היי! מי שם?', check: 'בדקו את האימייל שלכם והזינו את הקוד', welcome: 'ברוכים השבים! כיף לראות אתכם שוב', retry: 'הממ, נסו שוב', recheck: 'הממ, בדקו את הכתובת', sent: 'נשלח שוב', sentTo: 'נשלח אל', change: 'שינוי', resendIn: 'שליחת הקוד מחדש בעוד {n} שנ׳', resend: 'שליחת הקוד מחדש', needEmail: 'נדרשת כתובת אימייל.', badEmail: 'הזינו כתובת אימייל תקינה.', needCode: 'הזינו את הקוד בן 6 הספרות.', wrongCode: 'הקוד אינו תואם. נסו שוב.', today: 'היום', note: 'תיבת דואר לדוגמה, רק להצגת המעבר.', chat: 'צ׳אט', chatSub: 'שאלו על כל מה ששמרתם', notes: 'הערות', notesSub: '12 השבוע', tasks: 'משימות', tasksSub: '3 להיום', capture: 'תעדו הכול…' },
+    ja: { hi: 'こんにちは！どなたですか？', check: 'メールを確認して、届いたコードを入力してください', welcome: 'おかえりなさい！またお会いできてうれしいです', retry: 'うーん、もう一度お試しください', recheck: 'うーん、アドレスをご確認ください', sent: '再送しました', sentTo: '送信先', change: '変更', resendIn: '{n}秒後にコードを再送', resend: 'コードを再送', needEmail: 'メールアドレスを入力してください。', badEmail: '有効なメールアドレスを入力してください。', needCode: '6桁のコードを入力してください。', wrongCode: 'コードが一致しません。もう一度お試しください。', today: '今日', note: '仮の受信箱です。切り替えの確認用です。', chat: 'チャット', chatSub: '保存したことを何でも聞けます', notes: 'ノート', notesSub: '今週12件', tasks: 'タスク', tasksSub: '今日が期限は3件', capture: '何でも記録…' },
+    zh: { hi: '你好！你是哪位？', check: '请查看你的邮箱并输入验证码', welcome: '欢迎回来！很高兴再次见到你', retry: '嗯，请再试一次', recheck: '嗯，请检查地址', sent: '已重新发送', sentTo: '已发送至', change: '更改', resendIn: '{n} 秒后重新发送验证码', resend: '重新发送验证码', needEmail: '请输入电子邮箱。', badEmail: '请输入有效的电子邮箱地址。', needCode: '请输入 6 位验证码。', wrongCode: '验证码不匹配，请再试一次。', today: '今天', note: '占位收件箱，仅用于演示过渡效果。', chat: '对话', chatSub: '随时询问你保存的内容', notes: '笔记', notesSub: '本周 12 条', tasks: '任务', tasksSub: '今天到期 3 项', capture: '随手记录…' },
+    ko: { hi: '안녕하세요! 누구세요?', check: '이메일을 확인하고 받은 코드를 입력해 주세요', welcome: '다시 오신 것을 환영합니다! 반가워요', retry: '음, 다시 시도해 주세요', recheck: '음, 주소를 확인해 주세요', sent: '다시 보냈어요', sentTo: '받는 사람', change: '변경', resendIn: '{n}초 후 코드 다시 보내기', resend: '코드 다시 보내기', needEmail: '이메일을 입력해 주세요.', badEmail: '올바른 이메일 주소를 입력해 주세요.', needCode: '6자리 코드를 입력해 주세요.', wrongCode: '코드가 일치하지 않아요. 다시 시도해 주세요.', today: '오늘', note: '자리 표시용 받은편지함입니다. 전환 효과 확인용이에요.', chat: '채팅', chatSub: '저장한 내용을 무엇이든 물어보세요', notes: '메모', notesSub: '이번 주 12개', tasks: '할 일', tasksSub: '오늘 마감 3개', capture: '무엇이든 기록하세요…' },
+    th: { hi: 'สวัสดี! ใครน่ะ?', check: 'ตรวจสอบอีเมลของคุณแล้วกรอกรหัสที่ได้รับ', welcome: 'ยินดีต้อนรับกลับมา! ดีใจที่ได้เจอกันอีก', retry: 'อืม ลองอีกครั้งนะ', recheck: 'อืม ตรวจสอบที่อยู่อีกครั้ง', sent: 'ส่งอีกครั้งแล้ว', sentTo: 'ส่งไปที่', change: 'เปลี่ยน', resendIn: 'ส่งรหัสอีกครั้งใน {n} วินาที', resend: 'ส่งรหัสอีกครั้ง', needEmail: 'กรุณากรอกอีเมล', badEmail: 'กรุณากรอกที่อยู่อีเมลที่ถูกต้อง', needCode: 'กรอกรหัส 6 หลัก', wrongCode: 'รหัสไม่ตรงกัน ลองอีกครั้ง', today: 'วันนี้', note: 'กล่องจดหมายตัวอย่าง ไว้ดูการเปลี่ยนหน้าเท่านั้น', chat: 'แชต', chatSub: 'ถามได้ทุกเรื่องที่คุณบันทึกไว้', notes: 'บันทึก', notesSub: '12 รายการสัปดาห์นี้', tasks: 'งาน', tasksSub: 'ครบกำหนดวันนี้ 3 งาน', capture: 'จดอะไรก็ได้…' },
+    hi: { hi: 'नमस्ते! आप कौन हैं?', check: 'अपना ईमेल देखें और मिला हुआ कोड दर्ज करें', welcome: 'वापसी पर स्वागत है! आपको फिर देखकर खुशी हुई', retry: 'हम्म, फिर से कोशिश करें', recheck: 'हम्म, पता जाँच लें', sent: 'फिर से भेजा गया', sentTo: 'यहाँ भेजा गया', change: 'बदलें', resendIn: '{n} सेकंड में कोड दोबारा भेजें', resend: 'कोड दोबारा भेजें', needEmail: 'ईमेल आवश्यक है।', badEmail: 'कृपया मान्य ईमेल पता दर्ज करें।', needCode: '6 अंकों का कोड दर्ज करें।', wrongCode: 'कोड मेल नहीं खाया। फिर से कोशिश करें।', today: 'आज', note: 'नमूना इनबॉक्स, केवल बदलाव दिखाने के लिए।', chat: 'चैट', chatSub: 'सहेजी हुई किसी भी बात के बारे में पूछें', notes: 'नोट्स', notesSub: 'इस सप्ताह 12', tasks: 'कार्य', tasksSub: 'आज 3 की समय-सीमा', capture: 'कुछ भी दर्ज करें…' }
+  };
+  var META = {
+    en: { f: '' }, de: { f: '' }, fi: { f: '' }, ru: { f: "'Noto Sans'," },
+    ar: { f: "'Noto Sans Arabic'," , rtl: 1, lh: 1.55 }, he: { f: "'Noto Sans Hebrew'," , rtl: 1 },
+    ja: { f: "'Noto Sans JP'," }, zh: { f: "'Noto Sans SC'," }, ko: { f: "'Noto Sans KR'," },
+    th: { f: "'Noto Sans Thai'," , lh: 1.55 }, hi: { f: "'Noto Sans Devanagari'," , lh: 1.55 }
+  };
+  var lang = 'en', bubbleKey = '', msgKeys = { email: '', code: '' }, resendLeft = 0;
+  var t = function (k) { return (L[lang][k] !== undefined ? L[lang][k] : L.en[k]) || ''; };
+  function renderResend() { resend.textContent = resendLeft > 0 ? t('resendIn').replace('{n}', resendLeft) : t('resend'); }
+  function setMsg(which, key) { msgKeys[which] = key; (which === 'email' ? emailMsg : codeMsg).textContent = key ? t(key) : ''; }
+  function applyLang() {
+    var m = META[lang], rtl = !!m.rtl;
+    screen.lang = lang; screen.dir = rtl ? 'rtl' : 'ltr';
+    screen.style.fontFamily = m.f ? m.f + " 'Geist', sans-serif" : '';
+    screen.style.setProperty('--lh', m.lh || 1.3);
+    screen.style.setProperty('--lean', rtl ? '7deg' : '-7deg');
+    cells.forEach(function (c, i) { c.style.setProperty('--r', rtl ? i : 5 - i); c.style.setProperty('--sgn', rtl ? -1 : 1); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (el) { el.textContent = t(el.getAttribute('data-i18n')); });
+    if (bubbleKey) bubble.textContent = t(bubbleKey);
+    setMsg('email', msgKeys.email); setMsg('code', msgKeys.code);
+    if (!resend.hidden) renderResend();
+  }
+
+  var speed = function () { return $('slow').checked ? 3 : 1; };
+  var later = function (ms, fn) { timers.push(setTimeout(fn, ms * speed())); };
+  var clearTimers = function () { timers.forEach(clearTimeout); timers = []; clearInterval(resendTimer); };
+  var phase = function (p) { screen.setAttribute('data-phase', p); };
+  var beat = function (name) {
+    var items = $('beats').children;
+    var order = ['native', 'splash', 'login', 'code', 'ok', 'inbox'], idx = order.indexOf(name);
+    for (var j = 0; j < items.length; j++) {
+      items[j].classList.remove('now', 'done');
+      if (j < idx) items[j].classList.add('done');
+      if (j === idx) items[j].classList.add('now');
+    }
+  };
+  var say = function (key) {
+    bubble.classList.remove('show');
+    later(220, function () { bubbleKey = key; bubble.textContent = t(key); bubble.classList.add('show'); });
+  };
+  var nod = function () { mascot.classList.remove('nod'); void mascot.offsetWidth; mascot.classList.add('nod'); };
+  var setStep = function (next) { step = next; screen.setAttribute('data-step', next); };
+  var validEmail = function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); };
+
+  function renderCells() {
+    var v = otpInput.value;
+    cells.forEach(function (c, i) {
+      if (!c.classList.contains('good')) c.textContent = v[i] || '';
+      c.classList.toggle('on', document.activeElement === otpInput && i === Math.min(v.length, 5));
+    });
+  }
+  function syncReady() {
+    var ok = validEmail(email.value.trim()), was = send.dataset.ready === '1';
+    send.dataset.ready = ok ? '1' : '0';
+    if (ok && !was) { send.classList.remove('pulse'); void send.offsetWidth; send.classList.add('pulse'); }
+  }
+  function shake(el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+
+  function reset() {
+    clearTimers();
+    busy = false;
+    screen.classList.remove('ok', 'leave');
+    cells.forEach(function (c) { c.classList.remove('good', 'bad', 'pop', 'on'); c.textContent = ''; });
+    otpEl.classList.remove('shake', 'checking');
+    email.value = ''; email.readOnly = false; composer.classList.remove('err'); setMsg('email', ''); setMsg('code', '');
+    otpInput.value = '';
+    send.classList.remove('busy', 'pulse'); send.dataset.ready = '0';
+    bubble.classList.remove('show'); bubble.textContent = ''; bubbleKey = '';
+    resend.hidden = true;
+    setStep('email');
+    phase('native'); beat('native');
+  }
+
+  function play() {
+    reset();
+    var rm = $('rm').checked;
+    later(rm ? 250 : 500, function () { phase('splash'); beat('splash'); });
+    if (scenario === 'new') {
+      later(rm ? 700 : 1300, function () { phase('login'); beat('login'); });
+      later(rm ? 1100 : 2000, function () { say('hi'); });
+      later(rm ? 1100 : 2300, function () { if (step === 'email') email.focus({ preventScroll: true }); });
+    } else {
+      later(rm ? 900 : 1700, function () { screen.classList.add('leave'); });
+      later(rm ? 1100 : 2000, function () { screen.classList.remove('leave'); phase('inbox'); beat('inbox'); });
+    }
+  }
+
+  function sendCode() {
+    if (busy) return;
+    var v = email.value.trim().toLowerCase();
+    var problem = !v ? 'needEmail' : !validEmail(v) ? 'badEmail' : '';
+    if (problem) { setMsg('email', problem); composer.classList.add('err'); shake(composer); say('recheck'); return; }
+    busy = true; send.classList.add('busy'); email.readOnly = true;
+    later(750, function () {
+      busy = false; send.classList.remove('busy'); email.readOnly = false;
+      sentTo.textContent = v;
+      otpInput.value = ''; renderCells(); setMsg('code', '');
+      setStep('code'); beat('code'); say('check');
+      later(700, function () { otpInput.focus({ preventScroll: true }); renderCells(); });
+      startResend(30);
+    });
+  }
+
+  function startResend(sec) {
+    clearInterval(resendTimer);
+    resend.hidden = false; resend.disabled = true;
+    var left = sec;
+    var tick = function () {
+      if (left <= 0) { clearInterval(resendTimer); resend.disabled = false; resendLeft = 0; renderResend(); return; }
+      resendLeft = left; renderResend(); left--;
+    };
+    tick(); resendTimer = setInterval(tick, 1000);
+  }
+
+  function verify() {
+    if (busy) return;
+    var v = otpInput.value;
+    if (v.length !== 6) { setMsg('code', 'needCode'); return; }
+    busy = true; otpEl.classList.add('checking');
+    later(900, function () {
+      otpEl.classList.remove('checking');
+      if (v === '000000') {
+        busy = false;
+        setMsg('code', 'wrongCode');
+        cells.forEach(function (c) { c.classList.add('bad'); });
+        shake(otpEl); say('retry');
+        later(650, function () { cells.forEach(function (c) { c.classList.remove('bad'); }); otpInput.value = ''; renderCells(); otpInput.focus({ preventScroll: true }); });
+        return;
+      }
+      otpInput.blur(); clearInterval(resendTimer); resend.hidden = true;
+      cells.forEach(function (c) { c.classList.remove('on'); c.classList.add('good'); c.textContent = '✓'; });
+      screen.classList.add('ok'); beat('ok'); say('welcome');
+      later(1300, function () { bubble.classList.remove('show'); phase('inbox'); beat('inbox'); });
+    });
+  }
+
+  email.addEventListener('input', function () { setMsg('email', ''); composer.classList.remove('err'); syncReady(); nod(); });
+  email.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendCode(); });
+  send.addEventListener('click', sendCode);
+  otpInput.addEventListener('input', function () {
+    otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6);
+    setMsg('code', '');
+    var n = otpInput.value.length;
+    renderCells(); nod();
+    if (n > 0) { var c = cells[n - 1]; c.classList.add('pop'); setTimeout(function () { c.classList.remove('pop'); }, 150); }
+    if (n === 6) later(260, verify);
+  });
+  otpInput.addEventListener('focus', renderCells);
+  otpInput.addEventListener('blur', renderCells);
+  otpEl.addEventListener('click', function () { otpInput.focus(); });
+  $('change').addEventListener('click', function () {
+    if (busy) return;
+    clearInterval(resendTimer); resend.hidden = true;
+    setStep('email'); beat('login'); say('hi');
+    later(450, function () { email.focus({ preventScroll: true }); });
+  });
+  resend.addEventListener('click', function () { setMsg('code', ''); startResend(30); say('sent'); });
+
+  function typeInto(el, text, start, gap) {
+    for (var i = 0; i < text.length; i++) (function (i) {
+      later(start + i * gap, function () {
+        el.value = el.value + text[i];
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    })(i);
+    return start + text.length * gap;
+  }
+  function auto() {
+    scenario = 'new'; pick('sc-new', 'sc-ret'); play();
+    var t = typeInto(email, 'you@example.com', 2900, 70);
+    later(t + 500, sendCode);
+    later(t + 500 + 750 + 1100, function () { typeInto(otpInput, '482913', 0, 230); });
+  }
+  function jump() {
+    scenario = 'new'; pick('sc-new', 'sc-ret'); reset();
+    phase('login'); beat('login');
+    later(900, function () { email.value = 'you@example.com'; syncReady(); });
+    later(1500, sendCode);
+  }
+
+  $('replay').addEventListener('click', play);
+  $('auto').addEventListener('click', auto);
+  $('jump').addEventListener('click', jump);
+  function pick(a, b) { $(a).setAttribute('aria-pressed', 'true'); $(b).setAttribute('aria-pressed', 'false'); }
+  $('sc-new').addEventListener('click', function () { scenario = 'new'; pick('sc-new', 'sc-ret'); play(); });
+  $('sc-ret').addEventListener('click', function () { scenario = 'ret'; pick('sc-ret', 'sc-new'); play(); });
+  $('rm').addEventListener('change', function () { root.classList.toggle('rm', $('rm').checked); play(); });
+  $('slow').addEventListener('change', play);
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) { $('rm').checked = true; root.classList.add('rm'); }
+
+  function theme(t) {
+    ['th-sys', 'th-l', 'th-d'].forEach(function (id) { $(id).setAttribute('aria-pressed', 'false'); });
+    if (t === 'auto') { root.removeAttribute('data-theme'); $('th-sys').setAttribute('aria-pressed', 'true'); }
+    else { root.setAttribute('data-theme', t); $(t === 'light' ? 'th-l' : 'th-d').setAttribute('aria-pressed', 'true'); }
+  }
+  $('th-sys').addEventListener('click', function () { theme('auto'); });
+  $('th-l').addEventListener('click', function () { theme('light'); });
+  $('th-d').addEventListener('click', function () { theme('dark'); });
+
+  $('lang').addEventListener('change', function () { lang = this.value; applyLang(); });
+  applyLang();
+  play();
+})();
+</script>
