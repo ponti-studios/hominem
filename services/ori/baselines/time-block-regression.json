@@ -1,0 +1,1039 @@
+{
+  "suite": "time-block-regression",
+  "tier": "regression",
+  "datasetHash": "976ffd734bb3",
+  "promptHash": "c6796822ab40",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 3,
+  "limited": false,
+  "summary": {
+    "cases": 28,
+    "trials": 84,
+    "passRate": 0.9881,
+    "passAllRate": 0.9643,
+    "errors": 0,
+    "meanScore": 0.996,
+    "costUsd": 0.106661,
+    "promptTokens": 240996,
+    "completionTokens": 46246,
+    "latencyP50Ms": 6190,
+    "latencyP95Ms": 8657,
+    "byCategory": {
+      "uncategorized": {
+        "cases": 28,
+        "passRate": 0.9881
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "fixed-event",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4195,
+          "costUsd": 0.00075915,
+          "promptTokens": 2867,
+          "completionTokens": 338
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4633,
+          "costUsd": 0.00086515,
+          "promptTokens": 2867,
+          "completionTokens": 391
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4643,
+          "costUsd": 0.00086915,
+          "promptTokens": 2867,
+          "completionTokens": 393
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "flexible-task",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6534,
+          "costUsd": 0.00127265,
+          "promptTokens": 2865,
+          "completionTokens": 595
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6799,
+          "costUsd": 0.00119265,
+          "promptTokens": 2865,
+          "completionTokens": 555
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6542,
+          "costUsd": 0.00115865,
+          "promptTokens": 2865,
+          "completionTokens": 538
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "tonight",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6116,
+          "costUsd": 0.0011359,
+          "promptTokens": 2862,
+          "completionTokens": 527
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7092,
+          "costUsd": 0.0011939,
+          "promptTokens": 2862,
+          "completionTokens": 556
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 9748,
+          "costUsd": 0.0013959,
+          "promptTokens": 2862,
+          "completionTokens": 657
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "gap-fill",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8311,
+          "costUsd": 0.00138665,
+          "promptTokens": 2889,
+          "completionTokens": 649
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8657,
+          "costUsd": 0.00146465,
+          "promptTokens": 2889,
+          "completionTokens": 688
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8295,
+          "costUsd": 0.00137265,
+          "promptTokens": 2889,
+          "completionTokens": 642
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "schedule-search",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4850,
+          "costUsd": 0.00076565,
+          "promptTokens": 2869,
+          "completionTokens": 341
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5745,
+          "costUsd": 0.00096965,
+          "promptTokens": 2869,
+          "completionTokens": 443
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4954,
+          "costUsd": 0.00076365,
+          "promptTokens": 2869,
+          "completionTokens": 340
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "explicit-deadline",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7824,
+          "costUsd": 0.0012284,
+          "promptTokens": 2864,
+          "completionTokens": 573
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5892,
+          "costUsd": 0.0009524,
+          "promptTokens": 2864,
+          "completionTokens": 435
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7349,
+          "costUsd": 0.0011684,
+          "promptTokens": 2864,
+          "completionTokens": 543
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "correction-wins",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6046,
+          "costUsd": 0.0011549,
+          "promptTokens": 2874,
+          "completionTokens": 535
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6242,
+          "costUsd": 0.0011269,
+          "promptTokens": 2874,
+          "completionTokens": 521
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6501,
+          "costUsd": 0.0013049,
+          "promptTokens": 2874,
+          "completionTokens": 610
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "no-invention",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4351,
+          "costUsd": 0.0008239,
+          "promptTokens": 2862,
+          "completionTokens": 371
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6520,
+          "costUsd": 0.0010939,
+          "promptTokens": 2862,
+          "completionTokens": 506
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6147,
+          "costUsd": 0.0016995,
+          "promptTokens": 2862,
+          "completionTokens": 492
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "call-mom-sunday-afternoon",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4883,
+          "costUsd": 0.0012808,
+          "promptTokens": 2864,
+          "completionTokens": 484
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6190,
+          "costUsd": 0.0014204,
+          "promptTokens": 2864,
+          "completionTokens": 669
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6274,
+          "costUsd": 0.0012604,
+          "promptTokens": 2864,
+          "completionTokens": 589
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "deep-work-tomorrow-morning",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6687,
+          "costUsd": 0.0010984,
+          "promptTokens": 2864,
+          "completionTokens": 508
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6732,
+          "costUsd": 0.0014548,
+          "promptTokens": 2864,
+          "completionTokens": 571
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8423,
+          "costUsd": 0.0013044,
+          "promptTokens": 2864,
+          "completionTokens": 611
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "dentist-monday-afternoon",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7935,
+          "costUsd": 0.00153255,
+          "promptTokens": 2863,
+          "completionTokens": 610
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5117,
+          "costUsd": 0.00099015,
+          "promptTokens": 2863,
+          "completionTokens": 454
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6039,
+          "costUsd": 0.00109815,
+          "promptTokens": 2863,
+          "completionTokens": 508
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "lunch-alex-next-thursday",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5107,
+          "costUsd": 0.00132855,
+          "promptTokens": 2863,
+          "completionTokens": 508
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5217,
+          "costUsd": 0.00103615,
+          "promptTokens": 2863,
+          "completionTokens": 477
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4954,
+          "costUsd": 0.00096615,
+          "promptTokens": 2863,
+          "completionTokens": 442
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "submit-invoice-friday",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6098,
+          "costUsd": 0.00152305,
+          "promptTokens": 2865,
+          "completionTokens": 605
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4815,
+          "costUsd": 0.00108865,
+          "promptTokens": 2865,
+          "completionTokens": 503
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6271,
+          "costUsd": 0.00112665,
+          "promptTokens": 2865,
+          "completionTokens": 522
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "board-meeting-next-week",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5703,
+          "costUsd": 0.00108955,
+          "promptTokens": 2867,
+          "completionTokens": 388
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6286,
+          "costUsd": 0.00118315,
+          "promptTokens": 2867,
+          "completionTokens": 550
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4477,
+          "costUsd": 0.00081115,
+          "promptTokens": 2867,
+          "completionTokens": 364
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "find-slot-sarah",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6309,
+          "costUsd": 0.0016928,
+          "promptTokens": 2888,
+          "completionTokens": 687
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6180,
+          "costUsd": 0.0014504,
+          "promptTokens": 2888,
+          "completionTokens": 681
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6824,
+          "costUsd": 0.0014224,
+          "promptTokens": 2888,
+          "completionTokens": 667
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "workout-tomorrow",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7493,
+          "costUsd": 0.00154055,
+          "promptTokens": 2863,
+          "completionTokens": 614
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6239,
+          "costUsd": 0.00114615,
+          "promptTokens": 2863,
+          "completionTokens": 532
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 11765,
+          "costUsd": 0.00144615,
+          "promptTokens": 2863,
+          "completionTokens": 682
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "move-meeting-time",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8823,
+          "costUsd": 0.00191375,
+          "promptTokens": 2903,
+          "completionTokens": 594
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8164,
+          "costUsd": 0.00205175,
+          "promptTokens": 2903,
+          "completionTokens": 663
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8149,
+          "costUsd": 0.00178015,
+          "promptTokens": 2903,
+          "completionTokens": 844
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "correction-friday",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5620,
+          "costUsd": 0.00144005,
+          "promptTokens": 2869,
+          "completionTokens": 563
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5219,
+          "costUsd": 0.00130165,
+          "promptTokens": 2869,
+          "completionTokens": 609
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5969,
+          "costUsd": 0.00130565,
+          "promptTokens": 2869,
+          "completionTokens": 611
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "recurring-team-sync",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6265,
+          "costUsd": 0.0014033,
+          "promptTokens": 2866,
+          "completionTokens": 545
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6440,
+          "costUsd": 0.0012809,
+          "promptTokens": 2866,
+          "completionTokens": 599
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8576,
+          "costUsd": 0.0021185,
+          "promptTokens": 2866,
+          "completionTokens": 701
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "haircut-saturday-morning",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7699,
+          "costUsd": 0.0015783,
+          "promptTokens": 2862,
+          "completionTokens": 633
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7394,
+          "costUsd": 0.0014759,
+          "promptTokens": 2862,
+          "completionTokens": 697
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7345,
+          "costUsd": 0.0013559,
+          "promptTokens": 2862,
+          "completionTokens": 637
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "groceries-after-work",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5656,
+          "costUsd": 0.00141205,
+          "promptTokens": 2861,
+          "completionTokens": 550
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5398,
+          "costUsd": 0.00117965,
+          "promptTokens": 2861,
+          "completionTokens": 549
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6034,
+          "costUsd": 0.00114165,
+          "promptTokens": 2861,
+          "completionTokens": 530
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "presentation-afternoon-window",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7003,
+          "costUsd": 0.00136115,
+          "promptTokens": 2867,
+          "completionTokens": 639
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5470,
+          "costUsd": 0.00099315,
+          "promptTokens": 2867,
+          "completionTokens": 455
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8928,
+          "costUsd": 0.00204355,
+          "promptTokens": 2867,
+          "completionTokens": 865
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "jordan-office-planning",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4530,
+          "costUsd": 0.0010998,
+          "promptTokens": 2868,
+          "completionTokens": 393
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4542,
+          "costUsd": 0.0009714,
+          "promptTokens": 2868,
+          "completionTokens": 444
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5851,
+          "costUsd": 0.0011054,
+          "promptTokens": 2868,
+          "completionTokens": 511
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "search-after-lunch",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7472,
+          "costUsd": 0.00172205,
+          "promptTokens": 2869,
+          "completionTokens": 704
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7815,
+          "costUsd": 0.00131805,
+          "promptTokens": 2869,
+          "completionTokens": 502
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6943,
+          "costUsd": 0.00134565,
+          "promptTokens": 2869,
+          "completionTokens": 631
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "free-time-tomorrow-morning",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5408,
+          "costUsd": 0.0014723,
+          "promptTokens": 2878,
+          "completionTokens": 578
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5006,
+          "costUsd": 0.0012179,
+          "promptTokens": 2878,
+          "completionTokens": 566
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4697,
+          "costUsd": 0.0011319,
+          "promptTokens": 2878,
+          "completionTokens": 523
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "cancel-dentist",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 3358,
+          "costUsd": 0.0005849,
+          "promptTokens": 2866,
+          "completionTokens": 251
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4972,
+          "costUsd": 0.0012793,
+          "promptTokens": 2866,
+          "completionTokens": 483
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5209,
+          "costUsd": 0.0008689,
+          "promptTokens": 2866,
+          "completionTokens": 393
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "reschedule-meeting",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0.6666666666666666,
+          "failedMetrics": ["fields"],
+          "latencyMs": 6720,
+          "costUsd": 0.00161305,
+          "promptTokens": 2873,
+          "completionTokens": 649
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4383,
+          "costUsd": 0.00091265,
+          "promptTokens": 2873,
+          "completionTokens": 414
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5522,
+          "costUsd": 0.00136865,
+          "promptTokens": 2873,
+          "completionTokens": 642
+        }
+      ],
+      "passRate": 0.6667,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "reading-before-bed",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6484,
+          "costUsd": 0.00162405,
+          "promptTokens": 2861,
+          "completionTokens": 656
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5697,
+          "costUsd": 0.00110765,
+          "promptTokens": 2861,
+          "completionTokens": 513
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6580,
+          "costUsd": 0.00136965,
+          "promptTokens": 2861,
+          "completionTokens": 644
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    }
+  ]
+}

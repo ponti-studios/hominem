@@ -1,0 +1,67 @@
+{
+  "suite": "career-job-import",
+  "tier": "capability",
+  "datasetHash": "8a747e2e7803",
+  "promptHash": "504bbeaf51b8",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 3,
+  "limited": false,
+  "summary": {
+    "cases": 1,
+    "trials": 3,
+    "passRate": 0,
+    "passAllRate": 0,
+    "errors": 0,
+    "meanScore": 0.625,
+    "costUsd": 0.033604,
+    "promptTokens": 46962,
+    "completionTokens": 16159,
+    "latencyP50Ms": 81128,
+    "latencyP95Ms": 86948,
+    "byCategory": {
+      "uncategorized": {
+        "cases": 1,
+        "passRate": 0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "Whatnot AI Tooling Engineer posting",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0.625,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 73283,
+          "costUsd": 0.0102267,
+          "promptTokens": 15654,
+          "completionTokens": 4899
+        },
+        {
+          "pass": false,
+          "score": 0.5,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 81128,
+          "costUsd": 0.0113067,
+          "promptTokens": 15654,
+          "completionTokens": 5439
+        },
+        {
+          "pass": false,
+          "score": 0.75,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 86948,
+          "costUsd": 0.0120707,
+          "promptTokens": 15654,
+          "completionTokens": 5821
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    }
+  ]
+}

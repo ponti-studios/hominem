@@ -1,0 +1,247 @@
+{
+  "suite": "voice-task-extraction",
+  "tier": "capability",
+  "datasetHash": "848892566694",
+  "promptHash": "e5292856f319",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 3,
+  "limited": false,
+  "summary": {
+    "cases": 6,
+    "trials": 18,
+    "passRate": 0.8333,
+    "passAllRate": 0.8333,
+    "errors": 0,
+    "meanScore": 0.9783,
+    "costUsd": 0.019384,
+    "promptTokens": 22392,
+    "completionTokens": 9096,
+    "latencyP50Ms": 5542,
+    "latencyP95Ms": 15751,
+    "byCategory": {
+      "uncategorized": {
+        "cases": 6,
+        "passRate": 0.8333
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "urgency and date",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7181,
+          "costUsd": 0.0011563,
+          "promptTokens": 1254,
+          "completionTokens": 551
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8377,
+          "costUsd": 0.0012663,
+          "promptTokens": 1254,
+          "completionTokens": 606
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 10004,
+          "costUsd": 0.0015283,
+          "promptTokens": 1254,
+          "completionTokens": 737
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "noon default",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8165,
+          "costUsd": 0.00139,
+          "promptTokens": 1232,
+          "completionTokens": 541
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6519,
+          "costUsd": 0.0009468,
+          "promptTokens": 1232,
+          "completionTokens": 449
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 9880,
+          "costUsd": 0.0016908,
+          "promptTokens": 1232,
+          "completionTokens": 821
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "two weeks",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 3692,
+          "costUsd": 0.0006388,
+          "promptTokens": 1232,
+          "completionTokens": 295
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5253,
+          "costUsd": 0.0007008,
+          "promptTokens": 1232,
+          "completionTokens": 326
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5240,
+          "costUsd": 0.0007588,
+          "promptTokens": 1232,
+          "completionTokens": 355
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "explicit clock time",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 3387,
+          "costUsd": 0.0005238,
+          "promptTokens": 1236,
+          "completionTokens": 237
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5542,
+          "costUsd": 0.0007398,
+          "promptTokens": 1236,
+          "completionTokens": 345
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4892,
+          "costUsd": 0.0006178,
+          "promptTokens": 1236,
+          "completionTokens": 284
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "mixed urgency",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0.875,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 12706,
+          "costUsd": 0.00218305,
+          "promptTokens": 1265,
+          "completionTokens": 1063
+        },
+        {
+          "pass": false,
+          "score": 0.835,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 11321,
+          "costUsd": 0.00188505,
+          "promptTokens": 1265,
+          "completionTokens": 914
+        },
+        {
+          "pass": false,
+          "score": 0.9,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 15751,
+          "costUsd": 0.00272105,
+          "promptTokens": 1265,
+          "completionTokens": 1332
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "no actionable items",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 2512,
+          "costUsd": 0.00018805,
+          "promptTokens": 1245,
+          "completionTokens": 68
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 2204,
+          "costUsd": 0.00016205,
+          "promptTokens": 1245,
+          "completionTokens": 55
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 2179,
+          "costUsd": 0.00028605,
+          "promptTokens": 1245,
+          "completionTokens": 117
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    }
+  ]
+}

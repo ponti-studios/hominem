@@ -1,0 +1,255 @@
+{
+  "suite": "mcp-tool-routing",
+  "tier": "regression",
+  "datasetHash": "eedad25c2bf1",
+  "promptHash": "227cc076b242",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 3,
+  "limited": false,
+  "summary": {
+    "cases": 6,
+    "trials": 18,
+    "passRate": 1,
+    "passAllRate": 1,
+    "errors": 0,
+    "meanScore": 1,
+    "costUsd": 0.027699,
+    "promptTokens": 9211,
+    "completionTokens": 12698,
+    "latencyP50Ms": 9061,
+    "latencyP95Ms": 18870,
+    "byCategory": {
+      "simple_lookup": {
+        "cases": 3,
+        "passRate": 1
+      },
+      "cross_domain_synthesis": {
+        "cases": 2,
+        "passRate": 1
+      },
+      "ordered_read_chain": {
+        "cases": 1,
+        "passRate": 1
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "flight history uses one travel lookup",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8496,
+          "costUsd": 0.0010385,
+          "promptTokens": 554,
+          "completionTokens": 450
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8499,
+          "costUsd": 0.0011425,
+          "promptTokens": 554,
+          "completionTokens": 502
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 9588,
+          "costUsd": 0.0012985,
+          "promptTokens": 554,
+          "completionTokens": 580
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "career lookup uses one career tool",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7711,
+          "costUsd": 0.0008175000000000001,
+          "promptTokens": 326,
+          "completionTokens": 368
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7471,
+          "costUsd": 0.0008775,
+          "promptTokens": 326,
+          "completionTokens": 398
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7618,
+          "costUsd": 0.0009815,
+          "promptTokens": 326,
+          "completionTokens": 450
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "general question uses no private-data tools",
+      "category": "simple_lookup",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4390,
+          "costUsd": 0.0005765,
+          "promptTokens": 58,
+          "completionTokens": 281
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4341,
+          "costUsd": 0.0005425,
+          "promptTokens": 58,
+          "completionTokens": 264
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4412,
+          "costUsd": 0.0006185,
+          "promptTokens": 58,
+          "completionTokens": 302
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "travel and career request calls tools in requested order",
+      "category": "cross_domain_synthesis",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 9375,
+          "costUsd": 0.0011775,
+          "promptTokens": 750,
+          "completionTokens": 495
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 10636,
+          "costUsd": 0.0017675,
+          "promptTokens": 750,
+          "completionTokens": 790
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 9061,
+          "costUsd": 0.0015035,
+          "promptTokens": 750,
+          "completionTokens": 658
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "place and travel request calls both history tools",
+      "category": "ordered_read_chain",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 11716,
+          "costUsd": 0.00175425,
+          "promptTokens": 625,
+          "completionTokens": 799
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 12799,
+          "costUsd": 0.0016519999999999998,
+          "promptTokens": 624,
+          "completionTokens": 748
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 12996,
+          "costUsd": 0.00182,
+          "promptTokens": 624,
+          "completionTokens": 832
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "trip briefing uses travel and career data",
+      "category": "cross_domain_synthesis",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 18870,
+          "costUsd": 0.0035235,
+          "promptTokens": 758,
+          "completionTokens": 1667
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 16947,
+          "costUsd": 0.0031315,
+          "promptTokens": 758,
+          "completionTokens": 1471
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 18579,
+          "costUsd": 0.0034755,
+          "promptTokens": 758,
+          "completionTokens": 1643
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    }
+  ]
+}

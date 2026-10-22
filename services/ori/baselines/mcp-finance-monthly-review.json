@@ -1,0 +1,147 @@
+{
+  "suite": "mcp-finance-monthly-review",
+  "tier": "capability",
+  "datasetHash": "f838fe63b278",
+  "promptHash": "0bd8f089d5b9",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 3,
+  "limited": false,
+  "summary": {
+    "cases": 3,
+    "trials": 9,
+    "passRate": 1,
+    "passAllRate": 1,
+    "errors": 0,
+    "meanScore": 1,
+    "costUsd": 0.020078,
+    "promptTokens": 9681,
+    "completionTokens": 8829,
+    "latencyP50Ms": 28289,
+    "latencyP95Ms": 40319,
+    "byCategory": {
+      "complete monthly review": {
+        "cases": 1,
+        "passRate": 1
+      },
+      "clarification before querying": {
+        "cases": 1,
+        "passRate": 1
+      },
+      "currency safety": {
+        "cases": 1,
+        "passRate": 1
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "september-review",
+      "category": "complete monthly review",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 34632,
+          "costUsd": 0.0022255,
+          "promptTokens": 1342,
+          "completionTokens": 945
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 36518,
+          "costUsd": 0.0023175,
+          "promptTokens": 1342,
+          "completionTokens": 991
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 40319,
+          "costUsd": 0.0024815,
+          "promptTokens": 1342,
+          "completionTokens": 1073
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "missing-month",
+      "category": "clarification before querying",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 2215,
+          "costUsd": 0.00039225,
+          "promptTokens": 473,
+          "completionTokens": 137
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5994,
+          "costUsd": 0.00040025,
+          "promptTokens": 473,
+          "completionTokens": 141
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 3474,
+          "costUsd": 0.00048425,
+          "promptTokens": 473,
+          "completionTokens": 183
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "mixed-currency-review",
+      "category": "currency safety",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 23928,
+          "costUsd": 0.0036390000000000003,
+          "promptTokens": 1412,
+          "completionTokens": 1643
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 28289,
+          "costUsd": 0.004319,
+          "promptTokens": 1412,
+          "completionTokens": 1983
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 35048,
+          "costUsd": 0.003819,
+          "promptTokens": 1412,
+          "completionTokens": 1733
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    }
+  ]
+}
