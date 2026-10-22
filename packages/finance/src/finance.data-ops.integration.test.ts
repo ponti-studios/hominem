@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 
+import { db } from '@hominem/db/core';
 import {
   createDeterministicIdFactory,
   ensureIntegrationUsers,
@@ -110,7 +111,17 @@ describeIntegration('finance data ops integration', () => {
       merchantName: 'Keep',
     });
 
+    await db
+      .insertInto('app.plaidItems')
+      .values({
+        userId: ownerId,
+        providerItemId: `legacy-${crypto.randomUUID()}`,
+        accessToken: 'legacy-token',
+      })
+      .execute();
+
     const summary = await deleteUserFinanceData(ownerId);
+    expect(summary.deletedPlaidItems).toBe(1);
     expect(summary.deletedTransactions).toBeGreaterThanOrEqual(1);
     expect(summary.deletedAccounts).toBeGreaterThanOrEqual(1);
     expect(summary.deletedTaggedItems).toBeGreaterThanOrEqual(1);
@@ -119,6 +130,9 @@ describeIntegration('finance data ops integration', () => {
     expect(ownerExport.accounts).toHaveLength(0);
     expect(ownerExport.transactions).toHaveLength(0);
     expect(ownerExport.tags.length).toBeGreaterThanOrEqual(1);
+    await expect(
+      db.selectFrom('app.plaidItems').select('id').where('userId', '=', ownerId).execute(),
+    ).resolves.toHaveLength(0);
 
     const otherExport = await exportFinanceData(otherUserId);
     expect(otherExport.accounts.length).toBeGreaterThanOrEqual(1);

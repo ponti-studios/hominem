@@ -16,7 +16,6 @@ import {
   listAccounts,
   listImportAccountSnapshots,
   updateAccount,
-  upsertAccount,
 } from './index';
 import { cleanupIntegrationFinanceUser } from './test-utils';
 
