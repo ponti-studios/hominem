@@ -9,9 +9,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   createAccount,
   createTransaction,
-  deletePlaidTransaction,
   deleteTransaction,
-  getTransactionByPlaidId,
   insertTransaction,
   listCopilotExternalIds,
   queryTransactions,
@@ -121,33 +119,5 @@ describeIntegration('finance transactions integration', () => {
     });
 
     await expect(listCopilotExternalIds(ownerId)).resolves.toEqual(new Set(['copilot-ext-1']));
-  });
-
-  it('supports plaid external id lookup and delete', async () => {
-    await sql`
-      insert into app.finance_transactions (
-        id, user_id, account_id, amount, transaction_type, description, posted_on, external_id
-      )
-      values (
-        ${crypto.randomUUID()},
-        ${ownerId},
-        ${ownerAccountId},
-        ${15.25},
-        ${'credit'},
-        ${'Plaid tx'},
-        ${'2026-02-10'},
-        ${'plaid-ext-1'}
-      )
-    `.execute(db);
-
-    const byPlaid = await getTransactionByPlaidId('plaid-ext-1', ownerId);
-    expect(byPlaid).not.toBeNull();
-    expect(byPlaid?.description).toBe('Plaid tx');
-
-    const deleted = await deletePlaidTransaction('plaid-ext-1');
-    expect(deleted).toBe(true);
-
-    const afterDelete = await getTransactionByPlaidId('plaid-ext-1', ownerId);
-    expect(afterDelete).toBeNull();
   });
 });

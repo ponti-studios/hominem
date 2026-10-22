@@ -80,9 +80,6 @@ export const apiSchema = runtimeSchema.extend({
   ),
   OTEL_EXPORTER_OTLP_LOGS_HEADERS: z.string().optional(),
   OTEL_TRACES_SAMPLER_ARG: z.coerce.number().default(0.1),
-  PLAID_CLIENT_ID: z.string().default(''),
-  PLAID_API_KEY: z.string().default(''),
-  PLAID_ENV: z.enum(['sandbox', 'development', 'production']).default('sandbox'),
 });
 
 export type ApiEnv = z.infer<typeof apiSchema>;
