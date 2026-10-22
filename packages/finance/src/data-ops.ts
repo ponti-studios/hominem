@@ -8,13 +8,12 @@ import { listAccounts } from './accounts';
 import { getTransactionTags } from './categories';
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
 import { queryTransactionsByContract } from './transactions';
-import { getAffectedRows, tableExists } from './utils';
+import { getAffectedRows } from './utils';
 
 export async function deleteUserFinanceData(userId: string): Promise<{
   deletedTaggedItems: number;
   deletedTransactions: number;
   deletedAccounts: number;
-  deletedPlaidItems: number;
 }> {
   const taggedItemsResult = await db
     .deleteFrom('app.tagAssignments')
@@ -36,22 +35,10 @@ export async function deleteUserFinanceData(userId: string): Promise<{
     .executeTakeFirst();
   const deletedAccounts = getAffectedRows(accountsResult);
 
-  // plaid is gone, but legacy rows (with stored access tokens) can still be in
-  // app.plaid_items until a migration drops it, so delete-all keeps wiping them
-  let deletedPlaidItems = 0;
-  if (await tableExists('app.plaid_items')) {
-    const plaidItemsResult = await db
-      .deleteFrom('app.plaidItems')
-      .where('userId', '=', userId)
-      .executeTakeFirst();
-    deletedPlaidItems = getAffectedRows(plaidItemsResult);
-  }
-
   return {
     deletedTaggedItems,
     deletedTransactions,
     deletedAccounts,
-    deletedPlaidItems,
   };
 }
 
