@@ -1,6 +1,13 @@
 import type { Assertion, TestCase, UnifiedConfig } from 'promptfoo';
 
-import { fingerprint, judgeModel, targetModel, type Golden, type PromptMessage } from './golden';
+import {
+  fingerprint,
+  fingerprintGrading,
+  judgeModel,
+  targetModel,
+  type Golden,
+  type PromptMessage,
+} from './golden';
 import type { McpFixtureProfile } from './mcp-fixtures';
 import type { McpExpectation } from './mcp-scoring';
 
@@ -107,19 +114,38 @@ export async function defineTextSuite(options: TextSuiteOptions): Promise<Suite>
       ],
       defaultTest: { options: { provider: judgeProvider } },
       tests,
-      metadata: await suiteMetadata(options),
+      metadata: await suiteMetadata({ ...options, gradingSpec: { schema, rubric, assertions } }),
     },
   };
 }
+
+/** Code that decides pass/fail for every suite: change any of it and old baselines stop being comparable. */
+const graderFiles = [
+  'suite.ts',
+  'golden.ts',
+  'mcp-scoring.ts',
+  'mcp-fixtures.ts',
+  'mcp-tool-catalog.ts',
+  'schemas.ts',
+  'time-block-compare.ts',
+  '../assertions/concise.ts',
+  '../assertions/time-block.ts',
+  '../assertions/offer-shape.ts',
+  '../assertions/mcp-grade.ts',
+  '../providers/mcp-agent.ts',
+].map((name) => new URL(name, import.meta.url));
 
 export const suiteMetadata = async (options: {
   tier: Tier;
   datasetFiles: readonly URL[];
   promptFiles: readonly URL[];
+  /** Rubrics, schemas, and expectations that define what counts as a pass. */
+  gradingSpec: unknown;
 }) => ({
   tier: options.tier,
   datasetHash: await fingerprint(options.datasetFiles),
   promptHash: await fingerprint(options.promptFiles),
+  graderHash: await fingerprintGrading(graderFiles, options.gradingSpec),
 });
 
 export type McpCase = {
@@ -158,10 +184,9 @@ export async function defineMcpSuite(options: McpSuiteOptions): Promise<Suite> {
     },
     metadata: { category: scenario.category ?? 'uncategorized', tier: options.tier },
     assert: [
-      fileAssertion('mcp-trace.ts', undefined, 'trajectory'),
-      ...(scenario.rubric
-        ? [fileAssertion('mcp-judge.ts', { minScore: JUDGE_MIN_SCORE }, 'judge')]
-        : []),
+      // One assertion on purpose: promptfoo runs separate assertions concurrently, so a
+      // separate judge assertion would be paid for even when the trajectory already failed.
+      fileAssertion('mcp-grade.ts', { minScore: JUDGE_MIN_SCORE }),
     ],
   }));
   return {
@@ -181,7 +206,10 @@ export async function defineMcpSuite(options: McpSuiteOptions): Promise<Suite> {
         },
       ],
       tests,
-      metadata: await suiteMetadata(options),
+      metadata: await suiteMetadata({
+        ...options,
+        gradingSpec: options.cases.map(({ id, expected, rubric }) => ({ id, expected, rubric })),
+      }),
     },
   };
 }

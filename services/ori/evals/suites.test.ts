@@ -25,8 +25,13 @@ test.each(suites.map((suite) => [suite.name, suite] as const))(
       expect(entry.assert?.length, `${entry.description} needs assertions`).toBeGreaterThan(0);
       expect(entry.metadata?.tier).toEqual(suite.tier);
     }
-    const metadata = suite.config.metadata as { datasetHash: string; promptHash: string };
+    const metadata = suite.config.metadata as {
+      datasetHash: string;
+      promptHash: string;
+      graderHash: string;
+    };
     expect(metadata.datasetHash).toMatch(/^[0-9a-f]{12}$/);
+    expect(metadata.graderHash).toMatch(/^[0-9a-f]{12}$/);
   },
 );
 
@@ -40,6 +45,14 @@ test('judge assertions always follow deterministic ones', () => {
       );
       const firstJudge = kinds.indexOf('judge');
       if (firstJudge >= 0) expect(kinds.slice(firstJudge)).not.toContain('det');
+    }
+  }
+});
+
+test('agent suites grade trajectory and judge in a single assertion', () => {
+  for (const suite of suites.filter((s) => s.name.startsWith('mcp-'))) {
+    for (const entry of suite.config.tests as Array<{ assert?: unknown[] }>) {
+      expect(entry.assert).toHaveLength(1);
     }
   }
 });

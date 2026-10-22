@@ -10,6 +10,8 @@ export type RawResult = {
   error?: string | null;
   latencyMs?: number;
   cost?: number;
+  /** Target plus grader usage; `response.tokenUsage` only has the target's. */
+  tokenUsage?: { prompt?: number; completion?: number };
   testCase?: { description?: string; metadata?: Record<string, unknown> };
   response?: {
     error?: string;
@@ -47,8 +49,8 @@ export function toTrial(raw: RawResult): TrialRecord {
     score: raw.score ?? 0,
     latencyMs: raw.latencyMs ?? 0,
     costUsd: raw.cost ?? raw.response?.cost ?? 0,
-    promptTokens: raw.response?.tokenUsage?.prompt ?? 0,
-    completionTokens: raw.response?.tokenUsage?.completion ?? 0,
+    promptTokens: raw.tokenUsage?.prompt ?? raw.response?.tokenUsage?.prompt ?? 0,
+    completionTokens: raw.tokenUsage?.completion ?? raw.response?.tokenUsage?.completion ?? 0,
     failedMetrics: failed.map(
       (component) => component.assertion?.metric ?? component.assertion?.type ?? 'assertion',
     ),

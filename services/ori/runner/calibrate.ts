@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
 import { assertions } from 'promptfoo';
 
@@ -68,6 +68,7 @@ export async function calibrate(): Promise<void> {
       `  disagree ${row.id}: human=${row.label} judge=${row.verdict} (${row.score}) ${row.reason.slice(0, 160)}`,
     );
   }
+  await mkdir(new URL('../runs/', import.meta.url), { recursive: true });
   await writeFile(
     new URL('../runs/judge-calibration.json', import.meta.url),
     `${JSON.stringify({ judgeModel, agreement, falsePass, falseFail, rows }, null, 2)}\n`,

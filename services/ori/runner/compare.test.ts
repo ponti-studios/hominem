@@ -17,6 +17,7 @@ const suite = (overrides: Partial<SuiteRecord> & { cases: CaseRecord[] }): Suite
   tier: 'regression',
   datasetHash: 'd',
   promptHash: 'p',
+  graderHash: 'g',
   targetModel: 'm',
   judgeModel: 'j',
   trialsPerCase: 1,
@@ -81,6 +82,7 @@ test('capability tier tolerates small drops and fails on large ones', () => {
 test.each([
   ['dataset', { datasetHash: 'x' }],
   ['prompt', { promptHash: 'x' }],
+  ['grading logic', { graderHash: 'x' }],
   ['target model', { targetModel: 'x' }],
   ['judge model', { judgeModel: 'x' }],
   ['partial run', { limited: true }],

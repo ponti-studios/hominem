@@ -27,6 +27,14 @@ export const fingerprint = async (urls: readonly URL[]): Promise<string> => {
   return hash.digest('hex').slice(0, 12);
 };
 
+/** Hash of arbitrary grading inputs (rubrics, schemas, expectations) plus the grader source files. */
+export const fingerprintGrading = async (files: readonly URL[], spec: unknown): Promise<string> => {
+  const hash = createHash('sha256');
+  for (const url of files) hash.update(await readFile(url));
+  hash.update(JSON.stringify(spec));
+  return hash.digest('hex').slice(0, 12);
+};
+
 export const render = (template: string, values: Record<string, string>): string =>
   template.replace(/{{\s*([^}]+?)\s*}}/g, (_, key: string) => values[key.trim()] ?? '');
 

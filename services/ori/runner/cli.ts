@@ -1,3 +1,4 @@
+import './env';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -127,12 +128,19 @@ async function check(): Promise<void> {
       );
       continue;
     }
-    const metadata = suite.config.metadata as { datasetHash: string; promptHash: string };
+    const metadata = suite.config.metadata as {
+      datasetHash: string;
+      promptHash: string;
+      graderHash: string;
+    };
     if (baseline.datasetHash !== metadata.datasetHash) {
       problems.push(`${suite.name}: dataset changed since the baseline was recorded`);
     }
     if (baseline.promptHash !== metadata.promptHash) {
       problems.push(`${suite.name}: prompt changed since the baseline was recorded`);
+    }
+    if (baseline.graderHash !== metadata.graderHash) {
+      problems.push(`${suite.name}: grading logic changed since the baseline was recorded`);
     }
     const unknown = baseline.cases.filter((entry) => !ids.includes(entry.id));
     if (unknown.length > 0) {
@@ -171,12 +179,17 @@ async function runSuite(
     rows,
     tests.map((test) => test.description ?? 'unnamed'),
   );
-  const metadata = suite.config.metadata as { datasetHash: string; promptHash: string };
+  const metadata = suite.config.metadata as {
+    datasetHash: string;
+    promptHash: string;
+    graderHash: string;
+  };
   return {
     suite: suite.name,
     tier: suite.tier,
     datasetHash: metadata.datasetHash,
     promptHash: metadata.promptHash,
+    graderHash: metadata.graderHash,
     targetModel,
     judgeModel,
     trialsPerCase: options.trials,
@@ -187,7 +200,6 @@ async function runSuite(
 }
 
 async function run(): Promise<void> {
-  if (process.env.ORI_ENV_FILE) process.loadEnvFile(process.env.ORI_ENV_FILE);
   if (!process.env.OPENROUTER_API_KEY) {
     throw new Error('OPENROUTER_API_KEY is required for live runs (offline: `eval check`)');
   }

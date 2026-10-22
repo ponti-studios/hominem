@@ -45,6 +45,7 @@ export type SuiteRecord = {
   tier: Tier;
   datasetHash: string;
   promptHash: string;
+  graderHash: string;
   targetModel: string;
   judgeModel: string;
   trialsPerCase: number;

@@ -38,6 +38,7 @@ export function compareToBaseline(current: SuiteRecord, baseline?: SuiteRecord):
   const reasons: string[] = [];
   if (baseline.datasetHash !== current.datasetHash) reasons.push('dataset changed');
   if (baseline.promptHash !== current.promptHash) reasons.push('prompt changed');
+  if (baseline.graderHash !== current.graderHash) reasons.push('grading logic changed');
   if (baseline.targetModel !== current.targetModel) reasons.push('target model changed');
   if (baseline.judgeModel !== current.judgeModel) reasons.push('judge model changed');
   if (current.limited) reasons.push('partial run (--limit)');
