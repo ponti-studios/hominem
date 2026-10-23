@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +23,17 @@ const exporterArgs = (outputPath: string) => [
   '--output',
   outputPath,
 ];
+
+function readSnapshot(): unknown {
+  try {
+    return JSON.parse(readFileSync(snapshotPath, 'utf8'));
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+      return undefined;
+    }
+    throw error;
+  }
+}
 
 const tempDir = mkdtempSync(join(tmpdir(), 'hominem-mcp-catalog-'));
 const tempCatalogPath = join(tempDir, 'catalog.json');
@@ -54,9 +65,7 @@ try {
   const generatedCatalog = z.array(toolSchema).parse(parsed);
   const generated = `${JSON.stringify(generatedCatalog, null, 2)}\n`;
 
-  const current: unknown = existsSync(snapshotPath)
-    ? JSON.parse(readFileSync(snapshotPath, 'utf8'))
-    : undefined;
+  const current = readSnapshot();
 
   if (process.argv.includes('--write')) {
     writeFileSync(snapshotPath, generated);
