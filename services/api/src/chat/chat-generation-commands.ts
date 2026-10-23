@@ -1,4 +1,5 @@
 import { CHAT_MODEL, type ChatMessages } from '@hominem/ai';
+import { getMaxOutputTokens } from '@hominem/ai/reply-profile';
 import type { ChatSnapshot, GenerationEvent } from '@hominem/chat';
 import { restoreGenerationState } from '@hominem/chat/server';
 import { ChatGenerationRepository, ChatRepository } from '@hominem/db/chats';
@@ -12,7 +13,6 @@ import { execute, send, start } from './chat-generation-execute';
 import {
   buildMessages,
   formatUserContentWithContext,
-  getMaxTokens,
   getReasoningConfig,
   toStoredUserMessageContent,
 } from './chat-generation-input';
@@ -162,6 +162,7 @@ export async function startMessage(
     [],
     formatUserContentWithContext(input.message, [], files),
     buildChatSystemPrompt(input.responseLength),
+    input.responseLength,
   );
   const toolPlan = await planTools(dependencies, messages);
   const created = await runInTransaction(async (trx) => {
@@ -194,7 +195,7 @@ export async function startMessage(
     toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
     requiresWebSearch: toolPlan.requiresWebSearch,
-    maxTokens: getMaxTokens(CHAT_MODEL, input.responseLength),
+    maxTokens: getMaxOutputTokens(CHAT_MODEL),
     reasoning: getReasoningConfig(CHAT_MODEL),
     userMessageId: created.userMessageId,
   });
@@ -230,6 +231,7 @@ export async function sendMessage(
     history,
     formatUserContentWithContext(input.message, notes, files),
     buildChatSystemPrompt(input.responseLength),
+    input.responseLength,
   );
   const toolPlan = await planTools(dependencies, messages);
 
@@ -262,7 +264,7 @@ export async function sendMessage(
     toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
     requiresWebSearch: toolPlan.requiresWebSearch,
-    maxTokens: getMaxTokens(CHAT_MODEL, input.responseLength),
+    maxTokens: getMaxOutputTokens(CHAT_MODEL),
     reasoning: getReasoningConfig(CHAT_MODEL),
     userMessageId,
     responseModality: input.responseModality,
@@ -298,6 +300,7 @@ async function redoGeneration(
     history.slice(0, userMessageIndex),
     formatUserContentWithContext(userMessage.content, notes, userMessage.files ?? []),
     buildChatSystemPrompt(input.responseLength),
+    input.responseLength,
   );
   const toolPlan = await planTools(dependencies, messages);
   await ChatRepository.createGenerationRun(db, {
@@ -318,7 +321,7 @@ async function redoGeneration(
     toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
     requiresWebSearch: toolPlan.requiresWebSearch,
-    maxTokens: getMaxTokens(CHAT_MODEL, input.responseLength),
+    maxTokens: getMaxOutputTokens(CHAT_MODEL),
     reasoning: getReasoningConfig(CHAT_MODEL),
     userMessageId: input.userMessageId,
     staleGenerationId: input.staleGenerationId,
@@ -402,7 +405,7 @@ export async function respondToConfirmation(
     toolPlan: toolPlan.steps,
     requiresToolCall: toolPlan.requiresLookup,
     requiresWebSearch: toolPlan.requiresWebSearch,
-    maxTokens: getMaxTokens(CHAT_MODEL, input.responseLength),
+    maxTokens: getMaxOutputTokens(CHAT_MODEL),
     reasoning: getReasoningConfig(CHAT_MODEL),
     userMessageId: null,
     targetAssistantMessageId: input.messageId,

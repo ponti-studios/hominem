@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getMaxTokens, getReasoningConfig } from './chat-generation-input';
+import { buildMessages, getReasoningConfig } from './chat-generation-input';
 
 describe('getReasoningConfig', () => {
   it('lets Muse Spark 1.3 models use their native reasoning mode', () => {
@@ -15,9 +15,20 @@ describe('getReasoningConfig', () => {
   it('uses minimal reasoning for GPT-5 mini', () => {
     expect(getReasoningConfig('openai/gpt-5-mini')).toEqual({ effort: 'minimal' });
   });
+});
 
-  it('caps Muse generations to a provider-compatible completion budget', () => {
-    expect(getMaxTokens('meta/muse-spark-1.3-contributor', 'long')).toBe(1600);
-    expect(getMaxTokens('openai/gpt-6-luna', 'long')).toBe(6000);
+describe('buildMessages', () => {
+  it('adds the length reminder to the request-only last user turn', () => {
+    const messages = buildMessages([], 'Hello', 'system prompt', 'short');
+    expect(messages.at(-1)?.content).toContain('Hello');
+    expect(messages.at(-1)?.content).toContain('under sixty words');
+    expect(messages[0]).toEqual({ role: 'system', content: 'system prompt' });
+  });
+
+  it('leaves the user turn untouched without a response length', () => {
+    expect(buildMessages([], 'Hello', 'system prompt').at(-1)).toEqual({
+      role: 'user',
+      content: 'Hello',
+    });
   });
 });

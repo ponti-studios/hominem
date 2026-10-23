@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { REPLY_LENGTHS } from '@hominem/ai/reply-profile';
 import { describe, expect, it } from 'vitest';
 
 import type { ChatResponseLength } from '../chat/chat-prompts';
 import {
   buildChatSystemPrompt,
   CHAT_ASSISTANT_PROMPT,
-  CHAT_RESPONSE_LENGTH_GUIDANCE,
   CHAT_TO_NOTE_PROMPT,
   getCurrentUtcDate,
   TIME_BLOCK_EXTRACTION_PROMPT,
@@ -28,19 +28,21 @@ describe('chat assistant personality', () => {
   });
 
   it('makes default brevity explicit and appends each selected length mode', () => {
-    expect(CHAT_ASSISTANT_PROMPT).toContain('answer in one or two sentences');
+    expect(CHAT_ASSISTANT_PROMPT).toContain('keep the answer short and direct');
+    // Models cannot count characters; the default must not promise a numeric limit.
+    expect(CHAT_ASSISTANT_PROMPT).not.toMatch(/\b\d+ characters\b/);
     expect(CHAT_ASSISTANT_PROMPT).toContain(
-      'Do not add context, action plans, generic reassurance',
+      'Do not add context nobody asked for, action plans, generic reassurance',
     );
     expect(buildChatSystemPrompt()).toContain(CHAT_ASSISTANT_PROMPT);
     expect(buildChatSystemPrompt()).toMatch(/CURRENT DATE \(UTC\): \d{4}-\d{2}-\d{2}/);
 
     const lengths: ChatResponseLength[] = ['short', 'medium', 'long'];
-    expect([...lengths].sort()).toEqual(Object.keys(CHAT_RESPONSE_LENGTH_GUIDANCE).sort());
+    expect([...lengths].sort()).toEqual(Object.keys(REPLY_LENGTHS).sort());
     for (const length of lengths) {
       const prompt = buildChatSystemPrompt(length);
       expect(prompt).toContain(CHAT_ASSISTANT_PROMPT);
-      expect(prompt).toContain(CHAT_RESPONSE_LENGTH_GUIDANCE[length]);
+      expect(prompt).toContain(REPLY_LENGTHS[length].guidance);
     }
   });
 

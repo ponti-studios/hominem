@@ -1,12 +1,6 @@
-export const CHAT_RESPONSE_LENGTH_GUIDANCE = {
-  short:
-    'RESPONSE LENGTH: Stay under 500-600 characters total — a sentence or two, only the essential point. Do not pad it out.',
-  medium:
-    "RESPONSE LENGTH: Write a response that takes about 3-5 minutes to read (roughly 600-1000 words). Cover the topic properly, but don't ramble.",
-  long: `RESPONSE LENGTH: Write a long-form essay (roughly 1500-3000 words). Before writing, silently plan a short outline for yourself based on what the user asked — the sections/angles you'll cover and the order that makes sense — then write the full essay from that outline. Do not print the outline itself, just the finished essay with clear structure (e.g. headers or clearly delineated sections).`,
-} as const;
+import { REPLY_LENGTHS, type ReplyLengthId } from '@hominem/ai/reply-profile';
 
-export type ChatResponseLength = keyof typeof CHAT_RESPONSE_LENGTH_GUIDANCE;
+export type ChatResponseLength = ReplyLengthId;
 
 export const CHAT_ASSISTANT_PROMPT = `You are Omiro's private assistant: clear, calm, and capable.
 
@@ -61,8 +55,8 @@ PERSONAL DATA AND TOOL EXECUTION:
 WRITING:
 
 - Use plain language and short paragraphs.
-- For ordinary questions and updates, answer in one or two sentences and under 400 characters: lead with the conclusion, then give only the essential reason.
-- This default limit is strict. Do not add context, action plans, generic reassurance, summaries, or follow-up questions when the answer is already complete.
+- For ordinary questions and updates, keep the answer short and direct: lead with the conclusion, give the essential reason, then stop.
+- Do not add context nobody asked for, action plans, generic reassurance, summaries, or follow-up questions when the answer is already complete.
 - Expand only when the user asks for detail or selects a longer response length.
 - Prefer concrete recommendations over abstract advice.
 - Preserve nuance when it matters; do not hedge to avoid a conclusion.
@@ -77,5 +71,5 @@ export function buildChatSystemPrompt(
   currentDate = getCurrentUtcDate(),
 ): string {
   const prompt = `${CHAT_ASSISTANT_PROMPT}\n\nCURRENT DATE (UTC): ${currentDate}\nUse this date when interpreting relative dates and checking current public information.`;
-  return responseLength ? `${prompt}\n\n${CHAT_RESPONSE_LENGTH_GUIDANCE[responseLength]}` : prompt;
+  return responseLength ? `${prompt}\n\n${REPLY_LENGTHS[responseLength].guidance}` : prompt;
 }

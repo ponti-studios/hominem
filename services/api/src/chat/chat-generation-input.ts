@@ -1,23 +1,10 @@
 import { getReasoningConfig as getModelReasoningConfig, type ChatMessages } from '@hominem/ai';
+import { withLengthReminder, type ReplyLengthId } from '@hominem/ai/reply-profile';
 import type { ChatMessageSnapshot } from '@hominem/chat';
 import type { ChatMessageFileRecord, NoteContext } from '@hominem/db/chats';
 import { isObject } from '@hominem/utils';
 
-export const RESPONSE_LENGTH_MAX_TOKENS: Record<'short' | 'medium' | 'long', number> = {
-  short: 250,
-  medium: 1600,
-  long: 6000,
-};
-
 export const getReasoningConfig = getModelReasoningConfig;
-
-export function getMaxTokens(
-  model: string,
-  responseLength?: keyof typeof RESPONSE_LENGTH_MAX_TOKENS,
-) {
-  if (model.startsWith('meta/muse-spark-1.3')) return 1_600;
-  return responseLength ? RESPONSE_LENGTH_MAX_TOKENS[responseLength] : undefined;
-}
 
 export function toStoredUserMessageContent(
   message: string,
@@ -79,13 +66,19 @@ export function buildMessages(
   history: ChatMessageSnapshot[],
   currentUserContent: string,
   systemPrompt: string,
+  responseLength?: ReplyLengthId,
 ): ChatMessages[] {
-  return [
-    { role: 'system', content: systemPrompt },
-    ...history.map((entry): ChatMessages => ({
-      role: entry.role === 'assistant' ? 'assistant' : 'user',
-      content: entry.content,
-    })),
-    { role: 'user', content: currentUserContent },
-  ];
+  // The length reminder rides along on this request's last user turn only; the stored message
+  // (see toStoredUserMessageContent) never includes it.
+  return withLengthReminder(
+    [
+      { role: 'system', content: systemPrompt },
+      ...history.map((entry): ChatMessages => ({
+        role: entry.role === 'assistant' ? 'assistant' : 'user',
+        content: entry.content,
+      })),
+      { role: 'user', content: currentUserContent },
+    ],
+    responseLength,
+  );
 }
