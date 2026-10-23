@@ -451,26 +451,26 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       ),
     )
     .get('/logout', async (c) => {
-      // Apps send people here with `next`: sign out in one hop and land on the
-      // login page (with a note), never a confirmation or dead-end screen.
+      // Apps send people here with `next`. GET stays read-only (a cross-site
+      // navigation or prefetch must not end a session), so a signed-in browser
+      // gets a page that POSTs the sign-out itself; a signed-out one just moves on.
       const next = c.req.query('next');
       const resume = next
         ? resolveResumeWithEnv(`next=${encodeURIComponent(next)}`, requestOrigin(c))
         : null;
       if (resume?.mode === 'app') {
-        const response = await callBetterAuth({
-          body: {},
-          path: '/sign-out',
-          request: c.req.raw,
-          auth,
-          env: inputEnv,
-        });
         const landing = new URL('/login', requestOrigin(c));
         landing.searchParams.set('next', resume.url);
         landing.searchParams.set('signed_out', '1');
-        const headers = new Headers(response.headers);
-        headers.set('location', landing.toString());
-        return new Response(null, { headers, status: 303 });
+        const active = await auth.api.getSession({ headers: c.req.raw.headers });
+        if (!active) return c.redirect(landing.toString(), 303);
+        return c.html(
+          renderAuthShell({
+            entry: 'logout',
+            init: { signedOut: false, next: landing.toString() },
+            title: 'Signing out | Hominem',
+          }),
+        );
       }
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       return c.html(

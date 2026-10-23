@@ -1,4 +1,6 @@
 // @jsxImportSource react
+import { useEffect, useRef } from 'react';
+
 import {
   AuthCardCopy,
   AuthContent,
@@ -11,9 +13,17 @@ import {
 
 type LogoutPageProps = {
   signedOut?: boolean;
+  next?: string;
 };
 
-export function LogoutPage({ signedOut = false }: LogoutPageProps) {
+export function LogoutPage({ signedOut = false, next }: LogoutPageProps) {
+  const formRef = useRef<HTMLFormElement | null>(null);
+
+  // Arrived from an app with a return target: sign out right away.
+  useEffect(() => {
+    if (next) formRef.current?.requestSubmit();
+  }, [next]);
+
   return (
     <AuthShell>
       <AuthContent>
@@ -21,7 +31,7 @@ export function LogoutPage({ signedOut = false }: LogoutPageProps) {
           <AuthTitle>{signedOut ? "You're signed out" : 'Sign out?'}</AuthTitle>
           <AuthCardCopy>
             {signedOut
-              ? 'Your session on every Hominem app has ended. Nothing else changed.'
+              ? 'Your Hominem session in this browser has ended. Nothing else changed.'
               : 'This clears your Hominem browser session.'}
           </AuthCardCopy>
         </AuthHeading>
@@ -36,7 +46,8 @@ export function LogoutPage({ signedOut = false }: LogoutPageProps) {
             <AuthSecondaryLink href="https://hominem.app">Back to Hominem</AuthSecondaryLink>
           </div>
         ) : (
-          <form action="/logout" method="post">
+          <form action="/logout" method="post" ref={formRef}>
+            {next ? <input name="next" type="hidden" value={next} /> : null}
             <AuthPrimaryButton type="submit">Sign me out</AuthPrimaryButton>
           </form>
         )}

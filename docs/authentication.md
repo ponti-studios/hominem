@@ -146,7 +146,9 @@ Signed-out visitors are redirected through hosted login with a resume back to
 accepts an optional `next` form field (trusted via the same
 `resolveResume` check) and 303s there after clearing the session cookie — it
 is additive; a `/logout` POST without `next` keeps rendering the signed-out
-page.
+page. `GET /logout?next=<trusted app>` never mutates: a signed-in browser gets
+a page that auto-submits that POST (landing on `/login?signed_out=1` with a
+"you're signed out" note), a signed-out one is redirected straight there.
 
 `/auth/settings/ai` is the deep-dive version of the same usage section: a
 per-month breakdown page (status + pacing, daily spend, ranked drivers by

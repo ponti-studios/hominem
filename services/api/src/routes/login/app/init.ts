@@ -26,6 +26,8 @@ export type ConsentInit = z.infer<typeof consentInitSchema>;
 
 export const logoutInitSchema = z.object({
   signedOut: z.boolean(),
+  /** Where the sign-out POST sends the browser afterwards (already validated server-side). */
+  next: z.string().optional(),
 });
 export type LogoutInit = z.infer<typeof logoutInitSchema>;
 

@@ -60,7 +60,7 @@ export function LoginPage({
             <strong className="block font-semibold">
               You're signed out{app ? ` of ${app}` : ''}
             </strong>
-            Your session is cleared on every Hominem app.
+            Your session on this browser has been cleared.
           </p>
         ) : null}
         {app && !signedOut && !isOtpStep ? (
