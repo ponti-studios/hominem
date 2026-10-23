@@ -26,7 +26,7 @@ export function PlaceScreen() {
   const createNote = useCreateNote();
   const [skipped, setSkipped] = useState<string[]>([]);
   const [picking, setPicking] = useState(false);
-  const [today] = useState(() => new Date());
+  const [today, setToday] = useState(() => new Date());
 
   const inbox = getInboxTasks(tasks);
   const queue = inbox.filter((task) => !skipped.includes(task.id));
@@ -180,7 +180,12 @@ export function PlaceScreen() {
             ))}
             <Pressable
               accessibilityRole="button"
-              onPress={() => setPicking((open) => !open)}
+              onPress={() => {
+                if (!picking) {
+                  setToday(new Date());
+                }
+                setPicking((open) => !open);
+              }}
               style={[styles.chip, styles.chipPick]}
               testID="place-pick"
             >

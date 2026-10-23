@@ -20,7 +20,7 @@ export function MoveSheet({ task, onClose, onMove }: MoveSheetProps) {
   const { primary, mutedForeground } = useAppTheme().colors;
   const [picking, setPicking] = useState(false);
   const [lastTask, setLastTask] = useState<TaskListItem | null>(null);
-  const [today] = useState(() => new Date());
+  const [today, setToday] = useState(() => new Date());
   // Hold the last task so the sheet keeps its content while animating out.
   if (task && task !== lastTask) {
     setLastTask(task);
@@ -86,7 +86,12 @@ export function MoveSheet({ task, onClose, onMove }: MoveSheetProps) {
         ))}
         <Pressable
           accessibilityRole="button"
-          onPress={() => setPicking((open) => !open)}
+          onPress={() => {
+            if (!picking) {
+              setToday(new Date());
+            }
+            setPicking((open) => !open);
+          }}
           style={[styles.row, styles.lastRow]}
           testID="move-pick"
         >
