@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { assertions } from 'promptfoo';
 
 import { judgeModel } from '../evals/lib/golden';
+import { summarizeCalibration, type CalibrationRow } from './calibration-metrics';
 import { discoverSuites } from './discover';
 
 type LabeledCase = {
@@ -13,7 +14,7 @@ type LabeledCase = {
   label: 'pass' | 'fail';
 };
 
-/** Minimum share of labels the judge must reproduce before we trust its pass rates. */
+/** Minimum observed agreement and lower confidence bound for each calibration slice. */
 const MIN_AGREEMENT = 0.85;
 
 const labelsUrl = new URL('../calibration/judge-labels.json', import.meta.url);
@@ -27,10 +28,11 @@ export async function calibrate(): Promise<void> {
   if (process.env.ORI_ENV_FILE) process.loadEnvFile(process.env.ORI_ENV_FILE);
   if (!process.env.OPENROUTER_API_KEY) throw new Error('OPENROUTER_API_KEY is required');
   const { cases } = JSON.parse(await readFile(labelsUrl, 'utf8')) as { cases: LabeledCase[] };
+  if (cases.length === 0)
+    throw new Error('Judge calibration needs at least one human-labeled case');
   const suites = await discoverSuites();
 
-  const rows: Array<{ id: string; label: string; verdict: string; score: number; reason: string }> =
-    [];
+  const rows: CalibrationRow[] = [];
   for (const labeled of cases) {
     const suite = suites.find((candidate) => candidate.name === labeled.suite);
     const tests = suite?.config.tests as Array<{
@@ -45,6 +47,7 @@ export async function calibrate(): Promise<void> {
     );
     rows.push({
       id: labeled.id,
+      suite: labeled.suite,
       label: labeled.label,
       verdict: grade.score >= 0.7 ? 'pass' : 'fail',
       score: grade.score,
@@ -52,29 +55,46 @@ export async function calibrate(): Promise<void> {
     });
   }
 
-  const wrong = rows.filter((row) => row.label !== row.verdict);
-  const falsePass = wrong.filter((row) => row.verdict === 'pass').length;
-  const falseFail = wrong.filter((row) => row.verdict === 'fail').length;
-  const agreement = (rows.length - wrong.length) / rows.length;
+  const bySuite = Object.fromEntries(
+    [...new Set(rows.map((row) => row.suite))]
+      .sort()
+      .map((suite) => [suite, summarizeCalibration(rows.filter((row) => row.suite === suite))]),
+  );
+  const overall = summarizeCalibration(rows);
 
   console.log(
-    `judge ${judgeModel}: agreement ${(agreement * 100).toFixed(0)}% on ${rows.length} labeled cases`,
+    `judge ${judgeModel}: agreement ${(overall.agreement * 100).toFixed(0)}% on ${overall.cases} labeled cases`,
   );
   console.log(
-    `false passes (judge too lenient): ${falsePass} · false fails (too strict): ${falseFail}`,
+    `overall 95% Wilson interval ${(overall.agreementInterval95.lower * 100).toFixed(0)}–${(overall.agreementInterval95.upper * 100).toFixed(0)}% · Cohen's κ ${overall.cohenKappa ?? 'undefined'}`,
   );
-  for (const row of wrong) {
+  for (const [suite, stats] of Object.entries(bySuite)) {
     console.log(
-      `  disagree ${row.id}: human=${row.label} judge=${row.verdict} (${row.score}) ${row.reason.slice(0, 160)}`,
+      `  ${suite}: ${stats.cases} cases · agreement ${(stats.agreement * 100).toFixed(0)}% · 95% Wilson ${(stats.agreementInterval95.lower * 100).toFixed(0)}–${(stats.agreementInterval95.upper * 100).toFixed(0)}% · κ ${stats.cohenKappa ?? 'undefined'} · false passes ${stats.falsePass} · false fails ${stats.falseFail}`,
+    );
+  }
+  for (const row of rows.filter((entry) => entry.label !== entry.verdict)) {
+    console.log(
+      `  disagree ${row.id} (${row.suite}): human=${row.label} judge=${row.verdict} (${row.score}) ${row.reason.slice(0, 160)}`,
     );
   }
   await mkdir(new URL('../runs/', import.meta.url), { recursive: true });
   await writeFile(
     new URL('../runs/judge-calibration.json', import.meta.url),
-    `${JSON.stringify({ judgeModel, agreement, falsePass, falseFail, rows }, null, 2)}\n`,
+    `${JSON.stringify({ judgeModel, overall, bySuite, rows }, null, 2)}\n`,
   );
-  if (agreement < MIN_AGREEMENT || falsePass > 0) {
-    console.error(`Judge below bar (need agreement >= ${MIN_AGREEMENT} and zero false passes).`);
+  const failedSuites = Object.entries(bySuite)
+    .filter(
+      ([, stats]) =>
+        stats.agreement < MIN_AGREEMENT ||
+        stats.agreementInterval95.lower < MIN_AGREEMENT ||
+        stats.falsePass > 0,
+    )
+    .map(([suite]) => suite);
+  if (failedSuites.length > 0) {
+    console.error(
+      `Judge calibration below bar for ${failedSuites.join(', ')}. Each suite needs observed agreement >= ${MIN_AGREEMENT}, a 95% Wilson lower bound >= ${MIN_AGREEMENT}, and zero false passes. Treat small curated samples as screening evidence, not proof of generalization.`,
+    );
     process.exitCode = 1;
   }
 }

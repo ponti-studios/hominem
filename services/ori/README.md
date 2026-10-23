@@ -39,8 +39,12 @@ Exit codes: `0` ok, `1` gate failed (regression), `2` infrastructure errors.
 - **Trials**: `--trials k` repeats every case. Reports show pass@1 (mean pass rate) and pass^k
   (case passed every trial), because a flaky pass isn't a pass.
 - **Judge**: a different model family from the target (`ORI_JUDGE_MODEL`, default
-  `openai/gpt-6-luna`), threshold 0.7. `calibrate` grades `calibration/judge-labels.json` and needs
-  agreement >= 85% with zero false passes.
+  `openai/gpt-6-luna`), threshold 0.7. `calibrate` grades the judge against
+  `calibration/judge-labels.json`, reports agreement, Cohen's kappa, a 95% Wilson interval, and
+  per-suite confusion counts. Each suite must reach 85% observed agreement and a 95% Wilson lower
+  bound of at least 85%, with zero false passes. The labels are curated screening examples, so
+  even a passing interval does not establish generalization; add diverse human-reviewed cases for
+  each rubric before relying on the judge as a release signal.
 - **Tracked every run**: cost, tokens (target + judge), p50/p95 latency, dataset/prompt/grader hashes, models.
 
 ## Baselines and the gate
