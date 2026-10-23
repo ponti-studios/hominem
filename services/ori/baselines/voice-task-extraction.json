@@ -1,0 +1,140 @@
+{
+  "suite": "voice-task-extraction",
+  "tier": "capability",
+  "datasetHash": "848892566694",
+  "promptHash": "e5292856f319",
+  "graderHash": "ccf44bbd5619",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 1,
+  "limited": false,
+  "summary": {
+    "cases": 6,
+    "trials": 6,
+    "passRate": 0.8333,
+    "passAllRate": 0.8333,
+    "errors": 0,
+    "meanScore": 0.975,
+    "costUsd": 0.006359,
+    "promptTokens": 7464,
+    "completionTokens": 3024,
+    "latencyP50Ms": 3638,
+    "latencyP95Ms": 9836,
+    "byCategory": {
+      "uncategorized": {
+        "cases": 6,
+        "passRate": 0.8333
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "urgency and date",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7242,
+          "costUsd": 0.0015903,
+          "promptTokens": 1254,
+          "completionTokens": 768
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "noon default",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5508,
+          "costUsd": 0.0011068,
+          "promptTokens": 1232,
+          "completionTokens": 529
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "two weeks",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 3638,
+          "costUsd": 0.0005508,
+          "promptTokens": 1232,
+          "completionTokens": 251
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "explicit clock time",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 3384,
+          "costUsd": 0.0005518,
+          "promptTokens": 1236,
+          "completionTokens": 251
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "mixed urgency",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0.85,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 9836,
+          "costUsd": 0.00237505,
+          "promptTokens": 1265,
+          "completionTokens": 1159
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "no actionable items",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 2160,
+          "costUsd": 0.00018405,
+          "promptTokens": 1245,
+          "completionTokens": 66
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    }
+  ]
+}

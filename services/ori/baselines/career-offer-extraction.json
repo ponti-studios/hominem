@@ -1,0 +1,608 @@
+{
+  "suite": "career-offer-extraction",
+  "tier": "capability",
+  "datasetHash": "4f536e0446cf",
+  "promptHash": "1b3eea88d328",
+  "graderHash": "3302ea5d1fb3",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 1,
+  "limited": false,
+  "summary": {
+    "cases": 32,
+    "trials": 32,
+    "passRate": 0.9063,
+    "passAllRate": 0.9063,
+    "errors": 0,
+    "meanScore": 0.9969,
+    "costUsd": 0.058023,
+    "promptTokens": 56424,
+    "completionTokens": 27949,
+    "latencyP50Ms": 7222,
+    "latencyP95Ms": 12670,
+    "byCategory": {
+      "uncategorized": {
+        "cases": 32,
+        "passRate": 0.9063
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "la-baseline",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5674,
+          "costUsd": 0.00126685,
+          "promptTokens": 1773,
+          "completionTokens": 599
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "london-offer",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7562,
+          "costUsd": 0.0021076,
+          "promptTokens": 1768,
+          "completionTokens": 1020
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "users-offer-notes",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0.9333333333333332,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 12670,
+          "costUsd": 0.00327435,
+          "promptTokens": 1795,
+          "completionTokens": 1600
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "currency-inferred-from-location",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5118,
+          "costUsd": 0.0014116,
+          "promptTokens": 1752,
+          "completionTokens": 674
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "currency-symbol-location-conflict",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7178,
+          "costUsd": 0.00182385,
+          "promptTokens": 1753,
+          "completionTokens": 880
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "partial-info",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4697,
+          "costUsd": 0.00129085,
+          "promptTokens": 1749,
+          "completionTokens": 614
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "landmark-fidi",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5576,
+          "costUsd": 0.0013366,
+          "promptTokens": 1756,
+          "completionTokens": 636
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "equity-rsu-cliff",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8681,
+          "costUsd": 0.0018391,
+          "promptTokens": 1766,
+          "completionTokens": 886
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "contractor",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8399,
+          "costUsd": 0.0021011,
+          "promptTokens": 1758,
+          "completionTokens": 1018
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "person-profile",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 2831,
+          "costUsd": 0.00068085,
+          "promptTokens": 1773,
+          "completionTokens": 306
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "multi-offer",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 9048,
+          "costUsd": 0.00259435,
+          "promptTokens": 1787,
+          "completionTokens": 1261
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "tokyo-jpy",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6258,
+          "costUsd": 0.00148935,
+          "promptTokens": 1759,
+          "completionTokens": 712
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "singapore-sgd",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6946,
+          "costUsd": 0.00192135,
+          "promptTokens": 1767,
+          "completionTokens": 927
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "sydney-aud",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7253,
+          "costUsd": 0.0018396,
+          "promptTokens": 1760,
+          "completionTokens": 887
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "berlin-eur",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7459,
+          "costUsd": 0.00139085,
+          "promptTokens": 1757,
+          "completionTokens": 663
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "paris-eur",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7269,
+          "costUsd": 0.0015536,
+          "promptTokens": 1760,
+          "completionTokens": 744
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "dubai-aed",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7222,
+          "costUsd": 0.0017256,
+          "promptTokens": 1760,
+          "completionTokens": 830
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "zurich-chf",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7739,
+          "costUsd": 0.00166485,
+          "promptTokens": 1757,
+          "completionTokens": 800
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "toronto-cad",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7362,
+          "costUsd": 0.00168035,
+          "promptTokens": 1763,
+          "completionTokens": 807
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "bangalore-inr",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8558,
+          "costUsd": 0.0023531,
+          "promptTokens": 1758,
+          "completionTokens": 1144
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "sao-paulo-brl",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6702,
+          "costUsd": 0.0015541,
+          "promptTokens": 1762,
+          "completionTokens": 744
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "seattle-usd",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0.9833333333333334,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 14798,
+          "costUsd": 0.00287935,
+          "promptTokens": 1767,
+          "completionTokens": 1406
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "london-ontario",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6014,
+          "costUsd": 0.00142235,
+          "promptTokens": 1755,
+          "completionTokens": 679
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "hourly-contractor",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7346,
+          "costUsd": 0.0020136,
+          "promptTokens": 1768,
+          "completionTokens": 973
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "signon-heavy",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0.9833333333333334,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 11200,
+          "costUsd": 0.00321835,
+          "promptTokens": 1771,
+          "completionTokens": 1575
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "dublin-eur",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6286,
+          "costUsd": 0.00165735,
+          "promptTokens": 1759,
+          "completionTokens": 796
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "amsterdam-eur",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6821,
+          "costUsd": 0.0015551,
+          "promptTokens": 1758,
+          "completionTokens": 745
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "stockholm-sek",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5993,
+          "costUsd": 0.0015491,
+          "promptTokens": 1758,
+          "completionTokens": 742
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "cape-town-zar",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5966,
+          "costUsd": 0.00159985,
+          "promptTokens": 1761,
+          "completionTokens": 767
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "no-location",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8116,
+          "costUsd": 0.0018216,
+          "promptTokens": 1760,
+          "completionTokens": 878
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "fractional-cto",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6941,
+          "costUsd": 0.00159785,
+          "promptTokens": 1761,
+          "completionTokens": 766
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "equity-iso-vs-nso",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7814,
+          "costUsd": 0.00180885,
+          "promptTokens": 1773,
+          "completionTokens": 870
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    }
+  ]
+}

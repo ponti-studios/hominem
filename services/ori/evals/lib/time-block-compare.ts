@@ -1,4 +1,4 @@
-import type { Golden } from './evaluator';
+import type { Golden } from './golden';
 
 type TimeBlock = Record<string, unknown>;
 
