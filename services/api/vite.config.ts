@@ -5,9 +5,22 @@ import { defineConfig } from 'vite';
 
 const loginRoot = path.resolve(import.meta.dirname, 'src/routes/login');
 
+const stripReactQueryClientDirective = {
+  name: 'strip-react-query-client-directive',
+  transform(code: string, id: string) {
+    // These entries are browser bundles, not React Server Component modules;
+    // Vite's bundler cannot preserve the marker and it has no runtime meaning here.
+    if (!id.includes('/@tanstack/react-query/') || !code.startsWith('"use client";')) {
+      return null;
+    }
+
+    return { code: code.replace(/^"use client";\s*/, ''), map: null };
+  },
+};
+
 export default defineConfig({
   appType: 'custom',
-  plugins: [tailwindcss()],
+  plugins: [stripReactQueryClientDirective, tailwindcss()],
   build: {
     manifest: true,
     outDir: 'dist/public',

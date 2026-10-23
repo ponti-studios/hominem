@@ -26,6 +26,7 @@ export function PlaceScreen() {
   const createNote = useCreateNote();
   const [skipped, setSkipped] = useState<string[]>([]);
   const [picking, setPicking] = useState(false);
+  const [today] = useState(() => new Date());
 
   const inbox = getInboxTasks(tasks);
   const queue = inbox.filter((task) => !skipped.includes(task.id));
@@ -191,11 +192,11 @@ export function PlaceScreen() {
             <View style={styles.picker}>
               <DateTimePicker
                 display="inline"
-                minimumDate={new Date()}
+                minimumDate={today}
                 mode="date"
                 onValueChange={(_, date) => placeOn(current, new Date(date.setHours(0, 0, 0, 0)))}
                 testID="place-date-picker"
-                value={new Date()}
+                value={today}
               />
             </View>
           ) : null}
