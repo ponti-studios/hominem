@@ -204,10 +204,10 @@ function getAuthPlugins(inputEnv: ApiEnv) {
       metadataProfile: 'mcp-2026-07-28',
     }),
     multiSession({ maximumSessions: 8 }),
-    openAPI({
-      path: '/reference',
-      theme: 'deepSpace',
-    }),
+    // Reference page lists every endpoint; fine locally, not worth exposing in production.
+    ...(inputEnv.NODE_ENV === 'production'
+      ? []
+      : [openAPI({ path: '/reference', theme: 'deepSpace' })]),
   ];
 
   return plugins;
