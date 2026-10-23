@@ -19,17 +19,18 @@ export function AccountSettingsPage({ loaderData }: { loaderData: AccountSetting
       body: formData,
     });
 
-    const contentType = response.headers.get('content-type');
-    const result: AccountActionResult<TData> = contentType?.includes('application/json')
-      ? await response.json()
-      : {
-          success: response.ok,
-          error: response.ok ? undefined : await response.text(),
-        };
+    const isJson = response.headers.get('content-type')?.includes('application/json');
 
     if (!response.ok) {
-      throw new Error(result.error || result.message || 'Request failed');
+      const failure: Partial<AccountActionResult<TData>> = isJson
+        ? await response.json()
+        : { error: await response.text() };
+      throw new Error(failure.error || failure.message || 'Request failed');
     }
+
+    const result: AccountActionResult<TData> = isJson
+      ? await response.json()
+      : { success: true, error: undefined };
 
     return result;
   };
