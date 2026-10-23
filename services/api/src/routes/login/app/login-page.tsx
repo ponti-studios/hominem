@@ -1,5 +1,5 @@
 // @jsxImportSource react
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   AuthAlert,
@@ -20,13 +20,28 @@ type LoginPageProps = {
   error?: string;
   resumeQuery: string;
   step: 'email' | 'otp';
+  app?: string;
+  signedOut?: boolean;
 };
 
-export function LoginPage({ email: initialEmail, error, resumeQuery, step }: LoginPageProps) {
+export function LoginPage({
+  email: initialEmail,
+  error,
+  resumeQuery,
+  step,
+  app,
+  signedOut = false,
+}: LoginPageProps) {
   const [email, setEmail] = useState(initialEmail);
   const [digits, setDigits] = useState('');
 
   const isOtpStep = step === 'otp';
+  const otpFormRef = useRef<HTMLFormElement | null>(null);
+
+  // Sixth digit typed or pasted: send it, no Verify click needed.
+  useEffect(() => {
+    if (isOtpStep && digits.length === 6) otpFormRef.current?.requestSubmit();
+  }, [digits, isOtpStep]);
 
   const changeEmailUrl = useMemo(() => {
     const url = new URL(window.location.href);
@@ -37,8 +52,26 @@ export function LoginPage({ email: initialEmail, error, resumeQuery, step }: Log
   return (
     <AuthShell>
       <AuthContent>
+        {signedOut && !isOtpStep ? (
+          <p
+            className="m-0 rounded-[10px] bg-[color-mix(in_srgb,var(--auth-primary)_14%,transparent)] px-4 py-3.5 text-sm leading-normal text-auth-text"
+            role="status"
+          >
+            <strong className="block font-semibold">
+              You're signed out{app ? ` of ${app}` : ''}
+            </strong>
+            Your session is cleared on every Hominem app.
+          </p>
+        ) : null}
+        {app && !signedOut && !isOtpStep ? (
+          <p className="m-0 self-start rounded-full bg-[color-mix(in_srgb,var(--auth-primary)_14%,transparent)] px-3 py-1.5 text-[13px] font-medium text-auth-text">
+            Continuing to {app}
+          </p>
+        ) : null}
         <AuthHeading>
-          <AuthTitle>{isOtpStep ? 'Check your email' : 'Sign in'}</AuthTitle>
+          <AuthTitle>
+            {isOtpStep ? 'Check your email' : signedOut ? 'Sign back in' : 'Sign in'}
+          </AuthTitle>
           <AuthCardCopy>
             {isOtpStep ? (
               <>
@@ -46,6 +79,10 @@ export function LoginPage({ email: initialEmail, error, resumeQuery, step }: Log
                 <strong className="font-semibold text-auth-text">{email}</strong>. It's good for a
                 few minutes.
               </>
+            ) : signedOut ? (
+              'Switching accounts? Enter the email you want to use.'
+            ) : app ? (
+              `We'll send a six-digit code, then take you straight back to ${app}.`
             ) : (
               "Enter your email and we'll send you a six-digit code. No password to remember."
             )}
@@ -58,6 +95,7 @@ export function LoginPage({ email: initialEmail, error, resumeQuery, step }: Log
             className="flex flex-col gap-5"
             data-error={error ? true : undefined}
             method="post"
+            ref={otpFormRef}
           >
             <input name="resume" type="hidden" value={resumeQuery} />
             <input name="email" type="hidden" value={email} />
