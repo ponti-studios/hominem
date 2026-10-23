@@ -1,6 +1,6 @@
 name: _validate-docker
 
-# Builds a service's production Dockerfile exactly as Railway does (context = repo root). The
+# Builds a service's production Dockerfile exactly as the Fly deploy does (context = repo root). The
 # regular validate job builds with turbo, which compiles workspace packages first; the Dockerfiles
 # do not, so a change can pass validation and still fail the image build (and block the deploy).
 
@@ -12,7 +12,7 @@ on:
         type: string
         required: true
       build-args:
-        description: Space-separated KEY=value build arguments (Railway injects these from service variables).
+        description: Space-separated KEY=value build arguments (Fly deploys pass these as --build-arg).
         type: string
         default: ''
 

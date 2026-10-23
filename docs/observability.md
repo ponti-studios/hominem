@@ -4,8 +4,8 @@ Hominem uses two production observability surfaces with different jobs:
 
 - New Relic is the primary home for API and worker traces, metrics, and
   privacy-filtered application logs, plus Omiro mobile errors and performance.
-- Railway is the source of truth for complete container stdout/stderr, build,
-  HTTP edge, Redis, and database logs.
+- Fly is the source of truth for complete container stdout/stderr, build,
+  and platform logs (`fly logs`, short buffer).
 
 Do not put OTLP or New Relic user API credentials in a Web or mobile bundle.
 
@@ -17,14 +17,14 @@ runbook steps — see the `hominem-observability` skill
 navigation path.
 
 The API and worker send OTLP traces, metrics, and searchable application logs
-to New Relic. Configure these Railway variables on both services:
+to New Relic. Configure these Fly secrets on both apps (`hominem-api`, `hominem-worker`):
 
 - `OTEL_EXPORTER_OTLP_ENDPOINT`
 - `OTEL_EXPORTER_OTLP_HEADERS` (`api-key` header with the New Relic license key;
-  store it as a write-only Railway secret)
+  store it as a Fly secret)
 - `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` (New Relic EU OTLP logs endpoint)
 - `OTEL_EXPORTER_OTLP_LOGS_HEADERS` (`api-key` header with the New Relic license
-  key; store it as a write-only Railway secret)
+  key; store it as a Fly secret)
 - `OTEL_TRACES_SAMPLER_ARG`
 
 Set `OTEL_EXPORTER_OTLP_ENDPOINT` to `https://otlp.eu01.nr-data.net:4318`.
@@ -115,11 +115,11 @@ IDs, generation IDs, provider URLs, authorization data, and provider error
 bodies are not exported. Error messages, stacks, job IDs, and arbitrary payload
 objects are omitted.
 
-Railway continues to capture the complete stdout/stderr stream, including logs
-written directly by dependencies. New Relic receives events emitted through
-Hominem's shared logger; it is not a raw Railway log drain. Railway does not
-provide a native log drain, so platform HTTP/build logs and direct dependency
-stdout remain searchable in Railway.
+Fly captures the complete stdout/stderr stream, including logs written directly
+by dependencies, but only keeps a short buffer. New Relic receives events
+emitted through Hominem's shared logger; it is not a raw Fly log drain, so
+direct dependency stdout is only visible through `fly logs` while it is still
+in the buffer.
 
 ## Operational error logging contract
 
@@ -136,7 +136,7 @@ Error records should include:
 
 - a stable event name and bounded failure category;
 - HTTP method, route template, status, and trace context. Request IDs are
-  available in Railway stdout and the response header, but are not exported to
+  available in Fly stdout and the response header, but are not exported to
   New Relic.
 - service/component and operation stage (for example `chat_tool_planning`);
 - model/provider metadata when relevant, without provider request URLs or raw
@@ -187,7 +187,7 @@ skill (`.agents/skills/hominem-observability/`).
 
 ### Completed in this observability pass
 
-- Railway log wrapper with API, worker, Redis, and database aliases.
+- Fly log wrapper (`scripts/fly-logs.sh`) with app aliases.
 - Explicit production log/runbook documentation.
 - Active HTTP span context so child AI and speech spans correlate with the
   originating request.

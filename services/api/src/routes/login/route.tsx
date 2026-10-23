@@ -482,14 +482,16 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       );
     })
     .post('/logout', async (c) => {
-      const form = await c.req.parseBody();
-      const response = await callBetterAuth({
-        body: {},
-        path: '/sign-out',
-        request: c.req.raw,
-        auth,
-        env: inputEnv,
-      });
+      const [form, response] = await Promise.all([
+        c.req.parseBody(),
+        callBetterAuth({
+          body: {},
+          path: '/sign-out',
+          request: c.req.raw,
+          auth,
+          env: inputEnv,
+        }),
+      ]);
       // Optional post-sign-out destination (used by /auth/settings): redirect
       // there once the session is cleared, falling back to the signed-out page.
       const next = getFormValue(form, 'next');

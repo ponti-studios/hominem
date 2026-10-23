@@ -16,7 +16,6 @@ vi.mock('../components/finance/export-transactions', () => ({
   ExportTransactions: () => <div>Export transactions</div>,
 }));
 vi.mock('../lib/api/provider', () => ({ useFinanceApiClient: vi.fn() }));
-vi.mock('~/lib/auth-client', () => ({ authClient: { signOut: vi.fn() } }));
 vi.mock('~/lib/toast', () => ({ toast: vi.fn() }));
 
 import AccountPage from './account';

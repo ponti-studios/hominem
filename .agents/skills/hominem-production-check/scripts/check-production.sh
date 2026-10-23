@@ -1,80 +1,79 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-project=''
-environment=''
 while (($#)); do
   case "$1" in
-    --project) project=${2:?missing value for --project}; shift 2 ;;
-    --environment) environment=${2:?missing value for --environment}; shift 2 ;;
-    -h|--help) printf 'Usage: %s [--project PROJECT_ID] [--environment ENVIRONMENT_ID]\n' "$0"; exit 0 ;;
+    -h|--help) printf 'Usage: %s\n' "$0"; exit 0 ;;
     *) printf 'Unknown argument: %s\n' "$1" >&2; exit 2 ;;
   esac
 done
 
-command -v railway >/dev/null || { echo 'railway CLI is required' >&2; exit 2; }
+command -v fly >/dev/null || { echo 'fly CLI is required' >&2; exit 2; }
 command -v jq >/dev/null || { echo 'jq is required' >&2; exit 2; }
 command -v curl >/dev/null || { echo 'curl is required' >&2; exit 2; }
 
-caller='skill:hominem-production-check@1.0.0'
-session="hominem-production-check-$(date +%s)-$$"
-status_json=$(RAILWAY_CALLER="$caller" RAILWAY_AGENT_SESSION="$session" railway status --json)
-project=${project:-$(jq -r '.id // empty' <<<"$status_json")}
-environment=${environment:-$(jq -r '.environments.edges[]?.node | select(.name == "production") | .id' <<<"$status_json" | head -n1)}
-if [[ -z "$project" || -z "$environment" ]]; then
-  echo 'Could not resolve the Hominem project or production environment.' >&2
-  exit 2
-fi
-
 echo "Production check: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-echo "Project: $project"
-echo "Environment: $environment"
+echo 'Platform: Fly.io (region sjc)'
 echo
-echo 'SERVICE DEPLOYMENTS'
-printf '%-14s %-38s %-10s %-10s\n' service deployment status instance
+echo 'FLY MACHINES'
+printf '%-18s %-16s %-10s %-10s\n' app machine state checks
 
-service_rows=$(RAILWAY_CALLER="$caller" RAILWAY_AGENT_SESSION="$session" railway status --project "$project" --environment "$environment" --json \
-  | jq -r '.environments.edges[]?.node.serviceInstances.edges[]?.node | [.serviceName,.latestDeployment.id,.latestDeployment.status,(.latestDeployment.instances[0].status // "NONE")] | @tsv')
-# Services that are stopped on purpose; remove a name here when it is restarted.
-stopped_services=' finance '
 failed=0
-while IFS=$'\t' read -r service deployment deployment_status instance_status; do
-  [[ -z "$service" ]] && continue
-  if [[ "$stopped_services" == *" $service "* ]]; then
-    printf '%-14s %-38s %-10s %-10s\n' "$service" "$deployment" "STOPPED" "(intentional)"
+for app in hominem-api hominem-worker hominem-web hominem-career hominem-finance hominem-redis hominem-db; do
+  if ! machines=$(fly machine list --app "$app" --json 2>/dev/null); then
+    printf '%-18s %-16s %-10s %-10s\n' "$app" '-' 'ERR' 'fly failed'
+    failed=1
     continue
   fi
-  printf '%-14s %-38s %-10s %-10s\n' "$service" "$deployment" "$deployment_status" "$instance_status"
-  # Railway reports idle services as SLEEPING and may remove their instances.
-  # The public-domain probes below confirm that sleeping services still wake and respond.
-  if [[ "$deployment_status" != SUCCESS && "$deployment_status" != SLEEPING ]]; then failed=1
-  elif [[ "$instance_status" != RUNNING && "$instance_status" != REMOVED ]]; then failed=1; fi
-done <<<"$service_rows"
+  rows=$(jq -r '.[] | [.id, .state, ((.checks // []) | map(.status) | unique | join(",") | if . == "" then "none" else . end)] | @tsv' <<<"$machines")
+  if [[ -z "$rows" ]]; then
+    printf '%-18s %-16s %-10s %-10s\n' "$app" '-' 'NONE' '-'
+    failed=1
+    continue
+  fi
+  while IFS=$'\t' read -r id state checks; do
+    printf '%-18s %-16s %-10s %-10s\n' "$app" "$id" "$state" "$checks"
+    [[ "$state" == started ]] || failed=1
+    [[ "$checks" == none || "$checks" == passing ]] || failed=1
+  done <<<"$rows"
+done
 
 echo
 echo 'PUBLIC DOMAINS'
 printf '%-22s %-6s %-52s\n' domain code location
 
+strict=1
 check_domain() {
-  local host=$1 expected_code=$2 expected_location=$3 headers code location
+  local host=$1 expected_code=$2 expected_location=$3 headers code location failed_before=$failed
   headers=$(curl -sS -D - -o /dev/null --max-time 15 --max-redirs 0 "https://$host/" 2>/dev/null || true)
   code=$(awk '/^HTTP\//{value=$2} END{print value}' <<<"$headers")
   location=$(awk 'tolower($0) ~ /^location:/{print substr($0,11)}' <<<"$headers" | tr -d '\r')
   printf '%-22s %-6s %-52s\n' "$host" "${code:-ERR}" "${location:-—}"
-  [[ "$code" == "$expected_code" ]] || { failed=1; return; }
-  case "$expected_location" in
-    '') [[ -z "$location" ]] || failed=1 ;;
-    exact:*) [[ "$location" == "${expected_location#exact:}" ]] || failed=1 ;;
-    prefix:*) [[ "$location" == "${expected_location#prefix:}"* ]] || failed=1 ;;
-  esac
+  if [[ "$code" != "$expected_code" ]]; then
+    failed=1
+  else
+    case "$expected_location" in
+      '') [[ -z "$location" ]] || failed=1 ;;
+      exact:*) [[ "$location" == "${expected_location#exact:}" ]] || failed=1 ;;
+      prefix:*) [[ "$location" == "${expected_location#prefix:}"* ]] || failed=1 ;;
+    esac
+  fi
+  # Domains that don't live on Fly are reported but never fail the run.
+  if ((!strict && failed != failed_before)); then
+    failed=$failed_before
+    echo "  ^ WARN: unexpected response for $host (not a Fly app, not counted)"
+  fi
 }
 
 check_domain api.ponti.io 200 ''
 check_domain career.ponti.io 200 ''
-# finance.ponti.io is intentionally not probed: the finance service is stopped.
+check_domain finance.ponti.io 200 ''
+check_domain omiro.ponti.io 302 'prefix:https://api.ponti.io/login?'
+
+# Not Fly apps from this repo (labs was still answering via Railway on 2026-10-23).
+strict=0
 check_domain labs.ponti.io 200 ''
 check_domain ponti.io 200 ''
-check_domain omiro.ponti.io 302 'prefix:https://api.ponti.io/login?'
 check_domain newsboy.ponti.io 302 'exact:/reality'
 
 echo

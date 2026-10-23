@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router';
 import { AccountActions } from '~/components/account/AccountActions';
 import { EmailField } from '~/components/EmailField';
 import type { AccountActionResult, AccountSettingsLoaderData } from '~/lib/account/types';
-import { authClient } from '~/lib/auth-client';
 
 export function AccountSettingsPage({ loaderData }: { loaderData: AccountSettingsLoaderData }) {
   const navigate = useNavigate();
@@ -38,11 +37,12 @@ export function AccountSettingsPage({ loaderData }: { loaderData: AccountSetting
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      await authClient.signOut();
-      navigate('/');
+      // Full-page hop through the API's logout so the user lands on its signed-out sign-in.
+      const logoutUrl = new URL('/logout', import.meta.env.VITE_PUBLIC_API_URL);
+      logoutUrl.searchParams.set('next', window.location.origin);
+      window.location.assign(logoutUrl.toString());
     } catch {
       // sign-out failed, just stay put on the account page
-    } finally {
       setIsSigningOut(false);
     }
   };

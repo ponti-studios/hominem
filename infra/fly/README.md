@@ -11,7 +11,7 @@ Repo config the workflows need:
 Everything below is the by-hand path for first-time setup or emergencies.
 
 Run everything from the repo root. Needs `fly auth login` first.
-Region sjc (closest to Railway us-west2). Apps talk over `*.internal` (Fly private network).
+Region sjc (chosen to stay near the old Railway us-west2 footprint). Apps talk over `*.internal` (Fly private network).
 
 ## 1. Create apps + volumes
     fly apps create hominem-db hominem-redis hominem-api hominem-worker hominem-web hominem-career hominem-finance

@@ -4,7 +4,7 @@ import { expect, it, vi } from 'vitest';
 
 vi.mock('./env.server', () => ({
   serverEnv: {
-    HOMINEM_INTERNAL_API_URL: 'http://api.railway.internal:8080',
+    HOMINEM_INTERNAL_API_URL: 'http://hominem-api.internal:4040',
     VITE_PUBLIC_API_URL: 'http://localhost:3000',
   },
 }));
@@ -18,7 +18,7 @@ it('uses the server-only API URL for session checks', async () => {
   await getServerAuth(new Request('http://localhost/account'));
 
   expect(fetchMock.mock.calls[0]?.[0]).toBe(
-    'http://api.railway.internal:8080/api/auth/get-session',
+    'http://hominem-api.internal:4040/api/auth/get-session',
   );
   vi.unstubAllGlobals();
 });

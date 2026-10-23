@@ -7,7 +7,7 @@ import { apiErrorHandler } from './error';
 describe('apiErrorHandler', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('logs the matched route template and retains the exception for Railway', async () => {
+  it('logs the matched route template and retains the exception for the platform logs', async () => {
     const errorOutput = vi.spyOn(console, 'error').mockImplementation(() => {});
     const app = new Hono<AppContext>().onError(apiErrorHandler);
     app.get('/api/credentials/:deviceId', () => {
