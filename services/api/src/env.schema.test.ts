@@ -26,6 +26,6 @@ describe('apiSchema PostHog flag settings', () => {
   });
 
   it('leaves the key unset when it is not given', () => {
-    expect(apiSchema.shape.POSTHOG_API_KEY.parse(undefined)).toBeUndefined();
+    expect(apiSchema.shape.POSTHOG_PROJECT_TOKEN.parse(undefined)).toBeUndefined();
   });
 });

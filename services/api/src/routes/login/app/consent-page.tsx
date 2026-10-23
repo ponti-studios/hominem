@@ -3,10 +3,9 @@ import {
   AuthAlert,
   AuthCardCopy,
   AuthContent,
-  AuthField,
   AuthHeading,
+  AuthOutlineButton,
   AuthPrimaryButton,
-  AuthSecondaryButton,
   AuthShell,
   AuthTitle,
 } from './auth-shell';
@@ -26,60 +25,57 @@ export function ConsentPage({ clientName, query, scopes, error }: ConsentPagePro
   }, {});
 
   return (
-    <AuthShell>
+    <AuthShell
+      aside={{
+        headline: 'You decide what other apps can see.',
+        body: 'Approve only what you recognize. You can deny and nothing is shared.',
+      }}
+    >
       <AuthContent>
         <AuthHeading>
           <AuthTitle>Authorize {clientName}</AuthTitle>
-          <AuthCardCopy>This client is requesting access to your Hominem data.</AuthCardCopy>
+          <AuthCardCopy>This client is asking for access to your Hominem data.</AuthCardCopy>
         </AuthHeading>
         {error ? <AuthAlert>{error}</AuthAlert> : null}
-        <AuthField label="Requested permissions">
-          <div className="flex flex-col gap-2">
-            {Object.entries(groupedScopes).map(([domain, domainScopes]) => {
-              const access = (['read', 'write'] as const).filter((level) =>
-                domainScopes.some((scope) => scope.endsWith(`:${level}`)),
-              );
-              return (
-                <div
-                  className="flex items-center gap-3 rounded-lg border border-auth-border bg-auth-panel p-2.5 text-left"
-                  key={domain}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-auth-primary font-bold text-auth-primary-text"
-                  >
-                    {domain.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="text-sm font-semibold text-auth-text">{domain}</span>
-                  <span className="ml-auto flex gap-1.5">
-                    {access.map((level) => (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase ${
-                          level === 'read'
-                            ? 'bg-[color-mix(in_srgb,var(--auth-primary)_10%,transparent)] text-auth-primary'
-                            : 'bg-[color-mix(in_srgb,var(--auth-danger)_12%,transparent)] text-auth-danger'
-                        }`}
-                        key={level}
-                      >
-                        {level}
-                      </span>
-                    ))}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </AuthField>
-        <form action="/consent/decision" method="post">
+        <div className="flex flex-col rounded-xl border border-auth-border bg-auth-card">
+          {Object.entries(groupedScopes).map(([domain, domainScopes]) => {
+            const access = (['read', 'write'] as const).filter((level) =>
+              domainScopes.some((scope) => scope.endsWith(`:${level}`)),
+            );
+            return (
+              <div
+                className="flex items-center gap-3 border-b border-auth-border px-4.5 py-4 text-left last:border-b-0"
+                key={domain}
+              >
+                <span className="text-[15px] font-semibold capitalize text-auth-text">
+                  {domain}
+                </span>
+                <span className="ml-auto flex gap-1.5">
+                  {access.map((level) => (
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
+                        level === 'read'
+                          ? 'bg-[color-mix(in_srgb,var(--auth-primary)_16%,transparent)] text-auth-primary'
+                          : 'bg-auth-danger-background text-auth-danger'
+                      }`}
+                      key={level}
+                    >
+                      {level}
+                    </span>
+                  ))}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <form action="/consent/decision" className="flex flex-col gap-3" method="post">
           <input name="oauth_query" type="hidden" value={query} />
           <AuthPrimaryButton name="accept" type="submit" value="true">
             Approve
           </AuthPrimaryButton>
-          <div className="mt-4">
-            <AuthSecondaryButton name="accept" type="submit" value="false">
-              Deny
-            </AuthSecondaryButton>
-          </div>
+          <AuthOutlineButton name="accept" type="submit" value="false">
+            Deny
+          </AuthOutlineButton>
         </form>
       </AuthContent>
     </AuthShell>

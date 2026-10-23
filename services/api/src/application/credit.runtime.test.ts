@@ -18,7 +18,7 @@ vi.mock('../env', () => ({
     get CREDIT_TESTERS() {
       return state.testers;
     },
-    POSTHOG_API_KEY: 'phc_test',
+    POSTHOG_PROJECT_TOKEN: 'phc_test',
     POSTHOG_HOST: 'https://posthog.test',
     CREDIT_USD_PER_POUND: 1.28,
     CREDIT_GRANT_PENCE: 100,

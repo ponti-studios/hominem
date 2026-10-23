@@ -59,7 +59,6 @@ describe('finance account routes', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ accounts: [] });
-    expect(database.selectFrom).not.toHaveBeenCalledWith('app.plaidItems');
   });
 
   it('returns the MCP account-list object for the authenticated owner', async () => {

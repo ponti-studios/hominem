@@ -417,101 +417,12 @@ export async function insertTransaction(input: {
   return result;
 }
 
-export async function getTransactionByPlaidId(
-  externalId: string,
-  userId?: string,
-): Promise<TransactionRow | null> {
-  if (userId) {
-    const result = await db
-      .selectFrom('app.financeTransactions')
-      .selectAll()
-      .where('externalId', '=', externalId)
-      .where('userId', '=', userId)
-      .orderBy('postedOn', 'desc')
-      .orderBy('id', 'desc')
-      .limit(1)
-      .executeTakeFirst();
-    return result ?? null;
-  }
-
-  const result = await db
-    .selectFrom('app.financeTransactions')
-    .selectAll()
-    .where('externalId', '=', externalId)
-    .orderBy('postedOn', 'desc')
-    .orderBy('id', 'desc')
-    .limit(1)
-    .executeTakeFirst();
-  return result ?? null;
-}
-
 export async function processTransactionsFromCSVBuffer(_input: {
   userId: string;
   accountId: string;
   csvBuffer: ArrayBuffer | Buffer;
 }): Promise<{ imported: number; skipped: number }> {
   return { imported: 0, skipped: 0 };
-}
-
-export async function updatePlaidTransaction(
-  id: string,
-  updates: Partial<{
-    amount: number | string;
-    description: string | null;
-    postedOn: string | Date;
-    merchantName: string | null;
-    pending: boolean;
-  }>,
-): Promise<TransactionRow | null> {
-  const existing = await db
-    .selectFrom('app.financeTransactions')
-    .selectAll()
-    .where('id', '=', id)
-    .limit(1)
-    .executeTakeFirst();
-  if (!existing) {
-    return null;
-  }
-
-  const nextAmount =
-    updates.amount === undefined
-      ? toNumber(existing.amount)
-      : typeof updates.amount === 'string'
-        ? Number.parseFloat(updates.amount)
-        : updates.amount;
-  const nextDescription =
-    updates.description === undefined ? existing.description : updates.description;
-  const nextPostedOn =
-    updates.postedOn === undefined
-      ? existing.postedOn
-      : updates.postedOn instanceof Date
-        ? updates.postedOn.toISOString().slice(0, 10)
-        : updates.postedOn;
-  const nextMerchantName =
-    updates.merchantName === undefined ? existing.merchantName : updates.merchantName;
-  const nextType = nextAmount < 0 ? 'debit' : 'credit';
-
-  const result = await db
-    .updateTable('app.financeTransactions')
-    .set({
-      amount: nextAmount,
-      description: nextDescription,
-      postedOn: nextPostedOn,
-      merchantName: nextMerchantName,
-      transactionType: nextType,
-    })
-    .where('id', '=', id)
-    .returningAll()
-    .executeTakeFirst();
-  return result ?? null;
-}
-
-export async function deletePlaidTransaction(externalId: string): Promise<boolean> {
-  const result = await db
-    .deleteFrom('app.financeTransactions')
-    .where('externalId', '=', externalId)
-    .executeTakeFirst();
-  return !!result;
 }
 
 export async function queryAnalyticsTransactionsByContract(input: {

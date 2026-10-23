@@ -96,8 +96,6 @@ export async function createAccount(input: CreateAccountInput): Promise<AccountW
       name: input.name,
       accountType,
       metadata: input.metadata ?? {},
-      ...(input.plaidAccountId ? { plaidAccountId: input.plaidAccountId } : {}),
-      ...(input.plaidItemId ? { plaidItemId: input.plaidItemId } : {}),
     })
     .returningAll()
     .executeTakeFirst();
@@ -424,85 +422,13 @@ export async function upsertAccount(input: UpsertAccountInput): Promise<AccountW
     throw new Error('upsertAccount requires name');
   }
 
-  if (input.plaidAccountId) {
-    const existingResult = await db
-      .selectFrom('app.financeAccounts')
-      .selectAll()
-      .where('userId', '=', input.userId)
-      .where('plaidAccountId', '=', input.plaidAccountId)
-      .limit(1)
-      .executeTakeFirst();
-    const existing = existingResult ?? null;
-    if (existing) {
-      const updated = await updateAccount({
-        id: existing.id,
-        userId: input.userId,
-        name: input.name,
-        ...(input.accountType ? { accountType: input.accountType } : {}),
-        metadata: input.metadata,
-      });
-      if (!updated) {
-        throw new Error('Failed to update existing plaid account');
-      }
-      return updated;
-    }
-  }
-
   return createAccount({
     userId: input.userId,
     name: input.name,
     ...(input.id !== undefined ? { id: input.id } : {}),
     ...(input.accountType ? { accountType: input.accountType } : {}),
     ...(input.metadata ? { metadata: input.metadata } : {}),
-    ...(input.plaidAccountId ? { plaidAccountId: input.plaidAccountId } : {}),
-    ...(input.plaidItemId ? { plaidItemId: input.plaidItemId } : {}),
   });
-}
-
-export async function getUserAccounts(
-  userId: string,
-  itemId?: string,
-): Promise<AccountWithBalance[]> {
-  if (!itemId) {
-    return listAccounts(userId);
-  }
-
-  const accounts = await db
-    .selectFrom('app.financeAccounts')
-    .selectAll()
-    .where('userId', '=', userId)
-    .where('plaidItemId', '=', itemId)
-    .orderBy('name', 'asc')
-    .orderBy('id', 'asc')
-    .execute();
-
-  return withBalances(accounts);
-}
-
-export async function getAccountByPlaidId(
-  plaidAccountId: string,
-  userId?: string,
-): Promise<AccountWithBalance | null> {
-  if (userId) {
-    const result = await db
-      .selectFrom('app.financeAccounts')
-      .selectAll()
-      .where('userId', '=', userId)
-      .where('plaidAccountId', '=', plaidAccountId)
-      .limit(1)
-      .executeTakeFirst();
-    return result ? withBalance(result) : null;
-  }
-
-  const result = await db
-    .selectFrom('app.financeAccounts')
-    .selectAll()
-    .where('plaidAccountId', '=', plaidAccountId)
-    .orderBy('createdAt', 'desc')
-    .orderBy('id', 'asc')
-    .limit(1)
-    .executeTakeFirst();
-  return result ? withBalance(result) : null;
 }
 
 export interface AccountSummary {

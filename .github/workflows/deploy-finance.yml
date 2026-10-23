@@ -1,6 +1,6 @@
 name: deploy-finance
 
-# Disabled: the finance Railway service is intentionally stopped, so a merge to
+# Disabled: the finance Fly app is intentionally not auto-deployed, so a merge to
 # main must not bring it back. Re-enable by restoring the workflow_run trigger:
 #
 #   on:
@@ -22,11 +22,13 @@ permissions:
 jobs:
   deploy-finance:
     if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
-    uses: ./.github/workflows/railway-deploy-service.yml
+    uses: ./.github/workflows/fly-deploy-service.yml
     secrets:
-      service_target: ${{ secrets.RAILWAY_SERVICE_FINANCE }}
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     with:
-      service_name: finance
+      app: hominem-finance
+      config_path: infra/fly/finance.toml
+      dockerfile: apps/finance/Dockerfile
+      build_args: |
+        VITE_PUBLIC_API_URL=https://api.ponti.io
       checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      config_path: apps/finance/railway.json

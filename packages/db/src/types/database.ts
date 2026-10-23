@@ -274,7 +274,6 @@ export interface AppCareerProjects {
   endDate: ColumnType<string, Date | string, Date | string> | null;
   githubUrl: string | null;
   id: Generated<string>;
-  imageUrl: string | null;
   isFeatured: Generated<boolean>;
   isVisible: Generated<boolean>;
   liveUrl: string | null;
@@ -559,8 +558,6 @@ export interface AppFinanceAccounts {
   mask: string | null;
   metadata: Generated<Json>;
   name: string;
-  plaidAccountId: string | null;
-  plaidItemId: string | null;
   provider: string | null;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
   userId: string;
@@ -978,20 +975,6 @@ export interface AppPlaceVisits {
   purpose: string | null;
   source: string | null;
   visitedAt: ColumnType<string, Date | string, Date | string> | null;
-}
-
-export interface AppPlaidItems {
-  accessToken: string | null;
-  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  cursor: string | null;
-  errorCode: string | null;
-  id: Generated<string>;
-  institutionId: string | null;
-  lastSyncedAt: ColumnType<string, Date | string, Date | string> | null;
-  providerItemId: string;
-  status: Generated<string>;
-  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  userId: string;
 }
 
 export interface AppPossessionContainers {
@@ -1747,7 +1730,6 @@ export interface DB {
   'app.placeResidences': AppPlaceResidences;
   'app.places': AppPlaces;
   'app.placeVisits': AppPlaceVisits;
-  'app.plaidItems': AppPlaidItems;
   'app.possessionContainers': AppPossessionContainers;
   'app.possessionEvents': AppPossessionEvents;
   'app.possessionImages': AppPossessionImages;

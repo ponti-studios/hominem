@@ -1,0 +1,19 @@
+# Postgres 18 + pgvector + PostGIS from foundation. Private only (no public ports).
+app = "hominem-db"
+primary_region = "sjc"
+
+[build]
+  image = "ghcr.io/ponti-studios/foundation/postgres@sha256:578d34f82b21752b9e749776e955fadc85e1cba8d962e78bce1bd60878a9c316"
+
+[env]
+  POSTGRES_USER = "postgres"
+  POSTGRES_DB = "hominem"
+
+[[mounts]]
+  source = "pgdata"
+  destination = "/var/lib/postgresql"
+  initial_size = "10gb"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "2gb"

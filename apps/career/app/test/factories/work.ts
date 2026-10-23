@@ -37,7 +37,6 @@ export function makeProject(overrides: Partial<CareerProjectRecord> = {}): Caree
     engagements: [],
     githubUrl: null,
     id: 'proj-1',
-    imageUrl: null,
     isFeatured: false,
     isVisible: true,
     liveUrl: null,

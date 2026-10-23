@@ -288,7 +288,7 @@ export type ChatGenerationInput = {
 function user(id: string): RpcUser {
   return {
     id,
-    email: `${id}@hominem-tests.test`,
+    email: `${id}@chat-generation-harness.test`,
     name: 'Hominem Test User',
     emailVerified: true,
     image: null,
@@ -344,7 +344,7 @@ async function parseSse(response: Response, generationId: string): Promise<ChatR
   };
 }
 
-export class HominemTests {
+export class ChatGenerationHarness {
   readonly userId: string;
   readonly tools = {
     add: (tool: TestTool) => {
@@ -489,14 +489,14 @@ export class HominemTests {
       .route('/api/chats/:id', createChatGenerationRoutes(service));
   }
 
-  static async create(options: { provider: ScriptedProvider }): Promise<HominemTests> {
-    const test = new HominemTests(options.provider);
+  static async create(options: { provider: ScriptedProvider }): Promise<ChatGenerationHarness> {
+    const test = new ChatGenerationHarness(options.provider);
     await authDb
       .insertInto('user')
       .values({
         id: test.userId,
         name: 'Hominem Test User',
-        email: `${test.userId}@hominem-tests.test`,
+        email: `${test.userId}@chat-generation-harness.test`,
       })
       .execute();
     return test;

@@ -12,12 +12,10 @@ import {
   createTransaction,
   deleteAccount,
   getAccountById,
-  getAccountByPlaidId,
   getFinanceAccountList,
   listAccounts,
   listImportAccountSnapshots,
   updateAccount,
-  upsertAccount,
 } from './index';
 import { cleanupIntegrationFinanceUser } from './test-utils';
 
@@ -169,34 +167,5 @@ describeIntegration('finance accounts integration', () => {
 
     const stillExists = await getAccountById(created.id, ownerId);
     expect(stillExists?.name).toBe('Protected');
-  });
-
-  it('upserts by plaidAccountId idempotently for same owner', async () => {
-    const first = await upsertAccount({
-      userId: ownerId,
-      name: 'Plaid Account',
-      accountType: 'credit',
-      plaidAccountId: 'plaid-acc-1',
-    });
-
-    const second = await upsertAccount({
-      userId: ownerId,
-      name: 'Plaid Account Updated',
-      accountType: 'credit',
-      plaidAccountId: 'plaid-acc-1',
-    });
-
-    expect(first.id).toBe(second.id);
-    expect(second.name).toBe('Plaid Account Updated');
-
-    await createTransaction({
-      userId: ownerId,
-      accountId: second.id,
-      amount: 20,
-    });
-
-    const byPlaid = await getAccountByPlaidId('plaid-acc-1', ownerId);
-    expect(byPlaid?.id).toBe(first.id);
-    expect(Number(byPlaid?.currentBalance)).toBe(20);
   });
 });

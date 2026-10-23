@@ -7,17 +7,17 @@ import { z } from 'zod';
 
 import {
   fragmentedToolCallTurn,
-  HominemTests,
+  ChatGenerationHarness,
   multipleToolCallTurn,
   providerFailureTurn,
   scriptedProvider,
   textTurn,
   type TestTool,
-} from './hominem-tests';
+} from './chat-generation-harness';
 
-describe('HominemTests', () => {
-  let test: HominemTests | undefined;
-  let otherTest: HominemTests | undefined;
+describe('ChatGenerationHarness', () => {
+  let test: ChatGenerationHarness | undefined;
+  let otherTest: ChatGenerationHarness | undefined;
   let warningSpy: { mock: { calls: unknown[][] }; mockRestore: () => void };
   let expectedWarnings: string[];
 
@@ -46,7 +46,7 @@ describe('HominemTests', () => {
   });
 
   it('writes each boundary event exactly once: no double-write, no loss', async () => {
-    test = await HominemTests.create({
+    test = await ChatGenerationHarness.create({
       provider: scriptedProvider([textTurn('Boundary reply')]),
     });
 
@@ -83,7 +83,7 @@ describe('HominemTests', () => {
       cachedPromptTokens: null,
       reasoningTokens: 2,
     };
-    test = await HominemTests.create({
+    test = await ChatGenerationHarness.create({
       provider: scriptedProvider([textTurn('SDK reply')], undefined, [usage]),
     });
 
@@ -106,7 +106,7 @@ describe('HominemTests', () => {
   });
 
   it('publishes redacted evidence with durable duplicate checks', async () => {
-    test = await HominemTests.create({
+    test = await ChatGenerationHarness.create({
       provider: scriptedProvider([textTurn('Evidence reply')]),
     });
 
@@ -140,7 +140,7 @@ describe('HominemTests', () => {
   });
 
   it('writes a manifest artifact for browser and mobile evidence consumers', async () => {
-    test = await HominemTests.create({
+    test = await ChatGenerationHarness.create({
       provider: scriptedProvider([textTurn('Persisted evidence')]),
     });
     const result = await test.chat.start({ title: 'SDK artifact', message: 'Write evidence' });
@@ -162,7 +162,7 @@ describe('HominemTests', () => {
 
   it('commits a valid response when the provider omits usage metadata', async () => {
     expectWarning('[ai-usage] provider response missing usage');
-    test = await HominemTests.create({
+    test = await ChatGenerationHarness.create({
       provider: scriptedProvider([textTurn('Valid response without usage')], undefined, []),
     });
 
@@ -199,7 +199,7 @@ describe('HominemTests', () => {
       fragmentedToolCallTurn('sdk_echo', 'call-sdk', ['{"value":"hel', 'lo"}']),
       textTurn('Tool completed'),
     ]);
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
     test.tools.add(tool);
 
     const result = await test.chat.start({ title: 'SDK tools', message: 'Use the tool' });
@@ -237,7 +237,7 @@ describe('HominemTests', () => {
       ]),
       textTurn('Both tools completed'),
     ]);
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
     test.tools.add(makeTool('sdk_first_tool'));
     test.tools.add(makeTool('sdk_second_tool'));
 
@@ -256,7 +256,7 @@ describe('HominemTests', () => {
 
   it('supports send, terminal replay, and duplicate-safe client convergence', async () => {
     const provider = scriptedProvider([textTurn('First reply'), textTurn('Second reply')]);
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
 
     const started = await test.chat.start({ title: 'SDK replay', message: 'First' });
     const chatId = started.chatId;
@@ -282,7 +282,7 @@ describe('HominemTests', () => {
       providerFailureTurn('temporary provider failure', { transient: true }),
       textTurn('Recovered reply'),
     ]);
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
 
     const result = await test.chat.start({ title: 'SDK retry', message: 'Retry this' });
     const inspected = await test.inspect(result.generationId);
@@ -298,7 +298,7 @@ describe('HominemTests', () => {
   it('scripts a permanent provider failure and preserves a durable terminal failure', async () => {
     expectWarning('[ai-usage] provider response missing usage');
     const provider = scriptedProvider([providerFailureTurn('provider unavailable')]);
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
 
     const result = await test.chat.start({ title: 'SDK failure', message: 'Fail this' });
     const inspected = await test.inspect(result.generationId);
@@ -314,7 +314,7 @@ describe('HominemTests', () => {
       providerFailureTurn('provider unavailable'),
       textTurn('Recovered reply'),
     ]);
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
 
     const failed = await test.chat.start({ title: 'SDK retry recovery', message: 'Retry this' });
     expect(failed.clientState.phase).toBe('failed');
@@ -364,7 +364,7 @@ describe('HominemTests', () => {
       fragmentedToolCallTurn('sdk_confirm', 'call-confirm', ['{"value":"approved"}']),
       textTurn('Approval completed'),
     ]);
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
     test.tools.add(tool);
 
     const checkpoint = await test.chat.start({
@@ -400,7 +400,7 @@ describe('HominemTests', () => {
   });
 
   it('turns an append failure into a durable terminal failure', async () => {
-    test = await HominemTests.create({
+    test = await ChatGenerationHarness.create({
       provider: scriptedProvider([textTurn('Should not commit')]),
     });
     test.failures.inject('event-append', undefined, 3);
@@ -415,7 +415,7 @@ describe('HominemTests', () => {
   });
 
   it('durably terminalizes when the snapshot commit fails', async () => {
-    test = await HominemTests.create({
+    test = await ChatGenerationHarness.create({
       provider: scriptedProvider([textTurn('Snapshot must not commit')]),
     });
     test.failures.inject('snapshot-commit');
@@ -430,7 +430,7 @@ describe('HominemTests', () => {
   });
 
   it('surfaces a cancellation commit failure without fabricating cancellation', async () => {
-    test = await HominemTests.create({
+    test = await ChatGenerationHarness.create({
       provider: scriptedProvider([textTurn('Already complete')]),
     });
     const result = await test.chat.start({
@@ -470,7 +470,7 @@ describe('HominemTests', () => {
       textTurn('Recovered after tool failure'),
     ]);
     expectWarning('chat_generation_tool_call_failed');
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
     test.tools.add(tool);
 
     const result = await test.chat.start({ title: 'SDK tool failure', message: 'Use it' });
@@ -503,7 +503,7 @@ describe('HominemTests', () => {
       textTurn('Done'),
     ]);
     expectWarning('chat_generation_tool_call_failed');
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
     test.tools.add(tool);
 
     const result = await test.chat.start({ title: 'SDK invalid args', message: 'Use it' });
@@ -542,7 +542,7 @@ describe('HominemTests', () => {
       fragmentedToolCallTurn('sdk_rejected_tool', 'call-reject', ['{"value":"no"}']),
       textTurn('Rejection acknowledged'),
     ]);
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
     test.tools.add(tool);
 
     const checkpoint = await test.chat.start({ title: 'SDK rejection', message: 'Reject it' });
@@ -570,7 +570,7 @@ describe('HominemTests', () => {
       textTurn('Original answer'),
       textTurn('Regenerated answer'),
     ]);
-    test = await HominemTests.create({ provider });
+    test = await ChatGenerationHarness.create({ provider });
 
     const started = await test.chat.start({ title: 'SDK regenerate', message: 'Answer twice' });
     if (!started.chatId) throw new Error('The accepted event did not contain a chat ID');
@@ -588,10 +588,10 @@ describe('HominemTests', () => {
   });
 
   it('enforces owner isolation through the real replay route', async () => {
-    test = await HominemTests.create({
+    test = await ChatGenerationHarness.create({
       provider: scriptedProvider([textTurn('Private reply')]),
     });
-    otherTest = await HominemTests.create({
+    otherTest = await ChatGenerationHarness.create({
       provider: scriptedProvider([]),
     });
     const ownerResult = await test.chat.start({ title: 'Private chat', message: 'Private' });
