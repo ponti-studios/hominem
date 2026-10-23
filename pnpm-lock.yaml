@@ -1068,7 +1068,11 @@ importers:
         specifier: ^2.12.0
         version: 2.12.0(@opentelemetry/api@1.8.0)
 
-  packages/utils: {}
+  packages/utils:
+    devDependencies:
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
 
   services/api:
     dependencies:
