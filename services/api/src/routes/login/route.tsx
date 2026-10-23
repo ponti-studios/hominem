@@ -15,6 +15,8 @@ import {
 import { listOAuthClients, revokeOAuthClient } from '../../application/oauth-clients.service';
 import { betterAuthServer } from '../../auth/better-auth';
 import { env } from '../../env';
+import { getClientIp } from '../../middleware/client-ip';
+import { checkOtpSendLimits } from '../../middleware/rate-limit';
 import {
   createMcpTokenInputSchema,
   createMcpTokenOutputSchema,
@@ -90,7 +92,7 @@ function copySetCookieHeaders(headers: Headers) {
 }
 
 export function createLoginRoutes(dependencies: AuthDependencies) {
-  const { env: inputEnv, auth } = dependencies;
+  const { env: inputEnv, auth, rateLimitCounter } = dependencies;
   const resolveResumeWithEnv = (query: string, origin?: string) =>
     resolveResume(query, inputEnv, origin);
   const resolvePostAuthResumeWithEnv = (query: string, origin?: string) =>
@@ -523,6 +525,26 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         return c.redirect(
           loginUrlWithEnv(
             { error: 'Enter a valid email address.', resumeQuery, step: 'email' },
+            origin,
+          ),
+          303,
+        );
+      // This calls Better Auth directly, skipping the Hono middleware, so the OTP limits run here too.
+      const limit = rateLimitCounter
+        ? await checkOtpSendLimits({ counter: rateLimitCounter, email, ip: getClientIp(c) })
+        : 'allowed';
+      if (limit !== 'allowed')
+        return c.redirect(
+          loginUrlWithEnv(
+            {
+              email,
+              error:
+                limit === 'limited'
+                  ? 'Too many codes requested. Wait a few minutes and try again.'
+                  : 'Unable to send a verification code. Try again.',
+              resumeQuery,
+              step: 'email',
+            },
             origin,
           ),
           303,
