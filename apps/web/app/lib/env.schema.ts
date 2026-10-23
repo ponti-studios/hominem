@@ -7,7 +7,7 @@ export const webSchema = runtimeSchema.extend({
   VITE_PUBLIC_API_URL: z.url(),
   HOMINEM_INTERNAL_API_URL: z.url(),
   PUBLIC_APP_URL: z.url(),
-  VITE_POSTHOG_PUBLIC_KEY: z.preprocess(blankAsUndefined, z.string().optional()),
+  VITE_POSTHOG_PROJECT_TOKEN: z.preprocess(blankAsUndefined, z.string().optional()),
   VITE_POSTHOG_HOST: z.preprocess(
     blankAsUndefined,
     z.url().optional().default('https://us.i.posthog.com'),
@@ -31,7 +31,7 @@ export const webSchema = runtimeSchema.extend({
 
 export const webClientSchema = webSchema.pick({
   VITE_PUBLIC_API_URL: true,
-  VITE_POSTHOG_PUBLIC_KEY: true,
+  VITE_POSTHOG_PROJECT_TOKEN: true,
   VITE_POSTHOG_HOST: true,
   VITE_OTEL_DISABLED: true,
   VITE_OTEL_SERVICE_NAME: true,

@@ -36,7 +36,9 @@ export function creditConfig(): CreditConfig {
 
 /** The PostHog flag alone: is top-up switched on for this person there? */
 export const creditFlagFor = createCreditFlag({
-  client: env.POSTHOG_API_KEY ? new PostHog(env.POSTHOG_API_KEY, { host: env.POSTHOG_HOST }) : null,
+  client: env.POSTHOG_PROJECT_TOKEN
+    ? new PostHog(env.POSTHOG_PROJECT_TOKEN, { host: env.POSTHOG_HOST })
+    : null,
   log: (event, fields) => logger.error(event, fields),
 });
 
