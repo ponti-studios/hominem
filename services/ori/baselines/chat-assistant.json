@@ -2,24 +2,24 @@
   "suite": "chat-assistant",
   "tier": "capability",
   "datasetHash": "93b9b48e558f",
-  "promptHash": "3f0f43421bae",
-  "graderHash": "503776686683",
+  "promptHash": "5878e2229ec0",
+  "graderHash": "87da9924f260",
   "targetModel": "openai/gpt-5-mini",
   "judgeModel": "openai/gpt-6-luna",
-  "trialsPerCase": 3,
+  "trialsPerCase": 1,
   "limited": false,
   "summary": {
     "cases": 10,
-    "trials": 30,
+    "trials": 10,
     "passRate": 0,
     "passAllRate": 0,
     "errors": 0,
-    "meanScore": 0.0667,
-    "costUsd": 0.045406,
-    "promptTokens": 43434,
-    "completionTokens": 20874,
-    "latencyP50Ms": 5877,
-    "latencyP95Ms": 15081,
+    "meanScore": 0.05,
+    "costUsd": 0.013507,
+    "promptTokens": 13948,
+    "completionTokens": 6306,
+    "latencyP50Ms": 5753,
+    "latencyP95Ms": 23588,
     "byCategory": {
       "uncategorized": {
         "cases": 10,
@@ -36,28 +36,10 @@
           "pass": false,
           "score": 0,
           "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 11033,
-          "costUsd": 0.0026795,
-          "promptTokens": 1454,
-          "completionTokens": 1158
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 15224,
-          "costUsd": 0.0033167,
-          "promptTokens": 1454,
-          "completionTokens": 1635
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 15081,
-          "costUsd": 0.0032167,
-          "promptTokens": 1454,
-          "completionTokens": 1585
+          "latencyMs": 23588,
+          "costUsd": 0.00312625,
+          "promptTokens": 1401,
+          "completionTokens": 1532
         }
       ],
       "passRate": 0,
@@ -72,28 +54,10 @@
           "pass": false,
           "score": 0,
           "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 9633,
-          "costUsd": 0.00188625,
-          "promptTokens": 1449,
-          "completionTokens": 906
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 7626,
-          "costUsd": 0.00162145,
-          "promptTokens": 1449,
-          "completionTokens": 788
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 8560,
-          "costUsd": 0.00181345,
-          "promptTokens": 1449,
-          "completionTokens": 884
+          "latencyMs": 8713,
+          "costUsd": 0.001507,
+          "promptTokens": 1396,
+          "completionTokens": 723
         }
       ],
       "passRate": 0,
@@ -108,28 +72,10 @@
           "pass": false,
           "score": 0,
           "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 5008,
-          "costUsd": 0.0011365,
-          "promptTokens": 1466,
-          "completionTokens": 385
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 7229,
-          "costUsd": 0.0012197,
-          "promptTokens": 1466,
-          "completionTokens": 585
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 7030,
-          "costUsd": 0.0014077,
-          "promptTokens": 1466,
-          "completionTokens": 679
+          "latencyMs": 5480,
+          "costUsd": 0.00076725,
+          "promptTokens": 1413,
+          "completionTokens": 351
         }
       ],
       "passRate": 0,
@@ -142,30 +88,12 @@
       "trials": [
         {
           "pass": false,
-          "score": 0.5,
-          "failedMetrics": ["llm-rubric"],
-          "latencyMs": 4338,
-          "costUsd": 0.00128325,
-          "promptTokens": 1453,
-          "completionTokens": 460
-        },
-        {
-          "pass": false,
           "score": 0,
           "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 5362,
-          "costUsd": 0.00104045,
-          "promptTokens": 1453,
-          "completionTokens": 497
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 5373,
-          "costUsd": 0.00087845,
-          "promptTokens": 1453,
-          "completionTokens": 416
+          "latencyMs": 4601,
+          "costUsd": 0.000758,
+          "promptTokens": 1400,
+          "completionTokens": 348
         }
       ],
       "passRate": 0,
@@ -180,28 +108,10 @@
           "pass": false,
           "score": 0,
           "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 8949,
-          "costUsd": 0.00268875,
-          "promptTokens": 1443,
-          "completionTokens": 1164
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 11290,
-          "costUsd": 0.00267875,
-          "promptTokens": 1443,
-          "completionTokens": 1303
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 12960,
-          "costUsd": 0.00255875,
-          "promptTokens": 1443,
-          "completionTokens": 1243
+          "latencyMs": 9600,
+          "costUsd": 0.0021615,
+          "promptTokens": 1390,
+          "completionTokens": 907
         }
       ],
       "passRate": 0,
@@ -214,30 +124,12 @@
       "trials": [
         {
           "pass": false,
-          "score": 0.5,
-          "failedMetrics": ["llm-rubric"],
-          "latencyMs": 5032,
-          "costUsd": 0.001296,
-          "promptTokens": 1440,
-          "completionTokens": 612
-        },
-        {
-          "pass": false,
           "score": 0,
           "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 5877,
-          "costUsd": 0.001444,
-          "promptTokens": 1440,
-          "completionTokens": 542
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 5572,
-          "costUsd": 0.001158,
-          "promptTokens": 1440,
-          "completionTokens": 543
+          "latencyMs": 5753,
+          "costUsd": 0.00089275,
+          "promptTokens": 1387,
+          "completionTokens": 417
         }
       ],
       "passRate": 0,
@@ -250,30 +142,12 @@
       "trials": [
         {
           "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 5525,
-          "costUsd": 0.0009225,
-          "promptTokens": 1442,
-          "completionTokens": 425
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 7199,
-          "costUsd": 0.0010805,
-          "promptTokens": 1442,
-          "completionTokens": 504
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 4781,
-          "costUsd": 0.0009565,
-          "promptTokens": 1442,
-          "completionTokens": 298
+          "score": 0.5,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 3909,
+          "costUsd": 0.00066125,
+          "promptTokens": 1389,
+          "completionTokens": 301
         }
       ],
       "passRate": 0,
@@ -288,28 +162,10 @@
           "pass": false,
           "score": 0,
           "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 5762,
-          "costUsd": 0.001128,
-          "promptTokens": 1440,
-          "completionTokens": 528
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 6025,
-          "costUsd": 0.001136,
-          "promptTokens": 1440,
-          "completionTokens": 532
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 7414,
-          "costUsd": 0.00162,
-          "promptTokens": 1440,
-          "completionTokens": 774
+          "latencyMs": 4846,
+          "costUsd": 0.00069675,
+          "promptTokens": 1387,
+          "completionTokens": 319
         }
       ],
       "passRate": 0,
@@ -324,28 +180,10 @@
           "pass": false,
           "score": 0,
           "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 5621,
-          "costUsd": 0.00096125,
-          "promptTokens": 1437,
-          "completionTokens": 445
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 6342,
-          "costUsd": 0.00107925,
-          "promptTokens": 1437,
-          "completionTokens": 504
-        },
-        {
-          "pass": false,
-          "score": 0.5,
-          "failedMetrics": ["llm-rubric"],
-          "latencyMs": 5033,
-          "costUsd": 0.00110725,
-          "promptTokens": 1437,
-          "completionTokens": 518
+          "latencyMs": 11712,
+          "costUsd": 0.002182,
+          "promptTokens": 1384,
+          "completionTokens": 1062
         }
       ],
       "passRate": 0,
@@ -358,30 +196,12 @@
       "trials": [
         {
           "pass": false,
-          "score": 0.5,
-          "failedMetrics": ["llm-rubric"],
-          "latencyMs": 2831,
-          "costUsd": 0.0005515,
-          "promptTokens": 1454,
-          "completionTokens": 238
-        },
-        {
-          "pass": false,
           "score": 0,
           "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 4510,
-          "costUsd": 0.0006807,
-          "promptTokens": 1454,
-          "completionTokens": 317
-        },
-        {
-          "pass": false,
-          "score": 0,
-          "failedMetrics": ["concise", "llm-rubric"],
-          "latencyMs": 5053,
-          "costUsd": 0.0008587,
-          "promptTokens": 1454,
-          "completionTokens": 406
+          "latencyMs": 6309,
+          "costUsd": 0.00075425,
+          "promptTokens": 1401,
+          "completionTokens": 346
         }
       ],
       "passRate": 0,

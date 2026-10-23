@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 import {
   currentUtcDate,
   loadJson,
@@ -9,6 +11,12 @@ import { defineTextSuite, fileAssertion } from '../../lib/suite';
 
 const promptUrl = new URL('./system-prompt.json', import.meta.url);
 const casesUrl = new URL('./expected-cases.json', import.meta.url);
+// The assertion's source rides in its config so the grader hash changes when the check does,
+// without staling every other suite's baseline the way a shared grader file would.
+const graderSource = await readFile(
+  new URL('../../assertions/word-count.ts', import.meta.url),
+  'utf8',
+);
 const prompt = await loadJson<PromptMessage[]>(promptUrl);
 
 export default await defineTextSuite({
@@ -20,7 +28,7 @@ export default await defineTextSuite({
   promptFiles: [promptUrl],
   messages: (golden) =>
     renderMessages(prompt, { user_message: golden.input, current_date: currentUtcDate() }),
-  assertions: [fileAssertion('word-count.ts', { maxWords: 90 }, 'concise')],
+  assertions: [fileAssertion('word-count.ts', { maxWords: 90, graderSource }, 'concise')],
   rubric: [
     'Use the expected output below as the authoritative reference for the answer’s conclusion and essential reasoning.',
     'The response should be calm, respectful, direct, and grounded; it must not mock, shame, patronize, or use sarcasm.',
