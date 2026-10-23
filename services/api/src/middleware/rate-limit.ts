@@ -139,8 +139,9 @@ export function otpSendLimit(counter: RateLimitCounter): MiddlewareHandler {
     if (c.req.method !== 'POST') return next();
     let email = '';
     try {
-      const body = (await c.req.raw.clone().json()) as { email?: unknown };
-      if (typeof body.email === 'string') email = body.email;
+      const body: unknown = await c.req.raw.clone().json();
+      if (body && typeof body === 'object' && 'email' in body && typeof body.email === 'string')
+        email = body.email;
     } catch {
       // Not JSON / no body: let Better Auth reject it.
     }
