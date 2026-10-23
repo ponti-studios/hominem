@@ -1027,9 +1027,6 @@
           "githubUrl": {
             "type": ["string", "null"]
           },
-          "imageUrl": {
-            "type": ["string", "null"]
-          },
           "videoUrl": {
             "type": ["string", "null"]
           },
@@ -1135,9 +1132,6 @@
                 "type": ["string", "null"]
               },
               "githubUrl": {
-                "type": ["string", "null"]
-              },
-              "imageUrl": {
                 "type": ["string", "null"]
               },
               "videoUrl": {

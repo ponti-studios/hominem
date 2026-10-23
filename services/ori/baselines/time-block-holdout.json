@@ -3,7 +3,7 @@
   "tier": "holdout",
   "datasetHash": "8bb448e431aa",
   "promptHash": "c6796822ab40",
-  "graderHash": "80b7dc7781de",
+  "graderHash": "5d76b3b49b70",
   "targetModel": "openai/gpt-5-mini",
   "judgeModel": "openai/gpt-6-luna",
   "trialsPerCase": 1,
@@ -15,11 +15,11 @@
     "passAllRate": 1,
     "errors": 0,
     "meanScore": 1,
-    "costUsd": 0.009175,
+    "costUsd": 0.006371,
     "promptTokens": 14346,
-    "completionTokens": 3687,
-    "latencyP50Ms": 5326,
-    "latencyP95Ms": 11834,
+    "completionTokens": 2976,
+    "latencyP50Ms": 5531,
+    "latencyP95Ms": 6081,
     "byCategory": {
       "uncategorized": {
         "cases": 5,
@@ -36,10 +36,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 5326,
-          "costUsd": 0.00132525,
+          "latencyMs": 5531,
+          "costUsd": 0.00133165,
           "promptTokens": 2869,
-          "completionTokens": 592
+          "completionTokens": 624
         }
       ],
       "passRate": 1,
@@ -54,10 +54,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 11834,
-          "costUsd": 0.00296795,
+          "latencyMs": 6081,
+          "costUsd": 0.00153315,
           "promptTokens": 2867,
-          "completionTokens": 1428
+          "completionTokens": 725
         }
       ],
       "passRate": 1,
@@ -72,10 +72,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 5256,
-          "costUsd": 0.00185125,
+          "latencyMs": 4003,
+          "costUsd": 0.00113565,
           "promptTokens": 2885,
-          "completionTokens": 565
+          "completionTokens": 524
         }
       ],
       "passRate": 1,
@@ -90,10 +90,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 5435,
-          "costUsd": 0.00126645,
+          "latencyMs": 5949,
+          "costUsd": 0.00114965,
           "promptTokens": 2861,
-          "completionTokens": 578
+          "completionTokens": 534
         }
       ],
       "passRate": 1,
@@ -108,10 +108,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 4699,
-          "costUsd": 0.001764,
+          "latencyMs": 5080,
+          "costUsd": 0.0012204,
           "promptTokens": 2864,
-          "completionTokens": 524
+          "completionTokens": 569
         }
       ],
       "passRate": 1,
