@@ -9,6 +9,9 @@ on:
   pull_request:
     paths:
       - 'services/ori/**'
+      - 'services/api/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/evals.yml'
   workflow_dispatch:
     inputs:

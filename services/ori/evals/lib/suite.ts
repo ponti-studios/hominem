@@ -126,6 +126,7 @@ const graderFiles = [
   'mcp-scoring.ts',
   'mcp-fixtures.ts',
   'mcp-tool-catalog.ts',
+  'mcp-tool-catalog.generated.json',
   'schemas.ts',
   'time-block-compare.ts',
   '../assertions/concise.ts',

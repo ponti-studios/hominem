@@ -63,11 +63,16 @@ Changed a dataset, prompt, or model on purpose? Run the full suite, read the rep
 
 ## CI
 
-`.github/workflows/evals.yml`: PRs touching `services/ori` run `eval:check`, unit tests and
-typecheck (free, deterministic). The live job is manual (`workflow_dispatch`) because it costs money.
+`.github/workflows/evals.yml`: PRs touching evals, API tools, shared packages, or the lockfile run
+`eval:check`, unit tests and typecheck (free, deterministic). The live job is manual
+(`workflow_dispatch`) because it costs money.
+
+`evals/lib/mcp-tool-catalog.generated.json` is the generated model-facing tool catalog from the API
+registry. `eval:check` compares it with the current API definitions; after an intentional tool
+change, review and update it with `pnpm --filter @hominem/ori eval:catalog:update`. Eval domain
+membership remains explicitly curated in `mcp-tool-catalog.ts`. Catalog content contributes to the
+grader hash, so a catalog update requires a reviewed live run before promoting new baselines.
 
 ## Caveats
 
-- `evals/lib/mcp-tool-catalog.ts` is a hand-copied tool list, not the real MCP definitions, so it
-  can drift from `services/api`. Generating it from the API is a good follow-up.
 - The chat-assistant and time-block prompt snapshots mirror production prompts; API tests fail if they drift.

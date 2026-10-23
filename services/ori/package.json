@@ -4,11 +4,12 @@
   "type": "module",
   "scripts": {
     "eval": "tsx runner/cli.ts",
-    "eval:check": "tsx runner/cli.ts check",
+    "eval:check": "tsx runner/mcp-tool-catalog.ts && tsx runner/cli.ts check",
+    "eval:catalog:update": "tsx runner/mcp-tool-catalog.ts --write",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "format": "oxfmt evals runner --write '!evals/**/*.html'",
-    "format:check": "oxfmt evals runner --check '!evals/**/*.html'"
+    "format": "oxfmt evals runner --write '!evals/**/*.html' '!evals/**/*.generated.json'",
+    "format:check": "oxfmt evals runner --check '!evals/**/*.html' '!evals/**/*.generated.json'"
   },
   "devDependencies": {
     "@types/node": "catalog:",

@@ -17,6 +17,8 @@ test('an eval case can provide its own tool result without changing shared fixtu
 });
 
 test('tool surfaces are declared by the eval case', () => {
+  expect(tools.every((tool) => tool.function.description.length > 0)).toEqual(true);
+  expect(tools.every((tool) => tool.function.parameters.type === 'object')).toEqual(true);
   expect(toolsByDomain.finance.every((tool) => tool.function.name.startsWith('finance_'))).toEqual(
     true,
   );
