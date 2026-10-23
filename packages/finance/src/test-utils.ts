@@ -14,7 +14,6 @@ export async function cleanupIntegrationFinanceUser(userId: string): Promise<voi
         eb.selectFrom('app.financeTransactions').select('id').where('userId', '=', userId),
       )
       .execute();
-    await trx.deleteFrom('app.plaidItems').where('userId', '=', userId).execute();
     await trx.deleteFrom('app.financeTransactions').where('userId', '=', userId).execute();
     await trx.deleteFrom('app.tags').where('ownerUserid', '=', userId).execute();
     await trx.deleteFrom('app.financeAccounts').where('userId', '=', userId).execute();

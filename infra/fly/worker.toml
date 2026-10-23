@@ -1,0 +1,20 @@
+app = "hominem-worker"
+primary_region = "sjc"
+
+[env]
+  PORT = "4041"
+  NODE_ENV = "production"
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 4041
+    method = "GET"
+    path = "/health"
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "30s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

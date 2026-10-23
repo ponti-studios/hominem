@@ -2,7 +2,7 @@ import posthog from 'posthog-js';
 import { PostHogProvider } from 'posthog-js/react';
 import type { ReactNode } from 'react';
 
-const apiKey: string | undefined = import.meta.env.VITE_POSTHOG_PUBLIC_KEY;
+const apiKey: string | undefined = import.meta.env.VITE_POSTHOG_PROJECT_TOKEN;
 const host: string = import.meta.env.VITE_POSTHOG_HOST ?? 'https://us.i.posthog.com';
 
 if (apiKey && typeof window !== 'undefined') {

@@ -6,6 +6,7 @@ export {
   getLastMonthFromRange,
   stringToDate,
 } from './dates';
+export { CACHE_TTL, invalidateCaseCache, QueryCache, queryCache, withCache } from './cache';
 export { delay } from './delay';
 export { isObject } from './object';
 export {

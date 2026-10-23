@@ -31,6 +31,10 @@ function getAdvancedOptions(inputEnv: ApiEnv) {
       generateId: 'uuid' as const,
     },
     useSecureCookies,
+    // Better Auth's own limiter keys on this header. x-forwarded-for (the default) is client-controlled.
+    ipAddress: {
+      ipAddressHeaders: inputEnv.ORIGIN_SECRET ? ['cf-connecting-ip'] : ['fly-client-ip'],
+    },
     ...(crossSubDomainEnabled
       ? {
           crossSubDomainCookies: {

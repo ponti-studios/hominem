@@ -1,6 +1,6 @@
 ---
 name: hominem-observability
-description: Pull production logs, traces, and dashboards for Hominem (Railway logs and New Relic errors/traces/dashboards), diagnose incidents, and verify telemetry after deployment. Use for production error investigation, log tailing, speech-funnel debugging, or setting up dashboards/alerts.
+description: Pull production logs, traces, and dashboards for Hominem (Fly logs and New Relic errors/traces/dashboards), diagnose incidents, and verify telemetry after deployment. Use for production error investigation, log tailing, speech-funnel debugging, or setting up dashboards/alerts.
 ---
 
 # Hominem observability
@@ -11,29 +11,24 @@ the "why" behind what's allowed in telemetry. This skill is the runbook.
 
 New Relic is the primary home for API/worker traces, metrics, and
 privacy-filtered application logs emitted through Hominem's shared logger. It
-also receives Omiro mobile crashes and JavaScript errors. Railway is the source
-of truth for complete container stdout/stderr and platform
-HTTP/build/Redis/database logs. Do not put OTLP credentials or New Relic user
+also receives Omiro mobile crashes and JavaScript errors. Fly.io is the source
+of truth for complete container stdout/stderr (`fly logs`). Prod runs on Fly
+(region sjc); app names are in `infra/fly/`. Do not put OTLP credentials or New Relic user
 API keys in a Web or mobile bundle.
 
 ## Pull production logs
 
 ```bash
-scripts/railway-logs.sh api --since 1h
-scripts/railway-logs.sh worker --filter '@level:error OR @level:warn'
-scripts/railway-logs.sh api --http --status '>=400' --since 1h
-scripts/railway-logs.sh worker --follow
-scripts/diagnose-speech.sh 30m
+fly logs -a hominem-api              # live tail
+fly logs -a hominem-api --no-tail    # recent buffer
+fly logs -a hominem-worker --no-tail | grep -E 'error|warn'
 ```
 
-Service aliases: `api`, `worker`, `redis`, `database`. The script targets the
-Hominem production project explicitly — it doesn't depend on your locally
-linked Railway project. Override when needed:
-
-```bash
-RAILWAY_PROJECT_ID=<project-id> RAILWAY_ENVIRONMENT=staging \
-  scripts/railway-logs.sh api --since 30m
-```
+Apps: `hominem-api`, `hominem-worker`, `hominem-web`, `hominem-career`,
+`hominem-finance`, `hominem-redis`, `hominem-db`. `scripts/railway-logs.sh` is
+legacy (Railway is no longer prod). New Relic is in the EU region
+(`one.eu.newrelic.com`, OTLP `https://otlp.eu01.nr-data.net`); turn it on with
+`infra/fly/enable-newrelic.sh`.
 
 For aggregate database verification (reconciliation state, missing usage
 events, current-month feature totals — no individual user data):
@@ -42,10 +37,8 @@ events, current-month feature totals — no individual user data):
 DATABASE_URL=<url> scripts/diagnose-usage.sh
 ```
 
-Dashboard path: Railway → Hominem → environment → service → Logs. Use API for
-HTTP/runtime, worker for queue processing, Redis for cache health, database
-for database events. Prefer the HTTP log view over structured app logs when a
-request status/path/duration/Railway request ID is more useful.
+Dashboard path: fly.io dashboard → app → Monitoring. Use api for HTTP/runtime,
+worker for queue processing, redis for cache health, db for database events.
 
 ## New Relic errors and traces
 
@@ -59,8 +52,8 @@ feature diagnostics inherit the 10% parent sampling ratio.
 
 Open Logs in the `hominem` account and filter by `service.name` (`api` or
 `worker`), `deployment.environment.name`, `log.event`, `log.level`, or the
-bounded attributes emitted by the shared logger. Use Railway for raw dependency
-stdout/stderr and Railway edge/build logs, which are not forwarded to New Relic.
+bounded attributes emitted by the shared logger. Use `fly logs` for raw dependency
+stdout/stderr and platform/build logs, which are not forwarded to New Relic.
 
 For error triage, start with production plus `failureType`; use
 `failureCategory` for the broad HTTP class, `operation`/`failureStage` to locate
@@ -96,7 +89,7 @@ To inspect recent occurrences of one type, replace the aggregate with
 the incident window. New Relic documents the `FROM`, `FACET`, and time-window
 query syntax in its [NRQL documentation](https://docs.newrelic.com/docs/nrql/get-started/introduction-nrql-how-nrql-works/).
 
-Response procedure for an incident: New Relic Errors/trace waterfall → Railway
+Response procedure for an incident: New Relic Errors/trace waterfall → Fly
 logs → database usage/reconciliation rows → local reproduction. Do not change
 provider or deployment configuration based on a dashboard aggregate alone.
 

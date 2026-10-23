@@ -1,6 +1,6 @@
 import { db } from '@hominem/db/core';
 import type { Selectable } from '@hominem/db/core';
-import type { AppFinanceTransactions, AppPlaidItems, AppTags } from '@hominem/db/types';
+import type { AppFinanceTransactions, AppTags } from '@hominem/db/types';
 import { sql } from 'kysely';
 
 import type { AccountWithBalance } from './accounts';
@@ -8,13 +8,12 @@ import { listAccounts } from './accounts';
 import { getTransactionTags } from './categories';
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
 import { queryTransactionsByContract } from './transactions';
-import { getAffectedRows, tableExists } from './utils';
+import { getAffectedRows } from './utils';
 
 export async function deleteUserFinanceData(userId: string): Promise<{
   deletedTaggedItems: number;
   deletedTransactions: number;
   deletedAccounts: number;
-  deletedPlaidItems: number;
 }> {
   const taggedItemsResult = await db
     .deleteFrom('app.tagAssignments')
@@ -36,20 +35,10 @@ export async function deleteUserFinanceData(userId: string): Promise<{
     .executeTakeFirst();
   const deletedAccounts = getAffectedRows(accountsResult);
 
-  let deletedPlaidItems = 0;
-  if (await tableExists('app.plaid_items')) {
-    const plaidItemsResult = await db
-      .deleteFrom('app.plaidItems')
-      .where('userId', '=', userId)
-      .executeTakeFirst();
-    deletedPlaidItems = getAffectedRows(plaidItemsResult);
-  }
-
   return {
     deletedTaggedItems,
     deletedTransactions,
     deletedAccounts,
-    deletedPlaidItems,
   };
 }
 
@@ -57,7 +46,6 @@ export async function exportFinanceData(userId: string): Promise<{
   accounts: AccountWithBalance[];
   transactions: Selectable<AppFinanceTransactions>[];
   tags: Selectable<AppTags>[];
-  plaidItems: Selectable<AppPlaidItems>[];
 }> {
   const [accounts, transactions, tags] = await Promise.all([
     listAccounts(userId),
@@ -65,22 +53,9 @@ export async function exportFinanceData(userId: string): Promise<{
     getTransactionTags(userId),
   ]);
 
-  let plaidItems: Selectable<AppPlaidItems>[] = [];
-  if (await tableExists('app.plaid_items')) {
-    const plaidItemsResult = await db
-      .selectFrom('app.plaidItems')
-      .selectAll()
-      .where('userId', '=', userId)
-      .orderBy('createdAt', 'desc')
-      .orderBy('id', 'asc')
-      .execute();
-    plaidItems = plaidItemsResult;
-  }
-
   return {
     accounts,
     transactions,
     tags,
-    plaidItems,
   };
 }

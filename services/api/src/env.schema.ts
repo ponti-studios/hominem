@@ -25,6 +25,9 @@ export const apiSchema = runtimeSchema.extend({
   DATABASE_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().min(32),
   AUTH_COOKIE_DOMAIN: z.string().default(''),
+  // Shared with a Cloudflare Transform Rule that adds X-Origin-Secret to every proxied request.
+  // When set, requests that don't carry it (like direct hits on fly.dev) get a 403. Empty = guard off.
+  ORIGIN_SECRET: z.string().default(''),
   HOMINEM_SCRIPTED_MAILBOX: z.string().default(''),
   AUTH_EMAIL_OTP_EXPIRES_SECONDS: z.coerce.number().int().positive().default(300),
   // App Review sign-in: one address, a 6-digit fixed code and an expiry, all empty when off (src/auth/review-account.ts).
@@ -51,9 +54,9 @@ export const apiSchema = runtimeSchema.extend({
   CREDIT_MODE: z.enum(['off', 'test', 'live']).default('off'),
   // Comma-separated emails, or whole domains (work.com or @work.com), who are in credit mode in `test`.
   CREDIT_TESTERS: z.string().default(''),
-  // PostHog project key and host, read only to ask whether the `thames-top-up` flag is on for a
+  // PostHog project token (Project settings -> Project token) and host, read only to ask whether the `thames-top-up` flag is on for a
   // person in `test`. Unset means the flag is never consulted and CREDIT_TESTERS alone decides.
-  POSTHOG_API_KEY: z.string().optional(),
+  POSTHOG_PROJECT_TOKEN: z.string().optional(),
   POSTHOG_HOST: z.preprocess(
     (value) => (value === '' ? undefined : value),
     z.url().default('https://us.i.posthog.com'),
@@ -80,9 +83,6 @@ export const apiSchema = runtimeSchema.extend({
   ),
   OTEL_EXPORTER_OTLP_LOGS_HEADERS: z.string().optional(),
   OTEL_TRACES_SAMPLER_ARG: z.coerce.number().default(0.1),
-  PLAID_CLIENT_ID: z.string().default(''),
-  PLAID_API_KEY: z.string().default(''),
-  PLAID_ENV: z.enum(['sandbox', 'development', 'production']).default('sandbox'),
 });
 
 export type ApiEnv = z.infer<typeof apiSchema>;

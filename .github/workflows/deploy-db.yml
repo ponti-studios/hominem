@@ -36,7 +36,25 @@ jobs:
         with:
           go-version: '1.25'
 
+      - name: setup-flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@fc53c09e1bc3be6f54706524e3b82c4f462f77be # 1.5
+
+      # hominem-db is private to Fly's network, so tunnel to it from the runner.
+      - name: open-database-tunnel
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          flyctl proxy 15432:5432 -a hominem-db >/tmp/fly-proxy.log 2>&1 &
+          for _ in $(seq 1 30); do
+            (echo > /dev/tcp/127.0.0.1/15432) 2>/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/fly-proxy.log
+          echo 'Database tunnel did not come up'
+          exit 1
+
       - name: apply-database-migrations
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: postgresql://postgres:${{ secrets.FLY_POSTGRES_PASSWORD }}@localhost:15432/hominem
         run: just db migrate

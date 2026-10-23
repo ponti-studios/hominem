@@ -31,7 +31,6 @@ export type CareerProjectInput = {
   shortDescription?: string | null;
   liveUrl?: string | null;
   githubUrl?: string | null;
-  imageUrl?: string | null;
   videoUrl?: string | null;
   technologies?: JsonArray;
   status?: AppCareerProjectStatus | null;

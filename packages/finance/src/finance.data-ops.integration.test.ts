@@ -14,7 +14,6 @@ import {
   deleteUserFinanceData,
   exportFinanceData,
   replaceTransactionTags,
-  upsertPlaidItem,
 } from './index';
 import { cleanupIntegrationFinanceUser } from './test-utils';
 
@@ -68,15 +67,6 @@ describeIntegration('finance data ops integration', () => {
     });
     await replaceTransactionTags(ownerTx.id, ownerId, [ownerTag.id]);
 
-    await upsertPlaidItem({
-      id: crypto.randomUUID(),
-      userId: ownerId,
-      providerItemId: `item-${crypto.randomUUID()}`,
-      institutionId: null,
-      cursor: 'cursor-1',
-      accessToken: 'token-1',
-    });
-
     await createTransaction({
       userId: otherUserId,
       accountId: otherAccountId,
@@ -94,8 +84,6 @@ describeIntegration('finance data ops integration', () => {
     expect(exported.transactions[0]?.userId).toBe(ownerId);
     expect(exported.tags.length).toBe(1);
     expect(exported.tags[0]?.ownerUserid).toBe(ownerId);
-    expect(exported.plaidItems.length).toBe(1);
-    expect(exported.plaidItems[0]?.userId).toBe(ownerId);
   });
 
   it('delete-all summary removes only caller-scoped data', async () => {
@@ -112,15 +100,6 @@ describeIntegration('finance data ops integration', () => {
       merchantName: 'Transit',
     });
     await replaceTransactionTags(ownerTx.id, ownerId, [ownerTag.id]);
-
-    await upsertPlaidItem({
-      id: crypto.randomUUID(),
-      userId: ownerId,
-      providerItemId: `item-${crypto.randomUUID()}`,
-      institutionId: null,
-      cursor: null,
-      accessToken: null,
-    });
 
     await createTransaction({
       userId: otherUserId,
@@ -140,7 +119,6 @@ describeIntegration('finance data ops integration', () => {
     expect(ownerExport.accounts).toHaveLength(0);
     expect(ownerExport.transactions).toHaveLength(0);
     expect(ownerExport.tags.length).toBeGreaterThanOrEqual(1);
-    expect(ownerExport.plaidItems).toHaveLength(0);
 
     const otherExport = await exportFinanceData(otherUserId);
     expect(otherExport.accounts.length).toBeGreaterThanOrEqual(1);
