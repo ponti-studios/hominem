@@ -14,6 +14,7 @@ import { getServiceErrorFailureType, isServiceError } from './errors';
 import { createMcpRoutes } from './mcp/routes';
 import { createAuthMiddleware } from './middleware/auth';
 import { blockMaliciousProbes } from './middleware/block-probes';
+import { requestBodyLimit } from './middleware/body-limit';
 import { clientIpMiddleware } from './middleware/client-ip';
 import { originGuard } from './middleware/origin-guard';
 import {
@@ -112,6 +113,7 @@ function registerBaseMiddleware(app: Hono<AppEnv>, dependencies: ServerDependenc
     }),
   );
   app.use('*', requestIdMiddleware);
+  app.use('*', requestBodyLimit());
   app.use('*', blockMaliciousProbes());
   app.use('*', requestLogger());
   app.use('*', compress());
@@ -183,7 +185,10 @@ function registerApiRoutes(app: Hono<AppEnv>, dependencies: ServerDependencies) 
   app.route('/api/images', imagesRoutes);
 }
 
-function registerDocumentationRoutes(app: Hono<AppEnv>) {
+// The Scalar page points at /openapi.json, which nothing serves, and Better Auth's own reference
+// page maps every auth endpoint for anyone who asks. Dev-only: nothing in production needs either.
+function registerDocumentationRoutes(app: Hono<AppEnv>, inputEnv: ApiEnv) {
+  if (inputEnv.NODE_ENV === 'production') return;
   app.get(
     '/docs',
     Scalar({
@@ -268,7 +273,7 @@ export function createServer(overrides: Partial<ServerDependencies> = {}) {
   registerBaseMiddleware(app, dependencies);
   registerApiRoutes(app, dependencies);
   app.get('/', (c) => c.json(createRootStatusPayload()));
-  registerDocumentationRoutes(app);
+  registerDocumentationRoutes(app, inputEnv);
   registerErrorHandlers(app);
 
   return app;
