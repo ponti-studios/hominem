@@ -6,7 +6,6 @@ import {
   getMaxOutputTokens,
   hitOutputCap,
   REPLY_LENGTHS,
-  trimToLastSentence,
   withLengthReminder,
 } from './reply-profile';
 
@@ -49,27 +48,5 @@ describe('hitOutputCap', () => {
     expect(hitOutputCap(['max_output_tokens'])).toBe(true);
     expect(hitOutputCap(['stop'])).toBe(false);
     expect(hitOutputCap([])).toBe(false);
-  });
-});
-
-describe('trimToLastSentence', () => {
-  it('cuts back to the last complete sentence', () => {
-    expect(trimToLastSentence('One. Two! Three is half wri')).toBe('One. Two!');
-  });
-
-  it('keeps closing quotes and brackets with the sentence', () => {
-    expect(trimToLastSentence('He said "stop." Then he le')).toBe('He said "stop."');
-  });
-
-  it('does not treat a decimal point as a sentence end', () => {
-    expect(trimToLastSentence('Version 3.5 is out')).toBe('');
-  });
-
-  it('returns an empty string when nothing complete is left', () => {
-    expect(trimToLastSentence('no end in sight')).toBe('');
-  });
-
-  it('returns a complete reply unchanged', () => {
-    expect(trimToLastSentence('Done. ')).toBe('Done.');
   });
 });

@@ -370,6 +370,7 @@ export class OpenRouterChatModel implements ChatModel {
         type: 'provider-turn-completed',
         requiredToolCall,
         confirmationCallIds,
+        outputTruncated: hitOutputCap(finishReasons),
       };
     } catch (error) {
       if (error instanceof ProviderInputError) {

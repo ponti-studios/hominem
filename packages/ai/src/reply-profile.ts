@@ -83,18 +83,3 @@ export function getMaxOutputTokens(model: string): number {
 export function hitOutputCap(finishReasons: readonly string[]): boolean {
   return finishReasons.some((reason) => reason === 'length' || reason === 'max_output_tokens');
 }
-
-/**
- * Trim a reply that was cut off by the output cap back to its last complete sentence. Returns an
- * empty string when no complete sentence is left, so the caller can fail the turn instead of
- * showing half a sentence.
- */
-export function trimToLastSentence(text: string): string {
-  const trimmed = text.trimEnd();
-  let end = -1;
-  // A terminator only counts when whitespace or the end follows it, so "3.5" is not a sentence end.
-  for (const match of trimmed.matchAll(/[.!?]["'”’)\]]*(?=\s|$)/g)) {
-    end = match.index + match[0].length;
-  }
-  return end === -1 ? '' : trimmed.slice(0, end);
-}

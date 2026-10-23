@@ -8,6 +8,7 @@
 // `state.requestedToolCalls`, which `provider.ts` already built up.
 
 import { persistCommand, phaseCommands, toolCallIdempotencyKey } from './shared';
+import { trimToLastSentence } from './truncation';
 import type {
   GenerationHistoryEventPayload,
   GenerationInput,
@@ -79,8 +80,13 @@ export function reduceProviderTurnCompleted(
     // reply instead of failing the whole generation — an unwanted answer
     // beats no answer, and the router's classification is a heuristic, not
     // a guarantee.
+    // A reply cut off by the output cap ends on its last complete sentence. If there is none,
+    // keep the text as is: half a reply beats no reply.
+    const assistantText = input.outputTruncated
+      ? trimToLastSentence(state.assistantText) || state.assistantText
+      : state.assistantText;
     return {
-      state: { ...state, phase: 'saving', requestedToolCalls: [] },
+      state: { ...state, assistantText, phase: 'saving', requestedToolCalls: [] },
       commands: [...phaseCommands(state.generationId, 'saving'), { type: 'save-generation' }],
     };
   }

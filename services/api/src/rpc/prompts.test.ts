@@ -28,11 +28,11 @@ describe('chat assistant personality', () => {
   });
 
   it('makes default brevity explicit and appends each selected length mode', () => {
-    expect(CHAT_ASSISTANT_PROMPT).toContain('keep the answer short and direct');
+    expect(CHAT_ASSISTANT_PROMPT).toContain('the way a sharp friend replies to a text message');
     // Models cannot count characters; the default must not promise a numeric limit.
     expect(CHAT_ASSISTANT_PROMPT).not.toMatch(/\b\d+ characters\b/);
     expect(CHAT_ASSISTANT_PROMPT).toContain(
-      'Do not add context nobody asked for, action plans, generic reassurance',
+      'No lists, menus of options, headers, context nobody asked for, action plans, generic reassurance',
     );
     expect(buildChatSystemPrompt()).toContain(CHAT_ASSISTANT_PROMPT);
     expect(buildChatSystemPrompt()).toMatch(/CURRENT DATE \(UTC\): \d{4}-\d{2}-\d{2}/);
