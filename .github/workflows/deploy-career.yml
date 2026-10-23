@@ -17,11 +17,13 @@ permissions:
 jobs:
   deploy-career:
     if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
-    uses: ./.github/workflows/railway-deploy-service.yml
+    uses: ./.github/workflows/fly-deploy-service.yml
     secrets:
-      service_target: ${{ secrets.RAILWAY_SERVICE_CAREER }}
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     with:
-      service_name: career
+      app: hominem-career
+      config_path: infra/fly/career.toml
+      dockerfile: apps/career/Dockerfile
+      build_args: |
+        VITE_PUBLIC_API_URL=https://api.ponti.io
       checkout_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      config_path: apps/career/railway.json

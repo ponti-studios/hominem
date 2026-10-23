@@ -1,4 +1,14 @@
-# Fly.io emergency deploy
+# Fly.io deploy
+
+Merges to `main` deploy automatically: each `deploy-*` workflow runs after its
+`validate-*` workflow passes and calls `.github/workflows/fly-deploy-service.yml`
+(remote build, waits on health checks). `deploy-finance` is manual-only.
+Repo config the workflows need:
+
+- secrets: `FLY_API_TOKEN` (`fly tokens create org`), `FLY_POSTGRES_PASSWORD` (migrations, via `fly proxy`)
+- variable: `VITE_POSTHOG_PROJECT_TOKEN` (public token baked into the web build)
+
+Everything below is the by-hand path for first-time setup or emergencies.
 
 Run everything from the repo root. Needs `fly auth login` first.
 Region sjc (closest to Railway us-west2). Apps talk over `*.internal` (Fly private network).

@@ -7,7 +7,3 @@ status:
     gh run list --branch main --commit "$sha" --limit 20 \
       --json name,status,conclusion,url \
       --jq '.[] | [.name, .status, (.conclusion // ""), .url] | @tsv'
-
-# Tests for deploy.sh (stubbed railway CLI, no network).
-test:
-    bash {{justfile_directory()}}/just/deploy.test.sh

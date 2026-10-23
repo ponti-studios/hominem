@@ -1,0 +1,70 @@
+name: fly-deploy-service
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        required: true
+        type: string
+      config_path:
+        required: true
+        type: string
+      dockerfile:
+        required: true
+        type: string
+      build_args:
+        description: Newline-separated KEY=VALUE pairs passed to the image build
+        required: false
+        type: string
+        default: ''
+      checkout_ref:
+        required: false
+        type: string
+        default: ''
+    secrets:
+      FLY_API_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: Production
+    concurrency:
+      group: fly-deploy-${{ inputs.app }}
+      cancel-in-progress: false
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      APP: ${{ inputs.app }}
+      CONFIG_PATH: ${{ inputs.config_path }}
+      DOCKERFILE: ${{ inputs.dockerfile }}
+      BUILD_ARGS: ${{ inputs.build_args }}
+    steps:
+      - name: checkout-repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
+
+      - name: setup-flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@fc53c09e1bc3be6f54706524e3b82c4f462f77be # 1.5
+
+      - name: validate-environment
+        run: |
+          set -euo pipefail
+          test -n "$FLY_API_TOKEN" || { echo 'Missing FLY_API_TOKEN'; exit 1; }
+          test -f "$CONFIG_PATH" || { echo "Fly config not found: $CONFIG_PATH"; exit 1; }
+          test -f "$DOCKERFILE" || { echo "Dockerfile not found: $DOCKERFILE"; exit 1; }
+
+      # Remote build on Fly's builder. flyctl waits for the new machines to pass
+      # their health checks and rolls back on failure, so a red job means a bad deploy.
+      - name: deploy-to-fly
+        run: |
+          set -euo pipefail
+          args=(--config "$CONFIG_PATH" --dockerfile "$DOCKERFILE" --app "$APP" --remote-only --ha=false)
+          while IFS= read -r line; do
+            [[ -n "$line" ]] && args+=(--build-arg "$line")
+          done <<<"$BUILD_ARGS"
+          flyctl deploy "${args[@]}"
