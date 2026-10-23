@@ -16,14 +16,18 @@ export function AuthErrorPage({ description, error, mode }: AuthErrorPageProps) 
     : 'Return to your MCP client and try again.';
 
   return (
-    <AuthShell>
+    <AuthShell
+      aside={{
+        headline: 'Nothing was shared.',
+        body: 'When authorization stops, no access is granted and nothing changes on your account.',
+      }}
+    >
       <AuthContent>
-        <div
-          aria-hidden="true"
-          className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-[color-mix(in_srgb,var(--auth-danger)_35%,transparent)] bg-auth-danger-background text-2xl font-bold text-auth-danger"
-        >
-          !
-        </div>
+        <svg aria-hidden="true" fill="none" height="44" viewBox="0 0 44 44" width="44">
+          <circle cx="22" cy="22" r="20" stroke="var(--auth-danger)" strokeWidth="2" />
+          <path d="M22 12v13" stroke="var(--auth-danger)" strokeLinecap="round" strokeWidth="2.5" />
+          <circle cx="22" cy="32" fill="var(--auth-danger)" r="1.8" />
+        </svg>
         <AuthHeading>
           <p className="m-0 text-xs font-semibold uppercase tracking-wider text-auth-muted">
             {accessLabel}

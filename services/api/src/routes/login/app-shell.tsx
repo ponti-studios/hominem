@@ -16,9 +16,15 @@ export function renderAuthShell(input: { entry: LoginEntry; init?: unknown; titl
       <head>
         <meta charSet="utf-8" />
         <meta content="width=device-width, initial-scale=1" name="viewport" />
-        <meta content="#fcfcfd" media="(prefers-color-scheme: light)" name="theme-color" />
-        <meta content="#111113" media="(prefers-color-scheme: dark)" name="theme-color" />
+        <meta content="#f6f3ec" media="(prefers-color-scheme: light)" name="theme-color" />
+        <meta content="#141310" media="(prefers-color-scheme: dark)" name="theme-color" />
         <title>{input.title}</title>
+        <link href="https://fonts.googleapis.com" rel="preconnect" />
+        <link crossOrigin="anonymous" href="https://fonts.gstatic.com" rel="preconnect" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        />
         {assets.styles.map((href) => (
           <link href={href} rel="stylesheet" />
         ))}
