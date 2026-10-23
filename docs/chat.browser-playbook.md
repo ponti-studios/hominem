@@ -3,7 +3,7 @@
 This playbook defines repeatable browser evidence for the functional chat
 release gate. It tests the running Web application against the running API and
 real persistence. Provider permutations and deterministic dependency failure
-injection belong in focused Vitest/MSW or API-local `HominemTests` tests.
+injection belong in focused Vitest/MSW or API-local `ChatGenerationHarness` tests.
 Browser runs prove that real responses become correct user-visible state and
 survive lifecycle transitions where browser or device behavior is part of the
 contract.
