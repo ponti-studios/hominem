@@ -274,7 +274,6 @@ export interface AppCareerProjects {
   endDate: ColumnType<string, Date | string, Date | string> | null;
   githubUrl: string | null;
   id: Generated<string>;
-  imageUrl: string | null;
   isFeatured: Generated<boolean>;
   isVisible: Generated<boolean>;
   liveUrl: string | null;

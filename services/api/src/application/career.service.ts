@@ -754,7 +754,6 @@ function toProjectDto(project: CareerProjectRecord): z.infer<typeof careerProjec
     shortDescription: project.shortDescription,
     liveUrl: project.liveUrl,
     githubUrl: project.githubUrl,
-    imageUrl: project.imageUrl,
     videoUrl: project.videoUrl,
     technologies: Array.isArray(project.technologies) ? project.technologies : [],
     status: project.status === null ? null : careerProjectStatusSchema.parse(project.status),
