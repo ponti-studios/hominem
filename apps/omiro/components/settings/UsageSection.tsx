@@ -8,15 +8,9 @@ const usdFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
 });
-const usagePeriodFormatter = new Intl.DateTimeFormat('en-US', {
-  month: '2-digit',
-  year: '2-digit',
-});
-
-function formatUsagePeriod(date: Date): string {
-  const parts = usagePeriodFormatter.formatToParts(date);
-  const month = parts.find((part) => part.type === 'month')?.value ?? '';
-  const year = parts.find((part) => part.type === 'year')?.value ?? '';
+function formatUsagePeriod(periodStart: string): string {
+  const month = periodStart.slice(5, 7);
+  const year = periodStart.slice(2, 4);
   return `${month} '${year}`;
 }
 
@@ -49,7 +43,7 @@ export function UsageSection({ monthlyUsage }: { monthlyUsage: MonthlyUsageStatu
 
   return (
     <View testID="settings-usage-section" style={styles.usageSection}>
-      <SectionLabel>{`AI usage · ${formatUsagePeriod(new Date())}`}</SectionLabel>
+      <SectionLabel>{`AI usage · ${formatUsagePeriod(monthlyUsage.periodStart)}`}</SectionLabel>
       <View style={styles.usageSummary}>
         <Text style={[styles.usageAmount, { fontVariant: ['tabular-nums'] }]}>
           {formatUsd(monthlyUsage.totalCostUsd)}

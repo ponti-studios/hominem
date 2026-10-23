@@ -1,13 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { betterAuthServer } from './auth/better-auth';
 import { createServer } from './server';
 import { createTestEnv } from './testkit/server';
 
-const auth = { api: { getSession: async () => null } } as unknown as typeof betterAuthServer;
-
 function createApp() {
-  const app = createServer({ env: createTestEnv(), auth });
+  const app = createServer({ env: createTestEnv(), auth: betterAuthServer });
   app.get('/test-large-json', (c) =>
     c.json({
       items: Array.from({ length: 200 }, (_, index) => ({ id: index, name: `item-${index}` })),
@@ -17,6 +15,14 @@ function createApp() {
 }
 
 describe('api response pipeline', () => {
+  beforeEach(() => {
+    vi.spyOn(betterAuthServer.api, 'getSession').mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('returns minified JSON', async () => {
     const response = await createApp().request('/');
     const text = await response.text();

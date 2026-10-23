@@ -25,6 +25,9 @@ export const apiSchema = runtimeSchema.extend({
   DATABASE_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().min(32),
   AUTH_COOKIE_DOMAIN: z.string().default(''),
+  // Shared with a Cloudflare Transform Rule that adds X-Origin-Secret to every proxied request.
+  // When set, requests that don't carry it (like direct hits on fly.dev) get a 403. Empty = guard off.
+  ORIGIN_SECRET: z.string().default(''),
   HOMINEM_SCRIPTED_MAILBOX: z.string().default(''),
   AUTH_EMAIL_OTP_EXPIRES_SECONDS: z.coerce.number().int().positive().default(300),
   // App Review sign-in: one address, a 6-digit fixed code and an expiry, all empty when off (src/auth/review-account.ts).

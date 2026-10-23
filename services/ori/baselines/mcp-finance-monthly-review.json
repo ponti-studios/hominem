@@ -1,0 +1,94 @@
+{
+  "suite": "mcp-finance-monthly-review",
+  "tier": "capability",
+  "datasetHash": "f838fe63b278",
+  "promptHash": "0bd8f089d5b9",
+  "graderHash": "bac0965d621a",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 1,
+  "limited": false,
+  "summary": {
+    "cases": 3,
+    "trials": 3,
+    "passRate": 1,
+    "passAllRate": 1,
+    "errors": 0,
+    "meanScore": 1,
+    "costUsd": 0.008474,
+    "promptTokens": 14332,
+    "completionTokens": 3943,
+    "latencyP50Ms": 16128,
+    "latencyP95Ms": 16460,
+    "byCategory": {
+      "complete monthly review": {
+        "cases": 1,
+        "passRate": 1
+      },
+      "clarification before querying": {
+        "cases": 1,
+        "passRate": 1
+      },
+      "currency safety": {
+        "cases": 1,
+        "passRate": 1
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "september-review",
+      "category": "complete monthly review",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 16128,
+          "costUsd": 0.0034472500000000002,
+          "promptTokens": 5789,
+          "completionTokens": 1576
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "missing-month",
+      "category": "clarification before querying",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 3138,
+          "costUsd": 0.000567,
+          "promptTokens": 2684,
+          "completionTokens": 236
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "mixed-currency-review",
+      "category": "currency safety",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 16460,
+          "costUsd": 0.00445955,
+          "promptTokens": 5859,
+          "completionTokens": 2131
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    }
+  ]
+}
