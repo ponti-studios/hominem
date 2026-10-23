@@ -54,7 +54,8 @@ initRuntime('api').installSignalHandlers(async () => {
 
 const app = createServer();
 const port = env.PORT ?? 4040;
-const host = '0.0.0.0';
+// '::' is dual-stack: Fly's .internal 6PN names resolve to IPv6, 0.0.0.0 would refuse them
+const host = '::';
 const websocketServer = new WebSocketServer({ noServer: true });
 
 async function startServer() {

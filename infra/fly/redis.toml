@@ -1,0 +1,18 @@
+# Real Redis for BullMQ. Private only. AOF on so queued jobs survive restarts.
+app = "hominem-redis"
+primary_region = "sjc"
+
+[build]
+  image = "redis:7-alpine"
+
+[processes]
+  app = "sh -c 'exec redis-server --appendonly yes --dir /data --requirepass \"$REDIS_PASSWORD\"'"
+
+[[mounts]]
+  source = "redisdata"
+  destination = "/data"
+  initial_size = "1gb"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
