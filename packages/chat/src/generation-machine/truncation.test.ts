@@ -28,7 +28,7 @@ describe('trimToLastSentence', () => {
 describe('provider-turn-completed with outputTruncated', () => {
   const withText = (assistantText: string) => ({
     ...createGenerationState('g1'),
-    phase: 'streaming' as const,
+    phase: 'running' as const,
     assistantText,
   });
   const completed = (outputTruncated?: boolean) => ({
