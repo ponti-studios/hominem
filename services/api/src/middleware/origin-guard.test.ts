@@ -36,6 +36,13 @@ describe('origin guard', () => {
     expect((await app('s3cret').request('/healthz')).status).toBe(200);
   });
 
+  it('does not trust a spoofed internal Host on public (proxied) traffic', async () => {
+    const res = await app('s3cret').request('/api/status', {
+      headers: { host: 'hominem-api.internal', 'fly-client-ip': '203.0.113.9' },
+    });
+    expect(res.status).toBe(403);
+  });
+
   it('exempts the private network host', async () => {
     const res = await app('s3cret').request('/api/status', {
       headers: { host: 'hominem-api.internal:4040' },

@@ -8,6 +8,16 @@ type HeaderCarrier = {
 };
 
 const UNKNOWN_IP = 'unknown';
+export const INTERNAL_IP = 'internal';
+
+// The Host header is caller-controlled, so on its own it proves nothing. What can't be forged:
+// Fly's edge proxy always stamps fly-client-ip on public traffic, while SSR calls over the 6PN
+// private network hit the app directly and never pass through it. So internal = a .internal Host
+// AND no fly-client-ip.
+export function isInternalRequest(c: { req: { header: (name: string) => string | undefined } }) {
+  const host = (c.req.header('host') ?? '').split(':')[0] ?? '';
+  return host.endsWith('.internal') && !c.req.header('fly-client-ip');
+}
 
 // Which proxy headers can be believed depends on who can reach us:
 // - Behind Cloudflare with the origin guard on (ORIGIN_SECRET set), only Cloudflare can talk to
@@ -29,6 +39,8 @@ function resolveClientIp(
   c: Context,
   { originGuardActive, production }: { originGuardActive: boolean; production: boolean },
 ) {
+  // Private SSR traffic gets its own identity so it never shares a visitor-sized bucket.
+  if (isInternalRequest(c)) return INTERNAL_IP;
   const flyIp = c.req.header('fly-client-ip')?.trim();
   if (originGuardActive) {
     const cfIp = c.req.header('cf-connecting-ip')?.trim();

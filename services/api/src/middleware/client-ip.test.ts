@@ -35,6 +35,13 @@ describe('client ip', () => {
     );
   });
 
+  it('gives private SSR traffic its own identity, but not a spoofed one', async () => {
+    expect(await ipFor(guarded, { host: 'hominem-api.internal:4040' })).toBe('internal');
+    expect(
+      await ipFor(guarded, { host: 'hominem-api.internal', 'fly-client-ip': '104.16.0.1' }),
+    ).toBe('104.16.0.1');
+  });
+
   it('falls back to forwarded headers outside production', async () => {
     const dev = { originGuardActive: false, production: false };
     expect(await ipFor(dev, { 'x-real-ip': '198.51.100.10', 'x-forwarded-for': '1.1.1.1' })).toBe(

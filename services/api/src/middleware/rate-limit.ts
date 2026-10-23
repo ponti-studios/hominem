@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { logger } from '@hominem/telemetry';
 import type { Context, MiddlewareHandler } from 'hono';
 
-import { getClientIp } from './client-ip';
+import { getClientIp, INTERNAL_IP } from './client-ip';
 
 // Bumps the counter for a key and returns the new count. The first hit in a window starts the clock.
 export type RateLimitCounter = (key: string, windowSec: number) => Promise<number>;
@@ -79,6 +79,8 @@ export function rateLimit(options: RateLimitOptions): MiddlewareHandler {
     // Preflights and the health check shouldn't eat anyone's budget.
     if (c.req.method === 'OPTIONS' || c.req.path === '/healthz') return next();
     const key = options.key?.(c) ?? getClientIp(c);
+    // Private-network SSR traffic is our own apps acting for many users; per-visitor caps don't fit.
+    if (key === INTERNAL_IP) return next();
     const result = await checkBucket(counter, bucket, key, limit, windowSec);
     if (result === 'limited') return tooMany(c, bucket, windowSec);
     if (result === 'unavailable') {

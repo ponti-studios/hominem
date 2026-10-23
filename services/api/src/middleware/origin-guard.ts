@@ -3,6 +3,8 @@ import { timingSafeEqual } from 'node:crypto';
 import { logger } from '@hominem/telemetry';
 import type { MiddlewareHandler } from 'hono';
 
+import { isInternalRequest } from './client-ip';
+
 export const ORIGIN_SECRET_HEADER = 'x-origin-secret';
 const HEALTH_PATH = '/healthz';
 
@@ -21,8 +23,7 @@ export function originGuard(secret: string): MiddlewareHandler {
   return async (c, next) => {
     if (!secret || c.req.path === HEALTH_PATH) return next();
 
-    const host = (c.req.header('host') ?? '').split(':')[0] ?? '';
-    if (host.endsWith('.internal')) return next();
+    if (isInternalRequest(c)) return next();
 
     if (!secretsMatch(c.req.header(ORIGIN_SECRET_HEADER), secret)) {
       logger.warn('origin_guard_rejected', {
