@@ -20,11 +20,11 @@ export default await defineTextSuite({
   promptFiles: [promptUrl],
   messages: (golden) =>
     renderMessages(prompt, { user_message: golden.input, current_date: currentUtcDate() }),
-  assertions: [fileAssertion('concise.ts', { maxChars: 400 }, 'concise')],
+  assertions: [fileAssertion('word-count.ts', { maxWords: 90 }, 'concise')],
   rubric: [
     'Use the expected output below as the authoritative reference for the answer’s conclusion and essential reasoning.',
     'The response should be calm, respectful, direct, and grounded; it must not mock, shame, patronize, or use sarcasm.',
-    'For an ordinary request, answer in one or two concise sentences with the conclusion first and the essential reason second.',
+    'For an ordinary request, answer briefly and directly, with the conclusion first and the essential reason second, and then stop.',
     'Treat material omissions, invented claims, generic reassurance, hedging, or padding as failures even when the general topic is correct.',
   ].join('\n'),
 });
