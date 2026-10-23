@@ -14,6 +14,15 @@ import { getServiceErrorFailureType, isServiceError } from './errors';
 import { createMcpRoutes } from './mcp/routes';
 import { createAuthMiddleware } from './middleware/auth';
 import { blockMaliciousProbes } from './middleware/block-probes';
+import { requestBodyLimit } from './middleware/body-limit';
+import { clientIpMiddleware } from './middleware/client-ip';
+import { originGuard } from './middleware/origin-guard';
+import {
+  otpSendLimit,
+  rateLimit,
+  redisCounter,
+  type RateLimitCounter,
+} from './middleware/rate-limit';
 import { requestLogger } from './middleware/request-logger';
 import { securityHeadersMiddleware } from './middleware/security-headers';
 import { createAuthRoutes } from './routes/auth';
@@ -29,6 +38,7 @@ export type AppEnv = {
   Variables: {
     auth?: AuthContext;
     requestId?: string;
+    clientIp?: string;
   };
 };
 
@@ -87,16 +97,68 @@ function createRootStatusPayload() {
 export type ServerDependencies = {
   env: ApiEnv;
   auth: typeof betterAuthServer;
+  /** Unset = no rate limiting (tests, local dev); production defaults to Redis. */
+  rateLimitCounter?: RateLimitCounter;
 };
 
 function registerBaseMiddleware(app: Hono<AppEnv>, dependencies: ServerDependencies) {
+  const { env: inputEnv, rateLimitCounter } = dependencies;
+  app.get('/healthz', (c) => c.text('ok'));
+  app.use('*', originGuard(inputEnv.ORIGIN_SECRET));
+  app.use(
+    '*',
+    clientIpMiddleware({
+      originGuardActive: inputEnv.ORIGIN_SECRET.length > 0,
+      production: inputEnv.NODE_ENV === 'production',
+    }),
+  );
   app.use('*', requestIdMiddleware);
+  app.use('*', requestBodyLimit());
   app.use('*', blockMaliciousProbes());
   app.use('*', requestLogger());
   app.use('*', compress());
   app.use('*', createCorsMiddleware(dependencies.env));
   app.use('*', securityHeadersMiddleware(dependencies.env));
   app.use('*', createAuthMiddleware(dependencies.auth));
+
+  if (rateLimitCounter) {
+    // Global bucket fails open; the auth buckets fail closed (see rate-limit.ts).
+    app.use(
+      '*',
+      rateLimit({ bucket: 'global', limit: 120, windowSec: 60, counter: rateLimitCounter }),
+    );
+    app.use(
+      '/api/auth/*',
+      rateLimit({
+        bucket: 'auth',
+        limit: 30,
+        windowSec: 60,
+        counter: rateLimitCounter,
+        failClosed: true,
+      }),
+    );
+    app.use(
+      '/login/send',
+      rateLimit({
+        bucket: 'login-send',
+        limit: 30,
+        windowSec: 60,
+        counter: rateLimitCounter,
+        failClosed: true,
+      }),
+    );
+    app.use(
+      '/api/auth/oauth2/register',
+      rateLimit({
+        bucket: 'oauth-register',
+        limit: 5,
+        windowSec: 3600,
+        counter: rateLimitCounter,
+        failClosed: true,
+      }),
+    );
+    app.use('/api/auth/email-otp/send-verification-otp', otpSendLimit(rateLimitCounter));
+  }
 }
 
 function registerApiRoutes(app: Hono<AppEnv>, dependencies: ServerDependencies) {
@@ -123,7 +185,10 @@ function registerApiRoutes(app: Hono<AppEnv>, dependencies: ServerDependencies) 
   app.route('/api/images', imagesRoutes);
 }
 
-function registerDocumentationRoutes(app: Hono<AppEnv>) {
+// The Scalar page points at /openapi.json, which nothing serves, and Better Auth's own reference
+// page maps every auth endpoint for anyone who asks. Dev-only: nothing in production needs either.
+function registerDocumentationRoutes(app: Hono<AppEnv>, inputEnv: ApiEnv) {
+  if (inputEnv.NODE_ENV === 'production') return;
   app.get(
     '/docs',
     Scalar({
@@ -200,13 +265,15 @@ export function createServer(overrides: Partial<ServerDependencies> = {}) {
   const dependencies: ServerDependencies = {
     env: inputEnv,
     auth: overrides.auth ?? (overrides.env ? createBetterAuthServer(inputEnv) : betterAuthServer),
+    rateLimitCounter:
+      overrides.rateLimitCounter ?? (inputEnv.NODE_ENV === 'production' ? redisCounter : undefined),
   };
   const app = new Hono<AppEnv>();
 
   registerBaseMiddleware(app, dependencies);
   registerApiRoutes(app, dependencies);
   app.get('/', (c) => c.json(createRootStatusPayload()));
-  registerDocumentationRoutes(app);
+  registerDocumentationRoutes(app, inputEnv);
   registerErrorHandlers(app);
 
   return app;

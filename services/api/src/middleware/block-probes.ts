@@ -4,9 +4,10 @@ const PROBE_REGEXES: RegExp[] = [
   /^\/+(?:[^/]+\/)*wp-includes\/wlwmanifest\.xml$/i,
   /^\/+xmlrpc\.php$/i,
   /^\/+wp-(?:admin|login)\.php$/i,
-  /^\/+\.git\/config$/i,
+  /^\/+\.git(?:\/.*)?$/i,
   /^\/+(?:phpmyadmin|adminer|pma)\/?.*$/i,
-  /^\/+(?:\.env|wp-config\.php|configuration\.php)$/i,
+  /^\/+(?:\.env(?:\..*)?|wp-config\.php|configuration\.php)$/i,
+  /^\/+(?:actuator|server-status|server-info|\.aws|\.ssh|\.DS_Store|cgi-bin|boaform|vendor\/phpunit)(?:\/.*)?$/i,
   /^\/+dump(?:\.sql)?$/i,
 ];
 

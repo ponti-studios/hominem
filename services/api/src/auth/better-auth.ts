@@ -31,6 +31,10 @@ function getAdvancedOptions(inputEnv: ApiEnv) {
       generateId: 'uuid' as const,
     },
     useSecureCookies,
+    // Better Auth's own limiter keys on this header. x-forwarded-for (the default) is client-controlled.
+    ipAddress: {
+      ipAddressHeaders: inputEnv.ORIGIN_SECRET ? ['cf-connecting-ip'] : ['fly-client-ip'],
+    },
     ...(crossSubDomainEnabled
       ? {
           crossSubDomainCookies: {
@@ -200,10 +204,10 @@ function getAuthPlugins(inputEnv: ApiEnv) {
       metadataProfile: 'mcp-2026-07-28',
     }),
     multiSession({ maximumSessions: 8 }),
-    openAPI({
-      path: '/reference',
-      theme: 'deepSpace',
-    }),
+    // Reference page lists every endpoint; fine locally, not worth exposing in production.
+    ...(inputEnv.NODE_ENV === 'production'
+      ? []
+      : [openAPI({ path: '/reference', theme: 'deepSpace' })]),
   ];
 
   return plugins;
