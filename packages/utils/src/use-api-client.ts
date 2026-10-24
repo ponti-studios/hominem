@@ -22,10 +22,18 @@ interface ApiState {
   error: Error | null;
 }
 
+function trimSlashes(value: string, side: 'start' | 'end') {
+  let start = 0;
+  let end = value.length;
+  if (side === 'start') while (start < end && value[start] === '/') start++;
+  else while (end > start && value[end - 1] === '/') end--;
+  return value.slice(start, end);
+}
+
 function resolveEndpoint(baseUrl: string, endpoint: string) {
   if (/^https?:\/\//i.test(endpoint)) return endpoint;
-  const base = baseUrl.replace(/\/+$/, '');
-  const path = endpoint.replace(/^\/+/, '');
+  const base = trimSlashes(baseUrl, 'end');
+  const path = trimSlashes(endpoint, 'start');
   return base ? `${base}/${path}` : `/${path}`;
 }
 
