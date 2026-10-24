@@ -4,8 +4,21 @@ set -euo pipefail
 
 # CocoaPods (Ruby) crashes with an encoding error under a non-UTF-8 locale and
 # hides the real pod install failure, so force UTF-8.
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
+# Prefer en_US.UTF-8 (always on macOS), fall back to C.UTF-8 if it's missing.
+if locale -a 2>/dev/null | grep -qix 'en_US.UTF-8'; then
+  UTF8_LOCALE=en_US.UTF-8
+else
+  UTF8_LOCALE=C.UTF-8
+fi
+export LANG="$UTF8_LOCALE"
+export LC_ALL="$UTF8_LOCALE"
+
+for tool in xcodebuild xcrun python3 pnpm pod; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    echo "Missing required tool: $tool. Install Xcode (plus its command line tools), pnpm and CocoaPods first." >&2
+    exit 1
+  fi
+done
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(git -C "$APP_DIR" rev-parse --show-toplevel)"
@@ -39,7 +52,10 @@ fi
 export APP_ENV=development
 export EXPO_NO_DOTENV=1
 
-DEVICE_JSON="$(xcrun xcdevice list --timeout 10)"
+if ! DEVICE_JSON="$(xcrun xcdevice list --timeout 10)"; then
+  echo "Couldn't list devices with 'xcrun xcdevice list'. Check that Xcode is installed and selected ('xcode-select -p')." >&2
+  exit 1
+fi
 DEVICE_ROWS="$(printf '%s' "$DEVICE_JSON" | python3 -c '
 import json, sys
 devices = json.load(sys.stdin)
@@ -95,6 +111,13 @@ echo "Selected ${DEVICE_NAME}."
 # ios/ is gitignored, so generate the development workspace (OmiroDev scheme) first.
 pnpm run prebuild:dev
 
+# expo prebuild can swallow a failing 'pod install' and exit 0, which only
+# shows up later as a missing workspace. Catch it here with a clear message.
+if [[ ! -d ios/OmiroDev.xcworkspace ]]; then
+  echo "Prebuild did not produce ios/OmiroDev.xcworkspace. Look for a 'pod install' error in the output above." >&2
+  exit 1
+fi
+
 xcodebuild \
   -quiet \
   -workspace ios/OmiroDev.xcworkspace \
@@ -127,7 +150,15 @@ if b"https://api.ponti.io" not in bundle or b"localhost:4040" in bundle:
 PY
 
 echo "Installing Omiro Dev on ${DEVICE_NAME}..."
-xcrun devicectl device install app --device "$DEVICE_ID" "$APP_PATH"
+if ! xcrun devicectl device install app --device "$DEVICE_ID" "$APP_PATH"; then
+  echo "Install failed. Make sure ${DEVICE_NAME} is unlocked, trusts this Mac, and has Developer Mode on (Settings > Privacy & Security)." >&2
+  exit 1
+fi
 echo "Launching Omiro Dev..."
-xcrun devicectl device process launch --device "$DEVICE_ID" "$BUNDLE_ID"
-echo "Installed and launched Omiro Dev on ${DEVICE_NAME}; API endpoint is production."
+# The install is done at this point. A locked phone only blocks the auto-launch,
+# so don't report the whole run as failed.
+if xcrun devicectl device process launch --device "$DEVICE_ID" "$BUNDLE_ID"; then
+  echo "Installed and launched Omiro Dev on ${DEVICE_NAME}; API endpoint is production."
+else
+  echo "Installed Omiro Dev on ${DEVICE_NAME}, but couldn't launch it (is the phone locked?). Unlock it and open the app; API endpoint is production."
+fi

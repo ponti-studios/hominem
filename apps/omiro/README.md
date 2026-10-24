@@ -73,6 +73,12 @@ and bundles the production API endpoint from the gitignored
 `apps/omiro/.eas-prod.local`. It includes uncommitted changes from the current
 branch and does not submit anything to App Store Connect.
 
+Keep the phone unlocked while it runs. It needs Xcode, CocoaPods and pnpm on
+your `PATH`, and the phone must trust this Mac with Developer Mode on. The
+script forces a UTF-8 locale (CocoaPods crashes without one). If the install
+works but the app doesn't open, the phone was probably locked, so unlock it and
+open the app by hand.
+
 Omiro is built and shipped from the maintainer's machine, not through the paid
 EAS cloud workflow. The production binary goes out like this:
 
