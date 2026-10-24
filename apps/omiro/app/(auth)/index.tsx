@@ -225,7 +225,14 @@ function AuthScreen() {
       <View style={{ opacity: launchPhase === 'done' ? 1 : 0 }}>
         <AuthBrand hop={flow.succeeded ? 1 : 0} leaningIn={isCode} nod={nod} testID="auth-brand" />
       </View>
-      <View style={{ height: BUBBLE_SLOT_HEIGHT, justifyContent: 'flex-end', width: '100%' }}>
+      <View
+        style={{
+          height: BUBBLE_SLOT_HEIGHT,
+          justifyContent: 'flex-end',
+          marginBottom: 20,
+          width: '100%',
+        }}
+      >
         <SpeechBubble text={bubbleText} />
       </View>
 
