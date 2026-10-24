@@ -92,8 +92,12 @@ function wordsPerChunk(queue: string) {
 }
 
 function isPunctuationBoundary(word: string) {
-  return /[.!?,;:]$/.test(word);
+  return /[.!?,;:。！？，；：、]$/.test(word);
 }
+
+// CJK text has no spaces, so each character counts as its own word. Otherwise a whole
+// reply would sit in the queue until it commits.
+const CJK_CHAR = /[\u3040-\u30ff\u3400-\u9fff\uff00-\uffef]/;
 
 function takeWordChunk(queue: string, maxWords: number, finalized: boolean): string | null {
   let cursor = 0;
@@ -108,11 +112,19 @@ function takeWordChunk(queue: string, maxWords: number, finalized: boolean): str
     }
 
     const wordStart = cursor;
-    while (cursor < queue.length && !/\s/.test(queue[cursor]!)) {
+    if (CJK_CHAR.test(queue[cursor]!)) {
       cursor += 1;
+    } else {
+      while (
+        cursor < queue.length &&
+        !/\s/.test(queue[cursor]!) &&
+        !CJK_CHAR.test(queue[cursor]!)
+      ) {
+        cursor += 1;
+      }
     }
     const word = queue.slice(wordStart, cursor);
-    const hasWordBoundary = cursor < queue.length;
+    const hasWordBoundary = cursor < queue.length || CJK_CHAR.test(word);
     words += 1;
 
     if (words >= maxWords || isPunctuationBoundary(word)) {

@@ -112,6 +112,25 @@ describe('chat cache paced streaming', () => {
     ]);
   });
 
+  it('streams text without whitespace, like Chinese, before the commit', () => {
+    const queryClient = new QueryClient();
+    const read = () => queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(CHAT_ID));
+    handleChatGenerationEvent({
+      queryClient,
+      chatId: CHAT_ID,
+      generation,
+      event: textDelta('你好，这是一个正在生成的中文回答。'),
+    });
+
+    vi.advanceTimersByTime(300);
+    const partial = read()?.find((m) => m.isStreaming);
+    expect(partial?.message.length).toBeGreaterThan(0);
+
+    // Drain so the module-level queue doesn't leak into the next test.
+    handleChatGenerationEvent({ queryClient, chatId: CHAT_ID, generation, event: commit() });
+    vi.advanceTimersByTime(5000);
+  });
+
   it('commits right away when nothing is queued', () => {
     const queryClient = new QueryClient();
     handleChatGenerationEvent({ queryClient, chatId: CHAT_ID, generation, event: commit() });
