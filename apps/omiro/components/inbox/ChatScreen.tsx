@@ -19,6 +19,7 @@ import {
   useFloatingHeaderHeight,
   FloatingPillButton,
 } from '~/components/navigation/floating-header';
+import { PerfProfiler } from '~/components/perf/perf-profiler';
 import { useStyles } from '~/components/theme';
 import { ActionMenu } from '~/components/ui/action-menu';
 import { useChatData } from '~/hooks/use-chat-data';
@@ -32,6 +33,7 @@ import {
   writeResumeTarget,
 } from '~/services/navigation/launch-state';
 import { NEW_CHAT_ROUTE, CHAT_ROUTE } from '~/services/navigation/routes';
+import { useStreamBenchTrigger } from '~/services/perf/use-stream-bench-trigger';
 import t from '~/translations';
 
 function isNotFoundError(error: unknown): boolean {
@@ -64,6 +66,7 @@ export function ChatScreen({ id }: { id: string }) {
   }));
 
   const chatGeneration = useChatScreenGeneration(chatId);
+  useStreamBenchTrigger(chatId);
 
   const handleChatArchive = useCallback(() => {
     router.dismissTo(CHAT_ROUTE);
@@ -230,23 +233,25 @@ export function ChatScreen({ id }: { id: string }) {
             <Text style={styles.offlineText}>{t.chat.offlineIndicator}</Text>
           </View>
         ) : null}
-        <ChatScreenMessageList
-          status={{
-            phase: isMessagesLoading ? 'loading' : isMessagesRefreshing ? 'refreshing' : 'ready',
-            error: isConversationGone ? 'missing' : messagesError ? 'load' : null,
-          }}
-          refetchMessages={refetchMessages}
-          onGoBack={() => router.dismissTo(CHAT_ROUTE)}
-          search={search}
-          showDebug={showDebug}
-          onEdit={handleEditMessage}
-          onRegenerate={regenerateMessage}
-          onRetry={retryFailedMessage}
-          generation={activeGeneration}
-          bottomInset={composerInset}
-          keyboardOffset={getDockKeyboardOffset(restingInset)}
-          topInset={headerHeight}
-        />
+        <PerfProfiler id="chat-message-list">
+          <ChatScreenMessageList
+            status={{
+              phase: isMessagesLoading ? 'loading' : isMessagesRefreshing ? 'refreshing' : 'ready',
+              error: isConversationGone ? 'missing' : messagesError ? 'load' : null,
+            }}
+            refetchMessages={refetchMessages}
+            onGoBack={() => router.dismissTo(CHAT_ROUTE)}
+            search={search}
+            showDebug={showDebug}
+            onEdit={handleEditMessage}
+            onRegenerate={regenerateMessage}
+            onRetry={retryFailedMessage}
+            generation={activeGeneration}
+            bottomInset={composerInset}
+            keyboardOffset={getDockKeyboardOffset(restingInset)}
+            topInset={headerHeight}
+          />
+        </PerfProfiler>
         <ChatScreenDock
           chatId={chatId}
           restingInset={restingInset}

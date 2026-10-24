@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessageItem } from '~/components/chat';
 import { handleChatGenerationEvent } from '~/services/chat/chat-cache';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
+import { getStreamingMessageText } from '~/services/chat/streaming-text-store';
 import { chatKeys } from '~/services/notes/query-keys';
 
 import { mockMmkvModule } from '../../mocks/mmkv';
@@ -99,14 +100,27 @@ describe('chat cache paced streaming', () => {
     // Nothing shown yet and the commit is parked behind the paced reveal.
     expect(read()).toBeUndefined();
 
+    // Words land in the streaming store, not the cache: the list data stays the
+    // same array and the provisional row the same object, so the list never
+    // re-renders per word.
     vi.advanceTimersByTime(50);
-    const partial = read()?.find((m) => m.isStreaming);
-    expect(partial?.message.length).toBeGreaterThan(0);
-    expect(partial?.message.length).toBeLessThan('Hello there, friend.'.length);
+    const rows = read();
+    const row = rows?.find((m) => m.isStreaming);
+    const partial = getStreamingMessageText(`streaming-${GENERATION_ID}`);
+    expect(partial.length).toBeGreaterThan(0);
+    expect(partial.length).toBeLessThan('Hello there, friend.'.length);
+
+    vi.advanceTimersByTime(60);
+    expect(read()).toBe(rows);
+    expect(read()?.find((m) => m.isStreaming)).toBe(row);
+    expect(getStreamingMessageText(`streaming-${GENERATION_ID}`).length).toBeGreaterThan(
+      partial.length,
+    );
 
     vi.advanceTimersByTime(1000);
     const final = read() ?? [];
     expect(final.some((m) => m.isStreaming)).toBe(false);
+    expect(getStreamingMessageText(`streaming-${GENERATION_ID}`)).toBe('');
     expect(final).toEqual([
       expect.objectContaining({ role: 'assistant', message: committed.content }),
     ]);

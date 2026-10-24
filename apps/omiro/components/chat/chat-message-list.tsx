@@ -23,6 +23,7 @@ import type Animated from 'react-native-reanimated';
 
 import { fontFamilies, useStyles } from '~/components/theme';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
+import { countRender } from '~/services/perf/stream-perf';
 
 import { MessageEditModal } from './chat-message-edit-modal';
 import { ChatMessageListRow } from './chat-message-list-row';
@@ -49,6 +50,20 @@ const ChatScrollView = forwardRef<Animated.ScrollView, ScrollViewProps>(
   },
 );
 const keyExtractor = (item: ChatMessageItem) => item.renderKey ?? item.id;
+// Module-level so the list sees one stable component type, not a new one per render.
+const itemSeparatorStyle = { height: 20 };
+const ItemSeparator = () => <View style={itemSeparatorStyle} />;
+
+// Calls the row renderer from its own render, the way the list does for its items.
+function RenderedRow({
+  item,
+  render,
+}: {
+  item: ChatMessageItem;
+  render: (item: ChatMessageItem) => React.ReactElement;
+}) {
+  return render(item);
+}
 
 interface ChatMessageListProps {
   isMessagesLoading: boolean;
@@ -126,14 +141,15 @@ export function ChatMessageList({
   topInset = 0,
   generation,
 }: ChatMessageListProps) {
+  countRender('ChatMessageList');
   const styles = useStyles((theme) => ({
     emptySearch: { alignItems: 'center', paddingTop: 28 },
     emptySearchText: { fontFamily: fontFamilies.mono, color: theme.colors.tertiary },
     loadingState: { flex: 1, paddingTop: 12 },
     emptyState: { flex: 1 },
     list: { flex: 1 },
+    streamingRow: { marginTop: 20 },
     bottomSentinel: { flexGrow: 1, minHeight: 32 },
-    itemSeparator: { height: 20 },
   }));
   const targetMessageId = generation?.targetMessageId;
   const renderedMessages = useMemo(
@@ -142,6 +158,19 @@ export function ChatMessageList({
         ? displayMessages.filter((message) => message.id !== targetMessageId)
         : displayMessages,
     [displayMessages, targetMessageId],
+  );
+  // The reply still arriving lives in the list footer, not in the data: its height changes
+  // every word, and as a list item that would re-lay-out every row around it.
+  const streamingMessage = useMemo(
+    () => renderedMessages.find((message) => message.isStreaming),
+    [renderedMessages],
+  );
+  const listData = useMemo(
+    () =>
+      streamingMessage
+        ? renderedMessages.filter((message) => !message.isStreaming)
+        : renderedMessages,
+    [renderedMessages, streamingMessage],
   );
   const hasSearchQuery = search.isOpen && search.query.length > 0;
   // The list first paints at an estimated offset and then jumps once rows are measured. Keep it
@@ -205,8 +234,8 @@ export function ChatMessageList({
     [],
   );
 
-  const renderItem = useCallback<ListRenderItem<ChatMessageItem>>(
-    ({ item }) => {
+  const renderRow = useCallback(
+    (item: ChatMessageItem) => {
       const previousMessage = announcedMessagesRef.current.get(item.id);
       return (
         <ChatMessageListRow
@@ -238,6 +267,10 @@ export function ChatMessageList({
       announcedMessagesRef,
       hasSearchQuery,
     ],
+  );
+  const renderItem = useCallback<ListRenderItem<ChatMessageItem>>(
+    ({ item }) => renderRow(item),
+    [renderRow],
   );
 
   const emptySearch = hasSearchQuery ? (
@@ -278,21 +311,31 @@ export function ChatMessageList({
           onContentSizeChange={pinToBottomUntilStable}
           pointerEvents={generation ? 'box-none' : 'auto'}
           contentInsetAdjustmentBehavior="automatic"
-          ListEmptyComponent={listEmptyComponent}
+          ListEmptyComponent={streamingMessage ? null : listEmptyComponent}
           ListFooterComponent={
             renderedMessages.length > 0 ? (
-              <Pressable
-                accessibilityLabel="Chat message list bottom"
-                onPress={() => setActiveActionMessageId(null)}
-                style={styles.bottomSentinel}
-                testID="chat-message-list-bottom-sentinel"
-              />
+              <>
+                {streamingMessage ? (
+                  <View
+                    key={streamingMessage.renderKey ?? streamingMessage.id}
+                    style={listData.length > 0 ? styles.streamingRow : undefined}
+                  >
+                    <RenderedRow item={streamingMessage} render={renderRow} />
+                  </View>
+                ) : null}
+                <Pressable
+                  accessibilityLabel="Chat message list bottom"
+                  onPress={() => setActiveActionMessageId(null)}
+                  style={styles.bottomSentinel}
+                  testID="chat-message-list-bottom-sentinel"
+                />
+              </>
             ) : null
           }
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: topInset }}
-          ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+          ItemSeparatorComponent={ItemSeparator}
           renderScrollComponent={ChatScrollView}
-          data={renderedMessages}
+          data={listData}
           keyExtractor={keyExtractor}
           maintainVisibleContentPosition={{
             startRenderingFromBottom: true,
