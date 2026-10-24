@@ -24,6 +24,7 @@ type ChatScreenMessageListProps = {
   generation: ChatGenerationState | null;
   bottomInset: number;
   keyboardOffset: number;
+  topInset: number;
 };
 
 export function ChatScreenMessageList({
@@ -38,6 +39,7 @@ export function ChatScreenMessageList({
   generation,
   bottomInset,
   keyboardOffset,
+  topInset,
 }: ChatScreenMessageListProps) {
   const emptyState = (
     <EmptyState
@@ -73,6 +75,7 @@ export function ChatScreenMessageList({
     <ChatMessageList
       bottomInset={bottomInset}
       keyboardOffset={keyboardOffset}
+      topInset={topInset}
       isMessagesLoading={status.phase === 'loading'}
       displayMessages={search.displayMessages}
       search={{

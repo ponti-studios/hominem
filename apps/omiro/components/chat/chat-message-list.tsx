@@ -66,6 +66,8 @@ interface ChatMessageListProps {
   bottomInset?: number;
   // Where the list's bottom edge rests above the keyboard (see ChatScrollView).
   keyboardOffset?: number;
+  // Space the list keeps clear at the top for a floating header drawn over it.
+  topInset?: number;
   generation?: ChatGenerationState | null;
 }
 
@@ -75,6 +77,7 @@ function getEmptyListState({
   renderedMessages,
   emptyState,
   bottomInset,
+  topInset,
   styles,
 }: {
   isLoading: boolean;
@@ -82,11 +85,12 @@ function getEmptyListState({
   renderedMessages: ChatMessageItem[];
   emptyState: React.ReactElement | null | undefined;
   bottomInset: number;
+  topInset: number;
   styles: ReturnType<typeof useStyles>;
 }): React.ReactElement | null {
   if (isLoading && renderedMessages.length === 0) {
     return (
-      <View style={styles.loadingState}>
+      <View style={[styles.loadingState, { marginTop: topInset }]}>
         <ChatShimmerMessage />
         <ChatShimmerMessage variant="user" />
         <ChatShimmerMessage />
@@ -95,7 +99,11 @@ function getEmptyListState({
   }
 
   if (!hasSearchQuery && renderedMessages.length === 0 && emptyState) {
-    return <View style={[styles.emptyState, { paddingBottom: bottomInset }]}>{emptyState}</View>;
+    return (
+      <View style={[styles.emptyState, { paddingBottom: bottomInset, paddingTop: topInset }]}>
+        {emptyState}
+      </View>
+    );
   }
 
   return null;
@@ -115,6 +123,7 @@ export function ChatMessageList({
   refreshControl,
   bottomInset = 0,
   keyboardOffset = 0,
+  topInset = 0,
   generation,
 }: ChatMessageListProps) {
   const styles = useStyles((theme) => ({
@@ -244,6 +253,7 @@ export function ChatMessageList({
     renderedMessages,
     emptyState,
     bottomInset,
+    topInset,
     styles,
   });
   if (emptyListState) {
@@ -279,7 +289,7 @@ export function ChatMessageList({
               />
             ) : null
           }
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: topInset }}
           ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
           renderScrollComponent={ChatScrollView}
           data={renderedMessages}

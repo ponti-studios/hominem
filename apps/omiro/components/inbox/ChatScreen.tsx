@@ -16,6 +16,7 @@ import {
   FloatingActionPill,
   FloatingCircleButton,
   FloatingHeader,
+  useFloatingHeaderHeight,
   FloatingPillButton,
 } from '~/components/navigation/floating-header';
 import { useStyles } from '~/components/theme';
@@ -42,11 +43,13 @@ export function ChatScreen({ id }: { id: string }) {
   const { data: activeChat, error: activeChatError } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
   const { inset: composerInset, restingInset } = useComposerDockMetrics();
+  const headerHeight = useFloatingHeaderHeight();
   const [showDebug, setShowDebug] = useState(false);
   const { isOnline } = useNetworkStatus();
   const styles = useStyles((theme) => ({
     container: { flex: 1 },
     offlineIndicator: {
+      marginTop: headerHeight,
       backgroundColor: theme.colors.muted,
       borderBottomWidth: 1,
       borderColor: theme.colors.border,
@@ -179,6 +182,7 @@ export function ChatScreen({ id }: { id: string }) {
   return (
     <>
       <FloatingHeader
+        overlay
         left=<FloatingCircleButton
           accessibilityLabel="BackButton"
           icon={canGoBack ? 'chevron.left' : 'xmark'}
@@ -241,6 +245,7 @@ export function ChatScreen({ id }: { id: string }) {
           generation={activeGeneration}
           bottomInset={composerInset}
           keyboardOffset={getDockKeyboardOffset(restingInset)}
+          topInset={headerHeight}
         />
         <ChatScreenDock
           chatId={chatId}
