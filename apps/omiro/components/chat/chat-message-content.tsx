@@ -59,12 +59,86 @@ export function MessageContent({
 }) {
   const Markdown = useMarkdownComponent();
   const isStreaming = !enableMarkdown;
-  const { foreground: textPrimary, popover } = useAppTheme().colors;
+  const { foreground: textPrimary, popover, primary, border } = useAppTheme().colors;
   const { borderRadii } = useAppTheme();
 
   const markdownStyle = useMemo(
     () => ({
       body: textStyle,
+      text: textStyle,
+      textgroup: textStyle,
+      strong: { fontWeight: '700' as const },
+      em: { fontStyle: 'italic' as const },
+      s: { textDecorationLine: 'line-through' as const },
+      link: { color: primary, textDecorationLine: 'underline' as const },
+      // Headings stay near body size: this is chat, not a document.
+      heading1: {
+        ...textStyle,
+        fontSize: 22,
+        lineHeight: 28,
+        fontWeight: '700' as const,
+        marginTop: 6,
+        marginBottom: 8,
+      },
+      heading2: {
+        ...textStyle,
+        fontSize: 19,
+        lineHeight: 25,
+        fontWeight: '700' as const,
+        marginTop: 6,
+        marginBottom: 6,
+      },
+      heading3: {
+        ...textStyle,
+        fontSize: 17,
+        lineHeight: 24,
+        fontWeight: '600' as const,
+        marginTop: 4,
+        marginBottom: 4,
+      },
+      heading4: {
+        ...textStyle,
+        fontSize: 16,
+        lineHeight: 24,
+        fontWeight: '600' as const,
+        marginTop: 4,
+        marginBottom: 4,
+      },
+      heading5: {
+        ...textStyle,
+        fontSize: 16,
+        lineHeight: 24,
+        fontWeight: '600' as const,
+        marginBottom: 4,
+      },
+      heading6: {
+        ...textStyle,
+        fontSize: 16,
+        lineHeight: 24,
+        fontWeight: '600' as const,
+        marginBottom: 4,
+      },
+      bullet_list: { marginBottom: 10 },
+      ordered_list: { marginBottom: 10 },
+      list_item: { flexDirection: 'row' as const, marginBottom: 4 },
+      bullet_list_icon: { ...textStyle, marginLeft: 4, marginRight: 8 },
+      ordered_list_icon: { ...textStyle, marginLeft: 4, marginRight: 8 },
+      bullet_list_content: { flex: 1 },
+      ordered_list_content: { flex: 1 },
+      blockquote: {
+        backgroundColor: 'transparent',
+        borderLeftColor: border,
+        borderLeftWidth: 3,
+        marginBottom: 10,
+        marginLeft: 0,
+        paddingHorizontal: 12,
+        paddingVertical: 2,
+      },
+      hr: { backgroundColor: border, height: 1, marginVertical: 12 },
+      table: { borderColor: border, borderRadius: borderRadii.lg, marginBottom: 10 },
+      th: { padding: 8, fontWeight: '600' as const },
+      td: { padding: 8 },
+      tr: { borderColor: border },
       // Paragraph spacing comes from the bottom margin only; the trailing one
       // is cancelled by the wrapper below so the bubble hugs the text.
       paragraph: { marginBottom: 10, marginTop: 0 },
@@ -90,7 +164,7 @@ export function MessageContent({
         padding: 12,
       },
     }),
-    [textPrimary, popover, textStyle, borderRadii.lg],
+    [textPrimary, popover, primary, border, textStyle, borderRadii.lg],
   );
   const markdownChildren = { children: content };
 
