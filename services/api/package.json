@@ -44,6 +44,7 @@
     "credit": "tsx scripts/credit-admin.ts",
     "test-user": "tsx scripts/test-user-admin.ts",
     "merge-user-data": "tsx scripts/merge-user-data.ts",
+    "backfill:file-security": "tsx scripts/backfill-file-security.ts",
     "mcp:smoke": "tsx scripts/mcp-smoke-test.ts",
     "mcp:perf": "tsx --tsconfig tsconfig.dev.json scripts/mcp-perf-baseline.ts",
     "migrate:career-ledger": "tsx scripts/migrate-career-ledger.ts"

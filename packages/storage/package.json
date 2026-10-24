@@ -17,6 +17,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts",
     "typecheck": "rm -rf .cache && tsc --noEmit",
     "format": "oxfmt src --write",
     "format:check": "oxfmt src --check",
@@ -27,7 +28,8 @@
     "@aws-sdk/client-s3": "^3.1153.0",
     "@aws-sdk/s3-request-presigner": "^3.1153.0",
     "@hominem/env": "workspace:*",
-    "@hominem/utils": "workspace:*"
+    "@hominem/utils": "workspace:*",
+    "file-type": "^22.2.0"
   },
   "devDependencies": {
     "@types/node": "catalog:"

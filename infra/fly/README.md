@@ -45,3 +45,7 @@ Region sjc (chosen to stay near the old Railway us-west2 footprint). Apps talk o
 
 ## 5. Cutover
 Add certs (`fly certs add <host> -a <app>`), then repoint DNS. Lower TTLs first.
+
+## 6. Storage
+The R2 bucket is private and uploads/reads go through presigned URLs. Bucket CORS, lifecycle and
+the backfill are in [docs/file-uploads.md](../../docs/file-uploads.md).

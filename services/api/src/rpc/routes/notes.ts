@@ -54,7 +54,7 @@ export const notesRoutes = new Hono<AppContext>()
       ...(input.fileIds ? { fileIds: input.fileIds } : {}),
     });
 
-    return c.json(toNoteDto(note), 201);
+    return c.json(await toNoteDto(note), 201);
   })
   .use('/generate', rateLimitMiddleware({ bucket: 'ai-note-generate', windowSec: 60, max: 20 }))
   .post('/generate', zValidator('json', GenerateNoteFromChatInputSchema), async (c) => {
@@ -129,7 +129,7 @@ export const notesRoutes = new Hono<AppContext>()
     const { id } = c.req.valid('param');
     const note = await noteService.getOwnedNote(userId, id);
     if (!note) throw new NotFoundError('Note', { id });
-    return c.json(toNoteDto(note));
+    return c.json(await toNoteDto(note));
   })
   .patch(
     '/:id',
@@ -147,7 +147,7 @@ export const notesRoutes = new Hono<AppContext>()
       });
       if (!note) throw new NotFoundError('Note', { id });
 
-      return c.json(toNoteDto(note));
+      return c.json(await toNoteDto(note));
     },
   )
   .delete('/:id', zValidator('param', NoteParamSchema), async (c) => {
@@ -157,5 +157,5 @@ export const notesRoutes = new Hono<AppContext>()
     const note = await noteService.deleteNote(userId, id);
     if (!note) throw new NotFoundError('Note', { id });
 
-    return c.json(toNoteDto(note));
+    return c.json(await toNoteDto(note));
   });

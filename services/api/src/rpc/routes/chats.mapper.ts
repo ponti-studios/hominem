@@ -1,6 +1,8 @@
 import type { ChatMessageSnapshot, ChatSnapshot } from '@hominem/chat';
 import type { ChatSourceRecord } from '@hominem/db/chats';
 
+import { signFileUrl } from './file-urls';
+
 export function toChatDto(record: ChatSnapshot) {
   return {
     id: record.id,
@@ -12,14 +14,29 @@ export function toChatDto(record: ChatSnapshot) {
   };
 }
 
-export function toChatMessageDto(record: ChatMessageSnapshot) {
+export async function toChatMessageDto(record: ChatMessageSnapshot) {
+  const files = record.files
+    ? await Promise.all(
+        record.files.map(async (file) => ({
+          ...file,
+          ...(file.url
+            ? {
+                url: await signFileUrl(file.url, {
+                  mimetype: file.mimeType,
+                  originalName: file.filename,
+                }),
+              }
+            : {}),
+        })),
+      )
+    : record.files;
   return {
     id: record.id,
     chatId: record.chatId,
     userId: record.userId,
     role: record.role,
     content: record.content,
-    files: record.files,
+    files,
     toolCalls: record.toolCalls,
     reasoning: record.reasoning,
     parentMessageId: record.parentMessageId,

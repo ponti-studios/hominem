@@ -32,7 +32,7 @@ export const chatMessageRoutes = new Hono<AppContext>()
     // one query; null means the chat doesn't exist or isn't owned.
     const messages = await ChatRepository.getMessagesForOwner(db, chatId, userId, limit, offset);
     if (!messages) throw new NotFoundError('Chat', { chatId });
-    return c.json(messages.map(toChatMessageDto));
+    return c.json(await Promise.all(messages.map(toChatMessageDto)));
   })
   .get('/messages/search', zValidator('query', ChatsSearchMessagesQuerySchema), async (c) => {
     const userId = c.get('auth')!.userId;
@@ -40,7 +40,7 @@ export const chatMessageRoutes = new Hono<AppContext>()
     const { query, limit } = c.req.valid('query');
     const messages = await ChatRepository.searchMessagesForOwner(db, chatId, userId, query, limit);
     if (!messages) throw new NotFoundError('Chat', { chatId });
-    return c.json(messages.map(toChatMessageDto));
+    return c.json(await Promise.all(messages.map(toChatMessageDto)));
   })
   .patch('/messages/:messageId', zValidator('json', ChatsEditMessageSchema), async (c) => {
     const userId = c.get('auth')!.userId;
@@ -63,7 +63,7 @@ export const chatMessageRoutes = new Hono<AppContext>()
       );
     }
     return c.json({
-      ...toChatMessageDto(result.message),
+      ...(await toChatMessageDto(result.message)),
       deletedMessageIds: result.deletedMessageIds,
     });
   })

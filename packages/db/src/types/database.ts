@@ -539,6 +539,7 @@ export interface AppFiles {
   originalName: string;
   ownerUserid: string;
   size: number;
+  status: Generated<string>;
   storageKey: string;
   textContent: string | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;

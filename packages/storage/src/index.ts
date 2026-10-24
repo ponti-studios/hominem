@@ -26,4 +26,13 @@ export type {
   UploadPolicyFile,
 } from './upload-policy';
 
-export type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
+export type {
+  FileObject,
+  FinalizeResult,
+  PreparedUpload,
+  ReverifyResult,
+  StorageOptions,
+  StoredFile,
+  UploadIntent,
+} from './types';
+export { isInlineSafe, sniffContent } from './content-sniff';
