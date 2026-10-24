@@ -253,33 +253,61 @@
         if (s.start >= a && s.start <= b2) { var inner = m[0].slice(pre.length, m[0].length - suf.length); var c0 = Math.max(a, Math.min(a + inner.length, s.start - pre.length)); return { text: t.slice(0, a) + inner + t.slice(b2), sel: { start: c0, end: c0 } }; }
       } var c = s.start + pre.length; return { text: t.slice(0, s.start) + pre + suf + t.slice(s.start), sel: { start: c, end: c } }; }
     var b = t.slice(0, s.start), m = t.slice(s.start, s.end), a = t.slice(s.end);
-    if (m.startsWith(pre) && m.endsWith(suf) && m.length >= pre.length + suf.length) { var inner = m.slice(pre.length, m.length - suf.length); return { text: b + inner + a, sel: { start: s.start, end: s.start + inner.length } }; }
-    var e = s.end + pre.length + suf.length; return { text: b + pre + m + suf + a, sel: { start: e, end: e } };
+    // markers can't hug whitespace ("**bold **" doesn't render), so the spaces stay outside
+    var lead = /^\s*/.exec(m)[0], core = m.slice(lead.length).replace(/\s+$/, ''), trail = m.slice(lead.length + core.length);
+    if (!core) return wrap(t, { start: s.end, end: s.end }, pre, suf);
+    if (core.length >= pre.length + suf.length && core.startsWith(pre) && core.endsWith(suf)) { var inner = core.slice(pre.length, core.length - suf.length); return { text: b + lead + inner + trail + a, sel: { start: s.start + lead.length, end: s.start + lead.length + inner.length } }; }
+    // only the inside of an existing span is selected: remove the markers around it
+    if (t.slice(s.start - pre.length, s.start) === pre && t.slice(s.end, s.end + suf.length) === suf) { return { text: t.slice(0, s.start - pre.length) + m + t.slice(s.end + suf.length), sel: { start: s.start - pre.length, end: s.end - pre.length } }; }
+    var e = s.end + pre.length + suf.length; return { text: b + lead + pre + core + suf + trail + a, sel: { start: e, end: e } };
   }
   function toggle(t, s, pre) {
     var st = lineStart(t, s.start), nb = t.indexOf('\n', s.end > s.start ? s.end - 1 : s.end), block = t.slice(st, nb === -1 ? t.length : nb).split('\n');
     var skip = block.length > 1, filled = block.filter(function (l) { return l.length > 0; }), all = filled.length > 0 && filled.every(function (l) { return l.startsWith(pre); });
     return mapLines(t, s, function (l) { if (all) return l.startsWith(pre) ? l.slice(pre.length) : l; return (skip && l.length === 0) || l.startsWith(pre) ? l : pre + l; });
   }
+  // one marker family per list kind, so switching kinds swaps the marker instead of stacking a second one
+  var KIND = { check: /^(\s*)- \[[ xX]\] /, bullet: /^(\s*)- (?!\[[ xX]\] )/, num: /^(\s*)\d+\. /, head: /^()#{1,6} / };
+  var ANY_LIST = /^(\s*)(?:- \[[ xX]\] |- |\d+\. )/;
+  function blockOf(t, s) { var st = lineStart(t, s.start), nb = t.indexOf('\n', s.end > s.start ? s.end - 1 : s.end); return t.slice(st, nb === -1 ? t.length : nb).split('\n'); }
+  function allMatch(block, re) { var f = block.filter(function (l) { return l.trim().length > 0; }); return f.length > 0 && f.every(function (l) { return re.test(l); }); }
+  function listCmd(t, s, kind) {
+    var block = blockOf(t, s), multi = block.length > 1, all = allMatch(block, KIND[kind]), n = 0;
+    return mapLines(t, s, function (l) {
+      if (multi && l.trim() === '') return l;
+      if (all) return l.replace(KIND[kind], '$1');
+      var m = ANY_LIST.exec(l), indent = m ? m[1] : /^\s*/.exec(l)[0], rest = l.slice(m ? m[0].length : indent.length);
+      n++; return indent + (kind === 'check' ? '- [ ] ' : kind === 'bullet' ? '- ' : n + '. ') + rest;
+    });
+  }
+  function headingCmd(t, s) {
+    var block = blockOf(t, s), multi = block.length > 1, all = allMatch(block, KIND.head);
+    return mapLines(t, s, function (l) { if (multi && l.trim() === '') return l; return all ? l.replace(KIND.head, '') : '# ' + l.replace(KIND.head, ''); });
+  }
   var CMD = {
     bold: function (t, s) { return wrap(t, s, '**', '**'); }, italic: function (t, s) { return wrap(t, s, '_', '_'); },
     strikethrough: function (t, s) { return wrap(t, s, '~~', '~~'); }, code: function (t, s) { return wrap(t, s, '`', '`'); },
-    heading: function (t, s) { return toggle(t, s, '# '); }, blockquote: function (t, s) { return toggle(t, s, '> '); },
-    checklist: function (t, s) { return toggle(t, s, '- [ ] '); }, bullet: function (t, s) { return toggle(t, s, '- '); }, numbered: function (t, s) { return toggle(t, s, '1. '); },
+    heading: headingCmd, blockquote: function (t, s) { return toggle(t, s, '> '); },
+    checklist: function (t, s) { return listCmd(t, s, 'check'); }, bullet: function (t, s) { return listCmd(t, s, 'bullet'); }, numbered: function (t, s) { return listCmd(t, s, 'num'); },
     indent: function (t, s) { return mapLines(t, s, function (l) { return '  ' + l; }); }, outdent: function (t, s) { return mapLines(t, s, function (l) { return l.replace(/^ {1,2}/, ''); }); }
   };
 
   /* ---------- what the cursor is in (drives the pressed state) ---------- */
   function lineAt(t, p) { var st = lineStart(t, p), nb = t.indexOf('\n', p); return { text: t.slice(st, nb === -1 ? t.length : nb), start: st }; }
-  function inlineActive(t, s, re) {
-    var ln = lineAt(t, s.start), m; re.lastIndex = 0;
-    while ((m = re.exec(ln.text))) { var a = ln.start + m.index, b = a + m[0].length; if (s.start >= a && s.end <= b) return true; }
+  function inlineActive(t, s, re, isCode) {
+    var ln = lineAt(t, s.start), m, code = [], c, cre = /`[^`\n]+`/g; re.lastIndex = 0;
+    while ((c = cre.exec(ln.text))) code.push([ln.start + c.index, ln.start + c.index + c[0].length]);
+    while ((m = re.exec(ln.text))) {
+      var a = ln.start + m.index, b = a + m[0].length;
+      if (!isCode && code.some(function (r) { return a >= r[0] && a < r[1]; })) continue;
+      if (s.start >= a && s.end <= b) return true;
+    }
     return false;
   }
   function activeStates(t, s) {
     var l = lineAt(t, s.start).text;
     return {
-      bold: inlineActive(t, s, /\*\*[^*\n]+\*\*/g), italic: inlineActive(t, s, /(^|[^_])_[^_\n]+_/g), strikethrough: inlineActive(t, s, /~~[^~\n]+~~/g), code: inlineActive(t, s, /`[^`\n]+`/g),
+      bold: inlineActive(t, s, /\*\*[^*\n]+\*\*/g), italic: inlineActive(t, s, /(?<!\w)_[^_\n]+_(?!\w)/g), strikethrough: inlineActive(t, s, /~~[^~\n]+~~/g), code: inlineActive(t, s, /`[^`\n]+`/g, true),
       heading: /^#{1,6} /.test(l), blockquote: /^> /.test(l), checklist: /^\s*- \[[ x]\] /.test(l), bullet: /^\s*- (?!\[[ x]\] )/.test(l), numbered: /^\s*\d+\. /.test(l)
     };
   }
@@ -287,7 +315,7 @@
   /* ---------- editor model: plain text with live styling spans ---------- */
   function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function inl(s) {
-    var re = /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(~~[^~\n]+~~)|(_[^_\n]+_)/g, out = '', last = 0, m;
+    var re = /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(~~[^~\n]+~~)|((?<!\w)_[^_\n]+_(?!\w))/g, out = '', last = 0, m;
     while ((m = re.exec(s))) {
       out += esc(s.slice(last, m.index)); var t = m[0], mk = function (x) { return '<span class="mk">' + x + '</span>'; };
       if (m[1]) out += '<span class="cd">' + mk('`') + esc(t.slice(1, -1)) + mk('`') + '</span>';
@@ -407,7 +435,25 @@
   });
   document.addEventListener('pointerdown', function (e) { if (sheet.classList.contains('open') && !e.target.closest('.sheet') && !e.target.closest('[data-aa]')) closeSheet(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
+  function apply(r) { ed.textContent = r.text; paint(r.sel); lastSel = r.sel; stats(); touched(); refresh(); }
+  // Enter on a list or quote line starts the next item; Enter on an empty item steps out (one indent level, then off the list)
+  function continueList(e) {
+    var s = getSel(); if (!s || s.start !== s.end) return false;
+    var t = text(), ln = lineAt(t, s.start), col = s.start - ln.start, m = /^(\s*)(- \[[ xX]\] |- |\d+\. |> )/.exec(ln.text);
+    if (!m || col < m[0].length) return false;
+    e.preventDefault();
+    if (ln.text.slice(m[0].length).trim() === '' && col === ln.text.length) {
+      var keep = m[1].length >= 2 ? m[1].slice(2) + m[2] : '', c = ln.start + keep.length;
+      apply({ text: t.slice(0, ln.start) + keep + t.slice(ln.start + ln.text.length), sel: { start: c, end: c } });
+      return true;
+    }
+    var mk = /^\s*\d+\. /.test(m[0]) ? (parseInt(m[2], 10) + 1) + '. ' : /\[[ xX]\]/.test(m[2]) ? '- [ ] ' : m[2], ins = '\n' + m[1] + mk, c2 = s.start + ins.length;
+    apply({ text: t.slice(0, s.start) + ins + t.slice(s.start), sel: { start: c2, end: c2 } });
+    return true;
+  }
   ed.addEventListener('keydown', function (e) {
+    if (e.key === 'Tab') { e.preventDefault(); run(e.shiftKey ? 'outdent' : 'indent'); return; }
+    if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.isComposing && continueList(e)) return;
     if (!(e.metaKey || e.ctrlKey)) return; var k = e.key.toLowerCase();
     if (k === 'b') { e.preventDefault(); run('bold'); } else if (k === 'i') { e.preventDefault(); run('italic'); }
   });
@@ -424,7 +470,7 @@
   });
 
   /* ---------- preview ---------- */
-  function pInline(s) { return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/~~([^~]+)~~/g, '<s>$1</s>').replace(/(^|[^_\w])_([^_]+)_/g, '$1<i>$2</i>'); }
+  function pInline(s) { return esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/~~([^~]+)~~/g, '<s>$1</s>').replace(/(^|[^_\w])_([^_]+)_(?!\w)/g, '$1<i>$2</i>'); }
   function renderPreview() {
     var out = '', list = null; var close = function () { if (list) { out += '</' + list + '>'; list = null; } };
     text().split('\n').forEach(function (l) {

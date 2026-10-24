@@ -298,12 +298,20 @@
   .beats b { font-weight: 600; font-size: 14px; }
   .beats p { margin: 2px 0 0; font-size: 13px; color: var(--page-muted); }
   .beats .tag2 { font-family: var(--mono); font-size: 11px; color: var(--page-muted); }
+  .net { position: absolute; top: 46px; inset-inline: 16px; z-index: 22; padding: 8px 12px; border-radius: 12px; background: var(--card); color: var(--fg); border: 1px solid var(--border); font-size: 13px; line-height: var(--lh, 1.3); text-align: center; opacity: 0; transform: translateY(-8px); pointer-events: none; transition: opacity 200ms ease-out, transform 260ms ease-out; }
+  .net.show { opacity: 1; transform: none; }
+  .otp.locked .cell { opacity: 0.4 !important; }
+  .rm .net { transform: none !important; }
+  .fails { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+  .fails li { display: grid; gap: 2px; font-size: 14px; }
+  .fails b { font-weight: 600; }
+  .fails p { margin: 0; font-size: 13px; color: var(--page-muted); }
 </style>
 
 <div class="wrap">
   <header>
     <h1>Omiro entry prototype</h1>
-    <p>Splash, entry animation and one-screen login, built from Omiro's real tokens. Tap through it: any email works, any 6-digit code works, and 000000 shows the error state.</p>
+    <p>Splash, entry animation and one-screen login, built from Omiro's real tokens. Tap through it: any email works, any 6-digit code works, and 000000 shows the error state (three misses lock you out). Use "Next failure" for offline, send-fail and expired-code states.</p>
   </header>
 
   <div class="grid">
@@ -331,7 +339,7 @@
               <div class="blk b-code">
                 <div class="sentto"><span class="l" data-i18n="sentTo">Sent to</span><div class="row2"><span class="chip" id="sentTo">you@example.com</span><button class="linkbtn" id="change" type="button" data-i18n="change">Change</button></div></div>
                 <div class="otp" id="otp">
-                  <input id="otpInput" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-label="6-digit verification code">
+                  <input id="otpInput" inputmode="numeric" autocomplete="one-time-code" aria-label="6-digit verification code">
                 </div>
                 <p class="msg" id="codeMsg" role="status" aria-live="polite"></p>
                 <button class="linkbtn" id="resend" type="button" hidden></button>
@@ -340,6 +348,7 @@
           </div>
         </div>
 
+        <div class="net" id="net" role="status" aria-live="polite" data-i18n="offline"></div>
         <div class="bubble" id="bubble" aria-hidden="true"></div>
         <div class="layer inbox" aria-hidden="true">
           <h2 data-i18n="today">Today</h2>
@@ -375,8 +384,20 @@
           </div>
         </div>
         <div class="row"><label class="check" for="lang">Language</label><select class="sel" id="lang"><option value="en">English</option><option value="de">Deutsch · German (long words)</option><option value="fi">Suomi · Finnish (longest words)</option><option value="ru">Русский · Russian (wide Cyrillic)</option><option value="ar">العربية · Arabic (RTL)</option><option value="he">עברית · Hebrew (RTL)</option><option value="ja">日本語 · Japanese (no spaces)</option><option value="zh">简体中文 · Chinese (no spaces)</option><option value="ko">한국어 · Korean</option><option value="th">ไทย · Thai (tall marks, no spaces)</option><option value="hi">हिन्दी · Hindi (conjuncts, tall marks)</option></select></div>
+        <div class="row"><label class="check" for="fail">Next failure</label><select class="sel" id="fail"><option value="none">None (happy path)</option><option value="offline">Offline (stays until changed)</option><option value="sendfail">Send fails once</option><option value="expired">Code expired once</option></select></div>
         <div class="row"><button class="btn ghost" id="auto" type="button">Auto-play login</button><button class="btn ghost" id="jump" type="button">Jump to code step</button></div>
         <p class="hint">Language swaps every string in the phone and mirrors the layout for Arabic and Hebrew, so you can check wrapping at each step. Slow 3× stretches every timing so you can see the handoff. Reduce motion swaps all travel for 200ms fades and stops the mascot floating.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="fs">
+        <h3 id="fs">Failure states</h3>
+        <ul class="fails">
+          <li><b>Offline</b><p>Banner drops from the top. Send and verify stop before the spinner starts, the field shakes, and the mascot says it will wait. Coming back online clears the error and re-submits a full code on its own. Haptic: error.</p></li>
+          <li><b>Send fails</b><p>Server said no. The email stays put with a message under it, so one tap tries again. Fires once, then the next send works.</p></li>
+          <li><b>Code expired</b><p>Pebbles turn coral, the message says to ask for a new code, and Resend unlocks right away instead of waiting out the 30s timer. Fires once.</p></li>
+          <li><b>Lockout</b><p>Enter <code>000000</code> three times. The second miss warns it is the last try. The third dims the pebbles, makes the field read-only and counts down 30s, then clears and refocuses. Haptic: warning. Resend stays off until it unlocks.</p></li>
+          <li><b>Paste</b><p>Paste <code>123 456</code> or <code>123-456</code> into the code field. Spaces and dashes are dropped and it still auto-submits once. A fresh code (Resend) resets the tries.</p></li>
+        </ul>
       </section>
 
       <section class="panel" aria-labelledby="bt">
@@ -409,7 +430,7 @@
   }
 
     var L = {
-    en: { hi: "Hi! Who's this?", check: 'Check your email', welcome: 'Welcome in!', retry: 'Hmm, try again', recheck: 'Hmm, check that', sent: 'Sent again', sentTo: 'Sent to', change: 'Change', resendIn: 'Resend code in {n}s', resend: 'Resend code', needEmail: 'Email is required.', badEmail: 'Enter a valid email address.', needCode: 'Enter the 6-digit code.', wrongCode: "That code didn't match. Try again.", today: 'Today', note: 'Placeholder inbox, only here to show the handoff.', chat: 'Chat', chatSub: "Ask anything you've saved", notes: 'Notes', notesSub: '12 this week', tasks: 'Tasks', tasksSub: '3 due today', capture: 'Capture anything…' },
+    en: { hi: "Hi! Who's this?", check: 'Check your email', welcome: 'Welcome in!', retry: 'Hmm, try again', recheck: 'Hmm, check that', sent: 'Sent again', sentTo: 'Sent to', change: 'Change', resendIn: 'Resend code in {n}s', resend: 'Resend code', needEmail: 'Email is required.', badEmail: 'Enter a valid email address.', needCode: 'Enter the 6-digit code.', wrongCode: "That code didn't match. Try again.", today: 'Today', note: 'Placeholder inbox, only here to show the handoff.', chat: 'Chat', chatSub: "Ask anything you've saved", notes: 'Notes', notesSub: '12 this week', tasks: 'Tasks', tasksSub: '3 due today', capture: 'Capture anything…', offline: "You're offline. Hang tight, I'll keep your spot.", offlineSay: "No signal. I'll wait.", sendFail: "Couldn't send the code. Try again.", expired: 'That code expired. Send a new one.', lastTry: "That code didn't match. One try left.", locked: 'Too many wrong codes. Try again in {n}s.', oops: "Oops, that didn't go through" },
     de: { hi: 'Hallo! Wer bist du?', check: 'Prüfe dein E-Mail-Postfach und gib den Code ein', welcome: 'Willkommen zurück! Schön, dass du wieder da bist', retry: 'Hm, versuch es noch einmal', recheck: 'Hm, bitte Adresse prüfen', sent: 'Erneut gesendet', sentTo: 'Gesendet an', change: 'Ändern', resendIn: 'Code in {n} Sek. erneut senden', resend: 'Code erneut senden', needEmail: 'E-Mail-Adresse erforderlich.', badEmail: 'Gib eine gültige E-Mail-Adresse ein.', needCode: 'Gib den 6-stelligen Code ein.', wrongCode: 'Der Code stimmt nicht überein. Versuch es noch einmal.', today: 'Heute', note: 'Platzhalter-Posteingang, nur zur Veranschaulichung des Übergangs.', chat: 'Chat', chatSub: 'Frag nach allem, was du gespeichert hast', notes: 'Notizen', notesSub: '12 diese Woche', tasks: 'Aufgaben', tasksSub: '3 heute fällig', capture: 'Alles festhalten…' },
     fi: { hi: 'Hei! Kuka siellä?', check: 'Tarkista sähköpostisi ja syötä vahvistuskoodi', welcome: 'Tervetuloa takaisin! Kiva nähdä sinut taas', retry: 'Hmm, yritä uudelleen', recheck: 'Hmm, tarkista sähköpostiosoite', sent: 'Lähetetty uudelleen', sentTo: 'Lähetetty osoitteeseen', change: 'Vaihda', resendIn: 'Lähetä koodi uudelleen {n} s kuluttua', resend: 'Lähetä koodi uudelleen', needEmail: 'Sähköpostiosoite vaaditaan.', badEmail: 'Anna kelvollinen sähköpostiosoite.', needCode: 'Anna 6-numeroinen koodi.', wrongCode: 'Koodi ei täsmännyt. Yritä uudelleen.', today: 'Tänään', note: 'Paikkamerkkipostilaatikko, vain siirtymän esittelyyn.', chat: 'Keskustelu', chatSub: 'Kysy mitä tahansa tallentamastasi', notes: 'Muistiinpanot', notesSub: '12 tällä viikolla', tasks: 'Tehtävät', tasksSub: '3 erääntyy tänään', capture: 'Tallenna mitä tahansa…' },
     ru: { hi: 'Привет! Кто это?', check: 'Проверьте свою электронную почту и введите код', welcome: 'С возвращением! Рады вас снова видеть', retry: 'Хм, попробуйте ещё раз', recheck: 'Хм, проверьте адрес', sent: 'Отправлено повторно', sentTo: 'Отправлено на', change: 'Изменить', resendIn: 'Отправить код повторно через {n} с', resend: 'Отправить код повторно', needEmail: 'Укажите адрес электронной почты.', badEmail: 'Введите действительный адрес электронной почты.', needCode: 'Введите 6-значный код.', wrongCode: 'Код не подошёл. Попробуйте ещё раз.', today: 'Сегодня', note: 'Заглушка входящих, только для показа перехода.', chat: 'Чат', chatSub: 'Спросите о чём угодно из сохранённого', notes: 'Заметки', notesSub: '12 на этой неделе', tasks: 'Задачи', tasksSub: '3 на сегодня', capture: 'Запишите что угодно…' },
@@ -428,9 +449,13 @@
     th: { f: "'Noto Sans Thai'," , lh: 1.55 }, hi: { f: "'Noto Sans Devanagari'," , lh: 1.55 }
   };
   var lang = 'en', bubbleKey = '', msgKeys = { email: '', code: '' }, resendLeft = 0;
+  var fail = 'none', attempts = 0, lockLeft = 0, lockTimer = null, verifyTimer = null, msgN = 0, net = $('net');
+  var offline = function () { return fail === 'offline'; };
+  var syncNet = function () { net.classList.toggle('show', offline()); };
+  var consume = function () { fail = 'none'; $('fail').value = 'none'; syncNet(); };
   var t = function (k) { return (L[lang][k] !== undefined ? L[lang][k] : L.en[k]) || ''; };
   function renderResend() { resend.textContent = resendLeft > 0 ? t('resendIn').replace('{n}', resendLeft) : t('resend'); }
-  function setMsg(which, key) { msgKeys[which] = key; (which === 'email' ? emailMsg : codeMsg).textContent = key ? t(key) : ''; }
+  function setMsg(which, key) { msgKeys[which] = key; (which === 'email' ? emailMsg : codeMsg).textContent = key ? t(key).replace('{n}', msgN) : ''; }
   function applyLang() {
     var m = META[lang], rtl = !!m.rtl;
     screen.lang = lang; screen.dir = rtl ? 'rtl' : 'ltr';
@@ -446,7 +471,7 @@
 
   var speed = function () { return $('slow').checked ? 3 : 1; };
   var later = function (ms, fn) { timers.push(setTimeout(fn, ms * speed())); };
-  var clearTimers = function () { timers.forEach(clearTimeout); timers = []; clearInterval(resendTimer); };
+  var clearTimers = function () { timers.forEach(clearTimeout); timers = []; clearInterval(resendTimer); clearInterval(lockTimer); clearTimeout(verifyTimer); };
   var phase = function (p) { screen.setAttribute('data-phase', p); };
   var beat = function (name) {
     var items = $('beats').children;
@@ -486,7 +511,7 @@
     cells.forEach(function (c) { c.classList.remove('good', 'bad', 'pop', 'on'); c.textContent = ''; });
     otpEl.classList.remove('shake', 'checking');
     email.value = ''; email.readOnly = false; composer.classList.remove('err'); setMsg('email', ''); setMsg('code', '');
-    otpInput.value = '';
+    otpInput.value = ''; otpInput.readOnly = false; otpEl.classList.remove('locked'); attempts = 0; lockLeft = 0; syncNet();
     send.classList.remove('busy', 'pulse'); send.dataset.ready = '0';
     bubble.classList.remove('show'); bubble.textContent = ''; bubbleKey = '';
     resend.hidden = true;
@@ -508,15 +533,41 @@
     }
   }
 
+  function lock(sec) {
+    lockLeft = sec;
+    otpInput.readOnly = true; otpInput.blur(); otpEl.classList.add('locked'); resend.disabled = true;
+    clearInterval(lockTimer);
+    var tick = function () {
+      if (lockLeft <= 0) { unlock(); return; }
+      msgN = lockLeft; setMsg('code', 'locked'); lockLeft--;
+    };
+    tick(); lockTimer = setInterval(tick, 1000);
+  }
+  function unlock() {
+    clearInterval(lockTimer); lockLeft = 0; attempts = 0;
+    otpInput.readOnly = false; otpEl.classList.remove('locked');
+    otpInput.value = ''; renderCells(); setMsg('code', '');
+    resend.disabled = resendLeft > 0;
+    otpInput.focus({ preventScroll: true });
+  }
+  function emailOffline() { setMsg('email', 'offline'); composer.classList.add('err'); shake(composer); say('offlineSay'); }
+
   function sendCode() {
     if (busy) return;
     var v = email.value.trim().toLowerCase();
     var problem = !v ? 'needEmail' : !validEmail(v) ? 'badEmail' : '';
     if (problem) { setMsg('email', problem); composer.classList.add('err'); shake(composer); say('recheck'); return; }
+    if (offline()) { emailOffline(); return; }
     busy = true; send.classList.add('busy'); email.readOnly = true;
     later(750, function () {
       busy = false; send.classList.remove('busy'); email.readOnly = false;
+      if (offline()) { emailOffline(); return; }
+      if (fail === 'sendfail') {
+        consume(); setMsg('email', 'sendFail'); composer.classList.add('err'); shake(composer); say('oops');
+        return;
+      }
       sentTo.textContent = v;
+      attempts = 0; otpInput.readOnly = false; otpEl.classList.remove('locked');
       otpInput.value = ''; renderCells(); setMsg('code', '');
       setStep('code'); beat('code'); say('check');
       later(700, function () { otpInput.focus({ preventScroll: true }); renderCells(); });
@@ -529,25 +580,42 @@
     resend.hidden = false; resend.disabled = true;
     var left = sec;
     var tick = function () {
-      if (left <= 0) { clearInterval(resendTimer); resend.disabled = false; resendLeft = 0; renderResend(); return; }
+      if (left <= 0) { clearInterval(resendTimer); resend.disabled = lockLeft > 0; resendLeft = 0; renderResend(); return; }
       resendLeft = left; renderResend(); left--;
     };
     tick(); resendTimer = setInterval(tick, 1000);
   }
 
+  function clearBad() {
+    cells.forEach(function (c) { c.classList.remove('bad'); });
+    otpInput.value = ''; renderCells();
+    if (lockLeft === 0) otpInput.focus({ preventScroll: true });
+  }
+  function codeOffline() { setMsg('code', 'offline'); shake(otpEl); say('offlineSay'); }
+
   function verify() {
-    if (busy) return;
+    if (busy || lockLeft > 0) return;
     var v = otpInput.value;
     if (v.length !== 6) { setMsg('code', 'needCode'); return; }
+    if (offline()) { codeOffline(); return; }
     busy = true; otpEl.classList.add('checking');
     later(900, function () {
       otpEl.classList.remove('checking');
+      if (offline()) { busy = false; codeOffline(); return; }
+      if (fail === 'expired') {
+        consume(); busy = false;
+        setMsg('code', 'expired'); cells.forEach(function (c) { c.classList.add('bad'); });
+        shake(otpEl); say('retry');
+        clearInterval(resendTimer); resendLeft = 0; resend.hidden = false; resend.disabled = false; renderResend();
+        later(650, clearBad);
+        return;
+      }
       if (v === '000000') {
-        busy = false;
-        setMsg('code', 'wrongCode');
+        busy = false; attempts++;
         cells.forEach(function (c) { c.classList.add('bad'); });
         shake(otpEl); say('retry');
-        later(650, function () { cells.forEach(function (c) { c.classList.remove('bad'); }); otpInput.value = ''; renderCells(); otpInput.focus({ preventScroll: true }); });
+        if (attempts >= 3) lock(30); else setMsg('code', attempts === 2 ? 'lastTry' : 'wrongCode');
+        later(650, clearBad);
         return;
       }
       otpInput.blur(); clearInterval(resendTimer); resend.hidden = true;
@@ -561,23 +629,49 @@
   email.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendCode(); });
   send.addEventListener('click', sendCode);
   otpInput.addEventListener('input', function () {
+    clearTimeout(verifyTimer);
     otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6);
     setMsg('code', '');
     var n = otpInput.value.length;
     renderCells(); nod();
     if (n > 0) { var c = cells[n - 1]; c.classList.add('pop'); setTimeout(function () { c.classList.remove('pop'); }, 150); }
-    if (n === 6) later(260, verify);
+    if (n === 6) verifyTimer = setTimeout(verify, 260 * speed());
+  });
+  otpInput.addEventListener('paste', function (e) {
+    var digits = ((e.clipboardData || window.clipboardData).getData('text') || '').replace(/\D/g, '').slice(0, 6);
+    e.preventDefault();
+    if (!digits || otpInput.readOnly || busy) return;
+    otpInput.value = digits;
+    otpInput.dispatchEvent(new Event('input', { bubbles: true }));
   });
   otpInput.addEventListener('focus', renderCells);
   otpInput.addEventListener('blur', renderCells);
   otpEl.addEventListener('click', function () { otpInput.focus(); });
   $('change').addEventListener('click', function () {
     if (busy) return;
-    clearInterval(resendTimer); resend.hidden = true;
+    clearInterval(resendTimer); clearInterval(lockTimer); clearTimeout(verifyTimer); resend.hidden = true;
+    lockLeft = 0; attempts = 0; otpInput.readOnly = false; otpEl.classList.remove('locked');
     setStep('email'); beat('login'); say('hi');
     later(450, function () { email.focus({ preventScroll: true }); });
   });
-  resend.addEventListener('click', function () { setMsg('code', ''); startResend(30); say('sent'); });
+  resend.addEventListener('click', function () {
+    if (busy || lockLeft > 0 || resend.disabled) return;
+    if (offline()) { codeOffline(); return; }
+    clearTimeout(verifyTimer);
+    cells.forEach(function (c) { c.classList.remove('bad'); });
+    otpInput.value = ''; renderCells(); attempts = 0;
+    setMsg('code', ''); startResend(30); say('sent');
+    otpInput.focus({ preventScroll: true });
+  });
+  $('fail').addEventListener('change', function () {
+    fail = this.value; syncNet();
+    if (offline()) return;
+    if (msgKeys.email === 'offline') { setMsg('email', ''); composer.classList.remove('err'); }
+    if (msgKeys.code === 'offline') {
+      setMsg('code', '');
+      if (step === 'code' && otpInput.value.length === 6) verify();
+    }
+  });
 
   function typeInto(el, text, start, gap) {
     for (var i = 0; i < text.length; i++) (function (i) {
