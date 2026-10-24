@@ -225,7 +225,6 @@
   var $ = function (id) { return document.getElementById(id); };
   var screen = $('screen'), root = document.documentElement, ed = $('editor'), title = $('title'), sheet = $('sheet'), bar = $('bar'), old = $('old');
   var coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
-  if (coarse) { ed.setAttribute('inputmode', 'none'); title.setAttribute('inputmode', 'none'); }
 
   var SAMPLE_TITLE = 'Weekend in Lisbon';
   var SAMPLE = [
@@ -329,7 +328,7 @@
   function line(l) {
     var m;
     if ((m = /^(#{1,6}) /.exec(l))) return '<span class="ln ln-h ln-h' + Math.min(m[1].length, 3) + '"><span class="mk">' + m[0] + '</span>' + inl(l.slice(m[0].length)) + '</span>';
-    if ((m = /^> /.exec(l))) return '<span class="ln ln-q"><span class="mk">&gt; </span>' + inl(l.slice(2)) + '</span>';
+    if (/^> /.test(l)) return '<span class="ln ln-q"><span class="mk">&gt; </span>' + inl(l.slice(2)) + '</span>';
     if ((m = /^(\s*)- \[(x)\] /.exec(l))) return '<span class="ln ln-li ln-done">' + esc(m[1]) + '<span class="mk">- [x] </span>' + inl(l.slice(m[0].length)) + '</span>';
     if ((m = /^(\s*)- \[ \] /.exec(l)) || (m = /^(\s*)- /.exec(l)) || (m = /^(\s*)\d+\. /.exec(l))) return '<span class="ln ln-li">' + esc(m[1]) + '<span class="mk">' + esc(m[0].slice(m[1].length)) + '</span>' + inl(l.slice(m[0].length)) + '</span>';
     return inl(l);
@@ -344,7 +343,7 @@
     var w = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT), pos = 0, n, sn, so, en, eo;
     while ((n = w.nextNode())) {
       var len = n.nodeValue.length;
-      if (!sn && a <= pos + len) { sn = n; so = a - pos; } if (!en && b <= pos + len) { en = n; eo = b - pos; break; } pos += len;
+      if (!sn && a <= pos + len) { sn = n; so = a - pos; } if (b <= pos + len) { en = n; eo = b - pos; break; } pos += len;
     }
     var r = document.createRange();
     if (sn && en) { r.setStart(sn, so); r.setEnd(en, eo); } else { r.selectNodeContents(ed); r.collapse(false); }
@@ -360,10 +359,11 @@
     $('save').classList.add('busy'); $('saveText').textContent = 'Saving…'; clearTimeout(saveTimer);
     saveTimer = setTimeout(function () { $('save').classList.remove('busy'); $('saveText').textContent = 'Saved'; }, 700);
   }
-  ed.addEventListener('input', function () {
+  ed.addEventListener('input', function (e) {
     var s = getSel(), t = text();
     // Chrome appends a spare newline when Enter is pressed at the very end; it is not part of the note
-    if (s && t.endsWith('\n') && s.end < t.length) { ed.textContent = t.slice(0, -1); }
+    var enter = e.inputType === 'insertParagraph' || e.inputType === 'insertLineBreak';
+    if (s && enter && t.endsWith('\n') && s.end === t.length - 1) { ed.textContent = t.slice(0, -1); }
     paint(s); stats(); touched(); refresh();
   });
   function fit() { title.style.height = 'auto'; title.style.height = title.scrollHeight + 'px'; }
