@@ -350,7 +350,7 @@
     var s = getSelection(); s.removeAllRanges(); s.addRange(r);
   }
   function text() { return ed.textContent; }
-  function paint(sel) { var t = text(); ed.innerHTML = html(t); if (sel) setSel(sel.start, sel.end); }
+  function paint(sel) { var t = text(); var doc = new DOMParser().parseFromString('<body>' + html(t), 'text/html'); ed.replaceChildren.apply(ed, Array.prototype.slice.call(doc.body.childNodes)); if (sel) setSel(sel.start, sel.end); }
   var lastSel = { start: 0, end: 0 }, saveTimer;
   function stats() {
     var words = (text().trim().match(/\S+/g) || []).length; $('wc').textContent = words + (words === 1 ? ' word' : ' words'); $('rt').textContent = Math.max(1, Math.round(words / 200)) + ' min read';

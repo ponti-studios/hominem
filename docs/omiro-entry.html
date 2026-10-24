@@ -593,10 +593,10 @@
   }
   function codeOffline() { setMsg('code', 'offline'); shake(otpEl); say('offlineSay'); }
 
-  function verify() {
+  function verify(quiet) {
     if (busy || lockLeft > 0) return;
     var v = otpInput.value;
-    if (v.length !== 6) { setMsg('code', 'needCode'); return; }
+    if (v.length !== 6) { if (!quiet) setMsg('code', 'needCode'); return; }
     if (offline()) { codeOffline(); return; }
     busy = true; otpEl.classList.add('checking');
     later(900, function () {
@@ -669,7 +669,7 @@
     if (msgKeys.email === 'offline') { setMsg('email', ''); composer.classList.remove('err'); }
     if (msgKeys.code === 'offline') {
       setMsg('code', '');
-      if (step === 'code' && otpInput.value.length === 6) verify();
+      if (step === 'code') verify(true);
     }
   });
 
