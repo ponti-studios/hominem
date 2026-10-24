@@ -30,8 +30,64 @@ function trimSlashes(value: string, side: 'start' | 'end') {
   return value.slice(start, end);
 }
 
+/** Longest server-supplied error text we surface, so a stack trace or HTML page can't flood the UI. */
+const MAX_ERROR_MESSAGE_LENGTH = 500;
+
+/** Control characters and backslashes: URL parsers strip or rewrite these, which can turn `/\t/host` into `//host`. */
+function hasUnsafeEndpointChars(endpoint: string) {
+  for (let index = 0; index < endpoint.length; index++) {
+    const code = endpoint.charCodeAt(index);
+    if (code <= 0x1f || code === 0x7f || code === 0x5c) return true;
+  }
+  return false;
+}
+
+function hasDotSegment(endpoint: string) {
+  const pathEnd = endpoint.search(/[?#]/);
+  const path = pathEnd === -1 ? endpoint : endpoint.slice(0, pathEnd);
+  for (const segment of path.split('/')) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(segment);
+    } catch {
+      return true;
+    }
+    if (decoded.split(/[/\\]/).some((part) => part === '.' || part === '..')) return true;
+  }
+  return false;
+}
+
+function originOf(url: string) {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Joins `endpoint` onto `baseUrl` without ever leaving the base's origin or path prefix.
+ * Absolute endpoints are only accepted when they point at the same origin as an absolute
+ * `baseUrl`, so cookies and auth headers can't be redirected to a third party.
+ */
 function resolveEndpoint(baseUrl: string, endpoint: string) {
-  if (/^https?:\/\//i.test(endpoint)) return endpoint;
+  if (hasUnsafeEndpointChars(endpoint)) {
+    throw new TypeError('Endpoint contains forbidden characters');
+  }
+  if (/^https?:\/\//i.test(endpoint)) {
+    const target = new URL(endpoint);
+    if (target.username || target.password) {
+      throw new TypeError('Endpoint must not contain credentials');
+    }
+    const baseOrigin = originOf(baseUrl);
+    if (baseOrigin === null || target.origin !== baseOrigin) {
+      throw new TypeError('Absolute endpoint must be on the same origin as baseUrl');
+    }
+    return endpoint;
+  }
+  if (hasDotSegment(endpoint)) {
+    throw new TypeError('Endpoint must not contain dot segments');
+  }
   const base = trimSlashes(baseUrl, 'end');
   const path = trimSlashes(endpoint, 'start');
   return base ? `${base}/${path}` : `/${path}`;
@@ -39,17 +95,17 @@ function resolveEndpoint(baseUrl: string, endpoint: string) {
 
 async function responseErrorMessage(response: Response) {
   const contentType = response.headers.get('content-type') ?? '';
+  let message = '';
   if (contentType.includes('json')) {
     const payload: unknown = await response.json().catch(() => null);
     if (payload && typeof payload === 'object' && 'message' in payload) {
-      const message = payload.message;
-      if (typeof message === 'string' && message.length > 0) return message;
+      if (typeof payload.message === 'string') message = payload.message;
     }
   } else {
-    const text = await response.text().catch(() => '');
-    if (text.length > 0) return text;
+    message = await response.text().catch(() => '');
   }
-  return `Request failed with status ${response.status}`;
+  if (message.length === 0) return `Request failed with status ${response.status}`;
+  return message.slice(0, MAX_ERROR_MESSAGE_LENGTH);
 }
 
 /**
@@ -65,7 +121,7 @@ export function useApiClient({
   const inFlightCount = useRef(0);
 
   const fetchApi = useCallback(
-    async <T>(endpoint: string, options: ApiRequestOptions<T> = {}): Promise<unknown> => {
+    async <T>(endpoint: string, options: ApiRequestOptions<T>): Promise<unknown> => {
       const { method = 'GET', body, headers, stream = false, signal } = options;
       inFlightCount.current += 1;
       setState((previous) => ({ ...previous, isLoading: true, error: null }));
@@ -75,19 +131,19 @@ export function useApiClient({
         const hasBody = body !== undefined && body !== null;
         const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 
-        if (hasBody && !isFormData && !requestHeaders.has('Content-Type')) {
-          requestHeaders.set('Content-Type', 'application/json');
-        }
-
         let requestBody: BodyInit | null = null;
-        if (body !== undefined && body !== null) {
-          if (typeof FormData !== 'undefined' && body instanceof FormData) requestBody = body;
-          else {
-            const serializedBody = JSON.stringify(body);
-            if (serializedBody === undefined) {
-              throw new TypeError('Request body cannot be serialized to JSON');
-            }
-            requestBody = serializedBody;
+        if (isFormData) {
+          // The runtime must generate the multipart boundary; a caller-set type would break it.
+          requestHeaders.delete('Content-Type');
+          requestBody = body;
+        } else if (hasBody) {
+          const serializedBody = JSON.stringify(body);
+          if (serializedBody === undefined) {
+            throw new TypeError('Request body cannot be serialized to JSON');
+          }
+          requestBody = serializedBody;
+          if (!requestHeaders.has('Content-Type')) {
+            requestHeaders.set('Content-Type', 'application/json');
           }
         }
         const response = await fetcher(resolveEndpoint(baseUrl, endpoint), {
