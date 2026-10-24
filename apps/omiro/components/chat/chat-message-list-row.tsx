@@ -1,5 +1,7 @@
 import type { ChatMessageItem } from '@hominem/chat';
 
+import { countRender } from '~/services/perf/stream-perf';
+
 import { ChatMessage } from './chat-message';
 
 export function ChatMessageListRow({
@@ -27,6 +29,7 @@ export function ChatMessageListRow({
   onRetry?: (messageId: string) => void;
   formatTimestamp: (value: string) => string;
 }) {
+  countRender('ChatMessageListRow');
   const isStreaming = Boolean(message.isStreaming);
   // The list seeds seen IDs from loaded history; FlashList row mount timing is
   // not the same as a message's lifetime because it recycles rows while scrolling.

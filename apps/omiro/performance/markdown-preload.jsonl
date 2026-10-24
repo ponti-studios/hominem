@@ -1,0 +1,2 @@
+{"variant":"baseline-no-preload","metric":"md-wait-ms","runs":[[90.3,211.5,139.2],[113.7,239.6,169.9],[144.5,246.1,173.9,148.0]]}
+{"variant":"preload-at-root-layout","metric":"md-wait-ms","runs":[[53.5,66.4,33.4],[58.7,50.0,24.3],[60.8,54.5,26.4]]}
