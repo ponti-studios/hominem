@@ -1,5 +1,11 @@
 import { forwardRef, useState } from 'react';
-import { TextInput, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import {
+  TextInput,
+  type TextInputProps,
+  type TextStyle,
+  type ViewStyle,
+  type TextInputInstance,
+} from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { fontFamilies, useAppTheme, useStyles } from '~/components/theme';
@@ -11,7 +17,7 @@ interface TextFieldProps extends TextInputProps {
   hasError?: boolean;
 }
 
-export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
+export const TextField = forwardRef<TextInputInstance, TextFieldProps>(function TextField(
   { style, focusBorder = true, hasError = false, onFocus, onBlur, ...props },
   ref,
 ) {

@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import type { TextInput } from 'react-native';
+import type { TextInputInstance } from 'react-native';
 import { Pressable, Text, View } from 'react-native';
 
 import { PRESET_INSTRUCTIONS } from '~/components/chat/build-note-draft';
@@ -43,7 +43,7 @@ export default function ChatToNoteSheetScreen() {
   const [selectedPreset, setSelectedPreset] = useState<NotePreset>(t.chat.noteDraft.presets[0]);
   const [instruction, setInstruction] = useState('');
   const [saveError, setSaveError] = useState<string | null>(null);
-  const customInputRef = useRef<TextInput>(null);
+  const customInputRef = useRef<TextInputInstance>(null);
   const styles = useStyles((theme) => ({
     container: { flex: 1, paddingHorizontal: 20, paddingTop: 28, paddingBottom: 24, gap: 8 },
     header: { alignItems: 'center', gap: 6, paddingBottom: 8 },

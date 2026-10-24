@@ -67,7 +67,14 @@ export function TasksScreen() {
     inbox: { paddingTop: 4 },
   }));
 
-  const refreshControl = <RefreshControl onRefresh={refetch} refreshing={isRefetching} />;
+  const refreshControl = (
+    <RefreshControl
+      onRefresh={async () => {
+        await refetch();
+      }}
+      refreshing={isRefetching}
+    />
+  );
   const open = (task: TaskListItem) => setDetailTaskId(task.id);
   const toggle = (task: TaskListItem) =>
     toggleTask({ completed: task.status !== 'completed', taskId: task.id });

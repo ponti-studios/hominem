@@ -1,5 +1,12 @@
 import type { RefObject } from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+  type TextInputInstance,
+} from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
@@ -7,7 +14,7 @@ import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
 interface ChatSearchBarProps {
-  inputRef: RefObject<TextInput | null>;
+  inputRef: RefObject<TextInputInstance | null>;
   onChangeQuery: (value: string) => void;
   onClose: () => void;
   query: string;

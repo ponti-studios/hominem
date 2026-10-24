@@ -6,6 +6,7 @@ import {
   forwardRef,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -65,6 +66,8 @@ interface ChatMessageListProps {
   bottomInset?: number;
   // Where the list's bottom edge rests above the keyboard (see ChatScrollView).
   keyboardOffset?: number;
+  // Space the list keeps clear at the top for a floating header drawn over it.
+  topInset?: number;
   generation?: ChatGenerationState | null;
 }
 
@@ -74,6 +77,7 @@ function getEmptyListState({
   renderedMessages,
   emptyState,
   bottomInset,
+  topInset,
   styles,
 }: {
   isLoading: boolean;
@@ -81,11 +85,12 @@ function getEmptyListState({
   renderedMessages: ChatMessageItem[];
   emptyState: React.ReactElement | null | undefined;
   bottomInset: number;
+  topInset: number;
   styles: ReturnType<typeof useStyles>;
 }): React.ReactElement | null {
   if (isLoading && renderedMessages.length === 0) {
     return (
-      <View style={styles.loadingState}>
+      <View style={[styles.loadingState, { marginTop: topInset }]}>
         <ChatShimmerMessage />
         <ChatShimmerMessage variant="user" />
         <ChatShimmerMessage />
@@ -94,7 +99,11 @@ function getEmptyListState({
   }
 
   if (!hasSearchQuery && renderedMessages.length === 0 && emptyState) {
-    return <View style={[styles.emptyState, { paddingBottom: bottomInset }]}>{emptyState}</View>;
+    return (
+      <View style={[styles.emptyState, { paddingBottom: bottomInset, paddingTop: topInset }]}>
+        {emptyState}
+      </View>
+    );
   }
 
   return null;
@@ -114,6 +123,7 @@ export function ChatMessageList({
   refreshControl,
   bottomInset = 0,
   keyboardOffset = 0,
+  topInset = 0,
   generation,
 }: ChatMessageListProps) {
   const styles = useStyles((theme) => ({
@@ -134,6 +144,9 @@ export function ChatMessageList({
     [displayMessages, targetMessageId],
   );
   const hasSearchQuery = search.isOpen && search.query.length > 0;
+  // The list first paints at an estimated offset and then jumps once rows are measured. Keep it
+  // invisible until it has been pinned to the real bottom, so opening a chat doesn't visibly scroll.
+  const [settled, setSettled] = useState(false);
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
   // A single shared edit modal + its draft state, instead of every row
   // carrying its own -- at most one message is ever being edited at a time,
@@ -150,6 +163,39 @@ export function ChatMessageList({
     listRef,
   });
   const editing = useChatMessageListEditing({ messages: renderedMessages, onEdit });
+  const hasList = renderedMessages.length > 0;
+
+  // Rows are measured after first paint, so the content height keeps growing. Re-pin to the bottom on
+  // every size change and reveal the list once the size has stopped changing.
+  const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pinToBottomUntilStable = useCallback(() => {
+    if (settled) {
+      return;
+    }
+    listRef.current?.scrollToEnd({ animated: false });
+    if (settleTimeoutRef.current) {
+      clearTimeout(settleTimeoutRef.current);
+    }
+    settleTimeoutRef.current = setTimeout(() => setSettled(true), 150);
+  }, [settled]);
+
+  // Never leave the list hidden if no size change ever arrives.
+  useEffect(() => {
+    if (!hasList || settled) {
+      return;
+    }
+    const timeout = setTimeout(() => setSettled(true), 800);
+    return () => clearTimeout(timeout);
+  }, [hasList, settled]);
+
+  useEffect(
+    () => () => {
+      if (settleTimeoutRef.current) {
+        clearTimeout(settleTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const onActivate = useCallback(
     (messageId: string) =>
@@ -207,6 +253,7 @@ export function ChatMessageList({
     renderedMessages,
     emptyState,
     bottomInset,
+    topInset,
     styles,
   });
   if (emptyListState) {
@@ -226,7 +273,9 @@ export function ChatMessageList({
       <KeyboardOffsetContext.Provider value={keyboardOffset}>
         <FlashList
           ref={listRef}
-          style={styles.list}
+          style={[styles.list, { opacity: settled ? 1 : 0 }]}
+          onLoad={pinToBottomUntilStable}
+          onContentSizeChange={pinToBottomUntilStable}
           pointerEvents={generation ? 'box-none' : 'auto'}
           contentInsetAdjustmentBehavior="automatic"
           ListEmptyComponent={listEmptyComponent}
@@ -240,7 +289,7 @@ export function ChatMessageList({
               />
             ) : null
           }
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: topInset }}
           ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
           renderScrollComponent={ChatScrollView}
           data={renderedMessages}

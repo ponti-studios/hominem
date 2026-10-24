@@ -1,82 +1,25 @@
-import { Canvas, Group, LinearGradient, Rect, vec } from '@shopify/react-native-skia';
-import { useState } from 'react';
-import { Text, View, type LayoutChangeEvent } from 'react-native';
-import Animated, { FadeOut, FadeOutUp, useDerivedValue } from 'react-native-reanimated';
+import { ShimmerText as KitShimmerText } from '@hominem/rn-kit';
+import { View, type TextStyle } from 'react-native';
+import Animated, { FadeOut, FadeOutUp } from 'react-native-reanimated';
 
 import { useAppTheme, useStyles } from '~/components/theme';
 import { useReducedMotion } from '~/hooks/use-reduced-motion';
-import { useShimmerProgress } from '~/hooks/use-shimmer-progress';
 import { nativeMotionContracts } from '~/services/motion/native-motion';
 import t from '~/translations';
 
-// Mirrors the web Shimmer ("Thinking"): a muted label whose glyphs are
-// briefly "erased" to the page background by a soft-edged band sweeping
-// left to right. Keeps the same 1s linear loop, spread of 2px per character
-// (half the band's width-shaped ramp), and a sweep that travels from
-// -0.25x to 1.25x the label width -- the geometry of the web's 250%-wide
-// background layer.
-const SHIMMER_SPREAD_PER_CHAR = 2;
-// Fraction-of-width offsets for the band center across one sweep.
-const SWEEP_START = -0.25;
-const SWEEP_SPAN = 1.5;
-
-// Generic version of the erase-sweep: any muted label can shimmer, so the
-// same visual language covers streaming, regeneration, and save/stop states
-// instead of each one inventing its own spinner or card.
+// Theme adapter over the shared ShimmerText: the sweep erases glyphs to `fade`
+// (the surface the label sits on), defaulting to the page background.
 export function ShimmerText({
   fade,
   label,
   style,
 }: {
-  // The surface the label sits on; the sweep erases glyphs to this colour.
   fade?: string;
   label: string;
-  style?: object;
+  style?: TextStyle;
 }) {
-  const { background: pageBackground } = useAppTheme().colors;
-  const background = fade ?? pageBackground;
-  const styles = useStyles(() => ({
-    sweep: { position: 'absolute', top: 0, left: 0 },
-  }));
-  const reducedMotion = useReducedMotion();
-  const progress = useShimmerProgress(reducedMotion);
-  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
-
-  const onLayout = (event: LayoutChangeEvent) => {
-    const { height, width } = event.nativeEvent.layout;
-    setSize({ height, width });
-  };
-
-  const spread = label.length * SHIMMER_SPREAD_PER_CHAR;
-  const bandWidth = spread * 2;
-
-  const bandTransform = useDerivedValue(() => {
-    const width = size?.width ?? 0;
-    const center = width * (SWEEP_START + SWEEP_SPAN * progress.value);
-    return [{ translateX: center - bandWidth / 2 }];
-  }, [bandWidth, progress, size]);
-
-  return (
-    <View collapsable={false} onLayout={onLayout}>
-      <Text style={style}>{label}</Text>
-      {size && !reducedMotion ? (
-        <View pointerEvents="none" style={styles.sweep}>
-          <Canvas style={{ height: size.height, width: size.width }}>
-            <Group transform={bandTransform}>
-              <Rect height={size.height} width={bandWidth} x={0} y={0}>
-                <LinearGradient
-                  colors={[`${background}00`, background, `${background}00`]}
-                  end={vec(bandWidth, 0)}
-                  positions={[0, 0.5, 1]}
-                  start={vec(0, 0)}
-                />
-              </Rect>
-            </Group>
-          </Canvas>
-        </View>
-      ) : null}
-    </View>
-  );
+  const { background } = useAppTheme().colors;
+  return <KitShimmerText fadeColor={fade ?? background} label={label} style={style} />;
 }
 
 export function ChatThinkingIndicator() {

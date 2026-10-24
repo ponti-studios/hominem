@@ -15,6 +15,7 @@ ENV TURBO_TELEMETRY_DISABLED=1 \
 RUN test -n "$VITE_PUBLIC_API_URL"
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY patches ./patches
 COPY scripts ./scripts
 COPY packages ./packages
 COPY services/api ./services/api

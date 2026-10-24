@@ -2,7 +2,7 @@ import type { ChatMessageItem } from '@hominem/chat';
 import { useApiClient } from '@hominem/rpc/react';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
-import type { TextInput } from 'react-native';
+import type { TextInputInstance } from 'react-native';
 
 import { toMessageOutput } from '~/services/chat/use-chat-messages';
 import { chatKeys } from '~/services/notes/query-keys';
@@ -41,7 +41,7 @@ export function chatSearchReducer(
 export function useChatSearch(messages: ChatMessageItem[], chatId: string) {
   const client = useApiClient();
   const [state, dispatch] = useReducer(chatSearchReducer, initialChatSearchState);
-  const searchInputRef = useRef<TextInput | null>(null);
+  const searchInputRef = useRef<TextInputInstance | null>(null);
   const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {

@@ -1,6 +1,5 @@
 const { z } = require('zod');
 const withPrivacyManifest = require('./plugins/withPrivacyManifest');
-const withSceneLifecycle = require('./plugins/withSceneLifecycle');
 const withHominemAuthSPM = require('./plugins/withHominemAuthSPM');
 const withLocalNotificationsOnly = require('./plugins/withLocalNotificationsOnly');
 
@@ -104,7 +103,6 @@ function createConfig({ config }) {
       { ios: { appTokenEnvName: 'EXPO_PUBLIC_NEWRELIC_IOS_APP_TOKEN' } },
     ],
     withPrivacyManifest,
-    withSceneLifecycle,
     withHominemAuthSPM,
     [
       'expo-build-properties',
