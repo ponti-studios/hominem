@@ -218,5 +218,4 @@ function createConfig({ config }) {
   };
 }
 
-module.exports = createConfig;
-module.exports.getAppEnvironment = getAppEnvironment;
+module.exports = Object.assign(createConfig, { getAppEnvironment });
