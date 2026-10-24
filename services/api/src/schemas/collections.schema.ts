@@ -127,11 +127,18 @@ export const removeCollectionItemOutputSchema = z.object({
 
 export const listCollectionsInputSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
+  cursor: z
+    .string()
+    .min(1)
+    .max(512)
+    .optional()
+    .describe('The `nextCursor` from the previous page.'),
 });
 
 export const listCollectionsOutputSchema = z.object({
   collections: z.array(collectionSummarySchema),
   count: z.number().int().min(0),
+  nextCursor: z.string().nullable(),
 });
 
 // ── collection_detail ────────────────────────────────────────────────

@@ -1,9 +1,16 @@
 import { isObject } from '@hominem/utils';
-import type { Selectable } from 'kysely';
+import { sql, type Selectable } from 'kysely';
 
 import { NotFoundError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppFiles, JsonObject } from '../../types/database';
+import {
+  PAGE_DEFAULT_LIMIT,
+  decodePageCursor,
+  encodePageCursor,
+  toPage,
+  type Page,
+} from '../pagination';
 
 type FileRow = Selectable<AppFiles>;
 
@@ -99,6 +106,40 @@ export const FileRepository = {
       .execute();
 
     return files.map(toFileRecord);
+  },
+
+  // Listed by upload time, newest first, with `id` as the tiebreaker that gives the keyset walk a
+  // total order. The cursor carries PostgreSQL's own microsecond timestamp text, not the
+  // millisecond ISO `uploadedAt`, so files uploaded in the same millisecond are not skipped.
+  async listPage(
+    handle: DbHandle,
+    userId: string,
+    opts?: { limit?: number; cursor?: string },
+  ): Promise<Page<FileRecord>> {
+    const limit = opts?.limit ?? PAGE_DEFAULT_LIMIT;
+    const cursor = opts?.cursor
+      ? decodePageCursor(opts.cursor, { route: 'files', filter: '', keys: ['timestamp', 'uuid'] })
+      : null;
+
+    let query = handle.selectFrom('app.files').selectAll().where('ownerUserid', '=', userId);
+
+    if (cursor) {
+      const [createdAt, id] = cursor;
+      query = query.where(
+        sql<boolean>`("createdat", "id") < (${createdAt}::timestamptz, ${id}::uuid)`,
+      );
+    }
+
+    const rows = await query
+      .orderBy('createdat', 'desc')
+      .orderBy('id', 'desc')
+      .limit(limit + 1)
+      .execute();
+
+    const page = toPage(rows, limit, (last) =>
+      encodePageCursor('files', '', [last.createdat, last.id]),
+    );
+    return { items: page.items.map(toFileRecord), next: page.next };
   },
 
   async getOwned(handle: DbHandle, fileId: string, userId: string): Promise<FileRecord | null> {

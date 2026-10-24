@@ -7,7 +7,12 @@ import { isSupportedUploadMimeType, UPLOAD_MAX_FILE_SIZE_BYTES } from '@hominem/
 import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
-import { UploadIntentSchema, UploadMetadataSchema } from '../../schemas/files.schema';
+import {
+  listFilesInputSchema,
+  listFilesOutputSchema,
+  UploadIntentSchema,
+  UploadMetadataSchema,
+} from '../../schemas/files.schema';
 import {
   getServiceErrorFailureType,
   InternalError,
@@ -17,6 +22,7 @@ import {
 } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
 import { rateLimitMiddleware } from '../middleware/rate-limit';
+import { zValidator } from '../validator';
 import { signFileUrl } from './file-urls';
 
 async function toFilePayload(file: FileRecord) {
@@ -234,6 +240,15 @@ export const filesRoutes = new Hono<AppContext>()
     const file = await FileRepository.getOwned(db, c.req.param('fileId'), userId);
     if (!file) throw new NotFoundError('File', { fileId: c.req.param('fileId') });
     return c.json({ url: await signFileUrl(file.url, file) });
+  })
+  .get('/', zValidator('query', listFilesInputSchema), async (c) => {
+    const userId = c.get('auth')!.userId;
+    const { limit, cursor } = c.req.valid('query');
+    const page = await FileRepository.listPage(db, userId, { limit, cursor });
+    const files = await Promise.all(page.items.map(toFilePayload));
+    return c.json(
+      listFilesOutputSchema.parse({ files, count: files.length, nextCursor: page.next }),
+    );
   })
   .delete('/:fileId', async (c) => {
     try {

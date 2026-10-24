@@ -1,4 +1,4 @@
-import type { InferResponseType } from 'hono/client';
+import type { InferRequestType, InferResponseType } from 'hono/client';
 
 import type { HonoClient } from '../core/api-client';
 
@@ -6,6 +6,12 @@ type UploadRoute = HonoClient['api']['files']['$post'];
 
 export type UploadResponse = InferResponseType<UploadRoute, 200>;
 export type UploadedFileDto = UploadResponse['file'];
+
+type _FilesListEndpoint = HonoClient['api']['files']['$get'];
+
+export type ListFilesInput = InferRequestType<_FilesListEndpoint>['query'];
+export type ListFilesOutput = InferResponseType<_FilesListEndpoint, 200>;
+export type FileListItemDto = ListFilesOutput['files'][number];
 
 // ============================================================================
 // Client-normalized file types
