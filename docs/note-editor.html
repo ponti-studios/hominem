@@ -313,27 +313,37 @@
 
   /* ---------- editor model: plain text with live styling spans ---------- */
   function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  // the renderer builds DOM nodes directly (text nodes + spans), so note text is never parsed as HTML
+  function el(cls, kids) { var n = document.createElement('span'); if (cls) n.className = cls; kids.forEach(function (k) { n.appendChild(typeof k === 'string' ? document.createTextNode(k) : k); }); return n; }
+  function mkr(x) { return el('mk', [x]); }
   function inl(s) {
-    var re = /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(~~[^~\n]+~~)|((?<!\w)_[^_\n]+_(?!\w))/g, out = '', last = 0, m;
+    var re = /(`[^`\n]+`)|(\*\*[^*\n]+\*\*)|(~~[^~\n]+~~)|((?<!\w)_[^_\n]+_(?!\w))/g, out = [], last = 0, m;
     while ((m = re.exec(s))) {
-      out += esc(s.slice(last, m.index)); var t = m[0], mk = function (x) { return '<span class="mk">' + x + '</span>'; };
-      if (m[1]) out += '<span class="cd">' + mk('`') + esc(t.slice(1, -1)) + mk('`') + '</span>';
-      else if (m[2]) out += '<span class="b">' + mk('**') + esc(t.slice(2, -2)) + mk('**') + '</span>';
-      else if (m[3]) out += '<span class="st">' + mk('~~') + esc(t.slice(2, -2)) + mk('~~') + '</span>';
-      else out += '<span class="it">' + mk('_') + esc(t.slice(1, -1)) + mk('_') + '</span>';
+      if (m.index > last) out.push(s.slice(last, m.index));
+      var t = m[0], c = m[1] ? ['cd', 1] : m[2] ? ['b', 2] : m[3] ? ['st', 2] : ['it', 1], mk = t.slice(0, c[1]);
+      out.push(el(c[0], [mkr(mk), t.slice(c[1], -c[1]), mkr(mk)]));
       last = m.index + t.length;
     }
-    return out + esc(s.slice(last));
+    if (last < s.length) out.push(s.slice(last));
+    return out;
   }
   function line(l) {
     var m;
-    if ((m = /^(#{1,6}) /.exec(l))) return '<span class="ln ln-h ln-h' + Math.min(m[1].length, 3) + '"><span class="mk">' + m[0] + '</span>' + inl(l.slice(m[0].length)) + '</span>';
-    if (/^> /.test(l)) return '<span class="ln ln-q"><span class="mk">&gt; </span>' + inl(l.slice(2)) + '</span>';
-    if ((m = /^(\s*)- \[(x)\] /.exec(l))) return '<span class="ln ln-li ln-done">' + esc(m[1]) + '<span class="mk">- [x] </span>' + inl(l.slice(m[0].length)) + '</span>';
-    if ((m = /^(\s*)- \[ \] /.exec(l)) || (m = /^(\s*)- /.exec(l)) || (m = /^(\s*)\d+\. /.exec(l))) return '<span class="ln ln-li">' + esc(m[1]) + '<span class="mk">' + esc(m[0].slice(m[1].length)) + '</span>' + inl(l.slice(m[0].length)) + '</span>';
+    if ((m = /^(#{1,6}) /.exec(l))) return el('ln ln-h ln-h' + Math.min(m[1].length, 3), [mkr(m[0])].concat(inl(l.slice(m[0].length))));
+    if (/^> /.test(l)) return el('ln ln-q', [mkr('> ')].concat(inl(l.slice(2))));
+    if ((m = /^(\s*)- \[(x)\] /.exec(l))) return el('ln ln-li ln-done', [m[1], mkr('- [x] ')].concat(inl(l.slice(m[0].length))));
+    if ((m = /^(\s*)- \[ \] /.exec(l)) || (m = /^(\s*)- /.exec(l)) || (m = /^(\s*)\d+\. /.exec(l))) return el('ln ln-li', [m[1], mkr(m[0].slice(m[1].length))].concat(inl(l.slice(m[0].length))));
     return inl(l);
   }
-  function html(t) { return t.split('\n').map(line).join('\n') + (t.endsWith('\n') ? '<br>' : ''); }
+  function nodes(t) {
+    var out = [];
+    t.split('\n').forEach(function (l, i) {
+      if (i) out.push('\n');
+      [].concat(line(l)).forEach(function (n) { out.push(n); });
+    });
+    if (t.endsWith('\n')) out.push(document.createElement('br'));
+    return out.map(function (n) { return typeof n === 'string' ? document.createTextNode(n) : n; });
+  }
   function offsetOf(node, off) { var r = document.createRange(); r.selectNodeContents(ed); r.setEnd(node, off); return r.toString().length; }
   function getSel() {
     var s = getSelection(); if (!s.rangeCount) return null; var r = s.getRangeAt(0); if (!ed.contains(r.startContainer)) return null;
@@ -350,7 +360,7 @@
     var s = getSelection(); s.removeAllRanges(); s.addRange(r);
   }
   function text() { return ed.textContent; }
-  function paint(sel) { var t = text(); var doc = new DOMParser().parseFromString('<body>' + html(t), 'text/html'); ed.replaceChildren.apply(ed, Array.prototype.slice.call(doc.body.childNodes)); if (sel) setSel(sel.start, sel.end); }
+  function paint(sel) { var t = text(); ed.replaceChildren.apply(ed, nodes(t)); if (sel) setSel(sel.start, sel.end); }
   var lastSel = { start: 0, end: 0 }, saveTimer;
   function stats() {
     var words = (text().trim().match(/\S+/g) || []).length; $('wc').textContent = words + (words === 1 ? ' word' : ' words'); $('rt').textContent = Math.max(1, Math.round(words / 200)) + ' min read';
