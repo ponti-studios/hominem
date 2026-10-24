@@ -57,6 +57,22 @@ for the evidence harness details.
 
 ## Release
 
+### Install the current branch on a physical iPhone
+
+To build the current checkout and install it directly on a connected iPhone,
+run this from the repository root or `apps/omiro`:
+
+```bash
+pnpm --filter @hominem/omiro build:install:device
+```
+
+The script discovers available physical iPhones automatically. If more than
+one is available, it asks which one to use. It builds the `OmiroDev` app in
+Release configuration, keeps the dev app identity separate from TestFlight,
+and bundles the production API endpoint from the gitignored
+`apps/omiro/.eas-prod.local`. It includes uncommitted changes from the current
+branch and does not submit anything to App Store Connect.
+
 Omiro is built and shipped from the maintainer's machine, not through the paid
 EAS cloud workflow. The production binary goes out like this:
 
