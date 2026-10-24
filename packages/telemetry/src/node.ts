@@ -1,5 +1,6 @@
-import { metrics } from '@opentelemetry/api';
+import { context, metrics, propagation, trace } from '@opentelemetry/api';
 import { logs, type LogAttributes } from '@opentelemetry/api-logs';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
@@ -11,8 +12,8 @@ import {
   BatchSpanProcessor,
   ParentBasedSampler,
   TraceIdRatioBasedSampler,
-} from '@opentelemetry/sdk-trace-base';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 
 import { logger, setTelemetryLogSink } from './logger.js';
 
@@ -139,22 +140,27 @@ export function initTelemetry(config: TelemetryConfig) {
   const headers = config.otlpHeaders ?? {};
   const exportAllLogs = Boolean(config.otlpLogsEndpoint);
   const tracerProvider = config.otlpEndpoint
-    ? new NodeTracerProvider({
+    ? new TracerProvider({
         resource,
         sampler: new ParentBasedSampler({
           root: new TraceIdRatioBasedSampler(Math.min(1, Math.max(0, config.samplingRatio ?? 0.1))),
         }),
         spanProcessors: [
-          new BatchSpanProcessor(
-            new OTLPTraceExporter({
+          new BatchSpanProcessor({
+            exporter: new OTLPTraceExporter({
               url: withPath(config.otlpEndpoint, '/v1/traces'),
               headers,
             }),
-          ),
+          }),
         ],
       })
     : null;
-  tracerProvider?.register({ propagator: new W3CTraceContextPropagator() });
+  if (tracerProvider) {
+    // sdk-trace 3.0 no longer registers globals for us (NodeTracerProvider.register is gone)
+    context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());
+    propagation.setGlobalPropagator(new W3CTraceContextPropagator());
+    trace.setGlobalTracerProvider(tracerProvider);
+  }
 
   const meterProvider = config.otlpEndpoint
     ? new MeterProvider({
@@ -175,19 +181,17 @@ export function initTelemetry(config: TelemetryConfig) {
     ? new LoggerProvider({
         resource,
         processors: [
-          new BatchLogRecordProcessor(
-            new OTLPLogExporter({
+          new BatchLogRecordProcessor({
+            exporter: new OTLPLogExporter({
               url: withPath(logsEndpoint, '/v1/logs'),
               headers: config.otlpLogsHeaders ?? headers,
             }),
-          ),
+          }),
         ],
       })
     : null;
   if (loggerProvider) logs.setGlobalLoggerProvider(loggerProvider);
-  const otelLogger = loggerProvider?.getLogger(config.serviceName, config.serviceVersion, {
-    includeTraceContext: true,
-  });
+  const otelLogger = loggerProvider?.getLogger(config.serviceName, config.serviceVersion);
   setTelemetryLogSink((level, message, data) => {
     if (!otelLogger || (!exportAllLogs && !isExportableLog(message))) return;
 
