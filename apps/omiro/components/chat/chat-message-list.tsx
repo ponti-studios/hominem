@@ -6,6 +6,7 @@ import {
   forwardRef,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -134,6 +135,9 @@ export function ChatMessageList({
     [displayMessages, targetMessageId],
   );
   const hasSearchQuery = search.isOpen && search.query.length > 0;
+  // The list first paints at an estimated offset and then jumps once rows are measured. Keep it
+  // invisible until it has been pinned to the real bottom, so opening a chat doesn't visibly scroll.
+  const [settled, setSettled] = useState(false);
   const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null);
   // A single shared edit modal + its draft state, instead of every row
   // carrying its own -- at most one message is ever being edited at a time,
@@ -150,6 +154,39 @@ export function ChatMessageList({
     listRef,
   });
   const editing = useChatMessageListEditing({ messages: renderedMessages, onEdit });
+  const hasList = renderedMessages.length > 0;
+
+  // Rows are measured after first paint, so the content height keeps growing. Re-pin to the bottom on
+  // every size change and reveal the list once the size has stopped changing.
+  const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pinToBottomUntilStable = useCallback(() => {
+    if (settled) {
+      return;
+    }
+    listRef.current?.scrollToEnd({ animated: false });
+    if (settleTimeoutRef.current) {
+      clearTimeout(settleTimeoutRef.current);
+    }
+    settleTimeoutRef.current = setTimeout(() => setSettled(true), 150);
+  }, [settled]);
+
+  // Never leave the list hidden if no size change ever arrives.
+  useEffect(() => {
+    if (!hasList || settled) {
+      return;
+    }
+    const timeout = setTimeout(() => setSettled(true), 800);
+    return () => clearTimeout(timeout);
+  }, [hasList, settled]);
+
+  useEffect(
+    () => () => {
+      if (settleTimeoutRef.current) {
+        clearTimeout(settleTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const onActivate = useCallback(
     (messageId: string) =>
@@ -226,7 +263,9 @@ export function ChatMessageList({
       <KeyboardOffsetContext.Provider value={keyboardOffset}>
         <FlashList
           ref={listRef}
-          style={styles.list}
+          style={[styles.list, { opacity: settled ? 1 : 0 }]}
+          onLoad={pinToBottomUntilStable}
+          onContentSizeChange={pinToBottomUntilStable}
           pointerEvents={generation ? 'box-none' : 'auto'}
           contentInsetAdjustmentBehavior="automatic"
           ListEmptyComponent={listEmptyComponent}
