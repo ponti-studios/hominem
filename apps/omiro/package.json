@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@expensify/react-native-live-markdown": "0.1.343",
-    "@expo/ui": "~57.0.21",
+    "@expo/ui": "~58.0.21",
     "@hominem/chat": "workspace:*",
     "@hominem/env": "workspace:*",
     "@hominem/rpc": "workspace:*",
