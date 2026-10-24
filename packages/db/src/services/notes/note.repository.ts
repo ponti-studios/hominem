@@ -256,6 +256,7 @@ export const NoteRepository = {
     const rows = await handle
       .selectFrom('app.noteFiles as noteFile')
       .innerJoin('app.files as file', 'file.id', 'noteFile.fileId')
+      .where('file.status', '=', 'ready')
       .select([
         'noteFile.noteId as noteId',
         'file.id',
@@ -600,6 +601,7 @@ export const NoteRepository = {
       .selectFrom('app.files')
       .select('id')
       .where('ownerUserid', '=', command.userId)
+      .where('status', '=', 'ready')
       .where('id', 'in', uniqueFileIds)
       .execute();
 

@@ -20,7 +20,7 @@ export const chatResourceRoutes = new Hono<AppContext>()
     if (!result) throw new NotFoundError('Chat', { chatId });
     return c.json({
       ...toChatDto(result.chat),
-      messages: result.messages.map(toChatMessageDto),
+      messages: await Promise.all(result.messages.map(toChatMessageDto)),
     });
   })
   .patch('/', zValidator('json', ChatsUpdateSchema), async (c) => {

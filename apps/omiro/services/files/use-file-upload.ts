@@ -11,7 +11,13 @@ import { API_BASE_URL } from '~/constants';
 import { parseApiError } from '~/services/api/parse-api-error';
 import { useAuth } from '~/services/auth/auth-provider';
 interface UploadClient {
-  upload(formData: FormData): Promise<UploadResponse>;
+  upload(input: { blob: Blob; originalName: string; mimetype: string }): Promise<UploadResponse>;
+}
+
+interface UploadIntentResponse {
+  id: string;
+  uploadUrl: string;
+  headers: Record<string, string>;
 }
 
 function toUploadedFile(file: UploadedFileDto): UploadedFile {
@@ -123,12 +129,7 @@ async function performMobileUploads(
         throw new Error('File exceeds 10MB limit');
       }
 
-      const formData = new FormData();
-      formData.append('file', fileBlob, originalName);
-      formData.append('originalName', originalName);
-      formData.append('mimetype', mimetype);
-
-      const completion = await api.upload(formData);
+      const completion = await api.upload({ blob: fileBlob, originalName, mimetype });
 
       completedCount++;
       const overallProgress = Math.round((completedCount / assets.length) * 100);
@@ -207,27 +208,50 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
 
       const result = await performMobileUploads(
         {
-          upload: async (formData) => {
+          upload: async ({ blob, originalName, mimetype }) => {
             const authHeaders = await getAuthHeaders();
-            const response = await fetchImpl(`${API_BASE_URL}/api/files`, {
-              method: 'POST',
-              headers: {
-                ...authHeaders,
-                Accept: 'application/json',
-              },
-              body: formData,
-            });
+            const jsonHeaders = {
+              ...authHeaders,
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            };
 
-            if (!response.ok) {
+            const failFrom = async (response: Response, fallback: string): Promise<never> => {
               const error = await parseApiError(response);
               throw new Error(
                 typeof error.message === 'string'
                   ? error.message
-                  : `Upload failed (${response.status})`,
+                  : `${fallback} (${response.status})`,
               );
+            };
+
+            // 1. Ask the API for a short-lived presigned PUT.
+            const intentResponse = await fetchImpl(`${API_BASE_URL}/api/files/uploads`, {
+              method: 'POST',
+              headers: jsonHeaders,
+              body: JSON.stringify({ originalName, mimetype, size: blob.size }),
+            });
+            if (!intentResponse.ok) return failFrom(intentResponse, 'Upload failed');
+            const intent: UploadIntentResponse = await intentResponse.json();
+
+            // 2. Bytes go straight to R2 with exactly the headers that were signed. No auth
+            //    header here: the signature in the URL is the credential.
+            const putResponse = await fetchImpl(intent.uploadUrl, {
+              method: 'PUT',
+              headers: intent.headers,
+              body: blob,
+            });
+            if (!putResponse.ok) {
+              throw new Error(`Upload failed (${putResponse.status})`);
             }
 
-            const body: UploadResponse = await response.json();
+            // 3. The API checks what actually landed before the file counts.
+            const completeResponse = await fetchImpl(
+              `${API_BASE_URL}/api/files/uploads/${intent.id}/complete`,
+              { method: 'POST', headers: jsonHeaders },
+            );
+            if (!completeResponse.ok) return failFrom(completeResponse, 'Upload failed');
+            const body: UploadResponse = await completeResponse.json();
             return body;
           },
         },

@@ -1,3 +1,4 @@
+import type { GenerationEvent } from '@hominem/chat';
 import { ChatHttpClientError, createGenerationSseResponse } from '@hominem/chat/server';
 import { logger } from '@hominem/telemetry';
 import { Hono, type Context } from 'hono';
@@ -16,6 +17,11 @@ import {
 } from '../../schemas/chats.schema';
 import type { AppContext } from '../middleware/auth';
 import { zValidator } from '../validator';
+import { signGenerationEvents } from './generation-event-urls';
+
+function sse(events: AsyncIterable<GenerationEvent>) {
+  return createGenerationSseResponse(signGenerationEvents(events));
+}
 
 function chatErrorMetadata(error: unknown) {
   const errorName = error instanceof Error ? error.name : 'UnknownError';
@@ -152,7 +158,7 @@ function createGenerationRoutes(service: ChatGenerationService) {
             { status: 404 },
           );
         }
-        return createGenerationSseResponse(
+        return sse(
           await service.replay({
             generationId,
             ownerUserId,
@@ -178,7 +184,7 @@ function createGenerationRoutes(service: ChatGenerationService) {
       zValidator('json', ChatsRetryGenerationSchema),
       (c) =>
         handleRoute(c, async () =>
-          createGenerationSseResponse(
+          sse(
             await service.regenerate({
               userId: c.get('auth')!.userId,
               chatId: c.req.param('id')!,
@@ -193,7 +199,7 @@ function createGenerationRoutes(service: ChatGenerationService) {
       zValidator('json', ChatsRegenerateMessageSchema),
       (c) =>
         handleRoute(c, async () =>
-          createGenerationSseResponse(
+          sse(
             await service.regenerate({
               userId: c.get('auth')!.userId,
               chatId: c.req.param('id')!,
@@ -208,7 +214,7 @@ function createGenerationRoutes(service: ChatGenerationService) {
       zValidator('json', ChatsToolCallRespondSchema),
       (c) =>
         handleRoute(c, async () =>
-          createGenerationSseResponse(
+          sse(
             await service.respondToConfirmation({
               userId: c.get('auth')!.userId,
               chatId: c.req.param('id')!,
@@ -222,7 +228,7 @@ function createGenerationRoutes(service: ChatGenerationService) {
     .post('/stream', zValidator('json', ChatsSendSchema), (c) =>
       handleRoute(c, async () => {
         const input = c.req.valid('json');
-        return createGenerationSseResponse(
+        return sse(
           await service.sendMessage({
             userId: c.get('auth')!.userId,
             chatId: c.req.param('id')!,
@@ -244,7 +250,7 @@ export function createChatStartGenerationRoute(
   return new Hono<AppContext>().post('/', zValidator('json', ChatsStartStreamSchema), (c) =>
     handleRoute(c, async () => {
       const input = c.req.valid('json');
-      return createGenerationSseResponse(
+      return sse(
         await service.startMessage({
           userId: c.get('auth')!.userId,
           ...input,
