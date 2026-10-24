@@ -160,16 +160,14 @@ export function ChatMessageList({
     [displayMessages, targetMessageId],
   );
   // The reply still arriving lives in the list footer, not in the data: its height changes
-  // every word, and as a list item that would re-lay-out every row around it.
-  const streamingMessage = useMemo(
-    () => renderedMessages.find((message) => message.isStreaming),
-    [renderedMessages],
-  );
+  // every word, and as a list item that would re-lay-out every row around it. Only the last
+  // message qualifies, so a reply still draining under a newer message stays in order in the data.
+  const streamingMessage = useMemo(() => {
+    const last = renderedMessages.at(-1);
+    return last?.isStreaming ? last : undefined;
+  }, [renderedMessages]);
   const listData = useMemo(
-    () =>
-      streamingMessage
-        ? renderedMessages.filter((message) => !message.isStreaming)
-        : renderedMessages,
+    () => (streamingMessage ? renderedMessages.slice(0, -1) : renderedMessages),
     [renderedMessages, streamingMessage],
   );
   const hasSearchQuery = search.isOpen && search.query.length > 0;

@@ -128,7 +128,6 @@ describe('chat cache paced streaming', () => {
 
   it('streams text without whitespace, like Chinese, before the commit', () => {
     const queryClient = new QueryClient();
-    const read = () => queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(CHAT_ID));
     handleChatGenerationEvent({
       queryClient,
       chatId: CHAT_ID,
@@ -137,8 +136,7 @@ describe('chat cache paced streaming', () => {
     });
 
     vi.advanceTimersByTime(300);
-    const partial = read()?.find((m) => m.isStreaming);
-    expect(partial?.message.length).toBeGreaterThan(0);
+    expect(getStreamingMessageText(`streaming-${GENERATION_ID}`).length).toBeGreaterThan(0);
 
     // Drain so the module-level queue doesn't leak into the next test.
     handleChatGenerationEvent({ queryClient, chatId: CHAT_ID, generation, event: commit() });
