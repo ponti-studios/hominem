@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build:prod:local": "bash scripts/build-prod-local.sh",
+    "build:install:device": "bash scripts/build-and-install-device.sh",
     "dev": "APP_ENV=development expo start --dev-client --ios",
     "eas-build-post-install": "pnpm --filter @ponti-studios/auth build",
     "eas:publish": "eas submit -p ios --profile production --path ./build/prod-local.ipa",
