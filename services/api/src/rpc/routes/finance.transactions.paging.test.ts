@@ -274,6 +274,16 @@ const tieRows: TransactionRow[] = [
     description: 'Coffee',
     amount: -5,
   },
+  // Equal *fractional* similarity (~0.7): this is the case where a `real` score round-tripped
+  // through a JavaScript number could disagree with itself and repeat or skip rows mid-walk.
+  ...[1, 2, 3, 4].map((n) => ({
+    id: tieTransactionId(3 + n),
+    owner: tieUserId,
+    accountId: tieAccountId,
+    postedOn: '2026-03-01',
+    description: `Coffee ${n}`,
+    amount: -6 - n,
+  })),
 ];
 
 beforeAll(async () => {
@@ -475,18 +485,23 @@ describe('finance transaction list paging', () => {
 
   it('keeps a stable order when text ranking ties', async () => {
     const whole = await readPage(tieApp, { description: 'coffee', limit: '50' });
-    // Two rows rank equally above the partial match; the unique `id` orders the tie.
+    // Exact matches first, then the four equal fractional scores, each group ordered by `id` desc;
+    // the partial match ranks below them all.
     expect(whole.data.map((row) => row.id)).toEqual([
       tieTransactionId(3),
       tieTransactionId(1),
+      tieTransactionId(7),
+      tieTransactionId(6),
+      tieTransactionId(5),
+      tieTransactionId(4),
       tieTransactionId(2),
     ]);
-    expect(await walk(tieApp, { description: 'coffee' }, 1)).toEqual(
-      whole.data.map((row) => row.id),
-    );
-    expect(await walk(tieApp, { description: 'coffee' }, 2)).toEqual(
-      whole.data.map((row) => row.id),
-    );
+    // Page sizes that cut through the tied fractional group must neither repeat nor skip a row.
+    for (const size of [1, 2, 3, 4]) {
+      expect(await walk(tieApp, { description: 'coffee' }, size)).toEqual(
+        whole.data.map((row) => row.id),
+      );
+    }
     const rerun = await readPage(tieApp, { description: 'coffee', limit: '50' });
     expect(rerun.data.map((row) => row.id)).toEqual(whole.data.map((row) => row.id));
   });

@@ -294,6 +294,10 @@ const TRANSACTIONS_CURSOR_ROUTE = 'finance.transactions';
 /**
  * The text-search ranking, hoisted so the order, the keyset predicate and the cursor all read the
  * same expression. Without text the list is ordered by posted date then id, as it always was.
+ *
+ * The `real` score is widened to `float8` in SQL so the value the cursor carries round-trips
+ * through a JavaScript number exactly; comparing a cursor's double against a bare `real` would
+ * make equal scores compare unequal and repeat or skip rows.
  */
 function transactionSearchRank(text: string) {
   return sql<number>`greatest(
@@ -301,7 +305,7 @@ function transactionSearchRank(text: string) {
     similarity(lower(coalesce(t.merchant_name, '')), lower(${text})),
     similarity(lower(coalesce(c.name, '')), lower(${text})),
     similarity(lower(coalesce(a.name, '')), lower(${text}))
-  )`;
+  )::float8`;
 }
 
 export async function searchTransactions(userId: string, input: TransactionSearchInput) {
