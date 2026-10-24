@@ -127,11 +127,8 @@ export type TransactionUpdateData = {
   recurring?: boolean | null;
 };
 
-export type TransactionListOutput = {
-  data: TransactionData[];
-  filteredCount: number;
-  totalUserCount: number;
-};
+type _TransactionListEndpoint = HonoClient['api']['finance']['transactions']['list']['$get'];
+export type TransactionListOutput = InferResponseType<_TransactionListEndpoint, 200>;
 
 export type TransactionCreateOutput = TransactionData;
 export type TransactionUpdateOutput = TransactionData;

@@ -36,6 +36,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         data: [],
         filteredCount: 0,
         totalUserCount: 0,
+        nextCursor: null,
       })),
   ]);
 
@@ -79,6 +80,11 @@ export default function TransactionsPage({ loaderData }: Route.ComponentProps) {
     description: searchValue || undefined,
     accountIds: selectedAccounts.length > 0 ? selectedAccounts : undefined,
   };
+
+  // Cursor paging has no random access, so a new filter set restarts at the first page.
+  useEffect(() => {
+    setPage(0);
+  }, [currentFilters, searchValue, selectedAccounts, sortOptions]);
 
   const {
     transactions,
