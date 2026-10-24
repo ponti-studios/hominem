@@ -1,5 +1,6 @@
 import { db, sql } from '@hominem/db/core';
 import { NotFoundError, ValidationError } from '@hominem/db/errors';
+import { decodePageCursor, encodePageCursor, toPage } from '@hominem/db/services/pagination';
 
 import type {
   AcceptMemberInviteInput,
@@ -488,26 +489,53 @@ export async function declineMemberInvite(ownerUserId: string, input: AcceptMemb
 }
 
 export async function listCollections(ownerUserId: string, input: ListCollectionsInput) {
-  const ownedRows = db
+  const cursor = input.cursor
+    ? decodePageCursor(input.cursor, {
+        route: 'collections',
+        filter: '',
+        keys: ['timestamp', 'uuid'],
+      })
+    : null;
+
+  let query = db
     .selectFrom('app.collections')
-    .select('id')
-    .where('ownerUserid', '=', ownerUserId);
+    .selectAll()
+    .where((eb) =>
+      eb.or([
+        eb('ownerUserid', '=', ownerUserId),
+        eb.exists(
+          eb
+            .selectFrom('app.collectionMembers')
+            .select('app.collectionMembers.id')
+            .whereRef('app.collectionMembers.collectionId', '=', 'app.collections.id')
+            .where('app.collectionMembers.userId', '=', ownerUserId)
+            .where('app.collectionMembers.acceptedAt', 'is not', null),
+        ),
+      ]),
+    );
 
-  const memberRows = db
-    .selectFrom('app.collectionMembers')
-    .select('collectionId as id')
-    .where('userId', '=', ownerUserId)
-    .where('acceptedAt', 'is not', null);
+  if (cursor) {
+    const [createdAt, id] = cursor;
+    query = query.where(
+      sql<boolean>`("createdat", "id") < (${createdAt}::timestamptz, ${id}::uuid)`,
+    );
+  }
 
-  const rows = await ownedRows.union(memberRows).execute();
+  // Most recently created first, with `id` as the tiebreaker that gives the keyset walk a total
+  // order. The cursor carries the raw PostgreSQL timestamp so same-millisecond rows still page.
+  const rows = await query
+    .orderBy('createdat', 'desc')
+    .orderBy('id', 'desc')
+    .limit(input.limit + 1)
+    .execute();
+  const page = toPage(rows, input.limit, (last) =>
+    encodePageCursor('collections', '', [last.createdat, last.id]),
+  );
 
-  const summaries = await Promise.all(rows.map((row) => loadCollectionSummary(row.id)));
-  const collections = summaries.filter((summary) => summary !== null);
+  const summaries = await Promise.all(page.items.map((row) => loadCollectionSummary(row.id)));
+  const collections = summaries.filter((summary): summary is CollectionSummary => summary !== null);
 
-  collections.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const limited = collections.slice(0, input.limit);
-
-  return { collections: limited, count: limited.length };
+  return { collections, count: collections.length, nextCursor: page.next };
 }
 
 export async function listPendingInvites(ownerUserId: string, input: ListPendingInvitesInput) {
