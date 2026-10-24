@@ -12,6 +12,8 @@ import {
   useState,
 } from 'react';
 import {
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   Pressable,
   type RefreshControlProps,
   type ScrollViewProps,
@@ -32,6 +34,8 @@ import { useChatMessageListEditing } from './use-chat-message-list-editing';
 import { useChatMessageListLifecycle } from './use-chat-message-list-lifecycle';
 
 const AUTO_SCROLL_TO_BOTTOM_THRESHOLD = 0.25;
+// Within this many points of the end the list counts as "at the bottom" and keeps following new content.
+const FOLLOW_BOTTOM_DISTANCE = 120;
 
 // How far the list's bottom edge sits above the keyboard's resting spot, so
 // the scroll view lifts its content by exactly the amount the keyboard (and the
@@ -195,8 +199,20 @@ export function ChatMessageList({
   // Rows are measured after first paint, so the content height keeps growing. Re-pin to the bottom on
   // every size change and reveal the list once the size has stopped changing.
   const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The streaming reply lives in the footer, so it grows without any data change and the list's own
+  // autoscroll never fires. Once settled, follow the bottom ourselves for as long as the reader is
+  // still there; scrolling up to read stops following until they come back.
+  const followingBottomRef = useRef(true);
+  const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    followingBottomRef.current =
+      contentSize.height - layoutMeasurement.height - contentOffset.y < FOLLOW_BOTTOM_DISTANCE;
+  }, []);
   const pinToBottomUntilStable = useCallback(() => {
     if (settled) {
+      if (followingBottomRef.current) {
+        listRef.current?.scrollToEnd({ animated: false });
+      }
       return;
     }
     listRef.current?.scrollToEnd({ animated: false });
@@ -302,49 +318,53 @@ export function ChatMessageList({
         visible={editing.messageId !== null}
       />
       <KeyboardOffsetContext.Provider value={keyboardOffset}>
-        <FlashList
-          ref={listRef}
-          style={[styles.list, { opacity: settled ? 1 : 0 }]}
-          onLoad={pinToBottomUntilStable}
-          onContentSizeChange={pinToBottomUntilStable}
-          pointerEvents={generation ? 'box-none' : 'auto'}
-          contentInsetAdjustmentBehavior="automatic"
-          ListEmptyComponent={streamingMessage ? null : listEmptyComponent}
-          ListFooterComponent={
-            renderedMessages.length > 0 ? (
-              <>
-                {streamingMessage ? (
-                  <View
-                    key={streamingMessage.renderKey ?? streamingMessage.id}
-                    style={listData.length > 0 ? styles.streamingRow : undefined}
-                  >
-                    <RenderedRow item={streamingMessage} render={renderRow} />
-                  </View>
-                ) : null}
-                <Pressable
-                  accessibilityLabel="Chat message list bottom"
-                  onPress={() => setActiveActionMessageId(null)}
-                  style={styles.bottomSentinel}
-                  testID="chat-message-list-bottom-sentinel"
-                />
-              </>
-            ) : null
-          }
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: topInset }}
-          ItemSeparatorComponent={ItemSeparator}
-          renderScrollComponent={ChatScrollView}
-          data={listData}
-          keyExtractor={keyExtractor}
-          maintainVisibleContentPosition={{
-            startRenderingFromBottom: true,
-            autoscrollToBottomThreshold: AUTO_SCROLL_TO_BOTTOM_THRESHOLD,
-          }}
-          onScrollBeginDrag={() => setActiveActionMessageId(null)}
-          renderItem={renderItem}
-          refreshControl={refreshControl}
-          scrollEnabled={renderedMessages.length > 0 || refreshControl !== undefined}
-          testID="chat-message-list"
-        />
+        <View onLayout={pinToBottomUntilStable} style={styles.list}>
+          <FlashList
+            ref={listRef}
+            style={[styles.list, { opacity: settled ? 1 : 0 }]}
+            onLoad={pinToBottomUntilStable}
+            onContentSizeChange={pinToBottomUntilStable}
+            onScroll={onScroll}
+            scrollEventThrottle={32}
+            pointerEvents={generation ? 'box-none' : 'auto'}
+            contentInsetAdjustmentBehavior="automatic"
+            ListEmptyComponent={streamingMessage ? null : listEmptyComponent}
+            ListFooterComponent={
+              renderedMessages.length > 0 ? (
+                <>
+                  {streamingMessage ? (
+                    <View
+                      key={streamingMessage.renderKey ?? streamingMessage.id}
+                      style={listData.length > 0 ? styles.streamingRow : undefined}
+                    >
+                      <RenderedRow item={streamingMessage} render={renderRow} />
+                    </View>
+                  ) : null}
+                  <Pressable
+                    accessibilityLabel="Chat message list bottom"
+                    onPress={() => setActiveActionMessageId(null)}
+                    style={styles.bottomSentinel}
+                    testID="chat-message-list-bottom-sentinel"
+                  />
+                </>
+              ) : null
+            }
+            contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: topInset }}
+            ItemSeparatorComponent={ItemSeparator}
+            renderScrollComponent={ChatScrollView}
+            data={listData}
+            keyExtractor={keyExtractor}
+            maintainVisibleContentPosition={{
+              startRenderingFromBottom: true,
+              autoscrollToBottomThreshold: AUTO_SCROLL_TO_BOTTOM_THRESHOLD,
+            }}
+            onScrollBeginDrag={() => setActiveActionMessageId(null)}
+            renderItem={renderItem}
+            refreshControl={refreshControl}
+            scrollEnabled={renderedMessages.length > 0 || refreshControl !== undefined}
+            testID="chat-message-list"
+          />
+        </View>
       </KeyboardOffsetContext.Provider>
     </>
   );
