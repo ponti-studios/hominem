@@ -14,17 +14,83 @@ import {
 } from '../../errors';
 import type { AppEnv } from '../../server';
 
-function isValidGoogleHost(input: string): boolean {
+const ALLOWED_HOST_SUFFIXES = ['googleusercontent.com'];
+const ALLOWED_HOSTS = ['maps.googleapis.com', 'places.googleapis.com'];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_REDIRECTS = 3;
+const FETCH_TIMEOUT_MS = 10_000;
+
+// https only, and only hosts Google runs for images. Deliberately NOT all of googleapis.com:
+// storage.googleapis.com serves anyone's bucket, so that would let a caller host content on us.
+export function isAllowedImageUrl(input: string): boolean {
   try {
     const parsed = new URL(input);
+    if (parsed.protocol !== 'https:' || parsed.username || parsed.password) return false;
+    if (parsed.port && parsed.port !== '443') return false;
     const hostname = parsed.hostname.toLowerCase();
-    const allowedBaseDomains = ['googleapis.com', 'googleusercontent.com'];
-    return allowedBaseDomains.some((base) => {
-      return hostname === base || hostname.endsWith(`.${base}`);
-    });
+    return (
+      ALLOWED_HOSTS.includes(hostname) ||
+      ALLOWED_HOST_SUFFIXES.some((base) => hostname.endsWith(`.${base}`))
+    );
   } catch {
     return false;
   }
+}
+
+// SVG can carry script, so it never goes through even though it's image/*.
+export function isSafeImageContentType(contentType: string | null): contentType is string {
+  if (!contentType) return false;
+  const type = contentType.split(';')[0]?.trim().toLowerCase() ?? '';
+  return type.startsWith('image/') && !type.includes('svg');
+}
+
+// Follows redirects by hand so every hop is re-checked against the allowlist.
+async function fetchAllowed(url: string): Promise<Response> {
+  let current = url;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+    if (!isAllowedImageUrl(current)) {
+      throw new ForbiddenError('Domain not allowed', undefined, 'image.domain_not_allowed');
+    }
+    const response = await fetch(current, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ImageProxy/1.0)' },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      await response.body?.cancel();
+      if (!location) break;
+      current = new URL(location, current).toString();
+      continue;
+    }
+    return response;
+  }
+  throw new UnavailableError('Too many redirects', undefined, 'image.upstream_failed');
+}
+
+// Reads the body chunk by chunk and bails the moment it passes the cap, so a huge
+// upstream can't be buffered into memory first.
+async function readCapped(response: Response, maxBytes: number): Promise<Buffer> {
+  const declared = Number(response.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    await response.body?.cancel();
+    throw new UnavailableError('Image exceeds 5MB limit', undefined, 'image.size_limit_exceeded');
+  }
+  if (!response.body) return Buffer.alloc(0);
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  const reader = response.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new UnavailableError('Image exceeds 5MB limit', undefined, 'image.size_limit_exceeded');
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
 }
 
 export const imagesRoutes = new Hono<AppEnv>();
@@ -56,6 +122,9 @@ function setResponseHeaders(
   c.header('Access-Control-Allow-Origin', '*');
   c.header('Access-Control-Allow-Methods', 'GET');
   c.header('Content-Type', options.contentType);
+  c.header('X-Content-Type-Options', 'nosniff');
+  c.header('Content-Security-Policy', "default-src 'none'; sandbox");
+  c.header('Cross-Origin-Resource-Policy', 'cross-origin');
   c.header(
     'Cache-Control',
     'public, max-age=86400, stale-while-revalidate=86400, stale-if-error=86400',
@@ -81,7 +150,7 @@ imagesRoutes.get('/proxy', async (c) => {
   try {
     const decodedUrl = decodeURIComponent(imageUrl);
 
-    if (!isValidGoogleHost(decodedUrl)) {
+    if (!isAllowedImageUrl(decodedUrl)) {
       throw new ForbiddenError('Domain not allowed', undefined, 'image.domain_not_allowed');
     }
 
@@ -143,13 +212,10 @@ imagesRoutes.get('/proxy', async (c) => {
       }
     }
 
-    const response = await fetch(decodedUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; ImageProxy/1.0)',
-      },
-    });
+    const response = await fetchAllowed(decodedUrl);
 
     if (!response.ok) {
+      await response.body?.cancel();
       throw new UnavailableError(
         `Failed to fetch image: ${response.statusText}`,
         undefined,
@@ -157,14 +223,14 @@ imagesRoutes.get('/proxy', async (c) => {
       );
     }
 
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
-    const arrayBuffer = await response.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
-    const etag = `"${createHash('sha256').update(imageBuffer).digest('hex')}"`;
-
-    if (imageBuffer.length > 5 * 1024 * 1024) {
-      throw new UnavailableError('Image exceeds 5MB limit', undefined, 'image.size_limit_exceeded');
+    const upstreamType = response.headers.get('content-type');
+    if (!isSafeImageContentType(upstreamType)) {
+      await response.body?.cancel();
+      throw new UnavailableError('Upstream is not an image', undefined, 'image.upstream_failed');
     }
+    const contentType = upstreamType.split(';')[0]!.trim().toLowerCase();
+    const imageBuffer = await readCapped(response, MAX_IMAGE_BYTES);
+    const etag = `"${createHash('sha256').update(imageBuffer).digest('hex')}"`;
 
     try {
       await Promise.all([
