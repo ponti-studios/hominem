@@ -14,22 +14,27 @@ export function toChatDto(record: ChatSnapshot) {
   };
 }
 
+// Swaps each attachment's persisted URL for a short-lived signed one.
+export async function signMessageFiles(record: ChatMessageSnapshot): Promise<ChatMessageSnapshot> {
+  if (!record.files) return record;
+  const files = await Promise.all(
+    record.files.map(async (file) => ({
+      ...file,
+      ...(file.url
+        ? {
+            url: await signFileUrl(file.url, {
+              mimetype: file.mimeType,
+              originalName: file.filename,
+            }),
+          }
+        : {}),
+    })),
+  );
+  return { ...record, files };
+}
+
 export async function toChatMessageDto(record: ChatMessageSnapshot) {
-  const files = record.files
-    ? await Promise.all(
-        record.files.map(async (file) => ({
-          ...file,
-          ...(file.url
-            ? {
-                url: await signFileUrl(file.url, {
-                  mimetype: file.mimeType,
-                  originalName: file.filename,
-                }),
-              }
-            : {}),
-        })),
-      )
-    : record.files;
+  const { files } = await signMessageFiles(record);
   return {
     id: record.id,
     chatId: record.chatId,

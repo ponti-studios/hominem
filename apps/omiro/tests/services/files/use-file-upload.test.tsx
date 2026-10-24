@@ -140,7 +140,7 @@ describe('useFileUpload', () => {
         }
         return intentResponse();
       }
-      if (url.startsWith('https://r2.example.com')) return putOk;
+      if (new URL(url).hostname === 'r2.example.com') return putOk;
       return { ok: true, json: async () => ({ file: uploadedFileDto() }) };
     });
 

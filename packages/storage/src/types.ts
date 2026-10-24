@@ -47,7 +47,7 @@ export type FinalizeResult =
   | { ok: true; key: string; size: number }
   | {
       ok: false;
-      reason: 'missing' | 'size_mismatch' | 'too_large' | 'content_rejected';
+      reason: 'missing' | 'size_mismatch' | 'too_large' | 'content_rejected' | 'changed';
       detail?: string;
     };
 

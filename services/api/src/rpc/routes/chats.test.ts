@@ -229,6 +229,7 @@ vi.mock('@hominem/services/redis', () => ({
 vi.mock('./chats.mapper', () => ({
   toChatDto: vi.fn((chat: { id: string }) => ({ id: chat.id })),
   toChatMessageDto: vi.fn((message: unknown) => message),
+  signMessageFiles: vi.fn(async (message: unknown) => message),
   toChatSourceDto: vi.fn((source: unknown) => source),
 }));
 

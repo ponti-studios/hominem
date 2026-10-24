@@ -904,13 +904,26 @@ export class R2StorageService {
       return { ok: false, reason: 'size_mismatch' };
     }
 
-    const ranged = await this.client.send(
-      new GetObjectCommand({
-        Bucket: this.bucketName,
-        Key: quarantineKey,
-        Range: `bytes=0-${SNIFF_BYTES - 1}`,
-      }),
-    );
+    const etag = head.ETag;
+    let ranged;
+    try {
+      ranged = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucketName,
+          Key: quarantineKey,
+          Range: `bytes=0-${SNIFF_BYTES - 1}`,
+          // The presigned PUT stays valid for a few minutes, so the uploader could swap the bytes
+          // after the HEAD. Pin every read and the copy to the version we measured.
+          ...(etag ? { IfMatch: etag } : {}),
+        }),
+      );
+    } catch (error) {
+      if (isPreconditionFailed(error)) {
+        await this.deleteByKey(quarantineKey);
+        return { ok: false, reason: 'changed' };
+      }
+      throw error;
+    }
     const bytes = ranged.Body ? await ranged.Body.transformToByteArray() : new Uint8Array();
     const sniffed = await sniffContent(bytes, input.mimetype);
     if (!sniffed.ok) {
@@ -919,17 +932,26 @@ export class R2StorageService {
     }
 
     const key = this.getKey(input.userId, input.id);
-    await this.client.send(
-      new CopyObjectCommand({
-        Bucket: this.bucketName,
-        Key: key,
-        CopySource: `${this.bucketName}/${quarantineKey}`,
-        MetadataDirective: 'REPLACE',
-        ContentType: input.mimetype,
-        ContentDisposition: isInlineSafe(input.mimetype) ? 'inline' : 'attachment',
-        CacheControl: 'private, max-age=0, no-store',
-      }),
-    );
+    try {
+      await this.client.send(
+        new CopyObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+          CopySource: `${this.bucketName}/${quarantineKey}`,
+          ...(etag ? { CopySourceIfMatch: etag } : {}),
+          MetadataDirective: 'REPLACE',
+          ContentType: input.mimetype,
+          ContentDisposition: isInlineSafe(input.mimetype) ? 'inline' : 'attachment',
+          CacheControl: 'private, max-age=0, no-store',
+        }),
+      );
+    } catch (error) {
+      if (isPreconditionFailed(error)) {
+        await this.deleteByKey(quarantineKey);
+        return { ok: false, reason: 'changed' };
+      }
+      throw error;
+    }
     await this.deleteByKey(quarantineKey);
     return { ok: true, key, size: actualSize };
   }
@@ -1128,6 +1150,16 @@ export const importStorageService = createStorageService('imports', {
   maxFileSize: 1024 * 1024 * 1024,
   isPublic: false,
 });
+
+function isPreconditionFailed(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const name = 'name' in error ? error.name : undefined;
+  const status =
+    '$metadata' in error && typeof error.$metadata === 'object' && error.$metadata !== null
+      ? (error.$metadata as { httpStatusCode?: number }).httpStatusCode
+      : undefined;
+  return name === 'PreconditionFailed' || status === 412;
+}
 
 export const documentStorageService = createStorageService('documents', {
   maxFileSize: 25 * 1024 * 1024,
