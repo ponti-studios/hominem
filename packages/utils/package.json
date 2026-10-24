@@ -18,6 +18,10 @@
       "types": "./build/http.d.ts",
       "default": "./src/http.ts"
     },
+    "./use-api-client": {
+      "types": "./build/use-api-client.d.ts",
+      "default": "./src/use-api-client.ts"
+    },
     "./time": {
       "types": "./build/time.d.ts",
       "default": "./src/time.ts"
@@ -57,5 +61,15 @@
     "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
+    "@vitest/coverage-v8": "5.0.5",
+    "jsdom": "^30.1.3",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "catalog:"
+  }
 }
