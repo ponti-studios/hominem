@@ -1,8 +1,8 @@
 ---
 name: hominem-database
-description: "Operate Hominem's PostgreSQL database end to end. Use for any packages/db schema change, migration, generated-type regen, or repository/DTO method in the Hominem repo — and for safely performing production Railway operations: backups, extension upgrades, collation maintenance, migrations, verification, monitoring, and recovery. Not for building the Foundation image. For database work in any other project, use kernel-dev-database instead."
+description: "Operate Hominem's PostgreSQL database end to end. Use for any packages/db schema change, migration, generated-type regen, or repository/DTO method in the Hominem repo — and for safely performing production Fly operations: backups, extension upgrades, collation maintenance, migrations, verification, monitoring, and recovery. Not for building the Foundation image. For database work in any other project, use kernel-dev-database instead."
 license: MIT
-compatibility: PostgreSQL (Railway) + Goose migrations + Kysely/kysely-codegen.
+compatibility: PostgreSQL (Fly.io) + Goose migrations + Kysely/kysely-codegen.
 metadata:
   author: project
   version: '1.0'
@@ -14,11 +14,11 @@ metadata:
     - goose
     - kysely
     - codegen
-    - railway
+    - fly
 when:
   - user needs to change or inspect anything under packages/db: migrations, generated types, repositories, or DTOs
   - user needs to regenerate Kysely types after a schema change
-  - user needs to run production Railway PostgreSQL maintenance: backups, extension or collation upgrades, migrations, verification, monitoring, or recovery
+  - user needs to run production Fly PostgreSQL maintenance: backups, extension or collation upgrades, migrations, verification, monitoring, or recovery
   - user needs to scope a repository mutation by ownership without redundant round trips
 termination:
   - migrations and generated types are applied and verified against the live database
@@ -35,7 +35,7 @@ outputs:
 
 `packages/db` is PostgreSQL access code and server-only. Client code uses `@hominem/rpc`, never the database package directly.
 
-For connection strings and the production read-only Railway tunnel, follow
+For connection strings and the production read-only Fly proxy, follow
 [`docs/database.md`](../../../docs/database.md). Do not copy production
 credentials into chat, logs, shell history, or repository files.
 
@@ -83,12 +83,12 @@ For a repository method that mutates (or looks up before mutating) a single row 
 - Callers (routes, application services) must not call `getOwnedOrThrow` (or equivalent) before calling such a method — it is a pure redundant round trip once the method enforces the same boundary itself.
 - This only applies when the method's own query is scoped by owner. A read that queries by resource id alone (e.g. `getMessages`, `listChatSources`) is not self-scoping — an explicit ownership check stays load-bearing there until the query itself is extended (JOIN or owner clause) to cover it.
 
-## Production Railway operations
+## Production Fly operations
 
-Use the `use-railway` skill for all Railway operations. Resolve the target explicitly on
-every run; production's database service is named `database`. Confirm its active
-deployment, image digest, volume mount, and `/api/status` response before any
-mutation. The current custom-image volume mount is `/var/lib/postgresql`.
+Use the `fly` CLI for all Fly operations. Resolve the target explicitly on
+every run; production's database app is `hominem-db`. Confirm its machine
+state, image digest, volume mount, and `/api/status` response before any
+mutation. The volume `pgdata` mounts at `/var/lib/postgresql`.
 
 ### Backup and recovery gate
 
@@ -100,9 +100,9 @@ Before an extension, collation, schema, or image mutation:
    user-private, non-repository directory. Use restrictive permissions,
    validate it with `pg_restore --list`, record a SHA-256 checksum, and retain
    it for at least 30 days.
-3. Create a Railway volume backup when the dashboard and plan permit it. The
-   current service is not eligible for Railway PITR because it uses a custom
-   image, and Railway volume backups require the appropriate paid plan.
+3. Take a Fly volume snapshot (`fly volumes snapshots create <volume-id> -a hominem-db`).
+   There is no replica or automated backup for `hominem-db` yet, so the logical
+   dump above is the primary recovery path.
 
 Do not mutate the database until the logical dump verifies. Do not delete,
 recreate, detach, or remount the production volume. After an extension upgrade,
@@ -140,16 +140,16 @@ pending or run ad-hoc local migrations against production.
 
 After any maintenance or deployment, verify:
 
-- terminal Railway deployment status is `SUCCESS`, with the expected image
-  digest and existing volume mount;
+- the `hominem-db` machine is `started`, with the expected image digest and
+  existing volume mount;
 - PostgreSQL version, required extension versions, collation versions, and
   index validity;
 - a transactional temporary-table read/write smoke test and a vector query or
   HNSW-index check;
 - `https://api.ponti.io/api/status` reports `database: connected`;
-- Railway logs show no new errors or collation warnings, and volume use is
-  stable.
+- `fly logs -a hominem-db --no-tail` shows no new errors or collation
+  warnings, and volume use is stable.
 
-Do not claim an image deployment succeeded until Railway reports a terminal
-`SUCCESS` status. Keep the backup checksum, rollback image reference, and
+Do not claim an image deployment succeeded until `fly status -a hominem-db`
+shows the machine `started` on the new image. Keep the backup checksum, rollback image reference, and
 maintenance evidence with the change record.

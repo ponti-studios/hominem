@@ -237,11 +237,12 @@ Only after reviewing that manifest, run with `--apply --yes`. The tool then:
 - aborts on any non-identical primary-key or unique-key collision,
 - excludes `app.ai_usage_events` and every `app.purchase_*` table.
 
-For Railway, use a temporary tunnel as `TARGET_DATABASE_URL`, then close it
+For Fly, use a temporary proxy as `TARGET_DATABASE_URL`
+(`postgresql://postgres:<password>@localhost:15432/hominem`), then close it
 after the command finishes:
 
 ```bash
-pnpm dlx @railway/cli@5.25.1 connect database --tunnel-only --environment production
+fly proxy 15432:5432 -a hominem-db
 ```
 
 ## Development rules
@@ -251,19 +252,19 @@ pnpm dlx @railway/cli@5.25.1 connect database --tunnel-only --environment produc
 - The monorepo resolves types through compiled declaration contracts, not source. Package `exports` `types` conditions point at `build/`, and declaration emit is a types-only artifact. Run `pnpm dev:types` alongside `pnpm dev` when editing shared types: composite packages are watched via `tsc -b`, while the API/RPC boundaries use declaration-only emit watchers. Runtime (tsx, metro, vite) runs from source and is unaffected. If a type change ripples further than one hop, restart the TypeScript server. See [docs/type-system.md](../../../docs/type-system.md) for the model, why the watcher is shaped the way it is, and what else was tried to speed up type-checking.
 - Published shared packages expose compiled artifacts. Local development may use source aliases for hot reload, but CI, deployables, EAS, and external consumers must use the same compiled public exports.
 - Keep the shared UI package registry-resolved in manifests and lockfiles. Use `just ui link [path]`, `just ui status`, and `just ui unlink` for a reversible local source link. Never commit the local path.
-- Use the same Node and pnpm versions in local development, CI, Docker, Railway, and EAS. A version mismatch is a defect.
+- Use the same Node and pnpm versions in local development, CI, Docker, Fly, and EAS. A version mismatch is a defect.
 - `@hominem/env` defines shared environment-variable behavior. Framework prefixes adapt a variable for a runtime; they must not give it a second meaning.
 - Redact secrets from logs. Use a safe identifier instead of a raw third-party URL when one is available.
 
 ## Deployment rules
 
-Each production service must have one deployment authority. A Railway service
-managed by GitHub must not also use Railway linked-source auto-deploy.
+Each production service must have one deployment authority. A Fly app deployed by a
+GitHub workflow must not also be deployed by hand outside an incident.
 
 A deployment target is identified by this set of values:
 
 ```text
-repository + logical service + immutable Railway service ID
+repository + logical service + Fly app name
 + checked-in configuration path + triggering workflow
 ```
 

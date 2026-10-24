@@ -15,7 +15,7 @@ import pg from 'pg';
 // shortcut: it's what makes delivery work the same way whether the
 // generation and the SSE connection live on the same instance or not,
 // including the ~30s window every rolling deploy runs two instances
-// concurrently (see railway.json's overlapSeconds).
+// concurrently (see the deploy config's overlap window).
 
 type Subscriber = {
   queue: ChatGenerationEventRecord[];

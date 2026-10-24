@@ -63,13 +63,13 @@ two different callers with two different trust boundaries:
 `HOMINEM_INTERNAL_API_URL` is server-only in both environments — never expose
 it as a `VITE_*` variable or use it in a browser redirect, client request, or
 auth client configuration. In production it must resolve to the API service's
-private Railway address; in development it's the same local API URL as
+private Fly address (`*.internal`, e.g. `http://hominem-api.internal:4040`); in development it's the same local API URL as
 `VITE_PUBLIC_API_URL`, since there's no private/public split on localhost. The
-actual values live in each app's Railway service variables (production) and
+actual values live in each app's `infra/fly/*.toml` `[env]` and Fly secrets (production) and
 `.env.example` (development) — not here, so this doc can't drift from them.
 
 This split exists because the public API is Cloudflare-protected in
-production. A browser can complete Cloudflare's challenge; a Railway
+production. A browser can complete Cloudflare's challenge; a Fly
 server-to-server request cannot. If an app's server sends its session check to
 the public URL instead of the private one, Cloudflare can return an edge
 response instead of Better Auth's session payload. `getServerAuth` fails
@@ -100,7 +100,7 @@ cache (five minutes).
 
 Each deployed or locally-run app needs `VITE_PUBLIC_API_URL`,
 `HOMINEM_INTERNAL_API_URL`, and `PUBLIC_APP_URL` set — see that app's
-`.env.example` for the development values and its Railway service variables
+`.env.example` for the development values and its `infra/fly/*.toml` and Fly secrets
 for production. `HOMINEM_INTERNAL_API_URL` is required in every environment;
 set it explicitly rather than relying on a default, so the no-fallback rule
 above stays enforceable by inspection.
@@ -146,7 +146,9 @@ Signed-out visitors are redirected through hosted login with a resume back to
 accepts an optional `next` form field (trusted via the same
 `resolveResume` check) and 303s there after clearing the session cookie — it
 is additive; a `/logout` POST without `next` keeps rendering the signed-out
-page.
+page. `GET /logout?next=<trusted app>` never mutates: a signed-in browser gets
+a page that auto-submits that POST (landing on `/login?signed_out=1` with a
+"you're signed out" note), a signed-out one is redirected straight there.
 
 `/auth/settings/ai` is the deep-dive version of the same usage section: a
 per-month breakdown page (status + pacing, daily spend, ranked drivers by

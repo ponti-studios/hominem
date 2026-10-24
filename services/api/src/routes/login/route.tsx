@@ -128,6 +128,13 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       return null;
     }
   };
+  // "omiro.ponti.io" -> "Omiro". Hidden when the target is the auth host itself.
+  const appNameFor = (url: string, origin: string) => {
+    const host = new URL(url).hostname;
+    if (host === new URL(origin).hostname) return undefined;
+    const label = host.split('.')[0] ?? '';
+    return label ? label.charAt(0).toUpperCase() + label.slice(1) : undefined;
+  };
   const loginUrlWithEnv = (value: Parameters<typeof loginUrl>[0], origin?: string) =>
     loginUrl({ ...value, origin }, inputEnv);
   // Redirects are followed by the browser, so they must point at the host
@@ -186,6 +193,8 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
             email,
             step,
             error: url.searchParams.get('error') ?? undefined,
+            app: resume.mode === 'app' ? appNameFor(resume.url, origin) : undefined,
+            signedOut: url.searchParams.get('signed_out') === '1' ? true : undefined,
           },
           title: 'Sign in to Hominem',
         }),
@@ -444,6 +453,27 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       ),
     )
     .get('/logout', async (c) => {
+      // Apps send people here with `next`. GET stays read-only (a cross-site
+      // navigation or prefetch must not end a session), so a signed-in browser
+      // gets a page that POSTs the sign-out itself; a signed-out one just moves on.
+      const next = c.req.query('next');
+      const resume = next
+        ? resolveResumeWithEnv(`next=${encodeURIComponent(next)}`, requestOrigin(c))
+        : null;
+      if (resume?.mode === 'app') {
+        const landing = new URL('/login', requestOrigin(c));
+        landing.searchParams.set('next', resume.url);
+        landing.searchParams.set('signed_out', '1');
+        const active = await auth.api.getSession({ headers: c.req.raw.headers });
+        if (!active) return c.redirect(landing.toString(), 303);
+        return c.html(
+          renderAuthShell({
+            entry: 'logout',
+            init: { signedOut: false, next: landing.toString() },
+            title: 'Signing out | Hominem',
+          }),
+        );
+      }
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       return c.html(
         renderAuthShell({
@@ -454,14 +484,16 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       );
     })
     .post('/logout', async (c) => {
-      const form = await c.req.parseBody();
-      const response = await callBetterAuth({
-        body: {},
-        path: '/sign-out',
-        request: c.req.raw,
-        auth,
-        env: inputEnv,
-      });
+      const [form, response] = await Promise.all([
+        c.req.parseBody(),
+        callBetterAuth({
+          body: {},
+          path: '/sign-out',
+          request: c.req.raw,
+          auth,
+          env: inputEnv,
+        }),
+      ]);
       // Optional post-sign-out destination (used by /auth/settings): redirect
       // there once the session is cleared, falling back to the signed-out page.
       const next = getFormValue(form, 'next');

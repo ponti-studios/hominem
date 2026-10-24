@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router';
 import { AccountActions } from '~/components/account/AccountActions';
 import { EmailField } from '~/components/EmailField';
 import type { AccountActionResult, AccountSettingsLoaderData } from '~/lib/account/types';
-import { authClient } from '~/lib/auth-client';
 
 export function AccountSettingsPage({ loaderData }: { loaderData: AccountSettingsLoaderData }) {
   const navigate = useNavigate();
@@ -20,17 +19,18 @@ export function AccountSettingsPage({ loaderData }: { loaderData: AccountSetting
       body: formData,
     });
 
-    const contentType = response.headers.get('content-type');
-    const result: AccountActionResult<TData> = contentType?.includes('application/json')
-      ? await response.json()
-      : {
-          success: response.ok,
-          error: response.ok ? undefined : await response.text(),
-        };
+    const isJson = response.headers.get('content-type')?.includes('application/json');
 
     if (!response.ok) {
-      throw new Error(result.error || result.message || 'Request failed');
+      const failure: Partial<AccountActionResult<TData>> = isJson
+        ? await response.json()
+        : { error: await response.text() };
+      throw new Error(failure.error || failure.message || 'Request failed');
     }
+
+    const result: AccountActionResult<TData> = isJson
+      ? await response.json()
+      : { success: true, error: undefined };
 
     return result;
   };
@@ -38,11 +38,12 @@ export function AccountSettingsPage({ loaderData }: { loaderData: AccountSetting
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      await authClient.signOut();
-      navigate('/');
+      // Full-page hop through the API's logout so the user lands on its signed-out sign-in.
+      const logoutUrl = new URL('/logout', import.meta.env.VITE_PUBLIC_API_URL);
+      logoutUrl.searchParams.set('next', window.location.origin);
+      window.location.assign(logoutUrl.toString());
     } catch {
       // sign-out failed, just stay put on the account page
-    } finally {
       setIsSigningOut(false);
     }
   };
