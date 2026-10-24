@@ -93,7 +93,6 @@ function ProtectedShell() {
           <View style={styles.container}>
             <View style={styles.stackContainer}>
               <Stack
-                initialRouteName="(tabs)"
                 screenOptions={{ ...screenOptions, ...headerOptions, headerLargeTitle: false }}
               >
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -163,5 +162,7 @@ function ProtectedShell() {
     </FeatureErrorBoundary>
   );
 }
+
+export const unstable_settings = { initialRouteName: '(tabs)' };
 
 export default ProtectedShell;

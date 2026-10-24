@@ -128,7 +128,9 @@ describe('useFileUpload', () => {
     const blob = new Blob(['bytes'], { type: 'image/jpeg' });
     // Two assets run concurrently, so route by url instead of by call order.
     const fetchImpl = vi.fn().mockImplementation(async (url: string, init?: { body?: unknown }) => {
-      if (url.startsWith('file://')) return { blob: async () => blob };
+      if (url.startsWith('file://')) {
+        return { blob: async () => blob };
+      }
       if (url.endsWith('/api/files/uploads')) {
         const { originalName } = JSON.parse(String(init?.body));
         if (originalName === 'broken.jpg') {
@@ -140,7 +142,9 @@ describe('useFileUpload', () => {
         }
         return intentResponse();
       }
-      if (new URL(url).hostname === 'r2.example.com') return putOk;
+      if (new URL(url).hostname === 'r2.example.com') {
+        return putOk;
+      }
       return { ok: true, json: async () => ({ file: uploadedFileDto() }) };
     });
 

@@ -34,16 +34,16 @@ export function AnimatedCanvasButton({
     if (width === 0) {
       return null;
     }
-    const path = Skia.Path.Make();
-    path.addRRect(
-      {
-        rect: { x: 1, y: 1, width: width - 2, height: height - 2 },
-        rx: borderRadius,
-        ry: borderRadius,
-      },
-      false,
-    );
-    return path;
+    return Skia.PathBuilder.Make()
+      .addRRect(
+        {
+          rect: { x: 1, y: 1, width: width - 2, height: height - 2 },
+          rx: borderRadius,
+          ry: borderRadius,
+        },
+        false,
+      )
+      .detach();
   }, [borderRadius, height, width]);
 
   const drawProgress = useSharedValue(clampedProgress);

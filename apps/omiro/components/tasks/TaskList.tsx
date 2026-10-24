@@ -111,7 +111,7 @@ export function TaskList({
       ItemSeparatorComponent={Gap}
       contentInsetAdjustmentBehavior={adjustForHeader ? 'automatic' : 'never'}
       ListEmptyComponent={<Text style={styles.empty}>{emptyText}</Text>}
-      ListFooterComponent={footer ? <View style={styles.footer}>{footer}</View> : null}
+      ListFooterComponent={footer ? <View style={styles.footer}>{footer}</View> : undefined}
       contentContainerStyle={{ paddingBottom: contentPaddingBottom, paddingTop: contentPaddingTop }}
       data={tasks}
       initialNumToRender={10}

@@ -231,7 +231,9 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
               headers: jsonHeaders,
               body: JSON.stringify({ originalName, mimetype, size: blob.size }),
             });
-            if (!intentResponse.ok) return failFrom(intentResponse, 'Upload failed');
+            if (!intentResponse.ok) {
+              return failFrom(intentResponse, 'Upload failed');
+            }
             const intent: UploadIntentResponse = await intentResponse.json();
 
             // 2. Bytes go straight to R2 with exactly the headers that were signed. No auth
@@ -250,7 +252,9 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
               `${API_BASE_URL}/api/files/uploads/${intent.id}/complete`,
               { method: 'POST', headers: jsonHeaders },
             );
-            if (!completeResponse.ok) return failFrom(completeResponse, 'Upload failed');
+            if (!completeResponse.ok) {
+              return failFrom(completeResponse, 'Upload failed');
+            }
             const body: UploadResponse = await completeResponse.json();
             return body;
           },

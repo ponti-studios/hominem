@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Pressable, StyleSheet, Text, TextInput } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, type TextInputInstance } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -116,7 +116,7 @@ export function OtpInput({
     destructive,
     foreground: textPrimary,
   } = useAppTheme().colors;
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
 
   const shakeStyle = useShakeAnimation(error);
 

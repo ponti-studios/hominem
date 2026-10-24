@@ -241,12 +241,13 @@ function Stripes() {
     const count = Math.ceil((width + STRIPE_SLANT) / STRIPE_PERIOD) + 2;
     return Array.from({ length: count }, (_, index) => {
       const x = index * STRIPE_PERIOD - STRIPE_PERIOD;
-      const path = Skia.Path.Make();
-      path.moveTo(x + STRIPE_SLANT, 0);
-      path.lineTo(x + STRIPE_SLANT + STRIPE_WIDTH, 0);
-      path.lineTo(x + STRIPE_WIDTH, BAR_HEIGHT);
-      path.lineTo(x, BAR_HEIGHT);
-      path.close();
+      const path = Skia.PathBuilder.Make()
+        .moveTo(x + STRIPE_SLANT, 0)
+        .lineTo(x + STRIPE_SLANT + STRIPE_WIDTH, 0)
+        .lineTo(x + STRIPE_WIDTH, BAR_HEIGHT)
+        .lineTo(x, BAR_HEIGHT)
+        .close()
+        .detach();
       return { id: x, path };
     });
   }, [width]);

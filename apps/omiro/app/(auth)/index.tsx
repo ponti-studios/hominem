@@ -1,6 +1,6 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View, type TextInputInstance } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import Animated, {
   FadeIn,
@@ -53,7 +53,7 @@ function AuthScreen() {
     linkToken,
     onLinkOpened: useCallback(() => posthog.capture('auth_verify_link_opened'), []),
   });
-  const emailInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInputInstance>(null);
   const isCodeRef = useRef(flow.step === 'code');
   const [nod, setNod] = useState(0);
   const [greeted, setGreeted] = useState(false);
