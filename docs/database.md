@@ -35,36 +35,32 @@ for service startup and worktree setup.
 
 ## Production read-only inspection
 
-Production PostgreSQL is the Railway service `database` in the `hominem`
-project's `production` environment (project ID
-`777ae082-725f-40b2-808e-e4635d5e2b82`). Its private Railway hostname is not
-resolvable from a local machine. Use a temporary Railway tunnel instead of
-trying to connect directly to `db.railway.internal` or sourcing
-`packages/db/.env.production`.
+Production PostgreSQL is the Fly app `hominem-db` (Postgres 18, region `sjc`,
+`pgdata` volume). Its private hostname (`hominem-db.internal`) is not
+resolvable from a local machine. Use a temporary `fly proxy` instead of trying
+to connect to it directly or sourcing `packages/db/.env.production`.
 
-1. Read the installed `use-railway` skill and verify the authenticated account
-   and target project/environment before connecting:
+1. Verify the authenticated Fly account and the target app before connecting:
 
    ```bash
-   railway whoami --json
-   railway status --json
+   fly auth whoami
+   fly status -a hominem-db
    ```
 
-2. Start a tunnel to the explicitly named production database. Use an unused
-   local port if the default ephemeral port is unsuitable:
+2. Start a proxy to the explicitly named production database. Use an unused
+   local port if `15432` is taken:
 
    ```bash
-   railway connect database --tunnel-only \
-     --environment production \
-     --project 777ae082-725f-40b2-808e-e4635d5e2b82
+   fly proxy 15432:5432 -a hominem-db
    ```
 
-   Keep this process running while the database client is connected. The CLI
-   prints a temporary host, port, username, password, and connection URL. Treat
-   those values as secrets: do not paste them into chat, logs, committed files,
-   or shell command history.
+   Keep this process running while the database client is connected. The
+   database password lives in Fly secrets / your password manager, never in the
+   repo. Treat it as a secret: do not paste it into chat, logs, committed files,
+   or shell command history. The connection URL is
+   `postgresql://postgres:<password>@localhost:15432/hominem`.
 
-3. In a second terminal, enter the temporary URL without echoing it or saving it
+3. In a second terminal, enter the URL without echoing it or saving it
    to shell history, then start `psql` with read-only defaults:
 
    ```bash
@@ -83,9 +79,9 @@ trying to connect directly to `db.railway.internal` or sourcing
    Keep results to the minimum needed for the task. Do not run migrations,
    imports, updates, deletes, or other writes through this read-only workflow.
    Production writes and maintenance have separate backup and approval gates in
-   the database and Railway skills.
+   the database skill.
 
-4. Exit `psql` and stop the tunnel with `Ctrl+C`. The temporary URL stays inside
+4. Exit `psql` and stop the proxy with `Ctrl+C`. The URL stays inside
    the short-lived shell and should not be reused.
 
 ## Query and data boundaries

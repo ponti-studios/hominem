@@ -34,6 +34,24 @@ export interface UpsertFileInput {
   metadata?: JsonObject | null;
 }
 
+export interface CreatePendingFileInput {
+  id: string;
+  userId: string;
+  storageKey: string;
+  originalName: string;
+  mimetype: string;
+  size: number;
+}
+
+export interface PendingFile {
+  id: string;
+  userId: string;
+  storageKey: string;
+  originalName: string;
+  mimetype: string;
+  size: number;
+}
+
 export interface DeleteFileCommand {
   fileId: string;
   userId: string;
@@ -76,6 +94,7 @@ export const FileRepository = {
       .selectFrom('app.files')
       .selectAll()
       .where('ownerUserid', '=', userId)
+      .where('status', '=', 'ready')
       .orderBy('createdat', 'desc')
       .execute();
 
@@ -88,6 +107,7 @@ export const FileRepository = {
       .selectAll()
       .where('id', '=', fileId)
       .where('ownerUserid', '=', userId)
+      .where('status', '=', 'ready')
       .executeTakeFirst();
 
     return file ? toFileRecord(file) : null;
@@ -107,6 +127,7 @@ export const FileRepository = {
       .select(['url'])
       .where('id', '=', fileId)
       .where('ownerUserid', '=', userId)
+      .where('status', '=', 'ready')
       .executeTakeFirst();
 
     if (!file) {
@@ -122,6 +143,7 @@ export const FileRepository = {
       .select(['id'])
       .where('id', '=', fileId)
       .where('ownerUserid', '=', userId)
+      .where('status', '=', 'ready')
       .executeTakeFirst();
 
     return Boolean(file);
@@ -141,6 +163,7 @@ export const FileRepository = {
         mimetype: input.mimetype,
         size: input.size,
         url: input.url,
+        status: 'ready',
         content: input.content ?? null,
         textContent: input.textContent ?? null,
         metadata: input.metadata ?? null,
@@ -154,6 +177,7 @@ export const FileRepository = {
           mimetype: input.mimetype,
           size: input.size,
           url: input.url,
+          status: 'ready',
           content: input.content ?? null,
           textContent: input.textContent ?? null,
           metadata: input.metadata ?? null,
@@ -163,6 +187,81 @@ export const FileRepository = {
       .execute();
 
     return FileRepository.getOwnedOrThrow(handle, input.id, input.userId);
+  },
+
+  // An upload that has been handed a presigned URL but not yet verified. Never shown to the user
+  // (every read above filters on status = ready). `url` stays empty: it is not a public URL
+  // anymore, reads are signed on demand from storageKey.
+  async createPending(handle: DbHandle, input: CreatePendingFileInput): Promise<void> {
+    await handle
+      .insertInto('app.files')
+      .values({
+        id: input.id,
+        ownerUserid: input.userId,
+        storageKey: input.storageKey,
+        originalName: input.originalName,
+        mimetype: input.mimetype,
+        size: input.size,
+        url: '',
+        status: 'pending',
+      })
+      .execute();
+  },
+
+  async getPending(handle: DbHandle, fileId: string, userId: string): Promise<PendingFile | null> {
+    const row = await handle
+      .selectFrom('app.files')
+      .select(['id', 'ownerUserid', 'storageKey', 'originalName', 'mimetype', 'size'])
+      .where('id', '=', fileId)
+      .where('ownerUserid', '=', userId)
+      .where('status', '=', 'pending')
+      .executeTakeFirst();
+
+    return row
+      ? {
+          id: row.id,
+          userId: row.ownerUserid,
+          storageKey: row.storageKey,
+          originalName: row.originalName,
+          mimetype: row.mimetype,
+          size: row.size,
+        }
+      : null;
+  },
+
+  // Flips a verified upload to ready and records its final (promoted) key and stored url. Only touches rows that
+  // are still pending, so completing twice can't resurrect a different object.
+  async markReady(
+    handle: DbHandle,
+    fileId: string,
+    userId: string,
+    ready: { storageKey: string; url: string },
+  ): Promise<FileRecord> {
+    const updated = await handle
+      .updateTable('app.files')
+      .set({
+        status: 'ready',
+        storageKey: ready.storageKey,
+        url: ready.url,
+        updatedat: new Date().toISOString(),
+      })
+      .where('id', '=', fileId)
+      .where('ownerUserid', '=', userId)
+      .where('status', '=', 'pending')
+      .returning('id')
+      .executeTakeFirst();
+
+    if (!updated) throw new NotFoundError('File', { fileId });
+    return FileRepository.getOwnedOrThrow(handle, fileId, userId);
+  },
+
+  async deletePending(handle: DbHandle, fileId: string, userId: string): Promise<void> {
+    await handle
+      .deleteFrom('app.files')
+      .where('id', '=', fileId)
+      .where('ownerUserid', '=', userId)
+      .where('status', '=', 'pending')
+      .execute();
   },
 
   async delete(handle: DbHandle, command: DeleteFileCommand): Promise<void> {

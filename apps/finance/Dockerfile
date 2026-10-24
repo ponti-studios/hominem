@@ -42,7 +42,7 @@ USER financeuser
 
 EXPOSE 3000
 
-# Railway injects PORT (often 8080). Bind the server to that port so the
+# Fly sets PORT (often 8080). Bind the server to that port so the
 # platform healthcheck and reverse proxy hit the right listener.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f -s -m 2 http://localhost:${PORT:-3000}/ || exit 1

@@ -31,6 +31,10 @@ function getAdvancedOptions(inputEnv: ApiEnv) {
       generateId: 'uuid' as const,
     },
     useSecureCookies,
+    // Better Auth's own limiter keys on this header. x-forwarded-for (the default) is client-controlled.
+    ipAddress: {
+      ipAddressHeaders: inputEnv.ORIGIN_SECRET ? ['cf-connecting-ip'] : ['fly-client-ip'],
+    },
     ...(crossSubDomainEnabled
       ? {
           crossSubDomainCookies: {
@@ -123,33 +127,68 @@ function getVerificationOtpSubject(type: VerificationOtpType) {
   return verificationOtpSubjectByType[type] ?? 'Your verification code';
 }
 
+// Mirrors the hosted auth pages (routes/login/app/styles.css): warm paper
+// background, white card, forest-green accent, Fraunces-style serif headings.
+// Email clients need inline styles + tables, so the palette is repeated here
+// with a dark-mode override for clients that honor prefers-color-scheme.
 function buildVerificationOtpEmail(input: {
   to: string;
   otp: string;
   type: VerificationOtpType;
+  expiresInSeconds: number;
 }): SendEmailParams {
+  const minutes = Math.max(1, Math.round(input.expiresInSeconds / 60));
+  const expiry = `${minutes} minute${minutes === 1 ? '' : 's'}`;
+  const heading =
+    input.type === 'sign-in' ? 'Your sign-in code' : getVerificationOtpSubject(input.type);
+  const serif = "Fraunces, Georgia, 'Times New Roman', serif";
+  const sans = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
   return {
     to: input.to,
     subject: getVerificationOtpSubject(input.type),
-    text: `Your verification code is: ${input.otp}. This code will expire in 5 minutes.`,
+    // Test mailbox helpers parse "verification code is: NNNNNN" out of this line.
+    text: `Your verification code is: ${input.otp}\n\nThis code expires in ${expiry}. If you didn't request it, you can safely ignore this email.\n\n${API_BRAND.appName}`,
     html: `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .bg { background: #141310 !important; }
+      .card { background: #1c1a16 !important; border-color: #4a453b !important; }
+      .text { color: #edeae2 !important; }
+      .muted { color: #a9a396 !important; }
+      .accent { color: #8fc1ae !important; }
+      .code { background: #141310 !important; border-color: #4a453b !important; color: #8fc1ae !important; }
+    }
+  </style>
 </head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="padding: 30px; border-radius: 12px 12px 0 0;">
-    <h1 style="margin: 0; font-size: 24px;">${API_BRAND.appName}</h1>
-  </div>
-  <div style="padding: 30px; border: 1px solid; border-top: none; border-radius: 0 0 12px 12px;">
-    <p style="margin-top: 0;">Your verification code is:</p>
-    <div style="padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; border: 1px solid; border-radius: 8px; margin: 20px 0;">
-      ${input.otp}
-    </div>
-    <p style="font-size: 14px;">This code will expire in 5 minutes.</p>
-    <p style="font-size: 14px;">If you didn't request this code, you can safely ignore this email.</p>
-  </div>
+<body class="bg" style="margin: 0; padding: 0; background: #f6f3ec;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="bg" style="background: #f6f3ec;">
+    <tr>
+      <td align="center" style="padding: 40px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px;">
+          <tr>
+            <td class="accent" style="padding: 0 4px 20px; font-family: ${serif}; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; color: #2f5d50;">
+              ${API_BRAND.appName}
+            </td>
+          </tr>
+          <tr>
+            <td class="card" style="padding: 32px 28px; background: #ffffff; border: 1px solid #b9b2a3; border-radius: 16px;">
+              <h1 class="text" style="margin: 0 0 8px; font-family: ${serif}; font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; color: #1b1a17;">${heading}</h1>
+              <p class="muted" style="margin: 0 0 24px; font-family: ${sans}; font-size: 16px; line-height: 1.5; color: #5e594f;">Type this code where you started signing in.</p>
+              <div class="code" style="padding: 18px 12px; text-align: center; font-family: ${serif}; font-size: 36px; font-weight: 600; letter-spacing: 10px; text-indent: 10px; color: #2f5d50; background: #f6f3ec; border: 1px solid #b9b2a3; border-radius: 12px;">${input.otp}</div>
+              <p class="muted" style="margin: 24px 0 0; font-family: ${sans}; font-size: 14px; line-height: 1.5; color: #5e594f;">This code expires in ${expiry}. If you didn't ask for it, you can safely ignore this email.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`,
   };
@@ -170,7 +209,15 @@ function getAuthPlugins(inputEnv: ApiEnv) {
         // The review code is fixed, so it must never be put in an email.
         if (reviewSignInCode(inputEnv, { email, type }) !== undefined) return;
         try {
-          await sendEmail(inputEnv, buildVerificationOtpEmail({ to: email, otp, type }));
+          await sendEmail(
+            inputEnv,
+            buildVerificationOtpEmail({
+              to: email,
+              otp,
+              type,
+              expiresInSeconds: inputEnv.AUTH_EMAIL_OTP_EXPIRES_SECONDS,
+            }),
+          );
         } catch (error) {
           logger.error('[auth:email-otp] failed to deliver verification email', {
             ...emailLogContext(email),
@@ -200,10 +247,10 @@ function getAuthPlugins(inputEnv: ApiEnv) {
       metadataProfile: 'mcp-2026-07-28',
     }),
     multiSession({ maximumSessions: 8 }),
-    openAPI({
-      path: '/reference',
-      theme: 'deepSpace',
-    }),
+    // Reference page lists every endpoint; fine locally, not worth exposing in production.
+    ...(inputEnv.NODE_ENV === 'production'
+      ? []
+      : [openAPI({ path: '/reference', theme: 'deepSpace' })]),
   ];
 
   return plugins;

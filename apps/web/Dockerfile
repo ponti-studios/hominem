@@ -49,7 +49,7 @@ USER webuser
 
 EXPOSE 3000
 
-# Railway injects PORT (often 8080), which react-router-serve reads from the
+# Fly sets PORT (often 8080), which react-router-serve reads from the
 # environment.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f -s -m 2 http://localhost:${PORT:-3000}/ || exit 1

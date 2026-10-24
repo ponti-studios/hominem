@@ -2,6 +2,7 @@ import { logger } from '@hominem/telemetry';
 import { createElement, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { StreamingText } from '~/components/chat/streaming-text';
 import { fontFamilies, useAppTheme } from '~/components/theme';
 
 type MarkdownComponent = typeof import('react-native-markdown-display').default;
@@ -45,11 +46,14 @@ function useMarkdownComponent(): MarkdownComponent | null {
 export function MessageContent({
   content,
   enableMarkdown,
+  streaming = false,
   textStyle,
   children,
 }: {
   content: string;
   enableMarkdown: boolean;
+  /** An assistant reply still arriving: shown with the ink-drying reveal. */
+  streaming?: boolean;
   textStyle: object;
   children?: ReactNode;
 }) {
@@ -92,7 +96,9 @@ export function MessageContent({
 
   return (
     <View style={styles.content}>
-      {isStreaming || !Markdown ? (
+      {streaming ? (
+        <StreamingText content={content} style={textStyle} />
+      ) : isStreaming || !Markdown ? (
         <Text style={textStyle}>{content}</Text>
       ) : (
         <View style={styles.markdown}>

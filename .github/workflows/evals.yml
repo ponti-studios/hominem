@@ -1,0 +1,93 @@
+name: evals
+
+# Offline job (every PR that touches evals): validates every suite, dataset and baseline and
+# runs the unit tests. No model calls, no secrets, no cost.
+# Live job (manual only): runs suites against the real model with repeated trials and gates
+# against the committed baselines. Costs real money, so start it from the Actions tab.
+
+on:
+  pull_request:
+    paths:
+      - 'services/ori/**'
+      - 'services/api/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/evals.yml'
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Suite name to run (empty runs every suite).
+        type: string
+        required: false
+      tier:
+        description: Tier to run (regression, capability, holdout). Empty runs all.
+        type: string
+        required: false
+      trials:
+        description: Trials per case, for pass^k.
+        type: string
+        default: '3'
+      target-model:
+        description: OpenRouter model id under test (defaults to ORI_TARGET_MODEL / gpt-5-mini).
+        type: string
+        required: false
+
+concurrency:
+  group: evals-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  evals-offline:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-pnpm-workspace
+        with:
+          node-version: '24.18.0'
+      - name: eval-check
+        run: pnpm --filter @hominem/ori eval:check
+      - name: eval-unit-tests
+        run: pnpm --filter @hominem/ori test
+      - name: eval-typecheck
+        run: pnpm --filter @hominem/ori typecheck
+
+  evals-live:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      ORI_TARGET_MODEL: ${{ inputs.target-model }}
+    steps:
+      - name: require-openrouter-key
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "::error::The OPENROUTER_API_KEY repository secret is not set; live evals cannot run."
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-pnpm-workspace
+        with:
+          node-version: '24.18.0'
+      - name: eval-run
+        env:
+          SUITE: ${{ inputs.suite }}
+          TIER: ${{ inputs.tier }}
+          TRIALS: ${{ inputs.trials }}
+        run: |
+          args=(--trials "$TRIALS")
+          [ -n "$SUITE" ] && args+=(--suite "$SUITE")
+          [ -n "$TIER" ] && args+=(--tier "$TIER")
+          pnpm --filter @hominem/ori eval run "${args[@]}"
+      - name: upload-results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: eval-results
+          path: services/ori/runs
+          if-no-files-found: ignore

@@ -1013,6 +1013,7 @@ export const ChatRepository = {
     const files = await handle
       .selectFrom('app.noteFiles as noteFile')
       .innerJoin('app.files as file', 'file.id', 'noteFile.fileId')
+      .where('file.status', '=', 'ready')
       .select([
         'noteFile.noteId as noteId',
         'file.id',
@@ -1055,6 +1056,7 @@ export const ChatRepository = {
       .selectFrom('app.files')
       .selectAll()
       .where('ownerUserid', '=', userId)
+      .where('status', '=', 'ready')
       .where('id', 'in', uniqueIds)
       .execute();
 

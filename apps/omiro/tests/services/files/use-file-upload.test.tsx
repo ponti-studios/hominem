@@ -23,6 +23,21 @@ function makeAsset(overrides: Partial<Record<string, unknown>> = {}) {
   };
 }
 
+function intentResponse() {
+  return {
+    ok: true,
+    json: async () => ({
+      id: 'file-1',
+      method: 'PUT',
+      uploadUrl: 'https://r2.example.com/put?sig=abc',
+      headers: { 'content-type': 'image/jpeg' },
+      expiresAt: '2026-08-14T00:05:00.000Z',
+    }),
+  };
+}
+
+const putOk = { ok: true, status: 200 };
+
 function uploadedFileDto(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: 'file-1',
@@ -43,6 +58,8 @@ describe('useFileUpload', () => {
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce({ blob: async () => blob })
+      .mockResolvedValueOnce(intentResponse())
+      .mockResolvedValueOnce(putOk)
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ file: uploadedFileDto() }),
@@ -55,11 +72,26 @@ describe('useFileUpload', () => {
       uploaded = await result.current.uploadAssets([makeAsset()]);
     });
 
-    expect(fetchImpl).toHaveBeenNthCalledWith(2, 'http://localhost:4040/api/files', {
+    expect(fetchImpl).toHaveBeenNthCalledWith(2, 'http://localhost:4040/api/files/uploads', {
       method: 'POST',
-      headers: { Authorization: 'Bearer token', Accept: 'application/json' },
-      body: expect.any(FormData),
+      headers: {
+        Authorization: 'Bearer token',
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ originalName: 'photo.jpg', mimetype: 'image/jpeg', size: blob.size }),
     });
+    // The R2 PUT carries the signed headers only, never our bearer token.
+    expect(fetchImpl).toHaveBeenNthCalledWith(3, 'https://r2.example.com/put?sig=abc', {
+      method: 'PUT',
+      headers: { 'content-type': 'image/jpeg' },
+      body: blob,
+    });
+    expect(fetchImpl).toHaveBeenNthCalledWith(
+      4,
+      'http://localhost:4040/api/files/uploads/file-1/complete',
+      expect.objectContaining({ method: 'POST' }),
+    );
     expect(uploaded).toEqual([
       expect.objectContaining({
         assetId: 'asset-1',
@@ -79,6 +111,8 @@ describe('useFileUpload', () => {
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce({ blob: async () => blob })
+      .mockResolvedValueOnce(intentResponse())
+      .mockResolvedValueOnce(putOk)
       .mockResolvedValueOnce({ ok: true, json: async () => ({ file: uploadedFileDto() }) });
 
     const { result } = renderHook(() => useFileUpload(fetchImpl));
@@ -91,18 +125,24 @@ describe('useFileUpload', () => {
   });
 
   it('collects per-file errors without failing the whole batch', async () => {
-    const goodBlob = new Blob(['bytes'], { type: 'image/jpeg' });
-    const badBlob = new Blob(['bytes'], { type: 'image/jpeg' });
-    const fetchImpl = vi
-      .fn()
-      .mockResolvedValueOnce({ blob: async () => goodBlob })
-      .mockResolvedValueOnce({ blob: async () => badBlob })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ file: uploadedFileDto() }) })
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        json: async () => ({ message: 'Upload failed on server' }),
-      });
+    const blob = new Blob(['bytes'], { type: 'image/jpeg' });
+    // Two assets run concurrently, so route by url instead of by call order.
+    const fetchImpl = vi.fn().mockImplementation(async (url: string, init?: { body?: unknown }) => {
+      if (url.startsWith('file://')) return { blob: async () => blob };
+      if (url.endsWith('/api/files/uploads')) {
+        const { originalName } = JSON.parse(String(init?.body));
+        if (originalName === 'broken.jpg') {
+          return {
+            ok: false,
+            status: 500,
+            json: async () => ({ message: 'Upload failed on server' }),
+          };
+        }
+        return intentResponse();
+      }
+      if (new URL(url).hostname === 'r2.example.com') return putOk;
+      return { ok: true, json: async () => ({ file: uploadedFileDto() }) };
+    });
 
     const { result } = renderHook(() => useFileUpload(fetchImpl));
 

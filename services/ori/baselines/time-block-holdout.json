@@ -1,0 +1,122 @@
+{
+  "suite": "time-block-holdout",
+  "tier": "holdout",
+  "datasetHash": "8bb448e431aa",
+  "promptHash": "c6796822ab40",
+  "graderHash": "5d76b3b49b70",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 1,
+  "limited": false,
+  "summary": {
+    "cases": 5,
+    "trials": 5,
+    "passRate": 1,
+    "passAllRate": 1,
+    "errors": 0,
+    "meanScore": 1,
+    "costUsd": 0.006371,
+    "promptTokens": 14346,
+    "completionTokens": 2976,
+    "latencyP50Ms": 5531,
+    "latencyP95Ms": 6081,
+    "byCategory": {
+      "uncategorized": {
+        "cases": 5,
+        "passRate": 1
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "dst-fixed-event",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5531,
+          "costUsd": 0.00133165,
+          "promptTokens": 2869,
+          "completionTokens": 624
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "future-window",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6081,
+          "costUsd": 0.00153315,
+          "promptTokens": 2867,
+          "completionTokens": 725
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "availability-with-window",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4003,
+          "costUsd": 0.00113565,
+          "promptTokens": 2885,
+          "completionTokens": 524
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "appointment-without-clock",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5949,
+          "costUsd": 0.00114965,
+          "promptTokens": 2861,
+          "completionTokens": 534
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "search-never-creates",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5080,
+          "costUsd": 0.0012204,
+          "promptTokens": 2864,
+          "completionTokens": 569
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    }
+  ]
+}

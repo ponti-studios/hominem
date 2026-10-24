@@ -1,4 +1,5 @@
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
@@ -16,9 +17,18 @@ import {
   sanitizeFileName,
 } from '@hominem/utils/files';
 
+import { isInlineSafe, SNIFF_BYTES, sniffContent } from './content-sniff';
 import { env } from './env';
 import { StorageServiceError } from './errors';
-import type { FileObject, PreparedUpload, StorageOptions, StoredFile } from './types';
+import type {
+  FileObject,
+  FinalizeResult,
+  ReverifyResult,
+  PreparedUpload,
+  StorageOptions,
+  StoredFile,
+  UploadIntent,
+} from './types';
 import { isSupportedUploadMimeType } from './upload-policy';
 
 export type StorageCategory = 'csvs' | 'chats' | 'places' | 'images' | 'documents' | 'imports';
@@ -172,6 +182,120 @@ class InMemoryStorageBackend {
 
   async ensureBucket(): Promise<void> {
     // No-op for in-memory backend
+  }
+
+  quarantineKeyFor(userId: string, id: string): string {
+    return `quarantine/users/${userId}/${id}`;
+  }
+
+  // Ownership is baked into the key, so a caller can only ever finalize or read their own prefix.
+  isOwnedQuarantineKey(userId: string, key: string): boolean {
+    return key.startsWith(`quarantine/users/${userId}/`);
+  }
+
+  async createUploadIntent(
+    input: { mimetype: string; size: number },
+    userId: string,
+    expiresIn = 300,
+  ): Promise<UploadIntent> {
+    if (input.size <= 0 || input.size > this.maxFileSize) {
+      throw new Error(`File size must be between 1 and ${this.maxFileSize} bytes`);
+    }
+    if (!this.isValidFileType(input.mimetype)) {
+      throw new Error(`Unsupported file type: ${input.mimetype}`);
+    }
+    const id = crypto.randomUUID();
+    const quarantineKey = this.quarantineKeyFor(userId, id);
+    return {
+      id,
+      quarantineKey,
+      uploadUrl: `https://storage.test/${quarantineKey}`,
+      headers: { 'content-type': input.mimetype },
+      expiresAt: new Date(Date.now() + expiresIn * 1000),
+    };
+  }
+
+  async finalizeUpload(input: {
+    id: string;
+    userId: string;
+    mimetype: string;
+    size: number;
+    originalName: string;
+  }): Promise<FinalizeResult> {
+    const quarantineKey = this.quarantineKeyFor(input.userId, input.id);
+    const buffer = this.files.get(quarantineKey);
+    if (!buffer) return { ok: false, reason: 'missing' };
+    if (buffer.byteLength > this.maxFileSize) {
+      this.files.delete(quarantineKey);
+      return { ok: false, reason: 'too_large' };
+    }
+    if (buffer.byteLength !== input.size) {
+      this.files.delete(quarantineKey);
+      return { ok: false, reason: 'size_mismatch' };
+    }
+    const sniffed = await sniffContent(
+      new Uint8Array(buffer.subarray(0, SNIFF_BYTES)),
+      input.mimetype,
+    );
+    if (!sniffed.ok) {
+      this.files.delete(quarantineKey);
+      return { ok: false, reason: 'content_rejected', detail: sniffed.reason };
+    }
+    const key = this.getKey(input.userId, input.id);
+    this.files.set(key, buffer);
+    this.files.delete(quarantineKey);
+    return { ok: true, key, size: buffer.byteLength };
+  }
+
+  // Backfill: re-check an object stored before direct uploads existed. On success its headers are
+  // rewritten in place (same key, so persisted URLs keep working).
+  async reverifyObject(
+    key: string,
+    mimetype: string,
+    _options: { dryRun?: boolean } = {},
+  ): Promise<ReverifyResult> {
+    const buffer = this.files.get(key);
+    if (!buffer) return { ok: false, reason: 'missing' };
+    if (buffer.byteLength > this.maxFileSize) return { ok: false, reason: 'too_large' };
+    const sniffed = await sniffContent(new Uint8Array(buffer.subarray(0, SNIFF_BYTES)), mimetype);
+    if (!sniffed.ok) return { ok: false, reason: 'content_rejected', detail: sniffed.reason };
+    return { ok: true, size: buffer.byteLength };
+  }
+
+  // Parks a failed object under rejected/ instead of deleting it, so nothing is lost for review.
+  async moveToRejected(key: string): Promise<void> {
+    const buffer = this.files.get(key);
+    if (!buffer) return;
+    this.files.set(`rejected/${key}`, buffer);
+    this.files.delete(key);
+  }
+
+  async deleteByKey(key: string): Promise<void> {
+    this.files.delete(key);
+  }
+
+  async getSignedReadUrl(
+    key: string,
+    options: { mimetype: string; filename?: string; expiresIn?: number },
+  ): Promise<string> {
+    return `https://storage.test/${key}?ttl=${options.expiresIn ?? 300}&type=${encodeURIComponent(options.mimetype)}`;
+  }
+
+  // Old rows and chat messages persist the permanent public URL. Reads turn that back into a key
+  // and sign it, so the stored value never has to change when the bucket goes private.
+  keyFromStoredUrl(url: string): string | null {
+    const prefix = '/files/';
+    if (!url.startsWith(prefix)) return null;
+    const key = url.slice(prefix.length);
+    return key && !key.includes('..') ? key : null;
+  }
+
+  async signStoredUrl(
+    url: string,
+    options: { mimetype: string; filename?: string; expiresIn?: number },
+  ): Promise<string> {
+    const key = this.keyFromStoredUrl(url);
+    return key ? this.getSignedReadUrl(key, options) : url;
   }
 
   async createPreparedUpload(
@@ -705,6 +829,244 @@ export class R2StorageService {
     });
   }
 
+  quarantineKeyFor(userId: string, id: string): string {
+    return `quarantine/users/${userId}/${id}`;
+  }
+
+  // Ownership is baked into the key, so a caller can only ever finalize or read their own prefix.
+  isOwnedQuarantineKey(userId: string, key: string): boolean {
+    return key.startsWith(`quarantine/users/${userId}/`);
+  }
+
+  // Step 1 of a direct upload: hand the client a short-lived URL that can PUT exactly one object,
+  // of exactly this type and size, to a key we picked. No user-supplied name touches the key.
+  async createUploadIntent(
+    input: { mimetype: string; size: number },
+    userId: string,
+    expiresIn = 300,
+  ): Promise<UploadIntent> {
+    if (input.size <= 0 || input.size > this.maxFileSize) {
+      throw new Error(`File size must be between 1 and ${this.maxFileSize} bytes`);
+    }
+    if (!this.isValidFileType(input.mimetype)) {
+      throw new Error(`Unsupported file type: ${input.mimetype}`);
+    }
+
+    const id = crypto.randomUUID();
+    const quarantineKey = this.quarantineKeyFor(userId, id);
+    const uploadUrl = await getSignedUrl(
+      this.client,
+      new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: quarantineKey,
+        ContentType: input.mimetype,
+        ContentLength: input.size,
+      }),
+      { expiresIn, signableHeaders: new Set(['content-type', 'content-length']) },
+    );
+
+    return {
+      id,
+      quarantineKey,
+      uploadUrl,
+      headers: { 'content-type': input.mimetype },
+      expiresAt: new Date(Date.now() + expiresIn * 1000),
+    };
+  }
+
+  // Step 2: look at what actually landed. Checks the real size, sniffs the real bytes, and only
+  // then copies the object to its servable key with locked-down headers. Bad uploads are deleted.
+  async finalizeUpload(input: {
+    id: string;
+    userId: string;
+    mimetype: string;
+    size: number;
+    originalName: string;
+  }): Promise<FinalizeResult> {
+    const quarantineKey = this.quarantineKeyFor(input.userId, input.id);
+
+    let head;
+    try {
+      head = await this.client.send(
+        new HeadObjectCommand({ Bucket: this.bucketName, Key: quarantineKey }),
+      );
+    } catch {
+      return { ok: false, reason: 'missing' };
+    }
+
+    const actualSize = head.ContentLength ?? 0;
+    if (actualSize > this.maxFileSize) {
+      await this.deleteByKey(quarantineKey);
+      return { ok: false, reason: 'too_large' };
+    }
+    if (actualSize !== input.size) {
+      await this.deleteByKey(quarantineKey);
+      return { ok: false, reason: 'size_mismatch' };
+    }
+
+    const etag = head.ETag;
+    let ranged;
+    try {
+      ranged = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucketName,
+          Key: quarantineKey,
+          Range: `bytes=0-${SNIFF_BYTES - 1}`,
+          // The presigned PUT stays valid for a few minutes, so the uploader could swap the bytes
+          // after the HEAD. Pin every read and the copy to the version we measured.
+          ...(etag ? { IfMatch: etag } : {}),
+        }),
+      );
+    } catch (error) {
+      if (isPreconditionFailed(error)) {
+        await this.deleteByKey(quarantineKey);
+        return { ok: false, reason: 'changed' };
+      }
+      throw error;
+    }
+    const bytes = ranged.Body ? await ranged.Body.transformToByteArray() : new Uint8Array();
+    const sniffed = await sniffContent(bytes, input.mimetype);
+    if (!sniffed.ok) {
+      await this.deleteByKey(quarantineKey);
+      return { ok: false, reason: 'content_rejected', detail: sniffed.reason };
+    }
+
+    const key = this.getKey(input.userId, input.id);
+    try {
+      await this.client.send(
+        new CopyObjectCommand({
+          Bucket: this.bucketName,
+          Key: key,
+          CopySource: `${this.bucketName}/${quarantineKey}`,
+          ...(etag ? { CopySourceIfMatch: etag } : {}),
+          MetadataDirective: 'REPLACE',
+          ContentType: input.mimetype,
+          ContentDisposition: isInlineSafe(input.mimetype) ? 'inline' : 'attachment',
+          CacheControl: 'private, max-age=0, no-store',
+        }),
+      );
+    } catch (error) {
+      if (isPreconditionFailed(error)) {
+        await this.deleteByKey(quarantineKey);
+        return { ok: false, reason: 'changed' };
+      }
+      throw error;
+    }
+    await this.deleteByKey(quarantineKey);
+    return { ok: true, key, size: actualSize };
+  }
+
+  // Backfill: re-check an object stored before direct uploads existed (size, magic bytes). On
+  // success its headers are rewritten in place with the locked set, same key, so URLs persisted in
+  // rows and chat messages keep resolving.
+  async reverifyObject(
+    key: string,
+    mimetype: string,
+    options: { dryRun?: boolean } = {},
+  ): Promise<ReverifyResult> {
+    let head;
+    try {
+      head = await this.client.send(new HeadObjectCommand({ Bucket: this.bucketName, Key: key }));
+    } catch {
+      return { ok: false, reason: 'missing' };
+    }
+    const size = head.ContentLength ?? 0;
+    if (size > this.maxFileSize) return { ok: false, reason: 'too_large' };
+
+    const ranged = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Range: `bytes=0-${SNIFF_BYTES - 1}`,
+      }),
+    );
+    const bytes = ranged.Body ? await ranged.Body.transformToByteArray() : new Uint8Array();
+    const sniffed = await sniffContent(bytes, mimetype);
+    if (!sniffed.ok) return { ok: false, reason: 'content_rejected', detail: sniffed.reason };
+    if (options.dryRun) return { ok: true, size };
+
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        CopySource: `${this.bucketName}/${key}`,
+        MetadataDirective: 'REPLACE',
+        ContentType: mimetype,
+        ContentDisposition: isInlineSafe(mimetype) ? 'inline' : 'attachment',
+        CacheControl: 'private, max-age=0, no-store',
+      }),
+    );
+    return { ok: true, size };
+  }
+
+  // Parks a failed object under rejected/ instead of deleting it, so nothing is lost for review.
+  async moveToRejected(key: string): Promise<void> {
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: this.bucketName,
+        Key: `rejected/${key}`,
+        CopySource: `${this.bucketName}/${key}`,
+        MetadataDirective: 'REPLACE',
+        ContentType: 'application/octet-stream',
+        ContentDisposition: 'attachment',
+        CacheControl: 'private, max-age=0, no-store',
+      }),
+    );
+    await this.deleteByKey(key);
+  }
+
+  async deleteByKey(key: string): Promise<void> {
+    try {
+      await this.client.send(new DeleteObjectCommand({ Bucket: this.bucketName, Key: key }));
+    } catch {
+      // Best effort: the bucket lifecycle rule sweeps leftovers in quarantine.
+    }
+  }
+
+  // The only way a client ever reads an object: a few minutes of access, with the response type
+  // and disposition pinned by us rather than trusted from the object.
+  async getSignedReadUrl(
+    key: string,
+    options: { mimetype: string; filename?: string; expiresIn?: number },
+  ): Promise<string> {
+    const inline = isInlineSafe(options.mimetype);
+    const safeName = (options.filename ?? 'file').replace(/[^\w.\- ]+/g, '_').slice(0, 120);
+    return getSignedUrl(
+      this.client,
+      new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        ResponseContentType: options.mimetype,
+        ResponseContentDisposition: `${inline ? 'inline' : 'attachment'}; filename="${safeName}"`,
+        ResponseCacheControl: 'private, no-store',
+      }),
+      { expiresIn: options.expiresIn ?? 300 },
+    );
+  }
+
+  // Inverse of getPublicUrl: the object key if this URL points at our bucket, otherwise null
+  // (external URLs, e.g. Google photos, are left alone).
+  keyFromStoredUrl(url: string): string | null {
+    const base = this.getPublicUrl('');
+    if (!url.startsWith(base)) return null;
+    const rawKey = url.slice(base.length).split(/[?#]/)[0] ?? '';
+    let key: string;
+    try {
+      key = decodeURIComponent(rawKey);
+    } catch {
+      return null;
+    }
+    return key && !key.split('/').includes('..') ? key : null;
+  }
+
+  async signStoredUrl(
+    url: string,
+    options: { mimetype: string; filename?: string; expiresIn?: number },
+  ): Promise<string> {
+    const key = this.keyFromStoredUrl(url);
+    return key ? this.getSignedReadUrl(key, options) : url;
+  }
+
   getPublicUrl(key: string): string {
     const endpoint = this.storageConfig.endpoint;
     const bucket = this.storageConfig.bucketName;
@@ -788,6 +1150,15 @@ export const importStorageService = createStorageService('imports', {
   maxFileSize: 1024 * 1024 * 1024,
   isPublic: false,
 });
+
+function isPreconditionFailed(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  if ('name' in error && error.name === 'PreconditionFailed') return true;
+  if (!('$metadata' in error) || typeof error.$metadata !== 'object' || !error.$metadata) {
+    return false;
+  }
+  return 'httpStatusCode' in error.$metadata && error.$metadata.httpStatusCode === 412;
+}
 
 export const documentStorageService = createStorageService('documents', {
   maxFileSize: 25 * 1024 * 1024,

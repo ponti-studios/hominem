@@ -15,6 +15,8 @@ import {
 import { listOAuthClients, revokeOAuthClient } from '../../application/oauth-clients.service';
 import { betterAuthServer } from '../../auth/better-auth';
 import { env } from '../../env';
+import { getClientIp } from '../../middleware/client-ip';
+import { checkOtpSendLimits } from '../../middleware/rate-limit';
 import {
   createMcpTokenInputSchema,
   createMcpTokenOutputSchema,
@@ -90,7 +92,7 @@ function copySetCookieHeaders(headers: Headers) {
 }
 
 export function createLoginRoutes(dependencies: AuthDependencies) {
-  const { env: inputEnv, auth } = dependencies;
+  const { env: inputEnv, auth, rateLimitCounter } = dependencies;
   const resolveResumeWithEnv = (query: string, origin?: string) =>
     resolveResume(query, inputEnv, origin);
   const resolvePostAuthResumeWithEnv = (query: string, origin?: string) =>
@@ -125,6 +127,13 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
     } catch {
       return null;
     }
+  };
+  // "omiro.ponti.io" -> "Omiro". Hidden when the target is the auth host itself.
+  const appNameFor = (url: string, origin: string) => {
+    const host = new URL(url).hostname;
+    if (host === new URL(origin).hostname) return undefined;
+    const label = host.split('.')[0] ?? '';
+    return label ? label.charAt(0).toUpperCase() + label.slice(1) : undefined;
   };
   const loginUrlWithEnv = (value: Parameters<typeof loginUrl>[0], origin?: string) =>
     loginUrl({ ...value, origin }, inputEnv);
@@ -184,6 +193,8 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
             email,
             step,
             error: url.searchParams.get('error') ?? undefined,
+            app: resume.mode === 'app' ? appNameFor(resume.url, origin) : undefined,
+            signedOut: url.searchParams.get('signed_out') === '1' ? true : undefined,
           },
           title: 'Sign in to Hominem',
         }),
@@ -442,6 +453,27 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       ),
     )
     .get('/logout', async (c) => {
+      // Apps send people here with `next`. GET stays read-only (a cross-site
+      // navigation or prefetch must not end a session), so a signed-in browser
+      // gets a page that POSTs the sign-out itself; a signed-out one just moves on.
+      const next = c.req.query('next');
+      const resume = next
+        ? resolveResumeWithEnv(`next=${encodeURIComponent(next)}`, requestOrigin(c))
+        : null;
+      if (resume?.mode === 'app') {
+        const landing = new URL('/login', requestOrigin(c));
+        landing.searchParams.set('next', resume.url);
+        landing.searchParams.set('signed_out', '1');
+        const active = await auth.api.getSession({ headers: c.req.raw.headers });
+        if (!active) return c.redirect(landing.toString(), 303);
+        return c.html(
+          renderAuthShell({
+            entry: 'logout',
+            init: { signedOut: false, next: landing.toString() },
+            title: 'Signing out | Hominem',
+          }),
+        );
+      }
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       return c.html(
         renderAuthShell({
@@ -452,14 +484,16 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       );
     })
     .post('/logout', async (c) => {
-      const form = await c.req.parseBody();
-      const response = await callBetterAuth({
-        body: {},
-        path: '/sign-out',
-        request: c.req.raw,
-        auth,
-        env: inputEnv,
-      });
+      const [form, response] = await Promise.all([
+        c.req.parseBody(),
+        callBetterAuth({
+          body: {},
+          path: '/sign-out',
+          request: c.req.raw,
+          auth,
+          env: inputEnv,
+        }),
+      ]);
       // Optional post-sign-out destination (used by /auth/settings): redirect
       // there once the session is cleared, falling back to the signed-out page.
       const next = getFormValue(form, 'next');
@@ -491,6 +525,26 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         return c.redirect(
           loginUrlWithEnv(
             { error: 'Enter a valid email address.', resumeQuery, step: 'email' },
+            origin,
+          ),
+          303,
+        );
+      // This calls Better Auth directly, skipping the Hono middleware, so the OTP limits run here too.
+      const limit = rateLimitCounter
+        ? await checkOtpSendLimits({ counter: rateLimitCounter, email, ip: getClientIp(c) })
+        : 'allowed';
+      if (limit !== 'allowed')
+        return c.redirect(
+          loginUrlWithEnv(
+            {
+              email,
+              error:
+                limit === 'limited'
+                  ? 'Too many codes requested. Wait a few minutes and try again.'
+                  : 'Unable to send a verification code. Try again.',
+              resumeQuery,
+              step: 'email',
+            },
             origin,
           ),
           303,

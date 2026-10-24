@@ -225,6 +225,54 @@ describe('API login route', () => {
     expect(request.url).toContain('/api/auth/sign-out');
   });
 
+  it('sends a signed-out browser straight to the signed-out login landing', async () => {
+    const next = encodeURIComponent('https://career.ponti.io/work');
+    const response = await createApp().request(`http://localhost/logout?next=${next}`);
+
+    expect(response.status).toBe(303);
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.origin + location.pathname).toBe('http://localhost/login');
+    expect(location.searchParams.get('next')).toBe('https://career.ponti.io/work');
+    expect(location.searchParams.get('signed_out')).toBe('1');
+    expect(mocks.handler).not.toHaveBeenCalled();
+  });
+
+  it('keeps GET /logout?next read-only for a signed-in browser and auto-submits a POST page', async () => {
+    mocks.getSession.mockResolvedValue({ user: { id: 'user-1' } });
+    const next = encodeURIComponent('https://career.ponti.io/work');
+
+    const response = await createApp().request(`http://localhost/logout?next=${next}`);
+
+    expect(response.status).toBe(200);
+    // no sign-out call: GET must never mutate the session
+    expect(mocks.handler).not.toHaveBeenCalled();
+    const html = await response.text();
+    expect(html).toContain('/src/routes/login/app/entries/logout.tsx');
+    expect(html).toContain('"signedOut":false');
+    expect(html).toContain('signed_out=1');
+    expect(html).toContain('career.ponti.io');
+  });
+
+  it('ignores an untrusted next on GET /logout and falls back to the signed-out page', async () => {
+    const next = encodeURIComponent('https://evil.example.com/steal');
+    const response = await createApp().request(`http://localhost/logout?next=${next}`);
+
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain('"signedOut":true');
+    expect(html).not.toContain('evil.example.com');
+  });
+
+  it('names the app on the login page after a signed-out return', async () => {
+    const next = encodeURIComponent('https://career.ponti.io/work');
+    const response = await createApp().request(`http://localhost/login?next=${next}&signed_out=1`);
+
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain('"app":"Career"');
+    expect(html).toContain('"signedOut":true');
+  });
+
   it('redirects signed-out visitors to hosted login with a settings resume', async () => {
     const response = await createApp().request('http://localhost/auth/settings');
 

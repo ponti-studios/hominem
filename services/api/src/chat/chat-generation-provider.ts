@@ -8,6 +8,7 @@ import {
   OpenRouterRequestError,
   streamChatCompletion,
 } from '@hominem/ai';
+import { hitOutputCap } from '@hominem/ai/reply-profile';
 import {
   GENERATION_TIMING,
   providerChunkSchema,
@@ -303,6 +304,21 @@ export class OpenRouterChatModel implements ChatModel {
         textChars: contentChars,
         finishReasons,
       });
+      if (hitOutputCap(finishReasons)) {
+        // The ceiling is generous, so reaching it means a runaway or a reply that was cut off
+        // mid-sentence. Worth an alert, not a silent pass.
+        logger.warn('provider_turn_hit_output_cap', {
+          model: this.options.model,
+          iteration: generationIteration,
+          servedModel,
+          // Not "maxTokens": the logger redacts any key containing "token".
+          completionCap: this.options.maxTokens ?? null,
+          textChars: contentChars,
+          reasoningChars,
+          usage: usageSeen,
+          finishReasons,
+        });
+      }
       if (contentChars === 0 && toolCalls.length === 0) {
         // Neither text nor a usable tool call: this is the user's "No reply was generated".
         logger.warn('provider_turn_empty', {
@@ -354,6 +370,7 @@ export class OpenRouterChatModel implements ChatModel {
         type: 'provider-turn-completed',
         requiredToolCall,
         confirmationCallIds,
+        outputTruncated: hitOutputCap(finishReasons),
       };
     } catch (error) {
       if (error instanceof ProviderInputError) {

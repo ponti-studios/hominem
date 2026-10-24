@@ -30,11 +30,36 @@ describe('security headers middleware', () => {
     expect(response.headers.has('x-frame-options')).toBe(false);
   });
 
-  it('does not add API CSP or HSTS to the docs HTML surface', async () => {
+  it('adds clickjacking protection and HSTS to HTML pages without an API-style CSP', async () => {
     const app = await createApp('production');
     const response = await app.request('/docs');
 
-    expect(response.headers.has('content-security-policy')).toBe(false);
+    expect(response.headers.get('x-frame-options')).toBe('DENY');
+    expect(response.headers.get('content-security-policy')).toBe("frame-ancestors 'none'");
+    expect(response.headers.get('strict-transport-security')).toBe(
+      'max-age=31536000; includeSubDomains',
+    );
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+  });
+
+  it('does not clobber a CSP the page already set', async () => {
+    const { securityHeadersMiddleware } = await import('./security-headers');
+    const app = new Hono()
+      .use('*', securityHeadersMiddleware({ ...env, NODE_ENV: 'production' }))
+      .get('/credit', (c) => {
+        c.header('Content-Security-Policy', "script-src 'nonce-abc'");
+        return c.html('<html></html>');
+      });
+    const response = await app.request('/credit');
+
+    expect(response.headers.get('content-security-policy')).toBe("script-src 'nonce-abc'");
+    expect(response.headers.get('x-frame-options')).toBe('DENY');
+  });
+
+  it('skips HSTS outside production', async () => {
+    const app = await createApp('test');
+    const response = await app.request('/docs');
+
     expect(response.headers.has('strict-transport-security')).toBe(false);
   });
 });

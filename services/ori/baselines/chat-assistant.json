@@ -1,0 +1,212 @@
+{
+  "suite": "chat-assistant",
+  "tier": "capability",
+  "datasetHash": "93b9b48e558f",
+  "promptHash": "3f0f43421bae",
+  "graderHash": "8a3701497c41",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 1,
+  "limited": false,
+  "summary": {
+    "cases": 10,
+    "trials": 10,
+    "passRate": 0,
+    "passAllRate": 0,
+    "errors": 0,
+    "meanScore": 0.015,
+    "costUsd": 0.015033,
+    "promptTokens": 14478,
+    "completionTokens": 7003,
+    "latencyP50Ms": 5973,
+    "latencyP95Ms": 10036,
+    "byCategory": {
+      "uncategorized": {
+        "cases": 10,
+        "passRate": 0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "day trading crypto overconfidence",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["concise", "llm-rubric"],
+          "latencyMs": 7419,
+          "costUsd": 0.0020975,
+          "promptTokens": 1454,
+          "completionTokens": 1011
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "postgres for relational consistency",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["concise", "llm-rubric"],
+          "latencyMs": 10036,
+          "costUsd": 0.00195825,
+          "promptTokens": 1449,
+          "completionTokens": 942
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "declining to cosign",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["concise", "llm-rubric"],
+          "latencyMs": 5528,
+          "costUsd": 0.0012505,
+          "promptTokens": 1466,
+          "completionTokens": 586
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "casual success without sarcasm",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["concise", "llm-rubric"],
+          "latencyMs": 5061,
+          "costUsd": 0.00109525,
+          "promptTokens": 1453,
+          "completionTokens": 510
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "direct answer does not need a lookup",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["concise", "llm-rubric"],
+          "latencyMs": 9414,
+          "costUsd": 0.00266875,
+          "promptTokens": 1443,
+          "completionTokens": 1154
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "simple greeting",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["concise", "llm-rubric"],
+          "latencyMs": 7325,
+          "costUsd": 0.001302,
+          "promptTokens": 1440,
+          "completionTokens": 615
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "small planning request",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["concise", "llm-rubric"],
+          "latencyMs": 4517,
+          "costUsd": 0.0008685,
+          "promptTokens": 1442,
+          "completionTokens": 398
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "clear technical explanation",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["concise", "llm-rubric"],
+          "latencyMs": 8395,
+          "costUsd": 0.002056,
+          "promptTokens": 1440,
+          "completionTokens": 992
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "uncertainty handled honestly",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0.15,
+          "failedMetrics": ["concise", "llm-rubric"],
+          "latencyMs": 5973,
+          "costUsd": 0.00097725,
+          "promptTokens": 1437,
+          "completionTokens": 453
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "concise rewrite help",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["concise", "llm-rubric"],
+          "latencyMs": 5227,
+          "costUsd": 0.0007595,
+          "promptTokens": 1454,
+          "completionTokens": 342
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    }
+  ]
+}

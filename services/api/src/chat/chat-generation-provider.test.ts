@@ -185,6 +185,7 @@ describe('OpenRouter generation provider', () => {
         type: 'provider-turn-completed',
         requiredToolCall: true,
         confirmationCallIds: ['second'],
+        outputTruncated: false,
       },
     ]);
 
@@ -252,6 +253,28 @@ describe('OpenRouter generation provider', () => {
     ]);
   });
 
+  it('flags a turn that ended on the output cap so the machine can trim it', async () => {
+    mockedStream.mockReturnValueOnce(
+      chunks([chunk([{ index: 0, finishReason: 'length', delta: { content: 'Half a sen' } }])]),
+    );
+    const provider = new OpenRouterChatModel({ model: 'test-model', messages: [], tools: [] });
+
+    await expect(
+      collect(
+        provider.open({
+          turnId: 'turn-1',
+          iteration: 0,
+          state: createGenerationState('generation-1'),
+        }),
+      ),
+    ).resolves.toContainEqual({
+      type: 'provider-turn-completed',
+      requiredToolCall: false,
+      confirmationCallIds: [],
+      outputTruncated: true,
+    });
+  });
+
   it('classifies transient provider failures for machine retries', async () => {
     const error = Object.assign(new Error('rate limited'), { status: 429 });
     mockedStream.mockImplementationOnce(() => {
@@ -293,6 +316,7 @@ describe('OpenRouter generation provider', () => {
       type: 'provider-turn-completed',
       requiredToolCall: false,
       confirmationCallIds: [],
+      outputTruncated: false,
     });
   });
 
@@ -338,6 +362,7 @@ describe('OpenRouter generation provider', () => {
         type: 'provider-turn-completed',
         requiredToolCall: false,
         confirmationCallIds: [],
+        outputTruncated: false,
       },
     ]);
   });
@@ -594,6 +619,7 @@ describe('OpenRouter generation provider', () => {
           type: 'provider-turn-completed',
           requiredToolCall: false,
           confirmationCallIds: [],
+          outputTruncated: false,
         },
       ]);
       expect(onUsage).toHaveBeenCalledTimes(1);

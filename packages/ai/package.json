@@ -10,7 +10,11 @@
       "types": "./build/index.d.ts",
       "default": "./src/index.ts"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./reply-profile": {
+      "types": "./build/reply-profile.d.ts",
+      "default": "./src/reply-profile.ts"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

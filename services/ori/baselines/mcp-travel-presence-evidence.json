@@ -1,0 +1,212 @@
+{
+  "suite": "mcp-travel-presence-evidence",
+  "tier": "capability",
+  "datasetHash": "13482999857a",
+  "promptHash": "601c3661537e",
+  "graderHash": "2a9ee07e4513",
+  "targetModel": "openai/gpt-5-mini",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 1,
+  "limited": false,
+  "summary": {
+    "cases": 10,
+    "trials": 10,
+    "passRate": 1,
+    "passAllRate": 1,
+    "errors": 0,
+    "meanScore": 1,
+    "costUsd": 0.020373,
+    "promptTokens": 13582,
+    "completionTokens": 9641,
+    "latencyP50Ms": 10905,
+    "latencyP95Ms": 15394,
+    "byCategory": {
+      "travel_presence": {
+        "cases": 10,
+        "passRate": 1
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "all countries preserve presence evidence",
+      "category": "travel_presence",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 13742,
+          "costUsd": 0.0024916,
+          "promptTokens": 1352,
+          "completionTokens": 1192
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "country count explains inclusion rule",
+      "category": "travel_presence",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 10905,
+          "costUsd": 0.0021696,
+          "promptTokens": 1352,
+          "completionTokens": 1031
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "Iceland layover is not described as a destination stop",
+      "category": "travel_presence",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 8704,
+          "costUsd": 0.0014756,
+          "promptTokens": 1368,
+          "completionTokens": 682
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "lived countries use residence evidence",
+      "category": "travel_presence",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 7682,
+          "costUsd": 0.0011456,
+          "promptTokens": 1352,
+          "completionTokens": 519
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "visited but never lived excludes residence countries",
+      "category": "travel_presence",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 13852,
+          "costUsd": 0.0026511,
+          "promptTokens": 1358,
+          "completionTokens": 1271
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "layovers require connecting-flight evidence",
+      "category": "travel_presence",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 9289,
+          "costUsd": 0.0015426,
+          "promptTokens": 1356,
+          "completionTokens": 717
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "residence and trip evidence can overlap",
+      "category": "travel_presence",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 11449,
+          "costUsd": 0.0021086,
+          "promptTokens": 1364,
+          "completionTokens": 999
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "latest presence compares evidence dates",
+      "category": "travel_presence",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6737,
+          "costUsd": 0.0011591,
+          "promptTokens": 1358,
+          "completionTokens": 525
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "repeat country evidence remains multiple occurrences",
+      "category": "travel_presence",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 11535,
+          "costUsd": 0.0020491,
+          "promptTokens": 1358,
+          "completionTokens": 970
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "country evidence is explainable",
+      "category": "travel_presence",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 15394,
+          "costUsd": 0.0035805999999999998,
+          "promptTokens": 1364,
+          "completionTokens": 1735
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    }
+  ]
+}

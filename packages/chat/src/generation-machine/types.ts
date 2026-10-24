@@ -177,6 +177,8 @@ export type GenerationInput =
   | {
       type: 'provider-turn-completed';
       requiredToolCall: boolean;
+      // The provider stopped because it hit the output cap, so the text may end mid-sentence.
+      outputTruncated?: boolean;
       confirmationCallIds: readonly string[];
     }
   | {

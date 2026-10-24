@@ -4,6 +4,7 @@ import type { Context } from 'hono';
 import { betterAuthServer } from '../../auth/better-auth';
 import { env } from '../../env';
 import type { ApiEnv } from '../../env.schema';
+import type { RateLimitCounter } from '../../middleware/rate-limit';
 import type { AppEnv } from '../../server';
 
 export interface AppSessionResponse {
@@ -21,6 +22,8 @@ export interface AppSessionResponse {
 export type AuthDependencies = {
   env: ApiEnv;
   auth: typeof betterAuthServer;
+  /** Rate limiting is off when this is unset (tests, local dev). */
+  rateLimitCounter?: RateLimitCounter;
 };
 
 interface BetterAuthSessionContext {

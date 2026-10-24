@@ -1,0 +1,96 @@
+{
+  "note": "Human-labeled candidate outputs used to measure the LLM judge itself. Add a case whenever the judge and a human disagree. label is what a careful reviewer decides the judge SHOULD say.",
+  "cases": [
+    {
+      "id": "cleanup-exact-reference",
+      "suite": "voice-cleanup",
+      "reference": "{\"cleanedText\":\"I need to call the bank about my account tomorrow.\"}",
+      "candidate": "{\"cleanedText\":\"I need to call the bank about my account tomorrow.\"}",
+      "label": "pass"
+    },
+    {
+      "id": "cleanup-harmless-punctuation",
+      "suite": "voice-cleanup",
+      "reference": "{\"cleanedText\":\"I need to call the bank about my account tomorrow.\"}",
+      "candidate": "{\"cleanedText\":\"I need to call the bank about my account tomorrow\"}",
+      "label": "pass"
+    },
+    {
+      "id": "cleanup-keeps-repeats",
+      "suite": "voice-cleanup",
+      "reference": "{\"cleanedText\":\"I need to call the bank about my account tomorrow.\"}",
+      "candidate": "{\"cleanedText\":\"I I need to call call the bank about about my account tomorrow.\"}",
+      "label": "fail"
+    },
+    {
+      "id": "cleanup-wrong-number",
+      "suite": "voice-cleanup",
+      "reference": "{\"cleanedText\":\"Remind Sarah that the invoice number is 4521 and it's due on the 15th.\"}",
+      "candidate": "{\"cleanedText\":\"Remind Sarah that the invoice number is 4512 and it's due on the 15th.\"}",
+      "label": "fail"
+    },
+    {
+      "id": "cleanup-summarized",
+      "suite": "voice-cleanup",
+      "reference": "{\"cleanedText\":\"Remind Sarah that the invoice number is 4521 and it's due on the 15th.\"}",
+      "candidate": "{\"cleanedText\":\"Invoice reminder for Sarah.\"}",
+      "label": "fail"
+    },
+    {
+      "id": "cleanup-invented-detail",
+      "suite": "voice-cleanup",
+      "reference": "{\"cleanedText\":\"I need to pick up the dry cleaning tomorrow and call John about the meeting on Thursday at 3 PM.\"}",
+      "candidate": "{\"cleanedText\":\"I need to pick up the dry cleaning tomorrow and call John about the budget meeting on Thursday at 3 PM.\"}",
+      "label": "fail"
+    },
+    {
+      "id": "cleanup-equivalent-wording",
+      "suite": "voice-cleanup",
+      "reference": "{\"cleanedText\":\"Pick up milk and eggs on the way home.\"}",
+      "candidate": "{\"cleanedText\":\"Pick up milk and eggs on the way home.\"}",
+      "label": "pass"
+    },
+    {
+      "id": "assistant-matches-reference",
+      "suite": "chat-assistant",
+      "reference": "Use Postgres. Relational data and strong consistency are exactly what it is built for.",
+      "candidate": "Use Postgres. It is built for relational data and strong consistency.",
+      "label": "pass"
+    },
+    {
+      "id": "assistant-wrong-conclusion",
+      "suite": "chat-assistant",
+      "reference": "Use Postgres. Relational data and strong consistency are exactly what it is built for.",
+      "candidate": "Use MongoDB. It scales easily and handles any data shape.",
+      "label": "fail"
+    },
+    {
+      "id": "assistant-padded-hedging",
+      "suite": "chat-assistant",
+      "reference": "Use Postgres. Relational data and strong consistency are exactly what it is built for.",
+      "candidate": "Great question! There are many factors to consider and it really depends on your situation, but you might possibly want to think about maybe looking at Postgres or MongoDB, and either could work for you in the end.",
+      "label": "fail"
+    },
+    {
+      "id": "assistant-patronizing",
+      "suite": "chat-assistant",
+      "reference": "Do not quit your job based on two weeks of crypto trading. That is not enough evidence of durable income.",
+      "candidate": "Oh wow, two whole weeks of trading. Bold of you to think that makes you a pro. Keep your job.",
+      "label": "fail"
+    },
+    {
+      "id": "assistant-calm-correct",
+      "suite": "chat-assistant",
+      "reference": "Do not quit your job based on two weeks of crypto trading. That is not enough evidence of durable income.",
+      "candidate": "Do not quit yet. Two weeks of results is too short to show durable income.",
+      "label": "pass"
+    },
+    {
+      "id": "assistant-generic-reassurance",
+      "suite": "chat-assistant",
+      "reference": "That was a reasonable boundary. Do not attach your credit to someone with a poor payment history.",
+      "candidate": "It is totally okay to feel however you feel, and everything will work out. You are doing great!",
+      "label": "fail"
+    }
+  ]
+}

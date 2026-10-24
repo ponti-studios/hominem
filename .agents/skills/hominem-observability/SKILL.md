@@ -25,8 +25,7 @@ fly logs -a hominem-worker --no-tail | grep -E 'error|warn'
 ```
 
 Apps: `hominem-api`, `hominem-worker`, `hominem-web`, `hominem-career`,
-`hominem-finance`, `hominem-redis`, `hominem-db`. `scripts/railway-logs.sh` is
-legacy (Railway is no longer prod). New Relic is in the EU region
+`hominem-finance`, `hominem-redis`, `hominem-db`. `scripts/fly-logs.sh <service>` wraps `fly logs`. New Relic is in the EU region
 (`one.eu.newrelic.com`, OTLP `https://otlp.eu01.nr-data.net`); turn it on with
 `infra/fly/enable-newrelic.sh`.
 

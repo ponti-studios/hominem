@@ -36,7 +36,21 @@ vi.mock('~/components/ui/button', () => ({
   ),
 }));
 vi.mock('@expo/ui/community/datetime-picker', () => ({
-  default: ({ testID }: { testID?: string }) => <div data-testid={testID} />,
+  default: ({
+    minimumDate,
+    testID,
+    value,
+  }: {
+    minimumDate: Date;
+    testID?: string;
+    value: Date;
+  }) => (
+    <div
+      data-minimum-date={minimumDate.toISOString()}
+      data-testid={testID}
+      data-value={value.toISOString()}
+    />
+  ),
 }));
 
 const back = vi.fn();
@@ -81,6 +95,7 @@ describe('PlaceScreen', () => {
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
     vi.clearAllMocks();
   });
 
@@ -113,6 +128,18 @@ describe('PlaceScreen', () => {
     fireEvent.click(screen.getByTestId('place-pick'));
 
     expect(screen.getByTestId('place-date-picker')).toBeTruthy();
+  });
+
+  it('refreshes the date when opening the picker after midnight', () => {
+    vi.useFakeTimers({ now: new Date('2026-10-23T23:59:00.000Z') });
+    render(<PlaceScreen />);
+
+    vi.setSystemTime(new Date('2026-10-24T00:01:00.000Z'));
+    fireEvent.click(screen.getByTestId('place-pick'));
+
+    const picker = screen.getByTestId('place-date-picker');
+    expect(picker.getAttribute('data-value')).toBe('2026-10-24T00:01:00.000Z');
+    expect(picker.getAttribute('data-minimum-date')).toBe('2026-10-24T00:01:00.000Z');
   });
 
   it('drops a task', () => {

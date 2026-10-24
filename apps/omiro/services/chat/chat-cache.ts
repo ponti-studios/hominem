@@ -18,6 +18,133 @@ export function invalidateChatQueries(queryClient: QueryClient, chatId: string) 
   ]);
 }
 
+const STREAMING_ID_PREFIX = 'streaming-';
+
+function dropStreamingMessages(messages: ChatMessageItem[]) {
+  return messages.filter((item) => !item.id.startsWith(STREAMING_ID_PREFIX));
+}
+
+// Text deltas build a provisional assistant message in the cache so the reply
+// grows on screen while it is generated. The committed message replaces it.
+function appendStreamingText({
+  queryClient,
+  chatId,
+  generationId,
+  text,
+}: {
+  queryClient: QueryClient;
+  chatId: string;
+  generationId: string;
+  text: string;
+}) {
+  const id = `${STREAMING_ID_PREFIX}${generationId}`;
+  queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (messages = []) => {
+    const existing = messages.find((item) => item.id === id);
+    if (!existing) {
+      return [
+        ...messages,
+        {
+          id,
+          renderKey: id,
+          role: 'assistant',
+          message: text,
+          createdAt: new Date().toISOString(),
+          chatId,
+          toolCalls: null,
+          isStreaming: true,
+        },
+      ];
+    }
+    return messages.map((item) =>
+      item.id === id ? { ...item, message: item.message + text } : item,
+    );
+  });
+}
+
+// Text arrives from the network in bursts (a fast model can send a whole reply
+// in ~30ms), which would paint as one jump. Deltas queue here and trickle into
+// the cache a few frames at a time, faster while the backlog is large.
+const PACE_TICK_MS = 50;
+const PACE_MIN_CHARS = 4;
+const PACE_BACKLOG_DIVISOR = 12;
+
+type PacedText = {
+  queue: string;
+  timer: ReturnType<typeof setInterval> | null;
+  onDrain: (() => void)[];
+  flush: () => void;
+};
+
+const pacedByGeneration = new Map<string, PacedText>();
+
+function paceStreamingText({
+  queryClient,
+  chatId,
+  generationId,
+  text,
+}: {
+  queryClient: QueryClient;
+  chatId: string;
+  generationId: string;
+  text: string;
+}) {
+  let paced = pacedByGeneration.get(generationId);
+  if (!paced) {
+    const created: PacedText = {
+      queue: '',
+      timer: null,
+      onDrain: [],
+      flush: () => {
+        const count = Math.max(
+          PACE_MIN_CHARS,
+          Math.ceil(created.queue.length / PACE_BACKLOG_DIVISOR),
+        );
+        const slice = created.queue.slice(0, count);
+        created.queue = created.queue.slice(count);
+        if (slice) {
+          appendStreamingText({ queryClient, chatId, generationId, text: slice });
+        }
+        if (created.queue) {
+          return;
+        }
+        if (created.timer) {
+          clearInterval(created.timer);
+        }
+        pacedByGeneration.delete(generationId);
+        for (const done of created.onDrain) {
+          done();
+        }
+      },
+    };
+    created.timer = setInterval(created.flush, PACE_TICK_MS);
+    pacedByGeneration.set(generationId, created);
+    paced = created;
+  }
+  paced.queue += text;
+}
+
+// Runs `then` once everything queued for this generation has been shown.
+// Returns false when nothing is pending, so the caller can run it right away.
+function afterPacedDrain(generationId: string, then: () => void) {
+  const paced = pacedByGeneration.get(generationId);
+  if (!paced) {
+    return false;
+  }
+  paced.onDrain.push(then);
+  return true;
+}
+
+function discardPacedText(generationId: string) {
+  const paced = pacedByGeneration.get(generationId);
+  if (!paced) {
+    return;
+  }
+  if (paced.timer) {
+    clearInterval(paced.timer);
+  }
+  pacedByGeneration.delete(generationId);
+}
+
 function triggerAssistantCompletionHaptic() {
   void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
 }
@@ -44,7 +171,7 @@ export function applyGenerationCommitted({
     queryClient.setQueryData<ChatMessageItem[]>(
       chatKeys.messages(chatId),
       (currentMessages = []) => [
-        ...currentMessages.filter(
+        ...dropStreamingMessages(currentMessages).filter(
           (item) => item.id !== committed.id && item.id !== targetMessageId,
         ),
         committed,
@@ -75,6 +202,37 @@ export function handleChatGenerationEvent({
   if (!('payload' in event)) {
     return;
   }
+  if (event.payload.type === 'text-delta') {
+    paceStreamingText({
+      queryClient,
+      chatId,
+      generationId: event.generationId,
+      text: event.payload.text,
+    });
+    return;
+  }
+  if (event.type === 'generation.committed') {
+    // A fast model hands over the whole reply in one burst; let the paced
+    // reveal catch up before the committed message replaces it.
+    const { generationId } = event;
+    const apply = () =>
+      applyGenerationCommitted({
+        queryClient,
+        chatId,
+        message: event.payload.message,
+        targetMessageId: generation.targetMessageId,
+      });
+    if (!afterPacedDrain(generationId, apply)) {
+      apply();
+    }
+    return;
+  }
+  if (event.type === 'generation.cancelled' || event.type === 'generation.failed') {
+    discardPacedText(event.generationId);
+    queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (messages = []) =>
+      dropStreamingMessages(messages),
+    );
+  }
   if (event.type === 'generation.accepted' && event.payload.userMessage) {
     const accepted = toMessageOutput(event.payload.userMessage);
     if (accepted) {
@@ -91,13 +249,5 @@ export function handleChatGenerationEvent({
     event.type === 'generation.failed'
   ) {
     void invalidateChatQueries(queryClient, chatId);
-  }
-  if (event.type === 'generation.committed') {
-    applyGenerationCommitted({
-      queryClient,
-      chatId,
-      message: event.payload.message,
-      targetMessageId: generation.targetMessageId,
-    });
   }
 }
