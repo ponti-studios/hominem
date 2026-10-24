@@ -49,7 +49,7 @@
     "@hominem/chat": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "hono": "catalog:",
-    "undici": "^7.29.0",
+    "undici": "^7.30.1",
     "zod": "catalog:"
   },
   "devDependencies": {
