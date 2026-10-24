@@ -39,7 +39,6 @@ export function ChatMessageBubble({
   const bannerExiting = reducedMotion
     ? nativeMotionAnimations.fadeOutQuick
     : nativeMotionAnimations.fadeOutUpQuick;
-  const contentLayout = reducedMotion ? undefined : nativeMotionAnimations.layoutQuick;
   const textStyle = isUser ? styles.userText : styles.assistantText;
 
   return (
@@ -50,7 +49,7 @@ export function ChatMessageBubble({
     >
       <MessageReasoning message={message} isUser={isUser} styles={styles} />
 
-      <Animated.View layout={contentLayout} style={styles.content}>
+      <View style={styles.content}>
         {/* The user's own text is shown verbatim: underscores or asterisks they
             typed must not turn into emphasis. */}
         <MessageContent
@@ -71,7 +70,7 @@ export function ChatMessageBubble({
           styles={styles}
         />
         <MessageDebugPanel message={message} showDebug={showDebug} isStreaming={isStreaming} />
-      </Animated.View>
+      </View>
     </Pressable>
   );
 }
