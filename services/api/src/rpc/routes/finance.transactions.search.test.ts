@@ -59,11 +59,10 @@ describe('finance transaction search route', () => {
       ],
       filteredCount: 1,
       totalUserCount: 1000,
+      nextCursor: null,
     });
 
-    const response = await createApp().request(
-      '/api/finance/transactions/list?description=parkin&limit=8&offset=0',
-    );
+    const response = await createApp().request('/api/finance/transactions/list?description=parkin');
 
     expect(response.status).toBe(200);
     expect(financeService.searchTransactions).toHaveBeenCalledWith(testUser.id, {
@@ -73,13 +72,14 @@ describe('finance transaction search route', () => {
       text: 'parkin',
       tagIds: undefined,
       tagNames: undefined,
-      limit: 8,
-      offset: 0,
+      limit: 20,
+      cursor: undefined,
     });
     await expect(response.json()).resolves.toMatchObject({
       data: [{ currencyCode: 'GBP' }],
       filteredCount: 1,
       totalUserCount: 1000,
+      nextCursor: null,
     });
   });
 
@@ -88,10 +88,11 @@ describe('finance transaction search route', () => {
       data: [],
       filteredCount: 0,
       totalUserCount: 1000,
+      nextCursor: null,
     });
 
     const response = await createApp().request(
-      '/api/finance/transactions/list?min=225.7&max=225.7&limit=8&offset=0',
+      '/api/finance/transactions/list?min=225.7&max=225.7&limit=8',
     );
 
     expect(response.status).toBe(200);
@@ -105,7 +106,43 @@ describe('finance transaction search route', () => {
       amountMin: 225.7,
       amountMax: 225.7,
       limit: 8,
-      offset: 0,
+      cursor: undefined,
     });
+  });
+
+  it('forwards the cursor and returns the next one', async () => {
+    financeService.searchTransactions.mockResolvedValue({
+      data: [],
+      filteredCount: 4,
+      totalUserCount: 1000,
+      nextCursor: 'next-page-cursor',
+    });
+
+    const response = await createApp().request('/api/finance/transactions/list?limit=2&cursor=abc');
+
+    expect(response.status).toBe(200);
+    expect(financeService.searchTransactions).toHaveBeenCalledWith(
+      testUser.id,
+      expect.objectContaining({ limit: 2, cursor: 'abc' }),
+    );
+    await expect(response.json()).resolves.toMatchObject({ nextCursor: 'next-page-cursor' });
+  });
+
+  it('rejects limits above 50 and ignores a retired offset parameter', async () => {
+    financeService.searchTransactions.mockResolvedValue({
+      data: [],
+      filteredCount: 0,
+      totalUserCount: 0,
+      nextCursor: null,
+    });
+
+    expect((await createApp().request('/api/finance/transactions/list?limit=51')).status).toBe(400);
+
+    const response = await createApp().request('/api/finance/transactions/list?offset=100');
+    expect(response.status).toBe(200);
+    expect(financeService.searchTransactions).toHaveBeenCalledWith(
+      testUser.id,
+      expect.not.objectContaining({ offset: expect.anything() }),
+    );
   });
 });

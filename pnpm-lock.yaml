@@ -614,7 +614,7 @@ importers:
         specifier: 5.2.0
         version: 5.2.0(e744751a9a66b866bff94de1d87feaed)
       react-native-web:
-        specifier: ^0.21.0
+        specifier: ^0.21.4
         version: 0.21.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react-native-worklets:
         specifier: 0.13.0

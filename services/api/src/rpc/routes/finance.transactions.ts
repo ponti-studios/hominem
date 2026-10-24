@@ -4,6 +4,10 @@ import { db } from '@hominem/db/core';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import {
+  FINANCE_TRANSACTION_PAGE_DEFAULT_LIMIT,
+  FINANCE_TRANSACTION_PAGE_MAX_LIMIT,
+} from '../../application/finance.pagination';
 import { searchTransactions } from '../../application/finance.service';
 import { NotFoundError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
@@ -18,10 +22,26 @@ const transactionListSchema = z
       .optional(),
     dateFrom: z.string().optional(),
     dateTo: z.string().optional(),
-    limit: z.coerce.number().int().min(1).max(200).default(50),
-    offset: z.coerce.number().int().min(0).default(0),
-    tagIds: z.array(z.string().uuid()).optional(),
-    tagNames: z.array(z.string().min(1)).optional(),
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(FINANCE_TRANSACTION_PAGE_MAX_LIMIT)
+      .default(FINANCE_TRANSACTION_PAGE_DEFAULT_LIMIT),
+    cursor: z
+      .string()
+      .min(1)
+      .max(512)
+      .optional()
+      .describe('The `nextCursor` from the previous page.'),
+    tagIds: z
+      .union([z.string().uuid(), z.array(z.string().uuid())])
+      .transform((v) => (Array.isArray(v) ? v : [v]))
+      .optional(),
+    tagNames: z
+      .union([z.string().min(1), z.array(z.string().min(1))])
+      .transform((v) => (Array.isArray(v) ? v : [v]))
+      .optional(),
   })
   .extend({
     account: z.string().uuid().optional(),
@@ -127,7 +147,7 @@ export const transactionsRoutes = new Hono<AppContext>()
       tagIds: input.tagIds,
       tagNames: input.tagNames,
       limit: input.limit,
-      offset: input.offset,
+      cursor: input.cursor,
     });
     return c.json(
       {
@@ -143,6 +163,7 @@ export const transactionsRoutes = new Hono<AppContext>()
         })),
         filteredCount: result.filteredCount,
         totalUserCount: result.totalUserCount,
+        nextCursor: result.nextCursor,
       },
       200,
     );

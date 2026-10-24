@@ -95,7 +95,6 @@ export function FinanceSearch({ className }: FinanceSearchProps) {
               ? { min: String(amountSearch.min), max: String(amountSearch.max) }
               : { description: normalizedSearch }),
             limit: String(RESULT_LIMIT),
-            offset: '0',
           },
         })
         .then((r) => r.json()),
