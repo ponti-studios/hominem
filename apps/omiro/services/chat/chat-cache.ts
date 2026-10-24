@@ -8,6 +8,7 @@ import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
 import { syncAfterChatTasks } from '~/services/tasks/sync-chat-tasks';
 
 import type { ChatGenerationState } from './chat-generation';
+import { appendStreamingMessageText, clearStreamingMessageText } from './streaming-text-store';
 import { toMessageOutput } from './use-chat-messages';
 
 export function invalidateChatQueries(queryClient: QueryClient, chatId: string) {
@@ -21,11 +22,18 @@ export function invalidateChatQueries(queryClient: QueryClient, chatId: string) 
 const STREAMING_ID_PREFIX = 'streaming-';
 
 function dropStreamingMessages(messages: ChatMessageItem[]) {
-  return messages.filter((item) => !item.id.startsWith(STREAMING_ID_PREFIX));
+  return messages.filter((item) => {
+    if (!item.id.startsWith(STREAMING_ID_PREFIX)) {
+      return true;
+    }
+    clearStreamingMessageText(item.id);
+    return false;
+  });
 }
 
-// Text deltas build a provisional assistant message in the cache so the reply
-// grows on screen while it is generated. The committed message replaces it.
+// The first text delta adds one provisional assistant row to the cache; after
+// that the words go straight to the streaming text store, which only the
+// bubble's own text reads. The committed message replaces the row.
 function appendStreamingText({
   queryClient,
   chatId,
@@ -38,26 +46,25 @@ function appendStreamingText({
   text: string;
 }) {
   const id = `${STREAMING_ID_PREFIX}${generationId}`;
+  appendStreamingMessageText(id, text);
   queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (messages = []) => {
-    const existing = messages.find((item) => item.id === id);
-    if (!existing) {
-      return [
-        ...messages,
-        {
-          id,
-          renderKey: id,
-          role: 'assistant',
-          message: text,
-          createdAt: new Date().toISOString(),
-          chatId,
-          toolCalls: null,
-          isStreaming: true,
-        },
-      ];
+    if (messages.some((item) => item.id === id)) {
+      // Same array back: React Query bails out, so nothing re-renders.
+      return messages;
     }
-    return messages.map((item) =>
-      item.id === id ? { ...item, message: item.message + text } : item,
-    );
+    return [
+      ...messages,
+      {
+        id,
+        renderKey: id,
+        role: 'assistant',
+        message: '',
+        createdAt: new Date().toISOString(),
+        chatId,
+        toolCalls: null,
+        isStreaming: true,
+      },
+    ];
   });
 }
 
@@ -72,7 +79,10 @@ const PACE_VARIATION_MS = [0, 9, 17, 5, 13] as const;
 
 type PacedText = {
   queue: string;
-  timer: ReturnType<typeof setTimeout> | null;
+  frame: number | null;
+  // When the next chunk is due. Chunks go out on frame boundaries, so a busy
+  // JS thread delays one frame instead of shifting the whole rhythm.
+  dueAt: number;
   onDrain: (() => void)[];
   finalized: boolean;
   tick: number;
@@ -172,16 +182,23 @@ function paceStreamingText({
   if (!paced) {
     const created: PacedText = {
       queue: '',
-      timer: null,
+      frame: null,
+      dueAt: performance.now() + PACE_FIRST_TICK_MS,
       onDrain: [],
       finalized: false,
       tick: 0,
       flush: () => {
-        created.timer = null;
+        created.frame = null;
+        const now = performance.now();
+        if (now < created.dueAt) {
+          created.frame = requestAnimationFrame(created.flush);
+          return;
+        }
         const chunk = takeWordChunk(created.queue, wordsPerChunk(created.queue), created.finalized);
 
         if (!chunk && created.queue && !created.finalized) {
-          created.timer = setTimeout(created.flush, PACE_FIRST_TICK_MS);
+          created.dueAt = now + PACE_FIRST_TICK_MS;
+          created.frame = requestAnimationFrame(created.flush);
           return;
         }
 
@@ -192,7 +209,10 @@ function paceStreamingText({
 
         if (created.queue) {
           created.tick += 1;
-          created.timer = setTimeout(created.flush, nextPaceDelay(chunk ?? '', created.tick));
+          // Keep the cadence drift-free, but never owe more than the one chunk
+          // a frame can show after a stall.
+          created.dueAt = Math.max(created.dueAt + nextPaceDelay(chunk ?? '', created.tick), now);
+          created.frame = requestAnimationFrame(created.flush);
           return;
         }
 
@@ -202,7 +222,7 @@ function paceStreamingText({
         }
       },
     };
-    created.timer = setTimeout(created.flush, PACE_FIRST_TICK_MS);
+    created.frame = requestAnimationFrame(created.flush);
     pacedByGeneration.set(generationId, created);
     paced = created;
   }
@@ -218,10 +238,8 @@ function afterPacedDrain(generationId: string, then: () => void) {
   }
   paced.finalized = true;
   paced.onDrain.push(then);
-  if (paced.timer) {
-    clearTimeout(paced.timer);
-  }
-  paced.timer = setTimeout(paced.flush, PACE_FIRST_TICK_MS);
+  paced.dueAt = performance.now() + PACE_FIRST_TICK_MS;
+  paced.frame ??= requestAnimationFrame(paced.flush);
   return true;
 }
 
@@ -230,8 +248,8 @@ function discardPacedText(generationId: string) {
   if (!paced) {
     return;
   }
-  if (paced.timer) {
-    clearTimeout(paced.timer);
+  if (paced.frame !== null) {
+    cancelAnimationFrame(paced.frame);
   }
   pacedByGeneration.delete(generationId);
 }

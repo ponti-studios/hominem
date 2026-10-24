@@ -23,6 +23,7 @@ import {
   SafeAreaView,
 } from 'react-native-safe-area-context';
 
+import { preloadMarkdown } from '~/components/chat/chat-message-content';
 import { logError } from '~/components/error-boundary/log-error';
 import { RootErrorBoundary } from '~/components/error-boundary/RootErrorBoundary';
 import { LaunchOverlay } from '~/components/launch/LaunchOverlay';
@@ -75,6 +76,11 @@ function InnerRootLayout() {
     const timeout = setTimeout(hideSplash, 3000);
     return () => clearTimeout(timeout);
   }, [hideSplash]);
+
+  // Warm the markdown renderer while the app boots, ahead of the first chat.
+  useEffect(() => {
+    preloadMarkdown();
+  }, []);
 
   useEffect(() => {
     if (E2E_TESTING && isSettled) {

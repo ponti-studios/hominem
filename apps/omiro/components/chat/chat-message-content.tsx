@@ -3,6 +3,8 @@ import { createElement, type ReactNode, useEffect, useMemo, useState } from 'rea
 import { StyleSheet, Text, View } from 'react-native';
 
 import { fontFamilies, useAppTheme } from '~/components/theme';
+import { useStreamingMessageText } from '~/services/chat/streaming-text-store';
+import { countRender } from '~/services/perf/stream-perf';
 
 type MarkdownComponent = typeof import('react-native-markdown-display').default;
 
@@ -24,6 +26,12 @@ function getMarkdownComponent(): Promise<MarkdownComponent | null> {
   return markdownPromise;
 }
 
+// Start loading the markdown renderer before any chat is open, so the first
+// committed reply doesn't wait on the module before it can swap in.
+export function preloadMarkdown(): void {
+  void getMarkdownComponent();
+}
+
 function useMarkdownComponent(): MarkdownComponent | null {
   const [Markdown, setMarkdown] = useState<MarkdownComponent | null>(null);
 
@@ -42,17 +50,25 @@ function useMarkdownComponent(): MarkdownComponent | null {
   return Markdown;
 }
 
+// Reads the arriving words straight from the streaming store, so each new word
+// re-renders this Text alone -- never the message row or the list around it.
+function StreamingMessageText({ id, textStyle }: { id: string; textStyle: object }) {
+  const text = useStreamingMessageText(id);
+  countRender('StreamingMessageText');
+  return <Text style={textStyle}>{text}</Text>;
+}
+
 export function MessageContent({
   content,
   enableMarkdown,
-  streaming = false,
+  streamingId,
   textStyle,
   children,
 }: {
   content: string;
   enableMarkdown: boolean;
-  /** An assistant reply still arriving: shown as unformatted streaming text. */
-  streaming?: boolean;
+  /** An assistant reply still arriving: its text is read live from the streaming store. */
+  streamingId?: string;
   textStyle: object;
   children?: ReactNode;
 }) {
@@ -169,8 +185,8 @@ export function MessageContent({
 
   return (
     <View style={styles.content}>
-      {streaming ? (
-        <Text style={textStyle}>{content}</Text>
+      {streamingId ? (
+        <StreamingMessageText id={streamingId} textStyle={textStyle} />
       ) : isStreaming || !Markdown ? (
         <Text style={textStyle}>{content}</Text>
       ) : (

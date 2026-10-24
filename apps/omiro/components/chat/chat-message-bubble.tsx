@@ -55,7 +55,7 @@ export function ChatMessageBubble({
         <MessageContent
           content={message.message}
           enableMarkdown={!isUser && !isStreaming}
-          streaming={!isUser && isStreaming}
+          streamingId={!isUser && isStreaming ? message.id : undefined}
           textStyle={textStyle}
         >
           <AssistantThinkingIndicator isStreaming={isStreaming} isUser={isUser} />

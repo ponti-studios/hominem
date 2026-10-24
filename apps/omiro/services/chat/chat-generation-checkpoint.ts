@@ -71,6 +71,12 @@ export function restoreGenerationCheckpoint(chatId: string): ChatGenerationState
   }
 }
 
+// The checkpoint only holds the generation id, phase and last durable sequence,
+// so most events in a stream (every text delta that carries no new sequence)
+// would rewrite identical bytes. Remember what was last written per chat and
+// skip the read-parse-write round trip when nothing changed.
+const lastWrittenCheckpoint = new Map<string, string>();
+
 export function persistGenerationCheckpoint(
   chatId: string,
   state: Pick<
@@ -83,6 +89,7 @@ export function persistGenerationCheckpoint(
     phase: state.stage === 'stopping' ? 'cancel_requested' : state.stage,
     lastDurableSequence: state.lastDurableSequence,
   });
+  lastWrittenCheckpoint.delete(chatId);
   storage.set(
     generationStorageKey(chatId),
     JSON.stringify({
@@ -95,6 +102,7 @@ export function persistGenerationCheckpoint(
 }
 
 export function clearGenerationCheckpoint(chatId: string) {
+  lastWrittenCheckpoint.delete(chatId);
   storage.remove(generationStorageKey(chatId));
 }
 
@@ -108,6 +116,10 @@ export function createGenerationCheckpointStore(chatId: string) {
       }
     },
     set: (state: GenerationClientState) => {
+      const checkpointJson = JSON.stringify(toGenerationClientCheckpoint(state));
+      if (lastWrittenCheckpoint.get(chatId) === checkpointJson) {
+        return;
+      }
       let userMessageId: string | undefined;
       let targetMessageId: string | undefined;
       let retryInput: ChatGenerationState['retryInput'];
@@ -131,6 +143,7 @@ export function createGenerationCheckpointStore(chatId: string) {
           ...(retryInput ? { retryInput } : {}),
         }),
       );
+      lastWrittenCheckpoint.set(chatId, checkpointJson);
     },
     remove: (_generationId: string) => clearGenerationCheckpoint(chatId),
   };
