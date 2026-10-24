@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+# CocoaPods (Ruby) crashes with an encoding error under a non-UTF-8 locale and
+# hides the real pod install failure, so force UTF-8.
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(git -C "$APP_DIR" rev-parse --show-toplevel)"
 cd "$APP_DIR"
