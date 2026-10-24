@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.profiles/react-package.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "tsBuildInfoFile": "./.cache/tsconfig.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "build", "dist", ".turbo", ".cache", "coverage"]
+}

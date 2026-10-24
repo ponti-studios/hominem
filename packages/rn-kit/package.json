@@ -1,0 +1,35 @@
+{
+  "name": "@hominem/rn-kit",
+  "version": "0.0.0",
+  "description": "Reusable React Native motion primitives: streaming text, shimmer text, shimmer progress bar",
+  "type": "module",
+  "sideEffects": false,
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "format": "oxfmt src --write",
+    "format:check": "oxfmt src --check",
+    "lint": "oxlint src",
+    "lint:fix": "oxlint src --fix",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "@shopify/react-native-skia": "2.14.0",
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "react-native": "0.88.0",
+    "react-native-reanimated": "4.7.1"
+  },
+  "peerDependencies": {
+    "@shopify/react-native-skia": ">=2.0.0",
+    "react": "catalog:",
+    "react-native": ">=0.80.0",
+    "react-native-reanimated": ">=4.0.0"
+  }
+}

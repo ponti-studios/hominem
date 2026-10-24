@@ -430,6 +430,9 @@ importers:
       '@hominem/env':
         specifier: workspace:*
         version: link:../../packages/env
+      '@hominem/rn-kit':
+        specifier: workspace:*
+        version: link:../../packages/rn-kit
       '@hominem/rpc':
         specifier: workspace:*
         version: file:packages/rpc(@playwright/test@1.64.1)(@types/react@19.2.18)(expo-constants@58.0.13)(expo-linking@58.0.14)(expo-network@58.0.4(expo@58.0.19)(react@19.2.8))(expo-secure-store@58.0.2(expo@58.0.19))(react@19.2.8)(supports-color@8.1.1)(vitest@5.0.5)
@@ -954,6 +957,24 @@ importers:
       ioredis:
         specifier: 'catalog:'
         version: 6.0.0(supports-color@8.1.1)
+
+  packages/rn-kit:
+    devDependencies:
+      '@shopify/react-native-skia':
+        specifier: 2.14.0
+        version: 2.14.0(c0d2d7afe5c35ab39d35c44cc090cb85)
+      '@types/react':
+        specifier: 19.2.18
+        version: 19.2.18
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-native:
+        specifier: 0.88.0
+        version: 0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1)
+      react-native-reanimated:
+        specifier: 4.7.1
+        version: 4.7.1(react-native-worklets@0.13.0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)(supports-color@8.1.1))(react-native@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.0(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.8)(supports-color@8.1.1))(react@19.2.8)
 
   packages/rpc:
     dependencies:
