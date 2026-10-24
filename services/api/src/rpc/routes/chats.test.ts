@@ -475,11 +475,15 @@ describe('chat stream accounting', () => {
     await response.text();
 
     const completionOptions = mocks.streamChatCompletion.mock.calls[0]?.[0];
-    expect(completionOptions.maxTokens).toBe(6000);
+    // The ceiling does not vary with response length; the prompt does.
+    expect(completionOptions.maxTokens).toBe(32_000);
     expect(completionOptions.reasoning).toEqual({ effort: 'none' });
     expect(completionOptions.messages[0]?.role).toBe('system');
     expect(completionOptions.messages[0]?.content).toContain('silently plan a short outline');
-    expect(completionOptions.messages[1]).toEqual({ role: 'user', content: 'Hello' });
+    expect(completionOptions.messages[1]).toEqual({
+      role: 'user',
+      content: expect.stringMatching(/^Hello\n\n\(Give the full essay/),
+    });
   });
 
   it('persists reasoning and toolCalls on the committed assistant message', async () => {
