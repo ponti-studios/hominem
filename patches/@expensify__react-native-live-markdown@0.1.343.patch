@@ -1,0 +1,25 @@
+diff --git a/apple/LiveMarkdownModule.mm b/apple/LiveMarkdownModule.mm
+index 4cd3970..a14bc26 100644
+--- a/apple/LiveMarkdownModule.mm
++++ b/apple/LiveMarkdownModule.mm
+@@ -2,6 +2,7 @@
+ 
+ #import <RNLiveMarkdown/RuntimeDecorator.h>
+ #import <React/RCTBridge+Private.h>
++#import <objc/message.h>
+ #import <jsi/jsi.h>
+ 
+ using namespace facebook;
+@@ -13,8 +14,10 @@ RCT_EXPORT_MODULE()
+ 
+ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(install)
+ {
+-  RCTCxxBridge *cxxBridge = (RCTCxxBridge *)self.bridge;
+-  jsi::Runtime &rt = *(jsi::Runtime *)cxxBridge.runtime;
++  // RN 0.88 removed RCTCxxBridge; the bridgeless RCTBridgeProxy still implements -runtime
++  // (just without declaring it in a header), so message it directly.
++  void *runtime = ((void *(*)(id, SEL))objc_msgSend)(self.bridge, @selector(runtime));
++  jsi::Runtime &rt = *(jsi::Runtime *)runtime;
+   expensify::livemarkdown::injectJSIBindings(rt);
+   return @(1);
+ }

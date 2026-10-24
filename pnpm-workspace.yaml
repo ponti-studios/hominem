@@ -178,3 +178,6 @@ minimumReleaseAgeExclude:
   - oxfmt@0.72.0
   - expo-modules-cli@0.3.2
   - expo-sqlite@58.0.14
+
+patchedDependencies:
+  '@expensify/react-native-live-markdown@0.1.343': patches/@expensify__react-native-live-markdown@0.1.343.patch
