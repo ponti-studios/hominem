@@ -36,6 +36,9 @@ export function ShimmerText({
   const { background: pageBackground } = useAppTheme().colors;
   const background = fade ?? pageBackground;
   const styles = useStyles(() => ({
+    // Hug the label: in a flex row the wrapper would stretch and the sweep would
+    // cross the whole bar instead of just the text.
+    root: { alignSelf: 'flex-start' },
     sweep: { position: 'absolute', top: 0, left: 0 },
   }));
   const reducedMotion = useReducedMotion();
@@ -57,7 +60,7 @@ export function ShimmerText({
   }, [bandWidth, progress, size]);
 
   return (
-    <View collapsable={false} onLayout={onLayout}>
+    <View collapsable={false} onLayout={onLayout} style={styles.root}>
       <Text style={style}>{label}</Text>
       {size && !reducedMotion ? (
         <View pointerEvents="none" style={styles.sweep}>
