@@ -8,7 +8,7 @@ import type {
 } from '@hominem/rpc/finance';
 import type { SortOption } from '@ponti-studios/ui/hooks';
 import { format } from 'date-fns';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useHonoQuery } from '~/lib/api';
 
@@ -145,14 +145,12 @@ export function useFinanceTransactions({
     return sortOptions[0]?.direction || 'desc';
   }, [sortOptions]);
 
-  const offset = page * limit;
-
   const queryOptions: { staleTime: number; initialData?: TransactionListOutput } = {
     staleTime: 1 * 60 * 1000,
   };
 
   const isInitialQuery =
-    offset === 0 &&
+    page === 0 &&
     !filters.accountId &&
     !filters.accountIds?.length &&
     !filters.dateFrom &&
@@ -165,6 +163,21 @@ export function useFinanceTransactions({
     queryOptions.initialData = initialData;
   }
 
+  // Keyset paging has no random access: page N's cursor is the `nextCursor` the server issued for
+  // page N-1. This stack belongs to one filter combination and resets when the filters change.
+  const filterKey = useMemo(
+    () => JSON.stringify([filters, sortBy, sortOrder, limit]),
+    [filters, sortBy, sortOrder, limit],
+  );
+  const [pagination, setPagination] = useState<{ key: string; cursors: (string | null)[] }>({
+    key: filterKey,
+    cursors: [null],
+  });
+  if (pagination.key !== filterKey) {
+    setPagination({ key: filterKey, cursors: [null] });
+  }
+  const cursor = pagination.cursors[page] ?? undefined;
+
   const query = useHonoQuery<TransactionListOutput>(
     [
       'finance',
@@ -174,7 +187,7 @@ export function useFinanceTransactions({
         filters,
         sortBy,
         sortOrder,
-        offset,
+        cursor,
         limit,
       },
     ],
@@ -191,16 +204,25 @@ export function useFinanceTransactions({
                 : {}),
             ...(filters.description ? { description: filters.description } : {}),
             limit: String(limit),
-            offset: String(offset),
+            ...(cursor ? { cursor } : {}),
             sortBy,
             sortDirection: sortOrder,
           },
         })
         .then((r) => r.json()),
-    queryOptions,
+    { ...queryOptions, enabled: page === 0 || cursor !== undefined },
   );
 
   const result = query.data;
+  const nextCursor = result?.nextCursor;
+
+  useEffect(() => {
+    if (nextCursor === undefined) return;
+    setPagination((prev) => {
+      if (prev.key !== filterKey || prev.cursors[page + 1] === nextCursor) return prev;
+      return { key: prev.key, cursors: [...prev.cursors.slice(0, page + 1), nextCursor] };
+    });
+  }, [nextCursor, page, filterKey]);
 
   return {
     transactions: Array.isArray(result?.data) ? result.data : [],

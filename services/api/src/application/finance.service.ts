@@ -12,6 +12,13 @@ import {
   type SheetTransactionInput,
 } from '@hominem/finance-services';
 
+import {
+  decodeFinanceTransactionCursor,
+  encodeFinanceTransactionCursor,
+  financeTransactionFilterKey,
+  toFinanceTransactionPage,
+} from './finance.pagination';
+
 export type { SheetTransactionInput };
 
 export interface FinanceReportFilter {
@@ -276,7 +283,29 @@ export interface TransactionSearchInput {
   amountMin?: number | undefined;
   amountMax?: number | undefined;
   limit: number;
-  offset: number;
+  /** Legacy offset paging, kept for `finance_transaction_search`; cursor surfaces omit it. */
+  offset?: number | undefined;
+  /** The `nextCursor` from the previous page: keyset paging instead of `offset`. */
+  cursor?: string | undefined;
+}
+
+const TRANSACTIONS_CURSOR_ROUTE = 'finance.transactions';
+
+/**
+ * The text-search ranking, hoisted so the order, the keyset predicate and the cursor all read the
+ * same expression. Without text the list is ordered by posted date then id, as it always was.
+ *
+ * The `real` score is widened to `float8` in SQL so the value the cursor carries round-trips
+ * through a JavaScript number exactly; comparing a cursor's double against a bare `real` would
+ * make equal scores compare unequal and repeat or skip rows.
+ */
+function transactionSearchRank(text: string) {
+  return sql<number>`greatest(
+    similarity(lower(coalesce(t.description, '')), lower(${text})),
+    similarity(lower(coalesce(t.merchant_name, '')), lower(${text})),
+    similarity(lower(coalesce(c.name, '')), lower(${text})),
+    similarity(lower(coalesce(a.name, '')), lower(${text}))
+  )::float8`;
 }
 
 export async function searchTransactions(userId: string, input: TransactionSearchInput) {
@@ -371,25 +400,44 @@ export async function searchTransactions(userId: string, input: TransactionSearc
     't.excluded',
   ]);
 
-  const orderedTransactionRowsQuery = input.text
-    ? transactionRowsQuery
-        .orderBy(
-          sql<number>`greatest(
-            similarity(lower(coalesce(t.description, '')), lower(${input.text})),
-            similarity(lower(coalesce(t.merchant_name, '')), lower(${input.text})),
-            similarity(lower(coalesce(c.name, '')), lower(${input.text})),
-            similarity(lower(coalesce(a.name, '')), lower(${input.text}))
-          )`,
-          'desc',
-        )
-        .orderBy('t.postedOn', 'desc')
-    : transactionRowsQuery.orderBy('t.postedOn', 'desc');
+  const filter = financeTransactionFilterKey({
+    accountIds,
+    dateFrom: input.dateFrom,
+    dateTo: input.dateTo,
+    text: input.text,
+    tagIds,
+    tagNames,
+    categoryName: input.categoryName,
+    transactionType: input.transactionType,
+    amountMin: input.amountMin,
+    amountMax: input.amountMax,
+  });
+  const cursor = input.cursor
+    ? decodeFinanceTransactionCursor(input.cursor, {
+        route: TRANSACTIONS_CURSOR_ROUTE,
+        filter,
+        keys: ['score', 'date', 'uuid'],
+      })
+    : null;
+  // A ranked list carries its similarity score into the cursor; a plain list carries a constant 0,
+  // so the keyset comparison falls through to `posted_on` and then the unique `id` tiebreaker.
+  const rank = input.text ? transactionSearchRank(input.text) : sql<number>`0::float8`;
+  const offsetPaged = input.offset !== undefined;
 
-  const [rows, filteredRow, totalRow] = await Promise.all([
-    orderedTransactionRowsQuery
-      .orderBy('t.id', 'desc')
-      .limit(input.limit)
-      .offset(input.offset)
+  let pagedRowsQuery = transactionRowsQuery.select(rank.as('searchRank'));
+  if (input.text) pagedRowsQuery = pagedRowsQuery.orderBy(rank, 'desc');
+  pagedRowsQuery = pagedRowsQuery.orderBy('t.postedOn', 'desc').orderBy('t.id', 'desc');
+  if (cursor) {
+    const [score, postedOn, id] = cursor;
+    pagedRowsQuery = pagedRowsQuery.where(
+      sql<boolean>`(${rank}, t.posted_on, t.id) < (${score}::float8, ${postedOn}::date, ${id}::uuid)`,
+    );
+  }
+
+  const [fetchedRows, filteredRow, totalRow] = await Promise.all([
+    pagedRowsQuery
+      .limit(offsetPaged ? input.limit : input.limit + 1)
+      .offset(input.offset ?? 0)
       .execute(),
     applyFilters(filterableBase()).select(db.fn.countAll<number>().as('count')).executeTakeFirst(),
     db
@@ -398,6 +446,15 @@ export async function searchTransactions(userId: string, input: TransactionSearc
       .where('userId', '=', userId)
       .executeTakeFirst(),
   ]);
+
+  const page = toFinanceTransactionPage(fetchedRows, input.limit, (last) =>
+    encodeFinanceTransactionCursor(TRANSACTIONS_CURSOR_ROUTE, filter, [
+      last.searchRank,
+      last.postedOn,
+      last.id,
+    ]),
+  );
+  const rows = offsetPaged ? fetchedRows : page.items;
 
   const tagNamesById = await getTransactionTagNames(
     userId,
@@ -430,6 +487,7 @@ export async function searchTransactions(userId: string, input: TransactionSearc
     })),
     filteredCount: Number(filteredRow?.count ?? 0),
     totalUserCount: Number(totalRow?.count ?? 0),
+    nextCursor: offsetPaged ? null : page.next,
   };
 }
 
