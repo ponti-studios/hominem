@@ -1153,12 +1153,11 @@ export const importStorageService = createStorageService('imports', {
 
 function isPreconditionFailed(error: unknown): boolean {
   if (typeof error !== 'object' || error === null) return false;
-  const name = 'name' in error ? error.name : undefined;
-  const status =
-    '$metadata' in error && typeof error.$metadata === 'object' && error.$metadata !== null
-      ? (error.$metadata as { httpStatusCode?: number }).httpStatusCode
-      : undefined;
-  return name === 'PreconditionFailed' || status === 412;
+  if ('name' in error && error.name === 'PreconditionFailed') return true;
+  if (!('$metadata' in error) || typeof error.$metadata !== 'object' || !error.$metadata) {
+    return false;
+  }
+  return 'httpStatusCode' in error.$metadata && error.$metadata.httpStatusCode === 412;
 }
 
 export const documentStorageService = createStorageService('documents', {
