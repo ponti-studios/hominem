@@ -87,6 +87,9 @@ DEVICE_NAME="${DEVICE_NAMES[$DEVICE_INDEX]}"
 DEVICE_ID="${DEVICE_IDS[$DEVICE_INDEX]}"
 echo "Selected ${DEVICE_NAME}."
 
+# ios/ is gitignored, so generate the development workspace (OmiroDev scheme) first.
+pnpm run prebuild:dev
+
 xcodebuild \
   -quiet \
   -workspace ios/OmiroDev.xcworkspace \
