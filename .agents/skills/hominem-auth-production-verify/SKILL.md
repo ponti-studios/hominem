@@ -1,6 +1,6 @@
 ---
 name: hominem-auth-production-verify
-description: Verify production web authentication (Career, Finance, Web) after changing auth config or deployment topology. Use after touching HOMINEM_INTERNAL_API_URL, VITE_PUBLIC_API_URL, PUBLIC_APP_URL, Better Auth cookie settings, or Railway service topology for these apps.
+description: Verify production web authentication (Career, Finance, Web) after changing auth config or deployment topology. Use after touching HOMINEM_INTERNAL_API_URL, VITE_PUBLIC_API_URL, PUBLIC_APP_URL, Better Auth cookie settings, or Fly app topology for these apps.
 ---
 
 # Hominem production auth verification
@@ -13,9 +13,9 @@ after a change.
 ## When to run this
 
 After any change to auth configuration or deployment topology for Career,
-Finance (currently stopped), or Web (served at `omiro.ponti.io`): env var edits (`HOMINEM_INTERNAL_API_URL`,
+Finance, or Web (served at `omiro.ponti.io`): env var edits (`HOMINEM_INTERNAL_API_URL`,
 `VITE_PUBLIC_API_URL`, `PUBLIC_APP_URL`), Better Auth cookie settings, or
-Railway service/network changes affecting these apps.
+Fly app/network changes affecting these apps.
 
 ## Verification steps
 
@@ -27,7 +27,7 @@ Railway service/network changes affecting these apps.
 3. Navigate to the protected route again and confirm it loads rather than
    redirecting back to sign-in.
 4. Confirm the app server's session/data requests reach the API service
-   directly (private Railway URL) without Cloudflare interception — a
+   directly (private Fly URL, `*.internal`) without Cloudflare interception — a
    redirect-loop back to sign-in after a successful OTP is the signature
    symptom of an SSR call accidentally going through the public
    Cloudflare-protected URL instead.

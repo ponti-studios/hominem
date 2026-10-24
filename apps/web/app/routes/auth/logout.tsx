@@ -2,7 +2,12 @@ import { redirect } from 'react-router';
 
 import { serverEnv } from '~/lib/env.server';
 
-const logoutUrl = new URL('/logout', serverEnv.VITE_PUBLIC_API_URL).toString();
+// Hand the API our origin so sign-out lands back on its sign-in page for this app.
+const logoutUrl = () => {
+  const url = new URL('/logout', serverEnv.VITE_PUBLIC_API_URL);
+  url.searchParams.set('next', serverEnv.PUBLIC_APP_URL);
+  return url.toString();
+};
 
-export const action = () => redirect(logoutUrl);
-export const loader = () => redirect(logoutUrl);
+export const action = () => redirect(logoutUrl());
+export const loader = () => redirect(logoutUrl());

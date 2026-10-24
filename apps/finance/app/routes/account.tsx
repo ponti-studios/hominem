@@ -20,12 +20,15 @@ import { useState } from 'react';
 
 import { ExportTransactions } from '~/components/finance/export-transactions';
 import { useFinanceApiClient } from '~/lib/api/provider';
-import { authClient } from '~/lib/auth-client';
 import { useUser } from '~/lib/hooks/use-user';
 import { toast } from '~/lib/toast';
 
 export default function AccountPage() {
-  const logout = () => authClient.signOut();
+  const logout = () => {
+    const logoutUrl = new URL('/logout', import.meta.env.VITE_PUBLIC_API_URL);
+    logoutUrl.searchParams.set('next', window.location.origin);
+    window.location.assign(logoutUrl.toString());
+  };
   const user = useUser();
   useFinanceApiClient(); // unused, but throws if we're not inside FinanceHonoProvider - cheap sanity check
   const queryClient = useQueryClient();

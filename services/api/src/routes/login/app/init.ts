@@ -9,6 +9,10 @@ export const loginInitSchema = z.object({
   email: z.string(),
   step: z.enum(['email', 'otp']),
   error: z.string().optional(),
+  /** Name of the app the person is signing in to, when they came from one. */
+  app: z.string().optional(),
+  /** They just signed out; the login page says so. */
+  signedOut: z.boolean().optional(),
 });
 export type LoginInit = z.infer<typeof loginInitSchema>;
 
@@ -22,6 +26,8 @@ export type ConsentInit = z.infer<typeof consentInitSchema>;
 
 export const logoutInitSchema = z.object({
   signedOut: z.boolean(),
+  /** Where the sign-out POST sends the browser afterwards (already validated server-side). */
+  next: z.string().optional(),
 });
 export type LogoutInit = z.infer<typeof logoutInitSchema>;
 
