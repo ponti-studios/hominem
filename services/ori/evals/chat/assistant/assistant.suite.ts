@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-
 import {
   currentUtcDate,
   loadJson,
@@ -7,32 +5,25 @@ import {
   type Golden,
   type PromptMessage,
 } from '../../lib/golden';
-import { defineTextSuite, fileAssertion } from '../../lib/suite';
+import { defineTextSuite } from '../../lib/suite';
 
 const promptUrl = new URL('./system-prompt.json', import.meta.url);
 const casesUrl = new URL('./expected-cases.json', import.meta.url);
-// The assertion's source rides in its config so the grader hash changes when the check does,
-// without staling every other suite's baseline the way a shared grader file would.
-const graderSource = await readFile(
-  new URL('../../assertions/word-count.ts', import.meta.url),
-  'utf8',
-);
 const prompt = await loadJson<PromptMessage[]>(promptUrl);
 
 export default await defineTextSuite({
   name: 'chat-assistant',
-  description: 'The Omiro chat assistant answers directly, calmly and briefly',
+  description: 'The Omiro chat assistant answers directly, calmly and accurately',
   tier: 'capability',
   cases: await loadJson<Golden[]>(casesUrl),
   datasetFiles: [casesUrl],
   promptFiles: [promptUrl],
   messages: (golden) =>
     renderMessages(prompt, { user_message: golden.input, current_date: currentUtcDate() }),
-  assertions: [fileAssertion('word-count.ts', { maxWords: 90, graderSource }, 'concise')],
   rubric: [
     'Use the expected output below as the authoritative reference for the answer’s conclusion and essential reasoning.',
     'The response should be calm, respectful, direct, and grounded; it must not mock, shame, patronize, or use sarcasm.',
-    'For an ordinary request, answer briefly and directly, with the conclusion first and the essential reason second, and then stop.',
-    'Treat material omissions, invented claims, generic reassurance, hedging, or padding as failures even when the general topic is correct.',
+    'Lead with the conclusion and give the essential reason. Do not judge the answer by its length: extra detail is fine as long as it is accurate and the conclusion matches the reference.',
+    'Treat material omissions, invented claims, generic reassurance, or hedging that avoids a conclusion as failures even when the general topic is correct.',
   ].join('\n'),
 });

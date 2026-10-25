@@ -3,7 +3,7 @@
   "tier": "capability",
   "datasetHash": "a3e24d506686",
   "promptHash": "f4e0d3a66556",
-  "graderHash": "e06fa9454db7",
+  "graderHash": "02625360ad56",
   "targetModel": "openai/gpt-5-mini",
   "judgeModel": "openai/gpt-6-luna",
   "trialsPerCase": 1,
@@ -15,11 +15,11 @@
     "passAllRate": 0.75,
     "errors": 0,
     "meanScore": 0.875,
-    "costUsd": 0.002591,
+    "costUsd": 0.002293,
     "promptTokens": 611,
-    "completionTokens": 1219,
-    "latencyP50Ms": 3548,
-    "latencyP95Ms": 4425,
+    "completionTokens": 1070,
+    "latencyP50Ms": 3032,
+    "latencyP95Ms": 9855,
     "byCategory": {
       "uncategorized": {
         "cases": 4,
@@ -36,10 +36,10 @@
           "pass": false,
           "score": 0.5,
           "failedMetrics": ["llm-rubric"],
-          "latencyMs": 4425,
-          "costUsd": 0.0008985,
+          "latencyMs": 9855,
+          "costUsd": 0.0010125,
           "promptTokens": 170,
-          "completionTokens": 428
+          "completionTokens": 485
         }
       ],
       "passRate": 0,
@@ -54,10 +54,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 3226,
-          "costUsd": 0.0006005,
+          "latencyMs": 2879,
+          "costUsd": 0.0003505,
           "promptTokens": 146,
-          "completionTokens": 282
+          "completionTokens": 157
         }
       ],
       "passRate": 1,
@@ -72,10 +72,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 3548,
-          "costUsd": 0.00063425,
+          "latencyMs": 4859,
+          "costUsd": 0.00068625,
           "promptTokens": 153,
-          "completionTokens": 298
+          "completionTokens": 324
         }
       ],
       "passRate": 1,
@@ -90,10 +90,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 4395,
-          "costUsd": 0.0004575,
+          "latencyMs": 3032,
+          "costUsd": 0.0002435,
           "promptTokens": 142,
-          "completionTokens": 211
+          "completionTokens": 104
         }
       ],
       "passRate": 1,

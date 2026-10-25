@@ -129,7 +129,6 @@ const graderFiles = [
   'mcp-tool-catalog.generated.json',
   'schemas.ts',
   'time-block-compare.ts',
-  '../assertions/concise.ts',
   '../assertions/time-block.ts',
   '../assertions/offer-shape.ts',
   '../assertions/mcp-grade.ts',

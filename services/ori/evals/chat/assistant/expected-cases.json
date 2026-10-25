@@ -45,7 +45,7 @@
     "expectedOutput": "No forecast can guarantee that far ahead. Check a current forecast closer to Saturday for a useful answer."
   },
   {
-    "name": "concise rewrite help",
+    "name": "rewrite help",
     "input": "Rewrite this to sound more direct: I just wanted to reach out and see if maybe you had time to review this.",
     "expectedOutput": "Could you review this?"
   }
