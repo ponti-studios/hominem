@@ -16,9 +16,15 @@ export function maxBodyBytesFor(method: string, path: string) {
 
 // Hono checks Content-Length up front and counts streamed bytes otherwise, so an oversized body is
 // rejected before the handler buffers it.
+//
+// Methods that never carry a body skip it. The Node adapter still exposes a body stream on OPTIONS,
+// and bodyLimit's re-wrap of that request throws, which turned every CORS preflight into a 500.
+const BODYLESS_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
 export function requestBodyLimit(): MiddlewareHandler {
   const limiters = new Map<number, MiddlewareHandler>();
   return (c, next) => {
+    if (BODYLESS_METHODS.has(c.req.method)) return next();
     const maxSize = maxBodyBytesFor(c.req.method, c.req.path);
     let limiter = limiters.get(maxSize);
     if (!limiter) {
