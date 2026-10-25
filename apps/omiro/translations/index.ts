@@ -478,6 +478,9 @@ const t = {
       openChatA11y: 'Open chat',
       saveNoteA11y: 'Save note',
       planA11y: 'Plan with your calendar',
+      attachLabel: 'Attach',
+      enhanceLabel: 'Enhance',
+      planLabel: 'Plan',
       dismissErrorHint: 'Tap to dismiss',
       retry: 'Retry',
       voiceErrors: {

@@ -8,11 +8,14 @@ import { ActionSheet } from '~/components/ui/action-sheet';
 import AppIcon from '~/components/ui/icon';
 import t from '~/translations';
 
+import { ComposerTrayChip } from './ComposerTrayChip';
+
 interface ComposerAttachButtonProps {
   disabled: boolean;
+  variant?: 'icon' | 'chip';
 }
 
-export function ComposerAttachButton({ disabled }: ComposerAttachButtonProps) {
+export function ComposerAttachButton({ disabled, variant = 'icon' }: ComposerAttachButtonProps) {
   const { pickAttachment, handleCameraCapture } = useComposerContext();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -22,16 +25,27 @@ export function ComposerAttachButton({ disabled }: ComposerAttachButtonProps) {
 
   return (
     <>
-      <IconButton
-        accessibilityLabel={t.inboxComposer.composer.addAttachmentA11y}
-        disabled={disabled}
-        style={{ width: 40, height: 40 }}
-        testID="composer-attach-button"
-        variant="plain"
-        onPress={showMenu}
-      >
-        <AppIcon name="plus" size={22} tintColor={barForeground} />
-      </IconButton>
+      {variant === 'chip' ? (
+        <ComposerTrayChip
+          accessibilityLabel={t.inboxComposer.composer.addAttachmentA11y}
+          disabled={disabled}
+          icon="plus"
+          label={t.inboxComposer.composer.attachLabel}
+          testID="composer-attach-button"
+          onPress={showMenu}
+        />
+      ) : (
+        <IconButton
+          accessibilityLabel={t.inboxComposer.composer.addAttachmentA11y}
+          disabled={disabled}
+          style={{ width: 40, height: 40 }}
+          testID="composer-attach-button"
+          variant="plain"
+          onPress={showMenu}
+        >
+          <AppIcon name="plus" size={22} tintColor={barForeground} />
+        </IconButton>
+      )}
       <ActionSheet
         cancelLabel={t.chat.input.actionSheet.cancel}
         onClose={() => setIsMenuOpen(false)}
