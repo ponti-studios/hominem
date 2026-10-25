@@ -9,12 +9,6 @@ export type {
   CareerProfileRecord,
   CareerTimelineRecord,
 } from './services/career/career.repository';
-export { CareerImportRepository } from './services/career/career-import.repository';
-export type {
-  CareerImportRecord,
-  CareerImportStage,
-  CareerImportStatus,
-} from './services/career/career-import.repository';
 export { ApplicationFilesRepository } from './services/career/application-files.repository';
 export type {
   CareerApplicationFileInput,

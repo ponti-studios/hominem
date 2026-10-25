@@ -1,3 +1,4 @@
+import { jobExternalKey, jobPostingUrlKey } from '@hominem/career-services';
 import {
   ApplicationFilesRepository,
   ApplicationNotesRepository,
@@ -160,6 +161,12 @@ function toApplicationDto(
     currentStage: application.currentStage ?? null,
     status: application.status ?? 'APPLIED',
     jobPostingUrl: application.jobPostingUrl,
+    externalId: application.externalId,
+    postedAt: application.postedAt,
+    postingText: application.postingText,
+    salaryMin: application.salaryMin,
+    salaryMax: application.salaryMax,
+    salaryCurrency: application.salaryCurrency,
     salaryExpectation: application.salaryExpectation,
     notes: application.notes,
     stageCount: detail?.stages.length ?? 0,
@@ -167,16 +174,42 @@ function toApplicationDto(
   });
 }
 
+/** The user's application for this same posting, matched by board id first, then normalized URL. */
+async function findExistingPosting(
+  ownerUserId: string,
+  input: Pick<
+    z.infer<typeof careerApplicationCreateSchema>,
+    'jobPostingUrl' | 'externalId' | 'source'
+  >,
+) {
+  const externalKey = jobExternalKey(input.source, input.externalId);
+  const urlKey = input.jobPostingUrl ? jobPostingUrlKey(input.jobPostingUrl) : null;
+  if (!externalKey && !urlKey) return null;
+  const candidates = await CareerRepository.listApplicationsWithPosting(db, ownerUserId);
+  return (
+    candidates.find(
+      (row) =>
+        (externalKey && jobExternalKey(row.source, row.externalId) === externalKey) ||
+        (urlKey && row.jobPostingUrl && jobPostingUrlKey(row.jobPostingUrl) === urlKey),
+    ) ?? null
+  );
+}
+
 export async function createCareerApplication(
   ownerUserId: string,
   input: z.infer<typeof careerApplicationCreateSchema>,
 ) {
-  return toApplicationDto(
-    await CareerRepository.createApplication(db, ownerUserId, {
-      ...input,
-      status: input.status ?? 'WISHLIST',
-    }),
-  );
+  const existing = await findExistingPosting(ownerUserId, input);
+  if (existing) return { application: toApplicationDto(existing), alreadyExisted: true };
+  return {
+    application: toApplicationDto(
+      await CareerRepository.createApplication(db, ownerUserId, {
+        ...input,
+        status: input.status ?? 'WISHLIST',
+      }),
+    ),
+    alreadyExisted: false,
+  };
 }
 
 export async function updateCareerApplication(

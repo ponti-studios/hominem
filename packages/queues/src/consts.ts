@@ -4,7 +4,6 @@ export const QUEUE_NAMES = {
   FILE_PROCESSING: 'file-processing',
   EMBEDDING_GENERATION: 'embedding-generation',
   RESUME_ANALYSIS: 'resume-analysis',
-  CAREER_JOB_IMPORT: 'career-job-import',
   SPEECH_USAGE_RECONCILIATION: 'speech-usage-reconciliation',
   CHAT_FILE_CLEANUP: 'chat-file-cleanup',
   CHAT_GENERATION_EFFECTS: 'chat-generation-effects',

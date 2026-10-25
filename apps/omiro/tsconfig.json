@@ -33,7 +33,7 @@
       // @hominem/db, @hominem/career-services, @hominem/ai, and
       // @hominem/finance-services below aren't this app's own dependencies
       // either — services/api's build/rpc/app.d.ts (the Hono AppType)
-      // preserves `import("@hominem/career-services").JobImportErrorCode`-
+      // preserves `import("@hominem/career-services").ResumeImportDiff`-
       // style references literally instead of inlining them, so every
       // consumer of that .d.ts has to resolve those specifiers itself and
       // hits the same injectWorkspacePackages trap services/api's own

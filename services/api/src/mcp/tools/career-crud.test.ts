@@ -692,3 +692,97 @@ describe('career_social_links_save', () => {
     expect(read.socialLinks?.github).toBe('https://github.com/mcp-test');
   });
 });
+
+describe('career_application_create posting dedupe', () => {
+  const create = async (owner: string, input: Record<string, unknown>) =>
+    toolOutput(
+      await callTool(owner, 'career_application_create', input),
+      careerApplicationCreateOutputSchema,
+    );
+  const cleanup = async (...ids: string[]) => {
+    await db.deleteFrom('app.careerApplications').where('id', 'in', ids).execute();
+  };
+
+  it('saves posting fields and returns the existing record for a tracking-param variant', async () => {
+    const first = await create(userId, {
+      company: 'Whatnot',
+      title: 'AI Tooling Engineer',
+      source: 'Ashby',
+      jobPostingUrl: 'https://jobs.ashbyhq.com/whatnot/7cfa0536-94de-42b7-9fe7-d646f4addc29',
+      postedAt: '2026-06-08',
+      postingText: 'Full posting body.',
+      salaryMin: 200000,
+      salaryMax: 260000,
+      salaryCurrency: 'USD',
+    });
+    expect(first.alreadyExisted).toBe(false);
+    expect(first.application).toMatchObject({
+      status: 'WISHLIST',
+      postingText: 'Full posting body.',
+      salaryMin: 200000,
+      salaryMax: 260000,
+      salaryCurrency: 'USD',
+    });
+
+    const again = await create(userId, {
+      company: 'Whatnot',
+      title: 'AI Tooling Engineer',
+      jobPostingUrl:
+        'https://www.jobs.ashbyhq.com/whatnot/7cfa0536-94de-42b7-9fe7-d646f4addc29/?utm_source=linkedin#apply',
+    });
+    expect(again.alreadyExisted).toBe(true);
+    expect(again.application.id).toBe(first.application.id);
+    await cleanup(first.application.id);
+  });
+
+  it('keeps different job ids on the same path apart', async () => {
+    const a = await create(userId, {
+      company: 'Acme',
+      title: 'Backend Engineer',
+      jobPostingUrl: 'https://acme.com/careers?gh_jid=4567890',
+    });
+    const b = await create(userId, {
+      company: 'Acme',
+      title: 'Designer',
+      jobPostingUrl: 'https://acme.com/careers?gh_jid=4567891&utm_source=x',
+    });
+    expect(b.alreadyExisted).toBe(false);
+    expect(b.application.id).not.toBe(a.application.id);
+    await cleanup(a.application.id, b.application.id);
+  });
+
+  it('matches on source + externalId even when the URL differs', async () => {
+    const first = await create(userId, {
+      company: 'Globex',
+      title: 'SRE',
+      source: 'Greenhouse',
+      externalId: 'gh-998877',
+      jobPostingUrl: 'https://boards.greenhouse.io/globex/jobs/998877',
+    });
+    const again = await create(userId, {
+      company: 'Globex',
+      title: 'SRE',
+      source: 'greenhouse',
+      externalId: 'gh-998877',
+      jobPostingUrl: 'https://globex.com/careers/sre',
+    });
+    expect(again.alreadyExisted).toBe(true);
+    expect(again.application.id).toBe(first.application.id);
+    await cleanup(first.application.id);
+  });
+
+  it("never matches another user's posting", async () => {
+    const mine = await create(userId, {
+      company: 'Initech',
+      title: 'Engineer',
+      jobPostingUrl: 'https://initech.com/jobs/4242',
+    });
+    const theirs = await create(otherUserId, {
+      company: 'Initech',
+      title: 'Engineer',
+      jobPostingUrl: 'https://initech.com/jobs/4242',
+    });
+    expect(theirs.alreadyExisted).toBe(false);
+    await cleanup(mine.application.id, theirs.application.id);
+  });
+});

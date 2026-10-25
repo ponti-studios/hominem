@@ -46,7 +46,6 @@ const OTEL_LOG_PREFIXES = [
   'image_',
   'ai_',
   'airport_',
-  'career_import_',
   'chat_file_',
   'thames_',
   'credential_',

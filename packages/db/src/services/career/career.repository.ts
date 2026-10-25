@@ -589,6 +589,20 @@ export const CareerRepository = {
       .executeTakeFirstOrThrow();
   },
 
+  /** Every application that came from a posting, so callers can match on normalized keys. */
+  async listApplicationsWithPosting(
+    handle: DbHandle,
+    ownerUserId: string,
+  ): Promise<CareerApplicationRecord[]> {
+    return handle
+      .selectFrom('app.careerApplications')
+      .selectAll()
+      .where('ownerUserid', '=', ownerUserId)
+      .where((eb) => eb.or([eb('jobPostingUrl', 'is not', null), eb('externalId', 'is not', null)]))
+      .orderBy('createdAt', 'asc')
+      .execute();
+  },
+
   async updateApplication(
     handle: DbHandle,
     ownerUserId: string,

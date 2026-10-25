@@ -1,3 +1,3 @@
 export * from './resume';
-export * from './job-import';
+export * from './job-key';
 export * from './models';

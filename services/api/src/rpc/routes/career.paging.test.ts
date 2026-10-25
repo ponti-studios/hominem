@@ -6,7 +6,6 @@ import {
   careerCertificationsSchema,
   careerEducationSchema,
   careerEngagementsSchema,
-  careerImportsSchema,
   careerProjectsSchema,
   careerSkillsSchema,
   careerWishlistCompaniesSchema,
@@ -17,7 +16,6 @@ import { validationErrorMiddleware } from '../middleware/validation';
 import { careerCertificationsRoutes } from './career.certifications';
 import { careerEducationRoutes } from './career.education';
 import { careerEngagementsRoutes } from './career.engagements';
-import { careerImportsRoutes } from './career.imports';
 import { careerProjectsRoutes } from './career.projects';
 import { careerSkillsRoutes } from './career.skills';
 import { careerWishlistRoutes } from './career.wishlist';
@@ -58,8 +56,7 @@ function createApp(user: RpcUser) {
     .route('/career/wishlist', careerWishlistRoutes)
     .route('/career/certifications', careerCertificationsRoutes)
     .route('/career/projects', careerProjectsRoutes)
-    .route('/career/skills', careerSkillsRoutes)
-    .route('/career/imports', careerImportsRoutes);
+    .route('/career/skills', careerSkillsRoutes);
 }
 
 const app = createApp(makeUser(userId));
@@ -92,10 +89,6 @@ const skillsPage: PageParser = (body) => {
   const page = careerSkillsSchema.parse(body);
   return { ids: page.skills.map((row) => row.id), nextCursor: page.nextCursor };
 };
-const importsPage: PageParser = (body) => {
-  const page = careerImportsSchema.parse(body);
-  return { ids: page.imports.map((row) => row.id), nextCursor: page.nextCursor };
-};
 
 const routes: Array<{ url: string; parse: PageParser }> = [
   { url: '/career/engagements', parse: engagementsPage },
@@ -104,7 +97,6 @@ const routes: Array<{ url: string; parse: PageParser }> = [
   { url: '/career/certifications', parse: certificationsPage },
   { url: '/career/projects', parse: projectsPage },
   { url: '/career/skills', parse: skillsPage },
-  { url: '/career/imports', parse: importsPage },
 ];
 
 function cursorOf(value: unknown): string {
@@ -207,7 +199,6 @@ beforeAll(async () => {
     'app.career_certifications',
     'app.career_projects',
     'app.career_skills',
-    'app.career_import_jobs',
   ]) {
     await pool.query(`DELETE FROM ${table} WHERE owner_userid = ANY($1)`, [owns]);
   }
@@ -286,30 +277,6 @@ beforeAll(async () => {
     [rowId(94), otherId],
   );
 
-  // Open imports are ordered by last update, newest first, with `id` breaking ties. The first two
-  // share a timestamp to prove the tiebreaker (and the microsecond text the cursor carries).
-  await pool.query(
-    `INSERT INTO app.career_import_jobs
-       (id, owner_userid, source_url, source_host, queue_job_id, status, stage, updated_at)
-     VALUES
-       ($1, $4, 'https://a.example/job', 'a.example', 'queue-a', 'ready', 'draft-ready', '2026-03-01T10:00:00.000001Z'),
-       ($2, $4, 'https://b.example/job', 'b.example', 'queue-b', 'ready', 'draft-ready', '2026-03-01T10:00:00.000001Z'),
-       ($3, $4, 'https://c.example/job', 'c.example', 'queue-c', 'queued', 'queued', '2026-02-01T00:00:00Z')`,
-    [rowId(70), rowId(71), rowId(72), userId],
-  );
-  await pool.query(
-    `INSERT INTO app.career_import_jobs
-       (id, owner_userid, source_url, source_host, queue_job_id, status, stage, updated_at)
-     VALUES ($1, $2, 'https://d.example/job', 'd.example', 'queue-d', 'dismissed', 'queued', '2026-04-01T00:00:00Z')`,
-    [rowId(73), userId],
-  );
-  await pool.query(
-    `INSERT INTO app.career_import_jobs
-       (id, owner_userid, source_url, source_host, queue_job_id, status, stage, updated_at)
-     VALUES ($1, $2, 'https://e.example/job', 'e.example', 'queue-e', 'queued', 'queued', '2026-05-01T00:00:00Z')`,
-    [rowId(93), otherId],
-  );
-
   // Enough skills for the bulk user to exceed one page at the default and maximum limits.
   await pool.query(
     `INSERT INTO app.career_skills (id, owner_userid, name, sort_order)
@@ -327,7 +294,6 @@ afterAll(async () => {
     'app.career_certifications',
     'app.career_projects',
     'app.career_skills',
-    'app.career_import_jobs',
   ]) {
     await pool.query(`DELETE FROM ${table} WHERE owner_userid = ANY($1)`, [owns]);
   }
@@ -351,7 +317,6 @@ describe('career list routes paging', () => {
       },
       { url: '/career/projects', parse: projectsPage, ids: [rowId(50), rowId(51), rowId(52)] },
       { url: '/career/skills', parse: skillsPage, ids: [rowId(60), rowId(61), rowId(62)] },
-      { url: '/career/imports', parse: importsPage, ids: [rowId(71), rowId(70), rowId(72)] },
     ];
     for (const { url, parse, ids } of expected) {
       const page = await readPage(url, parse);
@@ -369,7 +334,6 @@ describe('career list routes paging', () => {
     expect(seen).not.toContain(rowId(96));
     expect(seen).not.toContain(rowId(95));
     expect(seen).not.toContain(rowId(94));
-    expect(seen).not.toContain(rowId(93));
   });
 
   it.each([1, 2, 3])('walks every route in pages of %i with no repeats or gaps', async (size) => {
@@ -377,18 +341,6 @@ describe('career list routes paging', () => {
       const whole = await readPage(url, parse);
       expect(await walk(url, parse, size)).toEqual(whole.ids);
     }
-  });
-
-  it('returns the full import record, not just the fields that survive a snake_case read', async () => {
-    const res = await app.request('/career/imports?limit=1');
-    expect(res.status).toBe(200);
-    const page = careerImportsSchema.parse(await res.json());
-    expect(page.imports[0]).toMatchObject({
-      id: rowId(71),
-      queueJobId: 'queue-b',
-      sourceUrl: 'https://b.example/job',
-      updatedAt: expect.stringContaining('2026-03-01'),
-    });
   });
 
   it('does not repeat or skip rows when one is inserted between pages', async () => {
@@ -475,7 +427,6 @@ describe('career list routes paging', () => {
         cursor: await firstCursor('/career/engagements', engagementsPage),
         url: '/career/engagements',
       },
-      { cursor: await firstCursor('/career/imports', importsPage), url: '/career/imports' },
       { cursor: await firstCursor('/career/skills', skillsPage), url: '/career/skills' },
     ];
     for (const source of sources) {

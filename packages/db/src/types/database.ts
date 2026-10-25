@@ -113,15 +113,21 @@ export interface AppCareerApplications {
   coverLetterUrl: string | null;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   currentStageId: string | null;
+  externalId: string | null;
   id: Generated<string>;
   jobPostingUrl: string | null;
   legacyId: string | null;
   location: string | null;
   notes: string | null;
   ownerUserid: string;
+  postedAt: ColumnType<string, Date | string, Date | string> | null;
+  postingText: string | null;
   referredBy: string | null;
   resumeUrl: string | null;
+  salaryCurrency: string | null;
   salaryExpectation: number | null;
+  salaryMax: number | null;
+  salaryMin: number | null;
   source: string | null;
   status: AppCareerApplicationStatus;
   title: string;
@@ -209,25 +215,6 @@ export interface AppCareerEngagements {
   title: string;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
   url: string | null;
-}
-
-export interface AppCareerImportJobs {
-  attempts: Generated<number>;
-  completedAt: ColumnType<string, Date | string, Date | string> | null;
-  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
-  draft: Json | null;
-  errorCode: string | null;
-  errorMessage: string | null;
-  id: Generated<string>;
-  ownerUserid: string;
-  progress: Generated<number>;
-  queueJobId: string;
-  resolvedAt: ColumnType<string, Date | string, Date | string> | null;
-  sourceHost: string;
-  sourceUrl: string;
-  stage: Generated<string>;
-  status: Generated<string>;
-  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
 export interface AppCareerProfile {
@@ -1673,7 +1660,6 @@ export interface DB {
   'app.careerCertifications': AppCareerCertifications;
   'app.careerEducation': AppCareerEducation;
   'app.careerEngagements': AppCareerEngagements;
-  'app.careerImportJobs': AppCareerImportJobs;
   'app.careerProfile': AppCareerProfile;
   'app.careerProjectEngagements': AppCareerProjectEngagements;
   'app.careerProjects': AppCareerProjects;
