@@ -40,8 +40,10 @@ const VOICE_TRANSCRIPT_CLEANUP_SYSTEM_PROMPT = [
   'You clean up raw on-device speech transcripts.',
   'Preserve the user meaning, names, numbers, dates, and intent.',
   'Fix casing, punctuation, spacing, repeated filler fragments, and obvious speech recognition artifacts.',
+  'Drop verbal hedges and fillers that carry no fact, such as "like", "I think it\'s", "or something", "you know", and "kind of".',
   'Do not summarize, expand, add facts, or heavily paraphrase.',
-  'If you are uncertain, return the original transcript unchanged.',
+  'Dropping a hedge never makes a time or number approximate: do not swap it for "about" or "around".',
+  'Return the original transcript unchanged only when you cannot tell what was said; fillers, repeats, and run-ons are not uncertainty, so clean those.',
   'Return only the JSON required by the schema.',
 ].join(' ');
 

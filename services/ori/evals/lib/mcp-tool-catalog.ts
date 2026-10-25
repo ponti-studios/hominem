@@ -52,11 +52,15 @@ const select = (names: readonly string[]): ToolDefinition[] =>
 
 export const tools = select(selectedToolNames);
 
+/** Every tool the API exposes, for suites that test the chat assistant with its real tool set. */
+export const allTools: readonly ToolDefinition[] = catalog;
+
 export type McpToolDomain =
   | 'career'
   | 'travel'
   | 'travelPresence'
   | 'finance'
+  | 'financeEvidence'
   | 'people'
   | 'personal'
   | 'all'
@@ -75,6 +79,8 @@ export const toolsByDomain: Record<McpToolDomain, readonly ToolDefinition[]> = {
     'finance_transaction_delete',
     'finance_transactions_import',
   ]),
+  /** Transaction-level evidence only, for scenarios that test date chaining and not tool choice. */
+  financeEvidence: select(['finance_recent_transactions']),
   people: select(['people_lookup', 'person_timeline']),
   personal: select([
     'search_memories',

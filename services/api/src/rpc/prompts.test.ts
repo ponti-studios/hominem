@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { REPLY_LENGTHS } from '@hominem/ai/reply-profile';
 import { describe, expect, it } from 'vitest';
 
-import type { ChatResponseLength } from '../chat/chat-prompts';
+import { labelUtcDate, type ChatResponseLength } from '../chat/chat-prompts';
 import {
   buildChatSystemPrompt,
   CHAT_ASSISTANT_PROMPT,
@@ -56,7 +56,9 @@ describe('chat assistant personality', () => {
     expect(
       messages
         .filter((message) => message.role === 'system')
-        .map((message) => message.content.replace('{{current_date}}', getCurrentUtcDate()))
+        .map((message) =>
+          message.content.replace('{{current_date}}', labelUtcDate(getCurrentUtcDate())),
+        )
         .join('\n\n'),
     ).toBe(buildChatSystemPrompt(undefined, getCurrentUtcDate()));
   });

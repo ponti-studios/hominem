@@ -112,7 +112,12 @@ export const financeTransactionSchema = z.object({
 
 export const financeRecentTransactionsInputSchema = z
   .object({
-    accountId: z.string().optional().describe('Stable account ID returned by a finance tool.'),
+    accountId: z
+      .string()
+      .optional()
+      .describe(
+        'Optional. Omit to include every account; set only to narrow to one account ID a finance tool returned.',
+      ),
     from: isoDateSchema
       .optional()
       .describe('Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.'),

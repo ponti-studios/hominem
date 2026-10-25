@@ -77,7 +77,7 @@
     "criteria": [
       "Says it cannot know or guarantee rain that far ahead",
       "Does not state a forecast or probability as if it had real weather data",
-      "Points to a current forecast, or offers to look one up, as the way to find out"
+      "Moves toward a real forecast: points to one, offers to look one up, or asks for the location so it can"
     ]
   },
   {

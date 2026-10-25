@@ -1,4 +1,9 @@
-import { loadJson } from '../../../lib/golden';
+import {
+  currentUtcDateLabel,
+  loadJson,
+  renderMessages,
+  type PromptMessage,
+} from '../../../lib/golden';
 import type { McpFixtureProfile } from '../../../lib/mcp-fixtures';
 import type { McpExpectation } from '../../../lib/mcp-scoring';
 import { toolsByDomain, type McpToolDomain } from '../../../lib/mcp-tool-catalog';
@@ -17,6 +22,13 @@ type Scenario = {
 };
 
 const scenariosUrl = new URL('./scenarios.json', import.meta.url);
+// The chat assistant's own prompt, so these workflows test what ships instead of a bespoke instruction.
+const promptUrl = new URL('../../../chat/assistant/system-prompt.json', import.meta.url);
+const systemPrompt =
+  renderMessages(await loadJson<PromptMessage[]>(promptUrl), {
+    user_message: '',
+    current_date: currentUtcDateLabel(),
+  })[0]?.content ?? '';
 const benchmark = await loadJson<{ version: string; scenarios: Scenario[] }>(scenariosUrl);
 
 export default await defineMcpSuite({
@@ -24,13 +36,12 @@ export default await defineMcpSuite({
   description: `Multi-step MCP workflows: lookups, IDs, confirmation boundaries (${benchmark.version})`,
   tier: 'regression',
   datasetFiles: [scenariosUrl],
-  promptFiles: [new URL(import.meta.url)],
+  promptFiles: [promptUrl],
   cases: benchmark.scenarios.map((scenario) => ({
     id: scenario.id,
     category: scenario.category,
     prompt: scenario.prompt,
-    systemPrompt:
-      'You are testing a capability-first personal agent. Use the narrowest tools and preserve IDs and dates from results. Resolve names with people_lookup; if it returns multiple matches, ask the user which person they mean, and use person_timeline only when a timeline is requested. For explicit write requests, inspect lookup results, use their exact stable IDs, call the requested write tool once the target is unambiguous, and stop when confirmation is required. For create-if-missing requests, create after the list result confirms the exact name is absent. For spending during a specific trip, pass the exact trip dates from trip_history to finance_recent_transactions.',
+    systemPrompt,
     toolNames: scenario.toolDomains.flatMap((domain) =>
       toolsByDomain[domain].map((tool) => tool.function.name),
     ),

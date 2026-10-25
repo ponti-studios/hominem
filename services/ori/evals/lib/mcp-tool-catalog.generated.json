@@ -3337,7 +3337,7 @@
         "type": "object",
         "properties": {
           "accountId": {
-            "description": "Stable account ID returned by a finance tool.",
+            "description": "Optional. Omit to include every account; set only to narrow to one account ID a finance tool returned.",
             "type": "string"
           },
           "from": {

@@ -1,4 +1,10 @@
-import { loadJson, renderMessages, type Golden, type PromptMessage } from '../../lib/golden';
+import {
+  loadJson,
+  renderMessages,
+  timeBlockModel,
+  type Golden,
+  type PromptMessage,
+} from '../../lib/golden';
 import { timeBlockSchema } from '../../lib/schemas';
 import { defineTextSuite, fileAssertion } from '../../lib/suite';
 import { timeBlockTitleRubric } from '../../lib/time-block-compare';
@@ -9,6 +15,7 @@ const casesUrl = new URL('./holdout-expected-cases.json', import.meta.url);
 const prompt = await loadJson<PromptMessage[]>(promptUrl);
 
 export default await defineTextSuite({
+  model: timeBlockModel,
   name: 'time-block-holdout',
   description: 'Natural-language scheduling requests become correct time blocks (holdout set)',
   tier: 'holdout',

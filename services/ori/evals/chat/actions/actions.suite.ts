@@ -1,5 +1,6 @@
 import {
-  currentUtcDate,
+  chatModel,
+  currentUtcDateLabel,
   loadJson,
   renderMessages,
   type CriteriaGolden,
@@ -9,8 +10,6 @@ import { defineTextSuite } from '../../lib/suite';
 
 const promptUrl = new URL('./system-prompt.json', import.meta.url);
 const casesUrl = new URL('./expected-cases.json', import.meta.url);
-/** The model chat ships with (`CHAT_MODEL` in packages/env). Keep in step with it. */
-const chatModel = process.env.ORI_TARGET_MODEL?.trim() || 'openai/gpt-6-luna';
 const prompt = await loadJson<PromptMessage[]>(promptUrl);
 
 export default await defineTextSuite({
@@ -31,9 +30,10 @@ export default await defineTextSuite({
   datasetFiles: [casesUrl],
   promptFiles: [promptUrl],
   messages: (golden) =>
-    renderMessages(prompt, { user_message: golden.input, current_date: currentUtcDate() }),
+    renderMessages(prompt, { user_message: golden.input, current_date: currentUtcDateLabel() }),
   rubric: [
     'You are grading the first step of a private personal assistant. It was offered tools, and the reply is the tool call it made (or a plain reply, if it made none).',
+    'Today is {{currentDate}} (UTC). Judge dates against it.',
     'There is no model answer. Grade against the criteria below: the right tool, sensible arguments, and no asking permission or announcing an action instead of taking it.',
   ].join('\n'),
 });

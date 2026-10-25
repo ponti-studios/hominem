@@ -16,7 +16,7 @@ export default await defineTextSuite({
   messages: (golden) => renderMessages(prompt, { rawText: golden.input }),
   schema: voiceCleanupSchema,
   rubric: [
-    'Compare actual output to the reference while allowing harmless punctuation and capitalization differences.',
+    'Compare actual output to the reference while allowing harmless punctuation and capitalization differences, and connective words the speaker actually said (such as "also" or "and") kept or dropped.',
     'Require names, numbers, dates, meaning, and intent to remain intact.',
     'Require filler and repeated speech fragments to be removed without summarizing or inventing content.',
   ].join('\n'),

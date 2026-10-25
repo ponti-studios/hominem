@@ -25,7 +25,7 @@ export default await defineTextSuite({
   schema: jobImportSchema,
   rubric: [
     'Require the correct Whatnot company and AI Tooling Engineer role.',
-    'Require fullText and jobDescription to retain the complete job description in source order, not a summary.',
+    'Require fullText to retain the whole posting body in source order, through the closing equal-opportunity statement, not a summary. Require jobDescription to be the verbatim role overview (every paragraph before the responsibilities, requirements and benefits lists), not just the opening paragraph; it does not need to repeat those lists.',
     'Require fields to be grounded only in the supplied posting and leave unavailable fields empty.',
   ].join('\n'),
 });

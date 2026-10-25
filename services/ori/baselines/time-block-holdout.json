@@ -2,24 +2,24 @@
   "suite": "time-block-holdout",
   "tier": "holdout",
   "datasetHash": "8bb448e431aa",
-  "promptHash": "c6796822ab40",
-  "graderHash": "2fda80dc785c",
-  "targetModel": "openai/gpt-5-mini",
+  "promptHash": "6bdceec9ec9c",
+  "graderHash": "fd8b206c3f70",
+  "targetModel": "z-ai/glm-5.3-flash",
   "judgeModel": "openai/gpt-6-luna",
-  "trialsPerCase": 1,
+  "trialsPerCase": 3,
   "limited": false,
   "summary": {
     "cases": 5,
-    "trials": 5,
+    "trials": 15,
     "passRate": 1,
     "passAllRate": 1,
     "errors": 0,
     "meanScore": 1,
-    "costUsd": 0.006306,
-    "promptTokens": 14346,
-    "completionTokens": 2944,
-    "latencyP50Ms": 6687,
-    "latencyP95Ms": 7685,
+    "costUsd": 0.002828,
+    "promptTokens": 42453,
+    "completionTokens": 2844,
+    "latencyP50Ms": 1639,
+    "latencyP95Ms": 3156,
     "byCategory": {
       "uncategorized": {
         "cases": 5,
@@ -36,10 +36,28 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 6687,
-          "costUsd": 0.00137765,
-          "promptTokens": 2869,
-          "completionTokens": 647
+          "latencyMs": 1737,
+          "costUsd": 0.00018982,
+          "promptTokens": 2830,
+          "completionTokens": 185
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 3051,
+          "costUsd": 0.00019742,
+          "promptTokens": 2830,
+          "completionTokens": 223
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 3156,
+          "costUsd": 0.000213596,
+          "promptTokens": 2830,
+          "completionTokens": 317
         }
       ],
       "passRate": 1,
@@ -54,10 +72,28 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 7685,
-          "costUsd": 0.00138115,
-          "promptTokens": 2867,
-          "completionTokens": 649
+          "latencyMs": 2516,
+          "costUsd": 0.000188112,
+          "promptTokens": 2828,
+          "completionTokens": 177
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 958,
+          "costUsd": 0.00018176,
+          "promptTokens": 2828,
+          "completionTokens": 159
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1187,
+          "costUsd": 0.000192696,
+          "promptTokens": 2828,
+          "completionTokens": 214
         }
       ],
       "passRate": 1,
@@ -72,10 +108,28 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 6231,
-          "costUsd": 0.00112165,
-          "promptTokens": 2885,
-          "completionTokens": 517
+          "latencyMs": 1773,
+          "costUsd": 0.000184732,
+          "promptTokens": 2846,
+          "completionTokens": 169
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1800,
+          "costUsd": 0.000184268,
+          "promptTokens": 2846,
+          "completionTokens": 167
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1639,
+          "costUsd": 0.000183068,
+          "promptTokens": 2846,
+          "completionTokens": 161
         }
       ],
       "passRate": 1,
@@ -90,10 +144,28 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 6822,
-          "costUsd": 0.00142365,
-          "promptTokens": 2861,
-          "completionTokens": 671
+          "latencyMs": 1734,
+          "costUsd": 0.000186036,
+          "promptTokens": 2822,
+          "completionTokens": 182
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1222,
+          "costUsd": 0.000185772,
+          "promptTokens": 2822,
+          "completionTokens": 181
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1484,
+          "costUsd": 0.000186372,
+          "promptTokens": 2822,
+          "completionTokens": 184
         }
       ],
       "passRate": 1,
@@ -108,10 +180,28 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 4204,
-          "costUsd": 0.0010024,
-          "promptTokens": 2864,
-          "completionTokens": 460
+          "latencyMs": 1363,
+          "costUsd": 0.000181998,
+          "promptTokens": 2825,
+          "completionTokens": 161
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1608,
+          "costUsd": 0.000189534,
+          "promptTokens": 2825,
+          "completionTokens": 199
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1601,
+          "costUsd": 0.000182734,
+          "promptTokens": 2825,
+          "completionTokens": 165
         }
       ],
       "passRate": 1,

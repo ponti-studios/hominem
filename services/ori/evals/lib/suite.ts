@@ -1,9 +1,11 @@
 import type { Assertion, TestCase, UnifiedConfig } from 'promptfoo';
 
 import {
+  currentUtcDate,
   fingerprint,
   fingerprintGrading,
   judgeModel,
+  chatModel,
   targetModel,
   type CriteriaGolden,
   type Golden,
@@ -11,7 +13,7 @@ import {
 } from './golden';
 import type { McpFixtureProfile } from './mcp-fixtures';
 import type { McpExpectation } from './mcp-scoring';
-import { tools as toolCatalog } from './mcp-tool-catalog';
+import { allTools as toolCatalog } from './mcp-tool-catalog';
 
 /**
  * regression: must stay green, any new failure blocks.
@@ -36,16 +38,16 @@ export const JUDGE_MIN_SCORE = 0.7;
 
 const path = (url: URL): string => url.pathname;
 
-export const rubricAssertion = (rubric: string): Assertion => ({
+export const rubricAssertion = (rubric: string, showInput = false): Assertion => ({
   type: 'llm-rubric',
-  value: `${rubric}\n\nReference output:\n{{expectedOutput}}`,
+  value: `${rubric}${showInput ? '\n\nThe model was given:\n{{golden.input}}' : ''}\n\nReference output:\n{{expectedOutput}}`,
   threshold: JUDGE_MIN_SCORE,
 });
 
 /** Open-ended replies have no single right answer, so grade against what the reply must do. */
 export const criteriaAssertion = (rubric: string, criteria: readonly string[]): Assertion => ({
   type: 'llm-rubric',
-  value: `${rubric}\n\nThe reply passes only if it satisfies every point below:\n${criteria
+  value: `${rubric}\n\nThe user wrote:\n{{golden.input}}\n\nThe reply passes only if it satisfies every point below:\n${criteria
     .map((criterion) => `- ${criterion}`)
     .join('\n')}`,
   threshold: JUDGE_MIN_SCORE,
@@ -83,6 +85,8 @@ type TextSuiteOptions = {
   model?: string;
   /** Catalog tools offered to the model. A tool call shows up in the output for the judge. */
   toolNames?: readonly string[];
+  /** Let the judge read each case's input, so it can tell stated details from invented ones. */
+  judgeSeesInput?: boolean;
   /** Deterministic assertions, run before and instead of paying for a judge where possible. */
   assertions?: readonly Assertion[];
 };
@@ -95,6 +99,7 @@ export async function defineTextSuite(options: TextSuiteOptions): Promise<Suite>
     vars: {
       messages: options.messages(golden),
       expectedOutput: 'criteria' in golden ? '' : golden.expectedOutput,
+      currentDate: currentUtcDate(),
       golden,
     },
     metadata: { category: golden.category ?? 'uncategorized', tier: options.tier },
@@ -105,7 +110,7 @@ export async function defineTextSuite(options: TextSuiteOptions): Promise<Suite>
         ? [
             'criteria' in golden
               ? criteriaAssertion(rubric, golden.criteria)
-              : rubricAssertion(rubric),
+              : rubricAssertion(rubric, options.judgeSeesInput),
           ]
         : []),
     ],
@@ -125,6 +130,7 @@ export async function defineTextSuite(options: TextSuiteOptions): Promise<Suite>
           id: `openrouter:${options.model ?? targetModel}`,
           config: {
             temperature: 0,
+            showThinking: false,
             ...(options.toolNames
               ? {
                   tools: toolCatalog.filter((tool) =>
@@ -233,6 +239,7 @@ export async function defineMcpSuite(options: McpSuiteOptions): Promise<Suite> {
     name: options.name,
     description: options.description,
     tier: options.tier,
+    model: chatModel,
     datasetFiles: options.datasetFiles,
     promptFiles: options.promptFiles,
     config: {
@@ -241,8 +248,8 @@ export async function defineMcpSuite(options: McpSuiteOptions): Promise<Suite> {
       providers: [
         {
           id: `file://${path(new URL('../providers/mcp-agent.ts', import.meta.url))}`,
-          label: `mcp-agent:${targetModel}`,
-          config: { model: targetModel },
+          label: `mcp-agent:${chatModel}`,
+          config: { model: chatModel },
         },
       ],
       tests,

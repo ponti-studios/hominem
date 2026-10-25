@@ -19,6 +19,10 @@ Rules:
 15. Do not map a contract's duration to startDate. startDate is only a calendar date when work begins.
 16. If the employer explicitly pays an immigration fee, including the UK NHS surcharge, set employerCoversVisa to true.
 17. Return exactly the fields in the output schema. Do not add extra keys for details such as contract length, rate units, work schedule, or tax status.
+18. Include every field of the output schema in every offer, with null for anything the notes do not state. Never leave a key out.
+19. equityValue is the dollar amount the notes state for the grant. A plain amount such as "100k RSU grant", "RSU 200k", or "50k NSO grant" sets BOTH equityValue and equityGrantTotal to that amount (100000, 200000, 50000). Never use a per-share price or strike price. Only two cases leave equityValue null, with the amount in equityGrantTotal alone: the notes literally say "grant total", or the equity is described as a percentage of base (rule 5 or 11).
+20. equityVestingFrequency is one of monthly, quarterly, semi-annual, or annual, and only when the notes state it. Words such as "graded" are not a frequency: use null.
+21. hasBonus is true when a bonus of any kind is stated (a percentage or a sign-on amount). Use false only for an explicit "no bonus"; "no benefits" says nothing about bonuses, so use null.
 
 Output format — valid JSON matching this structure (types and examples shown; use the correct currency code for the location):
 

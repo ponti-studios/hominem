@@ -99,7 +99,7 @@ export function scoreMcpTrace(trace: McpTrace, expected: McpExpectation): McpSce
   }
 
   const missingOutput = (expected.outputIncludes ?? []).filter(
-    (value) => !(trace.text ?? '').includes(value),
+    (value) => !(trace.text ?? '').toLowerCase().includes(value.toLowerCase()),
   );
   const callsByTool = new Map((trace.calls ?? []).map((call) => [call.tool, call]));
   const failedArguments = (expected.argumentAssertions ?? [])
