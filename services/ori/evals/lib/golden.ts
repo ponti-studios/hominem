@@ -11,6 +11,9 @@ export type Golden = {
   additionalMetadata?: Record<string, unknown>;
 };
 
+/** Open-ended replies: no single right answer, so say what a good reply must do instead. */
+export type CriteriaGolden = Omit<Golden, 'expectedOutput'> & { criteria: string[] };
+
 export type PromptMessage = { role: string; content: string };
 
 export const targetModel = process.env.ORI_TARGET_MODEL?.trim() || 'openai/gpt-5-mini';

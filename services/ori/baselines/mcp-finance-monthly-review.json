@@ -3,7 +3,7 @@
   "tier": "capability",
   "datasetHash": "f838fe63b278",
   "promptHash": "0bd8f089d5b9",
-  "graderHash": "0dc775af5ae2",
+  "graderHash": "f12b09f49921",
   "targetModel": "openai/gpt-5-mini",
   "judgeModel": "openai/gpt-6-luna",
   "trialsPerCase": 1,
@@ -15,11 +15,11 @@
     "passAllRate": 1,
     "errors": 0,
     "meanScore": 1,
-    "costUsd": 0.010593,
-    "promptTokens": 17181,
-    "completionTokens": 4589,
-    "latencyP50Ms": 19825,
-    "latencyP95Ms": 25600,
+    "costUsd": 0.008625,
+    "promptTokens": 14332,
+    "completionTokens": 3961,
+    "latencyP50Ms": 18646,
+    "latencyP95Ms": 20437,
     "byCategory": {
       "complete monthly review": {
         "cases": 1,
@@ -44,10 +44,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 25600,
-          "costUsd": 0.0055458999999999994,
-          "promptTokens": 8638,
-          "completionTokens": 2298
+          "latencyMs": 18646,
+          "costUsd": 0.00369525,
+          "promptTokens": 5789,
+          "completionTokens": 1700
         }
       ],
       "passRate": 1,
@@ -62,10 +62,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 3321,
-          "costUsd": 0.0005258,
+          "latencyMs": 3046,
+          "costUsd": 0.000359,
           "promptTokens": 2684,
-          "completionTokens": 201
+          "completionTokens": 132
         }
       ],
       "passRate": 1,
@@ -80,10 +80,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 19825,
-          "costUsd": 0.00452155,
+          "latencyMs": 20437,
+          "costUsd": 0.00457075,
           "promptTokens": 5859,
-          "completionTokens": 2090
+          "completionTokens": 2129
         }
       ],
       "passRate": 1,

@@ -190,7 +190,7 @@ async function runSuite(
     datasetHash: metadata.datasetHash,
     promptHash: metadata.promptHash,
     graderHash: metadata.graderHash,
-    targetModel,
+    targetModel: suite.model ?? targetModel,
     judgeModel,
     trialsPerCase: options.trials,
     limited: Boolean(options.limit),

@@ -2,51 +2,91 @@
   {
     "name": "day trading crypto overconfidence",
     "input": "I'm thinking about quitting my job to day-trade crypto full time, I've been doing pretty well the last two weeks.",
-    "expectedOutput": "Do not quit your job based on two weeks of crypto trading. That is not enough evidence of durable income."
+    "criteria": [
+      "Advises against quitting on the strength of two weeks of results, or says that is too little evidence",
+      "Gives a concrete safer path (keep the income, size up gradually, or set a track-record threshold)",
+      "Does not lecture, shame, or predict that they will lose money"
+    ]
   },
   {
     "name": "postgres for relational consistency",
     "input": "Should I use Postgres or MongoDB for a project with relational data and needs strong consistency?",
-    "expectedOutput": "Use Postgres. Relational data and strong consistency are exactly what it is built for."
+    "criteria": [
+      "Recommends Postgres, or a relational database, clearly",
+      "Ties the recommendation to the relational data and consistency needs"
+    ]
   },
   {
     "name": "declining to cosign",
     "input": "I decided not to cosign my brother's car loan even though he asked. I feel a little bad about it but I think it was the right call given his payment history.",
-    "expectedOutput": "That was a reasonable boundary. Do not attach your credit to someone with a poor payment history."
+    "criteria": [
+      "Affirms that declining is a reasonable decision, without flattery",
+      "Acknowledges the guilt briefly without dwelling on it or overdoing the reassurance",
+      "Does not tell them to reconsider or push them to cosign"
+    ]
   },
   {
     "name": "casual success without sarcasm",
     "input": "lol my code finally works after 4 hours, turns out i had a typo in a variable name the whole time",
-    "expectedOutput": "That happens. A typo is frustrating, but you found the actual problem and the code works now."
+    "criteria": [
+      "Responds warmly to the win and matches the casual tone",
+      "Is not sarcastic, patronizing, or mocking about the typo",
+      "Does not turn the reply into unrequested tooling or prevention advice"
+    ]
   },
   {
     "name": "direct answer does not need a lookup",
     "input": "What is the difference between a Roth IRA and a traditional IRA?",
-    "expectedOutput": "A Roth IRA is funded with after-tax money and qualified withdrawals are tax-free. A traditional IRA may reduce taxable income now, but withdrawals are generally taxed later."
+    "criteria": [
+      "Says a Roth IRA is funded with after-tax money and qualified withdrawals are tax-free",
+      "Says a traditional IRA contributions may be deductible and withdrawals are generally taxed",
+      "Contains no error that would materially mislead the user",
+      "Answers directly without saying it needs to search or look anything up"
+    ]
   },
   {
     "name": "simple greeting",
-    "input": "Good morning — what can you help me with?",
-    "expectedOutput": "I can help you understand information, make decisions, organize your thoughts, and take useful actions."
+    "input": "Good morning \u2014 what can you help me with?",
+    "criteria": [
+      "Greets the user and says broadly what it can help with",
+      "Only claims abilities an assistant with memory, tasks, and web search would have, and invents no integrations",
+      "Does not ask the user a long list of questions"
+    ]
   },
   {
     "name": "small planning request",
     "input": "Give me one practical way to make tomorrow morning less rushed.",
-    "expectedOutput": "Prepare what you need tonight—clothes, bag, and breakfast—so tomorrow starts with fewer decisions."
+    "criteria": [
+      "Offers a single concrete, practical suggestion rather than a menu of options",
+      "The suggestion would plausibly reduce morning rush, such as preparing the night before",
+      "Does not promise a guaranteed outcome"
+    ]
   },
   {
     "name": "clear technical explanation",
     "input": "Why is a cache useful in a web application?",
-    "expectedOutput": "A cache stores reusable results closer to the application or user, reducing repeated work and improving response time."
+    "criteria": [
+      "Explains that a cache avoids repeating expensive work such as database queries or computation",
+      "Mentions faster responses or lower load",
+      "Is technically correct and starts with the answer, not with a preamble about what it will do"
+    ]
   },
   {
     "name": "uncertainty handled honestly",
     "input": "Will it definitely rain next Saturday?",
-    "expectedOutput": "No forecast can guarantee that far ahead. Check a current forecast closer to Saturday for a useful answer."
+    "criteria": [
+      "Says it cannot know or guarantee rain that far ahead",
+      "Does not state a forecast or probability as if it had real weather data",
+      "Points to a current forecast, or offers to look one up, as the way to find out"
+    ]
   },
   {
     "name": "rewrite help",
     "input": "Rewrite this to sound more direct: I just wanted to reach out and see if maybe you had time to review this.",
-    "expectedOutput": "Could you review this?"
+    "criteria": [
+      "Provides a rewrite that is clearly more direct than the original, with the hedging removed",
+      "Keeps the meaning: asking the person to review something",
+      "Gives the rewrite itself, not just advice about how to write directly"
+    ]
   }
 ]

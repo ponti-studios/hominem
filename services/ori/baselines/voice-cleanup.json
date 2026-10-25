@@ -3,7 +3,7 @@
   "tier": "capability",
   "datasetHash": "a3e24d506686",
   "promptHash": "f4e0d3a66556",
-  "graderHash": "02625360ad56",
+  "graderHash": "176ec9c67004",
   "targetModel": "openai/gpt-5-mini",
   "judgeModel": "openai/gpt-6-luna",
   "trialsPerCase": 1,
@@ -15,11 +15,11 @@
     "passAllRate": 0.75,
     "errors": 0,
     "meanScore": 0.875,
-    "costUsd": 0.002293,
+    "costUsd": 0.002033,
     "promptTokens": 611,
-    "completionTokens": 1070,
-    "latencyP50Ms": 3032,
-    "latencyP95Ms": 9855,
+    "completionTokens": 940,
+    "latencyP50Ms": 2992,
+    "latencyP95Ms": 5087,
     "byCategory": {
       "uncategorized": {
         "cases": 4,
@@ -36,10 +36,10 @@
           "pass": false,
           "score": 0.5,
           "failedMetrics": ["llm-rubric"],
-          "latencyMs": 9855,
-          "costUsd": 0.0010125,
+          "latencyMs": 5087,
+          "costUsd": 0.0009665,
           "promptTokens": 170,
-          "completionTokens": 485
+          "completionTokens": 462
         }
       ],
       "passRate": 0,
@@ -54,10 +54,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 2879,
-          "costUsd": 0.0003505,
+          "latencyMs": 3057,
+          "costUsd": 0.0003245,
           "promptTokens": 146,
-          "completionTokens": 157
+          "completionTokens": 144
         }
       ],
       "passRate": 1,
@@ -72,10 +72,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 4859,
-          "costUsd": 0.00068625,
+          "latencyMs": 2866,
+          "costUsd": 0.00049425,
           "promptTokens": 153,
-          "completionTokens": 324
+          "completionTokens": 228
         }
       ],
       "passRate": 1,
@@ -90,10 +90,10 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 3032,
-          "costUsd": 0.0002435,
+          "latencyMs": 2992,
+          "costUsd": 0.0002475,
           "promptTokens": 142,
-          "completionTokens": 104
+          "completionTokens": 106
         }
       ],
       "passRate": 1,

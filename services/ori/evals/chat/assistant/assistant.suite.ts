@@ -2,28 +2,30 @@ import {
   currentUtcDate,
   loadJson,
   renderMessages,
-  type Golden,
+  type CriteriaGolden,
   type PromptMessage,
 } from '../../lib/golden';
 import { defineTextSuite } from '../../lib/suite';
 
 const promptUrl = new URL('./system-prompt.json', import.meta.url);
 const casesUrl = new URL('./expected-cases.json', import.meta.url);
+/** The model chat ships with (`CHAT_MODEL` in packages/env). Keep in step with it. */
+const chatModel = process.env.ORI_TARGET_MODEL?.trim() || 'openai/gpt-6-luna';
 const prompt = await loadJson<PromptMessage[]>(promptUrl);
 
 export default await defineTextSuite({
   name: 'chat-assistant',
   description: 'The Omiro chat assistant answers directly, calmly and accurately',
   tier: 'capability',
-  cases: await loadJson<Golden[]>(casesUrl),
+  model: chatModel,
+  cases: await loadJson<CriteriaGolden[]>(casesUrl),
   datasetFiles: [casesUrl],
   promptFiles: [promptUrl],
   messages: (golden) =>
     renderMessages(prompt, { user_message: golden.input, current_date: currentUtcDate() }),
   rubric: [
-    'Use the expected output below as the authoritative reference for the answer’s conclusion and essential reasoning.',
-    'The response should be calm, respectful, direct, and grounded; it must not mock, shame, patronize, or use sarcasm.',
-    'Lead with the conclusion and give the essential reason. Do not judge the answer by its length: extra detail is fine as long as it is accurate and the conclusion matches the reference.',
-    'Treat material omissions, invented claims, generic reassurance, or hedging that avoids a conclusion as failures even when the general topic is correct.',
+    'You are grading one reply from a private personal assistant. There is no single correct wording, so grade against the criteria below, not against a model answer.',
+    'Do not judge by length, format, or style. A longer or differently worded reply passes if it satisfies every criterion.',
+    'Fail the reply if it mocks, shames, patronizes, or uses sarcasm, if it invents capabilities or facts, or if it contains an error that would materially mislead the user. Do not fail it for small incidental details.',
   ].join('\n'),
 });

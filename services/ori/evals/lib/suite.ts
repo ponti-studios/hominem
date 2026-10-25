@@ -5,11 +5,13 @@ import {
   fingerprintGrading,
   judgeModel,
   targetModel,
+  type CriteriaGolden,
   type Golden,
   type PromptMessage,
 } from './golden';
 import type { McpFixtureProfile } from './mcp-fixtures';
 import type { McpExpectation } from './mcp-scoring';
+import { tools as toolCatalog } from './mcp-tool-catalog';
 
 /**
  * regression: must stay green, any new failure blocks.
@@ -22,6 +24,8 @@ export type Suite = {
   name: string;
   description: string;
   tier: Tier;
+  /** Model under test when the suite pins one, else the shared target. */
+  model?: string;
   config: UnifiedConfig;
   /** Dataset and prompt files, hashed into every run record. */
   datasetFiles: readonly URL[];
@@ -35,6 +39,15 @@ const path = (url: URL): string => url.pathname;
 export const rubricAssertion = (rubric: string): Assertion => ({
   type: 'llm-rubric',
   value: `${rubric}\n\nReference output:\n{{expectedOutput}}`,
+  threshold: JUDGE_MIN_SCORE,
+});
+
+/** Open-ended replies have no single right answer, so grade against what the reply must do. */
+export const criteriaAssertion = (rubric: string, criteria: readonly string[]): Assertion => ({
+  type: 'llm-rubric',
+  value: `${rubric}\n\nThe reply passes only if it satisfies every point below:\n${criteria
+    .map((criterion) => `- ${criterion}`)
+    .join('\n')}`,
   threshold: JUDGE_MIN_SCORE,
 });
 
@@ -58,14 +71,18 @@ type TextSuiteOptions = {
   name: string;
   description: string;
   tier: Tier;
-  cases: readonly Golden[];
+  cases: readonly (Golden | CriteriaGolden)[];
   datasetFiles: readonly URL[];
   promptFiles: readonly URL[];
   /** Chat messages for one case, already rendered. */
-  messages: (golden: Golden) => PromptMessage[];
+  messages: (golden: Golden | CriteriaGolden) => PromptMessage[];
   /** JSON schema the model must follow. Also asserted on the output. */
   schema?: object;
   rubric?: string;
+  /** Model under test, when the suite must match what ships instead of the shared default. */
+  model?: string;
+  /** Catalog tools offered to the model. A tool call shows up in the output for the judge. */
+  toolNames?: readonly string[];
   /** Deterministic assertions, run before and instead of paying for a judge where possible. */
   assertions?: readonly Assertion[];
 };
@@ -77,20 +94,27 @@ export async function defineTextSuite(options: TextSuiteOptions): Promise<Suite>
     description: golden.name ?? `case ${index + 1}`,
     vars: {
       messages: options.messages(golden),
-      expectedOutput: golden.expectedOutput,
+      expectedOutput: 'criteria' in golden ? '' : golden.expectedOutput,
       golden,
     },
     metadata: { category: golden.category ?? 'uncategorized', tier: options.tier },
     assert: [
       ...(schema ? [{ type: 'is-json' as const, value: schema }] : []),
       ...assertions,
-      ...(rubric ? [rubricAssertion(rubric)] : []),
+      ...(rubric
+        ? [
+            'criteria' in golden
+              ? criteriaAssertion(rubric, golden.criteria)
+              : rubricAssertion(rubric),
+          ]
+        : []),
     ],
   }));
   return {
     name: options.name,
     description: options.description,
     tier: options.tier,
+    ...(options.model ? { model: options.model } : {}),
     datasetFiles: options.datasetFiles,
     promptFiles: options.promptFiles,
     config: {
@@ -98,9 +122,16 @@ export async function defineTextSuite(options: TextSuiteOptions): Promise<Suite>
       prompts: [`file://${path(new URL('./render-prompt.ts', import.meta.url))}`],
       providers: [
         {
-          id: `openrouter:${targetModel}`,
+          id: `openrouter:${options.model ?? targetModel}`,
           config: {
             temperature: 0,
+            ...(options.toolNames
+              ? {
+                  tools: toolCatalog.filter((tool) =>
+                    options.toolNames?.includes(tool.function.name),
+                  ),
+                }
+              : {}),
             ...(schema
               ? {
                   response_format: {
@@ -114,7 +145,16 @@ export async function defineTextSuite(options: TextSuiteOptions): Promise<Suite>
       ],
       defaultTest: { options: { provider: judgeProvider } },
       tests,
-      metadata: await suiteMetadata({ ...options, gradingSpec: { schema, rubric, assertions } }),
+      metadata: await suiteMetadata({
+        ...options,
+        gradingSpec: {
+          schema,
+          rubric,
+          assertions,
+          model: options.model,
+          toolNames: options.toolNames,
+        },
+      }),
     },
   };
 }

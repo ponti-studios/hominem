@@ -1,0 +1,86 @@
+{
+  "suite": "chat-actions",
+  "tier": "capability",
+  "datasetHash": "bb1e3ba772b0",
+  "promptHash": "799859451e28",
+  "graderHash": "6c9fccfbdb97",
+  "targetModel": "openai/gpt-6-luna",
+  "judgeModel": "openai/gpt-6-luna",
+  "trialsPerCase": 1,
+  "limited": false,
+  "summary": {
+    "cases": 3,
+    "trials": 3,
+    "passRate": 0.6667,
+    "passAllRate": 0.6667,
+    "errors": 0,
+    "meanScore": 0.6667,
+    "costUsd": 0.000098,
+    "promptTokens": 5791,
+    "completionTokens": 79,
+    "latencyP50Ms": 1138,
+    "latencyP95Ms": 1644,
+    "byCategory": {
+      "uncategorized": {
+        "cases": 3,
+        "passRate": 0.6667
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "task from a stated deadline",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["llm-rubric"],
+          "latencyMs": 1061,
+          "costUsd": 0.0000316,
+          "promptTokens": 1933,
+          "completionTokens": 24
+        }
+      ],
+      "passRate": 0,
+      "passAll": false,
+      "errored": false
+    },
+    {
+      "id": "remember an explicit fact",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1644,
+          "costUsd": 0.00003456,
+          "promptTokens": 1929,
+          "completionTokens": 30
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    },
+    {
+      "id": "checks memory before denying",
+      "category": "uncategorized",
+      "trials": [
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1138,
+          "costUsd": 0.00003206,
+          "promptTokens": 1929,
+          "completionTokens": 25
+        }
+      ],
+      "passRate": 1,
+      "passAll": true,
+      "errored": false
+    }
+  ]
+}
