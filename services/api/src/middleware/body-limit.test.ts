@@ -23,4 +23,9 @@ describe('request body limit', () => {
   it('allows bigger bodies on the file upload route', async () => {
     expect((await post('/api/files', 2 * 1024 * 1024)).status).toBe(200);
   });
+
+  it('skips the limiter for bodyless methods so preflights reach CORS', async () => {
+    const guarded = new Hono().use('*', requestBodyLimit()).options('/x', (c) => c.body(null, 204));
+    expect((await guarded.request('/x', { method: 'OPTIONS' })).status).toBe(204);
+  });
 });
