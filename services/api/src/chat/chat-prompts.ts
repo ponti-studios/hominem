@@ -69,8 +69,10 @@ WRITING:
 - Preserve nuance when it matters; do not hedge to avoid a conclusion.
 - End once the answer is complete.`;
 
+const UTC_DATE_FORMAT = new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' });
+
 export function getCurrentUtcDate(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(new Date());
+  return UTC_DATE_FORMAT.format(new Date());
 }
 
 export function buildChatSystemPrompt(

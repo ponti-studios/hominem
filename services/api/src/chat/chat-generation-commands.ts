@@ -172,8 +172,10 @@ export async function startMessage(
     input.responseLength,
   );
   // Tool planning reads text; only the model request carries the images.
-  const toolPlan = await planTools(dependencies, textMessages);
-  const messages = await attachImagesToLastUserMessage(textMessages, files, input.userId);
+  const [toolPlan, messages] = await Promise.all([
+    planTools(dependencies, textMessages),
+    attachImagesToLastUserMessage(textMessages, files, input.userId),
+  ]);
   const created = await runInTransaction(async (trx) => {
     const chat = await ChatRepository.create(trx, { userId: input.userId, title: input.title });
     const userMessage = await ChatRepository.insertMessage(trx, {
@@ -243,8 +245,10 @@ export async function sendMessage(
     buildChatSystemPrompt(input.responseLength),
     input.responseLength,
   );
-  const toolPlan = await planTools(dependencies, textMessages);
-  const messages = await attachImagesToLastUserMessage(textMessages, files, input.userId);
+  const [toolPlan, messages] = await Promise.all([
+    planTools(dependencies, textMessages),
+    attachImagesToLastUserMessage(textMessages, files, input.userId),
+  ]);
 
   const userMessageId = await runInTransaction(async (trx): Promise<string> => {
     const userMessage = await ChatRepository.insertMessage(trx, {
@@ -313,12 +317,10 @@ async function redoGeneration(
     buildChatSystemPrompt(input.responseLength),
     input.responseLength,
   );
-  const toolPlan = await planTools(dependencies, textMessages);
-  const messages = await attachImagesToLastUserMessage(
-    textMessages,
-    userMessage.files ?? [],
-    input.userId,
-  );
+  const [toolPlan, messages] = await Promise.all([
+    planTools(dependencies, textMessages),
+    attachImagesToLastUserMessage(textMessages, userMessage.files ?? [], input.userId),
+  ]);
   await ChatRepository.createGenerationRun(db, {
     id: input.generationId,
     chatId: input.chatId,
@@ -400,8 +402,10 @@ export async function respondToConfirmation(
           },
         ]),
   ];
-  const toolPlan = await planTools(dependencies, messages);
-  const events = await ChatGenerationRepository.listEvents(db, run.id, input.userId, 0);
+  const [toolPlan, events] = await Promise.all([
+    planTools(dependencies, messages),
+    ChatGenerationRepository.listEvents(db, run.id, input.userId, 0),
+  ]);
   const initialState = {
     ...restoreGenerationState(run.id, events.map(toHistoryEvent)),
     // The checkpoint contains the approval prompt. A resumed generation
