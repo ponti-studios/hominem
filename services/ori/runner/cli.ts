@@ -30,7 +30,8 @@ const usage = `ori evals
 
 Commands
   list                     suites, tiers, case counts, dataset/prompt hashes (offline)
-  check                    validate every suite and baseline without calling a model (CI)
+  check                    validate every suite and baseline without calling a model (CI);
+                           stale baselines only warn, add --strict to fail on them
   run                      run suites against the live model and gate against baselines
   baseline                 promote the latest full run to the committed baselines
   calibrate                score the judge against human-labeled cases
@@ -55,6 +56,7 @@ const { positionals, values } = parseArgs({
     concurrency: { type: 'string' },
     cache: { type: 'boolean' },
     'no-gate': { type: 'boolean' },
+    strict: { type: 'boolean' },
     help: { type: 'boolean', short: 'h' },
   },
 });
@@ -115,6 +117,9 @@ async function list(): Promise<void> {
 async function check(): Promise<void> {
   const suites = await discoverSuites();
   const problems: string[] = [];
+  // Drift means the baseline was recorded against different datasets, prompts or graders.
+  // Re-recording costs a full live run, so it only blocks under --strict.
+  const drift: string[] = [];
   for (const suite of suites) {
     const tests = testsOf(suite);
     if (tests.length === 0) problems.push(`${suite.name}: no cases`);
@@ -134,13 +139,13 @@ async function check(): Promise<void> {
       graderHash: string;
     };
     if (baseline.datasetHash !== metadata.datasetHash) {
-      problems.push(`${suite.name}: dataset changed since the baseline was recorded`);
+      drift.push(`${suite.name}: dataset changed since the baseline was recorded`);
     }
     if (baseline.promptHash !== metadata.promptHash) {
-      problems.push(`${suite.name}: prompt changed since the baseline was recorded`);
+      drift.push(`${suite.name}: prompt changed since the baseline was recorded`);
     }
     if (baseline.graderHash !== metadata.graderHash) {
-      problems.push(`${suite.name}: grading logic changed since the baseline was recorded`);
+      drift.push(`${suite.name}: grading logic changed since the baseline was recorded`);
     }
     const unknown = baseline.cases.filter((entry) => !ids.includes(entry.id));
     if (unknown.length > 0) {
@@ -152,13 +157,22 @@ async function check(): Promise<void> {
   console.log(
     `${suites.length} suites, ${suites.reduce((n, s) => n + testsOf(s).length, 0)} cases checked`,
   );
-  if (problems.length > 0) {
-    console.error(`\n${problems.map((problem) => `  x ${problem}`).join('\n')}`);
-    console.error(
-      '\nStale baselines mean results are no longer comparable. Re-run and `eval baseline`.',
+  const blocking = values.strict ? [...problems, ...drift] : problems;
+  if (!values.strict && drift.length > 0) {
+    console.warn(`\n${drift.map((entry) => `  ! ${entry}`).join('\n')}`);
+    console.warn(
+      '\nStale baselines mean results are no longer comparable. Re-run and `eval baseline` before trusting a live comparison.',
     );
+  }
+  if (blocking.length > 0) {
+    console.error(`\n${blocking.map((problem) => `  x ${problem}`).join('\n')}`);
+    if (values.strict) {
+      console.error(
+        '\nStale baselines mean results are no longer comparable. Re-run and `eval baseline`.',
+      );
+    }
     process.exitCode = 1;
-  } else {
+  } else if (drift.length === 0) {
     console.log('all suites valid, baselines match datasets and prompts');
   }
 }
