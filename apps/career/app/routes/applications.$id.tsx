@@ -50,7 +50,7 @@ export async function action({ context, params, request }: Route.ActionArgs) {
     }
     const salaryRaw = formText(formData, 'salaryExpectation') ?? '';
     const salaryExpectation =
-      salaryRaw && Number.isFinite(Number(salaryRaw)) ? Math.round(Number(salaryRaw) * 100) : null;
+      salaryRaw && Number.isFinite(Number(salaryRaw)) ? Math.round(Number(salaryRaw)) : null;
 
     await CareerRepository.updateApplication(db, user.id, id, {
       title: formText(formData, 'title') ?? '',

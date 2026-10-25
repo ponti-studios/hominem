@@ -238,7 +238,7 @@ export const careerApplicationCreateSchema = z.object({
     .nullable()
     .optional()
     .describe(
-      'What the user hopes to earn, in cents per year. For the pay range in the posting use salaryMin and salaryMax instead.',
+      'What the user hopes to earn, in whole currency units per year, like salaryMin and salaryMax. For the pay range in the posting use salaryMin and salaryMax instead.',
     ),
   notes: z.string().nullable().optional().describe("The user's own notes, not the posting text."),
 });

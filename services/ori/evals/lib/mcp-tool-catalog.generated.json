@@ -173,7 +173,7 @@
             "type": ["string", "null"]
           },
           "salaryExpectation": {
-            "description": "What the user hopes to earn, in cents per year. For the pay range in the posting use salaryMin and salaryMax instead.",
+            "description": "What the user hopes to earn, in whole currency units per year, like salaryMin and salaryMax. For the pay range in the posting use salaryMin and salaryMax instead.",
             "anyOf": [
               {
                 "type": "integer",
@@ -438,7 +438,7 @@
                 "type": ["string", "null"]
               },
               "salaryExpectation": {
-                "description": "What the user hopes to earn, in cents per year. For the pay range in the posting use salaryMin and salaryMax instead.",
+                "description": "What the user hopes to earn, in whole currency units per year, like salaryMin and salaryMax. For the pay range in the posting use salaryMin and salaryMax instead.",
                 "anyOf": [
                   {
                     "type": "integer",

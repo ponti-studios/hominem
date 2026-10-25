@@ -1,4 +1,4 @@
-import { centsToDollars, formatCurrency } from '@hominem/utils/numbers';
+import { formatCurrency } from '@hominem/utils/numbers';
 
 import { StatusTone } from '~/components/patterns';
 
@@ -45,7 +45,7 @@ export function formatApplicationDate(date: Date | string | null | undefined): s
 export function formatApplicationSalary(salary: number | string | null | undefined): string {
   if (!salary) return '—';
   if (typeof salary === 'string') return salary;
-  return formatCurrency(centsToDollars(salary));
+  return formatCurrency(salary);
 }
 
 export function getUniqueStatuses(applications: Array<{ status: string }>): string[] {

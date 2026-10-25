@@ -55,7 +55,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const cleaned = salaryQuoted.replace(/[$,\s]/g, '');
     const dollars = Number(cleaned);
     if (Number.isFinite(dollars)) {
-      salaryExpectation = dollars * 100;
+      salaryExpectation = Math.round(dollars);
     }
   }
 

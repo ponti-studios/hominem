@@ -121,7 +121,7 @@
     "category": "travel_presence",
     "promptVersion": "evidence-v1",
     "input": "What countries have I been to, and how do you know?",
-    "expectedOutput": "The assistant supports each country with named places and the corresponding stop, layover, visit, or residence evidence instead of referring to a method difference.",
+    "expectedOutput": "The assistant supports every country with named places and the matching stop, layover, visit, or residence evidence. Briefly saying that layovers or residences count is fine; it must not hedge about disagreeing with an earlier answer or claim it counted differently before.",
     "expectedTools": [
       {
         "name": "travel_countries"
