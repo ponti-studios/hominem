@@ -37,6 +37,7 @@ const selectedToolNames = [
   'create_collection',
   'invite_member',
   'career_applications',
+  'career_application_create',
   'career_application_delete',
   'remove_collection_item',
   'career_profile',
@@ -67,7 +68,12 @@ export type McpToolDomain =
   | 'general';
 
 export const toolsByDomain: Record<McpToolDomain, readonly ToolDefinition[]> = {
-  career: select(['career_applications', 'career_application_delete', 'career_profile']),
+  career: select([
+    'career_applications',
+    'career_application_create',
+    'career_application_delete',
+    'career_profile',
+  ]),
   travel: select(['place_visit_history', 'trip_history']),
   travelPresence: select(['travel_countries']),
   finance: select([

@@ -88,25 +88,30 @@
     "type": "function",
     "function": {
       "name": "career_application_create",
-      "description": "Creates a job application. Mode: write.",
+      "description": "Saves a job posting (or an application) to the user's career tracker. Hominem does not fetch job sites: read the posting yourself, then pass what you found. Include company and title exactly as posted, the posting URL, the full posting text in postingText, the posted pay range in salaryMin/salaryMax/salaryCurrency, and the board's own job id in externalId with the board name in source when the page shows one. Leave out anything the posting does not say; only company and title are required, so do not ask the user for the rest. Saving the same posting twice is harmless because repeats are detected. New postings default to the WISHLIST status. If the user already saved this posting the tool creates nothing and returns the existing record with alreadyExisted true; check its title and company match before telling the user it was saved. Mode: write.",
       "parameters": {
         "type": "object",
         "properties": {
           "company": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Company name exactly as the posting shows it."
           },
           "title": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "description": "Job title exactly as the posting shows it."
           },
           "location": {
+            "description": "Location as posted, e.g. \"San Francisco, CA\" or \"Remote (US)\". Omit if unknown.",
             "type": ["string", "null"]
           },
           "source": {
+            "description": "Where the posting lives: the job board or ATS, e.g. \"Ashby\", \"Greenhouse\", \"LinkedIn\".",
             "type": ["string", "null"]
           },
           "appliedAt": {
+            "description": "Date applied, YYYY-MM-DD.",
             "type": ["string", "null"]
           },
           "status": {
@@ -122,9 +127,53 @@
             ]
           },
           "jobPostingUrl": {
+            "description": "Link to the posting. Tracking params like utm_* are ignored when checking for duplicates; keep any job-id param.",
+            "type": ["string", "null"]
+          },
+          "externalId": {
+            "description": "The job board's own id for the posting (JSON-LD identifier, Greenhouse/Lever/Ashby job id) when the page exposes one. With source, this is the strongest duplicate check.",
+            "type": ["string", "null"]
+          },
+          "postedAt": {
+            "description": "Date the posting went up, YYYY-MM-DD.",
+            "type": ["string", "null"]
+          },
+          "postingText": {
+            "description": "The full posting body as plain text. Read the page yourself and paste it; do not summarize.",
+            "type": ["string", "null"]
+          },
+          "salaryMin": {
+            "description": "Bottom of the posted pay range in whole currency units per year. Omit if not posted.",
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "salaryMax": {
+            "description": "Top of the posted pay range in whole currency units per year. Omit if not posted.",
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "salaryCurrency": {
+            "description": "ISO currency code for the posted range, e.g. \"USD\".",
             "type": ["string", "null"]
           },
           "salaryExpectation": {
+            "description": "What the user hopes to earn, in cents per year. For the pay range in the posting use salaryMin and salaryMax instead.",
             "anyOf": [
               {
                 "type": "integer",
@@ -137,6 +186,7 @@
             ]
           },
           "notes": {
+            "description": "The user's own notes, not the posting text.",
             "type": ["string", "null"]
           }
         },
@@ -295,7 +345,7 @@
     "type": "function",
     "function": {
       "name": "career_application_update",
-      "description": "Updates a job application. Mode: write.",
+      "description": "Updates a saved job application: change its status or notes, or fill in posting details (postingText, postedAt, salaryMin/salaryMax/salaryCurrency, jobPostingUrl, externalId) that were missing when it was first saved. Mode: write.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -309,19 +359,24 @@
             "properties": {
               "company": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "description": "Company name exactly as the posting shows it."
               },
               "title": {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "description": "Job title exactly as the posting shows it."
               },
               "location": {
+                "description": "Location as posted, e.g. \"San Francisco, CA\" or \"Remote (US)\". Omit if unknown.",
                 "type": ["string", "null"]
               },
               "source": {
+                "description": "Where the posting lives: the job board or ATS, e.g. \"Ashby\", \"Greenhouse\", \"LinkedIn\".",
                 "type": ["string", "null"]
               },
               "appliedAt": {
+                "description": "Date applied, YYYY-MM-DD.",
                 "type": ["string", "null"]
               },
               "status": {
@@ -337,9 +392,53 @@
                 ]
               },
               "jobPostingUrl": {
+                "description": "Link to the posting. Tracking params like utm_* are ignored when checking for duplicates; keep any job-id param.",
+                "type": ["string", "null"]
+              },
+              "externalId": {
+                "description": "The job board's own id for the posting (JSON-LD identifier, Greenhouse/Lever/Ashby job id) when the page exposes one. With source, this is the strongest duplicate check.",
+                "type": ["string", "null"]
+              },
+              "postedAt": {
+                "description": "Date the posting went up, YYYY-MM-DD.",
+                "type": ["string", "null"]
+              },
+              "postingText": {
+                "description": "The full posting body as plain text. Read the page yourself and paste it; do not summarize.",
+                "type": ["string", "null"]
+              },
+              "salaryMin": {
+                "description": "Bottom of the posted pay range in whole currency units per year. Omit if not posted.",
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "salaryMax": {
+                "description": "Top of the posted pay range in whole currency units per year. Omit if not posted.",
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "salaryCurrency": {
+                "description": "ISO currency code for the posted range, e.g. \"USD\".",
                 "type": ["string", "null"]
               },
               "salaryExpectation": {
+                "description": "What the user hopes to earn, in cents per year. For the pay range in the posting use salaryMin and salaryMax instead.",
                 "anyOf": [
                   {
                     "type": "integer",
@@ -352,6 +451,7 @@
                 ]
               },
               "notes": {
+                "description": "The user's own notes, not the posting text.",
                 "type": ["string", "null"]
               }
             },

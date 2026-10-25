@@ -297,6 +297,22 @@ export function executeFixtureTool(
           count: 1,
         },
       };
+    case 'career_application_create': {
+      // A posting URL carrying this id is already saved, so the tool hands back the existing row.
+      const alreadyExisted = String(input.jobPostingUrl ?? '').includes('9f1c2d3e');
+      return {
+        output: {
+          alreadyExisted,
+          application: {
+            id: 'a0900000-0000-4000-8000-000000000002',
+            company: input.company ?? 'Acme',
+            title: alreadyExisted ? 'Senior Engineer' : (input.title ?? 'Engineer'),
+            status: 'WISHLIST',
+            jobPostingUrl: input.jobPostingUrl ?? null,
+          },
+        },
+      };
+    }
     case 'create_collection':
     case 'invite_member':
     case 'career_application_delete':
