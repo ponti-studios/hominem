@@ -49,7 +49,7 @@ appId: com.pontistudios.hakumi.dev
     timeout: 8000
 
 - tapOn:
-    id: BackButton
+    id: chat-back-button
 - waitForAnimationToEnd:
     timeout: 3000
 - assertVisible:

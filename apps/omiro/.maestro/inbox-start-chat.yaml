@@ -22,36 +22,25 @@ appId: com.pontistudios.hakumi.dev
     id: composer-submit-chat
 - tapOn:
     id: composer-submit-chat
-- assertVisible: Native first smoke chat
+- assertVisible: ".*Native first smoke chat.*"
 - assertVisible:
     id: chat-composer-input
 - tapOn:
-    id: BackButton
+    id: chat-back-button
     optional: true
 - tapOn:
     text: Inbox
     optional: true
 - assertVisible:
     id: inbox-composer-input
-# Archived afterward (long-press -> Archive chat, no second confirmation --
+# Archived afterward (swipe -> archive, no confirmation --
 # see inbox-chat-archive.yaml) so repeated runs don't accumulate chats. Safe
 # to match by this exact title since it's a custom, non-default title, not
 # the generic "New conversation" default other chats can share.
 #
-# Retries the long-press if the Alert doesn't open on the first attempt --
-# see the identical repeat/while block in notes-delete.yaml for why.
-- repeat:
-    while:
-      notVisible: Archive chat
-    times: 3
-    commands:
-      - longPressOn: Native first smoke chat
-      - extendedWaitUntil:
-          visible: Archive chat
-          timeout: 2000
-          optional: true
-- assertVisible: Archive chat
-- tapOn: Archive chat
-- assertNotVisible: Native first smoke chat
+- runFlow:
+    file: archive-chat.yaml
+    env:
+      CHAT_TITLE: Native first smoke chat
 - assertVisible:
     id: inbox-composer-input

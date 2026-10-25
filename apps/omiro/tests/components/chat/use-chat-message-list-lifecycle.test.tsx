@@ -1,7 +1,6 @@
 import type { ChatMessageItem } from '@hominem/chat';
-import type { FlashListRef } from '@shopify/flash-list';
 // @vitest-environment jsdom
-import { act, renderHook } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { announceForAccessibility } = vi.hoisted(() => ({
@@ -33,18 +32,8 @@ describe('useChatMessageListLifecycle', () => {
     announceForAccessibility.mockClear();
   });
 
-  it('announces only new messages and scrolls to a newly sent message', () => {
-    const frames: FrameRequestCallback[] = [];
-    const requestFrame = vi.fn((callback: FrameRequestCallback) => {
-      frames.push(callback);
-      return frames.length;
-    });
-    vi.stubGlobal('requestAnimationFrame', requestFrame);
-    vi.stubGlobal('cancelAnimationFrame', vi.fn());
-    const scrollToEnd = vi.fn();
-    const listRef: {
-      current: Pick<FlashListRef<ChatMessageItem>, 'scrollToEnd'> | null;
-    } = { current: { scrollToEnd } };
+  it('announces only new messages and reports a newly sent message', () => {
+    const onNewUserMessage = vi.fn();
     const existingMessage = message('assistant-1', 'assistant');
     const { rerender } = renderHook(
       ({
@@ -60,13 +49,13 @@ describe('useChatMessageListLifecycle', () => {
           isMessagesLoading,
           showSearch: false,
           hasSearchQuery: false,
-          listRef,
+          onNewUserMessage,
         }),
       { initialProps: { displayMessages: [existingMessage], isMessagesLoading: false } },
     );
 
     expect(announceForAccessibility).not.toHaveBeenCalled();
-    expect(requestFrame).not.toHaveBeenCalled();
+    expect(onNewUserMessage).not.toHaveBeenCalled();
 
     rerender({
       displayMessages: [existingMessage, message('user-1', 'user')],
@@ -74,15 +63,12 @@ describe('useChatMessageListLifecycle', () => {
     });
 
     expect(announceForAccessibility).toHaveBeenCalledWith('Message sent.');
-    expect(requestFrame).toHaveBeenCalledTimes(1);
-    act(() => frames.at(-1)?.(0));
-    expect(scrollToEnd).toHaveBeenCalledWith({ animated: true });
+    expect(onNewUserMessage).toHaveBeenCalledTimes(1);
+    expect(onNewUserMessage).toHaveBeenCalledWith('user-1');
   });
 
   it('does not announce search results and bounds the announcement history to rendered messages', () => {
-    const listRef: {
-      current: Pick<FlashListRef<ChatMessageItem>, 'scrollToEnd'> | null;
-    } = { current: { scrollToEnd: vi.fn() } };
+    const onNewUserMessage = vi.fn();
     const currentMessage = message('current-1', 'assistant');
     const historicalSearchResult = message('search-result-1', 'assistant');
     const { result, rerender } = renderHook(
@@ -101,7 +87,7 @@ describe('useChatMessageListLifecycle', () => {
           isMessagesLoading: false,
           showSearch,
           hasSearchQuery,
-          listRef,
+          onNewUserMessage,
         }),
       {
         initialProps: {

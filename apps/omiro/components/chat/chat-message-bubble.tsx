@@ -3,6 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import AppIcon from '~/components/ui/icon';
+import { useStreamingMessageText } from '~/services/chat/streaming-text-store';
 import { nativeMotionAnimations } from '~/services/motion/native-motion';
 import t from '~/translations';
 
@@ -11,6 +12,20 @@ import { MessageDebug } from './chat-message-debug';
 import type { ChatMessageStyles } from './chat-message.styles';
 import { ChatThinkingIndicator } from './chat-thinking-indicator';
 
+type ChatMessageBubbleProps = {
+  message: ChatMessageItem;
+  styles: ChatMessageStyles;
+  isUser: boolean;
+  showDebug: boolean;
+  /**
+   * Indicates whether the message has newly failed.
+   * This is used to determine if the failure banner should animate in.
+   */
+  isNewlyFailed: boolean;
+  reducedMotion: boolean;
+  onActivate?: (messageId: string) => void;
+  onRetry?: (messageId: string) => void;
+};
 export function ChatMessageBubble({
   message,
   styles,
@@ -20,16 +35,7 @@ export function ChatMessageBubble({
   reducedMotion,
   onActivate,
   onRetry,
-}: {
-  message: ChatMessageItem;
-  styles: ChatMessageStyles;
-  isUser: boolean;
-  showDebug: boolean;
-  isNewlyFailed: boolean;
-  reducedMotion: boolean;
-  onActivate?: (messageId: string) => void;
-  onRetry?: (messageId: string) => void;
-}) {
+}: ChatMessageBubbleProps) {
   const isStreaming = Boolean(message.isStreaming);
   const bannerEntering = isNewlyFailed
     ? reducedMotion
@@ -58,7 +64,12 @@ export function ChatMessageBubble({
           streamingId={!isUser && isStreaming ? message.id : undefined}
           textStyle={textStyle}
         >
-          <AssistantThinkingIndicator isStreaming={isStreaming} isUser={isUser} />
+          <AssistantThinkingIndicator
+            hasCommittedText={Boolean(message.message.trim())}
+            id={message.id}
+            isStreaming={isStreaming}
+            isUser={isUser}
+          />
         </MessageContent>
 
         <MessageFailureNotice
@@ -95,13 +106,19 @@ function MessageReasoning({
 }
 
 function AssistantThinkingIndicator({
+  hasCommittedText,
+  id,
   isStreaming,
   isUser,
 }: {
+  hasCommittedText: boolean;
+  id: string;
   isStreaming: boolean;
   isUser: boolean;
 }) {
-  if (isUser || !isStreaming) {
+  // A live reply's text arrives through the streaming store, not message.message, so watch both.
+  const streamedText = useStreamingMessageText(id);
+  if (isUser || !isStreaming || hasCommittedText || streamedText.trim()) {
     return null;
   }
   return <ChatThinkingIndicator />;

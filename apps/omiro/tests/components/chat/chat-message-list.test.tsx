@@ -23,9 +23,10 @@ vi.mock('react-native', () => ({
   Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   View: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
-vi.mock('react-native-keyboard-controller', () => ({ KeyboardChatScrollView: () => <div /> }));
+vi.mock('~/components/ui/icon', () => ({ default: () => <span /> }));
 vi.mock('~/components/theme', () => ({
   fontFamilies: { mono: 'Geist Mono' },
+  useAppTheme: () => ({ colors: { barForeground: '' } }),
   useStyles: (factory: (theme: { colors: Record<string, string> }) => unknown) =>
     factory({
       colors: {

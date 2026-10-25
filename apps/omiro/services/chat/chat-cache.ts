@@ -8,6 +8,14 @@ import { chatKeys, inboxKeys } from '~/services/notes/query-keys';
 import { syncAfterChatTasks } from '~/services/tasks/sync-chat-tasks';
 
 import type { ChatGenerationState } from './chat-generation';
+import {
+  acceptLiveUserMessage,
+  dropLiveReply,
+  finishLiveReply,
+  getLiveChat,
+  startLiveReply,
+  streamingIdFor,
+} from './live-turn-store';
 import { appendStreamingMessageText, clearStreamingMessageText } from './streaming-text-store';
 import { toMessageOutput } from './use-chat-messages';
 
@@ -19,21 +27,27 @@ export function invalidateChatQueries(queryClient: QueryClient, chatId: string) 
   ]);
 }
 
-const STREAMING_ID_PREFIX = 'streaming-';
+export function getCachedMessageIds(queryClient: QueryClient, chatId: string) {
+  return (queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(chatId)) ?? []).map(
+    (item) => item.id,
+  );
+}
 
-function dropStreamingMessages(messages: ChatMessageItem[]) {
-  return messages.filter((item) => {
-    if (!item.id.startsWith(STREAMING_ID_PREFIX)) {
-      return true;
-    }
-    clearStreamingMessageText(item.id);
-    return false;
+// Adds or replaces a message by id, leaving the rest of the list untouched.
+function upsertMessage(
+  queryClient: QueryClient,
+  chatId: string,
+  message: ChatMessageItem,
+  removeId?: string,
+) {
+  queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (messages = []) => {
+    const rest = messages.filter((item) => item.id !== message.id && item.id !== removeId);
+    return [...rest, message];
   });
 }
 
-// The first text delta adds one provisional assistant row to the cache; after
-// that the words go straight to the streaming text store, which only the
-// bubble's own text reads. The committed message replaces the row.
+// Words go straight to the streaming text store, which only the bubble's own
+// text reads; the query cache is never touched while a reply arrives.
 function appendStreamingText({
   queryClient,
   chatId,
@@ -45,33 +59,22 @@ function appendStreamingText({
   generationId: string;
   text: string;
 }) {
-  const id = `${STREAMING_ID_PREFIX}${generationId}`;
-  appendStreamingMessageText(id, text);
-  queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (messages = []) => {
-    if (messages.some((item) => item.id === id)) {
-      // Same array back: React Query bails out, so nothing re-renders.
-      return messages;
-    }
-    return [
-      ...messages,
-      {
-        id,
-        renderKey: id,
-        role: 'assistant',
-        message: '',
-        createdAt: new Date().toISOString(),
-        chatId,
-        toolCalls: null,
-        isStreaming: true,
-      },
-    ];
-  });
+  // A reply that already committed (the new-chat handoff can commit before the
+  // paced reveal catches up) must not grow a second streaming bubble.
+  if (committedGenerations.has(generationId)) {
+    return;
+  }
+  appendStreamingMessageText(streamingIdFor(generationId), text);
+  startLiveReply(chatId, generationId, () => getCachedMessageIds(queryClient, chatId));
 }
 
 // Text arrives from the network in bursts (a fast model can send a whole reply
 // in ~30ms). Reveal complete words, grouping a larger backlog into short
 // phrases so fast generations catch up without turning into a character
 // typewriter. Small cadence variation keeps the rhythm from feeling mechanical.
+// Master speed knob: multiplies every delay between reveals. 1 = the original quick cadence,
+// 2 = about half the speed, 3 = slow and deliberate. Tweak this one to feel the timing.
+export const PACE_DELAY_SCALE = 3;
 const PACE_FIRST_TICK_MS = 42;
 const PACE_MEDIUM_BACKLOG_CHARS = 48;
 const PACE_LARGE_BACKLOG_CHARS = 120;
@@ -161,7 +164,7 @@ function nextPaceDelay(text: string, tick: number) {
     : /[,;:]["'’”)}\]]*$/.test(end)
       ? 55
       : 0;
-  return base + variation + punctuationPause;
+  return (base + variation + punctuationPause) * PACE_DELAY_SCALE;
 }
 
 function paceStreamingText({
@@ -264,28 +267,38 @@ function triggerAssistantCompletionHaptic() {
 // stay registered where it already is; see use-start-chat.ts for why it
 // can't just wait for the destination screen to adopt the handoff and
 // drive this from there).
+// A generation can be observed by two subscriptions while a new chat hands its
+// stream to the chat screen; the commit must only land once.
+const committedGenerations = new Set<string>();
+
+// Test seam: generation ids are random in the app, but fixtures reuse them.
+export function resetChatCacheState() {
+  committedGenerations.clear();
+  pacedByGeneration.clear();
+}
+
 export function applyGenerationCommitted({
   queryClient,
   chatId,
+  generationId,
   message,
   targetMessageId,
 }: {
   queryClient: QueryClient;
   chatId: string;
+  generationId: string;
   message: Parameters<typeof toMessageOutput>[0];
   targetMessageId?: string;
 }) {
+  if (committedGenerations.has(generationId)) {
+    return toMessageOutput(message);
+  }
+  committedGenerations.add(generationId);
   const committed = toMessageOutput(message);
   if (committed) {
-    queryClient.setQueryData<ChatMessageItem[]>(
-      chatKeys.messages(chatId),
-      (currentMessages = []) => [
-        ...dropStreamingMessages(currentMessages).filter(
-          (item) => item.id !== committed.id && item.id !== targetMessageId,
-        ),
-        committed,
-      ],
-    );
+    upsertMessage(queryClient, chatId, committed, targetMessageId);
+    finishLiveReply(chatId, generationId, committed);
+    clearStreamingMessageText(streamingIdFor(generationId));
     if (committed.audio?.url) {
       playAudioReply(committed.id, committed.audio.url);
     }
@@ -328,6 +341,7 @@ export function handleChatGenerationEvent({
       applyGenerationCommitted({
         queryClient,
         chatId,
+        generationId,
         message: event.payload.message,
         targetMessageId: generation.targetMessageId,
       });
@@ -338,20 +352,36 @@ export function handleChatGenerationEvent({
   }
   if (event.type === 'generation.cancelled' || event.type === 'generation.failed') {
     discardPacedText(event.generationId);
-    queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (messages = []) =>
-      dropStreamingMessages(messages),
-    );
+    clearStreamingMessageText(streamingIdFor(event.generationId));
+    dropLiveReply(chatId, event.generationId);
   }
   if (event.type === 'generation.accepted' && event.payload.userMessage) {
     const accepted = toMessageOutput(event.payload.userMessage);
     if (accepted) {
-      queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (messages = []) =>
-        messages.map((item) => (item.id === generation.userMessageId ? accepted : item)),
-      );
+      acceptLiveUserMessage(chatId, event.generationId, accepted);
+      upsertMessage(queryClient, chatId, accepted, generation.userMessageId);
     }
   }
+  if (event.type === 'confirmation.required') {
+    // The stream pauses here and the assistant message is now persisted: hand
+    // the streaming bubble over to it once the refetch has it, never before.
+    const { generationId } = event;
+    const handOver = () => {
+      void invalidateChatQueries(queryClient, chatId).then(() => {
+        const knownIds = getLiveChat(chatId).turn?.knownIds;
+        const adopted = (
+          queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(chatId)) ?? []
+        ).find((item) => item.role === 'assistant' && !knownIds?.has(item.id));
+        clearStreamingMessageText(streamingIdFor(generationId));
+        dropLiveReply(chatId, generationId, adopted?.id);
+      });
+    };
+    if (!afterPacedDrain(generationId, handOver)) {
+      handOver();
+    }
+    return;
+  }
   if (
-    event.type === 'confirmation.required' ||
     event.type === 'confirmation.approved' ||
     event.type === 'confirmation.rejected' ||
     event.type === 'generation.cancelled' ||

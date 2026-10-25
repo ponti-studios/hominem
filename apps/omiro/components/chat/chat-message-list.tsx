@@ -1,29 +1,19 @@
 import type { ChatMessageItem } from '@hominem/chat';
 import { FlashList, type FlashListRef, type ListRenderItem } from '@shopify/flash-list';
 import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  createContext,
-  forwardRef,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import {
+  type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
   type RefreshControlProps,
-  type ScrollViewProps,
   Text,
   View,
 } from 'react-native';
-import { KeyboardChatScrollView } from 'react-native-keyboard-controller';
-import type Animated from 'react-native-reanimated';
 
-import { fontFamilies, useStyles } from '~/components/theme';
+import { fontFamilies, useAppTheme, useStyles } from '~/components/theme';
+import AppIcon from '~/components/ui/icon';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
 import { countRender } from '~/services/perf/stream-perf';
 
@@ -36,37 +26,68 @@ import { useChatMessageListLifecycle } from './use-chat-message-list-lifecycle';
 const AUTO_SCROLL_TO_BOTTOM_THRESHOLD = 0.25;
 // Within this many points of the end the list counts as "at the bottom" and keeps following new content.
 const FOLLOW_BOTTOM_DISTANCE = 120;
+// Far enough from the end that the reader has clearly left it (about a screen).
+const JUMP_PILL_DISTANCE = 600;
 
-// How far the list's bottom edge sits above the keyboard's resting spot, so
-// the scroll view lifts its content by exactly the amount the keyboard (and the
-// composer riding on it) covers.
-const KeyboardOffsetContext = createContext(0);
+// Reports a row's height. FlashList recycles native views, and a recycled view that happens to keep
+// its size never fires onLayout for its new message, so also measure whenever the key changes.
+function MeasuredRow({
+  rowKey,
+  onMeasure,
+  onLayout,
+  children,
+}: {
+  rowKey: string;
+  onMeasure: (key: string, height: number) => void;
+  onLayout: (key: string, event: LayoutChangeEvent) => void;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<React.ComponentRef<typeof View>>(null);
+  useEffect(() => {
+    ref.current?.measure((_x, _y, _width, height) => {
+      if (height > 0) {
+        onMeasure(rowKey, height);
+      }
+    });
+  }, [rowKey, onMeasure]);
+  return (
+    <View ref={ref} collapsable={false} onLayout={(event) => onLayout(rowKey, event)}>
+      {children}
+    </View>
+  );
+}
 
-// The list's scroll view: when the keyboard opens the messages move up with it
-// (and back down when it closes), so the bottom of the conversation stays in
-// view instead of ending up behind the composer.
-const ChatScrollView = forwardRef<Animated.ScrollView, ScrollViewProps>(
-  function ChatScrollView(props, ref) {
-    const offset = useContext(KeyboardOffsetContext);
-    return (
-      <KeyboardChatScrollView {...props} keyboardLiftBehavior="always" offset={offset} ref={ref} />
-    );
-  },
-);
 const keyExtractor = (item: ChatMessageItem) => item.renderKey ?? item.id;
 // Module-level so the list sees one stable component type, not a new one per render.
-const itemSeparatorStyle = { height: 20 };
+const ITEM_SEPARATOR_HEIGHT = 20;
+const FOOTER_HEIGHT = 24;
+const itemSeparatorStyle = { height: ITEM_SEPARATOR_HEIGHT };
 const ItemSeparator = () => <View style={itemSeparatorStyle} />;
 
-// Calls the row renderer from its own render, the way the list does for its items.
-function RenderedRow({
-  item,
-  render,
-}: {
-  item: ChatMessageItem;
-  render: (item: ChatMessageItem) => React.ReactElement;
-}) {
-  return render(item);
+const FADE_STEPS = 10;
+const FADE_STEP_HEIGHT = 3;
+const fadeStrips = Array.from({ length: FADE_STEPS }, (_, index) => {
+  const t = (index + 1) / FADE_STEPS;
+  return { key: index, opacity: t * t * (3 - 2 * t) };
+});
+
+// The list ends flush against the composer; this softens that edge so
+// messages dissolve into the page instead of being cut off.
+function BottomFade({ color }: { color: string }) {
+  return (
+    <View
+      pointerEvents="none"
+      style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
+      testID="chat-list-bottom-fade"
+    >
+      {fadeStrips.map((strip) => (
+        <View
+          key={strip.key}
+          style={{ height: FADE_STEP_HEIGHT, backgroundColor: color, opacity: strip.opacity }}
+        />
+      ))}
+    </View>
+  );
 }
 
 interface ChatMessageListProps {
@@ -81,10 +102,6 @@ interface ChatMessageListProps {
   formatTimestamp: (value: string) => string;
   emptyState?: React.ReactElement | null;
   refreshControl?: React.ReactElement<RefreshControlProps>;
-  // Bottom space the empty state keeps clear while the keyboard is open.
-  bottomInset?: number;
-  // Where the list's bottom edge rests above the keyboard (see ChatScrollView).
-  keyboardOffset?: number;
   // Space the list keeps clear at the top for a floating header drawn over it.
   topInset?: number;
   generation?: ChatGenerationState | null;
@@ -95,7 +112,6 @@ function getEmptyListState({
   hasSearchQuery,
   renderedMessages,
   emptyState,
-  bottomInset,
   topInset,
   styles,
 }: {
@@ -103,7 +119,6 @@ function getEmptyListState({
   hasSearchQuery: boolean;
   renderedMessages: ChatMessageItem[];
   emptyState: React.ReactElement | null | undefined;
-  bottomInset: number;
   topInset: number;
   styles: ReturnType<typeof useStyles>;
 }): React.ReactElement | null {
@@ -118,11 +133,7 @@ function getEmptyListState({
   }
 
   if (!hasSearchQuery && renderedMessages.length === 0 && emptyState) {
-    return (
-      <View style={[styles.emptyState, { paddingBottom: bottomInset, paddingTop: topInset }]}>
-        {emptyState}
-      </View>
-    );
+    return <View style={[styles.emptyState, { paddingTop: topInset }]}>{emptyState}</View>;
   }
 
   return null;
@@ -140,8 +151,6 @@ export function ChatMessageList({
   formatTimestamp,
   emptyState,
   refreshControl,
-  bottomInset = 0,
-  keyboardOffset = 0,
   topInset = 0,
   generation,
 }: ChatMessageListProps) {
@@ -152,9 +161,20 @@ export function ChatMessageList({
     loadingState: { flex: 1, paddingTop: 12 },
     emptyState: { flex: 1 },
     list: { flex: 1 },
-    streamingRow: { marginTop: 20 },
-    bottomSentinel: { flexGrow: 1, minHeight: 32 },
+    bottomSentinel: { height: FOOTER_HEIGHT },
+    jumpPill: {
+      position: 'absolute',
+      alignSelf: 'center',
+      bottom: 12,
+      height: 36,
+      width: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.bar,
+    },
   }));
+  const { barForeground, background } = useAppTheme().colors;
   const targetMessageId = generation?.targetMessageId;
   const renderedMessages = useMemo(
     () =>
@@ -162,17 +182,6 @@ export function ChatMessageList({
         ? displayMessages.filter((message) => message.id !== targetMessageId)
         : displayMessages,
     [displayMessages, targetMessageId],
-  );
-  // The reply still arriving lives in the list footer, not in the data: its height changes
-  // every word, and as a list item that would re-lay-out every row around it. Only the last
-  // message qualifies, so a reply still draining under a newer message stays in order in the data.
-  const streamingMessage = useMemo(() => {
-    const last = renderedMessages.at(-1);
-    return last?.isStreaming ? last : undefined;
-  }, [renderedMessages]);
-  const listData = useMemo(
-    () => (streamingMessage ? renderedMessages.slice(0, -1) : renderedMessages),
-    [renderedMessages, streamingMessage],
   );
   const hasSearchQuery = search.isOpen && search.query.length > 0;
   // The list first paints at an estimated offset and then jumps once rows are measured. Keep it
@@ -185,13 +194,110 @@ export function ChatMessageList({
   // per-row useStyles/useState overhead, but it's one source of truth
   // either way (same reasoning as activeActionMessageId above).
   const listRef = useRef<FlashListRef<ChatMessageItem> | null>(null);
+
+  // Anchor-to-top: sending a message scrolls it to the top of the viewport and leaves blank space
+  // below it (a native bottom content inset, so no row relayouts). The reply grows into that space
+  // and we only start following the bottom once it has filled the viewport.
+  const [anchorKey, setAnchorKey] = useState<string | null>(null);
+  const [blank, setBlank] = useState(0);
+  const anchorKeyRef = useRef<string | null>(null);
+  const blankRef = useRef(0);
+  const viewportHeightRef = useRef(0);
+  const rowHeightsRef = useRef(new Map<string, number>());
+  const needsAnchorScrollRef = useRef(false);
+  // Once the reader drags, the anchor stops steering the scroll position.
+  const anchorDetachedRef = useRef(false);
+  const verifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const renderedMessagesRef = useRef<ChatMessageItem[]>(renderedMessages);
+  useEffect(() => {
+    renderedMessagesRef.current = renderedMessages;
+  }, [renderedMessages]);
+  // The streaming reply grows without any data change, so the list's own autoscroll never fires.
+  // Once settled, follow the bottom ourselves for as long as the reader is still there; scrolling
+  // up to read stops following until they come back.
+  const followingBottomRef = useRef(true);
+
+  const recomputeBlank = useCallback(() => {
+    const key = anchorKeyRef.current;
+    if (!key) {
+      return;
+    }
+    const messages = renderedMessagesRef.current;
+    const anchorIndex = messages.findIndex((message) => (message.renderKey ?? message.id) === key);
+    const viewport = viewportHeightRef.current;
+    if (anchorIndex < 0 || viewport <= 0) {
+      return;
+    }
+    let below = FOOTER_HEIGHT;
+    for (let index = anchorIndex; index < messages.length; index++) {
+      const message = messages[index];
+      if (!message) {
+        continue;
+      }
+      below += rowHeightsRef.current.get(message.renderKey ?? message.id) ?? 0;
+      if (index > anchorIndex) {
+        below += ITEM_SEPARATOR_HEIGHT;
+      }
+    }
+    // The anchor sits flush under the floating header, so the usable viewport excludes it.
+    const next = Math.max(0, Math.round(viewport - topInset - below));
+    if (next !== blankRef.current) {
+      blankRef.current = next;
+      setBlank(next);
+    }
+    if (next === 0 && !needsAnchorScrollRef.current) {
+      // The reply has filled the viewport: hand over to follow-the-bottom.
+      anchorKeyRef.current = null;
+      setAnchorKey(null);
+      followingBottomRef.current = true;
+    }
+  }, [topInset]);
+
+  // The blank inset is sized so the furthest the list can scroll is exactly "anchor flush under the
+  // header". The native scroll view knows its true content size (ours lags a layout pass, and
+  // scrollToIndex is unreliable over virtualized rows), so just ask it for its end, then re-ask
+  // while rows are still measuring.
+  const scrollToAnchor = useCallback(() => {
+    const key = anchorKeyRef.current;
+    if (!key) {
+      return;
+    }
+    listRef.current?.getScrollResponder()?.scrollToEnd({ animated: true });
+    if (verifyTimeoutRef.current) {
+      clearTimeout(verifyTimeoutRef.current);
+    }
+    let attempts = 0;
+    const verify = () => {
+      if (anchorKeyRef.current !== key || attempts++ >= 3) {
+        return;
+      }
+      listRef.current?.getScrollResponder()?.scrollToEnd({ animated: true });
+      verifyTimeoutRef.current = setTimeout(verify, 300);
+    };
+    verifyTimeoutRef.current = setTimeout(verify, 400);
+  }, []);
+
+  const lastAnchoredKeyRef = useRef<string | null>(null);
+  const onNewUserMessage = useCallback((key: string) => {
+    if (lastAnchoredKeyRef.current === key) {
+      return;
+    }
+    lastAnchoredKeyRef.current = key;
+    anchorKeyRef.current = key;
+    needsAnchorScrollRef.current = true;
+    anchorDetachedRef.current = false;
+    followingBottomRef.current = false;
+    setAnchorKey(key);
+    setSettled(true);
+  }, []);
+
   const { announcedMessagesRef, didInitializeAnnouncementsRef } = useChatMessageListLifecycle({
     displayMessages,
     renderedMessages,
     isMessagesLoading,
     showSearch: search.isOpen,
     hasSearchQuery,
-    listRef,
+    onNewUserMessage,
   });
   const editing = useChatMessageListEditing({ messages: renderedMessages, onEdit });
   const hasList = renderedMessages.length > 0;
@@ -199,28 +305,96 @@ export function ChatMessageList({
   // Rows are measured after first paint, so the content height keeps growing. Re-pin to the bottom on
   // every size change and reveal the list once the size has stopped changing.
   const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // The streaming reply lives in the footer, so it grows without any data change and the list's own
-  // autoscroll never fires. Once settled, follow the bottom ourselves for as long as the reader is
-  // still there; scrolling up to read stops following until they come back.
-  const followingBottomRef = useRef(true);
+  // Scrolled well away from the end: offer a way back instead of leaving the reader stranded.
+  const [showJump, setShowJump] = useState(false);
   const onScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    followingBottomRef.current =
-      contentSize.height - layoutMeasurement.height - contentOffset.y < FOLLOW_BOTTOM_DISTANCE;
+    const distance = contentSize.height - layoutMeasurement.height - contentOffset.y;
+    followingBottomRef.current = distance < FOLLOW_BOTTOM_DISTANCE;
+    setShowJump(distance > JUMP_PILL_DISTANCE);
+  }, []);
+  const jumpToLatest = useCallback(() => {
+    setShowJump(false);
+    if (anchorKeyRef.current) {
+      scrollToAnchor();
+      return;
+    }
+    followingBottomRef.current = true;
+    listRef.current?.scrollToEnd({ animated: true });
+  }, [scrollToAnchor]);
+  // FlashList's scrollToEnd stops at the last row and can miss the footer; the native scroll view
+  // knows its real content size, so ask it to go to the true end.
+  const scrollToExactEnd = useCallback(() => {
+    const scroller = listRef.current?.getScrollResponder();
+    if (scroller) {
+      scroller.scrollToEnd({ animated: false });
+    } else {
+      listRef.current?.scrollToEnd({ animated: false });
+    }
   }, []);
   const pinToBottomUntilStable = useCallback(() => {
+    // While a reply is growing into the anchor's blank space the list must stay put.
+    if (anchorKeyRef.current) {
+      recomputeBlank();
+      return;
+    }
     if (settled) {
       if (followingBottomRef.current) {
-        listRef.current?.scrollToEnd({ animated: false });
+        scrollToExactEnd();
       }
       return;
     }
-    listRef.current?.scrollToEnd({ animated: false });
+    scrollToExactEnd();
     if (settleTimeoutRef.current) {
       clearTimeout(settleTimeoutRef.current);
     }
     settleTimeoutRef.current = setTimeout(() => setSettled(true), 150);
-  }, [settled]);
+  }, [settled, scrollToExactEnd, recomputeBlank]);
+
+  // A chat opened straight into a live reply (e.g. just started from the inbox) never sees the
+  // send happen here, so anchor to the message that is being answered.
+  const isGenerating = Boolean(generation);
+  useEffect(() => {
+    if (!isGenerating) {
+      return;
+    }
+    // The message being answered is either the last row, or the one right before the reply that is
+    // still streaming. A finished older reply means the send hasn't landed yet; the lifecycle hook
+    // announces that one.
+    const last = renderedMessages.at(-1);
+    const beforeLast = renderedMessages.at(-2);
+    const answered =
+      last?.role === 'user'
+        ? last
+        : last?.isStreaming && beforeLast?.role === 'user'
+          ? beforeLast
+          : null;
+    if (answered) {
+      onNewUserMessage(answered.renderKey ?? answered.id);
+    }
+  }, [isGenerating, renderedMessages, onNewUserMessage]);
+
+  // Scroll the sent message to the top once its blank space is in place (the inset is native, so
+  // it has to exist before the offset is reachable).
+  useEffect(() => {
+    if (!anchorKey || blank <= 0) {
+      return;
+    }
+    if (needsAnchorScrollRef.current) {
+      // Not cancelled on re-run: `blank` keeps changing while rows measure, and the flag is already
+      // cleared, so cancelling here would drop the scroll for good.
+      needsAnchorScrollRef.current = false;
+      requestAnimationFrame(scrollToAnchor);
+      return;
+    }
+    // The inset moved after we landed (keyboard closing, the reply row re-measuring): keep the
+    // anchor flush under the header unless the reader has taken over.
+    if (!anchorDetachedRef.current) {
+      requestAnimationFrame(() =>
+        listRef.current?.getScrollResponder()?.scrollToEnd({ animated: false }),
+      );
+    }
+  }, [anchorKey, blank, scrollToAnchor]);
 
   // Never leave the list hidden if no size change ever arrives.
   useEffect(() => {
@@ -236,6 +410,9 @@ export function ChatMessageList({
       if (settleTimeoutRef.current) {
         clearTimeout(settleTimeoutRef.current);
       }
+      if (verifyTimeoutRef.current) {
+        clearTimeout(verifyTimeoutRef.current);
+      }
     },
     [],
   );
@@ -250,7 +427,7 @@ export function ChatMessageList({
 
   const renderRow = useCallback(
     (item: ChatMessageItem) => {
-      const previousMessage = announcedMessagesRef.current.get(item.id);
+      const previousMessage = announcedMessagesRef.current.get(item.renderKey ?? item.id);
       return (
         <ChatMessageListRow
           message={item}
@@ -282,9 +459,30 @@ export function ChatMessageList({
       hasSearchQuery,
     ],
   );
+  const onRowHeight = useCallback(
+    (key: string, height: number) => {
+      if (rowHeightsRef.current.get(key) === height) {
+        return;
+      }
+      rowHeightsRef.current.set(key, height);
+      recomputeBlank();
+    },
+    [recomputeBlank],
+  );
+  const onRowLayout = useCallback(
+    (key: string, event: LayoutChangeEvent) => onRowHeight(key, event.nativeEvent.layout.height),
+    [onRowHeight],
+  );
   const renderItem = useCallback<ListRenderItem<ChatMessageItem>>(
-    ({ item }) => renderRow(item),
-    [renderRow],
+    ({ item }) => {
+      const key = item.renderKey ?? item.id;
+      return (
+        <MeasuredRow rowKey={key} onMeasure={onRowHeight} onLayout={onRowLayout}>
+          {renderRow(item)}
+        </MeasuredRow>
+      );
+    },
+    [renderRow, onRowHeight, onRowLayout],
   );
 
   const emptySearch = hasSearchQuery ? (
@@ -299,7 +497,6 @@ export function ChatMessageList({
     hasSearchQuery,
     renderedMessages,
     emptyState,
-    bottomInset,
     topInset,
     styles,
   });
@@ -317,55 +514,73 @@ export function ChatMessageList({
         onSave={editing.save}
         visible={editing.messageId !== null}
       />
-      <KeyboardOffsetContext.Provider value={keyboardOffset}>
-        <View onLayout={pinToBottomUntilStable} style={styles.list}>
-          <FlashList
-            ref={listRef}
-            style={[styles.list, { opacity: settled ? 1 : 0 }]}
-            onLoad={pinToBottomUntilStable}
-            onContentSizeChange={pinToBottomUntilStable}
-            onScroll={onScroll}
-            scrollEventThrottle={32}
-            pointerEvents={generation ? 'box-none' : 'auto'}
-            contentInsetAdjustmentBehavior="automatic"
-            ListEmptyComponent={streamingMessage ? null : listEmptyComponent}
-            ListFooterComponent={
-              renderedMessages.length > 0 ? (
-                <>
-                  {streamingMessage ? (
-                    <View
-                      key={streamingMessage.renderKey ?? streamingMessage.id}
-                      style={listData.length > 0 ? styles.streamingRow : undefined}
-                    >
-                      <RenderedRow item={streamingMessage} render={renderRow} />
-                    </View>
-                  ) : null}
-                  <Pressable
-                    accessibilityLabel="Chat message list bottom"
-                    onPress={() => setActiveActionMessageId(null)}
-                    style={styles.bottomSentinel}
-                    testID="chat-message-list-bottom-sentinel"
-                  />
-                </>
-              ) : null
-            }
-            contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingTop: topInset }}
-            ItemSeparatorComponent={ItemSeparator}
-            renderScrollComponent={ChatScrollView}
-            data={listData}
-            keyExtractor={keyExtractor}
-            maintainVisibleContentPosition={{
-              startRenderingFromBottom: true,
-              autoscrollToBottomThreshold: AUTO_SCROLL_TO_BOTTOM_THRESHOLD,
-            }}
-            onScrollBeginDrag={() => setActiveActionMessageId(null)}
-            renderItem={renderItem}
-            refreshControl={refreshControl}
-            scrollEnabled={renderedMessages.length > 0 || refreshControl !== undefined}
-            testID="chat-message-list"
-          />
-        </View>
-      </KeyboardOffsetContext.Provider>
+      <View
+        onLayout={(event) => {
+          viewportHeightRef.current = event.nativeEvent.layout.height;
+          pinToBottomUntilStable();
+        }}
+        style={styles.list}
+      >
+        <FlashList
+          ref={listRef}
+          style={[styles.list, { opacity: settled ? 1 : 0 }]}
+          onLoad={pinToBottomUntilStable}
+          onContentSizeChange={pinToBottomUntilStable}
+          onScroll={onScroll}
+          scrollEventThrottle={32}
+          pointerEvents={generation ? 'box-none' : 'auto'}
+          contentInset={blank > 0 ? { bottom: blank } : undefined}
+          contentInsetAdjustmentBehavior="never"
+          ListEmptyComponent={listEmptyComponent}
+          ListFooterComponent={
+            renderedMessages.length > 0 ? (
+              <>
+                <Pressable
+                  accessibilityLabel="Chat message list bottom"
+                  onLayout={pinToBottomUntilStable}
+                  onPress={() => setActiveActionMessageId(null)}
+                  style={styles.bottomSentinel}
+                  testID="chat-message-list-bottom-sentinel"
+                />
+              </>
+            ) : null
+          }
+          // Stretching a short chat to the viewport would add the blank inset on top of that height
+          // and push the anchor past the header, so only stretch when nothing is anchored.
+          contentContainerStyle={{
+            flexGrow: anchorKey ? 0 : 1,
+            paddingHorizontal: 16,
+            paddingTop: topInset,
+          }}
+          ItemSeparatorComponent={ItemSeparator}
+          data={renderedMessages}
+          keyExtractor={keyExtractor}
+          maintainVisibleContentPosition={{
+            startRenderingFromBottom: !anchorKey,
+            autoscrollToBottomThreshold: anchorKey ? undefined : AUTO_SCROLL_TO_BOTTOM_THRESHOLD,
+          }}
+          onScrollBeginDrag={() => {
+            anchorDetachedRef.current = true;
+            setActiveActionMessageId(null);
+          }}
+          renderItem={renderItem}
+          refreshControl={refreshControl}
+          scrollEnabled={renderedMessages.length > 0 || refreshControl !== undefined}
+          testID="chat-message-list"
+        />
+        <BottomFade color={background} />
+        {showJump ? (
+          <Pressable
+            accessibilityLabel="Jump to latest message"
+            accessibilityRole="button"
+            onPress={jumpToLatest}
+            style={styles.jumpPill}
+            testID="chat-jump-to-latest"
+          >
+            <AppIcon name="arrow.down" size={16} tintColor={barForeground} />
+          </Pressable>
+        ) : null}
+      </View>
     </>
   );
 }

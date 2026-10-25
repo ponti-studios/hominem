@@ -7,7 +7,9 @@ import type { ChatMessageItem } from '~/components/chat';
 import { getChatResponseLength } from '~/hooks/use-chat-response-length';
 import { chatKeys } from '~/services/notes/query-keys';
 
+import { getCachedMessageIds } from './chat-cache';
 import { OFFLINE_UNAVAILABLE_ERROR } from './chat-errors';
+import { beginLiveTurn, dropLiveReply } from './live-turn-store';
 import type { useChatGeneration } from './use-chat-generation';
 
 function fallbackId() {
@@ -68,10 +70,13 @@ export function useSendMessage({
     onMutate: async ({ message, generationId }) => {
       await queryClient.cancelQueries({ queryKey: chatKeys.messages(chatId) });
       const userMessageId = randomUUID();
-      queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (previous = []) => [
-        ...previous,
-        createOptimisticMessage(chatId, message, userMessageId),
-      ]);
+      // The optimistic message lives in the live turn, not the query cache, so a
+      // refetch can neither drop it nor show it twice next to the server's copy.
+      beginLiveTurn(chatId, {
+        generationId,
+        knownIds: getCachedMessageIds(queryClient, chatId),
+        user: createOptimisticMessage(chatId, message, userMessageId),
+      });
       setGeneration({
         id: generationId,
         chatId,
@@ -120,7 +125,9 @@ export function useSendMessage({
         throw new Error(completed.error ?? 'Generation failed.');
       }
     },
-    onError: (error, input, context) => {
+    onError: (error, input) => {
+      // Failed before (or without) a terminal event: the placeholder must not outlive the send.
+      dropLiveReply(chatId, input.generationId);
       const current = generationRef.current;
       if (
         current?.id === input.generationId &&
@@ -142,14 +149,6 @@ export function useSendMessage({
             : {}),
         });
       }
-      if (!context) {
-        return;
-      }
-      queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (messages = []) =>
-        messages.filter(
-          (item) => item.id !== context.userMessageId || item.message.trim().length > 0,
-        ),
-      );
     },
   });
 
@@ -165,9 +164,6 @@ export function useSendMessage({
     const failed = generationRef.current;
     if (failed?.stage === 'failed' && failed.retryInput) {
       const retryInput = failed.retryInput;
-      queryClient.setQueryData<ChatMessageItem[]>(chatKeys.messages(chatId), (messages = []) =>
-        messages.filter((item) => item.id !== failed.userMessageId),
-      );
       setGeneration(null);
       void sendChatMessage(retryInput).catch(() => undefined);
       return;

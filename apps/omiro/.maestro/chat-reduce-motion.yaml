@@ -67,7 +67,7 @@ tags:
     timeout: 5000
 - takeScreenshot: /tmp/omiro_chat_reduce_motion
 - tapOn:
-    id: BackButton
+    id: chat-back-button
     optional: true
 - tapOn:
     text: Inbox

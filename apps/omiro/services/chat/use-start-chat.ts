@@ -108,6 +108,7 @@ export function useStartChat() {
           applyGenerationCommitted({
             queryClient,
             chatId: startedChatIdRef.current,
+            generationId: event.generationId,
             message: event.payload.message,
           });
         }

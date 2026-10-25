@@ -1,7 +1,7 @@
 import type { ChatMessageItem } from '@hominem/chat';
 import { useApiClient } from '@hominem/rpc/react';
 import type { Chat, ChatMessageDto as RpcChatMessage } from '@hominem/rpc/types';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import { chatKeys } from '../notes/query-keys';
 
@@ -31,32 +31,8 @@ export function toMessageOutput(message: RpcChatMessage): ChatMessageItem | null
   };
 }
 
-export function preserveRenderKeys(
-  messages: ChatMessageItem[],
-  previousMessages: ChatMessageItem[],
-) {
-  const usedPreviousIndexes = new Set<number>();
-
-  return messages.map((message) => {
-    const previousIndex = previousMessages.findIndex(
-      (previous, index) =>
-        !usedPreviousIndexes.has(index) &&
-        previous.role === message.role &&
-        previous.message === message.message,
-    );
-
-    if (previousIndex === -1) {
-      return message;
-    }
-
-    usedPreviousIndexes.add(previousIndex);
-    return { ...message, renderKey: previousMessages[previousIndex]?.renderKey };
-  });
-}
-
 export const useChatMessages = ({ chatId }: { chatId: string }) => {
   const client = useApiClient();
-  const queryClient = useQueryClient();
   return useQuery<ChatMessageItem[]>({
     queryKey: chatKeys.messages(chatId),
     queryFn: async () => {
@@ -66,14 +42,10 @@ export const useChatMessages = ({ chatId }: { chatId: string }) => {
       });
       const messages = await res.json();
 
-      const nextMessages = messages.flatMap((message: RpcChatMessage) => {
+      return messages.flatMap((message: RpcChatMessage) => {
         const output = toMessageOutput(message);
         return output ? [output] : [];
       });
-      return preserveRenderKeys(
-        nextMessages,
-        queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(chatId)) ?? [],
-      );
     },
     enabled: Boolean(chatId),
     refetchOnWindowFocus: false,

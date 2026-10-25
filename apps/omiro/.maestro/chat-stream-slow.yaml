@@ -59,7 +59,7 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible:
     id: chat-message-list-bottom-sentinel
 - tapOn:
-    id: BackButton
+    id: chat-back-button
     optional: true
 - tapOn:
     text: Inbox

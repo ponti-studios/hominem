@@ -7,6 +7,7 @@ import { chatKeys } from '~/services/notes/query-keys';
 
 import { handleChatGenerationEvent } from '../chat/chat-cache';
 import type { ChatGenerationState } from '../chat/chat-generation';
+import { clearLiveChat } from '../chat/live-turn-store';
 import { subscribeToStreamingMessageText } from '../chat/streaming-text-store';
 import {
   roundMs,
@@ -133,6 +134,7 @@ export async function runStreamBench({
   const frames = stopFrames();
   const recorded = stopRecording();
   unsubscribe();
+  clearLiveChat(chatId);
   queryClient.setQueryData<ChatMessageItem[]>(messagesKey, (messages = []) =>
     messages.filter((m) => m.id !== assistantId && !m.id.startsWith('streaming-bench-')),
   );

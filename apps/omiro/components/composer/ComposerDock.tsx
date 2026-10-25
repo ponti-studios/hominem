@@ -17,6 +17,9 @@ interface ComposerDockProps {
   // From useComposerDockMetrics: the distance from the screen's bottom edge
   // to the composer's bottom edge while the keyboard is closed.
   restingInset: number;
+  // The dock takes its own space in the column instead of floating over
+  // the content above it, for screens whose parent resizes with the keyboard.
+  inFlow?: boolean;
   testID?: string;
 }
 
@@ -38,7 +41,14 @@ export function useComposerDockMetrics({ clearance = DEFAULT_CLEARANCE } = {}) {
 // the screen. It sits in flow at the bottom of its screen, so at rest the
 // content above it is already bounded; callers add `inset` from
 // useComposerDockMetrics for the keyboard-lifted overlap only.
-export function ComposerDock({ children, restingInset, testID }: ComposerDockProps) {
+export function ComposerDock({ children, restingInset, inFlow, testID }: ComposerDockProps) {
+  if (inFlow) {
+    return (
+      <View style={{ paddingBottom: restingInset, paddingHorizontal: 12 }} testID={testID}>
+        {children}
+      </View>
+    );
+  }
   return (
     <KeyboardStickyView
       offset={{ closed: 0, opened: getDockKeyboardOffset(restingInset) }}
