@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { ActivityIndicator } from 'react-native';
 
 import { useComposerContext } from '~/components/composer/ComposerContext';
 import { CameraModal } from '~/components/media/camera-modal';
@@ -16,10 +17,15 @@ interface ComposerAttachButtonProps {
 }
 
 export function ComposerAttachButton({ disabled, variant = 'icon' }: ComposerAttachButtonProps) {
-  const { pickAttachment, handleCameraCapture } = useComposerContext();
+  const { pickAttachment, handleCameraCapture, isUploading } = useComposerContext();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { barForeground } = useAppTheme().colors;
+
+  const isBlocked = disabled || isUploading;
+  const a11yLabel = isUploading
+    ? t.inboxComposer.composer.uploadingAttachmentA11y
+    : t.inboxComposer.composer.addAttachmentA11y;
 
   const showMenu = useCallback(() => setIsMenuOpen(true), []);
 
@@ -27,23 +33,27 @@ export function ComposerAttachButton({ disabled, variant = 'icon' }: ComposerAtt
     <>
       {variant === 'chip' ? (
         <ComposerTrayChip
-          accessibilityLabel={t.inboxComposer.composer.addAttachmentA11y}
-          disabled={disabled}
-          icon="plus"
+          accessibilityLabel={a11yLabel}
+          disabled={isBlocked}
+          icon={isUploading ? 'arrow.up.circle' : 'plus'}
           label={t.inboxComposer.composer.attachLabel}
           testID="composer-attach-button"
           onPress={showMenu}
         />
       ) : (
         <IconButton
-          accessibilityLabel={t.inboxComposer.composer.addAttachmentA11y}
-          disabled={disabled}
+          accessibilityLabel={a11yLabel}
+          disabled={isBlocked}
           style={{ width: 40, height: 40 }}
           testID="composer-attach-button"
           variant="plain"
           onPress={showMenu}
         >
-          <AppIcon name="plus" size={22} tintColor={barForeground} />
+          {isUploading ? (
+            <ActivityIndicator color={barForeground} size="small" />
+          ) : (
+            <AppIcon name="plus" size={22} tintColor={barForeground} />
+          )}
         </IconButton>
       )}
       <ActionSheet

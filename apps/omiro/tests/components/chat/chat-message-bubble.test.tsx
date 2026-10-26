@@ -54,6 +54,11 @@ vi.mock('~/components/chat/chat-message-content', () => ({
     </div>
   ),
 }));
+vi.mock('expo-image', () => ({
+  Image: ({ source, testID }: { source: { uri: string }; testID?: string }) => (
+    <img alt="" data-testid={testID} src={source.uri} />
+  ),
+}));
 vi.mock('~/components/chat/chat-message-debug', () => ({
   MessageDebug: ({ hasReasoning }: { hasReasoning: boolean }) => (
     <span data-testid="message-debug" data-reasoning={String(hasReasoning)} />
@@ -86,6 +91,46 @@ function message(overrides: Partial<ChatMessageItem> = {}): ChatMessageItem {
 }
 
 describe('ChatMessageBubble', () => {
+  it('shows the photos sent with a user message', () => {
+    render(
+      <ChatMessageBubble
+        isNewlyFailed={false}
+        isUser
+        message={message({
+          role: 'user',
+          images: [{ id: 'file-1', url: 'file:///photo.jpg' }],
+        })}
+        reducedMotion
+        showDebug={false}
+        styles={styles}
+      />,
+    );
+
+    expect(screen.getByTestId('chat-message-image-file-1').getAttribute('src')).toBe(
+      'file:///photo.jpg',
+    );
+  });
+
+  it('renders no empty text line for a photo-only user message', () => {
+    render(
+      <ChatMessageBubble
+        isNewlyFailed={false}
+        isUser
+        message={message({
+          role: 'user',
+          message: '',
+          images: [{ id: 'file-1', url: 'file:///photo.jpg' }],
+        })}
+        reducedMotion
+        showDebug={false}
+        styles={styles}
+      />,
+    );
+
+    expect(screen.getByTestId('chat-message-image-file-1')).not.toBeNull();
+    expect(document.querySelector('[data-markdown]')).toBeNull();
+  });
+
   it('keeps user text verbatim and exposes retry as an accessible action', () => {
     const onRetry = vi.fn();
     render(
@@ -113,7 +158,7 @@ describe('ChatMessageBubble', () => {
     expect(screen.getByText(/Send failed/)).not.toBeNull();
   });
 
-  it('shows reasoning and the thinking indicator during assistant streaming', () => {
+  it('shows the thinking indicator during assistant streaming, with reasoning left to its card', () => {
     render(
       <ChatMessageBubble
         isNewlyFailed={false}
@@ -125,7 +170,7 @@ describe('ChatMessageBubble', () => {
       />,
     );
 
-    expect(screen.getByText('Checking context')).not.toBeNull();
+    expect(screen.queryByText('Checking context')).toBeNull();
     expect(screen.getByTestId('thinking-indicator')).not.toBeNull();
     expect(screen.queryByTestId('message-debug')).toBeNull();
   });

@@ -88,6 +88,12 @@ const t = {
     offlineIndicator: "You're offline. You can keep composing and send when you reconnect.",
     conversationActionsLabel: 'Conversation actions',
     thinkingIndicator: 'Thinking...',
+    reasoning: {
+      title: 'Reasoning',
+      thinking: 'Thinking…',
+      a11y: 'Show reasoning',
+      done: 'Done',
+    },
     toolCall: {
       waiting: 'WAITING FOR YOUR OK',
       rejected: 'You rejected this',
@@ -116,6 +122,7 @@ const t = {
     failedToSend: 'Failed to send',
     tapToRetry: 'Tap to retry',
     retryMessageA11y: 'Retry sending message',
+    attachedPhotoA11y: 'Attached photo',
     responseInterrupted: 'Response interrupted',
     input: {
       messagePlaceholder: 'Message',
@@ -467,6 +474,8 @@ const t = {
     composer: {
       placeholder: "What's on your mind?",
       addAttachmentA11y: 'Add attachment',
+      uploadingAttachmentA11y: 'Uploading photo…',
+      uploadingA11y: (name: string) => `Uploading ${name}`,
       startVoiceInputA11y: 'Record voice note',
       stopVoiceInputA11y: 'Stop recording voice note',
       recordingElsewhereA11y: 'Recording in progress elsewhere',

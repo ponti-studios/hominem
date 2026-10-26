@@ -30,9 +30,18 @@ export interface ComposerAttachment {
   uploadedFile?: UploadedFile;
 }
 
+// A photo that's been picked and is on its way up, shown as a thumbnail right away.
+export interface PendingUpload {
+  id: string;
+  name: string;
+  localUri: string;
+}
+
 interface ComposerContextValue {
   // Attachment state
   attachments: ComposerAttachment[];
+  pendingUploads: PendingUpload[];
+  dismissErrors: () => void;
   errors: string[];
   isUploading: boolean;
   progressByAssetId: Record<string, number>;
@@ -64,6 +73,7 @@ export function ComposerProvider({ children, initialAttachments = [] }: Composer
   const [attachments, setAttachmentsState] = useState<ComposerAttachment[]>(
     () => initialAttachments,
   );
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const attachmentsRef = useRef(initialAttachments);
   // File ids handed off to an in-flight submission (note/chat/message) --
   // need to survive this provider unmounting mid-flight, see the cleanup
@@ -121,7 +131,19 @@ export function ComposerProvider({ children, initialAttachments = [] }: Composer
         uri: string;
       }[],
     ): Promise<ComposerAttachment[]> => {
-      const uploaded = await uploadAssets(assets);
+      const pending = assets.map((asset) => ({
+        id: asset.assetId,
+        name: asset.fileName ?? asset.uri.split('/').pop() ?? 'photo',
+        localUri: asset.uri,
+      }));
+      setPendingUploads((prev) => [...prev, ...pending]);
+      let uploaded: Awaited<ReturnType<typeof uploadAssets>>;
+      try {
+        uploaded = await uploadAssets(assets);
+      } finally {
+        const pendingIds = new Set(pending.map((item) => item.id));
+        setPendingUploads((prev) => prev.filter((item) => !pendingIds.has(item.id)));
+      }
       if (uploaded.length === 0) {
         return [];
       }
@@ -187,6 +209,8 @@ export function ComposerProvider({ children, initialAttachments = [] }: Composer
   const value = useMemo<ComposerContextValue>(
     () => ({
       attachments,
+      pendingUploads,
+      dismissErrors: clearErrors,
       errors: uploadState.errors,
       isUploading: uploadState.isUploading,
       progressByAssetId: uploadState.progressByAssetId,
@@ -198,6 +222,8 @@ export function ComposerProvider({ children, initialAttachments = [] }: Composer
     }),
     [
       attachments,
+      pendingUploads,
+      clearErrors,
       uploadState.errors,
       uploadState.isUploading,
       uploadState.progressByAssetId,
@@ -242,6 +268,8 @@ export function useComposerContext() {
 export function useComposerAttachments() {
   const {
     attachments,
+    pendingUploads,
+    dismissErrors,
     errors,
     isUploading,
     progressByAssetId,
@@ -251,6 +279,8 @@ export function useComposerAttachments() {
   } = useComposerContext();
   return {
     attachments,
+    pendingUploads,
+    dismissErrors,
     errors,
     isUploading,
     progressByAssetId,

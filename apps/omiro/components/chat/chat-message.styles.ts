@@ -6,12 +6,21 @@ export function createChatMessageStyles(theme: Theme) {
     messageUser: { alignItems: 'flex-end' as const },
     messageAssistant: { alignItems: 'flex-start' as const },
     content: { gap: 8 },
+    imageRow: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6 },
+    image: {
+      width: 128,
+      height: 128,
+      borderCurve: 'continuous' as const,
+      borderRadius: 12,
+      backgroundColor: theme.colors.card,
+    },
     reasoningPanel: {
       backgroundColor: theme.colors.background,
       borderWidth: 1,
       borderColor: theme.colors.border,
       borderRadius: theme.borderRadii.lg,
       gap: 4,
+      marginBottom: 8,
       paddingHorizontal: 12,
       paddingVertical: 12,
     },
@@ -23,7 +32,8 @@ export function createChatMessageStyles(theme: Theme) {
       alignSelf: 'flex-end' as const,
     },
     interruptedRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
-    retryText: { color: theme.colors.destructive, fontSize: 12 },
+    // Sits on the violet user bubble, where destructive red is unreadable.
+    retryText: { color: theme.colors.primaryForeground, fontSize: 12, fontWeight: '700' as const },
     interruptedText: { color: theme.colors.tertiary, fontSize: 12 },
     userBubble: {
       backgroundColor: theme.colors.primary,

@@ -23,6 +23,7 @@ export function createOptimisticMessage(
   chatId: string,
   messageText: string,
   id = fallbackId(),
+  images?: ChatMessageItem['images'],
 ): ChatMessageItem {
   return {
     id,
@@ -34,12 +35,15 @@ export function createOptimisticMessage(
     reasoning: null,
     toolCalls: null,
     isStreaming: false,
+    ...(images?.length ? { images } : {}),
   };
 }
 
 export interface SendInput {
   message: string;
   fileIds?: string[];
+  // Local previews of the photos in fileIds, only for the optimistic message.
+  images?: ChatMessageItem['images'];
   responseModality?: 'text' | 'audio';
 }
 
@@ -67,7 +71,7 @@ export function useSendMessage({
   const { mutateAsync, isPending } = useMutation<void, Error, MutationInput, SendContext>({
     mutationKey: ['chat-generation', chatId],
     retry: false,
-    onMutate: async ({ message, generationId }) => {
+    onMutate: async ({ message, generationId, images }) => {
       await queryClient.cancelQueries({ queryKey: chatKeys.messages(chatId) });
       const userMessageId = randomUUID();
       // The optimistic message lives in the live turn, not the query cache, so a
@@ -75,7 +79,7 @@ export function useSendMessage({
       beginLiveTurn(chatId, {
         generationId,
         knownIds: getCachedMessageIds(queryClient, chatId),
-        user: createOptimisticMessage(chatId, message, userMessageId),
+        user: createOptimisticMessage(chatId, message, userMessageId, images),
       });
       setGeneration({
         id: generationId,

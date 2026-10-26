@@ -14,6 +14,9 @@ export interface ChatMessageItem {
   toolCalls: ChatMessageToolCallRecord[] | null;
   isStreaming?: boolean;
   audio?: { url: string; mimeType: string } | null;
+  // Photos sent with a user message. `url` is a local file:// uri for a message still
+  // sending, and the API's signed read url once the server's copy is loaded.
+  images?: { id: string; url: string }[];
   // Set when a send fails or a stream gets interrupted, instead of removing
   // the message — keeps it visible in the transcript so the user can retry
   failed?: boolean;

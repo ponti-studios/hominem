@@ -46,6 +46,15 @@ export function useComposerController({
       ),
     [attachments],
   );
+  const attachedImages = useMemo(
+    () =>
+      attachments.flatMap((attachment) =>
+        attachment.uploadedFile?.id && attachment.type === 'image' && attachment.localUri
+          ? [{ id: attachment.uploadedFile.id, url: attachment.localUri }]
+          : [],
+      ),
+    [attachments],
+  );
   const [manualEntryKind, setManualEntryKind] = useState<ComposerEntryKind | null>(
     entryMode === 'mixed' ? (defaultEntryKind ?? null) : entryMode,
   );
@@ -87,6 +96,7 @@ export function useComposerController({
       isFocused,
       showAttachments,
       uploadedAttachmentIds,
+      attachedImages,
       canPickMedia,
       canToggleVoice,
       isInteractionBusy,
@@ -106,6 +116,7 @@ export function useComposerController({
       isFocused,
       showAttachments,
       uploadedAttachmentIds,
+      attachedImages,
       canPickMedia,
       canToggleVoice,
       isInteractionBusy,

@@ -1,3 +1,4 @@
+import type { ChatMessageItem } from '@hominem/chat';
 import { logger } from '@hominem/telemetry';
 import * as Haptics from 'expo-haptics';
 import { useCallback } from 'react';
@@ -15,6 +16,7 @@ interface ComposerSubmitInput {
   canSubmit: boolean;
   clearComposer: () => void;
   fileIds: string[];
+  images?: NonNullable<ChatMessageItem['images']>;
   message: string;
   restoreMessage: (message: string) => void;
   responseModality?: 'text' | 'audio';
@@ -49,6 +51,7 @@ export function useComposerSubmission(props: ComposerProps) {
         canSubmit,
         clearComposer,
         fileIds,
+        images,
         message,
         responseModality,
         restoreMessage,
@@ -86,6 +89,7 @@ export function useComposerSubmission(props: ComposerProps) {
       const sendPromise = sendChatMessage({
         message: trimmedMessage,
         fileIds,
+        ...(images?.length ? { images } : {}),
         responseModality,
       });
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);

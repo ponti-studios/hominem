@@ -80,6 +80,7 @@ function ComposerContent(props: ComposerProps) {
           canSubmit,
           clearComposer: controller.clearComposer,
           fileIds: controller.uploadedAttachmentIds,
+          images: controller.attachedImages,
           message,
           restoreMessage: controller.setMessage,
         },
@@ -91,6 +92,7 @@ function ComposerContent(props: ComposerProps) {
       controller.markAttachmentsSubmitted,
       controller.setMessage,
       controller.uploadedAttachmentIds,
+      controller.attachedImages,
       submission,
     ],
   );

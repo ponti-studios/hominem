@@ -13,6 +13,9 @@ export function toMessageOutput(message: RpcChatMessage): ChatMessageItem | null
   }
 
   const audioFile = message.files?.find((file) => file.type === 'audio');
+  const images = (message.files ?? []).flatMap((file) =>
+    file.type === 'image' && file.url ? [{ id: file.fileId ?? file.url, url: file.url }] : [],
+  );
 
   return {
     id: message.id,
@@ -28,6 +31,7 @@ export function toMessageOutput(message: RpcChatMessage): ChatMessageItem | null
       audioFile?.url && audioFile.mimeType
         ? { url: audioFile.url, mimeType: audioFile.mimeType }
         : null,
+    ...(images.length > 0 ? { images } : {}),
   };
 }
 

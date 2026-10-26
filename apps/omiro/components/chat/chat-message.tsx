@@ -8,6 +8,7 @@ import { nativeMotionAnimations } from '~/services/motion/native-motion';
 
 import { ActiveMessageActions } from './chat-message-actions';
 import { ChatMessageBubble } from './chat-message-bubble';
+import { MessageReasoning } from './chat-message-reasoning';
 import { MessageToolCalls } from './chat-message-tool-calls';
 import { createChatMessageStyles } from './chat-message.styles';
 
@@ -73,23 +74,29 @@ export const ChatMessage = memo(function ChatMessage({
     canDelete: !isStreaming && onDelete !== undefined,
   };
   const renderedToolCalls = message.toolCalls ?? [];
+  // A tool- or reasoning-only turn has no words yet: the cards stand alone instead of
+  // trailing an empty bubble.
+  const hasBubble = isUser || isStreaming || failed || Boolean(message.message.trim());
 
   return (
     <Animated.View
       entering={rowEntering}
       style={[styles.message, isUser ? styles.messageUser : styles.messageAssistant]}
     >
+      <MessageReasoning message={message} />
       <MessageToolCalls toolCalls={renderedToolCalls} />
-      <ChatMessageBubble
-        isNewlyFailed={failure === 'new'}
-        isUser={isUser}
-        message={message}
-        styles={styles}
-        onActivate={onActivate}
-        onRetry={onRetry}
-        reducedMotion={reducedMotion}
-        showDebug={showDebug}
-      />
+      {hasBubble ? (
+        <ChatMessageBubble
+          isNewlyFailed={failure === 'new'}
+          isUser={isUser}
+          message={message}
+          styles={styles}
+          onActivate={onActivate}
+          onRetry={onRetry}
+          reducedMotion={reducedMotion}
+          showDebug={showDebug}
+        />
+      ) : null}
       <ActiveMessageActions
         actions={actions}
         isActive={activity === 'active'}

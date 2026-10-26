@@ -1,4 +1,5 @@
 import type { ChatMessageItem } from '@hominem/chat';
+import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
@@ -53,24 +54,38 @@ export function ChatMessageBubble({
       style={[isUser ? styles.userBubble : styles.assistantBubble, isUser && styles.continuous]}
       testID={`chat-message-${message.id}`}
     >
-      <MessageReasoning message={message} isUser={isUser} styles={styles} />
-
       <View style={styles.content}>
+        {message.images?.length ? (
+          <View style={styles.imageRow}>
+            {message.images.map((image) => (
+              <Image
+                accessibilityLabel={t.chat.attachedPhotoA11y}
+                contentFit="cover"
+                key={image.id}
+                source={{ uri: image.url }}
+                style={styles.image}
+                testID={`chat-message-image-${image.id}`}
+              />
+            ))}
+          </View>
+        ) : null}
         {/* The user's own text is shown verbatim: underscores or asterisks they
             typed must not turn into emphasis. */}
-        <MessageContent
-          content={message.message}
-          enableMarkdown={!isUser && !isStreaming}
-          streamingId={!isUser && isStreaming ? message.id : undefined}
-          textStyle={textStyle}
-        >
-          <AssistantThinkingIndicator
-            hasCommittedText={Boolean(message.message.trim())}
-            id={message.id}
-            isStreaming={isStreaming}
-            isUser={isUser}
-          />
-        </MessageContent>
+        {isUser && !message.message.trim() ? null : (
+          <MessageContent
+            content={message.message}
+            enableMarkdown={!isUser && !isStreaming}
+            streamingId={!isUser && isStreaming ? message.id : undefined}
+            textStyle={textStyle}
+          >
+            <AssistantThinkingIndicator
+              hasCommittedText={Boolean(message.message.trim())}
+              id={message.id}
+              isStreaming={isStreaming}
+              isUser={isUser}
+            />
+          </MessageContent>
+        )}
 
         <MessageFailureNotice
           message={message}
@@ -83,25 +98,6 @@ export function ChatMessageBubble({
         <MessageDebugPanel message={message} showDebug={showDebug} isStreaming={isStreaming} />
       </View>
     </Pressable>
-  );
-}
-
-function MessageReasoning({
-  message,
-  isUser,
-  styles,
-}: {
-  message: ChatMessageItem;
-  isUser: boolean;
-  styles: ChatMessageStyles;
-}) {
-  if (isUser || !message.reasoning?.trim()) {
-    return null;
-  }
-  return (
-    <View style={styles.reasoningPanel}>
-      <Text style={styles.reasoningText}>{message.reasoning}</Text>
-    </View>
   );
 }
 
