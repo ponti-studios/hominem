@@ -1,7 +1,7 @@
 import type { ChatMessageItem } from '@hominem/chat';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
-import { type LiveChat, streamingIdFor, useLiveChat } from './live-turn-store';
+import { type LiveChat, retireLiveTurn, streamingIdFor, useLiveChat } from './live-turn-store';
 
 // The rows the chat shows: the server's persisted messages with the live turn
 // laid over them. Every id appears at most once, and a bubble keeps the same
@@ -60,5 +60,20 @@ export function deriveChatRows(persisted: ChatMessageItem[], live: LiveChat): Ch
 
 export function useChatRows(chatId: string, persisted: ChatMessageItem[]) {
   const live = useLiveChat(chatId);
+
+  // Once the server list has the finished turn's messages, the overlay copies are done.
+  useEffect(() => {
+    const { turn } = live;
+    if (!turn || turn.reply === 'pending' || turn.reply === 'streaming') {
+      return;
+    }
+    const ids = new Set(persisted.map((message) => message.id));
+    const userCaughtUp = !turn.user || ids.has(turn.user.id);
+    const replyCaughtUp = !turn.committed || ids.has(turn.committed.id);
+    if (userCaughtUp && replyCaughtUp) {
+      retireLiveTurn(chatId, turn.generationId);
+    }
+  }, [chatId, live, persisted]);
+
   return useMemo(() => deriveChatRows(persisted, live), [persisted, live]);
 }

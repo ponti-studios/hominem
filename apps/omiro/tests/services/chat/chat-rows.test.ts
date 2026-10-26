@@ -9,6 +9,7 @@ import {
   dropLiveReply,
   finishLiveReply,
   getLiveChat,
+  retireLiveTurn,
   startLiveReply,
   streamingIdFor,
 } from '~/services/chat/live-turn-store';
@@ -161,5 +162,17 @@ describe('deriveChatRows ordering', () => {
     dropLiveReply(CHAT_ID, GEN);
     const rows = rowsFor([message('old', 'assistant'), message('a1', 'assistant', 'reply')]);
     expect(ids(rows)).toEqual(['old', 'u-opt', 'a1']);
+  });
+});
+
+describe('retireLiveTurn', () => {
+  it('stops resurrecting a reply that an edit truncated away', () => {
+    beginLiveTurn(CHAT_ID, { generationId: GEN, knownIds: [], user: message('u1', 'user') });
+    finishLiveReply(CHAT_ID, GEN, message('a1', 'assistant', 'reply'));
+    expect(ids(rowsFor([message('u1', 'user')]))).toEqual(['u1', 'a1']);
+
+    // The persisted list caught up, then an edit deleted the reply server-side.
+    retireLiveTurn(CHAT_ID, GEN);
+    expect(ids(rowsFor([message('u1', 'user', 'edited')]))).toEqual(['u1']);
   });
 });
