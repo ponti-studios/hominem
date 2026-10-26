@@ -1,4 +1,4 @@
-import { db, pool } from '@hominem/db/core';
+import { authDb, db, pool } from '@hominem/db/core';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -160,6 +160,12 @@ async function createElicitingClient(
 }
 
 beforeAll(async () => {
+  // Tool calls now record plan usage against a real user row; give the fixture identity one.
+  await authDb
+    .insertInto('user')
+    .values({ id: testUser.id, name: testUser.name, email: testUser.email })
+    .onConflict((oc) => oc.doNothing())
+    .execute();
   // The worklog confirmation test below needs an engagement for the test user.
   // Clear any leftover first so a crashed earlier run can't leak one into the
   // other tests' expectations.
