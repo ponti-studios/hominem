@@ -23,6 +23,8 @@ Read the relevant doc before changing a system boundary. Package READMEs are set
 `docs/` are where durable decisions live.
 
 For PostgreSQL connection details, see [Database access](./docs/database.md).
+For where production runs and which credentials are rotated, see
+[Hosting and credentials](./docs/hosting.md).
 
 `docs/` has four jobs:
 

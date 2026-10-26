@@ -1,5 +1,8 @@
 # Fly.io deploy
 
+Current production topology and credential rotation state live in
+[docs/hosting.md](../../docs/hosting.md).
+
 Merges to `main` deploy automatically: each `deploy-*` workflow runs after its
 `validate-*` workflow passes and calls `.github/workflows/fly-deploy-service.yml`
 (remote build, waits on health checks). `deploy-finance` is manual-only.
