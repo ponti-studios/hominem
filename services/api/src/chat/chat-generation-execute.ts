@@ -319,6 +319,13 @@ async function executeGenerationRun(
         totalTokens: usage.totalTokens,
       });
     }
+    const durationMs = getDurationMs();
+    // Traces are sampled, so this unsampled log is what the "chat response time" dashboard reads.
+    logger.info('chat_generation_completed', {
+      operation: 'chat.generation',
+      outcome: streamError ? 'failed' : 'succeeded',
+      durationMs,
+    });
     await recordAIUsageEvent({
       eventId,
       userId: input.userId,
@@ -328,7 +335,7 @@ async function executeGenerationRun(
       usage,
       status: streamError ? 'failed' : 'succeeded',
       error: streamError,
-      durationMs: getDurationMs(),
+      durationMs,
       metadata: { chatId: input.chatId, generationId: input.generationId, toolCallCount },
     });
     if (failureDeliveryError) queue.fail(failureDeliveryError);
