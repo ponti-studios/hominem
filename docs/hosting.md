@@ -62,10 +62,19 @@ path, there is nothing to do.
 ## Credential rotation state
 
 "Rotated" here means the value in production was issued after the 22 Oct 2026
-compromise. A value that was merely copied into Fly's secret store during the
-overnight migration is _not_ rotated: Fly's `created_at` records only when the
-value was stored, so on its own it does not prove anything was re-issued.
-Evidence is noted per row.
+compromise, or the credential it replaced is provably dead. A value that was
+merely copied into Fly's secret store during the overnight migration is _not_
+rotated: Fly's `created_at` records only when the value was stored, so on its
+own it does not prove anything was re-issued.
+
+"New" is used only for credentials that protect machinery which did not exist
+before the migration — the Fly database, the Fly Redis instance, the origin
+guard. Nothing pre-migration references those hosts, so there was no running
+credential to carry over; it is still not a provider-recorded re-issue.
+
+"Not verified" means the only evidence is a stored-at timestamp sitting next to
+a plausible pre-compromise copy source, so a provider record or an operator's
+rotation note has to settle it. Evidence is noted per row.
 
 | Credential                            | Held by                                                       | State             | Evidence                                                                                                                                     |
 | ------------------------------------- | ------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -73,7 +82,7 @@ Evidence is noted per row.
 | PostgreSQL password                   | Fly secret on `hominem-db`; `DATABASE_URL` on api, worker, career, finance | **New**           | new 10 GB volume; password stored 2026-10-22T06:11Z, and `FLY_POSTGRES_PASSWORD` added as a repository secret 2026-10-23T04:53Z                |
 | Redis password                        | Fly secret on `hominem-redis`; `REDIS_URL`                    | **New**           | new instance created 2026-10-22T06:11Z                                                                                                        |
 | OpenRouter production key             | Fly secret `OPENROUTER_API_KEY` on api, worker, career        | **Rotated**       | the OpenRouter management API lists `hominem.prod`, created 2026-10-22T18:27Z, and the deployed key reports usage `0.031405535`, matching that key |
-| OpenRouter management key             | Fly secret `OPENROUTER_MANAGEMENT_KEY`                        | **New**           | stored 2026-10-23T16:12Z, after the migration                                                                                                 |
+| OpenRouter management key             | Fly secret `OPENROUTER_MANAGEMENT_KEY`                        | **Not verified**  | only the 2026-10-23T16:12Z stored-at timestamp. OpenRouter exposes no `created_at` for a provisioning key (`GET /api/v1/key` returns `is_provisioning_key: true` and no date, and `GET /api/v1/keys` lists only normal keys), so it cannot be told apart from an account-level key carried over from Railway |
 | `ORIGIN_SECRET`                       | Fly secret, mirrored in the Cloudflare Transform Rule that sets `X-Origin-Secret` | **New**           | stored 2026-10-23T21:48Z; direct `*.fly.dev` requests are refused                                                                             |
 | `RESEND_API_KEY`                      | Fly secret                                                    | **Not verified**  | the deployed key is send-only (`401 restricted to only send emails`), so it cannot list its siblings; the Resend console is the only source    |
 | R2 access key and secret              | Fly secret                                                    | **Not verified**  | needs the Cloudflare R2 console; no Cloudflare token exists on this machine                                                                    |
@@ -89,9 +98,10 @@ These are gaps found by the audit, not work done by it:
 
 1. Rotate the CI `OPENROUTER_API_KEY` repository secret, which predates the
    compromise, and delete the stale `RAILWAY_SERVICE_FINANCE` secret.
-2. Check each console for the Resend key, the R2 access key, the Better Auth
-   secret, and the New Relic licence key, and rotate whatever was not re-issued
-   after 22 Oct.
+2. Check each console for the OpenRouter management key, the Resend key, the R2
+   access key, the Better Auth secret, and the New Relic licence key, and
+   rotate whatever was not re-issued after 22 Oct. The management key is the
+   priority: it can mint and disable every per-person OpenRouter key.
 3. Decide what to force if the database restore counts as an exposure:
    rotating `BETTER_AUTH_SECRET` invalidates every session, and the ChatGPT and
    Claude connectors need re-consent rather than a key swap.
