@@ -8,6 +8,10 @@
       "types": "./build/ai.d.ts",
       "default": "./src/ai.ts"
     },
+    "./billing": {
+      "types": "./build/billing.d.ts",
+      "default": "./src/billing.ts"
+    },
     "./career": {
       "types": "./build/career.d.ts",
       "default": "./src/career.ts"
