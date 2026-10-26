@@ -18,13 +18,13 @@ import { resolveAiProvider, resolveEmailProvider } from './provider-mode';
 import { initRuntime } from './runtime';
 import { createServer } from './server';
 
-const aiProvider = resolveAiProvider(env);
+const aiProvider = resolveAiProvider();
 if (aiProvider === 'scripted' && env.NODE_ENV === 'production') {
   throw new Error('Scripted providers are not allowed in production');
 }
 
 // Production always sends real email while other environments capture to the
-// scripted mailbox. ENV=scripted forces scripted AI and email together.
+// scripted mailbox. ENV=scripted forces scripted email; scripted AI is the USE_SCRIPTED_AI const in provider-mode.ts.
 const emailProvider = resolveEmailProvider(env);
 if (emailProvider === 'scripted' && env.NODE_ENV === 'production') {
   throw new Error('Scripted providers are not allowed in production');

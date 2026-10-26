@@ -22,21 +22,26 @@ export function executeFixtureTool(
   switch (name) {
     case 'place_visit_history':
       return {
-        output: { visits: [{ id: 'visit-1', place: 'Sushi Dai', city: 'Tokyo' }], count: 1 },
+        output: {
+          visits: [
+            { id: '51500000-0000-4000-8000-000000000001', place: 'Sushi Dai', city: 'Tokyo' },
+          ],
+          count: 1,
+        },
       };
     case 'trip_history':
       return {
         output: {
           trips: [
             {
-              id: 'trip-tokyo',
+              id: '7e100000-0000-4000-8000-000000000001',
               city: 'Tokyo',
               country: 'Japan',
               startDate: '2025-04-10',
               endDate: '2025-04-18',
             },
             {
-              id: 'trip-london',
+              id: '7e100000-0000-4000-8000-000000000002',
               city: 'London',
               country: 'United Kingdom',
               startDate: '2024-09-02',
@@ -52,18 +57,35 @@ export function executeFixtureTool(
           people:
             state.fixture.ambiguousPerson === true
               ? [
-                  { id: 'person-alex', name: 'Alex Morgan', email: 'alex@example.com' },
-                  { id: 'person-alexis', name: 'Alexis Chen', email: 'alexis@example.com' },
+                  {
+                    id: 'a1e00000-0000-4000-8000-000000000001',
+                    name: 'Alex Morgan',
+                    email: 'alex@example.com',
+                  },
+                  {
+                    id: 'a1e00000-0000-4000-8000-000000000002',
+                    name: 'Alexis Chen',
+                    email: 'alexis@example.com',
+                  },
                 ]
-              : [{ id: 'person-alex', name: 'Alex Morgan', email: 'alex@example.com' }],
+              : [
+                  {
+                    id: 'a1e00000-0000-4000-8000-000000000001',
+                    name: 'Alex Morgan',
+                    email: 'alex@example.com',
+                  },
+                ],
           count: state.fixture.ambiguousPerson === true ? 2 : 1,
         },
       };
     case 'person_timeline':
       return {
         output:
-          input.personId === 'person-alex'
-            ? { personId: 'person-alex', events: [{ type: 'trip', city: 'Tokyo' }] }
+          input.personId === 'a1e00000-0000-4000-8000-000000000001'
+            ? {
+                personId: 'a1e00000-0000-4000-8000-000000000001',
+                events: [{ type: 'trip', city: 'Tokyo' }],
+              }
             : { error: 'invalid_or_invented_person_id' },
       };
     case 'finance_recent_transactions':
@@ -72,7 +94,12 @@ export function executeFixtureTool(
           input.from === '2025-04-10' && input.to === '2025-04-18'
             ? {
                 transactions: [
-                  { id: 'txn-1', postedOn: '2025-04-12', merchant: 'Sushi Dai', amountCents: 4200 },
+                  {
+                    id: '70900000-0000-4000-8000-000000000001',
+                    postedOn: '2025-04-12',
+                    merchant: 'Sushi Dai',
+                    amountCents: 4200,
+                  },
                 ],
                 count: 1,
               }
@@ -81,16 +108,22 @@ export function executeFixtureTool(
     case 'search_memories':
       return { output: { memories: [], count: 0 } };
     case 'remember':
-      return { output: { id: 'memory-aisle', content: input.content, alreadyExists: false } };
+      return {
+        output: {
+          id: '3e300000-0000-4000-8000-000000000001',
+          content: input.content,
+          alreadyExists: false,
+        },
+      };
     case 'list_collections':
       return {
         output: {
           collections:
             state.fixture.collection === 'japan'
-              ? [{ id: 'collection-japan', name: 'Japan restaurants' }]
+              ? [{ id: 'c0110000-0000-4000-8000-000000000001', name: 'Japan restaurants' }]
               : state.fixture.collection === 'missing'
                 ? []
-                : [{ id: 'collection-existing', name: 'Existing Places' }],
+                : [{ id: 'c0110000-0000-4000-8000-000000000002', name: 'Existing Places' }],
           count: state.fixture.collection === 'missing' ? 0 : 1,
         },
       };
@@ -254,11 +287,32 @@ export function executeFixtureTool(
       return {
         output: {
           applications: [
-            { id: 'application-old', company: 'Acme', title: 'Engineer', status: 'APPLIED' },
+            {
+              id: 'a0900000-0000-4000-8000-000000000001',
+              company: 'Acme',
+              title: 'Engineer',
+              status: 'APPLIED',
+            },
           ],
           count: 1,
         },
       };
+    case 'career_application_create': {
+      // A posting URL carrying this id is already saved, so the tool hands back the existing row.
+      const alreadyExisted = String(input.jobPostingUrl ?? '').includes('9f1c2d3e');
+      return {
+        output: {
+          alreadyExisted,
+          application: {
+            id: 'a0900000-0000-4000-8000-000000000002',
+            company: input.company ?? 'Acme',
+            title: alreadyExisted ? 'Senior Engineer' : (input.title ?? 'Engineer'),
+            status: 'WISHLIST',
+            jobPostingUrl: input.jobPostingUrl ?? null,
+          },
+        },
+      };
+    }
     case 'create_collection':
     case 'invite_member':
     case 'career_application_delete':

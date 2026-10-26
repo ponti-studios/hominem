@@ -72,7 +72,7 @@ function ComposerInputComponent({
         selectionColor={withAlpha(barForeground, 0.35)}
         style={{
           borderRadius: 0,
-          borderWidth: 5,
+          borderWidth: 0,
           color: barForeground,
           fontFamily: fontFamilies.sans,
           fontSize: 17,
@@ -80,7 +80,7 @@ function ComposerInputComponent({
           lineHeight: 24,
           minHeight: 0,
           paddingHorizontal: 0,
-          paddingVertical: 2,
+          paddingVertical: 8,
         }}
       />
       {message.length >= LENGTH_WARNING_THRESHOLD ? (

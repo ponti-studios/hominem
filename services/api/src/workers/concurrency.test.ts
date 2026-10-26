@@ -7,7 +7,6 @@ describe('worker concurrency', () => {
   it('parallelizes I/O-bound queues', () => {
     expect(getWorkerConcurrency(QUEUE_NAMES.EMBEDDING_GENERATION)).toBe(5);
     expect(getWorkerConcurrency(QUEUE_NAMES.FILE_PROCESSING)).toBe(5);
-    expect(getWorkerConcurrency(QUEUE_NAMES.CAREER_JOB_IMPORT)).toBe(5);
   });
 
   it('keeps dispatcher and serial queues at one', () => {

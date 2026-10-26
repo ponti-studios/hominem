@@ -34,14 +34,15 @@ status_json="$(curl --fail --silent --show-error --max-time 5 "$API_URL/api/stat
   fail "API is not reachable at $API_URL"
 
 # The suite assumes deterministic, no-cost providers (fixed replies, no real
-# LLM/email calls). An API not started with ENV=scripted silently makes real
+# LLM/email calls). An API without scripted AI (USE_SCRIPTED_AI) and email
+# (ENV=scripted) silently makes real
 # OpenRouter calls instead, which is non-deterministic, costs real tokens,
 # and is what produced "Could not start chat" failures the first time this
 # ran against an ordinary `pnpm dev` API.
 ai_provider="$(jq -r '.providers.ai // empty' <<<"$status_json")"
 email_provider="$(jq -r '.providers.email // empty' <<<"$status_json")"
 if [[ "$ai_provider" != 'scripted' || "$email_provider" != 'scripted' ]]; then
-  fail "API at $API_URL is not running with ENV=scripted (ai=${ai_provider:-unknown}, email=${email_provider:-unknown}). Restart it with ENV=scripted before running this suite."
+  fail "API at $API_URL is not fully scripted (ai=${ai_provider:-unknown}, email=${email_provider:-unknown}). Set USE_SCRIPTED_AI=true in services/api/src/provider-mode.ts and start the API with ENV=scripted before running this suite."
 fi
 
 if [[ -z "$METRO_URL_ENCODED" ]]; then

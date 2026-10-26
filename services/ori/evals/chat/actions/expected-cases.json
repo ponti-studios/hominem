@@ -1,0 +1,27 @@
+[
+  {
+    "name": "task from a stated deadline",
+    "input": "i need to renew my passport on march 15th",
+    "criteria": [
+      "Calls task_create with a short title about renewing a passport",
+      "Sets the due date to March 15 in the next year it comes around from the current date",
+      "Does not call remember, and does not ask permission first"
+    ]
+  },
+  {
+    "name": "remember an explicit fact",
+    "input": "remember that I'm allergic to penicillin",
+    "criteria": [
+      "Calls remember exactly once with the penicillin allergy",
+      "Does not ask permission first and does not create a task"
+    ]
+  },
+  {
+    "name": "checks memory before denying",
+    "input": "what's my dog's name again?",
+    "criteria": [
+      "Calls search_memories or list_memories instead of claiming it has no memory of the user",
+      "Does not invent a name"
+    ]
+  }
+]

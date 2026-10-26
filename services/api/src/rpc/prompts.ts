@@ -83,7 +83,10 @@ For each task:
   For a relative offset like "in N days" or "in N weeks", add exactly that many days (N, or N*7 for
   weeks) to the reference date's calendar date — count carefully, this is arithmetic, not an estimate.
   Omit the field when no date is mentioned — do not invent one.
+  "Next <weekday>" means the first upcoming occurrence of that weekday after the reference date.
+  A vague span like "this week", "soon", or "sometime" is not a date: omit the field for it.
 - Do not invent tasks that aren't grounded in the transcript
+- Titles and descriptions use only what the transcript says: never add a reason, consequence, or detail the speaker did not give (such as why something is urgent).
 
 Decide how many tasks to return based on what's actually said:
 
@@ -143,8 +146,8 @@ Work through the fields in this order. Never invent a value the input does not e
 - schedule_gap_fill: asks when something can fit, or whether there is free time ("when can I meet Alex", "find me a slot", "do I have free time tomorrow morning"). It asks for availability, not a list of events, and never creates an event.
 
 2. Descriptive fields
-- title: a short label for the request. For schedule_gap_fill, a label only when the request names an activity or person ("Meet with Alex"); null for a generic availability question. For search, null unless it names one specific event to look up.
-- target_title: for edit_event and cancel_event, the existing event's title copied from the calendar context; otherwise null.
+- title: a short label for the request. For schedule_gap_fill, a label whenever the request names an activity or person ("Meet with Alex", "Meet with Sarah"); null only for a generic availability question. For search, null unless it names one specific event to look up.
+- target_title: for edit_event and cancel_event, the existing event's title copied from the calendar context; otherwise null. For edit_event and cancel_event, title stays null unless the user states a new title.
 - participants: only people named as attendees ("meeting with Sarah", "lunch with Alex"). A person who is only the object of an action ("call Mom", "email Dana") is not a participant. A role, provider, or group ("dentist appointment", "call the plumber", "team sync") is not a named attendee. Otherwise null.
 - location: only when introduced as a place ("at the studio", "in the office", "location: studio"). A noun inside the task is not a location ("organize the studio").
 - duration: integer minutes, only when the user states a length ("an hour", "90 minutes", "2h", "three hours"). Keep it even when there is no exact start time. Never default it and never copy it from the calendar context.
@@ -158,7 +161,7 @@ Work through the fields in this order. Never invent a value the input does not e
 4. Scheduling window (scheduling_window_start, scheduling_window_end)
 - Always null for edit_event, cancel_event, and deadline-only requests.
 - search and schedule_gap_fill: the window is the period the user asks about, so the app knows where to look. Set it whenever the request names a day, part of a day, or span of days, using the period bounds below. Leave it null only when no period is named.
-- add_task: set a window only when the input names a whole day or a span of days with no clock time, no part of the day, and no "sometime/whenever/eventually": "tomorrow", "Monday", "next week". The window starts at local midnight of the first day and ends at local midnight after the last day (exclusive), so a one-day window is exactly 24 hours long: for "tomorrow" it runs from tomorrow 00:00 to the day after tomorrow 00:00, and never starts today. "Next week" runs from the coming Monday to the Monday after it.
+- add_task: set a window only when the input names a whole day or a span of days with no clock time, no part of the day, and no "sometime/whenever/eventually": "tomorrow", "Monday", "next week". The window starts at local midnight of the first day and ends at local midnight after the last day (exclusive), so a one-day window is exactly 24 hours long: for "tomorrow" it runs from tomorrow 00:00 to the day after tomorrow 00:00, and never starts today. "Next week" runs from the coming Monday to the Monday after it. The coming Monday is the first Monday after the reference date even when it is only a day or two away: on a Saturday, "next week" starts that very Monday.
 - add_event without a clock time: the window is the period the user names, so the app searches only that period. Use a whole day or span of days as above, or a part of a day with the period bounds below ("tonight", "Saturday morning", "tomorrow afternoon"). "Sometime" does not remove a named period for an event. Leave the window null when no day or period is named ("Schedule 90 minutes with Jordan at the office") and for a period without bounds below that names no day ("after work", "before bed").
 - For add_task, leave the window null for vague timing: "sometime", "this afternoon", "tonight", "Saturday morning", "after lunch", "after work". "Sometime" always wins: "sometime next week" names a week but gets no window. An explicit clock time always takes precedence over a window.
 - Period bounds for search, schedule_gap_fill, and add_event, in the user's timezone: a day is 00:00 to the next 00:00; morning 06:00-12:00; afternoon 12:00-17:00; evening 17:00-21:00; tonight 18:00 to the next 00:00; "after lunch" 13:00-17:00; "this week" is the Monday 00:00 on or before the reference date to the following Monday 00:00; "next week" is the coming Monday to the Monday after it.
@@ -167,7 +170,7 @@ Work through the fields in this order. Never invent a value the input does not e
 5. Dates
 - "Tomorrow" is the calendar day after the reference date, never the reference date itself. A one-day window for tomorrow runs from tomorrow 00:00 to the day after tomorrow 00:00.
 - A named weekday means its next occurrence strictly after the reference date, never the reference date itself. With a Saturday reference, "Friday" is the following Friday and "Monday" is two days later.
-- Use the UTC offset that is in effect on the resolved date, which can differ from the reference date's offset across a daylight-saving change.
+- Use the UTC offset that is in effect on the resolved date, which can differ from the reference date's offset across a daylight-saving change. For America/Los_Angeles that means -07:00 up to the first Sunday of November and -08:00 from that Sunday until the second Sunday of March: November 1, 2026 is already -08:00 even when the reference date is -07:00.
 - deadline_fixed: a date-only value, only for an explicit deadline ("by Friday", "due the 3rd"). A deadline is not a window or a time: for a deadline-only request leave start_time, end_time, and both window fields null.
 - Corrections ("tomorrow at 10, actually Friday at 2"): use only the final value and discard every superseded date or time.
 - Never emit symbolic dates such as today, tomorrow, or next_week.

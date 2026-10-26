@@ -37,6 +37,7 @@ const selectedToolNames = [
   'create_collection',
   'invite_member',
   'career_applications',
+  'career_application_create',
   'career_application_delete',
   'remove_collection_item',
   'career_profile',
@@ -52,18 +53,27 @@ const select = (names: readonly string[]): ToolDefinition[] =>
 
 export const tools = select(selectedToolNames);
 
+/** Every tool the API exposes, for suites that test the chat assistant with its real tool set. */
+export const allTools: readonly ToolDefinition[] = catalog;
+
 export type McpToolDomain =
   | 'career'
   | 'travel'
   | 'travelPresence'
   | 'finance'
+  | 'financeEvidence'
   | 'people'
   | 'personal'
   | 'all'
   | 'general';
 
 export const toolsByDomain: Record<McpToolDomain, readonly ToolDefinition[]> = {
-  career: select(['career_applications', 'career_application_delete', 'career_profile']),
+  career: select([
+    'career_applications',
+    'career_application_create',
+    'career_application_delete',
+    'career_profile',
+  ]),
   travel: select(['place_visit_history', 'trip_history']),
   travelPresence: select(['travel_countries']),
   finance: select([
@@ -75,6 +85,8 @@ export const toolsByDomain: Record<McpToolDomain, readonly ToolDefinition[]> = {
     'finance_transaction_delete',
     'finance_transactions_import',
   ]),
+  /** Transaction-level evidence only, for scenarios that test date chaining and not tool choice. */
+  financeEvidence: select(['finance_recent_transactions']),
   people: select(['people_lookup', 'person_timeline']),
   personal: select([
     'search_memories',

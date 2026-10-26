@@ -14,7 +14,7 @@ import { useReducedMotion } from '~/hooks/use-reduced-motion';
 
 import type { ComposerEntryKind } from './composer.types';
 
-const SEGMENT_SIZE = 34;
+const SEGMENT_SIZE = 30;
 const TRACK_PADDING = 2;
 // Matches the app's motion guidelines for on-screen movement (--ease-in-out).
 const MOVE_EASING = Easing.bezier(0.77, 0, 0.175, 1);
@@ -40,12 +40,12 @@ const options: { kind: ComposerEntryKind; label: string; icon: SFSymbol; iconFil
 // control. The thumb sliding between them is what makes the switch legible.
 export function ComposerKindToggle({ selected, onSelect }: ComposerKindToggleProps) {
   const theme = useAppTheme();
-  const { barAccent, barAccentForeground, barForeground } = theme.colors;
+  const { bar, barAccent, barAccentForeground, barForeground } = theme.colors;
   const styles = useStyles(() => ({
     control: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: withAlpha(barForeground, 0.16),
+      backgroundColor: bar,
       borderRadius: 999,
       borderCurve: 'continuous',
       padding: TRACK_PADDING,

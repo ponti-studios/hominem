@@ -11,12 +11,23 @@ export type Golden = {
   additionalMetadata?: Record<string, unknown>;
 };
 
+/** Open-ended replies: no single right answer, so say what a good reply must do instead. */
+export type CriteriaGolden = Omit<Golden, 'expectedOutput'> & { criteria: string[] };
+
 export type PromptMessage = { role: string; content: string };
 
 export const targetModel = process.env.ORI_TARGET_MODEL?.trim() || 'openai/gpt-5-mini';
+/** Models that production runs, so a suite measures what ships. `ORI_TARGET_MODEL` overrides all of them. */
+const shipped = (model: string): string => process.env.ORI_TARGET_MODEL?.trim() || model;
+export const chatModel = shipped('openai/gpt-6-luna');
+export const timeBlockModel = shipped('z-ai/glm-5.3-flash');
 export const judgeModel = process.env.ORI_JUDGE_MODEL?.trim() || 'openai/gpt-6-luna';
 export const currentUtcDate = (): string =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'UTC' }).format(new Date());
+
+/** The date line prod puts in the chat prompt, weekday included, e.g. "2026-10-25 (Sunday)". */
+export const currentUtcDateLabel = (): string =>
+  `${currentUtcDate()} (${new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'long' }).format(new Date())})`;
 
 export const loadText = (url: URL): Promise<string> => readFile(url, 'utf8');
 

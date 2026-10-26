@@ -1,7 +1,7 @@
 {
   "name": "@hominem/career-services",
   "version": "0.0.0",
-  "description": "Career domain business logic (resume parsing, import diffing)",
+  "description": "Career domain business logic (resume parsing, import diffing, job posting dedupe keys)",
   "type": "module",
   "sideEffects": false,
   "exports": {

@@ -93,7 +93,7 @@ describe('Application Utils', () => {
     });
 
     it('should format numeric values using currency formatting', () => {
-      expect(formatApplicationSalary(12000000)).toBe('$120,000'); // 120k in cents
+      expect(formatApplicationSalary(120000)).toBe('$120,000');
     });
   });
 

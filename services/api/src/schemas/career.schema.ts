@@ -159,6 +159,12 @@ export const careerApplicationsSchema = z.object({
       currentStage: z.string().nullable(),
       status: careerApplicationStatusSchema,
       jobPostingUrl: z.string().nullable(),
+      externalId: z.string().nullable(),
+      postedAt: z.string().nullable(),
+      postingText: z.string().nullable(),
+      salaryMin: z.number().nullable(),
+      salaryMax: z.number().nullable(),
+      salaryCurrency: z.string().nullable(),
       salaryExpectation: z.number().nullable(),
       notes: z.string().nullable(),
       stageCount: z.number(),
@@ -169,15 +175,72 @@ export const careerApplicationsSchema = z.object({
 });
 
 export const careerApplicationCreateSchema = z.object({
-  company: z.string().trim().min(1),
-  title: z.string().trim().min(1),
-  location: z.string().nullable().optional(),
-  source: z.string().nullable().optional(),
-  appliedAt: z.string().nullable().optional(),
+  company: z.string().trim().min(1).describe('Company name exactly as the posting shows it.'),
+  title: z.string().trim().min(1).describe('Job title exactly as the posting shows it.'),
+  location: z
+    .string()
+    .nullable()
+    .optional()
+    .describe('Location as posted, e.g. "San Francisco, CA" or "Remote (US)". Omit if unknown.'),
+  source: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      'Where the posting lives: the job board or ATS, e.g. "Ashby", "Greenhouse", "LinkedIn".',
+    ),
+  appliedAt: z.string().nullable().optional().describe('Date applied, YYYY-MM-DD.'),
   status: careerApplicationStatusSchema.optional(),
-  jobPostingUrl: z.string().nullable().optional(),
-  salaryExpectation: z.number().int().nullable().optional(),
-  notes: z.string().nullable().optional(),
+  jobPostingUrl: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      'Link to the posting. Tracking params like utm_* are ignored when checking for duplicates; keep any job-id param.',
+    ),
+  externalId: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      "The job board's own id for the posting (JSON-LD identifier, Greenhouse/Lever/Ashby job id) when the page exposes one. With source, this is the strongest duplicate check.",
+    ),
+  postedAt: z.string().nullable().optional().describe('Date the posting went up, YYYY-MM-DD.'),
+  postingText: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      'The full posting body as plain text. Read the page yourself and paste it; do not summarize.',
+    ),
+  salaryMin: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe(
+      'Bottom of the posted pay range in whole currency units per year. Omit if not posted.',
+    ),
+  salaryMax: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe('Top of the posted pay range in whole currency units per year. Omit if not posted.'),
+  salaryCurrency: z
+    .string()
+    .nullable()
+    .optional()
+    .describe('ISO currency code for the posted range, e.g. "USD".'),
+  salaryExpectation: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe(
+      'What the user hopes to earn, in whole currency units per year, like salaryMin and salaryMax. For the pay range in the posting use salaryMin and salaryMax instead.',
+    ),
+  notes: z.string().nullable().optional().describe("The user's own notes, not the posting text."),
 });
 export const careerApplicationUpdateSchema = z.object({
   id: z.string().uuid(),
@@ -728,6 +791,11 @@ export const careerEngagementCreateOutputSchema = z.object({ engagement: careerE
 
 export const careerApplicationCreateOutputSchema = z.object({
   application: careerApplicationsSchema.shape.applications.element,
+  alreadyExisted: z
+    .boolean()
+    .describe(
+      'True when the user already had this posting, so nothing was created. Check that the returned title and company match what you meant to save.',
+    ),
 });
 
 export const careerApplicationUpdateOutputSchema = z.object({
@@ -800,68 +868,4 @@ export const careerProjectUpdateOutputSchema = z.object({
 
 export const careerProfileOutputSchema = z.object({
   profile: careerMcpProfileSchema.nullable(),
-});
-
-export const careerImportsQuerySchema = z.object({
-  limit: careerPageLimitSchema,
-  cursor: careerCursorSchema,
-});
-
-export const careerImportsSchema = z.object({
-  imports: z.array(
-    z.object({
-      id: z.string().uuid(),
-      queueJobId: z.string(),
-      status: z.enum(['queued', 'processing', 'ready', 'failed', 'dismissed', 'resolved']),
-      stage: z.enum([
-        'queued',
-        'validating-url',
-        'fetching-posting',
-        'extracting-fields',
-        'validating-result',
-        'draft-ready',
-      ]),
-      progress: z.number(),
-      sourceUrl: z.string(),
-      draft: z.unknown(),
-      errorCode: z.string().nullable(),
-      errorMessage: z.string().nullable(),
-      attempts: z.number(),
-      createdAt: z.string(),
-      updatedAt: z.string(),
-      completedAt: z.string().nullable(),
-      resolvedAt: z.string().nullable(),
-    }),
-  ),
-  nextCursor: z.string().nullable(),
-});
-
-export const careerImportDraftSchema = z.object({
-  jobTitle: z.string(),
-  companyName: z.string(),
-  companyDescription: z.string(),
-  jobDescription: z.string(),
-  location: z.string(),
-  salaryRange: z.string(),
-  salaryDetails: z.string(),
-  employmentType: z.string(),
-  experienceLevel: z.string(),
-  education: z.string(),
-  requirements: z.array(z.string()),
-  skills: z.array(z.string()),
-  benefits: z.array(z.string()),
-  responsibilities: z.array(z.string()),
-  industry: z.string(),
-  postedDate: z.string(),
-  applicationDeadline: z.string(),
-  department: z.string(),
-  hiringManager: z.string(),
-  companySize: z.string(),
-  fundingStage: z.string(),
-  technologyStack: z.array(z.string()),
-  cultureAspects: z.array(z.string()),
-  fullText: z.string(),
-  url: z.string(),
-  scrapedAt: z.string(),
-  wordCount: z.number(),
 });

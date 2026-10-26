@@ -237,11 +237,14 @@ export function useFileUpload(fetchImpl: typeof fetch = fetch) {
             const intent: UploadIntentResponse = await intentResponse.json();
 
             // 2. Bytes go straight to R2 with exactly the headers that were signed. No auth
-            //    header here: the signature in the URL is the credential.
+            //    header here: the signature in the URL is the credential. React Native
+            //    overwrites the content-type header with the blob's own type, and a blob
+            //    read from a file:// uri has none -- so stamp the type on the blob or the
+            //    signature never matches.
             const putResponse = await fetchImpl(intent.uploadUrl, {
               method: 'PUT',
               headers: intent.headers,
-              body: blob,
+              body: blob.type === mimetype ? blob : blob.slice(0, blob.size, mimetype),
             });
             if (!putResponse.ok) {
               throw new Error(`Upload failed (${putResponse.status})`);

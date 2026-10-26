@@ -21,7 +21,7 @@ interface VoiceRecordingPanelProps {
 }
 
 // Recording, as the composer flattened into one 44px row: cancel on the left,
-// a dot, the timer and the live waveform in the middle, a coral stop on the
+// a dot, the timer and the live waveform in the middle, a lime done button on the
 // right. It sits on the fixed dark bar, so it uses the bar tokens only.
 export function VoiceRecordingPanel({
   startedAt,
@@ -29,7 +29,7 @@ export function VoiceRecordingPanel({
   onDone,
   doneAccessibilityLabel,
 }: VoiceRecordingPanelProps) {
-  const { barForeground } = useAppTheme().colors;
+  const { barForeground, limeForeground } = useAppTheme().colors;
   const styles = useStyles((theme) => ({
     row: { alignItems: 'center', flexDirection: 'row', gap: 10, width: '100%' },
     cancel: {
@@ -41,7 +41,7 @@ export function VoiceRecordingPanel({
       width: 44,
     },
     status: { alignItems: 'center', flex: 1, flexDirection: 'row', gap: 10 },
-    dot: { backgroundColor: theme.colors.coral, borderRadius: 999, height: 10, width: 10 },
+    dot: { backgroundColor: theme.colors.lime, borderRadius: 999, height: 10, width: 10 },
     timer: {
       color: theme.colors.barForeground,
       fontSize: 15,
@@ -52,7 +52,7 @@ export function VoiceRecordingPanel({
     meter: { flex: 1 },
     stop: {
       alignItems: 'center',
-      backgroundColor: theme.colors.coral,
+      backgroundColor: theme.colors.lime,
       borderRadius: 22,
       height: 44,
       justifyContent: 'center',
@@ -93,7 +93,7 @@ export function VoiceRecordingPanel({
         style={styles.stop}
         testID="composer-stop-recording-button"
       >
-        <AppIcon name="stop.fill" size={18} tintColor={barForeground} />
+        <AppIcon name="checkmark" size={18} tintColor={limeForeground} />
       </Pressable>
     </View>
   );

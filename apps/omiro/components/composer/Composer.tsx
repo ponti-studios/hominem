@@ -13,14 +13,15 @@ import { ComposerAttachmentRow } from './ComposerAttachmentRow';
 import { ComposerProvider } from './ComposerContext';
 import { ComposerInput } from './ComposerInput';
 import { getComposerSubmissionConfig } from './composerSubmission.helpers';
-import { ComposerToolbar } from './ComposerToolbar';
+import { ComposerTrailingAction } from './ComposerTrailingAction';
+import { ComposerTray } from './ComposerTray';
 import { useComposerController } from './useComposerController';
 import { useComposerSubmission } from './useComposerSubmission';
 import { getVoiceComposerErrorPresentation } from './voiceComposerInput.helpers';
 
 export type { ComposerProps } from './composer.types';
 
-const SURFACE_RADIUS = 30;
+const SURFACE_RADIUS = 26;
 
 export function Composer(props: ComposerProps) {
   return (
@@ -95,9 +96,12 @@ function ComposerContent(props: ComposerProps) {
   );
 
   const styles = useStyles((currentTheme) => ({
-    composer: { width: '100%', gap: 8 },
-    fields: { gap: 8 },
-    // The floating bar: the same dark surface in light and dark mode (`bar`
+    composer: { width: '100%', gap: 10 },
+    // Text (and any attachments above it) on the left, the mic/send action
+    // bottom-aligned on the right.
+    fields: { alignItems: 'flex-end', flexDirection: 'row', gap: 8 },
+    fieldsMain: { flex: 1, gap: 8 },
+    // The floating pill: the same dark surface in light and dark mode (`bar`
     // tokens do not flip with the color scheme). Its own margin comes from
     // ComposerDock.
     surface: {
@@ -106,9 +110,9 @@ function ComposerContent(props: ComposerProps) {
       borderRadius: SURFACE_RADIUS,
       boxShadow: currentTheme.shadows.bar,
     },
-    surfaceContent: { gap: 8, paddingBottom: 8, paddingHorizontal: 16, paddingTop: 14 },
-    // Recording is one 44px row in a 56px bar, the height of every other bar.
-    surfaceRecording: { gap: 0, padding: 6 },
+    surfaceContent: { gap: 8, minHeight: 52, padding: 6, paddingLeft: 20 },
+    // Recording is one 44px row in the same 52px pill.
+    surfaceRecording: { gap: 0, paddingLeft: 6 },
   }));
   const prefersReducedMotion = useReducedMotion();
 
@@ -130,15 +134,35 @@ function ComposerContent(props: ComposerProps) {
     ? nativeMotionAnimations.fadeOutQuick
     : nativeMotionAnimations.fadeOutUpQuick;
 
+  const tray = isRecording ? undefined : (
+    <ComposerTray
+      composerProps={props}
+      messageStore={controller.messageStore}
+      entryMode={controller.entryMode}
+      manualEntryKind={controller.manualEntryKind}
+      onManualEntryKindChange={controller.setManualEntryKind}
+      uploadedAttachmentCount={controller.uploadedAttachmentIds.length}
+      state={{
+        isFocused: controller.isFocused,
+        showAttachments: controller.showAttachments,
+        isInteractionBusy: controller.isInteractionBusy,
+      }}
+      canPickMedia={controller.canPickMedia}
+      voice={controller.voice}
+      onChangeMessage={controller.setMessage}
+      onPlan={props.mode === 'inbox' && props.onPlan ? handlePlan : undefined}
+    />
+  );
+
   return (
     <Animated.View style={styles.composer} layout={bannerLayout} testID={presentation.shellTestID}>
+      {tray}
       <View
         collapsable={false}
         style={styles.surface}
         testID={`${presentation.shellTestID ?? 'composer'}-surface`}
       >
         <View style={[styles.surfaceContent, isRecording && styles.surfaceRecording]}>
-          {controller.showAttachments ? <ComposerAttachmentRow /> : undefined}
           {errorBanner ? (
             // Split: entering/exiting on the outer view, layout on the inner
             // one -- same reasoning as chat-message.tsx and the two Animated.Views
@@ -171,21 +195,23 @@ function ComposerContent(props: ComposerProps) {
               key="composer-fields"
             >
               <Animated.View style={styles.fields} layout={bannerLayout}>
-                <ComposerInput
+                <View style={styles.fieldsMain}>
+                  {controller.showAttachments ? <ComposerAttachmentRow /> : undefined}
+                  <ComposerInput
+                    composerProps={props}
+                    messageStore={controller.messageStore}
+                    entryMode={controller.entryMode}
+                    manualEntryKind={controller.manualEntryKind}
+                    onFocus={controller.handleInputFocus}
+                    onBlur={controller.handleInputBlur}
+                    onChangeMessage={controller.setMessage}
+                  />
+                </View>
+                <ComposerTrailingAction
                   composerProps={props}
                   messageStore={controller.messageStore}
                   entryMode={controller.entryMode}
                   manualEntryKind={controller.manualEntryKind}
-                  onFocus={controller.handleInputFocus}
-                  onBlur={controller.handleInputBlur}
-                  onChangeMessage={controller.setMessage}
-                />
-                <ComposerToolbar
-                  composerProps={props}
-                  messageStore={controller.messageStore}
-                  entryMode={controller.entryMode}
-                  manualEntryKind={controller.manualEntryKind}
-                  onManualEntryKindChange={controller.setManualEntryKind}
                   uploadedAttachmentCount={controller.uploadedAttachmentIds.length}
                   state={{
                     isFocused: controller.isFocused,
@@ -193,14 +219,10 @@ function ComposerContent(props: ComposerProps) {
                     isInteractionBusy: controller.isInteractionBusy,
                     isSubmitting: submission.isSubmitting,
                   }}
-                  capabilities={{
-                    canPickMedia: controller.canPickMedia,
-                    canToggleVoice: controller.canToggleVoice,
-                  }}
+                  canToggleVoice={controller.canToggleVoice}
                   voice={controller.voice}
                   onChangeMessage={controller.setMessage}
                   onSubmit={handleActiveAreaSubmit}
-                  onPlan={props.mode === 'inbox' && props.onPlan ? handlePlan : undefined}
                 />
               </Animated.View>
             </Animated.View>

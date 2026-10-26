@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-import type { JobPosting } from '~/lib/services/job-scraping.service';
 import type { ConvertedResumeData, ResumeConvertStage } from '~/types/resume';
 
 export type UploadResumeApiResponse = {
@@ -21,15 +20,6 @@ export type UploadResumeApiResponse = {
   retryable?: boolean;
 };
 
-export type JobScrapeApiRequest = {
-  url: string;
-};
-
-export type JobScrapeApiResponse = {
-  job_posting?: JobPosting;
-  error?: string;
-};
-
 export const jobAnalysisSchema = z.object({
   requiredSkills: z.array(z.string()).describe('Top 5 required skills from the job posting'),
   qualifications: z.array(z.string()).describe('Top 3 most important qualifications'),
@@ -43,7 +33,6 @@ export type JobAnalysis = z.infer<typeof jobAnalysisSchema>;
 
 export type CustomizeResumeApiRequest = {
   job_posting?: string;
-  jobPostingData?: JobPosting;
   resumeFormat?: 'professional' | 'modern' | 'technical' | 'executive';
   focusAreas?: string[];
   targetLength?: 'concise' | 'standard' | 'detailed';
@@ -59,12 +48,6 @@ export type CustomizeResumeApiResponse = {
     generatedAt: string;
     portfolio_id: string;
     job_posting_word_count: number;
-    jobPostingMetadata: {
-      job_title?: string;
-      companyName?: string;
-      requirements?: string[];
-      skills?: string[];
-    };
   };
   error?: string;
 };

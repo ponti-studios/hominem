@@ -196,14 +196,13 @@ registerTool(
   {
     ...writeTool,
     name: 'career_application_create',
-    title: 'Create a career application',
-    description: 'Creates a job application.',
+    title: 'Save a job posting as a career application',
+    description:
+      "Saves a job posting (or an application) to the user's career tracker. Hominem does not fetch job sites: read the posting yourself, then pass what you found. Include company and title exactly as posted, the posting URL, the full posting text in postingText, the posted pay range in salaryMin/salaryMax/salaryCurrency, and the board's own job id in externalId with the board name in source when the page shows one. Leave out anything the posting does not say; only company and title are required, so do not ask the user for the rest. Saving the same posting twice is harmless because repeats are detected. New postings default to the WISHLIST status. If the user already saved this posting the tool creates nothing and returns the existing record with alreadyExisted true; check its title and company match before telling the user it was saved.",
     inputSchema: careerApplicationCreateSchema,
     outputSchema: careerApplicationCreateOutputSchema,
   },
-  async (ownerUserId, input) => ({
-    application: await createCareerApplication(ownerUserId, input),
-  }),
+  async (ownerUserId, input) => createCareerApplication(ownerUserId, input),
 );
 registerTool(
   {
@@ -211,7 +210,8 @@ registerTool(
     idempotent: true,
     name: 'career_application_update',
     title: 'Update a career application',
-    description: 'Updates a job application.',
+    description:
+      'Updates a saved job application: change its status or notes, or fill in posting details (postingText, postedAt, salaryMin/salaryMax/salaryCurrency, jobPostingUrl, externalId) that were missing when it was first saved.',
     inputSchema: careerApplicationUpdateSchema,
     outputSchema: careerApplicationUpdateOutputSchema,
   },

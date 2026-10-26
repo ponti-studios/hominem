@@ -75,9 +75,7 @@ export function ApplicationEditor({ application, onCancel }: ApplicationEditorPr
               name="salaryExpectation"
               type="number"
               defaultValue={
-                application.salaryExpectation != null
-                  ? String(application.salaryExpectation / 100)
-                  : ''
+                application.salaryExpectation != null ? String(application.salaryExpectation) : ''
               }
             />
           </div>

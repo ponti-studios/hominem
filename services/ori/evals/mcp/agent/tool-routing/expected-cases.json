@@ -85,5 +85,47 @@
     ],
     "expectedOutputIncludes": ["Tokyo", "Staff Engineer"],
     "toolDomains": ["travel", "career"]
+  },
+  {
+    "name": "saving a job posting pushes the full posting once",
+    "category": "write_action",
+    "promptVersion": "capability-first-v2",
+    "input": "Save this job for me. I just read the posting: Senior Engineer at Acme, remote (US), posted 2026-10-20, $180,000-$220,000 a year. It's on Ashby at https://jobs.ashbyhq.com/acme/1b2c3d4e-0000-4000-8000-00000000abcd. Description: Own the ingestion pipeline and mentor two engineers.",
+    "expectedOutput": "Confirms the posting was saved to the user's applications.",
+    "expectedTools": [
+      {
+        "name": "career_application_create"
+      }
+    ],
+    "expectedOutputIncludes": ["Acme"],
+    "toolDomains": ["career"]
+  },
+  {
+    "name": "pushing a posting that is already saved reports the duplicate",
+    "category": "write_action",
+    "promptVersion": "capability-first-v2",
+    "input": "Add this to my applications: Senior Engineer at Acme, https://jobs.ashbyhq.com/acme/9f1c2d3e-0000-4000-8000-00000000beef?utm_source=linkedin",
+    "expectedOutput": "Tells the user the job was already saved instead of claiming a new one.",
+    "expectedTools": [
+      {
+        "name": "career_application_create"
+      }
+    ],
+    "expectedOutputIncludes": ["already"],
+    "toolDomains": ["career"]
+  },
+  {
+    "name": "a partial posting with no salary still saves",
+    "category": "write_action",
+    "promptVersion": "capability-first-v2",
+    "input": "Save this role: Product Designer at Northwind, https://northwind.example/careers/designer. No salary listed and I haven't read the whole description.",
+    "expectedOutput": "Confirms the role was saved without inventing salary details.",
+    "expectedTools": [
+      {
+        "name": "career_application_create"
+      }
+    ],
+    "expectedOutputIncludes": ["Northwind"],
+    "toolDomains": ["career"]
   }
 ]

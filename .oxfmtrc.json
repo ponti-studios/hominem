@@ -1,10 +1,6 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": [
-    "**/*.config.ts",
-    "**/*.config.js",
-    "services/ori/data/career-job-import/fixtures/**"
-  ],
+  "ignorePatterns": ["**/*.config.ts", "**/*.config.js"],
   "singleQuote": true,
   "experimentalSortImports": {
     "order": "asc",

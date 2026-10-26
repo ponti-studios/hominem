@@ -15,9 +15,11 @@ export default await defineTextSuite({
   promptFiles: [promptUrl],
   messages: (golden) => renderMessages(prompt, { conversation: golden.input }),
   schema: taskSchema,
+  judgeSeesInput: true,
   rubric: [
     'Compare the JSON output to the reference output semantically, ignoring harmless title wording changes.',
     'Require every actionable commitment and forbid vague thoughts or invented tasks.',
     'Penalize missing, combined, split, or materially incorrect tasks.',
+    'A title may carry a deadline or detail the user stated in the conversation; penalize only details that appear nowhere in it.',
   ].join('\n'),
 });

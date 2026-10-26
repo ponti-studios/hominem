@@ -24,26 +24,15 @@ appId: com.pontistudios.hakumi.dev
 - assertVisible:
     id: chat-composer-input
 - tapOn:
-    id: BackButton
+    id: chat-back-button
     optional: true
 - tapOn:
     text: Inbox
     optional: true
-- assertVisible: Maestro archive test chat
-# Retries the long-press if the Alert doesn't open on the first attempt --
-# see the identical repeat/while block in notes-delete.yaml for why.
-- repeat:
-    while:
-      notVisible: Archive chat
-    times: 3
-    commands:
-      - longPressOn: Maestro archive test chat
-      - extendedWaitUntil:
-          visible: Archive chat
-          timeout: 2000
-          optional: true
-- assertVisible: Archive chat
-- tapOn: Archive chat
-- assertNotVisible: Maestro archive test chat
+- assertVisible: ".*Maestro archive test chat.*"
+- runFlow:
+    file: archive-chat.yaml
+    env:
+      CHAT_TITLE: Maestro archive test chat
 - assertVisible:
     id: inbox-composer-input

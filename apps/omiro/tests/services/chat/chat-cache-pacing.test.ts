@@ -5,8 +5,14 @@ import { QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ChatMessageItem } from '~/components/chat';
-import { handleChatGenerationEvent } from '~/services/chat/chat-cache';
+import {
+  handleChatGenerationEvent,
+  PACE_DELAY_SCALE,
+  resetChatCacheState,
+} from '~/services/chat/chat-cache';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
+import { deriveChatRows } from '~/services/chat/chat-rows';
+import { clearLiveChat, getLiveChat } from '~/services/chat/live-turn-store';
 import { getStreamingMessageText } from '~/services/chat/streaming-text-store';
 import { chatKeys } from '~/services/notes/query-keys';
 
@@ -84,6 +90,8 @@ describe('chat cache paced streaming', () => {
   });
   afterEach(() => {
     vi.useRealTimers();
+    clearLiveChat(CHAT_ID);
+    resetChatCacheState();
   });
 
   it('reveals a burst of deltas over several ticks and commits after the queue drains', () => {
@@ -97,33 +105,38 @@ describe('chat cache paced streaming', () => {
     }
     send(commit());
 
+    const live = () => deriveChatRows(read() ?? [], getLiveChat(CHAT_ID));
+
     // Nothing shown yet and the commit is parked behind the paced reveal.
     expect(read()).toBeUndefined();
+    expect(live()).toEqual([]);
 
-    // Words land in the streaming store, not the cache: the list data stays the
-    // same array and the provisional row the same object, so the list never
-    // re-renders per word.
+    // Words land in the streaming store, not the cache: the cache is never
+    // touched mid-reply, and the one streaming row keeps the same key.
     vi.advanceTimersByTime(50);
-    const rows = read();
-    const row = rows?.find((m) => m.isStreaming);
+    const row = live().find((m) => m.isStreaming);
     const partial = getStreamingMessageText(`streaming-${GENERATION_ID}`);
+    expect(row).toBeDefined();
+    expect(read()).toBeUndefined();
     expect(partial.length).toBeGreaterThan(0);
     expect(partial.length).toBeLessThan('Hello there, friend.'.length);
 
-    vi.advanceTimersByTime(60);
-    expect(read()).toBe(rows);
-    expect(read()?.find((m) => m.isStreaming)).toBe(row);
+    vi.advanceTimersByTime(60 * PACE_DELAY_SCALE);
+    expect(live().filter((m) => m.isStreaming)).toHaveLength(1);
+    expect(live().find((m) => m.isStreaming)?.renderKey).toBe(row?.renderKey);
     expect(getStreamingMessageText(`streaming-${GENERATION_ID}`).length).toBeGreaterThan(
       partial.length,
     );
 
-    vi.advanceTimersByTime(1000);
-    const final = read() ?? [];
+    vi.advanceTimersByTime(1000 * PACE_DELAY_SCALE);
+    const final = live();
     expect(final.some((m) => m.isStreaming)).toBe(false);
     expect(getStreamingMessageText(`streaming-${GENERATION_ID}`)).toBe('');
     expect(final).toEqual([
       expect.objectContaining({ role: 'assistant', message: committed.content }),
     ]);
+    // The bubble that streamed is the bubble that stays: same key, no remount.
+    expect(final[0]?.renderKey).toBe(row?.renderKey);
   });
 
   it('streams text without whitespace, like Chinese, before the commit', () => {

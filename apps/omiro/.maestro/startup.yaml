@@ -60,7 +60,7 @@ appId: com.pontistudios.hakumi.dev
         id: chat-composer-input
     commands:
       - tapOn:
-          id: BackButton
+          id: chat-back-button
           optional: true
       - tapOn:
           text: BackButton
@@ -102,32 +102,7 @@ appId: com.pontistudios.hakumi.dev
       - tapOn:
           text: BackButton
           optional: true
-# If we're on the Time root (navigation-menu visible, but not yet on
-# the inbox), use the nav drawer to get to "All" -- the same menu the
-# time-block-editor back step above can land on. Match by icon id
-# (tray.full.fill), not text: "All" also matches the inbox screen's own
-# header title once navigation lands, and text tap can race that.
-- runFlow:
-    when:
-      visible:
-        id: navigation-menu
-      notVisible:
-        id: inbox-composer-input
-    commands:
-      - tapOn:
-          id: navigation-menu
-      # Wait for the menu's open animation BEFORE tapping an item, not
-      # after -- see the identical comment in time-composer-interactions.yaml
-      # for why (tapping immediately raced the item settling into position).
-      - waitForAnimationToEnd:
-          timeout: 2000
-      - tapOn:
-          id: tray.full.fill
 - extendedWaitUntil:
     visible:
       id: inbox-composer-input
     timeout: 30000
-- extendedWaitUntil:
-    visible:
-      id: navigation-menu
-    timeout: 15000

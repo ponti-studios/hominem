@@ -1,7 +1,9 @@
 import type { ChatMessageItem } from '@hominem/chat';
-import type { FlashListRef } from '@shopify/flash-list';
 import { useEffect, useRef } from 'react';
 import { AccessibilityInfo } from 'react-native';
+
+// A bubble keeps one key from first paint to final message, so that is its identity here.
+const identityOf = (message: ChatMessageItem) => message.renderKey ?? message.id;
 
 function announceMessage(message: ChatMessageItem, previous?: ChatMessageItem) {
   const failed = Boolean(message.failed || message.error);
@@ -34,19 +36,20 @@ export function useChatMessageListLifecycle({
   isMessagesLoading,
   showSearch,
   hasSearchQuery,
-  listRef,
+  onNewUserMessage,
 }: {
   displayMessages: ChatMessageItem[];
   renderedMessages: ChatMessageItem[];
   isMessagesLoading: boolean;
   showSearch: boolean;
   hasSearchQuery: boolean;
-  listRef: {
-    current: Pick<FlashListRef<ChatMessageItem>, 'scrollToEnd'> | null;
-  };
+  // Fired once when the reader sends a message, with that message's identity key.
+  onNewUserMessage: (key: string) => void;
 }) {
   const prevCountRef = useRef(renderedMessages.length);
-  const prevLastMessageIdRef = useRef(renderedMessages.at(-1)?.id ?? null);
+  const prevLastMessageIdRef = useRef(
+    renderedMessages.at(-1)?.renderKey ?? renderedMessages.at(-1)?.id ?? null,
+  );
   const announcedMessagesRef = useRef(new Map<string, ChatMessageItem>());
   const didInitializeAnnouncementsRef = useRef(false);
 
@@ -65,18 +68,18 @@ export function useChatMessageListLifecycle({
 
     if (!didInitializeAnnouncementsRef.current) {
       for (const message of renderedMessages) {
-        previousMessages.set(message.id, message);
+        previousMessages.set(identityOf(message), message);
       }
       didInitializeAnnouncementsRef.current = true;
       return;
     }
 
     for (const message of renderedMessages) {
-      const previous = previousMessages.get(message.id);
+      const previous = previousMessages.get(identityOf(message));
       announceMessage(message, previous);
-      previousMessages.set(message.id, message);
+      previousMessages.set(identityOf(message), message);
     }
-    const renderedIds = new Set(renderedMessages.map((message) => message.id));
+    const renderedIds = new Set(renderedMessages.map(identityOf));
     for (const id of previousMessages.keys()) {
       if (!renderedIds.has(id)) {
         previousMessages.delete(id);
@@ -87,23 +90,20 @@ export function useChatMessageListLifecycle({
   useEffect(() => {
     const lastMessage = renderedMessages.at(-1) ?? null;
     const countChanged = renderedMessages.length !== prevCountRef.current;
-    const lastMessageIdChanged = lastMessage?.id !== prevLastMessageIdRef.current;
+    const lastMessageIdChanged =
+      (lastMessage ? identityOf(lastMessage) : null) !== prevLastMessageIdRef.current;
     const shouldScrollForNewUserMessage =
       countChanged && lastMessageIdChanged && lastMessage?.role === 'user';
 
     prevCountRef.current = renderedMessages.length;
-    prevLastMessageIdRef.current = lastMessage?.id ?? null;
+    prevLastMessageIdRef.current = lastMessage ? identityOf(lastMessage) : null;
 
-    if (showSearch || !shouldScrollForNewUserMessage) {
+    if (showSearch || isMessagesLoading || !shouldScrollForNewUserMessage || !lastMessage) {
       return;
     }
 
-    const frame = requestAnimationFrame(() => {
-      listRef.current?.scrollToEnd({ animated: true });
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [listRef, renderedMessages, showSearch]);
+    onNewUserMessage(identityOf(lastMessage));
+  }, [isMessagesLoading, onNewUserMessage, renderedMessages, showSearch]);
 
   return { announcedMessagesRef, didInitializeAnnouncementsRef };
 }

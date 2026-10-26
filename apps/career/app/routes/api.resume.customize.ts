@@ -46,19 +46,6 @@ function parseJsonObject(content: string): unknown {
 
 const customizeResumeSchema = z.object({
   job_posting: z.string().min(100, 'Job posting must be at least 100 characters').optional(),
-  jobPostingData: z
-    .object({
-      job_title: z.string(),
-      companyName: z.string(),
-      jobDescription: z.string(),
-      requirements: z.array(z.string()),
-      skills: z.array(z.string()),
-      fullText: z.string(),
-      url: z.string(),
-      scrapedAt: z.string(),
-      wordCount: z.number(),
-    })
-    .optional(),
   resumeFormat: z
     .enum(['professional', 'modern', 'technical', 'executive'])
     .default('professional'),
@@ -87,32 +74,12 @@ export const action: ActionFunction = async ({ request, context }) => {
       );
     }
 
-    const { job_posting, jobPostingData, resumeFormat, focusAreas, targetLength } = validation.data;
+    const { job_posting, resumeFormat, focusAreas, targetLength } = validation.data;
 
-    let finalJobPosting: string;
-    let jobPostingMetadata: {
-      job_title?: string;
-      companyName?: string;
-      requirements?: string[];
-      skills?: string[];
-    } = {};
-
-    if (jobPostingData) {
-      finalJobPosting = jobPostingData.fullText;
-      jobPostingMetadata = {
-        job_title: jobPostingData.job_title,
-        companyName: jobPostingData.companyName,
-        requirements: jobPostingData.requirements,
-        skills: jobPostingData.skills,
-      };
-    } else if (job_posting) {
-      finalJobPosting = job_posting;
-    } else {
-      return data(
-        { error: 'Either job_posting or jobPostingData must be provided' },
-        { status: 400 },
-      );
+    if (!job_posting) {
+      return data({ error: 'job_posting must be provided' }, { status: 400 });
     }
+    const finalJobPosting = job_posting;
 
     const portfolio = await getResumePortfolioContext(user.id);
 
@@ -180,7 +147,6 @@ Please create a customized resume that highlights the most relevant experience a
       status: 'succeeded',
       durationMs: getResumeDurationMs(),
       metadata: {
-        hasStructuredJobPosting: Boolean(jobPostingData),
         resumeFormat,
         targetLength,
         focusAreasCount: focusAreas.length,
@@ -234,7 +200,6 @@ ${finalJobPosting}`,
       status: 'succeeded',
       durationMs: getAnalysisDurationMs(),
       metadata: {
-        hasStructuredJobPosting: Boolean(jobPostingData),
         resumeFormat,
         targetLength,
         focusAreasCount: focusAreas.length,
@@ -263,7 +228,6 @@ ${finalJobPosting}`,
         generatedAt: new Date().toISOString(),
         portfolio_id: user.id,
         job_posting_word_count: finalJobPosting.split(/\s+/).length,
-        jobPostingMetadata,
       },
     };
 

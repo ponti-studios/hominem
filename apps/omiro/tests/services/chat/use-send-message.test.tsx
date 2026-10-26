@@ -9,6 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ChatMessageItem } from '~/components/chat';
 import type { ChatGenerationState } from '~/services/chat/chat-generation';
+import { deriveChatRows } from '~/services/chat/chat-rows';
+import { clearLiveChat, getLiveChat } from '~/services/chat/live-turn-store';
 import { chatKeys } from '~/services/notes/query-keys';
 
 import { mockMmkvModule } from '../../mocks/mmkv';
@@ -73,12 +75,15 @@ vi.mock('~/services/chat/use-chat-messages', () => ({
 }));
 vi.mock('~/constants', () => ({ API_BASE_URL: 'http://localhost:4040' }));
 
-const [{ useSendMessage }, { useChatGeneration }, { handleChatGenerationEvent }] =
-  await Promise.all([
-    import('~/services/chat/use-send-message'),
-    import('~/services/chat/use-chat-generation'),
-    import('~/services/chat/chat-cache'),
-  ]);
+const [
+  { useSendMessage },
+  { useChatGeneration },
+  { handleChatGenerationEvent, resetChatCacheState },
+] = await Promise.all([
+  import('~/services/chat/use-send-message'),
+  import('~/services/chat/use-chat-generation'),
+  import('~/services/chat/chat-cache'),
+]);
 
 const CHAT_ID = 'chat-1';
 
@@ -119,6 +124,14 @@ type PendingStream = {
 
 let pending: PendingStream | null = null;
 
+// What the chat screen shows: the cache with the live turn laid over it.
+function rows(queryClient: { getQueryData: <T>(key: readonly unknown[]) => T | undefined }) {
+  return deriveChatRows(
+    queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(CHAT_ID)) ?? [],
+    getLiveChat(CHAT_ID),
+  );
+}
+
 describe('useSendMessage', () => {
   beforeEach(() => {
     mockRandomUUID.mockReturnValue('uuid-1');
@@ -140,6 +153,8 @@ describe('useSendMessage', () => {
   afterEach(() => {
     vi.clearAllMocks();
     pending = null;
+    clearLiveChat(CHAT_ID);
+    resetChatCacheState();
   });
 
   it('keeps generated prose out of the cache until the server commits it', async () => {
@@ -150,8 +165,9 @@ describe('useSendMessage', () => {
     });
     await waitFor(() => expect(mockConsumeSseXhr).toHaveBeenCalledOnce());
 
-    expect(queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(CHAT_ID))).toEqual([
+    expect(rows(queryClient)).toEqual([
       expect.objectContaining({ role: 'user', message: 'Hello there' }),
+      expect.objectContaining({ role: 'assistant', message: '', isStreaming: true }),
     ]);
     expect(result.current.generation).toMatchObject({ stage: 'preparing' });
 
@@ -181,7 +197,7 @@ describe('useSendMessage', () => {
     });
 
     await waitFor(() => expect(result.current.generation).toBeNull());
-    expect(queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(CHAT_ID))).toEqual([
+    expect(rows(queryClient)).toEqual([
       expect.objectContaining({ role: 'user', message: 'Hello there' }),
       expect.objectContaining({ role: 'assistant', message: 'A durable reply.' }),
     ]);
@@ -196,7 +212,7 @@ describe('useSendMessage', () => {
       await result.current.sendChatMessage({ message: 'Hello there' }).catch(() => undefined);
     });
 
-    expect(queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(CHAT_ID))).toEqual([
+    expect(rows(queryClient)).toEqual([
       expect.objectContaining({ role: 'user', message: 'Hello there' }),
     ]);
     expect(result.current.generation).toMatchObject({
@@ -229,8 +245,9 @@ describe('useSendMessage', () => {
     expect(mockConsumeSseXhr.mock.calls[0]?.[0]).toMatchObject({
       url: `http://localhost:4040/api/chats/${CHAT_ID}/stream`,
     });
-    expect(queryClient.getQueryData<ChatMessageItem[]>(chatKeys.messages(CHAT_ID))).toEqual([
+    expect(rows(queryClient)).toEqual([
       expect.objectContaining({ role: 'user', message: 'Send me when online' }),
+      expect.objectContaining({ role: 'assistant', isStreaming: true }),
     ]);
 
     await act(async () => {

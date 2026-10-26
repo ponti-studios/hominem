@@ -62,6 +62,10 @@ vi.mock('~/components/chat/chat-message-debug', () => ({
 vi.mock('~/components/chat/chat-thinking-indicator', () => ({
   ChatThinkingIndicator: () => <span data-testid="thinking-indicator" />,
 }));
+const streamed = vi.hoisted(() => ({ text: '' }));
+vi.mock('~/services/chat/streaming-text-store', () => ({
+  useStreamingMessageText: () => streamed.text,
+}));
 
 const { ChatMessageBubble } = await import('~/components/chat/chat-message-bubble');
 const styles = createChatMessageStyles(lightTheme);
@@ -114,7 +118,7 @@ describe('ChatMessageBubble', () => {
       <ChatMessageBubble
         isNewlyFailed={false}
         isUser={false}
-        message={message({ isStreaming: true, reasoning: 'Checking context' })}
+        message={message({ isStreaming: true, message: '', reasoning: 'Checking context' })}
         styles={styles}
         reducedMotion={false}
         showDebug
@@ -124,6 +128,41 @@ describe('ChatMessageBubble', () => {
     expect(screen.getByText('Checking context')).not.toBeNull();
     expect(screen.getByTestId('thinking-indicator')).not.toBeNull();
     expect(screen.queryByTestId('message-debug')).toBeNull();
+  });
+
+  it('drops the thinking indicator once text is streaming ', () => {
+    render(
+      <ChatMessageBubble
+        isNewlyFailed={false}
+        isUser={false}
+        message={message({ isStreaming: true, message: 'Hello' })}
+        styles={styles}
+        reducedMotion={false}
+        showDebug={false}
+      />,
+    );
+
+    expect(screen.queryByTestId('thinking-indicator')).toBeNull();
+  });
+
+  it('drops the thinking indicator once live text lands in the streaming store', () => {
+    streamed.text = 'Hel';
+    try {
+      render(
+        <ChatMessageBubble
+          isNewlyFailed={false}
+          isUser={false}
+          message={message({ isStreaming: true, message: '' })}
+          styles={styles}
+          reducedMotion={false}
+          showDebug={false}
+        />,
+      );
+
+      expect(screen.queryByTestId('thinking-indicator')).toBeNull();
+    } finally {
+      streamed.text = '';
+    }
   });
 
   it('shows debug details after the assistant response finishes', () => {

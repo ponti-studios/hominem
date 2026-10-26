@@ -9,7 +9,6 @@ export const aiSchema = z.object({
   ENHANCE_MODEL: z.string().default('openai/gpt-5-mini'),
   FILE_ANALYSIS_MODEL: z.string().default('openai/gpt-5-mini'),
   JOB_ANALYSIS_MODEL: z.string().default('openai/gpt-5-mini'),
-  JOB_EXTRACTION_MODEL: z.string().default('openai/gpt-5-mini'),
   RESUME_CUSTOMIZE_MODEL: z.string().default('openai/gpt-5-mini'),
   RESUME_PARSE_MODEL: z.string().default('openai/gpt-5-mini'),
   SKILLS_DERIVATION_MODEL: z.string().default('openai/gpt-5-mini'),

@@ -16,9 +16,7 @@ import type {
   CustomizeResumeApiRequest,
   CustomizeResumeApiResponse,
   JobAnalysis,
-  JobScrapeApiResponse,
 } from '~/lib/api-contracts';
-import type { JobPosting } from '~/lib/services/job-scraping.service';
 import { getCompanyName } from '~/lib/utils/applicationUtils';
 
 const RESUME_FORMATS = ['professional', 'modern', 'technical', 'executive'] as const;
@@ -77,11 +75,10 @@ export function ApplicationResumeTab({
   const [error, setError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showRegenerate, setShowRegenerate] = useState(false);
-  // Job postings are no longer stored as raw text; the only source of job
-  // posting content is scraping application.jobPostingUrl on demand.
-  const [scrapedJobPosting, setScrapedJobPosting] = useState<JobPosting | null>(null);
-
-  const hasAnyPosting = Boolean(application.jobPostingUrl);
+  // The posting text is pushed by the user's own agent (career_application_create/update);
+  // Hominem never fetches job sites itself.
+  const postingText = application.postingText?.trim() ?? '';
+  const hasAnyPosting = postingText.length > 0;
   const resumeFilename = `${toFilenamePart(getCompanyName(application.company))}-${toFilenamePart(
     application.title,
   )}-resume.md`;
@@ -94,29 +91,14 @@ export function ApplicationResumeTab({
     fetcher.data.message === 'Resume saved successfully';
 
   async function handleGenerate() {
-    if (!application.jobPostingUrl) {
-      setError('This application has no job posting URL to generate a resume from.');
+    if (!hasAnyPosting) {
+      setError('This application has no saved job posting text to generate a resume from.');
       return;
     }
 
     setIsGenerating(true);
     setError(null);
     try {
-      let jobPostingData = scrapedJobPosting;
-      if (!jobPostingData) {
-        const scrapeResponse = await fetch('/api/job/scrape', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: application.jobPostingUrl }),
-        });
-        const scrapeData: JobScrapeApiResponse = await scrapeResponse.json();
-        if (!scrapeResponse.ok || scrapeData.error || !scrapeData.job_posting) {
-          throw new Error(scrapeData.error || 'Could not read the job posting');
-        }
-        jobPostingData = scrapeData.job_posting;
-        setScrapedJobPosting(jobPostingData);
-      }
-
       const request: CustomizeResumeApiRequest = {
         resumeFormat,
         targetLength,
@@ -124,7 +106,7 @@ export function ApplicationResumeTab({
           .split(',')
           .map((s) => s.trim())
           .filter(Boolean),
-        jobPostingData,
+        job_posting: postingText,
       };
       const response = await fetch('/api/resume/customize', {
         method: 'POST',
@@ -168,10 +150,11 @@ export function ApplicationResumeTab({
       <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
         <FileText className="size-10 text-muted-foreground/50" />
         <p className="body-3 text-muted-foreground">
-          No job description stored for this application.
+          No job description saved for this application.
         </p>
         <p className="body-3 text-muted-foreground">
-          Add a job posting URL in the Overview tab to generate a tailored resume.
+          Ask your AI agent to save the posting text to this application, then come back to generate
+          a tailored resume.
         </p>
       </div>
     );
@@ -181,36 +164,6 @@ export function ApplicationResumeTab({
 
   return (
     <div className="space-y-4">
-      {scrapedJobPosting && (
-        <Card>
-          <CardContent>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="subheading-4 text-foreground">
-                {scrapedJobPosting.job_title || application.title}
-              </span>
-              {scrapedJobPosting.companyName && (
-                <span className="body-3 text-muted-foreground">
-                  at {scrapedJobPosting.companyName}
-                </span>
-              )}
-              {scrapedJobPosting.skills?.slice(0, 6).map((skill) => (
-                <span
-                  key={skill}
-                  className="px-2 py-0.5 bg-accent/20 text-muted-foreground caption1 rounded-md"
-                >
-                  {skill}
-                </span>
-              ))}
-              {(scrapedJobPosting.skills?.length ?? 0) > 6 && (
-                <span className="text-sm text-muted-foreground">
-                  +{(scrapedJobPosting.skills?.length ?? 0) - 6} more
-                </span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {application.resumeUrl && !showRegenerate && !generatedResume && (
         <Card>
           <CardHeader>

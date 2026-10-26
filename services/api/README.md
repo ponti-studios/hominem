@@ -35,9 +35,15 @@ For most API changes, the loop is simple:
 The API process listens on port `4040`; browser-facing development traffic uses
 the Portless URL `https://api.lvh.me`.
 
-For local Browser chat and auth verification, set `ENV=scripted` in the API
-environment and restart the API. This mocks both the AI and email providers;
-captured OTPs are written to the scripted mailbox. Scripted AI uses deterministic local responses at
+For local Browser chat and auth verification, two switches control the mocks:
+
+- Email: set `ENV=scripted` in the API environment and restart the API.
+  Captured OTPs are written to the scripted mailbox.
+- AI: flip the `USE_SCRIPTED_AI` const in `src/provider-mode.ts` (default
+  `false`, so you get real OpenRouter). It's a const, not an env var, so it
+  can change on a running dev server.
+
+Scripted AI uses deterministic local responses at
 the OpenRouter HTTP boundary, including collection tool calls and their
 post-approval completion. The following exact message markers expose the
 timing needed by the Browser playbook:
@@ -50,8 +56,8 @@ timing needed by the Browser playbook:
 
 These controls only exist in the local scripted provider; they do not alter
 production provider behavior. The scripted provider is rejected when
-`NODE_ENV=production`; omit the flag or set it to `openrouter` for normal
-provider traffic.
+`NODE_ENV=production`; leave `USE_SCRIPTED_AI` false and omit `ENV=scripted`
+for normal provider traffic.
 
 ### Testing
 

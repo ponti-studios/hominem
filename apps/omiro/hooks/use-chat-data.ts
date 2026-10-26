@@ -1,8 +1,13 @@
+import type { ChatMessageItem } from '@hominem/chat';
+
+import { useChatRows } from '~/services/chat/chat-rows';
 import { useChatMessages } from '~/services/chat/use-chat-messages';
 import {
   hasNonEmptyListData,
   resolveRestoredQueryState,
 } from '~/services/query/restored-query-state';
+
+const NO_MESSAGES: ChatMessageItem[] = [];
 
 interface UseChatDataInput {
   chatId: string;
@@ -16,6 +21,7 @@ export function useChatData({ chatId }: UseChatDataInput) {
     refetch: refetchMessages,
     data: messages,
   } = useChatMessages({ chatId });
+  const messageRows = useChatRows(chatId, messages ?? NO_MESSAGES);
   const messagesState = resolveRestoredQueryState({
     data: messages,
     isPending: isMessagesPending,
@@ -24,7 +30,7 @@ export function useChatData({ chatId }: UseChatDataInput) {
   });
 
   return {
-    messages: messages ?? [],
+    messages: messageRows,
     messagesError,
     isMessagesLoading: messagesState.isInitialLoading,
     isMessagesRefreshing: messagesState.isRefreshing,

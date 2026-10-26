@@ -154,6 +154,18 @@ export const FileRepository = {
     return file ? toFileRecord(file) : null;
   },
 
+  async getStorageKey(handle: DbHandle, fileId: string, userId: string): Promise<string | null> {
+    const row = await handle
+      .selectFrom('app.files')
+      .select('storageKey')
+      .where('id', '=', fileId)
+      .where('ownerUserid', '=', userId)
+      .where('status', '=', 'ready')
+      .executeTakeFirst();
+
+    return row?.storageKey ?? null;
+  },
+
   async getOwnedOrThrow(handle: DbHandle, fileId: string, userId: string): Promise<FileRecord> {
     const file = await FileRepository.getOwned(handle, fileId, userId);
     if (!file) {

@@ -1,25 +1,25 @@
 {
   "suite": "mcp-finance-monthly-review",
   "tier": "capability",
-  "datasetHash": "f838fe63b278",
+  "datasetHash": "059dd3b27789",
   "promptHash": "0bd8f089d5b9",
-  "graderHash": "bac0965d621a",
-  "targetModel": "openai/gpt-5-mini",
+  "graderHash": "b46b7b6d52dd",
+  "targetModel": "openai/gpt-6-luna",
   "judgeModel": "openai/gpt-6-luna",
-  "trialsPerCase": 1,
+  "trialsPerCase": 3,
   "limited": false,
   "summary": {
     "cases": 3,
-    "trials": 3,
-    "passRate": 1,
-    "passAllRate": 1,
+    "trials": 9,
+    "passRate": 0.8889,
+    "passAllRate": 0.6667,
     "errors": 0,
-    "meanScore": 1,
-    "costUsd": 0.008474,
-    "promptTokens": 14332,
-    "completionTokens": 3943,
-    "latencyP50Ms": 16128,
-    "latencyP95Ms": 16460,
+    "meanScore": 0.8889,
+    "costUsd": 0.001946,
+    "promptTokens": 43627,
+    "completionTokens": 2473,
+    "latencyP50Ms": 4927,
+    "latencyP95Ms": 8679,
     "byCategory": {
       "complete monthly review": {
         "cases": 1,
@@ -31,7 +31,7 @@
       },
       "currency safety": {
         "cases": 1,
-        "passRate": 1
+        "passRate": 0.6667
       }
     }
   },
@@ -44,10 +44,28 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 16128,
-          "costUsd": 0.0034472500000000002,
-          "promptTokens": 5789,
-          "completionTokens": 1576
+          "latencyMs": 3609,
+          "costUsd": 0.00021727499999999998,
+          "promptTokens": 5875,
+          "completionTokens": 215
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 4927,
+          "costUsd": 0.00025089999999999997,
+          "promptTokens": 5876,
+          "completionTokens": 282
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 5771,
+          "costUsd": 0.0002479,
+          "promptTokens": 5876,
+          "completionTokens": 276
         }
       ],
       "passRate": 1,
@@ -62,10 +80,28 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 3138,
-          "costUsd": 0.000567,
-          "promptTokens": 2684,
-          "completionTokens": 236
+          "latencyMs": 1401,
+          "costUsd": 0.00004548,
+          "promptTokens": 2721,
+          "completionTokens": 36
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1316,
+          "costUsd": 0.00004498,
+          "promptTokens": 2721,
+          "completionTokens": 35
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 1865,
+          "costUsd": 0.00004898,
+          "promptTokens": 2721,
+          "completionTokens": 43
         }
       ],
       "passRate": 1,
@@ -80,14 +116,32 @@
           "pass": true,
           "score": 1,
           "failedMetrics": [],
-          "latencyMs": 16460,
-          "costUsd": 0.00445955,
-          "promptTokens": 5859,
-          "completionTokens": 2131
+          "latencyMs": 5689,
+          "costUsd": 0.00035115,
+          "promptTokens": 5946,
+          "completionTokens": 465
+        },
+        {
+          "pass": true,
+          "score": 1,
+          "failedMetrics": [],
+          "latencyMs": 6231,
+          "costUsd": 0.0003025,
+          "promptTokens": 5946,
+          "completionTokens": 485
+        },
+        {
+          "pass": false,
+          "score": 0,
+          "failedMetrics": ["javascript", "judge"],
+          "latencyMs": 8679,
+          "costUsd": 0.000436525,
+          "promptTokens": 5945,
+          "completionTokens": 636
         }
       ],
-      "passRate": 1,
-      "passAll": true,
+      "passRate": 0.6667,
+      "passAll": false,
       "errored": false
     }
   ]

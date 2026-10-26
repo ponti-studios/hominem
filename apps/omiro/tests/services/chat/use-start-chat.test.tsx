@@ -98,10 +98,12 @@ vi.mock('~/services/inbox/inbox-refresh', () => ({ invalidateInboxQueries: vi.fn
 vi.mock('~/constants', () => ({ API_BASE_URL: 'http://localhost:4040' }));
 
 const { useStartChat } = await import('~/services/chat/use-start-chat');
+const { resetChatCacheState } = await import('~/services/chat/chat-cache');
 const { takeGenerationHandoff } = await import('~/services/chat/generation-handoff');
 
 describe('useStartChat', () => {
   beforeEach(() => {
+    resetChatCacheState();
     mockRandomUUID.mockReturnValue('generation-1');
     mockTransportRequest.mockImplementation(async () => {
       const event: GenerationEvent = {
@@ -241,7 +243,8 @@ describe('useStartChat', () => {
       expect.objectContaining({ id: 'user-1', message: 'Hello' }),
       expect.objectContaining({ id: 'assistant-1', message: 'A durable reply.' }),
     ]);
-    expect(mockImpactAsync).toHaveBeenCalledTimes(2);
+    // The commit lands once per generation, so the side effects (haptic) fire once.
+    expect(mockImpactAsync).toHaveBeenCalledOnce();
     expect(mockPlayAudioReply).not.toHaveBeenCalled();
   });
 

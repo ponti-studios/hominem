@@ -71,3 +71,17 @@ export function deriveComposerContentCapabilities({
 
   return { canSubmit, canOpenEnhance, isColumnLayout };
 }
+
+// The tray stays out of the way at rest and shows while the user is writing:
+// focused, or holding a draft or attachments.
+export function shouldShowComposerTray({
+  isFocused,
+  hasContent,
+  showAttachments,
+}: {
+  isFocused: boolean;
+  hasContent: boolean;
+  showAttachments: boolean;
+}) {
+  return isFocused || hasContent || showAttachments;
+}

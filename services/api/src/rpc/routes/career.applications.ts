@@ -35,8 +35,11 @@ export const careerApplicationsRoutes = new Hono<AppContext>()
     return c.json(result);
   })
   .post('/create', zValidator('json', careerApplicationCreateSchema), async (c) => {
-    const created = await createCareerApplication(c.get('auth')!.userId, c.req.valid('json'));
-    return c.json(created, 201);
+    const { application, alreadyExisted } = await createCareerApplication(
+      c.get('auth')!.userId,
+      c.req.valid('json'),
+    );
+    return c.json(application, alreadyExisted ? 200 : 201);
   })
   .post('/update', zValidator('json', careerApplicationUpdateSchema), async (c) => {
     const { id, data } = c.req.valid('json');

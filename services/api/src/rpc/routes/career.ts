@@ -5,7 +5,6 @@ import { careerApplicationsRoutes } from './career.applications';
 import { careerCertificationsRoutes } from './career.certifications';
 import { careerEducationRoutes } from './career.education';
 import { careerEngagementsRoutes } from './career.engagements';
-import { careerImportsRoutes } from './career.imports';
 import { careerProfileRoutes } from './career.profile';
 import { careerProjectsRoutes } from './career.projects';
 import { careerSkillsRoutes } from './career.skills';
@@ -20,7 +19,6 @@ import { careerWishlistRoutes } from './career.wishlist';
 // grows. Splitting into small sub-routers (mirroring packages/db's own repo
 // split) keeps each one cheap to typecheck.
 export const careerRoutes = new Hono<AppContext>()
-  .route('/imports', careerImportsRoutes)
   .route('/profile', careerProfileRoutes)
   .route('/engagements', careerEngagementsRoutes)
   .route('/applications', careerApplicationsRoutes)

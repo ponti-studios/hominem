@@ -1,7 +1,8 @@
 name: evals
 
 # Offline job (every PR that touches evals): validates every suite, dataset and baseline and
-# runs the unit tests. No model calls, no secrets, no cost.
+# runs the unit tests. No model calls, no secrets, no cost. Stale baselines only warn here;
+# re-recording them takes a full live run, so `eval check --strict` is the way to enforce it.
 # Live job (manual only): runs suites against the real model with repeated trials and gates
 # against the committed baselines. Costs real money, so start it from the Actions tab.
 

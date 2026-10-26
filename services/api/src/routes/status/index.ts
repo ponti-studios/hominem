@@ -22,7 +22,7 @@ statusRoutes.get('/', async (c) => {
       // a scripted, deterministic API instead of one making real LLM/email
       // calls. Not sensitive — provider names, not credentials.
       ...(env.NODE_ENV !== 'production'
-        ? { providers: { ai: resolveAiProvider(env), email: resolveEmailProvider(env) } }
+        ? { providers: { ai: resolveAiProvider(), email: resolveEmailProvider(env) } }
         : {}),
     });
   } catch (err) {

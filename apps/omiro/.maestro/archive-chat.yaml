@@ -1,0 +1,22 @@
+appId: com.pontistudios.hakumi.dev
+---
+# Archives the inbox chat whose title is ${CHAT_TITLE}. Rows archive with a
+# left swipe that reveals the archive button (InboxStreamItem.tsx); there is
+# no long-press menu anymore. Archive is immediate, no confirmation, and a
+# long swipe (past COMMIT_DISTANCE) commits on its own, so the button tap
+# only matters when the swipe stopped at the revealed state.
+- assertVisible: ".*${CHAT_TITLE}.*"
+- swipe:
+    from:
+      text: ".*${CHAT_TITLE}.*"
+    direction: LEFT
+    duration: 120
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    id: inbox-item-chat-archive
+    optional: true
+- tapOn:
+    id: inbox-item-chat-archive
+    optional: true
+- assertNotVisible: ".*${CHAT_TITLE}.*"

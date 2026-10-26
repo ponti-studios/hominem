@@ -10,7 +10,6 @@ import { startHoldSweeper } from './application/credit-settle.runtime';
 import { env } from './env';
 import { initRuntime } from './runtime';
 import { startAirportCatalogueSyncWorker } from './workers/airport-catalogue-sync';
-import { startCareerJobImportWorker } from './workers/career-job-import';
 import { startChatFileCleanupWorker } from './workers/chat-file-cleanup';
 import { startChatGenerationEffectsWorker } from './workers/chat-generation-effects';
 import { startEmbeddingGenerationWorker } from './workers/embedding-generation';
@@ -25,12 +24,11 @@ const embeddingGenerationWorker = startEmbeddingGenerationWorker();
 const resumeAnalysisWorker = startResumeAnalysisWorker();
 const speechUsageReconciliationWorker = startSpeechUsageReconciliationWorker();
 // Started here (not elsewhere) so dev watchers actually reload the queue handlers.
-const careerJobImportWorker = startCareerJobImportWorker();
 const chatFileCleanupWorker = startChatFileCleanupWorker();
 const chatGenerationEffectsWorker = await startChatGenerationEffectsWorker();
 const airportCatalogueSyncWorker = await startAirportCatalogueSyncWorker();
 const stopHoldSweeper = startHoldSweeper();
-const workerVersion = 'career-import-v2';
+const workerVersion = 'worker-v3';
 
 const healthServer = createServer((req, res) => {
   if (req.url === '/health' && req.method === 'GET') {
@@ -52,7 +50,6 @@ runtime.installSignalHandlers(
       embeddingGenerationWorker.close(),
       resumeAnalysisWorker.close(),
       speechUsageReconciliationWorker.close(),
-      careerJobImportWorker.close(),
       chatFileCleanupWorker.close(),
       chatGenerationEffectsWorker.close(),
       chatGenerationEffectsQueue.close(),
@@ -65,7 +62,6 @@ runtime.installSignalHandlers(
 logger.info('worker_started', { queue: 'file-processing' });
 logger.info('worker_started', { queue: 'embedding-generation' });
 logger.info('worker_started', { queue: QUEUE_NAMES.RESUME_ANALYSIS });
-logger.info('worker_started', { queue: QUEUE_NAMES.CAREER_JOB_IMPORT });
 logger.info('worker_started', { queue: QUEUE_NAMES.SPEECH_USAGE_RECONCILIATION });
 logger.info('worker_started', { queue: QUEUE_NAMES.CHAT_FILE_CLEANUP });
 logger.info('worker_started', { queue: QUEUE_NAMES.CHAT_GENERATION_EFFECTS });

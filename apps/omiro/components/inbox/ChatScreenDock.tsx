@@ -49,7 +49,7 @@ export function ChatScreenDock({
 
   return (
     <>
-      <ComposerDock restingInset={restingInset} testID="chat-composer-dock">
+      <ComposerDock inFlow restingInset={restingInset} testID="chat-composer-dock">
         {pendingToolCall ? (
           <ChatToolApprovalBar
             disabled={isRespondingToToolCall}

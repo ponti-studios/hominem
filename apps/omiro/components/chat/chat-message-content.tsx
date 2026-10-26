@@ -1,8 +1,17 @@
 import { logger } from '@hominem/telemetry';
-import { createElement, type ReactNode, useEffect, useMemo, useState } from 'react';
+import {
+  createElement,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { fontFamilies, useAppTheme } from '~/components/theme';
+import { useReducedMotion } from '~/hooks/use-reduced-motion';
 import { useStreamingMessageText } from '~/services/chat/streaming-text-store';
 import { countRender } from '~/services/perf/stream-perf';
 
@@ -50,12 +59,85 @@ function useMarkdownComponent(): MarkdownComponent | null {
   return Markdown;
 }
 
-// Reads the arriving words straight from the streaming store, so each new word
-// re-renders this Text alone -- never the message row or the list around it.
+const MARK_HOLD_MS = 160;
+const MARK_FADE_MS = 640;
+const MARK_TICK_MS = 80;
+
+type Mark = { from: number; to: number; at: number };
+
+// Lime at `alpha`, as an 8-digit hex so it composes over either theme surface.
+function withAlpha(hex: string, alpha: number) {
+  return `${hex}${Math.round(alpha * 255)
+    .toString(16)
+    .padStart(2, '0')}`;
+}
+
+// The marker: whatever just arrived is highlighted lime, held a beat, then the
+// highlight wipes away. The text is one <Text> with nested spans, so the reply
+// stays a single bubble and nothing reflows as the highlight changes.
 function StreamingMessageText({ id, textStyle }: { id: string; textStyle: object }) {
   const text = useStreamingMessageText(id);
+  const { lime, limeForeground } = useAppTheme().colors;
+  const reducedMotion = useReducedMotion();
+  const [marks, setMarks] = useState<Mark[]>([]);
+  const seen = useRef(0);
+  const [now, setNow] = useState(0);
   countRender('StreamingMessageText');
-  return <Text style={textStyle}>{text}</Text>;
+
+  // Layout effect: the new word is marked before the frame it first shows in.
+  useLayoutEffect(() => {
+    const at = Date.now();
+    if (text.length > seen.current) {
+      const mark = { from: seen.current, to: text.length, at };
+      setMarks((current) => [...current, mark]);
+      setNow(at);
+    } else if (text.length < seen.current) {
+      setMarks([]);
+    }
+    seen.current = text.length;
+  }, [text]);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      return;
+    }
+    const timer = setInterval(() => {
+      const at = Date.now();
+      setNow(at);
+      setMarks((current) => {
+        const next = current.filter((mark) => at - mark.at < MARK_HOLD_MS + MARK_FADE_MS);
+        return next.length === current.length ? current : next;
+      });
+    }, MARK_TICK_MS);
+    return () => clearInterval(timer);
+  }, [reducedMotion]);
+
+  const live = reducedMotion ? [] : marks;
+
+  const spans: ReactNode[] = [];
+  let cursor = 0;
+  for (const mark of live) {
+    if (mark.from > cursor) {
+      spans.push(text.slice(cursor, mark.from));
+    }
+    const age = Math.max(0, now - mark.at);
+    const alpha = age <= MARK_HOLD_MS ? 1 : 1 - (age - MARK_HOLD_MS) / MARK_FADE_MS;
+    spans.push(
+      <Text
+        key={mark.at + ':' + mark.from}
+        style={{
+          backgroundColor: withAlpha(lime, alpha),
+          color: alpha > 0.35 ? limeForeground : undefined,
+        }}
+      >
+        {text.slice(mark.from, mark.to)}
+      </Text>,
+    );
+    cursor = mark.to;
+  }
+  spans.push(text.slice(cursor));
+
+  return <Text style={textStyle}>{spans}</Text>;
 }
 
 export function MessageContent({

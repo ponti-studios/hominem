@@ -13,7 +13,7 @@
           "finance_transaction_delete",
           "finance_transactions_import"
         ],
-        "outputIncludes": ["2026-09", "GBP", "Housing", "Tesco"],
+        "outputIncludes": ["2026-09", "Housing", "Tesco"],
         "argumentAssertions": [
           { "tool": "finance_monthly_stats", "equals": { "month": "2026-09" } },
           {
@@ -26,7 +26,7 @@
           }
         ]
       },
-      "rubric": "Report only values supported by tool results. Keep all amounts in GBP and distinguish income, expenses and net. Include the largest returned spending categories and top merchants; do not add new categories or merchants."
+      "rubric": "Report only values supported by tool results. Keep all amounts in GBP (the £ sign is GBP) and distinguish income, expenses and net. Include the largest returned spending categories and top merchants; do not add new categories or merchants."
     },
     {
       "id": "missing-month",

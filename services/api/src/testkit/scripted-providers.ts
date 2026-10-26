@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { scriptedFlowStep } from './scripted-flows';
 
 // Single owner of every scripted external-provider response (OpenRouter,
-// Resend) for ENV=scripted, at the undici dispatcher level.
+// Resend) when scripted mode is on (USE_SCRIPTED_AI / ENV=scripted), at the undici dispatcher level.
 //
 // Why one dispatcher and not one MSW `setupServer()` per provider: MSW's
 // interceptors never see requests made by @openrouter/sdk's default fetcher

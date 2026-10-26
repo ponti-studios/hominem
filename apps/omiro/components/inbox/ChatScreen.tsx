@@ -3,6 +3,7 @@ import { isObject } from '@hominem/utils';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { getToolCallPhase } from '~/components/chat';
 import { useChatActionsMenu } from '~/components/chat/chat-actions-menu';
@@ -44,7 +45,7 @@ export function ChatScreen({ id }: { id: string }) {
   const router = useRouter();
   const { data: activeChat, error: activeChatError } = useActiveChat(id);
   const chatId = activeChat?.id ?? id;
-  const { inset: composerInset, restingInset } = useComposerDockMetrics();
+  const { restingInset } = useComposerDockMetrics();
   const headerHeight = useFloatingHeaderHeight();
   const [showDebug, setShowDebug] = useState(false);
   const { isOnline } = useNetworkStatus();
@@ -216,7 +217,12 @@ export function ChatScreen({ id }: { id: string }) {
         visible={showActionsMenu}
       />
 
-      <View style={styles.container}>
+      {/* The column shrinks with the keyboard, so the list always ends where the composer begins. */}
+      <KeyboardAvoidingView
+        behavior="padding"
+        keyboardVerticalOffset={getDockKeyboardOffset(restingInset)}
+        style={styles.container}
+      >
         <ChatSettingsSheet visible={showChatSettings} onClose={() => setShowChatSettings(false)} />
         <ChatSourcesSheet
           chatId={chatId}
@@ -247,8 +253,6 @@ export function ChatScreen({ id }: { id: string }) {
             onRegenerate={regenerateMessage}
             onRetry={retryFailedMessage}
             generation={activeGeneration}
-            bottomInset={composerInset}
-            keyboardOffset={getDockKeyboardOffset(restingInset)}
             topInset={headerHeight}
           />
         </PerfProfiler>
@@ -271,7 +275,7 @@ export function ChatScreen({ id }: { id: string }) {
           search={search}
           chatSend={chatSend}
         />
-      </View>
+      </KeyboardAvoidingView>
     </>
   );
 }

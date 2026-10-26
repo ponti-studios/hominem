@@ -12,6 +12,8 @@ interface ComposerSendButtonProps {
   onPress: () => void;
   /** Button diameter in points; icon scales with it. Defaults to 32. */
   size?: number;
+  // 'lime' is the accent used on the dark composer bar.
+  tone?: 'primary' | 'lime';
   testID?: string;
 }
 
@@ -26,9 +28,12 @@ export function ComposerSendButton({
   isLoading = false,
   onPress,
   size = 32,
+  tone = 'primary',
   testID,
 }: ComposerSendButtonProps) {
-  const { primary, primaryForeground } = useAppTheme().colors;
+  const colors = useAppTheme().colors;
+  const primary = tone === 'lime' ? colors.lime : colors.primary;
+  const primaryForeground = tone === 'lime' ? colors.limeForeground : colors.primaryForeground;
   const styles = useStyles(() => ({
     sendButton: {
       borderRadius: 999,

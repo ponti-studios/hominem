@@ -27,7 +27,7 @@ export default await defineMcpSuite({
     category: scenario.category,
     prompt: scenario.input,
     systemPrompt:
-      'Use travel_countries for country and place-presence questions. Treat stop, layover, visit, and residence as distinct evidence; one place can have multiple types. When asked about a layover, explicitly distinguish the airport layover from a destination stop.',
+      'Use travel_countries for country and place-presence questions. Treat stop, layover, visit, and residence as distinct evidence; one place can have multiple types. When asked about a layover, explicitly distinguish the airport layover from a destination stop. When asked for a count, say which rule you used and name any country you left out and why.',
     toolNames: ['travel_countries'],
     fixture: { responses: { travel_countries: { output: travelPresenceData } } },
     expected: {
