@@ -8,8 +8,6 @@ Every studio repo answers to the same `just` verbs. Run `just --list` to see wha
 | `just doctor` | Read-only checks (Xcode, simulator, ports, devices). Says what to fix. |
 | `just run` | Start Metro (and the local API when the app needs one) on this repo's port. |
 | `just sim` | Build, install and launch on the booted simulator. |
-| `just device` | Build, install and launch on the paired physical devices. |
-| `just check` | Everything to pass before pushing: lint, types, tests (and Swift checks). |
 | `just e2e` | End-to-end flows on the simulator, where the repo has them. |
 | `just testflight` | Ship to TestFlight, the same way in every app (see Shipping). Only when asked. |
 
@@ -30,14 +28,16 @@ Never use 8081 for a studio app.
 
 ## This folder
 
-`.studio/` is copied from the `studio-dev` repo. Do not edit it here: change `studio-dev`, then run
-`just studio-update` in each repo. `just studio-check` fails when a copy has drifted.
+`.studio/` is assembled from the kernel skills (`studio-dev` for this file,
+`ship-ios` for the shipping pipeline): run `just studio-update` in any repo
+to install it, `just studio-check` to fail when a copy has drifted. Do not
+edit it here: change the skill, then update every repo.
 
 ## Shipping
 
 Every Apple app ships to TestFlight with `just testflight`, which runs `.studio/ship-ios.sh`. The
 stages and rules are the same for every repo; each repo's `scripts/` file supplies only how its app
-is built and uploaded.
+is built and uploaded. The full branch-to-TestFlight lifecycle is the `ship-ios` skill in kernel.
 
 1. **Preflight.** No uncommitted changes to tracked files, and HEAD is `origin/main` (build from a
    merged commit, in a worktree if your checkout has other work). `--allow-branch` overrides, and the
@@ -55,14 +55,16 @@ is built and uploaded.
 
 - The app token (`NEWRELIC_IOS_APP_TOKEN`, ends `NRMA`) is embedded in the app and uploads its dSYMs.
 - Source maps need a New Relic **User** API key, `NRAK-...`. Keep it as `NEW_RELIC_USER_API_KEY` in
-  `~/.localrc` (or `NEWRELIC_USER_API_KEY` in the repo's env file). An ingest license key (ends
+  `~/.localrc` (or `NEWRELIC_USER_API_KEY` in the repo's env file; Omiro takes it from EAS). An ingest license key (ends
   `NRAL`) is rejected: the endpoint redirects to the login page and the tool reports a misleading
   "413 too large". `ship_newrelic_user_key` checks the prefix for you.
 - Never print a key, and never build one into an app. Mobile tokens are not secrets; the User key is.
+- A watchOS app cannot report crashes to New Relic; Thames keeps Sentry for the Watch.
 
 ### Adding a new Apple app
 
-Copy `.studio/` (`just studio-update`), write a `scripts/ship.sh` that sources `.studio/lib.sh` and
+Assemble `.studio/` (`just studio-update`, from the studio-dev skill), write a `scripts/ship.sh` that sources `.studio/lib.sh` and
 `.studio/ship-ios.sh`, sets `SHIP_NAME` and `SHIP_ROOT`, defines `ship_build` and `ship_upload`
-(`ship_audit`, `ship_symbols` and `ship_check` if it needs them), and ends with `ship_ios "$@"`. Point
-the repo's `testflight` recipe at it. `scripts/archive-testflight.sh` in Thames is the worked example.
+(`ship_audit`, `ship_symbols` and `ship_check` if it needs them), and ends with `ship_ios "$@"`. Point the
+repo's `testflight` recipe at it. `scripts/archive-testflight.sh` in Thames and `scripts/ship-omiro.sh`
+in hominem are the worked examples.

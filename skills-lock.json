@@ -25,6 +25,18 @@
       "skillPath": "skills/react-doctor/SKILL.md",
       "computedHash": "2a003f397a4a94fc032019bc7fd97e938b4e2fae995c96df8603790db168dcc7"
     },
+    "ship-ios": {
+      "source": "ponti-studios/kernel",
+      "sourceType": "github",
+      "skillPath": "skills/ship-ios/SKILL.md",
+      "computedHash": "dfb1cb18eb9512564efdce74c0e7b69b162a96aec331a0d75c698df52fb816d9"
+    },
+    "studio-dev": {
+      "source": "ponti-studios/kernel",
+      "sourceType": "github",
+      "skillPath": "skills/studio-dev/SKILL.md",
+      "computedHash": "021d5065c9b787a4c8550add9a08a7598c0d2a287c103b99217b76795c19b1d3"
+    },
     "tech-debt-audit": {
       "source": "ksimback/tech-debt-skill",
       "sourceType": "github",

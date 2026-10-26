@@ -1,14 +1,23 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034  # SHIP_* are read by the sourced ship-ios.sh
-# Ship Omiro to TestFlight, the studio's way (.studio/ship-ios.sh): a local IPA, then App Store Connect,
-# with no EAS cloud build. Usage: scripts/ship-omiro.sh [--skip-checks] [--no-upload] [--allow-branch]
+# Ship Omiro to TestFlight, the studio's way (ship-ios skill): a local IPA, then App Store Connect,
+# with no EAS cloud build. Usage: scripts/ship-omiro.sh [--skills-dir <path>] [--skip-checks] [--no-upload] [--allow-branch]
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=../.studio/lib.sh
-source "$ROOT/.studio/lib.sh"
-# shellcheck source=../.studio/ship-ios.sh
-source "$ROOT/.studio/ship-ios.sh"
+SKILLS_DIR="$ROOT/.agents/skills"
+args=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skills-dir) SKILLS_DIR="$2"; shift 2;;
+    --skills-dir=*) SKILLS_DIR="${1#*=}"; shift;;
+    *) args+=("$1"); shift;;
+  esac
+done
+# shellcheck disable=SC1091  # resolved via --skills-dir at runtime
+source "$SKILLS_DIR/ship-ios/scripts/lib.sh"
+# shellcheck disable=SC1091  # resolved via --skills-dir at runtime
+source "$SKILLS_DIR/ship-ios/scripts/ship-ios.sh"
 
 SHIP_NAME=Omiro
 SHIP_ROOT="$ROOT"
@@ -52,4 +61,4 @@ ship_upload() {
   (cd "$APP_DIR" && pnpm submit:local)
 }
 
-ship_ios "$@"
+ship_ios "${args[@]}"
