@@ -1,12 +1,19 @@
 import type { ChatMessageItem } from '@hominem/chat';
+import { HonoProvider } from '@hominem/rpc/react';
 import { Redirect } from 'expo-router';
-import { useEffect } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, Text, View, type TextInputInstance } from 'react-native';
 
 import { ChatGenerationFailedBar } from '~/components/chat/chat-generation-bar';
 import { ChatMessage } from '~/components/chat/chat-message';
+import { ChatSearchBar } from '~/components/chat/chat-search-bar';
+import { ChatSourcesSheet } from '~/components/chat/chat-sources-sheet';
 import { ChatToolApprovalBar } from '~/components/chat/chat-tool-approval-bar';
+import { ComposerAttachButton } from '~/components/composer/ComposerAttachButton';
+import { ComposerAttachmentRow } from '~/components/composer/ComposerAttachmentRow';
+import { ComposerContext, type ComposerContextValue } from '~/components/composer/ComposerContext';
 import { useStyles } from '~/components/theme';
+import { API_BASE_URL } from '~/constants';
 import {
   appendStreamingMessageText,
   clearStreamingMessageText,
@@ -16,8 +23,10 @@ import {
 // each one can be eyeballed (and screenshotted) without driving a real conversation.
 const base = { chatId: 'gallery', createdAt: new Date().toISOString(), toolCalls: null };
 const noop = () => undefined;
+// The gallery lives outside the authed layout, so it brings its own bare API client.
+const galleryApiConfig = { baseUrl: API_BASE_URL };
 
-type Fixture = { title: string; message: ChatMessageItem; active?: boolean };
+type Fixture = { title: string; message: ChatMessageItem; active?: boolean; debug?: boolean };
 
 function msg(id: string, overrides: Partial<ChatMessageItem>): ChatMessageItem {
   return {
@@ -34,6 +43,63 @@ const photo = (id: string, seed: number) => ({
   id,
   url: `https://picsum.photos/seed/${seed}/320/320`,
 });
+
+const noopAsync = () => Promise.resolve([]);
+const attachState = (over: Partial<ComposerContextValue>): ComposerContextValue => ({
+  attachments: [],
+  pendingUploads: [],
+  dismissErrors: noop,
+  errors: [],
+  isUploading: false,
+  progressByAssetId: {},
+  onRemove: noop,
+  clearAttachments: noop,
+  pickAttachment: noopAsync,
+  handleCameraCapture: noopAsync,
+  markAttachmentsSubmitted: noop,
+  ...over,
+});
+const attachment = (id: string, seed: number) => ({
+  id,
+  name: `${id}.jpg`,
+  type: 'image',
+  localUri: `https://picsum.photos/seed/${seed}/200/200`,
+});
+const attachStates: { title: string; value: ComposerContextValue }[] = [
+  { title: 'Composer · idle', value: attachState({}) },
+  {
+    title: 'Composer · picking (pending thumbnail)',
+    value: attachState({
+      isUploading: true,
+      pendingUploads: [
+        { id: 'p1', name: 'p1.jpg', localUri: 'https://picsum.photos/seed/5/200/200' },
+      ],
+    }),
+  },
+  {
+    title: 'Composer · uploading (progress)',
+    value: attachState({
+      isUploading: true,
+      attachments: [attachment('a1', 6), attachment('a2', 7)],
+      progressByAssetId: { a2: 55 },
+    }),
+  },
+  {
+    title: 'Composer · ready',
+    value: attachState({ attachments: [attachment('a1', 6), attachment('a2', 7)] }),
+  },
+  {
+    title: 'Composer · upload error',
+    value: attachState({ errors: ['Could not upload photo.jpg'] }),
+  },
+];
+
+const searchStates = [
+  { title: 'Search · empty', query: '', resultCount: 0, isSearching: false },
+  { title: 'Search · searching', query: 'lisbon', resultCount: 0, isSearching: true },
+  { title: 'Search · results', query: 'lisbon', resultCount: 4, isSearching: false },
+  { title: 'Search · no results', query: 'zzzz', resultCount: 0, isSearching: false },
+];
 
 const fixtures: Fixture[] = [
   {
@@ -96,6 +162,15 @@ const fixtures: Fixture[] = [
         '**Today**\n\n- Standup at 10\n- Review the PR\n- Call mom\n\nWant me to block time?',
     }),
     active: true,
+  },
+  {
+    title: 'Assistant · speak button + debug panel',
+    message: msg('a8', {
+      message: 'Here is the short version: standup at 10, PR review after lunch.',
+      audio: { url: 'https://example.com/a8.mp3', mimeType: 'audio/mpeg' },
+    }),
+    active: true,
+    debug: true,
   },
   {
     title: 'Assistant · interrupted',
@@ -179,6 +254,9 @@ const fixtures: Fixture[] = [
 ];
 
 export default function DevStates() {
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<TextInputInstance | null>(null);
   const styles = useStyles((theme) => ({
     screen: { backgroundColor: theme.colors.background, flex: 1 },
     content: { gap: 18, padding: 16, paddingBottom: 80, paddingTop: 120 },
@@ -191,6 +269,24 @@ export default function DevStates() {
       textTransform: 'uppercase',
     },
     bars: { gap: 12 },
+    // The attach button is white-on-dark, so give it the composer's dark bar to sit on.
+    composerRow: {
+      alignItems: 'center',
+      backgroundColor: theme.colors.foreground,
+      borderRadius: 28,
+      flexDirection: 'row',
+      gap: 12,
+      padding: 10,
+    },
+    composerStrip: { flex: 1 },
+    sheetButton: {
+      alignItems: 'center',
+      backgroundColor: theme.colors.secondary,
+      borderRadius: 16,
+      padding: 14,
+    },
+    searchState: { marginTop: 12 },
+    sheetButtonText: { color: theme.colors.foreground, fontWeight: '700' },
   }));
 
   // A live reply's words come from the streaming store, not the message.
@@ -205,7 +301,7 @@ export default function DevStates() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} testID="dev-states">
-      {fixtures.map(({ title, message, active }) => (
+      {fixtures.map(({ title, message, active, debug }) => (
         <View key={message.id}>
           <Text style={styles.label}>{title}</Text>
           <ChatMessage
@@ -216,10 +312,60 @@ export default function DevStates() {
             onRegenerate={noop}
             onRequestEdit={noop}
             onRetry={noop}
-            showDebug={false}
+            showDebug={Boolean(debug)}
           />
         </View>
       ))}
+      {attachStates.map(({ title, value }) => (
+        <View key={title}>
+          <Text style={styles.label}>{title}</Text>
+          <ComposerContext.Provider value={value}>
+            <View style={styles.composerRow}>
+              <ComposerAttachButton disabled={false} />
+              <View style={styles.composerStrip}>
+                <ComposerAttachmentRow />
+              </View>
+            </View>
+          </ComposerContext.Provider>
+        </View>
+      ))}
+      <View>
+        <Text style={styles.label}>Sheet · sources</Text>
+        <Pressable style={styles.sheetButton} onPress={() => setSourcesOpen(true)}>
+          <Text style={styles.sheetButtonText}>Open sources sheet</Text>
+        </Pressable>
+        <HonoProvider config={galleryApiConfig}>
+          <ChatSourcesSheet
+            chatId="gallery"
+            visible={sourcesOpen}
+            onClose={() => setSourcesOpen(false)}
+          />
+        </HonoProvider>
+      </View>
+      <View>
+        <Text style={styles.label}>Dock · search bar</Text>
+        {/* The bar autofocuses, so keep it behind a tap rather than popping the keyboard on load. */}
+        <Pressable style={styles.sheetButton} onPress={() => setSearchOpen((open) => !open)}>
+          <Text style={styles.sheetButtonText}>
+            {searchOpen ? 'Hide search bar states' : 'Show search bar states'}
+          </Text>
+        </Pressable>
+        {searchOpen
+          ? searchStates.map(({ title, query, resultCount, isSearching }) => (
+              <View key={title} style={styles.searchState}>
+                <Text style={styles.label}>{title}</Text>
+                <ChatSearchBar
+                  inputRef={searchInputRef}
+                  isSearching={isSearching}
+                  onChangeQuery={noop}
+                  onClose={noop}
+                  query={query}
+                  resultCount={resultCount}
+                />
+              </View>
+            ))
+          : null}
+      </View>
       <View>
         <Text style={styles.label}>Dock · tool approval</Text>
         <ChatToolApprovalBar
