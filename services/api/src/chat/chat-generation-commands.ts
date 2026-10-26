@@ -6,7 +6,7 @@ import { ChatGenerationRepository, ChatRepository } from '@hominem/db/chats';
 import { db } from '@hominem/db/core';
 import { runInTransaction } from '@hominem/db/transaction';
 
-import { assertUnderMonthlyUsageLimit } from '../application/ai-usage.service';
+import { assertChatAllowed } from '../application/ai-usage.service';
 import { planChatTools } from '../mcp/chat-tool-adapter';
 import {
   attachImagesToLastUserMessage,
@@ -216,7 +216,7 @@ export async function sendMessage(
   dependencies: ChatGenerationDependencies,
   input: SendMessageInput,
 ): Promise<AsyncIterable<GenerationEvent>> {
-  await assertUnderMonthlyUsageLimit(input.userId);
+  await assertChatAllowed(input.userId);
   const chat = await ChatRepository.getOwnedOrThrow(db, input.chatId, input.userId);
   const [history, notes, resolvedFiles] = await Promise.all([
     ChatRepository.getMessages(db, input.chatId, 30, 0),
@@ -301,7 +301,7 @@ async function redoGeneration(
     responseLength?: 'short' | 'medium' | 'long';
   },
 ): Promise<AsyncIterable<GenerationEvent>> {
-  await assertUnderMonthlyUsageLimit(input.userId);
+  await assertChatAllowed(input.userId);
   const [history, notes] = await Promise.all([
     ChatRepository.getMessages(db, input.chatId, 30, 0),
     ChatRepository.getChatSourceContext(db, input.chatId),
@@ -351,7 +351,7 @@ export async function respondToConfirmation(
   dependencies: ChatGenerationDependencies,
   input: ConfirmationMessageInput,
 ): Promise<AsyncIterable<GenerationEvent>> {
-  await assertUnderMonthlyUsageLimit(input.userId);
+  await assertChatAllowed(input.userId);
   const chat = await ChatRepository.getOwnedOrThrow(db, input.chatId, input.userId);
   const message = await ChatRepository.getMessageById(db, input.chatId, input.messageId);
   const pendingCall = message?.toolCalls?.find((call) => call.toolCallId === input.toolCallId);

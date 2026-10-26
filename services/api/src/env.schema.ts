@@ -63,6 +63,16 @@ export const apiSchema = runtimeSchema.extend({
   ),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  // Subscription billing (docs/billing.md). The dedicated endpoint's secret; falls back to
+  // STRIPE_WEBHOOK_SECRET when both endpoints share one signing secret.
+  BILLING_STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  // Monthly conversation caps from the "Hominem — Paid Tier Plan" sheet. Every chat cap is finite:
+  // no tier has uncapped conversation. Taster's skill-call volume is finite; paid tiers are not
+  // capped by domain or by skill volume.
+  BILLING_TASTER_CHAT_MESSAGES: z.coerce.number().int().positive().default(50),
+  BILLING_CORE_CHAT_MESSAGES: z.coerce.number().int().positive().default(1000),
+  BILLING_AI_CHAT_MESSAGES: z.coerce.number().int().positive().default(3000),
+  BILLING_TASTER_SKILL_CALLS: z.coerce.number().int().positive().default(500),
   // Dollars per pound, already lowered by a small buffer so a falling pound does not cost Thames.
   CREDIT_USD_PER_POUND: z.coerce.number().positive().default(1.28),
   // The free credit on joining, in pence, and the most that may be given in a UTC day.

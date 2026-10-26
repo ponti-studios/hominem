@@ -14,6 +14,8 @@ import {
 import type { Context } from 'hono';
 import { ZodError } from 'zod';
 
+import { billingRules } from '../application/billing.runtime';
+import { assertBillingUsage } from '../application/billing.service';
 import type { CapabilityDefinition } from '../application/capability';
 import type { AuthContext } from '../auth/types';
 import { getServiceErrorFailureType, isServiceError, UnauthorizedError } from '../errors';
@@ -116,6 +118,8 @@ async function invokeTool(
   args: unknown,
 ): Promise<CallToolResult> {
   try {
+    // Volume, never domain: every plan can reach every tool, but a Taster's monthly volume is finite.
+    await assertBillingUsage(billingRules(), ownerUserId, 'skill');
     return await callTool(ownerUserId, toolName, args);
   } catch (error) {
     logger.warn('mcp_tool_invocation_failed', {

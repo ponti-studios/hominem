@@ -115,3 +115,68 @@ describe('the Stripe client', () => {
     expect(error.message).not.toContain('secret');
   });
 });
+
+describe('the Stripe subscriptions client', () => {
+  const subscriptionObject = {
+    id: 'sub_1',
+    status: 'active',
+    customer: 'cus_1',
+    current_period_end: 1_800_000_000,
+    cancel_at_period_end: false,
+    metadata: { user_id: 'u1', tier: 'core', founding: 'true' },
+    items: { data: [{ id: 'si_1', price: { unit_amount: 799 } }] },
+  };
+
+  it('starts a monthly subscription Checkout at the decided price', async () => {
+    const { stripe, calls } = client(() => ({
+      id: 'cs_1',
+      url: 'https://checkout.stripe.test/cs_1',
+    }));
+    await stripe.createSubscriptionCheckout({
+      userId: 'u1',
+      email: 'a@b.co',
+      tier: 'core',
+      pricePence: 799,
+      founding: true,
+      successUrl: 'https://api.test/billing/done',
+      cancelUrl: 'https://api.test/billing/cancelled',
+    });
+    const form = new URLSearchParams(calls[0]!.body);
+    expect(form.get('mode')).toBe('subscription');
+    expect(form.get('line_items[0][price_data][unit_amount]')).toBe('799');
+    expect(form.get('line_items[0][price_data][recurring][interval]')).toBe('month');
+    expect(form.get('subscription_data[metadata][user_id]')).toBe('u1');
+    expect(form.get('subscription_data[metadata][founding]')).toBe('true');
+  });
+
+  it('reads the fields the billing rules enforce', async () => {
+    const { stripe } = client(() => subscriptionObject);
+    expect(await stripe.subscription('sub_1')).toEqual({
+      stripeSubscriptionId: 'sub_1',
+      stripeCustomerId: 'cus_1',
+      status: 'active',
+      pricePence: 799,
+      currentPeriodEnd: new Date(1_800_000_000 * 1000),
+      cancelAtPeriodEnd: false,
+      userId: 'u1',
+      tier: 'core',
+      founding: true,
+    });
+  });
+
+  it('changes the plan on the subscription’s own item', async () => {
+    const { stripe, calls } = client(() => subscriptionObject);
+    await stripe.updateSubscriptionPlan('sub_1', 999);
+    expect(calls.map((call) => call.method)).toEqual(['GET', 'POST']);
+    const form = new URLSearchParams(calls[1]!.body);
+    expect(form.get('items[0][id]')).toBe('si_1');
+    expect(form.get('items[0][price_data][unit_amount]')).toBe('999');
+  });
+
+  it('cancels at the end of the period, not immediately', async () => {
+    const { stripe, calls } = client(() => ({}));
+    await stripe.cancelSubscriptionAtPeriodEnd('sub_1');
+    expect(calls[0]!.method).toBe('POST');
+    expect(new URLSearchParams(calls[0]!.body).get('cancel_at_period_end')).toBe('true');
+  });
+});
