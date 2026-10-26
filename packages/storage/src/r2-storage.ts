@@ -514,6 +514,10 @@ export class R2StorageService {
           secretAccessKey: this.storageConfig.secretAccessKey,
         },
         forcePathStyle: this.storageConfig.forcePathStyle,
+        // Recent SDKs bake a CRC32 into presigned PUTs. It is computed over an empty body at
+        // signing time, so R2 rejects the real upload with a 400. Only checksum when required.
+        requestChecksumCalculation: 'WHEN_REQUIRED',
+        responseChecksumValidation: 'WHEN_REQUIRED',
       });
     }
     return this._client;
