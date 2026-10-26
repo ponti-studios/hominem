@@ -145,7 +145,8 @@ export function ApplicationResumeTab({
     downloadMarkdown(resumeFilename, text);
   }
 
-  if (!hasAnyPosting) {
+  // A saved resume stays viewable without posting text; only (re)generating needs it.
+  if (!hasAnyPosting && !application.resumeUrl) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
         <FileText className="size-10 text-muted-foreground/50" />
@@ -160,7 +161,8 @@ export function ApplicationResumeTab({
     );
   }
 
-  const showGenerateForm = !application.resumeUrl || showRegenerate || generatedResume;
+  const showGenerateForm =
+    hasAnyPosting && (!application.resumeUrl || showRegenerate || generatedResume);
 
   return (
     <div className="space-y-4">
@@ -186,10 +188,12 @@ export function ApplicationResumeTab({
                   <Download className="size-4 mr-1" />
                   Download
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowRegenerate(true)}>
-                  <Sparkles className="size-4 mr-1" />
-                  Regenerate
-                </Button>
+                {hasAnyPosting && (
+                  <Button variant="outline" size="sm" onClick={() => setShowRegenerate(true)}>
+                    <Sparkles className="size-4 mr-1" />
+                    Regenerate
+                  </Button>
+                )}
               </div>
             </div>
           </CardHeader>

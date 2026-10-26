@@ -61,6 +61,21 @@ function ComposerTrailingActionComponent({
     onChangeMessage,
   });
 
+  const generation = composerProps.mode === 'chat' ? composerProps.generation : undefined;
+  if (generation) {
+    return (
+      <ComposerSendButton
+        accessibilityLabel={t.chat.generation.stopA11y}
+        disabled={generation.isStopping}
+        icon="stop.fill"
+        size={ACTION_SIZE}
+        testID="chat-generation-stop"
+        tone="lime"
+        onPress={generation.onCancel}
+      />
+    );
+  }
+
   if (!hasContent) {
     return (
       <IconButton

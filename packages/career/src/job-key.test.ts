@@ -14,7 +14,7 @@ describe('jobPostingUrlKey', () => {
     ];
     const keys = new Set(variants.map(jobPostingUrlKey));
     expect(keys.size).toBe(1);
-    expect(jobPostingUrlKey(variants[0] as string)).toBe(base);
+    expect(jobPostingUrlKey(base)).toBe(base);
   });
 
   it('keeps id params so different jobs on one path stay separate', () => {
@@ -39,8 +39,18 @@ describe('jobPostingUrlKey', () => {
     );
   });
 
-  it('drops non-id values even under unknown keys', () => {
-    expect(jobPostingUrlKey('https://acme.com/j/1?foo=homepage&lang=en')).toBe('acme.com/j/1');
+  it('keeps short numeric and textual job ids so different jobs stay separate', () => {
+    const a = jobPostingUrlKey('https://acme.com/careers?jobId=123');
+    const b = jobPostingUrlKey('https://acme.com/careers?jobId=456');
+    expect(a).toBe('acme.com/careers?jobid=123');
+    expect(a).not.toBe(b);
+    expect(jobPostingUrlKey('https://acme.com/careers?job=engineer')).not.toBe(
+      jobPostingUrlKey('https://acme.com/careers?job=designer'),
+    );
+  });
+
+  it('drops empty params', () => {
+    expect(jobPostingUrlKey('https://acme.com/j/1?foo=&utm_source=x')).toBe('acme.com/j/1');
   });
 
   it('returns null for empty or unparseable input', () => {

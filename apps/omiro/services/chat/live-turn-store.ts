@@ -196,6 +196,18 @@ export function dropLiveReply(chatId: string, generationId: string, adoptedId?: 
   });
 }
 
+// The persisted list has caught up with a finished turn, so its overlaid copies
+// of the user message and reply retire. Left in place they would outlive an edit
+// that truncates the conversation and bring the deleted messages back. The render
+// keys stay, so the persisted rows take over their bubbles without remounting.
+export function retireLiveTurn(chatId: string, generationId: string) {
+  const { turn, keys } = read(chatId);
+  if (turn?.generationId !== generationId || (!turn.user && !turn.committed)) {
+    return;
+  }
+  write(chatId, { keys, turn: { ...turn, user: null, committed: null } });
+}
+
 export function clearLiveChat(chatId: string) {
   if (chats.delete(chatId)) {
     for (const listener of listeners.get(chatId) ?? []) {

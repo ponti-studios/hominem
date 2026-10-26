@@ -101,8 +101,6 @@ const t = {
     },
     generation: {
       thinking: 'Thinking',
-      thinkingBar: 'Thinking…',
-      stoppingBar: 'Stopping…',
       failedBarDetail: 'Retry, or edit your message',
       editA11y: 'Edit message',
       preparingDetail: 'Your message is saved. The reply will appear when it is ready.',

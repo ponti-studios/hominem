@@ -217,10 +217,12 @@ export function ChatScreen({ id }: { id: string }) {
         visible={showActionsMenu}
       />
 
-      {/* The column shrinks with the keyboard, so the list always ends where the composer begins. */}
+      {/* The column shrinks with the keyboard, so the list always ends where the composer begins.
+          KeyboardAvoidingView pads by keyboard height + offset, and the dock already carries
+          restingInset of its own bottom padding, so the offset is negative to cancel it. */}
       <KeyboardAvoidingView
         behavior="padding"
-        keyboardVerticalOffset={getDockKeyboardOffset(restingInset)}
+        keyboardVerticalOffset={-getDockKeyboardOffset(restingInset)}
         style={styles.container}
       >
         <ChatSettingsSheet visible={showChatSettings} onClose={() => setShowChatSettings(false)} />

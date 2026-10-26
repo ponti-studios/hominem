@@ -40,6 +40,9 @@ interface ComposerChatProps {
   // sending and retrying a failed message share one in-flight mutation
   // instead of racing two separate streams.
   chatSend: ComposerChatSend;
+  // Set while a reply is generating: the trailing send/mic action becomes a
+  // stop button (disabled once the stop is in flight).
+  generation?: { isStopping: boolean; onCancel: () => void };
 }
 
 export type ComposerProps = ComposerInboxProps | ComposerChatProps;

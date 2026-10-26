@@ -37,7 +37,7 @@ export function createChatMessageStyles(theme: Theme) {
       backgroundColor: theme.colors.card,
       borderRadius: theme.borderRadii.xl,
       borderBottomLeftRadius: 6,
-      maxWidth: '94%' as const,
+      width: '100%' as const,
       paddingHorizontal: 16,
       paddingVertical: 12,
     },
