@@ -15,6 +15,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    // The full workspace gate runs every app's tests at once; a jsdom render that takes a second
+    // alone can take more than the 5s default while the machine is saturated.
+    testTimeout: 15_000,
     setupFiles: ['./vitest.setup.ts'],
     include: ['app/**/*.test.{ts,tsx,js,jsx}'],
     exclude: ['**/node_modules/**', '**/build/**', 'tests/**'],
