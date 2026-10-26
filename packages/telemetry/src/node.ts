@@ -114,6 +114,25 @@ function safeLogValue(key: string, value: string | number | boolean) {
     .replace(/\/\d{4,}(?=\/|$)/g, '/:id');
 }
 
+let exportFailureGuardInstalled = false;
+
+// The OTLP http exporter throws its OTLPExporterError (e.g. a 403 for a bad key) from a
+// response handler, where nothing can catch it, so Node treats it as an uncaught exception
+// and kills the process. Telemetry must never take the service down: log the failure and
+// carry on. Anything else still crashes, as it would without this handler.
+function installExportFailureGuard() {
+  if (exportFailureGuardInstalled) return;
+  exportFailureGuardInstalled = true;
+  process.on('uncaughtException', (error) => {
+    if (error instanceof Error && error.name === 'OTLPExporterError') {
+      logger.warn('telemetry_export_failed', { error_name: error.name, status: error.message });
+      return;
+    }
+    console.error(error);
+    process.exit(1);
+  });
+}
+
 export function initTelemetry(config: TelemetryConfig) {
   const logsEndpoint = config.otlpLogsEndpoint ?? config.otlpEndpoint;
   if (!config.otlpEndpoint && !logsEndpoint) {
@@ -130,6 +149,8 @@ export function initTelemetry(config: TelemetryConfig) {
       shutdown: () => Promise.resolve(),
     };
   }
+
+  installExportFailureGuard();
 
   const resource = resourceFromAttributes({
     'service.name': config.serviceName,
