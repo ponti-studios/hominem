@@ -137,6 +137,10 @@ function StreamingMessageText({ id, textStyle }: { id: string; textStyle: object
   }
   spans.push(text.slice(cursor));
 
+  // Nothing yet: render no empty line, so the thinking indicator sits flush in the bubble.
+  if (!text) {
+    return null;
+  }
   return <Text style={textStyle}>{spans}</Text>;
 }
 
