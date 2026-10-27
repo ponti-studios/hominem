@@ -1,4 +1,4 @@
-import { createHmac } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 
 import type {
   BillingSubscriptionRecord,
@@ -21,18 +21,19 @@ const mocks = vi.hoisted(() => {
   return { state, usage, stripe, foundingSeats: { value: 0 } };
 });
 
-const SECRET = 'whsec_billing_test';
+// Generated per run: the webhook code only needs a shared opaque value to sign with.
+const SIGNING_KEY = randomUUID();
 
 vi.mock('../../env', () => ({
   env: {
     API_URL: 'https://api.test',
     BILLING_AI_CHAT_MESSAGES: 3000,
-    STRIPE_SECRET_KEY: 'sk_test_x',
+    STRIPE_SECRET_KEY: 'configured-for-test',
   },
 }));
 
 vi.mock('../../application/billing.runtime', () => ({
-  billingWebhookSecret: () => SECRET,
+  billingWebhookSecret: () => SIGNING_KEY,
   billingDeps: () => ({
     store: {
       get: async () => mocks.state.subscription,
@@ -228,7 +229,7 @@ describe('POST /billing/change and /billing/cancel', () => {
 });
 
 describe('POST /webhooks/stripe/billing', () => {
-  function signed(body: string, secret = SECRET) {
+  function signed(body: string, secret = SIGNING_KEY) {
     const t = Math.floor(Date.now() / 1000);
     const v1 = createHmac('sha256', secret).update(`${t}.${body}`).digest('hex');
     return { 'stripe-signature': `t=${t},v1=${v1}` };
@@ -242,7 +243,7 @@ describe('POST /webhooks/stripe/billing', () => {
   it('rejects a bad signature and writes nothing', async () => {
     const response = await app(false).request('/webhooks/stripe/billing', {
       method: 'POST',
-      headers: signed(event, 'whsec_wrong'),
+      headers: signed(event, randomUUID()),
       body: event,
     });
     expect(response.status).toBe(400);

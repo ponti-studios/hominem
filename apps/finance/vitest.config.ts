@@ -15,8 +15,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    // The full workspace gate runs every app's tests at once; a jsdom render that takes a second
-    // alone can take more than the 5s default while the machine is saturated.
+    // Some jsdom renders take longer than vitest's 5s default when suites run in parallel.
     testTimeout: 15_000,
     setupFiles: ['./vitest.setup.ts'],
     include: ['app/**/*.test.{ts,tsx,js,jsx}'],
