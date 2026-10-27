@@ -15,7 +15,6 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    // Some jsdom renders take longer than vitest's 5s default when suites run in parallel.
     testTimeout: 15_000,
     setupFiles: ['./vitest.setup.ts'],
     include: ['app/**/*.test.{ts,tsx,js,jsx}'],
