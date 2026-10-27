@@ -8,6 +8,7 @@ import { AccountIdentitySection } from '~/components/settings/AccountIdentitySec
 import { DangerZoneSection } from '~/components/settings/DangerZoneSection';
 import { PrivacySection } from '~/components/settings/PrivacySection';
 import { SectionLabel, SettingsRow } from '~/components/settings/SettingsRow';
+import { TelegramSection } from '~/components/settings/TelegramSection';
 import { UsageSection } from '~/components/settings/UsageSection';
 import { useAppTheme } from '~/components/theme';
 import AppIcon from '~/components/ui/icon';
@@ -122,6 +123,8 @@ function Settings() {
         }}
         preventScreenshots={preventScreenshots}
       />
+
+      <TelegramSection />
 
       <View style={styles.chatsSection}>
         <SectionLabel>{t.settings.sections.chats}</SectionLabel>

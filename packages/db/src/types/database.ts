@@ -757,6 +757,28 @@ export interface AppMediaItems {
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
+export interface AppMessagingIdentities {
+  channel: string;
+  chatId: string;
+  externalChatId: string;
+  externalUserId: string;
+  id: Generated<string>;
+  lastInboundAt: ColumnType<string, Date | string, Date | string> | null;
+  linkedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  ownerUserId: string;
+  revokedAt: ColumnType<string, Date | string, Date | string> | null;
+}
+
+export interface AppMessagingLinkCodes {
+  channel: string;
+  codeHash: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  expiresAt: ColumnType<string, Date | string, Date | string>;
+  id: Generated<string>;
+  ownerUserId: string;
+  usedAt: ColumnType<string, Date | string, Date | string> | null;
+}
+
 export interface AppMusicAlbums {
   artistId: string | null;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1701,6 +1723,8 @@ export interface DB {
   'app.mediaItemActivities': AppMediaItemActivities;
   'app.mediaItemIdentifiers': AppMediaItemIdentifiers;
   'app.mediaItems': AppMediaItems;
+  'app.messagingIdentities': AppMessagingIdentities;
+  'app.messagingLinkCodes': AppMessagingLinkCodes;
   'app.musicAlbums': AppMusicAlbums;
   'app.noteFiles': AppNoteFiles;
   'app.notes': AppNotes;

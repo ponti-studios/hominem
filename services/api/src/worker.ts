@@ -3,7 +3,7 @@
 import 'dotenv/config';
 import { createServer } from 'node:http';
 
-import { QUEUE_NAMES, chatGenerationEffectsQueue } from '@hominem/queues';
+import { QUEUE_NAMES, chatGenerationEffectsQueue, messagingInboundQueue } from '@hominem/queues';
 import { logger } from '@hominem/telemetry';
 
 import { startHoldSweeper } from './application/credit-settle.runtime';
@@ -14,6 +14,7 @@ import { startChatFileCleanupWorker } from './workers/chat-file-cleanup';
 import { startChatGenerationEffectsWorker } from './workers/chat-generation-effects';
 import { startEmbeddingGenerationWorker } from './workers/embedding-generation';
 import { startFileProcessingWorker } from './workers/file-processing';
+import { startMessagingInboundWorker } from './workers/messaging-inbound';
 import { startResumeAnalysisWorker } from './workers/resume-analysis';
 import { startSpeechUsageReconciliationWorker } from './workers/speech-usage-reconciliation';
 
@@ -27,6 +28,7 @@ const speechUsageReconciliationWorker = startSpeechUsageReconciliationWorker();
 const chatFileCleanupWorker = startChatFileCleanupWorker();
 const chatGenerationEffectsWorker = await startChatGenerationEffectsWorker();
 const airportCatalogueSyncWorker = await startAirportCatalogueSyncWorker();
+const messagingInboundWorker = startMessagingInboundWorker();
 const stopHoldSweeper = startHoldSweeper();
 const workerVersion = 'worker-v3';
 
@@ -54,6 +56,8 @@ runtime.installSignalHandlers(
       chatGenerationEffectsWorker.close(),
       chatGenerationEffectsQueue.close(),
       airportCatalogueSyncWorker.close(),
+      messagingInboundWorker.close(),
+      messagingInboundQueue.close(),
     ]);
   },
   () => new Promise<void>((resolve) => healthServer.close(() => resolve())),
@@ -66,3 +70,4 @@ logger.info('worker_started', { queue: QUEUE_NAMES.SPEECH_USAGE_RECONCILIATION }
 logger.info('worker_started', { queue: QUEUE_NAMES.CHAT_FILE_CLEANUP });
 logger.info('worker_started', { queue: QUEUE_NAMES.CHAT_GENERATION_EFFECTS });
 logger.info('worker_started', { queue: 'airport-catalogue-sync' });
+logger.info('worker_started', { queue: QUEUE_NAMES.MESSAGING_INBOUND });

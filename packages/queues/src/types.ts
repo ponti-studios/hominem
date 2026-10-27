@@ -31,6 +31,11 @@ export interface ChatFileCleanupQueuePayload {
 
 export type ChatGenerationEffectsQueuePayload = Record<string, never>;
 
+export interface MessagingInboundQueuePayload {
+  updateId: number;
+  update: unknown;
+}
+
 export interface FileProcessingJob {
   jobId: string;
   userId: string;

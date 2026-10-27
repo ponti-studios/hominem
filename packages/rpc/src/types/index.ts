@@ -8,5 +8,6 @@ export * from './mobile.types';
 export * from './notes.types';
 export * from './tasks.schemas';
 export * from './tasks.types';
+export * from './telegram.types';
 export * from './usage.types';
 export * from './voice.types';
