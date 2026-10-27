@@ -227,6 +227,21 @@ describe('POST /billing/change and /billing/cancel', () => {
   });
 });
 
+describe('GET /billing/done', () => {
+  it('renders the Labs-style checkout confirmation without claiming the webhook has finished', async () => {
+    const response = await app().request('/billing/done');
+    const page = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(page).toContain('Checkout complete');
+    expect(page).toContain("font-family: 'JetBrains Mono'");
+    expect(page).toContain('Your Hominem account is updating now');
+    expect(page).not.toContain('Your new plan is active now');
+    expect(page).toContain('href="/billing"');
+  });
+});
+
 describe('POST /webhooks/stripe/billing', () => {
   function signed(body: string, secret = SIGNING_KEY) {
     const t = Math.floor(Date.now() / 1000);

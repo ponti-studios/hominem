@@ -80,10 +80,28 @@ const STYLES = `
   form.inline { margin: 0; }
   .note { color: #5b5751; font-size: 13px; margin-top: 24px; }
   a { color: inherit; }
+  body:has(.billing-done) { background: #fff; color: #0a0a0a; }
+  main:has(.billing-done) { box-sizing: border-box; width: min(100%, 1040px); max-width: none; min-height: 100svh; padding: 32px 24px; }
+  .billing-done { min-height: calc(100svh - 64px); display: flex; flex-direction: column; color: #0a0a0a; font-family: 'Hanken Grotesk', Arial, sans-serif; }
+  .billing-done__header, .billing-done__footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .billing-done__header { border-bottom: 1px solid #e0e0e0; padding-bottom: 18px; }
+  .billing-done__wordmark, .billing-done__meta, .billing-done__eyebrow, .billing-done__button, .billing-done__footer { font-family: 'JetBrains Mono', ui-monospace, monospace; text-transform: uppercase; }
+  .billing-done__wordmark { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
+  .billing-done__meta, .billing-done__footer { color: #737373; font-size: 10px; letter-spacing: 0.1em; }
+  .billing-done__content { width: min(100%, 600px); margin: auto; padding: 72px 0; }
+  .billing-done__eyebrow { display: flex; align-items: center; gap: 12px; margin: 0 0 28px; font-size: 11px; letter-spacing: 0.12em; }
+  .billing-done__mark { display: grid; width: 44px; height: 44px; place-items: center; background: #0a0a0a; color: #fff; font-size: 21px; }
+  .billing-done h1 { max-width: 560px; margin: 0; font-size: clamp(48px, 8vw, 76px); font-weight: 500; letter-spacing: -0.065em; line-height: 0.98; }
+  .billing-done__copy { max-width: 430px; margin: 24px 0 32px; color: #5c5c5c; font-size: 17px; line-height: 1.55; }
+  .billing-done__button { display: inline-flex; min-height: 48px; align-items: center; gap: 24px; padding: 0 18px; background: #0a0a0a; color: #fff; font-size: 11px; letter-spacing: 0.08em; text-decoration: none; transition: background 150ms ease; }
+  .billing-done__button:hover { background: #333; }
+  .billing-done__footer { justify-content: flex-start; border-top: 1px solid #e0e0e0; padding-top: 16px; }
+  @media (max-width: 520px) { main:has(.billing-done) { padding: 24px 20px; } .billing-done { min-height: calc(100svh - 48px); } .billing-done__content { padding: 52px 0; } .billing-done__meta { font-size: 9px; } }
+  @media (prefers-reduced-motion: reduce) { .billing-done__button { transition: none; } }
 `;
 
-function page(title: string, body: string): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title><style>${STYLES}</style></head><body><main>${body}</main></body></html>`;
+function page(title: string, body: string, head = ''): string {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title>${head}<style>${STYLES}</style></head><body><main>${body}</main></body></html>`;
 }
 
 function subscribeForm(tier: BillingTier, label: string, secondary = false): string {
@@ -374,10 +392,22 @@ billingRoutes.post('/billing/cancel', async (c) => {
 billingRoutes.get('/billing/done', (c) => {
   c.header('Cache-Control', 'no-store');
   return c.html(
-    messagePage(
-      'Subscription started | Hominem',
-      'You are subscribed',
-      'Stripe has taken the first payment. Your new plan is active now; the receipt is on its way by email.',
+    page(
+      'Checkout complete | Hominem',
+      `<section class="billing-done" aria-labelledby="billing-done-title">
+        <header class="billing-done__header">
+          <span class="billing-done__wordmark">Hominem</span>
+          <span class="billing-done__meta">Account / Billing</span>
+        </header>
+        <div class="billing-done__content">
+          <p class="billing-done__eyebrow"><span class="billing-done__mark" aria-hidden="true">✓</span> Checkout complete</p>
+          <h1 id="billing-done-title">You’re all set.</h1>
+          <p class="billing-done__copy">Checkout is complete. Your Hominem account is updating now, and Stripe will email your receipt.</p>
+          <a class="billing-done__button" href="/billing">Return to plans <span aria-hidden="true">↗</span></a>
+        </div>
+        <footer class="billing-done__footer"><span>Hominem</span><span aria-hidden="true">/</span><span>Billing</span></footer>
+      </section>`,
+      `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">`,
     ),
   );
 });
