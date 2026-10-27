@@ -225,6 +225,20 @@ describe('POST /billing/change and /billing/cancel', () => {
     expect(mocks.state.subscription?.tier).toBe('core');
   });
 
+  it('renders the branded recovery page when Stripe cannot change a plan', async () => {
+    mocks.state.subscription = subscription({ tier: 'ai', pricePence: 1999 });
+    mocks.stripe.updateSubscriptionPlan.mockRejectedValueOnce(new Error('Stripe unavailable'));
+
+    const response = await app().request('/billing/change', form({ tier: 'core' }));
+    const page = await response.text();
+
+    expect(response.status).toBe(400);
+    expect(page).toContain('class="billing-error"');
+    expect(page).toContain('Could not change the plan.');
+    expect(page).toContain('The plan change didn’t complete.');
+    expect(page).toContain('href="/billing"');
+  });
+
   it('cancels at the end of the period', async () => {
     mocks.state.subscription = subscription();
     const response = await app().request('/billing/cancel', form({}));

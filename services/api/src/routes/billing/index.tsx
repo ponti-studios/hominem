@@ -132,6 +132,25 @@ const STYLES = `
   .billing-done__footer { justify-content: flex-start; border-top: 1px solid #e0e0e0; padding-top: 16px; }
   @media (max-width: 520px) { main:has(.billing-done) { padding: 24px 20px; } .billing-done { min-height: calc(100svh - 48px); } .billing-done__content { padding: 52px 0; } .billing-done__meta { font-size: 9px; } }
   @media (prefers-reduced-motion: reduce) { .billing-done__button { transition: none; } }
+  body:has(.billing-error) { background: #fff; color: #0a0a0a; }
+  main:has(.billing-error) { box-sizing: border-box; width: min(100%, 1040px); max-width: none; min-height: 100svh; padding: 32px 24px; }
+  .billing-error { min-height: calc(100svh - 64px); display: flex; flex-direction: column; color: #0a0a0a; font-family: 'Hanken Grotesk', Arial, sans-serif; }
+  .billing-error__header, .billing-error__footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .billing-error__header { border-bottom: 1px solid #e0e0e0; padding-bottom: 18px; }
+  .billing-error__wordmark, .billing-error__meta, .billing-error__eyebrow, .billing-error__button, .billing-error__footer { font-family: 'JetBrains Mono', ui-monospace, monospace; text-transform: uppercase; }
+  .billing-error__wordmark { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
+  .billing-error__meta, .billing-error__footer { color: #737373; font-size: 10px; letter-spacing: 0.1em; }
+  .billing-error__content { width: min(100%, 600px); margin: auto; padding: 72px 0; }
+  .billing-error__eyebrow { display: flex; align-items: center; gap: 12px; margin: 0 0 28px; color: #5c5c5c; font-size: 11px; letter-spacing: 0.12em; }
+  .billing-error__mark { display: grid; width: 44px; height: 44px; place-items: center; background: #0a0a0a; color: #fff; font-size: 21px; }
+  .billing-error h1 { max-width: 560px; margin: 0; font-size: clamp(48px, 8vw, 76px); font-weight: 500; letter-spacing: -0.065em; line-height: 0.98; }
+  .billing-error__copy { max-width: 430px; margin: 24px 0 32px; color: #5c5c5c; font-size: 17px; line-height: 1.55; }
+  .billing-error__button { display: inline-flex; min-height: 48px; align-items: center; gap: 24px; padding: 0 18px; background: #0a0a0a; color: #fff; font-size: 11px; letter-spacing: 0.08em; text-decoration: none; transition: background 150ms ease; }
+  .billing-error__button:hover { background: #333; }
+  .billing-error__button:focus-visible { outline: 2px solid #0a0a0a; outline-offset: 4px; }
+  .billing-error__footer { justify-content: flex-start; border-top: 1px solid #e0e0e0; padding-top: 16px; }
+  @media (max-width: 520px) { main:has(.billing-error) { padding: 24px 20px; } .billing-error { min-height: calc(100svh - 48px); } .billing-error__content { padding: 52px 0; } .billing-error__meta { font-size: 9px; } }
+  @media (prefers-reduced-motion: reduce) { .billing-error__button { transition: none; } }
 `;
 
 function page(title: string, body: string, head = ''): string {
@@ -139,6 +158,23 @@ function page(title: string, body: string, head = ''): string {
 }
 
 const BRAND_FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">`;
+
+function billingChangeErrorPage(): string {
+  return page(
+    'Plan change unavailable | Hominem',
+    `<section class="billing-error" aria-labelledby="billing-error-title">
+       <header class="billing-error__header"><span class="billing-error__wordmark">Hominem</span><span class="billing-error__meta">Account / Billing</span></header>
+       <div class="billing-error__content" role="alert">
+         <p class="billing-error__eyebrow"><span class="billing-error__mark" aria-hidden="true">!</span> Billing / Update</p>
+         <h1 id="billing-error-title">Could not change the plan.</h1>
+         <p class="billing-error__copy">The plan change didn’t complete. You can return to billing and try again.</p>
+         <a class="billing-error__button" href="/billing">Back to billing <span aria-hidden="true">↗</span></a>
+       </div>
+       <footer class="billing-error__footer"><span>Hominem</span><span aria-hidden="true">/</span><span>Billing</span></footer>
+     </section>`,
+    BRAND_FONTS,
+  );
+}
 
 function subscribeForm(tier: BillingTier, label: string, secondary = false): string {
   return `<form class="inline" method="post" action="/billing/checkout"><input type="hidden" name="tier" value="${tier}"><button${secondary ? ' class="secondary"' : ''} type="submit">${label}</button></form>`;
@@ -406,7 +442,7 @@ billingRoutes.post('/billing/change', async (c) => {
       failureType: 'billing.change.failed',
       error_name: error instanceof Error ? error.name : 'unknown',
     });
-    return c.text('Could not change the plan.', 400);
+    return c.html(billingChangeErrorPage(), 400);
   }
 });
 
