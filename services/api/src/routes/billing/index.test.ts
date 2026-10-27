@@ -160,14 +160,26 @@ describe('GET /billing', () => {
     expect(page).toContain('£9.99');
     expect(page).toContain('£19.99');
     expect(page).toContain('0 of 50 messages this month');
+    expect(page).toContain('class="billing-page"');
+    expect(page).toContain('Plans / Monthly');
+    expect(page).toContain('action="/billing/checkout"');
   });
 
   it('shows the current plan, usage, and cancellation date for a subscriber', async () => {
     mocks.state.subscription = subscription({ cancelAtPeriodEnd: true });
     const page = await (await app().request('/billing')).text();
-    expect(page).toContain('Core plan');
+    expect(page).toContain('Current plan');
+    expect(page).toContain('Core');
     expect(page).toContain('Cancelled — access ends');
     expect(page).toContain('£9.99 per month');
+  });
+
+  it('keeps cancellation controls for an active paid subscriber', async () => {
+    mocks.state.subscription = subscription();
+    const page = await (await app().request('/billing')).text();
+
+    expect(page).toContain('Manage subscription');
+    expect(page).toContain('Cancel at the end of this period');
   });
 });
 

@@ -80,6 +80,40 @@ const STYLES = `
   form.inline { margin: 0; }
   .note { color: #5b5751; font-size: 13px; margin-top: 24px; }
   a { color: inherit; }
+  body:has(.billing-page) { background: #fff; color: #0a0a0a; }
+  main:has(.billing-page) { box-sizing: border-box; width: min(100%, 1240px); max-width: none; min-height: 100svh; padding: 32px 24px 48px; font-family: 'Hanken Grotesk', Arial, sans-serif; }
+  .billing-page { min-height: calc(100svh - 80px); color: #0a0a0a; }
+  .billing-page__header { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #e0e0e0; padding-bottom: 18px; }
+  .billing-page__wordmark, .billing-page__meta, .billing-page__eyebrow, .billing-page__label { font-family: 'JetBrains Mono', ui-monospace, monospace; text-transform: uppercase; }
+  .billing-page__wordmark { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
+  .billing-page__meta, .billing-page__label { color: #737373; font-size: 10px; letter-spacing: 0.1em; }
+  .billing-page__hero { margin: 64px 0 36px; }
+  .billing-page__eyebrow { margin: 0 0 20px; color: #5c5c5c; font-size: 11px; letter-spacing: 0.12em; }
+  .billing-page h1 { max-width: 700px; margin: 0; font-size: clamp(48px, 7vw, 76px); font-weight: 500; letter-spacing: -0.065em; line-height: 0.98; }
+  .billing-page__lede { max-width: 650px; margin: 20px 0 0; color: #5c5c5c; font-size: 17px; line-height: 1.55; }
+  .billing-page .current { display: grid; grid-template-columns: minmax(160px, 0.7fr) minmax(0, 1.3fr); gap: 24px; align-items: center; margin: 0 0 32px; padding: 20px 0; border: 0; border-top: 1px solid #0a0a0a; border-bottom: 1px solid #e0e0e0; border-radius: 0; background: #fff; }
+  .billing-page .current h2 { margin: 6px 0 0; font-size: 24px; font-weight: 500; letter-spacing: -0.03em; }
+  .billing-page .usage { margin: 0; color: #5c5c5c; font-size: 14px; }
+  .billing-page .usage + .usage { margin-top: 6px; }
+  .billing-page .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
+  .billing-page .card { display: flex; min-height: 270px; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid #e0e0e0; background: #fff; }
+  .billing-page .card:only-child { max-width: 500px; }
+  .billing-page .card.current-plan { border-color: #0a0a0a; }
+  .billing-page .card h2 { margin: 0; font-size: 19px; font-weight: 500; letter-spacing: -0.02em; }
+  .billing-page .price { margin: 0; font-size: 34px; font-weight: 500; letter-spacing: -0.05em; line-height: 1; }
+  .billing-page .price-period { color: #737373; font-size: 12px; font-weight: 400; letter-spacing: 0; }
+  .billing-page .meta { flex: 1; margin: 0; color: #5c5c5c; font-size: 13px; line-height: 1.5; }
+  .billing-page button { min-height: 44px; padding: 0 14px; border: 1px solid #0a0a0a; border-radius: 0; background: #0a0a0a; color: #fff; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+  .billing-page button:hover { background: #333; }
+  .billing-page button.secondary { background: #fff; color: #0a0a0a; }
+  .billing-page button.secondary:hover { background: #f4f4f4; }
+  .billing-page .card .inline { margin: 0; }
+  .billing-page .card .inline button { width: 100%; }
+  .billing-page .billing-manage { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 32px; padding: 18px 0; border-top: 1px solid #e0e0e0; border-bottom: 1px solid #e0e0e0; }
+  .billing-page .billing-manage h2 { margin: 0; font-size: 16px; font-weight: 500; }
+  .billing-page .billing-manage .inline { margin: 0; }
+  .billing-page .billing-page__note { margin: 24px 0 0; color: #737373; font-size: 12px; line-height: 1.6; }
+  @media (max-width: 620px) { main:has(.billing-page) { padding: 24px 20px 32px; } .billing-page { min-height: calc(100svh - 56px); } .billing-page__hero { margin: 48px 0 28px; } .billing-page .current { grid-template-columns: 1fr; gap: 10px; } .billing-page .card { min-height: 240px; } .billing-page .billing-manage { align-items: flex-start; flex-direction: column; } }
   body:has(.billing-done) { background: #fff; color: #0a0a0a; }
   main:has(.billing-done) { box-sizing: border-box; width: min(100%, 1040px); max-width: none; min-height: 100svh; padding: 32px 24px; }
   .billing-done { min-height: calc(100svh - 64px); display: flex; flex-direction: column; color: #0a0a0a; font-family: 'Hanken Grotesk', Arial, sans-serif; }
@@ -103,6 +137,8 @@ const STYLES = `
 function page(title: string, body: string, head = ''): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(title)}</title>${head}<style>${STYLES}</style></head><body><main>${body}</main></body></html>`;
 }
+
+const BRAND_FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">`;
 
 function subscribeForm(tier: BillingTier, label: string, secondary = false): string {
   return `<form class="inline" method="post" action="/billing/checkout"><input type="hidden" name="tier" value="${tier}"><button${secondary ? ' class="secondary"' : ''} type="submit">${label}</button></form>`;
@@ -139,9 +175,9 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
   const subscription = state.subscription;
   const renews = dateLabel(subscription?.currentPeriodEnd);
 
-  const status = `<section class="current">
-    <h2>${escapeHtml(planName)} plan</h2>
-    <p class="usage">${state.usage.chatMessages} of ${state.limits.chatMessagesPerMonth} messages this month${
+  const status = `<section class="current" aria-label="Current plan">
+    <div><span class="billing-page__label">Current plan</span><h2>${escapeHtml(planName)}</h2></div>
+    <div><p class="usage">${state.usage.chatMessages} of ${state.limits.chatMessagesPerMonth} messages this month${
       state.limits.skillCallsPerMonth === null
         ? ' · skills uncapped'
         : ` · ${state.usage.skillCalls} of ${state.limits.skillCallsPerMonth} skill calls`
@@ -156,7 +192,7 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
             subscription.founding ? ' · founding price locked' : ''
           }.</p>`
         : `<p class="usage">Free tier. Subscribe to keep your full skills and more conversation.</p>`
-    }
+    }</div>
   </section>`;
 
   const corePrice = pounds(TIER_PRICES_PENCE.core);
@@ -180,7 +216,7 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
     cards.push(
       planCard({
         name: 'Founding Core',
-        price: `${foundingPrice}<span style="font-size:13px;font-weight:400">/mo</span>`,
+        price: `${foundingPrice}<span class="price-period">/mo</span>`,
         meta: `All skills, unlimited. ${input.foundingLeft} of ${FOUNDING_SEATS} founding seats left; the price never rises while you stay subscribed.`,
         current: false,
         action: subscribeForm('core', 'Subscribe'),
@@ -191,7 +227,7 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
     cards.push(
       planCard({
         name: 'Core',
-        price: `${corePrice}<span style="font-size:13px;font-weight:400">/mo</span>`,
+        price: `${corePrice}<span class="price-period">/mo</span>`,
         meta: 'All skills, unlimited. For the everyday work of keeping your life in one place.',
         current: false,
         action: paid
@@ -203,7 +239,7 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
   cards.push(
     planCard({
       name: 'AI',
-      price: `${aiPrice}<span style="font-size:13px;font-weight:400">/mo</span>`,
+      price: `${aiPrice}<span class="price-period">/mo</span>`,
       meta: `All skills plus the longest conversation: up to ${env.BILLING_AI_CHAT_MESSAGES} messages a month.`,
       current: plan === 'ai',
       action:
@@ -217,19 +253,22 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
 
   const paidActions =
     paid && !subscription?.cancelAtPeriodEnd
-      ? `<section class="current"><h2>Manage</h2>
+      ? `<section class="billing-manage"><h2>Manage subscription</h2>
           ${actionForm('/billing/cancel', 'Cancel at the end of this period', true)}
         </section>`
       : '';
 
   return page(
     'Plan | Hominem',
-    `<h1>Choose your plan</h1>
-     <p class="lede">Every tier uses every skill. Plans differ in how much you use, never in which parts of Hominem you can reach.</p>
-     ${status}
-     <div class="grid">${cards.join('')}</div>
-     ${paidActions}
-     <p class="note">Payments and receipts are handled by Stripe. Prices are in pounds and renew monthly until you cancel. ${escapeHtml(input.name ? `Signed in as ${input.name}.` : '')}</p>`,
+    `<section class="billing-page" aria-labelledby="billing-title">
+       <header class="billing-page__header"><span class="billing-page__wordmark">Hominem</span><span class="billing-page__meta">Account / Billing</span></header>
+       <div class="billing-page__hero"><p class="billing-page__eyebrow">Plans / Monthly</p><h1 id="billing-title">Choose your plan.</h1><p class="billing-page__lede">Every tier uses every skill. Plans differ in how much you use, never in which parts of Hominem you can reach.</p></div>
+       ${status}
+       <div class="grid">${cards.join('')}</div>
+       ${paidActions}
+       <p class="billing-page__note">Payments and receipts are handled by Stripe. Prices are in pounds and renew monthly until you cancel. ${escapeHtml(input.name ? `Signed in as ${input.name}.` : '')}</p>
+     </section>`,
+    BRAND_FONTS,
   );
 }
 
@@ -407,7 +446,7 @@ billingRoutes.get('/billing/done', (c) => {
         </div>
         <footer class="billing-done__footer"><span>Hominem</span><span aria-hidden="true">/</span><span>Billing</span></footer>
       </section>`,
-      `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">`,
+      BRAND_FONTS,
     ),
   );
 });
