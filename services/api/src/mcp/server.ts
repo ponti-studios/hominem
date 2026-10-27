@@ -1,5 +1,6 @@
-import { chatMessageJsonObjectSchema } from '@hominem/chat';
+import { chatMessageJsonObjectSchema, type ChatMessageJsonObject } from '@hominem/chat';
 import { logger } from '@hominem/telemetry';
+import { isObject } from '@hominem/utils';
 import {
   createMcpHandler,
   inputRequired,
@@ -12,12 +13,17 @@ import {
   type StandardSchemaWithJSON,
 } from '@modelcontextprotocol/server';
 import type { Context } from 'hono';
-import { ZodError } from 'zod';
+import { ZodError, z } from 'zod';
 
 import type { CapabilityDefinition } from '../application/capability';
 import type { AuthContext } from '../auth/types';
 import { getServiceErrorFailureType, isServiceError, UnauthorizedError } from '../errors';
-import { confirmationCodec, type ConfirmationState } from './confirmation';
+import {
+  clientCanElicit,
+  confirmationCodec,
+  CONFIRM_TOKEN_KEY,
+  type ConfirmationState,
+} from './confirmation';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
 import { describeCapability } from './tool-planner';
@@ -70,6 +76,37 @@ function cachedJsonSchema(schema: StandardSchemaWithJSON): StandardSchemaWithJSO
   };
 }
 
+// Confirming tools accept the token that completes a preview the client has
+// already been shown (see createToolHandler). It is declared on the schema, not
+// just read off the wire, because a strict client validates the model's
+// arguments against the advertised schema and drops anything undeclared — an
+// undeclared token would never reach this server.
+const confirmTokenArgumentSchema = z.object({
+  [CONFIRM_TOKEN_KEY]: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      'Only for completing a call that returned a preview instead of running: ' +
+        'repeat the same call with the same arguments plus this token. Omit it on the first call.',
+    ),
+});
+
+const confirmableInputSchemas = new WeakMap<object, z.ZodType>();
+
+function mcpInputSchema(definition: CapabilityDefinition): StandardSchemaWithJSON {
+  if (!definition.requiresConfirmation) return cachedJsonSchema(definition.inputSchema);
+
+  // Intersected once per underlying schema, so the cached JSON Schema
+  // conversion still happens exactly once per tool rather than per request.
+  const cached = confirmableInputSchemas.get(definition.inputSchema);
+  if (cached) return cachedJsonSchema(cached);
+
+  const confirmable = z.intersection(definition.inputSchema, confirmTokenArgumentSchema);
+  confirmableInputSchemas.set(definition.inputSchema, confirmable);
+  return cachedJsonSchema(confirmable);
+}
+
 export type McpHonoEnv = {
   Variables: {
     auth?: AuthContext;
@@ -108,6 +145,58 @@ function buildCancelledResult(message: string): CallToolResult {
   // Mirrors createErrorResult's already-established structured-content-less
   // convention in this file.
   return { content: [{ type: 'text', text: message }], isError: true };
+}
+
+function readConfirmToken(args: unknown): string | undefined {
+  if (!isObject(args)) return undefined;
+  const token = args[CONFIRM_TOKEN_KEY];
+  return typeof token === 'string' && token.length > 0 ? token : undefined;
+}
+
+// Same shape as buildCancelledResult (no structured content) for the same
+// reason: the tool's output schema describes a completed call, and this one
+// deliberately did nothing. The preview is the whole point — it shows exactly
+// what a confirmation would affect.
+function buildConfirmTokenResult(
+  definition: CapabilityDefinition,
+  preview: ChatMessageJsonObject | undefined,
+  token: string,
+): CallToolResult {
+  const previewText =
+    preview === undefined
+      ? ''
+      : ` This is exactly what it will affect: ${JSON.stringify(preview)}.`;
+  return {
+    content: [
+      {
+        type: 'text',
+        text:
+          `${definition.name} was not run: it needs confirmation.${previewText} ` +
+          `Nothing has been changed. To complete it, call ${definition.name} again with the ` +
+          `same arguments plus ${CONFIRM_TOKEN_KEY}: ${JSON.stringify(token)}.`,
+      },
+    ],
+    isError: true,
+  };
+}
+
+/**
+ * Verifies a token handed back in the arguments and returns the state it froze.
+ * Anything that does not verify — tampered, expired, minted for another user or
+ * another tool — is treated as no confirmation at all and falls through to the
+ * normal preview, so a bad token can never execute anything.
+ */
+async function confirmTokenState(
+  token: string,
+  definition: CapabilityDefinition,
+  ctx: ServerContext,
+): Promise<ConfirmationState | null> {
+  try {
+    const state = await confirmationCodec.verify(token, ctx);
+    return state.tool === definition.name ? state : null;
+  } catch {
+    return null;
+  }
 }
 
 async function invokeTool(
@@ -161,13 +250,18 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
       return createErrorResult('insufficient_scope');
     }
 
-    // Protocol-level confirmation (Multi Round-Trip Requests, spec revision
-    // 2026-07-28): requiresConfirmation previously only gated Hominem's own
-    // chat UI (see chat-generation-engine.ts's requiresConfirmation callback),
-    // never this HTTP endpoint — any other MCP client (Claude Desktop, ChatGPT
-    // connectors) executed a destructive tool immediately. This makes
-    // confirmation a property of the tool call itself, enforced for every
-    // MCP client.
+    // Protocol-level confirmation enforced for every MCP client, in one gate
+    // rather than per tool. Two transports, same safety bar:
+    //
+    // - Clients that can answer an embedded elicitation (2026-07-28 multi
+    //   round-trip requests) confirm interactively, exactly as before.
+    // - Clients that cannot (2025-era protocol — ChatGPT connectors, the legacy
+    //   Muse CLI — or a modern client without the capability) get the preview
+    //   plus a confirmation token instead. They repeat the call with that token
+    //   to complete it: a two-step flow the model can drive from an ordinary
+    //   tool result, with no protocol feature it lacks.
+    //
+    // Neither path executes anything unconfirmed.
     if (definition.requiresConfirmation) {
       const state = ctx.mcpReq.requestState<ConfirmationState>();
 
@@ -189,6 +283,14 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
         return invokeTool(context.ownerUserId, definition.name, state.args);
       }
 
+      const confirmToken = readConfirmToken(args);
+      if (confirmToken) {
+        const confirmed = await confirmTokenState(confirmToken, definition, ctx);
+        // The token froze the arguments at mint time, so what runs is what the
+        // preview described, not whatever this round's wire call carried.
+        if (confirmed) return invokeTool(context.ownerUserId, definition.name, confirmed.args);
+      }
+
       // First call. A tool with a preview function only skips confirmation
       // when that preview explicitly returns null (e.g. the target is
       // already gone), matching today's single-round-trip no-op behavior. A
@@ -199,6 +301,13 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
         ? await definition.preview(context.ownerUserId, chatMessageJsonObjectSchema.parse(args))
         : undefined;
       if (preview !== null) {
+        if (!clientCanElicit(ctx)) {
+          const token = await confirmationCodec.mint(
+            { tool: definition.name, args: chatMessageJsonObjectSchema.parse(args) },
+            ctx,
+          );
+          return buildConfirmTokenResult(definition, preview, token);
+        }
         const message = definition.preview
           ? `Confirm: ${definition.title} — ${JSON.stringify(preview)}`
           : `Confirm: ${definition.title}?`;
@@ -247,7 +356,7 @@ function createMcpServer(authInfo?: AuthInfo) {
       {
         title: definition.title,
         description: describeCapability(definition),
-        inputSchema: cachedJsonSchema(definition.inputSchema),
+        inputSchema: mcpInputSchema(definition),
         outputSchema: definition.outputSchema
           ? cachedJsonSchema(definition.outputSchema)
           : undefined,
