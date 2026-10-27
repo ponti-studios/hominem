@@ -24,3 +24,5 @@ export const speechUsageReconciliationQueue = createQueue(QUEUE_NAMES.SPEECH_USA
 export const chatFileCleanupQueue = createQueue(QUEUE_NAMES.CHAT_FILE_CLEANUP);
 
 export const chatGenerationEffectsQueue = createQueue(QUEUE_NAMES.CHAT_GENERATION_EFFECTS);
+
+export const messagingInboundQueue = createQueue(QUEUE_NAMES.MESSAGING_INBOUND);

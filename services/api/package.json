@@ -47,6 +47,7 @@
     "backfill:file-security": "tsx scripts/backfill-file-security.ts",
     "mcp:smoke": "tsx scripts/mcp-smoke-test.ts",
     "mcp:perf": "tsx --tsconfig tsconfig.dev.json scripts/mcp-perf-baseline.ts",
+    "telegram:set-webhook": "tsx scripts/set-telegram-webhook.ts",
     "migrate:career-ledger": "tsx scripts/migrate-career-ledger.ts"
   },
   "dependencies": {

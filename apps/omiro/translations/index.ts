@@ -404,6 +404,31 @@ const t = {
     emailMissing: 'Not available',
     lockWithFaceId: 'Lock with Face ID',
     preventScreenshots: 'Prevent screenshots',
+    telegram: {
+      section: 'Connections',
+      label: 'Telegram bot',
+      privacyDisclosure:
+        'Telegram messages are processed by Telegram and this bot. The bot can use your full Hominem account and enabled tools. Only your linked private Telegram account can access it.',
+      loading: 'Checking connection…',
+      connected: 'Connected to your private chat',
+      disconnected: 'Connect Telegram for private chat access',
+      unavailable: 'Telegram is reserved for the bot owner',
+      needsSetup: 'Server setup is needed before connecting',
+      setupTitle: 'Finish Telegram setup',
+      setupMessage:
+        'Copy your Hominem account ID and set TELEGRAM_OWNER_USER_ID on the API. Telegram credentials must also be configured on the API and worker.',
+      copyAccountId: 'Copy account ID',
+      ok: 'OK',
+      unlinkTitle: 'Unlink Telegram?',
+      unlinkMessage:
+        'The bot will stop accessing your Hominem account. Your Telegram chat history stays in Hominem.',
+      cancel: 'Cancel',
+      unlink: 'Unlink',
+      unlinkedTitle: 'Telegram unlinked',
+      unlinkedMessage: 'The bot can no longer access your Hominem account.',
+      errorTitle: 'Telegram unavailable',
+      errorMessage: 'Could not update the Telegram connection. Please try again.',
+    },
     archivedChats: 'Archived chats',
     signOut: {
       label: 'Sign out',

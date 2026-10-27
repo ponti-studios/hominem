@@ -74,6 +74,11 @@ export const apiSchema = runtimeSchema.extend({
   STRIPE_API_BASE_URL: z.url().optional(),
   OPENAI_APPS_CHALLENGE: z.string().optional(),
   SAVE_VOICE_AUDIO: z.stringbool().default(false),
+  TELEGRAM_BOT_TOKEN: z.string().default(''),
+  TELEGRAM_BOT_USERNAME: z.string().default(''),
+  TELEGRAM_WEBHOOK_SECRET: z.string().default(''),
+  // The Hominem account allowed to link to and use this bot. Empty disables linking.
+  TELEGRAM_OWNER_USER_ID: z.string().default(''),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_EXPORTER_OTLP_PROTOCOL: z.string().optional(),
   OTEL_EXPORTER_OTLP_HEADERS: z.string().optional(),

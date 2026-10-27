@@ -7,6 +7,7 @@ export const QUEUE_NAMES = {
   SPEECH_USAGE_RECONCILIATION: 'speech-usage-reconciliation',
   CHAT_FILE_CLEANUP: 'chat-file-cleanup',
   CHAT_GENERATION_EFFECTS: 'chat-generation-effects',
+  MESSAGING_INBOUND: 'messaging-inbound',
 } as const;
 
 // Applied to every queue so completed/failed jobs cannot accumulate forever.

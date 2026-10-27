@@ -12,6 +12,7 @@ import { env } from './env';
 import type { ApiEnv } from './env.schema';
 import { getServiceErrorFailureType, isServiceError } from './errors';
 import { createMcpRoutes } from './mcp/routes';
+import { createTelegramWebhookRoutes } from './messaging/telegram-webhook.route';
 import { createAuthMiddleware } from './middleware/auth';
 import { blockMaliciousProbes } from './middleware/block-probes';
 import { requestBodyLimit } from './middleware/body-limit';
@@ -171,6 +172,13 @@ function registerApiRoutes(app: Hono<AppEnv>, dependencies: ServerDependencies) 
   // MCP stays outside the client-facing RPC contract - it's server-only and
   // its Redis-backed code shouldn't leak into mobile typechecking.
   app.route('/api/mcp', mcpRoutes);
+  app.route(
+    '/api/telegram/webhook',
+    createTelegramWebhookRoutes({
+      env: dependencies.env,
+      rateLimitCounter: dependencies.rateLimitCounter,
+    }),
+  );
   // Has to be mounted at root - RFC 8414 / RFC 9728 require it there.
   app.route('/', oauthDiscoveryRoutes);
   app.route('/', loginRoutes);

@@ -36,6 +36,10 @@
       "types": "./build/notes.d.ts",
       "default": "./src/notes.ts"
     },
+    "./messaging": {
+      "types": "./build/messaging.d.ts",
+      "default": "./src/messaging.ts"
+    },
     "./possessions": {
       "types": "./build/possessions.d.ts",
       "default": "./src/possessions.ts"
