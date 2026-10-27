@@ -101,6 +101,7 @@ function stripe(overrides: Partial<BillingDeps['stripe']> = {}): BillingDeps['st
     subscription: vi.fn(),
     updateSubscriptionPlan: vi.fn(async () => undefined),
     cancelSubscriptionAtPeriodEnd: vi.fn(async () => undefined),
+    cancelSubscriptionNow: vi.fn(async () => undefined),
     ...overrides,
   };
 }
@@ -298,9 +299,24 @@ describe('handleBillingEvent', () => {
       type: 'customer.subscription.created',
       data: { object: { id: 'sub_1' } },
     });
-    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999);
+    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999, 'core');
     expect(outcome).toMatchObject({ kind: 'applied', subscription: { pricePence: 999 } });
     expect(store.saved?.founding).toBe(false);
+  });
+
+  it('ends the previous live subscription when a new checkout completes', async () => {
+    const store = memoryStore(subscription({ stripeSubscriptionId: 'sub_old' }));
+    const billing = deps(store, {
+      subscription: vi.fn(async () => facts({ stripeSubscriptionId: 'sub_new' })),
+    });
+
+    await handleBillingEvent(billing, {
+      type: 'customer.subscription.created',
+      data: { object: { id: 'sub_new' } },
+    });
+
+    expect(billing.stripe.cancelSubscriptionNow).toHaveBeenCalledWith('sub_old');
+    expect(store.saved?.stripeSubscriptionId).toBe('sub_new');
   });
 
   it('ignores events that are not about subscriptions, and subscriptions with no owner', async () => {
@@ -324,7 +340,7 @@ describe('changePlan and cancelPlan', () => {
     const store = memoryStore(subscription({ tier: 'ai', pricePence: 1999 }));
     const billing = deps(store);
     const changed = await changePlan(billing, 'u1', 'core');
-    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999);
+    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999, 'core');
     expect(changed.tier).toBe('core');
     expect((await billingState(billing, 'u1')).plan).toBe('core');
     expect((await billingState(billing, 'u1')).limits.chatMessagesPerMonth).toBe(
@@ -336,7 +352,7 @@ describe('changePlan and cancelPlan', () => {
     const store = memoryStore(subscription({ founding: true, pricePence: 799 }));
     const billing = deps(store);
     const changed = await changePlan(billing, 'u1', 'core');
-    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 799);
+    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 799, 'core');
     expect(changed.founding).toBe(true);
   });
 

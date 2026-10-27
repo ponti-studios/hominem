@@ -116,9 +116,10 @@ export async function save(
     // A founding subscriber keeps their locked price on every later update, even once all 100 are taken.
     const keepsSeat =
       existing?.founding === true && existing.stripeSubscriptionId === input.stripeSubscriptionId;
-    const founding = input.founding
-      ? keepsSeat || (await countFoundingSeats(trx)) < FOUNDING_SEATS
-      : false;
+    // A founding seat is sticky for the subscription that holds it — including while the holder is
+    // on AI — so switching back to Core stays £7.99 and the seat is not released to someone else.
+    const founding =
+      keepsSeat || (input.founding && (await countFoundingSeats(trx)) < FOUNDING_SEATS);
 
     const row = await trx
       .insertInto('app.billingSubscriptions')
@@ -172,25 +173,34 @@ export async function countFoundingSeats(db: DbHandle): Promise<number> {
 }
 
 /**
- * Records one billable interaction and answers whether it was inside `limit`. The count and the
- * insert are one statement, so two calls at the boundary cannot both pass.
+ * Records one billable interaction and answers whether it was inside `limit`. The per-user, per-kind
+ * advisory lock serialises the count and the insert, so two requests with one slot left cannot both
+ * pass; a plain count-then-insert would let both read the same count under READ COMMITTED.
  */
-export async function recordUsageWithinLimit(
-  db: DbHandle,
-  input: { userId: string; kind: BillingUsageKind; since: Date; limit: number },
-): Promise<boolean> {
-  const result = await sql<{ id: string }>`
-    INSERT INTO app.billing_usage_events (user_id, kind)
-    SELECT ${input.userId}, ${input.kind}
-    WHERE (
-      SELECT count(*) FROM app.billing_usage_events
-      WHERE user_id = ${input.userId}
-        AND kind = ${input.kind}
-        AND created_at >= ${input.since}
-    ) < ${input.limit}
-    RETURNING id
-  `.execute(db);
-  return result.rows.length > 0;
+export async function recordUsageWithinLimit(input: {
+  userId: string;
+  kind: BillingUsageKind;
+  since: Date;
+  limit: number;
+}): Promise<boolean> {
+  return runInTransaction(async (trx) => {
+    await sql`SELECT pg_advisory_xact_lock(hashtext(${`billing.usage:${input.userId}:${input.kind}`}))`.execute(
+      trx,
+    );
+    const result = await trx
+      .selectFrom('app.billingUsageEvents')
+      .select(({ fn }) => fn.countAll<number>().as('count'))
+      .where('userId', '=', input.userId)
+      .where('kind', '=', input.kind)
+      .where('createdAt', '>=', input.since.toISOString())
+      .executeTakeFirst();
+    if (Number(result?.count ?? 0) >= input.limit) return false;
+    await trx
+      .insertInto('app.billingUsageEvents')
+      .values({ userId: input.userId, kind: input.kind })
+      .execute();
+    return true;
+  });
 }
 
 /** Records one billable interaction on a tier with no limit for this kind. */

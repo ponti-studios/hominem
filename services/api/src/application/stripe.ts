@@ -94,42 +94,63 @@ export interface StripeSubscriptionsClient {
     input: SubscriptionCheckoutInput,
   ): Promise<{ id: string; url: string }>;
   subscription(subscriptionId: string): Promise<SubscriptionFacts>;
-  updateSubscriptionPlan(subscriptionId: string, pricePence: number): Promise<void>;
+  /** Moves the subscription to `tier` at `pricePence`, carrying the tier in metadata with the price. */
+  updateSubscriptionPlan(
+    subscriptionId: string,
+    pricePence: number,
+    tier: 'core' | 'ai',
+  ): Promise<void>;
   cancelSubscriptionAtPeriodEnd(subscriptionId: string): Promise<void>;
+  /** Ends a subscription immediately, for an older one a new checkout has replaced. */
+  cancelSubscriptionNow(subscriptionId: string): Promise<void>;
 }
 
 /** Stripe's subscription object, as far as billing reads it. */
+const subscriptionItemSchema = z.object({
+  id: z.string().min(1),
+  // Stripe moved the period onto the item in API 2025-03-31.basil; older accounts still send the
+  // subscription-level field. Both are optional here and the mapper requires one of them.
+  current_period_end: z.number().int().nullable().optional(),
+  price: z.object({
+    unit_amount: z.number().int().nullable(),
+    product: z
+      .union([z.string(), z.object({ id: z.string().min(1) })])
+      .nullable()
+      .optional(),
+  }),
+});
+
 const subscriptionSchema = z.object({
   id: z.string().min(1),
   status: z.string(),
   customer: z.union([z.string(), z.object({ id: z.string().min(1) })]),
-  current_period_end: z.number().int(),
+  current_period_end: z.number().int().nullable().optional(),
   cancel_at_period_end: z.boolean().nullable().optional(),
   metadata: z.record(z.string(), z.string()).nullable().optional(),
-  items: z
-    .object({
-      data: z
-        .array(
-          z.object({
-            id: z.string().min(1),
-            price: z.object({ unit_amount: z.number().int().nullable() }),
-          }),
-        )
-        .min(1),
-    })
-    .optional(),
+  items: z.object({ data: z.array(subscriptionItemSchema).min(1) }),
 });
+
+function productIdOf(item: z.infer<typeof subscriptionItemSchema>): string | null {
+  const product = item.price.product;
+  if (!product) return null;
+  return typeof product === 'string' ? product : product.id;
+}
 
 function toSubscriptionFacts(subscription: z.infer<typeof subscriptionSchema>): SubscriptionFacts {
   const metadata = subscription.metadata ?? {};
   const tier = metadata.tier === 'ai' ? 'ai' : metadata.tier === 'core' ? 'core' : null;
+  const item = subscription.items.data[0];
+  const periodEnd = subscription.current_period_end ?? item?.current_period_end ?? null;
+  if (periodEnd === null) {
+    throw new StripeError('read subscription', 200, 'subscription_period_end_missing');
+  }
   return {
     stripeSubscriptionId: subscription.id,
     stripeCustomerId:
       typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
     status: subscription.status,
-    pricePence: subscription.items?.data[0]?.price.unit_amount ?? 0,
-    currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+    pricePence: item?.price.unit_amount ?? 0,
+    currentPeriodEnd: new Date(periodEnd * 1000),
     cancelAtPeriodEnd: subscription.cancel_at_period_end === true,
     userId: metadata.user_id && metadata.user_id.length > 0 ? metadata.user_id : null,
     tier,
@@ -164,7 +185,12 @@ export function createStripeClient(
   fetchImpl: typeof fetch = fetch,
   base: string = DEFAULT_BASE,
 ): StripeClient & StripeSubscriptionsClient {
-  async function call(what: string, method: 'GET' | 'POST', path: string, form?: URLSearchParams) {
+  async function call(
+    what: string,
+    method: 'GET' | 'POST' | 'DELETE',
+    path: string,
+    form?: URLSearchParams,
+  ) {
     const response = await fetchImpl(`${base}${path}`, {
       method,
       headers: {
@@ -313,7 +339,7 @@ export function createStripeClient(
       );
     },
 
-    async updateSubscriptionPlan(subscriptionId, pricePence) {
+    async updateSubscriptionPlan(subscriptionId, pricePence, tier) {
       const current = subscriptionSchema.parse(
         await call(
           'read subscription',
@@ -321,23 +347,38 @@ export function createStripeClient(
           `/subscriptions/${encodeURIComponent(subscriptionId)}`,
         ),
       );
-      const itemId = current.items?.data[0]?.id;
-      if (!itemId) throw new StripeError('read subscription', 200, 'subscription_item_missing');
-      const tier = current.metadata?.tier === 'ai' ? 'ai' : 'core';
-      const form = new URLSearchParams({
-        'items[0][id]': itemId,
-        'items[0][price_data][currency]': 'gbp',
-        'items[0][price_data][unit_amount]': String(pricePence),
-        'items[0][price_data][recurring][interval]': 'month',
-        'items[0][price_data][product_data][name]': subscriptionProductName(tier),
-        // Change now, charging or crediting the difference on the next invoice.
-        proration_behavior: 'create_prorations',
-      });
+      const item = current.items.data[0];
+      const productId = item ? productIdOf(item) : null;
+      if (!item || !productId) {
+        throw new StripeError('read subscription', 200, 'subscription_product_missing');
+      }
+      // A price change needs a real price: the subscription-update endpoint does not accept the
+      // Checkout-only `product_data`. Create the price against the item's existing product.
+      const price = z.object({ id: z.string().min(1) }).parse(
+        await call(
+          'create price',
+          'POST',
+          '/prices',
+          new URLSearchParams({
+            currency: 'gbp',
+            unit_amount: String(pricePence),
+            'recurring[interval]': 'month',
+            product: productId,
+          }),
+        ),
+      );
       await call(
         'update subscription',
         'POST',
         `/subscriptions/${encodeURIComponent(subscriptionId)}`,
-        form,
+        new URLSearchParams({
+          'items[0][id]': item.id,
+          'items[0][price]': price.id,
+          // The tier travels with the price: the webhook derives entitlement from this metadata.
+          'metadata[tier]': tier,
+          // Change now, charging or crediting the difference on the next invoice.
+          proration_behavior: 'create_prorations',
+        }),
       );
     },
 
@@ -347,6 +388,14 @@ export function createStripeClient(
         'POST',
         `/subscriptions/${encodeURIComponent(subscriptionId)}`,
         new URLSearchParams({ cancel_at_period_end: 'true' }),
+      );
+    },
+
+    async cancelSubscriptionNow(subscriptionId) {
+      await call(
+        'cancel subscription',
+        'DELETE',
+        `/subscriptions/${encodeURIComponent(subscriptionId)}`,
       );
     },
   };

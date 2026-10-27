@@ -109,20 +109,54 @@ describe('billing repository', () => {
         cancelAtPeriodEnd: true,
       }),
     );
-
     expect(updated.founding).toBe(true);
     expect(updated.cancelAtPeriodEnd).toBe(true);
+
+    // An AI-tier update arrives with no founding request and a higher price. The seat still belongs
+    // to that subscription, so switching back to Core stays at the locked £7.99.
+    const onAi = await save(
+      input(holder, {
+        tier: 'ai',
+        founding: false,
+        pricePence: 1999,
+        stripeSubscriptionId: 'sub_holder_0',
+      }),
+    );
+    expect(onAi.founding).toBe(true);
+    expect(onAi.tier).toBe('ai');
+
+    const backOnCore = await save(
+      input(holder, {
+        founding: true,
+        pricePence: 799,
+        stripeSubscriptionId: 'sub_holder_0',
+      }),
+    );
+    expect(backOnCore.founding).toBe(true);
+    expect(await countFoundingSeats(db)).toBe(FOUNDING_SEATS);
   });
 
   it('allows exactly the limit, then blocks the next interaction', async () => {
     const userId = await createUser();
     const since = new Date('2026-10-01T00:00:00.000Z');
-    const at = (limit: number) =>
-      recordUsageWithinLimit(db, { userId, kind: 'chat', since, limit });
+    const at = (limit: number) => recordUsageWithinLimit({ userId, kind: 'chat', since, limit });
 
     expect(await at(2)).toBe(true);
     expect(await at(2)).toBe(true);
     expect(await at(2)).toBe(false);
+    expect(await usageCount(db, { userId, kind: 'chat', since })).toBe(2);
+  });
+
+  it('does not let concurrent calls past the boundary both pass', async () => {
+    const userId = await createUser();
+    const since = new Date('2026-10-01T00:00:00.000Z');
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () =>
+        recordUsageWithinLimit({ userId, kind: 'chat', since, limit: 2 }),
+      ),
+    );
+
+    expect(results.filter(Boolean)).toHaveLength(2);
     expect(await usageCount(db, { userId, kind: 'chat', since })).toBe(2);
   });
 

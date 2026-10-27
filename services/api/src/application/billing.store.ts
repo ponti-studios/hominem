@@ -8,7 +8,7 @@ export const dbBillingStore: BillingStore = {
   get: (userId) => BillingRepository.get(db, userId),
   save: (input) => BillingRepository.save(input),
   countFoundingSeats: () => BillingRepository.countFoundingSeats(db),
-  recordUsageWithinLimit: (input) => BillingRepository.recordUsageWithinLimit(db, input),
+  recordUsageWithinLimit: (input) => BillingRepository.recordUsageWithinLimit(input),
   recordUsage: (input) => BillingRepository.recordUsage(db, input),
   usageCount: (input) => BillingRepository.usageCount(db, input),
 };

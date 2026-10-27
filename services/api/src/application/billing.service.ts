@@ -174,6 +174,23 @@ async function applySubscription(
   facts: SubscriptionFacts,
 ): Promise<BillingSubscriptionRecord | null> {
   if (!facts.userId || !facts.tier || !isBillingStatus(facts.status)) return null;
+  // A second completed Checkout replaces the first subscription. End the old one at Stripe too, or
+  // it keeps renewing and /billing/cancel only knows about the newest one.
+  const previous = await deps.store.get(facts.userId);
+  if (
+    previous &&
+    previous.stripeSubscriptionId !== facts.stripeSubscriptionId &&
+    ['active', 'trialing', 'past_due'].includes(previous.status)
+  ) {
+    try {
+      await deps.stripe.cancelSubscriptionNow(previous.stripeSubscriptionId);
+    } catch (error) {
+      deps.log?.('billing_previous_subscription_cancel_failed', {
+        subscriptionId: previous.stripeSubscriptionId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
   const wantsFounding =
     facts.tier === 'core' && facts.founding && facts.pricePence === TIER_PRICES_PENCE.founding_core;
   const base = {
@@ -192,7 +209,7 @@ async function applySubscription(
   });
   if (wantsFounding && !saved.founding) {
     const pricePence = pricePenceFor('core', false);
-    await deps.stripe.updateSubscriptionPlan(facts.stripeSubscriptionId, pricePence);
+    await deps.stripe.updateSubscriptionPlan(facts.stripeSubscriptionId, pricePence, 'core');
     saved = await deps.store.save({ ...base, pricePence, founding: false });
   }
   return saved;
@@ -241,7 +258,7 @@ export async function changePlan(
     throw new ValidationError('There is no paid subscription to change.');
   }
   const pricePence = pricePenceFor(tier, subscription.founding);
-  await deps.stripe.updateSubscriptionPlan(subscription.stripeSubscriptionId, pricePence);
+  await deps.stripe.updateSubscriptionPlan(subscription.stripeSubscriptionId, pricePence, tier);
   return deps.store.save({
     userId: subscription.userId,
     tier,
