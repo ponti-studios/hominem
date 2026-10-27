@@ -15,9 +15,11 @@ deployed configuration and can be changed from the environment without a rule ch
 | Founding Core | £7.99 / month  | uncapped                      | 1,000 messages       |
 
 Founding Core is the first **100** Core subscriptions. The price is locked for as long as that
-subscription stays subscribed, including when the holder changes tier; the seat counter is written
-inside one transaction with an advisory lock, so two simultaneous signups cannot both take seat 100. A founding Checkout that loses that race is repriced to £9.99 by the webhook before it is
-stored.
+subscription stays subscribed, including when the holder changes tier. A seat is released when its
+subscription ends or its paid period expires; a scheduled cancellation keeps the seat through the
+paid period. The seat counter is written inside one transaction with an advisory lock, so two
+simultaneous signups cannot both take seat 100. A founding Checkout that loses that race is repriced
+to £9.99 by the webhook before it is stored.
 
 ## What a tier gates
 

@@ -97,6 +97,29 @@ describe('billing repository', () => {
     expect(await countFoundingSeats(db)).toBe(FOUNDING_SEATS);
   });
 
+  it('releases a founding seat when its subscription ends', async () => {
+    const founders = await seedFounders('released');
+    expect(await countFoundingSeats(db, new Date('2026-11-27T00:00:00.000Z'))).toBe(0);
+
+    const endedUserId = founders[0]!;
+    await save(
+      input(endedUserId, {
+        founding: true,
+        pricePence: 799,
+        stripeSubscriptionId: 'sub_released_0',
+        status: 'canceled',
+      }),
+    );
+
+    expect(await countFoundingSeats(db)).toBe(FOUNDING_SEATS - 1);
+
+    const newSubscriber = await createUser();
+    const saved = await save(input(newSubscriber, { founding: true, pricePence: 799 }));
+
+    expect(saved.founding).toBe(true);
+    expect(await countFoundingSeats(db)).toBe(FOUNDING_SEATS);
+  });
+
   it('keeps a founding holder’s seat on later updates, even when the offer is full', async () => {
     const founders = await seedFounders('holder');
 

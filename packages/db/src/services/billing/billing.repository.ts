@@ -163,11 +163,13 @@ export async function get(db: DbHandle, userId: string): Promise<BillingSubscrip
   return row ? toRecord(row) : null;
 }
 
-export async function countFoundingSeats(db: DbHandle): Promise<number> {
+export async function countFoundingSeats(db: DbHandle, now = new Date()): Promise<number> {
   const result = await db
     .selectFrom('app.billingSubscriptions')
     .select(({ fn }) => fn.countAll<number>().as('count'))
     .where('founding', '=', true)
+    .where('status', 'not in', ['canceled', 'incomplete_expired'])
+    .where('currentPeriodEnd', '>', now.toISOString())
     .executeTakeFirst();
   return Number(result?.count ?? 0);
 }
