@@ -19,12 +19,6 @@ const confirmationActionSchema = z.object({
   messageId: z.string(),
   toolCallId: z.string(),
 });
-const consumeScript = `
-  local value = redis.call('GET', KEYS[1])
-  if value then redis.call('DEL', KEYS[1]) end
-  return value
-`;
-
 export async function createConfirmationTokens(
   input: Omit<TelegramConfirmationAction, 'approved'>,
 ) {
@@ -40,10 +34,10 @@ export async function createConfirmationTokens(
   return { true: approved.token, false: rejected.token };
 }
 
-export async function consumeConfirmationToken(
+export async function getConfirmationToken(
   token: string,
 ): Promise<TelegramConfirmationAction | null> {
-  const value = await redis.eval(consumeScript, 1, keyFor(token));
+  const value = await redis.get(keyFor(token));
   if (typeof value !== 'string') return null;
   try {
     const parsed = confirmationActionSchema.safeParse(JSON.parse(value));
@@ -51,4 +45,8 @@ export async function consumeConfirmationToken(
   } catch {
     return null;
   }
+}
+
+export async function deleteConfirmationToken(token: string) {
+  await redis.del(keyFor(token));
 }

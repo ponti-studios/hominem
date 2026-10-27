@@ -9,7 +9,11 @@ import { chatGenerationService } from '../chat/chat-generation.service';
 import { env } from '../env';
 import { createTelegramLinkService } from './link.service';
 import { createTelegramClient, telegramUpdateSchema, type TelegramUpdate } from './telegram';
-import { consumeConfirmationToken, createConfirmationTokens } from './telegram-callbacks';
+import {
+  createConfirmationTokens,
+  deleteConfirmationToken,
+  getConfirmationToken,
+} from './telegram-callbacks';
 
 const bot = createTelegramClient({ botToken: env.TELEGRAM_BOT_TOKEN });
 const linkService = createTelegramLinkService({
@@ -205,7 +209,8 @@ async function processCallback(update: TelegramUpdate) {
     return;
   }
 
-  const action = await consumeConfirmationToken(callbackData.slice(2));
+  const confirmationToken = callbackData.slice(2);
+  const action = await getConfirmationToken(confirmationToken);
   if (!action || action.userId !== identity.ownerUserId || action.chatId !== identity.chatId) {
     await bot.answerCallback(callback.id, 'This confirmation has expired.');
     return;
@@ -222,6 +227,7 @@ async function processCallback(update: TelegramUpdate) {
   });
   const result = await drainGeneration(events);
   await deliverGeneration(telegramChatId, result, identity.ownerUserId, identity.chatId);
+  await deleteConfirmationToken(confirmationToken);
 }
 
 export async function processTelegramUpdate(raw: unknown, updateId: number) {

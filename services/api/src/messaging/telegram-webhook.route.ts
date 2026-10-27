@@ -90,7 +90,7 @@ export function createTelegramWebhookRoutes(input: {
     }
 
     const senderHash = createHash('sha256').update(sender.userId).digest('hex').slice(0, 32);
-    const dedupeKey = `telegram:${parsed.data.update_id}`;
+    const dedupeKey = `telegram-${parsed.data.update_id}`;
     try {
       await messagingInboundQueue.add(
         'telegram-update',
