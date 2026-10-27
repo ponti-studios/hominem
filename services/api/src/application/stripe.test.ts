@@ -12,7 +12,10 @@ function client(respond: (url: string, init: RequestInit) => unknown, status = 2
     });
     return new Response(JSON.stringify(respond(String(url), init ?? {})), { status });
   });
-  return { stripe: createStripeClient('sk_test_x', fetchImpl, 'https://stripe.test/v1'), calls };
+  return {
+    stripe: createStripeClient('test-stripe-key', fetchImpl, 'https://stripe.test/v1'),
+    calls,
+  };
 }
 
 describe('the Stripe client', () => {
