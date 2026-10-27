@@ -84,6 +84,7 @@ vi.mock('../mcp/tool-registry', () => ({
   getToolDefinition: vi.fn(),
 }));
 vi.mock('../application/ai-usage.service', () => ({
+  assertChatAllowed: vi.fn(),
   assertUnderMonthlyUsageLimit: vi.fn(),
   recordAIUsageEvent: vi.fn(),
   startAIUsageTimer: () => () => 0,

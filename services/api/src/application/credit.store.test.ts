@@ -52,9 +52,10 @@ describe('dbCreditStore', () => {
   });
 
   it('stops giving grants once the day is full, even when asked at the same moment', async () => {
-    // Start the window right now so grants other test files made (or cleaned up) a moment ago
-    // can't shift the count between reading it and granting. Room for exactly one.
-    const since = new Date();
+    // Start the window at the database's now, not the runner's: the two clocks can differ enough
+    // that a row written "now" falls before a client-side `new Date()` and is never counted.
+    const { rows } = await pool.query<{ now: string }>('SELECT now() AS now');
+    const since = new Date(rows[0]!.now);
     const max = 1;
     const results = await Promise.all(
       [otherId, thirdId].map((id) =>

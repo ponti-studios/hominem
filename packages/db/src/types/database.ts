@@ -91,6 +91,27 @@ export interface AppAiUsageEvents {
   usageAvailable: Generated<boolean>;
 }
 
+export interface AppBillingSubscriptions {
+  cancelAtPeriodEnd: Generated<boolean>;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  currentPeriodEnd: ColumnType<string, Date | string, Date | string>;
+  founding: Generated<boolean>;
+  pricePence: number;
+  status: string;
+  stripeCustomerId: string;
+  stripeSubscriptionId: string;
+  tier: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
+export interface AppBillingUsageEvents {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  kind: string;
+  userId: string;
+}
+
 export interface AppCareerApplicationFiles {
   applicationId: string;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1674,6 +1695,8 @@ export interface Verification {
 export interface DB {
   account: Account;
   'app.aiUsageEvents': AppAiUsageEvents;
+  'app.billingSubscriptions': AppBillingSubscriptions;
+  'app.billingUsageEvents': AppBillingUsageEvents;
   'app.careerApplicationFiles': AppCareerApplicationFiles;
   'app.careerApplicationNotes': AppCareerApplicationNotes;
   'app.careerApplications': AppCareerApplications;

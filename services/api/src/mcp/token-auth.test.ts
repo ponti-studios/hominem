@@ -1,7 +1,7 @@
-import { db } from '@hominem/db/core';
+import { authDb, db } from '@hominem/db/core';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveMcpToken } from '../application/mcp-tokens.service';
 import type { AuthContext } from '../auth/types';
@@ -68,6 +68,15 @@ const testUser: RpcUser = {
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
+
+beforeAll(async () => {
+  // Tool calls now record plan usage against a real user row; give the fixture identity one.
+  await authDb
+    .insertInto('user')
+    .values({ id: testUser.id, name: testUser.name, email: testUser.email })
+    .onConflict((oc) => oc.doNothing())
+    .execute();
+});
 
 function createApp() {
   return new Hono<AppContext>()

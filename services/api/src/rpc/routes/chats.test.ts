@@ -199,6 +199,7 @@ vi.mock('@hominem/telemetry', () => ({
 
 vi.mock('../../application/ai-usage.service', () => ({
   recordAIUsageEvent: mocks.recordAIUsageEvent,
+  assertChatAllowed: mocks.assertUnderMonthlyUsageLimit,
   assertUnderMonthlyUsageLimit: mocks.assertUnderMonthlyUsageLimit,
   startAIUsageTimer: () => () => 0,
 }));

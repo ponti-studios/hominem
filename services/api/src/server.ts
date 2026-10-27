@@ -27,6 +27,7 @@ import {
 import { requestLogger } from './middleware/request-logger';
 import { securityHeadersMiddleware } from './middleware/security-headers';
 import { createAuthRoutes } from './routes/auth';
+import { billingRoutes } from './routes/billing';
 import { creditRoutes } from './routes/credit';
 import { imagesRoutes } from './routes/images';
 import { legalRoutes } from './routes/legal';
@@ -182,6 +183,7 @@ function registerApiRoutes(app: Hono<AppEnv>, dependencies: ServerDependencies) 
   // Has to be mounted at root - RFC 8414 / RFC 9728 require it there.
   app.route('/', oauthDiscoveryRoutes);
   app.route('/', loginRoutes);
+  app.route('/', billingRoutes);
   app.route('/', creditRoutes);
   app.route('/', legalRoutes);
   // Our own auth extras go first (session/logout reshape for apps/finance, e2e helpers).

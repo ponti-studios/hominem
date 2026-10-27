@@ -12,7 +12,10 @@ function client(respond: (url: string, init: RequestInit) => unknown, status = 2
     });
     return new Response(JSON.stringify(respond(String(url), init ?? {})), { status });
   });
-  return { stripe: createStripeClient('sk_test_x', fetchImpl, 'https://stripe.test/v1'), calls };
+  return {
+    stripe: createStripeClient('test-stripe-key', fetchImpl, 'https://stripe.test/v1'),
+    calls,
+  };
 }
 
 describe('the Stripe client', () => {
@@ -113,5 +116,106 @@ describe('the Stripe client', () => {
     if (!(error instanceof StripeError)) throw new Error('expected a StripeError');
     expect(error.code).toBe('payment_intent_unexpected_state');
     expect(error.message).not.toContain('secret');
+  });
+});
+
+describe('the Stripe subscriptions client', () => {
+  const subscriptionObject = {
+    id: 'sub_1',
+    status: 'active',
+    customer: 'cus_1',
+    current_period_end: 1_800_000_000,
+    cancel_at_period_end: false,
+    metadata: { user_id: 'u1', tier: 'core', founding: 'true' },
+    items: { data: [{ id: 'si_1', price: { unit_amount: 799, product: 'prod_1' } }] },
+  };
+
+  it('starts a monthly subscription Checkout at the decided price', async () => {
+    const { stripe, calls } = client(() => ({
+      id: 'cs_1',
+      url: 'https://checkout.stripe.test/cs_1',
+    }));
+    await stripe.createSubscriptionCheckout({
+      userId: 'u1',
+      email: 'a@b.co',
+      tier: 'core',
+      pricePence: 799,
+      founding: true,
+      successUrl: 'https://api.test/billing/done',
+      cancelUrl: 'https://api.test/billing/cancelled',
+    });
+    const form = new URLSearchParams(calls[0]!.body);
+    expect(form.get('mode')).toBe('subscription');
+    expect(form.get('line_items[0][price_data][unit_amount]')).toBe('799');
+    expect(form.get('line_items[0][price_data][recurring][interval]')).toBe('month');
+    expect(form.get('subscription_data[metadata][user_id]')).toBe('u1');
+    expect(form.get('subscription_data[metadata][founding]')).toBe('true');
+  });
+
+  it('reads the fields the billing rules enforce', async () => {
+    const { stripe } = client(() => subscriptionObject);
+    expect(await stripe.subscription('sub_1')).toEqual({
+      stripeSubscriptionId: 'sub_1',
+      stripeCustomerId: 'cus_1',
+      status: 'active',
+      pricePence: 799,
+      currentPeriodEnd: new Date(1_800_000_000 * 1000),
+      cancelAtPeriodEnd: false,
+      userId: 'u1',
+      tier: 'core',
+      founding: true,
+    });
+  });
+
+  it('changes the plan on the subscription’s own item, with a real price and the new tier', async () => {
+    const { stripe, calls } = client((url) =>
+      url.endsWith('/prices') ? { id: 'price_1' } : subscriptionObject,
+    );
+    await stripe.updateSubscriptionPlan('sub_1', 999, 'core');
+    expect(calls.map((call) => [call.method, call.url])).toEqual([
+      ['GET', 'https://stripe.test/v1/subscriptions/sub_1'],
+      ['POST', 'https://stripe.test/v1/prices'],
+      ['POST', 'https://stripe.test/v1/subscriptions/sub_1'],
+    ]);
+    const price = new URLSearchParams(calls[1]!.body);
+    expect(price.get('product')).toBe('prod_1');
+    expect(price.get('unit_amount')).toBe('999');
+    expect(price.get('recurring[interval]')).toBe('month');
+    const form = new URLSearchParams(calls[2]!.body);
+    expect(form.get('items[0][id]')).toBe('si_1');
+    expect(form.get('items[0][price]')).toBe('price_1');
+    expect(form.get('metadata[tier]')).toBe('core');
+  });
+
+  it('cancels at the end of the period, not immediately', async () => {
+    const { stripe, calls } = client(() => ({}));
+    await stripe.cancelSubscriptionAtPeriodEnd('sub_1');
+    expect(calls[0]!.method).toBe('POST');
+    expect(new URLSearchParams(calls[0]!.body).get('cancel_at_period_end')).toBe('true');
+  });
+
+  it('ends a replaced subscription immediately when a new one takes over', async () => {
+    const { stripe, calls } = client(() => ({}));
+    await stripe.cancelSubscriptionNow('sub_old');
+    expect(calls[0]!.method).toBe('DELETE');
+    expect(calls[0]!.url).toBe('https://stripe.test/v1/subscriptions/sub_old');
+  });
+
+  it('reads the period from the subscription item on newer Stripe API versions', async () => {
+    const { stripe } = client(() => ({
+      ...subscriptionObject,
+      current_period_end: undefined,
+      items: {
+        data: [
+          {
+            id: 'si_1',
+            current_period_end: 1_800_000_001,
+            price: { unit_amount: 999, product: 'prod_1' },
+          },
+        ],
+      },
+    }));
+    const facts = await stripe.subscription('sub_1');
+    expect(facts.currentPeriodEnd).toEqual(new Date(1_800_000_001 * 1000));
   });
 });

@@ -22,7 +22,8 @@ The repository's operating law lives in `docs/`.
 Read the relevant doc before changing a system boundary. Package READMEs are setup entrypoints only — the
 `docs/` are where durable decisions live.
 
-For PostgreSQL connection details, see [Database access](./docs/database.md).
+For PostgreSQL connection details, see [Database access](./docs/database.md). For plans, prices,
+and the tier limits the API enforces, see [Billing and paid tiers](./docs/billing.md).
 
 `docs/` has four jobs:
 
