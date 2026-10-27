@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => {
     subscription: vi.fn(),
     updateSubscriptionPlan: vi.fn(),
     cancelSubscriptionAtPeriodEnd: vi.fn(),
+    cancelSubscriptionNow: vi.fn(),
   };
   return { state, usage, stripe, foundingSeats: { value: 0 } };
 });
@@ -208,7 +209,7 @@ describe('POST /billing/change and /billing/cancel', () => {
     mocks.state.subscription = subscription({ tier: 'ai', pricePence: 1999 });
     const response = await app().request('/billing/change', form({ tier: 'core' }));
     expect(response.status).toBe(303);
-    expect(mocks.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999);
+    expect(mocks.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999, 'core');
     expect(mocks.state.subscription?.tier).toBe('core');
   });
 
