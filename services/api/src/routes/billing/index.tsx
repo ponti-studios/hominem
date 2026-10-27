@@ -165,7 +165,7 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
         price: `${foundingPrice}<span style="font-size:13px;font-weight:400">/mo</span>`,
         meta: `All skills, unlimited. ${input.foundingLeft} of ${FOUNDING_SEATS} founding seats left; the price never rises while you stay subscribed.`,
         current: false,
-        action: subscribeForm('core', `Subscribe for ${foundingPrice}/mo`),
+        action: subscribeForm('core', 'Subscribe'),
       }),
     );
   }
@@ -178,7 +178,7 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
         current: false,
         action: paid
           ? actionForm('/billing/change', `Switch to Core at ${coreSwitchPrice}/mo`, true, 'core')
-          : subscribeForm('core', `Subscribe for ${corePrice}/mo`),
+          : subscribeForm('core', 'Subscribe'),
       }),
     );
   }
@@ -193,7 +193,7 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
           ? `<p class="meta">Your current plan.</p>`
           : paid
             ? actionForm('/billing/change', `Switch to AI at ${aiPrice}/mo`, false, 'ai')
-            : subscribeForm('ai', `Subscribe for ${aiPrice}/mo`),
+            : subscribeForm('ai', 'Subscribe'),
     }),
   );
 
