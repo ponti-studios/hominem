@@ -28,7 +28,6 @@ vi.mock('../../env', () => ({
   env: {
     API_URL: 'https://api.test',
     BILLING_AI_CHAT_MESSAGES: 3000,
-    STRIPE_SECRET_KEY: 'configured-for-test',
   },
 }));
 
