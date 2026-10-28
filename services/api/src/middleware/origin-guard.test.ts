@@ -7,7 +7,9 @@ const app = (secret: string) =>
   new Hono()
     .use('*', originGuard(secret))
     .get('/healthz', (c) => c.text('ok'))
-    .get('/api/status', (c) => c.text('ok'));
+    .get('/api/status', (c) => c.text('ok'))
+    .get('/api/telegram/webhook', (c) => c.text('ok'))
+    .post('/api/telegram/webhook', (c) => c.text('ok'));
 
 describe('origin guard', () => {
   it('lets everything through when no secret is configured', async () => {
@@ -30,6 +32,16 @@ describe('origin guard', () => {
       headers: { 'x-origin-secret': 's3cret' },
     });
     expect(res.status).toBe(200);
+  });
+
+  it('lets Telegram webhook POSTs reach their route-specific secret check', async () => {
+    const res = await app('s3cret').request('/api/telegram/webhook', { method: 'POST' });
+    expect(res.status).toBe(200);
+  });
+
+  it('keeps the Telegram webhook path protected for other methods', async () => {
+    const res = await app('s3cret').request('/api/telegram/webhook');
+    expect(res.status).toBe(403);
   });
 
   it('exempts the health check', async () => {
