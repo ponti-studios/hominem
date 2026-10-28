@@ -62,6 +62,7 @@ describe('usage routes', () => {
     mocks.getMonthlyAIUsageReport.mockReset();
     mocks.getMonthlyUsageStatus.mockReset();
     mocks.getSpeechUsageHealth.mockReset();
+    mocks.getAIUsagePageReport.mockReset();
   });
 
   it('requires authentication', async () => {
@@ -127,6 +128,28 @@ describe('usage routes', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(page);
     expect(mocks.getAIUsagePageReport).toHaveBeenCalledWith(testUser.id);
+  });
+
+  it('marks AI usage as uncapped for admins while retaining actual usage totals', async () => {
+    const report = {
+      monthly: {
+        totalCostUsd: 18,
+        limitUsd: 10,
+        remainingUsd: 0,
+        isOverLimit: true,
+        periodStart: '2026-08-01T00:00:00.000Z',
+        periodEnd: '2026-08-22T00:00:00.000Z',
+      },
+    };
+    mocks.getAIUsagePageReport.mockResolvedValue(report);
+
+    const response = await createAdminApp().request('/api/usage/ai');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      ...report,
+      monthly: { ...report.monthly, unlimited: true },
+    });
   });
 
   it('returns the current-month usage report for the authenticated user', async () => {

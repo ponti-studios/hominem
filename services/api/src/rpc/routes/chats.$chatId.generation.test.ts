@@ -96,6 +96,7 @@ describe('chat confirmation route', () => {
     expect(response.headers.get('content-type')).toContain('text/event-stream');
     expect(mocks.respondToConfirmation).toHaveBeenCalledWith({
       userId,
+      isAdmin: false,
       chatId: '00000000-0000-4000-8000-000000000001',
       messageId: '00000000-0000-4000-8000-000000000003',
       toolCallId: 'call-1',
@@ -225,6 +226,7 @@ describe('chat generation retry route', () => {
     expect(response.status).toBe(200);
     expect(mocks.regenerate).toHaveBeenCalledWith({
       userId,
+      isAdmin: false,
       chatId: '00000000-0000-4000-8000-000000000001',
       failedGenerationId: '00000000-0000-4000-8000-000000000005',
       generationId: '00000000-0000-4000-8000-000000000006',

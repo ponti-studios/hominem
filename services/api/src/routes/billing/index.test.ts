@@ -18,7 +18,48 @@ const mocks = vi.hoisted(() => {
     cancelSubscriptionAtPeriodEnd: vi.fn(),
     cancelSubscriptionNow: vi.fn(),
   };
-  return { state, usage, stripe };
+  const store = {
+    get: async () => state.subscription,
+    save: async (input: SaveBillingSubscriptionInput) => {
+      const record: BillingSubscriptionRecord = {
+        userId: input.userId,
+        tier: input.tier,
+        status: input.status,
+        stripeCustomerId: input.stripeCustomerId,
+        stripeSubscriptionId: input.stripeSubscriptionId,
+        pricePence: input.pricePence,
+        founding: input.founding,
+        currentPeriodEnd: input.currentPeriodEnd.toISOString(),
+        cancelAtPeriodEnd: input.cancelAtPeriodEnd,
+        createdAt: '2026-10-26T00:00:00.000Z',
+        updatedAt: '2026-10-26T00:00:00.000Z',
+      };
+      state.subscription = record;
+      return record;
+    },
+    recordUsageWithinLimit: async (input: {
+      userId: string;
+      kind: BillingUsageKind;
+      limit: number;
+    }) => {
+      const used = usage.filter(
+        (event) => event.userId === input.userId && event.kind === input.kind,
+      ).length;
+      if (used >= input.limit) return false;
+      usage.push({ userId: input.userId, kind: input.kind });
+      return true;
+    },
+    recordUsage: async (input: { userId: string; kind: BillingUsageKind }) => {
+      usage.push(input);
+    },
+    usageCount: async (input: { userId: string; kind: BillingUsageKind }) =>
+      usage.filter((event) => event.userId === input.userId && event.kind === input.kind).length,
+  };
+  const config = {
+    chatMessages: { taster: 50, core: 1000, ai: 3000, founding_core: 1000 },
+    skillCalls: { taster: 500, core: null, ai: null, founding_core: null },
+  };
+  return { state, usage, stripe, store, config };
 });
 
 // Generated per run: the webhook code only needs a shared opaque value to sign with.
@@ -34,64 +75,21 @@ vi.mock('../../env', () => ({
 
 vi.mock('../../application/billing.runtime', () => ({
   billingWebhookSecret: () => SIGNING_KEY,
-  billingDeps: () => ({
-    store: {
-      get: async () => mocks.state.subscription,
-      save: async (input: SaveBillingSubscriptionInput) => {
-        const record: BillingSubscriptionRecord = {
-          userId: input.userId,
-          tier: input.tier,
-          status: input.status,
-          stripeCustomerId: input.stripeCustomerId,
-          stripeSubscriptionId: input.stripeSubscriptionId,
-          pricePence: input.pricePence,
-          founding: input.founding,
-          currentPeriodEnd: input.currentPeriodEnd.toISOString(),
-          cancelAtPeriodEnd: input.cancelAtPeriodEnd,
-          createdAt: '2026-10-26T00:00:00.000Z',
-          updatedAt: '2026-10-26T00:00:00.000Z',
-        };
-        mocks.state.subscription = record;
-        return record;
-      },
-      recordUsageWithinLimit: async (input: {
-        userId: string;
-        kind: BillingUsageKind;
-        limit: number;
-      }) => {
-        const used = mocks.usage.filter(
-          (event) => event.userId === input.userId && event.kind === input.kind,
-        ).length;
-        if (used >= input.limit) return false;
-        mocks.usage.push({ userId: input.userId, kind: input.kind });
-        return true;
-      },
-      recordUsage: async (input: { userId: string; kind: BillingUsageKind }) => {
-        mocks.usage.push(input);
-      },
-      usageCount: async (input: { userId: string; kind: BillingUsageKind }) =>
-        mocks.usage.filter((event) => event.userId === input.userId && event.kind === input.kind)
-          .length,
-    },
-    stripe: mocks.stripe,
-    config: {
-      chatMessages: { taster: 50, core: 1000, ai: 3000, founding_core: 1000 },
-      skillCalls: { taster: 500, core: null, ai: null, founding_core: null },
-    },
-  }),
+  billingRules: () => ({ store: mocks.store, config: mocks.config }),
+  billingDeps: () => ({ store: mocks.store, stripe: mocks.stripe, config: mocks.config }),
 }));
 
 import { billingRoutes } from './index';
 
 const USER = { id: 'u1', email: 'a@b.co', name: 'Dana' };
 
-function app(authenticated = true) {
+function app(authenticated = true, isAdmin = false) {
   const shell = new Hono<{ Variables: { auth?: unknown } }>();
   if (authenticated) {
     shell.use('*', async (c, next) => {
       c.set('auth', {
         userId: USER.id,
-        user: { ...USER, emailVerified: true, createdAt: '', updatedAt: '', image: null },
+        user: { ...USER, isAdmin, emailVerified: true, createdAt: '', updatedAt: '', image: null },
         credential: 'session',
         scopes: [],
       });
@@ -174,6 +172,17 @@ describe('GET /billing', () => {
     expect(page).toContain('action="/billing/checkout"');
   });
 
+  it('shows complimentary unlimited access to administrators', async () => {
+    const response = await app(true, true).request('/billing');
+    const page = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(page).toContain('Admin access');
+    expect(page).toContain('<p class="billing-page__usage-limit">∞</p>');
+    expect(page).toContain('Unlimited messages and MCP calls. No subscription required.');
+    expect(page).not.toContain('Subscribe');
+  });
+
   it('shows the current plan, usage, and cancellation date for a subscriber', async () => {
     mocks.state.subscription = subscription({ cancelAtPeriodEnd: true });
     const page = await (await app().request('/billing')).text();
@@ -195,6 +204,12 @@ describe('GET /billing', () => {
 });
 
 describe('POST /billing/checkout', () => {
+  it('refuses checkout for administrators', async () => {
+    const response = await app(true, true).request('/billing/checkout', form({ tier: 'core' }));
+    expect(response.status).toBe(403);
+    expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
+  });
+
   it('starts a Core subscription at £9.99 when the founding seats are gone', async () => {
     const response = await app().request('/billing/checkout', form({ tier: 'core' }));
     expect(response.status).toBe(303);

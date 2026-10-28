@@ -24,6 +24,7 @@ export const apiSchema = runtimeSchema.extend({
   NEWSBOY_URL: z.url().default('https://newsboy.lvh.me'),
   DATABASE_URL: z.url(),
   BETTER_AUTH_SECRET: z.string().min(32),
+  HOMINEM_ADMIN_EMAILS: z.string().default(''),
   AUTH_COOKIE_DOMAIN: z.string().default(''),
   // Shared with a Cloudflare Transform Rule that adds X-Origin-Secret to every proxied request.
   // When set, requests that don't carry it (like direct hits on fly.dev) get a 403. Empty = guard off.

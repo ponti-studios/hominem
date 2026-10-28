@@ -87,6 +87,7 @@ export async function billingState(
   deps: BillingRulesDeps,
   userId: string,
   now: Date = clock(deps),
+  options: { isAdmin?: boolean } = {},
 ): Promise<BillingState> {
   const subscription = await deps.store.get(userId);
   const plan = planFor(subscription, now);
@@ -98,7 +99,9 @@ export async function billingState(
   return {
     plan,
     subscription,
-    limits: limitsFor(plan, deps.config),
+    limits: options.isAdmin
+      ? { chatMessagesPerMonth: null, skillCallsPerMonth: null }
+      : limitsFor(plan, deps.config),
     usage: { chatMessages, skillCalls },
     periodStart: periodStart.toISOString(),
   };
@@ -114,11 +117,12 @@ export async function assertBillingUsage(
   userId: string,
   kind: BillingUsageKind,
   now: Date = clock(deps),
+  options: { isAdmin?: boolean } = {},
 ): Promise<Plan> {
   const subscription = await deps.store.get(userId);
   const plan = planFor(subscription, now);
   const limit = limitFor(plan, kind, deps.config);
-  if (limit === null) {
+  if (options.isAdmin || limit === null) {
     await deps.store.recordUsage({ userId, kind });
     return plan;
   }

@@ -8,7 +8,7 @@ import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 
 import { TIER_PRICES_PENCE, type BillingTier, type Plan } from '../../application/billing';
-import { billingDeps, billingWebhookSecret } from '../../application/billing.runtime';
+import { billingDeps, billingRules, billingWebhookSecret } from '../../application/billing.runtime';
 import {
   billingState,
   cancelPlan,
@@ -228,7 +228,7 @@ function usageResetLabel(periodStart: string): string {
   return `Resets ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(reset)} · UTC`;
 }
 
-function billingPage(input: { state: BillingState; name: string }): string {
+function billingPage(input: { state: BillingState; name: string; isAdmin?: boolean }): string {
   const { state } = input;
   const plan = state.plan;
   const paid = plan !== 'taster';
@@ -244,12 +244,22 @@ function billingPage(input: { state: BillingState; name: string }): string {
   const corePrice = pounds(TIER_PRICES_PENCE.core);
 
   const cards: string[] = [];
-  if (!paid) {
+  if (!paid && input.isAdmin) {
+    cards.push(
+      planCard({
+        name: 'Admin access',
+        price: '£0',
+        meta: 'Unlimited messages and MCP calls. No subscription required.',
+        current: true,
+        action: `<p class="meta">Administrator account.</p>`,
+      }),
+    );
+  } else if (!paid) {
     cards.push(
       planCard({
         name: 'Taster',
         price: '£0',
-        meta: `Try every skill, up to ${state.limits.chatMessagesPerMonth} messages and ${state.limits.skillCallsPerMonth ?? 'unlimited'} MCP tool calls a month.`,
+        meta: `Try every skill, up to ${state.limits.chatMessagesPerMonth?.toLocaleString('en-GB') ?? 'unlimited'} messages and ${state.limits.skillCallsPerMonth?.toLocaleString('en-GB') ?? 'unlimited'} MCP tool calls a month.`,
         current: plan === 'taster',
         action: `<p class="meta">Your current plan.</p>`,
       }),
@@ -257,21 +267,34 @@ function billingPage(input: { state: BillingState; name: string }): string {
   } else {
     const renews = dateLabel(subscription?.currentPeriodEnd);
     const pricePence = subscription?.pricePence ?? TIER_PRICES_PENCE.core;
+    const adminSubscriptionNote = input.isAdmin
+      ? subscription?.cancelAtPeriodEnd
+        ? `Existing Stripe subscription ends ${escapeHtml(renews)}; administrator access remains complimentary.`
+        : `Administrator access is complimentary. Existing Stripe subscription renews ${escapeHtml(renews)} unless cancelled.`
+      : null;
     cards.push(
       planCard({
-        name: PLAN_NAMES[plan],
-        price: `${pounds(pricePence)}<span class="price-period">/mo</span>`,
-        meta: subscription?.cancelAtPeriodEnd
-          ? `Cancelled — access ends ${escapeHtml(renews)}. ${pounds(pricePence)} per month.`
-          : `Renews ${escapeHtml(renews)}. ${pounds(pricePence)} per month${subscription?.founding ? ' · founding price locked' : ''}.`,
+        name: input.isAdmin ? 'Admin access' : PLAN_NAMES[plan],
+        price: input.isAdmin ? '£0' : `${pounds(pricePence)}<span class="price-period">/mo</span>`,
+        meta:
+          adminSubscriptionNote ??
+          (subscription?.cancelAtPeriodEnd
+            ? `Cancelled — access ends ${escapeHtml(renews)}. ${pounds(pricePence)} per month.`
+            : `Renews ${escapeHtml(renews)}. ${pounds(pricePence)} per month${subscription?.founding ? ' · founding price locked' : ''}.`),
         current: true,
         action: subscription?.cancelAtPeriodEnd
           ? `<p class="meta">Your current plan.</p>`
-          : actionForm('/billing/cancel', 'Cancel at the end of this period', true),
+          : actionForm(
+              '/billing/cancel',
+              input.isAdmin
+                ? 'Cancel existing Stripe subscription'
+                : 'Cancel at the end of this period',
+              true,
+            ),
       }),
     );
   }
-  if (plan !== 'core' && plan !== 'founding_core') {
+  if (!input.isAdmin && plan !== 'core' && plan !== 'founding_core') {
     cards.push(
       planCard({
         name: 'Core',
@@ -291,7 +314,7 @@ function billingPage(input: { state: BillingState; name: string }): string {
        <div class="billing-page__hero"><h1 id="billing-title">Your plan</h1></div>
        ${usage}
        ${cards.length ? `<div class="grid">${cards.join('')}</div>` : ''}
-       <p class="billing-page__note">Payments and receipts are handled by Stripe. Prices are in pounds and renew monthly until you cancel. ${escapeHtml(input.name ? `Signed in as ${input.name}.` : '')}</p>
+       <p class="billing-page__note">${input.isAdmin ? 'Administrator access is complimentary.' : 'Payments and receipts are handled by Stripe. Prices are in pounds and renew monthly until you cancel.'} ${escapeHtml(input.name ? `Signed in as ${input.name}.` : '')}</p>
      </section>`,
     BRAND_FONTS,
   );
@@ -321,7 +344,7 @@ function requireDeps(c: Context): { deps: BillingDeps } | { response: Response }
 
 function authOrRedirect(
   c: Context,
-): { userId: string; email: string; name: string } | { response: Response } {
+): { userId: string; email: string; name: string; isAdmin: boolean } | { response: Response } {
   const auth = c.get('auth');
   if (!auth) {
     const target = new URL('/billing', originFor(c)).toString();
@@ -334,18 +357,21 @@ function authOrRedirect(
     userId: auth.userId,
     email: auth.user.email,
     name: auth.user.name ?? '',
+    isAdmin: auth.user.isAdmin ?? false,
   };
 }
 
 billingRoutes.get('/billing', async (c) => {
   const who = authOrRedirect(c);
   if ('response' in who) return who.response;
-  const deps = requireDeps(c);
-  if ('response' in deps) return deps.response;
+  const deps = who.isAdmin ? null : requireDeps(c);
+  if (deps && 'response' in deps) return deps.response;
   try {
-    const state = await billingState(deps.deps, who.userId);
+    const state = await billingState(deps ? deps.deps : billingRules(), who.userId, undefined, {
+      isAdmin: who.isAdmin,
+    });
     c.header('Cache-Control', 'no-store');
-    return c.html(billingPage({ state, name: who.name }));
+    return c.html(billingPage({ state, name: who.name, isAdmin: who.isAdmin }));
   } catch (error) {
     logger.error('billing_page_failed', {
       operation: 'billing.page',
@@ -366,6 +392,7 @@ billingRoutes.get('/billing', async (c) => {
 billingRoutes.post('/billing/checkout', async (c) => {
   const who = authOrRedirect(c);
   if ('response' in who) return who.response;
+  if (who.isAdmin) return c.text('Administrator accounts do not need a subscription.', 403);
   const deps = requireDeps(c);
   if ('response' in deps) return deps.response;
   const tier = (await c.req.parseBody()).tier;
@@ -408,6 +435,7 @@ billingRoutes.post('/billing/checkout', async (c) => {
 billingRoutes.post('/billing/change', async (c) => {
   const who = authOrRedirect(c);
   if ('response' in who) return who.response;
+  if (who.isAdmin) return c.text('Administrator accounts do not need a paid plan.', 403);
   const deps = requireDeps(c);
   if ('response' in deps) return deps.response;
   const tier = (await c.req.parseBody()).tier;

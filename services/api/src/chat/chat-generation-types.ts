@@ -30,6 +30,7 @@ export type ChatGenerationFailureHooks = {
 
 export interface GenerationEngineInput {
   userId: string;
+  isAdmin?: boolean;
   model: string;
   messages: ChatMessages[];
   tools: ChatFunctionTool[];
@@ -75,6 +76,7 @@ export type ChatGenerationDependencies = {
 
 type PreparedGeneration = {
   userId: string;
+  isAdmin?: boolean;
   generationId: string;
   chatId: string;
   kind: 'send' | 'start';
@@ -137,6 +139,7 @@ export type GenerationLookupInput = {
 
 export type ConfirmationMessageInput = {
   userId: string;
+  isAdmin?: boolean;
   chatId: string;
   messageId: string;
   toolCallId: string;
@@ -146,6 +149,7 @@ export type ConfirmationMessageInput = {
 
 export type SendMessageInput = {
   userId: string;
+  isAdmin?: boolean;
   generationId: string;
   chatId: string;
   message: string;
@@ -162,6 +166,7 @@ export type StartMessageInput = Omit<SendMessageInput, 'chatId'> & { title: stri
 // and supersede the attempt being redone.
 type RegenerateInputBase = {
   userId: string;
+  isAdmin?: boolean;
   generationId: string;
   chatId: string;
   responseLength?: 'short' | 'medium' | 'long';

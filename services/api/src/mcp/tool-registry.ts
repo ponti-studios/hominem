@@ -44,7 +44,7 @@ export type DefinedMcpTool = {
   invoke: (
     ownerUserId: string,
     input: unknown,
-    context?: { idempotencyKey?: string },
+    context?: { idempotencyKey?: string; isAdmin?: boolean },
   ) => Promise<unknown>;
 };
 
@@ -74,7 +74,7 @@ export function defineMcpTool<TInputSchema extends z.ZodType, TOutputSchema exte
   invoke: (
     ownerUserId: string,
     input: z.output<TInputSchema>,
-    context?: { idempotencyKey?: string },
+    context?: { idempotencyKey?: string; isAdmin?: boolean },
   ) => Promise<z.output<TOutputSchema>>,
 ): DefinedMcpTool {
   return {
@@ -173,7 +173,7 @@ export function createToolRegistry(initialSlices: readonly DefinedMcpSlice[] = [
     ownerUserId: string,
     name: string,
     input: unknown,
-    context?: { idempotencyKey?: string },
+    context?: { idempotencyKey?: string; isAdmin?: boolean },
   ): Promise<McpToolResult> => {
     const implementation = tools.get(name);
     if (!implementation) {
@@ -221,7 +221,7 @@ export function registerTool<TInputSchema extends z.ZodType, TOutputSchema exten
   invoke: (
     ownerUserId: string,
     input: z.output<TInputSchema>,
-    context?: { idempotencyKey?: string },
+    context?: { idempotencyKey?: string; isAdmin?: boolean },
   ) => Promise<z.output<TOutputSchema>>,
 ): void {
   defaultToolRegistry.registerToolDefinition(defineMcpTool(definition, invoke));
@@ -235,7 +235,7 @@ export async function callTool(
   ownerUserId: string,
   name: string,
   input: unknown,
-  context?: { idempotencyKey?: string },
+  context?: { idempotencyKey?: string; isAdmin?: boolean },
 ): Promise<McpToolResult> {
   return defaultToolRegistry.callTool(ownerUserId, name, input, context);
 }

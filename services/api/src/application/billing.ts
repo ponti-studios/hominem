@@ -46,7 +46,7 @@ export const DEFAULT_BILLING_CONFIG: BillingConfig = {
 };
 
 export interface BillingLimits {
-  chatMessagesPerMonth: number;
+  chatMessagesPerMonth: number | null;
   skillCallsPerMonth: number | null;
 }
 

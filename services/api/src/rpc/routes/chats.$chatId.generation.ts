@@ -187,6 +187,7 @@ function createGenerationRoutes(service: ChatGenerationService) {
           sse(
             await service.regenerate({
               userId: c.get('auth')!.userId,
+              isAdmin: c.get('auth')!.user.isAdmin,
               chatId: c.req.param('id')!,
               failedGenerationId: c.req.param('generationId'),
               ...c.req.valid('json'),
@@ -202,6 +203,7 @@ function createGenerationRoutes(service: ChatGenerationService) {
           sse(
             await service.regenerate({
               userId: c.get('auth')!.userId,
+              isAdmin: c.get('auth')!.user.isAdmin,
               chatId: c.req.param('id')!,
               messageId: c.req.param('messageId'),
               ...c.req.valid('json'),
@@ -217,6 +219,7 @@ function createGenerationRoutes(service: ChatGenerationService) {
           sse(
             await service.respondToConfirmation({
               userId: c.get('auth')!.userId,
+              isAdmin: c.get('auth')!.user.isAdmin,
               chatId: c.req.param('id')!,
               messageId: c.req.param('messageId'),
               toolCallId: c.req.param('toolCallId'),
@@ -231,6 +234,7 @@ function createGenerationRoutes(service: ChatGenerationService) {
         return sse(
           await service.sendMessage({
             userId: c.get('auth')!.userId,
+            isAdmin: c.get('auth')!.user.isAdmin,
             chatId: c.req.param('id')!,
             ...input,
             fileIds: input.fileIds ?? [],

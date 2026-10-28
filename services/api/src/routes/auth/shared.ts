@@ -1,6 +1,7 @@
 import { authDb } from '@hominem/db/core';
 import type { Context } from 'hono';
 
+import { isAdminEmail } from '../../auth/admin';
 import { betterAuthServer } from '../../auth/better-auth';
 import { env } from '../../env';
 import type { ApiEnv } from '../../env.schema';
@@ -72,7 +73,7 @@ export async function buildSessionResponse(input: {
       id: userRecord.id,
       email: userRecord.email,
       ...(userRecord.name ? { name: userRecord.name } : {}),
-      isAdmin: false,
+      isAdmin: isAdminEmail(userRecord.email),
       ...(userRecord.createdAt ? { createdAt: userRecord.createdAt } : {}),
       ...(userRecord.updatedAt ? { updatedAt: userRecord.updatedAt } : {}),
     },

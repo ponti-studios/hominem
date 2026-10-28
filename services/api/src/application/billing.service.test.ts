@@ -150,6 +150,24 @@ describe('assertBillingUsage', () => {
     await expect(assertBillingUsage(billing, 'u1', 'skill')).rejects.toBeInstanceOf(ForbiddenError);
   });
 
+  it('records administrator usage without applying monthly caps', async () => {
+    const store = memoryStore();
+    const billing = deps(store);
+
+    for (let call = 0; call < 501; call += 1) {
+      await expect(
+        assertBillingUsage(billing, 'u1', 'skill', undefined, { isAdmin: true }),
+      ).resolves.toBe('taster');
+    }
+    for (let message = 0; message < 51; message += 1) {
+      await expect(
+        assertBillingUsage(billing, 'u1', 'chat', undefined, { isAdmin: true }),
+      ).resolves.toBe('taster');
+    }
+
+    expect(store.usage).toHaveLength(552);
+  });
+
   it('gives Core and AI uncapped skill volume but still caps their conversation', async () => {
     for (const plan of ['core', 'ai'] as const) {
       const store = memoryStore(subscription({ tier: plan }));
@@ -186,6 +204,11 @@ describe('billingState', () => {
     expect(state.usage.chatMessages).toBe(1);
     expect(state.usage.skillCalls).toBe(0);
     expect(state.periodStart).toBe('2026-10-01T00:00:00.000Z');
+  });
+
+  it('reports no usage caps for an administrator', async () => {
+    const state = await billingState(deps(memoryStore()), 'u1', now, { isAdmin: true });
+    expect(state.limits).toEqual({ chatMessagesPerMonth: null, skillCallsPerMonth: null });
   });
 });
 

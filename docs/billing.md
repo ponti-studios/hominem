@@ -38,6 +38,11 @@ how much can be used. The two counters are:
 Both counters are calendar-month, UTC. `app.billing_usage_events` is the ledger, and enforcement is
 one atomic `INSERT … WHERE count < limit`, so two calls at the boundary cannot both pass.
 
+Accounts listed in `HOMINEM_ADMIN_EMAILS` receive unlimited app usage: message volume, MCP calls,
+and the monthly AI spend cap are bypassed. Usage is still recorded and reported. The setting is a
+comma-separated list of exact email addresses, matched case-insensitively; it does not accept domain
+wildcards. Admin access does not create or cancel a Stripe subscription.
+
 ## Paying
 
 `GET /billing` on the API is the pay surface: it shows Taster and Core, starts a Stripe Checkout, and
@@ -65,6 +70,7 @@ subscription overwrites the old one, so access can never come from a stale row.
 | `BILLING_TASTER_CHAT_MESSAGES`  | Taster monthly conversation cap.                       |
 | `BILLING_CORE_CHAT_MESSAGES`    | Core and Founding Core monthly conversation cap.       |
 | `BILLING_TASTER_SKILL_CALLS`    | Taster monthly skill-call volume. Paid tiers uncapped. |
+| `HOMINEM_ADMIN_EMAILS`          | Comma-separated exact email allowlist for admin access and unlimited app usage. |
 
 The legacy `BILLING_AI_CHAT_MESSAGES` setting remains available for stored AI records. Stripe prices
 are created ad hoc per Checkout (`price_data`), so no price IDs need to be seeded for a new

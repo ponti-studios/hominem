@@ -12,13 +12,21 @@ import { authMiddleware, type AppContext } from '../middleware/auth';
 export const usageRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', async (c) => {
-    const userId = c.get('auth')!.userId;
-    return c.json(await getMonthlyAIUsageReport(userId));
+    const auth = c.get('auth')!;
+    const report = await getMonthlyAIUsageReport(auth.userId);
+    return c.json({
+      ...report,
+      monthly: auth.user.isAdmin ? { ...report.monthly, unlimited: true } : report.monthly,
+    });
   })
   // Everything the hosted /auth/settings/ai page renders, in one payload.
   .get('/ai', async (c) => {
-    const userId = c.get('auth')!.userId;
-    return c.json(await getAIUsagePageReport(userId));
+    const auth = c.get('auth')!;
+    const report = await getAIUsagePageReport(auth.userId);
+    return c.json({
+      ...report,
+      monthly: auth.user.isAdmin ? { ...report.monthly, unlimited: true } : report.monthly,
+    });
   })
   .get('/health', async (c) => {
     if (!c.get('auth')!.user.isAdmin) {
@@ -27,7 +35,7 @@ export const usageRoutes = new Hono<AppContext>()
     return c.json(await getSpeechUsageHealth());
   })
   .get('/monthly', async (c) => {
-    const userId = c.get('auth')!.userId;
-    const status = await getMonthlyUsageStatus(userId);
-    return c.json(status);
+    const auth = c.get('auth')!;
+    const status = await getMonthlyUsageStatus(auth.userId);
+    return c.json(auth.user.isAdmin ? { ...status, unlimited: true } : status);
   });

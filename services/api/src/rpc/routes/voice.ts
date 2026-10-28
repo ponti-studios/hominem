@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { Hono } from 'hono';
 
 import {
-  assertUnderMonthlyUsageLimit,
+  assertAIUsageAllowed,
   recordAIUsageEvent,
   startAIUsageTimer,
 } from '../../application/ai-usage.service';
@@ -25,7 +25,7 @@ const authenticatedVoiceRoutes = new Hono<AppContext>()
     const bypassed = shouldBypassVoiceCleanup(input.rawText);
 
     if (!bypassed) {
-      await assertUnderMonthlyUsageLimit(userId);
+      await assertAIUsageAllowed(userId, c.get('auth')!.user.isAdmin);
     }
 
     const eventId = randomUUID();
