@@ -93,10 +93,33 @@ const STYLES = `
   .billing-page__lede { max-width: 650px; margin: 20px 0 0; color: #5c5c5c; font-size: 17px; line-height: 1.55; }
   .billing-page .current { display: grid; grid-template-columns: minmax(160px, 0.7fr) minmax(0, 1.3fr); gap: 24px; align-items: center; margin: 0 0 32px; padding: 20px 0; border: 0; border-top: 1px solid #0a0a0a; border-bottom: 1px solid #e0e0e0; border-radius: 0; background: #fff; }
   .billing-page .current h2 { margin: 6px 0 0; font-size: 24px; font-weight: 500; letter-spacing: -0.03em; }
-  .billing-page .usage { margin: 0; color: #5c5c5c; font-size: 14px; }
-  .billing-page .usage + .usage { margin-top: 6px; }
+  .billing-page .current .usage { margin: 0; color: #5c5c5c; font-size: 14px; }
+  .billing-page .current .usage + .usage { margin-top: 6px; }
+  .billing-page__usage { margin: 0 0 36px; }
+  .billing-page__usage-header { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+  .billing-page__usage-title { margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -0.04em; }
+  .billing-page__usage-reset { margin: 0; color: #5c5c5c; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .billing-page__usage-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.65fr); gap: 12px; }
+  .billing-page__usage-card { display: flex; min-height: 150px; flex-direction: column; justify-content: space-between; gap: 22px; padding: 22px; border: 1px solid #e0e0e0; background: #f5f5f5; }
+  .billing-page__usage-card--mcp { background: #0a0a0a; color: #fff; }
+  .billing-page__usage-card-top { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+  .billing-page__usage-label { margin: 0; color: #5c5c5c; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .billing-page__usage-card--mcp .billing-page__usage-label { color: #bdbdbd; }
+  .billing-page__usage-count { margin: 14px 0 0; font-size: clamp(48px, 7vw, 72px); font-variant-numeric: tabular-nums; font-weight: 500; letter-spacing: -0.08em; line-height: 0.9; }
+  .billing-page__usage-limit { margin: 0; color: #5c5c5c; font-size: 13px; text-align: right; }
+  .billing-page__usage-card--mcp .billing-page__usage-limit { color: #bdbdbd; }
+  .billing-page__usage-meter { display: block; width: 100%; height: 10px; appearance: none; border: 0; border-radius: 0; background: #737373; }
+  .billing-page__usage-meter::-webkit-progress-bar { background: #737373; }
+  .billing-page__usage-meter::-webkit-progress-value { background: #0a0a0a; }
+  .billing-page__usage-meter::-moz-progress-bar { background: #0a0a0a; }
+  .billing-page__usage-card--mcp .billing-page__usage-meter { background: #737373; }
+  .billing-page__usage-card--mcp .billing-page__usage-meter::-webkit-progress-bar { background: #737373; }
+  .billing-page__usage-card--mcp .billing-page__usage-meter::-webkit-progress-value,
+  .billing-page__usage-card--mcp .billing-page__usage-meter::-moz-progress-bar { background: #fff; }
+  .billing-page__usage-detail { display: flex; justify-content: space-between; gap: 12px; margin: 8px 0 0; color: #5c5c5c; font-size: 12px; }
+  .billing-page__usage-card--mcp .billing-page__usage-detail { color: #bdbdbd; }
   .billing-page .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
-  .billing-page .card { display: flex; min-height: 270px; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid #e0e0e0; background: #fff; }
+  .billing-page .card { display: flex; min-height: 200px; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid #e0e0e0; background: #fff; }
   .billing-page .card:only-child { max-width: 500px; }
   .billing-page .card.current-plan { border-color: #0a0a0a; }
   .billing-page .card h2 { margin: 0; font-size: 19px; font-weight: 500; letter-spacing: -0.02em; }
@@ -113,7 +136,7 @@ const STYLES = `
   .billing-page .billing-manage h2 { margin: 0; font-size: 16px; font-weight: 500; }
   .billing-page .billing-manage .inline { margin: 0; }
   .billing-page .billing-page__note { margin: 24px 0 0; color: #737373; font-size: 12px; line-height: 1.6; }
-  @media (max-width: 620px) { main:has(.billing-page) { padding: 24px 20px 32px; } .billing-page { min-height: calc(100svh - 56px); } .billing-page__hero { margin: 48px 0 28px; } .billing-page .current { grid-template-columns: 1fr; gap: 10px; } .billing-page .card { min-height: 240px; } .billing-page .billing-manage { align-items: flex-start; flex-direction: column; } }
+  @media (max-width: 620px) { main:has(.billing-page) { padding: 24px 20px 32px; } .billing-page { min-height: calc(100svh - 56px); } .billing-page__hero { margin: 48px 0 28px; } .billing-page .current { grid-template-columns: 1fr; gap: 10px; } .billing-page__usage-grid { grid-template-columns: 1fr; } .billing-page__usage-header { align-items: start; flex-direction: column; gap: 6px; } .billing-page .card { min-height: 200px; } .billing-page .billing-manage { align-items: flex-start; flex-direction: column; } }
   body:has(.billing-done) { background: #fff; color: #0a0a0a; }
   main:has(.billing-done) { box-sizing: border-box; width: min(100%, 1040px); max-width: none; min-height: 100svh; padding: 32px 24px; }
   .billing-done { min-height: calc(100svh - 64px); display: flex; flex-direction: column; color: #0a0a0a; font-family: 'Hanken Grotesk', Arial, sans-serif; }
@@ -203,6 +226,29 @@ function planCard(input: {
   </section>`;
 }
 
+function usageCard(input: {
+  label: string;
+  used: number;
+  limit: number | null;
+  featured?: boolean;
+}): string {
+  const percent =
+    input.limit === null ? null : Math.min(100, Math.round((input.used / input.limit) * 100));
+  const value = input.limit === null ? input.used : Math.min(input.used, input.limit);
+  return `<article class="billing-page__usage-card${input.featured ? ' billing-page__usage-card--mcp' : ''}" aria-label="${escapeHtml(input.label)} usage">
+    <div class="billing-page__usage-card-top"><div><p class="billing-page__usage-label">${escapeHtml(input.label)}</p><p class="billing-page__usage-count">${input.used.toLocaleString('en-GB')}</p></div>
+      <p class="billing-page__usage-limit">${input.limit === null ? 'No monthly cap' : `of ${input.limit.toLocaleString('en-GB')} this month`}</p>
+    </div>
+    ${input.limit === null ? '<p class="billing-page__usage-detail"><span>Every MCP tool invocation uses one call.</span><span>Uncapped</span></p>' : `<div><progress class="billing-page__usage-meter" max="${input.limit}" value="${value}" aria-label="${escapeHtml(input.label)} usage"></progress><p class="billing-page__usage-detail"><span>${percent}% of monthly limit</span><span>${(input.limit - value).toLocaleString('en-GB')} remaining</span></p></div>`}
+  </article>`;
+}
+
+function usageResetLabel(periodStart: string): string {
+  const reset = new Date(periodStart);
+  reset.setUTCMonth(reset.getUTCMonth() + 1);
+  return `Resets ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(reset)} · UTC`;
+}
+
 function billingPage(input: { state: BillingState; name: string; foundingLeft: number }): string {
   const { state } = input;
   const plan = state.plan;
@@ -213,12 +259,7 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
 
   const status = `<section class="current" aria-label="Current plan">
     <div><span class="billing-page__label">Current plan</span><h2>${escapeHtml(planName)}</h2></div>
-    <div><p class="usage">${state.usage.chatMessages} of ${state.limits.chatMessagesPerMonth} messages this month${
-      state.limits.skillCallsPerMonth === null
-        ? ' · skills uncapped'
-        : ` · ${state.usage.skillCalls} of ${state.limits.skillCallsPerMonth} skill calls`
-    }</p>
-    ${
+    <div>${
       subscription
         ? `<p class="usage">${
             subscription.cancelAtPeriodEnd
@@ -229,6 +270,13 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
           }.</p>`
         : `<p class="usage">Free tier. Subscribe to keep your full skills and more conversation.</p>`
     }</div>
+  </section>`;
+  const usage = `<section class="billing-page__usage" aria-labelledby="billing-usage-title">
+    <header class="billing-page__usage-header"><h2 class="billing-page__usage-title" id="billing-usage-title">Usage this month</h2><p class="billing-page__usage-reset">${usageResetLabel(state.periodStart)}</p></header>
+    <div class="billing-page__usage-grid">
+      ${usageCard({ label: 'MCP tool calls', used: state.usage.skillCalls, limit: state.limits.skillCallsPerMonth, featured: true })}
+      ${usageCard({ label: 'Messages', used: state.usage.chatMessages, limit: state.limits.chatMessagesPerMonth })}
+    </div>
   </section>`;
 
   const corePrice = pounds(TIER_PRICES_PENCE.core);
@@ -241,7 +289,7 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
       planCard({
         name: 'Taster',
         price: '£0',
-        meta: `Try every skill, up to ${state.limits.chatMessagesPerMonth} messages and ${state.limits.skillCallsPerMonth ?? 'unlimited'} skill calls a month.`,
+        meta: `Try every skill, up to ${state.limits.chatMessagesPerMonth} messages and ${state.limits.skillCallsPerMonth ?? 'unlimited'} MCP tool calls a month.`,
         current: plan === 'taster',
         action: `<p class="meta">Your current plan.</p>`,
       }),
@@ -300,6 +348,7 @@ function billingPage(input: { state: BillingState; name: string; foundingLeft: n
        <header class="billing-page__header"><span class="billing-page__wordmark">Hominem</span><span class="billing-page__meta">Account / Billing</span></header>
        <div class="billing-page__hero"><p class="billing-page__eyebrow">Plans / Monthly</p><h1 id="billing-title">Choose your plan.</h1><p class="billing-page__lede">Every tier uses every skill. Plans differ in how much you use, never in which parts of Hominem you can reach.</p></div>
        ${status}
+       ${usage}
        <div class="grid">${cards.join('')}</div>
        ${paidActions}
        <p class="billing-page__note">Payments and receipts are handled by Stripe. Prices are in pounds and renew monthly until you cancel. ${escapeHtml(input.name ? `Signed in as ${input.name}.` : '')}</p>

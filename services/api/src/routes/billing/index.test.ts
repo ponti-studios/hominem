@@ -159,7 +159,15 @@ describe('GET /billing', () => {
     expect(page).toContain('£7.99');
     expect(page).toContain('£9.99');
     expect(page).toContain('£19.99');
-    expect(page).toContain('0 of 50 messages this month');
+    expect(page).toContain('<p class="billing-page__usage-count">0</p>');
+    expect(page).toContain('<p class="billing-page__usage-limit">of 50 this month</p>');
+    expect(page).toContain('Usage this month');
+    expect(page).toMatch(/Resets \d{1,2} [A-Z][a-z]{2} · UTC/);
+    expect(page).toContain('aria-label="MCP tool calls usage"');
+    expect(page).toContain('<progress class="billing-page__usage-meter" max="500" value="0"');
+    expect(page).toContain('500 remaining');
+    expect(page).toContain('<progress class="billing-page__usage-meter" max="50" value="0"');
+    expect(page).toContain('500 MCP tool calls a month');
     expect(page).toContain('class="billing-page"');
     expect(page).toContain('Plans / Monthly');
     expect(page).toContain('action="/billing/checkout"');
@@ -172,6 +180,8 @@ describe('GET /billing', () => {
     expect(page).toContain('Core');
     expect(page).toContain('Cancelled — access ends');
     expect(page).toContain('£9.99 per month');
+    expect(page).toContain('No monthly cap');
+    expect(page).toContain('Every MCP tool invocation uses one call.');
   });
 
   it('keeps cancellation controls for an active paid subscriber', async () => {

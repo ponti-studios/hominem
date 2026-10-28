@@ -37,7 +37,8 @@ is how much can be used. The two counters are:
   (`services/api/src/chat/chat-generation-commands.ts`). Every tier has a finite cap, so uncapped
   conversation is impossible.
 - `skill` — one row per MCP tool invocation (`services/api/src/mcp/server.ts`). Taster has a finite
-  monthly volume; Core, AI and Founding Core do not.
+  monthly volume; Core, AI and Founding Core do not. The `/billing` page shows the current MCP
+  tool-call count and cap, and the MCP limit error links to that page.
 
 Both counters are calendar-month, UTC. `app.billing_usage_events` is the ledger, and enforcement is
 one atomic `INSERT … WHERE count < limit`, so two calls at the boundary cannot both pass.

@@ -19,6 +19,7 @@ import { billingRules } from '../application/billing.runtime';
 import { assertBillingUsage } from '../application/billing.service';
 import type { CapabilityDefinition } from '../application/capability';
 import type { AuthContext } from '../auth/types';
+import { env } from '../env';
 import { getServiceErrorFailureType, isServiceError, UnauthorizedError } from '../errors';
 import {
   clientCanElicit,
@@ -238,7 +239,14 @@ async function invokeTool(
         .join('; ');
       return createErrorResult(`Invalid input: ${detail}`);
     }
-    if (isServiceError(error)) return createErrorResult(error.message);
+    if (isServiceError(error)) {
+      if (error.code === 'FORBIDDEN' && error.details?.kind === 'skill') {
+        return createErrorResult(
+          `${error.message} Check your MCP usage and limit at ${new URL('/billing', env.API_URL).toString()}`,
+        );
+      }
+      return createErrorResult(error.message);
+    }
     return createErrorResult(PUBLIC_TOOL_ERROR);
   }
 }
