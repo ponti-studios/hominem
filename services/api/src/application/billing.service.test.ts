@@ -44,7 +44,6 @@ function subscription(
 interface MemoryStore extends BillingStore {
   saved: BillingSubscriptionRecord | null;
   usage: Array<{ userId: string; kind: BillingUsageKind }>;
-  foundingSeats: number;
   /** Set to simulate a founding seat lost to a simultaneous signup. */
   denyFounding: boolean;
 }
@@ -54,7 +53,6 @@ function memoryStore(initial: BillingSubscriptionRecord | null = null): MemorySt
   const store: MemoryStore = {
     saved: initial,
     usage: [],
-    foundingSeats: 0,
     denyFounding: false,
     async get() {
       return current;
@@ -68,9 +66,6 @@ function memoryStore(initial: BillingSubscriptionRecord | null = null): MemorySt
       current = record;
       store.saved = record;
       return record;
-    },
-    async countFoundingSeats() {
-      return store.foundingSeats;
     },
     async recordUsageWithinLimit(input) {
       const used = store.usage.filter(
@@ -195,9 +190,8 @@ describe('billingState', () => {
 });
 
 describe('startSubscriptionCheckout', () => {
-  it('charges £9.99 for Core once the founding seats are gone', async () => {
+  it('charges £9.99 for Core even when legacy founding seats remain', async () => {
     const store = memoryStore();
-    store.foundingSeats = 100;
     const billing = deps(store);
     const outcome = await startSubscriptionCheckout(billing, {
       userId: 'u1',
@@ -216,37 +210,12 @@ describe('startSubscriptionCheckout', () => {
     );
   });
 
-  it('charges £7.99 for a founding Core seat and £19.99 for AI', async () => {
-    const store = memoryStore();
-    store.foundingSeats = 99;
-    const billing = deps(store);
-    await startSubscriptionCheckout(billing, {
-      userId: 'u1',
-      email: 'a@b.co',
-      tier: 'core',
-      origin: 'https://api.test',
-    });
-    expect(billing.stripe.createSubscriptionCheckout).toHaveBeenCalledWith(
-      expect.objectContaining({ pricePence: 799, founding: true }),
-    );
-
-    await startSubscriptionCheckout(billing, {
-      userId: 'u2',
-      email: 'b@c.co',
-      tier: 'ai',
-      origin: 'https://api.test',
-    });
-    expect(billing.stripe.createSubscriptionCheckout).toHaveBeenLastCalledWith(
-      expect.objectContaining({ pricePence: 1999, founding: false }),
-    );
-  });
-
   it('does not start a second subscription for someone already paying', async () => {
     const store = memoryStore(subscription());
     const outcome = await startSubscriptionCheckout(deps(store), {
       userId: 'u1',
       email: 'a@b.co',
-      tier: 'ai',
+      tier: 'core',
       origin: 'https://api.test',
     });
     expect(outcome).toEqual({ kind: 'already_subscribed' });

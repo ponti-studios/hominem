@@ -4,7 +4,6 @@
  * this file is the glue to the store and Stripe, and everything within it is testable with doubles.
  */
 import {
-  FOUNDING_SEATS,
   type BillingStatus,
   type BillingSubscriptionRecord,
   type BillingUsageKind,
@@ -29,7 +28,6 @@ import type { StripeSubscriptionsClient, SubscriptionFacts } from './stripe';
 export interface BillingStore {
   get(userId: string): Promise<BillingSubscriptionRecord | null>;
   save(input: SaveBillingSubscriptionInput): Promise<BillingSubscriptionRecord>;
-  countFoundingSeats(): Promise<number>;
   recordUsageWithinLimit(input: {
     userId: string;
     kind: BillingUsageKind;
@@ -142,23 +140,21 @@ export async function assertBillingUsage(
 
 export type CheckoutOutcome = { kind: 'started'; url: string } | { kind: 'already_subscribed' };
 
-/** Starts a subscription Checkout. Core is charged the founding price while seats remain. */
+/** Starts a Core subscription Checkout at the current public price. */
 export async function startSubscriptionCheckout(
   deps: BillingDeps,
-  input: { userId: string; email: string; tier: BillingTier; origin: string; now?: Date },
+  input: { userId: string; email: string; tier: 'core'; origin: string; now?: Date },
 ): Promise<CheckoutOutcome> {
   const now = input.now ?? clock(deps);
   const existing = await deps.store.get(input.userId);
   if (planFor(existing, now) !== 'taster') return { kind: 'already_subscribed' };
 
-  const founding =
-    input.tier === 'core' && (await deps.store.countFoundingSeats()) < FOUNDING_SEATS;
   const session = await deps.stripe.createSubscriptionCheckout({
     userId: input.userId,
     email: input.email,
     tier: input.tier,
-    pricePence: pricePenceFor(input.tier, founding),
-    founding,
+    pricePence: TIER_PRICES_PENCE.core,
+    founding: false,
     successUrl: `${input.origin}/billing/done?session_id={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${input.origin}/billing/cancelled`,
   });
@@ -166,8 +162,8 @@ export async function startSubscriptionCheckout(
 }
 
 /**
- * Writes what Stripe says about a subscription. A founding seat that a simultaneous signup took is
- * repriced to Core before it is stored, so nobody keeps £7.99 by losing a race.
+ * Writes what Stripe says about a subscription. A legacy founding seat that a simultaneous signup
+ * took is repriced to Core before it is stored, so nobody keeps £7.99 by losing a race.
  */
 async function applySubscription(
   deps: BillingDeps,
