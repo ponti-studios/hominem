@@ -1,6 +1,6 @@
 /**
- * Billing rules (docs/billing.md): the four tiers, what each grants, and when a paid subscription
- * stops granting access. Pure functions only — the Stripe calls and the database live in
+ * Billing rules (docs/billing.md): the current offers and legacy subscription tiers, what each
+ * grants, and when a paid subscription stops granting access. Pure functions only — Stripe calls and the database live in
  * billing.service.ts and billing.store.ts, so every rule here is testable on its own.
  */
 import type { BillingSubscriptionRecord, BillingTier, BillingUsageKind } from '@hominem/db/billing';
@@ -10,7 +10,7 @@ export type { BillingTier, BillingUsageKind };
 /** The plan a person is actually on. Taster is the absence of a live paid subscription. */
 export type Plan = 'taster' | 'core' | 'ai' | 'founding_core';
 
-/** The decided prices, in pence. Change these only with the plan sheet. */
+/** Current offer prices plus legacy prices needed to preserve stored subscription terms. */
 export const TIER_PRICES_PENCE = {
   taster: 0,
   core: 999,
@@ -91,7 +91,7 @@ export function limitFor(
   return kind === 'chat' ? limits.chatMessagesPerMonth : limits.skillCallsPerMonth;
 }
 
-/** The price a new subscription is charged, in pence. Founding Core is the locked £7.99 offer. */
+/** The stored subscription price, including legacy AI and Founding Core terms. */
 export function pricePenceFor(tier: BillingTier, founding: boolean): number {
   if (tier === 'ai') return TIER_PRICES_PENCE.ai;
   return founding ? TIER_PRICES_PENCE.founding_core : TIER_PRICES_PENCE.core;

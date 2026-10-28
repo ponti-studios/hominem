@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => {
     cancelSubscriptionAtPeriodEnd: vi.fn(),
     cancelSubscriptionNow: vi.fn(),
   };
-  return { state, usage, stripe, foundingSeats: { value: 0 } };
+  return { state, usage, stripe };
 });
 
 // Generated per run: the webhook code only needs a shared opaque value to sign with.
@@ -27,6 +27,7 @@ const SIGNING_KEY = randomUUID();
 vi.mock('../../env', () => ({
   env: {
     API_URL: 'https://api.test',
+    BILLING_CORE_CHAT_MESSAGES: 1000,
     BILLING_AI_CHAT_MESSAGES: 3000,
   },
 }));
@@ -53,7 +54,6 @@ vi.mock('../../application/billing.runtime', () => ({
         mocks.state.subscription = record;
         return record;
       },
-      countFoundingSeats: async () => mocks.foundingSeats.value,
       recordUsageWithinLimit: async (input: {
         userId: string;
         kind: BillingUsageKind;
@@ -132,7 +132,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.state.subscription = null;
   mocks.usage.length = 0;
-  mocks.foundingSeats.value = 0;
   mocks.stripe.createSubscriptionCheckout.mockResolvedValue({
     id: 'cs_1',
     url: 'https://checkout.stripe.test/cs_1',
@@ -150,52 +149,53 @@ describe('GET /billing', () => {
     expect(decodeURIComponent(location)).toContain('/billing');
   });
 
-  it('shows all four prices on the free tier', async () => {
+  it('shows Taster and one Core offer on the free tier', async () => {
     const response = await app().request('/billing');
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-store');
     const page = await response.text();
     expect(page).toContain('Taster');
-    expect(page).toContain('£7.99');
     expect(page).toContain('£9.99');
-    expect(page).toContain('£19.99');
+    expect(page).not.toContain('Founding Core');
+    expect(page).not.toContain('>AI<');
+    expect(page.match(/>Subscribe<\/button>/g)).toHaveLength(1);
     expect(page).toContain('<p class="billing-page__usage-count">0</p>');
-    expect(page).toContain('<p class="billing-page__usage-limit">of 50 this month</p>');
+    expect(page).toContain('<p class="billing-page__usage-limit">50</p>');
+    expect(page).toContain('<h1 id="billing-title">Your plan</h1>');
     expect(page).toContain('Usage this month');
     expect(page).toMatch(/Resets \d{1,2} [A-Z][a-z]{2} · UTC/);
     expect(page).toContain('aria-label="MCP tool calls usage"');
     expect(page).toContain('<progress class="billing-page__usage-meter" max="500" value="0"');
-    expect(page).toContain('500 remaining');
     expect(page).toContain('<progress class="billing-page__usage-meter" max="50" value="0"');
     expect(page).toContain('500 MCP tool calls a month');
     expect(page).toContain('class="billing-page"');
-    expect(page).toContain('Plans / Monthly');
+    expect(page).not.toContain('Plans / Monthly');
+    expect(page).toContain('background: #0a0a0a; color: #fff');
     expect(page).toContain('action="/billing/checkout"');
   });
 
   it('shows the current plan, usage, and cancellation date for a subscriber', async () => {
     mocks.state.subscription = subscription({ cancelAtPeriodEnd: true });
     const page = await (await app().request('/billing')).text();
-    expect(page).toContain('Current plan');
+    expect(page).toContain('Your current plan.');
     expect(page).toContain('Core');
     expect(page).toContain('Cancelled — access ends');
     expect(page).toContain('£9.99 per month');
-    expect(page).toContain('No monthly cap');
-    expect(page).toContain('Every MCP tool invocation uses one call.');
+    expect(page).toContain('<p class="billing-page__usage-limit">∞</p>');
+    expect(page).not.toContain('Every MCP tool invocation uses one call.');
   });
 
   it('keeps cancellation controls for an active paid subscriber', async () => {
     mocks.state.subscription = subscription();
     const page = await (await app().request('/billing')).text();
 
-    expect(page).toContain('Manage subscription');
     expect(page).toContain('Cancel at the end of this period');
+    expect(page).not.toContain('billing-manage');
   });
 });
 
 describe('POST /billing/checkout', () => {
   it('starts a Core subscription at £9.99 when the founding seats are gone', async () => {
-    mocks.foundingSeats.value = 100;
     const response = await app().request('/billing/checkout', form({ tier: 'core' }));
     expect(response.status).toBe(303);
     expect(response.headers.get('location')).toBe('https://checkout.stripe.test/cs_1');
@@ -204,23 +204,28 @@ describe('POST /billing/checkout', () => {
     );
   });
 
-  it('charges £7.99 while founding seats remain', async () => {
-    mocks.foundingSeats.value = 99;
+  it('does not issue new Founding Core prices', async () => {
     await app().request('/billing/checkout', form({ tier: 'core' }));
     expect(mocks.stripe.createSubscriptionCheckout).toHaveBeenCalledWith(
-      expect.objectContaining({ pricePence: 799, founding: true }),
+      expect.objectContaining({ pricePence: 999, founding: false }),
     );
   });
 
   it('refuses a second subscription for someone already paying', async () => {
     mocks.state.subscription = subscription();
-    const response = await app().request('/billing/checkout', form({ tier: 'ai' }));
+    const response = await app().request('/billing/checkout', form({ tier: 'core' }));
     expect(response.status).toBe(409);
     expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
   });
 
   it('rejects an unknown tier without calling Stripe', async () => {
     const response = await app().request('/billing/checkout', form({ tier: 'platinum' }));
+    expect(response.status).toBe(400);
+    expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
+  });
+
+  it('rejects AI as a new subscription', async () => {
+    const response = await app().request('/billing/checkout', form({ tier: 'ai' }));
     expect(response.status).toBe(400);
     expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
   });
