@@ -169,10 +169,8 @@ function registerApiRoutes(app: Hono<AppEnv>, dependencies: ServerDependencies) 
   const authRoutes = createAuthRoutes(dependencies);
   const loginRoutes = createLoginRoutes(dependencies);
 
-  app.route('/', rpcApp);
-  // MCP stays outside the client-facing RPC contract - it's server-only and
-  // its Redis-backed code shouldn't leak into mobile typechecking.
-  app.route('/api/mcp', mcpRoutes);
+  // This endpoint shares the /api/telegram prefix with authenticated RPC routes,
+  // so mount it before the RPC app's Telegram auth middleware can intercept it.
   app.route(
     '/api/telegram/webhook',
     createTelegramWebhookRoutes({
@@ -180,6 +178,10 @@ function registerApiRoutes(app: Hono<AppEnv>, dependencies: ServerDependencies) 
       rateLimitCounter: dependencies.rateLimitCounter,
     }),
   );
+  app.route('/', rpcApp);
+  // MCP stays outside the client-facing RPC contract - it's server-only and
+  // its Redis-backed code shouldn't leak into mobile typechecking.
+  app.route('/api/mcp', mcpRoutes);
   // Has to be mounted at root - RFC 8414 / RFC 9728 require it there.
   app.route('/', oauthDiscoveryRoutes);
   app.route('/', loginRoutes);
