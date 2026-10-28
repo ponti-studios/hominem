@@ -7,6 +7,7 @@ import { isInternalRequest } from './client-ip';
 
 export const ORIGIN_SECRET_HEADER = 'x-origin-secret';
 const HEALTH_PATH = '/healthz';
+const TELEGRAM_WEBHOOK_PATH = '/api/telegram/webhook';
 
 function secretsMatch(given: string | undefined, expected: string) {
   if (!given) return false;
@@ -22,6 +23,10 @@ function secretsMatch(given: string | undefined, expected: string) {
 export function originGuard(secret: string): MiddlewareHandler {
   return async (c, next) => {
     if (!secret || c.req.path === HEALTH_PATH) return next();
+
+    // Telegram cannot send Cloudflare's origin header. This exact POST endpoint
+    // authenticates every update with Telegram's webhook secret token itself.
+    if (c.req.method === 'POST' && c.req.path === TELEGRAM_WEBHOOK_PATH) return next();
 
     if (isInternalRequest(c)) return next();
 
