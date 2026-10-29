@@ -342,10 +342,11 @@ function requireDeps(c: Context): { deps: BillingDeps } | { response: Response }
 
 function authOrRedirect(
   c: Context,
+  resumePath = '/account/billing',
 ): { userId: string; email: string; name: string } | { response: Response } {
   const auth = c.get('auth');
   if (!auth) {
-    const target = new URL('/account/billing', originFor(c)).toString();
+    const target = new URL(resumePath, originFor(c)).toString();
     const login = new URL('/login', env.API_URL);
     login.searchParams.set('next', target);
     login.searchParams.set('step', 'email');
@@ -363,7 +364,7 @@ billingRoutes.get('/billing', (c) =>
 );
 
 billingRoutes.get('/account/usage', async (c) => {
-  const who = authOrRedirect(c);
+  const who = authOrRedirect(c, '/account/usage');
   if ('response' in who) return who.response;
   try {
     const [state, aiUsage] = await Promise.all([

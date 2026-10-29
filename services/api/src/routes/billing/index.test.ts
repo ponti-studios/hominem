@@ -225,6 +225,12 @@ describe('GET /account/billing', () => {
 });
 
 describe('GET /account/usage', () => {
+  it('returns a signed-out visitor to usage after hosted login', async () => {
+    const response = await app(false).request('/account/usage');
+    expect(response.status).toBe(303);
+    expect(decodeURIComponent(response.headers.get('location') ?? '')).toContain('/account/usage');
+  });
+
   it('shows message and MCP usage in one stacked usage panel', async () => {
     const response = await app().request('/account/usage');
     expect(response.status).toBe(200);
