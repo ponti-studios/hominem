@@ -47,6 +47,7 @@ export const settingsInitSchema = z.object({
   creditPence: z.number().nullable().default(null),
   /** Opened inside the Thames app, which shares this session: no sign out here. */
   embedded: z.boolean().default(false),
+  section: z.enum(['account', 'connections', 'data']).default('account'),
 });
 export type SettingsInit = z.infer<typeof settingsInitSchema>;
 

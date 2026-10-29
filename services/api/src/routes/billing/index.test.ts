@@ -153,17 +153,23 @@ beforeEach(() => {
   mocks.stripe.cancelSubscriptionAtPeriodEnd.mockResolvedValue(undefined);
 });
 
-describe('GET /billing', () => {
+describe('GET /account/billing', () => {
+  it('redirects the former billing URL to the account route', async () => {
+    const response = await app().request('/billing?from=old-link');
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('/account/billing?from=old-link');
+  });
+
   it('sends a signed-out visitor through hosted login and back', async () => {
-    const response = await app(false).request('/billing');
+    const response = await app(false).request('/account/billing');
     expect(response.status).toBe(303);
     const location = response.headers.get('location') ?? '';
     expect(location).toContain('/login');
-    expect(decodeURIComponent(location)).toContain('/billing');
+    expect(decodeURIComponent(location)).toContain('/account/billing');
   });
 
   it('shows Taster and one Core offer on the free tier', async () => {
-    const response = await app().request('/billing');
+    const response = await app().request('/account/billing');
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('no-store');
     const page = await response.text();
@@ -172,14 +178,9 @@ describe('GET /billing', () => {
     expect(page).not.toContain('Founding Core');
     expect(page).not.toContain('>AI<');
     expect(page.match(/>Subscribe<\/button>/g)).toHaveLength(1);
-    expect(page).toContain('<p class="billing-page__usage-count">0</p>');
-    expect(page).toContain('<p class="billing-page__usage-limit">50</p>');
     expect(page).toContain('<h1 id="billing-title">Your plan</h1>');
-    expect(page).toContain('Usage this month');
-    expect(page).toMatch(/Resets \d{1,2} [A-Z][a-z]{2} · UTC/);
-    expect(page).toContain('aria-label="MCP tool calls usage"');
-    expect(page).toContain('<progress class="billing-page__usage-meter" max="500" value="0"');
-    expect(page).toContain('<progress class="billing-page__usage-meter" max="50" value="0"');
+    expect(page).toContain('href="/account/usage"');
+    expect(page).not.toContain('Usage this month');
     expect(page).toContain('500 MCP tool calls a month');
     expect(page).toContain('class="billing-page"');
     expect(page).not.toContain('Plans / Monthly');
@@ -194,34 +195,45 @@ describe('GET /billing', () => {
       grantedByUserId: 'admin-1',
       grantedAt: '2026-10-26T00:00:00.000Z',
     };
-    const response = await app().request('/billing');
+    const response = await app().request('/account/billing');
     const page = await response.text();
 
     expect(response.status).toBe(200);
     expect(page).toContain('Osmium Membership');
     expect(page).toContain('Your Osmium membership is complimentary and unlimited.');
     expect(page).toContain('osmium-seal');
-    expect(page).toContain('<p class="billing-page__usage-limit">∞</p>');
     expect(page).not.toContain('Subscribe');
   });
 
   it('shows the current plan, usage, and cancellation date for a subscriber', async () => {
     mocks.state.subscription = subscription({ cancelAtPeriodEnd: true });
-    const page = await (await app().request('/billing')).text();
+    const page = await (await app().request('/account/billing')).text();
     expect(page).toContain('Your current plan.');
     expect(page).toContain('Core');
     expect(page).toContain('Cancelled — access ends');
     expect(page).toContain('£9.99 per month');
-    expect(page).toContain('<p class="billing-page__usage-limit">∞</p>');
     expect(page).not.toContain('Every MCP tool invocation uses one call.');
   });
 
   it('keeps cancellation controls for an active paid subscriber', async () => {
     mocks.state.subscription = subscription();
-    const page = await (await app().request('/billing')).text();
+    const page = await (await app().request('/account/billing')).text();
 
     expect(page).toContain('Cancel at the end of this period');
     expect(page).not.toContain('billing-manage');
+  });
+});
+
+describe('GET /account/usage', () => {
+  it('shows message and MCP usage in one stacked usage panel', async () => {
+    const response = await app().request('/account/usage');
+    expect(response.status).toBe(200);
+    const page = await response.text();
+    expect(page).toContain('href="/account/usage"');
+    expect(page).toContain('MCP tool calls');
+    expect(page).toContain('Messages');
+    expect(page).toContain('AI spend');
+    expect(page).toContain('View AI usage details');
   });
 });
 
@@ -294,7 +306,7 @@ describe('POST /billing/change and /billing/cancel', () => {
     expect(page).toContain('class="billing-error"');
     expect(page).toContain('Could not change the plan.');
     expect(page).toContain('The plan change didn’t complete.');
-    expect(page).toContain('href="/billing"');
+    expect(page).toContain('href="/account/billing"');
   });
 
   it('cancels at the end of the period', async () => {
@@ -322,7 +334,7 @@ describe('GET /billing/done', () => {
     expect(page).toContain("font-family: 'JetBrains Mono'");
     expect(page).toContain('Your Hominem account is updating now');
     expect(page).not.toContain('Your new plan is active now');
-    expect(page).toContain('href="/billing"');
+    expect(page).toContain('href="/account/billing"');
   });
 });
 

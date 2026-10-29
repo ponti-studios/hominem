@@ -7,6 +7,7 @@ import { logger } from '@hominem/telemetry';
 import { Hono, type Context } from 'hono';
 import { z } from 'zod';
 
+import { getMonthlyUsageStatus } from '../../application/ai-usage.service';
 import { TIER_PRICES_PENCE, type BillingTier, type Plan } from '../../application/billing';
 import { billingDeps, billingRules, billingWebhookSecret } from '../../application/billing.runtime';
 import {
@@ -84,6 +85,9 @@ const STYLES = `
   main:has(.billing-page) { box-sizing: border-box; width: min(100%, 1240px); max-width: none; min-height: 100svh; padding: 32px 24px 48px; font-family: 'Hanken Grotesk', Arial, sans-serif; }
   .billing-page { min-height: calc(100svh - 80px); color: #0a0a0a; }
   .billing-page__header { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #e0e0e0; padding-bottom: 18px; }
+  .account-nav { display:flex; flex-wrap:wrap; gap:8px 24px; padding:18px 0; border-bottom:1px solid #e0e0e0; }
+  .account-nav a { color:#737373; font: 10px 'JetBrains Mono', ui-monospace, monospace; letter-spacing:.08em; text-decoration:none; text-transform:uppercase; }
+  .account-nav a[aria-current='page'] { color:#0a0a0a; text-decoration:underline; text-underline-offset:5px; }
   .billing-page__wordmark, .billing-page__meta { font-family: 'JetBrains Mono', ui-monospace, monospace; text-transform: uppercase; }
   .billing-page__wordmark { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
   .billing-page__meta { color: #737373; font-size: 10px; letter-spacing: 0.1em; }
@@ -185,7 +189,7 @@ function billingChangeErrorPage(): string {
          <p class="billing-error__eyebrow"><span class="billing-error__mark" aria-hidden="true">!</span> Billing / Update</p>
          <h1 id="billing-error-title">Could not change the plan.</h1>
          <p class="billing-error__copy">The plan change didn’t complete. You can return to billing and try again.</p>
-         <a class="billing-error__button" href="/billing">Back to billing <span aria-hidden="true">↗</span></a>
+         <a class="billing-error__button" href="/account/billing">Back to billing <span aria-hidden="true">↗</span></a>
        </div>
        <footer class="billing-error__footer"><span>Hominem</span><span aria-hidden="true">/</span><span>Billing</span></footer>
      </section>`,
@@ -245,14 +249,6 @@ function billingPage(input: { state: BillingState; name: string }): string {
   const osmium = plan === 'osmium';
   const paid = plan !== 'taster' && !osmium;
   const subscription = state.subscription;
-  const usage = `<section class="billing-page__usage" aria-labelledby="billing-usage-title">
-    <header class="billing-page__usage-header"><h2 class="billing-page__usage-title" id="billing-usage-title">Usage this month</h2><p class="billing-page__usage-reset">${usageResetLabel(state.periodStart)}</p></header>
-    <div class="billing-page__usage-grid">
-      ${usageCard({ label: 'MCP tool calls', used: state.usage.skillCalls, limit: state.limits.skillCallsPerMonth })}
-      ${usageCard({ label: 'Messages', used: state.usage.chatMessages, limit: state.limits.chatMessagesPerMonth })}
-    </div>
-  </section>`;
-
   const corePrice = pounds(TIER_PRICES_PENCE.core);
 
   const cards: string[] = [];
@@ -312,9 +308,9 @@ function billingPage(input: { state: BillingState; name: string }): string {
   return page(
     'Plan | Hominem',
     `<section class="billing-page" aria-labelledby="billing-title">
-       <header class="billing-page__header"><span class="billing-page__wordmark">Hominem</span><span class="billing-page__meta">Account / Billing</span></header>
+       <header class="billing-page__header"><span class="billing-page__wordmark">Hominem</span><span class="billing-page__meta">Account</span></header>
+       <nav aria-label="Account" class="account-nav"><a href="/account">Account</a><a href="/account/usage">Usage</a><a aria-current="page" href="/account/billing">Billing</a><a href="/account/connections">Connections</a><a href="/account/data">Data</a></nav>
        <div class="billing-page__hero"><h1 id="billing-title">Your plan</h1></div>
-       ${usage}
        ${cards.length ? `<div class="grid">${cards.join('')}</div>` : ''}
        <p class="billing-page__note">${osmium ? 'Your Osmium membership is complimentary and unlimited.' : 'Payments and receipts are handled by Stripe. Prices are in pounds and renew monthly until you cancel.'} ${escapeHtml(input.name ? `Signed in as ${input.name}.` : '')}</p>
      </section>`,
@@ -325,7 +321,7 @@ function billingPage(input: { state: BillingState; name: string }): string {
 function messagePage(title: string, heading: string, body: string): string {
   return page(
     title,
-    `<h1>${escapeHtml(heading)}</h1><p class="lede">${body}</p><p><a href="/billing">Back to plans</a></p>`,
+    `<h1>${escapeHtml(heading)}</h1><p class="lede">${body}</p><p><a href="/account/billing">Back to plans</a></p>`,
   );
 }
 
@@ -349,7 +345,7 @@ function authOrRedirect(
 ): { userId: string; email: string; name: string } | { response: Response } {
   const auth = c.get('auth');
   if (!auth) {
-    const target = new URL('/billing', originFor(c)).toString();
+    const target = new URL('/account/billing', originFor(c)).toString();
     const login = new URL('/login', env.API_URL);
     login.searchParams.set('next', target);
     login.searchParams.set('step', 'email');
@@ -362,7 +358,56 @@ function authOrRedirect(
   };
 }
 
-billingRoutes.get('/billing', async (c) => {
+billingRoutes.get('/billing', (c) =>
+  c.redirect(`/account/billing${new URL(c.req.url).search}`, 302),
+);
+
+billingRoutes.get('/account/usage', async (c) => {
+  const who = authOrRedirect(c);
+  if ('response' in who) return who.response;
+  try {
+    const [state, aiUsage] = await Promise.all([
+      billingState(billingRules(), who.userId),
+      getMonthlyUsageStatus(who.userId),
+    ]);
+    c.header('Cache-Control', 'no-store');
+    const aiUnlimited = state.plan === 'osmium';
+    const aiLimit = aiUnlimited ? null : aiUsage.limitUsd;
+    const aiProgress = aiLimit === null ? 0 : Math.min(aiUsage.totalCostUsd, aiLimit);
+    const aiCard = `<article class="billing-page__usage-card" aria-label="AI spend usage">
+      <div class="billing-page__usage-card-top"><p class="billing-page__usage-label">AI spend</p><div class="billing-page__usage-reading">
+        <p class="billing-page__usage-count">$${aiUsage.totalCostUsd.toFixed(2)}</p><span class="billing-page__usage-slash">/</span><p class="billing-page__usage-limit">${aiLimit === null ? 'Unlimited' : `$${aiLimit.toFixed(2)}`}</p></div>
+      </div>
+      ${aiLimit === null ? '' : `<progress class="billing-page__usage-meter" max="${aiLimit}" value="${aiProgress}" aria-label="AI spend usage"></progress>`}
+    </article>`;
+    const content = `<section class="billing-page__usage" aria-labelledby="billing-usage-title">
+      <header class="billing-page__usage-header"><h1 class="billing-page__usage-title" id="billing-usage-title">Usage this month</h1><p class="billing-page__usage-reset">${usageResetLabel(state.periodStart)}</p></header>
+      <div class="billing-page__usage-grid">${usageCard({ label: 'MCP tool calls', used: state.usage.skillCalls, limit: state.limits.skillCallsPerMonth })}${usageCard({ label: 'Messages', used: state.usage.chatMessages, limit: state.limits.chatMessagesPerMonth })}${aiCard}</div>
+      <p class="billing-page__note"><a href="/account/usage/ai">View AI usage details ↗</a></p>
+    </section>`;
+    return c.html(
+      page(
+        'Usage | Hominem',
+        `<section class="billing-page"><header class="billing-page__header"><span class="billing-page__wordmark">Hominem</span><span class="billing-page__meta">Account</span></header><nav aria-label="Account" class="account-nav"><a href="/account">Account</a><a aria-current="page" href="/account/usage">Usage</a><a href="/account/billing">Billing</a><a href="/account/connections">Connections</a><a href="/account/data">Data</a></nav><div class="billing-page__hero"><h1>Your usage</h1></div>${content}</section>`,
+        BRAND_FONTS,
+      ),
+    );
+  } catch (error) {
+    logger.error('account_usage_page_failed', {
+      error_name: error instanceof Error ? error.name : 'unknown',
+    });
+    return c.html(
+      messagePage(
+        'Usage unavailable | Hominem',
+        'Usage unavailable',
+        'Something went wrong. Try again in a moment.',
+      ),
+      503,
+    );
+  }
+});
+
+billingRoutes.get('/account/billing', async (c) => {
   const who = authOrRedirect(c);
   if ('response' in who) return who.response;
   try {
@@ -447,7 +492,7 @@ billingRoutes.post('/billing/change', async (c) => {
   if (tier !== 'core') return c.text('Bad Request', 400);
   try {
     await changePlan(deps.deps, who.userId, tier);
-    return c.redirect('/billing', 303);
+    return c.redirect('/account/billing', 303);
   } catch (error) {
     logger.error('billing_change_failed', {
       operation: 'billing.change',
@@ -468,7 +513,7 @@ billingRoutes.post('/billing/cancel', async (c) => {
   if ('response' in deps) return deps.response;
   try {
     await cancelPlan(deps.deps, who.userId);
-    return c.redirect('/billing', 303);
+    return c.redirect('/account/billing', 303);
   } catch (error) {
     logger.error('billing_cancel_failed', {
       operation: 'billing.cancel',
@@ -493,7 +538,7 @@ billingRoutes.get('/billing/done', (c) => {
           <p class="billing-done__eyebrow"><span class="billing-done__mark" aria-hidden="true">✓</span> Checkout complete</p>
           <h1 id="billing-done-title">You’re all set.</h1>
           <p class="billing-done__copy">Checkout is complete. Your Hominem account is updating now, and Stripe will email your receipt.</p>
-          <a class="billing-done__button" href="/billing">Return to plans <span aria-hidden="true">↗</span></a>
+          <a class="billing-done__button" href="/account/billing">Return to plans <span aria-hidden="true">↗</span></a>
         </div>
         <footer class="billing-done__footer"><span>Hominem</span><span aria-hidden="true">/</span><span>Billing</span></footer>
       </section>`,

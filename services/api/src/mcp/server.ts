@@ -248,7 +248,7 @@ async function invokeTool(
     if (isServiceError(error)) {
       if (error.code === 'FORBIDDEN' && error.details?.kind === 'skill') {
         return createErrorResult(
-          `${error.message} Check your MCP usage and limit at ${new URL('/billing', env.API_URL).toString()}`,
+          `${error.message} Check your MCP usage and limit at ${new URL('/account/usage', env.API_URL).toString()}`,
         );
       }
       return createErrorResult(error.message);

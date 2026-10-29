@@ -56,7 +56,7 @@ export function AccountMenu({ user }: { user: User }) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <a href={`${import.meta.env.VITE_PUBLIC_API_URL}/auth/settings`}>
+          <a href={`${import.meta.env.VITE_PUBLIC_API_URL}/account`}>
             <Settings />
             Settings
           </a>

@@ -25,9 +25,9 @@
   place-items: center;
   width: 46px;
   height: 46px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--acc, var(--auth-primary)) 18%, transparent);
-  color: var(--acc, var(--auth-text));
+  border-radius: 0;
+  background: #0a0a0a;
+  color: #fff;
   font-size: 17px;
   font-weight: 700;
 }
@@ -36,7 +36,7 @@
   min-width: 0;
   padding: 10px 12px;
   border: 1px solid var(--auth-border);
-  border-radius: 6px;
+  border-radius: 0;
   outline: none;
   color: var(--auth-text);
   background: var(--auth-panel);
@@ -63,11 +63,14 @@
   margin: 0;
   padding: 6px 14px;
   border: 1px solid var(--auth-border);
-  border-radius: 6px;
-  background: var(--auth-panel);
-  color: var(--auth-text);
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 0;
+  background: #fff;
+  color: #0a0a0a;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 .saveButton:hover {
@@ -105,15 +108,15 @@
   font-variant-numeric: tabular-nums;
 }
 .usageBar {
-  height: 4px;
-  border-radius: 4px;
+  height: 8px;
+  border-radius: 0;
   overflow: hidden;
   background: var(--auth-border);
 }
 .usageBarFill {
   height: 100%;
-  border-radius: 4px;
-  background: var(--auth-primary);
+  border-radius: 0;
+  background: #0a0a0a;
   transition: width 0.4s ease;
 }
 .usageReset {
@@ -209,11 +212,15 @@
   justify-self: start;
   padding: 6px 14px;
   border: 1px solid var(--auth-border);
-  border-radius: 6px;
-  background: var(--auth-panel);
-  color: var(--auth-text);
-  font-size: 13px;
-  font-weight: 600;
+  border-radius: 0;
+  border-color: #0a0a0a;
+  background: #0a0a0a;
+  color: #fff;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   cursor: pointer;
   transition:
     border-color 0.2s ease,
@@ -253,7 +260,7 @@
   min-width: 0;
   padding: 10px 12px;
   border: 1px solid var(--auth-border);
-  border-radius: 6px;
+  border-radius: 0;
   outline: none;
   color: var(--auth-text);
   background: var(--auth-panel);
@@ -306,8 +313,8 @@
   margin: 0;
   color: var(--auth-text);
   font-size: 52px;
-  font-weight: 700;
-  letter-spacing: -1.2px;
+  font-weight: 500;
+  letter-spacing: -0.065em;
   line-height: 1.05;
   font-variant-numeric: tabular-nums;
 }
@@ -362,12 +369,12 @@
 /* The account home mirrors the Thames settings screen: a hero card, one
    rounded list of rows, and a sheet that rises over it for each row. */
 .page {
-  --acc: #0f9e84;
+  --acc: #0a0a0a;
   --acc-ink: #fff;
   display: grid;
-  gap: 18px;
+  gap: 24px;
   width: 100%;
-  max-width: 480px;
+  max-width: none;
   margin: 0 auto;
 }
 @media (prefers-color-scheme: dark) {
@@ -383,23 +390,22 @@
 .pageTitle {
   margin: 4px 0 0;
   color: var(--auth-text);
-  font-size: 34px;
-  font-weight: 700;
-  letter-spacing: -0.6px;
+  font-size: clamp(44px, 6vw, 68px);
+  font-weight: 500;
+  letter-spacing: -0.065em;
+  line-height: 0.98;
 }
 .hero {
-  display: grid;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 20px;
-  padding: 20px;
-  border: 1px solid color-mix(in srgb, var(--acc) 28%, var(--auth-border));
-  border-radius: 24px;
-  background:
-    radial-gradient(
-      120% 90% at 0% 0%,
-      color-mix(in srgb, var(--acc) 18%, transparent),
-      transparent 70%
-    ),
-    var(--auth-card);
+  padding: 24px 0;
+  border-top: 1px solid #0a0a0a;
+  border-bottom: 1px solid #e0e0e0;
+  border-radius: 0;
+  background: #fff;
   text-align: left;
 }
 .who {
@@ -457,8 +463,11 @@
 .card {
   overflow: hidden;
   border: 1px solid var(--auth-border);
-  border-radius: 24px;
+  border-radius: 0;
   background: var(--auth-card);
+}
+.card[data-account-section] {
+  padding: 24px;
 }
 .navRow {
   display: flex;

@@ -136,13 +136,17 @@ configured origins.
 
 ### Account settings
 
-The API also hosts `/auth/settings`, a web mirror of the account sections of
-the Omiro settings screen: editable name + email, monthly AI usage (fetched
-client-side from the authenticated `/api/usage/monthly` RPC route), MCP
-personal tokens (see below), and a sign-out action backed by the same
-`/logout` POST the web apps use.
+The API hosts the account area under `/account`: `/account` contains profile
+and sign-out, `/account/usage` contains MCP and message usage, and
+`/account/usage/ai` and `/account/usage/ai/footprint` contain AI usage details.
+`/account/billing` manages plans and subscriptions, `/account/connections`
+manages connected apps and MCP tokens, and `/account/data` provides export and
+deletion. These pages share the billing page's editorial design and account
+navigation. The older page URLs `/auth/settings`, `/auth/settings/ai`, and
+`/auth/settings/ai/footprint` redirect to their corresponding account pages;
+the `/auth/settings/*` data and mutation endpoints remain in place.
 Signed-out visitors are redirected through hosted login with a resume back to
-`/auth/settings` so they land here after authenticating. The sign-out POST
+the requested `/account` page. The sign-out POST
 accepts an optional `next` form field (trusted via the same
 `resolveResume` check) and 303s there after clearing the session cookie — it
 is additive; a `/logout` POST without `next` keeps rendering the signed-out
@@ -150,7 +154,7 @@ page. `GET /logout?next=<trusted app>` never mutates: a signed-in browser gets
 a page that auto-submits that POST (landing on `/login?signed_out=1` with a
 "you're signed out" note), a signed-out one is redirected straight there.
 
-`/auth/settings/ai` is the deep-dive version of the same usage section: a
+`/account/usage/ai` is the deep-dive version of the same usage section: a
 per-month breakdown page (status + pacing, daily spend, ranked drivers by
 feature/model/operation/day, six-month trend, failure/unpriced waste, cache
 and reasoning efficiency, cheapest/most expensive calls, and the most
@@ -162,8 +166,8 @@ back to the page they tried to open.
 
 ### Auth UI architecture
 
-All hosted auth pages (`/login`, `/consent`, `/error`, `/logout`,
-`/auth/settings*`) are **client-rendered React** built by the API's own Vite
+Hosted account and auth pages (`/login`, `/consent`, `/error`, `/logout`,
+`/account*`) are **client-rendered React** built by the API's own Vite
 pipeline (`vite.config.ts`, multi-page entries under
 `src/routes/login/app/entries/*.tsx`). The server routes render a minimal
 HTML shell (`src/routes/login/app-shell.tsx`) that injects the page's initial
@@ -241,7 +245,7 @@ codex mcp login hominem
 AI clients that cannot run the MCP OAuth browser flow (for example Muse's
 custom connectors, which only accept a static Bearer token) authenticate to
 `/api/mcp` with a personal access token instead. Tokens are minted and revoked
-from the hosted settings page (`/auth/settings` → MCP access, served by the
+from the hosted account page (`/account/connections` → MCP access, served by the
 API itself). The raw `hmt_` value is shown exactly once at creation and stored
 only as a SHA-256 hash; a revoked token stops authenticating immediately.
 

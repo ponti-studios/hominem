@@ -10,8 +10,8 @@
   gap: 10px;
   padding: 20px;
   border: 1px solid var(--auth-border);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--auth-panel) 62%, var(--auth-card));
+  border-radius: 0;
+  background: #f5f5f5;
   text-align: left;
 }
 .hero {
@@ -60,13 +60,13 @@
 }
 .bar {
   height: 8px;
-  border-radius: 999px;
+  border-radius: 0;
   overflow: hidden;
   background: color-mix(in srgb, var(--auth-primary-text) 22%, transparent);
 }
 .barFill {
   height: 100%;
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--auth-primary-text);
   transition: width 0.4s ease;
 }
@@ -91,7 +91,7 @@
 .sparkBar {
   flex: 1;
   min-width: 2px;
-  border-radius: 2px 2px 0 0;
+  border-radius: 0;
   background: var(--auth-primary);
   opacity: 0.85;
 }
@@ -109,14 +109,14 @@
   display: inline-flex;
   padding: 2px;
   border: 1px solid var(--auth-border);
-  border-radius: 6px;
+  border-radius: 0;
   background: var(--auth-card);
 }
 .segButton {
   margin: 0;
   padding: 3px 8px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 0;
   background: transparent;
   color: var(--auth-muted);
   font-size: 12px;
@@ -165,13 +165,13 @@
 .shareTrack {
   grid-column: 1 / -1;
   height: 3px;
-  border-radius: 3px;
+  border-radius: 0;
   overflow: hidden;
   background: var(--auth-border);
 }
 .shareFill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 0;
   background: var(--auth-primary);
 }
 .trend {
@@ -189,7 +189,7 @@
 }
 .trendBar {
   align-self: stretch;
-  border-radius: 3px 3px 0 0;
+  border-radius: 0;
   background: var(--auth-primary);
   opacity: 0.85;
 }
@@ -232,7 +232,7 @@
   gap: 4px;
   padding: 14px;
   border: 1px solid var(--auth-border);
-  border-radius: 10px;
+  border-radius: 0;
   background: var(--auth-card);
 }
 .impactValue {
