@@ -1,6 +1,7 @@
 import { createHmac, randomUUID } from 'node:crypto';
 
 import type {
+  BillingMembershipRecord,
   BillingSubscriptionRecord,
   BillingUsageKind,
   SaveBillingSubscriptionInput,
@@ -9,7 +10,10 @@ import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
-  const state: { subscription: BillingSubscriptionRecord | null } = { subscription: null };
+  const state: {
+    subscription: BillingSubscriptionRecord | null;
+    membership: BillingMembershipRecord | null;
+  } = { subscription: null, membership: null };
   const usage: Array<{ userId: string; kind: BillingUsageKind }> = [];
   const stripe = {
     createSubscriptionCheckout: vi.fn(),
@@ -20,6 +24,16 @@ const mocks = vi.hoisted(() => {
   };
   const store = {
     get: async () => state.subscription,
+    getOsmiumMembership: async () => state.membership,
+    grantOsmiumMembership: async (input: { userId: string; grantedByUserId: string }) => {
+      state.membership = {
+        ...input,
+        tier: 'osmium',
+        grantedAt: '2026-10-26T00:00:00.000Z',
+      };
+      return state.membership;
+    },
+    revokeOsmiumMembership: async () => false,
     save: async (input: SaveBillingSubscriptionInput) => {
       const record: BillingSubscriptionRecord = {
         userId: input.userId,
@@ -56,8 +70,8 @@ const mocks = vi.hoisted(() => {
       usage.filter((event) => event.userId === input.userId && event.kind === input.kind).length,
   };
   const config = {
-    chatMessages: { taster: 50, core: 1000, ai: 3000, founding_core: 1000 },
-    skillCalls: { taster: 500, core: null, ai: null, founding_core: null },
+    chatMessages: { taster: 50, core: 1000, ai: 3000, founding_core: 1000, osmium: null },
+    skillCalls: { taster: 500, core: null, ai: null, founding_core: null, osmium: null },
   };
   return { state, usage, stripe, store, config };
 });
@@ -83,13 +97,13 @@ import { billingRoutes } from './index';
 
 const USER = { id: 'u1', email: 'a@b.co', name: 'Dana' };
 
-function app(authenticated = true, isAdmin = false) {
+function app(authenticated = true) {
   const shell = new Hono<{ Variables: { auth?: unknown } }>();
   if (authenticated) {
     shell.use('*', async (c, next) => {
       c.set('auth', {
         userId: USER.id,
-        user: { ...USER, isAdmin, emailVerified: true, createdAt: '', updatedAt: '', image: null },
+        user: { ...USER, emailVerified: true, createdAt: '', updatedAt: '', image: null },
         credential: 'session',
         scopes: [],
       });
@@ -129,6 +143,7 @@ function form(body: Record<string, string>) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.state.subscription = null;
+  mocks.state.membership = null;
   mocks.usage.length = 0;
   mocks.stripe.createSubscriptionCheckout.mockResolvedValue({
     id: 'cs_1',
@@ -172,14 +187,21 @@ describe('GET /billing', () => {
     expect(page).toContain('action="/billing/checkout"');
   });
 
-  it('shows complimentary unlimited access to administrators', async () => {
-    const response = await app(true, true).request('/billing');
+  it('shows the distinctive complimentary Osmium membership', async () => {
+    mocks.state.membership = {
+      userId: USER.id,
+      tier: 'osmium',
+      grantedByUserId: 'admin-1',
+      grantedAt: '2026-10-26T00:00:00.000Z',
+    };
+    const response = await app().request('/billing');
     const page = await response.text();
 
     expect(response.status).toBe(200);
-    expect(page).toContain('Admin access');
+    expect(page).toContain('Osmium Membership');
+    expect(page).toContain('Your Osmium membership is complimentary and unlimited.');
+    expect(page).toContain('osmium-seal');
     expect(page).toContain('<p class="billing-page__usage-limit">∞</p>');
-    expect(page).toContain('Unlimited messages and MCP calls. No subscription required.');
     expect(page).not.toContain('Subscribe');
   });
 
@@ -204,8 +226,14 @@ describe('GET /billing', () => {
 });
 
 describe('POST /billing/checkout', () => {
-  it('refuses checkout for administrators', async () => {
-    const response = await app(true, true).request('/billing/checkout', form({ tier: 'core' }));
+  it('refuses checkout for Osmium members', async () => {
+    mocks.state.membership = {
+      userId: USER.id,
+      tier: 'osmium',
+      grantedByUserId: 'admin-1',
+      grantedAt: '2026-10-26T00:00:00.000Z',
+    };
+    const response = await app().request('/billing/checkout', form({ tier: 'core' }));
     expect(response.status).toBe(403);
     expect(mocks.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
   });

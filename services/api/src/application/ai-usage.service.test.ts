@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   assertUnderMonthlyUsageLimit: vi.fn(),
-  billingRules: vi.fn(() => ({ store: {}, config: {} })),
+  getOsmiumMembership: vi.fn(),
+  billingRules: vi.fn(() => ({
+    store: { getOsmiumMembership: mocks.getOsmiumMembership },
+    config: {},
+  })),
   assertBillingUsage: vi.fn(),
 }));
 
@@ -17,6 +21,7 @@ import { assertAIUsageAllowed, assertChatAllowed } from './ai-usage.service';
 describe('AI usage allowances', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getOsmiumMembership.mockResolvedValue(null);
   });
 
   it('keeps the monthly AI spend cap for regular accounts', async () => {
@@ -24,16 +29,10 @@ describe('AI usage allowances', () => {
     expect(mocks.assertUnderMonthlyUsageLimit).toHaveBeenCalledWith('user-1');
   });
 
-  it('skips spend and plan caps for administrators', async () => {
-    await assertChatAllowed('admin-1', true);
-
+  it('skips the monthly AI spend cap for Osmium members', async () => {
+    mocks.getOsmiumMembership.mockResolvedValue({ tier: 'osmium' });
+    await assertChatAllowed('member-1');
     expect(mocks.assertUnderMonthlyUsageLimit).not.toHaveBeenCalled();
-    expect(mocks.assertBillingUsage).toHaveBeenCalledWith(
-      expect.anything(),
-      'admin-1',
-      'chat',
-      undefined,
-      { isAdmin: true },
-    );
+    expect(mocks.assertBillingUsage).toHaveBeenCalledWith(expect.anything(), 'member-1', 'chat');
   });
 });

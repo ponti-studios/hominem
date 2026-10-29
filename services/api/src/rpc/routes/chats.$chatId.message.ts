@@ -107,7 +107,6 @@ export const chatMessageRoutes = new Hono<AppContext>()
         chatId,
         messageId,
         ownerUserId: userId,
-        isAdmin: c.get('auth')!.user.isAdmin,
       });
     } catch (error) {
       if (error instanceof ChatSpeechMessageNotFoundError) {

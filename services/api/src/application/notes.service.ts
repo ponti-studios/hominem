@@ -85,9 +85,8 @@ export class NoteService {
   async semanticSearch(
     userId: string,
     input: { query: string; limit: number },
-    isAdmin = false,
   ): Promise<SemanticSearchNoteResult[]> {
-    await assertAIUsageAllowed(userId, isAdmin);
+    await assertAIUsageAllowed(userId);
 
     const eventId = randomUUID();
     const getDurationMs = startAIUsageTimer();

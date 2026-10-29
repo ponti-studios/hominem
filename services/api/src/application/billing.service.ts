@@ -5,6 +5,7 @@
  */
 import {
   type BillingStatus,
+  type BillingMembershipRecord,
   type BillingSubscriptionRecord,
   type BillingUsageKind,
   type SaveBillingSubscriptionInput,
@@ -16,6 +17,7 @@ import {
   limitFor,
   limitsFor,
   planFor,
+  planForMembership,
   pricePenceFor,
   usagePeriodStart,
   type BillingConfig,
@@ -27,6 +29,12 @@ import type { StripeSubscriptionsClient, SubscriptionFacts } from './stripe';
 
 export interface BillingStore {
   get(userId: string): Promise<BillingSubscriptionRecord | null>;
+  getOsmiumMembership(userId: string): Promise<BillingMembershipRecord | null>;
+  grantOsmiumMembership(input: {
+    userId: string;
+    grantedByUserId: string;
+  }): Promise<BillingMembershipRecord>;
+  revokeOsmiumMembership(input: { userId: string; revokedByUserId: string }): Promise<boolean>;
   save(input: SaveBillingSubscriptionInput): Promise<BillingSubscriptionRecord>;
   recordUsageWithinLimit(input: {
     userId: string;
@@ -51,6 +59,7 @@ export type BillingRulesDeps = Pick<BillingDeps, 'store' | 'config' | 'now'>;
 export interface BillingState {
   plan: Plan;
   subscription: BillingSubscriptionRecord | null;
+  membership: BillingMembershipRecord | null;
   limits: BillingLimits;
   usage: { chatMessages: number; skillCalls: number };
   periodStart: string;
@@ -61,6 +70,7 @@ const PLAN_LABELS: Record<Plan, string> = {
   core: 'Core',
   ai: 'AI',
   founding_core: 'Founding Core',
+  osmium: 'Osmium',
 };
 
 const BILLING_STATUSES: readonly BillingStatus[] = [
@@ -87,10 +97,12 @@ export async function billingState(
   deps: BillingRulesDeps,
   userId: string,
   now: Date = clock(deps),
-  options: { isAdmin?: boolean } = {},
 ): Promise<BillingState> {
-  const subscription = await deps.store.get(userId);
-  const plan = planFor(subscription, now);
+  const [subscription, membership] = await Promise.all([
+    deps.store.get(userId),
+    deps.store.getOsmiumMembership(userId),
+  ]);
+  const plan = planForMembership(subscription, membership !== null, now);
   const periodStart = usagePeriodStart(now);
   const [chatMessages, skillCalls] = await Promise.all([
     deps.store.usageCount({ userId, kind: 'chat', since: periodStart }),
@@ -99,9 +111,8 @@ export async function billingState(
   return {
     plan,
     subscription,
-    limits: options.isAdmin
-      ? { chatMessagesPerMonth: null, skillCallsPerMonth: null }
-      : limitsFor(plan, deps.config),
+    membership,
+    limits: limitsFor(plan, deps.config),
     usage: { chatMessages, skillCalls },
     periodStart: periodStart.toISOString(),
   };
@@ -117,12 +128,14 @@ export async function assertBillingUsage(
   userId: string,
   kind: BillingUsageKind,
   now: Date = clock(deps),
-  options: { isAdmin?: boolean } = {},
 ): Promise<Plan> {
-  const subscription = await deps.store.get(userId);
-  const plan = planFor(subscription, now);
+  const [subscription, membership] = await Promise.all([
+    deps.store.get(userId),
+    deps.store.getOsmiumMembership(userId),
+  ]);
+  const plan = planForMembership(subscription, membership !== null, now);
   const limit = limitFor(plan, kind, deps.config);
-  if (options.isAdmin || limit === null) {
+  if (limit === null) {
     await deps.store.recordUsage({ userId, kind });
     return plan;
   }
@@ -144,14 +157,61 @@ export async function assertBillingUsage(
 
 export type CheckoutOutcome = { kind: 'started'; url: string } | { kind: 'already_subscribed' };
 
+/** Grants Osmium after stopping any live Stripe renewal, so complimentary access never keeps billing. */
+export async function grantOsmiumMembership(
+  deps: BillingRulesDeps & { stripe?: StripeSubscriptionsClient | null },
+  input: { userId: string; grantedByUserId: string },
+): Promise<BillingMembershipRecord> {
+  const membership = await deps.store.grantOsmiumMembership({
+    userId: input.userId,
+    grantedByUserId: input.grantedByUserId,
+  });
+  try {
+    const existing = await deps.store.get(input.userId);
+    if (!existing || ['canceled', 'incomplete_expired'].includes(existing.status))
+      return membership;
+    if (!deps.stripe)
+      throw new ValidationError('Stripe is unavailable to cancel this subscription.');
+    await deps.stripe.cancelSubscriptionNow(existing.stripeSubscriptionId);
+    await deps.store.save({
+      userId: existing.userId,
+      tier: existing.tier,
+      status: 'canceled',
+      stripeCustomerId: existing.stripeCustomerId,
+      stripeSubscriptionId: existing.stripeSubscriptionId,
+      pricePence: existing.pricePence,
+      founding: existing.founding,
+      currentPeriodEnd: new Date(existing.currentPeriodEnd),
+      cancelAtPeriodEnd: false,
+    });
+  } catch (error) {
+    await deps.store.revokeOsmiumMembership({
+      userId: input.userId,
+      revokedByUserId: input.grantedByUserId,
+    });
+    throw error;
+  }
+  return membership;
+}
+
+export async function revokeOsmiumMembership(
+  deps: BillingRulesDeps,
+  input: { userId: string; revokedByUserId: string },
+): Promise<boolean> {
+  return deps.store.revokeOsmiumMembership(input);
+}
+
 /** Starts a Core subscription Checkout at the current public price. */
 export async function startSubscriptionCheckout(
   deps: BillingDeps,
   input: { userId: string; email: string; tier: 'core'; origin: string; now?: Date },
 ): Promise<CheckoutOutcome> {
   const now = input.now ?? clock(deps);
-  const existing = await deps.store.get(input.userId);
-  if (planFor(existing, now) !== 'taster') return { kind: 'already_subscribed' };
+  const [existing, membership] = await Promise.all([
+    deps.store.get(input.userId),
+    deps.store.getOsmiumMembership(input.userId),
+  ]);
+  if (membership || planFor(existing, now) !== 'taster') return { kind: 'already_subscribed' };
 
   const session = await deps.stripe.createSubscriptionCheckout({
     userId: input.userId,
@@ -174,6 +234,12 @@ async function applySubscription(
   facts: SubscriptionFacts,
 ): Promise<BillingSubscriptionRecord | null> {
   if (!facts.userId || !facts.tier || !isBillingStatus(facts.status)) return null;
+  if (await deps.store.getOsmiumMembership(facts.userId)) {
+    if (!['canceled', 'incomplete_expired'].includes(facts.status)) {
+      await deps.stripe.cancelSubscriptionNow(facts.stripeSubscriptionId);
+    }
+    return null;
+  }
   // A second completed Checkout replaces the first subscription. End the old one at Stripe too, or
   // it keeps renewing and /billing/cancel only knows about the newest one.
   const previous = await deps.store.get(facts.userId);
@@ -249,6 +315,9 @@ export async function changePlan(
   tier: BillingTier,
   now: Date = clock(deps),
 ): Promise<BillingSubscriptionRecord> {
+  if (await deps.store.getOsmiumMembership(userId)) {
+    throw new ForbiddenError('Osmium membership is already unlimited.');
+  }
   const subscription = await deps.store.get(userId);
   if (
     !subscription ||
@@ -278,6 +347,9 @@ export async function cancelPlan(
   userId: string,
   now: Date = clock(deps),
 ): Promise<BillingSubscriptionRecord> {
+  if (await deps.store.getOsmiumMembership(userId)) {
+    throw new ForbiddenError('Osmium membership is complimentary and does not renew.');
+  }
   const subscription = await deps.store.get(userId);
   if (
     !subscription ||

@@ -215,7 +215,7 @@ async function invokeTool(
 ): Promise<CallToolResult> {
   try {
     // Volume, never domain: every plan can reach every tool, but a Taster's monthly volume is finite.
-    await assertBillingUsage(billingRules(), ownerUserId, 'skill', undefined, { isAdmin });
+    await assertBillingUsage(billingRules(), ownerUserId, 'skill');
     return await callTool(ownerUserId, toolName, args, { isAdmin });
   } catch (error) {
     logger.warn('mcp_tool_invocation_failed', {

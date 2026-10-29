@@ -193,8 +193,8 @@ registerTool(
       produces: ['note ids', 'similarity scores'],
     },
   },
-  async (ownerUserId, input, context) => {
-    const results = await noteService.semanticSearch(ownerUserId, input, context?.isAdmin);
+  async (ownerUserId, input) => {
+    const results = await noteService.semanticSearch(ownerUserId, input);
     return { results };
   },
 );

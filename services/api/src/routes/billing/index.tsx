@@ -29,6 +29,7 @@ const PLAN_NAMES: Record<Plan, string> = {
   core: 'Core',
   ai: 'AI',
   founding_core: 'Founding Core',
+  osmium: 'Osmium',
 };
 
 function originFor(c: Context): string {
@@ -111,6 +112,13 @@ const STYLES = `
   .billing-page .card.current-plan { border-color: #0a0a0a; background: #0a0a0a; color: #fff; }
   .billing-page .card.current-plan .meta { color: #bdbdbd; }
   .billing-page .card.current-plan .price-period { color: #bdbdbd; }
+  .billing-page .card.osmium-plan { position: relative; overflow: hidden; min-height: 260px; border-color: #aab0b9; background: radial-gradient(ellipse at 85% 10%, #525966 0, #191d24 32%, #090b0f 75%); color: #f5f6f8; }
+  .billing-page .card.osmium-plan::after { position: absolute; top: -90px; right: -74px; width: 250px; height: 250px; border: 1px solid #cbd0d855; border-radius: 50%; box-shadow: 0 0 0 20px #cbd0d810, 0 0 0 42px #cbd0d808; content: ''; pointer-events: none; }
+  .billing-page .card.osmium-plan .meta { color: #c5cad2; }
+  .billing-page .card.osmium-plan .tag { background: #e1e4e9; color: #101216; }
+  .billing-page .osmium-seal { position: absolute; top: 20px; right: 24px; z-index: 1; display: grid; width: 62px; height: 72px; place-content: center; border: 1px solid #d5d9df88; background: linear-gradient(145deg, #e1e4e9, #777e88 46%, #d6d9de); color: #12151a; text-align: center; }
+  .billing-page .osmium-seal small { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; line-height: 1; }
+  .billing-page .osmium-seal strong { font-size: 28px; font-weight: 500; line-height: 1; }
   .billing-page .card h2 { margin: 0; font-size: 19px; font-weight: 500; letter-spacing: -0.02em; }
   .billing-page .price { margin: 0; font-size: 34px; font-weight: 500; letter-spacing: -0.05em; line-height: 1; }
   .billing-page .price-period { color: #737373; font-size: 12px; font-weight: 400; letter-spacing: 0; }
@@ -202,9 +210,12 @@ function planCard(input: {
   current: boolean;
   action: string;
   tag?: string;
+  variant?: string;
+  seal?: string;
 }): string {
-  return `<section class="card${input.current ? ' current-plan' : ''}">
+  return `<section class="card${input.current ? ' current-plan' : ''}${input.variant ? ` ${input.variant}` : ''}">
     ${input.tag ? `<span class="tag">${escapeHtml(input.tag)}</span>` : ''}
+    ${input.seal ? `<span class="osmium-seal" aria-hidden="true"><small>76</small><strong>Os</strong></span>` : ''}
     <h2>${escapeHtml(input.name)}</h2>
     <p class="price">${input.price}</p>
     <p class="meta">${input.meta}</p>
@@ -228,10 +239,11 @@ function usageResetLabel(periodStart: string): string {
   return `Resets ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(reset)} · UTC`;
 }
 
-function billingPage(input: { state: BillingState; name: string; isAdmin?: boolean }): string {
+function billingPage(input: { state: BillingState; name: string }): string {
   const { state } = input;
   const plan = state.plan;
-  const paid = plan !== 'taster';
+  const osmium = plan === 'osmium';
+  const paid = plan !== 'taster' && !osmium;
   const subscription = state.subscription;
   const usage = `<section class="billing-page__usage" aria-labelledby="billing-usage-title">
     <header class="billing-page__usage-header"><h2 class="billing-page__usage-title" id="billing-usage-title">Usage this month</h2><p class="billing-page__usage-reset">${usageResetLabel(state.periodStart)}</p></header>
@@ -244,14 +256,17 @@ function billingPage(input: { state: BillingState; name: string; isAdmin?: boole
   const corePrice = pounds(TIER_PRICES_PENCE.core);
 
   const cards: string[] = [];
-  if (!paid && input.isAdmin) {
+  if (osmium) {
     cards.push(
       planCard({
-        name: 'Admin access',
-        price: '£0',
-        meta: 'Unlimited messages and MCP calls. No subscription required.',
+        name: 'Osmium Membership',
+        price: 'Complimentary',
+        meta: 'Unlimited messages, MCP tools and AI usage. No recurring charge.',
         current: true,
-        action: `<p class="meta">Administrator account.</p>`,
+        variant: 'osmium-plan',
+        seal: '76',
+        tag: 'Your membership',
+        action: `<p class="meta">A rare tier. Yours for as long as it’s assigned to your account.</p>`,
       }),
     );
   } else if (!paid) {
@@ -267,34 +282,21 @@ function billingPage(input: { state: BillingState; name: string; isAdmin?: boole
   } else {
     const renews = dateLabel(subscription?.currentPeriodEnd);
     const pricePence = subscription?.pricePence ?? TIER_PRICES_PENCE.core;
-    const adminSubscriptionNote = input.isAdmin
-      ? subscription?.cancelAtPeriodEnd
-        ? `Existing Stripe subscription ends ${escapeHtml(renews)}; administrator access remains complimentary.`
-        : `Administrator access is complimentary. Existing Stripe subscription renews ${escapeHtml(renews)} unless cancelled.`
-      : null;
     cards.push(
       planCard({
-        name: input.isAdmin ? 'Admin access' : PLAN_NAMES[plan],
-        price: input.isAdmin ? '£0' : `${pounds(pricePence)}<span class="price-period">/mo</span>`,
-        meta:
-          adminSubscriptionNote ??
-          (subscription?.cancelAtPeriodEnd
-            ? `Cancelled — access ends ${escapeHtml(renews)}. ${pounds(pricePence)} per month.`
-            : `Renews ${escapeHtml(renews)}. ${pounds(pricePence)} per month${subscription?.founding ? ' · founding price locked' : ''}.`),
+        name: PLAN_NAMES[plan],
+        price: `${pounds(pricePence)}<span class="price-period">/mo</span>`,
+        meta: subscription?.cancelAtPeriodEnd
+          ? `Cancelled — access ends ${escapeHtml(renews)}. ${pounds(pricePence)} per month.`
+          : `Renews ${escapeHtml(renews)}. ${pounds(pricePence)} per month${subscription?.founding ? ' · founding price locked' : ''}.`,
         current: true,
         action: subscription?.cancelAtPeriodEnd
           ? `<p class="meta">Your current plan.</p>`
-          : actionForm(
-              '/billing/cancel',
-              input.isAdmin
-                ? 'Cancel existing Stripe subscription'
-                : 'Cancel at the end of this period',
-              true,
-            ),
+          : actionForm('/billing/cancel', 'Cancel at the end of this period', true),
       }),
     );
   }
-  if (!input.isAdmin && plan !== 'core' && plan !== 'founding_core') {
+  if (!osmium && plan !== 'core' && plan !== 'founding_core') {
     cards.push(
       planCard({
         name: 'Core',
@@ -314,7 +316,7 @@ function billingPage(input: { state: BillingState; name: string; isAdmin?: boole
        <div class="billing-page__hero"><h1 id="billing-title">Your plan</h1></div>
        ${usage}
        ${cards.length ? `<div class="grid">${cards.join('')}</div>` : ''}
-       <p class="billing-page__note">${input.isAdmin ? 'Administrator access is complimentary.' : 'Payments and receipts are handled by Stripe. Prices are in pounds and renew monthly until you cancel.'} ${escapeHtml(input.name ? `Signed in as ${input.name}.` : '')}</p>
+       <p class="billing-page__note">${osmium ? 'Your Osmium membership is complimentary and unlimited.' : 'Payments and receipts are handled by Stripe. Prices are in pounds and renew monthly until you cancel.'} ${escapeHtml(input.name ? `Signed in as ${input.name}.` : '')}</p>
      </section>`,
     BRAND_FONTS,
   );
@@ -344,7 +346,7 @@ function requireDeps(c: Context): { deps: BillingDeps } | { response: Response }
 
 function authOrRedirect(
   c: Context,
-): { userId: string; email: string; name: string; isAdmin: boolean } | { response: Response } {
+): { userId: string; email: string; name: string } | { response: Response } {
   const auth = c.get('auth');
   if (!auth) {
     const target = new URL('/billing', originFor(c)).toString();
@@ -357,21 +359,20 @@ function authOrRedirect(
     userId: auth.userId,
     email: auth.user.email,
     name: auth.user.name ?? '',
-    isAdmin: auth.user.isAdmin ?? false,
   };
 }
 
 billingRoutes.get('/billing', async (c) => {
   const who = authOrRedirect(c);
   if ('response' in who) return who.response;
-  const deps = who.isAdmin ? null : requireDeps(c);
-  if (deps && 'response' in deps) return deps.response;
   try {
-    const state = await billingState(deps ? deps.deps : billingRules(), who.userId, undefined, {
-      isAdmin: who.isAdmin,
-    });
+    const state = await billingState(billingRules(), who.userId);
+    if (state.plan !== 'osmium') {
+      const deps = requireDeps(c);
+      if ('response' in deps) return deps.response;
+    }
     c.header('Cache-Control', 'no-store');
-    return c.html(billingPage({ state, name: who.name, isAdmin: who.isAdmin }));
+    return c.html(billingPage({ state, name: who.name }));
   } catch (error) {
     logger.error('billing_page_failed', {
       operation: 'billing.page',
@@ -392,7 +393,9 @@ billingRoutes.get('/billing', async (c) => {
 billingRoutes.post('/billing/checkout', async (c) => {
   const who = authOrRedirect(c);
   if ('response' in who) return who.response;
-  if (who.isAdmin) return c.text('Administrator accounts do not need a subscription.', 403);
+  if (await billingRules().store.getOsmiumMembership(who.userId)) {
+    return c.text('Osmium membership is already unlimited.', 403);
+  }
   const deps = requireDeps(c);
   if ('response' in deps) return deps.response;
   const tier = (await c.req.parseBody()).tier;
@@ -435,7 +438,9 @@ billingRoutes.post('/billing/checkout', async (c) => {
 billingRoutes.post('/billing/change', async (c) => {
   const who = authOrRedirect(c);
   if ('response' in who) return who.response;
-  if (who.isAdmin) return c.text('Administrator accounts do not need a paid plan.', 403);
+  if (await billingRules().store.getOsmiumMembership(who.userId)) {
+    return c.text('Osmium membership is already unlimited.', 403);
+  }
   const deps = requireDeps(c);
   if ('response' in deps) return deps.response;
   const tier = (await c.req.parseBody()).tier;
@@ -456,6 +461,9 @@ billingRoutes.post('/billing/change', async (c) => {
 billingRoutes.post('/billing/cancel', async (c) => {
   const who = authOrRedirect(c);
   if ('response' in who) return who.response;
+  if (await billingRules().store.getOsmiumMembership(who.userId)) {
+    return c.text('Osmium membership is complimentary and does not renew.', 403);
+  }
   const deps = requireDeps(c);
   if ('response' in deps) return deps.response;
   try {

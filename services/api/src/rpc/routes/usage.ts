@@ -5,6 +5,7 @@ import {
   getMonthlyUsageStatus,
   getAIUsagePageReport,
 } from '../../application/ai-usage.service';
+import { billingRules } from '../../application/billing.runtime';
 import { getSpeechUsageHealth } from '../../application/speech-usage.service';
 import { ForbiddenError } from '../errors';
 import { authMiddleware, type AppContext } from '../middleware/auth';
@@ -13,19 +14,25 @@ export const usageRoutes = new Hono<AppContext>()
   .use('*', authMiddleware)
   .get('/', async (c) => {
     const auth = c.get('auth')!;
-    const report = await getMonthlyAIUsageReport(auth.userId);
+    const [report, membership] = await Promise.all([
+      getMonthlyAIUsageReport(auth.userId),
+      billingRules().store.getOsmiumMembership(auth.userId),
+    ]);
     return c.json({
       ...report,
-      monthly: auth.user.isAdmin ? { ...report.monthly, unlimited: true } : report.monthly,
+      monthly: membership ? { ...report.monthly, unlimited: true } : report.monthly,
     });
   })
   // Everything the hosted /auth/settings/ai page renders, in one payload.
   .get('/ai', async (c) => {
     const auth = c.get('auth')!;
-    const report = await getAIUsagePageReport(auth.userId);
+    const [report, membership] = await Promise.all([
+      getAIUsagePageReport(auth.userId),
+      billingRules().store.getOsmiumMembership(auth.userId),
+    ]);
     return c.json({
       ...report,
-      monthly: auth.user.isAdmin ? { ...report.monthly, unlimited: true } : report.monthly,
+      monthly: membership ? { ...report.monthly, unlimited: true } : report.monthly,
     });
   })
   .get('/health', async (c) => {
@@ -36,6 +43,9 @@ export const usageRoutes = new Hono<AppContext>()
   })
   .get('/monthly', async (c) => {
     const auth = c.get('auth')!;
-    const status = await getMonthlyUsageStatus(auth.userId);
-    return c.json(auth.user.isAdmin ? { ...status, unlimited: true } : status);
+    const [status, membership] = await Promise.all([
+      getMonthlyUsageStatus(auth.userId),
+      billingRules().store.getOsmiumMembership(auth.userId),
+    ]);
+    return c.json(membership ? { ...status, unlimited: true } : status);
   });

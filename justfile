@@ -32,6 +32,7 @@ otp email:
     pnpm --filter @hominem/api exec tsx scripts/otp.ts "{{ email }}"
 
 mod db 'just/db.just'
+mod billing 'just/billing.just'
 mod deploy 'just/deploy.just'
 mod diagnostics 'just/diagnostics.just'
 mod evals 'just/evals.just'

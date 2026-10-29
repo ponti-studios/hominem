@@ -56,9 +56,8 @@ export async function streamMessageSpeech(input: {
   chatId: string;
   messageId: string;
   ownerUserId: string;
-  isAdmin?: boolean;
 }): Promise<ChatSpeechStream> {
-  await assertAIUsageAllowed(input.ownerUserId, input.isAdmin);
+  await assertAIUsageAllowed(input.ownerUserId);
   await ChatRepository.getOwnedOrThrow(db, input.chatId, input.ownerUserId);
   const message = await ChatRepository.getMessageById(db, input.chatId, input.messageId);
   if (!message || message.role !== 'assistant') {

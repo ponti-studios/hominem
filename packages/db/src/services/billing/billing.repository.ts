@@ -2,9 +2,10 @@ import { sql, type Selectable } from 'kysely';
 
 import type { DbHandle } from '../../transaction';
 import { runInTransaction } from '../../transaction';
-import type { AppBillingSubscriptions } from '../../types/database';
+import type { AppBillingMemberships, AppBillingSubscriptions } from '../../types/database';
 
 type BillingSubscriptionRow = Selectable<AppBillingSubscriptions>;
+type BillingMembershipRow = Selectable<AppBillingMemberships>;
 
 /** The founding offer is for the first 100 Core subscriptions (docs/billing.md). */
 export const FOUNDING_SEATS = 100;
@@ -20,6 +21,13 @@ export type BillingStatus =
   | 'incomplete_expired'
   | 'paused';
 export type BillingUsageKind = 'chat' | 'skill';
+
+export interface BillingMembershipRecord {
+  userId: string;
+  tier: 'osmium';
+  grantedByUserId: string | null;
+  grantedAt: string;
+}
 
 export interface BillingSubscriptionRecord {
   userId: string;
@@ -93,6 +101,71 @@ function toRecord(row: BillingSubscriptionRow): BillingSubscriptionRecord {
     createdAt: new Date(row.createdAt).toISOString(),
     updatedAt: new Date(row.updatedAt).toISOString(),
   };
+}
+
+function toMembershipRecord(row: BillingMembershipRow): BillingMembershipRecord {
+  return {
+    userId: row.userId,
+    tier: 'osmium',
+    grantedByUserId: row.grantedByUserId,
+    grantedAt: new Date(row.grantedAt).toISOString(),
+  };
+}
+
+export async function getOsmiumMembership(
+  db: DbHandle,
+  userId: string,
+): Promise<BillingMembershipRecord | null> {
+  const row = await db
+    .selectFrom('app.billingMemberships')
+    .selectAll()
+    .where('userId', '=', userId)
+    .where('revokedAt', 'is', null)
+    .executeTakeFirst();
+  return row ? toMembershipRecord(row) : null;
+}
+
+export async function grantOsmiumMembership(
+  db: DbHandle,
+  input: { userId: string; grantedByUserId: string },
+): Promise<BillingMembershipRecord> {
+  const now = new Date();
+  const row = await db
+    .insertInto('app.billingMemberships')
+    .values({
+      userId: input.userId,
+      tier: 'osmium',
+      grantedByUserId: input.grantedByUserId,
+      grantedAt: now,
+      revokedByUserId: null,
+      revokedAt: null,
+    })
+    .onConflict((oc) =>
+      oc.column('userId').doUpdateSet({
+        tier: 'osmium',
+        grantedByUserId: input.grantedByUserId,
+        grantedAt: now,
+        revokedByUserId: null,
+        revokedAt: null,
+        updatedAt: now,
+      }),
+    )
+    .returningAll()
+    .executeTakeFirstOrThrow();
+  return toMembershipRecord(row);
+}
+
+export async function revokeOsmiumMembership(
+  db: DbHandle,
+  input: { userId: string; revokedByUserId: string },
+): Promise<boolean> {
+  const result = await db
+    .updateTable('app.billingMemberships')
+    .set({ revokedByUserId: input.revokedByUserId, revokedAt: new Date(), updatedAt: new Date() })
+    .where('userId', '=', input.userId)
+    .where('revokedAt', 'is', null)
+    .executeTakeFirst();
+  return Number(result.numUpdatedRows) > 0;
 }
 
 /** One row per person, overwritten by the newest subscription so a stale webhook cannot grant access. */
@@ -233,6 +306,9 @@ export async function usageCount(
 export const BillingRepository = {
   save,
   get,
+  getOsmiumMembership,
+  grantOsmiumMembership,
+  revokeOsmiumMembership,
   countFoundingSeats,
   recordUsageWithinLimit,
   recordUsage,

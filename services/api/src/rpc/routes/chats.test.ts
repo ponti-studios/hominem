@@ -1414,7 +1414,6 @@ describe('chat stream walkie-talkie audio leg', () => {
       chatId: '00000000-0000-4000-8000-000000000001',
       messageId: '00000000-0000-4000-8000-000000000002',
       ownerUserId: testUser.id,
-      isAdmin: false,
     });
   });
 });

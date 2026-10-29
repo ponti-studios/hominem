@@ -25,7 +25,7 @@ export const taskExtractRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const { transcript, referenceDate, timezone } = c.req.valid('json');
 
-    await assertAIUsageAllowed(userId, c.get('auth')!.user.isAdmin);
+    await assertAIUsageAllowed(userId);
 
     const eventId = randomUUID();
     const getDurationMs = startAIUsageTimer();

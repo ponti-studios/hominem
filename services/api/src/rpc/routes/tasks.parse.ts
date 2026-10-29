@@ -24,7 +24,7 @@ export const timeBlockRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const input = c.req.valid('json');
 
-    await assertAIUsageAllowed(userId, c.get('auth')!.user.isAdmin);
+    await assertAIUsageAllowed(userId);
 
     const eventId = randomUUID();
     const getDurationMs = startAIUsageTimer();

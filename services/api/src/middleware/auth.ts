@@ -1,8 +1,7 @@
 import { authDb } from '@hominem/db/core';
-import type { AuthUser as AuthIdentity } from '@ponti-studios/auth/types';
+import type { AuthUser } from '@ponti-studios/auth/types';
 import type { MiddlewareHandler } from 'hono';
 
-import { isAdminEmail } from '../auth/admin';
 import { betterAuthServer } from '../auth/better-auth';
 import type { AuthContext } from '../auth/types';
 
@@ -42,7 +41,7 @@ type SessionLookup = {
 
 function toAuthUser(
   session: NonNullable<Awaited<ReturnType<SessionLookup['api']['getSession']>>>,
-): AuthIdentity & { isAdmin: boolean } {
+): AuthUser {
   const user = session.user;
   return {
     id: user.id,
@@ -50,13 +49,12 @@ function toAuthUser(
     emailVerified: user.emailVerified,
     name: user.name,
     image: user.image ?? null,
-    isAdmin: isAdminEmail(user.email),
     createdAt: new Date(user.createdAt).toISOString(),
     updatedAt: new Date(user.updatedAt).toISOString(),
   };
 }
 
-async function getUser(userId: string) {
+async function getUser(userId: string): Promise<AuthUser | null> {
   return (
     (await authDb.selectFrom('user').selectAll().where('id', '=', userId).executeTakeFirst()) ??
     null
@@ -112,7 +110,7 @@ export async function setMcpAuthContext(
   const clientId = typeof claims.client_id === 'string' ? claims.client_id : undefined;
 
   setAuthContext(c, {
-    user: { ...user, isAdmin: isAdminEmail(user.email) },
+    user,
     userId: user.id,
     clientId,
     credential,

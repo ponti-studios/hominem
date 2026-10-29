@@ -96,7 +96,7 @@ describe('tasks parse route', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ block: makeTimeBlock() });
-    expect(mocks.assertUnderMonthlyUsageLimit).toHaveBeenCalledWith(TIME_BLOCK_TEST_USER_ID, false);
+    expect(mocks.assertUnderMonthlyUsageLimit).toHaveBeenCalledWith(TIME_BLOCK_TEST_USER_ID);
     expect(mocks.extractTimeBlock).toHaveBeenCalledWith(
       VALID_TIME_BLOCK_PARSE_REQUEST,
       TIME_BLOCK_EXTRACTION_PROMPT,

@@ -25,7 +25,7 @@ const authenticatedVoiceRoutes = new Hono<AppContext>()
     const bypassed = shouldBypassVoiceCleanup(input.rawText);
 
     if (!bypassed) {
-      await assertAIUsageAllowed(userId, c.get('auth')!.user.isAdmin);
+      await assertAIUsageAllowed(userId);
     }
 
     const eventId = randomUUID();
