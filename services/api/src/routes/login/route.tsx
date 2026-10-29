@@ -205,7 +205,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
     .get('/auth/open', async (c) => {
       const origin = requestOrigin(c);
       const token = c.req.query('token') ?? '';
-      const landing = new URL('/auth/settings?app=1', origin).toString();
+      const landing = new URL('/account?app=1', origin).toString();
       c.header('Cache-Control', 'no-store');
       c.header('Referrer-Policy', 'no-referrer');
       if (!token) return c.redirect(landing, 303);
@@ -227,7 +227,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
       headers.set('referrer-policy', 'no-referrer');
       return new Response(null, { status: 303, headers });
     })
-    .get('/auth/settings', async (c) => {
+    .get('/account', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       const origin = requestOrigin(c);
       if (session?.user) {
@@ -242,7 +242,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
                 name: session.user.name,
                 email: session.user.email,
               },
-              loginNextUrl: new URL('/auth/settings', origin).toString(),
+              loginNextUrl: new URL('/account', origin).toString(),
               creditUrl,
               creditPence,
               embedded: c.req.query('app') === '1',
@@ -252,7 +252,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         );
       }
       // Signed out: take them through hosted login, then drop them back here.
-      const settingsUrl = new URL('/auth/settings', origin).toString();
+      const settingsUrl = new URL('/account', origin).toString();
       return c.redirect(
         loginUrlWithEnv(
           { resumeQuery: `next=${encodeURIComponent(settingsUrl)}`, step: 'email' },
@@ -261,13 +261,13 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         303,
       );
     })
-    .get('/auth/settings/ai', async (c) => {
+    .get('/account/usage/ai', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       const origin = requestOrigin(c);
       if (session?.user) {
         return c.html(renderAuthShell({ entry: 'settings-ai', title: 'AI usage | Hominem' }));
       }
-      const settingsAiUrl = new URL('/auth/settings/ai', origin).toString();
+      const settingsAiUrl = new URL('/account/usage/ai', origin).toString();
       return c.redirect(
         loginUrlWithEnv(
           { resumeQuery: `next=${encodeURIComponent(settingsAiUrl)}`, step: 'email' },
@@ -276,7 +276,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         303,
       );
     })
-    .get('/auth/settings/ai/footprint', async (c) => {
+    .get('/account/usage/ai/footprint', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       const origin = requestOrigin(c);
       if (session?.user) {
@@ -284,7 +284,7 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
           renderAuthShell({ entry: 'settings-ai-footprint', title: 'AI footprint | Hominem' }),
         );
       }
-      const footprintUrl = new URL('/auth/settings/ai/footprint', origin).toString();
+      const footprintUrl = new URL('/account/usage/ai/footprint', origin).toString();
       return c.redirect(
         loginUrlWithEnv(
           { resumeQuery: `next=${encodeURIComponent(footprintUrl)}`, step: 'email' },
@@ -293,6 +293,67 @@ export function createLoginRoutes(dependencies: AuthDependencies) {
         303,
       );
     })
+    .get('/account/connections', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      const origin = requestOrigin(c);
+      if (!session?.user) {
+        const target = new URL('/account/connections', origin).toString();
+        return c.redirect(
+          loginUrlWithEnv(
+            { resumeQuery: `next=${encodeURIComponent(target)}`, step: 'email' },
+            origin,
+          ),
+          303,
+        );
+      }
+      const creditUrl = await creditUrlFor(session.user, origin);
+      const creditPence = creditUrl ? await creditBalanceFor(session.user.id) : null;
+      return c.html(
+        renderAuthShell({
+          entry: 'settings',
+          title: 'Connections | Hominem',
+          init: {
+            user: { id: session.user.id, name: session.user.name, email: session.user.email },
+            loginNextUrl: new URL('/account/connections', origin).toString(),
+            creditUrl,
+            creditPence,
+            section: 'connections',
+          },
+        }),
+      );
+    })
+    .get('/account/data', async (c) => {
+      const session = await auth.api.getSession({ headers: c.req.raw.headers });
+      const origin = requestOrigin(c);
+      if (!session?.user) {
+        const target = new URL('/account/data', origin).toString();
+        return c.redirect(
+          loginUrlWithEnv(
+            { resumeQuery: `next=${encodeURIComponent(target)}`, step: 'email' },
+            origin,
+          ),
+          303,
+        );
+      }
+      const creditUrl = await creditUrlFor(session.user, origin);
+      const creditPence = creditUrl ? await creditBalanceFor(session.user.id) : null;
+      return c.html(
+        renderAuthShell({
+          entry: 'settings',
+          title: 'Your data | Hominem',
+          init: {
+            user: { id: session.user.id, name: session.user.name, email: session.user.email },
+            loginNextUrl: new URL('/account/data', origin).toString(),
+            creditUrl,
+            creditPence,
+            section: 'data',
+          },
+        }),
+      );
+    })
+    .get('/auth/settings', (c) => c.redirect(`/account${new URL(c.req.url).search}`, 302))
+    .get('/auth/settings/ai/footprint', (c) => c.redirect('/account/usage/ai/footprint', 302))
+    .get('/auth/settings/ai', (c) => c.redirect('/account/usage/ai', 302))
     .get('/auth/settings/credit-history', async (c) => {
       const session = await auth.api.getSession({ headers: c.req.raw.headers });
       if (!session?.user) return c.json({ error: 'unauthorized' }, 401);

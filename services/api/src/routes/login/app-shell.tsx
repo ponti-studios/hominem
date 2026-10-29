@@ -25,6 +25,10 @@ export function renderAuthShell(input: { entry: LoginEntry; init?: unknown; titl
           href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
         {assets.styles.map((href) => (
           <link href={href} rel="stylesheet" />
         ))}

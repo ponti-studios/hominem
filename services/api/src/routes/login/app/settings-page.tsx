@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
+import { AccountShell } from './account-shell';
 import { apiFetch } from './api';
 import { AuthContent, AuthShell } from './auth-shell';
 import type { SettingsInit } from './init';
@@ -199,6 +200,7 @@ export function SettingsPage({
   creditUrl,
   creditPence,
   embedded,
+  section,
 }: SettingsInit) {
   const queryClient = useQueryClient();
   const name = user.name ?? '';
@@ -519,7 +521,7 @@ export function SettingsPage({
             </p>
             <a
               className="text-sm font-medium text-auth-primary no-underline hover:underline hover:underline-offset-3"
-              href="/auth/settings/ai"
+              href="/account/usage/ai"
             >
               Usage details →
             </a>
@@ -736,85 +738,111 @@ export function SettingsPage({
     ),
   };
 
+  const sectionSheet: SheetName | null =
+    section === 'connections' ? 'tokens' : section === 'data' ? 'data' : null;
   return (
-    <AuthShell bare>
-      <div className={styles.page}>
-        <h1 className={styles.pageTitle} id="settings-title">
-          Account
-        </h1>
+    <AccountShell
+      active={
+        section === 'connections'
+          ? '/account/connections'
+          : section === 'data'
+            ? '/account/data'
+            : '/account'
+      }
+    >
+      <>
+        <div className={styles.page}>
+          <h1 className={styles.pageTitle} id="settings-title">
+            {section === 'connections'
+              ? 'Connected apps and tokens'
+              : section === 'data'
+                ? 'Your data'
+                : 'Account'}
+          </h1>
 
-        <section className={styles.hero}>
-          <div className={styles.identityRow}>
-            <span aria-hidden="true" className={styles.avatar}>
-              {initials}
-            </span>
-            <span className={styles.who}>
-              <span className={styles.whoName}>{name || email}</span>
-              {name ? <span className={styles.whoEmail}>{email}</span> : null}
-            </span>
-          </div>
-          {creditUrl ? (
-            <>
-              <div>
-                <p className={styles.heroLabel}>Credit</p>
-                <p className={styles.bigAmount}>
-                  {creditPence === null ? '—' : formatPounds(creditPence)}
-                </p>
-                <p className={styles.heroNote}>Doesn’t expire. Works in Thames.</p>
-              </div>
-              <a className={styles.addButton} href={creditUrl}>
-                Add credit
-              </a>
-            </>
+          {sectionSheet ? (
+            <div className={styles.card} data-account-section={section}>
+              {sheetBody[sectionSheet]}
+            </div>
           ) : (
             <>
-              <div>
-                <p className={styles.heroLabel}>AI usage · {formatUsagePeriod()}</p>
-                <p className={styles.bigAmount}>{usage ? formatUsd(usage.totalCostUsd) : '—'}</p>
-                <p className={styles.heroNote}>
-                  {usage
-                    ? usage.unlimited
-                      ? 'Unlimited admin access'
-                      : `of ${formatUsd(usage.limitUsd)} free this month`
-                    : '\u00a0'}
-                </p>
-              </div>
-              {!usage?.unlimited ? (
-                <div aria-hidden="true" className={styles.usageBar}>
-                  <div className={styles.usageBarFill} style={{ width: `${percent}%` }} />
+              <section className={styles.hero}>
+                <div className={styles.identityRow}>
+                  <span aria-hidden="true" className={styles.avatar}>
+                    {initials}
+                  </span>
+                  <span className={styles.who}>
+                    <span className={styles.whoName}>{name || email}</span>
+                    {name ? <span className={styles.whoEmail}>{email}</span> : null}
+                  </span>
                 </div>
+                {creditUrl ? (
+                  <>
+                    <div>
+                      <p className={styles.heroLabel}>Credit</p>
+                      <p className={styles.bigAmount}>
+                        {creditPence === null ? '—' : formatPounds(creditPence)}
+                      </p>
+                      <p className={styles.heroNote}>Doesn’t expire. Works in Thames.</p>
+                    </div>
+                    <a className={styles.addButton} href={creditUrl}>
+                      Add credit
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <p className={styles.heroLabel}>AI usage · {formatUsagePeriod()}</p>
+                      <p className={styles.bigAmount}>
+                        {usage ? formatUsd(usage.totalCostUsd) : '—'}
+                      </p>
+                      <p className={styles.heroNote}>
+                        {usage
+                          ? usage.unlimited
+                            ? 'Unlimited admin access'
+                            : `of ${formatUsd(usage.limitUsd)} free this month`
+                          : '\u00a0'}
+                      </p>
+                    </div>
+                    {!usage?.unlimited ? (
+                      <div aria-hidden="true" className={styles.usageBar}>
+                        <div className={styles.usageBarFill} style={{ width: `${percent}%` }} />
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </section>
+
+              <div className={styles.card}>
+                {rows.map((row, index) => (
+                  <NavRow
+                    key={row.icon}
+                    icon={row.icon}
+                    label={row.label}
+                    last={index === rows.length - 1}
+                    onOpen={() => setSheet(row.icon)}
+                    value={row.value}
+                  />
+                ))}
+              </div>
+
+              {embedded ? null : (
+                <form action="/logout" method="post">
+                  <input name="next" type="hidden" value={loginNextUrl} />
+                  <button className={styles.signOut} type="submit">
+                    Sign out
+                  </button>
+                </form>
+              )}
+              {sheet && !sectionSheet ? (
+                <Sheet title={sheetTitles[sheet]} onClose={() => setSheet(null)}>
+                  {sheetBody[sheet]}
+                </Sheet>
               ) : null}
             </>
           )}
-        </section>
-
-        <div className={styles.card}>
-          {rows.map((row, index) => (
-            <NavRow
-              key={row.icon}
-              icon={row.icon}
-              label={row.label}
-              last={index === rows.length - 1}
-              onOpen={() => setSheet(row.icon)}
-              value={row.value}
-            />
-          ))}
         </div>
-
-        {embedded ? null : (
-          <form action="/logout" method="post">
-            <input name="next" type="hidden" value={loginNextUrl} />
-            <button className={styles.signOut} type="submit">
-              Sign out
-            </button>
-          </form>
-        )}
-        {sheet ? (
-          <Sheet title={sheetTitles[sheet]} onClose={() => setSheet(null)}>
-            {sheetBody[sheet]}
-          </Sheet>
-        ) : null}
-      </div>
-    </AuthShell>
+      </>
+    </AccountShell>
   );
 }

@@ -29,7 +29,7 @@
   width: 28px;
   height: 28px;
   place-items: center;
-  border-radius: 50%;
+  border-radius: 0;
   color: var(--auth-primary-text);
   background: var(--auth-primary);
   font-size: 12px;

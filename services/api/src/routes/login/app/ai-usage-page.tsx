@@ -2,8 +2,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
+import { AccountShell } from './account-shell';
 import { apiFetch } from './api';
-import { AuthContent, AuthCardCopy, AuthHeading, AuthShell, AuthTitle } from './auth-shell';
+import { AuthContent, AuthCardCopy, AuthHeading, AuthTitle } from './auth-shell';
 
 import styles from './ai-usage-page.module.css';
 
@@ -354,7 +355,7 @@ function WasteAndEfficiency({ data }: { data: UsagePagePayload }) {
 
       <section className={styles.card}>
         <div className={styles.impactHead}>
-          <a className={styles.impactLink} href="/auth/settings/ai/footprint">
+          <a className={styles.impactLink} href="/account/usage/ai/footprint">
             Estimated footprint ↗
           </a>
           <p className={styles.muted}>This month</p>
@@ -385,36 +386,38 @@ export function AiUsagePage() {
   const data = query.data;
 
   return (
-    <AuthShell wide>
-      <AuthContent wide>
-        <AuthHeading>
-          <AuthTitle>AI usage</AuthTitle>
-          <AuthCardCopy>
-            Where your Hominem AI budget went this month — what's driving it, what's wasteful, and
-            how fast you're spending.
-          </AuthCardCopy>
-        </AuthHeading>
-        <div className={`${styles.page} w-full`}>
-          {data ? (
-            <>
-              <StatusCard data={data} />
-              <section className={styles.card}>
-                <p className={styles.cardTitle}>Daily spend</p>
-                <DailySpark daily={data.daily} />
-              </section>
-              <DriversCard data={data} />
-              <section className={styles.card}>
-                <p className={styles.cardTitle}>Last 6 months</p>
-                <TrendChart points={data.monthlyTrend} />
-              </section>
-              <WasteAndEfficiency data={data} />
-            </>
-          ) : null}
-          <p className={styles.backLink}>
-            <a href="/auth/settings">← Back to account</a>
-          </p>
-        </div>
-      </AuthContent>
-    </AuthShell>
+    <AccountShell active="/account/usage/ai">
+      <>
+        <AuthContent wide>
+          <AuthHeading>
+            <AuthTitle>AI usage</AuthTitle>
+            <AuthCardCopy>
+              Where your Hominem AI budget went this month — what's driving it, what's wasteful, and
+              how fast you're spending.
+            </AuthCardCopy>
+          </AuthHeading>
+          <div className={`${styles.page} w-full`}>
+            {data ? (
+              <>
+                <StatusCard data={data} />
+                <section className={styles.card}>
+                  <p className={styles.cardTitle}>Daily spend</p>
+                  <DailySpark daily={data.daily} />
+                </section>
+                <DriversCard data={data} />
+                <section className={styles.card}>
+                  <p className={styles.cardTitle}>Last 6 months</p>
+                  <TrendChart points={data.monthlyTrend} />
+                </section>
+                <WasteAndEfficiency data={data} />
+              </>
+            ) : null}
+            <p className={styles.backLink}>
+              <a href="/account">← Back to account</a>
+            </p>
+          </div>
+        </AuthContent>
+      </>
+    </AccountShell>
   );
 }

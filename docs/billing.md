@@ -36,8 +36,8 @@ recorded. The two volume counters are:
   (`services/api/src/chat/chat-generation-commands.ts`). Taster, Core, and legacy AI have finite
   caps; Osmium is unlimited.
 - `skill` — one row per MCP tool invocation (`services/api/src/mcp/server.ts`). Taster has a finite
-  monthly volume; paid plans do not. The `/billing` page shows the current MCP tool-call count and
-  cap, and the MCP limit error links to that page.
+  monthly volume; paid plans do not. `/account/usage` shows current MCP tool-call and message usage;
+  the MCP limit error links to that page.
 
 Both counters are calendar-month, UTC. `app.billing_usage_events` is the ledger, and enforcement is
 one atomic `INSERT … WHERE count < limit`, so two calls at the boundary cannot both pass.
@@ -49,9 +49,10 @@ other user.
 
 ## Paying
 
-`GET /billing` on the API is the pay surface: it shows Taster and Core, starts a Stripe Checkout, and
-offers a plan change or cancellation to anyone already paying. Osmium members see a distinct
-complimentary membership card. Signed-out visitors go through the hosted login first.
+`GET /account/billing` on the API is the pay surface: it shows Taster and Core, starts a Stripe
+Checkout, and offers a plan change or cancellation to anyone already paying. Osmium members see a
+distinct complimentary membership card. `GET /billing` redirects to this canonical page. Signed-out
+visitors go through hosted login first.
 
 - `POST /billing/checkout` — starts a monthly `mode=subscription` Checkout for Core at £9.99.
 - `POST /billing/change` — changes an existing subscription to Core. AI is no longer offered.

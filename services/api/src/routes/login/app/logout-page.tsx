@@ -39,7 +39,7 @@ export function LogoutPage({ signedOut = false, next }: LogoutPageProps) {
           <div className="flex flex-col items-center gap-3.5">
             <a
               className="grid h-12 w-full place-items-center rounded-[10px] bg-auth-primary text-base font-semibold text-auth-primary-text no-underline transition-opacity duration-150 hover:opacity-90"
-              href={`/login?next=${encodeURIComponent(`${window.location.origin}/auth/settings`)}`}
+              href={`/login?next=${encodeURIComponent(`${window.location.origin}/account`)}`}
             >
               Sign in again
             </a>

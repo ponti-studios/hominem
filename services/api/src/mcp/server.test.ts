@@ -192,6 +192,9 @@ beforeAll(async () => {
     .values({ id: testUser.id, name: testUser.name, email: testUser.email })
     .onConflict((oc) => oc.doNothing())
     .execute();
+  // These database-backed MCP integration tests share a fixed user across runs.
+  // Remove its old fixture usage so a previous run cannot exhaust the Taster cap.
+  await pool.query('DELETE FROM app.billing_usage_events WHERE user_id = $1', [testUser.id]);
   // The worklog confirmation test below needs an engagement for the test user.
   // Clear any leftover first so a crashed earlier run can't leak one into the
   // other tests' expectations.
@@ -199,6 +202,10 @@ beforeAll(async () => {
     testUser.id,
     'MRTR Worklog Co',
   ]);
+});
+
+afterAll(async () => {
+  await pool.query('DELETE FROM app.billing_usage_events WHERE user_id = $1', [testUser.id]);
 });
 
 describe('mcp server transport', () => {
