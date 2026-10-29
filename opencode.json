@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "expo": {
+        "type": "remote",
+        "url": "https://mcp.expo.dev/mcp",
+        "disabled": false
+      },
+      "maestro": {
+        "type": "local",
+        "command": ["/Users/charlesponti/.maestro/bin/maestro", "mcp"],
+        "environment": {
+          "JAVA_HOME": "/Users/charlesponti/.local/share/mise/installs/java/17.0.2"
+        },
+        "disabled": false
+      },
+      "hominem": {
+        "type": "remote",
+        "url": "https://api.ponti.io/api/mcp",
+        "disabled": false
+      },
+      "tableplus": {
+        "type": "local",
+        "command": ["/Applications/Setapp/TablePlus.app/Contents/MacOS/tableplus-mcp"],
+        "disabled": false
+      }
+    }
+  }
+}
