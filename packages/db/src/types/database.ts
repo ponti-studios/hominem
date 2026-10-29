@@ -91,6 +91,17 @@ export interface AppAiUsageEvents {
   usageAvailable: Generated<boolean>;
 }
 
+export interface AppBillingMemberships {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  grantedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  grantedByUserId: string | null;
+  revokedAt: ColumnType<string, Date | string, Date | string> | null;
+  revokedByUserId: string | null;
+  tier: Generated<string>;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
 export interface AppBillingSubscriptions {
   cancelAtPeriodEnd: Generated<boolean>;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1695,6 +1706,7 @@ export interface Verification {
 export interface DB {
   account: Account;
   'app.aiUsageEvents': AppAiUsageEvents;
+  'app.billingMemberships': AppBillingMemberships;
   'app.billingSubscriptions': AppBillingSubscriptions;
   'app.billingUsageEvents': AppBillingUsageEvents;
   'app.careerApplicationFiles': AppCareerApplicationFiles;

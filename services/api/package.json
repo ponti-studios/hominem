@@ -42,6 +42,7 @@
     "invite-user": "tsx scripts/invite-user.ts",
     "credentials": "tsx scripts/credentials-admin.ts",
     "credit": "tsx scripts/credit-admin.ts",
+    "membership": "tsx scripts/membership-admin.ts",
     "test-user": "tsx scripts/test-user-admin.ts",
     "merge-user-data": "tsx scripts/merge-user-data.ts",
     "backfill:file-security": "tsx scripts/backfill-file-security.ts",

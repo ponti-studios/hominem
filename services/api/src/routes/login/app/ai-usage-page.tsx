@@ -9,6 +9,7 @@ import styles from './ai-usage-page.module.css';
 
 type UsageStatus = {
   limitUsd: number;
+  unlimited?: boolean;
   periodStart: string;
   totalCostUsd: number;
 };
@@ -108,7 +109,9 @@ function formatElectricity(kilowattHours: number): string {
 function StatusCard({ data }: { data: UsagePagePayload }) {
   const { monthly, summary, daily } = data;
   const start = new Date(monthly.periodStart);
-  const percent = Math.min(100, (monthly.totalCostUsd / monthly.limitUsd) * 100);
+  const percent = monthly.unlimited
+    ? 0
+    : Math.min(100, (monthly.totalCostUsd / monthly.limitUsd) * 100);
 
   const now = new Date();
   const elapsedDays = Math.max(1, Math.floor((now.getTime() - start.getTime()) / 86_400_000) + 1);
@@ -117,11 +120,14 @@ function StatusCard({ data }: { data: UsagePagePayload }) {
   ).getUTCDate();
   const projected = (monthly.totalCostUsd / elapsedDays) * monthDays;
   const dailyAverage = daily.length > 0 ? monthly.totalCostUsd / elapsedDays : 0;
-  const dayOfCap = dailyAverage > 0 ? Math.floor(monthly.limitUsd / dailyAverage) : null;
+  const dayOfCap =
+    !monthly.unlimited && dailyAverage > 0 ? Math.floor(monthly.limitUsd / dailyAverage) : null;
 
   let pacing: string;
   let over = false;
-  if (monthly.totalCostUsd >= monthly.limitUsd) {
+  if (monthly.unlimited) {
+    pacing = 'Unlimited admin access. AI usage is not paused by a monthly spend cap.';
+  } else if (monthly.totalCostUsd >= monthly.limitUsd) {
     pacing = "You've reached this month's AI budget — AI features are paused until it resets.";
     over = true;
   } else if (dayOfCap !== null && dayOfCap <= monthDays) {
@@ -147,22 +153,28 @@ function StatusCard({ data }: { data: UsagePagePayload }) {
       </p>
       <div className={styles.statusRow}>
         <p className={styles.bigNumber}>{usd(monthly.totalCostUsd)}</p>
-        <p className={styles.muted}>of {usd(monthly.limitUsd)}</p>
+        <p className={styles.muted}>
+          {monthly.unlimited ? 'No monthly cap' : `of ${usd(monthly.limitUsd)}`}
+        </p>
       </div>
-      <div aria-hidden="true" className={styles.bar}>
-        <div
-          className={styles.barFill}
-          data-over={monthly.totalCostUsd >= monthly.limitUsd ? '' : undefined}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
+      {!monthly.unlimited ? (
+        <div aria-hidden="true" className={styles.bar}>
+          <div
+            className={styles.barFill}
+            data-over={monthly.totalCostUsd >= monthly.limitUsd ? '' : undefined}
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+      ) : null}
       <p className={styles.pacing} data-over={over ? '' : undefined}>
         {pacing}
       </p>
       <p className={styles.muted}>
-        {daysUntilReset === 1
-          ? `Budget resets tomorrow. ${summary.requestCount} requests so far.`
-          : `Budget resets in ${daysUntilReset} days. ${summary.requestCount} requests so far.`}
+        {monthly.unlimited
+          ? `${summary.requestCount} requests this month.`
+          : daysUntilReset === 1
+            ? `Budget resets tomorrow. ${summary.requestCount} requests so far.`
+            : `Budget resets in ${daysUntilReset} days. ${summary.requestCount} requests so far.`}
       </p>
     </section>
   );

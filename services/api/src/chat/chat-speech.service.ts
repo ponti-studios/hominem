@@ -15,7 +15,7 @@ import { getTelemetryTracer, logger } from '@hominem/telemetry';
 import { SpanStatusCode } from '@opentelemetry/api';
 
 import {
-  assertUnderMonthlyUsageLimit,
+  assertAIUsageAllowed,
   recordAIUsageEvent,
   startAIUsageTimer,
 } from '../application/ai-usage.service';
@@ -57,7 +57,7 @@ export async function streamMessageSpeech(input: {
   messageId: string;
   ownerUserId: string;
 }): Promise<ChatSpeechStream> {
-  await assertUnderMonthlyUsageLimit(input.ownerUserId);
+  await assertAIUsageAllowed(input.ownerUserId);
   await ChatRepository.getOwnedOrThrow(db, input.chatId, input.ownerUserId);
   const message = await ChatRepository.getMessageById(db, input.chatId, input.messageId);
   if (!message || message.role !== 'assistant') {

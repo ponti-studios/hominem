@@ -19,12 +19,14 @@ export function billingConfig(): BillingConfig {
       core: env.BILLING_CORE_CHAT_MESSAGES,
       ai: env.BILLING_AI_CHAT_MESSAGES,
       founding_core: env.BILLING_CORE_CHAT_MESSAGES,
+      osmium: null,
     },
     skillCalls: {
       taster: env.BILLING_TASTER_SKILL_CALLS,
       core: DEFAULT_BILLING_CONFIG.skillCalls.core,
       ai: DEFAULT_BILLING_CONFIG.skillCalls.ai,
       founding_core: DEFAULT_BILLING_CONFIG.skillCalls.founding_core,
+      osmium: null,
     },
   };
 }

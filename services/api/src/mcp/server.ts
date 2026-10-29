@@ -119,6 +119,7 @@ export type McpHonoEnv = {
 interface McpAuthInfoExtra {
   ownerUserId: string;
   sessionId: string | null;
+  isAdmin: boolean;
 }
 
 function createErrorResult(message: string): CallToolResult {
@@ -133,7 +134,11 @@ const PUBLIC_TOOL_ERROR = 'Unable to complete the MCP tool request.';
 function resolveRequestContext(authInfo?: AuthInfo) {
   const ownerUserId = authInfo?.extra?.ownerUserId;
   if (typeof ownerUserId !== 'string' || !ownerUserId) return null;
-  return { ownerUserId, grantedScopes: new Set(authInfo?.scopes ?? []) };
+  return {
+    ownerUserId,
+    grantedScopes: new Set(authInfo?.scopes ?? []),
+    isAdmin: authInfo?.extra?.isAdmin === true,
+  };
 }
 
 function hasRequiredScopes(grantedScopes: Set<string>, requiredScopes: readonly string[]): boolean {
@@ -206,11 +211,12 @@ async function invokeTool(
   ownerUserId: string,
   toolName: string,
   args: unknown,
+  isAdmin = false,
 ): Promise<CallToolResult> {
   try {
     // Volume, never domain: every plan can reach every tool, but a Taster's monthly volume is finite.
     await assertBillingUsage(billingRules(), ownerUserId, 'skill');
-    return await callTool(ownerUserId, toolName, args);
+    return await callTool(ownerUserId, toolName, args, { isAdmin });
   } catch (error) {
     logger.warn('mcp_tool_invocation_failed', {
       operation: 'mcp.tool.invoke',
@@ -292,7 +298,7 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
         // Execute with the args captured at mint time, not whatever arrived
         // on the retried wire call — a client can't change the payload
         // between the preview shown and the confirmed execution.
-        return invokeTool(context.ownerUserId, definition.name, state.args);
+        return invokeTool(context.ownerUserId, definition.name, state.args, context.isAdmin);
       }
 
       const confirmToken = readConfirmToken(args);
@@ -300,7 +306,8 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
         const confirmed = await confirmTokenState(confirmToken, definition, ctx);
         // The token froze the arguments at mint time, so what runs is what the
         // preview described, not whatever this round's wire call carried.
-        if (confirmed) return invokeTool(context.ownerUserId, definition.name, confirmed.args);
+        if (confirmed)
+          return invokeTool(context.ownerUserId, definition.name, confirmed.args, context.isAdmin);
       }
 
       // First call. A tool with a preview function only skips confirmation
@@ -335,7 +342,7 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
       }
     }
 
-    return invokeTool(context.ownerUserId, definition.name, args);
+    return invokeTool(context.ownerUserId, definition.name, args, context.isAdmin);
   };
 }
 
@@ -417,6 +424,7 @@ export async function handleMcpRequest(c: Context<McpHonoEnv>): Promise<Response
     extra: {
       ownerUserId: auth.userId,
       sessionId: auth.sessionId ?? null,
+      isAdmin: auth.user.isAdmin === true,
     } satisfies McpAuthInfoExtra,
   };
 

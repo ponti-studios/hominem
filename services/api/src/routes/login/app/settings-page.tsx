@@ -31,6 +31,7 @@ type MonthlyUsage = {
   isOverLimit: boolean;
   limitUsd: number;
   totalCostUsd: number;
+  unlimited?: boolean;
 };
 
 const usdFormatter = new Intl.NumberFormat('en-US', {
@@ -359,7 +360,8 @@ export function SettingsPage({
   };
 
   const usage = usageQuery.data;
-  const percent = usage ? Math.min(100, (usage.totalCostUsd / usage.limitUsd) * 100) : 0;
+  const percent =
+    usage && !usage.unlimited ? Math.min(100, (usage.totalCostUsd / usage.limitUsd) * 100) : 0;
   const nameChanged = nameInput.trim() !== name;
 
   const lastAdded = historyQuery.data?.entries[0];
@@ -495,7 +497,11 @@ export function SettingsPage({
             <div className={styles.usageSummary}>
               <p className={styles.usageAmount}>{usage ? formatUsd(usage.totalCostUsd) : '—'}</p>
               <p className={styles.usageLimit}>
-                {usage ? `of ${formatUsd(usage.limitUsd)} · ${percent.toFixed(0)}%` : '\u00a0'}
+                {usage
+                  ? usage.unlimited
+                    ? 'No monthly cap · admin access'
+                    : `of ${formatUsd(usage.limitUsd)} · ${percent.toFixed(0)}%`
+                  : '\u00a0'}
               </p>
             </div>
             <div aria-hidden="true" className={styles.usageBar}>
@@ -505,9 +511,11 @@ export function SettingsPage({
               className={styles.usageReset}
               data-over-limit={usage?.isOverLimit ? true : undefined}
             >
-              {usage?.isOverLimit
-                ? "You've reached this month's free AI usage limit. It resets at the start of next month."
-                : 'Resets at the start of next month.'}
+              {usage?.unlimited
+                ? 'AI usage is not paused by a monthly spend cap.'
+                : usage?.isOverLimit
+                  ? "You've reached this month's free AI usage limit. It resets at the start of next month."
+                  : 'Resets at the start of next month.'}
             </p>
             <a
               className="text-sm font-medium text-auth-primary no-underline hover:underline hover:underline-offset-3"
@@ -764,12 +772,18 @@ export function SettingsPage({
                 <p className={styles.heroLabel}>AI usage · {formatUsagePeriod()}</p>
                 <p className={styles.bigAmount}>{usage ? formatUsd(usage.totalCostUsd) : '—'}</p>
                 <p className={styles.heroNote}>
-                  {usage ? `of ${formatUsd(usage.limitUsd)} free this month` : '\u00a0'}
+                  {usage
+                    ? usage.unlimited
+                      ? 'Unlimited admin access'
+                      : `of ${formatUsd(usage.limitUsd)} free this month`
+                    : '\u00a0'}
                 </p>
               </div>
-              <div aria-hidden="true" className={styles.usageBar}>
-                <div className={styles.usageBarFill} style={{ width: `${percent}%` }} />
-              </div>
+              {!usage?.unlimited ? (
+                <div aria-hidden="true" className={styles.usageBar}>
+                  <div className={styles.usageBarFill} style={{ width: `${percent}%` }} />
+                </div>
+              ) : null}
             </>
           )}
         </section>

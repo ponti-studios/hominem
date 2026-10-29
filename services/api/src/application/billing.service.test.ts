@@ -1,4 +1,5 @@
 import type {
+  BillingMembershipRecord,
   BillingSubscriptionRecord,
   BillingUsageKind,
   SaveBillingSubscriptionInput,
@@ -12,7 +13,9 @@ import {
   billingState,
   cancelPlan,
   changePlan,
+  grantOsmiumMembership,
   handleBillingEvent,
+  revokeOsmiumMembership,
   startSubscriptionCheckout,
   type BillingDeps,
   type BillingStore,
@@ -43,6 +46,7 @@ function subscription(
 
 interface MemoryStore extends BillingStore {
   saved: BillingSubscriptionRecord | null;
+  membership: BillingMembershipRecord | null;
   usage: Array<{ userId: string; kind: BillingUsageKind }>;
   /** Set to simulate a founding seat lost to a simultaneous signup. */
   denyFounding: boolean;
@@ -52,10 +56,28 @@ function memoryStore(initial: BillingSubscriptionRecord | null = null): MemorySt
   let current = initial;
   const store: MemoryStore = {
     saved: initial,
+    membership: null,
     usage: [],
     denyFounding: false,
     async get() {
       return current;
+    },
+    async getOsmiumMembership() {
+      return store.membership;
+    },
+    async grantOsmiumMembership(input) {
+      store.membership = {
+        userId: input.userId,
+        tier: 'osmium',
+        grantedByUserId: input.grantedByUserId,
+        grantedAt: now.toISOString(),
+      };
+      return store.membership;
+    },
+    async revokeOsmiumMembership() {
+      const hadMembership = store.membership !== null;
+      store.membership = null;
+      return hadMembership;
     },
     async save(input: SaveBillingSubscriptionInput) {
       const record = subscription({
@@ -129,7 +151,7 @@ describe('assertBillingUsage', () => {
   it('blocks a Taster at the message limit, and lets exactly the limit through', async () => {
     const store = memoryStore();
     const billing = deps(store);
-    const limit = DEFAULT_BILLING_CONFIG.chatMessages.taster;
+    const limit = DEFAULT_BILLING_CONFIG.chatMessages.taster ?? 0;
 
     for (let sent = 0; sent < limit; sent += 1) {
       await expect(assertBillingUsage(billing, 'u1', 'chat')).resolves.toBe('taster');
@@ -150,11 +172,30 @@ describe('assertBillingUsage', () => {
     await expect(assertBillingUsage(billing, 'u1', 'skill')).rejects.toBeInstanceOf(ForbiddenError);
   });
 
+  it('lets Osmium members use unlimited messages and skill calls while recording usage', async () => {
+    const store = memoryStore();
+    store.membership = {
+      userId: 'u1',
+      tier: 'osmium',
+      grantedByUserId: 'operator-1',
+      grantedAt: now.toISOString(),
+    };
+    const billing = deps(store);
+
+    for (let call = 0; call < 501; call += 1) {
+      await expect(assertBillingUsage(billing, 'u1', 'skill')).resolves.toBe('osmium');
+    }
+    for (let message = 0; message < 51; message += 1) {
+      await expect(assertBillingUsage(billing, 'u1', 'chat')).resolves.toBe('osmium');
+    }
+    expect(store.usage).toHaveLength(552);
+  });
+
   it('gives Core and AI uncapped skill volume but still caps their conversation', async () => {
     for (const plan of ['core', 'ai'] as const) {
       const store = memoryStore(subscription({ tier: plan }));
       const billing = deps(store);
-      const cap = DEFAULT_BILLING_CONFIG.chatMessages[plan];
+      const cap = DEFAULT_BILLING_CONFIG.chatMessages[plan] ?? 0;
 
       for (let call = 0; call < 50; call += 1) {
         await expect(assertBillingUsage(billing, 'u1', 'skill')).resolves.toBe(plan);
@@ -187,9 +228,83 @@ describe('billingState', () => {
     expect(state.usage.skillCalls).toBe(0);
     expect(state.periodStart).toBe('2026-10-01T00:00:00.000Z');
   });
+
+  it('reports Osmium as a complimentary unlimited membership', async () => {
+    const store = memoryStore();
+    store.membership = {
+      userId: 'u1',
+      tier: 'osmium',
+      grantedByUserId: 'operator-1',
+      grantedAt: now.toISOString(),
+    };
+    const state = await billingState(deps(store), 'u1');
+    expect(state.plan).toBe('osmium');
+    expect(state.limits).toEqual({ chatMessagesPerMonth: null, skillCallsPerMonth: null });
+    expect(state.membership).toEqual(store.membership);
+  });
+
+  it('cancels an active Stripe plan before granting Osmium and can revoke the membership', async () => {
+    const store = memoryStore(subscription());
+    const billing = deps(store);
+    const membership = await grantOsmiumMembership(billing, {
+      userId: 'u1',
+      grantedByUserId: 'operator-1',
+    });
+    expect(billing.stripe.cancelSubscriptionNow).toHaveBeenCalledWith('sub_1');
+    expect(membership.tier).toBe('osmium');
+    expect((await billingState(billing, 'u1')).plan).toBe('osmium');
+    await expect(
+      revokeOsmiumMembership(billing, { userId: 'u1', revokedByUserId: 'operator-1' }),
+    ).resolves.toBe(true);
+    expect((await billingState(billing, 'u1')).plan).toBe('taster');
+  });
+
+  it('withdraws the Osmium grant when Stripe cancellation fails', async () => {
+    const store = memoryStore(subscription());
+    const billing = deps(store, {
+      cancelSubscriptionNow: vi.fn(async () => {
+        throw new Error('Stripe unavailable');
+      }),
+    });
+    await expect(
+      grantOsmiumMembership(billing, { userId: 'u1', grantedByUserId: 'operator-1' }),
+    ).rejects.toThrow('Stripe unavailable');
+    expect(store.membership).toBeNull();
+    expect((await billingState(billing, 'u1')).plan).toBe('core');
+  });
+
+  it('withdraws the Osmium grant when it cannot check the existing Stripe plan', async () => {
+    const store = memoryStore();
+    vi.spyOn(store, 'get').mockRejectedValue(new Error('billing store unavailable'));
+    const billing = deps(store);
+    await expect(
+      grantOsmiumMembership(billing, { userId: 'u1', grantedByUserId: 'operator-1' }),
+    ).rejects.toThrow('billing store unavailable');
+    expect(store.membership).toBeNull();
+  });
 });
 
 describe('startSubscriptionCheckout', () => {
+  it('does not start a Stripe checkout for Osmium members', async () => {
+    const store = memoryStore();
+    store.membership = {
+      userId: 'u1',
+      tier: 'osmium',
+      grantedByUserId: 'operator-1',
+      grantedAt: now.toISOString(),
+    };
+    const billing = deps(store);
+    await expect(
+      startSubscriptionCheckout(billing, {
+        userId: 'u1',
+        email: 'a@b.co',
+        tier: 'core',
+        origin: 'https://api.test',
+      }),
+    ).resolves.toEqual({ kind: 'already_subscribed' });
+    expect(billing.stripe.createSubscriptionCheckout).not.toHaveBeenCalled();
+  });
+
   it('charges £9.99 for Core even when legacy founding seats remain', async () => {
     const store = memoryStore();
     const billing = deps(store);
@@ -286,6 +401,24 @@ describe('handleBillingEvent', () => {
 
     expect(billing.stripe.cancelSubscriptionNow).toHaveBeenCalledWith('sub_old');
     expect(store.saved?.stripeSubscriptionId).toBe('sub_new');
+  });
+
+  it('prevents a Stripe webhook from replacing Osmium and cancels any racing subscription', async () => {
+    const store = memoryStore();
+    store.membership = {
+      userId: 'u1',
+      tier: 'osmium',
+      grantedByUserId: 'operator-1',
+      grantedAt: now.toISOString(),
+    };
+    const billing = deps(store, { subscription: vi.fn(async () => facts()) });
+    const outcome = await handleBillingEvent(billing, {
+      type: 'customer.subscription.created',
+      data: { object: { id: 'sub_1' } },
+    });
+    expect(outcome).toEqual({ kind: 'ignored' });
+    expect(billing.stripe.cancelSubscriptionNow).toHaveBeenCalledWith('sub_1');
+    expect(store.saved).toBeNull();
   });
 
   it('ignores events that are not about subscriptions, and subscriptions with no owner', async () => {

@@ -7,8 +7,11 @@ import {
   FOUNDING_SEATS,
   countFoundingSeats,
   get,
+  getOsmiumMembership,
+  grantOsmiumMembership,
   recordUsage,
   recordUsageWithinLimit,
+  revokeOsmiumMembership,
   save,
   usageCount,
 } from './billing.repository';
@@ -61,6 +64,21 @@ describe('billing repository', () => {
       founding: true,
       currentPeriodEnd: '2026-11-26T00:00:00.000Z',
     });
+  });
+
+  it('grants and revokes an Osmium membership without replacing Stripe subscription data', async () => {
+    const userId = await createUser();
+    const grantorId = await createUser();
+    const stripeSubscription = await save(input(userId));
+
+    const granted = await grantOsmiumMembership(db, { userId, grantedByUserId: grantorId });
+    expect(granted).toMatchObject({ userId, tier: 'osmium', grantedByUserId: grantorId });
+    expect(await getOsmiumMembership(db, userId)).toEqual(granted);
+    expect(await get(db, userId)).toEqual(stripeSubscription);
+
+    expect(await revokeOsmiumMembership(db, { userId, revokedByUserId: grantorId })).toBe(true);
+    expect(await getOsmiumMembership(db, userId)).toBeNull();
+    expect(await revokeOsmiumMembership(db, { userId, revokedByUserId: grantorId })).toBe(false);
   });
 
   async function seedFounders(prefix: string) {

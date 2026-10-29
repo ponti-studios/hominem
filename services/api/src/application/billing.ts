@@ -8,7 +8,7 @@ import type { BillingSubscriptionRecord, BillingTier, BillingUsageKind } from '@
 export type { BillingTier, BillingUsageKind };
 
 /** The plan a person is actually on. Taster is the absence of a live paid subscription. */
-export type Plan = 'taster' | 'core' | 'ai' | 'founding_core';
+export type Plan = 'taster' | 'core' | 'ai' | 'founding_core' | 'osmium';
 
 /** Current offer prices plus legacy prices needed to preserve stored subscription terms. */
 export const TIER_PRICES_PENCE = {
@@ -16,11 +16,12 @@ export const TIER_PRICES_PENCE = {
   core: 999,
   ai: 1999,
   founding_core: 799,
+  osmium: 0,
 } as const;
 
 export interface BillingConfig {
   /** Monthly conversation caps. Every tier is capped, so no tier is unlimited conversation. */
-  chatMessages: Record<Plan, number>;
+  chatMessages: Record<Plan, number | null>;
   /** Monthly skill-call volume. `null` is unlimited; Taster is blocked by volume, never by domain. */
   skillCalls: Record<Plan, number | null>;
 }
@@ -36,17 +37,19 @@ export const DEFAULT_BILLING_CONFIG: BillingConfig = {
     core: 1000,
     ai: 3000,
     founding_core: 1000,
+    osmium: null,
   },
   skillCalls: {
     taster: 500,
     core: null,
     ai: null,
     founding_core: null,
+    osmium: null,
   },
 };
 
 export interface BillingLimits {
-  chatMessagesPerMonth: number;
+  chatMessagesPerMonth: number | null;
   skillCallsPerMonth: number | null;
 }
 
@@ -69,6 +72,14 @@ export function planFor(subscription: BillingSubscriptionRecord | null, now: Dat
   if (!subscription || !subscriptionGrantsAccess(subscription, now)) return 'taster';
   if (subscription.tier === 'ai') return 'ai';
   return subscription.founding ? 'founding_core' : 'core';
+}
+
+export function planForMembership(
+  subscription: BillingSubscriptionRecord | null,
+  hasOsmiumMembership: boolean,
+  now: Date,
+): Plan {
+  return hasOsmiumMembership ? 'osmium' : planFor(subscription, now);
 }
 
 export function limitsFor(

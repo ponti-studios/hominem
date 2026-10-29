@@ -10,7 +10,7 @@ import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
 import {
-  assertUnderMonthlyUsageLimit,
+  assertAIUsageAllowed,
   recordAIUsageEvent,
   startAIUsageTimer,
 } from '../../application/ai-usage.service';
@@ -61,7 +61,7 @@ export const notesRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const { transcript, instruction } = c.req.valid('json');
 
-    await assertUnderMonthlyUsageLimit(userId);
+    await assertAIUsageAllowed(userId);
 
     const eventId = randomUUID();
     const getDurationMs = startAIUsageTimer();

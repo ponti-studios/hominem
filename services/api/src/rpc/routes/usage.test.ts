@@ -10,11 +10,15 @@ const mocks = vi.hoisted(() => ({
   getMonthlyUsageStatus: vi.fn(),
   getSpeechUsageHealth: vi.fn(),
   getAIUsagePageReport: vi.fn(),
+  getOsmiumMembership: vi.fn(),
 }));
 
 vi.mock('../../application/ai-usage.service', () => mocks);
 vi.mock('../../application/speech-usage.service', () => ({
   getSpeechUsageHealth: mocks.getSpeechUsageHealth,
+}));
+vi.mock('../../application/billing.runtime', () => ({
+  billingRules: () => ({ store: { getOsmiumMembership: mocks.getOsmiumMembership } }),
 }));
 
 import { usageRoutes } from './usage';
@@ -62,6 +66,9 @@ describe('usage routes', () => {
     mocks.getMonthlyAIUsageReport.mockReset();
     mocks.getMonthlyUsageStatus.mockReset();
     mocks.getSpeechUsageHealth.mockReset();
+    mocks.getAIUsagePageReport.mockReset();
+    mocks.getOsmiumMembership.mockReset();
+    mocks.getOsmiumMembership.mockResolvedValue(null);
   });
 
   it('requires authentication', async () => {
@@ -127,6 +134,29 @@ describe('usage routes', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(page);
     expect(mocks.getAIUsagePageReport).toHaveBeenCalledWith(testUser.id);
+  });
+
+  it('marks AI usage as uncapped for Osmium members while retaining actual usage totals', async () => {
+    const report = {
+      monthly: {
+        totalCostUsd: 18,
+        limitUsd: 10,
+        remainingUsd: 0,
+        isOverLimit: true,
+        periodStart: '2026-08-01T00:00:00.000Z',
+        periodEnd: '2026-08-22T00:00:00.000Z',
+      },
+    };
+    mocks.getAIUsagePageReport.mockResolvedValue(report);
+    mocks.getOsmiumMembership.mockResolvedValue({ tier: 'osmium' });
+
+    const response = await createApp().request('/api/usage/ai');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      ...report,
+      monthly: { ...report.monthly, unlimited: true },
+    });
   });
 
   it('returns the current-month usage report for the authenticated user', async () => {
