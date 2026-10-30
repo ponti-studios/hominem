@@ -30,22 +30,21 @@ type OAuthClient = {
 
 type MonthlyUsage = {
   isOverLimit: boolean;
-  limitUsd: number;
-  totalCostUsd: number;
+  totalTokens: number;
+  limitTokens: number | null;
+  percentUsed: number;
+  periodStart: string;
   unlimited?: boolean;
 };
-
-const usdFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-});
 const usagePeriodFormatter = new Intl.DateTimeFormat('en-US', {
   month: '2-digit',
   year: '2-digit',
 });
 
-function formatUsd(amount: number): string {
-  return usdFormatter.format(amount);
+function formatTokens(amount: number): string {
+  return amount >= 1_000_000
+    ? `${(amount / 1_000_000).toFixed(1)}M`
+    : amount.toLocaleString('en-GB');
 }
 
 function formatUsagePeriod(): string {
@@ -226,7 +225,7 @@ export function SettingsPage({
 
   const usageQuery = useQuery({
     queryKey: ['usage', 'monthly'],
-    queryFn: () => apiFetch<MonthlyUsage>('/api/usage/monthly'),
+    queryFn: () => apiFetch<MonthlyUsage>('/api/usage/monthly/v2'),
   });
 
   const historyQuery = useQuery({
@@ -362,8 +361,7 @@ export function SettingsPage({
   };
 
   const usage = usageQuery.data;
-  const percent =
-    usage && !usage.unlimited ? Math.min(100, (usage.totalCostUsd / usage.limitUsd) * 100) : 0;
+  const percent = usage && !usage.unlimited ? usage.percentUsed : 0;
   const nameChanged = nameInput.trim() !== name;
 
   const lastAdded = historyQuery.data?.entries[0];
@@ -392,7 +390,7 @@ export function SettingsPage({
     {
       icon: 'credit',
       label: creditUrl ? 'Credit' : 'AI usage',
-      value: creditUrl ? creditValue : usage ? formatUsd(usage.totalCostUsd) : '',
+      value: creditUrl ? creditValue : usage ? `${formatTokens(usage.totalTokens)} tokens` : '',
     },
     {
       icon: 'tokens',
@@ -497,12 +495,12 @@ export function SettingsPage({
           <section className={`${styles.section} w-full`} data-settings-usage>
             <p className={styles.sectionLabel}>AI usage · {formatUsagePeriod()}</p>
             <div className={styles.usageSummary}>
-              <p className={styles.usageAmount}>{usage ? formatUsd(usage.totalCostUsd) : '—'}</p>
+              <p className={styles.usageAmount}>{usage ? formatTokens(usage.totalTokens) : '—'}</p>
               <p className={styles.usageLimit}>
                 {usage
                   ? usage.unlimited
                     ? 'No monthly cap · admin access'
-                    : `of ${formatUsd(usage.limitUsd)} · ${percent.toFixed(0)}%`
+                    : `of ${formatTokens(usage.limitTokens ?? 0)} tokens · ${percent.toFixed(0)}%`
                   : '\u00a0'}
               </p>
             </div>
@@ -514,7 +512,7 @@ export function SettingsPage({
               data-over-limit={usage?.isOverLimit ? true : undefined}
             >
               {usage?.unlimited
-                ? 'AI usage is not paused by a monthly spend cap.'
+                ? 'Unlimited Osmium access. Your AI usage does not pause.'
                 : usage?.isOverLimit
                   ? "You've reached this month's free AI usage limit. It resets at the start of next month."
                   : 'Resets at the start of next month.'}
@@ -794,13 +792,13 @@ export function SettingsPage({
                     <div>
                       <p className={styles.heroLabel}>AI usage · {formatUsagePeriod()}</p>
                       <p className={styles.bigAmount}>
-                        {usage ? formatUsd(usage.totalCostUsd) : '—'}
+                        {usage ? `${formatTokens(usage.totalTokens)} tokens` : '—'}
                       </p>
                       <p className={styles.heroNote}>
                         {usage
                           ? usage.unlimited
                             ? 'Unlimited admin access'
-                            : `of ${formatUsd(usage.limitUsd)} free this month`
+                            : `of ${formatTokens(usage.limitTokens ?? 0)} tokens this month`
                           : '\u00a0'}
                       </p>
                     </div>

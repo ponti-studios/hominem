@@ -16,9 +16,11 @@ export function billingConfig(): BillingConfig {
   return {
     chatMessages: {
       taster: env.BILLING_TASTER_CHAT_MESSAGES,
-      core: env.BILLING_CORE_CHAT_MESSAGES,
-      ai: env.BILLING_AI_CHAT_MESSAGES,
-      founding_core: env.BILLING_CORE_CHAT_MESSAGES,
+      core: null,
+      ai: null,
+      founding_core: null,
+      rhodium: DEFAULT_BILLING_CONFIG.chatMessages.rhodium,
+      iridium: DEFAULT_BILLING_CONFIG.chatMessages.iridium,
       osmium: null,
     },
     skillCalls: {
@@ -26,8 +28,12 @@ export function billingConfig(): BillingConfig {
       core: DEFAULT_BILLING_CONFIG.skillCalls.core,
       ai: DEFAULT_BILLING_CONFIG.skillCalls.ai,
       founding_core: DEFAULT_BILLING_CONFIG.skillCalls.founding_core,
+      rhodium: DEFAULT_BILLING_CONFIG.skillCalls.rhodium,
+      iridium: DEFAULT_BILLING_CONFIG.skillCalls.iridium,
       osmium: null,
     },
+    aiTokens: DEFAULT_BILLING_CONFIG.aiTokens,
+    aiSpendUsd: DEFAULT_BILLING_CONFIG.aiSpendUsd,
   };
 }
 

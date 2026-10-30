@@ -191,21 +191,23 @@ describe('assertBillingUsage', () => {
     expect(store.usage).toHaveLength(552);
   });
 
-  it('gives Core and AI uncapped skill volume but still caps their conversation', async () => {
-    for (const plan of ['core', 'ai'] as const) {
-      const store = memoryStore(subscription({ tier: plan }));
+  it('gives paid tiers uncapped skill volume and no message cap', async () => {
+    for (const { plan, tier, founding } of [
+      { plan: 'core', tier: 'core', founding: false },
+      { plan: 'ai', tier: 'ai', founding: false },
+      { plan: 'founding_core', tier: 'core', founding: true },
+      { plan: 'rhodium', tier: 'rhodium', founding: false },
+      { plan: 'iridium', tier: 'iridium', founding: false },
+    ] as const) {
+      const store = memoryStore(subscription({ tier, founding }));
       const billing = deps(store);
-      const cap = DEFAULT_BILLING_CONFIG.chatMessages[plan] ?? 0;
 
       for (let call = 0; call < 50; call += 1) {
         await expect(assertBillingUsage(billing, 'u1', 'skill')).resolves.toBe(plan);
       }
-      for (let sent = 0; sent < cap; sent += 1) {
+      for (let sent = 0; sent < 1_001; sent += 1) {
         await expect(assertBillingUsage(billing, 'u1', 'chat')).resolves.toBe(plan);
       }
-      await expect(assertBillingUsage(billing, 'u1', 'chat')).rejects.toBeInstanceOf(
-        ForbiddenError,
-      );
     }
   });
 
@@ -223,7 +225,7 @@ describe('billingState', () => {
     await store.recordUsage({ userId: 'u1', kind: 'chat' });
     const state = await billingState(deps(store), 'u1');
     expect(state.plan).toBe('ai');
-    expect(state.limits.chatMessagesPerMonth).toBe(DEFAULT_BILLING_CONFIG.chatMessages.ai);
+    expect(state.limits.chatMessagesPerMonth).toBeNull();
     expect(state.usage.chatMessages).toBe(1);
     expect(state.usage.skillCalls).toBe(0);
     expect(state.periodStart).toBe('2026-10-01T00:00:00.000Z');
@@ -239,7 +241,12 @@ describe('billingState', () => {
     };
     const state = await billingState(deps(store), 'u1');
     expect(state.plan).toBe('osmium');
-    expect(state.limits).toEqual({ chatMessagesPerMonth: null, skillCallsPerMonth: null });
+    expect(state.limits).toEqual({
+      chatMessagesPerMonth: null,
+      skillCallsPerMonth: null,
+      aiTokensPerMonth: null,
+      aiSpendUsdPerMonth: null,
+    });
     expect(state.membership).toEqual(store.membership);
   });
 

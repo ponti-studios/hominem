@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   getMonthlyUsageStatus: vi.fn(),
   getSpeechUsageHealth: vi.fn(),
   getAIUsagePageReport: vi.fn(),
+  getPlanMonthlyUsageStatus: vi.fn(),
   getOsmiumMembership: vi.fn(),
 }));
 
@@ -67,6 +68,7 @@ describe('usage routes', () => {
     mocks.getMonthlyUsageStatus.mockReset();
     mocks.getSpeechUsageHealth.mockReset();
     mocks.getAIUsagePageReport.mockReset();
+    mocks.getPlanMonthlyUsageStatus.mockReset();
     mocks.getOsmiumMembership.mockReset();
     mocks.getOsmiumMembership.mockResolvedValue(null);
   });
@@ -128,34 +130,74 @@ describe('usage routes', () => {
       },
     };
     mocks.getAIUsagePageReport.mockResolvedValue(page);
+    mocks.getPlanMonthlyUsageStatus.mockResolvedValue({
+      totalTokens: 1250,
+      limitTokens: 3_900_000,
+      remainingTokens: 3_898_750,
+      percentUsed: 0,
+      unlimited: false,
+      isOverLimit: false,
+      periodStart: '2026-08-01T00:00:00.000Z',
+      periodEnd: '2026-08-22T00:00:00.000Z',
+    });
 
     const response = await createApp().request('/api/usage/ai');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual(page);
+    const payload = await response.json();
+    expect(payload).toMatchObject({
+      range: page.range,
+      monthly: {
+        totalTokens: 1250,
+        limitTokens: 3_900_000,
+        percentUsed: 0,
+      },
+      summary: {
+        requestCount: 3,
+        failedCount: 1,
+        totalTokens: 1250,
+      },
+    });
+    expect(JSON.stringify(payload)).not.toContain('totalCostUsd');
+    expect(JSON.stringify(payload)).not.toContain('limitUsd');
     expect(mocks.getAIUsagePageReport).toHaveBeenCalledWith(testUser.id);
   });
 
-  it('marks AI usage as uncapped for Osmium members while retaining actual usage totals', async () => {
+  it('marks AI usage as unlimited for Osmium members while retaining actual token totals', async () => {
     const report = {
-      monthly: {
-        totalCostUsd: 18,
-        limitUsd: 10,
-        remainingUsd: 0,
-        isOverLimit: true,
-        periodStart: '2026-08-01T00:00:00.000Z',
-        periodEnd: '2026-08-22T00:00:00.000Z',
+      range: { from: '2026-08-01T00:00:00.000Z', to: '2026-08-22T00:00:00.000Z' },
+      summary: {
+        requestCount: 2,
+        usageAvailableCount: 2,
+        failedCount: 0,
+        totalTokens: 1000,
+        cachedInputTokens: 0,
+        reasoningTokens: 0,
       },
+      byFeature: [],
+      byModel: [],
+      byOperation: [],
+      daily: [],
+      monthlyTrend: [],
     };
     mocks.getAIUsagePageReport.mockResolvedValue(report);
-    mocks.getOsmiumMembership.mockResolvedValue({ tier: 'osmium' });
+    mocks.getPlanMonthlyUsageStatus.mockResolvedValue({
+      totalTokens: 1000,
+      limitTokens: null,
+      remainingTokens: null,
+      percentUsed: 0,
+      unlimited: true,
+      isOverLimit: false,
+      periodStart: '2026-08-01T00:00:00.000Z',
+      periodEnd: '2026-08-22T00:00:00.000Z',
+    });
 
     const response = await createApp().request('/api/usage/ai');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      ...report,
-      monthly: { ...report.monthly, unlimited: true },
+    expect(await response.json()).toMatchObject({
+      monthly: { totalTokens: 1000, limitTokens: null, unlimited: true },
+      summary: { totalTokens: 1000 },
     });
   });
 
@@ -193,11 +235,11 @@ describe('usage routes', () => {
     expect(mocks.getMonthlyAIUsageReport).toHaveBeenCalledWith(testUser.id);
   });
 
-  it('preserves the monthly allowance endpoint', async () => {
+  it('preserves the legacy monthly allowance response for existing clients', async () => {
     const status = {
-      totalCostUsd: 1,
+      totalCostUsd: 0.42,
       limitUsd: 10,
-      remainingUsd: 9,
+      remainingUsd: 9.58,
       isOverLimit: false,
       periodStart: '2026-08-01T00:00:00.000Z',
       periodEnd: '2026-08-22T00:00:00.000Z',
@@ -209,6 +251,28 @@ describe('usage routes', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(status);
     expect(mocks.getMonthlyUsageStatus).toHaveBeenCalledWith(testUser.id);
+  });
+
+  it('serves token allowances from the versioned monthly endpoint', async () => {
+    const status = {
+      totalTokens: 100,
+      limitTokens: 3_900_000,
+      remainingTokens: 3_899_900,
+      percentUsed: 0,
+      unlimited: false,
+      isOverLimit: false,
+      periodStart: '2026-08-01T00:00:00.000Z',
+      periodEnd: '2026-08-22T00:00:00.000Z',
+    };
+    mocks.getPlanMonthlyUsageStatus.mockResolvedValue(status);
+
+    const response = await createApp().request('/api/usage/monthly/v2');
+
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload).toEqual(status);
+    expect(JSON.stringify(payload)).not.toContain('Usd');
+    expect(mocks.getPlanMonthlyUsageStatus).toHaveBeenCalledWith(testUser.id);
   });
 
   it('rejects health reports for non-admin users', async () => {

@@ -1,21 +1,27 @@
 # Billing and paid tiers
 
-Hominem offers free Taster, paid Core, and assigned Osmium membership. Stripe takes payment for
-Core; the API stores the account state it enforces and never trusts a browser for it.
+Hominem offers free Taster, paid Core, Rhodium, and Iridium, plus assigned Osmium membership. Stripe
+takes payment for paid tiers; the API stores the account state it enforces and never trusts a browser
+for it.
 
-The prices are decided in the **"Hominem — Paid Tier Plan" sheet**. The monthly volume caps below
-are the deployed configuration and can be changed from the environment without a rule change.
+The prices and token allowances are modeled in the **"Hominem — Paid Tier Plan" sheet**. The
+displayed token allowances and hidden AI spend guards are deployed configuration in
+`services/api/src/application/billing.ts`. Taster's message and MCP caps remain environment
+settings.
 
-| Plan   | Price         | Skills                        | Monthly conversation |
-| ------ | ------------- | ----------------------------- | -------------------- |
-| Taster | £0            | capped by volume, all domains | 50 messages          |
-| Core   | £9.99 / month | uncapped                      | 1,000 messages       |
-| Osmium | Complimentary | unlimited                     | unlimited            |
+| Plan    | Price          | Monthly AI allowance | Hidden spend guard | Monthly conversation | MCP calls |
+| ------- | -------------- | -------------------- | ------------------ | -------------------- | --------- |
+| Taster  | £0             | 1M tokens            | $10                | 50 messages          | 500       |
+| Core    | £9.99 / month  | 3.9M tokens          | $2.50              | token-metered        | unlimited |
+| Rhodium | £19.99 / month | 8.5M tokens          | $5.45              | token-metered        | unlimited |
+| Iridium | £39.99 / month | 18M tokens           | $11.40             | token-metered        | unlimited |
+| Osmium  | Complimentary  | unlimited            | none               | unlimited            | unlimited |
 
-AI and Founding Core are retired and are not available for new Stripe subscriptions or plan
-changes. The existing Founding Core price lock remains supported for legacy records; no new founding
-seats are issued. Legacy AI records retain their stored plan and 3,000-message allowance until they
-end. There were no active app subscribers when these offers were retired.
+AI and Founding Core are retired and are not available for new Stripe subscriptions or plan changes.
+The existing Founding Core price lock remains supported for legacy records; no new founding seats
+are issued. Founding Core keeps its £7.99 price and Core's token allowance; legacy AI keeps its
+£19.99 price and Rhodium's token allowance. Paid tiers are token-metered, including these legacy
+records. There were no active app subscribers when those offers were retired.
 
 ## What a plan gates
 
@@ -30,14 +36,18 @@ access comes from `app.billing_subscriptions`:
 
 A plan is blocked by **volume, never by domain**. Every plan can reach every skill; the difference is
 how much can be used. Osmium has no message, MCP, or monthly AI spend cap. Usage continues to be
-recorded. The two volume counters are:
+recorded. Current paid tiers have a user-visible token allowance and a hidden provider-spend guard.
+The guard protects tier economics and is separate from the displayed token budget. Taster retains
+its AI spend guard and message/MCP caps. Usage resets on the UTC calendar month. The two volume
+counters are:
 
 - `chat` — one row per Conversation message, counted at generation start
-  (`services/api/src/chat/chat-generation-commands.ts`). Taster, Core, and legacy AI have finite
-  caps; Osmium is unlimited.
+  (`services/api/src/chat/chat-generation-commands.ts`). Taster has a finite message cap; paid tiers
+  are token-metered; Osmium is unlimited.
 - `skill` — one row per MCP tool invocation (`services/api/src/mcp/server.ts`). Taster has a finite
-  monthly volume; paid plans do not. `/account/usage` shows current MCP tool-call and message usage;
-  the MCP limit error links to that page.
+  monthly volume; paid plans do not. `/account/usage` shows MCP tool-call usage and the AI allowance
+  as a percentage of the token budget, without exposing provider spend. The MCP limit error links to
+  that page. Paid tiers do not have a separate monthly message cap; Taster retains its message cap.
 
 Both counters are calendar-month, UTC. `app.billing_usage_events` is the ledger, and enforcement is
 one atomic `INSERT … WHERE count < limit`, so two calls at the boundary cannot both pass.
@@ -49,13 +59,15 @@ other user.
 
 ## Paying
 
-`GET /account/billing` on the API is the pay surface: it shows Taster and Core, starts a Stripe
+`GET /account/billing` on the API is the pay surface: it shows the available tiers, starts a Stripe
 Checkout, and offers a plan change or cancellation to anyone already paying. Osmium members see a
 distinct complimentary membership card. `GET /billing` redirects to this canonical page. Signed-out
 visitors go through hosted login first.
 
-- `POST /billing/checkout` — starts a monthly `mode=subscription` Checkout for Core at £9.99.
-- `POST /billing/change` — changes an existing subscription to Core. AI is no longer offered.
+- `POST /billing/checkout` — starts a monthly `mode=subscription` Checkout for Core, Rhodium, or
+  Iridium.
+- `POST /billing/change` — changes an existing subscription to an available paid tier. AI is no
+  longer offered.
 - `POST /billing/cancel` — sets `cancel_at_period_end`; access continues until the period ends.
 - `POST /webhooks/stripe/billing` — the writer of Stripe subscription state. It verifies
   `Stripe-Signature` against the raw body, and applies `customer.subscription.created`,
@@ -82,17 +94,16 @@ just billing revoke member@example.com operator@example.com
 | `STRIPE_API_BASE_URL`           | Local Stripe fake, development only.                   |
 | `BILLING_STRIPE_WEBHOOK_SECRET` | Signing secret for `/webhooks/stripe/billing`.         |
 | `BILLING_TASTER_CHAT_MESSAGES`  | Taster monthly conversation cap.                       |
-| `BILLING_CORE_CHAT_MESSAGES`    | Core and Founding Core monthly conversation cap.       |
 | `BILLING_TASTER_SKILL_CALLS`    | Taster monthly skill-call volume. Paid tiers uncapped. |
 
-The legacy `BILLING_AI_CHAT_MESSAGES` setting remains available for stored AI records. Stripe prices
-are created ad hoc per Checkout (`price_data`), so no price IDs need to be seeded for a new
-environment. Register the webhook endpoint in the Stripe dashboard and put its signing secret in
-`BILLING_STRIPE_WEBHOOK_SECRET` (or reuse `STRIPE_WEBHOOK_SECRET`).
+Stripe prices are created ad hoc per Checkout (`price_data`), so no price IDs need to be seeded for
+a new environment. Register the webhook endpoint in the Stripe dashboard and put its signing secret
+in `BILLING_STRIPE_WEBHOOK_SECRET` (or reuse `STRIPE_WEBHOOK_SECRET`).
 
 ## Rules for changes
 
-- Change a price only against the plan sheet, and change it here (and in `TIER_PRICES_PENCE`) in the
+- Change a price or token allowance only against the plan sheet, and change it here (and in
+  `TIER_PRICES_PENCE` / `DEFAULT_BILLING_CONFIG`) in the
   same commit. Never infer a price from a Stripe dashboard value at runtime.
 - Never let a cancel, a lapse, or a failed payment keep both a paid plan and access. `planFor` in
   `services/api/src/application/billing.ts` is the single answer to "what does this subscription

@@ -70,6 +70,8 @@ const PLAN_LABELS: Record<Plan, string> = {
   core: 'Core',
   ai: 'AI',
   founding_core: 'Founding Core',
+  rhodium: 'Rhodium',
+  iridium: 'Iridium',
   osmium: 'Osmium',
 };
 
@@ -204,7 +206,13 @@ export async function revokeOsmiumMembership(
 /** Starts a Core subscription Checkout at the current public price. */
 export async function startSubscriptionCheckout(
   deps: BillingDeps,
-  input: { userId: string; email: string; tier: 'core'; origin: string; now?: Date },
+  input: {
+    userId: string;
+    email: string;
+    tier: Extract<BillingTier, 'core' | 'rhodium' | 'iridium'>;
+    origin: string;
+    now?: Date;
+  },
 ): Promise<CheckoutOutcome> {
   const now = input.now ?? clock(deps);
   const [existing, membership] = await Promise.all([
@@ -217,7 +225,7 @@ export async function startSubscriptionCheckout(
     userId: input.userId,
     email: input.email,
     tier: input.tier,
-    pricePence: TIER_PRICES_PENCE.core,
+    pricePence: pricePenceFor(input.tier, false),
     founding: false,
     successUrl: `${input.origin}/billing/done?session_id={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${input.origin}/billing/cancelled`,

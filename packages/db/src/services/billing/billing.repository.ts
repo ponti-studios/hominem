@@ -10,7 +10,7 @@ type BillingMembershipRow = Selectable<AppBillingMemberships>;
 /** The founding offer is for the first 100 Core subscriptions (docs/billing.md). */
 export const FOUNDING_SEATS = 100;
 
-export type BillingTier = 'core' | 'ai';
+export type BillingTier = 'core' | 'ai' | 'rhodium' | 'iridium';
 export type BillingStatus =
   | 'active'
   | 'trialing'
@@ -56,7 +56,7 @@ export interface SaveBillingSubscriptionInput {
   cancelAtPeriodEnd: boolean;
 }
 
-const TIERS: readonly BillingTier[] = ['core', 'ai'];
+const TIERS: readonly BillingTier[] = ['core', 'ai', 'rhodium', 'iridium'];
 const STATUSES: readonly BillingStatus[] = [
   'active',
   'trialing',

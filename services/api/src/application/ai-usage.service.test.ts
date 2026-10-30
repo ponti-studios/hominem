@@ -1,38 +1,51 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  assertUnderMonthlyUsageLimit: vi.fn(),
-  getOsmiumMembership: vi.fn(),
-  billingRules: vi.fn(() => ({
-    store: { getOsmiumMembership: mocks.getOsmiumMembership },
-    config: {},
-  })),
+  assertUnderMonthlyUsageBudget: vi.fn(),
+  billingState: vi.fn(),
   assertBillingUsage: vi.fn(),
 }));
 
 vi.mock('@hominem/ai', () => ({
-  assertUnderMonthlyUsageLimit: mocks.assertUnderMonthlyUsageLimit,
+  assertUnderMonthlyUsageBudget: mocks.assertUnderMonthlyUsageBudget,
+  assertUnderMonthlyUsageLimit: vi.fn(),
+  getMonthlyUsageStatus: vi.fn(),
 }));
-vi.mock('./billing.runtime', () => ({ billingRules: mocks.billingRules }));
-vi.mock('./billing.service', () => ({ assertBillingUsage: mocks.assertBillingUsage }));
+vi.mock('./billing.runtime', () => ({ billingRules: vi.fn(() => ({ config: {} })) }));
+vi.mock('./billing.service', () => ({
+  assertBillingUsage: mocks.assertBillingUsage,
+  billingState: mocks.billingState,
+}));
 
 import { assertAIUsageAllowed, assertChatAllowed } from './ai-usage.service';
 
 describe('AI usage allowances', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getOsmiumMembership.mockResolvedValue(null);
+    mocks.billingState.mockResolvedValue({
+      plan: 'core',
+      limits: { aiTokensPerMonth: 3_900_000, aiSpendUsdPerMonth: 2.5 },
+    });
   });
 
-  it('keeps the monthly AI spend cap for regular accounts', async () => {
+  it('applies the plan token budget and provider spend guard', async () => {
     await assertAIUsageAllowed('user-1');
-    expect(mocks.assertUnderMonthlyUsageLimit).toHaveBeenCalledWith('user-1');
+    expect(mocks.assertUnderMonthlyUsageBudget).toHaveBeenCalledWith('user-1', {
+      limitUsd: 2.5,
+      limitTokens: 3_900_000,
+    });
   });
 
-  it('skips the monthly AI spend cap for Osmium members', async () => {
-    mocks.getOsmiumMembership.mockResolvedValue({ tier: 'osmium' });
+  it('skips token and spend limits for Osmium members', async () => {
+    mocks.billingState.mockResolvedValue({
+      plan: 'osmium',
+      limits: { aiTokensPerMonth: null, aiSpendUsdPerMonth: null },
+    });
     await assertChatAllowed('member-1');
-    expect(mocks.assertUnderMonthlyUsageLimit).not.toHaveBeenCalled();
+    expect(mocks.assertUnderMonthlyUsageBudget).toHaveBeenCalledWith('member-1', {
+      limitUsd: null,
+      limitTokens: null,
+    });
     expect(mocks.assertBillingUsage).toHaveBeenCalledWith(expect.anything(), 'member-1', 'chat');
   });
 });

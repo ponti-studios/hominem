@@ -66,7 +66,7 @@ export interface StripeClient {
 export interface SubscriptionCheckoutInput {
   userId: string;
   email: string;
-  tier: 'core' | 'ai';
+  tier: 'core' | 'ai' | 'rhodium' | 'iridium';
   pricePence: number;
   founding: boolean;
   successUrl: string;
@@ -81,7 +81,7 @@ export interface SubscriptionFacts {
   currentPeriodEnd: Date;
   cancelAtPeriodEnd: boolean;
   userId: string | null;
-  tier: 'core' | 'ai' | null;
+  tier: 'core' | 'ai' | 'rhodium' | 'iridium' | null;
   founding: boolean;
 }
 
@@ -98,7 +98,7 @@ export interface StripeSubscriptionsClient {
   updateSubscriptionPlan(
     subscriptionId: string,
     pricePence: number,
-    tier: 'core' | 'ai',
+    tier: 'core' | 'ai' | 'rhodium' | 'iridium',
   ): Promise<void>;
   cancelSubscriptionAtPeriodEnd(subscriptionId: string): Promise<void>;
   /** Ends a subscription immediately, for an older one a new checkout has replaced. */
@@ -138,7 +138,13 @@ function productIdOf(item: z.infer<typeof subscriptionItemSchema>): string | nul
 
 function toSubscriptionFacts(subscription: z.infer<typeof subscriptionSchema>): SubscriptionFacts {
   const metadata = subscription.metadata ?? {};
-  const tier = metadata.tier === 'ai' ? 'ai' : metadata.tier === 'core' ? 'core' : null;
+  const tier =
+    metadata.tier === 'core' ||
+    metadata.tier === 'ai' ||
+    metadata.tier === 'rhodium' ||
+    metadata.tier === 'iridium'
+      ? metadata.tier
+      : null;
   const item = subscription.items.data[0];
   const periodEnd = subscription.current_period_end ?? item?.current_period_end ?? null;
   if (periodEnd === null) {
@@ -158,8 +164,8 @@ function toSubscriptionFacts(subscription: z.infer<typeof subscriptionSchema>): 
   };
 }
 
-function subscriptionProductName(tier: 'core' | 'ai'): string {
-  return tier === 'ai' ? 'Hominem AI' : 'Hominem Core';
+function subscriptionProductName(tier: 'core' | 'ai' | 'rhodium' | 'iridium'): string {
+  return `Hominem ${tier[0]!.toUpperCase()}${tier.slice(1)}`;
 }
 
 /** A safety stop on pagination: 2,000 completed Checkouts in the sweep window. */
