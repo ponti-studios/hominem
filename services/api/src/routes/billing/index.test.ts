@@ -14,6 +14,15 @@ const mocks = vi.hoisted(() => {
     subscription: BillingSubscriptionRecord | null;
     membership: BillingMembershipRecord | null;
   } = { subscription: null, membership: null };
+  const aiUsage = {
+    totalCostUsd: 4,
+    limitUsd: 10,
+    remainingUsd: 6,
+    isOverLimit: false,
+    totalTokens: 400_000,
+    periodStart: '2026-10-01T00:00:00.000Z',
+    periodEnd: '2026-11-01T00:00:00.000Z',
+  };
   const usage: Array<{ userId: string; kind: BillingUsageKind }> = [];
   const stripe = {
     createSubscriptionCheckout: vi.fn(),
@@ -70,10 +79,44 @@ const mocks = vi.hoisted(() => {
       usage.filter((event) => event.userId === input.userId && event.kind === input.kind).length,
   };
   const config = {
-    chatMessages: { taster: 50, core: 1000, ai: 3000, founding_core: 1000, osmium: null },
-    skillCalls: { taster: 500, core: null, ai: null, founding_core: null, osmium: null },
+    chatMessages: {
+      taster: 50,
+      core: null,
+      ai: null,
+      founding_core: null,
+      rhodium: null,
+      iridium: null,
+      osmium: null,
+    },
+    skillCalls: {
+      taster: 500,
+      core: null,
+      ai: null,
+      founding_core: null,
+      rhodium: null,
+      iridium: null,
+      osmium: null,
+    },
+    aiTokens: {
+      taster: 1_000_000,
+      core: 3_900_000,
+      ai: 3_000_000,
+      founding_core: 3_900_000,
+      rhodium: 8_500_000,
+      iridium: 18_000_000,
+      osmium: null,
+    },
+    aiSpendUsd: {
+      taster: 10,
+      core: 2.5,
+      ai: 10,
+      founding_core: 2.5,
+      rhodium: 5.45,
+      iridium: 11.4,
+      osmium: null,
+    },
   };
-  return { state, usage, stripe, store, config };
+  return { state, aiUsage, usage, stripe, store, config };
 });
 
 // Generated per run: the webhook code only needs a shared opaque value to sign with.
@@ -82,8 +125,6 @@ const SIGNING_KEY = randomUUID();
 vi.mock('../../env', () => ({
   env: {
     API_URL: 'https://api.test',
-    BILLING_CORE_CHAT_MESSAGES: 1000,
-    BILLING_AI_CHAT_MESSAGES: 3000,
   },
 }));
 
@@ -91,6 +132,10 @@ vi.mock('../../application/billing.runtime', () => ({
   billingWebhookSecret: () => SIGNING_KEY,
   billingRules: () => ({ store: mocks.store, config: mocks.config }),
   billingDeps: () => ({ store: mocks.store, stripe: mocks.stripe, config: mocks.config }),
+}));
+
+vi.mock('../../application/ai-usage.service', () => ({
+  getMonthlyUsageStatus: async () => mocks.aiUsage,
 }));
 
 import { billingRoutes } from './index';
@@ -144,6 +189,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.state.subscription = null;
   mocks.state.membership = null;
+  Object.assign(mocks.aiUsage, {
+    totalCostUsd: 4,
+    limitUsd: 10,
+    remainingUsd: 6,
+    isOverLimit: false,
+  });
   mocks.usage.length = 0;
   mocks.stripe.createSubscriptionCheckout.mockResolvedValue({
     id: 'cs_1',
@@ -177,7 +228,13 @@ describe('GET /account/billing', () => {
     expect(page).toContain('£9.99');
     expect(page).not.toContain('Founding Core');
     expect(page).not.toContain('>AI<');
-    expect(page.match(/>Subscribe<\/button>/g)).toHaveLength(1);
+    expect(page.match(/>Subscribe<\/button>/g)).toHaveLength(3);
+    expect(page).toContain('£19.99');
+    expect(page).toContain('£39.99');
+    expect(page).toContain('class="card rhodium-plan"');
+    expect(page).toContain('class="card iridium-plan"');
+    expect(page).toContain('<small>45</small><strong>Rh</strong>');
+    expect(page).toContain('<small>77</small><strong>Ir</strong>');
     expect(page).toContain('<h1 id="billing-title">Your plan</h1>');
     expect(page).toContain('href="/account/usage"');
     expect(page).not.toContain('Usage this month');
@@ -215,11 +272,21 @@ describe('GET /account/billing', () => {
     expect(page).not.toContain('Every MCP tool invocation uses one call.');
   });
 
+  it('gives Founding Core its iron-core surface and seal', async () => {
+    mocks.state.subscription = subscription({ pricePence: 799, founding: true });
+    const page = await (await app().request('/account/billing')).text();
+
+    expect(page).toContain('class="card current-plan founding-core-plan"');
+    expect(page).toContain('class="metal-seal founding-core-seal"');
+    expect(page).toContain('<small>26</small><strong>Fe</strong>');
+    expect(page).toContain('radial-gradient(ellipse at 86% 18%');
+  });
+
   it('keeps cancellation controls for an active paid subscriber', async () => {
     mocks.state.subscription = subscription();
     const page = await (await app().request('/account/billing')).text();
 
-    expect(page).toContain('Cancel at the end of this period');
+    expect(page).toContain('<button type="submit">Cancel</button>');
     expect(page).not.toContain('billing-manage');
   });
 });
@@ -231,15 +298,36 @@ describe('GET /account/usage', () => {
     expect(decodeURIComponent(response.headers.get('location') ?? '')).toContain('/account/usage');
   });
 
-  it('shows message and MCP usage in one stacked usage panel', async () => {
+  it('shows AI allowance and MCP usage in one AI-first stacked panel without raw spend or messages', async () => {
     const response = await app().request('/account/usage');
     expect(response.status).toBe(200);
     const page = await response.text();
     expect(page).toContain('href="/account/usage"');
     expect(page).toContain('MCP tool calls');
-    expect(page).toContain('Messages');
-    expect(page).toContain('AI spend');
-    expect(page).toContain('View AI usage details');
+    expect(page).toContain('AI allowance');
+    expect(page).toContain('40% used');
+    expect(page).toContain('60% remaining');
+    expect(page).toContain('max="100" value="40"');
+    expect(page.indexOf('AI allowance')).toBeLessThan(page.indexOf('MCP tool calls'));
+    expect(page).not.toContain('Messages');
+    expect(page).not.toContain('AI spend');
+    expect(page).not.toContain('$4.00');
+    expect(page).not.toContain('View AI usage details');
+  });
+
+  it('shows unlimited AI allowance without a progress meter for Osmium', async () => {
+    mocks.state.membership = {
+      userId: USER.id,
+      tier: 'osmium',
+      grantedByUserId: 'admin-1',
+      grantedAt: '2026-10-26T00:00:00.000Z',
+    };
+    const page = await (await app().request('/account/usage')).text();
+
+    expect(page).toContain('AI allowance');
+    expect(page).toContain('Unlimited');
+    expect(page).not.toContain('<progress');
+    expect(page).not.toContain('$4.00');
   });
 });
 

@@ -1,5 +1,5 @@
 import { useApiClient } from '@hominem/rpc/react';
-import type { MonthlyUsageStatus } from '@hominem/rpc/types';
+import type { PlanMonthlyUsageStatus } from '@hominem/rpc/types';
 import { useQuery } from '@tanstack/react-query';
 
 const monthlyUsageQueryKey = ['usage', 'monthly'] as const;
@@ -7,7 +7,7 @@ const monthlyUsageQueryKey = ['usage', 'monthly'] as const;
 export const useMonthlyUsage = () => {
   const client = useApiClient();
 
-  return useQuery<MonthlyUsageStatus>({
+  return useQuery<PlanMonthlyUsageStatus>({
     queryKey: monthlyUsageQueryKey,
     queryFn: async () => {
       const res = await client.api.usage.monthly.$get();

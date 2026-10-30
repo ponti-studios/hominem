@@ -6,7 +6,7 @@ status: active
 owner: charlesponti
 tags: [design, web, interface]
 related: [authentication.md, billing.md]
-updated: 2026-10-29
+updated: 2026-10-30
 ---
 
 # Web design direction
@@ -21,7 +21,7 @@ This direction governs presentation. A restyle keeps the page's existing route, 
 - **Monochrome with a clear ink hierarchy.** Use white as the main ground, near-black for primary text and important actions, and a small set of neutral grays for supporting text, borders, and grouped data. The billing page uses `#0a0a0a` for ink, `#5c5c5c` / `#737373` for supporting text, `#e0e0e0` for rules, and `#f5f5f5` for a quiet data surface (`services/api/src/routes/billing/index.tsx:84-113`).
 - **Type does the expressive work.** Hanken Grotesk carries the page title and readable content. JetBrains Mono marks compact metadata, uppercase section labels, navigation, and action text. The large title is medium-weight, tightly tracked, and fluidly sized; supporting labels are small, spaced, and restrained (`services/api/src/routes/billing/index.tsx:85-99`; `services/api/src/routes/login/app/account-shell.module.css:15-25`, `46-82`).
 - **Structure comes from alignment and rules.** Use thin neutral dividers to separate page regions and stacked items. Keep content aligned to a shared max-width column and give each region room to breathe (`services/api/src/routes/billing/index.tsx:85-103`; `services/api/src/routes/login/app/account-shell.module.css:31-88`).
-- **Use dark surfaces sparingly and with meaning.** A solid near-black surface with white text can identify the current membership or make the primary action unmistakable. Keep ordinary content on white or pale neutral surfaces. The Osmium metallic treatment belongs to that specific membership card; it is not a general page background or decoration (`services/api/src/routes/billing/index.tsx:114-133`).
+- **Use dark surfaces and metal textures sparingly and with meaning.** A solid near-black surface with white text can identify the current membership or make the primary action unmistakable. Keep ordinary content on white or pale neutral surfaces. Metallic textures are reserved for metal-named billing tiers, the complimentary Osmium membership, and Founding Core's iron-and-nickel planetary-core treatment. Give each membership a distinct, restrained material treatment inside its card, and preserve readable text and controls; do not use the texture as a general page background or decoration (`services/api/src/routes/billing/index.tsx:114-133`).
 
 ## Page composition
 
@@ -54,7 +54,7 @@ Keep the page specific. Account pages share a compact wordmark/header and a wrap
 
 ## Data and usage
 
-Present values before commentary. Put a count beside its limit, format both with tabular numerals, and align the reading to the horizontal meter beneath it. Group related measures in one neutral panel and stack them as rows with dividers instead of creating a separate card for each metric. The billing usage panel demonstrates this arrangement (`services/api/src/routes/billing/index.tsx:100-112`, `232-236`).
+Present usage before commentary. For a capped count, put the count beside its limit; for a monthly allowance, show the percent used and remaining without exposing the underlying cost. Align the reading to the horizontal meter beneath it. Group related measures in one neutral panel and stack them as rows with dividers instead of creating a separate card for each metric. The account usage page puts the AI allowance first and MCP tool calls below it (`services/api/src/routes/billing/index.tsx`).
 
 Use a simple gray track with a near-black fill for neutral progress. The bar must have an accessible label and a meaningful maximum/value. Pair it with the numeric reading; color or bar length alone is not enough. Omit a meter when the concept has no finite limit rather than showing a misleading full bar.
 
@@ -68,7 +68,7 @@ Use a simple gray track with a near-black fill for neutral progress. The bar mus
 
 ## Restraint and exceptions
 
-Do not add gradients, illustrations, motion, new accent colors, shadows, or decorative marks just to make a page feel more designed. First use spacing, type hierarchy, alignment, and one meaningful surface treatment. The dark metallic Osmium membership card is a product-specific exception, not a license to add metallic or gradient styling elsewhere.
+Do not add gradients, illustrations, motion, new accent colors, shadows, or decorative marks just to make a page feel more designed. First use spacing, type hierarchy, alignment, and one meaningful surface treatment. Metallic treatments on the billing membership cards are product-specific exceptions, not a license to add metallic or gradient styling elsewhere.
 
 Do not copy the billing page's content hierarchy, account links, plan cards, or usage meters onto pages that do not need them. Match the visual language, not the page's information architecture. Keep page copy and controls concise, but do not remove information that is required to understand a decision or complete a task.
 

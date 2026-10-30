@@ -145,6 +145,7 @@ export async function recordAIUsageEvent(input: RecordAIUsageEventInput) {
 
 export interface MonthlyUsageStatus {
   totalCostUsd: number;
+  totalTokens: number;
   limitUsd: number;
   remainingUsd: number;
   isOverLimit: boolean;
@@ -171,23 +172,28 @@ function currentMonthRange(now = new Date()): { from: string; to: string } {
   return { from: periodStart.toISOString(), to: now.toISOString() };
 }
 
-export async function getMonthlyUsageStatus(userId: string): Promise<MonthlyUsageStatus> {
+export async function getMonthlyUsageStatus(
+  userId: string,
+  limitUsd = MONTHLY_AI_USAGE_LIMIT_USD,
+): Promise<MonthlyUsageStatus> {
   const { from, to } = currentMonthRange();
   const summary = await AIUsageEventRepository.getSummary(db, { userId, from, to });
 
-  return buildMonthlyUsageStatus(summary, from, to);
+  return buildMonthlyUsageStatus(summary, from, to, limitUsd);
 }
 
 function buildMonthlyUsageStatus(
   summary: AIUsageSummaryRecord,
   from: string,
   to: string,
+  limitUsd = MONTHLY_AI_USAGE_LIMIT_USD,
 ): MonthlyUsageStatus {
   return {
     totalCostUsd: summary.totalCostUsd,
-    limitUsd: MONTHLY_AI_USAGE_LIMIT_USD,
-    remainingUsd: Math.max(0, MONTHLY_AI_USAGE_LIMIT_USD - summary.totalCostUsd),
-    isOverLimit: summary.totalCostUsd >= MONTHLY_AI_USAGE_LIMIT_USD,
+    totalTokens: summary.totalTokens,
+    limitUsd,
+    remainingUsd: Math.max(0, limitUsd - summary.totalCostUsd),
+    isOverLimit: summary.totalCostUsd >= limitUsd,
     periodStart: from,
     periodEnd: to,
   };
@@ -246,6 +252,7 @@ export interface AIUsageAggregatedPoint {
   bucketEnd: string;
   requestCount: number;
   usageAvailableCount: number;
+  totalTokens: number;
   totalCostUsd: number;
 }
 
@@ -258,6 +265,7 @@ function aggregateTimeseries(points: AIUsageTimeseriesRecord[]): AIUsageAggregat
     if (existing) {
       existing.requestCount += point.requestCount;
       existing.usageAvailableCount += point.usageAvailableCount;
+      existing.totalTokens += point.totalTokens;
       existing.totalCostUsd += point.totalCostUsd;
     } else {
       const start = new Date(point.bucketStart);
@@ -266,6 +274,7 @@ function aggregateTimeseries(points: AIUsageTimeseriesRecord[]): AIUsageAggregat
         bucketEnd: addBucket(start, 'day').toISOString(),
         requestCount: point.requestCount,
         usageAvailableCount: point.usageAvailableCount,
+        totalTokens: point.totalTokens,
         totalCostUsd: point.totalCostUsd,
       });
     }
@@ -345,12 +354,29 @@ export async function getAIUsagePageReport(userId: string): Promise<AIUsagePageR
 // Called at the top of AI-cost-incurring routes (chat send, voice task
 // extraction, voice cleanup) before any provider call is made.
 export async function assertUnderMonthlyUsageLimit(userId: string): Promise<void> {
-  const status = await getMonthlyUsageStatus(userId);
-  if (status.isOverLimit) {
+  await assertUnderMonthlyUsageBudget(userId, {
+    limitUsd: MONTHLY_AI_USAGE_LIMIT_USD,
+    limitTokens: null,
+  });
+}
+
+export async function assertUnderMonthlyUsageBudget(
+  userId: string,
+  budget: { limitUsd: number | null; limitTokens: number | null },
+): Promise<void> {
+  const status = await getMonthlyUsageStatus(userId, budget.limitUsd ?? Number.MAX_SAFE_INTEGER);
+  if (budget.limitUsd !== null && status.totalCostUsd >= budget.limitUsd) {
     throw new ForbiddenError('Monthly AI usage limit reached', {
       reason: 'usage_limit_exceeded',
-      limitUsd: status.limitUsd,
+      limitUsd: budget.limitUsd,
       totalCostUsd: status.totalCostUsd,
+    });
+  }
+  if (budget.limitTokens !== null && status.totalTokens >= budget.limitTokens) {
+    throw new ForbiddenError('Monthly AI token allowance reached', {
+      reason: 'token_allowance_exceeded',
+      limitTokens: budget.limitTokens,
+      totalTokens: status.totalTokens,
     });
   }
 }

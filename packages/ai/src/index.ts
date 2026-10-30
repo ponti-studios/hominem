@@ -56,6 +56,7 @@ export type {
 
 export {
   assertUnderMonthlyUsageLimit,
+  assertUnderMonthlyUsageBudget,
   getAIUsageTimeseries,
   getAIUsagePageReport,
   getMonthlyAIUsageReport,

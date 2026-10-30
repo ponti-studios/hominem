@@ -80,18 +80,30 @@ describe('prices', () => {
     expect(pricePenceFor('core', false)).toBe(999);
     expect(pricePenceFor('core', true)).toBe(799);
     expect(pricePenceFor('ai', false)).toBe(1999);
+    expect(pricePenceFor('rhodium', false)).toBe(1999);
+    expect(pricePenceFor('iridium', false)).toBe(3999);
     expect(TIER_PRICES_PENCE.taster).toBe(0);
     expect(TIER_PRICES_PENCE.osmium).toBe(0);
   });
 });
 
 describe('limits', () => {
-  it('caps conversation on paid and Taster tiers, while Osmium is unlimited', () => {
-    for (const plan of ['taster', 'core', 'ai', 'founding_core'] as const) {
+  it('caps Taster and legacy conversation, while token-metering current paid tiers', () => {
+    for (const plan of ['taster'] as const) {
       expect(limitsFor(plan).chatMessagesPerMonth).toBeGreaterThan(0);
       expect(Number.isFinite(limitsFor(plan).chatMessagesPerMonth)).toBe(true);
     }
+    expect(limitsFor('core').chatMessagesPerMonth).toBeNull();
+    expect(limitsFor('ai').chatMessagesPerMonth).toBeNull();
+    expect(limitsFor('founding_core').chatMessagesPerMonth).toBeNull();
+    expect(limitsFor('rhodium').chatMessagesPerMonth).toBeNull();
+    expect(limitsFor('iridium').chatMessagesPerMonth).toBeNull();
     expect(limitFor('osmium', 'chat')).toBeNull();
+    expect(limitsFor('core').aiTokensPerMonth).toBe(3_900_000);
+    expect(limitsFor('founding_core').aiTokensPerMonth).toBe(3_900_000);
+    expect(limitsFor('ai').aiTokensPerMonth).toBe(8_500_000);
+    expect(limitsFor('rhodium').aiTokensPerMonth).toBe(8_500_000);
+    expect(limitsFor('iridium').aiTokensPerMonth).toBe(18_000_000);
   });
 
   it('caps Taster skill volume but never caps paid skill volume', () => {
@@ -104,8 +116,26 @@ describe('limits', () => {
 
   it('lets configuration change the caps without changing the rules', () => {
     const config: BillingConfig = {
-      chatMessages: { taster: 5, core: 50, ai: 500, founding_core: 50, osmium: null },
-      skillCalls: { taster: 7, core: null, ai: null, founding_core: null, osmium: null },
+      chatMessages: {
+        taster: 5,
+        core: null,
+        ai: 500,
+        founding_core: 50,
+        rhodium: null,
+        iridium: null,
+        osmium: null,
+      },
+      skillCalls: {
+        taster: 7,
+        core: null,
+        ai: null,
+        founding_core: null,
+        rhodium: null,
+        iridium: null,
+        osmium: null,
+      },
+      aiTokens: DEFAULT_BILLING_CONFIG.aiTokens,
+      aiSpendUsd: DEFAULT_BILLING_CONFIG.aiSpendUsd,
     };
     expect(limitFor('taster', 'chat', config)).toBe(5);
     expect(limitFor('ai', 'chat', config)).toBe(500);

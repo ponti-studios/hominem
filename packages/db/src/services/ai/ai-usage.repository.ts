@@ -206,6 +206,7 @@ export interface AIUsageTimeseriesRecord {
   model: string | null;
   requestCount: number;
   usageAvailableCount: number;
+  totalTokens: number;
   totalCostUsd: number;
 }
 
@@ -479,6 +480,7 @@ export const AIUsageEventRepository = {
         'model',
         sql<number>`count(*)`.as('requestCount'),
         sql<number>`count(*) FILTER (WHERE usage_available)`.as('usageAvailableCount'),
+        sql<number>`coalesce(sum(total_tokens), 0)`.as('totalTokens'),
         sql<Numeric>`coalesce(sum(cost_usd), 0)`.as('totalCostUsd'),
       ])
       .where('ownerUserid', '=', input.userId)
@@ -494,6 +496,7 @@ export const AIUsageEventRepository = {
       model: row.model ?? null,
       requestCount: Number(row.requestCount ?? 0),
       usageAvailableCount: Number(row.usageAvailableCount ?? 0),
+      totalTokens: Number(row.totalTokens ?? 0),
       totalCostUsd: toRequiredNumber(row.totalCostUsd),
     }));
   },
