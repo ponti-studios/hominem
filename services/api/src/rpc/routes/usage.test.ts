@@ -235,8 +235,11 @@ describe('usage routes', () => {
     expect(mocks.getMonthlyAIUsageReport).toHaveBeenCalledWith(testUser.id);
   });
 
-  it('preserves the monthly allowance endpoint', async () => {
+  it('preserves token and legacy dollar fields on the monthly endpoint', async () => {
     const status = {
+      totalCostUsd: 0.42,
+      limitUsd: 2.5,
+      remainingUsd: 2.08,
       totalTokens: 100,
       limitTokens: 3_900_000,
       remainingTokens: 3_899_900,
