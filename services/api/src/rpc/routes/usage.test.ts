@@ -235,11 +235,26 @@ describe('usage routes', () => {
     expect(mocks.getMonthlyAIUsageReport).toHaveBeenCalledWith(testUser.id);
   });
 
-  it('preserves token and legacy dollar fields on the monthly endpoint', async () => {
+  it('preserves the legacy monthly allowance response for existing clients', async () => {
     const status = {
       totalCostUsd: 0.42,
-      limitUsd: 2.5,
-      remainingUsd: 2.08,
+      limitUsd: 10,
+      remainingUsd: 9.58,
+      isOverLimit: false,
+      periodStart: '2026-08-01T00:00:00.000Z',
+      periodEnd: '2026-08-22T00:00:00.000Z',
+    };
+    mocks.getMonthlyUsageStatus.mockResolvedValue(status);
+
+    const response = await createApp().request('/api/usage/monthly');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(status);
+    expect(mocks.getMonthlyUsageStatus).toHaveBeenCalledWith(testUser.id);
+  });
+
+  it('serves token allowances from the versioned monthly endpoint', async () => {
+    const status = {
       totalTokens: 100,
       limitTokens: 3_900_000,
       remainingTokens: 3_899_900,
@@ -251,10 +266,12 @@ describe('usage routes', () => {
     };
     mocks.getPlanMonthlyUsageStatus.mockResolvedValue(status);
 
-    const response = await createApp().request('/api/usage/monthly');
+    const response = await createApp().request('/api/usage/monthly/v2');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual(status);
+    const payload = await response.json();
+    expect(payload).toEqual(status);
+    expect(JSON.stringify(payload)).not.toContain('Usd');
     expect(mocks.getPlanMonthlyUsageStatus).toHaveBeenCalledWith(testUser.id);
   });
 

@@ -225,7 +225,7 @@ export function SettingsPage({
 
   const usageQuery = useQuery({
     queryKey: ['usage', 'monthly'],
-    queryFn: () => apiFetch<MonthlyUsage>('/api/usage/monthly'),
+    queryFn: () => apiFetch<MonthlyUsage>('/api/usage/monthly/v2'),
   });
 
   const historyQuery = useQuery({

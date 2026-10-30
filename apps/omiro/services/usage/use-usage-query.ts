@@ -10,7 +10,7 @@ export const useMonthlyUsage = () => {
   return useQuery<PlanMonthlyUsageStatus>({
     queryKey: monthlyUsageQueryKey,
     queryFn: async () => {
-      const res = await client.api.usage.monthly.$get();
+      const res = await client.api.usage.monthly.v2.$get();
       return res.json();
     },
   });

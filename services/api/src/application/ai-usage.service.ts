@@ -33,10 +33,6 @@ export async function getPlanMonthlyUsageStatus(userId: string) {
   const spendPercent =
     spendLimit === null || spendLimit === 0 ? 0 : (status.totalCostUsd / spendLimit) * 100;
   return {
-    // Keep the original dollar fields during the mobile-client transition.
-    totalCostUsd: status.totalCostUsd,
-    limitUsd: status.limitUsd,
-    remainingUsd: status.remainingUsd,
     totalTokens: status.totalTokens,
     limitTokens,
     remainingTokens: limitTokens === null ? null : Math.max(0, limitTokens - status.totalTokens),

@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 
 import {
   getMonthlyAIUsageReport,
+  getMonthlyUsageStatus,
   getPlanMonthlyUsageStatus,
   getAIUsagePageReport,
 } from '../../application/ai-usage.service';
@@ -75,6 +76,14 @@ export const usageRoutes = new Hono<AppContext>()
     return c.json(await getSpeechUsageHealth());
   })
   .get('/monthly', async (c) => {
+    const auth = c.get('auth')!;
+    const [status, membership] = await Promise.all([
+      getMonthlyUsageStatus(auth.userId),
+      billingRules().store.getOsmiumMembership(auth.userId),
+    ]);
+    return c.json(membership ? { ...status, unlimited: true } : status);
+  })
+  .get('/monthly/v2', async (c) => {
     const auth = c.get('auth')!;
     return c.json(await getPlanMonthlyUsageStatus(auth.userId));
   });

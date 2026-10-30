@@ -3,16 +3,9 @@ import type { InferResponseType } from 'hono/client';
 import type { HonoClient } from '../core/api-client';
 
 type _MonthlyUsageEndpoint = HonoClient['api']['usage']['monthly']['$get'];
-export type PlanMonthlyUsageStatus = InferResponseType<_MonthlyUsageEndpoint, 200>;
-
-export type MonthlyUsageStatus = {
-  totalCostUsd: number;
-  limitUsd: number;
-  remainingUsd: number;
-  isOverLimit: boolean;
-  periodStart: string;
-  periodEnd: string;
-};
+type _PlanMonthlyUsageEndpoint = HonoClient['api']['usage']['monthly']['v2']['$get'];
+export type MonthlyUsageStatus = InferResponseType<_MonthlyUsageEndpoint, 200>;
+export type PlanMonthlyUsageStatus = InferResponseType<_PlanMonthlyUsageEndpoint, 200>;
 
 export type UsageSummary = {
   requestCount: number;
