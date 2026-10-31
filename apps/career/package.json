@@ -73,7 +73,7 @@
     "tailwindcss": "^4.1.8",
     "tw-animate-css": "^1.3.4",
     "vite": "catalog:",
-    "vite-plugin-pwa": "^1.2.0",
+    "vite-plugin-pwa": "^2.0.0",
     "vitest": "catalog:"
   },
   "portless": {
