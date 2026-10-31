@@ -1,173 +1,82 @@
-# Messaging gateway (Telegram first, WhatsApp second)
+# Messaging gateway
 
-Status: sketch, nothing built yet. Written so we can poke holes before touching code.
+Status: Telegram private text chat is implemented. Production configuration, webhook registration,
+deployment, and the owner's first link remain to be done. Voice, attachments, groups, proactive
+messages, and WhatsApp are future work.
 
-## Why
+## Architecture
 
-We don't want to own a chat UI forever. People already live in Telegram/WhatsApp, so let them
-talk to hominem there. The web/omiro chat stays for the rich stuff (finance review, editing).
+Telegram does not speak MCP. The bot calls Hominem's chat generation service directly; that service
+plans and invokes the existing registered Hominem tools and preserves tool confirmation rules.
+Telegram has its own Hominem chat history.
 
-Quick correction to the obvious idea: WhatsApp and Telegram don't speak MCP. MCP is for clients
-like Claude. What we already have that matters is the **chat generation engine**
-(`chat/chat-generation.service.ts` + `mcp/chat-tool-adapter.ts`), which runs the LLM, picks
-tools, and handles write confirmations. The gateway is a thin pipe into that engine.
-
-## Shape
-
-```
-Telegram / WhatsApp
-      │ webhook (signed)
-      ▼
-services/api/src/messaging/
-  routes.ts            Hono routes, one per channel, verify signature, 200 fast
-  gateway.ts           channel-agnostic core (below)
-  link.service.ts      phone/chat id <-> user linking
-  channels/
-    types.ts           MessagingChannel interface
-    telegram.ts
-    whatsapp.ts
-      │ enqueue (BullMQ)
-      ▼
-services/api/src/workers/messaging-inbound.ts   (does the slow LLM work)
-      │ in-process calls, NEVER HTTP back to the API
-      ▼
-chatGenerationService.sendMessage / respondToConfirmation
+```text
+Telegram
+  -> POST /api/telegram/webhook (secret header, private-chat and owner checks)
+  -> BullMQ messaging-inbound (dedupe by update_id)
+  -> worker (link validation, chat generation, tool confirmations)
+  -> Telegram Bot API
 ```
 
-Webhook handlers must ack fast (Telegram retries, Meta retries and eventually disables
-the webhook). So: verify, dedupe, enqueue, return 200. The worker does the generation. The
-worker calls the service directly (worker/API boundary rule).
+The webhook validates `X-Telegram-Bot-Api-Secret-Token`, ignores groups and channels, verifies the
+linked Telegram identity for ordinary messages and confirmation taps, enqueues the update, and
+returns. The worker calls `chatGenerationService` in-process. It never calls the API over HTTP.
 
-## Channel interface
+## Owner access
 
-```ts
-type ChannelId = 'telegram' | 'whatsapp';
+`TELEGRAM_OWNER_USER_ID` is required. The signed-in connection route only creates a link for that
+Hominem account. It returns a 256-bit, ten-minute, single-use deep-link code; only its hash is
+stored. Consuming the code creates a separate Telegram chat and binds the Telegram numeric user id
+and private chat id to the configured Hominem owner. A partial unique index allows one active
+Telegram identity per Hominem user and one active Hominem owner per Telegram user.
 
-type InboundMessage =
-  | { kind: 'text'; text: string }
-  | { kind: 'voice'; mediaRef: string }          // transcribed via chat-speech.service
-  | { kind: 'confirm'; toolCallId: string; approved: boolean } // button tap
-  | { kind: 'unsupported'; what: string };
+The webhook and worker both reject messages unless the linked owner id matches
+`TELEGRAM_OWNER_USER_ID`, the Telegram sender id matches the stored identity, and the private chat
+id matches. Group and channel updates are ignored. `/unlink` revokes the identity; the Hominem chat
+history remains in the account.
 
-type Inbound = {
-  channel: ChannelId;
-  externalUserId: string;   // telegram user id / wa_id (E.164 digits)
-  externalMessageId: string; // for dedupe
-  receivedAt: Date;
-  message: InboundMessage;
-};
+The linked owner can use the chat engine's full enabled capability catalog, including sensitive
+data and writes. Tool calls that require confirmation pause the generation. Telegram sends an
+approve/reject keyboard whose random callback tokens expire after 24 hours and are single-use; a
+valid callback resumes the same generation through `respondToConfirmation`.
 
-interface MessagingChannel {
-  id: ChannelId;
-  verifyAndParse(req: Request): Promise<Inbound[]>;      // sig check + normalize
-  fetchMedia(ref: string): Promise<{ bytes: Uint8Array; mime: string }>;
-  sendText(to: string, text: string): Promise<void>;    // splits to channel limit
-  sendConfirm(to: string, prompt: string, toolCallId: string): Promise<void>; // buttons
-  typing(to: string): Promise<void>;
-  canSendFreeForm(to: string): Promise<boolean>;         // WA 24h window; TG always true
-}
-```
+## Current behavior
 
-`gateway.handle(inbound)`:
+- Private text messages go to `chatGenerationService.sendMessage` with a deterministic generation
+  id derived from Telegram's `update_id`, preventing duplicate generation on webhook retries.
+- The worker drains durable generation events and sends the final assistant text. Long responses
+  split at paragraph boundaries and then at Unicode characters to respect Telegram's 4096-character
+  message limit.
+- Tool confirmations show the tool name and prepared preview with Approve and Reject buttons.
+- `/start <code>` links the account; `/unlink` revokes the link. Unknown users and invalid codes
+  receive no account data.
+- Inbound updates are queued with bounded retry/retention and rate-limited per Telegram sender.
 
-1. Dedupe on `(channel, externalMessageId)` (Redis SETNX, ~24h TTL).
-2. Resolve `externalUserId` -> `userId` via `link.service`. Unlinked? Only a "link your account"
-   reply goes out, and the link code path is the only thing that runs.
-3. Rate limit per user (reuse `mcp/rate-limiter`).
-4. Get-or-create the user's single channel chat (one long-running chat per user per channel).
-5. Voice -> transcribe -> treat as text.
-6. `sendMessage({ userId, chatId, generationId, message, fileIds: [] , responseLength: 'short' })`.
-7. Drain the event iterable to the terminal event. Final assistant text -> `sendText`.
-   If the run ends on a pending tool confirmation -> `sendConfirm` with the preview, and a later
-   `confirm` inbound calls `respondToConfirmation`.
-8. Typing indicator while it's running (Telegram `sendChatAction`, refreshed ~every 4s).
+Voice and media are not supported in this MVP. The current API has no general chat transcription
+operation for Telegram to call.
 
-`generationId` = deterministic from `(channel, externalMessageId)` so a webhook retry is
-idempotent through the engine's existing replay path.
+## Setup and activation
 
-## Data
+Configure the following on both `hominem-api` and `hominem-worker` in Fly:
 
-New tables (goose migration, per `hominem-database` skill):
+- `TELEGRAM_BOT_TOKEN` — BotFather token; keep secret.
+- `TELEGRAM_BOT_USERNAME` — public bot username.
+- `TELEGRAM_OWNER_USER_ID` — the owner's Hominem account id.
+- `TELEGRAM_WEBHOOK_SECRET` — random webhook secret; the API uses it to authenticate updates.
 
-- `messaging_identities`: `id`, `user_id`, `channel`, `external_user_id`, `chat_id`,
-  `linked_at`, `last_inbound_at` (drives the WA 24h window), `revoked_at`.
-  Unique on `(channel, external_user_id)` where `revoked_at is null`.
-- `messaging_link_codes`: `code_hash`, `user_id`, `channel`, `expires_at` (10 min), `used_at`.
+Then deploy the API, worker, and database migration. Run
+`pnpm --filter @hominem/api telegram:set-webhook` with production `API_URL` and the Telegram
+settings above. In the signed-in Omiro settings screen, connect Telegram and follow the bot's
+`/start` link. The setup screen displays the signed-in account id to copy into
+`TELEGRAM_OWNER_USER_ID` before deployment.
 
-Store codes hashed, same as `hmt_` tokens in `mcp-tokens.service.ts`.
+The Telegram bot token authorizes a caller to control the bot, so never paste it into source,
+logs, or chat. Telegram bot conversations are not Secret Chats; Telegram processes the messages
+sent through the Bot API. The link screen should disclose that the owner has enabled the bot for
+full account access.
 
-## Linking
+## Future work
 
-Signed-in user hits "Connect Telegram/WhatsApp" in the app -> we mint a code and show a deep link:
-
-- Telegram: `https://t.me/<bot>?start=<code>` -> bot gets `/start <code>` automatically. One tap.
-- WhatsApp: `https://wa.me/<number>?text=<code>` -> user sends the prefilled message.
-
-Webhook sees the code, binds `externalUserId` to `userId`, replies "you're in". Codes are single
-use. Unlink from the app (and a `STOP` command) sets `revoked_at`.
-
-## Tool scope on messaging channels (needs a real change)
-
-As far as I read, scope checks (`scopes.ts`, `mcp/routes.ts`) only gate the MCP endpoint. The chat
-engine picks from the whole registry via `planChatTools`. So channel restrictions need a new
-filter: `planChatTools({ ..., allowedCapabilities })`, fed from a per-channel allowlist.
-
-Proposed default for messaging channels: `task`, `notes`, `memory` read/write, plus read-only
-lookups. **No** finance writes, no deletes, no web search, no open-ended chat on WhatsApp
-(that last one is the Meta policy risk, see below). Destructive stuff always goes through the
-button confirmation. A phone number is a weaker identity than a session (SIM swap), so keep
-the blast radius small.
-
-## Telegram specifics (phase 1)
-
-- Create bot with BotFather. `setWebhook` with `secret_token`; verify the
-  `X-Telegram-Bot-Api-Secret-Token` header. HTTPS only.
-- Inbound: `message` (text, voice) and `callback_query` (button taps).
-- Outbound: `sendMessage`, `editMessageText`, inline keyboard for confirms, `sendChatAction`.
-- Limit 4096 chars per message; split on paragraph boundaries.
-- Optional nicety: stream by editing one message (about 1 edit/sec/chat to stay inside rate
-  limits). Skip in v1, just send the final text, then try it.
-- Free, no review, no 24h window, no AI-provider policy. Good place to prove the idea.
-
-## WhatsApp specifics (phase 2)
-
-- Meta app + WABA + business verification + dedicated number. Dev against Meta's test number first.
-- Webhook: GET verify challenge, POST with `X-Hub-Signature-256` (HMAC-SHA256 of raw body with
-  app secret). Verify on the raw bytes, before JSON parsing.
-- Inbound: text, audio (voice notes), `interactive.button_reply`.
-- Outbound: free-form only inside 24h of `last_inbound_at`. Outside it we need approved templates
-  (reminders, "your task is due"). `canSendFreeForm` guards every send; out of window with no
-  template -> drop + log, never throw.
-- Reply buttons max 3. Confirm = Yes / No (/ Edit later).
-- No streaming. Final message only. 4096 char text limit, split like Telegram.
-- Cost: replies beyond the first 1,000 free per business number per month are billed since
-  2026-10-01. Meter it per user next to `ai-usage.service` so credit/limits can account for it.
-  Rates here are from third-party blogs, confirm on Meta's rate card.
-- **Policy risk:** since 2026-01-15 Meta's terms bar "AI Providers" whose main offering is a
-  general-purpose assistant. Keep the WA surface structured (capture + query own data), no
-  open-ended Q&A. Read the actual clause (Section 4.7 per one source) before launch; I only saw
-  secondary sources. Meta decides what counts, so there's no guarantee.
-- Don't use Baileys/whatsapp-web.js. ToS violation, numbers get banned.
-
-## Privacy
-
-Messages on both channels transit the provider in a form they can read (Telegram bot chats aren't
-E2E; WhatsApp Cloud API is processed by Meta). Keep finance/health content off these channels by
-default via the allowlist above. Say so in the link screen.
-
-## Phasing
-
-1. `messaging_*` migration, `link.service`, channel interface, gateway, worker. Fake channel in
-   tests (like the scripted chat provider) to cover dedupe, unlinked, confirm, retry.
-2. Telegram adapter + link flow in web settings. Dogfood.
-3. `allowedCapabilities` filter in the planner, with tests.
-4. WhatsApp adapter on the test number. Window handling + one template (e.g. daily summary).
-5. Policy read-through, business verification, go/no-go on WhatsApp.
-
-## Open questions
-
-- One chat per user per channel, or share one chat across channels so web/omiro/Telegram see the
-  same thread? Sharing is cooler, but history gets long and tool-heavy. Leaning separate to start.
-- Group chats: ignore in v1 (private chats only).
-- Proactive messages (reminders): which worker triggers them, and does it respect quiet hours?
-- Do we meter messaging replies against the existing credit system?
+- Voice notes and attachments, with an explicit media download and transcription path.
+- Proactive messages with user-configurable quiet hours and delivery preferences.
+- WhatsApp adapter, Meta policy review, business verification, and the 24-hour delivery window.

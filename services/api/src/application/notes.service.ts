@@ -9,11 +9,7 @@ import { runInTransaction } from '@hominem/db/transaction';
 import { VectorDocumentRepository } from '@hominem/db/vector';
 import { embeddingQueue } from '@hominem/queues';
 
-import {
-  assertUnderMonthlyUsageLimit,
-  recordAIUsageEvent,
-  startAIUsageTimer,
-} from './ai-usage.service';
+import { assertAIUsageAllowed, recordAIUsageEvent, startAIUsageTimer } from './ai-usage.service';
 
 interface CreateNoteParams {
   kind?: NoteKind;
@@ -90,7 +86,7 @@ export class NoteService {
     userId: string,
     input: { query: string; limit: number },
   ): Promise<SemanticSearchNoteResult[]> {
-    await assertUnderMonthlyUsageLimit(userId);
+    await assertAIUsageAllowed(userId);
 
     const eventId = randomUUID();
     const getDurationMs = startAIUsageTimer();

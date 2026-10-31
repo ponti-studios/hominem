@@ -1,7 +1,7 @@
 import { authDb, db, pool } from '@hominem/db/core';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
 import type { AuthContext } from '../auth/types';
@@ -19,6 +19,11 @@ import {
   financeTransactionMoveOutputSchema,
   financeTransactionUpsertOutputSchema,
 } from '../schemas/finance.schema';
+import {
+  noteCreateToolOutputSchema,
+  noteDeleteToolOutputSchema,
+  noteGetToolOutputSchema,
+} from '../schemas/notes.schema';
 import { toolOutput } from '../testkit/tool-result';
 import { mcpRoutes, oauthDiscoveryRoutes } from './routes';
 import { callTool, listTools, registerTool } from './tool-registry';
@@ -159,6 +164,27 @@ async function createElicitingClient(
   return client;
 }
 
+// A 2026-07-28 client that declares no capabilities at all: modern protocol, but
+// no elicitation — a connector that speaks the current revision without offering
+// an interactive prompt. It must get the confirm-token path, not a failing input
+// request it cannot fulfil.
+async function createModernClientWithoutElicitation(app: Hono<AppContext>, scopes: string) {
+  const transport = new StreamableHTTPClientTransport(new URL('http://localhost/api/mcp'), {
+    fetch: async (input, init) => {
+      const headers = new Headers(init?.headers);
+      headers.set('authorization', 'Bearer test-token');
+      headers.set('x-mcp-scopes', scopes);
+      return app.fetch(new Request(input, { ...init, headers }));
+    },
+  });
+  const client = new Client(
+    { name: 'test-client', version: '1.0.0' },
+    { versionNegotiation: { mode: { pin: '2026-07-28' } } },
+  );
+  await client.connect(transport);
+  return client;
+}
+
 beforeAll(async () => {
   // Tool calls now record plan usage against a real user row; give the fixture identity one.
   await authDb
@@ -166,6 +192,9 @@ beforeAll(async () => {
     .values({ id: testUser.id, name: testUser.name, email: testUser.email })
     .onConflict((oc) => oc.doNothing())
     .execute();
+  // These database-backed MCP integration tests share a fixed user across runs.
+  // Remove its old fixture usage so a previous run cannot exhaust the Taster cap.
+  await pool.query('DELETE FROM app.billing_usage_events WHERE user_id = $1', [testUser.id]);
   // The worklog confirmation test below needs an engagement for the test user.
   // Clear any leftover first so a crashed earlier run can't leak one into the
   // other tests' expectations.
@@ -173,6 +202,10 @@ beforeAll(async () => {
     testUser.id,
     'MRTR Worklog Co',
   ]);
+});
+
+afterAll(async () => {
+  await pool.query('DELETE FROM app.billing_usage_events WHERE user_id = $1', [testUser.id]);
 });
 
 describe('mcp server transport', () => {
@@ -369,7 +402,9 @@ describe('mcp server transport', () => {
         'tags',
       ]);
       expect(properties('career_worklog_update')).toEqual(['data', 'id']);
-      expect(properties('career_worklog_delete')).toEqual(['id']);
+      // Confirming tools also advertise the token that completes the preview they
+      // return to clients that cannot answer an elicitation (see WYA-213 below).
+      expect(properties('career_worklog_delete')).toEqual(['confirmToken', 'id']);
 
       expect(byName.get('career_worklog_delete')?.annotations).toMatchObject({
         readOnlyHint: false,
@@ -1217,6 +1252,212 @@ describe('mcp server transport', () => {
         expect(text).toContain('read-only');
       });
     });
+  });
+});
+
+// WYA-213: a client that cannot answer an embedded elicitation — a 2025-era client
+// like the legacy Muse CLI or a ChatGPT connector, or a modern client that does not
+// declare the capability — must still be able to delete, through the two-step
+// confirm-token flow, and an unconfirmed delete must still be refused.
+describe('delete confirmation from a client without elicitation', () => {
+  const notesScopes = 'notes:read notes:write';
+
+  afterAll(async () => {
+    // The refused-call tests deliberately leave their note behind; clear it so the
+    // suite does not accumulate rows there.
+    await db
+      .deleteFrom('app.notes')
+      .where('ownerUserid', '=', testUser.id)
+      .where('title', '=', 'Doomed note')
+      .execute();
+  });
+
+  type ToolResult = { content?: Array<{ type: string; text?: string }> };
+
+  function resultText(result: ToolResult): string {
+    return (result.content ?? []).map((block) => block.text ?? '').join('\n');
+  }
+
+  function confirmTokenFrom(result: ToolResult): string {
+    const match = /confirmToken: ("v1\.[^"]+")/.exec(resultText(result));
+    if (!match?.[1]) throw new Error(`No confirmation token in: ${resultText(result)}`);
+    return JSON.parse(match[1]);
+  }
+
+  async function createNote(client: Client): Promise<string> {
+    const created = await client.callTool({
+      name: 'note_create',
+      arguments: { title: 'Doomed note', content: 'delete me' },
+    });
+    return toolOutput(created, noteCreateToolOutputSchema).note.id;
+  }
+
+  async function noteExists(client: Client, id: string): Promise<boolean> {
+    const fetched = await client.callTool({ name: 'note_get', arguments: { id } });
+    return toolOutput(fetched, noteGetToolOutputSchema).note !== null;
+  }
+
+  it('creates then deletes a note end to end, in two calls', async () => {
+    const client = await createClient(createApp(mcpAuthContext), notesScopes);
+    try {
+      const noteId = await createNote(client);
+
+      const unconfirmed = await client.callTool({
+        name: 'note_delete',
+        arguments: { id: noteId },
+      });
+      expect(unconfirmed.isError).toBe(true);
+      // The preview shows exactly what the confirmation would delete.
+      expect(resultText(unconfirmed)).toContain('Doomed note');
+      expect(resultText(unconfirmed)).toContain('was not run');
+      // ... and the refused call changed nothing.
+      expect(await noteExists(client, noteId)).toBe(true);
+
+      const confirmed = await client.callTool({
+        name: 'note_delete',
+        arguments: { id: noteId, confirmToken: confirmTokenFrom(unconfirmed) },
+      });
+      expect(confirmed.isError ?? false).toBe(false);
+      expect(toolOutput(confirmed, noteDeleteToolOutputSchema)).toEqual({ removed: true });
+
+      const fetched = await client.callTool({ name: 'note_get', arguments: { id: noteId } });
+      expect(toolOutput(fetched, noteGetToolOutputSchema).note).toBeNull();
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('refuses a token it did not mint, leaving the note in place', async () => {
+    const client = await createClient(createApp(mcpAuthContext), notesScopes);
+    try {
+      const noteId = await createNote(client);
+
+      const forged = await client.callTool({
+        name: 'note_delete',
+        arguments: { id: noteId, confirmToken: 'v1.eyJwIjp7fX0.forged-signature' },
+      });
+      expect(forged.isError).toBe(true);
+      expect(await noteExists(client, noteId)).toBe(true);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('refuses a token minted for a different tool', async () => {
+    const client = await createClient(
+      createApp(mcpAuthContext),
+      `${notesScopes} collections:read collections:write`,
+    );
+    try {
+      const noteId = await createNote(client);
+
+      // create_collection also requires confirmation; its token must not unlock a delete.
+      const collectionPreview = await client.callTool({
+        name: 'create_collection',
+        arguments: { name: 'Never created' },
+      });
+      expect(collectionPreview.isError).toBe(true);
+
+      const spliced = await client.callTool({
+        name: 'note_delete',
+        arguments: { id: noteId, confirmToken: confirmTokenFrom(collectionPreview) },
+      });
+      expect(spliced.isError).toBe(true);
+      expect(await noteExists(client, noteId)).toBe(true);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('only advertises the confirmation argument on tools that require it', async () => {
+    const client = await createClient(createApp(mcpAuthContext), notesScopes);
+    try {
+      const byName = new Map((await client.listTools()).tools.map((tool) => [tool.name, tool]));
+      const properties = (name: string) =>
+        Object.keys(
+          z
+            .object({ properties: z.record(z.string(), z.unknown()) })
+            .parse(byName.get(name)?.inputSchema).properties,
+        ).sort();
+
+      expect(properties('note_delete')).toEqual(['confirmToken', 'id']);
+      expect(properties('note_get')).toEqual(['id']);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('completes a confirming tool that has no preview function', async () => {
+    const client = await createClient(
+      createApp(mcpAuthContext),
+      'collections:read collections:write',
+    );
+    try {
+      const unconfirmed = await client.callTool({
+        name: 'create_collection',
+        arguments: { name: 'Token Confirmed Collection' },
+      });
+      expect(unconfirmed.isError).toBe(true);
+      expect(resultText(unconfirmed)).toContain('was not run');
+
+      const created = await client.callTool({
+        name: 'create_collection',
+        arguments: {
+          name: 'Token Confirmed Collection',
+          confirmToken: confirmTokenFrom(unconfirmed),
+        },
+      });
+      expect(created.isError ?? false).toBe(false);
+      expect(toolOutput(created, createCollectionOutputSchema)).toMatchObject({
+        collection: { name: 'Token Confirmed Collection' },
+      });
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('gives a modern client without the capability the same confirm-token path', async () => {
+    const client = await createModernClientWithoutElicitation(
+      createApp(mcpAuthContext),
+      notesScopes,
+    );
+    try {
+      const noteId = await createNote(client);
+
+      const unconfirmed = await client.callTool({
+        name: 'note_delete',
+        arguments: { id: noteId },
+      });
+      // A capability the client does not have would otherwise be requested and
+      // never fulfilled; the token path is what it can actually complete.
+      expect(unconfirmed.isError).toBe(true);
+      expect(await noteExists(client, noteId)).toBe(true);
+
+      const confirmed = await client.callTool({
+        name: 'note_delete',
+        arguments: { id: noteId, confirmToken: confirmTokenFrom(unconfirmed) },
+      });
+      expect(toolOutput(confirmed, noteDeleteToolOutputSchema)).toEqual({ removed: true });
+      expect(await noteExists(client, noteId)).toBe(false);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('keeps the one-call elicited confirmation for an elicitation-capable client', async () => {
+    const client = await createElicitingClient(createApp(mcpAuthContext), 'accept', notesScopes);
+    try {
+      const noteId = await createNote(client);
+
+      // A client that can answer the elicitation is asked, and one call completes it —
+      // no preview token is returned instead.
+      const removed = await client.callTool({ name: 'note_delete', arguments: { id: noteId } });
+      expect(removed.isError ?? false).toBe(false);
+      expect(toolOutput(removed, noteDeleteToolOutputSchema)).toEqual({ removed: true });
+      expect(await noteExists(client, noteId)).toBe(false);
+    } finally {
+      await client.close();
+    }
   });
 });
 

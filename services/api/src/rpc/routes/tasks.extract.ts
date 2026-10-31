@@ -5,7 +5,7 @@ import { logger } from '@hominem/telemetry';
 import { Hono } from 'hono';
 
 import {
-  assertUnderMonthlyUsageLimit,
+  assertAIUsageAllowed,
   recordAIUsageEvent,
   startAIUsageTimer,
 } from '../../application/ai-usage.service';
@@ -25,7 +25,7 @@ export const taskExtractRoutes = new Hono<AppContext>()
     const userId = c.get('auth')!.userId;
     const { transcript, referenceDate, timezone } = c.req.valid('json');
 
-    await assertUnderMonthlyUsageLimit(userId);
+    await assertAIUsageAllowed(userId);
 
     const eventId = randomUUID();
     const getDurationMs = startAIUsageTimer();

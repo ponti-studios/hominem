@@ -1,7 +1,7 @@
-import { authDb, db } from '@hominem/db/core';
+import { authDb, db, pool } from '@hominem/db/core';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveMcpToken } from '../application/mcp-tokens.service';
 import type { AuthContext } from '../auth/types';
@@ -59,7 +59,7 @@ vi.mock('../middleware/auth', () => ({
 }));
 
 const testUser: RpcUser = {
-  id: '11111111-1111-4111-8111-111111111111',
+  id: '22222222-2222-4222-8222-222222222222',
   email: 'token-mcp@example.com',
   name: 'Token MCP Test User',
   emailVerified: true,
@@ -76,6 +76,11 @@ beforeAll(async () => {
     .values({ id: testUser.id, name: testUser.name, email: testUser.email })
     .onConflict((oc) => oc.doNothing())
     .execute();
+  await pool.query('DELETE FROM app.billing_usage_events WHERE user_id = $1', [testUser.id]);
+});
+
+afterAll(async () => {
+  await pool.query('DELETE FROM app.billing_usage_events WHERE user_id = $1', [testUser.id]);
 });
 
 function createApp() {

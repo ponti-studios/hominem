@@ -1,24 +1,22 @@
-import type { MonthlyUsageStatus } from '@hominem/rpc/types';
+import type { PlanMonthlyUsageStatus } from '@hominem/rpc/types';
 import { Text, View } from 'react-native';
 
 import { SectionLabel } from '~/components/settings/SettingsRow';
 import { useAppTheme, useStyles } from '~/components/theme';
 
-const usdFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-});
 function formatUsagePeriod(periodStart: string): string {
   const month = periodStart.slice(5, 7);
   const year = periodStart.slice(2, 4);
   return `${month} '${year}`;
 }
 
-function formatUsd(amount: number): string {
-  return usdFormatter.format(amount);
+function formatTokens(amount: number): string {
+  return amount >= 1_000_000
+    ? `${(amount / 1_000_000).toFixed(1)}M`
+    : amount.toLocaleString('en-GB');
 }
 
-export function UsageSection({ monthlyUsage }: { monthlyUsage: MonthlyUsageStatus }) {
+export function UsageSection({ monthlyUsage }: { monthlyUsage: PlanMonthlyUsageStatus }) {
   const {
     foreground: textPrimaryColor,
     border: borderDefaultColor,
@@ -39,17 +37,19 @@ export function UsageSection({ monthlyUsage }: { monthlyUsage: MonthlyUsageStatu
     usageResetMessage: { color: theme.colors.tertiary, paddingHorizontal: 16 },
   }));
 
-  const usagePercent = Math.min(100, (monthlyUsage.totalCostUsd / monthlyUsage.limitUsd) * 100);
+  const usagePercent = monthlyUsage.percentUsed;
 
   return (
     <View testID="settings-usage-section" style={styles.usageSection}>
       <SectionLabel>{`AI usage · ${formatUsagePeriod(monthlyUsage.periodStart)}`}</SectionLabel>
       <View style={styles.usageSummary}>
         <Text style={[styles.usageAmount, { fontVariant: ['tabular-nums'] }]}>
-          {formatUsd(monthlyUsage.totalCostUsd)}
+          {formatTokens(monthlyUsage.totalTokens)}
         </Text>
         <Text style={[styles.usageLimit, { fontVariant: ['tabular-nums'] }]}>
-          of {formatUsd(monthlyUsage.limitUsd)} · {usagePercent.toFixed(0)}%
+          {monthlyUsage.unlimited
+            ? 'Unlimited'
+            : `of ${formatTokens(monthlyUsage.limitTokens ?? 0)} · ${usagePercent.toFixed(0)}%`}
         </Text>
       </View>
       <View style={[styles.usageBar, { backgroundColor: borderDefaultColor }]}>
@@ -65,7 +65,7 @@ export function UsageSection({ monthlyUsage }: { monthlyUsage: MonthlyUsageStatu
       </View>
       <Text style={styles.usageResetMessage}>
         {monthlyUsage.isOverLimit
-          ? "You've reached this month's free AI usage limit. It resets at the start of next month."
+          ? "You've reached this month's AI allowance. It resets at the start of next month."
           : 'Resets at the start of next month.'}
       </Text>
     </View>

@@ -91,6 +91,7 @@ export async function regenerate(
       return redoGeneration(dependencies, {
         chat,
         userId: input.userId,
+        isAdmin: input.isAdmin,
         chatId: input.chatId,
         generationId: input.generationId,
         userMessageId: target.id,
@@ -111,6 +112,7 @@ export async function regenerate(
     return redoGeneration(dependencies, {
       chat,
       userId: input.userId,
+      isAdmin: input.isAdmin,
       chatId: input.chatId,
       generationId: input.generationId,
       userMessageId: target.parentMessageId,
@@ -134,6 +136,7 @@ export async function regenerate(
   return redoGeneration(dependencies, {
     chat,
     userId: input.userId,
+    isAdmin: input.isAdmin,
     chatId: input.chatId,
     generationId: input.generationId,
     userMessageId: failedRun.userMessageId,
@@ -198,6 +201,7 @@ export async function startMessage(
   return start(dependencies, {
     chat: created.chat,
     userId: input.userId,
+    isAdmin: input.isAdmin,
     generationId: input.generationId,
     chatId: created.chat.id,
     model: CHAT_MODEL,
@@ -271,6 +275,7 @@ export async function sendMessage(
   return send(dependencies, {
     chat,
     userId: input.userId,
+    isAdmin: input.isAdmin,
     generationId: input.generationId,
     chatId: input.chatId,
     model: CHAT_MODEL,
@@ -298,6 +303,7 @@ async function redoGeneration(
     userMessageId: string;
     staleGenerationId: string | null;
     staleAssistantMessageId: string | null;
+    isAdmin?: boolean;
     responseLength?: 'short' | 'medium' | 'long';
   },
 ): Promise<AsyncIterable<GenerationEvent>> {
@@ -331,6 +337,7 @@ async function redoGeneration(
   return send(dependencies, {
     chat: input.chat,
     userId: input.userId,
+    isAdmin: input.isAdmin,
     generationId: input.generationId,
     chatId: input.chatId,
     model: CHAT_MODEL,
@@ -417,6 +424,7 @@ export async function respondToConfirmation(
   return execute(dependencies, {
     chat,
     userId: input.userId,
+    isAdmin: input.isAdmin,
     generationId: run.id,
     chatId: chat.id,
     model: CHAT_MODEL,

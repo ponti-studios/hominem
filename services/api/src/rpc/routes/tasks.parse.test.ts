@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../application/ai-usage.service', () => ({
+  assertAIUsageAllowed: mocks.assertUnderMonthlyUsageLimit,
   assertUnderMonthlyUsageLimit: mocks.assertUnderMonthlyUsageLimit,
   recordAIUsageEvent: mocks.recordAIUsageEvent,
   startAIUsageTimer: mocks.startAIUsageTimer,

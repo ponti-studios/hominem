@@ -180,11 +180,35 @@ describe('AIUsageEventRepository', () => {
     const userId = await createUser();
     const otherUserId = await createUser();
     const events = [
-      { userId, model: 'model-a', costUsd: 0.2, date: '2026-08-01T01:00:00.000Z' },
-      { userId, model: 'model-a', costUsd: 0.3, date: '2026-08-01T23:00:00.000Z' },
-      { userId, model: null, costUsd: null, date: '2026-08-02T01:00:00.000Z' },
-      { userId, model: 'model-a', costUsd: 0.4, date: '2026-09-01T00:00:00.000Z' },
-      { userId: otherUserId, model: 'model-a', costUsd: 10, date: '2026-08-01T01:00:00.000Z' },
+      {
+        userId,
+        model: 'model-a',
+        costUsd: 0.2,
+        totalTokens: 100,
+        date: '2026-08-01T01:00:00.000Z',
+      },
+      {
+        userId,
+        model: 'model-a',
+        costUsd: 0.3,
+        totalTokens: 200,
+        date: '2026-08-01T23:00:00.000Z',
+      },
+      { userId, model: null, costUsd: null, totalTokens: 0, date: '2026-08-02T01:00:00.000Z' },
+      {
+        userId,
+        model: 'model-a',
+        costUsd: 0.4,
+        totalTokens: 300,
+        date: '2026-09-01T00:00:00.000Z',
+      },
+      {
+        userId: otherUserId,
+        model: 'model-a',
+        costUsd: 10,
+        totalTokens: 900,
+        date: '2026-08-01T01:00:00.000Z',
+      },
     ];
 
     for (const event of events) {
@@ -196,9 +220,9 @@ describe('AIUsageEventRepository', () => {
         feature: 'text_enhance',
         operation: 'chat_completion',
         model: event.model,
-        promptTokens: 0,
+        promptTokens: event.totalTokens,
         outputTokens: 0,
-        totalTokens: 0,
+        totalTokens: event.totalTokens,
         costUsd: event.costUsd,
         usageAvailable: event.costUsd !== null,
       });
@@ -222,6 +246,7 @@ describe('AIUsageEventRepository', () => {
         model: 'model-a',
         requestCount: 2,
         usageAvailableCount: 2,
+        totalTokens: 300,
         totalCostUsd: 0.5,
       },
       {
@@ -229,6 +254,7 @@ describe('AIUsageEventRepository', () => {
         model: null,
         requestCount: 1,
         usageAvailableCount: 0,
+        totalTokens: 0,
         totalCostUsd: 0,
       },
     ]);
@@ -246,6 +272,7 @@ describe('AIUsageEventRepository', () => {
         model: 'model-a',
         requestCount: 2,
         usageAvailableCount: 2,
+        totalTokens: 300,
         totalCostUsd: 0.5,
       },
       {
@@ -253,6 +280,7 @@ describe('AIUsageEventRepository', () => {
         model: null,
         requestCount: 1,
         usageAvailableCount: 0,
+        totalTokens: 0,
         totalCostUsd: 0,
       },
       {
@@ -260,6 +288,7 @@ describe('AIUsageEventRepository', () => {
         model: 'model-a',
         requestCount: 1,
         usageAvailableCount: 1,
+        totalTokens: 300,
         totalCostUsd: 0.4,
       },
     ]);

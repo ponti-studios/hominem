@@ -274,6 +274,7 @@ export async function executeGenerationTurn(
         try {
           const value = await runtime.callTool(input.userId, call.name, parseArguments(call), {
             idempotencyKey,
+            isAdmin: input.isAdmin,
           });
           // content[0] is always the JSON text block — resource_link blocks
           // (if any) are always appended after it, never first.

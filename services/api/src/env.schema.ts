@@ -70,8 +70,6 @@ export const apiSchema = runtimeSchema.extend({
   // no tier has uncapped conversation. Taster's skill-call volume is finite; paid tiers are not
   // capped by domain or by skill volume.
   BILLING_TASTER_CHAT_MESSAGES: z.coerce.number().int().positive().default(50),
-  BILLING_CORE_CHAT_MESSAGES: z.coerce.number().int().positive().default(1000),
-  BILLING_AI_CHAT_MESSAGES: z.coerce.number().int().positive().default(3000),
   BILLING_TASTER_SKILL_CALLS: z.coerce.number().int().positive().default(500),
   // Dollars per pound, already lowered by a small buffer so a falling pound does not cost Thames.
   CREDIT_USD_PER_POUND: z.coerce.number().positive().default(1.28),
@@ -84,6 +82,11 @@ export const apiSchema = runtimeSchema.extend({
   STRIPE_API_BASE_URL: z.url().optional(),
   OPENAI_APPS_CHALLENGE: z.string().optional(),
   SAVE_VOICE_AUDIO: z.stringbool().default(false),
+  TELEGRAM_BOT_TOKEN: z.string().default(''),
+  TELEGRAM_BOT_USERNAME: z.string().default(''),
+  TELEGRAM_WEBHOOK_SECRET: z.string().default(''),
+  // The Hominem account allowed to link to and use this bot. Empty disables linking.
+  TELEGRAM_OWNER_USER_ID: z.string().default(''),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_EXPORTER_OTLP_PROTOCOL: z.string().optional(),
   OTEL_EXPORTER_OTLP_HEADERS: z.string().optional(),

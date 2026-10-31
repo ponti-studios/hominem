@@ -49,6 +49,7 @@ vi.mock('@hominem/telemetry', () => ({
   logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 vi.mock('../application/ai-usage.service', () => ({
+  assertAIUsageAllowed: mocks.assertUnderMonthlyUsageLimit,
   assertUnderMonthlyUsageLimit: mocks.assertUnderMonthlyUsageLimit,
   recordAIUsageEvent: mocks.recordAIUsageEvent,
   startAIUsageTimer: () => () => 0,

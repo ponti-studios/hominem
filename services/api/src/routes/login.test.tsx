@@ -273,21 +273,14 @@ describe('API login route', () => {
     expect(html).toContain('"signedOut":true');
   });
 
-  it('redirects signed-out visitors to hosted login with a settings resume', async () => {
+  it('redirects the legacy settings page to the account route', async () => {
     const response = await createApp().request('http://localhost/auth/settings');
-
-    expect(response.status).toBe(303);
-    const location = response.headers.get('location');
-    expect(location).toContain('/login?');
-    // Redirect targets use the incoming request's origin so the browser can
-    // actually follow them through the proxy (in dev that is 443, not the
-    // env's internal :4200).
-    expect(decodeURIComponent(location ?? '')).toContain('http://localhost/auth/settings');
-    expect(decodeURIComponent(location ?? '')).toContain('step=email');
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('/account');
   });
 
   it('serves the login page for a request-origin resume (portless-style next)', async () => {
-    const next = encodeURIComponent('http://localhost/auth/settings');
+    const next = encodeURIComponent('http://localhost/account');
     const response = await createApp().request(`http://localhost/login?next=${next}`);
 
     expect(response.status).toBe(200);
@@ -295,12 +288,12 @@ describe('API login route', () => {
     expect(html).toContain('/src/routes/login/app/entries/login.tsx');
   });
 
-  it('renders the account settings page for a signed-in session', async () => {
+  it('renders the account page for a signed-in session', async () => {
     mocks.getSession.mockResolvedValue({
       user: { id: 'u1', name: 'Ada Lovelace', email: 'ada@example.com' },
     });
 
-    const response = await createApp().request('http://localhost/auth/settings');
+    const response = await createApp().request('http://localhost/account');
 
     expect(response.status).toBe(200);
     const html = await response.text();
@@ -318,7 +311,7 @@ describe('API login route', () => {
     const response = await createApp().request('http://localhost/auth/open?token=one-time');
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('http://localhost/auth/settings?app=1');
+    expect(response.headers.get('location')).toBe('http://localhost/account?app=1');
     expect(response.headers.get('set-cookie')).toContain('better-auth.session_token=abc');
     expect(response.headers.get('cache-control')).toBe('no-store');
     const request = mocks.handler.mock.calls[0]?.[0];
@@ -331,16 +324,16 @@ describe('API login route', () => {
     const response = await createApp().request('http://localhost/auth/open?token=nope');
     expect(response.status).toBe(303);
     expect(response.headers.get('set-cookie')).toBeNull();
-    expect(response.headers.get('location')).toBe('http://localhost/auth/settings?app=1');
+    expect(response.headers.get('location')).toBe('http://localhost/account?app=1');
   });
 
-  it('redirects signed-out visitors to hosted login with an AI-settings resume', async () => {
-    const response = await createApp().request('http://localhost/auth/settings/ai');
+  it('redirects signed-out visitors to hosted login with an AI-usage resume', async () => {
+    const response = await createApp().request('http://localhost/account/usage/ai');
 
     expect(response.status).toBe(303);
     const location = response.headers.get('location');
     expect(location).toContain('/login?');
-    expect(decodeURIComponent(location ?? '')).toContain('http://localhost/auth/settings/ai');
+    expect(decodeURIComponent(location ?? '')).toContain('http://localhost/account/usage/ai');
   });
 
   it('renders the AI-usage page for a signed-in session and serves its bundle', async () => {
@@ -348,12 +341,18 @@ describe('API login route', () => {
       user: { id: 'u1', name: 'Ada Lovelace', email: 'ada@example.com' },
     });
 
-    const response = await createApp().request('http://localhost/auth/settings/ai');
+    const response = await createApp().request('http://localhost/account/usage/ai');
 
     expect(response.status).toBe(200);
     const html = await response.text();
     expect(html).toContain('<div id="root">');
     expect(html).toContain('/src/routes/login/app/entries/settings-ai.tsx');
+  });
+
+  it('redirects the legacy AI settings URL to account usage', async () => {
+    const response = await createApp().request('http://localhost/auth/settings/ai');
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toBe('/account/usage/ai');
   });
 
   it('updates the profile name through Better Auth', async () => {

@@ -91,6 +91,17 @@ export interface AppAiUsageEvents {
   usageAvailable: Generated<boolean>;
 }
 
+export interface AppBillingMemberships {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  grantedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  grantedByUserId: string | null;
+  revokedAt: ColumnType<string, Date | string, Date | string> | null;
+  revokedByUserId: string | null;
+  tier: Generated<string>;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
 export interface AppBillingSubscriptions {
   cancelAtPeriodEnd: Generated<boolean>;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -776,6 +787,28 @@ export interface AppMediaItems {
   spotifyId: string | null;
   trackNumber: number | null;
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
+}
+
+export interface AppMessagingIdentities {
+  channel: string;
+  chatId: string;
+  externalChatId: string;
+  externalUserId: string;
+  id: Generated<string>;
+  lastInboundAt: ColumnType<string, Date | string, Date | string> | null;
+  linkedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  ownerUserId: string;
+  revokedAt: ColumnType<string, Date | string, Date | string> | null;
+}
+
+export interface AppMessagingLinkCodes {
+  channel: string;
+  codeHash: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  expiresAt: ColumnType<string, Date | string, Date | string>;
+  id: Generated<string>;
+  ownerUserId: string;
+  usedAt: ColumnType<string, Date | string, Date | string> | null;
 }
 
 export interface AppMusicAlbums {
@@ -1673,6 +1706,7 @@ export interface Verification {
 export interface DB {
   account: Account;
   'app.aiUsageEvents': AppAiUsageEvents;
+  'app.billingMemberships': AppBillingMemberships;
   'app.billingSubscriptions': AppBillingSubscriptions;
   'app.billingUsageEvents': AppBillingUsageEvents;
   'app.careerApplicationFiles': AppCareerApplicationFiles;
@@ -1724,6 +1758,8 @@ export interface DB {
   'app.mediaItemActivities': AppMediaItemActivities;
   'app.mediaItemIdentifiers': AppMediaItemIdentifiers;
   'app.mediaItems': AppMediaItems;
+  'app.messagingIdentities': AppMessagingIdentities;
+  'app.messagingLinkCodes': AppMessagingLinkCodes;
   'app.musicAlbums': AppMusicAlbums;
   'app.noteFiles': AppNoteFiles;
   'app.notes': AppNotes;

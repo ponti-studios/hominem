@@ -11,7 +11,9 @@ vi.mock('@hominem/rpc/react', () => ({
     api: {
       usage: {
         monthly: {
-          $get: mockGet,
+          v2: {
+            $get: mockGet,
+          },
         },
       },
     },

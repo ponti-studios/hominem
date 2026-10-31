@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
+import { AccountShell } from './account-shell';
 import { apiFetch } from './api';
 import { AuthContent, AuthShell } from './auth-shell';
 import type { SettingsInit } from './init';
@@ -29,21 +30,21 @@ type OAuthClient = {
 
 type MonthlyUsage = {
   isOverLimit: boolean;
-  limitUsd: number;
-  totalCostUsd: number;
+  totalTokens: number;
+  limitTokens: number | null;
+  percentUsed: number;
+  periodStart: string;
+  unlimited?: boolean;
 };
-
-const usdFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-});
 const usagePeriodFormatter = new Intl.DateTimeFormat('en-US', {
   month: '2-digit',
   year: '2-digit',
 });
 
-function formatUsd(amount: number): string {
-  return usdFormatter.format(amount);
+function formatTokens(amount: number): string {
+  return amount >= 1_000_000
+    ? `${(amount / 1_000_000).toFixed(1)}M`
+    : amount.toLocaleString('en-GB');
 }
 
 function formatUsagePeriod(): string {
@@ -198,6 +199,7 @@ export function SettingsPage({
   creditUrl,
   creditPence,
   embedded,
+  section,
 }: SettingsInit) {
   const queryClient = useQueryClient();
   const name = user.name ?? '';
@@ -223,7 +225,7 @@ export function SettingsPage({
 
   const usageQuery = useQuery({
     queryKey: ['usage', 'monthly'],
-    queryFn: () => apiFetch<MonthlyUsage>('/api/usage/monthly'),
+    queryFn: () => apiFetch<MonthlyUsage>('/api/usage/monthly/v2'),
   });
 
   const historyQuery = useQuery({
@@ -359,7 +361,7 @@ export function SettingsPage({
   };
 
   const usage = usageQuery.data;
-  const percent = usage ? Math.min(100, (usage.totalCostUsd / usage.limitUsd) * 100) : 0;
+  const percent = usage && !usage.unlimited ? usage.percentUsed : 0;
   const nameChanged = nameInput.trim() !== name;
 
   const lastAdded = historyQuery.data?.entries[0];
@@ -388,7 +390,7 @@ export function SettingsPage({
     {
       icon: 'credit',
       label: creditUrl ? 'Credit' : 'AI usage',
-      value: creditUrl ? creditValue : usage ? formatUsd(usage.totalCostUsd) : '',
+      value: creditUrl ? creditValue : usage ? `${formatTokens(usage.totalTokens)} tokens` : '',
     },
     {
       icon: 'tokens',
@@ -493,9 +495,13 @@ export function SettingsPage({
           <section className={`${styles.section} w-full`} data-settings-usage>
             <p className={styles.sectionLabel}>AI usage · {formatUsagePeriod()}</p>
             <div className={styles.usageSummary}>
-              <p className={styles.usageAmount}>{usage ? formatUsd(usage.totalCostUsd) : '—'}</p>
+              <p className={styles.usageAmount}>{usage ? formatTokens(usage.totalTokens) : '—'}</p>
               <p className={styles.usageLimit}>
-                {usage ? `of ${formatUsd(usage.limitUsd)} · ${percent.toFixed(0)}%` : '\u00a0'}
+                {usage
+                  ? usage.unlimited
+                    ? 'No monthly cap · admin access'
+                    : `of ${formatTokens(usage.limitTokens ?? 0)} tokens · ${percent.toFixed(0)}%`
+                  : '\u00a0'}
               </p>
             </div>
             <div aria-hidden="true" className={styles.usageBar}>
@@ -505,13 +511,15 @@ export function SettingsPage({
               className={styles.usageReset}
               data-over-limit={usage?.isOverLimit ? true : undefined}
             >
-              {usage?.isOverLimit
-                ? "You've reached this month's free AI usage limit. It resets at the start of next month."
-                : 'Resets at the start of next month.'}
+              {usage?.unlimited
+                ? 'Unlimited Osmium access. Your AI usage does not pause.'
+                : usage?.isOverLimit
+                  ? "You've reached this month's free AI usage limit. It resets at the start of next month."
+                  : 'Resets at the start of next month.'}
             </p>
             <a
               className="text-sm font-medium text-auth-primary no-underline hover:underline hover:underline-offset-3"
-              href="/auth/settings/ai"
+              href="/account/usage/ai"
             >
               Usage details →
             </a>
@@ -728,79 +736,111 @@ export function SettingsPage({
     ),
   };
 
+  const sectionSheet: SheetName | null =
+    section === 'connections' ? 'tokens' : section === 'data' ? 'data' : null;
   return (
-    <AuthShell bare>
-      <div className={styles.page}>
-        <h1 className={styles.pageTitle} id="settings-title">
-          Account
-        </h1>
+    <AccountShell
+      active={
+        section === 'connections'
+          ? '/account/connections'
+          : section === 'data'
+            ? '/account/data'
+            : '/account'
+      }
+    >
+      <>
+        <div className={styles.page}>
+          <h1 className={styles.pageTitle} id="settings-title">
+            {section === 'connections'
+              ? 'Connected apps and tokens'
+              : section === 'data'
+                ? 'Your data'
+                : 'Account'}
+          </h1>
 
-        <section className={styles.hero}>
-          <div className={styles.identityRow}>
-            <span aria-hidden="true" className={styles.avatar}>
-              {initials}
-            </span>
-            <span className={styles.who}>
-              <span className={styles.whoName}>{name || email}</span>
-              {name ? <span className={styles.whoEmail}>{email}</span> : null}
-            </span>
-          </div>
-          {creditUrl ? (
-            <>
-              <div>
-                <p className={styles.heroLabel}>Credit</p>
-                <p className={styles.bigAmount}>
-                  {creditPence === null ? '—' : formatPounds(creditPence)}
-                </p>
-                <p className={styles.heroNote}>Doesn’t expire. Works in Thames.</p>
-              </div>
-              <a className={styles.addButton} href={creditUrl}>
-                Add credit
-              </a>
-            </>
+          {sectionSheet ? (
+            <div className={styles.card} data-account-section={section}>
+              {sheetBody[sectionSheet]}
+            </div>
           ) : (
             <>
-              <div>
-                <p className={styles.heroLabel}>AI usage · {formatUsagePeriod()}</p>
-                <p className={styles.bigAmount}>{usage ? formatUsd(usage.totalCostUsd) : '—'}</p>
-                <p className={styles.heroNote}>
-                  {usage ? `of ${formatUsd(usage.limitUsd)} free this month` : '\u00a0'}
-                </p>
+              <section className={styles.hero}>
+                <div className={styles.identityRow}>
+                  <span aria-hidden="true" className={styles.avatar}>
+                    {initials}
+                  </span>
+                  <span className={styles.who}>
+                    <span className={styles.whoName}>{name || email}</span>
+                    {name ? <span className={styles.whoEmail}>{email}</span> : null}
+                  </span>
+                </div>
+                {creditUrl ? (
+                  <>
+                    <div>
+                      <p className={styles.heroLabel}>Credit</p>
+                      <p className={styles.bigAmount}>
+                        {creditPence === null ? '—' : formatPounds(creditPence)}
+                      </p>
+                      <p className={styles.heroNote}>Doesn’t expire. Works in Thames.</p>
+                    </div>
+                    <a className={styles.addButton} href={creditUrl}>
+                      Add credit
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <p className={styles.heroLabel}>AI usage · {formatUsagePeriod()}</p>
+                      <p className={styles.bigAmount}>
+                        {usage ? `${formatTokens(usage.totalTokens)} tokens` : '—'}
+                      </p>
+                      <p className={styles.heroNote}>
+                        {usage
+                          ? usage.unlimited
+                            ? 'Unlimited admin access'
+                            : `of ${formatTokens(usage.limitTokens ?? 0)} tokens this month`
+                          : '\u00a0'}
+                      </p>
+                    </div>
+                    {!usage?.unlimited ? (
+                      <div aria-hidden="true" className={styles.usageBar}>
+                        <div className={styles.usageBarFill} style={{ width: `${percent}%` }} />
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </section>
+
+              <div className={styles.card}>
+                {rows.map((row, index) => (
+                  <NavRow
+                    key={row.icon}
+                    icon={row.icon}
+                    label={row.label}
+                    last={index === rows.length - 1}
+                    onOpen={() => setSheet(row.icon)}
+                    value={row.value}
+                  />
+                ))}
               </div>
-              <div aria-hidden="true" className={styles.usageBar}>
-                <div className={styles.usageBarFill} style={{ width: `${percent}%` }} />
-              </div>
+
+              {embedded ? null : (
+                <form action="/logout" method="post">
+                  <input name="next" type="hidden" value={loginNextUrl} />
+                  <button className={styles.signOut} type="submit">
+                    Sign out
+                  </button>
+                </form>
+              )}
+              {sheet && !sectionSheet ? (
+                <Sheet title={sheetTitles[sheet]} onClose={() => setSheet(null)}>
+                  {sheetBody[sheet]}
+                </Sheet>
+              ) : null}
             </>
           )}
-        </section>
-
-        <div className={styles.card}>
-          {rows.map((row, index) => (
-            <NavRow
-              key={row.icon}
-              icon={row.icon}
-              label={row.label}
-              last={index === rows.length - 1}
-              onOpen={() => setSheet(row.icon)}
-              value={row.value}
-            />
-          ))}
         </div>
-
-        {embedded ? null : (
-          <form action="/logout" method="post">
-            <input name="next" type="hidden" value={loginNextUrl} />
-            <button className={styles.signOut} type="submit">
-              Sign out
-            </button>
-          </form>
-        )}
-        {sheet ? (
-          <Sheet title={sheetTitles[sheet]} onClose={() => setSheet(null)}>
-            {sheetBody[sheet]}
-          </Sheet>
-        ) : null}
-      </div>
-    </AuthShell>
+      </>
+    </AccountShell>
   );
 }
