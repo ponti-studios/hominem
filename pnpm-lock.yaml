@@ -65,8 +65,8 @@ catalogs:
       specifier: 8.5.0
       version: 8.5.0
     resend:
-      specifier: 6.34.1
-      version: 6.34.1
+      specifier: 6.35.0
+      version: 6.35.0
     typescript:
       specifier: 7.0.2
       version: 7.0.2
@@ -1029,7 +1029,7 @@ importers:
         version: 4.1.0
       resend:
         specifier: 'catalog:'
-        version: 6.34.1
+        version: 6.35.0
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -1219,7 +1219,7 @@ importers:
         version: 19.2.8(react@19.2.8)
       resend:
         specifier: 'catalog:'
-        version: 6.34.1
+        version: 6.35.0
       ws:
         specifier: ^8.22.0
         version: 8.22.0
@@ -6206,10 +6206,12 @@ packages:
   '@smithy/core@3.33.3':
     resolution: {integrity: sha512-CsOeKq/9kA3y6VJHt+/+VTCtBaxJ4OTFpgrjIUhPpDIKxBci1k2bJaQASF2h/ELWrulGp+t97DZ0mevfAD8idg==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/core@3.36.0':
     resolution: {integrity: sha512-3hJiwG1F5t1SoXqp/yOCmYXziyx7ZVqF63S5W6YU201e/qwVaHPex+E/3vvyY9a3ORq/b+BydeNZpP2saQ9X2g==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.5.2':
     resolution: {integrity: sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==}
@@ -11247,8 +11249,8 @@ packages:
   reselect@5.3.0:
     resolution: {integrity: sha512-XGoLeRAVzUTcJ1qkxPQhDJyIZ5d6zzZD9nT7AEZOaaU9UbWclhycElmhO+VD5bFeLuzhPBaOV2oXC8uG35ZSpg==}
 
-  resend@6.34.1:
-    resolution: {integrity: sha512-3jo/j1WAW7CBkE6pzK4qLjZCfHRLIhY3ph3x/wzU+MN51cSw3EtReGce8S1cA1R0ipNDOdFYU5Lmt5r563lvYw==}
+  resend@6.35.0:
+    resolution: {integrity: sha512-sScNQHunU2Np7oICQ/44GXif8cQ0lp2WPEo9nDtTnM1koPvgJwH/SEee8mJwYRwyIfi+uj7IetKiYspfyYBYaA==}
     engines: {node: '>=20'}
     peerDependencies:
       '@react-email/render': '*'
@@ -14992,7 +14994,7 @@ snapshots:
       qrcode: 1.5.4
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
-      resend: 6.34.1
+      resend: 6.35.0
       ws: 8.22.0
       zod: 4.6.7
     transitivePeerDependencies:
@@ -15068,7 +15070,7 @@ snapshots:
       qrcode: 1.5.4
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
-      resend: 6.34.1
+      resend: 6.35.0
       ws: 8.22.0
       zod: 4.6.7
     transitivePeerDependencies:
@@ -15144,7 +15146,7 @@ snapshots:
       qrcode: 1.5.4
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
-      resend: 6.34.1
+      resend: 6.35.0
       ws: 8.22.0
       zod: 4.6.7
     transitivePeerDependencies:
@@ -15399,7 +15401,7 @@ snapshots:
       ioredis: 6.0.0(supports-color@8.1.1)
       mammoth: 1.13.0
       pdf2json: 4.1.0
-      resend: 6.34.1
+      resend: 6.35.0
       zod: 4.6.7
     transitivePeerDependencies:
       - '@react-email/render'
@@ -23677,7 +23679,7 @@ snapshots:
 
   reselect@5.3.0: {}
 
-  resend@6.34.1:
+  resend@6.35.0:
     dependencies:
       postal-mime: 2.7.6
       standardwebhooks: 1.1.1
