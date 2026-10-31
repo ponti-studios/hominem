@@ -124,21 +124,17 @@ function NavRow({
   value,
   last,
   onOpen,
+  href,
 }: {
   icon: SheetName;
   label: string;
   value: string;
   last?: boolean;
   onOpen: () => void;
+  href?: string;
 }) {
-  return (
-    <button
-      aria-label={value ? `${label}: ${value}` : label}
-      className={styles.navRow}
-      data-last={last ? true : undefined}
-      onClick={onOpen}
-      type="button"
-    >
+  const content = (
+    <>
       <span aria-hidden="true" className={styles.iconTile}>
         <svg fill="none" height="18" viewBox="0 0 24 24" width="18">
           <path
@@ -155,6 +151,24 @@ function NavRow({
       <span aria-hidden="true" className={styles.chevron}>
         ›
       </span>
+    </>
+  );
+  const className = styles.navRow;
+  const ariaLabel = value ? `${label}: ${value}` : label;
+
+  return href ? (
+    <a aria-label={ariaLabel} className={className} data-last={last ? true : undefined} href={href}>
+      {content}
+    </a>
+  ) : (
+    <button
+      aria-label={ariaLabel}
+      className={className}
+      data-last={last ? true : undefined}
+      onClick={onOpen}
+      type="button"
+    >
+      {content}
     </button>
   );
 }
@@ -818,6 +832,7 @@ export function SettingsPage({
                     icon={row.icon}
                     label={row.label}
                     last={index === rows.length - 1}
+                    href={row.icon === 'credit' && !creditUrl ? '/account/usage/ai' : undefined}
                     onOpen={() => setSheet(row.icon)}
                     value={row.value}
                   />

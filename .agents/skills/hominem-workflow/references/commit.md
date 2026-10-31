@@ -2,7 +2,9 @@
 
 Every commit in the hominem monorepo follows the Conventional Commits
 specification. For the full spec, message format, and edge cases, defer to the
-`conventional-commit` skill. This reference covers the hominem scope list and
+Kernel Git Commit workflow at
+`engineering-workflows/references/kernel-git-commit/WORKFLOW.md`. This
+reference covers the hominem scope list and
 repo-specific rules.
 
 ## Scopes

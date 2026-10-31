@@ -187,24 +187,25 @@ async function selectAirport(
   preferredReferenceId?: string | null,
 ) {
   const normalized = upperCode(code);
-  const [curated, reference] = await Promise.all([
-    sql<AirportRow>`SELECT id, code, name, serves_place AS "servesPlace", city, country, notes, latitude, longitude, reference_airport_id AS "referenceId", standalone FROM app.travel_airports WHERE owner_userid=${owner} AND code=${normalized} LIMIT 1`.execute(
+  const curated =
+    await sql<AirportRow>`SELECT id, code, name, serves_place AS "servesPlace", city, country, notes, latitude, longitude, reference_airport_id AS "referenceId", standalone FROM app.travel_airports WHERE owner_userid=${owner} AND code=${normalized} LIMIT 1`.execute(
+      trx,
+    );
+  const curation = curated.rows[0];
+  const pinId = curation?.referenceId ?? preferredReferenceId ?? null;
+  const [reference, referenced] = await Promise.all([
+    sql<AirportRow>`SELECT id, source_id AS "sourceId", code, name, city, country, latitude, longitude, type, scheduled_service AS "scheduledService", active, missing_from_source AS "missingFromSource" FROM app.travel_airport_reference WHERE upper(code)=${normalized} ORDER BY CASE WHEN id=${pinId} THEN 0 ELSE 1 END, ${sql.raw(referenceRank)} LIMIT 20`.execute(
       trx,
     ),
-    sql<AirportRow>`SELECT id, source_id AS "sourceId", code, name, city, country, latitude, longitude, type, scheduled_service AS "scheduledService", active, missing_from_source AS "missingFromSource" FROM app.travel_airport_reference WHERE upper(code)=${normalized} ORDER BY ${sql.raw(referenceRank)} LIMIT 20`.execute(
+    sql<{
+      count: number;
+    }>`SELECT count(*) AS count FROM app.travel_transport WHERE owner_userid=${owner} AND (origin=${normalized} OR destination=${normalized})`.execute(
       trx,
     ),
   ]);
-  const curation = curated.rows[0];
   const refs = reference.rows;
-  const pinId = curation?.referenceId ?? preferredReferenceId;
   const pinned = pinId ? refs.find((item) => String(item.id) === String(pinId)) : undefined;
   const picked = curation?.standalone ? undefined : (pinned ?? refs[0]);
-  const referenced = await sql<{
-    count: number;
-  }>`SELECT count(*) AS count FROM app.travel_transport WHERE owner_userid=${owner} AND (origin=${normalized} OR destination=${normalized})`.execute(
-    trx,
-  );
   if (!curation && !picked && Number(referenced.rows[0]?.count ?? 0) === 0) return null;
   return {
     id: curation ? String(curation.id) : null,
