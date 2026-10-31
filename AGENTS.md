@@ -72,7 +72,7 @@ just db migrate
 
 - Branch naming: `feature/<name>`
 - PR merge: squash commit
-- Every commit must follow the Conventional Commits standard. Load the globally installed `conventional-commit` skill before staging, committing, or pushing, and follow its workflow exactly.
+- Every commit must follow the Conventional Commits standard. Load the globally installed `engineering-workflows/references/kernel-git-commit/WORKFLOW.md` guidance before staging, committing, or pushing, and follow its workflow exactly.
 
 ## Documentation
 

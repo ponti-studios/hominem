@@ -483,6 +483,7 @@
   color: var(--auth-text);
   font: inherit;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
   transition: background 0.15s ease;
 }
