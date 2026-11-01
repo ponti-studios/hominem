@@ -539,7 +539,9 @@ registerTool(
     outputSchema: financeCategoryTagBreakdownOutputSchema,
     readOnly: true,
     scopes: ['finance:read'],
-    resultCap: 25,
+    // Matches the schema's maximum `limit` (50) so an accepted request can never be rejected by
+    // the result cap.
+    resultCap: 50,
     guidance: {
       whenToUse: 'The user asks what a category is made of, or which components drive its total.',
       whenNotToUse: 'Use finance_spending_by_category for the category totals themselves.',
