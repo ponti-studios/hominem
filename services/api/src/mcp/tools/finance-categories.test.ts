@@ -538,6 +538,34 @@ describe('finance_category_merge — taxonomy guarantees', () => {
     expect(stale).toEqual([]);
   });
 
+  it('refuses to delete a category a rule still files into, naming the rule', async () => {
+    await callTool(userId, 'finance_category_create', { name: 'Delete Guard Src' });
+    await callTool(userId, 'finance_rule_create', {
+      name: 'Delete guard rule',
+      category: 'Delete Guard Src',
+      matchPattern: 'guard',
+    });
+
+    await expect(
+      callTool(userId, 'finance_category_delete', { category: 'Delete Guard Src' }),
+    ).rejects.toThrow(
+      'category_in_use: 0 transaction(s) and 1 rule(s) (Delete guard rule) reference this category.',
+    );
+    expect(await categoryByName(userId, 'Delete Guard Src')).toBeDefined();
+
+    const removed = ruleContent(
+      await callTool(userId, 'finance_rule_delete', { rule: 'Delete guard rule' }),
+    );
+    expect(removed.deleted).toEqual({ id: expect.any(String), name: 'Delete guard rule' });
+    expect(removed.reason).toBeNull();
+
+    // With the rule gone the category can be deleted.
+    const deleted = content(
+      await callTool(userId, 'finance_category_delete', { category: 'Delete Guard Src' }),
+    );
+    expect(deleted.deleted).toEqual(expect.objectContaining({ name: 'Delete Guard Src' }));
+  });
+
   it('lists the rules and the category each one files into', async () => {
     const category = content(
       await callTool(userId, 'finance_category_create', { name: 'Listed Category' }),
