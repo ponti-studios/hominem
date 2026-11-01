@@ -162,7 +162,6 @@ async function findEquivalentTag(
     .selectFrom('app.tags')
     .select(['id', 'name'])
     .where('ownerUserid', '=', userId)
-    .where('archivedAt', 'is', null)
     .where(sql<boolean>`(lower(name) = lower(${name}) or slug = ${tagSlug(name)})`)
     .limit(1)
     .executeTakeFirst();
@@ -192,27 +191,6 @@ async function countTransactionsMarked(
     )
     .executeTakeFirst();
   return Number(row?.count ?? 0);
-}
-
-/**
- * Stage 1 — preservation. Every transaction in a source category gets a tag naming that source,
- * reusing an equivalent tag the user already owns and creating one from the category's name
- * otherwise. `dryRun` reports the tag that would be used and how many rows it would mark, and
- * writes nothing.
- */
-export async function preserveCategoryTags(
-  userId: string,
-  input: MergeCategoryInput,
-  options?: { dryRun?: boolean },
-): Promise<{ result: PreserveCategoryTagsResult; reason: FinanceCategoryMergeReason | null }> {
-  const resolved = await resolveMerge(userId, input);
-  if (!resolved.merge) return { result: emptyPreserve(), reason: resolved.reason };
-  return {
-    result: await preserveWith(db, userId, resolved.merge.sources, {
-      dryRun: options?.dryRun ?? false,
-    }),
-    reason: null,
-  };
 }
 
 function emptyPreserve(): PreserveCategoryTagsResult {
@@ -302,40 +280,6 @@ async function findRulesReferencing(
     name: row.name,
     category: { id: row.categoryId, name: row.categoryName },
   }));
-}
-
-/**
- * Rules that still name one of these categories. A merge may not complete while this is
- * non-empty — an automation that resolves a merged-away category by name would recreate it on
- * the next import.
- */
-export async function listCategoryMergeBlockers(
-  userId: string,
-  input: MergeCategoryInput,
-): Promise<CategoryRuleRef[]> {
-  const resolved = await resolveMerge(userId, input);
-  if (!resolved.merge) return [];
-  return findRulesReferencing(
-    db,
-    userId,
-    resolved.merge.sources.map((source) => source.id),
-  );
-}
-
-/**
- * Stage 2 — rule repointing. Every rule naming a source category is rewritten to the merge
- * target, so no automation can resurrect the category after it is gone.
- */
-export async function repointCategoryRules(
-  userId: string,
-  input: MergeCategoryInput,
-): Promise<{ result: RepointCategoryRulesResult; reason: FinanceCategoryMergeReason | null }> {
-  const resolved = await resolveMerge(userId, input);
-  if (!resolved.merge) return { result: { repointed: [] }, reason: resolved.reason };
-  return {
-    result: await repointWith(db, userId, resolved.merge.sources, resolved.merge.target),
-    reason: null,
-  };
 }
 
 async function repointWith(
