@@ -96,9 +96,75 @@ just billing revoke member@example.com operator@example.com
 | `BILLING_TASTER_CHAT_MESSAGES`  | Taster monthly conversation cap.                       |
 | `BILLING_TASTER_SKILL_CALLS`    | Taster monthly skill-call volume. Paid tiers uncapped. |
 
-Stripe prices are created ad hoc per Checkout (`price_data`), so no price IDs need to be seeded for
-a new environment. Register the webhook endpoint in the Stripe dashboard and put its signing secret
-in `BILLING_STRIPE_WEBHOOK_SECRET` (or reuse `STRIPE_WEBHOOK_SECRET`).
+Stripe billing resolves active catalog Prices by lookup key. Each resolved Price must match the
+configured tier amount, GBP currency, monthly recurring interval, `tax_behavior=inclusive`, and
+Price metadata (`tier` and `plan=monthly`; the legacy Founding Core Price also requires
+`founding=true`). Missing, inactive, or mismatched catalog entries fail closed; billing never
+creates an inline subscription Price.
+
+| Offer                       | Lookup key                      | Price        | Price metadata                               |
+| --------------------------- | ------------------------------- | ------------ | -------------------------------------------- |
+| Core                        | `hominem_core_monthly`          | £9.99/month  | `tier=core`, `plan=monthly`                  |
+| Rhodium                     | `hominem_rhodium_monthly`       | £19.99/month | `tier=rhodium`, `plan=monthly`               |
+| Iridium                     | `hominem_iridium_monthly`       | £39.99/month | `tier=iridium`, `plan=monthly`               |
+| Founding Core (legacy only) | `hominem_founding_core_monthly` | £7.99/month  | `tier=core`, `plan=monthly`, `founding=true` |
+
+Live and Test Mode catalogs are separate. Create products and active monthly GBP Prices in each
+mode with the same lookup keys and metadata, then configure the matching mode's API key. Existing
+subscriptions retain their current Price until a member changes plans; a change resolves the new
+tier's catalog Price and keeps the existing proration behavior. Do not bulk-migrate subscribers.
+For advertised tax-inclusive prices, use replacement Prices rather than changing existing Price
+objects: Stripe does not allow changing a Price's tax behavior after it is set. Move each lookup key
+to the new inclusive Price and leave old Price objects active for existing subscriptions.
+
+New paid subscription Checkouts use Stripe Managed Payments. The four active Hominem products use
+the eligible “Artificial Intelligence as a Service (AIaaS) — Cloud Based — Personal Use” product
+category, and the default category for new products is the same. The subscription Checkout request
+sets `managed_payments[enabled]=true` and uses Stripe API version `2026-09-30.endive`; regular
+Thames credit top-ups remain outside Managed Payments. Keep Managed Payments-only parameters out of
+other Checkout flows, and don't pass parameters that Managed Payments controls (including
+`automatic_tax`, `tax_id_collection`, or explicit payment method settings) to its sessions.
+
+Stripe's Managed Payments dashboard setup is saved at the “Set up your checkout” stage. Finish
+activation only after the app code with the Managed Payments Checkout request has been deployed.
+The account's old `$40 a year`, `$5.44 a month`, `$80 a year`, `$8 a month`, and `Ponti & Co`
+products were archived; archiving hides them from new purchases and retains their history.
+
+For local real-Checkout testing, use a Stripe Test Mode `sk_test` key in the ignored API `.env`,
+matching Test Mode catalog entries, and a webhook secret from Stripe CLI. Unset
+`STRIPE_API_BASE_URL`, then forward subscription events to the worktree API:
+
+```bash
+stripe listen --events customer.subscription.created,customer.subscription.updated,customer.subscription.deleted \
+  --forward-to https://api.lvh.me/webhooks/stripe/billing
+```
+
+Set the emitted `whsec_...` value as `BILLING_STRIPE_WEBHOOK_SECRET`, sign in as `test@lvh.me`, and
+complete Checkout with a Stripe test card. Verify the Checkout line item amount and the resulting
+subscription tier/status, then exercise a tier change and cancellation. Never use a live key or
+card for this test. The local fake supports Thames top-ups, not subscription billing.
+
+Register the production webhook endpoint in Stripe and put its signing secret in
+`BILLING_STRIPE_WEBHOOK_SECRET` (or reuse `STRIPE_WEBHOOK_SECRET`).
+
+The full repeatable verification matrix, including checkout, tax, webhook, tier-change, and
+cancellation scenarios, is in [`billing-test-plan.md`](billing-test-plan.md).
+
+### Managed Payments tax-country gate
+
+Paid checkout asks the customer for a billing country before creating a Stripe Checkout Session and
+rejects countries outside the server-side allowlist in
+`services/api/src/application/managed-payments-tax-countries.ts`. That list mirrors Stripe's
+[Managed Payments tax-coverage list](https://docs.stripe.com/payments/managed-payments/tax-compliance)
+and should be rechecked before release. Free registration is unchanged.
+
+This pre-Checkout selection is not a hard restriction on the final tax location: Stripe Managed
+Payments Checkout collects and updates the customer's billing address, and Stripe documents no
+allowed-country parameter for billing addresses. The customer can change that address in hosted
+Checkout. **Keep live Managed Payments activation blocked** until Stripe provides a hard pre-charge
+restriction for the final billing country, or a new product/tax decision explicitly replaces this
+gate. Do not treat an app-side country choice or a post-payment check as proof that unsupported
+countries cannot be charged.
 
 ## Rules for changes
 

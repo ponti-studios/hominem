@@ -2,11 +2,21 @@
  * The little of Stripe that top-up needs, over plain HTTPS so there is no SDK to install and the
  * webhook rules can be tested with signed sample events.
  */
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
 import { z } from 'zod';
 
 const DEFAULT_BASE = 'https://api.stripe.com/v1';
+const MANAGED_PAYMENTS_API_VERSION = '2026-09-30.endive';
+const INTEGRATION_IDENTIFIER_ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
+
+function integrationIdentifier(): string {
+  const suffix = Array.from(
+    randomBytes(8),
+    (byte) => INTEGRATION_IDENTIFIER_ALPHABET[byte % INTEGRATION_IDENTIFIER_ALPHABET.length],
+  ).join('');
+  return `hominem-subscription-${suffix}`;
+}
 
 export class StripeError extends Error {
   constructor(
@@ -66,7 +76,7 @@ export interface StripeClient {
 export interface SubscriptionCheckoutInput {
   userId: string;
   email: string;
-  tier: 'core' | 'ai' | 'rhodium' | 'iridium';
+  tier: 'core' | 'rhodium' | 'iridium';
   pricePence: number;
   founding: boolean;
   successUrl: string;
@@ -94,11 +104,12 @@ export interface StripeSubscriptionsClient {
     input: SubscriptionCheckoutInput,
   ): Promise<{ id: string; url: string }>;
   subscription(subscriptionId: string): Promise<SubscriptionFacts>;
-  /** Moves the subscription to `tier` at `pricePence`, carrying the tier in metadata with the price. */
+  /** Moves the subscription to `tier` at its matching catalog price. */
   updateSubscriptionPlan(
     subscriptionId: string,
     pricePence: number,
-    tier: 'core' | 'ai' | 'rhodium' | 'iridium',
+    tier: 'core' | 'rhodium' | 'iridium',
+    founding?: boolean,
   ): Promise<void>;
   cancelSubscriptionAtPeriodEnd(subscriptionId: string): Promise<void>;
   /** Ends a subscription immediately, for an older one a new checkout has replaced. */
@@ -130,12 +141,6 @@ const subscriptionSchema = z.object({
   items: z.object({ data: z.array(subscriptionItemSchema).min(1) }),
 });
 
-function productIdOf(item: z.infer<typeof subscriptionItemSchema>): string | null {
-  const product = item.price.product;
-  if (!product) return null;
-  return typeof product === 'string' ? product : product.id;
-}
-
 function toSubscriptionFacts(subscription: z.infer<typeof subscriptionSchema>): SubscriptionFacts {
   const metadata = subscription.metadata ?? {};
   const tier =
@@ -164,9 +169,24 @@ function toSubscriptionFacts(subscription: z.infer<typeof subscriptionSchema>): 
   };
 }
 
-function subscriptionProductName(tier: 'core' | 'ai' | 'rhodium' | 'iridium'): string {
-  return `Hominem ${tier[0]!.toUpperCase()}${tier.slice(1)}`;
-}
+const catalogPriceSchema = z.object({
+  id: z.string().min(1),
+  lookup_key: z.string().nullable(),
+  active: z.boolean(),
+  currency: z.string(),
+  unit_amount: z.number().int().nullable(),
+  tax_behavior: z.enum(['inclusive', 'exclusive', 'unspecified']).nullable(),
+  type: z.string(),
+  recurring: z.object({ interval: z.string() }).nullable(),
+  metadata: z.record(z.string(), z.string()),
+});
+
+const CATALOG_PRICES = {
+  core: { key: 'hominem_core_monthly', tier: 'core' },
+  rhodium: { key: 'hominem_rhodium_monthly', tier: 'rhodium' },
+  iridium: { key: 'hominem_iridium_monthly', tier: 'iridium' },
+  founding_core: { key: 'hominem_founding_core_monthly', tier: 'core' },
+} as const;
 
 /** A safety stop on pagination: 2,000 completed Checkouts in the sweep window. */
 const MAX_SESSION_PAGES = 20;
@@ -190,17 +210,26 @@ export function createStripeClient(
   secretKey: string,
   fetchImpl: typeof fetch = fetch,
   base: string = DEFAULT_BASE,
-): StripeClient & StripeSubscriptionsClient {
+): StripeClient &
+  StripeSubscriptionsClient & {
+    resolveSubscriptionPrice(
+      tier: 'core' | 'rhodium' | 'iridium',
+      amountPence: number,
+      founding?: boolean,
+    ): Promise<string>;
+  } {
   async function call(
     what: string,
     method: 'GET' | 'POST' | 'DELETE',
     path: string,
     form?: URLSearchParams,
+    stripeVersion?: string,
   ) {
     const response = await fetchImpl(`${base}${path}`, {
       method,
       headers: {
         Authorization: `Bearer ${secretKey}`,
+        ...(stripeVersion ? { 'Stripe-Version': stripeVersion } : {}),
         ...(form ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
       },
       body: form?.toString(),
@@ -216,7 +245,46 @@ export function createStripeClient(
     return body;
   }
 
+  async function resolveSubscriptionPrice(
+    tier: 'core' | 'rhodium' | 'iridium',
+    amountPence: number,
+    founding = false,
+  ): Promise<string> {
+    const expected =
+      tier === 'core' && founding ? CATALOG_PRICES.founding_core : CATALOG_PRICES[tier];
+    const query = new URLSearchParams({ active: 'true', limit: '100' });
+    query.append('lookup_keys[]', expected.key);
+    const result = z
+      .object({ data: z.array(catalogPriceSchema) })
+      .safeParse(await call('list subscription prices', 'GET', `/prices?${query.toString()}`));
+    if (!result.success) {
+      throw new StripeError('resolve subscription price', 200, 'subscription_price_invalid');
+    }
+    const [price] = result.data.data;
+    const foundingMetadataValid =
+      expected.key === CATALOG_PRICES.founding_core.key
+        ? price?.metadata.founding === 'true'
+        : price?.metadata.founding === undefined || price.metadata.founding === 'false';
+    if (
+      result.data.data.length !== 1 ||
+      !price?.active ||
+      price.lookup_key !== expected.key ||
+      price.currency !== 'gbp' ||
+      price.unit_amount !== amountPence ||
+      price.tax_behavior !== 'inclusive' ||
+      price.type !== 'recurring' ||
+      price.recurring?.interval !== 'month' ||
+      price.metadata.tier !== expected.tier ||
+      price.metadata.plan !== 'monthly' ||
+      !foundingMetadataValid
+    ) {
+      throw new StripeError('resolve subscription price', 200, 'subscription_price_invalid');
+    }
+    return price.id;
+  }
+
   return {
+    resolveSubscriptionPrice,
     async createCheckoutSession(input) {
       const form = new URLSearchParams({
         mode: 'payment',
@@ -224,8 +292,8 @@ export function createStripeClient(
         'line_items[0][price_data][currency]': 'gbp',
         'line_items[0][price_data][unit_amount]': String(input.amountPence),
         'line_items[0][price_data][product_data][name]': 'Thames credit',
-        // Only a card can be held and then released or taken, which the UK-only rule relies on.
         'payment_method_types[0]': 'card',
+        // Only a card can be held and then released or taken, which the UK-only rule relies on.
         'payment_intent_data[capture_method]': 'manual',
         billing_address_collection: 'required',
         'custom_text[submit][message]':
@@ -311,15 +379,13 @@ export function createStripeClient(
     },
 
     async createSubscriptionCheckout(input) {
+      const priceId = await resolveSubscriptionPrice(input.tier, input.pricePence, input.founding);
       const form = new URLSearchParams({
         mode: 'subscription',
+        'managed_payments[enabled]': 'true',
+        integration_identifier: integrationIdentifier(),
         'line_items[0][quantity]': '1',
-        'line_items[0][price_data][currency]': 'gbp',
-        'line_items[0][price_data][unit_amount]': String(input.pricePence),
-        // Monthly, so the price shown on the page is what is taken every month.
-        'line_items[0][price_data][recurring][interval]': 'month',
-        'line_items[0][price_data][product_data][name]': subscriptionProductName(input.tier),
-        'payment_method_types[0]': 'card',
+        'line_items[0][price]': priceId,
         customer_email: input.email,
         client_reference_id: input.userId,
         'subscription_data[metadata][user_id]': input.userId,
@@ -329,7 +395,13 @@ export function createStripeClient(
         cancel_url: input.cancelUrl,
       });
       return sessionSchema.parse(
-        await call('create subscription checkout', 'POST', '/checkout/sessions', form),
+        await call(
+          'create subscription checkout',
+          'POST',
+          '/checkout/sessions',
+          form,
+          MANAGED_PAYMENTS_API_VERSION,
+        ),
       );
     },
 
@@ -345,7 +417,8 @@ export function createStripeClient(
       );
     },
 
-    async updateSubscriptionPlan(subscriptionId, pricePence, tier) {
+    async updateSubscriptionPlan(subscriptionId, pricePence, tier, founding = false) {
+      const priceId = await resolveSubscriptionPrice(tier, pricePence, founding);
       const current = subscriptionSchema.parse(
         await call(
           'read subscription',
@@ -354,33 +427,17 @@ export function createStripeClient(
         ),
       );
       const item = current.items.data[0];
-      const productId = item ? productIdOf(item) : null;
-      if (!item || !productId) {
+      if (!item) {
         throw new StripeError('read subscription', 200, 'subscription_product_missing');
       }
-      // A price change needs a real price: the subscription-update endpoint does not accept the
-      // Checkout-only `product_data`. Create the price against the item's existing product.
-      const price = z.object({ id: z.string().min(1) }).parse(
-        await call(
-          'create price',
-          'POST',
-          '/prices',
-          new URLSearchParams({
-            currency: 'gbp',
-            unit_amount: String(pricePence),
-            'recurring[interval]': 'month',
-            product: productId,
-          }),
-        ),
-      );
       await call(
         'update subscription',
         'POST',
         `/subscriptions/${encodeURIComponent(subscriptionId)}`,
         new URLSearchParams({
           'items[0][id]': item.id,
-          'items[0][price]': price.id,
-          // The tier travels with the price: the webhook derives entitlement from this metadata.
+          'items[0][price]': priceId,
+          // The webhook derives entitlement from the subscription metadata.
           'metadata[tier]': tier,
           // Change now, charging or crediting the difference on the next invoice.
           proration_behavior: 'create_prorations',

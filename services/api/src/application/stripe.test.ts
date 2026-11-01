@@ -3,12 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { createStripeClient, StripeError } from './stripe';
 
 function client(respond: (url: string, init: RequestInit) => unknown, status = 200) {
-  const calls: { url: string; method: string; body: string }[] = [];
+  const calls: { url: string; method: string; body: string; stripeVersion: string | null }[] = [];
   const fetchImpl: typeof fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
     calls.push({
       url: String(url),
       method: init?.method ?? 'GET',
       body: String(init?.body ?? ''),
+      stripeVersion: new Headers(init?.headers).get('Stripe-Version'),
     });
     return new Response(JSON.stringify(respond(String(url), init ?? {})), { status });
   });
@@ -36,6 +37,7 @@ describe('the Stripe client', () => {
     expect(form.get('payment_intent_data[capture_method]')).toBe('manual');
     expect(form.get('payment_method_types[0]')).toBe('card');
     expect(form.get('billing_address_collection')).toBe('required');
+    expect(form.has('managed_payments[enabled]')).toBe(false);
   });
 
   it('reads whether the money is held and where the card and address are', async () => {
@@ -120,6 +122,21 @@ describe('the Stripe client', () => {
 });
 
 describe('the Stripe subscriptions client', () => {
+  const catalogPrice = (overrides: Record<string, unknown> = {}) => ({
+    id: 'price_core',
+    lookup_key: 'hominem_core_monthly',
+    active: true,
+    currency: 'gbp',
+    unit_amount: 999,
+    tax_behavior: 'inclusive',
+    type: 'recurring',
+    recurring: { interval: 'month' },
+    metadata: { tier: 'core', plan: 'monthly' },
+    ...overrides,
+  });
+  const priceList = (price: unknown = catalogPrice()) => ({
+    data: price ? [price] : [],
+  });
   const subscriptionObject = {
     id: 'sub_1',
     status: 'active',
@@ -130,26 +147,33 @@ describe('the Stripe subscriptions client', () => {
     items: { data: [{ id: 'si_1', price: { unit_amount: 799, product: 'prod_1' } }] },
   };
 
-  it('starts a monthly subscription Checkout at the decided price', async () => {
-    const { stripe, calls } = client(() => ({
-      id: 'cs_1',
-      url: 'https://checkout.stripe.test/cs_1',
-    }));
+  it('starts a monthly subscription Checkout at the public catalog Price', async () => {
+    const { stripe, calls } = client((url) =>
+      url.includes('/prices?')
+        ? priceList()
+        : { id: 'cs_1', url: 'https://checkout.stripe.test/cs_1' },
+    );
     await stripe.createSubscriptionCheckout({
       userId: 'u1',
       email: 'a@b.co',
       tier: 'core',
-      pricePence: 799,
-      founding: true,
+      pricePence: 999,
+      founding: false,
       successUrl: 'https://api.test/billing/done',
       cancelUrl: 'https://api.test/billing/cancelled',
     });
-    const form = new URLSearchParams(calls[0]!.body);
+    const form = new URLSearchParams(calls[1]!.body);
     expect(form.get('mode')).toBe('subscription');
-    expect(form.get('line_items[0][price_data][unit_amount]')).toBe('799');
-    expect(form.get('line_items[0][price_data][recurring][interval]')).toBe('month');
+    expect(form.get('line_items[0][price]')).toBe('price_core');
+    expect(form.has('line_items[0][price_data][unit_amount]')).toBe(false);
     expect(form.get('subscription_data[metadata][user_id]')).toBe('u1');
-    expect(form.get('subscription_data[metadata][founding]')).toBe('true');
+    expect(form.get('subscription_data[metadata][founding]')).toBe('false');
+    expect(form.has('payment_method_types[0]')).toBe(false);
+    expect(form.get('managed_payments[enabled]')).toBe('true');
+    expect(form.get('integration_identifier')).toMatch(/^hominem-subscription-[a-z]{8}$/);
+    expect(calls[1]!.stripeVersion).toBe('2026-09-30.endive');
+    const lookup = new URL(calls[0]!.url);
+    expect(lookup.searchParams.get('lookup_keys[]')).toBe('hominem_core_monthly');
   });
 
   it('reads the fields the billing rules enforce', async () => {
@@ -167,24 +191,105 @@ describe('the Stripe subscriptions client', () => {
     });
   });
 
+  it.each([
+    ['core', 999, 'hominem_core_monthly'],
+    ['rhodium', 1999, 'hominem_rhodium_monthly'],
+    ['iridium', 3999, 'hominem_iridium_monthly'],
+  ] as const)('resolves the %s catalog Price', async (tier, amountPence, key) => {
+    const { stripe, calls } = client(() =>
+      priceList({
+        ...catalogPrice(),
+        id: `price_${tier}`,
+        lookup_key: key,
+        unit_amount: amountPence,
+        metadata: { tier, plan: 'monthly' },
+      }),
+    );
+    expect(await stripe.resolveSubscriptionPrice(tier, amountPence)).toBe(`price_${tier}`);
+    expect(new URL(calls[0]!.url).searchParams.get('lookup_keys[]')).toBe(key);
+  });
+
   it('changes the plan on the subscription’s own item, with a real price and the new tier', async () => {
     const { stripe, calls } = client((url) =>
-      url.endsWith('/prices') ? { id: 'price_1' } : subscriptionObject,
+      url.includes('/prices?')
+        ? priceList()
+        : url.endsWith('/subscriptions/sub_1') && calls.some((call) => call.method === 'POST')
+          ? {}
+          : subscriptionObject,
     );
     await stripe.updateSubscriptionPlan('sub_1', 999, 'core');
     expect(calls.map((call) => [call.method, call.url])).toEqual([
+      [
+        'GET',
+        'https://stripe.test/v1/prices?active=true&limit=100&lookup_keys%5B%5D=hominem_core_monthly',
+      ],
       ['GET', 'https://stripe.test/v1/subscriptions/sub_1'],
-      ['POST', 'https://stripe.test/v1/prices'],
       ['POST', 'https://stripe.test/v1/subscriptions/sub_1'],
     ]);
-    const price = new URLSearchParams(calls[1]!.body);
-    expect(price.get('product')).toBe('prod_1');
-    expect(price.get('unit_amount')).toBe('999');
-    expect(price.get('recurring[interval]')).toBe('month');
     const form = new URLSearchParams(calls[2]!.body);
     expect(form.get('items[0][id]')).toBe('si_1');
-    expect(form.get('items[0][price]')).toBe('price_1');
+    expect(form.get('items[0][price]')).toBe('price_core');
     expect(form.get('metadata[tier]')).toBe('core');
+    expect(calls.some((call) => call.url.endsWith('/prices'))).toBe(false);
+  });
+
+  it('uses the Founding Core catalog Price when a grandfathered subscriber returns to Core', async () => {
+    const foundingPrice = catalogPrice({
+      id: 'price_founding',
+      lookup_key: 'hominem_founding_core_monthly',
+      unit_amount: 799,
+      metadata: { tier: 'core', plan: 'monthly', founding: 'true' },
+    });
+    const { stripe, calls } = client((url) =>
+      url.includes('/prices?') ? priceList(foundingPrice) : subscriptionObject,
+    );
+    await stripe.updateSubscriptionPlan('sub_1', 799, 'core', true);
+    expect(new URL(calls[0]!.url).searchParams.get('lookup_keys[]')).toBe(
+      'hominem_founding_core_monthly',
+    );
+    expect(new URLSearchParams(calls[2]!.body).get('items[0][price]')).toBe('price_founding');
+  });
+
+  it.each([
+    ['missing', null],
+    ['inactive', catalogPrice({ active: false })],
+    ['wrong tier', catalogPrice({ metadata: { tier: 'rhodium', plan: 'monthly' } })],
+    ['wrong plan metadata', catalogPrice({ metadata: { tier: 'core', plan: 'yearly' } })],
+    [
+      'unexpected founding metadata',
+      catalogPrice({ metadata: { tier: 'core', plan: 'monthly', founding: 'true' } }),
+    ],
+    ['wrong lookup key', catalogPrice({ lookup_key: 'hominem_rhodium_monthly' })],
+    [
+      'missing founding metadata',
+      catalogPrice({
+        lookup_key: 'hominem_founding_core_monthly',
+        unit_amount: 799,
+        metadata: { tier: 'core', plan: 'monthly' },
+      }),
+      true,
+    ],
+    ['wrong amount', catalogPrice({ unit_amount: 1000 })],
+    ['tax-exclusive', catalogPrice({ tax_behavior: 'exclusive' })],
+    ['unspecified tax behavior', catalogPrice({ tax_behavior: 'unspecified' })],
+    ['wrong currency', catalogPrice({ currency: 'usd' })],
+    ['non-monthly', catalogPrice({ recurring: { interval: 'year' } })],
+  ])('fails closed for a %s catalog price', async (_name, price, founding = false) => {
+    const { stripe } = client(() => priceList(price));
+    await expect(
+      stripe.resolveSubscriptionPrice('core', founding ? 799 : 999, founding),
+    ).rejects.toMatchObject({
+      code: 'subscription_price_invalid',
+    });
+  });
+
+  it('fails closed when Stripe returns multiple prices for one lookup key', async () => {
+    const { stripe } = client(() => ({
+      data: [catalogPrice(), catalogPrice({ id: 'price_duplicate' })],
+    }));
+    await expect(stripe.resolveSubscriptionPrice('core', 999)).rejects.toMatchObject({
+      code: 'subscription_price_invalid',
+    });
   });
 
   it('cancels at the end of the period, not immediately', async () => {
