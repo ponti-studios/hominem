@@ -3304,6 +3304,122 @@
   {
     "type": "function",
     "function": {
+      "name": "finance_budget_create",
+      "description": "Create the single budget for a category, or update that category’s existing budget if one exists — a category never has two budgets. The budget carries its own cadence (weekly, monthly, quarterly, annual) and its period is the matching calendar period. It has no currency of its own: the amount is in the profile primary currency, and spent is computed from transactions at read time. Mode: write. Use when: The user states a spending limit for a spending category, e.g. \"keep travel to £4,000 a year\". Do not use when: Do not create tag-level or merchant-level budgets (they do not exist), and do not pass a currency — the budget uses the profile primary currency. Set that with finance_primary_currency_set first if it is not set.  Prerequisites: finance_categories (resolve the category id, since budgets exist only at category level).  Produces: budget, current period status.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "Category id from finance_categories. Budgets exist only at category level."
+          },
+          "amountCents": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "description": "The spending limit for one period, in integer cents of the primary currency."
+          },
+          "cadence": {
+            "type": "string",
+            "enum": ["weekly", "monthly", "quarterly", "annual"],
+            "description": "This budget’s own cadence: weekly, monthly, quarterly or annual. Custom periods are not supported."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["categoryId", "amountCents", "cadence"],
+        "additionalProperties": false,
+        "description": "Create or replace the single budget for a category. Takes no currency: the budget is denominated in the profile primary currency, and no tag or merchant budget exists."
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_budget_delete",
+      "description": "Delete a category budget. The budget’s transactions are untouched — a budget is a limit, not a movement of money. The MCP server asks for confirmation before deletion. Mode: write, confirmation required. Use when: The user no longer wants a budget for that category. Do not use when: Do not delete a budget to change its amount or cadence; update it instead.  Prerequisites: finance_budget_list (resolve the budget id).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "budgetId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["budgetId"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_budget_get",
+      "description": "Get one category budget with its current period status, computed at read time from transactions in that category. Null when the id is not the caller’s budget. Mode: read-only. Use when: The user asks about one specific budget by the id finance_budget_list returned. Do not use when: Do not invent a budget id; list budgets first.  Prerequisites: finance_budget_list (resolve the budget id).  Produces: budget status, spent and remaining, pace projection.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "budgetId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "Stable budget id returned by finance_budget_list."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["budgetId"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_budget_list",
+      "description": "List every category budget with its current period status: period bounds, opening balance, available, spent in the category, remaining, swept-to-savings and the pace projection. Each budget reports against its own cadence’s calendar period. Spent is computed from transactions at read time. Mode: read-only. Use when: The user asks how their budgets are doing, or what budgets exist. Do not use when: Do not use for transaction history or category-level spending reports.  Produces: budgets, current period bounds, spent and remaining per budget, pace projection.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_budget_update",
+      "description": "Update a budget’s amount and/or cadence. Changing the cadence changes the calendar period the budget is measured over. Returns null when the id is not the caller’s budget. Mode: write. Use when: The user changes a budget’s limit or moves it to a different cadence. Do not use when: Do not use to create a budget; there is one budget per category.  Prerequisites: finance_budget_list (resolve the budget id).  Produces: updated budget status.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "budgetId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "amountCents": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "cadence": {
+            "type": "string",
+            "enum": ["weekly", "monthly", "quarterly", "annual"]
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["budgetId"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "finance_categories",
       "description": "List finance categories (id, name) for the authenticated user. Use to resolve sheet Category names before import. Mode: read-only.",
       "parameters": {
@@ -3424,6 +3540,26 @@
         },
         "$schema": "http://json-schema.org/draft-07/schema#",
         "required": ["includeClosed"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_primary_currency_set",
+      "description": "Set the profile primary currency (ISO 4217) that budgets are denominated in. This is an explicit user action: creating a budget never changes it. Existing budgets re-denominate immediately, counting each foreign transaction at its settled amount in the new currency where the record carries one. Mode: write. Use when: The user explicitly states the currency they think in, or a budget tool reports that the primary currency is not set. Do not use when: Do not change it as a side effect of creating a budget or recording a transaction, and do not guess a currency from account names.  Produces: primaryCurrency.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "currencyCode": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{3}$",
+            "description": "ISO 4217 currency code, e.g. GBP. Every budget is denominated in this currency."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["currencyCode"],
         "additionalProperties": false
       }
     }
@@ -3915,6 +4051,32 @@
               }
             ]
           },
+          "settledAmountCents": {
+            "description": "For a foreign-currency row, the amount actually charged in settledCurrencyCode, in cents. Budgets count the row at this amount; omit only when the record carries no settled amount.",
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settledCurrencyCode": {
+            "description": "ISO-4217 currency of settledAmountCents; set together with it.",
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "accountMap": {
             "description": "Explicit { \"Sheet Label\": \"hominem-account-id\" } overrides.",
             "type": "object",
@@ -4046,6 +4208,32 @@
                       "type": "string",
                       "format": "uuid",
                       "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "settledAmountCents": {
+                  "description": "For a foreign-currency row, the amount actually charged in settledCurrencyCode, in cents. Budgets count the row at this amount; omit only when the record carries no settled amount.",
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "settledCurrencyCode": {
+                  "description": "ISO-4217 currency of settledAmountCents; set together with it.",
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 3,
+                      "maxLength": 3
                     },
                     {
                       "type": "null"
