@@ -33,6 +33,13 @@ export interface SheetTransactionInput {
   counterpartId?: string | null;
   /** Stable provider identity; omitted rows continue using the natural key. */
   externalId?: string | null;
+  /**
+   * The amount actually charged for a foreign-currency row, in cents of
+   * `settledCurrencyCode`. Budgets count a foreign transaction at this amount; with no settled
+   * amount there is nothing truthful to count and the row is reported as uncounted.
+   */
+  settledAmountCents?: number | null;
+  settledCurrencyCode?: string | null;
 }
 
 export interface SheetImportOptions {
@@ -182,6 +189,23 @@ function validateRow(input: SheetTransactionInput): SheetRejectionReason | null 
   if (!/^[A-Za-z]{3}$/.test(input.currencyCode ?? '')) return 'invalid_currency';
   if (!input.description || !input.description.trim()) return 'invalid_description';
   if (!input.account || !input.account.trim()) return 'unknown_account';
+  const hasSettledAmount =
+    input.settledAmountCents !== undefined && input.settledAmountCents !== null;
+  const hasSettledCurrency =
+    input.settledCurrencyCode !== undefined &&
+    input.settledCurrencyCode !== null &&
+    input.settledCurrencyCode.trim() !== '';
+  // A settled amount without a currency (or the reverse) has no truthful meaning.
+  if (hasSettledAmount !== hasSettledCurrency) return 'invalid_amount';
+  if (
+    hasSettledAmount &&
+    (!Number.isInteger(input.settledAmountCents) || (input.settledAmountCents ?? 0) < 0)
+  ) {
+    return 'invalid_amount';
+  }
+  if (hasSettledCurrency && !/^[A-Za-z]{3}$/.test(input.settledCurrencyCode ?? '')) {
+    return 'invalid_currency';
+  }
   return null;
 }
 
@@ -327,6 +351,8 @@ const SHEET_TRANSACTION_KEYS = new Set([
   'transactionType',
   'pending',
   'counterpartId',
+  'settledAmountCents',
+  'settledCurrencyCode',
 ]);
 
 export async function ensureFinanceCategoryId(
@@ -808,6 +834,8 @@ export async function upsertSheetTransaction(
       'postedOn',
       'currencyCode',
       'orderNumber',
+      'settledAmount',
+      'settledCurrencyCode',
     ])
     .where('userId', '=', userId)
     .where('externalId', '=', externalId)
@@ -828,6 +856,18 @@ export async function upsertSheetTransaction(
   const notes = input.notes === undefined ? (existing?.notes ?? null) : input.notes;
   const orderNumber =
     input.orderNumber === undefined ? (existing?.orderNumber ?? null) : input.orderNumber;
+  const settledAmount =
+    input.settledAmountCents === undefined
+      ? (existing?.settledAmount ?? null)
+      : input.settledAmountCents === null
+        ? null
+        : input.settledAmountCents / 100;
+  const settledCurrencyCode =
+    input.settledCurrencyCode === undefined
+      ? (existing?.settledCurrencyCode ?? null)
+      : input.settledCurrencyCode === null || input.settledCurrencyCode.trim() === ''
+        ? null
+        : input.settledCurrencyCode.toUpperCase();
   const transactionType =
     input.transactionType === undefined
       ? (existing?.transactionType ?? inferredTransactionType)
@@ -869,6 +909,10 @@ export async function upsertSheetTransaction(
       existing.description === description &&
       String(existing.postedOn) === input.postedOn &&
       existing.currencyCode === currencyCode &&
+      (existing.settledAmount === null
+        ? settledAmount === null
+        : Number(existing.settledAmount) === settledAmount) &&
+      (existing.settledCurrencyCode ?? null) === (settledCurrencyCode ?? null) &&
       tagsSame;
     if (mutableSame) {
       return { id: existing.id, created: false, updated: false, accountId: resolved.accountId };
@@ -888,6 +932,8 @@ export async function upsertSheetTransaction(
         postedOn: input.postedOn,
         currencyCode,
         recurring,
+        settledAmount,
+        settledCurrencyCode,
         source: effectiveSource,
       })
       .where('id', '=', existing.id)
@@ -922,6 +968,8 @@ export async function upsertSheetTransaction(
         orderNumber,
         source,
         externalId,
+        settledAmount,
+        settledCurrencyCode,
       })
       .execute();
   } catch (error) {

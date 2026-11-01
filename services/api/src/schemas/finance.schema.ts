@@ -652,6 +652,161 @@ export const financeBudgetBreakdownOutputSchema = z.object({
   unallocated: z.number(),
 });
 
+// -- finance_budget_* (stored budgets, one per category, each with its own cadence) --
+
+export const financeBudgetCadenceSchema = z.enum(['weekly', 'monthly', 'quarterly', 'annual']);
+
+const primaryCurrencySchema = accountCurrencySchema
+  .refine((code) => code.toUpperCase() !== 'XXX', 'invalid_currency')
+  .describe('ISO 4217 currency code, e.g. GBP. Every budget is denominated in this currency.');
+
+export const financeBudgetStatusSchema = z.object({
+  id: z.string(),
+  categoryId: z.string(),
+  categoryName: z.string(),
+  amountCents: z
+    .number()
+    .int()
+    .describe('The limit for one period, in the primary currency cents.'),
+  cadence: financeBudgetCadenceSchema,
+  currencyCode: z
+    .string()
+    .describe('Resolved from the user profile at read time; budgets store no currency.'),
+  period: z.object({
+    startsOn: z.string().describe('Inclusive ISO date (YYYY-MM-DD) of the current period.'),
+    endsOn: z.string().describe('Inclusive ISO date (YYYY-MM-DD) of the current period.'),
+  }),
+  openingBalanceCents: z
+    .number()
+    .int()
+    .describe('Carried deficit (negative) or, for annual budgets only, carried underspend.'),
+  availableCents: z.number().int().describe('amountCents + openingBalanceCents.'),
+  spentCents: z.number().int().describe('Computed from transactions in the current period.'),
+  remainingCents: z.number().int().describe('availableCents - spentCents; negative = overspent.'),
+  sweptToSavingsCents: z
+    .number()
+    .int()
+    .min(0)
+    .describe(
+      'Underspend of the last closed period swept to savings; always 0 for annual budgets.',
+    ),
+  pace: z.object({
+    periodElapsedFraction: z.number().describe('Fraction of the current period elapsed, 0–1.'),
+    spentFraction: z
+      .number()
+      .nullable()
+      .describe('spent / available; null when the available amount is not positive.'),
+    projectedSpendCents: z
+      .number()
+      .int()
+      .nullable()
+      .describe('Current-rate projection of spend to period end; null before the period starts.'),
+    projectedExhaustionDate: z
+      .string()
+      .nullable()
+      .describe('ISO date the current rate reaches the limit, null if it never does.'),
+    paceStatus: z
+      .enum(['insufficient_data', 'on_track', 'ahead'])
+      .describe('insufficient_data until 20% of the period has elapsed.'),
+  }),
+  uncountedForeignTransactionCount: z
+    .number()
+    .int()
+    .min(0)
+    .describe(
+      'Foreign-currency transactions with no settled primary-currency amount; they are not counted.',
+    ),
+  uncountedForeignTransactions: z.array(
+    z.object({
+      id: z.string(),
+      postedOn: z.string(),
+      currencyCode: z.string(),
+      amountCents: z.number().int(),
+      merchantName: z.string().nullable(),
+      description: z.string().nullable(),
+    }),
+  ),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const financeBudgetListInputSchema = z.object({}).strict();
+
+export const financeBudgetListOutputSchema = z.object({
+  primaryCurrency: z.string(),
+  budgets: z.array(financeBudgetStatusSchema),
+  count: z.number().int().min(0),
+});
+
+export const financeBudgetGetInputSchema = z
+  .object({
+    budgetId: z.string().uuid().describe('Stable budget id returned by finance_budget_list.'),
+  })
+  .strict();
+
+export const financeBudgetGetOutputSchema = z.object({
+  budget: financeBudgetStatusSchema.nullable(),
+});
+
+export const financeBudgetCreateInputSchema = z
+  .object({
+    categoryId: z
+      .string()
+      .uuid()
+      .describe('Category id from finance_categories. Budgets exist only at category level.'),
+    amountCents: z
+      .number()
+      .int()
+      .positive()
+      .describe('The spending limit for one period, in integer cents of the primary currency.'),
+    cadence: financeBudgetCadenceSchema.describe(
+      'This budget’s own cadence: weekly, monthly, quarterly or annual. Custom periods are not supported.',
+    ),
+  })
+  .strict()
+  .describe(
+    'Create or replace the single budget for a category. Takes no currency: the budget is denominated in the profile primary currency, and no tag or merchant budget exists.',
+  );
+
+export const financeBudgetCreateOutputSchema = z.object({
+  budget: financeBudgetStatusSchema.nullable(),
+  created: z.boolean().describe('False when the existing budget for that category was updated.'),
+  reason: z
+    .enum(['unknown_category'])
+    .nullable()
+    .describe('Set instead of an error when the category id is not the caller’s.'),
+});
+
+export const financeBudgetUpdateInputSchema = z
+  .object({
+    budgetId: z.string().uuid(),
+    amountCents: z.number().int().positive().optional(),
+    cadence: financeBudgetCadenceSchema.optional(),
+  })
+  .strict()
+  .refine(
+    (value) => value.amountCents !== undefined || value.cadence !== undefined,
+    'Provide amountCents, cadence, or both.',
+  );
+
+export const financeBudgetUpdateOutputSchema = z.object({
+  budget: financeBudgetStatusSchema.nullable(),
+});
+
+export const financeBudgetDeleteInputSchema = z.object({ budgetId: z.string().uuid() }).strict();
+
+export const financeBudgetDeleteOutputSchema = z.object({ removed: z.boolean() });
+
+export const financePrimaryCurrencySetInputSchema = z
+  .object({
+    currencyCode: primaryCurrencySchema,
+  })
+  .strict();
+
+export const financePrimaryCurrencySetOutputSchema = z.object({
+  primaryCurrency: z.string(),
+});
+
 // -- finance_categories --
 
 export const financeCategoriesInputSchema = z.object({}).strict();
@@ -694,6 +849,22 @@ const sheetTransactionPayloadSchema = z.object({
     .describe(
       'Other leg of an internal transfer: an owned transaction on a different account. The link is mirrored on both rows; invalid targets are rejected as invalid_counterpart.',
     ),
+  settledAmountCents: z
+    .number()
+    .int()
+    .min(0)
+    .nullable()
+    .optional()
+    .describe(
+      'For a foreign-currency row, the amount actually charged in settledCurrencyCode, in cents. Budgets count the row at this amount; omit only when the record carries no settled amount.',
+    ),
+  settledCurrencyCode: z
+    .string()
+    .min(3)
+    .max(3)
+    .nullable()
+    .optional()
+    .describe('ISO-4217 currency of settledAmountCents; set together with it.'),
 });
 
 export const financeTransactionUpsertInputSchema = sheetTransactionPayloadSchema.extend({
