@@ -175,6 +175,7 @@ const catalogPriceSchema = z.object({
   active: z.boolean(),
   currency: z.string(),
   unit_amount: z.number().int().nullable(),
+  tax_behavior: z.enum(['inclusive', 'exclusive', 'unspecified']).nullable(),
   type: z.string(),
   recurring: z.object({ interval: z.string() }).nullable(),
   metadata: z.record(z.string(), z.string()),
@@ -270,6 +271,7 @@ export function createStripeClient(
       price.lookup_key !== expected.key ||
       price.currency !== 'gbp' ||
       price.unit_amount !== amountPence ||
+      price.tax_behavior !== 'inclusive' ||
       price.type !== 'recurring' ||
       price.recurring?.interval !== 'month' ||
       price.metadata.tier !== expected.tier ||
