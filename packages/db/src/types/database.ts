@@ -583,6 +583,16 @@ export interface AppFinanceAccounts {
   userId: string;
 }
 
+export interface AppFinanceBudgets {
+  amountCents: number;
+  cadence: string;
+  categoryId: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  id: Generated<string>;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
 export interface AppFinanceCategories {
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   id: Generated<string>;
@@ -634,6 +644,8 @@ export interface AppFinanceTransactions {
   postedOn: ColumnType<string, Date | string, Date | string>;
   providerPayload: Generated<Json>;
   recurring: Generated<boolean>;
+  settledAmount: Numeric | null;
+  settledCurrencyCode: string | null;
   source: string | null;
   transactionType: string;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1451,6 +1463,13 @@ export interface AppTravelTrips {
   updatedat: Generated<ColumnType<string, Date | string, Date | string>>;
 }
 
+export interface AppUserProfiles {
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  primaryCurrency: string;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
 export interface AppVectorDocuments {
   content: string;
   createdat: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1743,6 +1762,7 @@ export interface DB {
   'app.creditState': AppCreditState;
   'app.files': AppFiles;
   'app.financeAccounts': AppFinanceAccounts;
+  'app.financeBudgets': AppFinanceBudgets;
   'app.financeCategories': AppFinanceCategories;
   'app.financeInstitutions': AppFinanceInstitutions;
   'app.financeMonthlyBudgets': AppFinanceMonthlyBudgets;
@@ -1805,6 +1825,7 @@ export interface DB {
   'app.travelTransport': AppTravelTransport;
   'app.travelTripAttendees': AppTravelTripAttendees;
   'app.travelTrips': AppTravelTrips;
+  'app.userProfiles': AppUserProfiles;
   'app.vectorDocuments': AppVectorDocuments;
   deviceCode: DeviceCode;
   gooseDbVersion: GooseDbVersion;
