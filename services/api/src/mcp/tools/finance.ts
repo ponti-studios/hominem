@@ -1,12 +1,18 @@
 import { NotFoundError, ValidationError } from '@hominem/db/errors';
+import type { MergeFinanceCategoriesResult } from '@hominem/finance-services';
 import {
   computeLedgerRunway,
+  createFinanceRule,
   createOrGetFinanceCategory,
+  deleteFinanceRule,
   deleteUnusedFinanceCategory,
+  getCategoryTagBreakdown,
   getFinanceNetWorth,
   getFinanceSpendingByCategory,
   getRunwaySettings,
+  listFinanceRules,
   mergeFinanceCategories,
+  updateFinanceRule,
 } from '@hominem/finance-services';
 
 import {
@@ -44,8 +50,39 @@ import {
   financeTagRenameOutputSchema,
   financeTopMerchantsInputSchema,
   financeTopMerchantsOutputSchema,
+  financeCategoryTagBreakdownInputSchema,
+  financeCategoryTagBreakdownOutputSchema,
+  financeRuleCreateInputSchema,
+  financeRuleCreateOutputSchema,
+  financeRuleDeleteInputSchema,
+  financeRuleDeleteOutputSchema,
+  financeRuleUpdateInputSchema,
+  financeRuleUpdateOutputSchema,
+  financeRulesInputSchema,
+  financeRulesOutputSchema,
 } from '../../schemas/finance.schema';
 import { registerTool } from '../tool-registry';
+
+// Money crosses the MCP boundary in currency units; the services layer keeps cents.
+function mergeResponse(result: MergeFinanceCategoriesResult, dryRun: boolean) {
+  return {
+    transactionsReassigned: result.transactionsReassigned,
+    category: result.category,
+    removedCategory: result.removedCategory,
+    removedCategories: result.removedCategories,
+    reason: result.reason,
+    untaggedSources: result.untaggedSources,
+    blockedRules: result.blockedRules,
+    steps: result.steps,
+    currencyTotals: result.currencyTotals.map((total) => ({
+      currencyCode: total.currencyCode,
+      before: total.beforeCents / 100,
+      after: total.afterCents / 100,
+    })),
+    totalsUnchanged: result.totalsUnchanged,
+    dryRun,
+  };
+}
 
 // enforceResultCap in tool-registry rejects any top-level array longer than the tool's
 // resultCap; these tools have no pagination input, so their arrays are truncated here to
@@ -431,12 +468,13 @@ registerTool(
     name: 'finance_category_merge',
     title: 'Finance Category Merge',
     description:
-      'Reassign every transaction from one category to another, then permanently remove the source. Uncategorized may be a target, never a source. dryRun counts what would move without writing.',
+      'Merge one or more categories into a target in three ordered stages: preserve (a tag naming each source is put on its transactions), repoint (automation rules filing into a source are rewritten to the target), merge (transactions move and the sources are removed). Uncategorized may be a target, never a source. Any rule that still names a source blocks the merge and is listed by name, and so does a source whose transactions are not yet tagged. stage runs all three stages by default, or one at a time. dryRun reports all three stages without writing.',
     inputSchema: financeCategoryMergeInputSchema,
     outputSchema: financeCategoryMergeOutputSchema,
     destructive: true,
     requiresConfirmation: true,
-    resultCap: 1,
+    // The result reports every removed category and every blocked rule, not one row.
+    resultCap: 500,
     preview: async (ownerUserId, input) => {
       const parsed = financeCategoryMergeInputSchema.safeParse(input);
       if (!parsed.success) return null;
@@ -451,17 +489,95 @@ registerTool(
             from: parsed.data.from,
             into: result.category?.name ?? parsed.data.into,
             transactionsToMove: result.transactionsReassigned,
+            // The ordering is part of the contract, so the preview shows all three stages.
+            preserve: (result.steps?.preserveTags.tags ?? []).map((entry) => ({
+              category: entry.category.name,
+              tag: entry.tag.name,
+              tagCreated: entry.tagCreated,
+              transactions: entry.transactionsTagged,
+            })),
+            repointRules: (result.steps?.repointRules.repointed ?? []).map((rule) => rule.name),
+            totalsUnchanged: result.totalsUnchanged,
           };
     },
   },
-  async (ownerUserId, input) => ({
-    ...(await mergeFinanceCategories(
+  async (ownerUserId, input) => {
+    const result = await mergeFinanceCategories(
       ownerUserId,
       { from: input.from, into: input.into },
-      { dryRun: input.dryRun },
-    )),
-    dryRun: input.dryRun,
-  }),
+      { dryRun: input.dryRun, stage: input.stage },
+    );
+    if (result.reason === 'untagged_sources') {
+      // The preserve stage has not run, so the merge would lose which transactions came from
+      // which source category.
+      throw new ValidationError(
+        `untagged_sources: ${result.untaggedSources.map((category) => category.name).join(', ')} have transactions without their source tag. Run the preserve stage first.`,
+        { reason: result.reason, untaggedSources: result.untaggedSources },
+      );
+    }
+    if (result.reason === 'unrepointed_rules') {
+      // A merge may not complete while an automation still names a source: it would recreate the
+      // category on the next import. Name the rules so they can be repointed.
+      throw new ValidationError(
+        `unrepointed_rules: ${result.blockedRules.length} rule(s) still reference a merged category (${result.blockedRules
+          .map((rule) => `${rule.name} → ${rule.category.name}`)
+          .join(', ')}). Repoint them before merging.`,
+        { reason: result.reason, blockedRules: result.blockedRules },
+      );
+    }
+    return mergeResponse(result, input.dryRun);
+  },
+);
+
+registerTool(
+  {
+    name: 'finance_category_tag_breakdown',
+    title: 'Finance Category Tag Breakdown',
+    description:
+      'Drill into one category: its spending grouped by tag over a date range (defaults to the last 30 days through today), with each tag bucket and the category totals reported per currency. Tags are the layer beneath categories, so this is how a merged category is split back into the components it absorbed. Check warnings: tag buckets overlap when a transaction carries more than one tag.',
+    inputSchema: financeCategoryTagBreakdownInputSchema,
+    outputSchema: financeCategoryTagBreakdownOutputSchema,
+    readOnly: true,
+    scopes: ['finance:read'],
+    // Matches the schema's maximum `limit` (50) so an accepted request can never be rejected by
+    // the result cap.
+    resultCap: 50,
+    guidance: {
+      whenToUse: 'The user asks what a category is made of, or which components drive its total.',
+      whenNotToUse: 'Use finance_spending_by_category for the category totals themselves.',
+      produces: ['tag names', 'per-tag spending', 'per-tag transaction counts'],
+      dependencies: [
+        {
+          tool: 'finance_categories',
+          reason: 'resolve the category by name or id',
+          provides: ['id', 'name'],
+        },
+      ],
+    },
+  },
+  async (ownerUserId, input) => {
+    const breakdown = await getCategoryTagBreakdown(ownerUserId, input);
+    if (!breakdown) throw new NotFoundError('Category', { reason: 'category_not_found' });
+    return {
+      category: breakdown.category,
+      from: breakdown.from,
+      to: breakdown.to,
+      currencyCode: breakdown.currencyCode,
+      tags: breakdown.tags.map((tag) => ({
+        tagId: tag.tagId,
+        tagName: tag.tagName,
+        currencyCode: tag.currencyCode,
+        spent: tag.spentCents / 100,
+        transactionCount: tag.transactionCount,
+      })),
+      totals: breakdown.totals.map((total) => ({
+        currencyCode: total.currencyCode,
+        spent: total.spentCents / 100,
+        transactionCount: total.transactionCount,
+      })),
+      warnings: breakdown.warnings,
+    };
+  },
 );
 
 registerTool(
@@ -492,9 +608,17 @@ registerTool(
   async (ownerUserId, input) => {
     const result = await deleteUnusedFinanceCategory(ownerUserId, input.category);
     if (result.reason === 'category_in_use') {
+      const rules =
+        result.referencingRules.length > 0
+          ? ` and ${result.referencingRules.length} rule(s) (${result.referencingRules.join(', ')})`
+          : '';
       throw new ValidationError(
-        `category_in_use: ${result.referencingCount} transaction(s) reference this category.`,
-        { reason: result.reason, referencingCount: result.referencingCount },
+        `category_in_use: ${result.referencingCount} transaction(s)${rules} reference this category.`,
+        {
+          reason: result.reason,
+          referencingCount: result.referencingCount,
+          referencingRules: result.referencingRules,
+        },
       );
     }
     if (result.reason === 'category_protected') {
@@ -502,6 +626,100 @@ registerTool(
     }
     if (!result.category) throw new NotFoundError('Category', { reason: 'category_not_found' });
     return { deleted: result.category };
+  },
+);
+
+// Automation rules name the category a matching transaction is filed into. They exist as a
+// surface because a category merge has to repoint them — a rule left pointing at a merged-away
+// category would recreate it on the next import.
+registerTool(
+  {
+    name: 'finance_rules',
+    title: 'Finance Rules',
+    description:
+      'List automation rules: description patterns that file matching transactions into a category. Each rule reports the category it currently files into.',
+    inputSchema: financeRulesInputSchema,
+    outputSchema: financeRulesOutputSchema,
+    readOnly: true,
+    scopes: ['finance:read'],
+    resultCap: 500,
+    guidance: {
+      whenToUse: 'Before a category merge, or when the user asks what automations they have.',
+      produces: ['rule names', 'rule patterns', 'the category each rule files into'],
+    },
+  },
+  async (ownerUserId) => {
+    const rules = await listFinanceRules(ownerUserId);
+    return { rules, count: rules.length };
+  },
+);
+
+registerTool(
+  {
+    ...financeWriteTool,
+    name: 'finance_rule_create',
+    title: 'Finance Rule Create',
+    description:
+      'Create an automation rule that files transactions whose description matches a pattern into a category. Names are unique per owner case-insensitively; a category must already exist (rules never create categories).',
+    inputSchema: financeRuleCreateInputSchema,
+    outputSchema: financeRuleCreateOutputSchema,
+    resultCap: 1,
+    guidance: {
+      whenToUse: 'The user wants a merchant or description to be filed automatically.',
+      whenNotToUse: 'Do not use to reclassify historical transactions; edit them instead.',
+      dependencies: [
+        {
+          tool: 'finance_categories',
+          reason: 'resolve the category the rule files into',
+          provides: ['id', 'name'],
+        },
+      ],
+    },
+  },
+  async (ownerUserId, input) => createFinanceRule(ownerUserId, input),
+);
+
+registerTool(
+  {
+    ...financeWriteTool,
+    name: 'finance_rule_update',
+    title: 'Finance Rule Update',
+    description:
+      'Update a rule by name or id, including repointing it at another category — the move a blocked category merge asks for. Omitted fields are left unchanged.',
+    inputSchema: financeRuleUpdateInputSchema,
+    outputSchema: financeRuleUpdateOutputSchema,
+    resultCap: 1,
+  },
+  async (ownerUserId, input) => updateFinanceRule(ownerUserId, input),
+);
+
+registerTool(
+  {
+    ...financeWriteTool,
+    name: 'finance_rule_delete',
+    title: 'Finance Rule Delete',
+    description:
+      'Permanently delete an automation rule by name or id. Transactions it already filed keep their category.',
+    inputSchema: financeRuleDeleteInputSchema,
+    outputSchema: financeRuleDeleteOutputSchema,
+    destructive: true,
+    requiresConfirmation: true,
+    resultCap: 1,
+    preview: async (ownerUserId, input) => {
+      const parsed = financeRuleDeleteInputSchema.safeParse(input);
+      if (!parsed.success) return null;
+      const match = (await listFinanceRules(ownerUserId)).find(
+        (rule) =>
+          rule.id === parsed.data.rule ||
+          rule.name.toLowerCase() === parsed.data.rule.toLowerCase(),
+      );
+      return match ? { rule: match.name, category: match.category.name } : null;
+    },
+  },
+  async (ownerUserId, input) => {
+    const result = await deleteFinanceRule(ownerUserId, input.rule);
+    if (!result.rule) throw new NotFoundError('Rule', { reason: 'unknown_rule' });
+    return { deleted: result.rule, reason: null };
   },
 );
 

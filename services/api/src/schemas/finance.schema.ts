@@ -828,11 +828,21 @@ export const financeTagMergeInputSchema = z.object({
 
 export const financeTagMergeOutputSchema = z.object(tagMutationOutputShape);
 
-// -- finance_category_create / finance_category_merge --
+// -- finance_category_create / finance_category_merge / finance_category_tag_breakdown --
 
 const categoryMergeReasonSchema = z
-  .enum(['protected_category', 'unknown_category'])
-  .describe('Stable machine-readable reason; null when the merge succeeded.');
+  .enum(['protected_category', 'unknown_category', 'untagged_sources', 'unrepointed_rules'])
+  .describe(
+    'Stable machine-readable reason; null when the merge succeeded. untagged_sources and unrepointed_rules mean the merge refused before moving anything.',
+  );
+
+const categoryRefSchema = z.object({ id: z.string(), name: z.string() });
+
+const categoryRuleRefSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: categoryRefSchema.describe('The source category this rule still files into.'),
+});
 
 export const financeCategoryCreateInputSchema = z.object({
   name: z.string().trim().min(1, 'invalid_name').describe('Category name.'),
@@ -847,17 +857,169 @@ export const financeCategoryCreateOutputSchema = z.object({
 });
 
 export const financeCategoryMergeInputSchema = z.object({
-  from: z.string().min(1).describe('Category to fold away, by name or id.'),
+  from: z
+    .union([z.string().min(1), z.array(z.string().min(1)).min(1)])
+    .describe('One or more categories to fold away, by name or id.'),
   into: z.string().min(1).describe('Category to keep, by name or id.'),
-  dryRun: z.boolean().default(false).describe('Count what would move without writing.'),
+  stage: z
+    .enum(['all', 'preserve', 'repoint', 'merge'])
+    .default('all')
+    .describe(
+      'Which stage of the ordered flow to run: all (default, preserve → repoint → merge in one transaction), or a single stage so the ordering can be driven step by step. The merge stage refuses if a source is untagged or a rule still names one.',
+    ),
+  dryRun: z.boolean().default(false).describe('Report all three stages without writing.'),
 });
 
 export const financeCategoryMergeOutputSchema = z.object({
   transactionsReassigned: z.number().int().min(0),
-  category: z.object({ id: z.string(), name: z.string() }).nullable(),
-  removedCategory: z.object({ id: z.string(), name: z.string() }).nullable(),
+  category: categoryRefSchema.nullable(),
+  removedCategory: categoryRefSchema.nullable(),
+  removedCategories: z.array(categoryRefSchema),
   reason: categoryMergeReasonSchema.nullable(),
+  untaggedSources: z
+    .array(categoryRefSchema)
+    .describe('Sources with untagged transactions; non-empty means nothing was merged.'),
+  blockedRules: z
+    .array(categoryRuleRefSchema)
+    .describe('Rules still naming a source category; non-empty means nothing was merged.'),
+  steps: z
+    .object({
+      preserveTags: z.object({
+        tags: z.array(
+          z.object({
+            category: categoryRefSchema,
+            tag: z.object({ id: z.string().nullable(), name: z.string() }),
+            tagCreated: z.boolean(),
+            transactionsTagged: z.number().int().min(0),
+          }),
+        ),
+        transactionsTagged: z.number().int().min(0),
+      }),
+      repointRules: z.object({ repointed: z.array(categoryRuleRefSchema) }),
+      merge: z.object({
+        transactionsReassigned: z.number().int().min(0),
+        removedCategories: z.array(categoryRefSchema),
+        untaggedSources: z.array(categoryRefSchema),
+        blockedRules: z.array(categoryRuleRefSchema),
+      }),
+    })
+    .nullable()
+    .describe('The three ordered stages: preserve tags → repoint rules → merge.'),
+  currencyTotals: z.array(
+    z.object({
+      currencyCode: z.string(),
+      before: z.number(),
+      after: z.number(),
+    }),
+  ),
+  totalsUnchanged: z.boolean(),
   dryRun: z.boolean(),
+});
+
+export const financeCategoryTagBreakdownInputSchema = z
+  .object({
+    category: z.string().min(1).describe('Category name or id to drill into.'),
+    from: isoDateSchema
+      .optional()
+      .describe('Inclusive ISO calendar date (YYYY-MM-DD); defaults to 30 days ago.'),
+    to: isoDateSchema
+      .optional()
+      .describe('Inclusive ISO calendar date (YYYY-MM-DD); defaults to today.'),
+    limit: mcpLimitSchema.default(25).describe('Maximum tag buckets to return.'),
+  })
+  .strict()
+  .superRefine(rejectInvertedRange);
+
+export const financeCategoryTagBreakdownOutputSchema = z.object({
+  category: categoryRefSchema,
+  from: z.string(),
+  to: z.string(),
+  currencyCode: z.string().nullable(),
+  tags: z.array(
+    z.object({
+      tagId: z.string().nullable().describe('null is the untagged bucket.'),
+      tagName: z.string(),
+      currencyCode: z.string(),
+      spent: z.number(),
+      transactionCount: z.number().int().min(0),
+    }),
+  ),
+  totals: z.array(
+    z.object({
+      currencyCode: z.string(),
+      spent: z.number(),
+      transactionCount: z.number().int().min(0),
+    }),
+  ),
+  warnings: z.array(z.string()),
+});
+
+// -- finance_rules / finance_rule_create / finance_rule_update / finance_rule_delete --
+
+const financeRuleReasonSchema = z
+  .enum(['duplicate_name', 'invalid_name', 'invalid_pattern', 'unknown_category', 'unknown_rule'])
+  .describe('Stable machine-readable reason; null when the mutation succeeded.');
+
+const financeRuleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  enabled: z.boolean(),
+  priority: z.number().int(),
+  matchMode: z.enum(['exact', 'contains', 'regex']),
+  matchPattern: z.string(),
+  category: categoryRefSchema.describe('The category matched transactions are filed into.'),
+});
+
+export const financeRulesInputSchema = z.object({}).strict();
+
+export const financeRulesOutputSchema = z.object({
+  rules: z.array(financeRuleSchema),
+  count: z.number().int().min(0),
+});
+
+export const financeRuleCreateInputSchema = z.object({
+  name: z.string().trim().min(1, 'invalid_name').describe('Rule name, unique per owner.'),
+  category: z.string().min(1).describe('Category to file matches into, by name or id.'),
+  matchPattern: z.string().trim().min(1, 'invalid_pattern').describe('Text to match.'),
+  matchMode: z
+    .enum(['exact', 'contains', 'regex'])
+    .default('contains')
+    .describe('How matchPattern is compared against a transaction description.'),
+  enabled: z.boolean().default(true),
+  priority: z.number().int().default(100).describe('Lower runs first.'),
+});
+
+export const financeRuleCreateOutputSchema = z.object({
+  rule: financeRuleSchema.nullable(),
+  reason: financeRuleReasonSchema.nullable(),
+});
+
+export const financeRuleUpdateInputSchema = z.object({
+  rule: z.string().min(1).describe('Rule name or id.'),
+  name: z.string().trim().min(1, 'invalid_name').optional(),
+  category: z
+    .string()
+    .min(1)
+    .optional()
+    .describe('Repoint the rule at this category, by name or id.'),
+  matchPattern: z.string().trim().min(1, 'invalid_pattern').optional(),
+  matchMode: z.enum(['exact', 'contains', 'regex']).optional(),
+  enabled: z.boolean().optional(),
+  priority: z.number().int().optional(),
+});
+
+export const financeRuleUpdateOutputSchema = z.object({
+  rule: financeRuleSchema.nullable(),
+  reason: financeRuleReasonSchema.nullable(),
+});
+
+export const financeRuleDeleteInputSchema = z.object({
+  rule: z.string().min(1).describe('Rule name or id.'),
+});
+
+export const financeRuleDeleteOutputSchema = z.object({
+  deleted: z.object({ id: z.string(), name: z.string() }).nullable(),
+  reason: financeRuleReasonSchema.nullable(),
 });
 
 export const financeCategoryDeleteInputSchema = z.object({

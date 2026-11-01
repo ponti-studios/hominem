@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 
 import { db, sql } from '@hominem/db/core';
+import type { DbHandle } from '@hominem/db/core';
 import { ValidationError } from '@hominem/db/errors';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
@@ -392,16 +393,11 @@ export async function createOrGetFinanceCategory(
   return { id, name: trimmed, created: true };
 }
 
-export type FinanceCategoryMergeReason = 'protected_category' | 'unknown_category';
-
-export interface MergeFinanceCategoriesResult {
-  transactionsReassigned: number;
-  category: { id: string; name: string } | null;
-  removedCategory: { id: string; name: string } | null;
-  reason: FinanceCategoryMergeReason | null;
-}
-
-async function resolveFinanceCategory(
+/**
+ * Resolve a category by id or by case-insensitive name. Exported so the taxonomy merge resolves
+ * categories exactly the way create/delete/import do.
+ */
+export async function resolveFinanceCategory(
   userId: string,
   nameOrId: string,
 ): Promise<{ id: string; name: string } | null> {
@@ -420,82 +416,10 @@ async function resolveFinanceCategory(
 }
 
 /**
- * Reassign every transaction from one category to another. The emptied category is left in
- * place (budgets reference categories) but unused. `Uncategorized` may be a target, never a
- * source. `dryRun` counts what would move without writing.
+ * Category merge lives in `taxonomy.ts` — it is a staged taxonomy operation (preserve tags →
+ * repoint rules → merge), not a plain reassignment. `deleteUnusedFinanceCategory` below is the
+ * only remaining category mutation here.
  */
-export async function mergeFinanceCategories(
-  userId: string,
-  input: { from: string; into: string },
-  options?: { dryRun?: boolean },
-): Promise<MergeFinanceCategoriesResult> {
-  const source = await resolveFinanceCategory(userId, input.from);
-  if (!source)
-    return {
-      transactionsReassigned: 0,
-      category: null,
-      removedCategory: null,
-      reason: 'unknown_category',
-    };
-  if (source.name.toLowerCase() === UNCATEGORIZED_NAME.toLowerCase()) {
-    return {
-      transactionsReassigned: 0,
-      category: null,
-      removedCategory: null,
-      reason: 'protected_category',
-    };
-  }
-
-  const target = await resolveFinanceCategory(userId, input.into);
-  if (!target)
-    return {
-      transactionsReassigned: 0,
-      category: null,
-      removedCategory: null,
-      reason: 'unknown_category',
-    };
-
-  if (source.id === target.id) {
-    return { transactionsReassigned: 0, category: target, removedCategory: null, reason: null };
-  }
-
-  if (options?.dryRun) {
-    const row = await db
-      .selectFrom('app.financeTransactions')
-      .select((eb) => eb.fn.countAll<number>().as('count'))
-      .where('userId', '=', userId)
-      .where('categoryId', '=', source.id)
-      .executeTakeFirst();
-    return {
-      transactionsReassigned: Number(row?.count ?? 0),
-      category: target,
-      removedCategory: null,
-      reason: null,
-    };
-  }
-
-  return db.transaction().execute(async (trx) => {
-    const result = await trx
-      .updateTable('app.financeTransactions')
-      .set({ categoryId: target.id })
-      .where('userId', '=', userId)
-      .where('categoryId', '=', source.id)
-      .executeTakeFirst();
-    const deleted = await trx
-      .deleteFrom('app.financeCategories')
-      .where('id', '=', source.id)
-      .where('userId', '=', userId)
-      .returning(['id', 'name'])
-      .executeTakeFirst();
-
-    return {
-      transactionsReassigned: Number(result.numUpdatedRows),
-      category: target,
-      removedCategory: deleted ?? null,
-      reason: deleted ? null : 'unknown_category',
-    };
-  });
-}
 
 export async function deleteUnusedFinanceCategory(
   userId: string,
@@ -503,12 +427,25 @@ export async function deleteUnusedFinanceCategory(
 ): Promise<{
   category: { id: string; name: string } | null;
   referencingCount: number;
+  /** Names of automation rules still filing into this category. */
+  referencingRules: string[];
   reason: 'category_in_use' | 'category_protected' | 'unknown_category' | null;
 }> {
   const category = await resolveFinanceCategory(userId, nameOrId);
-  if (!category) return { category: null, referencingCount: 0, reason: 'unknown_category' };
+  if (!category)
+    return {
+      category: null,
+      referencingCount: 0,
+      referencingRules: [],
+      reason: 'unknown_category',
+    };
   if (category.name.toLowerCase() === UNCATEGORIZED_NAME.toLowerCase()) {
-    return { category: null, referencingCount: 0, reason: 'category_protected' };
+    return {
+      category: null,
+      referencingCount: 0,
+      referencingRules: [],
+      reason: 'category_protected',
+    };
   }
 
   return db.transaction().execute(async (trx) => {
@@ -519,7 +456,13 @@ export async function deleteUnusedFinanceCategory(
       .where('userId', '=', userId)
       .forUpdate()
       .executeTakeFirst();
-    if (!locked) return { category: null, referencingCount: 0, reason: 'unknown_category' };
+    if (!locked)
+      return {
+        category: null,
+        referencingCount: 0,
+        referencingRules: [],
+        reason: 'unknown_category',
+      };
 
     const references = await trx
       .selectFrom('app.financeTransactions')
@@ -528,8 +471,21 @@ export async function deleteUnusedFinanceCategory(
       .where('categoryId', '=', category.id)
       .executeTakeFirst();
     const referencingCount = Number(references?.count ?? 0);
-    if (referencingCount > 0) {
-      return { category: null, referencingCount, reason: 'category_in_use' };
+
+    // Rules hold a RESTRICT foreign key, so deleting a category they file into would either
+    // lose the automation or fail on the constraint. Refusing with their names lets the caller
+    // repoint them (a merge does that for you).
+    const rules = await trx
+      .selectFrom('app.financeRules')
+      .select('name')
+      .where('userId', '=', userId)
+      .where('actionCategoryId', '=', category.id)
+      .orderBy('name', 'asc')
+      .execute();
+    const referencingRules = rules.map((rule) => rule.name);
+
+    if (referencingCount > 0 || referencingRules.length > 0) {
+      return { category: null, referencingCount, referencingRules, reason: 'category_in_use' };
     }
 
     const deleted = await trx
@@ -538,7 +494,7 @@ export async function deleteUnusedFinanceCategory(
       .where('userId', '=', userId)
       .returning(['id', 'name'])
       .executeTakeFirst();
-    return { category: deleted ?? null, referencingCount: 0, reason: null };
+    return { category: deleted ?? null, referencingCount: 0, referencingRules: [], reason: null };
   });
 }
 
@@ -556,13 +512,17 @@ export async function listFinanceCategories(
   return rows.map((row) => ({ id: row.id, name: row.name }));
 }
 
-async function ensureTagIds(userId: string, names: string[]): Promise<string[]> {
+export async function ensureTagIds(
+  userId: string,
+  names: string[],
+  executor: DbHandle = db,
+): Promise<string[]> {
   const ids: string[] = [];
   for (const name of names) {
     // app.tags is unique on (owner, lower(name)) and on (owner, slug), but a sheet tag
     // arrives with whatever casing the sheet used. Match case-insensitively so "Art" finds
     // the existing "art" instead of attempting an insert that the unique index rejects.
-    const existing = await db
+    const existing = await executor
       .selectFrom('app.tags')
       .select('id')
       .where('ownerUserid', '=', userId)
@@ -575,7 +535,7 @@ async function ensureTagIds(userId: string, names: string[]): Promise<string[]> 
     }
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const path = name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-    const inserted = await db
+    const inserted = await executor
       .insertInto('app.tags')
       .values({ id: randomUUID(), ownerUserid: userId, name, slug, path })
       .onConflict((oc) => oc.doNothing())
@@ -587,7 +547,7 @@ async function ensureTagIds(userId: string, names: string[]): Promise<string[]> 
     }
     // No row inserted: either unique index already holds this tag — under a different
     // casing, or (via the slug) an equivalent name. Reuse it rather than fail the write.
-    const retry = await db
+    const retry = await executor
       .selectFrom('app.tags')
       .select('id')
       .where('ownerUserid', '=', userId)

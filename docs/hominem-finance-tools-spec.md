@@ -197,17 +197,82 @@ no correct bucket could be created, and a wrong category can never be
 folded into a right one.
 
 **Input (create).** `name` (string). §1.2 applies.
-**Input (merge).** `from` (name or id), `into` (name or id).
+**Input (merge).** `from` (name, id, or a list of them), `into` (name or id),
+`stage` (`all` by default, else `preserve` | `repoint` | `merge`), `dryRun`.
 
-**Behavior.** Merge reassigns all transactions from `from` to `into` and
-returns `{ transactionsReassigned }`; the emptied category remains but
-unused (no destructive delete — mirrors §4's caution, categories are
-referenced by budgets). `Uncategorized` may be a merge **target**, never
-a merge source (refuse with `protected_category`).
+**Behavior.** A merge is three ordered stages, and the order is the
+guarantee:
+
+1. **Preserve.** Every transaction in a source category is tagged with a tag
+   naming that source — an equivalent tag the owner already has (by name or
+   slug), otherwise one created from the category name. After the merge,
+   filtering the target by that tag reproduces the source category's
+   transaction set exactly, so the bucket can always be re-split.
+2. **Repoint.** Automation rules (§8a) that file into a source category are
+   rewritten to the target. A merge may not complete while any rule still
+   names a source: the merge stage re-scans and refuses with the offending
+   rules named (`unrepointed_rules`), because an automation that resolves a
+   merged-away category would recreate it on the next import.
+3. **Merge.** Transactions move to the target and the emptied source
+   categories are removed — "one category in, one category out". Per-currency
+   totals over the affected categories are captured before and after and must
+   be identical; a mismatch rolls the whole merge back.
+
+`stage` runs one stage at a time for a caller that wants to drive and inspect
+the ordering; the merge stage re-checks both earlier stages, so a skipped one
+is refused (`untagged_sources`, `unrepointed_rules`) rather than silently
+performed. `dryRun` reports all three stages and writes nothing.
+`Uncategorized` may be a merge **target**, never a merge source (refuse with
+`protected_category`).
 
 **Acceptance (live).** Create a probe category → `created: true`; re-create
 with different casing → `created: false`. Merge probe into `Uncategorized`
-→ reassigned count matches a pre-merge search count for the probe.
+→ reassigned count matches a pre-merge search count for the probe. For a
+fixture pair of populated categories: every source transaction carries its
+tag, the tag-filtered set equals the source set, per-currency totals are
+identical before and after, and no rule references a removed category.
+
+## 7a. `finance_category_tag_breakdown` — Tier 2
+
+**Problem.** Tags are the drill-down layer beneath a category: a category
+answers "which bucket", its tags answer "which component of the bucket".
+Without a per-category grouping there is no way to inspect what a merged
+category is made of.
+
+**Input.** `category` (name or id), `from`, `to` (default: last 30 days),
+`limit`.
+
+**Behavior.** Spending for one category grouped by tag and currency, with the
+category's true per-currency totals alongside. Spending filters match
+`finance_spending_by_category` so a bucket is comparable with the total.
+A transaction carrying several tags appears in each bucket; when that
+happens the response warns that buckets overlap and may exceed the total.
+
+**Acceptance (live).** Merge two populated categories, then break the target
+down: one bucket per source tag, and the sum of buckets equals the target's
+pre-merge total per currency.
+
+## 7b. `finance_rules` + `finance_rule_create|update|delete` — Tier 2
+
+**Problem.** Repointing needs a rule surface: a rule names the category it
+files matches into, and a merge must not leave one pointing at a category it
+removes.
+
+**Input (create).** `name`, `category` (name or id), `matchPattern`,
+`matchMode` (`exact` | `contains` | `regex`), `enabled`, `priority`.
+**Input (update).** `rule` (name or id) plus any fields to change — `category`
+is the repoint. **Input (delete).** `rule`.
+
+**Behavior.** Rules are owner-scoped; names are unique per owner
+case-insensitively (identity per §1.2), and a rule resolves its category
+against the owner's own registry — it never creates one
+(`unknown_category`). A category with rules cannot be deleted
+(`category_in_use` names them). Deleting a rule leaves the transactions it
+already filed where they are.
+
+**Acceptance (live).** Create a rule against a probe category → merge the
+probe away → the rule now names the target, and no rule references the
+removed category.
 
 ## 8. Transfer linking (`counterpartId`) — Tier 3 (data model)
 

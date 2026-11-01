@@ -7,6 +7,8 @@ export async function cleanupIntegrationFinanceUser(userId: string): Promise<voi
   await db.transaction().execute(async (trx) => {
     await trx.deleteFrom('app.financeMonthlyBudgets').where('userId', '=', userId).execute();
     await trx.deleteFrom('app.financeRunwayPreferences').where('userId', '=', userId).execute();
+    // Rules hold a RESTRICT reference to categories, so they go before the categories do.
+    await trx.deleteFrom('app.financeRules').where('userId', '=', userId).execute();
     await trx
       .deleteFrom('app.tagAssignments')
       .where('entityTable', '=', sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`)
@@ -16,6 +18,7 @@ export async function cleanupIntegrationFinanceUser(userId: string): Promise<voi
       .execute();
     await trx.deleteFrom('app.financeTransactions').where('userId', '=', userId).execute();
     await trx.deleteFrom('app.tags').where('ownerUserid', '=', userId).execute();
+    await trx.deleteFrom('app.financeCategories').where('userId', '=', userId).execute();
     await trx.deleteFrom('app.financeAccounts').where('userId', '=', userId).execute();
   });
 

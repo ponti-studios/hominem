@@ -3363,28 +3363,83 @@
     "type": "function",
     "function": {
       "name": "finance_category_merge",
-      "description": "Reassign every transaction from one category to another, then permanently remove the source. Uncategorized may be a target, never a source. dryRun counts what would move without writing. Mode: write, confirmation required.",
+      "description": "Merge one or more categories into a target in three ordered stages: preserve (a tag naming each source is put on its transactions), repoint (automation rules filing into a source are rewritten to the target), merge (transactions move and the sources are removed). Uncategorized may be a target, never a source. Any rule that still names a source blocks the merge and is listed by name, and so does a source whose transactions are not yet tagged. stage runs all three stages by default, or one at a time. dryRun reports all three stages without writing. Mode: write, confirmation required.",
       "parameters": {
         "type": "object",
         "properties": {
           "from": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Category to fold away, by name or id."
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            ],
+            "description": "One or more categories to fold away, by name or id."
           },
           "into": {
             "type": "string",
             "minLength": 1,
             "description": "Category to keep, by name or id."
           },
+          "stage": {
+            "default": "all",
+            "description": "Which stage of the ordered flow to run: all (default, preserve → repoint → merge in one transaction), or a single stage so the ordering can be driven step by step. The merge stage refuses if a source is untagged or a rule still names one.",
+            "type": "string",
+            "enum": ["all", "preserve", "repoint", "merge"]
+          },
           "dryRun": {
             "default": false,
-            "description": "Count what would move without writing.",
+            "description": "Report all three stages without writing.",
             "type": "boolean"
           }
         },
         "$schema": "http://json-schema.org/draft-07/schema#",
-        "required": ["from", "into", "dryRun"],
+        "required": ["from", "into", "stage", "dryRun"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_category_tag_breakdown",
+      "description": "Drill into one category: its spending grouped by tag over a date range (defaults to the last 30 days through today), with each tag bucket and the category totals reported per currency. Tags are the layer beneath categories, so this is how a merged category is split back into the components it absorbed. Check warnings: tag buckets overlap when a transaction carries more than one tag. Mode: read-only. Use when: The user asks what a category is made of, or which components drive its total. Do not use when: Use finance_spending_by_category for the category totals themselves.  Prerequisites: finance_categories (resolve the category by name or id).  Produces: tag names, per-tag spending, per-tag transaction counts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Category name or id to drill into."
+          },
+          "from": {
+            "description": "Inclusive ISO calendar date (YYYY-MM-DD); defaults to 30 days ago.",
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "to": {
+            "description": "Inclusive ISO calendar date (YYYY-MM-DD); defaults to today.",
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "limit": {
+            "default": 25,
+            "description": "Maximum tag buckets to return.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["category", "limit"],
         "additionalProperties": false
       }
     }
@@ -3460,6 +3515,131 @@
         },
         "$schema": "http://json-schema.org/draft-07/schema#",
         "required": ["limit"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_rule_create",
+      "description": "Create an automation rule that files transactions whose description matches a pattern into a category. Names are unique per owner case-insensitively; a category must already exist (rules never create categories). Mode: write. Use when: The user wants a merchant or description to be filed automatically. Do not use when: Do not use to reclassify historical transactions; edit them instead.  Prerequisites: finance_categories (resolve the category the rule files into).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Rule name, unique per owner."
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Category to file matches into, by name or id."
+          },
+          "matchPattern": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Text to match."
+          },
+          "matchMode": {
+            "default": "contains",
+            "description": "How matchPattern is compared against a transaction description.",
+            "type": "string",
+            "enum": ["exact", "contains", "regex"]
+          },
+          "enabled": {
+            "default": true,
+            "type": "boolean"
+          },
+          "priority": {
+            "default": 100,
+            "description": "Lower runs first.",
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["name", "category", "matchPattern", "matchMode", "enabled", "priority"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_rule_delete",
+      "description": "Permanently delete an automation rule by name or id. Transactions it already filed keep their category. Mode: write, confirmation required.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "rule": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Rule name or id."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["rule"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_rule_update",
+      "description": "Update a rule by name or id, including repointing it at another category — the move a blocked category merge asks for. Omitted fields are left unchanged. Mode: write.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "rule": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Rule name or id."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "description": "Repoint the rule at this category, by name or id.",
+            "type": "string",
+            "minLength": 1
+          },
+          "matchPattern": {
+            "type": "string",
+            "minLength": 1
+          },
+          "matchMode": {
+            "type": "string",
+            "enum": ["exact", "contains", "regex"]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["rule"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "finance_rules",
+      "description": "List automation rules: description patterns that file matching transactions into a category. Each rule reports the category it currently files into. Mode: read-only. Use when: Before a category merge, or when the user asks what automations they have.  Produces: rule names, rule patterns, the category each rule files into.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "$schema": "http://json-schema.org/draft-07/schema#",
         "additionalProperties": false
       }
     }
