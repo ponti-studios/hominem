@@ -8,19 +8,72 @@ const userId = 'f20000e0-0000-4000-8000-000000000001';
 const otherUserId = 'f20000e0-0000-4000-8000-000000000002';
 const checkingId = 'f20000e1-0000-4000-8000-000000000001';
 
+type CategoryRef = { id: string; name: string };
+
 type CategoryResult = {
   id?: string | null;
   name?: string;
   created?: boolean;
-  deleted?: { id: string; name: string };
+  deleted?: CategoryRef;
   dryRun?: boolean;
   transactionsReassigned?: number;
-  category?: { id: string; name: string } | null;
-  removedCategory?: { id: string; name: string } | null;
+  category?: CategoryRef | null;
+  removedCategory?: CategoryRef | null;
+  removedCategories?: CategoryRef[];
+  untaggedSources?: CategoryRef[];
+  blockedRules?: Array<{ id: string; name: string; category: CategoryRef }>;
+  totalsUnchanged?: boolean;
+  currencyTotals?: Array<{ currencyCode: string; before: number; after: number }>;
+  steps?: {
+    preserveTags: {
+      tags: Array<{
+        category: CategoryRef;
+        tag: { id: string | null; name: string };
+        tagCreated: boolean;
+        transactionsTagged: number;
+      }>;
+      transactionsTagged: number;
+    };
+    repointRules: { repointed: Array<{ id: string; name: string; category: CategoryRef }> };
+    merge: { transactionsReassigned: number; removedCategories: CategoryRef[] };
+  } | null;
+  reason?: string | null;
+};
+
+type SearchResult = {
+  transactions?: Array<{ id: string; categoryName?: string | null; tags?: string[] }>;
+  count?: number;
+};
+
+type BreakdownResult = {
+  category?: CategoryRef;
+  currencyCode?: string | null;
+  tags?: Array<{ tagId: string | null; tagName: string; spent: number; transactionCount: number }>;
+  totals?: Array<{ currencyCode: string; spent: number; transactionCount: number }>;
+  warnings?: string[];
+};
+
+type RuleResult = {
+  rules?: Array<{ id: string; name: string; category: CategoryRef; matchPattern: string }>;
+  count?: number;
+  rule?: { id: string; name: string; category: CategoryRef } | null;
+  deleted?: CategoryRef | null;
   reason?: string | null;
 };
 
 function content(res: McpToolResult<CategoryResult>): CategoryResult {
+  return res.structuredContent ?? {};
+}
+
+function searchContent(res: McpToolResult<SearchResult>): SearchResult {
+  return res.structuredContent ?? {};
+}
+
+function breakdownContent(res: McpToolResult<BreakdownResult>): BreakdownResult {
+  return res.structuredContent ?? {};
+}
+
+function ruleContent(res: McpToolResult<RuleResult>): RuleResult {
   return res.structuredContent ?? {};
 }
 
@@ -39,7 +92,12 @@ beforeAll(async () => {
       `INSERT INTO "user" (id, name, email, "emailVerified") VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
       [id, `Category User ${id}`, `${id}@test.hominem.dev`, true],
     );
+    // Tags first: deleting them cascades their assignments, including any left orphaned by a
+    // previous run (tag assignments are polymorphic, so they outlive the rows they tagged).
+    await db.deleteFrom('app.tags').where('ownerUserid', '=', id).execute();
     await db.deleteFrom('app.financeAccounts').where('userId', '=', id).execute();
+    // Rules hold a RESTRICT reference to categories, so they are cleared first.
+    await db.deleteFrom('app.financeRules').where('userId', '=', id).execute();
     await db.deleteFrom('app.financeCategories').where('userId', '=', id).execute();
   }
 
@@ -308,6 +366,195 @@ describe('finance_category_merge', () => {
       await callTool(userId, 'finance_category_merge', { from: 'nope', into: 'Uncategorized' }),
     );
     expect(result.reason).toBe('unknown_category');
+  });
+});
+
+describe('finance_category_merge — taxonomy guarantees', () => {
+  async function insertRows(
+    categoryId: string,
+    rows: Array<{ id: string; description: string; amount: number }>,
+  ) {
+    await db
+      .insertInto('app.financeTransactions')
+      .values(
+        rows.map((row) => ({
+          id: row.id,
+          userId,
+          accountId: checkingId,
+          postedOn: '2026-07-01',
+          description: row.description,
+          amount: row.amount,
+          currencyCode: 'USD',
+          transactionType: 'debit',
+          pending: false,
+          categoryId,
+          excluded: false,
+          externalId: `taxonomy-${row.id}`,
+          providerPayload: {},
+        })),
+      )
+      .execute();
+  }
+
+  it('gives every source transaction a tag that reproduces the source set when filtered', async () => {
+    const alpha = content(await callTool(userId, 'finance_category_create', { name: 'Alpha' }));
+    const beta = content(await callTool(userId, 'finance_category_create', { name: 'Beta' }));
+    const bucket = content(await callTool(userId, 'finance_category_create', { name: 'Bucket' }));
+
+    const alphaIds = [
+      'f20000e3-0000-4000-8000-000000000001',
+      'f20000e3-0000-4000-8000-000000000002',
+    ];
+    const betaIds = ['f20000e3-0000-4000-8000-000000000003'];
+    await insertRows(alpha.id!, [
+      { id: alphaIds[0]!, description: 'Alpha one', amount: -12.5 },
+      { id: alphaIds[1]!, description: 'Alpha two', amount: -5 },
+    ]);
+    await insertRows(beta.id!, [{ id: betaIds[0]!, description: 'Beta one', amount: -8 }]);
+
+    const result = content(
+      await callTool(userId, 'finance_category_merge', {
+        from: ['Alpha', 'Beta'],
+        into: 'Bucket',
+      }),
+    );
+
+    expect(result.reason).toBeNull();
+    expect(result.transactionsReassigned).toBe(3);
+    expect(result.removedCategories?.map((category) => category.name).sort()).toEqual([
+      'Alpha',
+      'Beta',
+    ]);
+    expect(result.totalsUnchanged).toBe(true);
+    expect(result.currencyTotals).toEqual([{ currencyCode: 'USD', before: -25.5, after: -25.5 }]);
+    expect(result.steps?.preserveTags.transactionsTagged).toBe(3);
+
+    // Filtering the merged category by a preserved tag reproduces the source set exactly.
+    for (const [tagName, expected] of [
+      ['Alpha', alphaIds],
+      ['Beta', betaIds],
+    ] as const) {
+      const search = searchContent(
+        await callTool(userId, 'finance_transaction_search', {
+          categoryName: 'Bucket',
+          tag: tagName,
+          limit: 50,
+        }),
+      );
+      expect(search.transactions?.map((transaction) => transaction.id).sort()).toEqual(
+        [...expected].sort(),
+      );
+    }
+
+    const breakdown = breakdownContent(
+      await callTool(userId, 'finance_category_tag_breakdown', {
+        category: 'Bucket',
+        from: '2026-07-01',
+        to: '2026-07-31',
+      }),
+    );
+    expect(breakdown.category).toEqual({ id: bucket.id, name: bucket.name });
+    expect(
+      breakdown.tags?.map((tag) => ({
+        tagName: tag.tagName,
+        spent: tag.spent,
+        transactionCount: tag.transactionCount,
+      })),
+    ).toEqual([
+      { tagName: 'Alpha', spent: 17.5, transactionCount: 2 },
+      { tagName: 'Beta', spent: 8, transactionCount: 1 },
+    ]);
+    expect(breakdown.totals).toEqual([{ currencyCode: 'USD', spent: 25.5, transactionCount: 3 }]);
+  });
+
+  it('blocks on an unrepointed rule with the rule named, then merges once repointed', async () => {
+    const source = content(await callTool(userId, 'finance_category_create', { name: 'Rule Src' }));
+    const target = content(
+      await callTool(userId, 'finance_category_create', { name: 'Rule Target' }),
+    );
+    await insertRows(source.id!, [
+      { id: 'f20000e3-0000-4000-8000-000000000011', description: 'Rule row', amount: -4 },
+    ]);
+
+    const created = ruleContent(
+      await callTool(userId, 'finance_rule_create', {
+        name: 'Rule for Src',
+        category: 'Rule Src',
+        matchPattern: 'rule row',
+      }),
+    );
+    expect(created.reason).toBeNull();
+    expect(created.rule?.category).toEqual({ id: source.id, name: source.name });
+
+    // Preserve, then attempt the merge with the rule still naming the source.
+    await callTool(userId, 'finance_category_merge', {
+      from: 'Rule Src',
+      into: 'Rule Target',
+      stage: 'preserve',
+    });
+    await expect(
+      callTool(userId, 'finance_category_merge', {
+        from: 'Rule Src',
+        into: 'Rule Target',
+        stage: 'merge',
+      }),
+    ).rejects.toThrow(
+      'unrepointed_rules: 1 rule(s) still reference a merged category (Rule for Src → Rule Src)',
+    );
+
+    // The block is real: the source category and its transactions are untouched.
+    expect(await categoryByName(userId, 'Rule Src')).toBeDefined();
+    const stillThere = await db
+      .selectFrom('app.financeTransactions')
+      .select('categoryId')
+      .where('id', '=', 'f20000e3-0000-4000-8000-000000000011')
+      .executeTakeFirstOrThrow();
+    expect(stillThere.categoryId).toBe(source.id);
+
+    const repointed = ruleContent(
+      await callTool(userId, 'finance_rule_update', {
+        rule: 'Rule for Src',
+        category: 'Rule Target',
+      }),
+    );
+    expect(repointed.reason).toBeNull();
+    expect(repointed.rule?.category).toEqual({ id: target.id, name: target.name });
+
+    const merged = content(
+      await callTool(userId, 'finance_category_merge', {
+        from: 'Rule Src',
+        into: 'Rule Target',
+      }),
+    );
+    expect(merged.reason).toBeNull();
+    expect(merged.removedCategory?.name).toBe('Rule Src');
+
+    // No rule in the system references the category that no longer exists.
+    const stale = await db
+      .selectFrom('app.financeRules')
+      .select('name')
+      .where('actionCategoryId', '=', source.id!)
+      .execute();
+    expect(stale).toEqual([]);
+  });
+
+  it('lists the rules and the category each one files into', async () => {
+    const category = content(
+      await callTool(userId, 'finance_category_create', { name: 'Listed Category' }),
+    );
+    await callTool(userId, 'finance_rule_create', {
+      name: 'Listed rule',
+      category: category.name!,
+      matchPattern: 'listed',
+    });
+
+    const listed = ruleContent(await callTool(userId, 'finance_rules', {}));
+    expect(listed.rules?.find((rule) => rule.name === 'Listed rule')).toMatchObject({
+      name: 'Listed rule',
+      matchPattern: 'listed',
+      category: { id: category.id, name: 'Listed Category' },
+    });
+    expect(listed.count).toBe(listed.rules?.length);
   });
 });
 
