@@ -716,16 +716,18 @@ export const financeBudgetStatusSchema = z.object({
     .describe(
       'Foreign-currency transactions with no settled primary-currency amount; they are not counted.',
     ),
-  uncountedForeignTransactions: z.array(
-    z.object({
-      id: z.string(),
-      postedOn: z.string(),
-      currencyCode: z.string(),
-      amountCents: z.number().int(),
-      merchantName: z.string().nullable(),
-      description: z.string().nullable(),
-    }),
-  ),
+  uncountedForeignTransactions: z
+    .array(
+      z.object({
+        id: z.string(),
+        postedOn: z.string(),
+        currencyCode: z.string(),
+        amountCents: z.number().int(),
+        merchantName: z.string().nullable(),
+        description: z.string().nullable(),
+      }),
+    )
+    .describe('Up to 25 of them for context; uncountedForeignTransactionCount is authoritative.'),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
