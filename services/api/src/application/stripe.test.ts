@@ -128,6 +128,7 @@ describe('the Stripe subscriptions client', () => {
     active: true,
     currency: 'gbp',
     unit_amount: 999,
+    tax_behavior: 'inclusive',
     type: 'recurring',
     recurring: { interval: 'month' },
     metadata: { tier: 'core', plan: 'monthly' },
@@ -269,6 +270,8 @@ describe('the Stripe subscriptions client', () => {
       true,
     ],
     ['wrong amount', catalogPrice({ unit_amount: 1000 })],
+    ['tax-exclusive', catalogPrice({ tax_behavior: 'exclusive' })],
+    ['unspecified tax behavior', catalogPrice({ tax_behavior: 'unspecified' })],
     ['wrong currency', catalogPrice({ currency: 'usd' })],
     ['non-monthly', catalogPrice({ recurring: { interval: 'year' } })],
   ])('fails closed for a %s catalog price', async (_name, price, founding = false) => {

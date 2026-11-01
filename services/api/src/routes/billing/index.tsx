@@ -20,6 +20,10 @@ import {
   type BillingDeps,
   type BillingState,
 } from '../../application/billing.service';
+import {
+  isManagedPaymentsTaxCountry,
+  MANAGED_PAYMENTS_TAX_COUNTRIES,
+} from '../../application/managed-payments-tax-countries';
 import { verifyStripeSignature } from '../../application/stripe';
 import { env } from '../../env';
 import type { AppEnv } from '../../server';
@@ -176,6 +180,15 @@ const STYLES = `
   .billing-page .card .inline { margin: 0; }
   .billing-page .card .inline button { width: 100%; }
   .billing-page .billing-page__note { margin: 24px 0 0; color: #737373; font-size: 12px; line-height: 1.6; }
+  .checkout-country { max-width: 620px; margin: 0 auto; padding: 48px 0; font-family: 'Hanken Grotesk', Arial, sans-serif; }
+  .checkout-country__eyebrow { color: #737373; font: 10px 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
+  .checkout-country h1 { margin: 24px 0 12px; font-size: clamp(40px, 7vw, 64px); font-weight: 500; letter-spacing: -.06em; }
+  .checkout-country p { max-width: 560px; color: #5c5c5c; line-height: 1.55; }
+  .checkout-country label { display: block; margin: 28px 0 8px; font-weight: 600; }
+  .checkout-country select { box-sizing: border-box; width: 100%; min-height: 52px; padding: 0 14px; border: 1px solid #737373; border-radius: 0; background: #fff; color: #0a0a0a; font: inherit; }
+  .checkout-country button { width: 100%; min-height: 52px; margin-top: 20px; border-radius: 0; font: 11px 'JetBrains Mono', ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+  .checkout-country__error { padding: 14px 16px; border-left: 3px solid #0a0a0a; background: #f5f5f5; color: #0a0a0a !important; }
+  .checkout-country a { display: inline-block; margin-top: 20px; color: #5c5c5c; }
   @media (max-width: 620px) { main:has(.billing-page) { padding: 24px 20px 32px; } .billing-page { min-height: calc(100svh - 56px); } .billing-page__hero { margin: 48px 0 28px; } .billing-page__usage-grid { grid-template-columns: 1fr; padding: 2px 16px; } .billing-page__usage-header { align-items: start; flex-direction: column; gap: 6px; } .billing-page__usage-card--ai .billing-page__usage-count { font-size: clamp(42px, 12vw, 56px); } .billing-page .card { min-height: 200px; } }
   body:has(.billing-done) { background: #fff; color: #0a0a0a; }
   main:has(.billing-done) { box-sizing: border-box; width: min(100%, 1040px); max-width: none; min-height: 100svh; padding: 32px 24px; }
@@ -240,7 +253,33 @@ function billingChangeErrorPage(): string {
 }
 
 function subscribeForm(tier: BillingTier, label: string, secondary = false): string {
-  return `<form class="inline" method="post" action="/billing/checkout"><input type="hidden" name="tier" value="${tier}"><button${secondary ? ' class="secondary"' : ''} type="submit">${label}</button></form>`;
+  return `<form class="inline" method="get" action="/billing/checkout"><input type="hidden" name="tier" value="${tier}"><button${secondary ? ' class="secondary"' : ''} type="submit">${label}</button></form>`;
+}
+
+function checkoutCountryPage(
+  tier: Extract<BillingTier, 'core' | 'rhodium' | 'iridium'>,
+  error = '',
+): string {
+  const countries = MANAGED_PAYMENTS_TAX_COUNTRIES.map(
+    ({ code, name }) => `<option value="${code}">${escapeHtml(name)}</option>`,
+  ).join('');
+  return page(
+    'Billing country | Hominem',
+    `<section class="checkout-country" aria-labelledby="checkout-country-title">
+       <p class="checkout-country__eyebrow">Hominem / Checkout</p>
+       <h1 id="checkout-country-title">Your billing country</h1>
+       <p>Choose the country where you’ll be billed. Hominem currently offers paid plans in countries covered by Stripe Managed Payments tax handling.</p>
+       ${error ? `<p class="checkout-country__error" role="alert">${escapeHtml(error)}</p>` : ''}
+       <form method="post" action="/billing/checkout">
+         <input type="hidden" name="tier" value="${tier}">
+         <label for="billing-country">Country or region</label>
+         <select id="billing-country" name="country" required><option value="">Select a country</option>${countries}</select>
+         <button type="submit">Continue to secure checkout</button>
+       </form>
+       <a href="/account/billing">Back to plans</a>
+     </section>`,
+    BRAND_FONTS,
+  );
 }
 
 function actionForm(action: string, label: string, secondary = false, tier?: BillingTier): string {
@@ -528,6 +567,18 @@ billingRoutes.get('/account/billing', async (c) => {
   }
 });
 
+billingRoutes.get('/billing/checkout', async (c) => {
+  const who = authOrRedirect(c);
+  if ('response' in who) return who.response;
+  const tier = c.req.query('tier');
+  if (tier !== 'core' && tier !== 'rhodium' && tier !== 'iridium')
+    return c.text('Bad Request', 400);
+  if (await billingRules().store.getOsmiumMembership(who.userId)) {
+    return c.text('Osmium membership is already unlimited.', 403);
+  }
+  return c.html(checkoutCountryPage(tier));
+});
+
 billingRoutes.post('/billing/checkout', async (c) => {
   const who = authOrRedirect(c);
   if ('response' in who) return who.response;
@@ -536,9 +587,20 @@ billingRoutes.post('/billing/checkout', async (c) => {
   }
   const deps = requireDeps(c);
   if ('response' in deps) return deps.response;
-  const tier = (await c.req.parseBody()).tier;
+  const body = await c.req.parseBody();
+  const tier = body.tier;
   if (tier !== 'core' && tier !== 'rhodium' && tier !== 'iridium')
     return c.text('Bad Request', 400);
+  const country = typeof body.country === 'string' ? body.country : '';
+  if (!/^[A-Z]{2}$/.test(country) || !isManagedPaymentsTaxCountry(country)) {
+    return c.html(
+      checkoutCountryPage(
+        tier,
+        'Paid plans are not available for that billing country yet. Choose a listed country to continue.',
+      ),
+      422,
+    );
+  }
   try {
     const outcome = await startSubscriptionCheckout(deps.deps, {
       userId: who.userId,
