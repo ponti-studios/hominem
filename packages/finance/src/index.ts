@@ -8,6 +8,8 @@ export * from './institutions';
 export * from './monthly-summary';
 export * from './analytics';
 export * from './reports';
+export * from './rules';
+export * from './taxonomy';
 export * from './data-ops';
 export * from './diagnostics';
 export * from './reconcile';
