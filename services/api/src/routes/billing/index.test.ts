@@ -385,7 +385,7 @@ describe('POST /billing/change and /billing/cancel', () => {
     mocks.state.subscription = subscription({ tier: 'ai', pricePence: 1999 });
     const response = await app().request('/billing/change', form({ tier: 'core' }));
     expect(response.status).toBe(303);
-    expect(mocks.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999, 'core');
+    expect(mocks.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999, 'core', false);
     expect(mocks.state.subscription?.tier).toBe('core');
   });
 
@@ -474,6 +474,37 @@ describe('POST /webhooks/stripe/billing', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ received: true });
     expect(mocks.state.subscription?.tier).toBe('core');
+  });
+
+  it('accepts a retried subscription event without duplicating its billing state', async () => {
+    mocks.stripe.subscription.mockResolvedValue({
+      stripeSubscriptionId: 'sub_1',
+      stripeCustomerId: 'cus_1',
+      status: 'active',
+      pricePence: 999,
+      currentPeriodEnd: new Date('2099-11-26T00:00:00.000Z'),
+      cancelAtPeriodEnd: false,
+      userId: USER.id,
+      tier: 'core',
+      founding: false,
+    });
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const response = await app(false).request('/webhooks/stripe/billing', {
+        method: 'POST',
+        headers: signed(event),
+        body: event,
+      });
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ received: true });
+    }
+
+    expect(mocks.stripe.subscription).toHaveBeenCalledTimes(2);
+    expect(mocks.state.subscription).toMatchObject({
+      stripeSubscriptionId: 'sub_1',
+      tier: 'core',
+      status: 'active',
+    });
   });
 
   it('accepts an event it does not act on', async () => {

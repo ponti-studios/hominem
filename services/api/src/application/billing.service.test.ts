@@ -390,7 +390,7 @@ describe('handleBillingEvent', () => {
       type: 'customer.subscription.created',
       data: { object: { id: 'sub_1' } },
     });
-    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999, 'core');
+    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999, 'core', false);
     expect(outcome).toMatchObject({ kind: 'applied', subscription: { pricePence: 999 } });
     expect(store.saved?.founding).toBe(false);
   });
@@ -449,7 +449,7 @@ describe('changePlan and cancelPlan', () => {
     const store = memoryStore(subscription({ tier: 'ai', pricePence: 1999 }));
     const billing = deps(store);
     const changed = await changePlan(billing, 'u1', 'core');
-    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999, 'core');
+    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 999, 'core', false);
     expect(changed.tier).toBe('core');
     expect((await billingState(billing, 'u1')).plan).toBe('core');
     expect((await billingState(billing, 'u1')).limits.chatMessagesPerMonth).toBe(
@@ -461,7 +461,7 @@ describe('changePlan and cancelPlan', () => {
     const store = memoryStore(subscription({ founding: true, pricePence: 799 }));
     const billing = deps(store);
     const changed = await changePlan(billing, 'u1', 'core');
-    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 799, 'core');
+    expect(billing.stripe.updateSubscriptionPlan).toHaveBeenCalledWith('sub_1', 799, 'core', true);
     expect(changed.founding).toBe(true);
   });
 
