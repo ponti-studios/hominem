@@ -53,6 +53,12 @@ ALTER TABLE app.tag_assignments
 
 -- +goose Down
 -- +goose StatementBegin
+-- Rows written by a merge keep their assignments; only the provenance value goes away, because
+-- the restored constraint would reject them.
+UPDATE app.tag_assignments
+  SET assignment_source = 'user'
+  WHERE assignment_source = 'merge';
+
 ALTER TABLE app.tag_assignments
   DROP CONSTRAINT app_tag_assignments_assignment_source_check,
   ADD CONSTRAINT app_tag_assignments_assignment_source_check CHECK (

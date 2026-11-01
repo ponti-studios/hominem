@@ -419,6 +419,31 @@ describeIntegration('finance category taxonomy', () => {
     expect(await categoryByName(ownerId, 'Coffee')).toBeUndefined();
   });
 
+  it('refuses sources that would share a single tag', async () => {
+    const { ownerId } = fixture;
+
+    // Both names normalise to the same tag slug, so one tag could not tell them apart.
+    await createOrGetFinanceCategory(ownerId, 'Food & Drink');
+    await createOrGetFinanceCategory(ownerId, 'Food Drink');
+
+    await expect(
+      mergeFinanceCategories(ownerId, { from: ['Food & Drink', 'Food Drink'], into: 'Food' }),
+    ).rejects.toThrow(
+      'duplicate_source_tag: "Food & Drink" and "Food Drink" would share one tag, so they could not be told apart after the merge. Rename one before merging.',
+    );
+
+    // Nothing was written or removed.
+    expect(await categoryByName(ownerId, 'Food & Drink')).toBeDefined();
+    expect(await categoryByName(ownerId, 'Food Drink')).toBeDefined();
+    expect(await categoryByName(ownerId, 'Food')).toBeDefined();
+    const tags = await db
+      .selectFrom('app.tags')
+      .select('id')
+      .where('ownerUserid', '=', ownerId)
+      .execute();
+    expect(tags).toHaveLength(0);
+  });
+
   it('runs preserve, repoint and merge as three reported stages', async () => {
     const { ownerId, categories } = fixture;
 

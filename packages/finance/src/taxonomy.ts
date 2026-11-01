@@ -153,6 +153,32 @@ function tagSlug(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
 
+/**
+ * Two sources that resolve to the same tag cannot stay distinguishable after the merge — for
+ * example `Food & Drink` and `Food Drink` share the slug `food-drink`, so the tag helper would
+ * hand both the same tag and a tag filter would return their union. That is the one thing the
+ * preserve stage exists to prevent, so it refuses and names the pair instead of merging.
+ */
+async function assertDistinctSourceTags(
+  executor: DbHandle,
+  userId: string,
+  sources: CategoryRef[],
+): Promise<void> {
+  const claimed = new Map<string, CategoryRef>();
+  for (const source of sources) {
+    const equivalent = await findEquivalentTag(executor, userId, source.name);
+    const identity = equivalent ? `tag:${equivalent.id}` : `slug:${tagSlug(source.name)}`;
+    const clash = claimed.get(identity);
+    if (clash) {
+      throw new ValidationError(
+        `duplicate_source_tag: "${clash.name}" and "${source.name}" would share one tag, so they could not be told apart after the merge. Rename one before merging.`,
+        { categories: [clash, source] },
+      );
+    }
+    claimed.set(identity, source);
+  }
+}
+
 async function findEquivalentTag(
   executor: DbHandle,
   userId: string,
@@ -205,6 +231,8 @@ async function preserveWith(
 ): Promise<PreserveCategoryTagsResult> {
   const tags: PreservedCategoryTag[] = [];
   let transactionsTagged = 0;
+
+  await assertDistinctSourceTags(executor, userId, sources);
 
   for (const source of sources) {
     const existing = await findEquivalentTag(executor, userId, source.name);
@@ -412,8 +440,9 @@ async function mergeWith(
     };
   }
 
-  // Stage 1 first: a source that is not fully tagged cannot be drill-downed after the merge, so
-  // the merge refuses rather than losing which transactions came from where.
+  // Stage 1 first: sources that cannot be told apart, or that are not fully tagged, would lose
+  // the record of which transactions came from where — refuse rather than merge them.
+  await assertDistinctSourceTags(executor, userId, sources);
   const untaggedSources = await findUntaggedSources(executor, userId, sources);
   if (untaggedSources.length > 0) {
     return {
