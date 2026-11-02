@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "expo": {
+        "type": "remote",
+        "url": "https://mcp.expo.dev/mcp",
+        "disabled": false
+      },
+      "maestro": {
+        "type": "local",
+        "command": ["{env:MAESTRO_BIN}", "mcp"],
+        "environment": {
+          "JAVA_HOME": "{env:JAVA_HOME}"
+        },
+        "disabled": false
+      },
+      "hominem": {
+        "type": "remote",
+        "url": "https://api.ponti.io/api/mcp",
+        "disabled": false
+      },
+      "tableplus": {
+        "type": "local",
+        "command": ["{env:TABLEPLUS_MCP_BIN}"],
+        "disabled": false
+      }
+    }
+  }
+}
