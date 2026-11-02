@@ -1,4 +1,6 @@
-import { db, pool } from '@hominem/db/core';
+import { db, pool, sql } from '@hominem/db/core';
+import { ValidationError } from '@hominem/db/errors';
+import { FINANCE_TRANSACTION_ENTITY_TYPE } from '@hominem/finance-services';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { seedBudgetsOfRecord, getBudget } from '../../../../application/finance-budgets.service';
@@ -20,6 +22,8 @@ type BudgetStatus = {
   id: string;
   categoryId: string;
   categoryName: string;
+  tagId: string | null;
+  tagName: string | null;
   amountCents: number;
   cadence: string;
   currencyCode: string;
@@ -29,6 +33,17 @@ type BudgetStatus = {
   spentCents: number;
   remainingCents: number;
   sweptToSavingsCents: number;
+  breach: { categoryId: string; categoryName: string; overByCents: number } | null;
+  tagBudgets: Array<{
+    tagId: string;
+    tagName: string;
+    amountCents: number;
+    cadence: string;
+    amountInCategoryCadenceCents: number;
+    spentCents: number;
+    remainingCents: number;
+    overTagBudget: boolean;
+  }>;
   pace: {
     periodElapsedFraction: number;
     spentFraction: number | null;
@@ -49,6 +64,7 @@ type Content = {
   id?: string | null;
   budget?: BudgetStatus | null;
   budgets?: BudgetStatus[];
+  breaches?: Array<{ categoryId: string; categoryName: string; overByCents: number }>;
   created?: boolean;
   reason?: string | null;
   removed?: boolean;
@@ -85,12 +101,13 @@ async function insertTransaction(input: {
   excluded?: boolean;
   pending?: boolean;
   transactionType?: string;
-}) {
+}): Promise<string> {
   transactionCounter += 1;
+  const id = `f2640003-0000-4000-8000-${String(transactionCounter).padStart(12, '0')}`;
   await db
     .insertInto('app.financeTransactions')
     .values({
-      id: `f2640003-0000-4000-8000-${String(transactionCounter).padStart(12, '0')}`,
+      id,
       userId,
       accountId: input.accountId,
       categoryId: input.categoryId,
@@ -106,6 +123,29 @@ async function insertTransaction(input: {
       excluded: input.excluded ?? false,
       providerPayload: {},
       externalId: `budget-test-${transactionCounter}`,
+    })
+    .execute();
+  return id;
+}
+
+/** A tag in the fixture's owner's taxonomy; `beforeEach` removes them between cases. */
+async function insertTag(name: string): Promise<string> {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const row = await db
+    .insertInto('app.tags')
+    .values({ ownerUserid: userId, name, slug, path: slug.replace(/-/g, '_') })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+  return row.id;
+}
+
+async function tagTransaction(transactionId: string, tagId: string): Promise<void> {
+  await db
+    .insertInto('app.tagAssignments')
+    .values({
+      tagId,
+      entityTable: sql<string>`${FINANCE_TRANSACTION_ENTITY_TYPE}::regclass`,
+      entityId: transactionId,
     })
     .execute();
 }
@@ -196,6 +236,7 @@ beforeEach(async () => {
     .deleteFrom('app.financeTransactions')
     .where('userId', 'in', [userId, otherUserId])
     .execute();
+  await db.deleteFrom('app.tags').where('ownerUserid', 'in', [userId, otherUserId]).execute();
   await callTool(userId, 'finance_primary_currency_set', { currencyCode: 'GBP' });
 });
 
@@ -249,22 +290,13 @@ describe('finance_budget_create', () => {
     expect(rows[0]?.cadence).toBe('quarterly');
   });
 
-  it('rejects a currency argument, tag or merchant fields, and a cadence outside the fixed set', async () => {
+  it('rejects a currency argument and a cadence outside the fixed set', async () => {
     await expect(
       callTool(userId, 'finance_budget_create', {
         categoryId: diningId,
         amountCents: 30_000,
         cadence: 'monthly',
         currencyCode: 'GBP',
-      }),
-    ).rejects.toThrow();
-
-    await expect(
-      callTool(userId, 'finance_budget_create', {
-        categoryId: diningId,
-        amountCents: 30_000,
-        cadence: 'monthly',
-        tagId: 'f2640001-0000-4000-8000-0000000000aa',
       }),
     ).rejects.toThrow();
 
@@ -678,5 +710,264 @@ describe('budgets of record', () => {
 
     expect(groceries).toMatchObject({ amountCents: 25_000, cadence: 'monthly' });
     expect(dining).toMatchObject({ amountCents: 30_000, cadence: 'monthly' });
+  });
+});
+
+describe('nested tag budgets', () => {
+  it('saves a category budget with tag budgets beneath it and reads them back intact', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+    const restaurantTagId = await insertTag('Restaurant');
+
+    const saved = content(
+      await callTool(userId, 'finance_budget_set', {
+        categoryId: diningId,
+        amountCents: 30_000,
+        cadence: 'monthly',
+        tagBudgets: [
+          { tagId: coffeeTagId, amountCents: 5_000, cadence: 'monthly' },
+          { tagId: restaurantTagId, amountCents: 1_000, cadence: 'weekly' },
+        ],
+      }),
+    ).budget;
+
+    expect(saved).toMatchObject({ amountCents: 30_000, cadence: 'monthly', tagId: null });
+    expect(saved?.tagBudgets).toHaveLength(2);
+    expect(saved?.tagBudgets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          tagId: coffeeTagId,
+          tagName: 'Coffee',
+          amountCents: 5_000,
+          cadence: 'monthly',
+          amountInCategoryCadenceCents: 5_000,
+        }),
+        expect.objectContaining({
+          tagId: restaurantTagId,
+          tagName: 'Restaurant',
+          amountCents: 1_000,
+          cadence: 'weekly',
+          // Weekly converted to monthly: 1,000 * 52 / 12, rounded.
+          amountInCategoryCadenceCents: 4_333,
+        }),
+      ]),
+    );
+
+    const readBack = content(
+      await callTool(userId, 'finance_budget_get', { budgetId: saved?.id ?? '' }),
+    ).budget;
+    expect(readBack).toMatchObject({ amountCents: 30_000, cadence: 'monthly' });
+    expect(readBack?.tagBudgets.map((tag) => [tag.tagName, tag.amountCents, tag.cadence])).toEqual([
+      ['Coffee', 5_000, 'monthly'],
+      ['Restaurant', 1_000, 'weekly'],
+    ]);
+
+    // Each tag budget is also readable on its own, with its own cadence.
+    const tagBudgetRow = await db
+      .selectFrom('app.financeBudgets')
+      .select('id')
+      .where('userId', '=', userId)
+      .where('tagId', '=', restaurantTagId)
+      .executeTakeFirstOrThrow();
+    const tagBudget = content(
+      await callTool(userId, 'finance_budget_get', { budgetId: tagBudgetRow.id }),
+    ).budget;
+    expect(tagBudget).toMatchObject({
+      tagId: restaurantTagId,
+      tagName: 'Restaurant',
+      amountCents: 1_000,
+      cadence: 'weekly',
+      breach: null,
+      tagBudgets: [],
+    });
+  });
+
+  it('accepts a tag sum equal to the category budget and one below it', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+
+    const equal = content(
+      await callTool(userId, 'finance_budget_set', {
+        categoryId: diningId,
+        amountCents: 30_000,
+        cadence: 'monthly',
+        tagBudgets: [{ tagId: coffeeTagId, amountCents: 30_000, cadence: 'monthly' }],
+      }),
+    ).budget;
+    expect(equal?.tagBudgets[0]?.amountCents).toBe(30_000);
+
+    const below = content(
+      await callTool(userId, 'finance_budget_set', {
+        categoryId: diningId,
+        amountCents: 30_000,
+        cadence: 'monthly',
+        tagBudgets: [{ tagId: coffeeTagId, amountCents: 29_999, cadence: 'monthly' }],
+      }),
+    ).budget;
+    expect(below?.tagBudgets[0]?.amountCents).toBe(29_999);
+  });
+
+  it('rejects a tag sum one cent over the category budget in full and leaves stored budgets unchanged', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+
+    await callTool(userId, 'finance_budget_set', {
+      categoryId: diningId,
+      amountCents: 30_000,
+      cadence: 'monthly',
+      tagBudgets: [{ tagId: coffeeTagId, amountCents: 5_000, cadence: 'monthly' }],
+    });
+
+    await expect(
+      callTool(userId, 'finance_budget_set', {
+        categoryId: diningId,
+        amountCents: 30_000,
+        cadence: 'monthly',
+        tagBudgets: [{ tagId: coffeeTagId, amountCents: 30_001, cadence: 'monthly' }],
+      }),
+    ).rejects.toThrow(/over the category budget|exceeds the category budget/i);
+
+    const listed = content(await callTool(userId, 'finance_budget_list', {}));
+    const budget = listed.budgets?.find((item) => item.categoryId === diningId);
+    expect(budget).toMatchObject({ amountCents: 30_000, cadence: 'monthly' });
+    expect(budget?.tagBudgets).toHaveLength(1);
+    expect(budget?.tagBudgets[0]).toMatchObject({ tagId: coffeeTagId, amountCents: 5_000 });
+  });
+
+  it('names the category, tag sum, category budget and overage when rejecting a save', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+
+    const error = await callTool(userId, 'finance_budget_set', {
+      categoryId: diningId,
+      amountCents: 10_000,
+      cadence: 'monthly',
+      tagBudgets: [{ tagId: coffeeTagId, amountCents: 12_500, cadence: 'monthly' }],
+    }).then(
+      () => null,
+      (caught: unknown) => {
+        if (!(caught instanceof ValidationError)) throw caught;
+        return caught;
+      },
+    );
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error?.message).toContain('Budget Cadence Dining');
+    expect(error?.message).toContain('12500');
+    expect(error?.message).toContain('10000');
+    expect(error?.message).toContain('2500');
+    expect(error?.details).toMatchObject({
+      categoryName: 'Budget Cadence Dining',
+      tagBudgetSumCents: 12_500,
+      categoryBudgetCents: 10_000,
+      overageCents: 2_500,
+    });
+  });
+
+  it('never lets a tag budget exist without the category budget it sits inside', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+
+    await expect(
+      callTool(userId, 'finance_budget_create', {
+        categoryId: diningId,
+        tagId: coffeeTagId,
+        amountCents: 5_000,
+        cadence: 'monthly',
+      }),
+    ).rejects.toThrow(/no category budget/i);
+
+    const rows = await db
+      .selectFrom('app.financeBudgets')
+      .selectAll()
+      .where('userId', '=', userId)
+      .where('categoryId', '=', diningId)
+      .execute();
+    expect(rows).toHaveLength(0);
+  });
+
+  it('reports a tag over its budget as composition only while the category is within budget', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+    const restaurantTagId = await insertTag('Restaurant');
+    await callTool(userId, 'finance_budget_set', {
+      categoryId: diningId,
+      amountCents: 30_000,
+      cadence: 'monthly',
+      tagBudgets: [
+        { tagId: coffeeTagId, amountCents: 2_000, cadence: 'monthly' },
+        { tagId: restaurantTagId, amountCents: 10_000, cadence: 'monthly' },
+      ],
+    });
+
+    const coffeeSpend = await insertTransaction({
+      accountId,
+      categoryId: diningId,
+      postedOn: currentMonthStart,
+      amount: -25,
+    });
+    await tagTransaction(coffeeSpend, coffeeTagId);
+
+    const listed = content(await callTool(userId, 'finance_budget_list', {}));
+    const budget = listed.budgets?.find((item) => item.categoryId === diningId);
+    const coffee = budget?.tagBudgets.find((tag) => tag.tagId === coffeeTagId);
+
+    expect(budget?.spentCents).toBe(2_500);
+    expect(budget?.remainingCents).toBe(27_500);
+    expect(budget?.breach).toBeNull();
+    expect(listed.breaches).toEqual([]);
+    expect(coffee).toMatchObject({
+      amountCents: 2_000,
+      spentCents: 2_500,
+      remainingCents: -500,
+      overTagBudget: true,
+    });
+  });
+
+  it('reports a breach when the category is over budget, however spend distributes across tags', async () => {
+    const coffeeTagId = await insertTag('Coffee');
+    const restaurantTagId = await insertTag('Restaurant');
+    await callTool(userId, 'finance_budget_set', {
+      categoryId: diningId,
+      amountCents: 30_000,
+      cadence: 'monthly',
+      tagBudgets: [
+        { tagId: coffeeTagId, amountCents: 2_000, cadence: 'monthly' },
+        { tagId: restaurantTagId, amountCents: 28_000, cadence: 'monthly' },
+      ],
+    });
+
+    // The overspend is untagged, so no tag is over its own budget and the category still breaches.
+    await insertTransaction({
+      accountId,
+      categoryId: diningId,
+      postedOn: currentMonthStart,
+      amount: -350,
+    });
+
+    const listed = content(await callTool(userId, 'finance_budget_list', {}));
+    const budget = listed.budgets?.find((item) => item.categoryId === diningId);
+    expect(budget?.spentCents).toBe(35_000);
+    expect(budget?.breach).toEqual({
+      categoryId: diningId,
+      categoryName: 'Budget Cadence Dining',
+      overByCents: 5_000,
+    });
+    expect(listed.breaches).toEqual([budget?.breach]);
+    expect(budget?.tagBudgets.every((tag) => !tag.overTagBudget)).toBe(true);
+
+    // Redistribute the same spend onto the small tag: still exactly one breach, the category's.
+    await db
+      .deleteFrom('app.financeTransactions')
+      .where('userId', '=', userId)
+      .where('categoryId', '=', diningId)
+      .execute();
+    const coffeeSpend = await insertTransaction({
+      accountId,
+      categoryId: diningId,
+      postedOn: currentMonthStart,
+      amount: -350,
+    });
+    await tagTransaction(coffeeSpend, coffeeTagId);
+
+    const redistributed = content(await callTool(userId, 'finance_budget_list', {}));
+    const after = redistributed.budgets?.find((item) => item.categoryId === diningId);
+    expect(after?.breach?.overByCents).toBe(5_000);
+    expect(redistributed.breaches).toHaveLength(1);
+    expect(after?.tagBudgets.find((tag) => tag.tagId === coffeeTagId)?.overTagBudget).toBe(true);
   });
 });

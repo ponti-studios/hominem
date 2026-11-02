@@ -1,5 +1,5 @@
-import { db, runInTransaction } from '@hominem/db/core';
-import { NotFoundError, ValidationError } from '@hominem/db/errors';
+import { db, runInTransaction, type DbHandle } from '@hominem/db/core';
+import { ValidationError } from '@hominem/db/errors';
 import {
   FinanceBudgetRepository,
   type FinanceBudgetCadence,
@@ -249,7 +249,7 @@ async function toStatus(
  * back and the previously stored budgets stay untouched.
  */
 async function assertNestedBudgets(
-  handle: Parameters<typeof FinanceBudgetRepository.listByCategory>[0],
+  handle: DbHandle,
   ownerUserId: string,
   categoryId: string,
   categoryName: string,
