@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const financeMonthlySummaryQuerySchema = z.object({
-  month: z.string().regex(/^\d{4}-\d{2}$/),
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
   limit: z.coerce.number().int().min(1).max(50).default(25),
 });
 
@@ -36,15 +36,8 @@ export const financeMonthlySummarySchema = z.object({
 
 // ── MCP tools ────────────────────────────────────────────────────────
 
-function isIsoDate(value: string): boolean {
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
-}
-
-const isoDateSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).')
-  .refine(isIsoDate, 'Invalid ISO date.');
+const isoDateSchema = z.iso.date().describe('ISO calendar date in YYYY-MM-DD format.');
+const financeAccountIdSchema = z.string().uuid();
 
 const mcpLimitSchema = z.number().int().min(1).max(50);
 
@@ -112,11 +105,10 @@ export const financeTransactionSchema = z.object({
 
 export const financeRecentTransactionsInputSchema = z
   .object({
-    accountId: z
-      .string()
+    accountId: financeAccountIdSchema
       .optional()
       .describe(
-        'Optional. Omit to include every account; set only to narrow to one account ID a finance tool returned.',
+        'Optional. Omit to include every account; set only to narrow to one account UUID returned by a finance tool.',
       ),
     from: isoDateSchema
       .optional()
@@ -210,11 +202,9 @@ function rejectInvertedRange(
   }
 }
 
-const accountIdField = z
-  .string()
-  .uuid()
+const accountIdField = financeAccountIdSchema
   .optional()
-  .describe('Stable account ID returned by finance_accounts.');
+  .describe('Stable account UUID returned by finance_accounts.');
 
 const tagField = z
   .string()
@@ -655,6 +645,10 @@ export const financeBudgetBreakdownOutputSchema = z.object({
 // -- finance_budget_* (stored budgets, one per category, each with its own cadence) --
 
 export const financeBudgetCadenceSchema = z.enum(['weekly', 'monthly', 'quarterly', 'annual']);
+const budgetCategoryIdSchema = z.union([
+  z.string().uuid(),
+  z.string().regex(/^preview-category:[A-Za-z0-9_-]+:[a-f0-9]{16}$/),
+]);
 
 const primaryCurrencySchema = accountCurrencySchema
   .refine((code) => code.toUpperCase() !== 'XXX', 'invalid_currency')
@@ -778,9 +772,19 @@ export const financeBudgetStatusSchema = z.object({
 
 export const financeBudgetListInputSchema = z.object({}).strict();
 
+const financeBudgetStoredSchema = z.object({
+  id: z.string(),
+  categoryId: z.string(),
+  categoryName: z.string(),
+  tagId: z.string().nullable(),
+  tagName: z.string().nullable(),
+  amountCents: z.number().int(),
+  cadence: financeBudgetCadenceSchema,
+});
+
 export const financeBudgetListOutputSchema = z.object({
-  primaryCurrency: z.string(),
-  budgets: z.array(financeBudgetStatusSchema),
+  primaryCurrency: z.string().nullable(),
+  budgets: z.array(z.union([financeBudgetStatusSchema, financeBudgetStoredSchema])),
   breaches: z
     .array(
       z.object({
@@ -793,6 +797,8 @@ export const financeBudgetListOutputSchema = z.object({
       'Category budgets that are over their limit — the only breaches there are. A tag over its own budget never appears here.',
     ),
   count: z.number().int().min(0),
+  warning: z.string().nullable(),
+  storedBudgets: z.array(financeBudgetStoredSchema),
 });
 
 export const financeBudgetGetInputSchema = z
@@ -802,15 +808,16 @@ export const financeBudgetGetInputSchema = z
   .strict();
 
 export const financeBudgetGetOutputSchema = z.object({
-  budget: financeBudgetStatusSchema.nullable(),
+  budget: z.union([financeBudgetStatusSchema, financeBudgetStoredSchema]).nullable(),
+  warning: z.string().nullable(),
+  storedBudget: financeBudgetStoredSchema.nullable(),
 });
 
 export const financeBudgetCreateInputSchema = z
   .object({
-    categoryId: z
-      .string()
-      .uuid()
-      .describe('Category id from finance_categories. Every budget belongs to a category.'),
+    categoryId: budgetCategoryIdSchema.describe(
+      'Category UUID from finance_categories. Dry runs may also use a preview-category placeholder.',
+    ),
     tagId: z
       .string()
       .uuid()
@@ -826,8 +833,18 @@ export const financeBudgetCreateInputSchema = z
     cadence: financeBudgetCadenceSchema.describe(
       'This budget’s own cadence: weekly, monthly, quarterly or annual. Custom periods are not supported.',
     ),
+    dryRun: z.boolean().default(false).describe('Project the budget without writing.'),
   })
   .strict()
+  .superRefine((value, context) => {
+    if (value.categoryId.startsWith('preview-category:') && !value.dryRun) {
+      context.addIssue({
+        code: 'custom',
+        path: ['categoryId'],
+        message: 'Preview categories are dry-run only.',
+      });
+    }
+  })
   .describe(
     'Create or replace one budget: the category budget (omit tagId) or a tag budget nested inside that category (set tagId). Takes no currency. The sum of a category’s tag budgets may not exceed its category budget.',
   );
@@ -839,6 +856,28 @@ export const financeBudgetCreateOutputSchema = z.object({
     .enum(['unknown_category'])
     .nullable()
     .describe('Set instead of an error when the category id is not the caller’s.'),
+  dryRun: z.boolean(),
+  preview: z
+    .object({
+      categoryId: z.string(),
+      categoryName: z.string(),
+      budgets: z.array(
+        z.object({
+          id: z.string().nullable(),
+          tagId: z.string().nullable(),
+          amountCents: z.number().int(),
+          cadence: financeBudgetCadenceSchema,
+        }),
+      ),
+      validation: z.object({
+        valid: z.boolean(),
+        tagBudgetSumCents: z.number().int(),
+        categoryBudgetCents: z.number().int().nullable(),
+        overageCents: z.number().int(),
+        message: z.string().nullable(),
+      }),
+    })
+    .nullable(),
 });
 
 export const financeBudgetUpdateInputSchema = z
@@ -846,6 +885,7 @@ export const financeBudgetUpdateInputSchema = z
     budgetId: z.string().uuid(),
     amountCents: z.number().int().positive().optional(),
     cadence: financeBudgetCadenceSchema.optional(),
+    dryRun: z.boolean().default(false),
   })
   .strict()
   .refine(
@@ -855,15 +895,54 @@ export const financeBudgetUpdateInputSchema = z
 
 export const financeBudgetUpdateOutputSchema = z.object({
   budget: financeBudgetStatusSchema.nullable(),
+  dryRun: z.boolean(),
+  preview: z
+    .object({
+      categoryId: z.string(),
+      categoryName: z.string(),
+      budgets: z.array(
+        z.object({
+          id: z.string(),
+          tagId: z.string().nullable(),
+          amountCents: z.number().int(),
+          cadence: financeBudgetCadenceSchema,
+        }),
+      ),
+      validation: z.object({
+        valid: z.boolean(),
+        tagBudgetSumCents: z.number().int(),
+        categoryBudgetCents: z.number().int().nullable(),
+        overageCents: z.number().int(),
+        message: z.string().nullable(),
+      }),
+    })
+    .nullable(),
 });
 
-export const financeBudgetDeleteInputSchema = z.object({ budgetId: z.string().uuid() }).strict();
+export const financeBudgetDeleteInputSchema = z
+  .object({ budgetId: z.string().uuid(), dryRun: z.boolean().default(false) })
+  .strict();
 
-export const financeBudgetDeleteOutputSchema = z.object({ removed: z.boolean() });
+export const financeBudgetDeleteOutputSchema = z.object({
+  removed: z.boolean(),
+  dryRun: z.boolean(),
+  preview: z.array(
+    z.object({
+      id: z.string(),
+      categoryId: z.string(),
+      categoryName: z.string(),
+      tagId: z.string().nullable(),
+      amountCents: z.number().int(),
+      cadence: financeBudgetCadenceSchema,
+    }),
+  ),
+});
 
 export const financeBudgetSetInputSchema = z
   .object({
-    categoryId: z.string().uuid().describe('Category id from finance_categories.'),
+    categoryId: budgetCategoryIdSchema.describe(
+      'Category id from finance_categories or a dry-run placeholder.',
+    ),
     amountCents: z
       .number()
       .int()
@@ -881,8 +960,18 @@ export const financeBudgetSetInputSchema = z
       .describe(
         'The complete set of tag budgets inside this category. Tags omitted from the list lose their budget; the set replaces what is stored.',
       ),
+    dryRun: z.boolean().default(false).describe('Project the replacement without writing.'),
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    if (value.categoryId.startsWith('preview-category:') && !value.dryRun) {
+      context.addIssue({
+        code: 'custom',
+        path: ['categoryId'],
+        message: 'Preview categories are dry-run only.',
+      });
+    }
+  });
 
 export const financeBudgetSetOutputSchema = z.object({
   budget: financeBudgetStatusSchema.nullable(),
@@ -890,16 +979,54 @@ export const financeBudgetSetOutputSchema = z.object({
     .enum(['unknown_category'])
     .nullable()
     .describe('Set instead of an error when the category id is not the caller’s.'),
+  dryRun: z.boolean(),
+  preview: z
+    .object({
+      categoryId: z.string(),
+      categoryName: z.string(),
+      budgets: z.array(
+        z.object({
+          id: z.string().nullable(),
+          tagId: z.string().nullable(),
+          amountCents: z.number().int(),
+          cadence: financeBudgetCadenceSchema,
+        }),
+      ),
+      validation: z.object({
+        valid: z.boolean(),
+        tagBudgetSumCents: z.number().int(),
+        categoryBudgetCents: z.number().int(),
+        overageCents: z.number().int(),
+        message: z.string().nullable(),
+      }),
+    })
+    .nullable(),
 });
 
 export const financePrimaryCurrencySetInputSchema = z
   .object({
     currencyCode: primaryCurrencySchema,
+    dryRun: z.boolean().default(false),
   })
   .strict();
 
 export const financePrimaryCurrencySetOutputSchema = z.object({
   primaryCurrency: z.string(),
+  dryRun: z.boolean(),
+  preview: z.object({
+    previousCurrency: z.string().nullable(),
+    affectedBudgets: z.array(
+      z.object({
+        id: z.string(),
+        categoryId: z.string(),
+        categoryName: z.string(),
+        tagId: z.string().nullable(),
+        tagName: z.string().nullable(),
+        amountCents: z.number().int(),
+        cadence: financeBudgetCadenceSchema,
+      }),
+    ),
+  }),
 });
 
 // -- finance_categories --
@@ -914,11 +1041,15 @@ export const financeCategoriesOutputSchema = z.object({
 // -- finance_transaction_upsert --
 
 const sheetTransactionPayloadSchema = z.object({
-  postedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).'),
-  account: z.string().min(1).describe('Sheet Bank label or a Hominem account id.'),
+  postedOn: isoDateSchema,
+  account: z
+    .string()
+    .trim()
+    .min(1)
+    .describe('Sheet bank label or account UUID returned by finance_accounts.'),
   description: z.string().min(1).describe('Merchant text.'),
   amountCents: z.number().int().describe('Signed amount in cents; negative = outflow.'),
-  currencyCode: z.string().min(3).max(3).describe('ISO-4217 code.'),
+  currencyCode: accountCurrencySchema.describe('ISO-4217 currency code, e.g. GBP or USD.'),
   category: z
     .string()
     .nullable()
@@ -953,10 +1084,7 @@ const sheetTransactionPayloadSchema = z.object({
     .describe(
       'For a foreign-currency row, the amount actually charged in settledCurrencyCode, in cents. Budgets count the row at this amount; omit only when the record carries no settled amount.',
     ),
-  settledCurrencyCode: z
-    .string()
-    .min(3)
-    .max(3)
+  settledCurrencyCode: accountCurrencySchema
     .nullable()
     .optional()
     .describe('ISO-4217 currency of settledAmountCents; set together with it.'),
@@ -964,9 +1092,9 @@ const sheetTransactionPayloadSchema = z.object({
 
 export const financeTransactionUpsertInputSchema = sheetTransactionPayloadSchema.extend({
   accountMap: z
-    .record(z.string(), z.string())
+    .record(z.string(), financeAccountIdSchema)
     .optional()
-    .describe('Explicit { "Sheet Label": "hominem-account-id" } overrides.'),
+    .describe('Explicit { "Sheet Label": "hominem-account-uuid" } overrides.'),
 });
 
 const sheetRejectionReasonSchema = z.enum([
@@ -1005,9 +1133,9 @@ export const financeTransactionsImportInputSchema = z.object({
     .default(false)
     .describe('Explicit confirmation for mode: "replace", which wipes the store first.'),
   accountMap: z
-    .record(z.string(), z.string())
+    .record(z.string(), financeAccountIdSchema)
     .optional()
-    .describe('Explicit { "Sheet Label": "hominem-account-id" } overrides.'),
+    .describe('Explicit { "Sheet Label": "hominem-account-uuid" } overrides.'),
 });
 
 export const financeTransactionsImportOutputSchema = z.object({
@@ -1116,7 +1244,10 @@ export const financeCategoryCreateInputSchema = z.object({
 });
 
 export const financeCategoryCreateOutputSchema = z.object({
-  id: z.string().nullable().describe('Category id; null on a dry run that would create.'),
+  id: z
+    .string()
+    .nullable()
+    .describe('Category id; dry-runs return a stable, non-persistent placeholder.'),
   name: z.string(),
   created: z.boolean(),
   dryRun: z.boolean(),
@@ -1133,7 +1264,7 @@ export const financeCategoryMergeInputSchema = z.object({
     .describe(
       'Which stage of the ordered flow to run: all (default, preserve → repoint → merge in one transaction), or a single stage so the ordering can be driven step by step. The merge stage refuses if a source is untagged or a rule still names one.',
     ),
-  dryRun: z.boolean().default(false).describe('Report all three stages without writing.'),
+  dryRun: z.boolean().default(false).describe('Report the selected stage without writing.'),
 });
 
 const categoryBudgetMergeSchema = z.object({
@@ -1196,6 +1327,7 @@ export const financeCategoryMergeOutputSchema = z.object({
   ),
   totalsUnchanged: z.boolean(),
   budgetMerge: categoryBudgetMergeSchema,
+  warnings: z.array(z.string()).describe('External rule sources are not visible to this API.'),
   dryRun: z.boolean(),
 });
 
@@ -1341,8 +1473,7 @@ export const financeAccountUpdateInputSchema = z.object({
     .enum(['open', 'closed', 'historical', 'unknown'])
     .optional()
     .describe('Lifecycle status; transitions are unrestricted.'),
-  currencyCode: z
-    .string()
+  currencyCode: accountCurrencySchema
     .optional()
     .describe('Immutable through this tool — any change is refused with currency_immutable.'),
   allowedCurrencies: z

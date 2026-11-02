@@ -5,12 +5,14 @@ import {
   createMcpHandler,
   inputRequired,
   inputResponse,
+  type InputRequiredResult,
   McpServer,
   type AuthInfo,
   type CacheHint,
   type CallToolResult,
   type ServerContext,
   type StandardSchemaWithJSON,
+  type Tool as McpTool,
 } from '@modelcontextprotocol/server';
 import type { Context } from 'hono';
 import { ZodError, z } from 'zod';
@@ -20,13 +22,26 @@ import { assertBillingUsage } from '../application/billing.service';
 import type { CapabilityDefinition } from '../application/capability';
 import type { AuthContext } from '../auth/types';
 import { env } from '../env';
-import { getServiceErrorFailureType, isServiceError, UnauthorizedError } from '../errors';
+import {
+  getServiceErrorFailureType,
+  isServiceError,
+  ServiceError,
+  UnauthorizedError,
+} from '../errors';
 import {
   clientCanElicit,
   confirmationCodec,
   CONFIRM_TOKEN_KEY,
   type ConfirmationState,
 } from './confirmation';
+import {
+  callToolInputSchema,
+  getToolDetailsInputSchema,
+  getToolDetailsOutputSchema,
+  searchTools,
+  searchToolsInputSchema,
+  searchToolsOutputSchema,
+} from './discovery';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
 import { describeCapability } from './tool-planner';
@@ -41,6 +56,15 @@ const CONFIRM_KEY = 'confirm';
 const LIST_CACHE_HINT: CacheHint = { ttlMs: 5 * 60 * 1000, cacheScope: 'private' };
 
 const JSON_SCHEMA_TARGET = 'draft-2020-12';
+
+function jsonInputSchema(schema: StandardSchemaWithJSON) {
+  const jsonSchema = schema['~standard'].jsonSchema.input({ target: JSON_SCHEMA_TARGET });
+  return { ...jsonSchema, type: 'object' as const };
+}
+
+function jsonOutputSchema(schema: StandardSchemaWithJSON) {
+  return schema['~standard'].jsonSchema.output({ target: JSON_SCHEMA_TARGET });
+}
 
 // zod's `~standard.jsonSchema` re-walks the whole schema tree (and deep-copies the
 // result via JSON.parse(JSON.stringify)) on every call. The MCP SDK calls it once at
@@ -122,9 +146,10 @@ interface McpAuthInfoExtra {
   isAdmin: boolean;
 }
 
-function createErrorResult(message: string): CallToolResult {
+function createErrorResult(code: string, message: string): CallToolResult {
   return {
     content: [{ type: 'text', text: message }],
+    structuredContent: { code, message },
     isError: true,
   };
 }
@@ -152,7 +177,11 @@ function buildCancelledResult(message: string): CallToolResult {
   // offer (the shape differs per tool: { removed }, { task: null }, ...).
   // Mirrors createErrorResult's already-established structured-content-less
   // convention in this file.
-  return { content: [{ type: 'text', text: message }], isError: true };
+  return {
+    content: [{ type: 'text', text: message }],
+    structuredContent: { code: 'cancelled', message },
+    isError: true,
+  };
 }
 
 function readConfirmToken(args: unknown): string | undefined {
@@ -169,23 +198,39 @@ function buildConfirmTokenResult(
   definition: CapabilityDefinition,
   preview: ChatMessageJsonObject | undefined,
   token: string,
+  invocationName: string,
 ): CallToolResult {
   const previewText =
     preview === undefined
       ? ''
       : ` This is exactly what it will affect: ${JSON.stringify(preview)}.`;
+  const retryInstruction =
+    invocationName === 'call_write_tool'
+      ? `To complete it, call call_write_tool with { name: ${JSON.stringify(definition.name)}, arguments: { ...same arguments, ${CONFIRM_TOKEN_KEY}: ${JSON.stringify(token)} } }.`
+      : `To complete it, call ${definition.name} again with the same arguments plus ${CONFIRM_TOKEN_KEY}: ${JSON.stringify(token)}.`;
   return {
     content: [
       {
         type: 'text',
-        text:
-          `${definition.name} was not run: it needs confirmation.${previewText} ` +
-          `Nothing has been changed. To complete it, call ${definition.name} again with the ` +
-          `same arguments plus ${CONFIRM_TOKEN_KEY}: ${JSON.stringify(token)}.`,
+        text: `${definition.name} was not run: it needs confirmation.${previewText} Nothing has been changed. ${retryInstruction}`,
       },
     ],
+    structuredContent: {
+      code: 'confirmation_required',
+      message: `${definition.name} was not run; confirmation is required.`,
+      tool: definition.name,
+      preview: preview ?? null,
+      confirmToken: token,
+    },
     isError: true,
   };
+}
+
+function serviceErrorCode(error: ServiceError): string {
+  const reason = error.details?.reason;
+  return typeof reason === 'string' && /^[a-z][a-z0-9_]*$/.test(reason)
+    ? reason
+    : error.code.toLowerCase();
 }
 
 /**
@@ -243,29 +288,30 @@ async function invokeTool(
       const detail = error.issues
         .map((issue) => `${issue.path.join('.') || 'input'}: ${issue.message}`)
         .join('; ');
-      return createErrorResult(`Invalid input: ${detail}`);
+      return createErrorResult('invalid_input', `Invalid input: ${detail}`);
     }
     if (isServiceError(error)) {
       if (error.code === 'FORBIDDEN' && error.details?.kind === 'skill') {
         return createErrorResult(
+          'forbidden',
           `${error.message} Check your MCP usage and limit at ${new URL('/account/usage', env.API_URL).toString()}`,
         );
       }
-      return createErrorResult(error.message);
+      return createErrorResult(serviceErrorCode(error), error.message);
     }
-    return createErrorResult(PUBLIC_TOOL_ERROR);
+    return createErrorResult('internal_error', PUBLIC_TOOL_ERROR);
   }
 }
 
 function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: AuthInfo) {
-  return async (args: unknown, ctx: ServerContext) => {
+  return async (args: unknown, ctx: ServerContext, invocationName = definition.name) => {
     const context = resolveRequestContext(ctx.http?.authInfo ?? fallbackAuthInfo);
     if (!context) {
-      return createErrorResult('Authentication required');
+      return createErrorResult('authentication_required', 'Authentication required');
     }
 
     if (!hasRequiredScopes(context.grantedScopes, definition.scopes)) {
-      return createErrorResult('insufficient_scope');
+      return createErrorResult('insufficient_scope', 'insufficient_scope');
     }
 
     // Protocol-level confirmation enforced for every MCP client, in one gate
@@ -280,7 +326,9 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
     //   tool result, with no protocol feature it lacks.
     //
     // Neither path executes anything unconfirmed.
-    if (definition.requiresConfirmation) {
+    const isDryRun =
+      typeof args === 'object' && args !== null && 'dryRun' in args && args.dryRun === true;
+    if (definition.requiresConfirmation && !isDryRun) {
       const state = ctx.mcpReq.requestState<ConfirmationState>();
 
       if (state) {
@@ -289,7 +337,10 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
         // minted for a different tool (defense against splicing a
         // confirmation token from one tool call onto another).
         if (state.tool !== definition.name) {
-          return createErrorResult('Confirmation state does not match this tool');
+          return createErrorResult(
+            'confirmation_state_mismatch',
+            'Confirmation state does not match this tool',
+          );
         }
         const response = inputResponse(ctx.mcpReq.inputResponses, CONFIRM_KEY);
         if (response.kind !== 'elicit' || response.action !== 'accept') {
@@ -325,7 +376,7 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
             { tool: definition.name, args: chatMessageJsonObjectSchema.parse(args) },
             ctx,
           );
-          return buildConfirmTokenResult(definition, preview, token);
+          return buildConfirmTokenResult(definition, preview, token, invocationName);
         }
         const message = definition.preview
           ? `Confirm: ${definition.title} — ${JSON.stringify(preview)}`
@@ -351,7 +402,7 @@ function createMcpServer(authInfo?: AuthInfo) {
     { name: 'Hominem MCP', version: '1.0.0' },
     {
       instructions:
-        'MCP tools, resources and prompts for authenticated Hominem users. Resources under hominem:// expose your own profile, memories, collections, tasks and notes.',
+        'MCP tools, resources and prompts for authenticated Hominem users. Discover tools progressively: search_tools returns names and short descriptions, get_tool_details returns one tool schema, and call_read_tool or call_write_tool executes that tool. Resources under hominem:// expose your own profile, memories, collections, tasks and notes.',
       requestState: { verify: confirmationCodec.verify },
       cacheHints: {
         'tools/list': LIST_CACHE_HINT,
@@ -361,7 +412,12 @@ function createMcpServer(authInfo?: AuthInfo) {
     },
   );
 
-  for (const definition of listToolsForScopes(authInfo?.scopes ?? [])) {
+  const availableDefinitions = listToolsForScopes(authInfo?.scopes ?? []);
+  const availableByName = new Map(
+    availableDefinitions.map((definition) => [definition.name, definition]),
+  );
+
+  for (const definition of availableDefinitions) {
     // Every write tool should declare these explicitly (see mcp/tools/*.ts) —
     // this is a conservative fallback, not a name-based guess: a read tool is
     // never destructive, and an unannotated write tool is assumed destructive
@@ -393,6 +449,134 @@ function createMcpServer(authInfo?: AuthInfo) {
       createToolHandler(definition, authInfo),
     );
   }
+
+  const discoveryAnnotations = {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  } as const;
+  const discoveryTools = [
+    {
+      name: 'search_tools',
+      title: 'Search tools',
+      description:
+        'Search the operations available to this connection. Returns names, short descriptions and whether each operation reads or writes. Use get_tool_details before calling an operation.',
+      inputSchema: searchToolsInputSchema,
+      outputSchema: searchToolsOutputSchema,
+      annotations: discoveryAnnotations,
+    },
+    {
+      name: 'get_tool_details',
+      title: 'Get tool details',
+      description:
+        'Get the full input and output schemas for one operation returned by search_tools.',
+      inputSchema: getToolDetailsInputSchema,
+      outputSchema: getToolDetailsOutputSchema,
+      annotations: discoveryAnnotations,
+    },
+    {
+      name: 'call_read_tool',
+      title: 'Call read tool',
+      description:
+        'Execute one read-only operation returned by search_tools, using arguments that match get_tool_details. Invalid arguments are rejected by that operation’s schema.',
+      inputSchema: callToolInputSchema,
+      annotations: discoveryAnnotations,
+    },
+    {
+      name: 'call_write_tool',
+      title: 'Call write tool',
+      description:
+        'Execute one write operation returned by search_tools, using arguments that match get_tool_details. Confirmation-required operations still return a preview and require the existing confirmation flow.',
+      inputSchema: callToolInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+  ];
+
+  const registerDiscoveryTool = (
+    tool: (typeof discoveryTools)[number],
+    handler: (input: unknown, ctx: ServerContext) => Promise<CallToolResult | InputRequiredResult>,
+  ) =>
+    mcpServer.registerTool(
+      tool.name,
+      {
+        title: tool.title,
+        description: tool.description,
+        inputSchema: cachedJsonSchema(tool.inputSchema),
+        outputSchema: tool.outputSchema ? cachedJsonSchema(tool.outputSchema) : undefined,
+        annotations: tool.annotations,
+      },
+      handler,
+    );
+
+  registerDiscoveryTool(discoveryTools[0]!, async (input) => {
+    const { query, limit, offset } = searchToolsInputSchema.parse(input);
+    const result = searchTools(query, availableDefinitions, limit, offset);
+    return { content: [{ type: 'text', text: JSON.stringify(result) }], structuredContent: result };
+  });
+  registerDiscoveryTool(discoveryTools[1]!, async (input) => {
+    const { name } = getToolDetailsInputSchema.parse(input);
+    const definition = availableByName.get(name);
+    if (!definition) return createErrorResult('unknown_tool', 'Unknown or unavailable tool.');
+
+    const details = {
+      name: definition.name,
+      title: definition.title,
+      description: describeCapability(definition),
+      readOnly: definition.readOnly,
+      requiresConfirmation: definition.requiresConfirmation === true,
+      annotations: {
+        readOnlyHint: definition.readOnly,
+        destructiveHint: definition.destructive ?? !definition.readOnly,
+        idempotentHint: definition.idempotent ?? false,
+        openWorldHint: definition.openWorld ?? false,
+      },
+      inputSchema: jsonInputSchema(cachedJsonSchema(mcpInputSchema(definition))),
+      outputSchema: jsonOutputSchema(cachedJsonSchema(definition.outputSchema)),
+    };
+    return {
+      content: [{ type: 'text', text: JSON.stringify(details) }],
+      structuredContent: details,
+    };
+  });
+
+  for (const [index, readOnly] of [true, false].entries()) {
+    const tool = discoveryTools[index + 2]!;
+    registerDiscoveryTool(tool, async (input, ctx) => {
+      const { name, arguments: args } = callToolInputSchema.parse(input);
+      const definition = availableByName.get(name);
+      if (!definition || definition.readOnly !== readOnly) {
+        return createErrorResult('unknown_tool', 'Unknown or unavailable tool.');
+      }
+      return createToolHandler(definition, authInfo)(args, ctx, 'call_write_tool');
+    });
+  }
+
+  // The server retains direct call handlers for already-configured clients, but
+  // only the four lightweight discovery operations enter a new client's context.
+  const listedTools: McpTool[] = discoveryTools
+    .map((tool) => ({
+      name: tool.name,
+      title: tool.title,
+      description: tool.description,
+      inputSchema: jsonInputSchema(cachedJsonSchema(tool.inputSchema)),
+      ...(tool.outputSchema
+        ? {
+            outputSchema: jsonOutputSchema(cachedJsonSchema(tool.outputSchema)),
+          }
+        : {}),
+      annotations: tool.annotations,
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+  mcpServer.server.setRequestHandler('tools/list', async () => ({
+    tools: listedTools,
+    ...LIST_CACHE_HINT,
+  }));
 
   // Resources and prompts read through the same registered tools as tools/call, so they
   // inherit the same owner scoping, scope checks and result validation.

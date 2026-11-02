@@ -10,7 +10,7 @@ export const financePrimaryCurrencySetTool = defineMcpTool(
     name: 'finance_primary_currency_set',
     title: 'Finance Primary Currency Set',
     description:
-      'Set the profile primary currency (ISO 4217) that budgets are denominated in. This is an explicit user action: creating a budget never changes it. Existing budgets re-denominate immediately, counting each foreign transaction at its settled amount in the new currency where the record carries one.',
+      'Set the profile primary currency (ISO 4217) that budgets are denominated in. This is an explicit user action: creating a budget never changes it. Existing budgets re-denominate immediately, counting each foreign transaction at its settled amount in the new currency where the record carries one. Set dryRun to list every affected category and tag budget without changing the profile.',
     inputSchema: financePrimaryCurrencySetInputSchema,
     outputSchema: financePrimaryCurrencySetOutputSchema,
     readOnly: false,
@@ -27,5 +27,6 @@ export const financePrimaryCurrencySetTool = defineMcpTool(
       produces: ['primaryCurrency'],
     },
   },
-  async (ownerUserId, input) => setPrimaryCurrency(ownerUserId, input.currencyCode),
+  async (ownerUserId, input) =>
+    setPrimaryCurrency(ownerUserId, input.currencyCode, { dryRun: input.dryRun }),
 );

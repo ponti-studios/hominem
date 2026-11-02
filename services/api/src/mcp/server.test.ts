@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { authDb, db, pool } from '@hominem/db/core';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { Hono } from 'hono';
@@ -331,15 +333,86 @@ describe('mcp server transport', () => {
     }
   });
 
-  it('lists registered career tools', async () => {
+  it('lists only lightweight tool discovery operations', async () => {
     const client = await createClient(createApp(mcpAuthContext));
     try {
       const tools = await client.listTools();
       const toolNames = tools.tools.map((t) => t.name);
-      expect(toolNames).toContain('career_profile');
-      expect(toolNames).toContain('career_engagements');
-      expect(toolNames).toContain('finance_net_worth');
-      expect(toolNames).not.toContain('career_wishlist_add');
+      expect(toolNames).toEqual([
+        'call_read_tool',
+        'call_write_tool',
+        'get_tool_details',
+        'search_tools',
+      ]);
+      expect(JSON.stringify(tools)).not.toContain('finance_net_worth');
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('searches, inspects and executes one authorized tool', async () => {
+    const client = await createClient(createApp(mcpAuthContext));
+    try {
+      const search = await client.callTool({
+        name: 'search_tools',
+        arguments: { query: 'finance categories', limit: 5 },
+      });
+      const matches = z
+        .object({
+          tools: z.array(z.object({ name: z.string(), readOnly: z.boolean() })),
+          count: z.number(),
+          hasMore: z.boolean(),
+        })
+        .parse(search.structuredContent);
+      expect(matches.tools).toContainEqual({ name: 'finance_categories', readOnly: true });
+
+      const detailsResult = await client.callTool({
+        name: 'get_tool_details',
+        arguments: { name: 'finance_categories' },
+      });
+      const details = z
+        .object({
+          inputSchema: z.object({
+            type: z.literal('object'),
+            properties: z.record(z.string(), z.unknown()),
+          }),
+          outputSchema: z.record(z.string(), z.unknown()),
+        })
+        .parse(detailsResult.structuredContent);
+      expect(details.inputSchema).toMatchObject({ type: 'object', properties: {} });
+      expect(details.outputSchema).toMatchObject({ type: 'object' });
+
+      const execution = await client.callTool({
+        name: 'call_read_tool',
+        arguments: { name: 'finance_categories', arguments: {} },
+      });
+      expect(execution.isError).not.toBe(true);
+      expect(execution.structuredContent).toMatchObject({ categories: expect.any(Array) });
+
+      const wrongMode = await client.callTool({
+        name: 'call_write_tool',
+        arguments: { name: 'finance_categories', arguments: {} },
+      });
+      expect(wrongMode.isError).toBe(true);
+      expect(wrongMode.structuredContent).toMatchObject({ code: 'unknown_tool' });
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('serves five concurrent finance category reads over streamable HTTP', async () => {
+    const client = await createClient(createApp(mcpAuthContext));
+    try {
+      const results = await Promise.all(
+        Array.from({ length: 5 }, () =>
+          client.callTool({ name: 'finance_categories', arguments: {} }),
+        ),
+      );
+
+      expect(results.every((result) => !result.isError)).toBe(true);
+      expect(results.map((result) => JSON.stringify(result))).toEqual(
+        Array.from({ length: 5 }, () => JSON.stringify(results[0])),
+      );
     } finally {
       await client.close();
     }
@@ -348,8 +421,33 @@ describe('mcp server transport', () => {
   it('lists the five career worklog tools with house-style mode annotations', async () => {
     const client = await createClient(createApp(mcpAuthContext), 'career:read career:write');
     try {
-      const tools = await client.listTools();
-      const byName = new Map(tools.tools.map((tool) => [tool.name, tool]));
+      const names = [
+        'career_worklog_entries',
+        'career_worklog_entry',
+        'career_worklog_create',
+        'career_worklog_update',
+        'career_worklog_delete',
+      ];
+      const detailsSchema = z.object({
+        description: z.string(),
+        inputSchema: z.object({ properties: z.record(z.string(), z.unknown()) }),
+        annotations: z.object({
+          readOnlyHint: z.boolean(),
+          destructiveHint: z.boolean(),
+          idempotentHint: z.boolean(),
+        }),
+      });
+      const byName = new Map(
+        await Promise.all(
+          names.map(async (name) => {
+            const result = await client.callTool({
+              name: 'get_tool_details',
+              arguments: { name },
+            });
+            return [name, detailsSchema.parse(result.structuredContent)] as const;
+          }),
+        ),
+      );
 
       const expectedModes: Record<string, string> = {
         career_worklog_entries: 'Mode: read-only.',
@@ -365,13 +463,9 @@ describe('mcp server transport', () => {
         expect(tool?.description, name).toContain(mode);
       }
 
-      // Parameter names are read off the live inputSchema, not the source schema.
+      // Parameter names are read from the single schema fetched on demand.
       const properties = (name: string) =>
-        Object.keys(
-          z
-            .object({ properties: z.record(z.string(), z.unknown()) })
-            .parse(byName.get(name)?.inputSchema).properties,
-        ).sort();
+        Object.keys(byName.get(name)!.inputSchema.properties).sort();
 
       expect(properties('career_worklog_entries')).toEqual([
         'engagementId',
@@ -437,24 +531,32 @@ describe('mcp server transport', () => {
     }
   });
 
-  it('advertises ChatGPT safety annotations and invocation status', async () => {
+  it('returns safety annotations in requested tool details', async () => {
     const client = await createClient(createApp(mcpAuthContext), 'career:read career:write');
     try {
-      const tools = await client.listTools();
-      const deleteTool = tools.tools.find((tool) => tool.name === 'career_wishlist_remove');
-      const readTool = tools.tools.find((tool) => tool.name === 'career_engagements');
+      const getDetails = async (name: string) => {
+        const result = await client.callTool({ name: 'get_tool_details', arguments: { name } });
+        return z
+          .object({
+            annotations: z.object({
+              readOnlyHint: z.boolean(),
+              destructiveHint: z.boolean(),
+              idempotentHint: z.boolean(),
+              openWorldHint: z.boolean(),
+            }),
+          })
+          .parse(result.structuredContent).annotations;
+      };
+      const deleteTool = await getDetails('career_wishlist_remove');
+      const readTool = await getDetails('career_engagements');
 
-      expect(deleteTool?.annotations).toMatchObject({
+      expect(deleteTool).toMatchObject({
         readOnlyHint: false,
         destructiveHint: true,
         idempotentHint: true,
         openWorldHint: false,
       });
-      expect(deleteTool?._meta).toMatchObject({
-        'openai/toolInvocation/invoking': expect.any(String),
-        'openai/toolInvocation/invoked': expect.any(String),
-      });
-      expect(readTool?.annotations).toMatchObject({
+      expect(readTool).toMatchObject({
         readOnlyHint: true,
         destructiveHint: false,
         idempotentHint: false,
@@ -465,17 +567,28 @@ describe('mcp server transport', () => {
     }
   });
 
-  it('declares task_complete idempotent, not just non-destructive', async () => {
+  it('returns idempotency annotations when tool details are requested', async () => {
     // Regression: the old name-regex fallback (delete|remove|update|save)
     // never matched "complete", so this tool used to be mislabeled
     // idempotentHint: false even though completing/reopening a task twice
     // with the same value is a no-op. Now declared explicitly in tasks.ts.
     const client = await createClient(createApp(mcpAuthContext), 'task:read task:write');
     try {
-      const tools = await client.listTools();
-      const completeTool = tools.tools.find((tool) => tool.name === 'task_complete');
+      const result = await client.callTool({
+        name: 'get_tool_details',
+        arguments: { name: 'task_complete' },
+      });
+      const completeTool = z
+        .object({
+          annotations: z.object({
+            readOnlyHint: z.boolean(),
+            destructiveHint: z.boolean(),
+            idempotentHint: z.boolean(),
+          }),
+        })
+        .parse(result.structuredContent);
 
-      expect(completeTool?.annotations).toMatchObject({
+      expect(completeTool.annotations).toMatchObject({
         readOnlyHint: false,
         destructiveHint: false,
         idempotentHint: true,
@@ -590,6 +703,10 @@ describe('mcp server transport', () => {
       expect(result.content).toEqual([
         { type: 'text', text: 'Unable to complete the MCP tool request.' },
       ]);
+      expect(result.structuredContent).toEqual({
+        code: 'internal_error',
+        message: 'Unable to complete the MCP tool request.',
+      });
       expect(JSON.stringify(result)).not.toContain('secret database detail');
       expect(warningSpy).toHaveBeenCalledWith(
         expect.stringContaining('mcp_tool_invocation_failed'),
@@ -863,7 +980,10 @@ describe('mcp server transport', () => {
         // A plain client can't answer the embedded elicitation at all, so the
         // call must fail rather than execute immediately.
         expect(result.isError).toBe(true);
-        expect(result.structuredContent).toBeUndefined();
+        expect(result.structuredContent).toMatchObject({
+          code: 'confirmation_required',
+          tool: 'create_collection',
+        });
       } finally {
         await client.close();
       }
@@ -1307,6 +1427,12 @@ describe('delete confirmation from a client without elicitation', () => {
         arguments: { id: noteId },
       });
       expect(unconfirmed.isError).toBe(true);
+      expect(unconfirmed.structuredContent).toMatchObject({
+        code: 'confirmation_required',
+        tool: 'note_delete',
+        preview: expect.any(Object),
+        confirmToken: expect.any(String),
+      });
       // The preview shows exactly what the confirmation would delete.
       expect(resultText(unconfirmed)).toContain('Doomed note');
       expect(resultText(unconfirmed)).toContain('was not run');
@@ -1372,12 +1498,20 @@ describe('delete confirmation from a client without elicitation', () => {
   it('only advertises the confirmation argument on tools that require it', async () => {
     const client = await createClient(createApp(mcpAuthContext), notesScopes);
     try {
-      const byName = new Map((await client.listTools()).tools.map((tool) => [tool.name, tool]));
+      const details = new Map(
+        await Promise.all(
+          ['note_delete', 'note_get'].map(async (name) => {
+            const result = await client.callTool({ name: 'get_tool_details', arguments: { name } });
+            return [name, result.structuredContent] as const;
+          }),
+        ),
+      );
       const properties = (name: string) =>
         Object.keys(
           z
             .object({ properties: z.record(z.string(), z.unknown()) })
-            .parse(byName.get(name)?.inputSchema).properties,
+            .parse(z.object({ inputSchema: z.unknown() }).parse(details.get(name)).inputSchema)
+            .properties,
         ).sort();
 
       expect(properties('note_delete')).toEqual(['confirmToken', 'id']);
@@ -1457,6 +1591,201 @@ describe('delete confirmation from a client without elicitation', () => {
       expect(await noteExists(client, noteId)).toBe(false);
     } finally {
       await client.close();
+    }
+  });
+});
+
+describe('finance budget delete confirmation contract', () => {
+  const categoryId = randomUUID();
+  const budgetId = randomUUID();
+  const categoryName = 'MCP budget confirmation fixture';
+
+  beforeAll(async () => {
+    await db
+      .insertInto('app.financeCategories')
+      .values({ id: categoryId, userId: testUser.id, name: categoryName })
+      .execute();
+    await db
+      .insertInto('app.financeBudgets')
+      .values({
+        id: budgetId,
+        userId: testUser.id,
+        categoryId,
+        amountCents: 2500,
+        cadence: 'monthly',
+      })
+      .execute();
+  });
+
+  async function createWrapperFixture() {
+    const fixtureCategoryId = randomUUID();
+    const fixtureBudgetId = randomUUID();
+    await db
+      .insertInto('app.financeCategories')
+      .values({
+        id: fixtureCategoryId,
+        userId: testUser.id,
+        name: `MCP wrapper ${fixtureCategoryId}`,
+      })
+      .execute();
+    await db
+      .insertInto('app.financeBudgets')
+      .values({
+        id: fixtureBudgetId,
+        userId: testUser.id,
+        categoryId: fixtureCategoryId,
+        amountCents: 2500,
+        cadence: 'monthly',
+      })
+      .execute();
+    return {
+      budgetId: fixtureBudgetId,
+      cleanup: async () => {
+        await db.deleteFrom('app.financeBudgets').where('id', '=', fixtureBudgetId).execute();
+        await db.deleteFrom('app.financeCategories').where('id', '=', fixtureCategoryId).execute();
+      },
+    };
+  }
+
+  afterAll(async () => {
+    await db.deleteFrom('app.financeBudgets').where('id', '=', budgetId).execute();
+    await db.deleteFrom('app.financeCategories').where('id', '=', categoryId).execute();
+  });
+
+  it('types missing ids and previews existing deletions without writing', async () => {
+    const client = await createClient(createApp(mcpAuthContext), 'finance:read finance:write');
+    try {
+      const missing = await client.callTool({
+        name: 'finance_budget_delete',
+        arguments: { budgetId: randomUUID() },
+      });
+      expect(missing.isError).toBe(true);
+      expect(missing.structuredContent).toMatchObject({ code: 'not_found' });
+
+      const preview = await client.callTool({
+        name: 'finance_budget_delete',
+        arguments: { budgetId },
+      });
+      expect(preview.isError).toBe(true);
+      expect(preview.structuredContent).toMatchObject({
+        code: 'confirmation_required',
+        tool: 'finance_budget_delete',
+        preview: expect.objectContaining({ categoryName }),
+      });
+      await expect(
+        db.selectFrom('app.financeBudgets').select('id').where('id', '=', budgetId).execute(),
+      ).resolves.toHaveLength(1);
+
+      const dryRun = await client.callTool({
+        name: 'finance_budget_delete',
+        arguments: { budgetId, dryRun: true },
+      });
+      expect(dryRun.isError ?? false).toBe(false);
+      expect(dryRun.structuredContent).toMatchObject({
+        dryRun: true,
+        removed: false,
+        preview: [expect.objectContaining({ id: budgetId, categoryName })],
+      });
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('keeps budget reads available and returns distinct typed write errors', async () => {
+    const client = await createClient(createApp(mcpAuthContext), 'finance:read finance:write');
+    try {
+      const listed = await client.callTool({ name: 'finance_budget_list', arguments: {} });
+      expect(listed.isError ?? false).toBe(false);
+      expect(listed.structuredContent).toMatchObject({
+        primaryCurrency: null,
+        warning: expect.stringMatching(/primary currency is unset/i),
+      });
+
+      const currencyRequired = await client.callTool({
+        name: 'finance_budget_create',
+        arguments: { categoryId, amountCents: 3000, cadence: 'monthly' },
+      });
+      expect(currencyRequired.isError).toBe(true);
+      expect(currencyRequired.structuredContent).toMatchObject({ code: 'primary_currency_unset' });
+
+      const unknownMergeCategory = await client.callTool({
+        name: 'finance_category_merge',
+        arguments: { from: categoryName, into: 'Missing Merge Target', dryRun: true },
+      });
+      expect(unknownMergeCategory.isError).toBe(true);
+      expect(unknownMergeCategory.structuredContent).toMatchObject({ code: 'unknown_category' });
+
+      await expect(
+        db
+          .selectFrom('app.financeBudgets')
+          .select('id')
+          .where('categoryId', '=', categoryId)
+          .execute(),
+      ).resolves.toHaveLength(1);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it('confirms a wrapped write through the confirm-token arguments object', async () => {
+    const fixture = await createWrapperFixture();
+    const client = await createModernClientWithoutElicitation(
+      createApp(mcpAuthContext),
+      'finance:read finance:write',
+    );
+    try {
+      const confirm = await client.callTool({
+        name: 'call_write_tool',
+        arguments: {
+          name: 'finance_budget_delete',
+          arguments: { budgetId: fixture.budgetId },
+        },
+      });
+      const confirmation = z
+        .object({ code: z.literal('confirmation_required'), confirmToken: z.string() })
+        .parse(confirm.structuredContent);
+      expect(
+        confirm.content.map((item) => (item.type === 'text' ? item.text : '')).join('\n'),
+      ).toContain('call_write_tool with { name: "finance_budget_delete", arguments:');
+
+      const completed = await client.callTool({
+        name: 'call_write_tool',
+        arguments: {
+          name: 'finance_budget_delete',
+          arguments: {
+            budgetId: fixture.budgetId,
+            confirmToken: confirmation.confirmToken,
+          },
+        },
+      });
+      expect(completed.isError).not.toBe(true);
+      expect(completed.structuredContent).toMatchObject({ removed: true });
+    } finally {
+      await client.close();
+      await fixture.cleanup();
+    }
+  });
+
+  it('confirms a wrapped write through elicitation-capable clients', async () => {
+    const fixture = await createWrapperFixture();
+    const client = await createElicitingClient(
+      createApp(mcpAuthContext),
+      'accept',
+      'finance:read finance:write',
+    );
+    try {
+      const completed = await client.callTool({
+        name: 'call_write_tool',
+        arguments: {
+          name: 'finance_budget_delete',
+          arguments: { budgetId: fixture.budgetId },
+        },
+      });
+      expect(completed.isError).not.toBe(true);
+      expect(completed.structuredContent).toMatchObject({ removed: true });
+    } finally {
+      await client.close();
+      await fixture.cleanup();
     }
   });
 });

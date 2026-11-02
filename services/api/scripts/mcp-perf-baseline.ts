@@ -31,8 +31,13 @@ import { MCP_SCOPES } from '../src/scopes';
 
 const ITERATIONS = Number(process.env.MCP_PERF_ITERATIONS ?? 200);
 const WARMUP = 20;
+const BENCH_SCOPES = process.env.MCP_PERF_SCOPES
+  ? process.env.MCP_PERF_SCOPES.split(',')
+      .map((scope) => scope.trim())
+      .filter(Boolean)
+  : [...MCP_SCOPES];
 
-const BENCH_USER_ID = '00000000-0000-4000-8000-000000000000';
+const BENCH_USER_ID = process.env.MCP_PERF_USER_ID ?? '00000000-0000-4000-8000-000000000000';
 
 const auth: AuthContext = {
   user: {
@@ -47,7 +52,7 @@ const auth: AuthContext = {
   userId: BENCH_USER_ID,
   clientId: 'bench-client',
   credential: 'mcp-token',
-  scopes: [...MCP_SCOPES],
+  scopes: BENCH_SCOPES,
 };
 
 type Sample = number[];
@@ -186,7 +191,8 @@ async function main() {
   const listWireBytes = responseBytes.get('tools/list') ?? 0;
 
   console.log('MCP server perf baseline (in-process, no auth/rate-limit middleware)\n');
-  console.log(`registered tools: ${listToolsForScopes(MCP_SCOPES).length}`);
+  console.log(`granted scopes: ${BENCH_SCOPES.join(', ')}`);
+  console.log(`registered tools: ${listToolsForScopes(BENCH_SCOPES).length}`);
   console.log(
     `tools/list wire bytes: ${listWireBytes} (${(listWireBytes / 1024).toFixed(1)} KiB)\n`,
   );
@@ -233,7 +239,7 @@ async function main() {
   // createMcpServer. Timing them shows how much of the per-request cost is
   // left to `new McpServer()` + `registerTool` zod->JSON-Schema serialization.
   console.log('\nfactory internals (raw, no McpServer schema serialization):');
-  const definitions = listToolsForScopes(MCP_SCOPES);
+  const definitions = listToolsForScopes(BENCH_SCOPES);
   const describeOnlySamples: Sample = [];
   for (let i = 0; i < ITERATIONS; i += 1) {
     await time(async () => {
@@ -244,7 +250,7 @@ async function main() {
 
   const listOnlySamples: Sample = [];
   for (let i = 0; i < ITERATIONS; i += 1) {
-    await time(async () => listToolsForScopes(MCP_SCOPES), listOnlySamples);
+    await time(async () => listToolsForScopes(BENCH_SCOPES), listOnlySamples);
   }
   summarize('listToolsForScopes', listOnlySamples);
 
@@ -256,7 +262,8 @@ async function main() {
       node: process.version,
       mcpServer: pkgVersion('@modelcontextprotocol/server'),
       mcpClient: pkgVersion('@modelcontextprotocol/client'),
-      toolCount: listToolsForScopes(MCP_SCOPES).length,
+      toolCount: listToolsForScopes(BENCH_SCOPES).length,
+      scopes: BENCH_SCOPES,
       iterations: ITERATIONS,
       warmup: WARMUP,
       mode: 'stateless + json responseMode (createMcpHandler)',

@@ -1,3 +1,5 @@
+import { NotFoundError } from '@hominem/db/errors';
+
 import { updateBudget } from '../../../../application/finance-budgets.service';
 import {
   financeBudgetUpdateInputSchema,
@@ -10,7 +12,7 @@ export const financeBudgetUpdateTool = defineMcpTool(
     name: 'finance_budget_update',
     title: 'Finance Budget Update',
     description:
-      'Update a budget’s amount and/or cadence. Changing the cadence changes the calendar period the budget is measured over. Returns null when the id is not the caller’s budget. A change that would make the category’s tag budgets add up to more than its category budget is rejected in full, leaving the stored budgets unchanged.',
+      'Update a budget’s amount and/or cadence. Changing the cadence changes the calendar period the budget is measured over. Returns a typed not-found error when the id is not the caller’s budget. A change that would make the category’s tag budgets add up to more than its category budget is rejected in full, leaving the stored budgets unchanged. Set dryRun to preview the projected budget set and nested-sum validation without writing.',
     inputSchema: financeBudgetUpdateInputSchema,
     outputSchema: financeBudgetUpdateOutputSchema,
     readOnly: false,
@@ -30,9 +32,17 @@ export const financeBudgetUpdateTool = defineMcpTool(
   },
   async (ownerUserId, input) => {
     const { budgetId, amountCents, cadence } = input;
-    return updateBudget(ownerUserId, budgetId, {
-      ...(amountCents === undefined ? {} : { amountCents }),
-      ...(cadence === undefined ? {} : { cadence }),
-    });
+    const result = await updateBudget(
+      ownerUserId,
+      budgetId,
+      {
+        ...(amountCents === undefined ? {} : { amountCents }),
+        ...(cadence === undefined ? {} : { cadence }),
+      },
+      { dryRun: input.dryRun },
+    );
+    if (input.dryRun ? !result.preview : !result.budget)
+      throw new NotFoundError('Budget', { reason: 'not_found' });
+    return result;
   },
 );

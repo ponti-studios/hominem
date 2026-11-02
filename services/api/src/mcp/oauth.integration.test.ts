@@ -306,9 +306,26 @@ describe('MCP OAuth integration', () => {
     await expect(readMcpJson(toolsResponse)).resolves.toMatchObject({
       result: {
         tools: expect.arrayContaining([
-          expect.objectContaining({ name: 'career_profile' }),
-          expect.objectContaining({ name: 'career_engagements' }),
+          expect.objectContaining({ name: 'search_tools' }),
+          expect.objectContaining({ name: 'get_tool_details' }),
+          expect.objectContaining({ name: 'call_read_tool' }),
+          expect.objectContaining({ name: 'call_write_tool' }),
         ]),
+      },
+    });
+
+    const searchResponse = await mcpRequest(token.access_token, {
+      jsonrpc: '2.0',
+      id: 4,
+      method: 'tools/call',
+      params: { name: 'search_tools', arguments: { query: 'career engagements' } },
+    });
+    expect(searchResponse.status).toBe(200);
+    await expect(readMcpJson(searchResponse)).resolves.toMatchObject({
+      result: {
+        structuredContent: {
+          tools: expect.arrayContaining([expect.objectContaining({ name: 'career_engagements' })]),
+        },
       },
     });
 

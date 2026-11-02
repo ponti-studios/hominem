@@ -1,3 +1,5 @@
+import { NotFoundError } from '@hominem/db/errors';
+
 import { createBudget } from '../../../../application/finance-budgets.service';
 import {
   financeBudgetCreateInputSchema,
@@ -10,7 +12,7 @@ export const financeBudgetCreateTool = defineMcpTool(
     name: 'finance_budget_create',
     title: 'Finance Budget Create',
     description:
-      'Create the budget for a category (omit tagId), or a tag budget nested inside that category (set tagId), or update that scope’s existing budget if one exists — a category has one budget and each tag inside it has one. The budget carries its own cadence (weekly, monthly, quarterly, annual) and its period is the matching calendar period. It has no currency of its own: the amount is in the profile primary currency, and spent is computed from transactions at read time. A save that would make the category’s tag budgets add up to more than its category budget is rejected in full.',
+      'Create the budget for a category (omit tagId), or a tag budget nested inside that category (set tagId), or update that scope’s existing budget if one exists — a category has one budget and each tag inside it has one. The budget carries its own cadence (weekly, monthly, quarterly, annual) and its period is the matching calendar period. It has no currency of its own: the amount is in the profile primary currency, and spent is computed from transactions at read time. A save that would make the category’s tag budgets add up to more than its category budget is rejected in full. Set dryRun to preview the complete projected set and nested-sum validation without writing.',
     inputSchema: financeBudgetCreateInputSchema,
     outputSchema: financeBudgetCreateOutputSchema,
     readOnly: false,
@@ -38,5 +40,11 @@ export const financeBudgetCreateTool = defineMcpTool(
       produces: ['budget', 'current period status'],
     },
   },
-  async (ownerUserId, input) => createBudget(ownerUserId, input),
+  async (ownerUserId, input) => {
+    const result = await createBudget(ownerUserId, input);
+    if (result.reason === 'unknown_category') {
+      throw new NotFoundError('Finance category', { reason: 'unknown_category' });
+    }
+    return result;
+  },
 );
