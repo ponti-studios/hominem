@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const financeMonthlySummaryQuerySchema = z.object({
-  month: z.string().regex(/^\d{4}-\d{2}$/),
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
   limit: z.coerce.number().int().min(1).max(50).default(25),
 });
 
@@ -36,15 +36,8 @@ export const financeMonthlySummarySchema = z.object({
 
 // ── MCP tools ────────────────────────────────────────────────────────
 
-function isIsoDate(value: string): boolean {
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
-}
-
-const isoDateSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).')
-  .refine(isIsoDate, 'Invalid ISO date.');
+const isoDateSchema = z.iso.date().describe('ISO calendar date in YYYY-MM-DD format.');
+const financeAccountIdSchema = z.string().uuid();
 
 const mcpLimitSchema = z.number().int().min(1).max(50);
 
@@ -112,11 +105,10 @@ export const financeTransactionSchema = z.object({
 
 export const financeRecentTransactionsInputSchema = z
   .object({
-    accountId: z
-      .string()
+    accountId: financeAccountIdSchema
       .optional()
       .describe(
-        'Optional. Omit to include every account; set only to narrow to one account ID a finance tool returned.',
+        'Optional. Omit to include every account; set only to narrow to one account UUID returned by a finance tool.',
       ),
     from: isoDateSchema
       .optional()
@@ -210,11 +202,9 @@ function rejectInvertedRange(
   }
 }
 
-const accountIdField = z
-  .string()
-  .uuid()
+const accountIdField = financeAccountIdSchema
   .optional()
-  .describe('Stable account ID returned by finance_accounts.');
+  .describe('Stable account UUID returned by finance_accounts.');
 
 const tagField = z
   .string()
@@ -826,7 +816,7 @@ export const financeBudgetGetOutputSchema = z.object({
 export const financeBudgetCreateInputSchema = z
   .object({
     categoryId: budgetCategoryIdSchema.describe(
-      'Category id from finance_categories. Every budget belongs to a category.',
+      'Category UUID from finance_categories. Dry runs may also use a preview-category placeholder.',
     ),
     tagId: z
       .string()
@@ -1051,11 +1041,15 @@ export const financeCategoriesOutputSchema = z.object({
 // -- finance_transaction_upsert --
 
 const sheetTransactionPayloadSchema = z.object({
-  postedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected an ISO date (YYYY-MM-DD).'),
-  account: z.string().min(1).describe('Sheet Bank label or a Hominem account id.'),
+  postedOn: isoDateSchema,
+  account: z
+    .string()
+    .trim()
+    .min(1)
+    .describe('Sheet bank label or account UUID returned by finance_accounts.'),
   description: z.string().min(1).describe('Merchant text.'),
   amountCents: z.number().int().describe('Signed amount in cents; negative = outflow.'),
-  currencyCode: z.string().min(3).max(3).describe('ISO-4217 code.'),
+  currencyCode: accountCurrencySchema.describe('ISO-4217 currency code, e.g. GBP or USD.'),
   category: z
     .string()
     .nullable()
@@ -1090,10 +1084,7 @@ const sheetTransactionPayloadSchema = z.object({
     .describe(
       'For a foreign-currency row, the amount actually charged in settledCurrencyCode, in cents. Budgets count the row at this amount; omit only when the record carries no settled amount.',
     ),
-  settledCurrencyCode: z
-    .string()
-    .min(3)
-    .max(3)
+  settledCurrencyCode: accountCurrencySchema
     .nullable()
     .optional()
     .describe('ISO-4217 currency of settledAmountCents; set together with it.'),
@@ -1101,9 +1092,9 @@ const sheetTransactionPayloadSchema = z.object({
 
 export const financeTransactionUpsertInputSchema = sheetTransactionPayloadSchema.extend({
   accountMap: z
-    .record(z.string(), z.string())
+    .record(z.string(), financeAccountIdSchema)
     .optional()
-    .describe('Explicit { "Sheet Label": "hominem-account-id" } overrides.'),
+    .describe('Explicit { "Sheet Label": "hominem-account-uuid" } overrides.'),
 });
 
 const sheetRejectionReasonSchema = z.enum([
@@ -1142,9 +1133,9 @@ export const financeTransactionsImportInputSchema = z.object({
     .default(false)
     .describe('Explicit confirmation for mode: "replace", which wipes the store first.'),
   accountMap: z
-    .record(z.string(), z.string())
+    .record(z.string(), financeAccountIdSchema)
     .optional()
-    .describe('Explicit { "Sheet Label": "hominem-account-id" } overrides.'),
+    .describe('Explicit { "Sheet Label": "hominem-account-uuid" } overrides.'),
 });
 
 export const financeTransactionsImportOutputSchema = z.object({
@@ -1482,8 +1473,7 @@ export const financeAccountUpdateInputSchema = z.object({
     .enum(['open', 'closed', 'historical', 'unknown'])
     .optional()
     .describe('Lifecycle status; transitions are unrestricted.'),
-  currencyCode: z
-    .string()
+  currencyCode: accountCurrencySchema
     .optional()
     .describe('Immutable through this tool — any change is refused with currency_immutable.'),
   allowedCurrencies: z

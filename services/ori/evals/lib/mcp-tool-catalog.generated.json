@@ -3228,7 +3228,8 @@
           },
           "currencyCode": {
             "description": "Immutable through this tool — any change is refused with currency_immutable.",
-            "type": "string"
+            "type": "string",
+            "pattern": "^[A-Za-z]{3}$"
           },
           "allowedCurrencies": {
             "description": "Full set of currencies this account may hold; currencyCode is always included.",
@@ -3321,7 +3322,7 @@
                 "pattern": "^preview-category:[A-Za-z0-9_-]+:[a-f0-9]{16}$"
               }
             ],
-            "description": "Category id from finance_categories. Every budget belongs to a category."
+            "description": "Category UUID from finance_categories. Dry runs may also use a preview-category placeholder."
           },
           "tagId": {
             "description": "Set to budget a tag inside this category (the composition layer). Omit for the category budget itself, which is the breach line.",
@@ -3637,12 +3638,14 @@
           "from": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD); defaults to 30 days ago.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "to": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD); defaults to today.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "limit": {
             "default": 25,
@@ -3730,18 +3733,22 @@
         "type": "object",
         "properties": {
           "accountId": {
-            "description": "Optional. Omit to include every account; set only to narrow to one account ID a finance tool returned.",
-            "type": "string"
+            "description": "Optional. Omit to include every account; set only to narrow to one account UUID returned by a finance tool.",
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "from": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "to": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "limit": {
             "default": 20,
@@ -3924,7 +3931,8 @@
           "asOf": {
             "description": "Projection start date. Defaults to today.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           }
         },
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3944,12 +3952,14 @@
           "from": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "to": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "limit": {
             "default": 20,
@@ -3976,15 +3986,17 @@
           "from": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "to": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "accountId": {
-            "description": "Stable account ID returned by finance_accounts.",
+            "description": "Stable account UUID returned by finance_accounts.",
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -4069,15 +4081,17 @@
           "from": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "to": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "accountId": {
-            "description": "Stable account ID returned by finance_accounts.",
+            "description": "Stable account UUID returned by finance_accounts.",
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -4178,15 +4192,17 @@
           "from": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "to": {
             "description": "Inclusive ISO calendar date (YYYY-MM-DD) in the user timezone.",
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
           },
           "accountId": {
-            "description": "Stable account ID returned by finance_accounts.",
+            "description": "Stable account UUID returned by finance_accounts.",
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -4237,12 +4253,14 @@
         "properties": {
           "postedOn": {
             "type": "string",
-            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+            "description": "ISO calendar date in YYYY-MM-DD format."
           },
           "account": {
             "type": "string",
             "minLength": 1,
-            "description": "Sheet Bank label or a Hominem account id."
+            "description": "Sheet bank label or account UUID returned by finance_accounts."
           },
           "description": {
             "type": "string",
@@ -4257,9 +4275,8 @@
           },
           "currencyCode": {
             "type": "string",
-            "minLength": 3,
-            "maxLength": 3,
-            "description": "ISO-4217 code."
+            "pattern": "^[A-Za-z]{3}$",
+            "description": "ISO-4217 currency code, e.g. GBP or USD."
           },
           "category": {
             "description": "Sheet Category name; blank/unknown → Uncategorized.",
@@ -4351,8 +4368,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "minLength": 3,
-                "maxLength": 3
+                "pattern": "^[A-Za-z]{3}$"
               },
               {
                 "type": "null"
@@ -4360,13 +4376,15 @@
             ]
           },
           "accountMap": {
-            "description": "Explicit { \"Sheet Label\": \"hominem-account-id\" } overrides.",
+            "description": "Explicit { \"Sheet Label\": \"hominem-account-uuid\" } overrides.",
             "type": "object",
             "propertyNames": {
               "type": "string"
             },
             "additionalProperties": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           }
         },
@@ -4400,12 +4418,14 @@
               "properties": {
                 "postedOn": {
                   "type": "string",
-                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+                  "description": "ISO calendar date in YYYY-MM-DD format."
                 },
                 "account": {
                   "type": "string",
                   "minLength": 1,
-                  "description": "Sheet Bank label or a Hominem account id."
+                  "description": "Sheet bank label or account UUID returned by finance_accounts."
                 },
                 "description": {
                   "type": "string",
@@ -4420,9 +4440,8 @@
                 },
                 "currencyCode": {
                   "type": "string",
-                  "minLength": 3,
-                  "maxLength": 3,
-                  "description": "ISO-4217 code."
+                  "pattern": "^[A-Za-z]{3}$",
+                  "description": "ISO-4217 currency code, e.g. GBP or USD."
                 },
                 "category": {
                   "description": "Sheet Category name; blank/unknown → Uncategorized.",
@@ -4514,8 +4533,7 @@
                   "anyOf": [
                     {
                       "type": "string",
-                      "minLength": 3,
-                      "maxLength": 3
+                      "pattern": "^[A-Za-z]{3}$"
                     },
                     {
                       "type": "null"
@@ -4551,13 +4569,15 @@
             "type": "boolean"
           },
           "accountMap": {
-            "description": "Explicit { \"Sheet Label\": \"hominem-account-id\" } overrides.",
+            "description": "Explicit { \"Sheet Label\": \"hominem-account-uuid\" } overrides.",
             "type": "object",
             "propertyNames": {
               "type": "string"
             },
             "additionalProperties": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           }
         },

@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 
 import { executeFixtureTool } from './mcp-fixtures';
-import { tools, toolsByDomain } from './mcp-tool-catalog';
+import { allTools, tools, toolsByDomain } from './mcp-tool-catalog';
 
 test('an eval case can provide its own tool result without changing shared fixtures', () => {
   const fixture = {
@@ -27,4 +27,30 @@ test('tool surfaces are declared by the eval case', () => {
     false,
   );
   expect(toolsByDomain.travelPresence[0]?.function.name).toEqual('travel_countries');
+});
+
+test('finance MCP schemas expose UUID, date, and currency constraints to agents', () => {
+  const parameters = (name: string) =>
+    allTools.find((tool) => tool.function.name === name)?.function.parameters;
+
+  expect(parameters('finance_recent_transactions')?.properties).toMatchObject({
+    accountId: { type: 'string', format: 'uuid', pattern: expect.any(String) },
+    from: { type: 'string', format: 'date', pattern: expect.any(String) },
+  });
+  expect(parameters('finance_transactions_import')?.properties).toMatchObject({
+    transactions: {
+      items: {
+        properties: {
+          postedOn: { type: 'string', format: 'date', pattern: expect.any(String) },
+          currencyCode: { type: 'string', pattern: '^[A-Za-z]{3}$' },
+          settledCurrencyCode: {
+            anyOf: [{ type: 'string', pattern: '^[A-Za-z]{3}$' }, { type: 'null' }],
+          },
+        },
+      },
+    },
+    accountMap: {
+      additionalProperties: { type: 'string', format: 'uuid', pattern: expect.any(String) },
+    },
+  });
 });
