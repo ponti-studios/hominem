@@ -41,7 +41,8 @@ export const financeBudgetUpdateTool = defineMcpTool(
       },
       { dryRun: input.dryRun },
     );
-    if (!input.dryRun && !result.budget) throw new NotFoundError('Budget', { reason: 'not_found' });
+    if (input.dryRun ? !result.preview : !result.budget)
+      throw new NotFoundError('Budget', { reason: 'not_found' });
     return result;
   },
 );

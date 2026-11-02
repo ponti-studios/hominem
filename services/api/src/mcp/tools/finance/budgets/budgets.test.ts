@@ -3,6 +3,7 @@ import { ValidationError } from '@hominem/db/errors';
 import { FinanceBudgetRepository } from '@hominem/db/finance';
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from '@hominem/finance-services';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import { seedBudgetsOfRecord, getBudget } from '../../../../application/finance-budgets.service';
 import { callTool, type McpToolResult } from '../../../tool-registry';
@@ -649,6 +650,51 @@ describe('finance_budget_update / get / delete', () => {
         budgetId: 'f20000e4-0000-4000-8000-000000000099',
       }),
     ).rejects.toMatchObject({ details: { reason: 'not_found' } });
+    await expect(
+      callTool(userId, 'finance_budget_update', {
+        budgetId: 'f20000e4-0000-4000-8000-000000000099',
+        amountCents: 500,
+        dryRun: true,
+      }),
+    ).rejects.toMatchObject({ details: { reason: 'not_found' } });
+    await expect(
+      callTool(userId, 'finance_budget_delete', {
+        budgetId: 'f20000e4-0000-4000-8000-000000000099',
+        dryRun: true,
+      }),
+    ).rejects.toMatchObject({ details: { reason: 'not_found' } });
+  });
+
+  it('includes nested tag budgets in the complete bounded delete preview', async () => {
+    const tagId = await insertTag('Delete Preview Tag');
+    const categoryBudget = content(
+      await callTool(userId, 'finance_budget_create', {
+        categoryId: diningId,
+        amountCents: 10_000,
+        cadence: 'monthly',
+      }),
+    ).budget;
+    const tagBudget = content(
+      await callTool(userId, 'finance_budget_create', {
+        categoryId: diningId,
+        tagId,
+        amountCents: 2_000,
+        cadence: 'monthly',
+      }),
+    ).budget;
+    expect(categoryBudget).toBeTruthy();
+    expect(tagBudget).toBeTruthy();
+
+    const result = await callTool(userId, 'finance_budget_delete', {
+      budgetId: categoryBudget!.id,
+      dryRun: true,
+    });
+    const preview = z.array(z.object({ id: z.string() })).parse(result.structuredContent?.preview);
+
+    expect(preview).toHaveLength(2);
+    expect(preview.map((item) => item.id)).toEqual(
+      expect.arrayContaining([categoryBudget!.id, tagBudget!.id]),
+    );
   });
 
   it('previews update and delete without changing stored budgets', async () => {

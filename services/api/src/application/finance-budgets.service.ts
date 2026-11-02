@@ -23,6 +23,8 @@ import {
   type BudgetPeriod,
 } from './finance-budget-periods';
 
+export const MAX_BUDGETS_IN_DELETE_PREVIEW = 500;
+
 /** The two budgets of record, seeded as the first budget rows. */
 export const BUDGETS_OF_RECORD = [
   { categoryName: 'Groceries', amountCents: 25_000, cadence: 'monthly' },
@@ -602,8 +604,19 @@ export async function deleteBudget(
     if (!budget) return { removed: false, dryRun: true, preview: [] };
     const affected =
       budget.tagId === null
-        ? await FinanceBudgetRepository.listByCategory(db, ownerUserId, budget.categoryId)
+        ? await FinanceBudgetRepository.listByCategory(
+            db,
+            ownerUserId,
+            budget.categoryId,
+            MAX_BUDGETS_IN_DELETE_PREVIEW + 1,
+          )
         : [budget];
+    if (affected.length > MAX_BUDGETS_IN_DELETE_PREVIEW) {
+      throw new ValidationError('Budget delete preview exceeds its result cap.', {
+        reason: 'result_cap_exceeded',
+        resultCap: MAX_BUDGETS_IN_DELETE_PREVIEW,
+      });
+    }
     return {
       removed: false,
       dryRun: true,

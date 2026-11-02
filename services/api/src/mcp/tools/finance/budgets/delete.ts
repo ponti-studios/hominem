@@ -1,6 +1,10 @@
 import { NotFoundError } from '@hominem/db/errors';
 
-import { deleteBudget, getBudgetPreview } from '../../../../application/finance-budgets.service';
+import {
+  deleteBudget,
+  getBudgetPreview,
+  MAX_BUDGETS_IN_DELETE_PREVIEW,
+} from '../../../../application/finance-budgets.service';
 import {
   financeBudgetDeleteInputSchema,
   financeBudgetDeleteOutputSchema,
@@ -20,7 +24,7 @@ export const financeBudgetDeleteTool = defineMcpTool(
     destructive: true,
     idempotent: true,
     requiresConfirmation: true,
-    resultCap: 1,
+    resultCap: MAX_BUDGETS_IN_DELETE_PREVIEW,
     guidance: {
       whenToUse: 'The user no longer wants a budget for that category or tag.',
       whenNotToUse: 'Do not delete a budget to change its amount or cadence; update it instead.',
@@ -44,7 +48,10 @@ export const financeBudgetDeleteTool = defineMcpTool(
   },
   async (ownerUserId, input) => {
     const result = await deleteBudget(ownerUserId, input.budgetId, { dryRun: input.dryRun });
-    if (input.dryRun) return result;
+    if (input.dryRun) {
+      if (result.preview.length === 0) throw new NotFoundError('Budget', { reason: 'not_found' });
+      return result;
+    }
     if (!result.removed) throw new NotFoundError('Budget', { reason: 'not_found' });
     return result;
   },

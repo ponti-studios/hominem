@@ -198,19 +198,21 @@ function buildConfirmTokenResult(
   definition: CapabilityDefinition,
   preview: ChatMessageJsonObject | undefined,
   token: string,
+  invocationName: string,
 ): CallToolResult {
   const previewText =
     preview === undefined
       ? ''
       : ` This is exactly what it will affect: ${JSON.stringify(preview)}.`;
+  const retryInstruction =
+    invocationName === 'call_write_tool'
+      ? `To complete it, call call_write_tool with { name: ${JSON.stringify(definition.name)}, arguments: { ...same arguments, ${CONFIRM_TOKEN_KEY}: ${JSON.stringify(token)} } }.`
+      : `To complete it, call ${definition.name} again with the same arguments plus ${CONFIRM_TOKEN_KEY}: ${JSON.stringify(token)}.`;
   return {
     content: [
       {
         type: 'text',
-        text:
-          `${definition.name} was not run: it needs confirmation.${previewText} ` +
-          `Nothing has been changed. To complete it, call ${definition.name} again with the ` +
-          `same arguments plus ${CONFIRM_TOKEN_KEY}: ${JSON.stringify(token)}.`,
+        text: `${definition.name} was not run: it needs confirmation.${previewText} Nothing has been changed. ${retryInstruction}`,
       },
     ],
     structuredContent: {
@@ -302,7 +304,7 @@ async function invokeTool(
 }
 
 function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: AuthInfo) {
-  return async (args: unknown, ctx: ServerContext) => {
+  return async (args: unknown, ctx: ServerContext, invocationName = definition.name) => {
     const context = resolveRequestContext(ctx.http?.authInfo ?? fallbackAuthInfo);
     if (!context) {
       return createErrorResult('authentication_required', 'Authentication required');
@@ -374,7 +376,7 @@ function createToolHandler(definition: CapabilityDefinition, fallbackAuthInfo?: 
             { tool: definition.name, args: chatMessageJsonObjectSchema.parse(args) },
             ctx,
           );
-          return buildConfirmTokenResult(definition, preview, token);
+          return buildConfirmTokenResult(definition, preview, token, invocationName);
         }
         const message = definition.preview
           ? `Confirm: ${definition.title} — ${JSON.stringify(preview)}`
@@ -551,7 +553,7 @@ function createMcpServer(authInfo?: AuthInfo) {
       if (!definition || definition.readOnly !== readOnly) {
         return createErrorResult('unknown_tool', 'Unknown or unavailable tool.');
       }
-      return createToolHandler(definition, authInfo)(args, ctx);
+      return createToolHandler(definition, authInfo)(args, ctx, 'call_write_tool');
     });
   }
 

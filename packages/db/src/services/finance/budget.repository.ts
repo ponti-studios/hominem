@@ -408,14 +408,15 @@ export const FinanceBudgetRepository = {
     handle: DbHandle,
     ownerUserId: string,
     categoryId: string,
+    limit?: number,
   ): Promise<FinanceBudgetRecord[]> {
-    const rows = await budgetsQuery(handle)
+    const query = budgetsQuery(handle)
       .select(BUDGET_COLUMNS)
       .where('budget.userId', '=', ownerUserId)
       .where('budget.categoryId', '=', categoryId)
       .where('category.userId', '=', ownerUserId)
-      .orderBy(sql`budget.tag_id asc nulls first`)
-      .execute();
+      .orderBy(sql`budget.tag_id asc nulls first`);
+    const rows = await (limit === undefined ? query : query.limit(limit)).execute();
     return rows.map(toBudget);
   },
 

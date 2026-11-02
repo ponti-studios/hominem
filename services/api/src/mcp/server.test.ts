@@ -1617,6 +1617,36 @@ describe('finance budget delete confirmation contract', () => {
       .execute();
   });
 
+  async function createWrapperFixture() {
+    const fixtureCategoryId = randomUUID();
+    const fixtureBudgetId = randomUUID();
+    await db
+      .insertInto('app.financeCategories')
+      .values({
+        id: fixtureCategoryId,
+        userId: testUser.id,
+        name: `MCP wrapper ${fixtureCategoryId}`,
+      })
+      .execute();
+    await db
+      .insertInto('app.financeBudgets')
+      .values({
+        id: fixtureBudgetId,
+        userId: testUser.id,
+        categoryId: fixtureCategoryId,
+        amountCents: 2500,
+        cadence: 'monthly',
+      })
+      .execute();
+    return {
+      budgetId: fixtureBudgetId,
+      cleanup: async () => {
+        await db.deleteFrom('app.financeBudgets').where('id', '=', fixtureBudgetId).execute();
+        await db.deleteFrom('app.financeCategories').where('id', '=', fixtureCategoryId).execute();
+      },
+    };
+  }
+
   afterAll(async () => {
     await db.deleteFrom('app.financeBudgets').where('id', '=', budgetId).execute();
     await db.deleteFrom('app.financeCategories').where('id', '=', categoryId).execute();
@@ -1694,6 +1724,68 @@ describe('finance budget delete confirmation contract', () => {
       ).resolves.toHaveLength(1);
     } finally {
       await client.close();
+    }
+  });
+
+  it('confirms a wrapped write through the confirm-token arguments object', async () => {
+    const fixture = await createWrapperFixture();
+    const client = await createModernClientWithoutElicitation(
+      createApp(mcpAuthContext),
+      'finance:read finance:write',
+    );
+    try {
+      const confirm = await client.callTool({
+        name: 'call_write_tool',
+        arguments: {
+          name: 'finance_budget_delete',
+          arguments: { budgetId: fixture.budgetId },
+        },
+      });
+      const confirmation = z
+        .object({ code: z.literal('confirmation_required'), confirmToken: z.string() })
+        .parse(confirm.structuredContent);
+      expect(
+        confirm.content.map((item) => (item.type === 'text' ? item.text : '')).join('\n'),
+      ).toContain('call_write_tool with { name: "finance_budget_delete", arguments:');
+
+      const completed = await client.callTool({
+        name: 'call_write_tool',
+        arguments: {
+          name: 'finance_budget_delete',
+          arguments: {
+            budgetId: fixture.budgetId,
+            confirmToken: confirmation.confirmToken,
+          },
+        },
+      });
+      expect(completed.isError).not.toBe(true);
+      expect(completed.structuredContent).toMatchObject({ removed: true });
+    } finally {
+      await client.close();
+      await fixture.cleanup();
+    }
+  });
+
+  it('confirms a wrapped write through elicitation-capable clients', async () => {
+    const fixture = await createWrapperFixture();
+    const client = await createElicitingClient(
+      createApp(mcpAuthContext),
+      'accept',
+      'finance:read finance:write',
+    );
+    try {
+      const completed = await client.callTool({
+        name: 'call_write_tool',
+        arguments: {
+          name: 'finance_budget_delete',
+          arguments: { budgetId: fixture.budgetId },
+        },
+      });
+      expect(completed.isError).not.toBe(true);
+      expect(completed.structuredContent).toMatchObject({ removed: true });
+    } finally {
+      await client.close();
+      await fixture.cleanup();
     }
   });
 });
