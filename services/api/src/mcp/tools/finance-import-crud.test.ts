@@ -688,6 +688,38 @@ describe('finance_transactions_import', () => {
       .execute();
   });
 
+  it('dryRun counts settlement-only changes', async () => {
+    const original = {
+      postedOn: '2026-10-11',
+      account: gbpId,
+      description: 'Settlement Preview',
+      amountCents: -500,
+      currencyCode: 'GBP',
+      externalId: 'settlement-preview-1',
+    };
+    await callTool(userId, 'finance_transactions_import', { transactions: [original] });
+
+    const settled = {
+      ...original,
+      settledAmountCents: 645,
+      settledCurrencyCode: 'USD',
+    };
+    const preview = await callTool(userId, 'finance_transactions_import', {
+      dryRun: true,
+      transactions: [settled],
+    });
+    expect(content(preview)).toMatchObject({ created: 0, updated: 1 });
+
+    await callTool(userId, 'finance_transactions_import', { transactions: [settled] });
+    const stored = await db
+      .selectFrom('app.financeTransactions')
+      .select(['settledAmount', 'settledCurrencyCode'])
+      .where('userId', '=', userId)
+      .where('externalId', '=', original.externalId)
+      .executeTakeFirstOrThrow();
+    expect(stored).toMatchObject({ settledAmount: 6.45, settledCurrencyCode: 'USD' });
+  });
+
   it('updates merchantName when an explicit provider identity corrects description', async () => {
     const row = {
       postedOn: '2026-10-11',

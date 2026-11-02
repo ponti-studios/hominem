@@ -24,6 +24,8 @@ Read the relevant doc before changing a system boundary. Package READMEs are set
 
 For PostgreSQL connection details, see [Database access](./docs/database.md). For plans, prices,
 and the tier limits the API enforces, see [Billing and paid tiers](./docs/billing.md).
+For stored category budgets, their cadences, rollover and currency rules, see
+[Finance budgets](./docs/finance-budgets.md).
 For the visual direction used when restyling Hominem browser pages, see
 [Web design direction](./docs/web-design-direction.md).
 
