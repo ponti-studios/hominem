@@ -70,6 +70,11 @@ function mergeResponse(result: MergeFinanceCategoriesResult, dryRun: boolean) {
       ? { amount: budgetMerge.budget.amountCents / 100, cadence: budgetMerge.budget.cadence }
       : null,
     sourceBudgetCount: budgetMerge.sourceBudgetCount,
+    tagBudgets: budgetMerge.tagBudgets.map((budget) => ({
+      tagId: budget.tagId,
+      amount: budget.amountCents / 100,
+      cadence: budget.cadence,
+    })),
     monthlyRunwayBudgets: budgetMerge.monthlyRunwayBudgets.map((budget) => ({
       currencyCode: budget.currencyCode,
       amount: budget.amountCents / 100,
@@ -487,7 +492,7 @@ registerTool(
     name: 'finance_category_merge',
     title: 'Finance Category Merge',
     description:
-      'Merge one or more categories into a target in three ordered stages: preserve (a tag naming each source is put on its transactions), repoint (automation rules filing into a source are rewritten to the target), merge (transactions move, budgets are added in the target cadence, and the sources are removed). The target keeps its cadence; if it has no budget, the first budgeted source supplies the cadence. Source amounts are converted from their own cadences before addition. Uncategorized may be a target, never a source. Any rule that still names a source blocks the merge and is listed by name, and so does a source whose transactions are not yet tagged. stage runs all three stages by default, or one at a time. dryRun reports the budget result without writing.',
+      'Merge one or more categories into a target in three ordered stages: preserve (a tag naming each source is put on its transactions), repoint (automation rules filing into a source are rewritten to the target), merge (transactions move, category budgets are added in the target cadence, tag budgets are added by tag and cadence, and the sources are removed). For each budget, an existing target keeps its cadence; otherwise the first budgeted source supplies it. Source amounts are converted from their own cadences before addition. Uncategorized may be a target, never a source. Any rule that still names a source blocks the merge and is listed by name, and so does a source whose transactions are not yet tagged. stage runs all three stages by default, or one at a time. dryRun reports the budget result without writing.',
     inputSchema: financeCategoryMergeInputSchema,
     outputSchema: financeCategoryMergeOutputSchema,
     destructive: true,
@@ -522,6 +527,11 @@ registerTool(
                   cadence: result.budgetMerge.budget.cadence,
                 }
               : null,
+            tagBudgets: result.budgetMerge.tagBudgets.map((budget) => ({
+              tagId: budget.tagId,
+              amount: budget.amountCents / 100,
+              cadence: budget.cadence,
+            })),
             monthlyRunwayBudgets: result.budgetMerge.monthlyRunwayBudgets.map((budget) => ({
               currencyCode: budget.currencyCode,
               amount: budget.amountCents / 100,

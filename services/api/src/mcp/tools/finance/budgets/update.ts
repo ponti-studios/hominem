@@ -10,7 +10,7 @@ export const financeBudgetUpdateTool = defineMcpTool(
     name: 'finance_budget_update',
     title: 'Finance Budget Update',
     description:
-      'Update a budget’s amount and/or cadence. Changing the cadence changes the calendar period the budget is measured over. Returns null when the id is not the caller’s budget.',
+      'Update a budget’s amount and/or cadence. Changing the cadence changes the calendar period the budget is measured over. Returns null when the id is not the caller’s budget. A change that would make the category’s tag budgets add up to more than its category budget is rejected in full, leaving the stored budgets unchanged.',
     inputSchema: financeBudgetUpdateInputSchema,
     outputSchema: financeBudgetUpdateOutputSchema,
     readOnly: false,
@@ -20,7 +20,8 @@ export const financeBudgetUpdateTool = defineMcpTool(
     resultCap: 1,
     guidance: {
       whenToUse: 'The user changes a budget’s limit or moves it to a different cadence.',
-      whenNotToUse: 'Do not use to create a budget; there is one budget per category.',
+      whenNotToUse:
+        'Do not use to create a budget; a category and each tag inside it have one budget.',
       dependencies: [
         { tool: 'finance_budget_list', reason: 'resolve the budget id', provides: ['id'] },
       ],

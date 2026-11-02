@@ -3305,7 +3305,7 @@
     "type": "function",
     "function": {
       "name": "finance_budget_create",
-      "description": "Create the single budget for a category, or update that category’s existing budget if one exists — a category never has two budgets. The budget carries its own cadence (weekly, monthly, quarterly, annual) and its period is the matching calendar period. It has no currency of its own: the amount is in the profile primary currency, and spent is computed from transactions at read time. Mode: write. Use when: The user states a spending limit for a spending category, e.g. \"keep travel to £4,000 a year\". Do not use when: Do not create tag-level or merchant-level budgets (they do not exist), and do not pass a currency — the budget uses the profile primary currency. Set that with finance_primary_currency_set first if it is not set.  Prerequisites: finance_categories (resolve the category id, since budgets exist only at category level).  Produces: budget, current period status.",
+      "description": "Create the budget for a category (omit tagId), or a tag budget nested inside that category (set tagId), or update that scope’s existing budget if one exists — a category has one budget and each tag inside it has one. The budget carries its own cadence (weekly, monthly, quarterly, annual) and its period is the matching calendar period. It has no currency of its own: the amount is in the profile primary currency, and spent is computed from transactions at read time. A save that would make the category’s tag budgets add up to more than its category budget is rejected in full. Mode: write. Use when: The user states a spending limit for a spending category, e.g. \"keep travel to £4,000 a year\", or for a tag inside it, e.g. \"£80 a month on coffee within food\". Do not use when: Do not pass a currency — the budget uses the profile primary currency, set with finance_primary_currency_set. When setting a category together with several of its tag budgets, use finance_budget_set so the whole set is validated and saved atomically.  Prerequisites: finance_categories (resolve the category id, since every budget belongs to a category); finance_tag_breakdown (resolve the tag id when budgeting a tag inside the category).  Produces: budget, current period status.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -3313,7 +3313,13 @@
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-            "description": "Category id from finance_categories. Budgets exist only at category level."
+            "description": "Category id from finance_categories. Every budget belongs to a category."
+          },
+          "tagId": {
+            "description": "Set to budget a tag inside this category (the composition layer). Omit for the category budget itself, which is the breach line.",
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "amountCents": {
             "type": "integer",
@@ -3330,7 +3336,7 @@
         "$schema": "http://json-schema.org/draft-07/schema#",
         "required": ["categoryId", "amountCents", "cadence"],
         "additionalProperties": false,
-        "description": "Create or replace the single budget for a category. Takes no currency: the budget is denominated in the profile primary currency, and no tag or merchant budget exists."
+        "description": "Create or replace one budget: the category budget (omit tagId) or a tag budget nested inside that category (set tagId). Takes no currency. The sum of a category’s tag budgets may not exceed its category budget."
       }
     }
   },
@@ -3338,7 +3344,7 @@
     "type": "function",
     "function": {
       "name": "finance_budget_delete",
-      "description": "Delete a category budget. The budget’s transactions are untouched — a budget is a limit, not a movement of money. The MCP server asks for confirmation before deletion. Mode: write, confirmation required. Use when: The user no longer wants a budget for that category. Do not use when: Do not delete a budget to change its amount or cadence; update it instead.  Prerequisites: finance_budget_list (resolve the budget id).",
+      "description": "Delete a budget — a category budget or one of its tag budgets. Deleting a category budget also deletes the tag budgets nested inside it. The budget’s transactions are untouched — a budget is a limit, not a movement of money. The MCP server asks for confirmation before deletion. Mode: write, confirmation required. Use when: The user no longer wants a budget for that category or tag. Do not use when: Do not delete a budget to change its amount or cadence; update it instead.  Prerequisites: finance_budget_list (resolve the budget id).",
       "parameters": {
         "type": "object",
         "properties": {
@@ -3379,7 +3385,7 @@
     "type": "function",
     "function": {
       "name": "finance_budget_list",
-      "description": "List every category budget with its current period status: period bounds, opening balance, available, spent in the category, remaining, swept-to-savings and the pace projection. Each budget reports against its own cadence’s calendar period. Spent is computed from transactions at read time. Mode: read-only. Use when: The user asks how their budgets are doing, or what budgets exist. Do not use when: Do not use for transaction history or category-level spending reports.  Produces: budgets, current period bounds, spent and remaining per budget, pace projection.",
+      "description": "List every category budget with its current period status: period bounds, opening balance, available, spent in the category, remaining, swept-to-savings and the pace projection. Each budget reports against its own cadence’s calendar period. Spent is computed from transactions at read time. Each category budget carries its tag budgets as composition and a `breach` only when the category itself is over; the `breaches` array is the complete exception list, so a tag over its budget while the category is within budget is composition, not a breach. Mode: read-only. Use when: The user asks how their budgets are doing, or what budgets exist. Do not use when: Do not use for transaction history or category-level spending reports.  Produces: budgets, current period bounds, spent and remaining per budget, pace projection, tag composition, breaches (category budgets over their limit).",
       "parameters": {
         "type": "object",
         "properties": {},
@@ -3391,8 +3397,66 @@
   {
     "type": "function",
     "function": {
+      "name": "finance_budget_set",
+      "description": "Save a category budget together with the complete set of tag budgets nested inside it, in one transaction. Either everything is saved or nothing is: if the tag budgets add up to more than the category budget the save is rejected with the overage named and the stored budgets are unchanged. Tag amounts below the category budget are fine — the remainder is simply unallocated. Mode: write. Use when: The user sets a total for a category and budgets some of its tags beneath it, e.g. a food total with grocery, restaurant and coffee components. Do not use when: Do not use for a single budget change with no tag composition — finance_budget_create and finance_budget_update are enough there.  Prerequisites: finance_categories (resolve the category id); finance_tag_breakdown (resolve the tags used inside the category).  Produces: category budget status, tag composition, breach when the category is over.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "categoryId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "description": "Category id from finance_categories."
+          },
+          "amountCents": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "description": "The category budget for one period, in integer cents of the primary currency."
+          },
+          "cadence": {
+            "type": "string",
+            "enum": ["weekly", "monthly", "quarterly", "annual"],
+            "description": "The category budget’s own cadence."
+          },
+          "tagBudgets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tagId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                  "description": "Tag id from the tag tools."
+                },
+                "amountCents": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "cadence": {
+                  "type": "string",
+                  "enum": ["weekly", "monthly", "quarterly", "annual"]
+                }
+              },
+              "required": ["tagId", "amountCents", "cadence"],
+              "additionalProperties": false
+            },
+            "description": "The complete set of tag budgets inside this category. Tags omitted from the list lose their budget; the set replaces what is stored."
+          }
+        },
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "required": ["categoryId", "amountCents", "cadence", "tagBudgets"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
       "name": "finance_budget_update",
-      "description": "Update a budget’s amount and/or cadence. Changing the cadence changes the calendar period the budget is measured over. Returns null when the id is not the caller’s budget. Mode: write. Use when: The user changes a budget’s limit or moves it to a different cadence. Do not use when: Do not use to create a budget; there is one budget per category.  Prerequisites: finance_budget_list (resolve the budget id).  Produces: updated budget status.",
+      "description": "Update a budget’s amount and/or cadence. Changing the cadence changes the calendar period the budget is measured over. Returns null when the id is not the caller’s budget. A change that would make the category’s tag budgets add up to more than its category budget is rejected in full, leaving the stored budgets unchanged. Mode: write. Use when: The user changes a budget’s limit or moves it to a different cadence. Do not use when: Do not use to create a budget; a category and each tag inside it have one budget.  Prerequisites: finance_budget_list (resolve the budget id).  Produces: updated budget status.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -3479,7 +3543,7 @@
     "type": "function",
     "function": {
       "name": "finance_category_merge",
-      "description": "Merge one or more categories into a target in three ordered stages: preserve (a tag naming each source is put on its transactions), repoint (automation rules filing into a source are rewritten to the target), merge (transactions move, budgets are added in the target cadence, and the sources are removed). The target keeps its cadence; if it has no budget, the first budgeted source supplies the cadence. Source amounts are converted from their own cadences before addition. Uncategorized may be a target, never a source. Any rule that still names a source blocks the merge and is listed by name, and so does a source whose transactions are not yet tagged. stage runs all three stages by default, or one at a time. dryRun reports the budget result without writing. Mode: write, confirmation required.",
+      "description": "Merge one or more categories into a target in three ordered stages: preserve (a tag naming each source is put on its transactions), repoint (automation rules filing into a source are rewritten to the target), merge (transactions move, category budgets are added in the target cadence, tag budgets are added by tag and cadence, and the sources are removed). For each budget, an existing target keeps its cadence; otherwise the first budgeted source supplies it. Source amounts are converted from their own cadences before addition. Uncategorized may be a target, never a source. Any rule that still names a source blocks the merge and is listed by name, and so does a source whose transactions are not yet tagged. stage runs all three stages by default, or one at a time. dryRun reports the budget result without writing. Mode: write, confirmation required.",
       "parameters": {
         "type": "object",
         "properties": {

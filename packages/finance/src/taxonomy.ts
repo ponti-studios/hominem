@@ -404,7 +404,7 @@ function emptyMerge(): MergeCategoryTransactionsResult {
 }
 
 function emptyBudgetMerge(): FinanceCategoryBudgetMerge {
-  return { budget: null, sourceBudgetCount: 0, monthlyRunwayBudgets: [] };
+  return { budget: null, tagBudgets: [], sourceBudgetCount: 0, monthlyRunwayBudgets: [] };
 }
 
 /** Sources whose transactions are not all marked with the tag that would identify them. */

@@ -10,7 +10,7 @@ export const financeBudgetDeleteTool = defineMcpTool(
     name: 'finance_budget_delete',
     title: 'Finance Budget Delete',
     description:
-      'Delete a category budget. The budget’s transactions are untouched — a budget is a limit, not a movement of money. The MCP server asks for confirmation before deletion.',
+      'Delete a budget — a category budget or one of its tag budgets. Deleting a category budget also deletes the tag budgets nested inside it. The budget’s transactions are untouched — a budget is a limit, not a movement of money. The MCP server asks for confirmation before deletion.',
     inputSchema: financeBudgetDeleteInputSchema,
     outputSchema: financeBudgetDeleteOutputSchema,
     readOnly: false,
@@ -20,7 +20,7 @@ export const financeBudgetDeleteTool = defineMcpTool(
     requiresConfirmation: true,
     resultCap: 1,
     guidance: {
-      whenToUse: 'The user no longer wants a budget for that category.',
+      whenToUse: 'The user no longer wants a budget for that category or tag.',
       whenNotToUse: 'Do not delete a budget to change its amount or cadence; update it instead.',
       dependencies: [
         { tool: 'finance_budget_list', reason: 'resolve the budget id', provides: ['id'] },
@@ -33,6 +33,7 @@ export const financeBudgetDeleteTool = defineMcpTool(
       return budget
         ? {
             categoryName: budget.categoryName,
+            tagName: budget.tagName,
             amountCents: budget.amountCents,
             cadence: budget.cadence,
           }

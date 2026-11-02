@@ -184,11 +184,22 @@ async function seedBudget(
   categoryId: string,
   amountCents: number,
   cadence: string,
+  tagId?: string,
 ) {
   await db
     .insertInto('app.financeBudgets')
-    .values({ userId: ownerId, categoryId, amountCents, cadence })
+    .values({ userId: ownerId, categoryId, amountCents, cadence, tagId: tagId ?? null })
     .execute();
+}
+
+async function seedTag(ownerId: string, name: string): Promise<string> {
+  const id = randomUUID();
+  const slug = `nested-${id}`;
+  await db
+    .insertInto('app.tags')
+    .values({ id, ownerUserid: ownerId, name, slug, path: slug })
+    .execute();
+  return id;
 }
 
 async function tagsOnTransaction(userId: string, transactionId: string): Promise<string[]> {
@@ -377,6 +388,7 @@ describeIntegration('finance category taxonomy', () => {
     expect(result.reason).toBeNull();
     expect(result.budgetMerge).toEqual({
       budget: { amountCents: 18_200, cadence: 'monthly' },
+      tagBudgets: [],
       sourceBudgetCount: 2,
       monthlyRunwayBudgets: [
         { currencyCode: 'EUR', amountCents: 250 },
@@ -421,6 +433,7 @@ describeIntegration('finance category taxonomy', () => {
 
     expect(result.budgetMerge).toEqual({
       budget: { amountCents: 18_600, cadence: 'quarterly' },
+      tagBudgets: [],
       sourceBudgetCount: 2,
       monthlyRunwayBudgets: [],
     });
@@ -431,6 +444,71 @@ describeIntegration('finance category taxonomy', () => {
         .where('userId', '=', ownerId)
         .execute(),
     ).toEqual([{ categoryId: categories.food.id, amountCents: 18_600, cadence: 'quarterly' }]);
+  });
+
+  it('adds nested tag budgets by tag while preserving the target cadence', async () => {
+    const { ownerId, categories } = fixture;
+    const sharedTagId = await seedTag(ownerId, 'Shared food tag');
+    const sourceOnlyTagId = await seedTag(ownerId, 'Source only food tag');
+    await seedBudget(ownerId, categories.food.id, 12_000, 'monthly');
+    await seedBudget(ownerId, categories.groceries.id, 30_000, 'quarterly');
+    await seedBudget(ownerId, categories.food.id, 1_200, 'monthly', sharedTagId);
+    await seedBudget(ownerId, categories.groceries.id, 600, 'weekly', sharedTagId);
+    await seedBudget(ownerId, categories.groceries.id, 6_000, 'quarterly', sourceOnlyTagId);
+
+    const preview = await mergeFinanceCategories(
+      ownerId,
+      { from: 'Groceries', into: 'Food' },
+      { dryRun: true },
+    );
+    expect(preview.budgetMerge).toEqual({
+      budget: { amountCents: 22_000, cadence: 'monthly' },
+      tagBudgets: [
+        { tagId: sharedTagId, amountCents: 3_800, cadence: 'monthly' },
+        { tagId: sourceOnlyTagId, amountCents: 6_000, cadence: 'quarterly' },
+      ].sort((left, right) => left.tagId.localeCompare(right.tagId)),
+      sourceBudgetCount: 1,
+      monthlyRunwayBudgets: [],
+    });
+    expect(
+      await db
+        .selectFrom('app.financeBudgets')
+        .select(['categoryId', 'tagId'])
+        .where('userId', '=', ownerId)
+        .where('tagId', 'is not', null)
+        .execute(),
+    ).toHaveLength(3);
+
+    const result = await mergeFinanceCategories(ownerId, { from: 'Groceries', into: 'Food' });
+    expect(result.budgetMerge).toEqual(preview.budgetMerge);
+    const mergedBudgets = await db
+      .selectFrom('app.financeBudgets')
+      .select(['categoryId', 'tagId', 'amountCents', 'cadence'])
+      .where('userId', '=', ownerId)
+      .execute();
+    expect(mergedBudgets).toHaveLength(3);
+    expect(mergedBudgets).toEqual(
+      expect.arrayContaining([
+        {
+          categoryId: categories.food.id,
+          tagId: null,
+          amountCents: 22_000,
+          cadence: 'monthly',
+        },
+        {
+          categoryId: categories.food.id,
+          tagId: sharedTagId,
+          amountCents: 3_800,
+          cadence: 'monthly',
+        },
+        {
+          categoryId: categories.food.id,
+          tagId: sourceOnlyTagId,
+          amountCents: 6_000,
+          cadence: 'quarterly',
+        },
+      ]),
+    );
   });
 
   it('repoints rules to the target, leaving no rule naming a merged-away category', async () => {

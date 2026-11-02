@@ -1,5 +1,5 @@
-import { db } from '@hominem/db/core';
-import { NotFoundError, ValidationError } from '@hominem/db/errors';
+import { db, runInTransaction, type DbHandle } from '@hominem/db/core';
+import { ValidationError } from '@hominem/db/errors';
 import {
   FinanceBudgetRepository,
   type FinanceBudgetCadence,
@@ -7,6 +7,12 @@ import {
   type UncountedForeignTransaction,
 } from '@hominem/db/finance';
 
+import { validateNestedBudgets } from './finance-budget-nesting';
+import {
+  evaluateCategoryBudgetPacing,
+  type BudgetBreach,
+  type TagBudgetComposition,
+} from './finance-budget-pacing';
 import {
   computePace,
   computeRollover,
@@ -30,6 +36,9 @@ export type BudgetStatus = {
   id: string;
   categoryId: string;
   categoryName: string;
+  /** Null on a category budget; set on a tag budget nested inside that category. */
+  tagId: string | null;
+  tagName: string | null;
   amountCents: number;
   cadence: FinanceBudgetCadence;
   currencyCode: string;
@@ -40,10 +49,28 @@ export type BudgetStatus = {
   remainingCents: number;
   sweptToSavingsCents: number;
   pace: BudgetPace;
+  /** Set only on a category budget that is over it. A tag budget never breaches. */
+  breach: BudgetBreach | null;
+  /** A category budget's tag budgets, as composition. Always empty on a tag budget. */
+  tagBudgets: TagBudgetComposition[];
   uncountedForeignTransactionCount: number;
   uncountedForeignTransactions: UncountedForeignTransaction[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type BudgetWriteInput = {
+  categoryId: string;
+  amountCents: number;
+  cadence: FinanceBudgetCadence;
+  /** Set to create or replace the budget for that tag inside the category. */
+  tagId?: string | null;
+};
+
+export type TagBudgetWriteInput = {
+  tagId: string;
+  amountCents: number;
+  cadence: FinanceBudgetCadence;
 };
 
 const DAY_MS = 86_400_000;
@@ -78,6 +105,54 @@ async function requirePrimaryCurrency(ownerUserId: string): Promise<string> {
   return currency;
 }
 
+/**
+ * A category's tag budgets and what each has spent in its own current period. Tag spend never
+ * folds rollover: a tag budget is composition tracking, not a carried balance.
+ */
+async function readTagComposition(
+  budget: FinanceBudgetRecord,
+  primaryCurrency: string,
+  now: Date,
+): Promise<
+  Array<{
+    tagId: string;
+    tagName: string;
+    amountCents: number;
+    cadence: FinanceBudgetCadence;
+    spentCents: number;
+  }>
+> {
+  const budgets = await FinanceBudgetRepository.listByCategory(
+    db,
+    budget.userId,
+    budget.categoryId,
+  );
+  return Promise.all(
+    budgets
+      .filter(
+        (candidate): candidate is FinanceBudgetRecord & { tagId: string; tagName: string } =>
+          candidate.tagId !== null && candidate.tagName !== null,
+      )
+      .map(async (tag) => {
+        const window = currentSpendWindow(periodFor(tag.cadence, now), now);
+        const spend = await FinanceBudgetRepository.getSpentTotal(db, tag.userId, {
+          categoryId: tag.categoryId,
+          primaryCurrency,
+          from: window.from,
+          to: window.to,
+          tagId: tag.tagId,
+        });
+        return {
+          tagId: tag.tagId,
+          tagName: tag.tagName,
+          amountCents: tag.amountCents,
+          cadence: tag.cadence,
+          spentCents: spend.spentCents,
+        };
+      }),
+  );
+}
+
 async function toStatus(
   budget: FinanceBudgetRecord,
   primaryCurrency: string,
@@ -86,21 +161,26 @@ async function toStatus(
   const currentPeriod = periodFor(budget.cadence, now);
   const trackingStart = periodContaining(budget.cadence, budget.createdAt);
   const window = currentSpendWindow(currentPeriod, now);
+  const isTagBudget = budget.tagId !== null;
 
   const currentSpend = await FinanceBudgetRepository.getSpentTotal(db, budget.userId, {
     categoryId: budget.categoryId,
     primaryCurrency,
     from: window.from,
     to: window.to,
+    ...(budget.tagId ? { tagId: budget.tagId } : {}),
   });
 
-  const spendByClosedPeriod = await FinanceBudgetRepository.getSpendByPeriod(db, budget.userId, {
-    categoryId: budget.categoryId,
-    primaryCurrency,
-    cadence: budget.cadence,
-    from: trackingStart.startsOn,
-    to: currentPeriod.startsOn,
-  });
+  // A tag budget is composition: its period starts fresh and no surplus or deficit carries.
+  const spendByClosedPeriod = isTagBudget
+    ? new Map<string, number>()
+    : await FinanceBudgetRepository.getSpendByPeriod(db, budget.userId, {
+        categoryId: budget.categoryId,
+        primaryCurrency,
+        cadence: budget.cadence,
+        from: trackingStart.startsOn,
+        to: currentPeriod.startsOn,
+      });
 
   const { openingBalanceCents: openingBalance, sweptToSavingsCents: sweptToSavings } =
     computeRollover({
@@ -118,13 +198,27 @@ async function toStatus(
           primaryCurrency,
           from: window.from,
           to: window.to,
+          ...(budget.tagId ? { tagId: budget.tagId } : {}),
         })
       : [];
+
+  const pacing = isTagBudget
+    ? null
+    : evaluateCategoryBudgetPacing({
+        categoryId: budget.categoryId,
+        categoryName: budget.categoryName,
+        categoryCadence: budget.cadence,
+        availableCents,
+        spentCents: currentSpend.spentCents,
+        tagBudgets: await readTagComposition(budget, primaryCurrency, now),
+      });
 
   return {
     id: budget.id,
     categoryId: budget.categoryId,
     categoryName: budget.categoryName,
+    tagId: budget.tagId,
+    tagName: budget.tagName,
     amountCents: budget.amountCents,
     cadence: budget.cadence,
     currencyCode: primaryCurrency,
@@ -140,6 +234,8 @@ async function toStatus(
       spentCents: currentSpend.spentCents,
       availableCents,
     }),
+    breach: pacing?.breach ?? null,
+    tagBudgets: pacing?.composition ?? [],
     uncountedForeignTransactionCount: currentSpend.uncountedForeignTransactionCount,
     uncountedForeignTransactions,
     createdAt: budget.createdAt,
@@ -147,14 +243,47 @@ async function toStatus(
   };
 }
 
+/**
+ * Reads back what is stored for the category and enforces the nested-budget invariant on it.
+ * Called inside the write's transaction after the write, so a rejection rolls the whole save
+ * back and the previously stored budgets stay untouched.
+ */
+async function assertNestedBudgets(
+  handle: DbHandle,
+  ownerUserId: string,
+  categoryId: string,
+  categoryName: string,
+): Promise<void> {
+  const rows = await FinanceBudgetRepository.listByCategory(handle, ownerUserId, categoryId);
+  const categoryBudget = rows.find((row) => row.tagId === null);
+  const tagBudgets = rows.filter((row) => row.tagId !== null);
+  if (!categoryBudget) {
+    if (tagBudgets.length === 0) return;
+    throw new ValidationError(
+      `Tag budgets need the category budget they sit inside: "${categoryName}" has no category budget. Save the category budget first; nothing was saved.`,
+      { categoryName, tagBudgetCount: tagBudgets.length },
+    );
+  }
+  validateNestedBudgets({
+    categoryName,
+    categoryBudgetCents: categoryBudget.amountCents,
+    categoryCadence: categoryBudget.cadence,
+    tagBudgets,
+  });
+}
+
 export async function listBudgets(ownerUserId: string) {
   const primaryCurrency = await requirePrimaryCurrency(ownerUserId);
   const now = new Date();
   const budgets = await FinanceBudgetRepository.list(db, ownerUserId);
+  const statuses = await Promise.all(
+    budgets.map((budget) => toStatus(budget, primaryCurrency, now)),
+  );
   return {
     primaryCurrency,
-    budgets: await Promise.all(budgets.map((budget) => toStatus(budget, primaryCurrency, now))),
-    count: budgets.length,
+    budgets: statuses,
+    breaches: statuses.flatMap((status) => (status.breach ? [status.breach] : [])),
+    count: statuses.length,
   };
 }
 
@@ -164,24 +293,21 @@ export async function getBudget(ownerUserId: string, budgetId: string, now: Date
   return { budget: budget ? await toStatus(budget, primaryCurrency, now) : null };
 }
 
-export async function createBudget(
-  ownerUserId: string,
-  input: { categoryId: string; amountCents: number; cadence: FinanceBudgetCadence },
-) {
+export async function createBudget(ownerUserId: string, input: BudgetWriteInput) {
   const primaryCurrency = await requirePrimaryCurrency(ownerUserId);
-  try {
-    const { budget, created } = await FinanceBudgetRepository.create(db, ownerUserId, input);
-    return {
-      budget: await toStatus(budget, primaryCurrency, new Date()),
-      created,
-      reason: null,
-    };
-  } catch (error) {
-    if (error instanceof NotFoundError) {
-      return { budget: null, created: false, reason: 'unknown_category' as const };
-    }
-    throw error;
-  }
+  const saved = await runInTransaction(async (trx) => {
+    const category = await FinanceBudgetRepository.lockCategory(trx, ownerUserId, input.categoryId);
+    if (!category) return null;
+    const result = await FinanceBudgetRepository.create(trx, ownerUserId, input);
+    await assertNestedBudgets(trx, ownerUserId, input.categoryId, category.name);
+    return result;
+  });
+  if (!saved) return { budget: null, created: false, reason: 'unknown_category' as const };
+  return {
+    budget: await toStatus(saved.budget, primaryCurrency, new Date()),
+    created: saved.created,
+    reason: null,
+  };
 }
 
 export async function updateBudget(
@@ -190,12 +316,71 @@ export async function updateBudget(
   patch: { amountCents?: number; cadence?: FinanceBudgetCadence },
 ) {
   const primaryCurrency = await requirePrimaryCurrency(ownerUserId);
-  const budget = await FinanceBudgetRepository.update(db, ownerUserId, budgetId, patch);
-  return { budget: budget ? await toStatus(budget, primaryCurrency, new Date()) : null };
+  const saved = await runInTransaction(async (trx) => {
+    const existing = await FinanceBudgetRepository.get(trx, ownerUserId, budgetId);
+    if (!existing) return null;
+    const category = await FinanceBudgetRepository.lockCategory(
+      trx,
+      ownerUserId,
+      existing.categoryId,
+    );
+    if (!category) return null;
+    const updated = await FinanceBudgetRepository.update(trx, ownerUserId, budgetId, patch);
+    if (!updated) return null;
+    await assertNestedBudgets(trx, ownerUserId, existing.categoryId, category.name);
+    return updated;
+  });
+  return { budget: saved ? await toStatus(saved, primaryCurrency, new Date()) : null };
+}
+
+/**
+ * Saves a category budget and the complete set of tag budgets nested inside it in one
+ * transaction. Either every budget in the set is written or none is: a tag sum over the category
+ * budget rejects the whole save with the overage named.
+ */
+export async function setCategoryBudgets(
+  ownerUserId: string,
+  input: {
+    categoryId: string;
+    amountCents: number;
+    cadence: FinanceBudgetCadence;
+    tagBudgets: TagBudgetWriteInput[];
+  },
+) {
+  const primaryCurrency = await requirePrimaryCurrency(ownerUserId);
+  const saved = await runInTransaction(async (trx) => {
+    const category = await FinanceBudgetRepository.lockCategory(trx, ownerUserId, input.categoryId);
+    if (!category) return null;
+    await FinanceBudgetRepository.create(trx, ownerUserId, {
+      categoryId: input.categoryId,
+      amountCents: input.amountCents,
+      cadence: input.cadence,
+    });
+    await FinanceBudgetRepository.replaceTagBudgets(
+      trx,
+      ownerUserId,
+      input.categoryId,
+      input.tagBudgets,
+    );
+    await assertNestedBudgets(trx, ownerUserId, input.categoryId, category.name);
+    return FinanceBudgetRepository.getByCategory(trx, ownerUserId, input.categoryId);
+  });
+  return {
+    budget: saved ? await toStatus(saved, primaryCurrency, new Date()) : null,
+    reason: saved ? null : ('unknown_category' as const),
+  };
 }
 
 export async function deleteBudget(ownerUserId: string, budgetId: string) {
-  return { removed: await FinanceBudgetRepository.remove(db, ownerUserId, budgetId) };
+  const removed = await runInTransaction(async (trx) => {
+    const budget = await FinanceBudgetRepository.get(trx, ownerUserId, budgetId);
+    if (!budget) return false;
+    if (!(await FinanceBudgetRepository.lockCategory(trx, ownerUserId, budget.categoryId))) {
+      return false;
+    }
+    return FinanceBudgetRepository.remove(trx, ownerUserId, budgetId);
+  });
+  return { removed };
 }
 
 /** Preview data for the delete confirmation: no currency or spend needed to show what goes. */
@@ -204,6 +389,7 @@ export async function getBudgetPreview(ownerUserId: string, budgetId: string) {
   return budget
     ? {
         categoryName: budget.categoryName,
+        tagName: budget.tagName,
         amountCents: budget.amountCents,
         cadence: budget.cadence,
       }

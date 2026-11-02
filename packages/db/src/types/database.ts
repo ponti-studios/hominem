@@ -589,6 +589,7 @@ export interface AppFinanceBudgets {
   categoryId: string;
   createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
   id: Generated<string>;
+  tagId: string | null;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
   userId: string;
 }
