@@ -1,6 +1,9 @@
 # Architecture
 
-Hominem is a monorepo containing several products and shared packages. They do not all use the same path to reach data.
+Hominem is one product. The API/MCP server is its brain; Omiro, Web, Career,
+Finance, and other clients are interfaces to that shared product. The current
+request paths in this document describe implementation boundaries, which do
+not all yet pass through the API in the same way.
 
 ## How the parts connect
 

@@ -1,16 +1,22 @@
 # Hominem
 
-Hominem is a product monorepo. Active products:
+Hominem is one product. The API/MCP server is its brain: it owns identity,
+data, and orchestration. Omiro, Web, Career, Finance, MCP clients, and future
+clients are interfaces to that product, not separate products or separate
+intelligences.
 
-- **Omiro** — `apps/omiro`, the Apple-native surface
+The repository contains those interfaces and the shared brain implementation:
+
 - **API** — `services/api`, identity and data authority
-- **Career** — web product, server-owned data access
-- **Finance** — in monorepo, release tier governed by explicit portfolio decision
+- **Omiro** — `apps/omiro`, Apple-native interface
+- **Web, Career, Finance** — browser interfaces and domain surfaces
+
+Finance's release tier remains governed by an explicit portfolio decision.
 
 ## Product today
 
-- **API** owns identity, persistence, orchestration, and work that clients cannot be trusted to perform.
-- **Career** is a web product whose data access is owned by the server.
+- **API** owns the shared product brain: identity, data authority, and orchestration.
+- **Client interfaces** present and invoke the shared product; they do not define separate product intelligence.
 - **Finance** is in the monorepo. Its release tier must be decided explicitly; do not infer it from a command or workflow.
 
 Product opinions and design philosophy live below in [Philosophy](#philosophy).
