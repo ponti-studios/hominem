@@ -54,7 +54,10 @@ every new tool.
   skips assignments the target already holds (the active-assignment unique index).
 - §7: `finance_categories` has no unique index on (user_id, lower(name)); create resolves
   case-insensitively in code (no duplicates exist in production today — 74 categories).
-  Merge keeps the emptied category in place (budgets reference categories).
+  Merge removes the emptied source category (one category in, one out) after tagging its
+  transactions and repointing rules, and consolidates its per-category and legacy monthly
+  runway budgets into the target — see `docs/hominem-finance-tools-spec.md` §7 and
+  `docs/finance-budgets.md`.
 - §8: `counterpart_id` landed as its own migration PR (#431) ahead of the code that reads it
   (expand/contract), applied to production via `deploy-db-migrations` after a verified
   `pg_dump`. A counterpart must already exist and sit on a **different** account

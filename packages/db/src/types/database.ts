@@ -619,6 +619,19 @@ export interface AppFinanceMonthlyBudgets {
   userId: string;
 }
 
+export interface AppFinanceRules {
+  actionCategoryId: string;
+  createdAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  enabled: Generated<boolean>;
+  id: Generated<string>;
+  matchMode: Generated<string>;
+  matchPattern: string;
+  name: string;
+  priority: Generated<number>;
+  updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
+  userId: string;
+}
+
 export interface AppFinanceRunwayPreferences {
   currencyCode: string;
   updatedAt: Generated<ColumnType<string, Date | string, Date | string>>;
@@ -1766,6 +1779,7 @@ export interface DB {
   'app.financeCategories': AppFinanceCategories;
   'app.financeInstitutions': AppFinanceInstitutions;
   'app.financeMonthlyBudgets': AppFinanceMonthlyBudgets;
+  'app.financeRules': AppFinanceRules;
   'app.financeRunwayPreferences': AppFinanceRunwayPreferences;
   'app.financeTransactions': AppFinanceTransactions;
   'app.healthActivities': AppHealthActivities;

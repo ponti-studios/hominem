@@ -3,6 +3,7 @@ export {
   FINANCE_BUDGET_CADENCES,
 } from './services/finance/budget.repository';
 export type {
+  FinanceCategoryBudgetMerge,
   FinanceBudgetCadence,
   FinanceBudgetPatch,
   FinanceBudgetRecord,
