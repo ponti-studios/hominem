@@ -1074,6 +1074,8 @@ async function projectImportSplit(
       description: string | null;
       postedOn: string | Date;
       currencyCode: string;
+      settledAmount: number | string | null;
+      settledCurrencyCode: string | null;
     }
   >();
   const chunkSize = 250;
@@ -1097,6 +1099,8 @@ async function projectImportSplit(
         'description',
         'postedOn',
         'currencyCode',
+        'settledAmount',
+        'settledCurrencyCode',
       ])
       .where('userId', '=', userId)
       .where(
@@ -1137,6 +1141,18 @@ async function projectImportSplit(
       continue;
     }
     const input = key.row.input;
+    const settledAmount =
+      input.settledAmountCents === undefined
+        ? found.settledAmount
+        : input.settledAmountCents === null
+          ? null
+          : input.settledAmountCents / 100;
+    const settledCurrencyCode =
+      input.settledCurrencyCode === undefined
+        ? found.settledCurrencyCode
+        : input.settledCurrencyCode === null || input.settledCurrencyCode.trim() === ''
+          ? null
+          : input.settledCurrencyCode.toUpperCase();
     const tagNames =
       input.tags === undefined
         ? (existingTags.get(found.id) ?? new Set<string>())
@@ -1161,6 +1177,10 @@ async function projectImportSplit(
       found.description === input.description.trim() &&
       String(found.postedOn).slice(0, 10) === input.postedOn &&
       found.currencyCode === input.currencyCode.trim().toUpperCase() &&
+      (found.settledAmount === null
+        ? settledAmount === null
+        : Number(found.settledAmount) === settledAmount) &&
+      found.settledCurrencyCode === settledCurrencyCode &&
       (input.source === undefined || input.externalId?.trim()?.startsWith('sheet:')
         ? true
         : found.source === key.source) &&
