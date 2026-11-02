@@ -24,6 +24,17 @@ has one returns the updated budget (`created: false`) and never creates a second
 Tag-level and merchant-level budgets do not exist. Tags are the drill-down layer; the category
 is the decision layer.
 
+## Category merges
+
+When categories are merged, their budgets move to the surviving target instead of being deleted.
+If the target already has a budget, its cadence and tracking start remain in place; each source
+amount is converted from its own cadence and added to the target amount. If the target has no
+budget, the first budgeted source in the merge input supplies the cadence and tracking start.
+Cadence conversion uses 52 weekly, 12 monthly, 4 quarterly, or 1 annual period per year, with
+the converted amount rounded to the nearest cent. The legacy runway-planner monthly amounts are
+added separately by currency. Both budget types are included in the merge preview and update in
+the same transaction as the category merge.
+
 ## Cadence and calendar periods
 
 Every cadence maps to a calendar period (UTC dates, inclusive bound):

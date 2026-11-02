@@ -1043,6 +1043,14 @@ export const financeCategoryMergeInputSchema = z.object({
   dryRun: z.boolean().default(false).describe('Report all three stages without writing.'),
 });
 
+const categoryBudgetMergeSchema = z.object({
+  budget: z
+    .object({ amount: z.number(), cadence: z.enum(['weekly', 'monthly', 'quarterly', 'annual']) })
+    .nullable(),
+  sourceBudgetCount: z.number().int().min(0),
+  monthlyRunwayBudgets: z.array(z.object({ currencyCode: z.string(), amount: z.number() })),
+});
+
 export const financeCategoryMergeOutputSchema = z.object({
   transactionsReassigned: z.number().int().min(0),
   category: categoryRefSchema.nullable(),
@@ -1074,6 +1082,7 @@ export const financeCategoryMergeOutputSchema = z.object({
         removedCategories: z.array(categoryRefSchema),
         untaggedSources: z.array(categoryRefSchema),
         blockedRules: z.array(categoryRuleRefSchema),
+        budgetMerge: categoryBudgetMergeSchema,
       }),
     })
     .nullable()
@@ -1086,6 +1095,7 @@ export const financeCategoryMergeOutputSchema = z.object({
     }),
   ),
   totalsUnchanged: z.boolean(),
+  budgetMerge: categoryBudgetMergeSchema,
   dryRun: z.boolean(),
 });
 

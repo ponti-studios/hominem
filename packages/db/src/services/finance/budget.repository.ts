@@ -1,6 +1,6 @@
 import { sql, type Selectable } from 'kysely';
 
-import { NotFoundError } from '../../errors';
+import { NotFoundError, ValidationError } from '../../errors';
 import type { DbHandle } from '../../transaction';
 import type { AppFinanceBudgets } from '../../types/database';
 
@@ -10,6 +10,25 @@ type FinanceBudgetRow = Selectable<AppFinanceBudgets>;
 export const FINANCE_BUDGET_CADENCES = ['weekly', 'monthly', 'quarterly', 'annual'] as const;
 
 export type FinanceBudgetCadence = (typeof FINANCE_BUDGET_CADENCES)[number];
+
+const PERIODS_PER_YEAR: Record<FinanceBudgetCadence, number> = {
+  weekly: 52,
+  monthly: 12,
+  quarterly: 4,
+  annual: 1,
+};
+
+const MAX_BUDGET_CENTS = 2_147_483_647;
+
+function amountInCadence(
+  amountCents: number,
+  sourceCadence: FinanceBudgetCadence,
+  targetCadence: FinanceBudgetCadence,
+): number {
+  return Math.round(
+    (amountCents * PERIODS_PER_YEAR[sourceCadence]) / PERIODS_PER_YEAR[targetCadence],
+  );
+}
 
 /** The budget as the API exposes it: flat, JSON-serializable, no row types. */
 export type FinanceBudgetRecord = {
@@ -41,6 +60,12 @@ export type FinanceBudgetSpendRange = {
   from: string;
   /** Exclusive last transaction date (YYYY-MM-DD). */
   to: string;
+};
+
+export type FinanceCategoryBudgetMerge = {
+  budget: { amountCents: number; cadence: FinanceBudgetCadence } | null;
+  sourceBudgetCount: number;
+  monthlyRunwayBudgets: Array<{ currencyCode: string; amountCents: number }>;
 };
 
 export type FinanceSpendTotal = {
@@ -98,6 +123,128 @@ const BUDGET_COLUMNS = [
  * transaction queries here are the only source of a budget's spent total.
  */
 export const FinanceBudgetRepository = {
+  async mergeCategories(
+    handle: DbHandle,
+    ownerUserId: string,
+    targetCategoryId: string,
+    sourceCategoryIds: string[],
+    options?: { dryRun?: boolean },
+  ): Promise<FinanceCategoryBudgetMerge> {
+    if (sourceCategoryIds.length === 0) {
+      return { budget: null, sourceBudgetCount: 0, monthlyRunwayBudgets: [] };
+    }
+
+    const budgets = await handle
+      .selectFrom('app.financeBudgets')
+      .select(['id', 'categoryId', 'amountCents', 'cadence'])
+      .where('userId', '=', ownerUserId)
+      .where('categoryId', 'in', [...sourceCategoryIds, targetCategoryId])
+      .execute();
+    const target = budgets.find((budget) => budget.categoryId === targetCategoryId);
+    const sourceBudgets = sourceCategoryIds.flatMap((categoryId) => {
+      const budget = budgets.find((candidate) => candidate.categoryId === categoryId);
+      return budget ? [budget] : [];
+    });
+
+    let mergedBudget: FinanceCategoryBudgetMerge['budget'] = target
+      ? { amountCents: target.amountCents, cadence: toCadence(target.cadence) }
+      : null;
+    if (sourceBudgets.length > 0) {
+      const cadence = mergedBudget?.cadence ?? toCadence(sourceBudgets[0]!.cadence);
+      const sourceAmountCents = sourceBudgets.reduce(
+        (total, budget) =>
+          total + amountInCadence(budget.amountCents, toCadence(budget.cadence), cadence),
+        0,
+      );
+      const amountCents = (target?.amountCents ?? 0) + sourceAmountCents;
+      if (!Number.isSafeInteger(amountCents) || amountCents > MAX_BUDGET_CENTS) {
+        throw new ValidationError('Merged budget exceeds the maximum supported amount.', {
+          ownerUserId,
+          targetCategoryId,
+        });
+      }
+
+      mergedBudget = { amountCents, cadence };
+
+      if (!options?.dryRun && target) {
+        await handle
+          .updateTable('app.financeBudgets')
+          .set({ amountCents, updatedAt: new Date().toISOString() })
+          .where('userId', '=', ownerUserId)
+          .where('id', '=', target.id)
+          .execute();
+        await handle
+          .deleteFrom('app.financeBudgets')
+          .where('userId', '=', ownerUserId)
+          .where('categoryId', 'in', sourceCategoryIds)
+          .execute();
+      } else if (!options?.dryRun) {
+        const first = sourceBudgets[0]!;
+        await handle
+          .updateTable('app.financeBudgets')
+          .set({ categoryId: targetCategoryId, amountCents, updatedAt: new Date().toISOString() })
+          .where('userId', '=', ownerUserId)
+          .where('id', '=', first.id)
+          .execute();
+        await handle
+          .deleteFrom('app.financeBudgets')
+          .where('userId', '=', ownerUserId)
+          .where(
+            'categoryId',
+            'in',
+            sourceCategoryIds.filter((id) => id !== first.categoryId),
+          )
+          .execute();
+      }
+    }
+
+    const monthlyBudgets = await handle
+      .selectFrom('app.financeMonthlyBudgets')
+      .select('currencyCode')
+      .select((eb) => eb.fn.sum<string>('monthlyAmount').as('monthlyAmount'))
+      .where('userId', '=', ownerUserId)
+      .where('categoryId', 'in', [...sourceCategoryIds, targetCategoryId])
+      .groupBy('currencyCode')
+      .orderBy('currencyCode', 'asc')
+      .execute();
+    const monthlyRunwayBudgets = monthlyBudgets.map((budget) => ({
+      currencyCode: budget.currencyCode,
+      amountCents: Math.round(Number(budget.monthlyAmount) * 100),
+    }));
+
+    if (options?.dryRun) {
+      return {
+        budget: mergedBudget,
+        sourceBudgetCount: sourceBudgets.length,
+        monthlyRunwayBudgets,
+      };
+    }
+
+    await sql`
+      INSERT INTO app.finance_monthly_budgets (
+        id, user_id, category_id, currency_code, monthly_amount, created_at, updated_at
+      )
+      SELECT uuidv7(), ${ownerUserId}, ${targetCategoryId}, currency_code,
+        sum(monthly_amount), min(created_at), now()
+      FROM app.finance_monthly_budgets
+      WHERE user_id = ${ownerUserId}
+        AND category_id = ANY(${sourceCategoryIds}::uuid[])
+      GROUP BY currency_code
+      ON CONFLICT (user_id, category_id, currency_code)
+      DO UPDATE SET
+        monthly_amount = app.finance_monthly_budgets.monthly_amount + EXCLUDED.monthly_amount,
+        updated_at = now()
+    `.execute(handle);
+
+    await handle
+      .deleteFrom('app.financeMonthlyBudgets')
+      .where('userId', '=', ownerUserId)
+      .where('categoryId', 'in', sourceCategoryIds)
+      .execute();
+
+    return { budget: mergedBudget, sourceBudgetCount: sourceBudgets.length, monthlyRunwayBudgets };
+  },
+
   async list(handle: DbHandle, ownerUserId: string, limit = 50): Promise<FinanceBudgetRecord[]> {
     const rows = await handle
       .selectFrom('app.financeBudgets as budget')

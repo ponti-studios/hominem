@@ -1,6 +1,7 @@
 import { db, sql } from '@hominem/db/core';
 import type { DbHandle } from '@hominem/db/core';
 import { ValidationError } from '@hominem/db/errors';
+import { FinanceBudgetRepository, type FinanceCategoryBudgetMerge } from '@hominem/db/finance';
 
 import { FINANCE_TRANSACTION_ENTITY_TYPE } from './contracts';
 import { UNCATEGORIZED_NAME, ensureTagIds, resolveFinanceCategory } from './sheet-import';
@@ -75,6 +76,7 @@ export interface MergeCategoryTransactionsResult {
   untaggedSources: CategoryRef[];
   /** Rules that still name a source category. Non-empty means the merge refused to run. */
   blockedRules: CategoryRuleRef[];
+  budgetMerge: FinanceCategoryBudgetMerge;
 }
 
 export interface CategoryCurrencyTotal {
@@ -103,6 +105,7 @@ export interface MergeFinanceCategoriesResult {
   steps: CategoryMergeSteps | null;
   currencyTotals: CategoryCurrencyTotal[];
   totalsUnchanged: boolean;
+  budgetMerge: FinanceCategoryBudgetMerge;
   dryRun?: boolean;
 }
 
@@ -396,7 +399,12 @@ function emptyMerge(): MergeCategoryTransactionsResult {
     removedCategories: [],
     untaggedSources: [],
     blockedRules: [],
+    budgetMerge: emptyBudgetMerge(),
   };
+}
+
+function emptyBudgetMerge(): FinanceCategoryBudgetMerge {
+  return { budget: null, sourceBudgetCount: 0, monthlyRunwayBudgets: [] };
 }
 
 /** Sources whose transactions are not all marked with the tag that would identify them. */
@@ -464,6 +472,13 @@ async function mergeWith(
     };
   }
 
+  const budgetMerge = await FinanceBudgetRepository.mergeCategories(
+    executor,
+    userId,
+    target.id,
+    sourceIds,
+  );
+
   const affectedIds = [...sourceIds, target.id];
   const before = await categoryCurrencyTotals(executor, userId, affectedIds);
 
@@ -498,6 +513,7 @@ async function mergeWith(
       removedCategories,
       untaggedSources: [],
       blockedRules: [],
+      budgetMerge,
     },
     currencyTotals,
     totalsUnchanged,
@@ -529,6 +545,7 @@ export async function mergeFinanceCategories(
       steps: null,
       currencyTotals: [],
       totalsUnchanged: true,
+      budgetMerge: emptyBudgetMerge(),
     };
   }
 
@@ -545,6 +562,7 @@ export async function mergeFinanceCategories(
       steps: null,
       currencyTotals: [],
       totalsUnchanged: true,
+      budgetMerge: emptyBudgetMerge(),
     };
   }
 
@@ -554,6 +572,13 @@ export async function mergeFinanceCategories(
     const preserveTags = await preserveWith(db, userId, sources, { dryRun: true });
     const repointRules = await repointWith(db, userId, sources, target, { dryRun: true });
     const wouldMove = await countCategoryTransactionsFor(db, userId, sources);
+    const budgetMerge = await FinanceBudgetRepository.mergeCategories(
+      db,
+      userId,
+      target.id,
+      sources.map((source) => source.id),
+      { dryRun: true },
+    );
     // The affected set is unchanged by the merge — only the rows' category_id moves — so the
     // projected totals are the current totals for that set.
     const before = await categoryCurrencyTotals(db, userId, [
@@ -576,6 +601,7 @@ export async function mergeFinanceCategories(
           removedCategories: [],
           untaggedSources: [],
           blockedRules: [],
+          budgetMerge,
         },
       },
       currencyTotals: [...before.entries()].map(([currencyCode, cents]) => ({
@@ -584,6 +610,7 @@ export async function mergeFinanceCategories(
         afterCents: cents,
       })),
       totalsUnchanged: true,
+      budgetMerge,
       dryRun: true,
     };
   }
@@ -619,6 +646,7 @@ export async function mergeFinanceCategories(
       steps: { preserveTags, repointRules, merge: merge.result },
       currencyTotals: merge.currencyTotals,
       totalsUnchanged: merge.totalsUnchanged,
+      budgetMerge: merge.result.budgetMerge,
     };
   });
 }

@@ -179,6 +179,18 @@ async function categoryByName(userId: string, name: string) {
     .executeTakeFirst();
 }
 
+async function seedBudget(
+  ownerId: string,
+  categoryId: string,
+  amountCents: number,
+  cadence: string,
+) {
+  await db
+    .insertInto('app.financeBudgets')
+    .values({ userId: ownerId, categoryId, amountCents, cadence })
+    .execute();
+}
+
 async function tagsOnTransaction(userId: string, transactionId: string): Promise<string[]> {
   const rows = await sql<{ name: string }>`
     select tg.name
@@ -301,6 +313,124 @@ describeIntegration('finance category taxonomy', () => {
       { currencyCode: 'EUR', beforeCents: -4000, afterCents: -4000 },
       { currencyCode: 'USD', beforeCents: -4400, afterCents: -4400 },
     ]);
+  });
+
+  it('adds source budgets in the target cadence and preserves monthly runway budgets', async () => {
+    const { ownerId, categories } = fixture;
+    await seedBudget(ownerId, categories.food.id, 12_000, 'monthly');
+    await seedBudget(ownerId, categories.groceries.id, 1_200, 'weekly');
+    await seedBudget(ownerId, categories.restaurants.id, 3_000, 'quarterly');
+
+    await db
+      .insertInto('app.financeMonthlyBudgets')
+      .values([
+        {
+          userId: ownerId,
+          categoryId: categories.food.id,
+          currencyCode: 'USD',
+          monthlyAmount: '50.00',
+        },
+        {
+          userId: ownerId,
+          categoryId: categories.groceries.id,
+          currencyCode: 'USD',
+          monthlyAmount: '10.25',
+        },
+        {
+          userId: ownerId,
+          categoryId: categories.restaurants.id,
+          currencyCode: 'USD',
+          monthlyAmount: '3.75',
+        },
+        {
+          userId: ownerId,
+          categoryId: categories.restaurants.id,
+          currencyCode: 'EUR',
+          monthlyAmount: '2.50',
+        },
+      ])
+      .execute();
+
+    const preview = await mergeFinanceCategories(
+      ownerId,
+      {
+        from: ['Groceries', 'Restaurants'],
+        into: 'Food',
+      },
+      { dryRun: true },
+    );
+    expect(preview.dryRun).toBe(true);
+    expect(
+      await db
+        .selectFrom('app.financeBudgets')
+        .select(['categoryId', 'amountCents'])
+        .where('userId', '=', ownerId)
+        .orderBy('categoryId')
+        .execute(),
+    ).toHaveLength(3);
+
+    const result = await mergeFinanceCategories(ownerId, {
+      from: ['Groceries', 'Restaurants'],
+      into: 'Food',
+    });
+
+    expect(result.reason).toBeNull();
+    expect(result.budgetMerge).toEqual({
+      budget: { amountCents: 18_200, cadence: 'monthly' },
+      sourceBudgetCount: 2,
+      monthlyRunwayBudgets: [
+        { currencyCode: 'EUR', amountCents: 250 },
+        { currencyCode: 'USD', amountCents: 6_400 },
+      ],
+    });
+    expect(
+      await db
+        .selectFrom('app.financeBudgets')
+        .select(['categoryId', 'amountCents', 'cadence'])
+        .where('userId', '=', ownerId)
+        .execute(),
+    ).toEqual([{ categoryId: categories.food.id, amountCents: 18_200, cadence: 'monthly' }]);
+
+    const monthlyBudgets = await db
+      .selectFrom('app.financeMonthlyBudgets')
+      .select(['currencyCode', 'monthlyAmount'])
+      .where('userId', '=', ownerId)
+      .where('categoryId', '=', categories.food.id)
+      .orderBy('currencyCode')
+      .execute();
+    expect(
+      monthlyBudgets.map((budget) => ({
+        currencyCode: budget.currencyCode,
+        monthlyAmount: Number(budget.monthlyAmount),
+      })),
+    ).toEqual([
+      { currencyCode: 'EUR', monthlyAmount: 2.5 },
+      { currencyCode: 'USD', monthlyAmount: 64 },
+    ]);
+  });
+
+  it('uses the first budgeted source cadence when the target has no budget', async () => {
+    const { ownerId, categories } = fixture;
+    await seedBudget(ownerId, categories.restaurants.id, 3_000, 'quarterly');
+    await seedBudget(ownerId, categories.groceries.id, 1_200, 'weekly');
+
+    const result = await mergeFinanceCategories(ownerId, {
+      from: ['Restaurants', 'Groceries'],
+      into: 'Food',
+    });
+
+    expect(result.budgetMerge).toEqual({
+      budget: { amountCents: 18_600, cadence: 'quarterly' },
+      sourceBudgetCount: 2,
+      monthlyRunwayBudgets: [],
+    });
+    expect(
+      await db
+        .selectFrom('app.financeBudgets')
+        .select(['categoryId', 'amountCents', 'cadence'])
+        .where('userId', '=', ownerId)
+        .execute(),
+    ).toEqual([{ categoryId: categories.food.id, amountCents: 18_600, cadence: 'quarterly' }]);
   });
 
   it('repoints rules to the target, leaving no rule naming a merged-away category', async () => {

@@ -9,6 +9,11 @@ const otherUserId = 'f20000e0-0000-4000-8000-000000000002';
 const checkingId = 'f20000e1-0000-4000-8000-000000000001';
 
 type CategoryRef = { id: string; name: string };
+type CategoryBudgetMerge = {
+  budget: { amount: number; cadence: string } | null;
+  sourceBudgetCount: number;
+  monthlyRunwayBudgets: Array<{ currencyCode: string; amount: number }>;
+};
 
 type CategoryResult = {
   id?: string | null;
@@ -23,6 +28,7 @@ type CategoryResult = {
   untaggedSources?: CategoryRef[];
   blockedRules?: Array<{ id: string; name: string; category: CategoryRef }>;
   totalsUnchanged?: boolean;
+  budgetMerge?: CategoryBudgetMerge;
   currencyTotals?: Array<{ currencyCode: string; before: number; after: number }>;
   steps?: {
     preserveTags: {
@@ -35,7 +41,11 @@ type CategoryResult = {
       transactionsTagged: number;
     };
     repointRules: { repointed: Array<{ id: string; name: string; category: CategoryRef }> };
-    merge: { transactionsReassigned: number; removedCategories: CategoryRef[] };
+    merge: {
+      transactionsReassigned: number;
+      removedCategories: CategoryRef[];
+      budgetMerge?: CategoryBudgetMerge;
+    };
   } | null;
   reason?: string | null;
 };
@@ -147,6 +157,51 @@ describe('finance_category_create', () => {
 });
 
 describe('finance_category_merge', () => {
+  it('previews and merges category budgets using each source cadence', async () => {
+    const source = content(
+      await callTool(userId, 'finance_category_create', { name: 'Budget Merge Source' }),
+    );
+    const target = content(
+      await callTool(userId, 'finance_category_create', { name: 'Budget Merge Target' }),
+    );
+    await db
+      .insertInto('app.financeBudgets')
+      .values([
+        { userId, categoryId: source.id!, amountCents: 1_200, cadence: 'weekly' },
+        { userId, categoryId: target.id!, amountCents: 12_000, cadence: 'monthly' },
+      ])
+      .execute();
+    await db
+      .insertInto('app.financeMonthlyBudgets')
+      .values([
+        { userId, categoryId: source.id!, currencyCode: 'USD', monthlyAmount: '10.00' },
+        { userId, categoryId: target.id!, currencyCode: 'USD', monthlyAmount: '50.00' },
+      ])
+      .execute();
+
+    const preview = content(
+      await callTool(userId, 'finance_category_merge', {
+        from: 'Budget Merge Source',
+        into: 'Budget Merge Target',
+        dryRun: true,
+      }),
+    );
+    expect(preview.budgetMerge).toEqual({
+      budget: { amount: 172, cadence: 'monthly' },
+      sourceBudgetCount: 1,
+      monthlyRunwayBudgets: [{ currencyCode: 'USD', amount: 60 }],
+    });
+
+    const result = content(
+      await callTool(userId, 'finance_category_merge', {
+        from: 'Budget Merge Source',
+        into: 'Budget Merge Target',
+      }),
+    );
+    expect(result.budgetMerge).toEqual(preview.budgetMerge);
+    expect(result.steps?.merge.budgetMerge).toEqual(preview.budgetMerge);
+  });
+
   it('reassigns transactions and removes the source category', async () => {
     const source = content(
       await callTool(userId, 'finance_category_create', { name: 'Merge Source' }),

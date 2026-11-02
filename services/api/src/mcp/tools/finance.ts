@@ -65,6 +65,16 @@ import { registerTool } from '../tool-registry';
 
 // Money crosses the MCP boundary in currency units; the services layer keeps cents.
 function mergeResponse(result: MergeFinanceCategoriesResult, dryRun: boolean) {
+  const budgetMergeResponse = (budgetMerge: MergeFinanceCategoriesResult['budgetMerge']) => ({
+    budget: budgetMerge.budget
+      ? { amount: budgetMerge.budget.amountCents / 100, cadence: budgetMerge.budget.cadence }
+      : null,
+    sourceBudgetCount: budgetMerge.sourceBudgetCount,
+    monthlyRunwayBudgets: budgetMerge.monthlyRunwayBudgets.map((budget) => ({
+      currencyCode: budget.currencyCode,
+      amount: budget.amountCents / 100,
+    })),
+  });
   return {
     transactionsReassigned: result.transactionsReassigned,
     category: result.category,
@@ -73,13 +83,22 @@ function mergeResponse(result: MergeFinanceCategoriesResult, dryRun: boolean) {
     reason: result.reason,
     untaggedSources: result.untaggedSources,
     blockedRules: result.blockedRules,
-    steps: result.steps,
+    steps: result.steps
+      ? {
+          ...result.steps,
+          merge: {
+            ...result.steps.merge,
+            budgetMerge: budgetMergeResponse(result.steps.merge.budgetMerge),
+          },
+        }
+      : null,
     currencyTotals: result.currencyTotals.map((total) => ({
       currencyCode: total.currencyCode,
       before: total.beforeCents / 100,
       after: total.afterCents / 100,
     })),
     totalsUnchanged: result.totalsUnchanged,
+    budgetMerge: budgetMergeResponse(result.budgetMerge),
     dryRun,
   };
 }
@@ -468,7 +487,7 @@ registerTool(
     name: 'finance_category_merge',
     title: 'Finance Category Merge',
     description:
-      'Merge one or more categories into a target in three ordered stages: preserve (a tag naming each source is put on its transactions), repoint (automation rules filing into a source are rewritten to the target), merge (transactions move and the sources are removed). Uncategorized may be a target, never a source. Any rule that still names a source blocks the merge and is listed by name, and so does a source whose transactions are not yet tagged. stage runs all three stages by default, or one at a time. dryRun reports all three stages without writing.',
+      'Merge one or more categories into a target in three ordered stages: preserve (a tag naming each source is put on its transactions), repoint (automation rules filing into a source are rewritten to the target), merge (transactions move, budgets are added in the target cadence, and the sources are removed). The target keeps its cadence; if it has no budget, the first budgeted source supplies the cadence. Source amounts are converted from their own cadences before addition. Uncategorized may be a target, never a source. Any rule that still names a source blocks the merge and is listed by name, and so does a source whose transactions are not yet tagged. stage runs all three stages by default, or one at a time. dryRun reports the budget result without writing.',
     inputSchema: financeCategoryMergeInputSchema,
     outputSchema: financeCategoryMergeOutputSchema,
     destructive: true,
@@ -497,6 +516,16 @@ registerTool(
               transactions: entry.transactionsTagged,
             })),
             repointRules: (result.steps?.repointRules.repointed ?? []).map((rule) => rule.name),
+            budget: result.budgetMerge.budget
+              ? {
+                  amount: result.budgetMerge.budget.amountCents / 100,
+                  cadence: result.budgetMerge.budget.cadence,
+                }
+              : null,
+            monthlyRunwayBudgets: result.budgetMerge.monthlyRunwayBudgets.map((budget) => ({
+              currencyCode: budget.currencyCode,
+              amount: budget.amountCents / 100,
+            })),
             totalsUnchanged: result.totalsUnchanged,
           };
     },
