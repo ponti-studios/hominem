@@ -20,7 +20,12 @@ const PERIODS_PER_YEAR: Record<FinanceBudgetCadence, number> = {
 
 const MAX_BUDGET_CENTS = 2_147_483_647;
 
-function amountInCadence(
+/**
+ * Converts an amount from one cadence to another (52 weekly, 12 monthly, 4 quarterly, 1 annual
+ * period a year), rounded to the nearest cent. Nested budgets are summed in the category
+ * budget's cadence, so a weekly tag budget can sit inside a monthly category budget.
+ */
+export function budgetAmountInCadence(
   amountCents: number,
   sourceCadence: FinanceBudgetCadence,
   targetCadence: FinanceBudgetCadence,
@@ -30,12 +35,18 @@ function amountInCadence(
   );
 }
 
+/** The finance transactions table `app.tag_assignments` names in `entity_table`. */
+const FINANCE_TRANSACTION_ENTITY_TABLE = 'app.finance_transactions';
+
 /** The budget as the API exposes it: flat, JSON-serializable, no row types. */
 export type FinanceBudgetRecord = {
   id: string;
   userId: string;
   categoryId: string;
   categoryName: string;
+  /** Null on a category budget; set on a tag budget nested inside that category. */
+  tagId: string | null;
+  tagName: string | null;
   amountCents: number;
   cadence: FinanceBudgetCadence;
   createdAt: string;
@@ -46,6 +57,8 @@ export type FinanceBudgetWriteInput = {
   categoryId: string;
   amountCents: number;
   cadence: FinanceBudgetCadence;
+  /** Set to create or replace the budget for that tag inside the category. */
+  tagId?: string | null;
 };
 
 export type FinanceBudgetPatch = {
@@ -60,6 +73,8 @@ export type FinanceBudgetSpendRange = {
   from: string;
   /** Exclusive last transaction date (YYYY-MM-DD). */
   to: string;
+  /** Count only transactions carrying this tag. Omitted counts the whole category. */
+  tagId?: string;
 };
 
 export type FinanceCategoryBudgetMerge = {
@@ -82,7 +97,7 @@ export type UncountedForeignTransaction = {
   description: string | null;
 };
 
-type BudgetJoinRow = FinanceBudgetRow & { categoryName: string };
+type BudgetJoinRow = FinanceBudgetRow & { categoryName: string; tagName: string | null };
 
 function toCurrencyCents(value: unknown): number {
   return Math.round(Number(value ?? 0) * 100);
@@ -100,6 +115,8 @@ function toBudget(row: BudgetJoinRow): FinanceBudgetRecord {
     userId: row.userId,
     categoryId: row.categoryId,
     categoryName: row.categoryName,
+    tagId: row.tagId,
+    tagName: row.tagName,
     amountCents: row.amountCents,
     cadence: toCadence(row.cadence),
     createdAt: String(row.createdAt),
@@ -111,12 +128,24 @@ const BUDGET_COLUMNS = [
   'budget.id',
   'budget.userId',
   'budget.categoryId',
+  'budget.tagId',
   'budget.amountCents',
   'budget.cadence',
   'budget.createdAt',
   'budget.updatedAt',
   'category.name as categoryName',
+  'tag.name as tagName',
 ] as const;
+
+/** Category budgets join their category; tag budgets additionally join their own tag. */
+function budgetsQuery(handle: DbHandle) {
+  return handle
+    .selectFrom('app.financeBudgets as budget')
+    .innerJoin('app.financeCategories as category', 'category.id', 'budget.categoryId')
+    .leftJoin('app.tags as tag', (join) =>
+      join.onRef('tag.id', '=', 'budget.tagId').onRef('tag.ownerUserid', '=', 'budget.userId'),
+    );
+}
 
 /**
  * Budgets are owner-scoped rows joined to their category, and spend is never stored: the
@@ -139,6 +168,8 @@ export const FinanceBudgetRepository = {
       .select(['id', 'categoryId', 'amountCents', 'cadence'])
       .where('userId', '=', ownerUserId)
       .where('categoryId', 'in', [...sourceCategoryIds, targetCategoryId])
+      // Only category budgets merge; a source's tag budgets go with its category.
+      .where('tagId', 'is', null)
       .execute();
     const target = budgets.find((budget) => budget.categoryId === targetCategoryId);
     const sourceBudgets = sourceCategoryIds.flatMap((categoryId) => {
@@ -153,7 +184,7 @@ export const FinanceBudgetRepository = {
       const cadence = mergedBudget?.cadence ?? toCadence(sourceBudgets[0]!.cadence);
       const sourceAmountCents = sourceBudgets.reduce(
         (total, budget) =>
-          total + amountInCadence(budget.amountCents, toCadence(budget.cadence), cadence),
+          total + budgetAmountInCadence(budget.amountCents, toCadence(budget.cadence), cadence),
         0,
       );
       const amountCents = (target?.amountCents ?? 0) + sourceAmountCents;
@@ -245,15 +276,31 @@ export const FinanceBudgetRepository = {
     return { budget: mergedBudget, sourceBudgetCount: sourceBudgets.length, monthlyRunwayBudgets };
   },
 
+  /** Category budgets only: tag budgets are read with their category. */
   async list(handle: DbHandle, ownerUserId: string, limit = 50): Promise<FinanceBudgetRecord[]> {
-    const rows = await handle
-      .selectFrom('app.financeBudgets as budget')
-      .innerJoin('app.financeCategories as category', 'category.id', 'budget.categoryId')
+    const rows = await budgetsQuery(handle)
       .select(BUDGET_COLUMNS)
       .where('budget.userId', '=', ownerUserId)
       .where('category.userId', '=', ownerUserId)
+      .where('budget.tagId', 'is', null)
       .orderBy('category.name', 'asc')
       .limit(limit)
+      .execute();
+    return rows.map(toBudget);
+  },
+
+  /** A category's budget and every tag budget nested inside it. */
+  async listByCategory(
+    handle: DbHandle,
+    ownerUserId: string,
+    categoryId: string,
+  ): Promise<FinanceBudgetRecord[]> {
+    const rows = await budgetsQuery(handle)
+      .select(BUDGET_COLUMNS)
+      .where('budget.userId', '=', ownerUserId)
+      .where('budget.categoryId', '=', categoryId)
+      .where('category.userId', '=', ownerUserId)
+      .orderBy(sql`budget.tag_id asc nulls first`)
       .execute();
     return rows.map(toBudget);
   },
@@ -263,9 +310,7 @@ export const FinanceBudgetRepository = {
     ownerUserId: string,
     id: string,
   ): Promise<FinanceBudgetRecord | null> {
-    const row = await handle
-      .selectFrom('app.financeBudgets as budget')
-      .innerJoin('app.financeCategories as category', 'category.id', 'budget.categoryId')
+    const row = await budgetsQuery(handle)
       .select(BUDGET_COLUMNS)
       .where('budget.id', '=', id)
       .where('budget.userId', '=', ownerUserId)
@@ -274,20 +319,40 @@ export const FinanceBudgetRepository = {
     return row ? toBudget(row) : null;
   },
 
+  /** The category budget of a category (never one of its tag budgets). */
   async getByCategory(
     handle: DbHandle,
     ownerUserId: string,
     categoryId: string,
   ): Promise<FinanceBudgetRecord | null> {
-    const row = await handle
-      .selectFrom('app.financeBudgets as budget')
-      .innerJoin('app.financeCategories as category', 'category.id', 'budget.categoryId')
+    const row = await budgetsQuery(handle)
       .select(BUDGET_COLUMNS)
       .where('budget.userId', '=', ownerUserId)
       .where('budget.categoryId', '=', categoryId)
+      .where('budget.tagId', 'is', null)
       .where('category.userId', '=', ownerUserId)
       .executeTakeFirst();
     return row ? toBudget(row) : null;
+  },
+
+  /**
+   * Serialises every write that can change the nested-budget invariant: holding the category's
+   * row lock means two concurrent saves cannot each pass the check and together exceed it.
+   * Returns null when the category is not the caller's.
+   */
+  async lockCategory(
+    handle: DbHandle,
+    ownerUserId: string,
+    categoryId: string,
+  ): Promise<{ id: string; name: string } | null> {
+    const row = await handle
+      .selectFrom('app.financeCategories')
+      .select(['id', 'name'])
+      .where('id', '=', categoryId)
+      .where('userId', '=', ownerUserId)
+      .forUpdate()
+      .executeTakeFirst();
+    return row ?? null;
   },
 
   async findCategory(
@@ -324,7 +389,11 @@ export const FinanceBudgetRepository = {
     return created;
   },
 
-  /** One row per (user, category): a second create for the same category updates it. */
+  /**
+   * One category budget per (user, category), and one budget per tag inside that category: a
+   * second create for the same scope updates the existing row. Runs inside the caller's
+   * transaction, which holds the category budget row's lock.
+   */
   async create(
     handle: DbHandle,
     ownerUserId: string,
@@ -337,37 +406,100 @@ export const FinanceBudgetRepository = {
     );
     if (!category) throw new NotFoundError('Category not found');
 
-    const existing = await handle
-      .selectFrom('app.financeBudgets')
-      .select('id')
-      .where('userId', '=', ownerUserId)
-      .where('categoryId', '=', input.categoryId)
-      .executeTakeFirst();
+    const tagId = input.tagId ?? null;
+    if (tagId) {
+      const tag = await handle
+        .selectFrom('app.tags')
+        .select('id')
+        .where('id', '=', tagId)
+        .where('ownerUserid', '=', ownerUserId)
+        .executeTakeFirst();
+      if (!tag) throw new NotFoundError('Tag not found');
+    }
 
-    await handle
-      .insertInto('app.financeBudgets')
-      .values({
-        userId: ownerUserId,
-        categoryId: input.categoryId,
-        amountCents: input.amountCents,
-        cadence: input.cadence,
-      })
-      .onConflict((conflict) =>
-        conflict.columns(['userId', 'categoryId']).doUpdateSet({
+    const existing = await (
+      tagId
+        ? handle
+            .selectFrom('app.financeBudgets')
+            .select('id')
+            .where('userId', '=', ownerUserId)
+            .where('categoryId', '=', input.categoryId)
+            .where('tagId', '=', tagId)
+        : handle
+            .selectFrom('app.financeBudgets')
+            .select('id')
+            .where('userId', '=', ownerUserId)
+            .where('categoryId', '=', input.categoryId)
+            .where('tagId', 'is', null)
+    ).executeTakeFirst();
+
+    if (existing) {
+      await handle
+        .updateTable('app.financeBudgets')
+        .set({
           amountCents: input.amountCents,
           cadence: input.cadence,
           updatedAt: new Date().toISOString(),
-        }),
-      )
-      .execute();
+        })
+        .where('userId', '=', ownerUserId)
+        .where('id', '=', existing.id)
+        .execute();
+    } else {
+      await handle
+        .insertInto('app.financeBudgets')
+        .values({
+          userId: ownerUserId,
+          categoryId: input.categoryId,
+          tagId,
+          amountCents: input.amountCents,
+          cadence: input.cadence,
+        })
+        .execute();
+    }
 
-    const budget = await FinanceBudgetRepository.getByCategory(
-      handle,
-      ownerUserId,
-      input.categoryId,
-    );
+    const budget = (
+      await FinanceBudgetRepository.listByCategory(handle, ownerUserId, input.categoryId)
+    ).find((candidate) => candidate.tagId === tagId);
     if (!budget) throw new NotFoundError('Budget not found');
     return { budget, created: !existing };
+  },
+
+  /**
+   * Makes the category's tag budgets exactly `inputs`: existing rows are updated in place (so
+   * their tracking start is kept), rows for tags no longer listed are removed.
+   */
+  async replaceTagBudgets(
+    handle: DbHandle,
+    ownerUserId: string,
+    categoryId: string,
+    inputs: ReadonlyArray<{ tagId: string; amountCents: number; cadence: FinanceBudgetCadence }>,
+  ): Promise<FinanceBudgetRecord[]> {
+    const existing = await handle
+      .selectFrom('app.financeBudgets')
+      .select('tagId')
+      .where('userId', '=', ownerUserId)
+      .where('categoryId', '=', categoryId)
+      .where('tagId', 'is not', null)
+      .execute();
+    const desired = new Set(inputs.map((input) => input.tagId));
+    const removedTagIds = existing.flatMap((row) =>
+      row.tagId && !desired.has(row.tagId) ? [row.tagId] : [],
+    );
+    if (removedTagIds.length > 0) {
+      await handle
+        .deleteFrom('app.financeBudgets')
+        .where('userId', '=', ownerUserId)
+        .where('categoryId', '=', categoryId)
+        .where('tagId', 'in', removedTagIds)
+        .execute();
+    }
+
+    for (const input of inputs) {
+      await FinanceBudgetRepository.create(handle, ownerUserId, { categoryId, ...input });
+    }
+    return (await FinanceBudgetRepository.listByCategory(handle, ownerUserId, categoryId)).filter(
+      (budget) => budget.tagId !== null,
+    );
   },
 
   async update(
@@ -386,11 +518,20 @@ export const FinanceBudgetRepository = {
     return FinanceBudgetRepository.get(handle, ownerUserId, id);
   },
 
+  /** Deleting a category budget also deletes the tag budgets nested inside it. */
   async remove(handle: DbHandle, ownerUserId: string, id: string): Promise<boolean> {
-    const result = await handle
-      .deleteFrom('app.financeBudgets')
+    const target = await handle
+      .selectFrom('app.financeBudgets')
+      .select(['categoryId', 'tagId'])
       .where('id', '=', id)
       .where('userId', '=', ownerUserId)
+      .executeTakeFirst();
+    if (!target) return false;
+    const result = await handle
+      .deleteFrom('app.financeBudgets')
+      .where('userId', '=', ownerUserId)
+      .$if(target.tagId === null, (query) => query.where('categoryId', '=', target.categoryId))
+      .$if(target.tagId !== null, (query) => query.where('id', '=', id))
       .executeTakeFirst();
     return Number(result.numDeletedRows) > 0;
   },
@@ -436,6 +577,17 @@ export const FinanceBudgetRepository = {
     ownerUserId: string,
     range: FinanceBudgetSpendRange,
   ): Promise<FinanceSpendTotal> {
+    // A tag budget counts only the category's transactions carrying that tag, using the same
+    // spend rules as the category budget it sits inside.
+    const tagFilter = range.tagId
+      ? sql<boolean>`exists (
+          select 1 from app.tag_assignments ta
+          where ta.entity_table = ${FINANCE_TRANSACTION_ENTITY_TABLE}::regclass
+            and ta.entity_id = t.id
+            and ta.tag_id = ${range.tagId}
+            and ta.removed_at is null
+        )`
+      : sql<boolean>`true`;
     const row = await handle
       .selectFrom('app.financeTransactions as t')
       .select([
@@ -459,6 +611,7 @@ export const FinanceBudgetRepository = {
       .where(sql<boolean>`t.amount < 0`)
       .where('t.postedOn', '>=', range.from)
       .where('t.postedOn', '<', range.to)
+      .where(tagFilter)
       .executeTakeFirst();
     return {
       spentCents: toCurrencyCents(row?.spent),

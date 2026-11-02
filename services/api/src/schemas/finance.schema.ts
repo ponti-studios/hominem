@@ -664,6 +664,11 @@ export const financeBudgetStatusSchema = z.object({
   id: z.string(),
   categoryId: z.string(),
   categoryName: z.string(),
+  tagId: z
+    .string()
+    .nullable()
+    .describe('Null on a category budget; set on a tag budget nested inside that category.'),
+  tagName: z.string().nullable().describe('The tag’s name on a tag budget, else null.'),
   amountCents: z
     .number()
     .int()
@@ -679,7 +684,9 @@ export const financeBudgetStatusSchema = z.object({
   openingBalanceCents: z
     .number()
     .int()
-    .describe('Carried deficit (negative) or, for annual budgets only, carried underspend.'),
+    .describe(
+      'Carried deficit (negative) or, for annual budgets only, carried underspend. Always 0 on a tag budget.',
+    ),
   availableCents: z.number().int().describe('amountCents + openingBalanceCents.'),
   spentCents: z.number().int().describe('Computed from transactions in the current period.'),
   remainingCents: z.number().int().describe('availableCents - spentCents; negative = overspent.'),
@@ -688,7 +695,7 @@ export const financeBudgetStatusSchema = z.object({
     .int()
     .min(0)
     .describe(
-      'Underspend of the last closed period swept to savings; always 0 for annual budgets.',
+      'Underspend of the last closed period swept to savings; always 0 for annual and tag budgets.',
     ),
   pace: z.object({
     periodElapsedFraction: z.number().describe('Fraction of the current period elapsed, 0–1.'),
@@ -709,6 +716,42 @@ export const financeBudgetStatusSchema = z.object({
       .enum(['insufficient_data', 'on_track', 'ahead'])
       .describe('insufficient_data until 20% of the period has elapsed.'),
   }),
+  breach: z
+    .object({
+      categoryId: z.string(),
+      categoryName: z.string(),
+      overByCents: z.number().int().positive(),
+    })
+    .nullable()
+    .describe(
+      'Set only when this category budget is over it. The category budget is the only breach line: a tag budget never sets this, even when the tag is over its own amount.',
+    ),
+  tagBudgets: z
+    .array(
+      z.object({
+        tagId: z.string(),
+        tagName: z.string(),
+        amountCents: z.number().int(),
+        cadence: financeBudgetCadenceSchema,
+        amountInCategoryCadenceCents: z
+          .number()
+          .int()
+          .describe('The tag amount converted to the category budget’s cadence.'),
+        spentCents: z
+          .number()
+          .int()
+          .describe('Spent on that tag in the tag budget’s own current period.'),
+        remainingCents: z.number().int(),
+        overTagBudget: z
+          .boolean()
+          .describe(
+            'True when the tag is over its own amount. Composition information only, never a breach.',
+          ),
+      }),
+    )
+    .describe(
+      'The category’s tag budgets as composition. Always empty on a tag budget. A tag over its budget is not an exception.',
+    ),
   uncountedForeignTransactionCount: z
     .number()
     .int()
@@ -737,6 +780,17 @@ export const financeBudgetListInputSchema = z.object({}).strict();
 export const financeBudgetListOutputSchema = z.object({
   primaryCurrency: z.string(),
   budgets: z.array(financeBudgetStatusSchema),
+  breaches: z
+    .array(
+      z.object({
+        categoryId: z.string(),
+        categoryName: z.string(),
+        overByCents: z.number().int().positive(),
+      }),
+    )
+    .describe(
+      'Category budgets that are over their limit — the only breaches there are. A tag over its own budget never appears here.',
+    ),
   count: z.number().int().min(0),
 });
 
@@ -755,7 +809,14 @@ export const financeBudgetCreateInputSchema = z
     categoryId: z
       .string()
       .uuid()
-      .describe('Category id from finance_categories. Budgets exist only at category level.'),
+      .describe('Category id from finance_categories. Every budget belongs to a category.'),
+    tagId: z
+      .string()
+      .uuid()
+      .optional()
+      .describe(
+        'Set to budget a tag inside this category (the composition layer). Omit for the category budget itself, which is the breach line.',
+      ),
     amountCents: z
       .number()
       .int()
@@ -767,7 +828,7 @@ export const financeBudgetCreateInputSchema = z
   })
   .strict()
   .describe(
-    'Create or replace the single budget for a category. Takes no currency: the budget is denominated in the profile primary currency, and no tag or merchant budget exists.',
+    'Create or replace one budget: the category budget (omit tagId) or a tag budget nested inside that category (set tagId). Takes no currency. The sum of a category’s tag budgets may not exceed its category budget.',
   );
 
 export const financeBudgetCreateOutputSchema = z.object({
@@ -798,6 +859,37 @@ export const financeBudgetUpdateOutputSchema = z.object({
 export const financeBudgetDeleteInputSchema = z.object({ budgetId: z.string().uuid() }).strict();
 
 export const financeBudgetDeleteOutputSchema = z.object({ removed: z.boolean() });
+
+export const financeBudgetSetInputSchema = z
+  .object({
+    categoryId: z.string().uuid().describe('Category id from finance_categories.'),
+    amountCents: z
+      .number()
+      .int()
+      .positive()
+      .describe('The category budget for one period, in integer cents of the primary currency.'),
+    cadence: financeBudgetCadenceSchema.describe('The category budget’s own cadence.'),
+    tagBudgets: z
+      .array(
+        z.object({
+          tagId: z.string().uuid().describe('Tag id from the tag tools.'),
+          amountCents: z.number().int().positive(),
+          cadence: financeBudgetCadenceSchema,
+        }),
+      )
+      .describe(
+        'The complete set of tag budgets inside this category. Tags omitted from the list lose their budget; the set replaces what is stored.',
+      ),
+  })
+  .strict();
+
+export const financeBudgetSetOutputSchema = z.object({
+  budget: financeBudgetStatusSchema.nullable(),
+  reason: z
+    .enum(['unknown_category'])
+    .nullable()
+    .describe('Set instead of an error when the category id is not the caller’s.'),
+});
 
 export const financePrimaryCurrencySetInputSchema = z
   .object({

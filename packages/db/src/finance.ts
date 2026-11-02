@@ -1,6 +1,7 @@
 export {
   FinanceBudgetRepository,
   FINANCE_BUDGET_CADENCES,
+  budgetAmountInCadence,
 } from './services/finance/budget.repository';
 export type {
   FinanceCategoryBudgetMerge,

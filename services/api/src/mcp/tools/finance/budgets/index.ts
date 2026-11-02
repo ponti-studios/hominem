@@ -4,6 +4,7 @@ import { financeBudgetDeleteTool } from './delete';
 import { financeBudgetGetTool } from './get';
 import { financeBudgetListTool } from './list';
 import { financePrimaryCurrencySetTool } from './primary-currency-set';
+import { financeBudgetSetTool } from './set';
 import { financeBudgetUpdateTool } from './update';
 
 export const financeBudgetsSlice = defineMcpSlice({
@@ -12,6 +13,7 @@ export const financeBudgetsSlice = defineMcpSlice({
     financeBudgetListTool,
     financeBudgetGetTool,
     financeBudgetCreateTool,
+    financeBudgetSetTool,
     financeBudgetUpdateTool,
     financeBudgetDeleteTool,
     financePrimaryCurrencySetTool,
