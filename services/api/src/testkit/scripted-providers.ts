@@ -518,7 +518,7 @@ class ScriptedProvidersDispatcher extends Dispatcher {
   ): Promise<void> {
     const mockAgent = new MockAgent();
     mockAgent.disableNetConnect();
-    // A cancelled request makes undici call onError while the agent is already closing, so close()
+    // A cancelled request makes undici call onResponseError while the agent is already closing, so close()
     // can run twice and the second call rejects with ClientDestroyedError. Close once, and swallow
     // that rejection: nothing awaits it, and an unhandled one fails the whole test run.
     let closing: Promise<void> | undefined;
@@ -541,7 +541,7 @@ class ScriptedProvidersDispatcher extends Dispatcher {
         get(target, property) {
           const callback = Reflect.get(target, property, target);
           if (typeof callback !== 'function') return callback;
-          if (property === 'onComplete' || property === 'onError') {
+          if (property === 'onResponseEnd' || property === 'onResponseError') {
             return (...args: unknown[]) => {
               try {
                 return callback.apply(target, args);
@@ -555,7 +555,17 @@ class ScriptedProvidersDispatcher extends Dispatcher {
       });
       mockAgent.dispatch({ ...options, body: null }, mockHandler);
     } catch (error) {
-      handler.onError?.(error instanceof Error ? error : new Error(String(error)));
+      handler.onResponseError?.(
+        {
+          aborted: false,
+          paused: false,
+          reason: null,
+          abort: () => undefined,
+          pause: () => undefined,
+          resume: () => undefined,
+        },
+        error instanceof Error ? error : new Error(String(error)),
+      );
       closeAgent();
     }
   }
